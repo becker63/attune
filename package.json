@@ -1,0 +1,16 @@
+{
+  "name": "attune",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.16",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "echo \"No app scaffold yet. OpenSpec spike is ready.\"",
+    "lint": "echo \"No lint target yet.\"",
+    "typecheck": "echo \"No typecheck target yet.\"",
+    "test": "echo \"No test target yet.\"",
+    "attune:scan": "echo \"No scan CLI yet.\""
+  }
+}

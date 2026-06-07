@@ -1,0 +1,12 @@
+.direnv/
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+build/
+coverage/
+.next/
+playwright-report/
+test-results/
+*.log
