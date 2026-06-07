@@ -10,6 +10,7 @@ coverage/
 playwright-report/
 test-results/
 *.log
+.pre-commit-config.yaml
 
 # Generated repo context
 repomix-output.xml

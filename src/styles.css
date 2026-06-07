@@ -1,0 +1,286 @@
+:root {
+  --attune-bg-root: #090d0e;
+  --attune-bg-sidebar: #0c1113;
+  --attune-bg-surface: #101617;
+  --attune-bg-panel: #13191b;
+  --attune-bg-panel-soft: #171d1f;
+  --attune-bg-code: #0d1315;
+  --attune-bg-code-line: #172023;
+  --attune-border-subtle: rgba(220, 228, 214, 0.08);
+  --attune-border-panel: rgba(220, 228, 214, 0.13);
+  --attune-border-strong: rgba(220, 228, 214, 0.22);
+  --attune-text-primary: #ece8dc;
+  --attune-text-secondary: #c8c1b2;
+  --attune-text-muted: #8f9087;
+  --attune-text-faint: #686e68;
+  --attune-accent-sage: #8dba6f;
+  --attune-accent-moss: #4f8f5b;
+  --attune-accent-clay: #c46a54;
+  --attune-accent-amber: #c49a4a;
+  --attune-accent-violet: #7c5ce5;
+  --attune-accent-blue: #6e91b8;
+  color: var(--attune-text-primary);
+  background: var(--attune-bg-root);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--attune-bg-root);
+}
+
+button {
+  font: inherit;
+}
+
+.attune-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(124, 92, 229, 0.12), transparent 28rem),
+    var(--attune-bg-root);
+}
+
+.attune-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-right: 1px solid var(--attune-border-panel);
+  background: color-mix(in srgb, var(--attune-bg-sidebar) 92%, black);
+}
+
+.attune-brand {
+  color: #d6d957;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.7rem;
+}
+
+.attune-nav,
+.attune-sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.attune-nav-item,
+.attune-pattern-card,
+.button {
+  border: 1px solid var(--attune-border-panel);
+  border-radius: 8px;
+  color: var(--attune-text-primary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.attune-nav-item {
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+}
+
+.attune-nav-item.is-selected {
+  border-color: color-mix(in srgb, var(--attune-accent-violet) 52%, white);
+  background: rgba(124, 92, 229, 0.18);
+}
+
+.attune-sidebar-eyebrow {
+  margin: 0;
+  color: var(--attune-text-muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.attune-pattern-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.8rem;
+  text-align: left;
+  background: var(--attune-bg-surface);
+}
+
+.attune-pattern-title {
+  line-height: 1.35;
+}
+
+.attune-pattern-count {
+  color: var(--attune-text-muted);
+  font-size: 0.82rem;
+}
+
+.attune-main {
+  min-width: 0;
+  padding: 2rem;
+}
+
+.workbench {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.workbench-header,
+.status-row,
+.artifact-grid,
+.timeline {
+  min-width: 0;
+}
+
+.workbench-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.repo-kicker,
+.intent,
+.metric span,
+.timeline p {
+  color: var(--attune-text-muted);
+}
+
+.repo-kicker {
+  margin: 0 0 0.65rem;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0.65rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 500;
+}
+
+.workbench-actions,
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.button {
+  padding: 0.7rem 1rem;
+}
+
+.button.primary {
+  border-color: color-mix(in srgb, var(--attune-accent-violet) 50%, white);
+  background: rgba(124, 92, 229, 0.28);
+}
+
+.button.secondary {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.status-row,
+.panel {
+  border: 1px solid var(--attune-border-panel);
+  border-radius: 8px;
+  background: rgba(19, 25, 27, 0.82);
+}
+
+.status-row {
+  align-items: center;
+  padding: 0.85rem 1rem;
+}
+
+.metric {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 6rem;
+}
+
+.artifact-grid {
+  display: grid;
+  grid-template-columns: minmax(20rem, 0.88fr) minmax(24rem, 1.12fr);
+  gap: 1rem;
+}
+
+.panel {
+  padding: 1rem;
+}
+
+.panel-heading {
+  margin-bottom: 1rem;
+  color: var(--attune-text-primary);
+  font-size: 1rem;
+}
+
+.panel-heading span {
+  color: var(--attune-text-muted);
+}
+
+.example-card {
+  margin-top: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid var(--attune-border-subtle);
+  border-radius: 8px;
+  background: var(--attune-bg-panel-soft);
+}
+
+.code-pane {
+  overflow: auto;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--attune-border-subtle);
+  border-radius: 8px;
+  background: var(--attune-bg-code);
+  color: var(--attune-text-secondary);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.code-line {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+}
+
+.code-line-number {
+  color: var(--attune-text-faint);
+  user-select: none;
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.timeline-item {
+  min-width: 0;
+}
+
+.attune-stub-page {
+  max-width: 44rem;
+  padding: 2rem;
+  border: 1px solid var(--attune-border-panel);
+  border-radius: 8px;
+  background: var(--attune-bg-panel);
+}
+
+@media (max-width: 920px) {
+  .attune-shell,
+  .artifact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .attune-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--attune-border-panel);
+  }
+}

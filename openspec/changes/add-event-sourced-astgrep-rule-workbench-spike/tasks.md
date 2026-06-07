@@ -1,16 +1,16 @@
 ## 1. Repository Toolchain
 
-- [ ] 1.1 Verify the Nix flake enters a dev shell with Node.js LTS, Bun, ast-grep, Chromium, and pre-commit tooling.
-- [ ] 1.2 Add or update package scripts for `dev`, `lint`, `typecheck`, `test`, `test:e2e`, and `attune:scan`.
-- [ ] 1.3 Wire nix-pre-commit/git-hooks checks to run formatting, linting, type checking, tests, and OpenSpec validation when implementation scripts exist.
-- [ ] 1.4 Document the runtime rule that Node.js LTS is the compatibility contract and Bun is the local package manager/script runner.
+- [x] 1.1 Verify the Nix flake enters a dev shell with Node.js LTS, Bun, ast-grep, Chromium, and pre-commit tooling.
+- [x] 1.2 Add or update package scripts for `dev`, `lint`, `typecheck`, `test`, `test:e2e`, and `attune:scan`.
+- [x] 1.3 Wire nix-pre-commit/git-hooks checks to run formatting, linting, type checking, tests, and OpenSpec validation when implementation scripts exist.
+- [x] 1.4 Document the runtime rule that Node.js LTS is the compatibility contract and Bun is the local package manager/script runner.
 
 ## 2. Application Skeleton
 
-- [ ] 2.1 Create the initial FoldKit package/app structure with root `entry.ts`, `main.ts`, `model.ts`, `message.ts`, `update.ts`, `view.ts`, `route.ts`, and `styles.css`.
-- [ ] 2.2 Add Effect, FoldKit, Shiki, Vercel AI SDK test utilities, ast-grep runner dependencies, Vitest, and Playwright as needed.
-- [ ] 2.3 Configure TypeScript so domain, eventing, agent, runner, fixture, UI, and export modules share strict types.
-- [ ] 2.4 Ensure core product modules avoid Bun-only APIs unless isolated behind an Effect service boundary.
+- [x] 2.1 Create the initial FoldKit package/app structure with root `entry.ts`, `main.ts`, `model.ts`, `message.ts`, `update.ts`, `view.ts`, `route.ts`, and `styles.css`.
+- [x] 2.2 Add Effect, FoldKit, Shiki, Vercel AI SDK test utilities, ast-grep runner dependencies, Vitest, and Playwright as needed.
+- [x] 2.3 Configure TypeScript so domain, eventing, agent, runner, fixture, UI, and export modules share strict types.
+- [x] 2.4 Ensure core product modules avoid Bun-only APIs unless isolated behind an Effect service boundary.
 - [ ] 2.5 Create `page/ruleWorkbench/` as a FoldKit page submodel with `index.ts`, `init.ts`, `model.ts`, `message.ts`, `update.ts`, `view.ts`, `command.ts`, Story tests, Scene tests, and local view helpers.
 - [ ] 2.6 Create route stubs for `page/findings/`, `page/lineage/`, `page/exports/`, `page/discover/`, and `page/settings/`, with only the minimal Findings label path needed by the end-to-end slice.
 
@@ -40,7 +40,7 @@
 ## 6. Typed Fixtures
 
 - [ ] 6.1 Add `defineRuleScenario` and fixture helper constructors.
-- [ ] 6.2 Add `bulletproof-react` as a git subtree at `repos/bulletproof-react`.
+- [x] 6.2 Add `bulletproof-react` as a git subtree at `repos/bulletproof-react`.
 - [ ] 6.3 Add the first typed scenario with repo metadata pointing at `repos/bulletproof-react`, initial events, fixture agent outputs, and expected projection assertions.
 - [ ] 6.4 Choose the first scenario pattern from `bulletproof-react`, with boundary validation and style firewall as the leading candidates.
 - [ ] 6.5 Add fixture candidates for noisy first proposal, false-positive revision, and clean promoted candidate.
@@ -73,19 +73,19 @@
 ## 10. FoldKit Rule Workbench
 
 - [ ] 10.1 Define FoldKit `Model`, `Message`, update function, command mapping, and projection adapter.
-- [ ] 10.2 Define Attune dark paper CSS variables for root background, sidebar, panels, code surfaces, borders, text, muted text, and semantic accents.
-- [ ] 10.3 Add `src/syntax/` modules for code language, highlighted-code model, Shiki highlighter service/command boundary, and FoldKit Html conversion.
+- [x] 10.2 Define Attune dark paper CSS variables for root background, sidebar, panels, code surfaces, borders, text, muted text, and semantic accents.
+- [x] 10.3 Add `src/syntax/` modules for code language, highlighted-code model, Shiki highlighter service/command boundary, and FoldKit Html conversion.
 - [ ] 10.4 Ensure Shiki highlighting runs outside FoldKit `view` and stores tokenized highlighted-code data in model/projection state.
-- [ ] 10.5 Render highlighted code through FoldKit Html nodes rather than raw `InnerHTML` by default.
-- [ ] 10.6 Render the persistent shell with Attune brand, primary nav, potential pattern cards in the sidebar, user footer, and collapse control.
-- [ ] 10.7 Render selected rule title, intent, compact candidate status strip, compact findings summary, and default primary actions `Revise rule` and `Promote rule`.
-- [ ] 10.8 Render grouped stacked examples with `Looks like` above `Does not look like`.
-- [ ] 10.9 Render the deterministic rule pane to the right of examples on desktop-width layouts and give it the main artifact height.
-- [ ] 10.10 Remove the standalone measurement panel from the default Workbench layout and avoid duplicated measurement values.
-- [ ] 10.11 Keep finding label buttons, notes input, selected finding detail, and finding pagination out of the default Workbench route.
-- [ ] 10.12 Render candidate iteration history and readable provenance timeline along the bottom of the Workbench.
+- [x] 10.5 Render highlighted code through FoldKit Html nodes rather than raw `InnerHTML` by default.
+- [x] 10.6 Render the persistent shell with Attune brand, primary nav, potential pattern cards in the sidebar, user footer, and collapse control.
+- [x] 10.7 Render selected rule title, intent, compact candidate status strip, compact findings summary, and default primary actions `Revise rule` and `Promote rule`.
+- [x] 10.8 Render grouped stacked examples with `Looks like` above `Does not look like`.
+- [x] 10.9 Render the deterministic rule pane to the right of examples on desktop-width layouts and give it the main artifact height.
+- [x] 10.10 Remove the standalone measurement panel from the default Workbench layout and avoid duplicated measurement values.
+- [x] 10.11 Keep finding label buttons, notes input, selected finding detail, and finding pagination out of the default Workbench route.
+- [x] 10.12 Render candidate iteration history and readable provenance timeline along the bottom of the Workbench.
 - [ ] 10.13 Render promotion blocker states for invalid or unmeasured candidates.
-- [ ] 10.14 Exclude ambiguous global actions such as `New scan`, `Give feedback`, `Run agent`, or `Auto-fix` until they have explicit domain commands and copy.
+- [x] 10.14 Exclude ambiguous global actions such as `New scan`, `Give feedback`, `Run agent`, or `Auto-fix` until they have explicit domain commands and copy.
 
 ## 11. FoldKit Tests
 

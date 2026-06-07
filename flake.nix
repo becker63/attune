@@ -81,13 +81,41 @@
             pkgs.chromium
             pkgs.pre-commit
             pkgs.nixfmt
+            pkgs.gum
           ]
           ++ preCommitCheck.enabledPackages;
 
           shellHook = ''
-            ${preCommitCheck.shellHook}
-            export PLAYWRIGHT_BROWSERS_PATH=${pkgs.chromium}
-            echo "Attune dev shell: Node is the runtime contract; Bun is the local tool."
+              ${preCommitCheck.shellHook}
+              export PLAYWRIGHT_BROWSERS_PATH=${pkgs.chromium}
+
+              if [ -z "$CI" ] && [ "$TERM" != "dumb" ] && [ "$ATTUNE_MOTD" != "0" ]; then
+                clear
+
+                gum style \
+                  --foreground "#ECE8DC" \
+                  --border-foreground "#32403B" \
+                  --border rounded \
+                  --padding "1 3" \
+                  --margin "1 0" \
+                  "$(cat <<'EOF'
+            ✦ Attune
+
+            Notice the pattern.
+            Ground it in examples.
+            Measure the deterministic rule.
+            Promote only what survived review.
+            EOF
+            )"
+
+                gum format <<'EOF'
+            **Ready**
+
+            - `bun run dev` — open the workbench
+            - `bun run test` — replay the fixture loop
+            - `bun run attune:scan` — measure candidates with ast-grep
+            EOF
+              fi
           '';
         };
 
