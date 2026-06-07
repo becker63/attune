@@ -7,10 +7,11 @@
 
 ## 2. Application Skeleton
 
-- [ ] 2.1 Create the initial TypeScript package/app structure for the spike.
+- [ ] 2.1 Create the initial FoldKit package/app structure with root `entry.ts`, `main.ts`, `model.ts`, `message.ts`, `update.ts`, `view.ts`, `route.ts`, and `styles.css`.
 - [ ] 2.2 Add Effect, FoldKit, Vercel AI SDK test utilities, ast-grep runner dependencies, Vitest, and Playwright as needed.
 - [ ] 2.3 Configure TypeScript so domain, eventing, agent, runner, fixture, UI, and export modules share strict types.
 - [ ] 2.4 Ensure core product modules avoid Bun-only APIs unless isolated behind an Effect service boundary.
+- [ ] 2.5 Create `page/ruleWorkbench/` as a FoldKit page submodel with `index.ts`, `init.ts`, `model.ts`, `message.ts`, `update.ts`, `view.ts`, `command.ts`, Story tests, Scene tests, and local view helpers.
 
 ## 3. Eventing Kernel
 

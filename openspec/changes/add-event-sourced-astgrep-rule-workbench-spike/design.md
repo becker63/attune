@@ -83,6 +83,49 @@ Alternatives considered:
 
 The Rule Workbench UI will be tested as product stories: typed scenario events project into a workbench model, FoldKit messages emit domain commands, command handling appends events, and projections update. Scene tests should verify that the rule card communicates intent, examples, YAML, measurement, review controls, lineage, and export preview.
 
+Attune should follow FoldKit's canonical application layout rather than inventing a generic frontend structure. The first implementation should start as a single package with root FoldKit app files and a page submodel for the workbench:
+
+```text
+src/
+  entry.ts
+  main.ts
+  model.ts
+  message.ts
+  update.ts
+  view.ts
+  route.ts
+  styles.css
+  vitest-setup.ts
+
+  page/
+    ruleWorkbench/
+      index.ts
+      init.ts
+      model.ts
+      message.ts
+      update.ts
+      view.ts
+      command.ts
+      main.story.test.ts
+      main.scene.test.ts
+      view/
+        ruleCard.ts
+        examplePair.ts
+        measurement.ts
+        findingQueue.ts
+        lineageTimeline.ts
+        exportPreview.ts
+
+  domain/
+  eventing/
+  agents/
+  astgrep/
+  scenario/
+  export/
+```
+
+The root app owns flags/init, route handling, root messages, and page delegation. The Rule Workbench page owns its own Model, Message, update, view, command definitions, Story tests, and Scene tests. Non-UI product modules live outside `page/` so they can be reused by CLI, tests, and future workers without importing FoldKit UI.
+
 Alternatives considered:
 
 - Unit-only testing was rejected because it would miss the product loop.
