@@ -30,6 +30,9 @@ rule:
 
 export const init = (): Model =>
   Model.make({
+    repoName: 'bulletproof-react',
+    branchName: 'main',
+    expandedCodePane: 'none',
     title: 'Styling belongs in UI primitives and recipes',
     intent:
       'Keep visual styling centralized in UI primitives and recipes so app components remain structural and token-driven.',
@@ -53,14 +56,28 @@ export const init = (): Model =>
       {
         label: 'Agent proposed',
         detail: 'The agent noticed repeated styling boundaries.',
+        time: '10:21 AM',
+      },
+      {
+        label: 'Candidate B revised',
+        detail: 'Rule revised to focus on surface styling specifics together.',
+        time: '10:48 AM',
       },
       {
         label: 'Measured',
         detail: '34 matches, 2 false positives, 180 ms.',
+        time: '10:52 AM',
+      },
+      {
+        label: 'Promoted',
+        detail: 'Rule promoted and ready to export to repository.',
+        time: '10:58 AM',
       },
       {
         label: 'Export ready',
         detail: 'Clean artifact prepared for attune/rules.',
+        time: '10:59 AM',
       },
     ],
+    fileCount: 12,
   })

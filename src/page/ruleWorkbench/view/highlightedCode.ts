@@ -16,19 +16,23 @@ export const highlightedCodeView = (code: HighlightedCode): Html => {
     [
       h.code(
         [h.Attribute('data-raw-code', code.rawCode)],
-        code.lines.map(line =>
+        code.lines.map((line) =>
           h.span(
-            [h.Class('code-line'), h.Attribute('data-line', line.lineNumber.toString())],
             [
-              h.span([h.Class('code-line-number')], [
-                line.lineNumber.toString(),
-              ]),
+              h.Class('code-line'),
+              h.Attribute('data-line', line.lineNumber.toString()),
+            ],
+            [
+              h.span(
+                [h.Class('code-line-number')],
+                [line.lineNumber.toString()],
+              ),
               h.span(
                 [h.Class('code-line-content')],
-                line.tokens.map(token => {
+                line.tokens.map((token) => {
                   const style = Option.match(token.color, {
                     onNone: () => ({}),
-                    onSome: color => ({ color }),
+                    onSome: (color) => ({ color }),
                   })
 
                   return h.span([h.Style(style)], [token.text])

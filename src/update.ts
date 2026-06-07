@@ -2,12 +2,8 @@ import { Match as M } from 'effect'
 import { Command } from 'foldkit'
 import { evo } from 'foldkit/struct'
 
-import type {
-  Message} from './message';
-import {
-  GotRuleWorkbenchMessage,
-  SelectedRoute,
-} from './message'
+import type { Message } from './message'
+import { GotRuleWorkbenchMessage, SelectedRoute } from './message'
 import type { Model } from './model'
 import * as RuleWorkbench from './page/ruleWorkbench'
 
@@ -27,7 +23,7 @@ export const update = (model: Model, message: Message): UpdateReturn =>
 
         return [
           evo(model, { ruleWorkbench: () => ruleWorkbench }),
-          Command.mapMessages(commands, message =>
+          Command.mapMessages(commands, (message) =>
             GotRuleWorkbenchMessage({ message }),
           ),
         ]

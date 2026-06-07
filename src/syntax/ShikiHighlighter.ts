@@ -30,7 +30,7 @@ export const highlightCode = (
         lines: lines.map((line, index) =>
           HighlightedLine.make({
             lineNumber: index + 1,
-            tokens: line.map(token =>
+            tokens: line.map((token) =>
               HighlightedToken.make({
                 text: token.content,
                 color: Option.fromUndefinedOr(token.color),
@@ -42,6 +42,6 @@ export const highlightCode = (
         ),
       })
     },
-    catch: error =>
+    catch: (error) =>
       error instanceof Error ? error : new Error(String(error)),
   })

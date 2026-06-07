@@ -188,13 +188,13 @@ The default Workbench composition is:
 │ repo / branch bar                                            │
 ├──────────────┬──────────────────────────────────────────────┤
 │ sidebar      │ selected rule title, intent, actions          │
-│              │ compact candidate status + findings summary   │
+│              │ compact candidate status                       │
 │ nav          │ ┌───────────────────┬──────────────────────┐ │
-│ patterns     │ │ stacked examples  │ deterministic rule    │ │
-│ user         │ │ looks like        │ tall ast-grep pane    │ │
-│ collapse     │ │ does not look like│                      │ │
+│ patterns     │ │ looks like        │ deterministic rule    │ │
+│ user         │ │ does not look like│ tall ast-grep pane    │ │
+│ collapse     │ │ resizable panes   │                      │ │
 │              │ └───────────────────┴──────────────────────┘ │
-│              │ provenance timeline                           │
+│              │ compact findings handoff                       │
 └──────────────┴──────────────────────────────────────────────┘
 ```
 
@@ -202,10 +202,11 @@ The visual system encodes product boundaries:
 
 - Potential patterns live in the persistent left sidebar beneath primary navigation, not as a floating second column.
 - The Workbench focuses on one selected candidate.
-- The main content pairs human examples with the deterministic artifact: examples stacked on the left, tall native rule pane on the right.
-- Measurement appears as a compact candidate status strip and, when useful, a compact findings summary; it does not appear again as a full standalone measurement panel.
+- The main content pairs human examples with the deterministic artifact as three peer panes: looks-like, does-not-look-like, and deterministic rule. The deterministic rule pane spans the right side on desktop.
+- Measurement appears as a compact candidate status strip and, when useful, a compact findings handoff strip; it does not appear again as a full standalone measurement panel.
 - Findings are reviewed on a dedicated Findings page. The Workbench routes to it with `Open findings`.
-- The bottom provenance timeline remains visible as a human-readable explanation of why the rule exists.
+- Lineage is reviewed on a dedicated Lineage page. The Workbench does not render the full provenance timeline by default.
+- Code artifact panes can be expanded through FoldKit state and resized with native pointer interaction so engineers can inspect dense examples and deterministic rule text without leaving the Workbench.
 - The default visible candidate actions are exactly `Revise rule` and `Promote rule`.
 
 Initial visual tokens should be implemented as CSS variables:
@@ -294,6 +295,63 @@ Alternatives considered:
 - Prism and highlight.js were rejected as the default because they are lighter but less editor-faithful for Attune's artifact-heavy UI.
 - Monaco and CodeMirror were rejected for the Workbench panes because Attune needs artifact viewing, not editing, in the default surface.
 - Shiki `codeToHtml` plus `InnerHTML` was rejected as the default because it bypasses FoldKit's pure view shape and makes highlighted code harder to inspect in Scene tests.
+
+### Decision: FoldKit-native iconography
+
+Attune should use a small curated icon set based on Lucide-style line icons, rendered as FoldKit-native inline SVG nodes. The icon system is part of the visual language: navigation, candidate state, examples, measurement, findings, lineage, and export states should pair text with quiet symbols rather than relying on color alone.
+
+The default icon path should be:
+
+```text
+curated icon helper
+-> FoldKit Html SVG node
+-> currentColor styling through Attune tokens
+```
+
+Do not introduce a React icon package, web-component icon runtime, or icon font into the core FoldKit UI. If Attune later needs a broader icon catalog, it can add a build-time extraction step or a package that exposes framework-neutral SVG data, but Workbench views should still receive icons as FoldKit `Html` nodes.
+
+Initial icon helpers should live near the UI boundary:
+
+```text
+src/
+  icon.ts
+```
+
+The icon helper should support:
+
+- decorative icons with `aria-hidden`
+- labeled icons when a symbol needs an accessible name
+- `currentColor` styling
+- stable sizing through CSS classes
+- semantic state paired with visible text
+
+Alternatives considered:
+
+- Icon fonts were rejected because they add font loading/layout behavior and are less inspectable in Scene tests.
+- React icon packages were rejected because Attune's UI is FoldKit-native.
+- Runtime icon web components were deferred because they add another rendering model to the Workbench.
+
+### Decision: Viewport-contained Workbench layout
+
+The Workbench should behave like an application surface, not a scrolling marketing page. On desktop-size viewports, the app shell should fit inside `100dvh` with local overflow regions:
+
+```text
+sidebar pattern list scrolls locally
+main content scrolls only when needed
+examples and deterministic rule panes keep their own code overflow
+compact findings handoff stays visible without stealing artifact space
+```
+
+This is a product decision, not merely a CSS detail. Attune asks engineers to compare examples, deterministic rules, measurement, and finding evidence in one calm review surface. If the page pushes critical evidence below the fold or duplicates large scroll contexts, the Workbench stops feeling like a review table.
+
+Mobile and narrow viewports may fall back to document scrolling, but desktop Workbench routes should prefer stable grid/flex regions with explicit `min-height: 0`, local code-pane overflow, and compact density rules for shorter screens. Each artifact pane should be independently resizable with the mouse in the normal Workbench. Code panes should also support two inspection modes:
+
+```text
+normal: examples and deterministic rule visible together
+expanded: one selected code pane takes the artifact area
+```
+
+The expanded/collapsed mode belongs in FoldKit model state. Mouse resizing may use native CSS resizing on the code panes because resizing is a local visual affordance, not product truth.
 
 ### Decision: Node runtime, Bun tooling
 

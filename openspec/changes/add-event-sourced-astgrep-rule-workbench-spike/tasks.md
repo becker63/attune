@@ -79,13 +79,18 @@
 - [x] 10.5 Render highlighted code through FoldKit Html nodes rather than raw `InnerHTML` by default.
 - [x] 10.6 Render the persistent shell with Attune brand, primary nav, potential pattern cards in the sidebar, user footer, and collapse control.
 - [x] 10.7 Render selected rule title, intent, compact candidate status strip, compact findings summary, and default primary actions `Revise rule` and `Promote rule`.
-- [x] 10.8 Render grouped stacked examples with `Looks like` above `Does not look like`.
+- [x] 10.8 Render `Looks like` and `Does not look like` as independent peer panes rather than inside a shared Examples parent.
 - [x] 10.9 Render the deterministic rule pane to the right of examples on desktop-width layouts and give it the main artifact height.
 - [x] 10.10 Remove the standalone measurement panel from the default Workbench layout and avoid duplicated measurement values.
 - [x] 10.11 Keep finding label buttons, notes input, selected finding detail, and finding pagination out of the default Workbench route.
-- [x] 10.12 Render candidate iteration history and readable provenance timeline along the bottom of the Workbench.
-- [ ] 10.13 Render promotion blocker states for invalid or unmeasured candidates.
-- [x] 10.14 Exclude ambiguous global actions such as `New scan`, `Give feedback`, `Run agent`, or `Auto-fix` until they have explicit domain commands and copy.
+- [x] 10.12 Keep full candidate lineage off the default Workbench and reserve it for the Lineage page.
+- [x] 10.13 Add FoldKit-native curated SVG icon helper and use it for shell navigation, semantic status, examples, findings, deterministic rule, and lineage surfaces.
+- [x] 10.14 Make the desktop Workbench shell viewport-contained with local overflow for sidebar patterns and code panes.
+- [x] 10.15 Move compact findings summary into a bottom findings handoff strip with `Open findings`.
+- [x] 10.16 Add FoldKit model/message/update state for expanding individual code panes.
+- [x] 10.17 Make the three Workbench artifact panes independently resizable with mouse/pointer interaction.
+- [ ] 10.18 Render promotion blocker states for invalid or unmeasured candidates.
+- [x] 10.19 Exclude ambiguous global actions such as `New scan`, `Give feedback`, `Run agent`, or `Auto-fix` until they have explicit domain commands and copy.
 
 ## 11. FoldKit Tests
 
@@ -94,16 +99,19 @@
 - [ ] 11.3 Add Scene test rendering the boundary validation rule card.
 - [ ] 11.4 Add Scene test for sidebar potential patterns and selected state.
 - [ ] 11.5 Add Scene test proving the default Workbench shows only `Revise rule` and `Promote rule` as primary actions.
-- [ ] 11.6 Add Scene test for stacked examples inside the parent `Examples` group.
+- [ ] 11.6 Add Scene test proving examples render as independent peer panes with no parent `Examples` group.
 - [ ] 11.7 Add Scene test for the right-side tall deterministic rule pane.
 - [ ] 11.8 Add Scene test proving no standalone measurement panel renders.
 - [ ] 11.9 Add Scene test proving finding review controls do not render on the Workbench route.
-- [ ] 11.10 Add Scene test for compact findings summary and `Open findings`.
-- [ ] 11.11 Add Scene test for bottom provenance timeline.
+- [ ] 11.10 Add Scene test for compact findings handoff and `Open findings`.
+- [ ] 11.11 Add Scene test proving the default Workbench does not render the bottom provenance timeline.
 - [ ] 11.12 Add Scene test proving code panes render tokenized Shiki output through FoldKit Html nodes while preserving plain text.
-- [ ] 11.13 Add Story test proving highlighting is requested through command/service boundaries rather than performed inside `view`.
-- [ ] 11.14 Add Findings page Story or Scene test covering false-positive labeling.
-- [ ] 11.15 Ensure UI tests run in the default fixture path without live model calls, GitHub, or a production database.
+- [ ] 11.13 Add Scene test proving core icons render as inline SVG nodes and semantic statuses are not color-only.
+- [ ] 11.14 Add Scene test proving desktop Workbench uses viewport-contained layout with local code overflow.
+- [ ] 11.15 Add Story test proving code pane expansion toggles through FoldKit update state.
+- [ ] 11.16 Add Story test proving highlighting is requested through command/service boundaries rather than performed inside `view`.
+- [ ] 11.17 Add Findings page Story or Scene test covering false-positive labeling.
+- [ ] 11.18 Ensure UI tests run in the default fixture path without live model calls, GitHub, or a production database.
 
 ## 12. Export Preview
 

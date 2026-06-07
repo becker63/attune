@@ -20,8 +20,17 @@ export type CodeExample = typeof CodeExample.Type
 export const TimelineItem = S.Struct({
   label: S.String,
   detail: S.String,
+  time: S.String,
 })
 export type TimelineItem = typeof TimelineItem.Type
+
+export const CodePaneId = S.Literals([
+  'none',
+  'looksLike',
+  'doesNotLookLike',
+  'deterministicRule',
+])
+export type CodePaneId = typeof CodePaneId.Type
 
 export const Model = S.Struct({
   title: S.String,
@@ -31,5 +40,9 @@ export const Model = S.Struct({
   doesNotLookLike: CodeExample,
   deterministicRule: HighlightedCode,
   timeline: S.Array(TimelineItem),
+  repoName: S.String,
+  branchName: S.String,
+  fileCount: S.Number,
+  expandedCodePane: CodePaneId,
 })
 export type Model = typeof Model.Type

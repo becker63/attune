@@ -45,8 +45,8 @@ Attune keeps the private lineage
 - Use real measurement as the trust mechanism: proposed rules must be run against real fixture code before promotion.
 - Let humans label findings, revise candidates, reject candidates, or promote candidates.
 - Establish the first Attune visual system as a dark paper workbench: warm dark surfaces, quiet panels, editorial headings, precise code panes, and semantic accents.
-- Compose the Workbench around the selected candidate: potential patterns in the persistent sidebar, examples stacked on the left, deterministic rule pane on the right, compact status/findings summary at the top, and provenance timeline along the bottom.
-- Keep finding review on a dedicated Findings page; the Workbench shows only a compact findings summary with an `Open findings` action.
+- Compose the Workbench around the selected candidate: potential patterns in the persistent sidebar, three peer artifact panes for looks-like, does-not-look-like, and deterministic rule, compact candidate status, and a compact findings handoff strip.
+- Keep finding review on a dedicated Findings page; the Workbench shows only a compact findings handoff with an `Open findings` action.
 - Limit default Workbench candidate actions to `Revise rule` and `Promote rule`; ambiguous global controls such as `New scan`, `Give feedback`, `Run agent`, or `Auto-fix` are excluded until modeled as explicit domain commands.
 - Generate an export preview containing clean repo-native artifacts after promotion.
 - Preserve the boundary that the repository receives only accepted artifacts while Attune privately remembers attempts, false positives, rejected candidates, revisions, and promotion reasoning.
