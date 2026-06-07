@@ -8,12 +8,13 @@ The repository is starting from a blank slate. The design therefore establishes 
 
 **Goals:**
 
-- Build one vertical rule-authoring lifecycle for a concrete TypeScript fixture scenario.
+- Build one narrow vertical rule-authoring lifecycle that proves the Workbench artifact surface before expanding every route.
 - Keep product truth in domain events and derive the Rule Workbench from projections.
-- Use typed TypeScript fixtures as the initial database and demo source.
+- Use typed TypeScript fixtures as the initial database and demo source, backed by `repos/bulletproof-react` as the real ast-grep fixture repository.
 - Run ast-grep for real in the default spike path.
 - Keep AI integration behind a product-owned `RuleAgent` boundary.
 - Use FoldKit Story and Scene tests as the primary product/UI test surface.
+- Enshrine the dark paper Workbench visual system as part of the first spike, not a later styling pass.
 - Generate export previews that contain clean native ast-grep artifacts.
 - Establish a reproducible local toolchain with Nix, Node.js LTS, Bun, ast-grep, Chromium, and pre-commit hooks.
 
@@ -27,6 +28,7 @@ The repository is starting from a blank slate. The design therefore establishes 
 - No full agent runtime owned by Attune.
 - No support for multiple rule engines in the first spike.
 - No Bun-only product runtime dependency.
+- No complete Findings, Lineage, Export, Discover, or Settings product pages in the first implementation slice beyond route stubs or narrow acceptance paths needed by the Workbench.
 
 ## Decisions
 
@@ -38,6 +40,32 @@ Alternatives considered:
 
 - A custom DSL was rejected because it would recreate the artifact-evolution problem learned from SearchBench.
 - A generic multi-engine abstraction was deferred because it would make the first spike larger than the product loop requires.
+
+### Decision: First implementation slice is Workbench-first
+
+The implementation should not try to build every page implied by the product shell at once. The first slice is:
+
+```text
+fixture events
+-> projection
+-> highlighted code model
+-> FoldKit Workbench screen
+-> one real ast-grep run against bulletproof-react
+-> compact measurement
+-> promote/export preview
+```
+
+This slice proves the heart of Attune: a human can inspect what a candidate means, see the deterministic artifact, see what it measured, understand why it exists, and promote a clean export preview. Finding review, lineage detail, exports, discover, and settings can exist as route stubs or minimal acceptance paths until the Workbench artifact surface is real.
+
+The first concrete fixture repository is `repos/bulletproof-react`, vendored as a subtree from `https://github.com/alan2207/bulletproof-react` on its `master` branch. It is a real TypeScript/React codebase with enough structure to make ast-grep measurement meaningful without dragging the spike back toward SearchBench's old harness shape.
+
+The initial rule scenario may still use the boundary-validation language if that remains the strongest demo, but the repo fixture should be `bulletproof-react`. A style-firewall scenario is also a strong candidate because the visual system already uses examples involving UI primitives, recipes, and raw styling boundaries.
+
+Alternatives considered:
+
+- Building the Findings page first was rejected because it delays the artifact-review surface that makes Attune legible.
+- Building all shell routes equally was rejected because it turns the spike into an app scaffold exercise instead of a product-loop proof.
+- Keeping a tiny synthetic fixture repo was rejected because real ast-grep measurement is part of the product evidence.
 
 ### Decision: Event-sourced private lineage
 
@@ -111,10 +139,28 @@ src/
       view/
         ruleCard.ts
         examplePair.ts
+        highlightedCode.ts
         measurement.ts
-        findingQueue.ts
         lineageTimeline.ts
         exportPreview.ts
+    findings/
+      index.ts
+      init.ts
+      model.ts
+      message.ts
+      update.ts
+      view.ts
+      command.ts
+      main.story.test.ts
+      main.scene.test.ts
+    lineage/
+      index.ts
+    exports/
+      index.ts
+    discover/
+      index.ts
+    settings/
+      index.ts
 
   domain/
   eventing/
@@ -124,12 +170,130 @@ src/
   export/
 ```
 
-The root app owns flags/init, route handling, root messages, and page delegation. The Rule Workbench page owns its own Model, Message, update, view, command definitions, Story tests, and Scene tests. Non-UI product modules live outside `page/` so they can be reused by CLI, tests, and future workers without importing FoldKit UI.
+The root app owns flags/init, route handling, root messages, and page delegation. The Rule Workbench page owns its own Model, Message, update, view, command definitions, Story tests, and Scene tests. The Findings page can start as a route stub plus the minimal label path required for the end-to-end spike. Lineage, Exports, Discover, and Settings can start as route stubs. Non-UI product modules live outside `page/` so they can be reused by CLI, tests, and future workers without importing FoldKit UI.
 
 Alternatives considered:
 
 - Unit-only testing was rejected because it would miss the product loop.
 - Pure visual mock tests were rejected because the first spike must show real measurement behavior.
+
+### Decision: Dark paper Workbench visual system
+
+The first spike will include Attune's visual system as product behavior. The target is a dark, quiet, technical workbench that still feels warm and human: closer to a dark paper dossier on a studio table than a terminal dashboard, observability console, security cockpit, or generic SaaS admin panel.
+
+The default Workbench composition is:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ repo / branch bar                                            │
+├──────────────┬──────────────────────────────────────────────┤
+│ sidebar      │ selected rule title, intent, actions          │
+│              │ compact candidate status + findings summary   │
+│ nav          │ ┌───────────────────┬──────────────────────┐ │
+│ patterns     │ │ stacked examples  │ deterministic rule    │ │
+│ user         │ │ looks like        │ tall ast-grep pane    │ │
+│ collapse     │ │ does not look like│                      │ │
+│              │ └───────────────────┴──────────────────────┘ │
+│              │ provenance timeline                           │
+└──────────────┴──────────────────────────────────────────────┘
+```
+
+The visual system encodes product boundaries:
+
+- Potential patterns live in the persistent left sidebar beneath primary navigation, not as a floating second column.
+- The Workbench focuses on one selected candidate.
+- The main content pairs human examples with the deterministic artifact: examples stacked on the left, tall native rule pane on the right.
+- Measurement appears as a compact candidate status strip and, when useful, a compact findings summary; it does not appear again as a full standalone measurement panel.
+- Findings are reviewed on a dedicated Findings page. The Workbench routes to it with `Open findings`.
+- The bottom provenance timeline remains visible as a human-readable explanation of why the rule exists.
+- The default visible candidate actions are exactly `Revise rule` and `Promote rule`.
+
+Initial visual tokens should be implemented as CSS variables:
+
+```text
+--attune-bg-root:        #090D0E;
+--attune-bg-sidebar:     #0C1113;
+--attune-bg-surface:     #101617;
+--attune-bg-panel:       #13191B;
+--attune-bg-panel-soft:  #171D1F;
+--attune-bg-code:        #0D1315;
+--attune-bg-code-line:   #172023;
+
+--attune-border-subtle:  rgba(220, 228, 214, 0.08);
+--attune-border-panel:   rgba(220, 228, 214, 0.13);
+--attune-border-strong:  rgba(220, 228, 214, 0.22);
+
+--attune-text-primary:   #ECE8DC;
+--attune-text-secondary: #C8C1B2;
+--attune-text-muted:     #8F9087;
+--attune-text-faint:     #686E68;
+
+--attune-accent-sage:    #8DBA6F;
+--attune-accent-moss:    #4F8F5B;
+--attune-accent-clay:    #C46A54;
+--attune-accent-amber:   #C49A4A;
+--attune-accent-violet:  #7C5CE5;
+--attune-accent-blue:    #6E91B8;
+```
+
+Typography should pair editorial headings with precise code: Attune wordmark and rule titles may use a serif or serif-adjacent face, while navigation, metadata, buttons, and code remain clean and functional. Color must stay semantic and sparse; violet may mark selected/candidate identity, but it must not dominate the interface.
+
+Alternatives considered:
+
+- A generic dark dashboard was rejected because Attune should feel like careful artifact review, not monitoring or security tooling.
+- A terminal-like code cockpit was rejected because Attune's product promise is human-readable shared practice, not command output.
+- A light-only direction was deferred because the approved visual target is the dark paper Workbench shown in the current design reference.
+- Keeping findings review inside the Workbench was rejected because it overloaded the candidate artifact review surface and duplicated measurement context.
+
+### Decision: FoldKit-native Shiki syntax highlighting
+
+Attune's Workbench shows a lot of code: examples, ast-grep YAML, export previews, finding excerpts, and future deterministic artifacts. Those panes should feel like real editor-quality artifacts, not plain preformatted text. The spike will use Shiki for syntax highlighting because it is based on TextMate grammars and VS Code themes, supports TypeScript/TSX/YAML well, and can run in modern JavaScript runtimes without making Attune depend on editor widgets.
+
+Shiki highlighting must be integrated through FoldKit's architecture:
+
+```text
+raw code + language + role
+-> HighlightCode command or Effect service
+-> Shiki token/HAST output
+-> Attune HighlightedCode domain/view model
+-> FoldKit view renders spans/lines as Html nodes
+```
+
+The default implementation must not call Shiki from `view`, because highlighting can load grammars/themes and is not a pure render concern. It also must not default to raw highlighted HTML via `InnerHTML`. FoldKit exposes `InnerHTML`, but Attune should reserve that as an explicitly reviewed escape hatch. The normal path is to convert Shiki token/HAST output into a small Attune-owned highlighted-code model and render it with FoldKit `Html`.
+
+Initial code highlighting modules should live near the UI boundary:
+
+```text
+src/
+  syntax/
+    CodeLanguage.ts
+    HighlightedCode.ts
+    ShikiHighlighter.ts
+    toFoldkitHtml.ts
+
+  page/
+    ruleWorkbench/
+      view/
+        highlightedCode.ts
+```
+
+The highlighted-code model should preserve:
+
+- language
+- raw code
+- line list
+- token text
+- token color or semantic token class
+- optional highlighted/marked line state
+- accessible plain-text fallback
+
+The first spike only needs languages used by the workbench: `ts`, `tsx`, `yaml`, and `text`. Future work can add diff markers, word highlights, CodeQL/ESLint languages, or custom semantic overlays.
+
+Alternatives considered:
+
+- Prism and highlight.js were rejected as the default because they are lighter but less editor-faithful for Attune's artifact-heavy UI.
+- Monaco and CodeMirror were rejected for the Workbench panes because Attune needs artifact viewing, not editing, in the default surface.
+- Shiki `codeToHtml` plus `InnerHTML` was rejected as the default because it bypasses FoldKit's pure view shape and makes highlighted code harder to inspect in Scene tests.
 
 ### Decision: Node runtime, Bun tooling
 
@@ -165,6 +329,9 @@ Alternatives considered:
 - AI SDK types may leak into the domain -> Keep `RuleAgent` product-owned and append only validated domain events.
 - Typed fixtures may become too coupled to implementation -> Treat fixtures as product stories with stable helper constructors.
 - Frontend may outrun product evidence -> Require real ast-grep runner output in the first spike.
+- Dark theme may become generic or terminal-like -> Use warm surfaces, low-contrast borders, semantic accents, editorial title treatment, and Scene tests that lock the information architecture.
+- Syntax highlighting may become an unsafe or imperative escape hatch -> Run Shiki behind commands/services, store highlighted-code data in Model/projection state, and render FoldKit Html nodes rather than defaulting to `InnerHTML`.
+- Moving finding review off the Workbench may hide evidence -> Keep compact findings summary and route to a dedicated Findings page scoped to the selected candidate.
 - Bun may hide Node compatibility issues -> Keep domain/runtime code Node-compatible and run quality gates under the Node runtime contract.
 
 ## Migration Plan
@@ -173,17 +340,20 @@ This is a new project spike, so there is no data migration. The implementation c
 
 1. Add the Nix/Bun/Node repository foundation.
 2. Add the eventing kernel and domain model.
-3. Add typed fixtures and projection.
+3. Add typed fixtures and projection using `repos/bulletproof-react` as the real fixture repo.
 4. Add fixture/mock agent boundary.
 5. Add live ast-grep measurement.
-6. Add FoldKit Rule Workbench and tests.
+6. Add the dark paper FoldKit shell and Workbench artifact surface.
 7. Add export preview.
+8. Add minimal Findings route path only where needed to prove label/revision flow.
 
 Rollback is removing the spike package/files before production adoption; no external state is introduced.
 
 ## Open Questions
 
-- Which exact small TypeScript/FoldKit fixture repo should anchor `boundaryValidationScenario`?
 - Should the first UI shell be a standalone FoldKit app or a Next/FoldKit package?
 - Which OpenSpec validation command should become the initial pre-commit hook once implementation scripts exist?
 - Should the first export preview include a GitHub Actions workflow preview, or only ast-grep config, rule, and tests?
+- Should the sidebar pattern list appear on every page or only Discover/Workbench?
+- Should Discover become the expanded version of the same pattern index shown in the sidebar?
+- Should the first demo rule be boundary validation, style firewall, or another pattern discovered from `bulletproof-react`?

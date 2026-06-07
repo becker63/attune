@@ -10,3 +10,6 @@ coverage/
 playwright-report/
 test-results/
 *.log
+
+# Generated repo context
+repomix-output.xml

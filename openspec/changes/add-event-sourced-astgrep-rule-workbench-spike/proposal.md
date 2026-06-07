@@ -44,6 +44,10 @@ Attune keeps the private lineage
 - Use an agent only to propose candidate intents, examples, structural proxies, and deterministic rules; the agent is not the authority.
 - Use real measurement as the trust mechanism: proposed rules must be run against real fixture code before promotion.
 - Let humans label findings, revise candidates, reject candidates, or promote candidates.
+- Establish the first Attune visual system as a dark paper workbench: warm dark surfaces, quiet panels, editorial headings, precise code panes, and semantic accents.
+- Compose the Workbench around the selected candidate: potential patterns in the persistent sidebar, examples stacked on the left, deterministic rule pane on the right, compact status/findings summary at the top, and provenance timeline along the bottom.
+- Keep finding review on a dedicated Findings page; the Workbench shows only a compact findings summary with an `Open findings` action.
+- Limit default Workbench candidate actions to `Revise rule` and `Promote rule`; ambiguous global controls such as `New scan`, `Give feedback`, `Run agent`, or `Auto-fix` are excluded until modeled as explicit domain commands.
 - Generate an export preview containing clean repo-native artifacts after promotion.
 - Preserve the boundary that the repository receives only accepted artifacts while Attune privately remembers attempts, false positives, rejected candidates, revisions, and promotion reasoning.
 - Establish the platform decision: Node.js LTS is the official runtime compatibility target, Bun is the local package manager and script runner, and Nix pins the shared development toolchain.
@@ -80,6 +84,7 @@ Attune helps teams discover the executable shadows of their shared taste: small 
 ### New Capabilities
 
 - `rule-workbench`: Review and operate on rule candidates through intent, examples, native deterministic rule content, measurement, labels, revisions, lineage, and export preview.
+- `attune-visual-system`: Define the dark paper workbench shell, visual tokens, layout hierarchy, action hierarchy, page boundaries, and Scene-test expectations.
 - `event-sourced-rule-lifecycle`: Store and project the rule authoring lifecycle as domain events so private lineage remains inspectable without polluting the target repository.
 - `deterministic-rule-measurement`: Execute candidate ast-grep rules against fixture code and normalize measurement results into findings.
 - `agent-rule-proposal-boundary`: Use fixture-backed and AI SDK mock-backed agents to propose structured candidates without storing raw provider responses as product truth.

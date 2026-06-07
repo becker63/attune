@@ -8,10 +8,11 @@
 ## 2. Application Skeleton
 
 - [ ] 2.1 Create the initial FoldKit package/app structure with root `entry.ts`, `main.ts`, `model.ts`, `message.ts`, `update.ts`, `view.ts`, `route.ts`, and `styles.css`.
-- [ ] 2.2 Add Effect, FoldKit, Vercel AI SDK test utilities, ast-grep runner dependencies, Vitest, and Playwright as needed.
+- [ ] 2.2 Add Effect, FoldKit, Shiki, Vercel AI SDK test utilities, ast-grep runner dependencies, Vitest, and Playwright as needed.
 - [ ] 2.3 Configure TypeScript so domain, eventing, agent, runner, fixture, UI, and export modules share strict types.
 - [ ] 2.4 Ensure core product modules avoid Bun-only APIs unless isolated behind an Effect service boundary.
 - [ ] 2.5 Create `page/ruleWorkbench/` as a FoldKit page submodel with `index.ts`, `init.ts`, `model.ts`, `message.ts`, `update.ts`, `view.ts`, `command.ts`, Story tests, Scene tests, and local view helpers.
+- [ ] 2.6 Create route stubs for `page/findings/`, `page/lineage/`, `page/exports/`, `page/discover/`, and `page/settings/`, with only the minimal Findings label path needed by the end-to-end slice.
 
 ## 3. Eventing Kernel
 
@@ -39,10 +40,11 @@
 ## 6. Typed Fixtures
 
 - [ ] 6.1 Add `defineRuleScenario` and fixture helper constructors.
-- [ ] 6.2 Add `boundaryValidationScenario` with repo metadata, initial events, fixture agent outputs, and expected projection assertions.
-- [ ] 6.3 Add a small real TypeScript fixture repo for ast-grep measurement.
-- [ ] 6.4 Add fixture candidates for noisy first proposal, false-positive revision, and clean promoted candidate.
-- [ ] 6.5 Reuse the same scenario in projection tests, FoldKit Story tests, FoldKit Scene tests, and demo boot.
+- [ ] 6.2 Add `bulletproof-react` as a git subtree at `repos/bulletproof-react`.
+- [ ] 6.3 Add the first typed scenario with repo metadata pointing at `repos/bulletproof-react`, initial events, fixture agent outputs, and expected projection assertions.
+- [ ] 6.4 Choose the first scenario pattern from `bulletproof-react`, with boundary validation and style firewall as the leading candidates.
+- [ ] 6.5 Add fixture candidates for noisy first proposal, false-positive revision, and clean promoted candidate.
+- [ ] 6.6 Reuse the same scenario in projection tests, FoldKit Story tests, FoldKit Scene tests, and demo boot.
 
 ## 7. Agent Boundary
 
@@ -70,19 +72,38 @@
 
 ## 10. FoldKit Rule Workbench
 
-- [ ] 10.1 Define FoldKit `Model`, `Msg`, update function, command mapping, and projection adapter.
-- [ ] 10.2 Render the rule card with title, status, scope, intent, structural proxy, native ast-grep YAML, examples, and known limits.
-- [ ] 10.3 Render measurement summary, finding review queue, selected finding details, and review actions.
-- [ ] 10.4 Render candidate iteration history, readable lineage timeline, and promote/revise/reject/export controls.
-- [ ] 10.5 Render promotion blocker states for invalid or unmeasured candidates.
+- [ ] 10.1 Define FoldKit `Model`, `Message`, update function, command mapping, and projection adapter.
+- [ ] 10.2 Define Attune dark paper CSS variables for root background, sidebar, panels, code surfaces, borders, text, muted text, and semantic accents.
+- [ ] 10.3 Add `src/syntax/` modules for code language, highlighted-code model, Shiki highlighter service/command boundary, and FoldKit Html conversion.
+- [ ] 10.4 Ensure Shiki highlighting runs outside FoldKit `view` and stores tokenized highlighted-code data in model/projection state.
+- [ ] 10.5 Render highlighted code through FoldKit Html nodes rather than raw `InnerHTML` by default.
+- [ ] 10.6 Render the persistent shell with Attune brand, primary nav, potential pattern cards in the sidebar, user footer, and collapse control.
+- [ ] 10.7 Render selected rule title, intent, compact candidate status strip, compact findings summary, and default primary actions `Revise rule` and `Promote rule`.
+- [ ] 10.8 Render grouped stacked examples with `Looks like` above `Does not look like`.
+- [ ] 10.9 Render the deterministic rule pane to the right of examples on desktop-width layouts and give it the main artifact height.
+- [ ] 10.10 Remove the standalone measurement panel from the default Workbench layout and avoid duplicated measurement values.
+- [ ] 10.11 Keep finding label buttons, notes input, selected finding detail, and finding pagination out of the default Workbench route.
+- [ ] 10.12 Render candidate iteration history and readable provenance timeline along the bottom of the Workbench.
+- [ ] 10.13 Render promotion blocker states for invalid or unmeasured candidates.
+- [ ] 10.14 Exclude ambiguous global actions such as `New scan`, `Give feedback`, `Run agent`, or `Auto-fix` until they have explicit domain commands and copy.
 
 ## 11. FoldKit Tests
 
 - [ ] 11.1 Add Story test for marking a finding false positive and emitting `LabelFinding`.
 - [ ] 11.2 Add Story tests for promotion allowed and promotion blocked states.
 - [ ] 11.3 Add Scene test rendering the boundary validation rule card.
-- [ ] 11.4 Add Scene test covering false-positive labeling followed by revision visibility.
-- [ ] 11.5 Ensure UI tests run in the default fixture path without live model calls, GitHub, or a production database.
+- [ ] 11.4 Add Scene test for sidebar potential patterns and selected state.
+- [ ] 11.5 Add Scene test proving the default Workbench shows only `Revise rule` and `Promote rule` as primary actions.
+- [ ] 11.6 Add Scene test for stacked examples inside the parent `Examples` group.
+- [ ] 11.7 Add Scene test for the right-side tall deterministic rule pane.
+- [ ] 11.8 Add Scene test proving no standalone measurement panel renders.
+- [ ] 11.9 Add Scene test proving finding review controls do not render on the Workbench route.
+- [ ] 11.10 Add Scene test for compact findings summary and `Open findings`.
+- [ ] 11.11 Add Scene test for bottom provenance timeline.
+- [ ] 11.12 Add Scene test proving code panes render tokenized Shiki output through FoldKit Html nodes while preserving plain text.
+- [ ] 11.13 Add Story test proving highlighting is requested through command/service boundaries rather than performed inside `view`.
+- [ ] 11.14 Add Findings page Story or Scene test covering false-positive labeling.
+- [ ] 11.15 Ensure UI tests run in the default fixture path without live model calls, GitHub, or a production database.
 
 ## 12. Export Preview
 
@@ -91,9 +112,20 @@
 - [ ] 12.3 Keep private lineage, labels, rejected candidates, prompts, raw provider responses, and intermediate measurements out of export preview files.
 - [ ] 12.4 Display the export boundary in the Rule Workbench.
 
-## 13. End-to-End Spike Validation
+## 13. Accessibility
 
-- [ ] 13.1 Add an end-to-end fixture test for generate -> measure -> label false positive -> revise -> measure -> promote -> export preview.
-- [ ] 13.2 Confirm the full default test path runs without live model credentials, GitHub, or a production database.
-- [ ] 13.3 Confirm the spike demonstrates clean native ast-grep artifact export and private lineage retention.
-- [ ] 13.4 Run OpenSpec status/validation and all configured quality checks.
+- [ ] 13.1 Ensure sidebar pattern cards are keyboard selectable.
+- [ ] 13.2 Ensure selected pattern state is not color-only.
+- [ ] 13.3 Ensure semantic statuses use text plus icon or color.
+- [ ] 13.4 Validate dark code panel contrast.
+- [ ] 13.5 Validate highlighted code preserves accessible plain text and copy text.
+- [ ] 13.6 Validate focus states for `Revise rule`, `Promote rule`, and `Open findings`.
+
+## 14. End-to-End Spike Validation
+
+- [ ] 14.1 Add an end-to-end fixture test for fixture events -> projection -> highlighted code model -> Workbench screen -> real ast-grep run against `repos/bulletproof-react` -> compact measurement -> promote -> export preview.
+- [ ] 14.2 Confirm the full default test path runs without live model credentials, GitHub, or a production database.
+- [ ] 14.3 Confirm the spike demonstrates clean native ast-grep artifact export and private lineage retention.
+- [ ] 14.4 Compare default Workbench rendering against the approved dark paper layout.
+- [ ] 14.5 Confirm the UI does not regress into a generic dashboard, terminal console, or overloaded review queue.
+- [ ] 14.6 Run OpenSpec status/validation and all configured quality checks.
