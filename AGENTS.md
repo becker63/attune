@@ -55,3 +55,52 @@ Domain services that are not FoldKit UI concerns should live outside the page tr
 ## Runtime Tooling
 
 Node.js LTS is the runtime compatibility contract. Bun is the local package manager and script runner. Core product services must remain Node-compatible unless a Bun-specific detail is isolated behind an Effect layer.
+
+## Attune clean editorial UI skill
+
+For UI, layout, visual design, CSS, or route-surface work, use the repo-scoped Codex skill:
+
+- `.codex/skills/attune-clean-editorial-refactor`
+
+This skill is mandatory when touching:
+
+- `src/styles.css`
+- `src/view.ts`
+- `src/page/**/view.ts`
+- `src/page/**/model.ts` when layout state is involved
+- `pages/style.md`
+- `pages/*.md`
+
+Do not merely apply colors from the style guide. Prefer aggressive layout refactors toward the clean editorial dark-mode mockups:
+
+- fewer panels
+- stronger page grammar
+- larger code/evidence surfaces
+- less dashboard density
+- fewer duplicate metrics
+- clearer action hierarchy
+- generated content inside typed FoldKit slots
+
+Use the skill alongside the existing FoldKit skills.
+
+## Attune Mockup Discipline
+
+When implementing or revising Attune UI pages, always inspect page mockups under `mockups/` before editing page layout or styles.
+
+Known mockups:
+
+- `mockups/discover.png`
+- `mockups/findings.png`
+- `mockups/lineage.png`
+- `mockups/exports.png`
+- `mockups/settings.png`
+
+There is currently no `mockups/workbench.png`.
+
+Mockups are visual source material. Use them for layout rhythm, panel hierarchy, spacing, density, contrast, accent usage, and route-specific composition.
+
+Specs and typed fixtures remain product truth. Do not blindly copy text from mockups. Use page specs and fixtures for real product copy.
+
+When a mockup exists, the implementation must visually follow it. When no mockup exists, fall back to the page-specific spec, the clean editorial dark mode spec, and the existing Workbench direction.
+
+The agent may fill prose, labels, examples, summaries, and icon tokens into typed slots. The agent must not invent arbitrary page layout outside the fixed FoldKit skeleton.
