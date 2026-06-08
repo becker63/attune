@@ -11,6 +11,7 @@ The interface should behave like a dossier, not look like stationery.
 ## Keywords
 
 Use:
+
 - clean
 - editorial
 - instrumented
@@ -24,6 +25,7 @@ Use:
 - review surface
 
 Avoid:
+
 - terminal
 - cyberpunk
 - neon
@@ -85,7 +87,7 @@ Do not make the whole interface feel like a terminal.
 
 ```css
 .attune-page-title {
-  font-family: Georgia, "Times New Roman", ui-serif, serif;
+  font-family: Georgia, 'Times New Roman', ui-serif, serif;
   font-size: clamp(2rem, 3vw, 3rem);
   font-weight: 500;
   line-height: 1.04;
@@ -114,6 +116,7 @@ Primary is rare. Each page gets at most one dominant primary action unless the p
 Secondary actions should be quiet and explicit. Destructive actions use clay and remain understated.
 
 Do not use ambiguous agent buttons:
+
 - Ask AI
 - Generate
 - Run agent
@@ -121,6 +124,7 @@ Do not use ambiguous agent buttons:
 - Give feedback
 
 Use product actions:
+
 - Start scan
 - Revise candidate
 - Open in Workbench
@@ -137,6 +141,7 @@ Use curated icons. Avoid icon font dependencies. Do not accept arbitrary generat
 ## Motion
 
 Motion should be causal:
+
 - scan materializes cards
 - selecting a card updates dossier
 - labeling finding advances queue

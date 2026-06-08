@@ -124,7 +124,10 @@ for (const file of viewFiles) {
   const source = fs.readFileSync(file, 'utf8')
   const rel = relative(file)
 
-  const primaryButtons = countMatches(source, /button primary|attune-button-primary/g)
+  const primaryButtons = countMatches(
+    source,
+    /button primary|attune-button-primary/g,
+  )
   if (primaryButtons > 1 && !rel.includes('ruleWorkbench')) {
     addIssue(
       issues,
@@ -136,7 +139,12 @@ for (const file of viewFiles) {
 
   for (const label of forbiddenLabels) {
     if (source.includes(label)) {
-      addIssue(issues, 'high', `Forbidden generic button label: "${label}".`, rel)
+      addIssue(
+        issues,
+        'high',
+        `Forbidden generic button label: "${label}".`,
+        rel,
+      )
     }
   }
 
@@ -179,7 +187,8 @@ for (const spec of requiredSpecs) {
   }
 }
 
-const bySeverity = (severity) => issues.filter((issue) => issue.severity === severity)
+const bySeverity = (severity) =>
+  issues.filter((issue) => issue.severity === severity)
 
 console.log('# Attune Visual Audit')
 
@@ -202,7 +211,11 @@ if (issues.length === 0) {
 console.log('\n## Suggested next actions')
 const suggestions = new Set()
 
-if (issues.some((issue) => /primary button|metric|card|panel|grid/i.test(issue.message))) {
+if (
+  issues.some((issue) =>
+    /primary button|metric|card|panel|grid/i.test(issue.message),
+  )
+) {
   suggestions.add('Refactor layout before color work.')
   suggestions.add('Reduce metric/card density.')
   suggestions.add('Move secondary content into rail or selected detail pane.')
@@ -213,7 +226,9 @@ if (issues.some((issue) => /primitive/i.test(issue.message))) {
 }
 
 if (issues.some((issue) => /raw hex/i.test(issue.message))) {
-  suggestions.add('Move one-off colors into tokens or explain syntax-highlight exceptions.')
+  suggestions.add(
+    'Move one-off colors into tokens or explain syntax-highlight exceptions.',
+  )
 }
 
 if (issues.some((issue) => /settings/i.test(issue.message))) {
@@ -221,7 +236,9 @@ if (issues.some((issue) => /settings/i.test(issue.message))) {
 }
 
 if (suggestions.size === 0) {
-  suggestions.add('Run a manual page-grammar audit against the clean editorial target.')
+  suggestions.add(
+    'Run a manual page-grammar audit against the clean editorial target.',
+  )
 }
 
 for (const suggestion of suggestions) console.log(`- ${suggestion}`)

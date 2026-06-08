@@ -12,6 +12,7 @@ This is not an exploratory design task. The visual direction, page specs, route 
 ## When to use this skill
 
 Use this skill whenever work touches:
+
 - `src/styles.css`
 - `src/view.ts`
 - `src/page/**/view.ts`
@@ -23,6 +24,7 @@ Use this skill whenever work touches:
 - app shell, sidebar, code panes, route layout, visual density, panel structure, or action hierarchy
 
 Use it especially when the user says:
+
 - "this is too busy"
 - "make it look more like the mockups"
 - "the style guide is not landing"
@@ -68,6 +70,7 @@ Do not preserve the current layout just because it exists.
 Attune's current UI may technically use the style tokens while still looking wrong. The purpose of this skill is to move the product toward the mockups, not to protect the old implementation.
 
 Prefer aggressive changes:
+
 - delete unnecessary panels
 - merge redundant panels
 - move secondary content into a sidebar or dedicated page
@@ -92,6 +95,7 @@ dark editorial instrumentation
 quiet artifact-review UI
 
 Attune should feel like:
+
 - a prepared review surface
 - a codebase policy dossier
 - a dark editorial instrument
@@ -100,6 +104,7 @@ Attune should feel like:
 - a Git artifact review packet
 
 Attune should not feel like:
+
 - a generic SaaS dashboard
 - a terminal cockpit
 - an observability console
@@ -172,6 +177,7 @@ Summarize current page grammar, visible panels/cards, primary actions, duplicate
 Update shared styles before page-specific work.
 
 Create or refine shared Attune visual primitives for:
+
 - app shell
 - sidebar
 - page header
@@ -187,6 +193,7 @@ Create or refine shared Attune visual primitives for:
 - empty/stub states
 
 The target style is clean editorial dark mode:
+
 - graphite / black-green background
 - quiet high-contrast typography
 - warm off-white text
@@ -224,6 +231,7 @@ Use `mockups/discover.png` as the visual source.
 Restyle Discover as an editorial pattern discovery surface.
 
 It should include:
+
 - route title
 - short editorial subtitle
 - scan/pattern context
@@ -236,6 +244,7 @@ It should include:
 - sparse primary action: `Open in Workbench`
 
 It must not look like:
+
 - a metrics dashboard
 - a scan-results table
 - a security alert list
@@ -248,11 +257,13 @@ The page should feel like a generated field guide of possible codebase practices
 There is no Workbench mockup. Use the Workbench spec and current direction.
 
 Workbench should preserve the core three-pane artifact review shape:
+
 - `Looks like`
 - `Does not look like`
 - `Deterministic rule`
 
 Also include:
+
 - selected rule title
 - plain-language intent
 - compact measurement/status strip
@@ -266,6 +277,7 @@ The deterministic rule pane should feel like the primary artifact.
 The user should not be expected to hand-write raw ast-grep/ESLint/CodeQL as the default path. The rule is inspectable; revision happens through intent.
 
 Do not add:
+
 - full findings queue on Workbench
 - duplicated measurement panel
 - generic `New scan`
@@ -279,6 +291,7 @@ Use `mockups/findings.png` as the visual source.
 Restyle Findings as a focused review queue for measured findings.
 
 It should include:
+
 - candidate context header
 - finding list / queue
 - selected finding detail
@@ -300,6 +313,7 @@ Use `mockups/lineage.png` as the visual source.
 Restyle Lineage as a calm provenance story.
 
 It should include:
+
 - readable event timeline
 - selected event detail
 - what changed
@@ -308,6 +322,7 @@ It should include:
 - promotion/export state
 
 It must not look like:
+
 - a raw event log
 - an observability trace
 - a dense audit dashboard
@@ -321,6 +336,7 @@ Use `mockups/exports.png` as the visual source.
 Restyle Exports around the Git bot handoff.
 
 It should include:
+
 - promoted artifact packet
 - files that will enter the repo
 - file preview panel
@@ -341,6 +357,7 @@ Use `mockups/settings.png` as the visual source.
 Restyle Settings as sparse, quiet configuration.
 
 It should include:
+
 - repository connection/scope
 - enabled analysis tools:
   - ast-grep
@@ -358,6 +375,7 @@ Settings should be calm and minimal.
 ### Step 4 - Route and model structure
 
 Use FoldKit idioms throughout:
+
 - Model is source of truth.
 - Messages describe facts that happened.
 - `update` is pure.
@@ -374,6 +392,7 @@ If needed, add page-local models for Discover, Findings, Lineage, Exports, and S
 Add or refine typed fixture data for each page.
 
 Fixture data should include enough content to make every route feel real:
+
 - pattern dossiers
 - selected candidate
 - finding rows
@@ -448,6 +467,7 @@ If a page has more than 6 major visible panels, it is probably too busy.
 A major panel is any bordered surface containing multiple controls, metrics, or a section heading.
 
 Exceptions:
+
 - Findings queue may contain many list items, but those are not major page panels.
 - File lists may contain rows, but rows are not major page panels.
 - Code line backgrounds do not count.
@@ -457,6 +477,7 @@ Exceptions:
 Each page should have at most one dominant primary action.
 
 Examples:
+
 - Discover: Start scan OR Open in Workbench depending region.
 - Workbench: Promote rule, with Revise candidate nearby but not equally loud if prompt is empty.
 - Findings: current finding decision group; no global primary unless needed.
@@ -467,6 +488,7 @@ Examples:
 ### No ambiguous agent controls
 
 Avoid:
+
 - Ask AI
 - Run agent
 - Generate
@@ -475,6 +497,7 @@ Avoid:
 - New scan unless the product command is explicit
 
 Use product-specific copy:
+
 - Start scan
 - Revise candidate
 - Open in Workbench
@@ -487,6 +510,7 @@ Use product-specific copy:
 Code panes should be treated as first-class artifacts.
 
 They need:
+
 - readable size
 - clear label
 - source path or engine label
@@ -509,6 +533,7 @@ Avoid large metric cards repeated across the page.
 ### Agent content lives in slots
 
 The agent may generate:
+
 - title
 - intent
 - summary
@@ -520,6 +545,7 @@ The agent may generate:
 - icon token from curated set
 
 The agent must not generate:
+
 - layout
 - raw HTML
 - arbitrary CSS
@@ -531,6 +557,7 @@ The agent must not generate:
 ## Page grammars
 
 Summaries:
+
 - Discover: pattern shelf + selected editorial dossier
 - Workbench: three code panes + revision prompt + compact findings handoff
 - Findings: review queue + selected finding dossier
@@ -543,6 +570,7 @@ Read `references/page-grammars.md` for full page-specific runbooks before editin
 ## FoldKit constraints
 
 Preserve FoldKit architecture:
+
 - Model is the source of truth.
 - Messages are facts.
 - `update` is pure.
@@ -559,6 +587,7 @@ Use current FoldKit examples in the repo if available.
 ## Definition of done
 
 A successful pass should produce visible improvement:
+
 - fewer panels
 - clearer grammar
 - more spacious layout

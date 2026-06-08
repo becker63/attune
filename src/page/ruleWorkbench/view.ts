@@ -17,31 +17,39 @@ export const view = Submodel.defineView<Model, Message>((model): Html => {
   const isExpanded = model.expandedCodePane !== 'none'
 
   return h.div(
-    [h.Class(isExpanded ? 'workbench has-expanded-code' : 'workbench')],
+    [
+      h.Class(
+        isExpanded
+          ? 'workbench attune-page has-expanded-code'
+          : 'workbench attune-page',
+      ),
+    ],
     [
       h.div(
-        [h.Class('workbench-topbar')],
-        [
-          h.span([h.Class('topbar-repo')], [model.repoName]),
-          h.span(
-            [h.Class('topbar-branch')],
-            [Icon.gitBranch(), model.branchName],
-          ),
-        ],
+        [h.Class('workbench-topbar attune-context-row')],
+        [h.span([], [`${model.repoName} / ${model.branchName}`])],
       ),
       h.header(
-        [h.Class('workbench-header')],
+        [h.Class('workbench-header attune-page-header')],
         [
           h.div(
-            [],
-            [h.h1([], [model.title]), h.p([h.Class('intent')], [model.intent])],
+            [h.Class('workbench-title-row')],
+            [
+              h.div(
+                [],
+                [
+                  h.h1([], [model.title]),
+                  h.p([h.Class('intent')], [model.status.readinessLabel]),
+                ],
+              ),
+            ],
           ),
           h.div(
             [h.Class('workbench-actions')],
             [
               h.button(
-                [h.Class('button secondary'), h.OnClick(ClickedReviseRule())],
-                ['Revise rule'],
+                [h.Class('button secondary'), h.OnClick(ClickedOpenFindings())],
+                ['Open findings'],
               ),
               h.button(
                 [h.Class('button primary'), h.OnClick(ClickedPromoteRule())],
@@ -51,59 +59,29 @@ export const view = Submodel.defineView<Model, Message>((model): Html => {
           ),
         ],
       ),
-      h.section(
-        [h.Class('status-row'), h.AriaLabel('Candidate measurement summary')],
-        [
-          metricView(model.status.label, '', Icon.check(), 'good'),
-          metricView(
-            model.status.matchCount.toString(),
-            'matches',
-            Icon.fileSearch(),
-          ),
-          metricView(
-            model.status.reviewedCount.toString(),
-            'reviewed',
-            Icon.check(),
-          ),
-          metricView(
-            model.status.falsePositiveCount.toString(),
-            'false positives',
-            Icon.x(),
-            'bad',
-          ),
-          metricView(model.status.durationMs.toString(), 'ms', Icon.clock()),
-        ],
-      ),
       h.section([h.Class('artifact-grid')], artifactGridChildren(model)),
-      h.aside(
-        [h.Class('findings-strip panel'), h.AriaLabel('Findings summary')],
+      h.section(
+        [h.Class('revision-panel')],
         [
           h.div(
-            [h.Class('findings-card-title')],
-            [
-              Icon.fileSearch({ className: 'icon muted-icon' }),
-              h.span([], ['Findings']),
-            ],
+            [h.Class('revision-heading')],
+            [h.div([], [h.h2([], ['Revise with intent'])])],
           ),
           h.div(
-            [h.Class('findings-metrics')],
+            [h.Class('revision-input-row')],
             [
-              metricView(model.status.matchCount.toString(), 'matches'),
-              metricView(model.fileCount.toString(), 'files'),
-              metricView(
-                model.status.falsePositiveCount.toString(),
-                'false positives',
-                undefined,
-                'bad',
+              h.textarea(
+                [
+                  h.AriaLabel('Revision intent'),
+                  h.Placeholder(model.revisionPlaceholder),
+                ],
+                [],
+              ),
+              h.button(
+                [h.Class('button primary'), h.OnClick(ClickedReviseRule())],
+                ['Revise candidate'],
               ),
             ],
-          ),
-          h.button(
-            [
-              h.Class('button primary compact-button'),
-              h.OnClick(ClickedOpenFindings()),
-            ],
-            ['Open findings', Icon.arrowRight({ className: 'icon tiny-icon' })],
           ),
         ],
       ),
@@ -117,10 +95,11 @@ const artifactGridChildren = (model: Model): ReadonlyArray<Html> => {
       examplePaneView(
         model,
         model.looksLike.label,
+        model.looksLike.description,
+        model.looksLike.sourcePath,
         model.looksLike.code,
         'good',
         'looksLike',
-        'What this rule means',
       ),
     ]
   }
@@ -130,10 +109,11 @@ const artifactGridChildren = (model: Model): ReadonlyArray<Html> => {
       examplePaneView(
         model,
         model.doesNotLookLike.label,
+        model.doesNotLookLike.description,
+        model.doesNotLookLike.sourcePath,
         model.doesNotLookLike.code,
         'bad',
         'doesNotLookLike',
-        'What this rule avoids',
       ),
     ]
   }
@@ -146,18 +126,20 @@ const artifactGridChildren = (model: Model): ReadonlyArray<Html> => {
     examplePaneView(
       model,
       model.looksLike.label,
+      model.looksLike.description,
+      model.looksLike.sourcePath,
       model.looksLike.code,
       'good',
       'looksLike',
-      'What this rule means',
     ),
     examplePaneView(
       model,
       model.doesNotLookLike.label,
+      model.doesNotLookLike.description,
+      model.doesNotLookLike.sourcePath,
       model.doesNotLookLike.code,
       'bad',
       'doesNotLookLike',
-      'What this rule avoids',
     ),
     rulePanelView(model),
   ]
@@ -166,15 +148,16 @@ const artifactGridChildren = (model: Model): ReadonlyArray<Html> => {
 const examplePaneView = (
   model: Model,
   label: string,
+  _description: string,
+  sourcePath: string,
   code: Model['looksLike']['code'],
   tone: 'good' | 'bad',
   paneId: CodePaneId,
-  description: string,
 ): Html => {
   const h = html<Message>()
 
   return h.article(
-    [h.Class(`example-card panel artifact-pane is-${tone}`)],
+    [h.Class(`example-card attune-artifact-panel artifact-pane is-${tone}`)],
     [
       h.div(
         [h.Class('panel-heading')],
@@ -191,7 +174,10 @@ const examplePaneView = (
           ),
           h.span(
             [h.Class('panel-heading-actions')],
-            [h.small([], [description]), expandButtonView(model, paneId)],
+            [
+              h.code([h.Class('source-path')], [sourcePath]),
+              expandButtonView(model, paneId),
+            ],
           ),
         ],
       ),
@@ -210,7 +196,7 @@ const rulePanelView = (model: Model): Html => {
   const h = html<Message>()
 
   return h.div(
-    [h.Class('rule-panel panel artifact-pane')],
+    [h.Class('rule-panel attune-artifact-panel artifact-pane')],
     [
       h.div(
         [h.Class('panel-heading')],
@@ -222,36 +208,13 @@ const rulePanelView = (model: Model): Html => {
           h.span(
             [h.Class('panel-heading-actions')],
             [
-              h.small([], ['ast-grep']),
+              h.code([h.Class('source-path')], [model.ruleId]),
               expandButtonView(model, 'deterministicRule'),
             ],
           ),
         ],
       ),
       highlightedCodeView(model.deterministicRule),
-      h.p(
-        [h.Class('rule-note')],
-        ['3 matches ', h.code([], ['styled({...})'])],
-      ),
-    ],
-  )
-}
-
-const metricView = (
-  value: string,
-  label: string,
-  icon?: Html,
-  tone?: 'good' | 'bad',
-): Html => {
-  const h = html<Message>()
-  const className = tone === undefined ? 'metric' : `metric is-${tone}`
-
-  return h.div(
-    [h.Class(className)],
-    [
-      icon === undefined ? h.empty : h.span([h.Class('metric-icon')], [icon]),
-      h.strong([], [value]),
-      label === '' ? h.empty : h.span([], [label]),
     ],
   )
 }

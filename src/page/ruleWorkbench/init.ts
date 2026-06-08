@@ -34,10 +34,13 @@ export const init = (): Model =>
     branchName: 'main',
     expandedCodePane: 'none',
     title: 'Styling belongs in UI primitives and recipes',
+    versionLabel: 'Candidate B (v2)',
+    ruleId: 'style-inline-forbidden',
     intent:
       'Keep visual styling centralized in UI primitives and recipes so app components remain structural and token-driven.',
     status: {
       label: 'Candidate B (v2)',
+      readinessLabel: 'Ready to inspect',
       matchCount: 34,
       reviewedCount: 8,
       falsePositiveCount: 2,
@@ -45,13 +48,28 @@ export const init = (): Model =>
     },
     looksLike: {
       label: 'Looks like',
+      description: 'What this rule means',
+      sourcePath: 'src/components/ui/button.tsx',
       code: highlightedCodeFromPlainText('tsx', looksLikeCode),
     },
     doesNotLookLike: {
       label: 'Does not look like',
+      description: 'What this rule avoids',
+      sourcePath: 'src/features/dashboard/StatsCard.tsx',
       code: highlightedCodeFromPlainText('tsx', doesNotLookLikeCode),
     },
     deterministicRule: highlightedCodeFromPlainText('yaml', astGrepRule),
+    deterministicRuleNote:
+      'This is the native ast-grep artifact being considered, not a prompt.',
+    revisionPlaceholder:
+      'Allow inline width and height for layout-only geometry, but keep raw colors and shadows flagged.',
+    revisionSuggestions: [
+      'Only apply outside ui/primitives',
+      'Allow layout geometry',
+      'Keep raw colors flagged',
+    ],
+    findingsSummary:
+      '34 matches across 12 files. Two false positives should inform the next revision before promotion.',
     timeline: [
       {
         label: 'Agent proposed',

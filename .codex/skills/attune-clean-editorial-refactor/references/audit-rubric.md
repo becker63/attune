@@ -37,6 +37,7 @@ These thresholds are deterministic-ish heuristics. They do not judge beauty, but
 ## Audit Response Pattern
 
 For every flag, choose one:
+
 - fix it immediately,
 - add a short explanation for why the flag is acceptable,
 - defer it into a page-specific runbook if the user asked for planning rather than edits.

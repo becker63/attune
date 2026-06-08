@@ -8,6 +8,20 @@ export default [
   },
   js.configs.recommended,
   {
+    files: ['eslint.config.mjs', 'scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        document: 'readonly',
+        fetch: 'readonly',
+        getComputedStyle: 'readonly',
+        process: 'readonly',
+        setTimeout: 'readonly',
+        window: 'readonly',
+      },
+    },
+  },
+  {
     files: ['**/*.ts'],
     languageOptions: {
       parser: tsParser,

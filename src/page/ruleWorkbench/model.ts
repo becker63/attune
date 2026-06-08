@@ -4,6 +4,7 @@ import { HighlightedCode } from '../../syntax/HighlightedCode'
 
 export const CandidateStatus = S.Struct({
   label: S.String,
+  readinessLabel: S.String,
   matchCount: S.Number,
   reviewedCount: S.Number,
   falsePositiveCount: S.Number,
@@ -13,6 +14,8 @@ export type CandidateStatus = typeof CandidateStatus.Type
 
 export const CodeExample = S.Struct({
   label: S.String,
+  description: S.String,
+  sourcePath: S.String,
   code: HighlightedCode,
 })
 export type CodeExample = typeof CodeExample.Type
@@ -35,10 +38,16 @@ export type CodePaneId = typeof CodePaneId.Type
 export const Model = S.Struct({
   title: S.String,
   intent: S.String,
+  versionLabel: S.String,
+  ruleId: S.String,
   status: CandidateStatus,
   looksLike: CodeExample,
   doesNotLookLike: CodeExample,
   deterministicRule: HighlightedCode,
+  deterministicRuleNote: S.String,
+  revisionPlaceholder: S.String,
+  revisionSuggestions: S.Array(S.String),
+  findingsSummary: S.String,
   timeline: S.Array(TimelineItem),
   repoName: S.String,
   branchName: S.String,

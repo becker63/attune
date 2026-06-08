@@ -11,6 +11,7 @@ node .codex/skills/attune-clean-editorial-refactor/scripts/audit-attune-ui.mjs
 ```
 
 Scripts:
+
 - `extract-css-inventory.mjs`: inventories tokens, class selectors, raw colors, radii, shadows, and background declarations in `src/styles.css`.
 - `extract-class-usage.mjs`: scans FoldKit TypeScript views for class usage and possible one-off classes.
 - `audit-attune-ui.mjs`: reports common Attune visual-system failures, including missing primitives, forbidden generic actions, dashboard-like class density, and missing page specs.

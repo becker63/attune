@@ -122,7 +122,9 @@ if (!fs.existsSync(srcRoot)) {
 
 console.log('\n## Most used classes')
 printList(
-  sortedGlobal.slice(0, 40).map(([className, count]) => `${className}: ${count}`),
+  sortedGlobal
+    .slice(0, 40)
+    .map(([className, count]) => `${className}: ${count}`),
 )
 
 console.log('\n## Classes by file')
@@ -133,8 +135,9 @@ if (byFile.size === 0) {
     console.log(`\n### ${file}`)
     printList(
       [...counts.entries()]
-        .sort(([aName, aCount], [bName, bCount]) =>
-          bCount - aCount || aName.localeCompare(bName),
+        .sort(
+          ([aName, aCount], [bName, bCount]) =>
+            bCount - aCount || aName.localeCompare(bName),
         )
         .map(([className, count]) => `${className}: ${count}`),
     )
