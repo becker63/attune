@@ -353,7 +353,7 @@ export const makeFuzzOracle = (
             const queryResults = [...baselineQueryResults, ...generatedQueryResults]
             const failures = checkFuzzExpectations(cases, queryResults)
             if (failures.length > 0) {
-              return Effect.fail(new FuzzExpectationMismatchError({ failures }))
+              return Effect.fail(new FuzzExpectationMismatchError({ failures, queryResults }))
             }
             return Effect.succeed({
               caseCount: cases.length,

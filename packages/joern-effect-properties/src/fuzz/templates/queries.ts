@@ -324,8 +324,10 @@ const chooseGeneratedPrograms = (
     return []
   }
   const seedText = cases.map((fuzzCase) => fuzzCase.caseId).join("|")
-  const candidates = allGeneratedPrograms()
-  return [...candidates]
+  const orderPrograms = (
+    programs: readonly GeneratedDslProgram<readonly unknown[]>[],
+  ): readonly GeneratedDslProgram<readonly unknown[]>[] =>
+    [...programs]
     .sort((left, right) => {
       const score = feedbackScore(left, options.feedback) - feedbackScore(right, options.feedback)
       if (score !== 0) {
@@ -333,7 +335,14 @@ const chooseGeneratedPrograms = (
       }
       return hashText(`${left.fingerprint}|${seedText}`) - hashText(`${right.fingerprint}|${seedText}`)
     })
-    .slice(0, Math.min(budget, candidates.length))
+  const candidates = allGeneratedPrograms()
+  const graphBudget = budget >= 4 ? Math.max(1, Math.floor(budget / 3)) : 0
+  const graphPrograms = orderPrograms(candidates.filter((program) => program.kind !== "rows"))
+    .slice(0, graphBudget)
+  const selectedFingerprints = new Set(graphPrograms.map((program) => program.fingerprint))
+  const remainingPrograms = orderPrograms(candidates.filter((program) => !selectedFingerprints.has(program.fingerprint)))
+    .slice(0, Math.max(0, budget - graphPrograms.length))
+  return [...graphPrograms, ...remainingPrograms]
 }
 
 export const compileGeneratedDslPrograms = (

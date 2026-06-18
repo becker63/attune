@@ -96,15 +96,69 @@ const expectationFailureFields = (
   if (!(error instanceof FuzzExpectationMismatchError)) {
     return {}
   }
+  const classifications = [...new Set(error.failures.map((failure) => failure.classification))]
+  const queryObservations = (error.queryResults ?? []).slice(0, 20).map((query) => ({
+    fingerprint: query.fingerprint,
+    kind: query.kind,
+    name: query.name,
+    observedCodes: query.observations.codes.slice(0, 8),
+    observedFullNames: query.observations.fullNames.slice(0, 8),
+    observedNames: query.observations.names.slice(0, 8),
+    rowCount: query.rowCount,
+  }))
   return {
+    expectationClassifications: classifications.join(","),
     expectationFailureCount: error.failures.length,
     expectationSummary: error.failures
       .slice(0, 8)
       .map((failure) =>
-        `${failure.expectation.kind}:${failure.expectation.value}:${failure.expectation.sourcePath}`
+        `${failure.classification}:${failure.expectation.kind}:${failure.expectation.value}:${failure.expectation.sourcePath}`
       )
       .join(";"),
+    observedQueryCount: error.queryResults?.length ?? 0,
+    observedQuerySummary: JSON.stringify(queryObservations),
   }
+}
+
+const fixtureCandidateJson = (
+  input: Readonly<{
+    readonly error: unknown
+    readonly firstCase: SemanticCase | undefined
+  }>,
+): string | undefined => {
+  if (!(input.error instanceof FuzzExpectationMismatchError) || input.firstCase === undefined) {
+    return undefined
+  }
+  return JSON.stringify({
+    caseId: input.firstCase.caseId,
+    expectationFailures: input.error.failures.map((failure) => ({
+      caseId: failure.caseId,
+      classification: failure.classification,
+      expectation: failure.expectation,
+      reason: failure.reason,
+    })),
+    mutations: input.firstCase.mutations.map((step) => ({
+      kind: step.kind,
+      targetFile: step.targetFile,
+    })),
+    queryResults: (input.error.queryResults ?? []).slice(0, 20).map((query) => ({
+      fingerprint: query.fingerprint,
+      kind: query.kind,
+      name: query.name,
+      observations: {
+        codes: query.observations.codes.slice(0, 20),
+        fullNames: query.observations.fullNames.slice(0, 20),
+        names: query.observations.names.slice(0, 20),
+      },
+      rowCount: query.rowCount,
+    })),
+    replay: input.firstCase.replay,
+    sourceFiles: input.firstCase.project.files.map((file) => ({
+      path: file.path,
+      source: file.source,
+      syntaxFlavor: file.syntaxFlavor,
+    })),
+  })
 }
 
 const emitCounterexampleEvents = (
@@ -130,6 +184,10 @@ const emitCounterexampleEvents = (
     failureSummaryFor(input.error),
     expectationFailureFields(input.error),
   )
+  const fixtureJson = fixtureCandidateJson({
+    error: input.error,
+    firstCase: input.firstCase,
+  })
   return input.telemetry.emit(config, "attune.fuzz.counterexample_found", {
     ...payload,
     batchIndex: input.batchIndex,
@@ -144,6 +202,7 @@ const emitCounterexampleEvents = (
     Effect.zipRight(input.telemetry.emit(config, "attune.fuzz.fixture_candidate", {
       ...payload,
       batchIndex: input.batchIndex,
+      ...(fixtureJson === undefined ? {} : { fixtureJson }),
       shardIndex: input.shardIndex,
     })),
     Effect.zipRight(input.telemetry.flush),

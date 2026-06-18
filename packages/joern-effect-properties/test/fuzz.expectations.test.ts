@@ -95,6 +95,15 @@ describe("fuzz expectation-bearing cases", () => {
 
   it("turns missing planted facts into structured oracle failures", () => {
     const expectations = deriveExpectationsForFile(sourceFile)
+    const queryResults = [
+      {
+        fingerprint: "method-name-any-to-rows-file-full-name-name-signature",
+        kind: "rows",
+        name: "method inventory",
+        observations: summarizeQueryRows([{ fullName: "unrelated", name: "unrelated" }]),
+        rowCount: 1,
+      },
+    ]
     const run = () => assertFuzzExpectations([
       {
         caseId: "expectation-case",
@@ -111,8 +120,54 @@ describe("fuzz expectation-bearing cases", () => {
         sourcePath: sourceFile.path,
         syntaxFlavor: "tsx",
       },
-    ], [])
+    ], queryResults)
 
     expect(run).toThrow(FuzzExpectationMismatchError)
+    try {
+      run()
+    } catch (error) {
+      expect(error).toBeInstanceOf(FuzzExpectationMismatchError)
+      const mismatch = error as FuzzExpectationMismatchError
+      expect(mismatch.queryResults).toBe(queryResults)
+      expect(mismatch.failures.map((failure) => failure.classification)).toContain("joern-language-model-gap")
+    }
+  })
+
+  it("classifies broad generated wrapper methods separately from query-template gaps", () => {
+    const failures = checkFuzzExpectations([
+      {
+        caseId: "broad-wrapper-case",
+        expectations: [
+          {
+            description: "wrapped function should not be treated as a durable source/sink fact",
+            kind: "method-name",
+            sourcePath: "src/handler.ts",
+            value: "wrapped_source123",
+          },
+          {
+            description: "source call should be covered by source/sink query templates",
+            kind: "call-name",
+            sourcePath: "src/handler.ts",
+            value: "source",
+          },
+        ],
+        mutators: [],
+        seed: {
+          id: "broad-wrapper-seed",
+          origin: "curated",
+          source: "export const handler = () => source()",
+          syntaxFlavor: "ts",
+          title: "Broad wrapper seed",
+        },
+        source: "export const handler = () => source()",
+        sourcePath: "src/handler.ts",
+        syntaxFlavor: "ts",
+      },
+    ], [])
+
+    expect(failures.map((failure) => failure.classification)).toEqual([
+      "expectation-too-broad",
+      "query-template-gap",
+    ])
   })
 })

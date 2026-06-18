@@ -17,12 +17,19 @@ export type ExpectationQueryResult = Readonly<{
 
 export type FuzzExpectationFailure = Readonly<{
   readonly caseId: string
+  readonly classification: FuzzExpectationFailureClassification
   readonly expectation: FuzzExpectation
   readonly reason: string
 }>
 
+export type FuzzExpectationFailureClassification =
+  | "expectation-too-broad"
+  | "joern-language-model-gap"
+  | "query-template-gap"
+
 export class FuzzExpectationMismatchError extends Data.TaggedError("FuzzExpectationMismatchError")<{
   readonly failures: readonly FuzzExpectationFailure[]
+  readonly queryResults?: readonly ExpectationQueryResult[]
 }> {
   override get message(): string {
     const preview = this.failures
@@ -33,6 +40,22 @@ export class FuzzExpectationMismatchError extends Data.TaggedError("FuzzExpectat
       .join("; ")
     return `Fuzz expectation mismatch (${this.failures.length}): ${preview}`
   }
+}
+
+const languageModelExtensions = [".jsx", ".tsx"] as const
+
+const broadExpectationPrefixes = /^(async_boundary|destructured|module_split|optional|wrapped)/u
+
+const classifyExpectationFailure = (
+  expectation: FuzzExpectation,
+): FuzzExpectationFailureClassification => {
+  if (languageModelExtensions.some((extension) => expectation.sourcePath.endsWith(extension))) {
+    return "joern-language-model-gap"
+  }
+  if (expectation.kind === "method-name" && broadExpectationPrefixes.test(expectation.value)) {
+    return "expectation-too-broad"
+  }
+  return "query-template-gap"
 }
 
 const identifierPattern = "[A-Za-z_$][A-Za-z0-9_$]*"
@@ -181,6 +204,7 @@ export const checkFuzzExpectations = (
       expectationMatched(item, results)
         ? []
         : [{
+          classification: classifyExpectationFailure(item),
           caseId: fuzzCase.caseId,
           expectation: item,
           reason: "No executed query observed the planted semantic fact.",
@@ -194,6 +218,6 @@ export const assertFuzzExpectations = (
 ): void => {
   const failures = checkFuzzExpectations(cases, results)
   if (failures.length > 0) {
-    throw new FuzzExpectationMismatchError({ failures })
+    throw new FuzzExpectationMismatchError({ failures, queryResults: results })
   }
 }
