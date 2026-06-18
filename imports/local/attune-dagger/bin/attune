@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command_name="${1:-dev}"
+source_dir="${2:-.}"
+
+module_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source_root="$(cd "$source_dir" && pwd)"
+stage_root="${HOME}/.cache/attune-dagger/staged"
+stage_source="${stage_root}/source"
+stage_module="${stage_root}/module"
+
+copy_tree() {
+  local from="$1"
+  local to="$2"
+  rm -rf "$to"
+  mkdir -p "$to"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a \
+      --exclude node_modules \
+      --exclude .pnpm-store \
+      --exclude dist \
+      --exclude reports \
+      --exclude .attune \
+      --exclude .dagger-output \
+      "$from"/ "$to"/
+  else
+    tar -C "$from" \
+      --exclude node_modules \
+      --exclude .pnpm-store \
+      --exclude dist \
+      --exclude reports \
+      --exclude .attune \
+      --exclude .dagger-output \
+      -cf - . | tar -C "$to" -xf -
+  fi
+}
+
+mkdir -p "$stage_root"
+copy_tree "$source_root" "$stage_source"
+copy_tree "$module_root" "$stage_module"
+
+cd "$stage_source"
+exec dagger -m "$stage_module" call "$command_name" --source=.

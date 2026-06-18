@@ -1,0 +1,124 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": [
+    ".pnpm-store/**",
+    "dist/**",
+    "node_modules/**",
+    "schema/**",
+    "src/generated/**",
+    "packages/**/dist/**",
+    "packages/**/node_modules/**",
+    "workspace/**",
+    "repomix-output.xml"
+  ],
+  "plugins": [
+    "import",
+    "vitest"
+  ],
+  "jsPlugins": [
+    {
+      "name": "effect",
+      "specifier": "@attune/fork/plugin"
+    }
+  ],
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
+  },
+  "settings": {
+    "effectComplete": {
+      "allowedPackages": [
+        "@effect/*",
+        "@axiomhq/js",
+        "@types/*",
+        "effect",
+        "expect-type",
+        "fast-check",
+        "graphology",
+        "graphology-types",
+        "joern-effect",
+        "node:child_process",
+        "node:crypto",
+        "node:fs/promises",
+        "node:net",
+        "node:os",
+        "node:path",
+        "node:util",
+        "node:url",
+        "node:*",
+        "oxc-parser",
+        "prettier",
+        "ts-morph",
+        "tsup",
+        "tsx",
+        "typescript",
+        "vitest",
+        "vitest/*"
+      ],
+      "allowedGlobals": [
+        "process",
+        "URL",
+        "RegExp",
+        "const"
+      ],
+      "envVars": [
+        "JOERN_BINARY",
+        "JOERN_HOME",
+        "JOERN_CPG_VERSION",
+        "JOERN_CPG_SCHEMA_JSON",
+        "JOERN_CPG_SCHEMA_SOURCES",
+        "JOERN_EFFECT_WORKSPACE",
+        "JOERN_EFFECT_E2E_RUNS",
+        "TMPDIR",
+        "AXIOM_DATASET",
+        "AXIOM_TOKEN",
+        "AXIOM_URL"
+      ]
+    }
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error",
+    "pedantic": "error",
+    "restriction": "error",
+    "style": "warn"
+  },
+  "rules": {
+    "no-console": "off",
+    "effect/onlyAllowedImports": "error",
+    "effect/capabilityEnforcement": "off",
+    "effect/noGlobalAccess": "off",
+    "effect/noImplicitGlobalThis": "error",
+    "effect/noPromise": "error",
+    "effect/noThrowStatement": "error",
+    "effect/noTryCatch": "error",
+    "effect/noNewPromise": "error",
+    "effect/noMutation": "error",
+    "effect/noInterfaces": "error",
+    "effect/noClasses": "error",
+    "effect/noUnknown": "error",
+    "effect/noExplicitAny": "error",
+    "effect/noTypeAssertions": "error",
+    "effect/noRuntimeExecution": "error",
+    "effect/noUnsafeEscapeHatches": "error",
+    "effect/noMutableCollections": "error",
+    "effect/noModuleSideEffects": "off",
+    "effect/effectBoundary": "off",
+    "effect/noRawEnvVars": "error",
+    "import/no-relative-parent-imports": "off",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-unsafe-type-assertion": "error",
+    "typescript/no-non-null-assertion": "error",
+    "eslint/no-underscore-dangle": [
+      "error",
+      {
+        "allow": [
+          "_tag"
+        ]
+      }
+    ],
+    "eslint/no-undefined": "off",
+    "eslint/max-classes-per-file": "off"
+  }
+}

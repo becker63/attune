@@ -1,0 +1,16 @@
+.direnv/
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+build/
+coverage/
+.next/
+playwright-report/
+test-results/
+*.log
+.pre-commit-config.yaml
+
+# Generated repo context
+repomix-output.xml

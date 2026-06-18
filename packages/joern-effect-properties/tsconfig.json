@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "joern-effect": ["../joern-effect/src/index.ts"]
+    }
+  },
+  "include": ["scripts", "src", "test", "vitest.config.ts"]
+}

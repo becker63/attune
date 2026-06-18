@@ -1,0 +1,11 @@
+load("//rules/attune:defs.bzl", "fork_check", "ts_check")
+
+ts_check(
+    name = "typecheck",
+    command = "pnpm typecheck:direct",
+)
+
+fork_check(
+    name = "fork",
+    phase = "all",
+)

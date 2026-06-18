@@ -1,0 +1,46 @@
+load("//rules/attune:defs.bzl", "attune_phase", "attune_property")
+
+attune_phase(
+    name = "harness",
+    phase = "harness",
+    srcs = glob(["src/**/*.ts", "test/**/*.ts"]),
+    contract = "src/phase.contract.ts",
+    deps = [
+        "//packages/joern-effect:pure",
+        "//packages/joern-effect:bridge",
+    ],
+)
+
+attune_property(
+    name = "source_sink_property",
+    phase = "harness",
+    mode = "property",
+    srcs = glob(["src/**/*.ts", "test/**/*.ts"]),
+    deps = [
+        "//packages/joern-effect:pure",
+        "//packages/joern-effect:bridge",
+        ":harness",
+    ],
+    contracts = [
+        "//packages/joern-effect:pure_schema_manifest",
+        "//packages/joern-effect:bridge_schema_manifest",
+        ":harness_schema_manifest",
+    ],
+    cases = 100,
+)
+
+attune_property(
+    name = "source_sink_e2e",
+    phase = "edge",
+    mode = "e2e",
+    srcs = glob(["src/**/*.ts", "test/**/*.ts"]),
+    deps = [
+        "//packages/joern-effect:edge",
+        ":harness",
+    ],
+    requires = [
+        "joern",
+        "tmpfs-workspace",
+    ],
+    cases = 50,
+)

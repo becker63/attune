@@ -1,0 +1,14 @@
+[cells]
+root = .
+
+[repositories]
+root = .
+
+[buildfile]
+name = BUCK
+
+[project]
+ignore = .git, node_modules, .pnpm-store, buck-out, dist, reports, .attune, .dagger-output, tmp
+
+[buck2]
+file_watcher = watchman

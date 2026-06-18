@@ -1,0 +1,9 @@
+load("//rules/attune:defs.bzl", "attune_package")
+
+attune_package(
+    name = "eventing",
+    pure = glob(["src/pure/**/*.ts"]),
+    bridge = glob(["src/bridge/**/*.ts"]),
+    harness = glob(["src/harness/**/*.ts"]),
+    edge = glob(["src/edge/**/*.ts", "test/**/*.ts"]),
+)

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "JoernTemplateGeneratorSchema",
+  "title": "Joern Template",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name, for example HardcodedSecret."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Directory where template modules should be written.",
+      "default": "src/joern/templates"
+    },
+    "export": {
+      "type": "boolean",
+      "description": "Update an index.ts barrel in the template directory.",
+      "default": true
+    },
+    "templateId": {
+      "type": "string",
+      "description": "Stable template identifier used in generated evidence."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

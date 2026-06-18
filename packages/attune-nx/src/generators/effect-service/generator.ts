@@ -1,0 +1,49 @@
+import { upsertExport } from "../../internal/barrel.js"
+import { joinPath, relativeModulePath } from "../../internal/paths.js"
+import { type GeneratorTask, type GeneratorTree, writeTextIfChanged } from "../../internal/tree.js"
+import { toNames } from "../../internal/names.js"
+
+export interface EffectServiceGeneratorSchema {
+  readonly name: string
+  readonly directory?: string
+  readonly export?: boolean
+  readonly tag?: string
+}
+
+const serviceTemplate = (schema: Required<Pick<EffectServiceGeneratorSchema, "tag">>, names: ReturnType<typeof toNames>): string => `import { Context, Effect, Layer } from "effect"
+
+export interface ${names.className}Service {
+  readonly run: Effect.Effect<void>
+}
+
+export class ${names.className} extends Context.Tag("${schema.tag}")<
+  ${names.className},
+  ${names.className}Service
+>() {}
+
+export const make${names.className} = (): ${names.className}Service => ({
+  run: Effect.void,
+})
+
+export const ${names.className}Live: Layer.Layer<${names.className}> = Layer.succeed(
+  ${names.className},
+  make${names.className}(),
+)
+`
+
+export default function effectServiceGenerator(
+  tree: GeneratorTree,
+  schema: EffectServiceGeneratorSchema,
+): GeneratorTask {
+  const names = toNames(schema.name)
+  const directory = schema.directory ?? "src/effect/services"
+  const filePath = joinPath(directory, `${names.fileName}.ts`)
+  const tag = schema.tag ?? `@attune/service/${names.className}`
+
+  writeTextIfChanged(tree, filePath, serviceTemplate({ tag }, names))
+
+  if (schema.export ?? true) {
+    const indexPath = joinPath(directory, "index.ts")
+    upsertExport(tree, indexPath, relativeModulePath(indexPath, filePath))
+  }
+}

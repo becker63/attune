@@ -1,0 +1,35 @@
+{
+  "name": "attune-nx",
+  "root": "packages/attune-nx",
+  "sourceRoot": "packages/attune-nx/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": "packages/attune-nx",
+        "command": "corepack pnpm exec tsc -p tsconfig.build.json"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-nx",
+        "command": "corepack pnpm exec tsgo --noEmit"
+      }
+    },
+    "typecheck:classic": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-nx",
+        "command": "corepack pnpm exec tsc --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "corepack pnpm exec oxlint --config root-oxlintrc.json packages/attune-nx --quiet"
+      }
+    }
+  }
+}

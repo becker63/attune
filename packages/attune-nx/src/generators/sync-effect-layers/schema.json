@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "SyncEffectLayersGeneratorSchema",
+  "title": "Sync Effect Layers",
+  "type": "object",
+  "properties": {
+    "directory": {
+      "type": "string",
+      "description": "Directory containing service modules with exported *Live layers.",
+      "default": "src/effect/services"
+    },
+    "output": {
+      "type": "string",
+      "description": "Generated layer composition file.",
+      "default": "src/effect/layers.generated.ts"
+    }
+  },
+  "additionalProperties": false
+}

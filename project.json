@@ -1,0 +1,22 @@
+{
+  "name": "workspace",
+  "root": ".",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "corepack pnpm exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+      }
+    },
+    "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "corepack pnpm exec nx run-many -t lint,typecheck --all",
+          "openspec validate --all --no-interactive"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

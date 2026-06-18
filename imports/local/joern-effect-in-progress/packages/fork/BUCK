@@ -1,0 +1,9 @@
+load("//rules/attune:defs.bzl", "attune_package")
+
+attune_package(
+    name = "fork",
+    pure = glob(["src/pure/**/*.ts", "src/rules/**/*.ts", "src/presets/**/*.ts"]),
+    bridge = glob(["src/bridge/**/*.ts", "src/config.ts", "src/diagnostics.ts", "src/events.ts"]),
+    harness = glob(["test/**/*.ts"]),
+    edge = glob(["src/cli.ts", "src/run.ts", "src/plugin.ts"]),
+)

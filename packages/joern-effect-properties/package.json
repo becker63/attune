@@ -1,0 +1,45 @@
+{
+  "name": "joern-effect-properties",
+  "version": "0.0.0",
+  "description": "Property-based harness package for joern-effect.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "nix"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean --external joern-effect",
+    "property": "tsx scripts/runPropertyVitest.ts",
+    "property:joern": "tsx scripts/runPropertyVitest.ts",
+    "test": "tsx scripts/runPropertyVitest.ts",
+    "typecheck": "tsc --noEmit",
+    "fuzz:smoke": "tsx scripts/runFuzzer.ts --preset smoke",
+    "fuzz:workbench": "tsx scripts/runFuzzer.ts --preset workbench",
+    "fuzz:nightly": "tsx scripts/runFuzzer.ts --preset nightly",
+    "fuzz:campaign": "tsx scripts/runFuzzer.ts --preset campaign"
+  },
+  "dependencies": {
+    "@axiomhq/js": "^1.7.0",
+    "effect": "^3.16.12",
+    "fast-check": "^3.23.2",
+    "joern-effect": "workspace:*",
+    "oxc-parser": "^0.135.0",
+    "ts-morph": "^28.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  }
+}

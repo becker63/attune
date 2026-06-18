@@ -1,0 +1,21 @@
+load("//rules/attune:defs.bzl", "attune_codegen", "attune_package")
+
+attune_package(
+    name = "joern-effect",
+    pure = glob(["src/pure/**/*.ts"]),
+    bridge = glob(["src/bridge/**/*.ts"]),
+    harness = [],
+    edge = glob(["src/edge/**/*.ts", "examples/**/*.ts", "scripts/**/*.ts", "test/**/*.ts"]),
+)
+
+attune_codegen(
+    name = "joern_schema_codegen",
+    command = "nix run .#generate",
+    srcs = glob(["schema/**/*.json", "scripts/**/*.ts", "scripts/**/*.mjs"]),
+)
+
+attune_codegen(
+    name = "check_generated",
+    command = "nix run .#check-generated",
+    srcs = glob(["src/pure/generated/**/*.ts", "schema/**/*.json", "scripts/**/*.ts"]),
+)

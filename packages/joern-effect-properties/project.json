@@ -1,0 +1,137 @@
+{
+  "name": "joern-effect-properties",
+  "root": "packages/joern-effect-properties",
+  "sourceRoot": "packages/joern-effect-properties/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "cwd": "packages/joern-effect-properties",
+        "command": "corepack pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean --external joern-effect"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/joern-effect-properties",
+        "command": "corepack pnpm exec tsgo --noEmit"
+      }
+    },
+    "typecheck:classic": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/joern-effect-properties",
+        "command": "corepack pnpm exec tsc --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "corepack pnpm exec oxlint --config root-oxlintrc.json packages/joern-effect-properties --quiet"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nix develop --command corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runPropertyVitest.ts"
+      }
+    },
+    "property": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nix develop --command corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runPropertyVitest.ts"
+      }
+    },
+    "property-joern": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nix develop --command corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runPropertyVitest.ts"
+      }
+    },
+    "property-joern:container": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nix build .#joern-effect-property-image",
+          "JOERN_EFFECT_PROPERTY_TMPFS_SIZE=${JOERN_EFFECT_PROPERTY_TMPFS_SIZE:-10g} JOERN_EFFECT_PROPERTY_WORKERS=${JOERN_EFFECT_PROPERTY_WORKERS:-2} JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=${JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER:-2} JOERN_EFFECT_PROPERTY_CPUS=${JOERN_EFFECT_PROPERTY_CPUS:-4} arion -f nix/compose/joern-effect-property.arion.nix up --abort-on-container-exit"
+        ],
+        "parallel": false
+      }
+    },
+    "fuzz:smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nix develop --command corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset smoke"
+      }
+    },
+    "fuzz:workbench": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nix develop --command corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset workbench"
+      }
+    },
+    "fuzz:nightly": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nix develop --command corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset nightly"
+      }
+    },
+    "fuzz:campaign": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nix develop --command corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset campaign"
+      }
+    },
+    "fuzz:container": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nix build .#joern-effect-property-image",
+          "JOERN_EFFECT_PROPERTY_TMPFS_SIZE=${JOERN_EFFECT_PROPERTY_TMPFS_SIZE:-10g} JOERN_EFFECT_PROPERTY_WORKERS=${JOERN_EFFECT_PROPERTY_WORKERS:-2} JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=${JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER:-2} JOERN_EFFECT_PROPERTY_CPUS=${JOERN_EFFECT_PROPERTY_CPUS:-4} JOERN_EFFECT_PROPERTY_NX_TARGET=joern-effect-properties:fuzz:workbench:direct arion -f nix/compose/joern-effect-property.arion.nix up --abort-on-container-exit"
+        ],
+        "parallel": false
+      }
+    },
+    "fuzz:nightly:container": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nix build .#joern-effect-property-image",
+          "JOERN_EFFECT_PROPERTY_TMPFS_SIZE=${JOERN_EFFECT_PROPERTY_TMPFS_SIZE:-10g} JOERN_EFFECT_PROPERTY_WORKERS=${JOERN_EFFECT_PROPERTY_WORKERS:-2} JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=${JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER:-2} JOERN_EFFECT_PROPERTY_CPUS=${JOERN_EFFECT_PROPERTY_CPUS:-4} JOERN_EFFECT_PROPERTY_NX_TARGET=joern-effect-properties:fuzz:nightly:direct arion -f nix/compose/joern-effect-property.arion.nix up --abort-on-container-exit"
+        ],
+        "parallel": false
+      }
+    },
+    "fuzz:dsl-four-hour:container": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nix build .#joern-effect-property-image",
+          "JOERN_EFFECT_PROPERTY_TMPFS_SIZE=${JOERN_EFFECT_PROPERTY_TMPFS_SIZE:-8g} JOERN_EFFECT_PROPERTY_WORKERS=${JOERN_EFFECT_PROPERTY_WORKERS:-2} JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=${JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER:-2} JOERN_EFFECT_PROPERTY_CPUS=${JOERN_EFFECT_PROPERTY_CPUS:-4} JOERN_EFFECT_PROPERTY_NX_TARGET=joern-effect-properties:fuzz:dsl-four-hour:direct timeout 4h arion -f nix/compose/joern-effect-property.arion.nix up --abort-on-container-exit"
+        ],
+        "parallel": false
+      }
+    },
+    "fuzz:workbench:direct": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset workbench"
+      }
+    },
+    "fuzz:nightly:direct": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset nightly"
+      }
+    },
+    "fuzz:dsl-four-hour:direct": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "timeout 4h corepack pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset campaign --batches 24 --cases 12 --joern-shard-size 12 --max-mutators 4 --query-budget 120 --query-feedback true --workers 2 --run-id joern-effect-dsl-4h-$(date -u +%Y%m%dT%H%M%SZ)"
+      }
+    }
+  }
+}

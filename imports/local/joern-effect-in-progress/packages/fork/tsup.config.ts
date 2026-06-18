@@ -1,0 +1,30 @@
+import { defineConfig } from "tsup"
+
+export default defineConfig({
+  clean: true,
+  dts: true,
+  entry: [
+    "src/index.ts",
+    "src/cli.ts",
+    "src/plugin.ts",
+    "src/config.ts",
+    "src/diagnostics.ts",
+    "src/events.ts",
+    "src/run.ts",
+    "src/presets/index.ts",
+    "src/presets/closed-world.ts",
+    "src/presets/core.ts",
+    "src/presets/effect-native.ts",
+    "src/presets/full.ts",
+    "src/presets/functional.ts",
+    "src/presets/strict.ts",
+    "src/presets/v3.ts",
+    "src/presets/v3-strict.ts",
+    "src/rules/index.ts",
+    "src/rules/**/*.ts",
+  ],
+  format: ["esm"],
+  sourcemap: true,
+  target: "es2022",
+  tsconfig: "tsconfig.build.json",
+})

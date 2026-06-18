@@ -1,0 +1,54 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": [
+    ".pnpm-store/**",
+    ".nx/**",
+    "dist/**",
+    "imports/**",
+    "node_modules/**",
+    "schema/**",
+    "src/generated/**",
+    "packages/joern-effect/schema/**",
+    "packages/joern-effect/src/pure/generated/**",
+    "packages/**/dist/**",
+    "packages/**/node_modules/**",
+    "workspace/**",
+    "repomix-output.xml"
+  ],
+  "plugins": [
+    "import",
+    "vitest"
+  ],
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn",
+    "pedantic": "off",
+    "restriction": "off",
+    "style": "off"
+  },
+  "rules": {
+    "no-console": "off",
+    "import/no-default-export": "off",
+    "import/no-named-export": "off",
+    "import/no-nodejs-modules": "off",
+    "import/no-relative-parent-imports": "off",
+    "vitest/no-conditional-expect": "off",
+    "vitest/no-conditional-in-test": "off",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-unsafe-type-assertion": "error",
+    "typescript/no-non-null-assertion": "error",
+    "eslint/no-underscore-dangle": [
+      "error",
+      {
+        "allow": [
+          "_tag"
+        ]
+      }
+    ]
+  }
+}

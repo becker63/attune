@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "paths": {
+      "joern-effect": ["./packages/joern-effect/src/index.ts"],
+      "@attune/joern-effect-properties": ["./packages/joern-effect-properties/src/index.ts"],
+      "@attune/nx": ["./packages/attune-nx/src/index.ts"]
+    }
+  }
+}

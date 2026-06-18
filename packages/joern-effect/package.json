@@ -1,0 +1,52 @@
+{
+  "name": "joern-effect",
+  "version": "0.0.0",
+  "description": "Generated TypeScript and Effect bindings for Joern CPGQL.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "schema"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run && tsd --typings dist/index.d.ts --files test/type-inference.test-d.ts",
+    "typecheck": "tsc --noEmit",
+    "generate": "tsx scripts/generate.ts",
+    "render-readme": "tsx scripts/renderReadme.ts",
+    "enrich-schema-docs": "node scripts/enrichSchemaDocs.mjs",
+    "extract-schema:joern": "javac -proc:none -cp \"${JOERN_HOME}/lib/*\" scripts/ExtractCpgSchema.java && java -cp \"scripts:${JOERN_HOME}/lib/*\" ExtractCpgSchema ${JOERN_CPG_VERSION:-unknown}"
+  },
+  "dependencies": {
+    "effect": "^3.16.12",
+    "graphology": "^0.26.0",
+    "graphology-types": "^0.24.8",
+    "oxc-parser": "^0.135.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "expect-type": "^1.2.1",
+    "fast-check": "^3.23.2",
+    "ts-morph": "^28.0.0",
+    "tsd": "^0.32.0",
+    "tsup": "^8.5.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  },
+  "tsd": {
+    "files": [
+      "test/type-inference.test-d.ts"
+    ]
+  }
+}

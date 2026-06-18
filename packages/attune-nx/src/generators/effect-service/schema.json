@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "EffectServiceGeneratorSchema",
+  "title": "Effect Service",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Service name, for example JoernTemplateExecutor."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Directory where the service module should be written.",
+      "default": "src/effect/services"
+    },
+    "export": {
+      "type": "boolean",
+      "description": "Update an index.ts barrel in the service directory.",
+      "default": true
+    },
+    "tag": {
+      "type": "string",
+      "description": "Effect Context.Tag identifier."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

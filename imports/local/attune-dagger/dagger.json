@@ -1,0 +1,5 @@
+{
+  "name": "attune-dagger",
+  "sdk": "typescript",
+  "source": "."
+}
