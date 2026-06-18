@@ -10,7 +10,7 @@ import { makeFuzzTrace, runPayload } from "../services/eventPayloads.js"
 import { SemanticAdmitter } from "../services/admission.js"
 import { SemanticCorpusStore } from "../services/corpus.js"
 import { semanticCasePlanArbitrary } from "../templates/workloads.js"
-import type { SemanticCase } from "../domain/model.js"
+import type { SemanticCase, SemanticProjectSeed } from "../domain/model.js"
 import { SemanticMutator } from "../services/mutator.js"
 
 export interface SemanticFuzzSchedulerService {
@@ -40,6 +40,18 @@ const chunksBySize = <A>(values: readonly A[], chunkSize: number): readonly (rea
   }
   return chunks
 }
+
+const filterSeeds = (
+  seeds: readonly SemanticProjectSeed[],
+  config: FuzzerRunConfig,
+): readonly SemanticProjectSeed[] =>
+  seeds.filter((seed) => {
+    const idMatches = config.seedIds === undefined || config.seedIds.includes(seed.id)
+    const syntaxMatches = config.syntaxFlavors === undefined || seed.files.some((file) =>
+      config.syntaxFlavors?.includes(file.syntaxFlavor) ?? false
+    )
+    return idMatches && syntaxMatches
+  })
 
 const semanticCasePayload = (
   input: Readonly<{
@@ -227,19 +239,48 @@ export const makeSemanticFuzzScheduler = (runtime: PropertyHarnessConfig): Seman
         batchCount,
         caseCount: config.caseCount,
         joernMode,
-      joernShardSize,
-      maxMutators,
-      mode: config.mode,
-      queryBudget: config.queryBudget,
-      queryFeedback: config.queryFeedback ?? true,
-      seed: config.seed,
-      workerCount,
-      "otel.span_id": trace.spanId,
-      "otel.trace_id": trace.traceId,
+        joernShardSize,
+        maxMutators,
+        mode: config.mode,
+        queryBudget: config.queryBudget,
+        queryFeedback: config.queryFeedback ?? true,
+        seed: config.seed,
+        seedIds: config.seedIds?.join(","),
+        syntaxFlavors: config.syntaxFlavors?.join(","),
+        workspaceRootPath: runtime.workspaceRootPath ?? "<node-tmpdir>",
+        workerCount,
+        "otel.span_id": trace.spanId,
+        "otel.trace_id": trace.traceId,
     })
     yield* telemetry.flush
 
-    const seeds = yield* corpus.list
+    const seeds = filterSeeds(yield* corpus.list, config)
+    if (seeds.length === 0) {
+      const reason = [
+        "No corpus seeds matched fuzzer filters",
+        config.seedIds === undefined ? undefined : `seedIds=${config.seedIds.join(",")}`,
+        config.syntaxFlavors === undefined ? undefined : `syntaxFlavors=${config.syntaxFlavors.join(",")}`,
+      ].filter((part) => part !== undefined).join("; ")
+      yield* telemetry.emit(config, "attune.fuzz.corpus_filter_empty", {
+        reason,
+        seedIds: config.seedIds?.join(","),
+        syntaxFlavors: config.syntaxFlavors?.join(","),
+        "otel.parent_span_id": trace.spanId,
+        "otel.span_id": makeFuzzTrace().spanId,
+        "otel.trace_id": trace.traceId,
+      })
+      yield* telemetry.flush
+      return yield* Effect.fail(new Error(reason))
+    }
+    yield* telemetry.emit(config, "attune.fuzz.corpus_selected", {
+      seedCount: seeds.length,
+      seedIds: seeds.map((seed) => seed.id).join(","),
+      syntaxFlavors: [...new Set(seeds.flatMap((seed) => seed.files.map((file) => file.syntaxFlavor)))].join(","),
+      "otel.parent_span_id": trace.spanId,
+      "otel.span_id": makeFuzzTrace().spanId,
+      "otel.trace_id": trace.traceId,
+    })
+    yield* telemetry.flush
     const batchSummaries = yield* Effect.forEach(
       Array.from({ length: batchCount }, (_, batchIndex) => batchIndex),
       (batchIndex) => Effect.gen(function* runSemanticBatch() {

@@ -34,6 +34,7 @@ export const runFuzzer = (
   harness?: Partial<PropertyHarnessConfig> & Readonly<{
     readonly localEvents?: boolean
     readonly runId?: string
+    readonly workspaceRootPath?: string
     readonly workerCount?: number
   }>,
 ) =>

@@ -69,6 +69,8 @@ export const configForPreset = (
     queryBudget: input.queryBudget ?? base.queryBudget,
     queryFeedback: input.queryFeedback ?? base.queryFeedback,
     seed: input.seed ?? 1337,
+    ...(input.seedIds === undefined ? {} : { seedIds: input.seedIds }),
+    ...(input.syntaxFlavors === undefined ? {} : { syntaxFlavors: input.syntaxFlavors }),
     target: input.target ?? `joern-effect-properties:fuzz:${preset}`,
   }
 }

@@ -180,6 +180,8 @@ export type FuzzerRunConfig = Readonly<{
   readonly queryBudget?: number
   readonly queryFeedback?: boolean
   readonly seed: number
+  readonly seedIds?: readonly string[]
+  readonly syntaxFlavors?: readonly SyntaxFlavor[]
   readonly target: string
 }>
 

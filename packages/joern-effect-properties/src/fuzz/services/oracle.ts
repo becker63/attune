@@ -25,6 +25,7 @@ import {
   summarizeQueryRows,
   type QueryObservationSummary,
 } from "./expectations.js"
+import { PropertyHarnessRuntime } from "../config/runtime.js"
 import { loadQueryFeedbackSnapshot } from "./queryFeedback.js"
 import { makeJoernWorkspacePool } from "./workspacePool.js"
 import type { JoernWorkspacePoolError, JoernWorkspacePoolService, JoernWorkspaceWorker } from "./workspacePool.js"
@@ -69,7 +70,8 @@ const safeFileStem = (value: string): string =>
   value.replace(/[^a-zA-Z0-9_-]/gu, "_").slice(0, 120)
 
 const safeRelativeSourcePath = (fuzzCase: FuzzCase): string => {
-  const generated = `src/${safeFileStem(fuzzCase.caseId)}.${fuzzCase.syntaxFlavor}`
+  const caseDirectory = join("src", "cases", safeFileStem(fuzzCase.caseId))
+  const generated = join(caseDirectory, `index.${fuzzCase.syntaxFlavor}`)
   const configured = fuzzCase.sourcePath
   if (configured === undefined) {
     return generated
@@ -78,7 +80,7 @@ const safeRelativeSourcePath = (fuzzCase: FuzzCase): string => {
   if (normalized.split(/[\\/]/u).includes("..")) {
     return generated
   }
-  return normalized
+  return join(caseDirectory, normalized)
 }
 
 const writeProject = (
@@ -369,7 +371,13 @@ export const makeFuzzOracle = (
   }),
 })
 
-export const FuzzOracleLive: Layer.Layer<FuzzOracle> = Layer.succeed(
+export const FuzzOracleLive: Layer.Layer<FuzzOracle, never, PropertyHarnessRuntime> = Layer.effect(
   FuzzOracle,
-  makeFuzzOracle(),
+  PropertyHarnessRuntime.pipe(
+    Effect.map((runtime) =>
+      makeFuzzOracle(makeJoernWorkspacePool({
+        ...(runtime.workspaceRootPath === undefined ? {} : { rootPath: runtime.workspaceRootPath }),
+      }))
+    ),
+  ),
 )

@@ -87,7 +87,9 @@ const methodNamesFor = (source: string): readonly string[] =>
   unique([
     ...matches(source, new RegExp(`\\bfunction\\s+(${identifierPattern})\\s*\\(`, "gu")),
     ...matches(source, new RegExp(`\\b(?:const|let|var)\\s+(${identifierPattern})\\s*=\\s*(?:async\\s*)?(?:\\([^)]*\\)|${identifierPattern})\\s*=>`, "gu")),
-  ]).filter((name) => expectationPrefixes.test(name))
+  ])
+    .filter((name) => expectationPrefixes.test(name))
+    .filter((name) => !broadExpectationPrefixes.test(name))
 
 const callNamesFor = (source: string): readonly string[] =>
   unique([...source.matchAll(new RegExp(`\\b(${identifierPattern})\\s*\\(`, "gu"))]
