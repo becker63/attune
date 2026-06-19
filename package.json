@@ -13,7 +13,9 @@
     "check-generated": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect:check-generated",
     "lint": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run-many -t lint --all",
     "property": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect-properties:property",
-    "property:joern": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect-properties:property-joern"
+    "property:joern": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect-properties:property-joern",
+    "codex:bootstrap": "corepack enable && corepack pnpm install --frozen-lockfile",
+    "codex:check": "./scripts/check-cloud-env.sh"
   },
   "devDependencies": {
     "@nx/js": "^22.2.0",
