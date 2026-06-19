@@ -12,8 +12,8 @@ OpenSpec
   -> Codex app automation
   -> Git worktree
   -> local validation
-  -> PR or report
-  -> Linear update
+  -> GitHub PR verified against the completion commit
+  -> Linear update with PR URL and validation summary
   -> Dispatch digest
 ```
 
@@ -29,6 +29,10 @@ Attune orchestrator
 ```
 
 The Codex app automation layer is the shipping rail now. App-server is a future local integration point for a real Attune control plane.
+
+## Codex Completion Gate
+
+A Codex run is not complete when local PR metadata is recorded. The runner must verify a real GitHub PR targeting `main`, attach or comment that PR URL on the Linear issue, and post validation results before moving the issue to Done. Use `corepack pnpm run codex:check` with `CODEX_COMPLETION_COMMIT`, `GITHUB_PR_URL`, and `LINEAR_ISSUE_ID` to enforce the gate documented in `docs/linear/codex-pr-completion-gate.md`.
 
 ## Budget Posture
 
