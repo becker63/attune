@@ -3,7 +3,11 @@ import type {
   ReportEvent,
   WorkbenchSnapshot,
 } from "@attune/attuned-discovery"
-import type { DispatchMdxPage } from "@attune/dispatch-schema"
+import type {
+  DispatchItem,
+  DispatchMdxPage,
+  DispatchRoute,
+} from "@attune/dispatch-schema"
 
 export type FoldkitWorkbenchFixtureStep = Readonly<{
   readonly stepId: string
@@ -25,6 +29,22 @@ export type FoldkitMdxViewFixture = Readonly<{
   readonly page: DispatchMdxPage
   readonly expectedText: ReadonlyArray<string>
   readonly expectedComponents: ReadonlyArray<string>
+}>
+
+export type FoldkitSiteSurfaceFixture = Readonly<{
+  readonly surfaceId: string
+  readonly route: DispatchRoute
+  readonly sourcePath: string
+  readonly expectedText: ReadonlyArray<string>
+}>
+
+export type FoldkitSiteFixture = Readonly<{
+  readonly fixtureId: string
+  readonly scenarioId: string
+  readonly runId: string
+  readonly routes: ReadonlyArray<DispatchRoute>
+  readonly items: ReadonlyArray<DispatchItem>
+  readonly surfaces: ReadonlyArray<FoldkitSiteSurfaceFixture>
 }>
 
 export type AppliedWorkbenchFixture = Readonly<{
