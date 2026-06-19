@@ -1,7 +1,10 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 import { describe, expect, it } from "vitest"
 
 import {
+  DiscoveryEvents,
+  DiscoveryEventsLive,
+  InMemoryDiscoveryEventLogLive,
   WorkbenchSnapshot,
   appendDiscoveryEvent,
   appendReportSection,
@@ -13,7 +16,10 @@ import {
   fixtureDiscoveryEvents,
   fixtureReportEvents,
   fixtureRun,
+  familyUpdated,
+  metricRecorded,
   pinEvidence,
+  runCompleted,
   replayReportEvents,
   replayDiscoveryEvents,
   reportActionRecorded,
@@ -203,6 +209,62 @@ describe("attuned discovery", () => {
         },
       ]),
     ).toThrow("executable UI text")
+  })
+
+  it("replays the ATT-12 projection-input vocabulary", () => {
+    const family = {
+      familyId: "family-server-view-boundary",
+      runId: fixtureRun.runId,
+      title: "Server view boundary",
+      hypothesisIds: ["hypothesis-server-atoms-foldkit-lens"],
+      status: "stable" as const,
+      updatedAt: "2026-06-19T05:02:15.000Z",
+    }
+    const metric = {
+      metricId: "metric-run-score",
+      runId: fixtureRun.runId,
+      name: "decision_packet_score",
+      value: 0.88,
+      unit: "score",
+      recordedAt: "2026-06-19T05:02:30.000Z",
+    }
+
+    const projection = replayDiscoveryEvents([
+      ...fixtureDiscoveryEvents,
+      familyUpdated(family),
+      metricRecorded(metric),
+      runCompleted(fixtureRun.runId, "completed", "Golden slice accepted."),
+    ])
+
+    expect(projection.runs.get(fixtureRun.runId)?.status).toBe("completed")
+    expect(projection.families.get(family.familyId)).toEqual(family)
+    expect(projection.metrics).toEqual([metric])
+    expect(projection.decisions).toHaveLength(1)
+    expect(projection.reviewQueue).toHaveLength(1)
+    expect(projection.anchors.size).toBeGreaterThan(0)
+    expect(projection.hypotheses.size).toBeGreaterThan(0)
+    expect(projection.evidence.size).toBeGreaterThan(0)
+  })
+
+  it("writes semantic events only through the DiscoveryEvents live facade", () => {
+    const program = Effect.gen(function* () {
+      const events = yield* DiscoveryEvents
+      yield* events.runStarted(fixtureRun)
+      yield* events.anchorsRecalled(fixtureRun.runId, [])
+      return yield* events.replay
+    }).pipe(
+      Effect.provide(DiscoveryEventsLive),
+      Effect.provide(InMemoryDiscoveryEventLogLive()),
+    )
+
+    const projection = Effect.runSync(program as Effect.Effect<
+      ReturnType<typeof replayDiscoveryEvents>,
+      never,
+      never
+    >)
+
+    expect(projection.version).toBe(2)
+    expect(projection.runs.get(fixtureRun.runId)?.runId).toBe(fixtureRun.runId)
   })
 
   it("removes Joern decisions when Joern budget is exhausted", () => {

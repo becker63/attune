@@ -1,4 +1,4 @@
-import { Schema as S } from "effect"
+import { Context, Effect, Layer, Ref, Schema as S } from "effect"
 
 export const RunStatus = S.Literals([
   "initializing",
@@ -121,6 +121,26 @@ export const EvidencePacket = S.Struct({
   createdAt: S.String,
 })
 export type EvidencePacket = typeof EvidencePacket.Type
+
+export const DiscoveryMetric = S.Struct({
+  metricId: S.String,
+  runId: S.String,
+  name: S.String,
+  value: S.Number,
+  unit: S.String,
+  recordedAt: S.String,
+})
+export type DiscoveryMetric = typeof DiscoveryMetric.Type
+
+export const MotifFamily = S.Struct({
+  familyId: S.String,
+  runId: S.String,
+  title: S.String,
+  hypothesisIds: S.Array(S.String),
+  status: S.Literals(["open", "stable", "promoted"]),
+  updatedAt: S.String,
+})
+export type MotifFamily = typeof MotifFamily.Type
 
 export const AgentDecision = S.Struct({
   decisionId: S.String,
@@ -321,6 +341,41 @@ export const RulePromotionRequested = S.Struct({
 })
 export type RulePromotionRequested = typeof RulePromotionRequested.Type
 
+export const FamilyUpdated = S.Struct({
+  _tag: S.Literal("FamilyUpdated"),
+  eventId: S.String,
+  occurredAt: S.String,
+  family: MotifFamily,
+})
+export type FamilyUpdated = typeof FamilyUpdated.Type
+
+export const MetricRecorded = S.Struct({
+  _tag: S.Literal("MetricRecorded"),
+  eventId: S.String,
+  occurredAt: S.String,
+  metric: DiscoveryMetric,
+})
+export type MetricRecorded = typeof MetricRecorded.Type
+
+export const AgentDecisionRejected = S.Struct({
+  _tag: S.Literal("AgentDecisionRejected"),
+  eventId: S.String,
+  occurredAt: S.String,
+  decision: AgentDecision,
+  reason: S.String,
+})
+export type AgentDecisionRejected = typeof AgentDecisionRejected.Type
+
+export const DiscoveryRunCompleted = S.Struct({
+  _tag: S.Literal("DiscoveryRunCompleted"),
+  eventId: S.String,
+  occurredAt: S.String,
+  runId: S.String,
+  status: S.Literals(["plateaued", "completed"]),
+  summary: S.String,
+})
+export type DiscoveryRunCompleted = typeof DiscoveryRunCompleted.Type
+
 export const ReportActionRecorded = S.Struct({
   _tag: S.Literal("ReportActionRecorded"),
   eventId: S.String,
@@ -338,8 +393,12 @@ export const DiscoveryEvent = S.Union([
   MotifHypothesisCreated,
   JoernEvidenceScored,
   AgentDecisionRecorded,
+  AgentDecisionRejected,
+  FamilyUpdated,
+  MetricRecorded,
   HumanReviewRequested,
   RulePromotionRequested,
+  DiscoveryRunCompleted,
 ])
 export type DiscoveryEvent = typeof DiscoveryEvent.Type
 
@@ -365,6 +424,9 @@ export type DiscoveryProjection = Readonly<{
   anchors: ReadonlyMap<string, AnchorCard>
   hypotheses: ReadonlyMap<string, MotifHypothesis>
   evidence: ReadonlyMap<string, EvidencePacket>
+  families: ReadonlyMap<string, MotifFamily>
+  metrics: ReadonlyArray<DiscoveryMetric>
+  rejectedDecisions: ReadonlyArray<AgentDecisionRejected>
   decisions: ReadonlyArray<AgentDecision>
   reviewQueue: ReadonlyArray<ReviewItem>
   promotions: ReadonlyArray<RulePromotionRequested>
@@ -376,6 +438,9 @@ type MutableProjection = {
   anchors: Map<string, AnchorCard>
   hypotheses: Map<string, MotifHypothesis>
   evidence: Map<string, EvidencePacket>
+  families: Map<string, MotifFamily>
+  metrics: Array<DiscoveryMetric>
+  rejectedDecisions: Array<AgentDecisionRejected>
   decisions: Array<AgentDecision>
   reviewQueue: Array<ReviewItem>
   promotions: Array<RulePromotionRequested>
@@ -411,6 +476,90 @@ export type OptimizerService = Readonly<{
 export type WorkbenchScribeService = Readonly<{
   compose: (snapshot: WorkbenchSnapshot) => ReadonlyArray<ReportAction>
 }>
+
+export type DiscoveryEventLogClient = Readonly<{
+  append: (event: DiscoveryEvent) => Effect.Effect<void>
+  readAll: Effect.Effect<ReadonlyArray<DiscoveryEvent>>
+}>
+
+export type DiscoveryEventsService = Readonly<{
+  runStarted: (run: DiscoveryRun) => Effect.Effect<void>
+  anchorsRecalled: (
+    runId: string,
+    anchors: ReadonlyArray<AnchorCard>,
+  ) => Effect.Effect<void>
+  familyUpdated: (family: MotifFamily) => Effect.Effect<void>
+  hypothesisCreated: (hypothesis: MotifHypothesis) => Effect.Effect<void>
+  evidenceScored: (evidence: EvidencePacket) => Effect.Effect<void>
+  metricRecorded: (metric: DiscoveryMetric) => Effect.Effect<void>
+  decisionRecorded: (decision: AgentDecision) => Effect.Effect<void>
+  decisionRejected: (
+    decision: AgentDecision,
+    reason: string,
+  ) => Effect.Effect<void>
+  humanReviewRequested: (item: ReviewItem) => Effect.Effect<void>
+  rulePromotionRequested: (
+    runId: string,
+    hypothesisId: string,
+    requestedBy: string,
+  ) => Effect.Effect<void>
+  runCompleted: (
+    runId: string,
+    status: "plateaued" | "completed",
+    summary: string,
+  ) => Effect.Effect<void>
+  replay: Effect.Effect<DiscoveryProjection>
+}>
+
+export const DiscoveryEvents = Context.Service<DiscoveryEventsService>(
+  "@attune/DiscoveryEvents",
+)
+
+export const DiscoveryEventLog = Context.Service<DiscoveryEventLogClient>(
+  "@attune/DiscoveryEventLog",
+)
+
+export const makeInMemoryDiscoveryEventLog = (
+  seed: ReadonlyArray<DiscoveryEvent> = [],
+): Effect.Effect<DiscoveryEventLogClient> =>
+  Ref.make<ReadonlyArray<DiscoveryEvent>>(seed).pipe(
+    Effect.map((events) => ({
+      append: (event) => Ref.update(events, (current) => [...current, event]),
+      readAll: Ref.get(events),
+    })),
+  )
+
+export const DiscoveryEventsLive = Layer.effect(
+  DiscoveryEvents,
+  Effect.map(DiscoveryEventLog, (log) => {
+    const write = (event: DiscoveryEvent): Effect.Effect<void> =>
+      log.append(event)
+
+    return {
+      runStarted: (run) => write(runStarted(run)),
+      anchorsRecalled: (runId, anchors) =>
+        write(anchorsRecalled(runId, anchors)),
+      familyUpdated: (family) => write(familyUpdated(family)),
+      hypothesisCreated: (hypothesis) => write(hypothesisCreated(hypothesis)),
+      evidenceScored: (evidence) => write(evidenceScored(evidence)),
+      metricRecorded: (metric) => write(metricRecorded(metric)),
+      decisionRecorded: (decision) => write(decisionRecorded(decision)),
+      decisionRejected: (decision, reason) =>
+        write(decisionRejected(decision, reason)),
+      humanReviewRequested: (item) => write(humanReviewRequested(item)),
+      rulePromotionRequested: (runId, hypothesisId, requestedBy) =>
+        write(rulePromotionRequested(runId, hypothesisId, requestedBy)),
+      runCompleted: (runId, status, summary) =>
+        write(runCompleted(runId, status, summary)),
+      replay: log.readAll.pipe(Effect.map(replayDiscoveryEvents)),
+    } satisfies DiscoveryEventsService
+  }),
+)
+
+export const InMemoryDiscoveryEventLogLive = (
+  seed: ReadonlyArray<DiscoveryEvent> = [],
+) =>
+  Layer.effect(DiscoveryEventLog, makeInMemoryDiscoveryEventLog(seed))
 
 export const decodeReportActions = (
   snapshot: WorkbenchSnapshot,
@@ -877,6 +1026,52 @@ export function rulePromotionRequested(
   }
 }
 
+export function familyUpdated(family: MotifFamily): FamilyUpdated {
+  return {
+    _tag: "FamilyUpdated",
+    eventId: `${family.runId}:${family.familyId}:updated`,
+    occurredAt: family.updatedAt,
+    family,
+  }
+}
+
+export function metricRecorded(metric: DiscoveryMetric): MetricRecorded {
+  return {
+    _tag: "MetricRecorded",
+    eventId: `${metric.runId}:${metric.metricId}:recorded`,
+    occurredAt: metric.recordedAt,
+    metric,
+  }
+}
+
+export function decisionRejected(
+  decision: AgentDecision,
+  reason: string,
+): AgentDecisionRejected {
+  return {
+    _tag: "AgentDecisionRejected",
+    eventId: `${decision.runId}:${decision.decisionId}:rejected`,
+    occurredAt: decision.createdAt,
+    decision,
+    reason,
+  }
+}
+
+export function runCompleted(
+  runId: string,
+  status: "plateaued" | "completed",
+  summary: string,
+): DiscoveryRunCompleted {
+  return {
+    _tag: "DiscoveryRunCompleted",
+    eventId: `${runId}:${status}`,
+    occurredAt: "2026-06-19T05:03:00.000Z",
+    runId,
+    status,
+    summary,
+  }
+}
+
 export function appendReportSection(
   action: Omit<AppendReportSection, "_tag">,
 ): AppendReportSection {
@@ -930,6 +1125,9 @@ const emptyProjection = (): MutableProjection => ({
   anchors: new Map(),
   hypotheses: new Map(),
   evidence: new Map(),
+  families: new Map(),
+  metrics: [],
+  rejectedDecisions: [],
   decisions: [],
   reviewQueue: [],
   promotions: [],
@@ -969,11 +1167,23 @@ const applyEvent = (
       })
       updateRunTimestamp(projection, event.evidence.runId, event.occurredAt)
       return
+    case "FamilyUpdated":
+      projection.families.set(event.family.familyId, event.family)
+      updateRunTimestamp(projection, event.family.runId, event.occurredAt)
+      return
+    case "MetricRecorded":
+      projection.metrics.push(event.metric)
+      updateRunTimestamp(projection, event.metric.runId, event.occurredAt)
+      return
     case "AgentDecisionRecorded":
       projection.decisions.push(event.decision)
       updateRunBudget(projection, event.decision.runId, {
         optimizerTurnsRemaining: -1,
       })
+      updateRunTimestamp(projection, event.decision.runId, event.occurredAt)
+      return
+    case "AgentDecisionRejected":
+      projection.rejectedDecisions.push(event)
       updateRunTimestamp(projection, event.decision.runId, event.occurredAt)
       return
     case "HumanReviewRequested":
@@ -988,6 +1198,9 @@ const applyEvent = (
       )
       updateRunTimestamp(projection, event.runId, event.occurredAt)
       return
+    case "DiscoveryRunCompleted":
+      updateRunStatus(projection, event.runId, event.status, event.occurredAt)
+      return
   }
 }
 
@@ -999,6 +1212,9 @@ const freezeProjection = (
   anchors: new Map(projection.anchors),
   hypotheses: new Map(projection.hypotheses),
   evidence: new Map(projection.evidence),
+  families: new Map(projection.families),
+  metrics: [...projection.metrics],
+  rejectedDecisions: [...projection.rejectedDecisions],
   decisions: [...projection.decisions],
   reviewQueue: [...projection.reviewQueue],
   promotions: [...projection.promotions],
@@ -1365,6 +1581,19 @@ const updateRunTimestamp = (
 
   if (run !== undefined) {
     projection.runs.set(runId, { ...run, updatedAt })
+  }
+}
+
+const updateRunStatus = (
+  projection: MutableProjection,
+  runId: string,
+  status: "plateaued" | "completed",
+  updatedAt: string,
+): void => {
+  const run = projection.runs.get(runId)
+
+  if (run !== undefined) {
+    projection.runs.set(runId, { ...run, status, updatedAt })
   }
 }
 
