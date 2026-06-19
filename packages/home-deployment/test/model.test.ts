@@ -8,7 +8,9 @@ import {
   confirmGateInState,
   createHomeDeploymentPlan,
   defaultHomeDeploymentConfig,
+  nextAgentStep,
   reconcileHomeDeployment,
+  toLifecycleResources,
   writeHomeDeploymentState,
 } from "../src/index.js"
 
@@ -146,5 +148,36 @@ describe("home-deployment", () => {
     )
 
     expect(state.confirmedGateIds).toEqual(["tailscale-auth-ready"])
+  })
+
+  it("projects legacy plan resources into typed lifecycle resources", () => {
+    const plan = createHomeDeploymentPlan()
+    const lifecycle = toLifecycleResources(plan.resources)
+
+    expect(lifecycle.find((resource) => resource.resourceId === "installer-image")).toMatchObject({
+      kind: "NixBuildArtifact",
+      operation: "safe",
+      provider: "NixProvider",
+    })
+    expect(lifecycle.find((resource) => resource.resourceId === "attune-cp-1:nixos-anywhere-install")).toMatchObject({
+      kind: "HostActivation",
+      operation: "irreversible",
+      provider: "HostActivationProvider",
+    })
+    expect(lifecycle.find((resource) => resource.resourceId === "attune-platform-kubernetes-graph")).toMatchObject({
+      kind: "KubernetesObjectSet",
+      provider: "KubernetesProvider",
+    })
+  })
+
+  it("returns deterministic next-step output for agents", () => {
+    const step = nextAgentStep(createHomeDeploymentPlan().resources)
+
+    expect(step).toMatchObject({
+      type: "SafeProbe",
+      resourceId: "installer-image",
+      provider: "NixProvider",
+      autoRunnable: true,
+    })
   })
 })
