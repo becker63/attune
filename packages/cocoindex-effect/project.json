@@ -37,6 +37,57 @@
         "cwd": "packages/cocoindex-effect",
         "command": "../../node_modules/.bin/vitest run"
       }
+    },
+    "inspect-cocoindex-mcp": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/src/generated/cocoindex-code-mcp.ts"],
+      "options": {
+        "cwd": "packages/cocoindex-effect",
+        "command": "../../node_modules/.bin/tsx scripts/generationStage.ts inspect-cocoindex-mcp"
+      }
+    },
+    "emit-mcp-schema": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/src/generated/cocoindex-code-mcp.ts"],
+      "options": {
+        "cwd": "packages/cocoindex-effect",
+        "command": "../../node_modules/.bin/tsx scripts/generationStage.ts emit-mcp-schema"
+      }
+    },
+    "scaffold-mcp-search-tool": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/src/cocoindex/tools/search.ts"],
+      "options": {
+        "command": "node_modules/.bin/nx generate @attune/nx:cocoindex-mcp-tool search --directory packages/cocoindex-effect/src/cocoindex/tools --toolName search"
+      }
+    },
+    "sync-mcp-tools": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/src/cocoindex/tools/ToolRegistry.generated.ts"],
+      "options": {
+        "command": "node_modules/.bin/nx generate @attune/nx:sync-cocoindex-mcp-tools --directory packages/cocoindex-effect/src/cocoindex/tools --registry packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts"
+      }
+    },
+    "generate": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/src/generated/cocoindex-code-mcp.ts",
+        "{projectRoot}/src/cocoindex/tools/ToolRegistry.generated.ts"
+      ],
+      "options": {
+        "commands": [
+          "node_modules/.bin/nx run cocoindex-effect:emit-mcp-schema",
+          "node_modules/.bin/nx run cocoindex-effect:sync-mcp-tools"
+        ],
+        "parallel": false
+      }
+    },
+    "check-generated": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["generate"],
+      "options": {
+        "command": "git diff --exit-code -- packages/cocoindex-effect/src/generated packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts"
+      }
     }
   }
 }

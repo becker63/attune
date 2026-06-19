@@ -23,6 +23,7 @@ result-*
 *.tsbuildinfo
 **/workspace/
 imports/**/.git/
+imports/
 imports/**/node_modules/
 imports/**/.direnv/
 imports/**/.nx/

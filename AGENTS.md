@@ -1,0 +1,181 @@
+# Attune Codex Agent Guide
+
+This file is the standing contract for Codex agents delegated from Linear in the
+`attune1` workspace. Read it before editing. If a Linear issue conflicts with
+this file, stop and ask for clarification in Linear or in the Codex thread.
+
+## Mission
+
+Attune is an Effect-first code intelligence system. Linear is the work ledger,
+Codex is the implementation agent, OpenSpec is the planning gate, Nx generators
+are the source-code grammar, and GitHub PRs are the review boundary.
+
+The northstar loop is:
+
+```text
+CocoIndex finds.
+Pi proposes.
+Effect validates.
+Joern proves.
+EventLog remembers.
+Drizzle materializes.
+Reactivity refreshes.
+Atoms reason.
+FoldKit explains.
+Humans promote.
+```
+
+## Primary References
+
+Read the relevant source docs before broad changes:
+
+- `docs/attuned/Attune Discovery v0 Technical spec.md`
+- `docs/attuned/Attune Atom, Reactivity, and State Philosophy.md`
+- `docs/attuned/Attune Discovery v0 Architecture Model.md`
+- `docs/attuned/Attune Discovery v0 Joern and Cocoindex.md`
+- `docs/attuned/Attune Discovery v0 Performance Model.md`
+- `docs/platform/autonomous-codex-workstation.md`
+- The active OpenSpec change under `openspec/changes/<change>/`
+
+For material product changes, create or link an OpenSpec proposal before
+implementation. Small docs and narrow follow-ups may proceed directly when the
+Linear issue is explicit and low risk.
+
+## Repo Map
+
+- `packages/attune-nx`: local Nx generators and sync generators. Prefer these
+  over hand-building repeated code shapes.
+- `packages/attuned-discovery`: current semantic discovery package. It contains
+  the first schema, fixture, event replay, projection, and WorkbenchSnapshot
+  slice.
+- `packages/cocoindex-effect`: Effect service boundary and MCP-facing code for
+  CocoIndex semantic recall.
+- `packages/joern-effect`: generated Joern CPGQL bindings and proof-template
+  DSL surface.
+- `packages/joern-effect-properties`: property, fuzzer, Axiom, and Joern-backed
+  validation workbench.
+- `packages/dispatch-schema`: schema-backed Dispatch data model.
+- `packages/dispatch-core`: Dispatch derivations, fixtures, and constrained MDX
+  compilation.
+- `packages/dispatch-feed`: RSS, Atom, and JSON Feed projections.
+- `packages/dispatch-foldkit`: FoldKit model, update, message, and view logic.
+- `packages/dispatch-web`: Vite/FoldKit app boot package.
+- `packages/platform-alchemy-k8s`: Kubernetes/Alchemy platform resource package.
+  Kubernetes generation should become an `@attune/nx` generator issue before
+  repeated hand-written resource shapes expand.
+
+## Linear Operating Loop
+
+For every delegated issue:
+
+1. Read the Linear issue fully.
+2. Identify the source doc or OpenSpec change.
+3. Confirm the issue is low risk or has explicit human-review gates.
+4. Work one implementation slice only.
+5. Run targeted validation.
+6. Report files changed, validation commands, failures, and follow-up issues.
+7. Open a PR when requested or when the issue explicitly asks for it.
+8. Never silently merge.
+
+Keep Linear current. A good status update says what changed, what passed, what
+failed, what is blocked, and what the next issue should be.
+
+## Scheduling Rules
+
+The queue should always have ready work, but a single Codex run should stay
+narrow. Prefer a chain of small issues over a heroic multi-day issue.
+
+Default order:
+
+1. Codex agent contract and Linear delegation protocol.
+2. Northstar backlog projection from docs.
+3. EventLog and `DiscoveryEvents` facade.
+4. Drizzle/Neon durable projections.
+5. Effect Reactivity keys.
+6. Server-side effect-atom view graph.
+7. DecisionPacket, score, plateau, and FoldKit scene atoms.
+8. Dispatch progress projection and feeds.
+9. Nx generator expansion for repeated shapes.
+
+CocoIndex MCP and Joern proof-router DSL work may be tracked elsewhere. Do not
+block this bootstrap queue on them unless the issue explicitly says so.
+
+## Nx And Generators
+
+Use `NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx ...`
+or the root `package.json` scripts.
+
+Useful commands:
+
+```bash
+corepack pnpm exec nx show projects
+corepack pnpm exec nx run <project>:typecheck
+corepack pnpm exec nx run <project>:test
+corepack pnpm exec nx run <project>:build
+```
+
+Current `@attune/nx` generators:
+
+- `@attune/nx:effect-service`
+- `@attune/nx:joern-template`
+- `@attune/nx:cocoindex-mcp-tool`
+- `@attune/nx:sync-effect-layers`
+- `@attune/nx:sync-joern-templates`
+- `@attune/nx:sync-cocoindex-mcp-tools`
+
+The northstar docs call for more generators: event, decision, projection,
+atom-family, derived-atom, score-feature, decision-packet-field, and
+foldkit-scene-atom. If an issue needs one of those repeated shapes, create or
+extend a generator when practical. Otherwise, leave a Linear follow-up explaining
+the missing generator.
+
+## Safety Rules
+
+- Do not write raw EventLog events outside `DiscoveryEventsLive`.
+- Do not import Drizzle tables outside the memory/persistence boundary.
+- Do not put durable writes inside atoms.
+- Projection writes should announce Reactivity keys.
+- Base atoms may subscribe to Reactivity keys; derived atoms should compose.
+- Do not manually invalidate derived views.
+- FoldKit owns interaction state, not durable discovery truth.
+- Pi/local model output is a bounded `AgentDecision`, not state ownership.
+- Agents must not author arbitrary Joern queries in v0.
+- CocoIndex recall is not proof; normalize results before use.
+- Joern proof output should be normalized into evidence packets.
+- Rego, Nix, Kubernetes, scheduler/admission, worker safety, budget/lease, and
+  app-server exposure work require human review unless explicitly downgraded.
+
+## Validation
+
+Run the smallest validation that proves the slice:
+
+- Package typecheck for schema/API changes.
+- Package tests for behavior changes.
+- Build only when packaging or app boot changes.
+- OpenSpec validation when changing OpenSpec artifacts.
+- Generator typecheck/tests when changing `@attune/nx`.
+
+If validation cannot run, report why and include the exact command attempted.
+
+## Reporting Template
+
+Use this shape in Linear comments or PR summaries:
+
+```text
+Changed:
+- ...
+
+Validated:
+- ...
+
+Not run:
+- ...
+
+Risks:
+- ...
+
+Follow-ups:
+- ...
+```
+
+Keep the report short, concrete, and linked to the issue.

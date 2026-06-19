@@ -10,6 +10,7 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./package.json": "./package.json",
     "./generators.json": "./generators.json"
   },
   "generators": "./generators.json",
@@ -19,7 +20,7 @@
     "src/generators/**/schema.json"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/write-generator-cjs-wrappers.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

@@ -8,7 +8,7 @@
       "outputs": ["{projectRoot}/dist"],
       "options": {
         "cwd": "packages/attune-nx",
-        "command": "corepack pnpm exec tsc -p tsconfig.build.json"
+        "command": "../../node_modules/.bin/tsc -p tsconfig.build.json && node scripts/write-generator-cjs-wrappers.mjs"
       }
     },
     "typecheck": {

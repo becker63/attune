@@ -20,7 +20,15 @@ export class CocoIndexAnchorNotFound extends Data.TaggedError("CocoIndexAnchorNo
   readonly anchorId: string
 }> {}
 
+export class CocoIndexMcpProtocolError extends Data.TaggedError("CocoIndexMcpProtocolError")<{
+  readonly message: string
+  readonly method: string
+  readonly payload?: unknown
+  readonly cause?: unknown
+}> {}
+
 export type CocoIndexError =
   | CocoIndexCommandError
   | CocoIndexDecodeError
   | CocoIndexAnchorNotFound
+  | CocoIndexMcpProtocolError

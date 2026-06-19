@@ -37,19 +37,71 @@
       "outputs": ["{projectRoot}/src/generated/crds.ts", "{projectRoot}/src/generated/crds"],
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generate-crd-types.ts"
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generationStage.ts emit-generated"
+      }
+    },
+    "emit-crd-manifests": {
+      "executor": "nx:run-commands",
+      "inputs": ["{projectRoot}/src/crds/**/*.ts", "{projectRoot}/scripts/generate-crd-types.ts"],
+      "outputs": ["{projectRoot}/src/generated/crds"],
+      "options": {
+        "cwd": "packages/platform-alchemy-k8s",
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generationStage.ts emit-crd-manifests"
+      }
+    },
+    "emit-crd-types": {
+      "executor": "nx:run-commands",
+      "inputs": ["{projectRoot}/src/crds/**/*.ts", "{projectRoot}/scripts/generate-crd-types.ts"],
+      "outputs": ["{projectRoot}/src/generated/crds.ts"],
+      "options": {
+        "cwd": "packages/platform-alchemy-k8s",
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generationStage.ts emit-crd-types"
+      }
+    },
+    "emit-generated": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/src/generated/crds.ts", "{projectRoot}/src/generated/crds"],
+      "options": {
+        "commands": [
+          "node_modules/.bin/nx run platform-alchemy-k8s:emit-crd-manifests",
+          "node_modules/.bin/nx run platform-alchemy-k8s:emit-crd-types"
+        ],
+        "parallel": false
+      }
+    },
+    "sync-k8s-resources": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/src/resources/ResourceRegistry.generated.ts"],
+      "options": {
+        "cwd": "packages/platform-alchemy-k8s",
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generationStage.ts sync-k8s-resources"
+      }
+    },
+    "generate": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/src/generated/crds.ts",
+        "{projectRoot}/src/generated/crds",
+        "{projectRoot}/src/resources/ResourceRegistry.generated.ts"
+      ],
+      "options": {
+        "commands": [
+          "node_modules/.bin/nx run platform-alchemy-k8s:emit-generated",
+          "node_modules/.bin/nx run platform-alchemy-k8s:sync-k8s-resources"
+        ],
+        "parallel": false
       }
     },
     "check-generated": {
       "executor": "nx:run-commands",
-      "dependsOn": ["generate-crd-types"],
+      "dependsOn": ["generate"],
       "options": {
-        "command": "git diff --exit-code -- packages/platform-alchemy-k8s/src/generated/crds.ts packages/platform-alchemy-k8s/src/generated/crds"
+        "command": "git diff --exit-code -- packages/platform-alchemy-k8s/src/generated/crds.ts packages/platform-alchemy-k8s/src/generated/crds packages/platform-alchemy-k8s/src/resources/ResourceRegistry.generated.ts"
       }
     },
     "test": {
       "executor": "nx:run-commands",
-      "dependsOn": ["generate-crd-types"],
+      "dependsOn": ["generate"],
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
         "command": "../../node_modules/.bin/vitest run"

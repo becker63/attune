@@ -1,37 +1,77 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "production": ["default", "!{projectRoot}/test/**/*", "!{projectRoot}/**/*.test.ts"],
-    "sharedGlobals": ["{workspaceRoot}/tsconfig.base.json", "{workspaceRoot}/package.json", "{workspaceRoot}/pnpm-workspace.yaml"]
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
+    "production": [
+      "default",
+      "!{projectRoot}/test/**/*",
+      "!{projectRoot}/**/*.test.ts"
+    ],
+    "sharedGlobals": [
+      "{workspaceRoot}/tsconfig.base.json",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/pnpm-workspace.yaml"
+    ]
   },
   "targetDefaults": {
     "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["production"],
-      "outputs": ["{projectRoot}/dist"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
     },
     "typecheck": {
-      "inputs": ["default"]
+      "inputs": [
+        "default"
+      ]
     },
     "typecheck:classic": {
-      "inputs": ["default"]
+      "inputs": [
+        "default"
+      ]
     },
     "lint": {
-      "inputs": ["default"]
+      "inputs": [
+        "default"
+      ]
     },
     "test": {
-      "dependsOn": ["^build"],
-      "inputs": ["default"],
-      "outputs": ["{projectRoot}/coverage"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "default"
+      ],
+      "outputs": [
+        "{projectRoot}/coverage"
+      ]
     },
     "generate": {
-      "inputs": ["default"],
-      "outputs": ["{projectRoot}/src/pure/generated", "{projectRoot}/schema", "{projectRoot}/README.md"]
+      "inputs": [
+        "default"
+      ],
+      "outputs": [
+        "{projectRoot}/src/pure/generated",
+        "{projectRoot}/schema",
+        "{projectRoot}/README.md"
+      ]
     },
     "check-generated": {
-      "dependsOn": ["generate"],
-      "inputs": ["default"]
+      "dependsOn": [
+        "generate"
+      ],
+      "inputs": [
+        "default"
+      ]
     }
-  }
+  },
+  "analytics": false
 }

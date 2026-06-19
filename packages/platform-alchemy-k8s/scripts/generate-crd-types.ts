@@ -204,10 +204,10 @@ ${renderInterface(`${kind}Status`, statusSchema)}
 `
 }
 
-const writeGenerated = Effect.gen(function* () {
-  const outFile = join("src", "generated", "crds.ts")
+const definitions = [...attuneCrdDefinitions].sort((left, right) => left.kind.localeCompare(right.kind))
+
+const writeCrdManifests = Effect.gen(function* () {
   const manifestDir = join("src", "generated", "crds")
-  const definitions = [...attuneCrdDefinitions].sort((left, right) => left.kind.localeCompare(right.kind))
 
   yield* Effect.promise(() => rm(manifestDir, { force: true, recursive: true }))
   yield* Effect.promise(() => mkdir(manifestDir, { recursive: true }))
@@ -223,7 +223,33 @@ const writeGenerated = Effect.gen(function* () {
     ),
     { concurrency: 4 },
   )
+})
+
+const writeCrdTypes = Effect.gen(function* () {
+  const outFile = join("src", "generated", "crds.ts")
+  yield* Effect.promise(() => mkdir(join("src", "generated"), { recursive: true }))
   yield* Effect.promise(() => writeFile(outFile, `${generatedHeader}${definitions.map(renderTypes).join("\n")}`, "utf8"))
 })
 
-await Effect.runPromise(writeGenerated)
+const writeGenerated = Effect.gen(function* () {
+  yield* writeCrdManifests
+  yield* writeCrdTypes
+})
+
+const stage = process.argv[2] ?? "emit-generated"
+
+const runStage = (stageName: string): Effect.Effect<void, Error> => {
+  switch (stageName) {
+    case "emit-crd-manifests":
+      return writeCrdManifests
+    case "emit-crd-types":
+      return writeCrdTypes
+    case "emit-generated":
+    case "generate-crd-types":
+      return writeGenerated
+    default:
+      return Effect.fail(new Error(`Unknown platform-alchemy-k8s generation stage: ${stageName}`))
+  }
+}
+
+await Effect.runPromise(runStage(stage))

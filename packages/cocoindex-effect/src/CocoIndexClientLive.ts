@@ -1,11 +1,18 @@
 import { spawn } from "node:child_process"
-import { Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema, Scope } from "effect"
 import { CocoIndexClient, type CocoIndexClientService } from "./CocoIndexClient.js"
 import {
   CocoIndexCommandError,
   CocoIndexDecodeError,
+  CocoIndexMcpProtocolError,
   type CocoIndexError,
 } from "./errors.js"
+import {
+  CocoIndexMcpSearchInput,
+  CocoIndexMcpSearchResult,
+  type CocoIndexMcpSearchResult as CocoIndexMcpSearchResultType,
+} from "./generated/cocoindex-code-mcp.js"
+import { startMcpStdioClient, type McpStdioClient } from "./mcp/stdio.js"
 import {
   AnchorCard,
   EnsureIndexedResult,
@@ -15,6 +22,7 @@ import {
   type GetAnchorRequest,
   type SearchAnchorsRequest,
   type SearchSimilarAnchorsRequest,
+  normalizeCocoIndexHits,
 } from "./model.js"
 
 export type CocoIndexCommandConfig = Readonly<{
@@ -23,6 +31,14 @@ export type CocoIndexCommandConfig = Readonly<{
   readonly cwd?: string
   readonly env?: Readonly<Record<string, string>>
   readonly timeoutMs?: number
+}>
+
+export type CocoIndexMcpConfig = Readonly<{
+  readonly command?: string
+  readonly args?: ReadonlyArray<string>
+  readonly repoPath: string
+  readonly env?: Readonly<Record<string, string>>
+  readonly startupTimeoutMs?: number
 }>
 
 export const makeCocoIndexCommandClient = (
@@ -47,6 +63,211 @@ export const CocoIndexClientLive = (
   config: CocoIndexCommandConfig,
 ): Layer.Layer<CocoIndexClient> =>
   CocoIndexClient.fromService(makeCocoIndexCommandClient(config))
+
+export const CocoIndexClientMcpLive = (
+  config: CocoIndexMcpConfig,
+): Layer.Layer<CocoIndexClient, CocoIndexError> =>
+  Layer.effect(
+    CocoIndexClient,
+    startCocoIndexMcpSession(config).pipe(
+      Effect.map(makeCocoIndexMcpClient),
+    ),
+  )
+
+export const makeCocoIndexMcpClient = (
+  session: McpStdioClient,
+): CocoIndexClientService => ({
+  ensureIndexed: (input: EnsureIndexedRequest) =>
+    runMcpSearch(session, {
+      query: "repository index freshness",
+      limit: 1,
+      offset: 0,
+      refresh_index: true,
+    }).pipe(
+      Effect.map(() => ({
+        repoSnapshotId: input.repoSnapshotId,
+        repoPath: input.repoPath,
+        indexedAt: new Date().toISOString(),
+      })),
+    ),
+  searchAnchors: (input: SearchAnchorsRequest) =>
+    runMcpSearch(session, toMcpSearchInput(input)).pipe(
+      Effect.map((result) =>
+        normalizeCocoIndexHits(
+          result.results.map((chunk) => ({
+            path: chunk.file_path,
+            startLine: chunk.start_line,
+            endLine: chunk.end_line,
+            language: chunk.language,
+            score: chunk.score,
+            code: chunk.content,
+            kind: input.filters?.kind,
+          })),
+          input,
+        ),
+      ),
+    ),
+  searchSimilarAnchors: (input: SearchSimilarAnchorsRequest) =>
+    runMcpSearch(session, {
+      query: input.anchorId,
+      limit: input.topK,
+      offset: 0,
+      refresh_index: false,
+    }).pipe(
+      Effect.map((result) =>
+        normalizeCocoIndexHits(
+          result.results.map((chunk) => ({
+            path: chunk.file_path,
+            startLine: chunk.start_line,
+            endLine: chunk.end_line,
+            language: chunk.language,
+            score: chunk.score,
+            code: chunk.content,
+          })),
+          {
+            repoSnapshotId: input.repoSnapshotId,
+            runId: input.runId,
+            query: input.anchorId,
+            topK: input.topK,
+          },
+        ),
+      ),
+    ),
+  getAnchor: (input: GetAnchorRequest) =>
+    runMcpSearch(session, {
+      query: input.anchorId,
+      limit: 1,
+      offset: 0,
+      refresh_index: false,
+    }).pipe(
+      Effect.map((result) =>
+        normalizeCocoIndexHits(
+          result.results.map((chunk) => ({
+            path: chunk.file_path,
+            startLine: chunk.start_line,
+            endLine: chunk.end_line,
+            language: chunk.language,
+            score: chunk.score,
+            code: chunk.content,
+          })),
+          {
+            repoSnapshotId: input.repoSnapshotId,
+            runId: input.runId,
+            query: input.anchorId,
+            topK: 1,
+          },
+        )[0],
+      ),
+      Effect.flatMap((anchor) =>
+        anchor
+          ? Effect.succeed(anchor)
+          : Effect.fail(
+              new CocoIndexMcpProtocolError({
+                message: "CocoIndex MCP search did not return the requested anchor",
+                method: "tools/call:search",
+                payload: input,
+              }),
+            ),
+      ),
+    ),
+})
+
+const startCocoIndexMcpSession = (
+  config: CocoIndexMcpConfig,
+): Effect.Effect<McpStdioClient, CocoIndexError, Scope.Scope> =>
+  Effect.acquireRelease(
+    startMcpStdioClient(mcpCommandConfig(config, config.repoPath)),
+    (session) => Effect.promise(() => session.close()),
+  )
+
+export const mcpCommandConfig = (
+  config: Omit<CocoIndexMcpConfig, "repoPath">,
+  repoPath: string,
+) => ({
+  command: config.command ?? "ccc",
+  args: config.args ?? ["mcp"],
+  cwd: repoPath,
+  ...(config.env === undefined ? {} : { env: config.env }),
+  ...(config.startupTimeoutMs === undefined
+    ? {}
+    : { startupTimeoutMs: config.startupTimeoutMs }),
+})
+
+const toMcpSearchInput = (
+  input: SearchAnchorsRequest,
+): typeof CocoIndexMcpSearchInput.Type => ({
+  query: input.query,
+  limit: input.topK,
+  offset: 0,
+  refresh_index: true,
+  languages: input.filters?.language ? [input.filters.language] : null,
+  paths: input.filters?.pathPrefix ? [`${input.filters.pathPrefix}*`] : null,
+})
+
+const runMcpSearch = (
+  session: McpStdioClient,
+  input: typeof CocoIndexMcpSearchInput.Type,
+): Effect.Effect<CocoIndexMcpSearchResultType, CocoIndexError> =>
+  Effect.tryPromise({
+    try: async () => {
+      const decodedInput = Schema.decodeUnknownSync(CocoIndexMcpSearchInput)(input)
+      const payload = await session.request("tools/call", {
+        name: "search",
+        arguments: decodedInput,
+      })
+      return decodeMcpToolResult(payload)
+    },
+    catch: (cause) =>
+      cause instanceof CocoIndexCommandError ||
+      cause instanceof CocoIndexDecodeError ||
+      cause instanceof CocoIndexMcpProtocolError
+        ? cause
+        : new CocoIndexMcpProtocolError({
+            message: "CocoIndex MCP search failed",
+            method: "tools/call:search",
+            payload: input,
+            cause,
+          }),
+  })
+
+const decodeMcpToolResult = (payload: unknown): CocoIndexMcpSearchResultType => {
+  const maybeStructured = asRecord(payload).structuredContent
+  if (maybeStructured !== undefined) {
+    return Schema.decodeUnknownSync(CocoIndexMcpSearchResult)(maybeStructured)
+  }
+
+  if (looksLikeSearchResult(payload)) {
+    return Schema.decodeUnknownSync(CocoIndexMcpSearchResult)(payload)
+  }
+
+  const firstText = asRecord(payload).content
+  if (Array.isArray(firstText)) {
+    for (const item of firstText) {
+      const text = asRecord(item).text
+      if (typeof text !== "string") continue
+      try {
+        return Schema.decodeUnknownSync(CocoIndexMcpSearchResult)(JSON.parse(text))
+      } catch {
+        // Keep scanning content blocks; MCP servers may also emit human text.
+      }
+    }
+  }
+
+  throw new CocoIndexDecodeError({
+    message: "CocoIndex MCP response did not contain a typed search result",
+    operation: "tools/call:search",
+    payload,
+  })
+}
+
+const looksLikeSearchResult = (
+  payload: unknown,
+): payload is typeof CocoIndexMcpSearchResult.Type =>
+  typeof asRecord(payload).success === "boolean" &&
+  Array.isArray(asRecord(payload).results)
+
+const asRecord = (input: unknown): Record<string, unknown> =>
+  input !== null && typeof input === "object" ? input as Record<string, unknown> : {}
 
 const runCocoIndexCommand = <A>(
   config: CocoIndexCommandConfig,

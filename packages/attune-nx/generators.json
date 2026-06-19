@@ -11,6 +11,16 @@
       "schema": "./src/generators/joern-template/schema.json",
       "description": "Create a known Joern proof-template shell with binding and evidence schemas."
     },
+    "cocoindex-mcp-tool": {
+      "factory": "./dist/generators/cocoindex-mcp-tool/generator.cjs",
+      "schema": "./src/generators/cocoindex-mcp-tool/schema.json",
+      "description": "Create a CocoIndex MCP tool shell with Effect Schema input and result boundaries."
+    },
+    "k8s-resource": {
+      "factory": "./dist/generators/k8s-resource/generator.cjs",
+      "schema": "./src/generators/k8s-resource/schema.json",
+      "description": "Create an Effect Alchemy Kubernetes resource module shell."
+    },
     "sync-effect-layers": {
       "factory": "./dist/generators/sync-effect-layers/generator",
       "schema": "./src/generators/sync-effect-layers/schema.json",
@@ -20,6 +30,16 @@
       "factory": "./dist/generators/sync-joern-templates/generator",
       "schema": "./src/generators/sync-joern-templates/schema.json",
       "description": "Synchronize Joern template registry and template barrel exports."
+    },
+    "sync-cocoindex-mcp-tools": {
+      "factory": "./dist/generators/sync-cocoindex-mcp-tools/generator.cjs",
+      "schema": "./src/generators/sync-cocoindex-mcp-tools/schema.json",
+      "description": "Synchronize CocoIndex MCP tool registry and tool barrel exports."
+    },
+    "sync-k8s-resources": {
+      "factory": "./dist/generators/sync-k8s-resources/generator.cjs",
+      "schema": "./src/generators/sync-k8s-resources/schema.json",
+      "description": "Synchronize Effect Alchemy Kubernetes resource registry and resource barrel exports."
     }
   }
 }

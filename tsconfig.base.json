@@ -13,7 +13,12 @@
     "skipLibCheck": true,
     "types": ["node"],
     "paths": {
+      "@attune/attuned-discovery": ["./packages/attuned-discovery/src/index.ts"],
       "@attune/cocoindex-effect": ["./packages/cocoindex-effect/src/index.ts"],
+      "@attune/dispatch-core": ["./packages/dispatch-core/src/index.ts"],
+      "@attune/dispatch-feed": ["./packages/dispatch-feed/src/index.ts"],
+      "@attune/dispatch-foldkit": ["./packages/dispatch-foldkit/src/index.ts"],
+      "@attune/dispatch-schema": ["./packages/dispatch-schema/src/index.ts"],
       "@attune/platform-alchemy-k8s": ["./packages/platform-alchemy-k8s/src/index.ts"],
       "joern-effect": ["./packages/joern-effect/src/index.ts"],
       "@attune/joern-effect-properties": ["./packages/joern-effect-properties/src/index.ts"],

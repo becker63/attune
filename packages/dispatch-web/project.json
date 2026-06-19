@@ -1,0 +1,49 @@
+{
+  "name": "dispatch-web",
+  "root": "packages/dispatch-web",
+  "sourceRoot": "packages/dispatch-web/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": "packages/dispatch-web",
+        "command": "node_modules/.bin/vite build"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/dispatch-web",
+        "command": "node_modules/.bin/vite --host 127.0.0.1 --port 5174"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/dispatch-web",
+        "command": "../../node_modules/.bin/tsgo --noEmit"
+      }
+    },
+    "typecheck:classic": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/dispatch-web",
+        "command": "../../node_modules/.bin/tsc --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node_modules/.bin/oxlint --config root-oxlintrc.json packages/dispatch-web --quiet"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/dispatch-web",
+        "command": "../../node_modules/.bin/vitest run"
+      }
+    }
+  }
+}
