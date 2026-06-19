@@ -14,7 +14,12 @@ import type {
 } from "@attune/dispatch-schema"
 
 import type { Message } from "./message.js"
-import { SelectedFilter, SelectedRoute, SelectedThread } from "./message.js"
+import {
+  RequestedPromotion,
+  SelectedFilter,
+  SelectedRoute,
+  SelectedThread,
+} from "./message.js"
 import type { Model } from "./model.js"
 
 type IconName =
@@ -220,24 +225,7 @@ const titleForRoute = (route: DispatchRoute): string => {
   return "Attune Dispatch"
 }
 
-const routeView = (model: Model): ReadonlyArray<Html> => {
-  switch (model.route) {
-    case "discover":
-      return discoverRouteView()
-    case "workbench":
-      return workbenchRouteView()
-    case "findings":
-      return findingsRouteView()
-    case "lineage":
-      return simpleRouteView("Lineage", "Candidate lineage", "Track how examples, selectors, and evidence changed before promotion.")
-    case "exports":
-      return simpleRouteView("Exports", "Export promoted rule packet", "Ship ast-grep rules, prompts, examples, and review evidence as one artifact.")
-    case "settings":
-      return simpleRouteView("Settings", "Workspace settings", "Keep scan paths, model routing, and promotion thresholds explicit.")
-    default:
-      return dispatchRouteView(model)
-  }
-}
+const routeView = (model: Model): ReadonlyArray<Html> => [mdxPageView(model)]
 
 const dispatchRouteView = (model: Model): ReadonlyArray<Html> => {
   const counts = dispatchSummaryCounts(model.items)
@@ -403,21 +391,49 @@ const discoverExampleB = `return (
   />
 )`
 
-const workbenchRouteView = (): ReadonlyArray<Html> => {
+const workbenchRouteView = (model: Model): ReadonlyArray<Html> => {
   const h = html<Message>()
+  const snapshot = model.serverSnapshot
+  const packet = snapshot?.decisionPacket
+  const matches = packet?.anchors.length.toString() ?? "0"
+  const reviewed = snapshot?.reviewQueue.length.toString() ?? "0"
+  const runtime = packet?.evidence[0]
+    ? `${packet.evidence[0].durationMs} ms`
+    : "0 ms"
+  const heading =
+    packet?.hypotheses[0]?.title ??
+    "Styling belongs in UI primitives and recipes"
+  const summary =
+    packet?.hypotheses[0]?.summary ??
+    "Refine the examples and deterministic rule until this candidate is ready to promote."
 
   return [
-    pageHeaderView(
-      "Workbench",
-      "Styling belongs in UI primitives and recipes",
-      "Refine the examples and deterministic rule until this candidate is ready to promote.",
-    ),
+    pageHeaderView("Workbench", heading, summary),
     statStripView([
-      { icon: "scan-text", value: "34", label: "Matches" },
-      { icon: "eye", value: "9", label: "Reviewed" },
+      { icon: "scan-text", value: matches, label: "Anchors" },
+      { icon: "eye", value: reviewed, label: "Reviews" },
       { icon: "x-circle", value: "2", label: "False positives" },
-      { icon: "timer", value: "180 ms", label: "Runtime" },
+      { icon: "timer", value: runtime, label: "Runtime" },
     ]),
+    snapshot
+      ? sectionView(
+          "Atom-derived snapshot",
+          `Version ${snapshot.version} from ${packet?.run.status ?? "unknown"} run`,
+          [
+            h.p([h.Class("section-copy")], [
+              packet?.bestNextAction.label ?? "No action",
+            ]),
+            ...snapshot.scene.nodes.slice(0, 3).map((node) =>
+              h.div([h.Class("list-row")], [
+                h.span([h.Class("list-row-title")], [node.label]),
+                h.span([h.Class("list-row-description")], [
+                  `${node.kind} · ${node.status}`,
+                ]),
+              ]),
+            ),
+          ],
+        )
+      : sectionView("Atom-derived snapshot", "No server snapshot loaded", []),
     sectionView("Examples", undefined, [
       hDiv("example-grid", [
         exampleBlockView({
@@ -814,27 +830,216 @@ const dispatchItemToRow = (item: DispatchItem): ListRowItem => ({
   tone: severityTone(item.severity),
 })
 
+const mdxPageView = (model: Model): Html =>
+  hDiv("mdx-fixture-page", [
+    ...model.page.document.blocks.map((block) => mdxBlockView(block, model)),
+  ])
+
 const foldkitMdxBlocksView = (
   blocks: ReadonlyArray<FoldkitMdxBlock>,
+): Html => hDiv("mdx-fixture-page", blocks.map((block) => mdxBlockView(block)))
+
+const mdxBlockView = (block: FoldkitMdxBlock, model?: Model): Html => {
+  const h = html<Message>()
+
+  switch (block._tag) {
+    case "Heading":
+      return h.h2([h.Class("page-title")], [block.text])
+    case "Paragraph":
+      return h.p([h.Class("section-copy")], [block.text])
+    case "Code":
+      return codePanelView(block.language, codeView(block.code, 1), true)
+    case "Component":
+      return mdxComponentView(block, model)
+  }
+}
+
+const mdxComponentView = (
+  block: Extract<FoldkitMdxBlock, Readonly<{ _tag: "Component" }>>,
+  model?: Model,
 ): Html => {
   const h = html<Message>()
-  const componentNames = blocks
-    .filter((block) => block._tag === "Component")
-    .map((block) => block.name)
+  const prop = (name: string): string | undefined => {
+    const value = block.props.find((item) => item.name === name)?.value
+    return typeof value === "string" || typeof value === "number"
+      ? String(value)
+      : undefined
+  }
+  const arrayProp = (name: string): ReadonlyArray<string> => {
+    const value = block.props.find((item) => item.name === name)?.value
+    return Array.isArray(value) ? value : []
+  }
+  const route = (name: string): DispatchRoute | undefined => {
+    const value = prop(name)
+    return value === "dispatch" ||
+      value === "discover" ||
+      value === "workbench" ||
+      value === "findings" ||
+      value === "lineage" ||
+      value === "exports" ||
+      value === "settings"
+      ? value
+      : undefined
+  }
 
-  return sectionView("FoldKit MDX contract", undefined, [
-    hDiv("card card-padded", [
-      h.h2([h.Class("card-title")], ["Agent-authored page grammar"]),
-      h.p([h.Class("section-copy")], [
-        "This page is backed by constrained MDX component slots decoded into data before FoldKit renders them.",
-      ]),
-      hDiv(
-        "chip-row",
-        componentNames.map((name) => badgeView(name, "primary")),
-      ),
-    ]),
-  ])
+  switch (block.name) {
+    case "PageHeader":
+      return pageHeaderView(
+        prop("eyebrow") ?? model?.page.title ?? "Fixture",
+        prop("title") ?? model?.page.title ?? "Fixture",
+        prop("subtitle") ?? prop("description") ?? model?.page.description ?? "",
+      )
+    case "StatStrip":
+      return statStripView(
+        arrayProp("items").map((item, index) => {
+          const icons: ReadonlyArray<IconName> = [
+            "sparkles",
+            "eye",
+            "timer",
+            "scan-text",
+          ]
+
+          return {
+            icon: icons[index % icons.length] ?? "sparkles",
+            value: item.split(" ")[0] ?? item,
+            label: item.split(" ").slice(1).join(" ") || item,
+          }
+        }),
+      )
+    case "FilterTabs":
+      return filterTabsView(model?.filter ?? "all")
+    case "DispatchRiver":
+      return dispatchRiverView(
+        filterDispatchItems(model?.items ?? [], model?.filter ?? "all"),
+      )
+    case "Button": {
+      const selectedRoute = route("route")
+      return h.button(
+        [
+          h.Class("button button-ghost"),
+          selectedRoute === undefined
+            ? h.Attribute("data-command", prop("command") ?? "noop")
+            : h.OnClick(SelectedRoute({ route: selectedRoute })),
+        ],
+        [prop("label") ?? "Action"],
+      )
+    }
+    case "ActionBar": {
+      const primary = prop("primary")
+      const primaryCommand = prop("command")
+      const secondary = prop("secondary")
+      const secondaryRoute = route("secondaryRoute")
+      return actionBarView([
+        ...(prop("note") === undefined
+          ? []
+          : [h.p([h.Class("section-copy")], [prop("note") ?? ""])]),
+        ...(primary === undefined
+          ? []
+          : [
+              h.button(
+                [
+                  h.Class("button button-primary"),
+                  primaryCommand === "promote" && model?.serverSnapshot
+                    ? h.OnClick(
+                        RequestedPromotion({
+                          hypothesisId:
+                            model.serverSnapshot.decisionPacket.hypotheses[0]
+                              ?.hypothesisId ?? "",
+                        }),
+                      )
+                    : h.Attribute("data-command", primaryCommand ?? "noop"),
+                ],
+                [primary],
+              ),
+            ]),
+        ...(secondary === undefined
+          ? []
+          : [
+              h.button(
+                [
+                  h.Class("button button-ghost"),
+                  secondaryRoute === undefined
+                    ? h.Attribute("data-command", "secondary")
+                    : h.OnClick(SelectedRoute({ route: secondaryRoute })),
+                ],
+                [secondary],
+              ),
+            ]),
+        ...arrayProp("actions").map((action) => buttonView(action, "ghost")),
+      ])
+    }
+    case "OptimizationPacket":
+      return sectionView("Atom-derived snapshot", prop("status"), [
+        h.p([h.Class("section-copy")], [prop("action") ?? "No action"]),
+        h.p([h.Class("mono-row")], [prop("runId") ?? ""]),
+      ])
+    case "PatternDossier":
+      return sectionView(prop("title") ?? "Pattern dossier", undefined, [
+        h.p([h.Class("section-copy")], [prop("evidence") ?? "Evidence pending"]),
+      ])
+    case "ExamplePair":
+      return hDiv("example-grid", [
+        exampleBlockView({
+          code: positiveExample,
+          count: "23",
+          description: "Positive example that matches the intent.",
+          file: "src/components/Card.tsx",
+          icon: "check",
+          startLine: 52,
+          title: prop("positive") ?? "Looks like",
+          tone: "success",
+        }),
+        exampleBlockView({
+          code: negativeExample,
+          count: "9",
+          description: "Negative example that should be flagged.",
+          file: "src/components/UserAvatar.tsx",
+          icon: "x-circle",
+          startLine: 18,
+          title: prop("negative") ?? "Does not look like",
+          tone: "destructive",
+        }),
+      ])
+    case "PatternList":
+      return sectionView("All patterns", undefined, [
+        listView([
+          {
+            icon: "paintbrush",
+            title: "Supporting examples",
+            description: "Possible deterministic shape with known risk.",
+            status: "Ready to inspect",
+            tone: "primary",
+          },
+        ]),
+      ])
+    case "FuzzerFinding":
+      return sectionView(undefined, undefined, [
+        hDiv("finding-file-row", [
+          h.span([h.Class("mono-row")], [
+            prop("path") ?? "src/components/Card.tsx",
+          ]),
+        ]),
+        sectionLabelView("Why it matched", "section-label-spaced"),
+        sectionLabelView("Deterministic selector", "section-label-spaced"),
+        sectionLabelView("Review decision", "section-label-spaced"),
+      ])
+    case "Badge":
+      return badgeView(prop("label") ?? block.name)
+    case "SectionLabel":
+      return sectionLabelView(prop("label") ?? block.name, "section-label-spaced")
+    case "MetaGrid":
+    case "SafetyGate":
+    case "CodePanel":
+      return sectionView(block.name, undefined, [
+        hDiv("chip-row", arrayProp("items").map((item) => badgeView(item))),
+      ])
+    default:
+      return sectionView(block.name, undefined, [
+        h.p([h.Class("section-copy")], [block.textChildren.join(" ")]),
+      ])
+  }
 }
+
 
 const feedLinksView = (): Html =>
   sectionView("Feeds", undefined, [
