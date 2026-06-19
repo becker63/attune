@@ -13,7 +13,9 @@ import {
   fixtureDiscoveryEvents,
   fixtureReportEvents,
   fixtureRun,
+  makeInMemoryMotifReadModel,
   pinEvidence,
+  projectDiscoveryEventsToReadModel,
   replayReportEvents,
   replayDiscoveryEvents,
   reportActionRecorded,
@@ -203,6 +205,27 @@ describe("attuned discovery", () => {
         },
       ]),
     ).toThrow("executable UI text")
+  })
+
+  it("materializes representative events into durable read-model rows", () => {
+    const readModel = makeInMemoryMotifReadModel()
+
+    projectDiscoveryEventsToReadModel(readModel, fixtureDiscoveryEvents)
+
+    expect(readModel.getRun(fixtureRun.runId)).toEqual(fixtureRun)
+    expect(readModel.listAnchorsForRun(fixtureRun.runId)).toHaveLength(2)
+    expect(readModel.listActiveFamilies(fixtureRun.runId)).toHaveLength(1)
+    expect(readModel.listActiveHypotheses(fixtureRun.runId)).toHaveLength(1)
+    expect(
+      readModel.listRecentEvidence({ runId: fixtureRun.runId, limit: 10 }),
+    ).toHaveLength(1)
+    expect(readModel.listReviewQueue(fixtureRun.runId)).toHaveLength(1)
+    expect(readModel.getRunMetrics(fixtureRun.runId)).toMatchObject({
+      anchorsCount: 2,
+      hypothesesCount: 1,
+      evidenceCount: 1,
+      reviewQueueCount: 1,
+    })
   })
 
   it("removes Joern decisions when Joern budget is exhausted", () => {

@@ -1435,3 +1435,16 @@ const promoteHypothesis = (
 
   return { ...hypothesis, status: "promoted" }
 }
+
+export type {
+  AnchorFamily,
+  AnchorSearchProjection,
+  MotifReadModel,
+  ReadModelSnapshot,
+  RunMetrics,
+} from "./memory/read-model.js"
+export { makeInMemoryMotifReadModel } from "./memory/read-model.js"
+export {
+  projectDiscoveryEventToReadModel,
+  projectDiscoveryEventsToReadModel,
+} from "./projection/read-model-projection.js"
