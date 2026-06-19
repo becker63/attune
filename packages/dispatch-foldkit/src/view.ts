@@ -225,7 +225,7 @@ const routeView = (model: Model): ReadonlyArray<Html> => {
     case "discover":
       return discoverRouteView()
     case "workbench":
-      return workbenchRouteView()
+      return workbenchRouteView(model)
     case "findings":
       return findingsRouteView()
     case "lineage":
@@ -403,21 +403,49 @@ const discoverExampleB = `return (
   />
 )`
 
-const workbenchRouteView = (): ReadonlyArray<Html> => {
+const workbenchRouteView = (model: Model): ReadonlyArray<Html> => {
   const h = html<Message>()
+  const snapshot = model.serverSnapshot
+  const packet = snapshot?.decisionPacket
+  const matches = packet?.anchors.length.toString() ?? "0"
+  const reviewed = snapshot?.reviewQueue.length.toString() ?? "0"
+  const runtime = packet?.evidence[0]
+    ? `${packet.evidence[0].durationMs} ms`
+    : "0 ms"
+  const heading =
+    packet?.hypotheses[0]?.title ??
+    "Styling belongs in UI primitives and recipes"
+  const summary =
+    packet?.hypotheses[0]?.summary ??
+    "Refine the examples and deterministic rule until this candidate is ready to promote."
 
   return [
-    pageHeaderView(
-      "Workbench",
-      "Styling belongs in UI primitives and recipes",
-      "Refine the examples and deterministic rule until this candidate is ready to promote.",
-    ),
+    pageHeaderView("Workbench", heading, summary),
     statStripView([
-      { icon: "scan-text", value: "34", label: "Matches" },
-      { icon: "eye", value: "9", label: "Reviewed" },
+      { icon: "scan-text", value: matches, label: "Anchors" },
+      { icon: "eye", value: reviewed, label: "Reviews" },
       { icon: "x-circle", value: "2", label: "False positives" },
-      { icon: "timer", value: "180 ms", label: "Runtime" },
+      { icon: "timer", value: runtime, label: "Runtime" },
     ]),
+    snapshot
+      ? sectionView(
+          "Atom-derived snapshot",
+          `Version ${snapshot.version} from ${packet?.run.status ?? "unknown"} run`,
+          [
+            h.p([h.Class("section-copy")], [
+              packet?.bestNextAction.label ?? "No action",
+            ]),
+            ...snapshot.scene.nodes.slice(0, 3).map((node) =>
+              h.div([h.Class("list-row")], [
+                h.span([h.Class("list-row-title")], [node.label]),
+                h.span([h.Class("list-row-description")], [
+                  `${node.kind} · ${node.status}`,
+                ]),
+              ]),
+            ),
+          ],
+        )
+      : sectionView("Atom-derived snapshot", "No server snapshot loaded", []),
     sectionView("Examples", undefined, [
       hDiv("example-grid", [
         exampleBlockView({

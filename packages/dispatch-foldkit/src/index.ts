@@ -3,3 +3,16 @@ export { Message } from "./message.js"
 export { Model } from "./model.js"
 export { update } from "./update.js"
 export { view } from "./view.js"
+export { mtxViewFixture } from "./fixtures/mtx-view-fixture.js"
+export {
+  appliedWorkbenchAtomFixture,
+  applyWorkbenchFixture,
+  makeDiscoveryAtomWorkspace,
+  workbenchAtomFixture,
+} from "./fixtures/workbench-atom-fixture.js"
+export type {
+  AppliedWorkbenchFixture,
+  FoldkitMtxViewFixture,
+  FoldkitWorkbenchFixture,
+  FoldkitWorkbenchFixtureStep,
+} from "./fixture-types.js"

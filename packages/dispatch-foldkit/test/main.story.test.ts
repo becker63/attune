@@ -7,6 +7,7 @@ import {
   SelectedHypothesis,
   SelectedRoute,
 } from "../src/message.js"
+import { appliedWorkbenchAtomFixture } from "../src/fixtures/workbench-atom-fixture.js"
 import { init } from "../src/main.js"
 import { update } from "../src/update.js"
 
@@ -58,6 +59,27 @@ describe("React-to-FoldKit migration story contract", () => {
       Story.model((model) => {
         expect(model.selectedHypothesisId).toBe("hyp-2")
         expect(model.pendingCommand).toBe("promote:hyp-2")
+      }),
+      Story.Command.expectNone(),
+    )
+  })
+
+  test("typed workbench fixture appends DiscoveryEvent facts before snapshot projection", () => {
+    Story.story(
+      update,
+      Story.with(initialModel()),
+      Story.model((model) => {
+        expect(appliedWorkbenchAtomFixture.appendedEvents).toHaveLength(6)
+        expect(appliedWorkbenchAtomFixture.trace[0]).toContain(
+          "append:DiscoveryRunStarted",
+        )
+        expect(model.serverSnapshot?.version).toBe(
+          appliedWorkbenchAtomFixture.appendedEvents.length +
+            appliedWorkbenchAtomFixture.fixture.reportEvents.length,
+        )
+        expect(model.serverSnapshot?.decisionPacket.hypotheses[0]?.title).toBe(
+          "Server atoms derive meaning; FoldKit steers the lens",
+        )
       }),
       Story.Command.expectNone(),
     )
