@@ -41,12 +41,19 @@
             system
             ;
         };
+        windowsDesktopGuard = import ./nix/containers/windows-desktop-guard.nix { inherit pkgs; };
       in
       {
         packages = {
           inherit joern openSpec;
           joern-effect-property-image = propertyImage;
+          windows-desktop-guard = windowsDesktopGuard;
           default = joern;
+        };
+
+        apps.windows-desktop-guard = {
+          type = "app";
+          program = "${windowsDesktopGuard}/bin/attune-desktop-guard";
         };
 
         devShells.default = pkgs.mkShell {

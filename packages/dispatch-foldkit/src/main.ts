@@ -1,26 +1,32 @@
-import type { Runtime } from "foldkit"
+import type { Runtime } from "foldkit";
 
 import {
   compileFoldkitMdx,
   dispatchFixtureItems,
-  dispatchSemanticWorkbenchSnapshot,
   dispatchWorkbenchMdx,
-} from "@attune/dispatch-core"
+} from "@attune/dispatch-core";
+import { fixtureRun } from "@attune/attuned-discovery";
 
-import type { Message } from "./message.js"
-import { Model } from "./model.js"
+import { StartFixtureRun } from "./fixture-commands.js";
+import { initialFixtureRouteModel } from "./fixture-route.js";
+import type { Message } from "./message.js";
+import { Model } from "./model.js";
 
 export const init: Runtime.ProgramInit<Model, Message> = () => [
   Model.make({
     route: "dispatch",
     filter: "all",
     selectedThreadId: "",
-    selectedRunId: dispatchSemanticWorkbenchSnapshot.runId,
+    selectedRunId: fixtureRun.runId,
     selectedHypothesisId: "",
-    pendingCommand: "",
+    pendingCommand: "start",
     items: [...dispatchFixtureItems],
     page: compileFoldkitMdx(dispatchWorkbenchMdx, "dispatch/index.mdx"),
-    serverSnapshot: dispatchSemanticWorkbenchSnapshot,
+    serverSnapshot: null,
+    fixtureRoute: {
+      ...initialFixtureRouteModel(),
+      status: "loading",
+    },
   }),
-  [],
-]
+  [StartFixtureRun()],
+];

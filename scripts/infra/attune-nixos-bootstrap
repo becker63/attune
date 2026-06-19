@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  scripts/infra/attune-nixos-bootstrap <node> <ssh-target>
+
+Example:
+  scripts/infra/attune-nixos-bootstrap attune-cp-1 root@192.0.2.10
+
+Environment:
+  ATTUNE_HOST_FLAKE  Host flake path. Default: ./nix/hosts
+  ATTUNE_TOKEN_FILE  Runtime K3s token path. Default: /var/lib/attune/secrets/k3s-server-token
+  ATTUNE_TOKEN_SOURCE Local K3s token path to copy in printed commands. Default: <token-source>
+  ATTUNE_SSH_KEY     Optional SSH identity passed to nixos-anywhere.
+
+This script prints commands only. It does not create secrets or install hosts.
+USAGE
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+node="${1:-}"
+target="${2:-}"
+
+if [[ -z "$node" || -z "$target" ]]; then
+  usage >&2
+  exit 64
+fi
+
+case "$node" in
+  attune-cp-1)
+    expected_disk="/dev/disk/by-id/REPLACE_ME_ATTUNE_CP_1"
+    ;;
+  attune-cp-2)
+    expected_disk="/dev/disk/by-id/REPLACE_ME_ATTUNE_CP_2"
+    ;;
+  attune-cp-3)
+    expected_disk="/dev/disk/by-id/REPLACE_ME_ATTUNE_CP_3"
+    ;;
+  *)
+    echo "Unsupported node: $node" >&2
+    exit 64
+    ;;
+esac
+
+flake="${ATTUNE_HOST_FLAKE:-./nix/hosts}"
+token_file="${ATTUNE_TOKEN_FILE:-/var/lib/attune/secrets/k3s-server-token}"
+token_source="${ATTUNE_TOKEN_SOURCE:-<token-source>}"
+post_install_target="attune@${node}"
+ssh_key_arg=()
+ssh_probe_arg=(-o BatchMode=yes -o ConnectTimeout=5)
+scp_key_arg=()
+
+if [[ -n "${ATTUNE_SSH_KEY:-}" ]]; then
+  ssh_key_arg=(--ssh-option "IdentityFile=${ATTUNE_SSH_KEY}")
+  ssh_probe_arg+=(-i "${ATTUNE_SSH_KEY}")
+  scp_key_arg=(-i "${ATTUNE_SSH_KEY}")
+fi
+
+printf '# Probe installer SSH for %s:\n' "$node"
+printf 'ssh'
+for arg in "${ssh_probe_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' %q true\n\n' "$target"
+
+printf '# Probe the destructive install target disk before confirming the wipe gate:\n'
+printf 'ssh'
+for arg in "${ssh_probe_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' %q %q\n\n' "$target" "test -e '$expected_disk' && lsblk -o NAME,SIZE,MODEL,SERIAL,TYPE,MOUNTPOINTS '$expected_disk'"
+
+printf '# Evaluate %s:\n' "$node"
+printf 'nix eval %q#nixosConfigurations.%s.config.networking.hostName\n\n' "$flake" "$node"
+
+printf '# Build %s locally:\n' "$node"
+printf 'nix build %q#nixosConfigurations.%s.config.system.build.toplevel\n\n' "$flake" "$node"
+
+printf '# Build the minimal installer ISO:\n'
+printf 'nix build %q#nixosConfigurations.attune-installer.config.system.build.isoImage\n\n' "$flake"
+
+printf '# Install with nixos-anywhere after hardware/disk config is ready:\n'
+printf 'nixos-anywhere'
+for arg in "${ssh_key_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' --flake %q#%s %q\n' "$flake" "$node" "$target"
+
+printf '\n# Copy the runtime K3s token to %s after install, before K3s is expected to settle:\n' "$post_install_target"
+printf 'ssh'
+for arg in "${ssh_probe_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' %q %q\n' "$post_install_target" "sudo install -d -m 0700 /var/lib/attune/secrets"
+printf 'scp'
+for arg in "${scp_key_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' %q %q\n' "$token_source" "${post_install_target}:/tmp/attune-k3s-server-token"
+printf 'ssh'
+for arg in "${ssh_probe_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' %q %q\n' "$post_install_target" "sudo install -m 0600 /tmp/attune-k3s-server-token '$token_file' && sudo rm -f /tmp/attune-k3s-server-token"
+
+printf '\n# Probe post-install Tailscale and K3s readiness:\n'
+printf 'ssh'
+for arg in "${ssh_probe_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' %q %q\n' "$post_install_target" "systemctl is-active --quiet tailscaled && tailscale status --json >/dev/null"
+printf 'ssh'
+for arg in "${ssh_probe_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' %q %q\n' "$post_install_target" "sudo systemctl is-active --quiet attune-k3s-server"
+printf 'ssh'
+for arg in "${ssh_probe_arg[@]}"; do
+  printf ' %q' "$arg"
+done
+printf ' %q %q\n' "$post_install_target" "sudo k3s kubectl get node '$node' -o wide"

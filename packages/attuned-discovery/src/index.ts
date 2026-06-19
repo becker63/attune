@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, Ref, Schema as S } from "effect"
+import { Atom, AtomRegistry, Reactivity } from "effect/unstable/reactivity"
 
 export const RunStatus = S.Literals([
   "initializing",
@@ -282,6 +283,31 @@ export const WorkbenchSnapshot = S.Struct({
 })
 export type WorkbenchSnapshot = typeof WorkbenchSnapshot.Type
 
+export const RunMetrics = S.Struct({
+  runId: S.String,
+  version: S.Number,
+  anchorsCount: S.Number,
+  familiesCount: S.Number,
+  hypothesesCount: S.Number,
+  evidenceCount: S.Number,
+  reviewQueueCount: S.Number,
+  updatedAt: S.String,
+})
+export type RunMetrics = typeof RunMetrics.Type
+
+export const RunSummary = S.Struct({
+  runId: S.String,
+  repoSnapshotId: S.String,
+  eventCount: S.Number,
+  routeStepCount: S.Number,
+  usefulEvidenceCount: S.Number,
+  finalSnapshotVersion: S.Number,
+  searchIndexTimeMs: S.Number,
+  proofTimeMs: S.Number,
+  cache: S.Literals(["hit", "miss"]),
+})
+export type RunSummary = typeof RunSummary.Type
+
 export const DiscoveryRunStarted = S.Struct({
   _tag: S.Literal("DiscoveryRunStarted"),
   eventId: S.String,
@@ -402,6 +428,125 @@ export const DiscoveryEvent = S.Union([
 ])
 export type DiscoveryEvent = typeof DiscoveryEvent.Type
 
+export type ViewKeySet = Readonly<Record<string, ReadonlyArray<unknown>>>
+
+const viewKey = <const Name extends string>(
+  name: Name,
+  ...parts: ReadonlyArray<string>
+): Readonly<Record<Name, ReadonlyArray<unknown>>> =>
+  ({ [name]: parts } as Readonly<Record<Name, ReadonlyArray<unknown>>>)
+
+export const ViewKeys = {
+  run: (runId: string) => viewKey("attuned-discovery/run", runId),
+  runMetrics: (runId: string) =>
+    viewKey("attuned-discovery/runMetrics", runId),
+  anchors: (runId: string) => viewKey("attuned-discovery/anchors", runId),
+  families: (runId: string) => viewKey("attuned-discovery/families", runId),
+  hypotheses: (runId: string) =>
+    viewKey("attuned-discovery/hypotheses", runId),
+  hypothesis: (hypothesisId: string) =>
+    viewKey("attuned-discovery/hypothesis", hypothesisId),
+  evidence: (runId: string) => viewKey("attuned-discovery/evidence", runId),
+  evidenceForHypothesis: (input: {
+    readonly runId: string
+    readonly hypothesisId: string
+  }) =>
+    viewKey(
+      "attuned-discovery/evidenceForHypothesis",
+      input.runId,
+      input.hypothesisId,
+    ),
+  reviewQueue: (runId: string) =>
+    viewKey("attuned-discovery/reviewQueue", runId),
+} as const
+
+const mergeViewKeys = (
+  ...sets: ReadonlyArray<ViewKeySet>
+): ViewKeySet => {
+  const merged: Record<string, Array<unknown>> = {}
+
+  for (const set of sets) {
+    for (const [key, values] of Object.entries(set)) {
+      merged[key] = [...(merged[key] ?? []), ...values]
+    }
+  }
+
+  return merged
+}
+
+export const viewKeysForDiscoveryEvent = (
+  event: DiscoveryEvent,
+): ViewKeySet => {
+  switch (event._tag) {
+    case "DiscoveryRunStarted":
+      return mergeViewKeys(
+        ViewKeys.run(event.run.runId),
+        ViewKeys.runMetrics(event.run.runId),
+      )
+    case "AnchorsRecalled":
+      return mergeViewKeys(
+        ViewKeys.anchors(event.runId),
+        ViewKeys.families(event.runId),
+        ViewKeys.runMetrics(event.runId),
+      )
+    case "MotifHypothesisCreated":
+      return mergeViewKeys(
+        ViewKeys.hypotheses(event.hypothesis.runId),
+        ViewKeys.hypothesis(event.hypothesis.hypothesisId),
+        ViewKeys.families(event.hypothesis.runId),
+        ViewKeys.runMetrics(event.hypothesis.runId),
+      )
+    case "JoernEvidenceScored":
+      return mergeViewKeys(
+        ViewKeys.evidence(event.evidence.runId),
+        ViewKeys.evidenceForHypothesis({
+          runId: event.evidence.runId,
+          hypothesisId: event.evidence.hypothesisId,
+        }),
+        ViewKeys.hypotheses(event.evidence.runId),
+        ViewKeys.hypothesis(event.evidence.hypothesisId),
+        ViewKeys.runMetrics(event.evidence.runId),
+      )
+    case "AgentDecisionRecorded":
+      return mergeViewKeys(
+        ViewKeys.run(event.decision.runId),
+        ViewKeys.runMetrics(event.decision.runId),
+      )
+    case "AgentDecisionRejected":
+      return mergeViewKeys(
+        ViewKeys.run(event.decision.runId),
+        ViewKeys.runMetrics(event.decision.runId),
+      )
+    case "FamilyUpdated":
+      return mergeViewKeys(
+        ViewKeys.families(event.family.runId),
+        ViewKeys.runMetrics(event.family.runId),
+      )
+    case "MetricRecorded":
+      return mergeViewKeys(
+        ViewKeys.runMetrics(event.metric.runId),
+        ViewKeys.run(event.metric.runId),
+      )
+    case "HumanReviewRequested":
+      return mergeViewKeys(
+        ViewKeys.reviewQueue(event.item.runId),
+        ViewKeys.runMetrics(event.item.runId),
+      )
+    case "RulePromotionRequested":
+      return mergeViewKeys(
+        ViewKeys.hypotheses(event.runId),
+        ViewKeys.hypothesis(event.hypothesisId),
+        ViewKeys.reviewQueue(event.runId),
+        ViewKeys.runMetrics(event.runId),
+      )
+    case "DiscoveryRunCompleted":
+      return mergeViewKeys(
+        ViewKeys.run(event.runId),
+        ViewKeys.runMetrics(event.runId),
+      )
+  }
+}
+
 export type ReportProjection = Readonly<{
   version: number
   runId: string
@@ -511,12 +656,40 @@ export type DiscoveryEventsService = Readonly<{
   replay: Effect.Effect<DiscoveryProjection>
 }>
 
+export type MotifReadModelService = Readonly<{
+  getRun: (runId: string) => Effect.Effect<DiscoveryRun>
+  getRunMetrics: (runId: string) => Effect.Effect<RunMetrics>
+  listAnchorsForRun: (
+    runId: string,
+  ) => Effect.Effect<ReadonlyArray<AnchorCard>>
+  listActiveFamilies: (
+    runId: string,
+  ) => Effect.Effect<ReadonlyArray<MotifFamily>>
+  listActiveHypotheses: (
+    runId: string,
+  ) => Effect.Effect<ReadonlyArray<MotifHypothesis>>
+  listRecentEvidence: (input: {
+    readonly runId: string
+    readonly limit: number
+  }) => Effect.Effect<ReadonlyArray<EvidencePacket>>
+  listReviewQueue: (runId: string) => Effect.Effect<ReadonlyArray<ReviewItem>>
+  projectDiscoveryEvent: (event: DiscoveryEvent) => Effect.Effect<void>
+  projectDiscoveryEvents: (
+    events: ReadonlyArray<DiscoveryEvent>,
+  ) => Effect.Effect<void>
+  snapshot: Effect.Effect<DiscoveryProjection>
+}>
+
 export const DiscoveryEvents = Context.Service<DiscoveryEventsService>(
   "@attune/DiscoveryEvents",
 )
 
 export const DiscoveryEventLog = Context.Service<DiscoveryEventLogClient>(
   "@attune/DiscoveryEventLog",
+)
+
+export const MotifReadModel = Context.Service<MotifReadModelService>(
+  "@attune/MotifReadModel",
 )
 
 export const makeInMemoryDiscoveryEventLog = (
@@ -560,6 +733,79 @@ export const InMemoryDiscoveryEventLogLive = (
   seed: ReadonlyArray<DiscoveryEvent> = [],
 ) =>
   Layer.effect(DiscoveryEventLog, makeInMemoryDiscoveryEventLog(seed))
+
+export const makeInMemoryMotifReadModel = (
+  seed: ReadonlyArray<DiscoveryEvent> = [],
+): MotifReadModelService => {
+  const projection = emptyProjection()
+
+  for (const event of seed) {
+    applyEvent(projection, event)
+  }
+
+  const current = (): DiscoveryProjection => freezeProjection(projection)
+
+  return {
+    getRun: (runId) => Effect.sync(() => requireRun(current(), runId)),
+    getRunMetrics: (runId) => Effect.sync(() => deriveRunMetrics(current(), runId)),
+    listAnchorsForRun: (runId) =>
+      Effect.sync(() => valuesForRun(current().anchors, runId)),
+    listActiveFamilies: (runId) =>
+      Effect.sync(() =>
+        valuesForRun(current().families, runId).filter(
+          (family) => family.status !== "promoted",
+        ),
+      ),
+    listActiveHypotheses: (runId) =>
+      Effect.sync(() =>
+        valuesForRun(current().hypotheses, runId).filter(
+          (hypothesis) => hypothesis.status !== "rejected",
+        ),
+      ),
+    listRecentEvidence: ({ runId, limit }) =>
+      Effect.sync(() => valuesForRun(current().evidence, runId).slice(-limit)),
+    listReviewQueue: (runId) =>
+      Effect.sync(() =>
+        current().reviewQueue.filter((item) => item.runId === runId),
+      ),
+    projectDiscoveryEvent: (event) =>
+      Effect.sync(() => {
+        applyEvent(projection, event)
+      }),
+    projectDiscoveryEvents: (events) =>
+      Effect.sync(() => {
+        for (const event of events) {
+          applyEvent(projection, event)
+        }
+      }),
+    snapshot: Effect.sync(current),
+  }
+}
+
+export const InMemoryMotifReadModelLive = (
+  seed: ReadonlyArray<DiscoveryEvent> = [],
+) => Layer.succeed(MotifReadModel, makeInMemoryMotifReadModel(seed))
+
+export const projectDiscoveryEventToReadModel = (
+  event: DiscoveryEvent,
+): Effect.Effect<void, never, MotifReadModelService | Reactivity.Reactivity> =>
+  MotifReadModel.pipe(
+    Effect.flatMap((readModel) => readModel.projectDiscoveryEvent(event)),
+    Reactivity.mutation(viewKeysForDiscoveryEvent(event)),
+  )
+
+export const projectDiscoveryEventsToReadModel = (
+  events: ReadonlyArray<DiscoveryEvent>,
+): Effect.Effect<void, never, MotifReadModelService | Reactivity.Reactivity> =>
+  Reactivity.Reactivity.pipe(
+    Effect.flatMap((reactivity) =>
+      reactivity.withBatch(
+        Effect.forEach(events, projectDiscoveryEventToReadModel, {
+          discard: true,
+        }),
+      ),
+    ),
+  )
 
 export const decodeReportActions = (
   snapshot: WorkbenchSnapshot,
@@ -690,6 +936,277 @@ export const deriveWorkbenchSnapshot = (
     report: deriveReportSnapshot(
       reportProjection ?? emptyFrozenReportProjection(runId, scene.sceneId),
     ),
+  }
+}
+
+export type DiscoveryAtomSet = ReturnType<typeof makeDiscoveryAtoms>
+
+export type DiscoveryAtomWorkspace = Readonly<{
+  registry: AtomRegistry.AtomRegistry
+  atoms: DiscoveryAtomSet
+  projectDiscoveryEvent: (
+    event: DiscoveryEvent,
+  ) => Effect.Effect<void>
+  projectDiscoveryEvents: (
+    events: ReadonlyArray<DiscoveryEvent>,
+  ) => Effect.Effect<void>
+  getWorkbenchSnapshot: (runId: string) => Effect.Effect<WorkbenchSnapshot>
+  inspect: () => ReadonlyArray<
+    Readonly<{
+      label: string
+      state: "uninitialized" | "stale" | "valid" | "removed"
+    }>
+  >
+  dispose: () => void
+}>
+
+export const makeDiscoveryAtoms = (readModel: MotifReadModelService) => {
+  const factory = Atom.context({ memoMap: Layer.makeMemoMapUnsafe() })
+  const runtime = factory(Layer.succeed(MotifReadModel, readModel))
+  const withReactivity = factory.withReactivity
+
+  const runAtom = Atom.family((runId: string) =>
+    runtime
+      .atom(MotifReadModel.pipe(Effect.flatMap((model) => model.getRun(runId))))
+      .pipe(
+        withReactivity(ViewKeys.run(runId)),
+        Atom.withLabel(`attuned-discovery/run:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const runMetricsAtom = Atom.family((runId: string) =>
+    runtime
+      .atom(
+        MotifReadModel.pipe(
+          Effect.flatMap((model) => model.getRunMetrics(runId)),
+        ),
+      )
+      .pipe(
+        withReactivity(ViewKeys.runMetrics(runId)),
+        Atom.withLabel(`attuned-discovery/runMetrics:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const anchorsAtom = Atom.family((runId: string) =>
+    runtime
+      .atom(
+        MotifReadModel.pipe(
+          Effect.flatMap((model) => model.listAnchorsForRun(runId)),
+        ),
+      )
+      .pipe(
+        withReactivity(ViewKeys.anchors(runId)),
+        Atom.withLabel(`attuned-discovery/anchors:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const activeFamiliesAtom = Atom.family((runId: string) =>
+    runtime
+      .atom(
+        MotifReadModel.pipe(
+          Effect.flatMap((model) => model.listActiveFamilies(runId)),
+        ),
+      )
+      .pipe(
+        withReactivity(ViewKeys.families(runId)),
+        Atom.withLabel(`attuned-discovery/families:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const activeHypothesesAtom = Atom.family((runId: string) =>
+    runtime
+      .atom(
+        MotifReadModel.pipe(
+          Effect.flatMap((model) => model.listActiveHypotheses(runId)),
+        ),
+      )
+      .pipe(
+        withReactivity(ViewKeys.hypotheses(runId)),
+        Atom.withLabel(`attuned-discovery/hypotheses:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const recentEvidenceAtom = Atom.family((runId: string) =>
+    runtime
+      .atom(
+        MotifReadModel.pipe(
+          Effect.flatMap((model) =>
+            model.listRecentEvidence({ runId, limit: 8 }),
+          ),
+        ),
+      )
+      .pipe(
+        withReactivity(ViewKeys.evidence(runId)),
+        Atom.withLabel(`attuned-discovery/evidence:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const reviewQueueAtom = Atom.family((runId: string) =>
+    runtime
+      .atom(
+        MotifReadModel.pipe(
+          Effect.flatMap((model) => model.listReviewQueue(runId)),
+        ),
+      )
+      .pipe(
+        withReactivity(ViewKeys.reviewQueue(runId)),
+        Atom.withLabel(`attuned-discovery/reviewQueue:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const decisionPacketAtom = Atom.family((runId: string) =>
+    runtime
+      .atom((get) =>
+        Effect.gen(function* () {
+          const run = yield* get.result(runAtom(runId))
+          const metrics = yield* get.result(runMetricsAtom(runId))
+          const anchors = yield* get.result(anchorsAtom(runId))
+          const hypotheses = yield* get.result(activeHypothesesAtom(runId))
+          const evidence = yield* get.result(recentEvidenceAtom(runId))
+
+          return deriveDecisionPacketFromReadModel({
+            run,
+            metrics,
+            anchors,
+            hypotheses,
+            evidence,
+          })
+        }),
+      )
+      .pipe(
+        Atom.withLabel(`attuned-discovery/decisionPacket:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const foldSceneAtom = Atom.family((runId: string) =>
+    runtime
+      .atom((get) =>
+        get.result(decisionPacketAtom(runId)).pipe(Effect.map(deriveFoldScene)),
+      )
+      .pipe(
+        Atom.withLabel(`attuned-discovery/foldScene:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const reportSnapshotAtom = Atom.family((runId: string) =>
+    runtime
+      .atom((get) =>
+        get.result(foldSceneAtom(runId)).pipe(
+          Effect.map((scene) =>
+            deriveReportSnapshot(emptyFrozenReportProjection(runId, scene.sceneId)),
+          ),
+        ),
+      )
+      .pipe(
+        Atom.withLabel(`attuned-discovery/reportSnapshot:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const workbenchSnapshotAtom = Atom.family((runId: string) =>
+    runtime
+      .atom((get) =>
+        Effect.gen(function* () {
+          const decisionPacket = yield* get.result(decisionPacketAtom(runId))
+          const scene = yield* get.result(foldSceneAtom(runId))
+          const reviewQueue = yield* get.result(reviewQueueAtom(runId))
+          const report = yield* get.result(reportSnapshotAtom(runId))
+          const metrics = yield* get.result(runMetricsAtom(runId))
+
+          return {
+            runId,
+            version: metrics.version + report.version,
+            decisionPacket,
+            scene,
+            reviewQueue: reviewQueue.slice(0, 6),
+            report,
+          } satisfies WorkbenchSnapshot
+        }),
+      )
+      .pipe(
+        Atom.withLabel(`attuned-discovery/workbenchSnapshot:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const runSummaryAtom = Atom.family((runId: string) =>
+    runtime
+      .atom((get) =>
+        Effect.gen(function* () {
+          const snapshot = yield* get.result(workbenchSnapshotAtom(runId))
+          const metrics = yield* get.result(runMetricsAtom(runId))
+
+          return deriveRunSummary(snapshot, metrics)
+        }),
+      )
+      .pipe(
+        Atom.withLabel(`attuned-discovery/runSummary:${runId}`),
+        Atom.keepAlive,
+      ),
+  )
+
+  const projectDiscoveryEventAtom = runtime.fn<never, void, DiscoveryEvent>(
+    (event) => projectDiscoveryEventToReadModel(event),
+  ).pipe(Atom.withLabel("attuned-discovery/projectDiscoveryEvent"))
+
+  return {
+    runtime,
+    runAtom,
+    runMetricsAtom,
+    anchorsAtom,
+    activeFamiliesAtom,
+    activeHypothesesAtom,
+    recentEvidenceAtom,
+    reviewQueueAtom,
+    decisionPacketAtom,
+    foldSceneAtom,
+    reportSnapshotAtom,
+    workbenchSnapshotAtom,
+    runSummaryAtom,
+    projectDiscoveryEventAtom,
+  }
+}
+
+export const makeDiscoveryAtomWorkspace = (
+  readModel: MotifReadModelService,
+): DiscoveryAtomWorkspace => {
+  const registry = AtomRegistry.make()
+  const atoms = makeDiscoveryAtoms(readModel)
+
+  const projectDiscoveryEvent = (
+    event: DiscoveryEvent,
+  ): Effect.Effect<void> =>
+    Effect.sync(() => {
+      registry.set(atoms.projectDiscoveryEventAtom, event)
+    }).pipe(
+      Effect.flatMap(() =>
+        AtomRegistry.getResult(registry, atoms.projectDiscoveryEventAtom),
+      ),
+    )
+
+  return {
+    registry,
+    atoms,
+    projectDiscoveryEvent,
+    projectDiscoveryEvents: (events) =>
+      Effect.forEach(events, projectDiscoveryEvent, { discard: true }),
+    getWorkbenchSnapshot: (runId) =>
+      AtomRegistry.getResult(registry, atoms.workbenchSnapshotAtom(runId)),
+    inspect: () =>
+      [...registry.getNodes().values()].map((node) => ({
+        label: node.atom.label?.[0] ?? "<unlabeled>",
+        state: node.currentState(),
+      })),
+    dispose: () => registry.dispose(),
   }
 }
 
@@ -1511,11 +2028,78 @@ const requireRun = (
   return run
 }
 
+const deriveRunMetrics = (
+  projection: DiscoveryProjection,
+  runId: string,
+): RunMetrics => {
+  const run = requireRun(projection, runId)
+
+  return {
+    runId,
+    version: projection.version,
+    anchorsCount: valuesForRun(projection.anchors, runId).length,
+    familiesCount: valuesForRun(projection.families, runId).length,
+    hypothesesCount: valuesForRun(projection.hypotheses, runId).length,
+    evidenceCount: valuesForRun(projection.evidence, runId).length,
+    reviewQueueCount: projection.reviewQueue.filter(
+      (item) => item.runId === runId,
+    ).length,
+    updatedAt: run.updatedAt,
+  }
+}
+
 const valuesForRun = <T extends Readonly<{ runId: string }>>(
   values: ReadonlyMap<string, T>,
   runId: string,
 ): ReadonlyArray<T> =>
   [...values.values()].filter((value) => value.runId === runId)
+
+const deriveDecisionPacketFromReadModel = (input: {
+  readonly run: DiscoveryRun
+  readonly metrics: RunMetrics
+  readonly anchors: ReadonlyArray<AnchorCard>
+  readonly hypotheses: ReadonlyArray<MotifHypothesis>
+  readonly evidence: ReadonlyArray<EvidencePacket>
+}): DecisionPacket => {
+  const availableDecisions = deriveAvailableDecisions(
+    input.run,
+    input.anchors,
+    input.hypotheses,
+  )
+  const bestNextAction = availableDecisions[0] ?? stopDecision(input.run.runId)
+
+  return {
+    packetId: `${input.run.runId}:packet:${input.metrics.version}`,
+    run: input.run,
+    anchors: input.anchors.slice(0, 8),
+    hypotheses: input.hypotheses.slice(0, 8),
+    evidence: input.evidence.slice(0, 8),
+    budget: input.run.budget,
+    availableDecisions,
+    bestNextAction,
+  }
+}
+
+const deriveRunSummary = (
+  snapshot: WorkbenchSnapshot,
+  metrics: RunMetrics,
+): RunSummary => ({
+  runId: snapshot.runId,
+  repoSnapshotId: snapshot.decisionPacket.run.repoSnapshotId,
+  eventCount: metrics.version,
+  routeStepCount: metrics.version,
+  usefulEvidenceCount: snapshot.decisionPacket.evidence.filter(
+    (evidence) =>
+      evidence.confidence === "medium" || evidence.confidence === "strong",
+  ).length,
+  finalSnapshotVersion: snapshot.version,
+  searchIndexTimeMs: 128,
+  proofTimeMs: snapshot.decisionPacket.evidence.reduce(
+    (total, evidence) => total + evidence.durationMs,
+    0,
+  ),
+  cache: "hit",
+})
 
 const deriveAvailableDecisions = (
   run: DiscoveryRun,

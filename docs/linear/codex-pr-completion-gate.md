@@ -18,7 +18,7 @@ Use the verifier before moving an issue to Done:
 CODEX_COMPLETION_COMMIT=<sha> \
 GITHUB_PR_URL=https://github.com/becker63/attune/pull/<number> \
 LINEAR_ISSUE_ID=ATT-26 \
-corepack pnpm run codex:check
+node scripts/codex/pnpm.mjs run codex:check
 ```
 
 The verifier fetches the GitHub PR, confirms it targets `main`, checks that the PR head matches the completion commit, and optionally checks that the PR title or body mentions the Linear issue ID.
@@ -28,13 +28,13 @@ The verifier fetches the GitHub PR, confirms it targets `main`, checks that the 
 Run the recovery audit whenever a human reports that Codex cloud threads are missing PRs:
 
 ```bash
-corepack pnpm run codex:audit-prs
+node scripts/codex/pnpm.mjs run codex:audit-prs
 ```
 
 Override the audited issue/commit list with `CODEX_AUDIT_COMMITS`, for example:
 
 ```bash
-CODEX_AUDIT_COMMITS=ATT-14:09e2046,ATT-21:a4863a5 corepack pnpm run codex:audit-prs
+CODEX_AUDIT_COMMITS=ATT-14:09e2046,ATT-21:a4863a5 node scripts/codex/pnpm.mjs run codex:audit-prs
 ```
 
 The audit intentionally reports three states: PR exists and needs Linear linking, commit exists but needs a GitHub PR against `main`, or no visible commit/branch exists and the Codex thread artifact must be recovered or the work re-run. It does not treat local `make_pr` metadata as sufficient.

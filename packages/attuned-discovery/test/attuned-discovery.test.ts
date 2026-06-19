@@ -1,4 +1,5 @@
 import { Effect, Schema } from "effect"
+import { AtomRegistry } from "effect/unstable/reactivity"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -13,17 +14,23 @@ import {
   deriveDecisionPacket,
   deriveWorkbenchSnapshot,
   decodeReportActions,
+  evidenceScored,
+  fixtureEvidence,
   fixtureDiscoveryEvents,
   fixtureReportEvents,
   fixtureRun,
   familyUpdated,
+  makeDiscoveryAtomWorkspace,
+  makeInMemoryMotifReadModel,
   metricRecorded,
   pinEvidence,
   runCompleted,
+  RunSummary,
   replayReportEvents,
   replayDiscoveryEvents,
   reportActionRecorded,
   rulePromotionRequested,
+  viewKeysForDiscoveryEvent,
 } from "../src/index.js"
 
 describe("attuned discovery", () => {
@@ -265,6 +272,71 @@ describe("attuned discovery", () => {
 
     expect(projection.version).toBe(2)
     expect(projection.runs.get(fixtureRun.runId)?.runId).toBe(fixtureRun.runId)
+  })
+
+  it("refreshes atom-derived workbench snapshots after projected evidence events", async () => {
+    const readModel = makeInMemoryMotifReadModel(
+      fixtureDiscoveryEvents.slice(0, 3),
+    )
+    const workspace = makeDiscoveryAtomWorkspace(readModel)
+    const evidence = {
+      ...fixtureEvidence,
+      evidenceId: "evidence-reactivity-refresh",
+      summary: "A new fixture proof result refreshes server-side atoms.",
+      createdAt: "2026-06-19T05:04:00.000Z",
+    }
+    const event = evidenceScored(evidence)
+    const invalidated = viewKeysForDiscoveryEvent(event)
+
+    try {
+      const before = await Effect.runPromise(
+        workspace.getWorkbenchSnapshot(fixtureRun.runId),
+      )
+
+      expect(before.version).toBe(3)
+      expect(before.decisionPacket.evidence).toHaveLength(0)
+      expect(invalidated["attuned-discovery/evidence"]).toContain(
+        fixtureRun.runId,
+      )
+      expect(invalidated["attuned-discovery/runMetrics"]).toContain(
+        fixtureRun.runId,
+      )
+
+      await Effect.runPromise(workspace.projectDiscoveryEvent(event))
+
+      const projection = Effect.runSync(readModel.snapshot)
+      const after = await Effect.runPromise(
+        workspace.getWorkbenchSnapshot(fixtureRun.runId),
+      )
+      const summary = await Effect.runPromise(
+        AtomRegistry.getResult(
+          workspace.registry,
+          workspace.atoms.runSummaryAtom(fixtureRun.runId),
+        ),
+      )
+
+      expect(projection.evidence.get(evidence.evidenceId)).toEqual(evidence)
+      expect(after.version).toBe(before.version + 1)
+      expect(after.decisionPacket.evidence).toContainEqual(evidence)
+      expect(after.scene.nodes).toContainEqual({
+        id: evidence.evidenceId,
+        label: evidence.templateId,
+        kind: "evidence",
+        status: evidence.confidence,
+      })
+      expect(Schema.decodeUnknownSync(RunSummary)(summary)).toMatchObject({
+        runId: fixtureRun.runId,
+        eventCount: after.version,
+        usefulEvidenceCount: 1,
+        finalSnapshotVersion: after.version,
+        cache: "hit",
+      })
+      expect(workspace.inspect().map((node) => node.label)).toContain(
+        `attuned-discovery/workbenchSnapshot:${fixtureRun.runId}`,
+      )
+    } finally {
+      workspace.dispose()
+    }
   })
 
   it("removes Joern decisions when Joern budget is exhausted", () => {

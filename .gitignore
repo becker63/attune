@@ -4,6 +4,7 @@ dist/
 buck-out/
 reports/
 .attune/
+.attune-tools/
 .dagger-output/
 .direnv/
 .pnpm-store/
@@ -19,6 +20,7 @@ telemetry-export.json
 counterexamples/
 result
 result-*
+nix/hosts/local/
 *.log
 *.tsbuildinfo
 **/workspace/

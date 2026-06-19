@@ -5,15 +5,20 @@
   "description": "Unified Attune workspace.",
   "type": "module",
   "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22.12"
+  },
   "scripts": {
-    "nx": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx",
-    "build": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run-many -t build",
-    "check": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run workspace:check",
-    "generate": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect:generate",
-    "check-generated": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect:check-generated",
-    "lint": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run-many -t lint --all",
-    "property": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect-properties:property",
-    "property:joern": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect-properties:property-joern",
+    "nx": "node scripts/codex/pnpm.mjs exec nx",
+    "build": "node scripts/codex/pnpm.mjs exec nx run-many -t build",
+    "check": "node scripts/codex/pnpm.mjs exec nx run workspace:check",
+    "generate": "node scripts/codex/pnpm.mjs exec nx run joern-effect:generate",
+    "check-generated": "node scripts/codex/pnpm.mjs exec nx run joern-effect:check-generated",
+    "lint": "node scripts/codex/pnpm.mjs exec nx run-many -t lint --all",
+    "property": "node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:property",
+    "property:joern": "node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:property-joern",
+    "codex:bootstrap": "node scripts/codex/pnpm.mjs install --frozen-lockfile",
+    "codex:cloud-check": "node scripts/codex/check-cloud-env.mjs",
     "codex:check": "node scripts/codex/verify-pr-completion.mjs",
     "codex:audit-prs": "node scripts/codex/audit-pr-recovery.mjs"
   },

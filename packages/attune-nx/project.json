@@ -15,20 +15,20 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attune-nx",
-        "command": "corepack pnpm exec tsgo --noEmit"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsgo --noEmit"
       }
     },
     "typecheck:classic": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attune-nx",
-        "command": "corepack pnpm exec tsc --noEmit"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsc --noEmit"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "corepack pnpm exec oxlint --config root-oxlintrc.json packages/attune-nx --quiet"
+        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json packages/attune-nx --quiet"
       }
     }
   }
