@@ -7,6 +7,10 @@ import {
   dispatchSummaryCounts,
   dispatchWorkbenchMdx,
   filterDispatchItems,
+  renderDispatchAtomFeed,
+  renderDispatchJsonFeed,
+  renderDispatchRssFeed,
+  selectSafetyFeedItems,
 } from "../src/index.js"
 
 describe("Dispatch core", () => {
@@ -39,5 +43,17 @@ describe("Dispatch core", () => {
     expect(page.document.blocks.some((block) => block._tag === "Component")).toBe(
       true,
     )
+  })
+
+  it("renders Dispatch operator feeds from core projections", () => {
+    const feed = renderDispatchJsonFeed(dispatchFixtureItems)
+
+    expect(JSON.parse(feed)).toMatchObject({
+      title: "Attune Dispatch",
+      feed_url: "/feeds/dispatch.json",
+    })
+    expect(renderDispatchRssFeed(dispatchFixtureItems)).toContain("<rss")
+    expect(renderDispatchAtomFeed(dispatchFixtureItems)).toContain("<feed")
+    expect(selectSafetyFeedItems(dispatchFixtureItems)).toHaveLength(1)
   })
 })

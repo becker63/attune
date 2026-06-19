@@ -1,5 +1,5 @@
 {
-  "name": "dispatch-foldkit",
+  "name": "dispatch-operator-foldkit",
   "root": "packages/dispatch-foldkit",
   "sourceRoot": "packages/dispatch-foldkit/src",
   "targets": {

@@ -1,6 +1,6 @@
 import { Runtime } from "foldkit"
 
-import { Message, Model, init, update, view } from "@attune/dispatch-foldkit"
+import { Message, Model, init, update, view } from "@attune/dispatch-operator-foldkit"
 
 const program = Runtime.makeProgram({
   Model,

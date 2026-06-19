@@ -10,10 +10,7 @@ export default defineConfig({
       "@attune/dispatch-core": fileURLToPath(
         new URL("../dispatch-core/src/index.ts", import.meta.url),
       ),
-      "@attune/dispatch-feed": fileURLToPath(
-        new URL("../dispatch-feed/src/index.ts", import.meta.url),
-      ),
-      "@attune/dispatch-foldkit": fileURLToPath(
+      "@attune/dispatch-operator-foldkit": fileURLToPath(
         new URL("../dispatch-foldkit/src/index.ts", import.meta.url),
       ),
       "@attune/dispatch-schema": fileURLToPath(
