@@ -40,6 +40,31 @@ Nx generators evolve the source-code grammar.
 
 ---
 
+
+## 0.1 Sacred v0 milestone: first closed loop
+
+Before Attune expands platform, UI, generators, Kubernetes, scheduler/admission, worker leases, budgets, worker safety, app-server exposure, or new product surfaces, v0 MUST prove one closed recall-to-proof-to-snapshot loop. The durable checklist lives in `docs/attuned/closed-loop-golden-slice-plan.md`.
+
+The required slice is one search path, one proof path, one memory path, and one refreshed `DecisionPacket`/`WorkbenchSnapshot`:
+
+```txt
+RepoSnapshotCreated
+→ CocoIndex search, or fake-CocoIndex test client
+→ AnchorCards normalized
+→ anchors.retrieved event
+→ DecisionPacket derived
+→ Pi/fixture optimizer chooses run_joern_template
+→ DecisionValidator accepts
+→ joern-effect runs one known template, or fake-Joern test client
+→ EvidencePacket decoded/scored
+→ evidence.scored event
+→ WorkbenchSnapshot version increments
+→ Dispatch/FoldKit renders refreshed state from projections
+→ RunSummary reports duration/cache/evidence yield
+```
+
+Fake CocoIndex and fake Joern clients are valid for this proof as long as they honor the production packet contracts. This milestone explicitly excludes full CocoIndex SDK completion, full Joern DSL/proof-router catalog completion, Kubernetes apply/deploy behavior, scheduler/admission, leases, budgets, worker safety, app-server exposure, and new UI/product surfaces.
+
 ## 1. Core principles
 
 ### 1.1 The model is not the source of truth

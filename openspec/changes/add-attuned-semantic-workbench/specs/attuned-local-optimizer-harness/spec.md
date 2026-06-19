@@ -36,3 +36,20 @@ Attune SHALL include scarce resource budgets in decision packets and optimizer i
 #### Scenario: Joern budget is exhausted
 - **WHEN** no Joern proof budget remains
 - **THEN** the optimizer harness does not select a Joern template run as an available decision.
+
+### Requirement: Closed-loop fake-client golden slice
+Attune SHALL prove the first recall-to-proof-to-snapshot loop before expanding platform, generator, Dispatch feed, Kubernetes, scheduler, lease, budget, worker-safety, app-server, or new UI surfaces.
+
+#### Scenario: Golden slice uses deterministic test clients
+- **WHEN** the golden-slice proof runs without CocoIndex, Joern, Pi, or local LLM processes
+- **THEN** a fake-CocoIndex client returns normalized `AnchorCard` records for one repo snapshot
+- **AND** a fixture optimizer chooses `run_joern_template` from a derived `DecisionPacket`
+- **AND** a fake-Joern client returns one normalized `EvidencePacket` for one known template
+- **AND** semantic events replay to the same `DecisionPacket` twice
+- **AND** the `WorkbenchSnapshot` version changes after evidence is scored.
+
+#### Scenario: Golden slice reports runtime yield
+- **WHEN** the loop completes
+- **THEN** `RunSummary` reports search/index time, proof time, cache hit or miss, and useful evidence count
+- **AND** Dispatch/FoldKit renders refreshed snapshot or feed state from projections
+- **AND** no Kubernetes apply is required.
