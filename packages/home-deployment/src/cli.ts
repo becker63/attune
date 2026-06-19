@@ -2,24 +2,40 @@
 import {
   confirmGateInState,
   createHomeDeploymentPlan,
+  createHomePlatformLifecycleGraph,
   defaultHomeDeploymentConfig,
   defaultStatePath,
   readHomeDeploymentState,
   reconcileHomeDeployment,
   type DeploymentPhase,
+  nextLifecycleAgentStep,
   type PlannedResource,
   writeHomeDeploymentState,
 } from "./index.js"
 
-const planFromState = () =>
-  {
-    const state = readHomeDeploymentState(defaultStatePath())
-    return createHomeDeploymentPlan(defaultHomeDeploymentConfig(), {
+const deploymentState = () => readHomeDeploymentState(defaultStatePath())
+
+const gateStateFromDeploymentState = () => {
+  const state = deploymentState()
+  return {
+    state,
+    gateState: {
       confirmedGateIds: new Set(state.confirmedGateIds),
       completedResourceIds: new Set(state.completedResourceIds),
       failedResourceIds: new Set(state.failedResourceIds),
-    })
+    },
   }
+}
+
+const planFromState = () => {
+  const { gateState } = gateStateFromDeploymentState()
+  return createHomeDeploymentPlan(defaultHomeDeploymentConfig(), gateState)
+}
+
+const lifecycleGraphFromState = () => {
+  const { state, gateState } = gateStateFromDeploymentState()
+  return createHomePlatformLifecycleGraph(defaultHomeDeploymentConfig(), gateState, state.gateEvidence)
+}
 
 const hasFlag = (flag: string): boolean => process.argv.includes(flag)
 
@@ -29,6 +45,16 @@ const optionValue = (name: string): string | undefined => {
     return undefined
   }
   return process.argv[index + 1]
+}
+
+const parseEvidence = (value: string | undefined): unknown => {
+  if (value === undefined) {
+    return { kind: "operator-confirmation" }
+  }
+  if (value.startsWith("@")) {
+    return { kind: "file-ref", path: value.slice(1) }
+  }
+  return JSON.parse(value) as unknown
 }
 
 const printJson = (value: unknown): void => {
@@ -49,34 +75,48 @@ const printResource = (resource: PlannedResource): void => {
   }
 }
 
+const printLifecycleResource = (resource: ReturnType<typeof lifecycleGraphFromState>["resources"][number]): void => {
+  const status = resource.status.toUpperCase().padEnd(10)
+  console.log(`${status} ${resource.kind.padEnd(28)} ${resource.resourceId}`)
+  console.log(`          ${resource.summary}`)
+  if (resource.errorType !== undefined) {
+    console.log(`          blocker: ${resource.errorType}`)
+  }
+  if (resource.evidenceRequirements.length > 0) {
+    console.log(`          evidence: ${resource.evidenceRequirements.map((item) => item.id).join(", ")}`)
+  }
+}
+
 const printPlan = (): void => {
   const plan = planFromState()
+  const lifecycle = lifecycleGraphFromState()
   if (hasFlag("--json")) {
-    printJson({ statePath: defaultStatePath(), plan })
+    printJson({ statePath: defaultStatePath(), plan, lifecycle })
     return
   }
 
-  console.log(`Attune home deployment plan: ${plan.name}`)
+  console.log(`Attune home lifecycle graph: ${lifecycle.name}`)
   console.log(`State: ${defaultStatePath()}`)
   console.log("")
 
-  for (const resource of plan.resources) {
-    printResource(resource)
+  for (const resource of lifecycle.resources) {
+    printLifecycleResource(resource)
   }
 }
 
 const printStatus = (): void => {
   const plan = planFromState()
-  const blocked = plan.resources.filter((resource) => resource.status === "blocked")
-  const planned = plan.resources.filter((resource) => resource.status === "planned")
-  const ready = plan.resources.filter((resource) => resource.status === "ready")
+  const lifecycle = lifecycleGraphFromState()
+  const blocked = lifecycle.resources.filter((resource) => resource.status === "blocked")
+  const planned = lifecycle.resources.filter((resource) => resource.status === "planned")
+  const ready = lifecycle.resources.filter((resource) => resource.status === "ready")
   const byPhase = Object.fromEntries(
-    [...new Set(plan.resources.map((resource) => resource.phase))].map((phase) => [
-      phase,
+    [...new Set(lifecycle.resources.map((resource) => resource.kind))].map((kind) => [
+      kind,
       {
-        planned: plan.resources.filter((resource) => resource.phase === phase && resource.status === "planned").length,
-        ready: plan.resources.filter((resource) => resource.phase === phase && resource.status === "ready").length,
-        blocked: plan.resources.filter((resource) => resource.phase === phase && resource.status === "blocked").length,
+        planned: lifecycle.resources.filter((resource) => resource.kind === kind && resource.status === "planned").length,
+        ready: lifecycle.resources.filter((resource) => resource.kind === kind && resource.status === "ready").length,
+        blocked: lifecycle.resources.filter((resource) => resource.kind === kind && resource.status === "blocked").length,
       },
     ]),
   )
@@ -88,7 +128,8 @@ const printStatus = (): void => {
       ready: ready.length,
       blocked: blocked.length,
       byPhase,
-      next: blocked[0],
+      next: nextLifecycleAgentStep(lifecycle.resources),
+      lifecycle,
     })
     return
   }
@@ -100,7 +141,7 @@ const printStatus = (): void => {
   if (next !== undefined) {
     console.log("")
     console.log("Next gate/action:")
-    printResource(next)
+    printLifecycleResource(next)
   }
 }
 
@@ -112,9 +153,13 @@ const confirmGate = (gateId: string | undefined): void => {
   }
 
   const statePath = defaultStatePath()
-  const state = confirmGateInState(readHomeDeploymentState(statePath), gateId)
+  const evidence = optionValue("--evidence")
+  const state = confirmGateInState(readHomeDeploymentState(statePath), gateId, parseEvidence(evidence))
   writeHomeDeploymentState(statePath, state)
   console.log(`Confirmed gate: ${gateId}`)
+  if (evidence !== undefined) {
+    console.log(`Evidence: ${evidence}`)
+  }
   console.log(`State: ${statePath}`)
 }
 
@@ -131,7 +176,7 @@ const printPhases = (): void => {
 }
 
 const printState = (): void => {
-  const state = readHomeDeploymentState(defaultStatePath())
+  const state = deploymentState()
   if (hasFlag("--json")) {
     printJson({
       statePath: defaultStatePath(),
@@ -186,6 +231,52 @@ const reconcile = async (): Promise<void> => {
   }
 }
 
+const printNextStep = (): void => {
+  const lifecycle = lifecycleGraphFromState()
+  const step = nextLifecycleAgentStep(lifecycle.resources)
+  if (hasFlag("--json")) {
+    printJson({ statePath: defaultStatePath(), step })
+    return
+  }
+  console.log(`Next step: ${step.type}`)
+  switch (step.type) {
+    case "SafeProbe":
+      console.log(`${step.resourceId}: ${step.summary}`)
+      if (step.command !== undefined) {
+        console.log(`command: ${step.command.join(" ")}`)
+      }
+      break
+    case "ManualGate":
+      console.log(`${step.gateId}: ${step.summary}`)
+      for (const requirement of step.requirements) {
+        console.log(`requires ${requirement.schema}: ${requirement.summary}`)
+      }
+      break
+    case "Apply":
+      console.log(`${step.resourceId}: ${step.summary}`)
+      console.log(`operation=${step.operation} approvalRequired=${step.approvalRequired}`)
+      break
+    case "Blocked":
+      for (const blocker of step.blockers) {
+        console.log(`${blocker.resourceId}: ${blocker.reason}`)
+      }
+      break
+  }
+}
+
+const deploy = async (): Promise<void> => {
+  await reconcile()
+}
+
+const destroy = async (): Promise<void> => {
+  if (!hasFlag("--dry-run")) {
+    console.error("destroy currently requires --dry-run while lifecycle delete providers are being migrated")
+    process.exitCode = 1
+    return
+  }
+  printJson({ target: optionValue("--target") ?? "smoke", dryRun: true, selected: [], blocked: [] })
+}
+
 const command = process.argv[2] ?? "plan"
 
 try {
@@ -205,12 +296,21 @@ try {
     case "confirm":
       confirmGate(process.argv[3])
       break
+    case "next-step":
+      printNextStep()
+      break
+    case "deploy":
+      await deploy()
+      break
+    case "destroy":
+      await destroy()
+      break
     case "reconcile":
       await reconcile()
       break
     default:
       console.error(`Unknown command: ${command}`)
-      console.error("Usage: attune-home <plan|status|phases|state|confirm|reconcile>")
+      console.error("Usage: attune-home <plan|status|next-step|phases|state|confirm|deploy|destroy|reconcile>")
       process.exitCode = 1
   }
 } catch (error) {

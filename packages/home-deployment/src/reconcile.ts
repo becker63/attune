@@ -8,6 +8,7 @@ import {
   type HomeDeploymentConfig,
   type PlannedResource,
 } from "./model.js"
+import { executeLiveProviderTransition } from "./providers.js"
 import {
   completeResourceInState,
   failResourceInState,
@@ -78,12 +79,7 @@ export const AttuneDeploymentStep = Resource(
       })
     }
 
-    const result = await this.scope.exec(props.resource.id.replaceAll(":", "-"), command.display)
-    if (result.exitCode !== 0) {
-      throw new Error(
-        `Resource ${props.resource.id} command failed with exit ${result.exitCode}\n${result.stderr || result.stdout}`,
-      )
-    }
+    const result = await executeLiveProviderTransition(props.resource, this.scope)
 
     return this.create({
       provider: "attune:alchemy:home-deployment-step",

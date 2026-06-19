@@ -6,6 +6,8 @@ import {
   AttuneCrds,
   LocalComputeStack,
   createAlchemyK8sProvider,
+  createKubernetesProviderDryRun,
+  createKubernetesProviderTest,
   makeLocalClusterPlan,
   objectKey,
   renderCommand,
@@ -63,6 +65,31 @@ describe("platform-alchemy-k8s", () => {
       plural: "attunediscoveryruns",
       scope: "Namespaced",
     })
+  })
+
+  it("applies Kubernetes object sets in the Test provider without subprocesses", () => {
+    const provider = createKubernetesProviderTest()
+    const graph = WorkerPool.thinkcentreCpu("registry.local/attune-worker:test")
+
+    const first = provider.diff(graph)
+    const applied = provider.apply(graph)
+    const second = provider.diff(graph)
+
+    expect(first.diff.some((entry) => entry.operation === "create")).toBe(true)
+    expect(applied.mutated).toBe(true)
+    expect(applied.evidenceRefs[0]).toContain("kubernetes-object-set:Test:apply")
+    expect(second.diff.every((entry) => entry.operation === "unchanged")).toBe(true)
+  })
+
+  it("keeps Kubernetes DryRun apply non-mutating", () => {
+    const provider = createKubernetesProviderDryRun()
+    const graph = WorkerPool.thinkcentreCpu("registry.local/attune-worker:test")
+
+    const applied = provider.apply(graph)
+    const diff = provider.diff(graph)
+
+    expect(applied.mutated).toBe(false)
+    expect(diff.diff.some((entry) => entry.operation === "create")).toBe(true)
   })
 
   it("models local cluster commands without applying them", () => {

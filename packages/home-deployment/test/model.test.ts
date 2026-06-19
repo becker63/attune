@@ -7,8 +7,14 @@ import { join } from "node:path"
 import {
   confirmGateInState,
   createHomeDeploymentPlan,
+  createHomePlatformLifecycleGraph,
+  createPlatformProvidersDryRun,
+  createPlatformProvidersTest,
   defaultHomeDeploymentConfig,
+  nextAgentStep,
+  nextLifecycleAgentStep,
   reconcileHomeDeployment,
+  toLifecycleResources,
   writeHomeDeploymentState,
 } from "../src/index.js"
 
@@ -118,6 +124,7 @@ describe("home-deployment", () => {
         completedResourceIds: [],
         failedResourceIds: [],
         records: [],
+        gateEvidence: [],
       })
 
       const result = await reconcileHomeDeployment({
@@ -141,10 +148,118 @@ describe("home-deployment", () => {
         completedResourceIds: [],
         failedResourceIds: [],
         records: [],
+        gateEvidence: [],
       },
       "tailscale-auth-ready",
     )
 
     expect(state.confirmedGateIds).toEqual(["tailscale-auth-ready"])
+    expect(state.gateEvidence[0]?.gateId).toBe("tailscale-auth-ready")
+  })
+
+  it("DryRun providers report intended transitions without mutation", () => {
+    const providers = createPlatformProvidersDryRun()
+    const resource = createHomeDeploymentPlan().resources.find((item) => item.id === "installer-image")
+
+    expect(resource).toBeDefined()
+    const result = providers.nix.buildArtifact(resource!)
+
+    expect(result.provider).toBe("NixProvider")
+    expect(result.mode).toBe("DryRun")
+    expect(result.mutated).toBe(false)
+  })
+
+  it("Test providers block irreversible host activation without typed proof", () => {
+    const providers = createPlatformProvidersTest()
+    const config = defaultHomeDeploymentConfig()
+    const resource = createHomeDeploymentPlan(config, {
+      confirmedGateIds: new Set([
+        "tailscale-auth-ready",
+        "k3s-token-ready",
+        "attune-cp-1:usb-booted",
+        "attune-cp-1:disk-wipe-confirmed",
+      ]),
+    }).resources.find((item) => item.id === "attune-cp-1:nixos-anywhere-install")
+
+    expect(resource).toBeDefined()
+    expect(() => providers.hostActivation.activateHost(resource!, undefined)).toThrow("requires typed manual proof")
+    expect(
+      providers.hostActivation.activateHost(resource!, {
+        gateId: "attune-cp-1:disk-wipe-confirmed",
+        evidenceRef: "test://disk-proof",
+      }).mutated,
+    ).toBe(true)
+  })
+
+  it("models every ATT-38 lifecycle resource kind in the platform graph", () => {
+    const graph = createHomePlatformLifecycleGraph()
+    const kinds = new Set(graph.resources.map((resource) => resource.kind))
+
+    expect(kinds).toEqual(
+      new Set([
+        "HostInventory",
+        "ManualGate",
+        "NixBuildArtifact",
+        "InstallerIso",
+        "SshReachability",
+        "HostActivation",
+        "TailscaleHostAccess",
+        "K3sServerNode",
+        "K3sJoinSecret",
+        "KubeconfigAccess",
+        "KubernetesApiReachable",
+        "KubernetesObjectSet",
+        "AttuneCrdSet",
+        "PlatformNamespaceSet",
+        "AttuneWorkerPool",
+        "DesktopWorkerRegistration",
+        "SmokeCheck",
+      ]),
+    )
+    expect(graph.resources.find((resource) => resource.resourceId === "host-inventory-confirmed")).toMatchObject({
+      kind: "ManualGate",
+      status: "blocked",
+      provider: "ManualGateProvider",
+    })
+  })
+
+  it("returns lifecycle-first manual gates before safe probes", () => {
+    const step = nextLifecycleAgentStep(createHomePlatformLifecycleGraph().resources)
+
+    expect(step).toMatchObject({
+      type: "ManualGate",
+      gateId: "host-inventory-confirmed",
+      autoRunnable: false,
+    })
+  })
+
+  it("projects legacy plan resources into typed lifecycle resources", () => {
+    const plan = createHomeDeploymentPlan()
+    const lifecycle = toLifecycleResources(plan.resources)
+
+    expect(lifecycle.find((resource) => resource.resourceId === "installer-image")).toMatchObject({
+      kind: "NixBuildArtifact",
+      operation: "safe",
+      provider: "NixProvider",
+    })
+    expect(lifecycle.find((resource) => resource.resourceId === "attune-cp-1:nixos-anywhere-install")).toMatchObject({
+      kind: "HostActivation",
+      operation: "irreversible",
+      provider: "HostActivationProvider",
+    })
+    expect(lifecycle.find((resource) => resource.resourceId === "attune-platform-kubernetes-graph")).toMatchObject({
+      kind: "KubernetesObjectSet",
+      provider: "KubernetesProvider",
+    })
+  })
+
+  it("returns deterministic next-step output for agents", () => {
+    const step = nextAgentStep(createHomeDeploymentPlan().resources)
+
+    expect(step).toMatchObject({
+      type: "ManualGate",
+      resourceId: "tailscale-auth-ready",
+      autoRunnable: false,
+    })
   })
 })

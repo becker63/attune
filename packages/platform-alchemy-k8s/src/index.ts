@@ -34,6 +34,7 @@ export type {
 } from "./generated/crds.js"
 export * from "./provider/alchemy-k8s-provider.js"
 export * from "./provider/effect-k8s-client.js"
+export * from "./provider/kubernetes-object-set.js"
 export * from "./resources/attune-artifact.js"
 export * from "./resources/attune-budget.js"
 export * from "./resources/attune-discovery-run.js"
