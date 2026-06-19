@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "@attune/home-deployment": ["./src/index.ts"],
+      "@attune/platform-alchemy-k8s": ["../platform-alchemy-k8s/src/index.ts"]
+    }
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}

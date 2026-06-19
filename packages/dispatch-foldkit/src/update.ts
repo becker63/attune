@@ -1,5 +1,6 @@
 import type { Command } from "foldkit"
 
+import { pageForRoute } from "./fixtures/app-mdx-fixture.js"
 import type { Message } from "./message.js"
 import type { Model } from "./model.js"
 
@@ -13,7 +14,7 @@ export const update = (model: Model, message: Message): UpdateReturn => {
   switch (message._tag) {
     case "SelectedRoute": {
       const selected = message as MessageByTag<"SelectedRoute">
-      return [{ ...model, route: selected.route }, []]
+      return [{ ...model, route: selected.route, page: pageForRoute(selected.route) }, []]
     }
     case "SelectedFilter": {
       const selected = message as MessageByTag<"SelectedFilter">

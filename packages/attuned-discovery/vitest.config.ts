@@ -1,16 +1,13 @@
-import { fileURLToPath } from "node:url"
+import { createRequire } from "node:module"
 
 import { defineConfig } from "vitest/config"
+
+const require = createRequire(import.meta.url)
 
 export default defineConfig({
   resolve: {
     alias: {
-      effect: fileURLToPath(
-        new URL(
-          "../../node_modules/.pnpm/effect@4.0.0-beta.78/node_modules/effect/dist/index.js",
-          import.meta.url,
-        ),
-      ),
+      effect: require.resolve("effect"),
     },
   },
   test: {

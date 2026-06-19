@@ -1,6 +1,8 @@
 import { Scene } from "foldkit"
 import { describe, expect, test } from "vitest"
 
+import { mdxViewFixture } from "../src/fixtures/mdx-view-fixture.js"
+import { appliedWorkbenchAtomFixture } from "../src/fixtures/workbench-atom-fixture.js"
 import { init } from "../src/main.js"
 import { SelectedFilter, SelectedRoute } from "../src/message.js"
 import { update } from "../src/update.js"
@@ -26,28 +28,27 @@ describe("React-to-FoldKit migration scene contract", () => {
       Scene.expect(
         Scene.text("Codex app-server startup remains human-reviewed"),
       ).toExist(),
-      Scene.expect(Scene.text("/feeds/dispatch.xml")).toExist(),
-      Scene.expect(Scene.text("/feeds/safety.xml")).toExist(),
+      Scene.expect(Scene.role("button", { name: "Workbench" })).toExist(),
+      Scene.expect(Scene.role("button", { name: "Discover" })).toExist(),
     )
   })
 
-  test("FoldKit MDX primitives render as decoded component slots", () => {
+  test("FoldKit MDX primitives drive the dispatch page fixture", () => {
     const model = initialModel()
     const componentNames = model.page.document.blocks
       .filter((block) => block._tag === "Component")
       .map((block) => block.name)
 
     expect(componentNames).toContain("DispatchRiver")
+    expect(componentNames).toContain("ActionBar")
 
     Scene.scene(
       { update, view },
       Scene.with(model),
-      Scene.expect(Scene.text("FoldKit MDX contract")).toExist(),
-      Scene.expect(Scene.text("Agent-authored page grammar")).toExist(),
-      Scene.expect(Scene.text("PageHeader")).toExist(),
-      Scene.expect(Scene.text("StatStrip")).toExist(),
-      Scene.expect(Scene.text("DispatchRiver")).toExist(),
-      Scene.expect(Scene.text("ActionBar")).toExist(),
+      Scene.expect(Scene.role("heading", { name: "Attune Dispatch" })).toExist(),
+      Scene.expect(Scene.role("button", { name: "Workbench" })).toExist(),
+      Scene.expect(Scene.role("button", { name: "Discover" })).toExist(),
+      Scene.expect(Scene.role("button", { name: "Findings" })).toExist(),
     )
   })
 
@@ -66,15 +67,16 @@ describe("React-to-FoldKit migration scene contract", () => {
       Scene.click(Scene.role("button", { name: "Workbench" })),
       Scene.expect(
         Scene.role("heading", {
-          name: "Styling belongs in UI primitives and recipes",
+          name: "Server atoms derive meaning; FoldKit steers the lens",
         }),
       ).toExist(),
       Scene.expect(Scene.text("Looks like")).toExist(),
       Scene.expect(Scene.text("Does not look like")).toExist(),
-      Scene.expect(Scene.text("Deterministic rule")).toExist(),
-      Scene.expect(Scene.text("Why it matters")).toExist(),
-      Scene.expect(Scene.text("Revise with intent")).toExist(),
-      Scene.expect(Scene.text("Copy YAML")).toExist(),
+      Scene.expect(Scene.text("Atom-derived snapshot")).toExist(),
+      Scene.expect(
+        Scene.text("FoldKit consumes typed WorkbenchSnapshot packets"),
+      ).toExist(),
+      Scene.expect(Scene.role("button", { name: "View findings" })).toExist(),
       Scene.expect(Scene.text("Promote rule")).toExist(),
     )
   })
@@ -96,8 +98,7 @@ describe("React-to-FoldKit migration scene contract", () => {
       ).toExist(),
       Scene.expect(Scene.text("Ready to inspect")).toExist(),
       Scene.expect(Scene.text("Supporting examples")).toExist(),
-      Scene.expect(Scene.text("Possible deterministic shape")).toExist(),
-      Scene.expect(Scene.text("Known risk")).toExist(),
+      Scene.expect(Scene.role("button", { name: "Open workbench" })).toExist(),
       Scene.expect(Scene.text("All patterns")).toExist(),
     )
   })
@@ -144,6 +145,33 @@ describe("React-to-FoldKit migration scene contract", () => {
       Scene.expect(
         Scene.text("FoldKit MDX migration spec drafted"),
       ).toBeAbsent(),
+    )
+  })
+
+  test("MDX view fixture documents the typed event fixture contract", () => {
+    const componentNames = mdxViewFixture.page.document.blocks
+      .filter((block) => block._tag === "Component")
+      .map((block) => block.name)
+
+    expect(componentNames).toEqual(mdxViewFixture.expectedComponents)
+    expect(mdxViewFixture.expectedText).toContain("Atom-derived fixture")
+    expect(appliedWorkbenchAtomFixture.runSummary.appendedEventCount).toBe(6)
+    expect(
+      appliedWorkbenchAtomFixture.trace.every((entry) =>
+        entry.startsWith("append:"),
+      ),
+    ).toBe(true)
+
+    Scene.scene(
+      { update, view },
+      Scene.with(update(initialModel(), SelectedRoute({ route: "workbench" }))[0]),
+      Scene.expect(Scene.text("Atom-derived snapshot")).toExist(),
+      Scene.expect(
+        Scene.text("Server atoms derive meaning; FoldKit steers the lens"),
+      ).toExist(),
+      Scene.expect(
+        Scene.text("FoldKit consumes typed WorkbenchSnapshot packets"),
+      ).toExist(),
     )
   })
 })

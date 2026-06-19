@@ -14,7 +14,9 @@
     "lint": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run-many -t lint --all",
     "property": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect-properties:property",
     "property:joern": "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run joern-effect-properties:property-joern",
+    "codex:bootstrap": "corepack enable && corepack pnpm install --frozen-lockfile",
     "codex:check": "node scripts/codex/verify-pr-completion.mjs",
+    "codex:cloud-check": "./scripts/check-cloud-env.sh",
     "codex:audit-prs": "node scripts/codex/audit-pr-recovery.mjs"
   },
   "devDependencies": {

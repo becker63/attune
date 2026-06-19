@@ -5,23 +5,38 @@ import {
   DiscoveryEvents,
   DiscoveryEventsLive,
   InMemoryDiscoveryEventLogLive,
+  ViewKeys,
   WorkbenchSnapshot,
+  anchorsRecalled,
   appendDiscoveryEvent,
   appendReportSection,
   buildFixtureHarnessEvents,
   buildFixtureWorkbenchSnapshot,
   deriveDecisionPacket,
+  appendProjectedDiscoveryEvent,
+  deriveDecisionPacketFromAtoms,
+  makeDiscoveryAtomWorkspace,
+  makeDiscoveryAtomWorkspaceService,
+  makeInMemoryReactivity,
+  makeReactivityRuntime,
   deriveWorkbenchSnapshot,
   decodeReportActions,
+  fixtureAnchorCards,
   fixtureDiscoveryEvents,
   fixtureReportEvents,
   fixtureRun,
   familyUpdated,
+  makeInMemoryMotifReadModel,
+  makeProjectionReactivityRecorder,
   metricRecorded,
   pinEvidence,
+  evidenceScored,
+  projectDiscoveryEventsToReadModel,
+  readModelFromProjection,
   runCompleted,
   replayReportEvents,
   replayDiscoveryEvents,
+  viewKeysForDiscoveryEvent,
   reportActionRecorded,
   rulePromotionRequested,
 } from "../src/index.js"
@@ -45,6 +60,63 @@ describe("attuned discovery", () => {
         version: "not-a-number",
       }),
     ).toThrow()
+  })
+
+  it("announces run-scoped ViewKeys after representative projection writes", () => {
+    const reactivity = makeProjectionReactivityRecorder()
+    replayDiscoveryEvents(fixtureDiscoveryEvents, reactivity)
+
+    expect(reactivity.mutations).toHaveLength(fixtureDiscoveryEvents.length)
+    expect(reactivity.mutations.every((mutation) => mutation.writeSucceeded)).toBe(
+      true,
+    )
+
+    const anchorMutation = reactivity.mutations.find((mutation) =>
+      mutation.keys.includes(ViewKeys.anchors(fixtureRun.runId)[0]!),
+    )
+    expect(anchorMutation?.keys).toEqual(
+      expect.arrayContaining([
+        ...ViewKeys.anchors(fixtureRun.runId),
+        ...ViewKeys.run(fixtureRun.runId),
+      ]),
+    )
+
+    const evidenceMutation = reactivity.mutations.find((mutation) =>
+      mutation.keys.includes(ViewKeys.evidence(fixtureRun.runId)[0]!),
+    )
+    expect(evidenceMutation?.keys).toEqual(
+      expect.arrayContaining([
+        ...ViewKeys.evidence(fixtureRun.runId),
+        ...ViewKeys.evidenceForHypothesis({
+          runId: fixtureRun.runId,
+          hypothesisId: "hypothesis-server-atoms-foldkit-lens",
+        }),
+        ...ViewKeys.hypotheses(fixtureRun.runId),
+        ...ViewKeys.hypothesis("hypothesis-server-atoms-foldkit-lens"),
+        ...ViewKeys.runMetrics(fixtureRun.runId),
+      ]),
+    )
+  })
+
+  it("does not announce Reactivity keys when a projection write fails", () => {
+    const reactivity = makeProjectionReactivityRecorder()
+    const invalidPromotion = rulePromotionRequested(
+      fixtureRun.runId,
+      "missing-hypothesis",
+      "human",
+    )
+
+    expect(() => replayDiscoveryEvents([invalidPromotion], reactivity)).toThrow(
+      "Missing hypothesis: missing-hypothesis",
+    )
+    expect(viewKeysForDiscoveryEvent(invalidPromotion)).toEqual(
+      expect.arrayContaining([
+        ...ViewKeys.hypotheses(fixtureRun.runId),
+        ...ViewKeys.hypothesis("missing-hypothesis"),
+        ...ViewKeys.reviewQueue(fixtureRun.runId),
+      ]),
+    )
+    expect(reactivity.mutations).toHaveLength(0)
   })
 
   it("replays discovery events deterministically", () => {
@@ -265,6 +337,173 @@ describe("attuned discovery", () => {
 
     expect(projection.version).toBe(2)
     expect(projection.runs.get(fixtureRun.runId)?.runId).toBe(fixtureRun.runId)
+  })
+
+  it("materializes representative events into durable read-model rows", () => {
+    const readModel = makeInMemoryMotifReadModel()
+
+    projectDiscoveryEventsToReadModel(readModel, fixtureDiscoveryEvents)
+
+    expect(readModel.getRun(fixtureRun.runId)).toEqual(fixtureRun)
+    expect(readModel.listAnchorsForRun(fixtureRun.runId)).toHaveLength(2)
+    expect(readModel.listActiveFamilies(fixtureRun.runId)).toHaveLength(1)
+    expect(readModel.listActiveHypotheses(fixtureRun.runId)).toHaveLength(1)
+    expect(
+      readModel.listRecentEvidence({ runId: fixtureRun.runId, limit: 10 }),
+    ).toHaveLength(1)
+    expect(readModel.listReviewQueue(fixtureRun.runId)).toHaveLength(1)
+    expect(readModel.getRunMetrics(fixtureRun.runId)).toMatchObject({
+      anchorsCount: 2,
+      hypothesesCount: 1,
+      evidenceCount: 1,
+      reviewQueueCount: 1,
+    })
+  })
+
+  it("announces run-scoped ViewKeys after successful projection writes", () => {
+    const reactivity = makeReactivityRuntime();
+    const before = replayDiscoveryEvents(fixtureDiscoveryEvents);
+    const scored = evidenceScored({
+      evidenceId: "evidence-reactive-refresh",
+      runId: fixtureRun.runId,
+      hypothesisId: "hypothesis-server-atoms-foldkit-lens",
+      templateId: "reactivity-refresh",
+      confidence: "medium",
+      summary: "Fresh evidence should refresh evidence and hypothesis views.",
+      durationMs: 42,
+      excerpts: ["projection write completed"],
+      createdAt: "2026-06-19T05:02:45.000Z",
+    });
+
+    const { projection, announcedKeys } = appendProjectedDiscoveryEvent(
+      before,
+      scored,
+      reactivity,
+    );
+
+    expect(projection.evidence.has("evidence-reactive-refresh")).toBe(true);
+    expect(reactivity.mutations.at(-1)?.keys).toEqual(announcedKeys);
+    expect(announcedKeys).toEqual(
+      expect.arrayContaining([
+        ...ViewKeys.evidence(fixtureRun.runId),
+        ...ViewKeys.hypotheses(fixtureRun.runId),
+        ...ViewKeys.runMetrics(fixtureRun.runId),
+      ]),
+    );
+  });
+
+  it("refreshes base atoms through ViewKeys and recomputes packet and FoldKit scene", () => {
+    const reactivity = makeReactivityRuntime();
+    let projection = replayDiscoveryEvents(fixtureDiscoveryEvents);
+    const workspace = makeDiscoveryAtomWorkspace({
+      runId: fixtureRun.runId,
+      getProjection: () => projection,
+      reactivity,
+    });
+    const beforePacket = workspace.decisionPacketAtom(1).read();
+    const beforeScene = workspace.foldSceneAtom(1).read();
+
+    projection = appendProjectedDiscoveryEvent(
+      projection,
+      evidenceScored({
+        evidenceId: "evidence-new-scene-node",
+        runId: fixtureRun.runId,
+        hypothesisId: "hypothesis-server-atoms-foldkit-lens",
+        templateId: "scene-refresh",
+        confidence: "strong",
+        summary: "New evidence should appear in the shared atom-derived views.",
+        durationMs: 51,
+        excerpts: ["atom view refreshed"],
+        createdAt: "2026-06-19T05:02:50.000Z",
+      }),
+      reactivity,
+    ).projection;
+
+    const afterPacket = deriveDecisionPacketFromAtoms(workspace, 2);
+    const afterScene = workspace.foldSceneAtom(2).read();
+
+    expect(workspace.evidenceAtom.keys).toEqual(
+      ViewKeys.evidence(fixtureRun.runId),
+    );
+    expect(workspace.decisionPacketAtom(2).keys).toEqual([]);
+    expect(afterPacket.evidence.length).toBe(beforePacket.evidence.length + 1);
+    expect(afterScene.nodes.length).toBe(beforeScene.nodes.length + 1);
+    expect(afterScene.nodes.at(-1)?.id).toBe("evidence-new-scene-node");
+    workspace.dispose();
+  });
+
+  it("keeps one run-scoped atom registry per active run", () => {
+    const projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
+    const workspaceService = makeDiscoveryAtomWorkspaceService({
+      readModel: readModelFromProjection(() => projection),
+      reactivity: makeInMemoryReactivity(),
+    })
+
+    const first = workspaceService.registryFor(fixtureRun.runId)
+    const second = workspaceService.registryFor(fixtureRun.runId)
+
+    expect(first).toBe(second)
+    expect(workspaceService.activeRunIds()).toEqual([fixtureRun.runId])
+
+    workspaceService.disposeRun(fixtureRun.runId)
+
+    expect(workspaceService.activeRunIds()).toEqual([])
+    expect(() => first.getRun()).toThrow("disposed")
+  })
+
+  it("base atoms read projected state through read-model services", () => {
+    const projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
+    const workspace = makeDiscoveryAtomWorkspaceService({
+      readModel: readModelFromProjection(() => projection),
+      reactivity: makeInMemoryReactivity(),
+    }).registryFor(fixtureRun.runId)
+
+    expect(workspace.getRun().runId).toBe(fixtureRun.runId)
+    expect(workspace.getRunMetrics()).toMatchObject({
+      runId: fixtureRun.runId,
+      anchorCount: 2,
+      hypothesisCount: 1,
+      evidenceCount: 1,
+      reviewQueueCount: 1,
+    })
+    expect(workspace.getAnchors()).toHaveLength(2)
+    expect(workspace.getActiveFamilies()).toHaveLength(2)
+    expect(workspace.getActiveHypotheses()).toHaveLength(1)
+    expect(workspace.getRecentEvidence()).toHaveLength(1)
+    expect(workspace.getReviewQueue()).toHaveLength(1)
+  })
+
+  it("refreshes representative base atoms through Reactivity ViewKeys", () => {
+    let projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
+    const reactivity = makeInMemoryReactivity()
+    const workspace = makeDiscoveryAtomWorkspaceService({
+      readModel: readModelFromProjection(() => projection),
+      reactivity,
+    }).registryFor(fixtureRun.runId)
+
+    expect(workspace.getAnchors()).toHaveLength(2)
+
+    projection = replayDiscoveryEvents([
+      ...fixtureDiscoveryEvents,
+      anchorsRecalled(fixtureRun.runId, [
+        {
+          ...fixtureAnchorCards[0]!,
+          anchorId: "anchor-fresh-reactivity",
+          title: "Fresh Reactivity key refreshes server atoms",
+        },
+      ]),
+    ])
+
+    expect(workspace.getAnchors()).toHaveLength(2)
+
+    reactivity.mutation([ViewKeys.anchors(fixtureRun.runId)], () => undefined)
+
+    expect(workspace.getAnchors()).toHaveLength(3)
+    expect(workspace.inspect()).toContainEqual({
+      label: `anchors:${fixtureRun.runId}`,
+      key: ViewKeys.anchors(fixtureRun.runId),
+      version: 1,
+    })
   })
 
   it("removes Joern decisions when Joern budget is exhausted", () => {

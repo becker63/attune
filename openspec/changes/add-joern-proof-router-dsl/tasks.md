@@ -60,8 +60,8 @@
 
 - [ ] 7.1 Export the proof router DSL, serializer, agent surface, and template catalog from `packages/joern-effect` public entrypoints without breaking the existing generated traversal DSL.
 - [ ] 7.2 Add Nx targets or extend existing package targets for proof catalog docs generation, proof serializer property tests, and proof template acceptance tests.
-- [ ] 7.3 Run `corepack pnpm exec nx run joern-effect:typecheck`.
-- [ ] 7.4 Run `corepack pnpm exec nx run joern-effect:test`.
-- [ ] 7.5 Run `corepack pnpm exec nx run joern-effect-properties:test`.
+- [ ] 7.3 Run `node scripts/codex/pnpm.mjs exec nx run joern-effect:typecheck`.
+- [ ] 7.4 Run `node scripts/codex/pnpm.mjs exec nx run joern-effect:test`.
+- [ ] 7.5 Run `node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:test`.
 - [ ] 7.6 Run the relevant Joern-backed workbench/container target with bounded resources and confirm proof template telemetry reaches Axiom.
 - [ ] 7.7 Update docs to show the tRPC-like proof router API, the agent catalog projection, serializer projections, and example query/evidence packets.
