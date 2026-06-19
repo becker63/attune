@@ -1,10 +1,12 @@
 import { Scene } from "foldkit"
 import { describe, expect, test } from "vitest"
 
+import { AdvanceFixtureStep } from "../src/fixture-commands.js"
+import { advanceFixtureStep, startFixtureRoute } from "../src/fixture-route.js"
 import { mdxViewFixture } from "../src/fixtures/mdx-view-fixture.js"
 import { appliedWorkbenchAtomFixture } from "../src/fixtures/workbench-atom-fixture.js"
 import { init } from "../src/main.js"
-import { SelectedFilter, SelectedRoute } from "../src/message.js"
+import { FixtureStepApplied, SelectedFilter, SelectedRoute } from "../src/message.js"
 import { update } from "../src/update.js"
 import { view } from "../src/view.js"
 
@@ -12,6 +14,14 @@ const initialModel = () => {
   const [model] = init()
 
   return model
+}
+
+const startedModel = async () => {
+  const [model] = init()
+  const result = await startFixtureRoute()
+  const [started] = update(model, FixtureStepApplied({ result }))
+
+  return started
 }
 
 describe("React-to-FoldKit migration scene contract", () => {
@@ -145,6 +155,43 @@ describe("React-to-FoldKit migration scene contract", () => {
       Scene.expect(
         Scene.text("FoldKit MDX migration spec drafted"),
       ).toBeAbsent(),
+    )
+  })
+
+  test("existing promotion and findings actions advance the fixture route", async () => {
+    const model = await startedModel()
+    const [workbenchModel] = update(model, SelectedRoute({ route: "workbench" }))
+    const promotionResult = await advanceFixtureStep("request-promotion")
+
+    Scene.scene(
+      { update, view },
+      Scene.with(workbenchModel),
+      Scene.click(Scene.role("button", { name: "Promote rule" })),
+      Scene.Command.expectExact(
+        AdvanceFixtureStep({ step: "request-promotion" }),
+      ),
+      Scene.Command.resolve(
+        AdvanceFixtureStep({ step: "request-promotion" }),
+        FixtureStepApplied({ result: promotionResult }),
+      ),
+      Scene.expect(Scene.text("Atom-derived snapshot")).toExist(),
+      Scene.Command.expectNone(),
+    )
+
+    const [findingsModel] = update(model, SelectedRoute({ route: "findings" }))
+    const proofResult = await advanceFixtureStep("complete-proof")
+
+    Scene.scene(
+      { update, view },
+      Scene.with(findingsModel),
+      Scene.click(Scene.role("button", { name: "True positive" })),
+      Scene.Command.expectExact(AdvanceFixtureStep({ step: "complete-proof" })),
+      Scene.Command.resolve(
+        AdvanceFixtureStep({ step: "complete-proof" }),
+        FixtureStepApplied({ result: proofResult }),
+      ),
+      Scene.expect(Scene.text("Review decision")).toExist(),
+      Scene.Command.expectNone(),
     )
   })
 
