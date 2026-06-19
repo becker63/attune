@@ -1,6 +1,11 @@
 {
   "$schema": "../../node_modules/nx/schemas/generators-schema.json",
   "generators": {
+    "discovery-event": {
+      "factory": "./dist/generators/discovery-event/generator",
+      "schema": "./src/generators/discovery-event/schema.json",
+      "description": "Create a DiscoveryEvents facade event with projection handler, Reactivity ViewKey, and replay fixture skeleton."
+    },
     "effect-service": {
       "factory": "./dist/generators/effect-service/generator",
       "schema": "./src/generators/effect-service/schema.json",
