@@ -25,6 +25,39 @@ FoldKit explains.
 Humans promote.
 ```
 
+## Cloud Codex Environment
+
+Linear-delegated Codex work must run in the Attune ChatGPT/Codex workspace and
+the Attune cloud environment for the GitHub repository `becker63/attune`.
+Do not continue from a home-network or unrelated Codex workspace. If the Linear
+session opens in the wrong workspace/environment, stop and report the mismatch
+in Linear instead of editing files.
+
+The canonical remote is:
+
+```bash
+git remote add attune https://github.com/becker63/attune.git 2>/dev/null || true
+git fetch attune main
+```
+
+Use the cloud image's preinstalled Node.js for normal TypeScript, Nx, and pnpm
+commands. Do not install a second Node runtime just to run workspace scripts.
+
+Install Nix before any Nix-backed validation, Joern runtime work, OpenSpec shell
+work, CocoIndex toolchain work, or Kubernetes generator/toolchain work. If
+`nix` is missing in the cloud environment, install it first:
+
+```bash
+if ! command -v nix >/dev/null 2>&1; then
+  curl -fsSL https://install.determinate.systems/nix | sh -s -- install --no-confirm
+  . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null || true
+fi
+```
+
+Prefer `nix develop -c <command>` for commands that need repo toolchains. Use
+plain `corepack pnpm ...` only for JS-only checks that do not need Nix-provided
+tools.
+
 ## Primary References
 
 Read the relevant source docs before broad changes:
@@ -102,8 +135,22 @@ block this bootstrap queue on them unless the issue explicitly says so.
 
 ## Nx And Generators
 
-Use `NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx ...`
-or the root `package.json` scripts.
+For JS-only work, use this shape or the root `package.json` scripts with the
+cloud image's preinstalled Node.js:
+
+```bash
+NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx ...
+```
+
+For work that depends on repo toolchains, run the same commands through Nix
+after installing Nix:
+
+```bash
+nix develop -c corepack pnpm exec nx show projects
+nix develop -c corepack pnpm exec nx run <project>:typecheck
+nix develop -c corepack pnpm exec nx run <project>:test
+nix develop -c corepack pnpm exec nx run <project>:build
+```
 
 Useful commands:
 
