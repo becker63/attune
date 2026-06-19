@@ -1,0 +1,42 @@
+{
+  "name": "cocoindex-effect",
+  "root": "packages/cocoindex-effect",
+  "sourceRoot": "packages/cocoindex-effect/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": "packages/cocoindex-effect",
+        "command": "../../node_modules/.bin/tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/cocoindex-effect",
+        "command": "../../node_modules/.bin/tsgo --noEmit"
+      }
+    },
+    "typecheck:classic": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/cocoindex-effect",
+        "command": "../../node_modules/.bin/tsc --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node_modules/.bin/oxlint --config root-oxlintrc.json packages/cocoindex-effect --quiet"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/cocoindex-effect",
+        "command": "../../node_modules/.bin/vitest run"
+      }
+    }
+  }
+}
