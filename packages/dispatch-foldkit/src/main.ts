@@ -1,12 +1,9 @@
 import type { Runtime } from "foldkit"
 
-import {
-  compileFoldkitMdx,
-  dispatchFixtureItems,
-  dispatchSemanticWorkbenchSnapshot,
-  dispatchWorkbenchMdx,
-} from "@attune/dispatch-core"
+import { dispatchFixtureItems } from "@attune/dispatch-core"
 
+import { pageForRoute } from "./fixtures/app-mdx-fixture.js"
+import { appliedWorkbenchAtomFixture } from "./fixtures/workbench-atom-fixture.js"
 import type { Message } from "./message.js"
 import { Model } from "./model.js"
 
@@ -15,12 +12,12 @@ export const init: Runtime.ProgramInit<Model, Message> = () => [
     route: "dispatch",
     filter: "all",
     selectedThreadId: "",
-    selectedRunId: dispatchSemanticWorkbenchSnapshot.runId,
+    selectedRunId: appliedWorkbenchAtomFixture.snapshot.runId,
     selectedHypothesisId: "",
     pendingCommand: "",
     items: [...dispatchFixtureItems],
-    page: compileFoldkitMdx(dispatchWorkbenchMdx, "dispatch/index.mdx"),
-    serverSnapshot: dispatchSemanticWorkbenchSnapshot,
+    page: pageForRoute("dispatch"),
+    serverSnapshot: appliedWorkbenchAtomFixture.snapshot,
   }),
   [],
 ]
