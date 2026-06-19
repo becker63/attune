@@ -51,3 +51,11 @@
 - [x] 8.4 Run `nx run dispatch-schema:typecheck`.
 - [x] 8.5 Run `nx run dispatch-core:typecheck`.
 - [x] 8.6 Run `nx run dispatch-foldkit:typecheck`.
+
+## 9. Closed-loop Reconciliation Gate
+
+- [ ] 9.1 Reframe ATT-11 around the first closed-loop recall-to-proof golden slice: one search path, one proof path, one memory path, and one refreshed `DecisionPacket`/`WorkbenchSnapshot`.
+- [ ] 9.2 Reframe ATT-16 around replaying recall evidence through refreshed `DecisionPacket`, `WorkbenchSnapshot`, and Dispatch/FoldKit projection state.
+- [ ] 9.3 Keep ATT-10, ATT-17, and ATT-20 blocked on the closed-loop proof before generator, Dispatch feed, or Kubernetes/platform expansion.
+- [ ] 9.4 Keep ATT-12 constrained to safe durable projection/read-model work and out of production Neon rollout or platform behavior until the loop is proven.
+- [ ] 9.5 Update ATT-6 delegation protocol so Codex-safe issues may proceed without repeated approval prompts when route, scope, validation, exclusions, and human-review gates are explicit.
