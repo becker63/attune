@@ -1,0 +1,119 @@
+{
+  "apiVersion": "apiextensions.k8s.io/v1",
+  "kind": "CustomResourceDefinition",
+  "metadata": {
+    "name": "attunereposandboxes.attune.dev"
+  },
+  "spec": {
+    "group": "attune.dev",
+    "scope": "Namespaced",
+    "names": {
+      "plural": "attunereposandboxes",
+      "singular": "attunereposandbox",
+      "kind": "AttuneRepoSandbox",
+      "shortNames": [
+        "adsandbox"
+      ]
+    },
+    "versions": [
+      {
+        "name": "v1alpha1",
+        "served": true,
+        "storage": true,
+        "schema": {
+          "openAPIV3Schema": {
+            "type": "object",
+            "properties": {
+              "spec": {
+                "type": "object",
+                "properties": {
+                  "runId": {
+                    "type": "string"
+                  },
+                  "repoUrl": {
+                    "type": "string"
+                  },
+                  "trust": {
+                    "type": "string",
+                    "enum": [
+                      "untrusted",
+                      "trusted-local"
+                    ]
+                  },
+                  "workspaceClaim": {
+                    "type": "string"
+                  },
+                  "allowNetworkEgress": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "runId",
+                  "repoUrl",
+                  "trust",
+                  "workspaceClaim"
+                ],
+                "additionalProperties": false
+              },
+              "status": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "type": "string",
+                    "enum": [
+                      "Pending",
+                      "Cloning",
+                      "Ready",
+                      "Failed",
+                      "Expired"
+                    ]
+                  },
+                  "conditions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "True",
+                            "False",
+                            "Unknown"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "observedGeneration": {
+                          "type": "number"
+                        },
+                        "lastTransitionTime": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "workspaceUri": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -20,6 +20,7 @@
         pkgs = import nixpkgs { inherit system; };
         envVars = import ./nix/lib/env-vars.nix;
         joernTools = import ./nix/toolchains/joern.nix { inherit pkgs; };
+        kubernetesTools = import ./nix/toolchains/kubernetes.nix { inherit pkgs; };
         openSpec = import ./nix/toolchains/openspec.nix { inherit pkgs; };
         inherit (joernTools) joern cpgSchemaSources cpgVersion;
         propertyTmpfsSize = "8g";
@@ -53,6 +54,11 @@
             pkgs.jdk21
             pkgs.arion
             pkgs.docker-client
+            kubernetesTools.k3d
+            kubernetesTools.kind
+            kubernetesTools.kubectl
+            kubernetesTools.kubernetes-helm
+            kubernetesTools.kustomize
             pkgs.nodejs_22
             pkgs.pnpm
             pkgs.nixfmt
@@ -77,6 +83,7 @@
             echo "  pnpm install"
             echo "  pnpm exec nx show projects"
             echo "  pnpm exec nx run joern-effect:generate"
+            echo "  pnpm exec nx run platform-alchemy-k8s:generate-crd-types"
           '';
         };
 

@@ -1,0 +1,59 @@
+{
+  "name": "platform-alchemy-k8s",
+  "root": "packages/platform-alchemy-k8s",
+  "sourceRoot": "packages/platform-alchemy-k8s/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": "packages/platform-alchemy-k8s",
+        "command": "../../node_modules/.bin/tsup src/index.ts src/provider/alchemy-resource.ts --format esm,cjs --dts --sourcemap --clean"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/platform-alchemy-k8s",
+        "command": "../../node_modules/.bin/tsgo --noEmit"
+      }
+    },
+    "typecheck:classic": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/platform-alchemy-k8s",
+        "command": "../../node_modules/.bin/tsc --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node_modules/.bin/oxlint --config root-oxlintrc.json packages/platform-alchemy-k8s --quiet"
+      }
+    },
+    "generate-crd-types": {
+      "executor": "nx:run-commands",
+      "inputs": ["{projectRoot}/src/crds/**/*.ts", "{projectRoot}/scripts/generate-crd-types.ts"],
+      "outputs": ["{projectRoot}/src/generated/crds.ts", "{projectRoot}/src/generated/crds"],
+      "options": {
+        "cwd": "packages/platform-alchemy-k8s",
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generate-crd-types.ts"
+      }
+    },
+    "check-generated": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["generate-crd-types"],
+      "options": {
+        "command": "git diff --exit-code -- packages/platform-alchemy-k8s/src/generated/crds.ts packages/platform-alchemy-k8s/src/generated/crds"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["generate-crd-types"],
+      "options": {
+        "cwd": "packages/platform-alchemy-k8s",
+        "command": "../../node_modules/.bin/vitest run"
+      }
+    }
+  }
+}

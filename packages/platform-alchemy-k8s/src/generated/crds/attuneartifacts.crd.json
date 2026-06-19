@@ -1,0 +1,120 @@
+{
+  "apiVersion": "apiextensions.k8s.io/v1",
+  "kind": "CustomResourceDefinition",
+  "metadata": {
+    "name": "attuneartifacts.attune.dev"
+  },
+  "spec": {
+    "group": "attune.dev",
+    "scope": "Namespaced",
+    "names": {
+      "plural": "attuneartifacts",
+      "singular": "attuneartifact",
+      "kind": "AttuneArtifact",
+      "shortNames": [
+        "adartifact"
+      ]
+    },
+    "versions": [
+      {
+        "name": "v1alpha1",
+        "served": true,
+        "storage": true,
+        "schema": {
+          "openAPIV3Schema": {
+            "type": "object",
+            "properties": {
+              "spec": {
+                "type": "object",
+                "properties": {
+                  "runId": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "cpg",
+                      "index",
+                      "evidence-bundle",
+                      "report-snapshot",
+                      "diagnostics"
+                    ]
+                  },
+                  "producerRef": {
+                    "type": "string"
+                  },
+                  "uri": {
+                    "type": "string"
+                  },
+                  "digest": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "runId",
+                  "kind",
+                  "producerRef"
+                ],
+                "additionalProperties": false
+              },
+              "status": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "type": "string",
+                    "enum": [
+                      "Pending",
+                      "Available",
+                      "Expired",
+                      "Failed"
+                    ]
+                  },
+                  "conditions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "True",
+                            "False",
+                            "Unknown"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "observedGeneration": {
+                          "type": "number"
+                        },
+                        "lastTransitionTime": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sizeBytes": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

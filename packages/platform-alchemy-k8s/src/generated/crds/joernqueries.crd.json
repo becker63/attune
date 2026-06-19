@@ -1,0 +1,130 @@
+{
+  "apiVersion": "apiextensions.k8s.io/v1",
+  "kind": "CustomResourceDefinition",
+  "metadata": {
+    "name": "joernqueries.attune.dev"
+  },
+  "spec": {
+    "group": "attune.dev",
+    "scope": "Namespaced",
+    "names": {
+      "plural": "joernqueries",
+      "singular": "joernquery",
+      "kind": "JoernQuery",
+      "shortNames": [
+        "jq"
+      ]
+    },
+    "versions": [
+      {
+        "name": "v1alpha1",
+        "served": true,
+        "storage": true,
+        "schema": {
+          "openAPIV3Schema": {
+            "type": "object",
+            "properties": {
+              "spec": {
+                "type": "object",
+                "properties": {
+                  "runId": {
+                    "type": "string"
+                  },
+                  "repoSandboxRef": {
+                    "type": "string"
+                  },
+                  "queryTemplate": {
+                    "type": "string"
+                  },
+                  "variables": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "timeoutSeconds": {
+                    "type": "number"
+                  },
+                  "resourceClass": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "runId",
+                  "repoSandboxRef",
+                  "queryTemplate",
+                  "resourceClass"
+                ],
+                "additionalProperties": false
+              },
+              "status": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "type": "string",
+                    "enum": [
+                      "Pending",
+                      "Running",
+                      "Succeeded",
+                      "Failed",
+                      "TimedOut"
+                    ]
+                  },
+                  "conditions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "True",
+                            "False",
+                            "Unknown"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "observedGeneration": {
+                          "type": "number"
+                        },
+                        "lastTransitionTime": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "startedAt": {
+                    "type": "string"
+                  },
+                  "completedAt": {
+                    "type": "string"
+                  },
+                  "resultArtifactRef": {
+                    "type": "string"
+                  },
+                  "diagnostics": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

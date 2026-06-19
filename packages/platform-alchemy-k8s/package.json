@@ -1,0 +1,39 @@
+{
+  "name": "@attune/platform-alchemy-k8s",
+  "version": "0.0.0",
+  "description": "Effect and Alchemy-shaped Kubernetes platform resources for Attune local compute.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./alchemy": {
+      "types": "./dist/provider/alchemy-resource.d.ts",
+      "import": "./dist/provider/alchemy-resource.js",
+      "require": "./dist/provider/alchemy-resource.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/provider/alchemy-resource.ts --format esm,cjs --dts --sourcemap --clean",
+    "generate": "tsx scripts/generate-crd-types.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "alchemy": "^0.93.12",
+    "effect": "4.0.0-beta.78",
+    "kubernetes-types": "^1.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "tsup": "^8.5.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  }
+}

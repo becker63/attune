@@ -1,0 +1,152 @@
+{
+  "apiVersion": "apiextensions.k8s.io/v1",
+  "kind": "CustomResourceDefinition",
+  "metadata": {
+    "name": "attunetooljobs.attune.dev"
+  },
+  "spec": {
+    "group": "attune.dev",
+    "scope": "Namespaced",
+    "names": {
+      "plural": "attunetooljobs",
+      "singular": "attunetooljob",
+      "kind": "AttuneToolJob",
+      "shortNames": [
+        "adtool"
+      ]
+    },
+    "versions": [
+      {
+        "name": "v1alpha1",
+        "served": true,
+        "storage": true,
+        "schema": {
+          "openAPIV3Schema": {
+            "type": "object",
+            "properties": {
+              "spec": {
+                "type": "object",
+                "properties": {
+                  "runId": {
+                    "type": "string"
+                  },
+                  "tool": {
+                    "type": "string",
+                    "enum": [
+                      "joern",
+                      "cocoindex",
+                      "ast-grep",
+                      "oxlint",
+                      "local-model"
+                    ]
+                  },
+                  "repoSandboxRef": {
+                    "type": "string"
+                  },
+                  "workerPoolRef": {
+                    "type": "string"
+                  },
+                  "resourceClass": {
+                    "type": "string"
+                  },
+                  "image": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "timeoutSeconds": {
+                    "type": "number"
+                  },
+                  "outputArtifactRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "runId",
+                  "tool",
+                  "repoSandboxRef",
+                  "workerPoolRef",
+                  "resourceClass",
+                  "image",
+                  "command"
+                ],
+                "additionalProperties": false
+              },
+              "status": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "type": "string",
+                    "enum": [
+                      "Pending",
+                      "Running",
+                      "Succeeded",
+                      "Failed",
+                      "TimedOut"
+                    ]
+                  },
+                  "conditions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "True",
+                            "False",
+                            "Unknown"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "observedGeneration": {
+                          "type": "number"
+                        },
+                        "lastTransitionTime": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "startedAt": {
+                    "type": "string"
+                  },
+                  "completedAt": {
+                    "type": "string"
+                  },
+                  "resultArtifactRef": {
+                    "type": "string"
+                  },
+                  "diagnostics": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
