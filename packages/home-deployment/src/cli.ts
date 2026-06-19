@@ -7,6 +7,8 @@ import {
   readHomeDeploymentState,
   reconcileHomeDeployment,
   type DeploymentPhase,
+  nextAgentStep,
+  toLifecycleResources,
   type PlannedResource,
   writeHomeDeploymentState,
 } from "./index.js"
@@ -31,6 +33,16 @@ const optionValue = (name: string): string | undefined => {
   return process.argv[index + 1]
 }
 
+const parseEvidence = (value: string | undefined): unknown => {
+  if (value === undefined) {
+    return { kind: "operator-confirmation" }
+  }
+  if (value.startsWith("@")) {
+    return { kind: "file-ref", path: value.slice(1) }
+  }
+  return JSON.parse(value) as unknown
+}
+
 const printJson = (value: unknown): void => {
   console.log(JSON.stringify(value, null, 2))
 }
@@ -52,7 +64,7 @@ const printResource = (resource: PlannedResource): void => {
 const printPlan = (): void => {
   const plan = planFromState()
   if (hasFlag("--json")) {
-    printJson({ statePath: defaultStatePath(), plan })
+    printJson({ statePath: defaultStatePath(), plan, lifecycle: toLifecycleResources(plan.resources) })
     return
   }
 
@@ -88,7 +100,8 @@ const printStatus = (): void => {
       ready: ready.length,
       blocked: blocked.length,
       byPhase,
-      next: blocked[0],
+      next: nextAgentStep(plan.resources),
+      lifecycle: toLifecycleResources(plan.resources),
     })
     return
   }
@@ -112,9 +125,13 @@ const confirmGate = (gateId: string | undefined): void => {
   }
 
   const statePath = defaultStatePath()
-  const state = confirmGateInState(readHomeDeploymentState(statePath), gateId)
+  const evidence = optionValue("--evidence")
+  const state = confirmGateInState(readHomeDeploymentState(statePath), gateId, parseEvidence(evidence))
   writeHomeDeploymentState(statePath, state)
   console.log(`Confirmed gate: ${gateId}`)
+  if (evidence !== undefined) {
+    console.log(`Evidence: ${evidence}`)
+  }
   console.log(`State: ${statePath}`)
 }
 
@@ -186,6 +203,52 @@ const reconcile = async (): Promise<void> => {
   }
 }
 
+const printNextStep = (): void => {
+  const plan = planFromState()
+  const step = nextAgentStep(plan.resources)
+  if (hasFlag("--json")) {
+    printJson({ statePath: defaultStatePath(), step })
+    return
+  }
+  console.log(`Next step: ${step.type}`)
+  switch (step.type) {
+    case "SafeProbe":
+      console.log(`${step.resourceId}: ${step.summary}`)
+      if (step.command !== undefined) {
+        console.log(`command: ${step.command.join(" ")}`)
+      }
+      break
+    case "ManualGate":
+      console.log(`${step.gateId}: ${step.summary}`)
+      for (const requirement of step.requirements) {
+        console.log(`requires ${requirement.schema}: ${requirement.summary}`)
+      }
+      break
+    case "Apply":
+      console.log(`${step.resourceId}: ${step.summary}`)
+      console.log(`operation=${step.operation} approvalRequired=${step.approvalRequired}`)
+      break
+    case "Blocked":
+      for (const blocker of step.blockers) {
+        console.log(`${blocker.resourceId}: ${blocker.reason}`)
+      }
+      break
+  }
+}
+
+const deploy = async (): Promise<void> => {
+  await reconcile()
+}
+
+const destroy = async (): Promise<void> => {
+  if (!hasFlag("--dry-run")) {
+    console.error("destroy currently requires --dry-run while lifecycle delete providers are being migrated")
+    process.exitCode = 1
+    return
+  }
+  printJson({ target: optionValue("--target") ?? "smoke", dryRun: true, selected: [], blocked: [] })
+}
+
 const command = process.argv[2] ?? "plan"
 
 try {
@@ -205,12 +268,21 @@ try {
     case "confirm":
       confirmGate(process.argv[3])
       break
+    case "next-step":
+      printNextStep()
+      break
+    case "deploy":
+      await deploy()
+      break
+    case "destroy":
+      await destroy()
+      break
     case "reconcile":
       await reconcile()
       break
     default:
       console.error(`Unknown command: ${command}`)
-      console.error("Usage: attune-home <plan|status|phases|state|confirm|reconcile>")
+      console.error("Usage: attune-home <plan|status|next-step|phases|state|confirm|deploy|destroy|reconcile>")
       process.exitCode = 1
   }
 } catch (error) {
