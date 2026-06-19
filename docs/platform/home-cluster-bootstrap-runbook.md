@@ -182,3 +182,28 @@ The generated config points at the `attune-runs/desktop-gpu` worker pool and has
   on a Nix-capable machine before wiping disks.
 - Tailscale auth and K3s token material are intentionally out of repo and must be
   provided locally.
+
+## 8. ATT-38 lifecycle and agent stepper surface
+
+ATT-38 makes Alchemy the lifecycle owner and keeps the CLI thin. Prefer the new
+agent-facing commands when stepping through the deployment with Taylor:
+
+```bash
+node scripts/codex/pnpm.mjs exec nx run home-deployment:next-step
+node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts plan --json
+node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts status --json
+node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts confirm <gate-id> --evidence <json-or-file>
+node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts deploy --target home --dry-run
+node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts destroy --target smoke --dry-run
+```
+
+`next-step --json` returns one deterministic step with one of these variants:
+
+- `SafeProbe`: an agent may run the probe automatically because it is non-mutating.
+- `ManualGate`: Taylor must provide typed evidence before dependent resources proceed.
+- `Apply`: a single transition is ready, but external or irreversible transitions require explicit approval.
+- `Blocked`: nothing can proceed; the output lists blockers and required operator action.
+
+Do not free-run `Apply` steps for host activation, Kubernetes mutation, desktop
+registration, or any irreversible/external operation. Re-run `plan`, `status`, or
+`next-step` after each confirmation or applied transition.

@@ -46,6 +46,27 @@
         "command": "../../node_modules/.bin/tsx src/cli.ts status"
       }
     },
+    "next-step": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/home-deployment",
+        "command": "../../node_modules/.bin/tsx src/cli.ts next-step --json"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/home-deployment",
+        "command": "../../node_modules/.bin/tsx src/cli.ts deploy"
+      }
+    },
+    "destroy:smoke:dry-run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/home-deployment",
+        "command": "../../node_modules/.bin/tsx src/cli.ts destroy --target smoke --dry-run"
+      }
+    },
     "reconcile": {
       "executor": "nx:run-commands",
       "options": {
