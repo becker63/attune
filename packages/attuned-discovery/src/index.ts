@@ -343,6 +343,66 @@ export const DiscoveryEvent = S.Union([
 ])
 export type DiscoveryEvent = typeof DiscoveryEvent.Type
 
+export type ViewKeySet = Readonly<Record<string, ReadonlyArray<string>>>
+
+const singletonViewKey = <const Name extends string>(
+  name: Name,
+  ...parts: ReadonlyArray<string>
+): Readonly<Record<Name, ReadonlyArray<string>>> =>
+  ({ [name]: parts } as Readonly<Record<Name, ReadonlyArray<string>>>)
+
+export const ViewKeys = {
+  run: (runId: string) => singletonViewKey("run", runId),
+  runMetrics: (runId: string) => singletonViewKey("runMetrics", runId),
+  anchors: (runId: string) => singletonViewKey("anchors", runId),
+  families: (runId: string) => singletonViewKey("families", runId),
+  hypotheses: (runId: string) => singletonViewKey("hypotheses", runId),
+  hypothesis: (hypothesisId: string) =>
+    singletonViewKey("hypothesis", hypothesisId),
+  evidence: (runId: string) => singletonViewKey("evidence", runId),
+  evidenceForHypothesis: (input: {
+    readonly runId: string
+    readonly hypothesisId: string
+  }) =>
+    singletonViewKey("evidenceForHypothesis", input.runId, input.hypothesisId),
+  reviewQueue: (runId: string) => singletonViewKey("reviewQueue", runId),
+} as const
+
+export type ReactivityMutationRecord = Readonly<{
+  keys: ViewKeySet
+  writeSucceeded: boolean
+}>
+
+/**
+ * In v0 the projection runtime and active-run atom runtime must receive the
+ * same in-process Reactivity service. Distributed projection workers will need
+ * a future bridge (for example Postgres LISTEN/NOTIFY) to fan out these keys.
+ */
+export type ProjectionReactivity = Readonly<{
+  mutation: <A>(keys: ViewKeySet, write: () => A) => A
+}>
+
+export const makeProjectionReactivityRecorder = (): ProjectionReactivity & {
+  readonly mutations: ReadonlyArray<ReactivityMutationRecord>
+} => {
+  const mutations: Array<ReactivityMutationRecord> = []
+
+  return {
+    get mutations() {
+      return [...mutations]
+    },
+    mutation: (keys, write) => {
+      const result = write()
+      mutations.push({ keys, writeSucceeded: true })
+      return result
+    },
+  }
+}
+
+const noopProjectionReactivity: ProjectionReactivity = {
+  mutation: (_keys, write) => write(),
+}
+
 export type ReportProjection = Readonly<{
   version: number
   runId: string
@@ -439,11 +499,12 @@ export const appendDiscoveryEvent = (
 
 export const replayDiscoveryEvents = (
   events: ReadonlyArray<DiscoveryEvent>,
+  reactivity: ProjectionReactivity = noopProjectionReactivity,
 ): DiscoveryProjection => {
   const projection = emptyProjection()
 
   for (const event of events) {
-    applyEvent(projection, event)
+    projectDiscoveryEvent(projection, event, reactivity)
   }
 
   return freezeProjection(projection)
@@ -934,6 +995,66 @@ const emptyProjection = (): MutableProjection => ({
   reviewQueue: [],
   promotions: [],
 })
+
+export const viewKeysForDiscoveryEvent = (event: DiscoveryEvent): ViewKeySet => {
+  switch (event._tag) {
+    case "DiscoveryRunStarted":
+      return {
+        ...ViewKeys.run(event.run.runId),
+        ...ViewKeys.runMetrics(event.run.runId),
+      }
+    case "AnchorsRecalled":
+      return {
+        ...ViewKeys.anchors(event.runId),
+        ...ViewKeys.families(event.runId),
+        ...ViewKeys.runMetrics(event.runId),
+      }
+    case "MotifHypothesisCreated":
+      return {
+        ...ViewKeys.hypotheses(event.hypothesis.runId),
+        ...ViewKeys.hypothesis(event.hypothesis.hypothesisId),
+        ...ViewKeys.families(event.hypothesis.runId),
+        ...ViewKeys.runMetrics(event.hypothesis.runId),
+      }
+    case "JoernEvidenceScored":
+      return {
+        ...ViewKeys.evidence(event.evidence.runId),
+        ...ViewKeys.evidenceForHypothesis({
+          runId: event.evidence.runId,
+          hypothesisId: event.evidence.hypothesisId,
+        }),
+        ...ViewKeys.hypotheses(event.evidence.runId),
+        ...ViewKeys.hypothesis(event.evidence.hypothesisId),
+        ...ViewKeys.runMetrics(event.evidence.runId),
+      }
+    case "AgentDecisionRecorded":
+      return {
+        ...ViewKeys.run(event.decision.runId),
+        ...ViewKeys.runMetrics(event.decision.runId),
+      }
+    case "HumanReviewRequested":
+      return {
+        ...ViewKeys.reviewQueue(event.item.runId),
+        ...ViewKeys.runMetrics(event.item.runId),
+      }
+    case "RulePromotionRequested":
+      return {
+        ...ViewKeys.hypotheses(event.runId),
+        ...ViewKeys.hypothesis(event.hypothesisId),
+        ...ViewKeys.reviewQueue(event.runId),
+        ...ViewKeys.runMetrics(event.runId),
+      }
+  }
+}
+
+const projectDiscoveryEvent = (
+  projection: MutableProjection,
+  event: DiscoveryEvent,
+  reactivity: ProjectionReactivity,
+): void =>
+  reactivity.mutation(viewKeysForDiscoveryEvent(event), () => {
+    applyEvent(projection, event)
+  })
 
 const applyEvent = (
   projection: MutableProjection,

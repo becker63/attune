@@ -2,6 +2,7 @@ import { Schema } from "effect"
 import { describe, expect, it } from "vitest"
 
 import {
+  ViewKeys,
   WorkbenchSnapshot,
   appendDiscoveryEvent,
   appendReportSection,
@@ -13,9 +14,11 @@ import {
   fixtureDiscoveryEvents,
   fixtureReportEvents,
   fixtureRun,
+  makeProjectionReactivityRecorder,
   pinEvidence,
   replayReportEvents,
   replayDiscoveryEvents,
+  viewKeysForDiscoveryEvent,
   reportActionRecorded,
   rulePromotionRequested,
 } from "../src/index.js"
@@ -39,6 +42,59 @@ describe("attuned discovery", () => {
         version: "not-a-number",
       }),
     ).toThrow()
+  })
+
+  it("announces run-scoped ViewKeys after representative projection writes", () => {
+    const reactivity = makeProjectionReactivityRecorder()
+    replayDiscoveryEvents(fixtureDiscoveryEvents, reactivity)
+
+    expect(reactivity.mutations).toHaveLength(fixtureDiscoveryEvents.length)
+    expect(reactivity.mutations.every((mutation) => mutation.writeSucceeded)).toBe(
+      true,
+    )
+
+    const anchorMutation = reactivity.mutations.find(
+      (mutation) => mutation.keys.anchors?.[0] === fixtureRun.runId,
+    )
+    expect(anchorMutation?.keys).toEqual({
+      ...ViewKeys.anchors(fixtureRun.runId),
+      ...ViewKeys.families(fixtureRun.runId),
+      ...ViewKeys.runMetrics(fixtureRun.runId),
+    })
+
+    const evidenceMutation = reactivity.mutations.find(
+      (mutation) => mutation.keys.evidence?.[0] === fixtureRun.runId,
+    )
+    expect(evidenceMutation?.keys).toEqual({
+      ...ViewKeys.evidence(fixtureRun.runId),
+      ...ViewKeys.evidenceForHypothesis({
+        runId: fixtureRun.runId,
+        hypothesisId: "hypothesis-server-atoms-foldkit-lens",
+      }),
+      ...ViewKeys.hypotheses(fixtureRun.runId),
+      ...ViewKeys.hypothesis("hypothesis-server-atoms-foldkit-lens"),
+      ...ViewKeys.runMetrics(fixtureRun.runId),
+    })
+  })
+
+  it("does not announce Reactivity keys when a projection write fails", () => {
+    const reactivity = makeProjectionReactivityRecorder()
+    const invalidPromotion = rulePromotionRequested(
+      fixtureRun.runId,
+      "missing-hypothesis",
+      "human",
+    )
+
+    expect(() => replayDiscoveryEvents([invalidPromotion], reactivity)).toThrow(
+      "Missing hypothesis: missing-hypothesis",
+    )
+    expect(viewKeysForDiscoveryEvent(invalidPromotion)).toEqual({
+      ...ViewKeys.hypotheses(fixtureRun.runId),
+      ...ViewKeys.hypothesis("missing-hypothesis"),
+      ...ViewKeys.reviewQueue(fixtureRun.runId),
+      ...ViewKeys.runMetrics(fixtureRun.runId),
+    })
+    expect(reactivity.mutations).toHaveLength(0)
   })
 
   it("replays discovery events deterministically", () => {
