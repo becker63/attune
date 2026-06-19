@@ -87,12 +87,16 @@ Linear issue is explicit and low risk.
   DSL surface.
 - `packages/joern-effect-properties`: property, fuzzer, Axiom, and Joern-backed
   validation workbench.
-- `packages/dispatch-schema`: schema-backed Dispatch data model.
-- `packages/dispatch-core`: Dispatch derivations, fixtures, and constrained MDX
-  compilation.
-- `packages/dispatch-feed`: RSS, Atom, and JSON Feed projections.
-- `packages/dispatch-foldkit`: FoldKit model, update, message, and view logic.
-- `packages/dispatch-web`: Vite/FoldKit app boot package.
+- `docs/dispatch-app-boundaries.md`: concise map for product app versus private
+  Dispatch operator app boundaries. Product Workbench/FoldKit UI must not hide
+  Dispatch as an incidental page.
+- `packages/dispatch-schema`: shared Dispatch operator schemas/types.
+- `packages/dispatch-core`: Dispatch operator fixtures, derivations, constrained
+  MDX compilation, and RSS/Atom/JSON feed projections.
+- `packages/dispatch-foldkit`: private Dispatch operator FoldKit model, update,
+  message, and view logic (`dispatch-operator-foldkit`).
+- `packages/dispatch-web`: private Dispatch operator Vite/FoldKit app boot
+  package (`dispatch-operator-web`).
 - `packages/platform-alchemy-k8s`: Kubernetes/Alchemy platform resource package.
   Kubernetes generation should become an `@attune/nx` generator issue before
   repeated hand-written resource shapes expand.

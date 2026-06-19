@@ -1,7 +1,7 @@
 {
-  "name": "@attune/dispatch-web",
+  "name": "@attune/dispatch-operator-web",
   "version": "0.0.0",
-  "description": "Vite boot package for Attune Dispatch.",
+  "description": "Vite boot package for the private Attune Dispatch operator app.",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@attune/dispatch-foldkit": "workspace:*",
+    "@attune/dispatch-operator-foldkit": "workspace:*",
     "@effect/platform-browser": "4.0.0-beta.78",
     "effect": "4.0.0-beta.78",
     "foldkit": "0.106.0"

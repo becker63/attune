@@ -1,5 +1,5 @@
 {
-  "name": "dispatch-web",
+  "name": "dispatch-operator-web",
   "root": "packages/dispatch-web",
   "sourceRoot": "packages/dispatch-web/src",
   "targets": {
