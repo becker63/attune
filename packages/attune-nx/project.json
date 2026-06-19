@@ -30,6 +30,13 @@
       "options": {
         "command": "corepack pnpm exec oxlint --config root-oxlintrc.json packages/attune-nx --quiet"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-nx",
+        "command": "../../node_modules/.bin/vitest run"
+      }
     }
   }
 }

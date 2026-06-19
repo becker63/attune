@@ -1,3 +1,5 @@
+export { default as discoveryEventGenerator } from "./generators/discovery-event/generator.js"
+export type { DiscoveryEventGeneratorSchema } from "./generators/discovery-event/generator.js"
 export { default as effectServiceGenerator } from "./generators/effect-service/generator.js"
 export type { EffectServiceGeneratorSchema } from "./generators/effect-service/generator.js"
 export { default as joernTemplateGenerator } from "./generators/joern-template/generator.js"
