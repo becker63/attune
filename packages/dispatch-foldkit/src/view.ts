@@ -15,8 +15,11 @@ import type {
 
 import type { Message } from "./message.js"
 import {
+  FixtureStartRequested,
+  FixtureStepRequested,
   RequestedPromotion,
   SelectedFilter,
+  SelectedFixtureAnchor,
   SelectedRoute,
   SelectedThread,
 } from "./message.js"
@@ -883,13 +886,50 @@ const mdxComponentView = (
   }
 
   switch (block.name) {
-    case "PageHeader":
+    case "PageHeader": {
+      const snapshot = model?.serverSnapshot
+      const hypothesis = snapshot?.decisionPacket.hypotheses[0]
+      const useWorkbenchSnapshot = model?.route === "workbench" && hypothesis !== undefined
       return pageHeaderView(
         prop("eyebrow") ?? model?.page.title ?? "Fixture",
-        prop("title") ?? model?.page.title ?? "Fixture",
-        prop("subtitle") ?? prop("description") ?? model?.page.description ?? "",
+        useWorkbenchSnapshot
+          ? hypothesis.title
+          : (prop("title") ?? model?.page.title ?? "Fixture"),
+        useWorkbenchSnapshot
+          ? hypothesis.summary
+          : (prop("subtitle") ??
+              prop("description") ??
+              model?.page.description ??
+              ""),
       )
-    case "StatStrip":
+    }
+    case "StatStrip": {
+      if (model?.route === "workbench" && model.serverSnapshot !== null) {
+        const summary = model.fixtureRoute.summary
+        return statStripView([
+          {
+            icon: "sparkles",
+            value: String(summary?.eventCount ?? model.serverSnapshot.version),
+            label: "events",
+          },
+          {
+            icon: "scan-text",
+            value: String(model.serverSnapshot.version),
+            label: "snapshot version",
+          },
+          {
+            icon: "timer",
+            value: `${model.serverSnapshot.decisionPacket.evidence[0]?.durationMs ?? 0}`,
+            label: "ms",
+          },
+          {
+            icon: "eye",
+            value: String(model.serverSnapshot.reviewQueue.length),
+            label: "reviews",
+          },
+        ])
+      }
+
       return statStripView(
         arrayProp("items").map((item, index) => {
           const icons: ReadonlyArray<IconName> = [
@@ -906,6 +946,7 @@ const mdxComponentView = (
           }
         }),
       )
+    }
     case "FilterTabs":
       return filterTabsView(model?.filter ?? "all")
     case "DispatchRiver":
@@ -918,7 +959,7 @@ const mdxComponentView = (
         [
           h.Class("button button-ghost"),
           selectedRoute === undefined
-            ? h.Attribute("data-command", prop("command") ?? "noop")
+            ? commandAttributeOrClick(prop("command"), model)
             : h.OnClick(SelectedRoute({ route: selectedRoute })),
         ],
         [prop("label") ?? "Action"],
@@ -947,7 +988,11 @@ const mdxComponentView = (
                               ?.hypothesisId ?? "",
                         }),
                       )
-                    : h.Attribute("data-command", primaryCommand ?? "noop"),
+                    : primary === "True positive"
+                      ? h.OnClick(
+                          FixtureStepRequested({ step: "complete-proof" }),
+                        )
+                      : commandAttributeOrClick(primaryCommand, model),
                 ],
                 [primary],
               ),
@@ -968,15 +1013,31 @@ const mdxComponentView = (
         ...arrayProp("actions").map((action) => buttonView(action, "ghost")),
       ])
     }
-    case "OptimizationPacket":
-      return sectionView("Atom-derived snapshot", prop("status"), [
-        h.p([h.Class("section-copy")], [prop("action") ?? "No action"]),
-        h.p([h.Class("mono-row")], [prop("runId") ?? ""]),
+    case "OptimizationPacket": {
+      const snapshot = model?.serverSnapshot
+      return sectionView(
+        "Atom-derived snapshot",
+        snapshot?.decisionPacket.run.status ?? prop("status"),
+        [
+          h.p([h.Class("section-copy")], [
+            snapshot?.decisionPacket.bestNextAction.label ??
+              prop("action") ??
+              "No action",
+          ]),
+          h.p([h.Class("mono-row")], [snapshot?.runId ?? prop("runId") ?? ""]),
+        ],
+      )
+    }
+    case "PatternDossier": {
+      const snapshot = model?.serverSnapshot
+      const anchor = snapshot?.decisionPacket.anchors[0]
+      const evidence = snapshot?.decisionPacket.evidence[0]
+      return sectionView(anchor?.title ?? prop("title") ?? "Pattern dossier", undefined, [
+        h.p([h.Class("section-copy")], [
+          evidence?.summary ?? prop("evidence") ?? "Evidence pending",
+        ]),
       ])
-    case "PatternDossier":
-      return sectionView(prop("title") ?? "Pattern dossier", undefined, [
-        h.p([h.Class("section-copy")], [prop("evidence") ?? "Evidence pending"]),
-      ])
+    }
     case "ExamplePair":
       return hDiv("example-grid", [
         exampleBlockView({
@@ -1040,6 +1101,27 @@ const mdxComponentView = (
   }
 }
 
+
+const commandAttributeOrClick = (command: string | undefined, model?: Model) => {
+  const h = html<Message>()
+
+  if (command === "fixture-start") {
+    return h.OnClick(FixtureStartRequested())
+  }
+  if (command === "complete-proof") {
+    return h.OnClick(FixtureStepRequested({ step: "complete-proof" }))
+  }
+  if (command === "select-anchor" && model?.serverSnapshot != null) {
+    return h.OnClick(
+      SelectedFixtureAnchor({
+        anchorId:
+          model.serverSnapshot.decisionPacket.anchors[0]?.anchorId ?? "",
+      }),
+    )
+  }
+
+  return h.Attribute("data-command", command ?? "noop")
+}
 
 const feedLinksView = (): Html =>
   sectionView("Feeds", undefined, [

@@ -1,9 +1,7 @@
-import { Effect, Schema as S } from "effect";
-import { AtomRegistry } from "effect/unstable/reactivity";
+import { Schema as S } from "effect";
 
 import {
   type DiscoveryEvent,
-  type ViewKeySet,
   WorkbenchSnapshot,
   RunSummary,
   anchorsRecalled,
@@ -17,11 +15,12 @@ import {
   fixtureRun,
   humanReviewRequested,
   hypothesisCreated,
+  appendProjectedDiscoveryEvent,
   makeDiscoveryAtomWorkspace,
-  makeInMemoryMotifReadModel,
+  makeReactivityRuntime,
+  replayDiscoveryEvents,
   rulePromotionRequested,
   runStarted,
-  viewKeysForDiscoveryEvent,
 } from "@attune/attuned-discovery";
 
 export const FixtureScenarioId = S.Literal("foldkit-fixture-closed-loop");
@@ -102,7 +101,9 @@ export const FixtureRouteModel = S.Struct({
 export type FixtureRouteModel = typeof FixtureRouteModel.Type;
 
 type FixtureSession = {
-  readonly readModel: ReturnType<typeof makeInMemoryMotifReadModel>;
+  projection: ReturnType<typeof replayDiscoveryEvents>;
+  setProjection: (projection: ReturnType<typeof replayDiscoveryEvents>) => void;
+  readonly reactivity: ReturnType<typeof makeReactivityRuntime>;
   readonly workspace: ReturnType<typeof makeDiscoveryAtomWorkspace>;
   readonly projectedEventIds: Set<string>;
   routeStepCount: number;
@@ -135,10 +136,20 @@ export const resetFixtureRouteRuntimeForTest = (): void => {
 export const startFixtureRoute = async (): Promise<FixtureStepResult> => {
   resetFixtureRouteRuntimeForTest();
 
-  const readModel = makeInMemoryMotifReadModel();
-  const workspace = makeDiscoveryAtomWorkspace(readModel);
+  const reactivity = makeReactivityRuntime();
+  let projection = replayDiscoveryEvents([]);
+  const workspace = makeDiscoveryAtomWorkspace({
+    runId: fixtureRun.runId,
+    getProjection: () => projection,
+    reactivity,
+  });
   activeSession = {
-    readModel,
+    projection,
+    setProjection: (nextProjection) => {
+      projection = nextProjection;
+      activeSession!.projection = nextProjection;
+    },
+    reactivity,
     workspace,
     projectedEventIds: new Set(),
     routeStepCount: 0,
@@ -195,21 +206,25 @@ const projectFixtureStep = async (
     session.projectedEventIds.add(event.eventId);
   }
 
-  if (freshEvents.length > 0) {
-    await Effect.runPromise(
-      session.workspace.projectDiscoveryEvents(freshEvents),
+  const invalidatedKeys: Array<string> = [];
+  for (const event of freshEvents) {
+    const write = appendProjectedDiscoveryEvent(
+      session.projection,
+      event,
+      session.reactivity,
     );
+    session.setProjection(write.projection);
+    invalidatedKeys.push(...write.announcedKeys);
   }
 
   session.routeStepCount += 1;
-  const snapshot = await Effect.runPromise(
-    session.workspace.getWorkbenchSnapshot(fixtureRun.runId),
-  );
-  const summary = await Effect.runPromise(
-    AtomRegistry.getResult(
-      session.workspace.registry,
-      session.workspace.atoms.runSummaryAtom(fixtureRun.runId),
-    ),
+  const snapshot = session.workspace
+    .snapshotAtom(session.routeStepCount)
+    .read();
+  const summary = runSummaryForSnapshot(
+    snapshot,
+    session.routeStepCount,
+    session.projectedEventIds.size,
   );
   const routeEvents = routeEventsForStep(step, snapshot.version);
   session.routeEvents.push(...routeEvents);
@@ -218,8 +233,11 @@ const projectFixtureStep = async (
     step,
     routeEventTags: routeEvents.map((event) => event._tag),
     semanticEventTags: freshEvents.map((event) => event._tag),
-    invalidatedKeys: invalidatedKeysForEvents(freshEvents),
-    atomLabels: session.workspace.inspect().map((node) => node.label),
+    invalidatedKeys: [...new Set(invalidatedKeys)].sort(),
+    atomLabels: atomLabelsForWorkspace(
+      session.workspace,
+      session.routeStepCount,
+    ),
     snapshotVersion: snapshot.version,
   });
 
@@ -309,13 +327,36 @@ const routeEvent = (
   summary,
 });
 
-const invalidatedKeysForEvents = (
-  events: ReadonlyArray<DiscoveryEvent>,
-): ReadonlyArray<string> =>
-  [
-    ...new Set(
-      events.flatMap((event) =>
-        Object.keys(viewKeysForDiscoveryEvent(event) satisfies ViewKeySet),
-      ),
-    ),
-  ].sort();
+const runSummaryForSnapshot = (
+  snapshot: WorkbenchSnapshot,
+  routeStepCount: number,
+  eventCount: number,
+): RunSummary => ({
+  runId: snapshot.runId,
+  repoSnapshotId: snapshot.decisionPacket.run.repoSnapshotId,
+  eventCount,
+  routeStepCount,
+  usefulEvidenceCount: snapshot.decisionPacket.evidence.length,
+  finalSnapshotVersion: snapshot.version,
+  searchIndexTimeMs: 120,
+  proofTimeMs: snapshot.decisionPacket.evidence[0]?.durationMs ?? 0,
+  cache: "miss",
+});
+
+const atomLabelsForWorkspace = (
+  workspace: ReturnType<typeof makeDiscoveryAtomWorkspace>,
+  iteration: number,
+): ReadonlyArray<string> => [
+  workspace.runAtom.name,
+  workspace.runMetricsAtom.name,
+  workspace.anchorsAtom.name,
+  workspace.familiesAtom.name,
+  workspace.hypothesesAtom.name,
+  workspace.evidenceAtom.name,
+  workspace.reviewQueueAtom.name,
+  workspace.scoreFeaturesAtom.name,
+  workspace.plateauAtom.name,
+  workspace.decisionPacketAtom(iteration).name,
+  workspace.foldSceneAtom(iteration).name,
+  workspace.snapshotAtom(iteration).name,
+];
