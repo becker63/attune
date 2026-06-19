@@ -7,6 +7,7 @@ import {
   SelectedHypothesis,
   SelectedRoute,
 } from "../src/message.js"
+import { appliedWorkbenchAtomFixture } from "../src/fixtures/workbench-atom-fixture.js"
 import { init } from "../src/main.js"
 import { update } from "../src/update.js"
 
@@ -62,4 +63,52 @@ describe("React-to-FoldKit migration story contract", () => {
       Story.Command.expectNone(),
     )
   })
+
+  test("typed workbench fixture appends DiscoveryEvent facts before snapshot projection", () => {
+    Story.story(
+      update,
+      Story.with(initialModel()),
+      Story.model((model) => {
+        expect(appliedWorkbenchAtomFixture.appendedEvents).toHaveLength(6)
+        expect(appliedWorkbenchAtomFixture.trace[0]).toContain(
+          "append:DiscoveryRunStarted",
+        )
+        expect(model.serverSnapshot?.version).toBe(
+          appliedWorkbenchAtomFixture.appendedEvents.length +
+            appliedWorkbenchAtomFixture.fixture.reportEvents.length,
+        )
+        expect(model.serverSnapshot?.decisionPacket.hypotheses[0]?.title).toBe(
+          "Server atoms derive meaning; FoldKit steers the lens",
+        )
+      }),
+      Story.Command.expectNone(),
+    )
+  })
+
+  test("MDX route fixtures keep navigation and promotion in the FoldKit loop", () => {
+    Story.story(
+      update,
+      Story.with(initialModel()),
+      Story.message(SelectedRoute({ route: "workbench" })),
+      Story.model((model) => {
+        expect(model.route).toBe("workbench")
+        expect(model.page.document.sourcePath).toBe("fixtures/workbench.mdx")
+      }),
+      Story.message(RequestedPromotion({
+        hypothesisId: "hypothesis-server-atoms-foldkit-lens",
+      })),
+      Story.model((model) => {
+        expect(model.pendingCommand).toBe(
+          "promote:hypothesis-server-atoms-foldkit-lens",
+        )
+      }),
+      Story.message(SelectedRoute({ route: "findings" })),
+      Story.model((model) => {
+        expect(model.route).toBe("findings")
+        expect(model.page.document.sourcePath).toBe("fixtures/findings.mdx")
+      }),
+      Story.Command.expectNone(),
+    )
+  })
+
 })

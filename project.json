@@ -5,14 +5,14 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "corepack pnpm exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
       }
     },
     "check": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "corepack pnpm exec nx run-many -t lint,typecheck --all",
+          "node scripts/codex/pnpm.mjs exec nx run-many -t lint,typecheck --all",
           "openspec validate --all --no-interactive"
         ],
         "parallel": false

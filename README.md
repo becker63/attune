@@ -44,21 +44,21 @@ See `IMPORTS.md` for import provenance.
 Common commands:
 
 ```bash
-corepack pnpm exec nx run joern-effect:generate
-corepack pnpm exec nx run joern-effect-properties:typecheck
-corepack pnpm exec nx run joern-effect-properties:lint
-corepack pnpm exec nx run joern-effect-properties:test
-corepack pnpm exec nx run joern-effect-properties:fuzz:smoke
-corepack pnpm exec nx run joern-effect-properties:fuzz:workbench
+node scripts/codex/pnpm.mjs exec nx run joern-effect:generate
+node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:typecheck
+node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:lint
+node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:test
+node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:smoke
+node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:workbench
 ```
 
 Container-backed fuzzing is exposed through Nx targets backed by the Nix/Arion
 runtime:
 
 ```bash
-corepack pnpm exec nx run joern-effect-properties:fuzz:container
-corepack pnpm exec nx run joern-effect-properties:fuzz:nightly:container
-corepack pnpm exec nx run joern-effect-properties:fuzz:dsl-four-hour:container
+node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:container
+node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:nightly:container
+node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:dsl-four-hour:container
 ```
 
 Runtime traces should go to OpenTelemetry/Axiom or container logs. Local

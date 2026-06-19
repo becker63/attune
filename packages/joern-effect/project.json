@@ -8,34 +8,34 @@
       "outputs": ["{projectRoot}/dist"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsup"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsup"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsgo --noEmit"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsgo --noEmit"
       }
     },
     "typecheck:classic": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsc --noEmit"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsc --noEmit"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "corepack pnpm exec oxlint --config root-oxlintrc.json packages/joern-effect --quiet"
+        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json packages/joern-effect --quiet"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec vitest run"
+        "command": "node ../../scripts/codex/pnpm.mjs exec vitest run"
       }
     },
     "extract-cpg-schema": {
@@ -43,7 +43,7 @@
       "outputs": ["{projectRoot}/schema"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm run extract-schema:joern > schema/joern-cpg-schema.${JOERN_CPG_VERSION:-unknown}.json"
+        "command": "node ../../scripts/codex/pnpm.mjs run extract-schema:joern > schema/joern-cpg-schema.${JOERN_CPG_VERSION:-unknown}.json"
       }
     },
     "enrich-schema-docs": {
@@ -52,7 +52,7 @@
       "outputs": ["{projectRoot}/schema"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts enrich-schema-docs"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts enrich-schema-docs"
       }
     },
     "normalize-schema": {
@@ -60,7 +60,7 @@
       "inputs": ["{projectRoot}/schema/**/*", "{projectRoot}/src/pure/codegen/normalizeSchema.ts"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts normalize-schema"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts normalize-schema"
       }
     },
     "emit-schema-modules": {
@@ -68,7 +68,7 @@
       "outputs": ["{projectRoot}/src/pure/generated/schema.ts"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts emit-schema-modules"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-schema-modules"
       }
     },
     "emit-node-types": {
@@ -76,7 +76,7 @@
       "outputs": ["{projectRoot}/src/pure/generated/nodes.ts"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts emit-node-types"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-node-types"
       }
     },
     "emit-property-metadata": {
@@ -84,7 +84,7 @@
       "outputs": ["{projectRoot}/src/pure/generated/prop.ts"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts emit-property-metadata"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-property-metadata"
       }
     },
     "emit-traversal-dsl": {
@@ -92,7 +92,7 @@
       "outputs": ["{projectRoot}/src/pure/generated/cpg.ts", "{projectRoot}/src/pure/generated/traversal.ts"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts emit-traversal-dsl"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-traversal-dsl"
       }
     },
     "emit-template-registry": {
@@ -100,7 +100,7 @@
       "outputs": ["{projectRoot}/src/generated/TemplateRegistry.generated.ts"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts emit-template-registry"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-template-registry"
       }
     },
     "emit-template-bindings": {
@@ -108,7 +108,7 @@
       "outputs": ["{projectRoot}/src/generated/TemplateBindings.generated.ts"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts emit-template-bindings"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-template-bindings"
       }
     },
     "emit-template-evidence": {
@@ -116,7 +116,7 @@
       "outputs": ["{projectRoot}/src/generated/TemplateEvidence.generated.ts"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts emit-template-evidence"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-template-evidence"
       }
     },
     "emit-fast-check-arbitraries": {
@@ -124,7 +124,7 @@
       "outputs": ["{projectRoot}/src/internal/generated"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm exec tsx scripts/generationStage.ts emit-fast-check-arbitraries"
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-fast-check-arbitraries"
       }
     },
     "emit-generated": {
@@ -132,7 +132,7 @@
       "outputs": ["{projectRoot}/src/pure/generated"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "JOERN_CPG_SCHEMA_JSON=\"${JOERN_CPG_SCHEMA_JSON:-schema/joern-cpg-schema.${JOERN_CPG_VERSION:-1.7.70}.json}\" corepack pnpm run generate"
+        "command": "JOERN_CPG_SCHEMA_JSON=\"${JOERN_CPG_SCHEMA_JSON:-schema/joern-cpg-schema.${JOERN_CPG_VERSION:-1.7.70}.json}\" node ../../scripts/codex/pnpm.mjs run generate"
       }
     },
     "render-readme": {
@@ -140,7 +140,7 @@
       "outputs": ["{projectRoot}/README.md"],
       "options": {
         "cwd": "packages/joern-effect",
-        "command": "corepack pnpm run render-readme"
+        "command": "node ../../scripts/codex/pnpm.mjs run render-readme"
       }
     },
     "generate": {
@@ -148,8 +148,8 @@
       "outputs": ["{projectRoot}/src/pure/generated", "{projectRoot}/README.md"],
       "options": {
         "commands": [
-          "corepack pnpm exec nx run joern-effect:emit-generated",
-          "corepack pnpm exec nx run joern-effect:render-readme"
+          "node scripts/codex/pnpm.mjs exec nx run joern-effect:emit-generated",
+          "node scripts/codex/pnpm.mjs exec nx run joern-effect:render-readme"
         ],
         "parallel": false
       }

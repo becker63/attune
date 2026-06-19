@@ -1,12 +1,14 @@
-import { Schema as S } from "effect"
+import { Schema as S } from "effect";
 
-import { WorkbenchSnapshot } from "@attune/attuned-discovery"
+import { WorkbenchSnapshot } from "@attune/attuned-discovery";
 import {
   DispatchFilter,
   DispatchItem,
   DispatchMdxPage,
   DispatchRoute,
-} from "@attune/dispatch-schema"
+} from "@attune/dispatch-schema";
+
+import { FixtureRouteModel } from "./fixture-route.js";
 
 export const Model = S.Struct({
   route: DispatchRoute,
@@ -18,5 +20,6 @@ export const Model = S.Struct({
   items: S.Array(DispatchItem),
   page: DispatchMdxPage,
   serverSnapshot: S.NullOr(WorkbenchSnapshot),
-})
-export type Model = typeof Model.Type
+  fixtureRoute: FixtureRouteModel,
+});
+export type Model = typeof Model.Type;

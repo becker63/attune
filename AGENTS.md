@@ -43,9 +43,27 @@ git fetch attune main
 Use the cloud image's preinstalled Node.js for normal TypeScript, Nx, and pnpm
 commands. Do not install a second Node runtime just to run workspace scripts.
 
-Install Nix before any Nix-backed validation, Joern runtime work, OpenSpec shell
-work, CocoIndex toolchain work, or Kubernetes generator/toolchain work. If
-`nix` is missing in the cloud environment, install it first:
+The canonical cloud-first bootstrap and smoke check is:
+
+```bash
+corepack enable
+corepack pnpm install --frozen-lockfile
+NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx graph --file=/tmp/attune-nx-graph.json
+NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run attune-nx:typecheck
+NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run attuned-discovery:typecheck
+```
+
+The same path is available as `corepack pnpm run codex:bootstrap` and
+`corepack pnpm run codex:check`. See
+`docs/platform/codex-cloud-environment.md` before changing environment or
+validation guidance.
+
+Nix is optional for ordinary Codex cloud validation. Install or enter Nix only
+when a task explicitly needs Nix-backed validation, Joern runtime/schema work,
+OpenSpec shell tooling unavailable on PATH, CocoIndex toolchains, Kubernetes
+generator/toolchain work, Docker/Arion property campaigns, or local
+reproducibility. If `nix` is needed and missing in the cloud environment,
+install it intentionally and report why:
 
 ```bash
 if ! command -v nix >/dev/null 2>&1; then
@@ -53,10 +71,6 @@ if ! command -v nix >/dev/null 2>&1; then
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null || true
 fi
 ```
-
-Prefer `nix develop -c <command>` for commands that need repo toolchains. Use
-plain `corepack pnpm ...` only for JS-only checks that do not need Nix-provided
-tools.
 
 ## Primary References
 
@@ -159,10 +173,10 @@ nix develop -c corepack pnpm exec nx run <project>:build
 Useful commands:
 
 ```bash
-corepack pnpm exec nx show projects
-corepack pnpm exec nx run <project>:typecheck
-corepack pnpm exec nx run <project>:test
-corepack pnpm exec nx run <project>:build
+NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx show projects
+NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run <project>:typecheck
+NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run <project>:test
+NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run <project>:build
 ```
 
 Current `@attune/nx` generators:
