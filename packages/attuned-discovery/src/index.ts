@@ -544,6 +544,252 @@ export const deriveWorkbenchSnapshot = (
   }
 }
 
+
+export type ViewKey = Readonly<{
+  readonly scope: "attuned-discovery"
+  readonly runId: string
+  readonly fact: "run" | "runMetrics" | "anchors" | "families" | "hypotheses" | "evidence" | "reviewQueue"
+}>
+
+const viewKey = (runId: string, fact: ViewKey["fact"]): ViewKey => ({
+  scope: "attuned-discovery",
+  runId,
+  fact,
+})
+
+export const ViewKeys = {
+  run: (runId: string): ViewKey => viewKey(runId, "run"),
+  runMetrics: (runId: string): ViewKey => viewKey(runId, "runMetrics"),
+  anchors: (runId: string): ViewKey => viewKey(runId, "anchors"),
+  families: (runId: string): ViewKey => viewKey(runId, "families"),
+  hypotheses: (runId: string): ViewKey => viewKey(runId, "hypotheses"),
+  evidence: (runId: string): ViewKey => viewKey(runId, "evidence"),
+  reviewQueue: (runId: string): ViewKey => viewKey(runId, "reviewQueue"),
+} as const
+
+export type RunMetrics = Readonly<{
+  readonly runId: string
+  readonly projectionVersion: number
+  readonly anchorCount: number
+  readonly hypothesisCount: number
+  readonly evidenceCount: number
+  readonly reviewQueueCount: number
+  readonly budget: DiscoveryBudget
+  readonly updatedAt: string
+}>
+
+export type DiscoveryReadModel = Readonly<{
+  readonly getRun: (runId: string) => DiscoveryRun
+  readonly getRunMetrics: (runId: string) => RunMetrics
+  readonly listAnchors: (runId: string) => ReadonlyArray<AnchorCard>
+  readonly listActiveFamilies: (runId: string) => ReadonlyArray<AnchorCard>
+  readonly listActiveHypotheses: (runId: string) => ReadonlyArray<MotifHypothesis>
+  readonly listRecentEvidence: (runId: string) => ReadonlyArray<EvidencePacket>
+  readonly listReviewQueue: (runId: string) => ReadonlyArray<ReviewItem>
+}>
+
+export type ReactivityService = Readonly<{
+  readonly versionOf: (key: ViewKey) => number
+  readonly mutation: <A>(keys: ReadonlyArray<ViewKey>, effect: () => A) => A
+}>
+
+export const makeInMemoryReactivity = (): ReactivityService => {
+  const versions = new Map<string, number>()
+
+  return {
+    versionOf: (key) => versions.get(serializeViewKey(key)) ?? 0,
+    mutation: (keys, effect) => {
+      const result = effect()
+      for (const key of keys) {
+        const serialized = serializeViewKey(key)
+        versions.set(serialized, (versions.get(serialized) ?? 0) + 1)
+      }
+      return result
+    },
+  }
+}
+
+export const readModelFromProjection = (
+  getProjection: () => DiscoveryProjection,
+): DiscoveryReadModel => ({
+  getRun: (runId) => requireRun(getProjection(), runId),
+  getRunMetrics: (runId) => {
+    const projection = getProjection()
+    const run = requireRun(projection, runId)
+
+    return {
+      runId,
+      projectionVersion: projection.version,
+      anchorCount: valuesForRun(projection.anchors, runId).length,
+      hypothesisCount: valuesForRun(projection.hypotheses, runId).length,
+      evidenceCount: valuesForRun(projection.evidence, runId).length,
+      reviewQueueCount: projection.reviewQueue.filter((item) => item.runId === runId).length,
+      budget: run.budget,
+      updatedAt: run.updatedAt,
+    }
+  },
+  listAnchors: (runId) => valuesForRun(getProjection().anchors, runId),
+  listActiveFamilies: (runId) => valuesForRun(getProjection().anchors, runId),
+  listActiveHypotheses: (runId) => valuesForRun(getProjection().hypotheses, runId),
+  listRecentEvidence: (runId) => valuesForRun(getProjection().evidence, runId),
+  listReviewQueue: (runId) => getProjection().reviewQueue.filter((item) => item.runId === runId),
+})
+
+type BaseAtom<A> = Readonly<{
+  readonly label: string
+  readonly key: ViewKey
+  readonly read: (readModel: DiscoveryReadModel) => A
+}>
+
+const withReactivity = <A>(atom: Omit<BaseAtom<A>, "key">, key: ViewKey): BaseAtom<A> => ({
+  ...atom,
+  key,
+})
+
+export const RunAtoms = {
+  runAtom: (runId: string): BaseAtom<DiscoveryRun> =>
+    withReactivity(
+      { label: `run:${runId}`, read: (readModel) => readModel.getRun(runId) },
+      ViewKeys.run(runId),
+    ),
+  runMetricsAtom: (runId: string): BaseAtom<RunMetrics> =>
+    withReactivity(
+      { label: `runMetrics:${runId}`, read: (readModel) => readModel.getRunMetrics(runId) },
+      ViewKeys.runMetrics(runId),
+    ),
+} as const
+
+export const AnchorAtoms = {
+  anchorsAtom: (runId: string): BaseAtom<ReadonlyArray<AnchorCard>> =>
+    withReactivity(
+      { label: `anchors:${runId}`, read: (readModel) => readModel.listAnchors(runId) },
+      ViewKeys.anchors(runId),
+    ),
+  activeFamiliesAtom: (runId: string): BaseAtom<ReadonlyArray<AnchorCard>> =>
+    withReactivity(
+      { label: `families:${runId}`, read: (readModel) => readModel.listActiveFamilies(runId) },
+      ViewKeys.families(runId),
+    ),
+} as const
+
+export const HypothesisAtoms = {
+  activeHypothesesAtom: (runId: string): BaseAtom<ReadonlyArray<MotifHypothesis>> =>
+    withReactivity(
+      { label: `activeHypotheses:${runId}`, read: (readModel) => readModel.listActiveHypotheses(runId) },
+      ViewKeys.hypotheses(runId),
+    ),
+} as const
+
+export const EvidenceAtoms = {
+  recentEvidenceAtom: (runId: string): BaseAtom<ReadonlyArray<EvidencePacket>> =>
+    withReactivity(
+      { label: `recentEvidence:${runId}`, read: (readModel) => readModel.listRecentEvidence(runId) },
+      ViewKeys.evidence(runId),
+    ),
+} as const
+
+export const ReviewQueueAtoms = {
+  reviewQueueAtom: (runId: string): BaseAtom<ReadonlyArray<ReviewItem>> =>
+    withReactivity(
+      { label: `reviewQueue:${runId}`, read: (readModel) => readModel.listReviewQueue(runId) },
+      ViewKeys.reviewQueue(runId),
+    ),
+} as const
+
+export type DiscoveryRunAtomWorkspace = Readonly<{
+  readonly runId: string
+  readonly getRun: () => DiscoveryRun
+  readonly getRunMetrics: () => RunMetrics
+  readonly getAnchors: () => ReadonlyArray<AnchorCard>
+  readonly getActiveFamilies: () => ReadonlyArray<AnchorCard>
+  readonly getActiveHypotheses: () => ReadonlyArray<MotifHypothesis>
+  readonly getRecentEvidence: () => ReadonlyArray<EvidencePacket>
+  readonly getReviewQueue: () => ReadonlyArray<ReviewItem>
+  readonly inspect: () => ReadonlyArray<Readonly<{ label: string; key: ViewKey; version: number }>>
+  readonly dispose: () => void
+}>
+
+export type DiscoveryAtomWorkspaceService = Readonly<{
+  readonly registryFor: (runId: string) => DiscoveryRunAtomWorkspace
+  readonly disposeRun: (runId: string) => void
+  readonly activeRunIds: () => ReadonlyArray<string>
+}>
+
+export const makeDiscoveryAtomWorkspaceService = (options: Readonly<{
+  readonly readModel: DiscoveryReadModel
+  readonly reactivity: ReactivityService
+}>): DiscoveryAtomWorkspaceService => {
+  const registries = new Map<string, DiscoveryRunAtomWorkspace>()
+
+  return {
+    registryFor: (runId) => {
+      const existing = registries.get(runId)
+      if (existing) return existing
+
+      const workspace = makeRunAtomWorkspace(runId, options.readModel, options.reactivity, () => {
+        registries.delete(runId)
+      })
+      registries.set(runId, workspace)
+      return workspace
+    },
+    disposeRun: (runId) => registries.get(runId)?.dispose(),
+    activeRunIds: () => [...registries.keys()],
+  }
+}
+
+const makeRunAtomWorkspace = (
+  runId: string,
+  readModel: DiscoveryReadModel,
+  reactivity: ReactivityService,
+  onDispose: () => void,
+): DiscoveryRunAtomWorkspace => {
+  const cache = new Map<string, { version: number; value: unknown; atom: BaseAtom<unknown> }>()
+  let disposed = false
+
+  const evaluate = <A>(atom: BaseAtom<A>): A => {
+    if (disposed) {
+      throw new Error(`Discovery atom workspace for ${runId} has been disposed`)
+    }
+
+    const cacheKey = atom.label
+    const version = reactivity.versionOf(atom.key)
+    const cached = cache.get(cacheKey)
+
+    if (cached && cached.version === version) {
+      return cached.value as A
+    }
+
+    const value = atom.read(readModel)
+    cache.set(cacheKey, { version, value, atom: atom as BaseAtom<unknown> })
+    return value
+  }
+
+  return {
+    runId,
+    getRun: () => evaluate(RunAtoms.runAtom(runId)),
+    getRunMetrics: () => evaluate(RunAtoms.runMetricsAtom(runId)),
+    getAnchors: () => evaluate(AnchorAtoms.anchorsAtom(runId)),
+    getActiveFamilies: () => evaluate(AnchorAtoms.activeFamiliesAtom(runId)),
+    getActiveHypotheses: () => evaluate(HypothesisAtoms.activeHypothesesAtom(runId)),
+    getRecentEvidence: () => evaluate(EvidenceAtoms.recentEvidenceAtom(runId)),
+    getReviewQueue: () => evaluate(ReviewQueueAtoms.reviewQueueAtom(runId)),
+    inspect: () =>
+      [...cache.values()].map(({ atom, version }) => ({
+        label: atom.label,
+        key: atom.key,
+        version,
+      })),
+    dispose: () => {
+      cache.clear()
+      disposed = true
+      onDispose()
+    },
+  }
+}
+
+const serializeViewKey = (key: ViewKey): string =>
+  `${key.scope}:${key.runId}:${key.fact}`
+
 export const buildFixtureWorkbenchSnapshot = (): WorkbenchSnapshot => {
   const domainProjection = replayDiscoveryEvents(fixtureDiscoveryEvents)
   const baseSnapshot = deriveWorkbenchSnapshot(

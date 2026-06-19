@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 
 import {
   WorkbenchSnapshot,
+  ViewKeys,
+  anchorsRecalled,
   appendDiscoveryEvent,
   appendReportSection,
   buildFixtureHarnessEvents,
@@ -10,10 +12,14 @@ import {
   deriveDecisionPacket,
   deriveWorkbenchSnapshot,
   decodeReportActions,
+  fixtureAnchorCards,
   fixtureDiscoveryEvents,
   fixtureReportEvents,
   fixtureRun,
+  makeDiscoveryAtomWorkspaceService,
+  makeInMemoryReactivity,
   pinEvidence,
+  readModelFromProjection,
   replayReportEvents,
   replayDiscoveryEvents,
   reportActionRecorded,
@@ -203,6 +209,80 @@ describe("attuned discovery", () => {
         },
       ]),
     ).toThrow("executable UI text")
+  })
+
+  it("keeps one run-scoped atom registry per active run", () => {
+    const projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
+    const workspaceService = makeDiscoveryAtomWorkspaceService({
+      readModel: readModelFromProjection(() => projection),
+      reactivity: makeInMemoryReactivity(),
+    })
+
+    const first = workspaceService.registryFor(fixtureRun.runId)
+    const second = workspaceService.registryFor(fixtureRun.runId)
+
+    expect(first).toBe(second)
+    expect(workspaceService.activeRunIds()).toEqual([fixtureRun.runId])
+
+    workspaceService.disposeRun(fixtureRun.runId)
+
+    expect(workspaceService.activeRunIds()).toEqual([])
+    expect(() => first.getRun()).toThrow("disposed")
+  })
+
+  it("base atoms read projected state through read-model services", () => {
+    const projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
+    const workspace = makeDiscoveryAtomWorkspaceService({
+      readModel: readModelFromProjection(() => projection),
+      reactivity: makeInMemoryReactivity(),
+    }).registryFor(fixtureRun.runId)
+
+    expect(workspace.getRun().runId).toBe(fixtureRun.runId)
+    expect(workspace.getRunMetrics()).toMatchObject({
+      runId: fixtureRun.runId,
+      anchorCount: 2,
+      hypothesisCount: 1,
+      evidenceCount: 1,
+      reviewQueueCount: 1,
+    })
+    expect(workspace.getAnchors()).toHaveLength(2)
+    expect(workspace.getActiveFamilies()).toHaveLength(2)
+    expect(workspace.getActiveHypotheses()).toHaveLength(1)
+    expect(workspace.getRecentEvidence()).toHaveLength(1)
+    expect(workspace.getReviewQueue()).toHaveLength(1)
+  })
+
+  it("refreshes representative base atoms through Reactivity ViewKeys", () => {
+    let projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
+    const reactivity = makeInMemoryReactivity()
+    const workspace = makeDiscoveryAtomWorkspaceService({
+      readModel: readModelFromProjection(() => projection),
+      reactivity,
+    }).registryFor(fixtureRun.runId)
+
+    expect(workspace.getAnchors()).toHaveLength(2)
+
+    projection = replayDiscoveryEvents([
+      ...fixtureDiscoveryEvents,
+      anchorsRecalled(fixtureRun.runId, [
+        {
+          ...fixtureAnchorCards[0]!,
+          anchorId: "anchor-fresh-reactivity",
+          title: "Fresh Reactivity key refreshes server atoms",
+        },
+      ]),
+    ])
+
+    expect(workspace.getAnchors()).toHaveLength(2)
+
+    reactivity.mutation([ViewKeys.anchors(fixtureRun.runId)], () => undefined)
+
+    expect(workspace.getAnchors()).toHaveLength(3)
+    expect(workspace.inspect()).toContainEqual({
+      label: `anchors:${fixtureRun.runId}`,
+      key: ViewKeys.anchors(fixtureRun.runId),
+      version: 1,
+    })
   })
 
   it("removes Joern decisions when Joern budget is exhausted", () => {
