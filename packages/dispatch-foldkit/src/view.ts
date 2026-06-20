@@ -90,6 +90,17 @@ type ListRowItem = Readonly<{
   readonly compact?: boolean
 }>
 
+type MdxComponentBlock = Extract<
+  FoldkitMdxBlock,
+  Readonly<{ _tag: "Component" }>
+>
+
+type MdxComponentProps = Readonly<{
+  readonly prop: (name: string) => string | undefined
+  readonly arrayProp: (name: string) => ReadonlyArray<string>
+  readonly route: (name: string) => DispatchRoute | undefined
+}>
+
 const positiveExample = `export function Card({ children, className }: CardProps) {
   return (
     <div
@@ -858,173 +869,41 @@ const mdxBlockView = (block: FoldkitMdxBlock, model?: Model): Html => {
 }
 
 const mdxComponentView = (
-  block: Extract<FoldkitMdxBlock, Readonly<{ _tag: "Component" }>>,
+  block: MdxComponentBlock,
   model?: Model,
 ): Html => {
   const h = html<Message>()
-  const prop = (name: string): string | undefined => {
-    const value = block.props.find((item) => item.name === name)?.value
-    return typeof value === "string" || typeof value === "number"
-      ? String(value)
-      : undefined
-  }
-  const arrayProp = (name: string): ReadonlyArray<string> => {
-    const value = block.props.find((item) => item.name === name)?.value
-    return Array.isArray(value) ? value : []
-  }
-  const route = (name: string): DispatchRoute | undefined => {
-    const value = prop(name)
-    return value === "dispatch" ||
-      value === "discover" ||
-      value === "workbench" ||
-      value === "findings" ||
-      value === "lineage" ||
-      value === "exports" ||
-      value === "settings"
-      ? value
-      : undefined
-  }
+  const props = mdxComponentProps(block)
 
   switch (block.name) {
-    case "PageHeader": {
-      const snapshot = model?.serverSnapshot
-      const hypothesis = snapshot?.decisionPacket.hypotheses[0]
-      const useWorkbenchSnapshot = model?.route === "workbench" && hypothesis !== undefined
-      return pageHeaderView(
-        prop("eyebrow") ?? model?.page.title ?? "Fixture",
-        useWorkbenchSnapshot
-          ? hypothesis.title
-          : (prop("title") ?? model?.page.title ?? "Fixture"),
-        useWorkbenchSnapshot
-          ? hypothesis.summary
-          : (prop("subtitle") ??
-              prop("description") ??
-              model?.page.description ??
-              ""),
-      )
-    }
-    case "StatStrip": {
-      if (model?.route === "workbench" && model.serverSnapshot !== null) {
-        const summary = model.fixtureRoute.summary
-        return statStripView([
-          {
-            icon: "sparkles",
-            value: String(summary?.eventCount ?? model.serverSnapshot.version),
-            label: "events",
-          },
-          {
-            icon: "scan-text",
-            value: String(model.serverSnapshot.version),
-            label: "snapshot version",
-          },
-          {
-            icon: "timer",
-            value: `${model.serverSnapshot.decisionPacket.evidence[0]?.durationMs ?? 0}`,
-            label: "ms",
-          },
-          {
-            icon: "eye",
-            value: String(model.serverSnapshot.reviewQueue.length),
-            label: "reviews",
-          },
-        ])
-      }
-
-      return statStripView(
-        arrayProp("items").map((item, index) => {
-          const icons: ReadonlyArray<IconName> = [
-            "sparkles",
-            "eye",
-            "timer",
-            "scan-text",
-          ]
-
-          return {
-            icon: icons[index % icons.length] ?? "sparkles",
-            value: item.split(" ")[0] ?? item,
-            label: item.split(" ").slice(1).join(" ") || item,
-          }
-        }),
-      )
-    }
+    case "PageHeader":
+      return mdxPageHeaderView(props, model)
+    case "StatStrip":
+      return mdxStatStripView(props, model)
     case "FilterTabs":
       return filterTabsView(model?.filter ?? "all")
     case "DispatchRiver":
       return dispatchRiverView(
         filterDispatchItems(model?.items ?? [], model?.filter ?? "all"),
       )
-    case "Button": {
-      const selectedRoute = route("route")
-      return h.button(
-        [
-          h.Class("button button-ghost"),
-          selectedRoute === undefined
-            ? commandAttributeOrClick(prop("command"), model)
-            : h.OnClick(SelectedRoute({ route: selectedRoute })),
-        ],
-        [prop("label") ?? "Action"],
-      )
-    }
-    case "ActionBar": {
-      const primary = prop("primary")
-      const primaryCommand = prop("command")
-      const secondary = prop("secondary")
-      const secondaryRoute = route("secondaryRoute")
-      return actionBarView([
-        ...(prop("note") === undefined
-          ? []
-          : [h.p([h.Class("section-copy")], [prop("note") ?? ""])]),
-        ...(primary === undefined
-          ? []
-          : [
-              h.button(
-                [
-                  h.Class("button button-primary"),
-                  primaryCommand === "promote" && model?.serverSnapshot
-                    ? h.OnClick(
-                        RequestedPromotion({
-                          hypothesisId:
-                            model.serverSnapshot.decisionPacket.hypotheses[0]
-                              ?.hypothesisId ?? "",
-                        }),
-                      )
-                    : primary === "True positive"
-                      ? h.OnClick(
-                          FixtureStepRequested({ step: "complete-proof" }),
-                        )
-                      : commandAttributeOrClick(primaryCommand, model),
-                ],
-                [primary],
-              ),
-            ]),
-        ...(secondary === undefined
-          ? []
-          : [
-              h.button(
-                [
-                  h.Class("button button-ghost"),
-                  secondaryRoute === undefined
-                    ? h.Attribute("data-command", "secondary")
-                    : h.OnClick(SelectedRoute({ route: secondaryRoute })),
-                ],
-                [secondary],
-              ),
-            ]),
-        ...arrayProp("actions").map((action) => buttonView(action, "ghost")),
-      ])
-    }
+    case "Button":
+      return mdxButtonView(props, model)
+    case "ActionBar":
+      return mdxActionBarView(props, model)
     case "OptimizationPacket": {
       const snapshot = model?.serverSnapshot
       return sectionView(
         "Atom-derived snapshot",
-        snapshot?.decisionPacket.run.status ?? prop("status"),
+        snapshot?.decisionPacket.run.status ?? props.prop("status"),
         [
           h.p([h.Class("section-copy")], [
             snapshot?.decisionPacket.bestNextAction.label ??
-              prop("action") ??
+              props.prop("action") ??
               "No action",
           ]),
-          h.p([h.Class("mono-row")], [snapshot?.runId ?? prop("runId") ?? ""]),
+          h.p([h.Class("mono-row")], [
+            snapshot?.runId ?? props.prop("runId") ?? "",
+          ]),
         ],
       )
     }
@@ -1032,11 +911,15 @@ const mdxComponentView = (
       const snapshot = model?.serverSnapshot
       const anchor = snapshot?.decisionPacket.anchors[0]
       const evidence = snapshot?.decisionPacket.evidence[0]
-      return sectionView(anchor?.title ?? prop("title") ?? "Pattern dossier", undefined, [
-        h.p([h.Class("section-copy")], [
-          evidence?.summary ?? prop("evidence") ?? "Evidence pending",
-        ]),
-      ])
+      return sectionView(
+        anchor?.title ?? props.prop("title") ?? "Pattern dossier",
+        undefined,
+        [
+          h.p([h.Class("section-copy")], [
+            evidence?.summary ?? props.prop("evidence") ?? "Evidence pending",
+          ]),
+        ],
+      )
     }
     case "ExamplePair":
       return hDiv("example-grid", [
@@ -1047,7 +930,7 @@ const mdxComponentView = (
           file: "src/components/Card.tsx",
           icon: "check",
           startLine: 52,
-          title: prop("positive") ?? "Looks like",
+          title: props.prop("positive") ?? "Looks like",
           tone: "success",
         }),
         exampleBlockView({
@@ -1057,7 +940,7 @@ const mdxComponentView = (
           file: "src/components/UserAvatar.tsx",
           icon: "x-circle",
           startLine: 18,
-          title: prop("negative") ?? "Does not look like",
+          title: props.prop("negative") ?? "Does not look like",
           tone: "destructive",
         }),
       ])
@@ -1077,7 +960,7 @@ const mdxComponentView = (
       return sectionView(undefined, undefined, [
         hDiv("finding-file-row", [
           h.span([h.Class("mono-row")], [
-            prop("path") ?? "src/components/Card.tsx",
+            props.prop("path") ?? "src/components/Card.tsx",
           ]),
         ]),
         sectionLabelView("Why it matched", "section-label-spaced"),
@@ -1085,20 +968,213 @@ const mdxComponentView = (
         sectionLabelView("Review decision", "section-label-spaced"),
       ])
     case "Badge":
-      return badgeView(prop("label") ?? block.name)
+      return badgeView(props.prop("label") ?? block.name)
     case "SectionLabel":
-      return sectionLabelView(prop("label") ?? block.name, "section-label-spaced")
+      return sectionLabelView(
+        props.prop("label") ?? block.name,
+        "section-label-spaced",
+      )
     case "MetaGrid":
     case "SafetyGate":
     case "CodePanel":
       return sectionView(block.name, undefined, [
-        hDiv("chip-row", arrayProp("items").map((item) => badgeView(item))),
+        hDiv("chip-row", props.arrayProp("items").map((item) => badgeView(item))),
       ])
     default:
       return sectionView(block.name, undefined, [
         h.p([h.Class("section-copy")], [block.textChildren.join(" ")]),
       ])
   }
+}
+
+const mdxComponentProps = (block: MdxComponentBlock): MdxComponentProps => {
+  const prop = (name: string): string | undefined => {
+    const value = block.props.find((item) => item.name === name)?.value
+    return typeof value === "string" || typeof value === "number"
+      ? String(value)
+      : undefined
+  }
+
+  return {
+    prop,
+    arrayProp: (name) => {
+      const value = block.props.find((item) => item.name === name)?.value
+      return Array.isArray(value) ? value : []
+    },
+    route: (name) => parseDispatchRoute(prop(name)),
+  }
+}
+
+const parseDispatchRoute = (value: string | undefined): DispatchRoute | undefined =>
+  value === "dispatch" ||
+  value === "discover" ||
+  value === "workbench" ||
+  value === "findings" ||
+  value === "lineage" ||
+  value === "exports" ||
+  value === "settings"
+    ? value
+    : undefined
+
+const mdxPageHeaderView = (props: MdxComponentProps, model?: Model): Html => {
+  const snapshot = model?.serverSnapshot
+  const hypothesis = snapshot?.decisionPacket.hypotheses[0]
+  const useWorkbenchSnapshot = model?.route === "workbench" && hypothesis !== undefined
+
+  return pageHeaderView(
+    props.prop("eyebrow") ?? model?.page.title ?? "Fixture",
+    useWorkbenchSnapshot
+      ? hypothesis.title
+      : (props.prop("title") ?? model?.page.title ?? "Fixture"),
+    useWorkbenchSnapshot
+      ? hypothesis.summary
+      : (props.prop("subtitle") ??
+          props.prop("description") ??
+          model?.page.description ??
+          ""),
+  )
+}
+
+const mdxStatStripView = (props: MdxComponentProps, model?: Model): Html => {
+  if (model?.route === "workbench" && model.serverSnapshot !== null) {
+    const summary = model.fixtureRoute.summary
+
+    return statStripView([
+      {
+        icon: "sparkles",
+        value: String(summary?.eventCount ?? model.serverSnapshot.version),
+        label: "events",
+      },
+      {
+        icon: "scan-text",
+        value: String(model.serverSnapshot.version),
+        label: "snapshot version",
+      },
+      {
+        icon: "timer",
+        value: `${model.serverSnapshot.decisionPacket.evidence[0]?.durationMs ?? 0}`,
+        label: "ms",
+      },
+      {
+        icon: "eye",
+        value: String(model.serverSnapshot.reviewQueue.length),
+        label: "reviews",
+      },
+    ])
+  }
+
+  return statStripView(props.arrayProp("items").map(statItemFromLabel))
+}
+
+const statItemFromLabel = (item: string, index: number): StatItem => {
+  const icons: ReadonlyArray<IconName> = [
+    "sparkles",
+    "eye",
+    "timer",
+    "scan-text",
+  ]
+
+  return {
+    icon: icons[index % icons.length] ?? "sparkles",
+    value: item.split(" ")[0] ?? item,
+    label: item.split(" ").slice(1).join(" ") || item,
+  }
+}
+
+const mdxButtonView = (props: MdxComponentProps, model?: Model): Html => {
+  const h = html<Message>()
+  const selectedRoute = props.route("route")
+
+  return h.button(
+    [
+      h.Class("button button-ghost"),
+      selectedRoute === undefined
+        ? commandAttributeOrClick(props.prop("command"), model)
+        : h.OnClick(SelectedRoute({ route: selectedRoute })),
+    ],
+    [props.prop("label") ?? "Action"],
+  )
+}
+
+const mdxActionBarView = (props: MdxComponentProps, model?: Model): Html => {
+  const h = html<Message>()
+
+  return actionBarView([
+    ...optionalNoteView(props.prop("note")),
+    ...optionalPrimaryActionView(props, model),
+    ...optionalSecondaryActionView(props),
+    ...props.arrayProp("actions").map((action) => buttonView(action, "ghost")),
+  ])
+}
+
+const optionalNoteView = (note: string | undefined): ReadonlyArray<Html> => {
+  const h = html<Message>()
+  return note === undefined ? [] : [h.p([h.Class("section-copy")], [note])]
+}
+
+const optionalPrimaryActionView = (
+  props: MdxComponentProps,
+  model?: Model,
+): ReadonlyArray<Html> => {
+  const h = html<Message>()
+  const primary = props.prop("primary")
+
+  return primary === undefined
+    ? []
+    : [
+        h.button(
+          [
+            h.Class("button button-primary"),
+            primaryActionMessage(primary, props.prop("command"), model),
+          ],
+          [primary],
+        ),
+      ]
+}
+
+const primaryActionMessage = (
+  primary: string,
+  command: string | undefined,
+  model?: Model,
+) => {
+  const h = html<Message>()
+
+  if (command === "promote" && model?.serverSnapshot) {
+    return h.OnClick(
+      RequestedPromotion({
+        hypothesisId:
+          model.serverSnapshot.decisionPacket.hypotheses[0]?.hypothesisId ?? "",
+      }),
+    )
+  }
+
+  if (primary === "True positive") {
+    return h.OnClick(FixtureStepRequested({ step: "complete-proof" }))
+  }
+
+  return commandAttributeOrClick(command, model)
+}
+
+const optionalSecondaryActionView = (
+  props: MdxComponentProps,
+): ReadonlyArray<Html> => {
+  const h = html<Message>()
+  const secondary = props.prop("secondary")
+  const secondaryRoute = props.route("secondaryRoute")
+
+  return secondary === undefined
+    ? []
+    : [
+        h.button(
+          [
+            h.Class("button button-ghost"),
+            secondaryRoute === undefined
+              ? h.Attribute("data-command", "secondary")
+              : h.OnClick(SelectedRoute({ route: secondaryRoute })),
+          ],
+          [secondary],
+        ),
+      ]
 }
 
 

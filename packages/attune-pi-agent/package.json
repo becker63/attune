@@ -1,0 +1,61 @@
+{
+  "name": "@attune/pi-agent",
+  "version": "0.0.0",
+  "description": "Private Attune Pi agent schemas, evidence artifacts, and permission policy helpers.",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./pi-extension": {
+      "types": "./dist/pi-extension.d.ts",
+      "import": "./dist/pi-extension.js",
+      "require": "./dist/pi-extension.cjs"
+    },
+    "./package.json": "./package.json",
+    "./generators.json": "./generators.json"
+  },
+  "generators": "./generators.json",
+  "pi": {
+    "extensions": [
+      "dist/pi-extension.js"
+    ]
+  },
+  "files": [
+    "dist",
+    "docs",
+    "generators.json",
+    "src/generators/**/schema.json"
+  ],
+  "scripts": {
+    "build": "tsup --config tsup.config.ts",
+    "lint": "oxlint --config ../../root-oxlintrc.json . --quiet",
+    "mutation": "stryker run stryker.conf.json",
+    "property": "vitest run test/*.property.test.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "effect": "4.0.0-beta.78"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.79.8"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.79.8",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/typescript-checker": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
+    "@types/node": "^22.15.30",
+    "fast-check": "^3.23.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  }
+}

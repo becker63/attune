@@ -1,12 +1,103 @@
-import type {
-  AgentDecision,
-  AnchorCard,
-  DiscoveryRun,
-  EvidencePacket,
-  MotifHypothesis,
-  ReviewItem,
-  RulePromotionRequested,
-} from "../index.js"
+type DiscoveryBudget = Readonly<{
+  joernRunsRemaining: number
+  anchorSearchesRemaining: number
+  optimizerTurnsRemaining: number
+}>
+
+type DiscoveryRun = Readonly<{
+  runId: string
+  repo: string
+  repoSnapshotId: string
+  status:
+    | "initializing"
+    | "recalling"
+    | "proving"
+    | "reviewing"
+    | "plateaued"
+    | "completed"
+  budget: DiscoveryBudget
+  startedAt: string
+  updatedAt: string
+}>
+
+type SourceLocation = Readonly<{
+  path: string
+  startLine: number
+  endLine: number
+}>
+
+type AnchorCard = Readonly<{
+  anchorId: string
+  runId: string
+  title: string
+  vocabulary: ReadonlyArray<string>
+  score: number
+  excerpt: string
+  locations: ReadonlyArray<SourceLocation>
+}>
+
+type MotifHypothesis = Readonly<{
+  hypothesisId: string
+  runId: string
+  anchorIds: ReadonlyArray<string>
+  title: string
+  summary: string
+  status:
+    | "candidate"
+    | "proving"
+    | "supported"
+    | "weak"
+    | "rejected"
+    | "promoted"
+  score: number
+}>
+
+type EvidencePacket = Readonly<{
+  evidenceId: string
+  runId: string
+  hypothesisId: string
+  templateId: string
+  confidence: "empty" | "weak" | "medium" | "strong"
+  summary: string
+  durationMs: number
+  excerpts: ReadonlyArray<string>
+  createdAt: string
+}>
+
+type AgentDecision = Readonly<{
+  decisionId: string
+  runId: string
+  kind:
+    | "search_anchors"
+    | "create_hypothesis"
+    | "run_joern_template"
+    | "request_human_review"
+    | "promote_rule"
+    | "stop"
+  targetId: string
+  templateId: string
+  rationale: string
+  createdAt: string
+}>
+
+type ReviewItem = Readonly<{
+  reviewId: string
+  runId: string
+  kind: "hypothesis" | "evidence" | "promotion"
+  title: string
+  summary: string
+  targetId: string
+  requiredAction: string
+}>
+
+type RulePromotionRequested = Readonly<{
+  _tag: "RulePromotionRequested"
+  eventId: string
+  occurredAt: string
+  runId: string
+  hypothesisId: string
+  requestedBy: string
+}>
 
 export type RunMetrics = Readonly<{
   runId: string
@@ -51,11 +142,16 @@ export type MotifReadModel = Readonly<{
   getRun: (runId: string) => DiscoveryRun
   getRunMetrics: (runId: string) => RunMetrics
   listAnchorsForRun: (runId: string) => ReadonlyArray<AnchorCard>
-  listAnchorSearchesForRun: (runId: string) => ReadonlyArray<AnchorSearchProjection>
+  listAnchorSearchesForRun: (
+    runId: string,
+  ) => ReadonlyArray<AnchorSearchProjection>
   listActiveFamilies: (runId: string) => ReadonlyArray<AnchorFamily>
   listQueuedHypotheses: (runId: string) => ReadonlyArray<MotifHypothesis>
   listActiveHypotheses: (runId: string) => ReadonlyArray<MotifHypothesis>
-  listRecentEvidence: (input: { readonly runId: string; readonly limit: number }) => ReadonlyArray<EvidencePacket>
+  listRecentEvidence: (input: {
+    readonly runId: string
+    readonly limit: number
+  }) => ReadonlyArray<EvidencePacket>
   listReviewQueue: (runId: string) => ReadonlyArray<ReviewItem>
   snapshot: () => ReadModelSnapshot
   upsertRunStarted: (input: DiscoveryRun) => void
@@ -64,11 +160,17 @@ export type MotifReadModel = Readonly<{
   recordAnchorSearch: (input: AnchorSearchProjection) => void
   upsertFamily: (input: AnchorFamily) => void
   upsertHypothesis: (input: MotifHypothesis) => void
-  markHypothesisDiscarded: (input: { readonly runId: string; readonly hypothesisId: string }) => void
+  markHypothesisDiscarded: (input: {
+    readonly runId: string
+    readonly hypothesisId: string
+  }) => void
   insertEvidencePacket: (input: EvidencePacket) => void
   requestRulePromotion: (input: RulePromotionRequested) => void
   insertReviewRequest: (input: ReviewItem) => void
-  refreshRunMetrics: (input: { readonly runId: string; readonly updatedAt: string }) => void
+  refreshRunMetrics: (input: {
+    readonly runId: string
+    readonly updatedAt: string
+  }) => void
 }>
 
 export const makeInMemoryMotifReadModel = (): MotifReadModel => {
@@ -83,8 +185,10 @@ export const makeInMemoryMotifReadModel = (): MotifReadModel => {
   const reviewQueue = new Map<string, ReviewItem>()
   const metrics = new Map<string, RunMetrics>()
 
-  const valuesForRun = <T extends Readonly<{ runId: string }>>(values: Iterable<T>, runId: string): ReadonlyArray<T> =>
-    [...values].filter((value) => value.runId === runId)
+  const valuesForRun = <T extends Readonly<{ runId: string }>>(
+    values: Iterable<T>,
+    runId: string,
+  ): ReadonlyArray<T> => [...values].filter((value) => value.runId === runId)
 
   const requireValue = <T>(value: T | undefined, label: string): T => {
     if (value === undefined) {
@@ -93,7 +197,13 @@ export const makeInMemoryMotifReadModel = (): MotifReadModel => {
     return value
   }
 
-  const refreshRunMetrics = ({ runId, updatedAt }: { readonly runId: string; readonly updatedAt: string }): void => {
+  const refreshRunMetrics = ({
+    runId,
+    updatedAt,
+  }: {
+    readonly runId: string
+    readonly updatedAt: string
+  }): void => {
     metrics.set(runId, {
       runId,
       anchorsCount: valuesForRun(anchors.values(), runId).length,
@@ -106,13 +216,25 @@ export const makeInMemoryMotifReadModel = (): MotifReadModel => {
 
   return {
     getRun: (runId) => requireValue(runs.get(runId), `discovery_runs/${runId}`),
-    getRunMetrics: (runId) => requireValue(metrics.get(runId), `run_metrics/${runId}`),
+    getRunMetrics: (runId) =>
+      requireValue(metrics.get(runId), `run_metrics/${runId}`),
     listAnchorsForRun: (runId) => valuesForRun(anchors.values(), runId),
-    listAnchorSearchesForRun: (runId) => valuesForRun(anchorSearches.values(), runId),
-    listActiveFamilies: (runId) => valuesForRun(families.values(), runId).filter((family) => family.status === "active"),
-    listQueuedHypotheses: (runId) => valuesForRun(hypotheses.values(), runId).filter((hypothesis) => hypothesis.status === "candidate"),
-    listActiveHypotheses: (runId) => valuesForRun(hypotheses.values(), runId).filter((hypothesis) => hypothesis.status !== "rejected"),
-    listRecentEvidence: ({ runId, limit }) => valuesForRun(evidence.values(), runId).slice(-limit),
+    listAnchorSearchesForRun: (runId) =>
+      valuesForRun(anchorSearches.values(), runId),
+    listActiveFamilies: (runId) =>
+      valuesForRun(families.values(), runId).filter(
+        (family) => family.status === "active",
+      ),
+    listQueuedHypotheses: (runId) =>
+      valuesForRun(hypotheses.values(), runId).filter(
+        (hypothesis) => hypothesis.status === "candidate",
+      ),
+    listActiveHypotheses: (runId) =>
+      valuesForRun(hypotheses.values(), runId).filter(
+        (hypothesis) => hypothesis.status !== "rejected",
+      ),
+    listRecentEvidence: ({ runId, limit }) =>
+      valuesForRun(evidence.values(), runId).slice(-limit),
     listReviewQueue: (runId) => valuesForRun(reviewQueue.values(), runId),
     snapshot: () => ({
       runs: [...runs.values()],
@@ -131,12 +253,16 @@ export const makeInMemoryMotifReadModel = (): MotifReadModel => {
       refreshRunMetrics({ runId: input.runId, updatedAt: input.updatedAt })
     },
     insertAcceptedDecision: (input) => decisions.set(input.decisionId, input),
-    upsertAnchorCards: (input) => input.forEach((anchor) => anchors.set(anchor.anchorId, anchor)),
+    upsertAnchorCards: (input) =>
+      input.forEach((anchor) => anchors.set(anchor.anchorId, anchor)),
     recordAnchorSearch: (input) => anchorSearches.set(input.searchId, input),
     upsertFamily: (input) => families.set(input.familyId, input),
     upsertHypothesis: (input) => hypotheses.set(input.hypothesisId, input),
     markHypothesisDiscarded: ({ hypothesisId }) => {
-      const hypothesis = requireValue(hypotheses.get(hypothesisId), `motif_hypotheses/${hypothesisId}`)
+      const hypothesis = requireValue(
+        hypotheses.get(hypothesisId),
+        `motif_hypotheses/${hypothesisId}`,
+      )
       hypotheses.set(hypothesisId, { ...hypothesis, status: "rejected" })
     },
     insertEvidencePacket: (input) => evidence.set(input.evidenceId, input),

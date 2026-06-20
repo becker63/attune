@@ -1,7 +1,7 @@
 import { MultiDirectedGraph } from "graphology"
 import type { AbstractGraph } from "graphology-types"
 import { Data, Effect, Schema } from "effect"
-import type { BoundLike } from "./CpgProgram.js"
+import type { BoundLike } from "./model.js"
 import { JsonObject, JsonValue, type JsonValue as JsonValueType } from "../../edge/runtime/json.js"
 
 export const NodeKind = Schema.String
@@ -143,6 +143,41 @@ export class CpgGraph {
     return undefined
   }
 
+  private pathFromPrevious(
+    endId: string,
+    previous: ReadonlyMap<string, string>,
+  ): readonly NodeAttrs[] {
+    const path = [endId]
+    let cursor = endId
+    while (previous.has(cursor)) {
+      const next = previous.get(cursor)
+      if (next === undefined) {break}
+      cursor = next
+      path.push(cursor)
+    }
+    return path.reverse().map((id) => this.graph.getNodeAttributes(id))
+  }
+
+  private shortestPathFromIds(startId: string, endId: string): readonly NodeAttrs[] {
+    const queue: string[] = [startId]
+    const seen = new Set(queue)
+    const previous = new Map<string, string>()
+
+    for (let index = 0; index < queue.length; index++) {
+      const current = queue[index]
+      if (current === undefined) {continue}
+      for (const neighbor of this.graph.outNeighbors(current)) {
+        if (seen.has(neighbor)) {continue}
+        seen.add(neighbor)
+        previous.set(neighbor, current)
+        if (neighbor === endId) {return this.pathFromPrevious(endId, previous)}
+        queue.push(neighbor)
+      }
+    }
+
+    return []
+  }
+
   shortestPath(
     from: BoundLike,
     to: BoundLike,
@@ -158,34 +193,7 @@ export class CpgGraph {
         const end = this.anchor(to)
         if (!start || !end) return []
         if (start.id === end.id) return [start]
-
-        const queue: string[] = [start.id]
-        const seen = new Set(queue)
-        const previous = new Map<string, string>()
-
-        for (let index = 0; index < queue.length; index++) {
-          const current = queue[index]
-          if (current === undefined) {continue}
-          for (const neighbor of this.graph.outNeighbors(current)) {
-            if (seen.has(neighbor)) continue
-            seen.add(neighbor)
-            previous.set(neighbor, current)
-            if (neighbor === end.id) {
-              const path = [end.id]
-              let cursor = end.id
-              while (previous.has(cursor)) {
-                const next = previous.get(cursor)
-                if (next === undefined) {break}
-                cursor = next
-                path.push(cursor)
-              }
-              return path.reverse().map((id) => this.graph.getNodeAttributes(id))
-            }
-            queue.push(neighbor)
-          }
-        }
-
-        return []
+        return this.shortestPathFromIds(start.id, end.id)
       },
     })
   }

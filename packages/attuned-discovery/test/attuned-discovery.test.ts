@@ -23,6 +23,8 @@ import {
   decodeReportActions,
   fixtureAnchorCards,
   fixtureDiscoveryEvents,
+  fixtureEvidence,
+  fixtureHypothesis,
   fixtureReportEvents,
   fixtureRun,
   familyUpdated,
@@ -67,9 +69,9 @@ describe("attuned discovery", () => {
     replayDiscoveryEvents(fixtureDiscoveryEvents, reactivity)
 
     expect(reactivity.mutations).toHaveLength(fixtureDiscoveryEvents.length)
-    expect(reactivity.mutations.every((mutation) => mutation.writeSucceeded)).toBe(
-      true,
-    )
+    expect(
+      reactivity.mutations.every((mutation) => mutation.writeSucceeded),
+    ).toBe(true)
 
     const anchorMutation = reactivity.mutations.find((mutation) =>
       mutation.keys.includes(ViewKeys.anchors(fixtureRun.runId)[0]!),
@@ -196,9 +198,7 @@ describe("attuned discovery", () => {
       ),
     ]
 
-    expect(() => replayReportEvents(base, events)).toThrow(
-      "unknown evidence",
-    )
+    expect(() => replayReportEvents(base, events)).toThrow("unknown evidence")
   })
 
   it("decodes validated local report-agent output", () => {
@@ -277,7 +277,7 @@ describe("attuned discovery", () => {
           actionId: "narrative",
           runId: fixtureRun.runId,
           sectionId: "section",
-          markdown: "<RuleCandidatePanel evidenceId=\"invented\" />",
+          markdown: '<RuleCandidatePanel evidenceId="invented" />',
         },
       ]),
     ).toThrow("executable UI text")
@@ -329,11 +329,13 @@ describe("attuned discovery", () => {
       Effect.provide(InMemoryDiscoveryEventLogLive()),
     )
 
-    const projection = Effect.runSync(program as Effect.Effect<
-      ReturnType<typeof replayDiscoveryEvents>,
-      never,
-      never
-    >)
+    const projection = Effect.runSync(
+      program as Effect.Effect<
+        ReturnType<typeof replayDiscoveryEvents>,
+        never,
+        never
+      >,
+    )
 
     expect(projection.version).toBe(2)
     expect(projection.runs.get(fixtureRun.runId)?.runId).toBe(fixtureRun.runId)
@@ -360,9 +362,130 @@ describe("attuned discovery", () => {
     })
   })
 
+  it("filters read-model rows by run, status, and evidence recency", () => {
+    const readModel = makeInMemoryMotifReadModel()
+    const otherRun = {
+      ...fixtureRun,
+      runId: "run-other",
+      repoSnapshotId: "workspace-other",
+    }
+    const candidateHypothesis = {
+      ...fixtureHypothesis,
+      hypothesisId: "hypothesis-candidate",
+      status: "candidate" as const,
+      score: 0.42,
+    }
+    const rejectedHypothesis = {
+      ...fixtureHypothesis,
+      hypothesisId: "hypothesis-rejected",
+      status: "rejected" as const,
+      score: 0.12,
+    }
+    const evidence = [1, 2, 3].map((index) => ({
+      ...fixtureEvidence,
+      evidenceId: `evidence-${index}`,
+      createdAt: `2026-06-19T05:0${index}:00.000Z`,
+    }))
+
+    readModel.upsertRunStarted(fixtureRun)
+    readModel.upsertRunStarted(otherRun)
+    readModel.upsertAnchorCards([
+      ...fixtureAnchorCards,
+      {
+        ...fixtureAnchorCards[0]!,
+        anchorId: "anchor-other",
+        runId: otherRun.runId,
+      },
+    ])
+    readModel.upsertFamily({
+      familyId: "family-active",
+      runId: fixtureRun.runId,
+      title: "Active family",
+      summary: "Included in active-family reads.",
+      status: "active",
+      anchorIds: [fixtureAnchorCards[0]!.anchorId],
+    })
+    readModel.upsertFamily({
+      familyId: "family-merged",
+      runId: fixtureRun.runId,
+      title: "Merged family",
+      summary: "Excluded from active-family reads.",
+      status: "merged",
+      anchorIds: [fixtureAnchorCards[1]!.anchorId],
+    })
+    readModel.upsertHypothesis(candidateHypothesis)
+    readModel.upsertHypothesis(rejectedHypothesis)
+    evidence.forEach((packet) => readModel.insertEvidencePacket(packet))
+    readModel.insertEvidencePacket({
+      ...fixtureEvidence,
+      evidenceId: "evidence-other",
+      runId: otherRun.runId,
+    })
+    readModel.insertReviewRequest({
+      reviewId: "review-run",
+      runId: fixtureRun.runId,
+      kind: "hypothesis",
+      title: "Review run hypothesis",
+      summary: "Only this run should be returned.",
+      targetId: candidateHypothesis.hypothesisId,
+      requiredAction: "Review candidate.",
+    })
+    readModel.refreshRunMetrics({
+      runId: fixtureRun.runId,
+      updatedAt: "2026-06-19T05:04:00.000Z",
+    })
+
+    expect(readModel.listAnchorsForRun(fixtureRun.runId)).toHaveLength(2)
+    expect(
+      readModel
+        .listActiveFamilies(fixtureRun.runId)
+        .map((family) => family.familyId),
+    ).toEqual(["family-active"])
+    expect(
+      readModel
+        .listQueuedHypotheses(fixtureRun.runId)
+        .map((hypothesis) => hypothesis.hypothesisId),
+    ).toEqual([candidateHypothesis.hypothesisId])
+    expect(
+      readModel
+        .listActiveHypotheses(fixtureRun.runId)
+        .map((hypothesis) => hypothesis.hypothesisId),
+    ).toEqual([candidateHypothesis.hypothesisId])
+    expect(
+      readModel
+        .listRecentEvidence({ runId: fixtureRun.runId, limit: 2 })
+        .map((packet) => packet.evidenceId),
+    ).toEqual(["evidence-2", "evidence-3"])
+    expect(readModel.listReviewQueue(fixtureRun.runId)).toHaveLength(1)
+    expect(readModel.getRunMetrics(fixtureRun.runId)).toMatchObject({
+      anchorsCount: 2,
+      hypothesesCount: 2,
+      evidenceCount: 3,
+      reviewQueueCount: 1,
+    })
+    expect(readModel.snapshot().runs.map((run) => run.runId)).toEqual([
+      fixtureRun.runId,
+      otherRun.runId,
+    ])
+  })
+
+  it("throws explicit read-model missing-row errors", () => {
+    const readModel = makeInMemoryMotifReadModel()
+
+    expect(() => readModel.getRun("missing-run")).toThrow(
+      "Missing read-model row: discovery_runs/missing-run",
+    )
+    expect(() =>
+      readModel.markHypothesisDiscarded({
+        runId: fixtureRun.runId,
+        hypothesisId: "missing-hypothesis",
+      }),
+    ).toThrow("Missing read-model row: motif_hypotheses/missing-hypothesis")
+  })
+
   it("announces run-scoped ViewKeys after successful projection writes", () => {
-    const reactivity = makeReactivityRuntime();
-    const before = replayDiscoveryEvents(fixtureDiscoveryEvents);
+    const reactivity = makeReactivityRuntime()
+    const before = replayDiscoveryEvents(fixtureDiscoveryEvents)
     const scored = evidenceScored({
       evidenceId: "evidence-reactive-refresh",
       runId: fixtureRun.runId,
@@ -373,35 +496,35 @@ describe("attuned discovery", () => {
       durationMs: 42,
       excerpts: ["projection write completed"],
       createdAt: "2026-06-19T05:02:45.000Z",
-    });
+    })
 
     const { projection, announcedKeys } = appendProjectedDiscoveryEvent(
       before,
       scored,
       reactivity,
-    );
+    )
 
-    expect(projection.evidence.has("evidence-reactive-refresh")).toBe(true);
-    expect(reactivity.mutations.at(-1)?.keys).toEqual(announcedKeys);
+    expect(projection.evidence.has("evidence-reactive-refresh")).toBe(true)
+    expect(reactivity.mutations.at(-1)?.keys).toEqual(announcedKeys)
     expect(announcedKeys).toEqual(
       expect.arrayContaining([
         ...ViewKeys.evidence(fixtureRun.runId),
         ...ViewKeys.hypotheses(fixtureRun.runId),
         ...ViewKeys.runMetrics(fixtureRun.runId),
       ]),
-    );
-  });
+    )
+  })
 
   it("refreshes base atoms through ViewKeys and recomputes packet and FoldKit scene", () => {
-    const reactivity = makeReactivityRuntime();
-    let projection = replayDiscoveryEvents(fixtureDiscoveryEvents);
+    const reactivity = makeReactivityRuntime()
+    let projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
     const workspace = makeDiscoveryAtomWorkspace({
       runId: fixtureRun.runId,
       getProjection: () => projection,
       reactivity,
-    });
-    const beforePacket = workspace.decisionPacketAtom(1).read();
-    const beforeScene = workspace.foldSceneAtom(1).read();
+    })
+    const beforePacket = workspace.decisionPacketAtom(1).read()
+    const beforeScene = workspace.foldSceneAtom(1).read()
 
     projection = appendProjectedDiscoveryEvent(
       projection,
@@ -417,20 +540,20 @@ describe("attuned discovery", () => {
         createdAt: "2026-06-19T05:02:50.000Z",
       }),
       reactivity,
-    ).projection;
+    ).projection
 
-    const afterPacket = deriveDecisionPacketFromAtoms(workspace, 2);
-    const afterScene = workspace.foldSceneAtom(2).read();
+    const afterPacket = deriveDecisionPacketFromAtoms(workspace, 2)
+    const afterScene = workspace.foldSceneAtom(2).read()
 
     expect(workspace.evidenceAtom.keys).toEqual(
       ViewKeys.evidence(fixtureRun.runId),
-    );
-    expect(workspace.decisionPacketAtom(2).keys).toEqual([]);
-    expect(afterPacket.evidence.length).toBe(beforePacket.evidence.length + 1);
-    expect(afterScene.nodes.length).toBe(beforeScene.nodes.length + 1);
-    expect(afterScene.nodes.at(-1)?.id).toBe("evidence-new-scene-node");
-    workspace.dispose();
-  });
+    )
+    expect(workspace.decisionPacketAtom(2).keys).toEqual([])
+    expect(afterPacket.evidence.length).toBe(beforePacket.evidence.length + 1)
+    expect(afterScene.nodes.length).toBe(beforeScene.nodes.length + 1)
+    expect(afterScene.nodes.at(-1)?.id).toBe("evidence-new-scene-node")
+    workspace.dispose()
+  })
 
   it("keeps one run-scoped atom registry per active run", () => {
     const projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
@@ -531,5 +654,79 @@ describe("attuned discovery", () => {
           decision.kind === "run_joern_template",
       ),
     ).toBe(false)
+  })
+
+  it("removes anchor search decisions when anchor budget is exhausted", () => {
+    const exhaustedRun = {
+      ...fixtureRun,
+      budget: {
+        ...fixtureRun.budget,
+        anchorSearchesRemaining: 0,
+      },
+    }
+    const projection = replayDiscoveryEvents([
+      {
+        _tag: "DiscoveryRunStarted",
+        eventId: "run-anchor-exhausted:started",
+        occurredAt: exhaustedRun.startedAt,
+        run: exhaustedRun,
+      },
+      ...buildFixtureHarnessEvents().slice(1, 3),
+    ])
+    const packet = deriveDecisionPacket(projection, exhaustedRun.runId)
+
+    expect(
+      packet.availableDecisions.map((decision) => decision.kind),
+    ).not.toContain("search_anchors")
+    expect(packet.bestNextAction.kind).toBe("create_hypothesis")
+  })
+
+  it("decrements budgets on evidence and accepted decisions without going below zero", () => {
+    const nearlyExhaustedRun = {
+      ...fixtureRun,
+      budget: {
+        joernRunsRemaining: 1,
+        anchorSearchesRemaining: 1,
+        optimizerTurnsRemaining: 0,
+      },
+    }
+    const projection = replayDiscoveryEvents([
+      {
+        _tag: "DiscoveryRunStarted",
+        eventId: "run-budget-clamp:started",
+        occurredAt: nearlyExhaustedRun.startedAt,
+        run: nearlyExhaustedRun,
+      },
+      ...buildFixtureHarnessEvents().slice(1, 3),
+      evidenceScored({
+        ...fixtureEvidence,
+        evidenceId: "evidence-budget-clamp",
+        createdAt: "2026-06-19T05:03:00.000Z",
+      }),
+      {
+        _tag: "AgentDecisionRecorded",
+        eventId: "decision-budget-clamp:recorded",
+        occurredAt: "2026-06-19T05:03:30.000Z",
+        decision: {
+          decisionId: "decision-budget-clamp",
+          runId: nearlyExhaustedRun.runId,
+          kind: "request_human_review",
+          targetId: fixtureHypothesis.hypothesisId,
+          templateId: "",
+          rationale: "Exercise optimizer budget clamping.",
+          createdAt: "2026-06-19T05:03:30.000Z",
+        },
+      },
+    ])
+    const packet = deriveDecisionPacket(projection, nearlyExhaustedRun.runId)
+
+    expect(packet.budget).toEqual({
+      joernRunsRemaining: 0,
+      anchorSearchesRemaining: 1,
+      optimizerTurnsRemaining: 0,
+    })
+    expect(
+      packet.availableDecisions.map((decision) => decision.kind),
+    ).not.toContain("run_joern_template")
   })
 })

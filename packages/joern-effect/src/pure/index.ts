@@ -3,15 +3,17 @@ export { property, type Property } from "./builder/property.js"
 export {
   BoundFlow,
   BoundTraversal,
+  FlowTraversal,
+  MaterializationBuilder,
+} from "./builder/traversal.js"
+export {
   CpgProgram,
-  CpgProgramBuilder,
   CpgProgramDefinition,
   GraphWeights,
-  type BindingAst,
-  type BoundLike,
   type CompiledCpgProgram,
-  type VariableId,
 } from "./program/CpgProgram.js"
+export { CpgProgramBuilder } from "./program/CpgProgramBuilder.js"
+export type { BindingAst, BoundLike, VariableId } from "./program/model.js"
 export {
   CpgGraph,
   EdgeKind,

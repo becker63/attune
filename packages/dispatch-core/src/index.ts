@@ -308,56 +308,102 @@ const parseBlocks = (body: string): ReadonlyArray<FoldkitMdxBlock> => {
     }
 
     if (line.startsWith("```")) {
-      const language = line.slice(3).trim()
-      const codeLines: Array<string> = []
-      index += 1
-      while (index < lines.length && !lines[index]!.startsWith("```")) {
-        codeLines.push(lines[index]!)
-        index += 1
-      }
-      blocks.push({ _tag: "Code", language, code: codeLines.join("\n") })
-      index += 1
+      const parsed = parseCodeBlock(lines, index)
+      blocks.push(parsed.block)
+      index = parsed.nextIndex
       continue
     }
 
     if (line.startsWith("#")) {
-      const level = Math.min(line.match(/^#+/)?.[0].length ?? 1, 6)
-      blocks.push({
-        _tag: "Heading",
-        level,
-        text: line.slice(level).trim(),
-      })
+      blocks.push(parseHeadingBlock(line))
       index += 1
       continue
     }
 
     if (line.trim().startsWith("<")) {
-      const componentLines = [line]
-      index += 1
-      while (
-        index < lines.length &&
-        !componentLines.join("\n").trim().endsWith("/>")
-      ) {
-        componentLines.push(lines[index]!)
-        index += 1
-      }
-      const component = parseComponent(componentLines.join("\n"))
+      const parsed = parseComponentBlock(lines, index)
+      const component = parseComponent(parsed.source)
       if (component !== undefined) {
         blocks.push(component)
       }
+      index = parsed.nextIndex
       continue
     }
 
-    const paragraphLines = [line.trim()]
-    index += 1
-    while (index < lines.length && lines[index]!.trim().length > 0) {
-      paragraphLines.push(lines[index]!.trim())
-      index += 1
-    }
-    blocks.push({ _tag: "Paragraph", text: paragraphLines.join(" ") })
+    const parsed = parseParagraphBlock(lines, index)
+    blocks.push(parsed.block)
+    index = parsed.nextIndex
   }
 
   return blocks
+}
+
+const parseCodeBlock = (
+  lines: ReadonlyArray<string>,
+  startIndex: number,
+): { readonly block: FoldkitMdxBlock; readonly nextIndex: number } => {
+  const language = lines[startIndex]!.slice(3).trim()
+  const codeLines: Array<string> = []
+  let index = startIndex + 1
+
+  while (index < lines.length && !lines[index]!.startsWith("```")) {
+    codeLines.push(lines[index]!)
+    index += 1
+  }
+
+  return {
+    block: { _tag: "Code", language, code: codeLines.join("\n") },
+    nextIndex: index + 1,
+  }
+}
+
+const parseHeadingBlock = (line: string): FoldkitMdxBlock => {
+  const level = Math.min(line.match(/^#+/)?.[0].length ?? 1, 6)
+
+  return {
+    _tag: "Heading",
+    level,
+    text: line.slice(level).trim(),
+  }
+}
+
+const parseComponentBlock = (
+  lines: ReadonlyArray<string>,
+  startIndex: number,
+): { readonly source: string; readonly nextIndex: number } => {
+  const componentLines = [lines[startIndex]!]
+  let index = startIndex + 1
+
+  while (
+    index < lines.length &&
+    !componentLines.join("\n").trim().endsWith("/>")
+  ) {
+    componentLines.push(lines[index]!)
+    index += 1
+  }
+
+  return {
+    source: componentLines.join("\n"),
+    nextIndex: index,
+  }
+}
+
+const parseParagraphBlock = (
+  lines: ReadonlyArray<string>,
+  startIndex: number,
+): { readonly block: FoldkitMdxBlock; readonly nextIndex: number } => {
+  const paragraphLines = [lines[startIndex]!.trim()]
+  let index = startIndex + 1
+
+  while (index < lines.length && lines[index]!.trim().length > 0) {
+    paragraphLines.push(lines[index]!.trim())
+    index += 1
+  }
+
+  return {
+    block: { _tag: "Paragraph", text: paragraphLines.join(" ") },
+    nextIndex: index,
+  }
 }
 
 const parseComponent = (source: string): FoldkitMdxBlock | undefined => {

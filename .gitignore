@@ -1,12 +1,17 @@
 node_modules/
 .nx/
+.stryker-tmp/
 dist/
 buck-out/
 reports/
 .attune/
+.attune-runs/
 .attune-tools/
 .dagger-output/
+packages/**/.alchemy/
 .direnv/
+.pi/
+.pi-tasks/
 .pnpm-store/
 .env
 *.events.jsonl
@@ -17,6 +22,7 @@ diagnostics.json
 run-summary.json
 summary.md
 telemetry-export.json
+repomix-output.xml
 counterexamples/
 result
 result-*
