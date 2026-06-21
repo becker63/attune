@@ -1,0 +1,105 @@
+{
+  "generatedOutputs": [
+    {
+      "generator": "scripts/generationStage.ts emit-generated",
+      "outputs": [
+        "src/pure/generated/cpg.ts",
+        "src/pure/generated/nodes.ts",
+        "src/pure/generated/prop.ts",
+        "src/pure/generated/schema.ts",
+        "src/pure/generated/traversal.ts"
+      ],
+      "sources": [
+        "schema/joern-cpg-schema.1.7.70.json",
+        "src/pure/codegen/**",
+        "scripts/generationStage.ts"
+      ],
+      "target": "emit-generated"
+    },
+    {
+      "generator": "scripts/renderReadme.ts",
+      "outputs": [
+        "README.md"
+      ],
+      "sources": [
+        "scripts/README.template.md",
+        "scripts/renderReadme.ts"
+      ],
+      "target": "render-readme"
+    }
+  ],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/edge/runtime/**",
+        "src/pure/builder/**",
+        "src/pure/program/**",
+        "examples/**",
+        "test/**"
+      ],
+      "reason": "Runtime, query builder, CPG program, examples, and tests are hand-authored Joern integration surfaces that predate Source BOM automation."
+    }
+  ],
+  "ownedFiles": [
+    "README.md",
+    "examples/**",
+    "package.json",
+    "project.json",
+    "schema/**",
+    "scripts/**",
+    "src/**",
+    "test/**",
+    "tsconfig.build.json",
+    "tsconfig.json",
+    "tsup.config.ts",
+    "vitest.config.ts"
+  ],
+  "project": "joern-effect",
+  "projectRoot": "packages/joern-effect",
+  "queryCheckTargetNotes": [
+    {
+      "note": "check-generated verifies generated Joern bindings, README, and schema snapshots; add Source BOM-native query/check annotations once helper support lands.",
+      "target": "check-generated"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "schema/joern-cpg-schema.1.7.70.json",
+    "scripts/ExtractCpgSchema.java",
+    "scripts/README.template.md",
+    "scripts/enrichSchemaDocs.mjs",
+    "scripts/generate.ts",
+    "scripts/generationStage.ts",
+    "scripts/renderReadme.ts",
+    "src/pure/codegen/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "extract-cpg-schema",
+    "enrich-schema-docs",
+    "normalize-schema",
+    "emit-schema-modules",
+    "emit-node-types",
+    "emit-property-metadata",
+    "emit-traversal-dsl",
+    "emit-template-registry",
+    "emit-template-bindings",
+    "emit-template-evidence",
+    "emit-fast-check-arbitraries",
+    "emit-generated",
+    "render-readme",
+    "generate",
+    "check-generated"
+  ],
+  "waivers": [
+    {
+      "expires": null,
+      "paths": [
+        "examples/raw-cpgql.ts",
+        "src/pure/builder/raw.ts",
+        "test/query-builder.test.ts"
+      ],
+      "reason": "Raw CPGQL remains an explicit escape hatch under the Joern Effect API; policy checks should inventory it but not block this day-0 shard."
+    }
+  ]
+}
