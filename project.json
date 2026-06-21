@@ -17,6 +17,32 @@
         ],
         "parallel": false
       }
+    },
+    "policy-fast": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "corepack pnpm exec nx run attune-nx:test",
+          "corepack pnpm exec nx run workspace:policy-proof-pressure"
+        ],
+        "parallel": false
+      }
+    },
+    "policy-architecture": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "corepack pnpm exec nx run attune-nx:test",
+          "corepack pnpm exec nx run workspace:policy-proof-pressure"
+        ],
+        "parallel": false
+      }
+    },
+    "policy-proof-pressure": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/codex/report-proof-pressure-status.mjs"
+      }
     }
   }
 }
