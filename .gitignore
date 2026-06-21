@@ -1,5 +1,6 @@
 node_modules/
 .nx/
+.alchemy/
 .stryker-tmp/
 dist/
 buck-out/

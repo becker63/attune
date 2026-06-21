@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: nix/hosts/local/thinkcentre-secrets\.yaml$
+    age: age1replacewithoperatororbootstraprecipient0000000000000000000000000000000000000000000000000000000

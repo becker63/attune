@@ -236,6 +236,7 @@
             pkgs.nodejs_22
             pkgs.pnpm
             pkgs.nixfmt
+            pkgs.ssh-to-age
             joern
             openSpec
           ];
@@ -245,6 +246,7 @@
           TMPDIR = "/tmp";
           TEMP = "/tmp";
           TMP = "/tmp";
+          ALCHEMY_TELEMETRY_DISABLED = "1";
           ${envVars.joernBinary} = "${joern}/bin/joern";
           ${envVars.joernHome} = "${joern}";
           ${envVars.joernCpgVersion} = cpgVersion;
@@ -254,7 +256,7 @@
 
           shellHook = ''
                         export ATTUNE_PI_BIN="${pkgs.pi}/bin/pi"
-                        export PATH="${pkgs.pi}/bin:${pkgs.nodejs_22}/bin:${pkgs.git}/bin:${pkgs.openssh}/bin:$PATH"
+                        export PATH="$PWD/packages/home-deployment/node_modules/.bin:$PWD/node_modules/.bin:${pkgs.pi}/bin:${pkgs.nodejs_22}/bin:${pkgs.git}/bin:${pkgs.openssh}/bin:$PATH"
                         hash -r 2>/dev/null || true
                         rehash 2>/dev/null || true
                         pi() {
@@ -310,6 +312,8 @@
                         echo "  pnpm exec nx run joern-effect:generate"
                         echo "  pnpm exec nx run cocoindex-effect:generate"
                         echo "  pnpm exec nx run platform-alchemy-k8s:generate-crd-types"
+                        echo "  alchemy plan packages/home-deployment/alchemy.run.ts"
+                        echo "  alchemy deploy packages/home-deployment/alchemy.run.ts --yes"
           '';
         };
 

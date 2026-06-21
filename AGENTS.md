@@ -101,16 +101,12 @@ Linear issue is explicit and low risk.
   DSL surface.
 - `packages/joern-effect-properties`: property, fuzzer, Axiom, and Joern-backed
   validation workbench.
-- `docs/dispatch-app-boundaries.md`: concise map for product app versus private
-  Dispatch operator app boundaries. Product Workbench/FoldKit UI must not hide
-  Dispatch as an incidental page.
-- `packages/dispatch-schema`: shared Dispatch operator schemas/types.
-- `packages/dispatch-core`: Dispatch operator fixtures, derivations, constrained
-  MDX compilation, and RSS/Atom/JSON feed projections.
-- `packages/dispatch-foldkit`: private Dispatch operator FoldKit model, update,
-  message, and view logic (`dispatch-operator-foldkit`).
-- `packages/dispatch-web`: private Dispatch operator Vite/FoldKit app boot
-  package (`dispatch-operator-web`).
+- `docs/dispatch-app-boundaries.md`: current FoldKit app boundary. Dispatch
+  packages were removed from this project; product Workbench/FoldKit UI must not
+  hide Dispatch as an incidental page.
+- `packages/attune-foldkit`: product FoldKit model, update, messages, view
+  logic, constrained MDX fixtures, activity helpers, and Vite web boot
+  (`attune-foldkit`, `@attune/foldkit-ui`).
 - `packages/platform-alchemy-k8s`: Kubernetes/Alchemy platform resource package.
   Kubernetes generation should become an `@attune/nx` generator issue before
   repeated hand-written resource shapes expand.
@@ -145,7 +141,7 @@ Default order:
 5. Effect Reactivity keys.
 6. Server-side effect-atom view graph.
 7. DecisionPacket, score, plateau, and FoldKit scene atoms.
-8. Dispatch progress projection and feeds.
+8. FoldKit workbench progress projection.
 9. Nx generator expansion for repeated shapes.
 
 CocoIndex MCP and Joern proof-router DSL work may be tracked elsewhere. Do not
