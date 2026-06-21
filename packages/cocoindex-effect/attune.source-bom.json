@@ -1,0 +1,84 @@
+{
+  "generatedOutputs": [
+    {
+      "generator": "scripts/generationStage.ts emit-mcp-schema",
+      "outputs": [
+        "src/generated/cocoindex-code-mcp.ts"
+      ],
+      "sources": [
+        "scripts/generate-cocoindex-mcp-types.ts",
+        "scripts/generationStage.ts"
+      ],
+      "target": "emit-mcp-schema"
+    },
+    {
+      "generator": "@attune/nx:sync-cocoindex-mcp-tools",
+      "outputs": [
+        "src/cocoindex/tools/ToolRegistry.generated.ts"
+      ],
+      "sources": [
+        "src/cocoindex/tools/index.ts",
+        "src/cocoindex/tools/search.ts"
+      ],
+      "target": "sync-mcp-tools"
+    }
+  ],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/CocoIndexClient.ts",
+        "src/CocoIndexClientFixture.ts",
+        "src/CocoIndexClientLive.ts",
+        "src/RepositoryIntelligence.ts",
+        "src/errors.ts",
+        "src/index.ts",
+        "src/mcp/stdio.ts",
+        "src/model.ts"
+      ],
+      "reason": "Effect service boundary, fixtures, MCP stdio entrypoint, and repository intelligence model predate Source BOM automation."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "scripts/generate-cocoindex-mcp-types.ts",
+    "scripts/generationStage.ts",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "cocoindex-effect",
+  "projectRoot": "packages/cocoindex-effect",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Generated MCP schema and tool registry freshness is covered by check-generated; add dedicated Source BOM query/check target metadata when @attune/nx exposes it.",
+      "target": "check-generated"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "scripts/generate-cocoindex-mcp-types.ts",
+    "scripts/generationStage.ts",
+    "src/cocoindex/tools/index.ts",
+    "src/cocoindex/tools/search.ts",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "inspect-cocoindex-mcp",
+    "emit-mcp-schema",
+    "scaffold-mcp-search-tool",
+    "sync-mcp-tools",
+    "generate",
+    "check-generated"
+  ],
+  "waivers": [
+    {
+      "expires": null,
+      "paths": [
+        "src/generated/cocoindex-code-mcp.ts"
+      ],
+      "reason": "Inspection depends on the local CocoIndex MCP surface; keep checked-in snapshot as provenance until Source BOM query targets can assert the toolchain version."
+    }
+  ]
+}

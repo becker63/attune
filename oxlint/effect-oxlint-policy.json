@@ -1,0 +1,30 @@
+{
+  "$schema": "../node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": [
+    ".pnpm-store/**",
+    ".nx/**",
+    "dist/**",
+    "imports/**",
+    "node_modules/**",
+    "schema/**",
+    "src/generated/**",
+    "packages/**/dist/**",
+    "packages/**/node_modules/**",
+    "workspace/**",
+    "repomix-output.xml"
+  ],
+  "jsPlugins": ["../packages/effect-oxlint-policy/dist/index.js"],
+  "categories": {
+    "correctness": "off",
+    "suspicious": "off",
+    "perf": "off",
+    "pedantic": "off",
+    "restriction": "off",
+    "style": "off"
+  },
+  "rules": {
+    "attune/no-raw-process-env": "warn",
+    "attune/no-raw-node-apis": "warn",
+    "attune/no-hand-authored-architecture-shapes": "warn"
+  }
+}
