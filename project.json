@@ -12,8 +12,77 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "node scripts/codex/pnpm.mjs exec nx run-many -t lint,typecheck --all",
-          "openspec validate --all --no-interactive"
+          "node scripts/codex/pnpm.mjs exec nx run workspace:policy-fast"
+        ],
+        "parallel": false
+      }
+    },
+    "source-bom-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/architecture/source-bom-check.mjs"
+      }
+    },
+    "arch:scan": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/architecture/scan.mjs"
+      },
+      "metadata": {
+        "description": "Low-level architecture scanner. The public npm arch:scan script is a compatibility alias to workspace:policy-architecture."
+      }
+    },
+    "arch:mutation": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/architecture/mutation.mjs"
+      },
+      "metadata": {
+        "description": "Explicit mutation-pressure architecture gate. Only workspace:policy-proof-pressure invokes this target."
+      }
+    },
+    "policy-architecture": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node scripts/codex/pnpm.mjs exec nx run workspace:arch:scan"
+        ],
+        "parallel": false
+      },
+      "metadata": {
+        "description": "Nx-owned public architecture policy gate; wraps workspace:arch:scan so npm arch:scan can remain a compatibility alias."
+      }
+    },
+    "policy-proof-pressure": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node scripts/codex/pnpm.mjs exec nx run workspace:policy-architecture",
+          "node scripts/codex/pnpm.mjs exec nx run workspace:arch:mutation"
+        ],
+        "parallel": false
+      }
+    },
+    "policy-fast": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node scripts/codex/pnpm.mjs exec nx graph --file=/tmp/attune-nx-graph.json",
+          "node scripts/codex/pnpm.mjs exec nx run workspace:lint",
+          "node scripts/codex/pnpm.mjs exec nx run attune-nx:typecheck",
+          "node scripts/codex/pnpm.mjs exec nx run attuned-discovery:typecheck",
+          "node scripts/codex/pnpm.mjs exec nx run workspace:source-bom-check",
+          "node scripts/codex/pnpm.mjs exec nx run workspace:policy-architecture"
+        ],
+        "parallel": false
+      }
+    },
+    "policy-all": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node scripts/codex/pnpm.mjs exec nx run workspace:policy-fast",
+          "node scripts/codex/pnpm.mjs exec nx run workspace:policy-proof-pressure"
         ],
         "parallel": false
       }
