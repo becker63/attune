@@ -1,0 +1,30 @@
+{
+  "name": "effect-oxlint-policy",
+  "root": "packages/effect-oxlint-policy",
+  "sourceRoot": "packages/effect-oxlint-policy/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../node_modules/.bin/tsup src/index.ts --format esm --dts --out-dir dist",
+        "cwd": "packages/effect-oxlint-policy"
+      },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../node_modules/.bin/tsc -p tsconfig.json --noEmit",
+        "cwd": "packages/effect-oxlint-policy"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../node_modules/.bin/vitest run test/*.test.ts",
+        "cwd": "packages/effect-oxlint-policy"
+      }
+    }
+  }
+}

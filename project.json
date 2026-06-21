@@ -17,6 +17,26 @@
         ],
         "parallel": false
       }
+    },
+    "policy-architecture": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "./node_modules/.bin/nx run effect-oxlint-policy:build",
+          "./node_modules/.bin/oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+        ],
+        "parallel": false
+      }
+    },
+    "policy-fast": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "./node_modules/.bin/nx run effect-oxlint-policy:test",
+          "./node_modules/.bin/nx run workspace:policy-architecture"
+        ],
+        "parallel": false
+      }
     }
   }
 }
