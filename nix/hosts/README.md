@@ -1,71 +1,60 @@
-# Attune Home Cluster Hosts
+# Attune ThinkCentre Day 0 Hosts
 
-This directory is a self-contained flake for the first home-cluster NixOS slice.
-It defines three ThinkCentre K3s control-plane nodes:
+This flake defines the network-bootstrap NixOS baseline for:
 
-- `attune-cp-1`: initializes the K3s server cluster.
-- `attune-cp-2`: joins `attune-cp-1` as a server.
-- `attune-cp-3`: joins `attune-cp-1` as a server.
+- `attune-cp-1`
+- `attune-cp-2`
+- `attune-cp-3`
 
-All three nodes enable SSH, Tailscale, baseline operator packages, firewall
-ports for SSH/K3s/flannel/Tailscale, and the node label
-`attune.dev/worker-class=thinkcentre-cpu`.
+The accepted Day 0 baseline is SSH, Tailscale, sops-nix, Disko, comin, the
+`attune` wheel user, and local repair access. K3s, Kubernetes, kubeconfig,
+desktop worker setup, and public ingress are deferred.
 
-The K3s shared token is intentionally not stored in this repository. Place it on
-each node at:
+`packages/home-deployment` owns the Day 0 lifecycle through native
+Effect/Alchemy resources. This flake owns the installed host shape.
+
+## Local Evidence
+
+Real machine-specific files are local and ignored:
 
 ```text
-/var/lib/attune/secrets/k3s-server-token
+nix/hosts/local/bootstrap-ssh-keys.nix
+nix/hosts/local/bootstrap-age-key.txt
+nix/hosts/local/bootstrap-age-recipient.txt
+nix/hosts/local/thinkcentre-secrets.yaml
+nix/hosts/local/disks.nix
 ```
 
-The `hardware-placeholder.nix` file is only a bootstrap placeholder. Replace or
-override it with each host's generated hardware config and disk layout before a
-real install.
+`disks.nix` should map hostnames to operator-approved stable by-id paths:
 
-## Local bootstrap SSH keys
-
-Create this local, untracked file before building the installer ISO:
-
-```bash
-mkdir -p nix/hosts/local
-printf '[ "%s" ]\n' "$(cat ~/.ssh/id_ed25519.pub)" > nix/hosts/local/bootstrap-ssh-keys.nix
+```nix
+{
+  attune-cp-1 = "/dev/disk/by-id/nvme-...";
+  attune-cp-2 = "/dev/disk/by-id/nvme-...";
+  attune-cp-3 = "/dev/disk/by-id/nvme-...";
+}
 ```
 
-The installer ISO grants those keys to `root`. Installed hosts grant those keys
-to the `attune` wheel user.
+Until those paths exist, the Alchemy Disko resources stay blocked.
 
-## Commands
+The live SOPS file is staged by Alchemy/nixos-anywhere at
+`/etc/attune/sops/thinkcentre-secrets.yaml`; it is intentionally not copied
+into the Nix store during evaluation.
 
-Show the constructed host commands:
-
-```bash
-scripts/infra/attune-nixos-bootstrap attune-cp-1 root@attune-installer-cp-1.local
-```
-
-The helper prints installer SSH, destructive disk, remote token copy,
-post-install Tailscale, and K3s readiness probes. It does not create secrets or
-install hosts by itself.
+## Evaluation
 
 Evaluate a host:
 
 ```bash
-nix eval ./nix/hosts#nixosConfigurations.attune-cp-1.config.networking.hostName
+nix eval path:./nix/hosts#nixosConfigurations.attune-cp-1.config.networking.hostName
 ```
 
-Build a host closure:
+Build the installer ISO through the verified x86 builder:
 
 ```bash
-nix build ./nix/hosts#nixosConfigurations.attune-cp-1.config.system.build.toplevel
+nix build path:./nix/hosts#nixosConfigurations.attune-installer.config.system.build.isoImage
 ```
 
-Build the minimal installer ISO:
-
-```bash
-nix build ./nix/hosts#nixosConfigurations.attune-installer.config.system.build.isoImage
-```
-
-Run nixos-anywhere after preparing hardware/disk config:
-
-```bash
-nixos-anywhere --flake ./nix/hosts#attune-cp-1 root@attune-installer-cp-1.local
-```
+Live install is driven by the `ThinkCentreDay0Deployment` Alchemy resources,
+which gate USB media, LAN binding, disk identity, Disko layout, SOPS extra
+files, and `nixos-anywhere` execution.

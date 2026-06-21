@@ -9,7 +9,7 @@ ownership, validation, and fake-client seams quickly.
 | Generator | Covered Attune shape | Use it when |
 | --- | --- | --- |
 | `@attune/nx:discovery-event` | Effect Schema event, `DiscoveryEvents` append facade helper, projection handler skeleton, durable Reactivity ViewKey, replay fixture | Adding a new EventLog fact. Raw EventLog writes remain behind `DiscoveryEvents`/facade boundaries. |
-| `@attune/nx:effect-service` | Effect service tag, live layer shell, export boundary | Adding world-changing effects. Effects live in services, not atoms. Add fake/test layers beside this seam. |
+| `@attune/nx:effect-service` | Effect service boundary, live layer shell, export boundary | Adding world-changing effects. Effects live in services, not atoms. Add fake/test layers beside this boundary. |
 | `@attune/nx:joern-template` | Typed binding schema, evidence schema, known proof-template renderer | Adding a known Joern proof template. Agents must not expand this into arbitrary proof-router queries. |
 | `@attune/nx:cocoindex-mcp-tool` | Typed request/result schemas for a CocoIndex MCP tool wrapper | Adding recall tools. Normalize CocoIndex output before turning it into AnchorCards/evidence. Fake clients are acceptable for closed-loop tests. |
 | `@attune/nx:k8s-resource` | Existing Kubernetes resource shell | Human-review-only area; do not expand platform generation from Codex-safe issues. |

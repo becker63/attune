@@ -8,7 +8,7 @@
       "outputs": ["{projectRoot}/dist"],
       "options": {
         "cwd": "packages/attune-nx",
-        "command": "../../node_modules/.bin/tsc -p tsconfig.build.json && node scripts/write-generator-cjs-wrappers.mjs"
+        "command": "pnpm exec tsc -p tsconfig.build.json && node scripts/write-generator-cjs-wrappers.mjs"
       }
     },
     "typecheck": {
@@ -35,7 +35,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attune-nx",
-        "command": "../../node_modules/.bin/vitest run"
+        "command": "pnpm exec vitest run"
       }
     }
   }

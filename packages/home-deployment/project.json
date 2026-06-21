@@ -8,70 +8,28 @@
       "outputs": ["{projectRoot}/dist"],
       "options": {
         "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsup src/index.ts src/alchemy.ts src/cli.ts --format esm,cjs --dts --sourcemap --clean"
+        "command": "pnpm exec tsup src/index.ts src/alchemy.ts --format esm,cjs --dts --sourcemap --clean"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsgo --noEmit"
+        "command": "pnpm exec tsgo --noEmit"
       }
     },
     "typecheck:classic": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsc --noEmit"
+        "command": "pnpm exec tsc --noEmit"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/vitest run"
-      }
-    },
-    "plan": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts plan"
-      }
-    },
-    "status": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts status"
-      }
-    },
-    "next-step": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts next-step --json"
-      }
-    },
-    "deploy": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts deploy"
-      }
-    },
-    "destroy:smoke:dry-run": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts destroy --target smoke --dry-run"
-      }
-    },
-    "reconcile": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts reconcile"
+        "command": "pnpm exec vitest run"
       }
     }
   }

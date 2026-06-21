@@ -73,13 +73,13 @@ Attune SHALL replay the same fixture event stream deterministically across packa
 - **THEN** the resulting `DecisionPacket` values match
 - **AND** the observable route state reaches the same terminal fixture step.
 
-### Requirement: Dispatch and FoldKit render refreshed fixture state
-Attune SHALL render refreshed fake-loop state through Dispatch/FoldKit from the Effect-atom-derived `WorkbenchSnapshot`, not from ad hoc UI-only mock data.
+### Requirement: FoldKit renders refreshed fixture state
+Attune SHALL render refreshed fake-loop state through FoldKit from the Effect-atom-derived `WorkbenchSnapshot`, not from ad hoc UI-only mock data.
 
 #### Scenario: Evidence changes snapshot
 - **WHEN** the fake proof evidence is appended and replayed
 - **THEN** the `WorkbenchSnapshot` version increases
-- **AND** the Dispatch/FoldKit workbench view renders the updated evidence and best-next-action state from that snapshot.
+- **AND** the FoldKit workbench view renders the updated evidence and best-next-action state from that snapshot.
 
 ### Requirement: Fixture route is backend hot-swappable
 Attune SHALL keep the fixture route on the same read boundary as the future asynchronous backend.

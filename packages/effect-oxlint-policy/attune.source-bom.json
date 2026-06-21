@@ -1,0 +1,39 @@
+{
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/**",
+        "test/**"
+      ],
+      "reason": "Effect oxlint rules are policy source for enforcing Effect Platform and generator usage."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "src/**",
+    "test/**",
+    "tsconfig.json"
+  ],
+  "project": "effect-oxlint-policy",
+  "projectRoot": "packages/effect-oxlint-policy",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Build output is consumed by the root oxlint Effect policy config.",
+      "target": "build"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "typecheck"
+  ],
+  "waivers": []
+}

@@ -1,4 +1,4 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process"
+import { spawn } from "node:child_process"
 import { createInterface, type Interface } from "node:readline"
 import { Effect } from "effect"
 import { CocoIndexCommandError, CocoIndexMcpProtocolError } from "../errors.js"

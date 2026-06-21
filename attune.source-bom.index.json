@@ -2,14 +2,54 @@
   "schemaVersion": 1,
   "shards": [
     {
+      "project": "attune-architecture-lint",
+      "projectRoot": "packages/attune-architecture-lint",
+      "shard": "packages/attune-architecture-lint/attune.source-bom.json"
+    },
+    {
+      "project": "attune-foldkit",
+      "projectRoot": "packages/attune-foldkit",
+      "shard": "packages/attune-foldkit/attune.source-bom.json"
+    },
+    {
+      "project": "attune-nx",
+      "projectRoot": "packages/attune-nx",
+      "shard": "packages/attune-nx/attune.source-bom.json"
+    },
+    {
+      "project": "attune-pi-agent",
+      "projectRoot": "packages/attune-pi-agent",
+      "shard": "packages/attune-pi-agent/attune.source-bom.json"
+    },
+    {
+      "project": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "shard": "packages/attuned-discovery/attune.source-bom.json"
+    },
+    {
       "project": "cocoindex-effect",
       "projectRoot": "packages/cocoindex-effect",
       "shard": "packages/cocoindex-effect/attune.source-bom.json"
     },
     {
+      "project": "effect-oxlint-policy",
+      "projectRoot": "packages/effect-oxlint-policy",
+      "shard": "packages/effect-oxlint-policy/attune.source-bom.json"
+    },
+    {
+      "project": "home-deployment",
+      "projectRoot": "packages/home-deployment",
+      "shard": "packages/home-deployment/attune.source-bom.json"
+    },
+    {
       "project": "joern-effect",
       "projectRoot": "packages/joern-effect",
       "shard": "packages/joern-effect/attune.source-bom.json"
+    },
+    {
+      "project": "joern-effect-properties",
+      "projectRoot": "packages/joern-effect-properties",
+      "shard": "packages/joern-effect-properties/attune.source-bom.json"
     },
     {
       "project": "platform-alchemy-k8s",

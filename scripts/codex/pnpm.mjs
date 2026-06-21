@@ -1,8 +1,6 @@
 #!/usr/bin/env node
-import { createWriteStream, existsSync, mkdirSync, readFileSync } from "node:fs"
-import { chmod, rm } from "node:fs/promises"
+import { existsSync, readFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
-import { pipeline } from "node:stream/promises"
 import { spawnSync } from "node:child_process"
 
 const repoRoot = findRepoRoot(process.cwd())
@@ -14,15 +12,12 @@ if (!nodeVersionIsSupported(process.versions.node)) {
 }
 
 const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"))
-const pnpmVersion = parsePnpmVersion(packageJson.packageManager)
-const fallbackDir = join(repoRoot, ".attune-tools", "pnpm", pnpmVersion)
-const fallbackEntrypoint = join(fallbackDir, "package", "bin", "pnpm.cjs")
+parsePnpmVersion(packageJson.packageManager)
 
 process.env.NX_DAEMON ??= "false"
 process.env.TMPDIR ??= "/tmp"
 process.env.TEMP ??= process.env.TMPDIR
 process.env.TMP ??= process.env.TMPDIR
-process.env.COREPACK_ENABLE_DOWNLOAD_PROMPT ??= "0"
 
 const pnpm = await resolvePnpm()
 const result = spawnSync(pnpm.command, pnpm.args.concat(process.argv.slice(2)), {
@@ -45,19 +40,7 @@ async function resolvePnpm() {
     return { command: nativePnpm, args: [] }
   }
 
-  const nativeCorepack = findNativeExecutable("corepack")
-  if (
-    nativeCorepack !== undefined &&
-    commandWorks(nativeCorepack, ["pnpm", "--version"])
-  ) {
-    return { command: nativeCorepack, args: ["pnpm"] }
-  }
-
-  if (!existsSync(fallbackEntrypoint)) {
-    await installFallbackPnpm()
-  }
-
-  return { command: process.execPath, args: [fallbackEntrypoint] }
+  reexecWithNixPnpm()
 }
 
 function findNativeExecutable(command) {
@@ -95,31 +78,6 @@ function commandWorks(command, args) {
   })
 
   return result.status === 0
-}
-
-async function installFallbackPnpm() {
-  mkdirSync(fallbackDir, { recursive: true })
-  const tarball = join(fallbackDir, "exe.tgz")
-  const response = await fetch(`https://registry.npmjs.org/pnpm/-/pnpm-${pnpmVersion}.tgz`)
-
-  if (!response.ok || response.body === null) {
-    throw new Error(`could not download pnpm@${pnpmVersion}: ${response.status} ${response.statusText}`)
-  }
-
-  await pipeline(response.body, createWriteStream(tarball))
-  await rm(join(fallbackDir, "package"), { recursive: true, force: true })
-
-  const extract = spawnSync("tar", ["-xzf", tarball, "-C", fallbackDir], {
-    cwd: repoRoot,
-    env: process.env,
-    stdio: "inherit",
-  })
-
-  if (extract.status !== 0) {
-    throw new Error("could not extract pnpm fallback; install a native tar or pnpm")
-  }
-
-  await chmod(fallbackEntrypoint, 0o755)
 }
 
 function findRepoRoot(start) {
@@ -187,6 +145,50 @@ function reexecWithNixNode() {
       "--command",
       "env",
       "ATTUNE_NIX_NODE_REEXEC=1",
+      "node",
+      "scripts/codex/pnpm.mjs",
+      ...process.argv.slice(2),
+    ],
+    {
+      cwd: repoRoot,
+      env: process.env,
+      stdio: "inherit",
+      shell: false,
+    },
+  )
+
+  if (result.error !== undefined) {
+    console.error(`failed to re-exec through nix develop: ${result.error.message}`)
+    process.exit(1)
+  }
+
+  process.exit(result.status ?? 1)
+}
+
+function reexecWithNixPnpm() {
+  if (process.env.ATTUNE_NIX_PNPM_REEXEC === "1") {
+    console.error("Attune could not find pnpm on PATH inside the pinned Nix dev shell.")
+    process.exit(1)
+  }
+
+  const nix = findNativeExecutable("nix")
+  if (nix === undefined) {
+    console.error("Attune requires pnpm from the pinned Nix dev shell.")
+    console.error("Install Nix or run from the dev shell: nix develop --command pnpm ...")
+    process.exit(1)
+  }
+
+  const result = spawnSync(
+    nix,
+    [
+      "--extra-experimental-features",
+      "nix-command",
+      "--extra-experimental-features",
+      "flakes",
+      "develop",
+      "--command",
+      "env",
+      "ATTUNE_NIX_PNPM_REEXEC=1",
       "node",
       "scripts/codex/pnpm.mjs",
       ...process.argv.slice(2),

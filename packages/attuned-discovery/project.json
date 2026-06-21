@@ -8,34 +8,34 @@
       "outputs": ["{projectRoot}/dist"],
       "options": {
         "cwd": "packages/attuned-discovery",
-        "command": "../../node_modules/.bin/tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
+        "command": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attuned-discovery",
-        "command": "../../node_modules/.bin/tsgo --noEmit"
+        "command": "pnpm exec tsgo --noEmit"
       }
     },
     "typecheck:classic": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attuned-discovery",
-        "command": "../../node_modules/.bin/tsc --noEmit"
+        "command": "pnpm exec tsc --noEmit"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node_modules/.bin/oxlint --config root-oxlintrc.json packages/attuned-discovery --quiet"
+        "command": "pnpm exec oxlint --config root-oxlintrc.json packages/attuned-discovery --quiet"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attuned-discovery",
-        "command": "../../node_modules/.bin/vitest run"
+        "command": "pnpm exec vitest run"
       }
     }
   }

@@ -1,17 +1,22 @@
 import { Context, Effect, Layer } from "effect"
 import fc from "fast-check"
 import { FuzzTelemetry, type FuzzTelemetryService } from "../services/telemetry.js"
-import { FuzzOracle } from "../services/oracle.js"
+import { FuzzOracle, type FuzzOracleService } from "../services/oracle.js"
 import { FuzzExpectationMismatchError } from "../services/expectations.js"
 import type { FuzzCase, FuzzerRunConfig, FuzzerRunSummary } from "../domain/model.js"
 import { PropertyHarnessRuntime } from "../config/runtime.js"
 import type { PropertyHarnessConfig } from "../config/runtime.js"
 import { makeFuzzTrace, runPayload } from "../services/eventPayloads.js"
-import { SemanticAdmitter } from "../services/admission.js"
+import { SemanticAdmitter, type SemanticAdmitterService } from "../services/admission.js"
 import { SemanticCorpusStore } from "../services/corpus.js"
 import { semanticCasePlanArbitrary } from "../templates/workloads.js"
 import type { SemanticCase, SemanticProjectSeed } from "../domain/model.js"
-import { SemanticMutator } from "../services/mutator.js"
+import {
+  SemanticMutator,
+  type SemanticCasePlan,
+  type SemanticMutationResult,
+  type SemanticMutatorService,
+} from "../services/mutator.js"
 
 export interface SemanticFuzzSchedulerService {
   readonly run: (config: FuzzerRunConfig) => Effect.Effect<
@@ -221,6 +226,402 @@ const emitCounterexampleEvents = (
   )
 }
 
+type WorkerSummary = Readonly<{
+  readonly accepted: number
+  readonly rejected: number
+}>
+
+const emitGeneratedCaseEvents = (
+  input: Readonly<{
+    readonly batchIndex: number
+    readonly caseIndex: number
+    readonly result: SemanticMutationResult
+    readonly spanId: string
+    readonly telemetry: FuzzTelemetryService
+    readonly traceId: string
+    readonly workerId: string
+    readonly workerSpanId: string
+  }>,
+  config: FuzzerRunConfig,
+): Effect.Effect<void> =>
+  Effect.gen(function* emitGeneratedCaseEventsEffect() {
+    const semanticCase = input.result.case
+    yield* input.telemetry.emit(config, "attune.fuzz.case_generated", {
+      appliedMutations: input.result.applied.map((mutation) => mutation.kind).join(","),
+      batchIndex: input.batchIndex,
+      caseIndex: input.caseIndex,
+      rejectedMutations: input.result.rejected.map((mutation) => `${mutation.kind}:${mutation.reason}`).join(";"),
+      workerId: input.workerId,
+      ...semanticCasePayload({
+        parentSpanId: input.workerSpanId,
+        semanticCase,
+        spanId: input.spanId,
+        traceId: input.traceId,
+      }),
+    })
+    yield* Effect.forEach(
+      input.result.applied,
+      (mutation) => input.telemetry.emit(config, "attune.fuzz.mutation_applied", {
+        batchIndex: input.batchIndex,
+        caseIndex: input.caseIndex,
+        mutationKind: mutation.kind,
+        targetFile: mutation.targetFile,
+        workerId: input.workerId,
+        ...semanticCasePayload({
+          parentSpanId: input.workerSpanId,
+          semanticCase,
+          spanId: makeFuzzTrace().spanId,
+          traceId: input.traceId,
+        }),
+      }),
+    )
+  })
+
+const admitGeneratedCase = (
+  input: Readonly<{
+    readonly admitter: SemanticAdmitterService
+    readonly batchIndex: number
+    readonly caseIndex: number
+    readonly semanticCase: SemanticCase
+    readonly spanId: string
+    readonly telemetry: FuzzTelemetryService
+    readonly traceId: string
+    readonly workerId: string
+    readonly workerSpanId: string
+  }>,
+  config: FuzzerRunConfig,
+): Effect.Effect<Readonly<{ readonly accepted: boolean; readonly fuzzCases: readonly FuzzCase[] }>> =>
+  Effect.gen(function* admitGeneratedCaseEffect() {
+    const admission = yield* input.admitter.admit(input.semanticCase)
+    const payload = {
+      batchIndex: input.batchIndex,
+      caseIndex: input.caseIndex,
+      workerId: input.workerId,
+      ...semanticCasePayload({
+        parentSpanId: input.workerSpanId,
+        semanticCase: input.semanticCase,
+        spanId: input.spanId,
+        traceId: input.traceId,
+      }),
+    }
+    if (!admission.accepted) {
+      yield* input.telemetry.emit(config, "attune.fuzz.case_rejected", {
+        ...payload,
+        diagnostics: admission.diagnostics,
+      })
+      return { accepted: false, fuzzCases: [] }
+    }
+    const fuzzCases = yield* input.admitter.toFuzzCases(input.semanticCase)
+    yield* input.telemetry.emit(config, "attune.fuzz.case_admitted", {
+      ...payload,
+      files: admission.files.length,
+    })
+    return { accepted: true, fuzzCases }
+  })
+
+const emitJoernImportCompleted = (
+  input: Readonly<{
+    readonly batchIndex: number
+    readonly caseCount: number
+    readonly durationMs: number
+    readonly projectName: string
+    readonly projectPath: string
+    readonly shardCount: number
+    readonly shardIndex: number
+    readonly telemetry: FuzzTelemetryService
+    readonly traceId: string
+    readonly workerId: string
+    readonly workerSpanId: string
+    readonly workspacePath: string
+    readonly joernWorkerId: string
+  }>,
+  config: FuzzerRunConfig,
+): Effect.Effect<void> =>
+  input.telemetry.emit(config, "attune.fuzz.joern_import_completed", {
+    batchIndex: input.batchIndex,
+    caseCount: input.caseCount,
+    durationMs: input.durationMs,
+    joernWorkerId: input.joernWorkerId,
+    projectName: input.projectName,
+    projectPath: input.projectPath,
+    shardCount: input.shardCount,
+    shardIndex: input.shardIndex,
+    workspacePath: input.workspacePath,
+    workerId: input.workerId,
+    "otel.parent_span_id": input.workerSpanId,
+    "otel.span_id": makeFuzzTrace().spanId,
+    "otel.trace_id": input.traceId,
+  })
+
+const runJoernShard = (
+  input: Readonly<{
+    readonly batchIndex: number
+    readonly config: FuzzerRunConfig
+    readonly firstCase: SemanticCase | undefined
+    readonly joernMode: "import" | "query"
+    readonly joernShard: readonly FuzzCase[]
+    readonly oracle: FuzzOracleService
+    readonly shardCount: number
+    readonly shardIndex: number
+    readonly telemetry: FuzzTelemetryService
+    readonly traceId: string
+    readonly workerId: string
+    readonly workerSpanId: string
+  }>,
+): Effect.Effect<void> =>
+  Effect.gen(function* runJoernShardEffect() {
+    const oracleStartedAt = Date.now()
+    yield* input.telemetry.emit(input.config, "attune.fuzz.joern_import_started", {
+      batchIndex: input.batchIndex,
+      caseCount: input.joernShard.length,
+      shardCount: input.shardCount,
+      shardIndex: input.shardIndex,
+      workerId: input.workerId,
+      "otel.parent_span_id": input.workerSpanId,
+      "otel.span_id": makeFuzzTrace().spanId,
+      "otel.trace_id": input.traceId,
+    })
+    yield* input.telemetry.flush
+
+    if (input.joernMode === "import") {
+      const importResult = yield* Effect.either(input.oracle.importJoernProject(input.joernShard))
+      if (importResult._tag === "Left") {
+        yield* emitCounterexampleEvents({
+          batchIndex: input.batchIndex,
+          error: importResult.left,
+          failureClass: "joern-import",
+          firstCase: input.firstCase,
+          shardIndex: input.shardIndex,
+          telemetry: input.telemetry,
+          traceId: input.traceId,
+          workerId: input.workerId,
+          workerSpanId: input.workerSpanId,
+        }, input.config)
+        return
+      }
+      yield* emitJoernImportCompleted({
+        ...importResult.right,
+        batchIndex: input.batchIndex,
+        durationMs: Date.now() - oracleStartedAt,
+        joernWorkerId: importResult.right.workerId,
+        shardCount: input.shardCount,
+        shardIndex: input.shardIndex,
+        telemetry: input.telemetry,
+        traceId: input.traceId,
+        workerId: input.workerId,
+        workerSpanId: input.workerSpanId,
+      }, input.config)
+      yield* input.telemetry.flush
+      return
+    }
+
+    const oracleResult = yield* Effect.either(input.oracle.runJoernQueries(input.joernShard, {
+      ...(input.config.queryBudget === undefined ? {} : { queryBudget: input.config.queryBudget }),
+      ...(input.config.queryFeedback === undefined ? {} : { queryFeedback: input.config.queryFeedback }),
+    }))
+    if (oracleResult._tag === "Left") {
+      yield* emitCounterexampleEvents({
+        batchIndex: input.batchIndex,
+        error: oracleResult.left,
+        failureClass: "oracle-disagreement",
+        firstCase: input.firstCase,
+        shardIndex: input.shardIndex,
+        telemetry: input.telemetry,
+        traceId: input.traceId,
+        workerId: input.workerId,
+        workerSpanId: input.workerSpanId,
+      }, input.config)
+      return
+    }
+    const durationMs = Date.now() - oracleStartedAt
+    yield* emitJoernImportCompleted({
+      ...oracleResult.right,
+      batchIndex: input.batchIndex,
+      durationMs,
+      joernWorkerId: oracleResult.right.workerId,
+      shardCount: input.shardCount,
+      shardIndex: input.shardIndex,
+      telemetry: input.telemetry,
+      traceId: input.traceId,
+      workerId: input.workerId,
+      workerSpanId: input.workerSpanId,
+    }, input.config)
+    yield* input.telemetry.emit(input.config, "attune.fuzz.joern_oracle_completed", {
+      batchIndex: input.batchIndex,
+      caseCount: oracleResult.right.caseCount,
+      durationMs,
+      joernWorkerId: oracleResult.right.workerId,
+      projectName: oracleResult.right.projectName,
+      queryResults: oracleResult.right.queryResults,
+      shardCount: input.shardCount,
+      shardIndex: input.shardIndex,
+      workerId: input.workerId,
+      "otel.parent_span_id": input.workerSpanId,
+      "otel.span_id": makeFuzzTrace().spanId,
+      "otel.trace_id": input.traceId,
+    })
+    yield* Effect.forEach(
+      oracleResult.right.queryResults,
+      (queryResult) => input.telemetry.emit(input.config, "attune.fuzz.query_completed", {
+        batchIndex: input.batchIndex,
+        caseCount: oracleResult.right.caseCount,
+        cpgql: queryResult.cpgql,
+        joernWorkerId: oracleResult.right.workerId,
+        projectName: oracleResult.right.projectName,
+        queryFingerprint: queryResult.fingerprint,
+        queryKind: queryResult.kind,
+        queryName: queryResult.name,
+        queryPreview: queryResult.preview,
+        rowCount: queryResult.rowCount,
+        shardCount: input.shardCount,
+        shardIndex: input.shardIndex,
+        workerId: input.workerId,
+        "otel.parent_span_id": input.workerSpanId,
+        "otel.span_id": makeFuzzTrace().spanId,
+        "otel.trace_id": input.traceId,
+      }),
+    )
+    yield* input.telemetry.flush
+  })
+
+const runJoernShards = (
+  input: Readonly<{
+    readonly acceptedFuzzCases: readonly FuzzCase[]
+    readonly acceptedSemanticCases: readonly SemanticCase[]
+    readonly batchIndex: number
+    readonly config: FuzzerRunConfig
+    readonly joernMode: "import" | "none" | "query"
+    readonly joernShardSize: number
+    readonly oracle: FuzzOracleService
+    readonly telemetry: FuzzTelemetryService
+    readonly traceId: string
+    readonly workerId: string
+    readonly workerSpanId: string
+  }>,
+): Effect.Effect<void> =>
+  Effect.gen(function* runJoernShardsEffect() {
+    if (input.joernMode === "none" || input.acceptedFuzzCases.length === 0) {return}
+    const joernMode = input.joernMode === "import" ? "import" : "query"
+    const joernShards = chunksBySize(input.acceptedFuzzCases, input.joernShardSize)
+    yield* Effect.forEach(
+      joernShards,
+      (joernShard, shardIndex) => runJoernShard({
+        batchIndex: input.batchIndex,
+        config: input.config,
+        firstCase: input.acceptedSemanticCases[0],
+        joernMode,
+        joernShard,
+        oracle: input.oracle,
+        shardCount: joernShards.length,
+        shardIndex,
+        telemetry: input.telemetry,
+        traceId: input.traceId,
+        workerId: input.workerId,
+        workerSpanId: input.workerSpanId,
+      }),
+      { concurrency: 1 },
+    )
+  })
+
+const runSemanticWorker = (
+  input: Readonly<{
+    readonly admitter: SemanticAdmitterService
+    readonly batchIndex: number
+    readonly batchTraceSpanId: string
+    readonly config: FuzzerRunConfig
+    readonly joernMode: "import" | "none" | "query"
+    readonly joernShardSize: number
+    readonly mutator: SemanticMutatorService
+    readonly oracle: FuzzOracleService
+    readonly planChunkCount: number
+    readonly telemetry: FuzzTelemetryService
+    readonly traceId: string
+    readonly workerIndex: number
+    readonly workerPlans: readonly SemanticCasePlan[]
+  }>,
+): Effect.Effect<WorkerSummary> =>
+  Effect.gen(function* runSemanticWorkerEffect() {
+    const workerId = `semantic-worker-${input.workerIndex}`
+    const workerTrace = makeFuzzTrace()
+    yield* input.telemetry.emit(input.config, "attune.fuzz.worker_started", {
+      batchIndex: input.batchIndex,
+      caseCount: input.workerPlans.length,
+      mode: input.config.mode,
+      workerId,
+      "otel.parent_span_id": input.batchTraceSpanId,
+      "otel.span_id": workerTrace.spanId,
+      "otel.trace_id": input.traceId,
+    })
+    yield* input.telemetry.flush
+
+    let accepted = 0
+    let rejected = 0
+    const acceptedSemanticCases: SemanticCase[] = []
+    const acceptedFuzzCases: FuzzCase[] = []
+
+    for (const [caseIndex, plan] of input.workerPlans.entries()) {
+      const spanId = makeFuzzTrace().spanId
+      const globalCaseIndex = input.workerIndex + caseIndex * input.planChunkCount
+      const result = yield* input.mutator.applyDetailed(plan)
+      const semanticCase = result.case
+      yield* emitGeneratedCaseEvents({
+        batchIndex: input.batchIndex,
+        caseIndex: globalCaseIndex,
+        result,
+        spanId,
+        telemetry: input.telemetry,
+        traceId: input.traceId,
+        workerId,
+        workerSpanId: workerTrace.spanId,
+      }, input.config)
+      const admission = yield* admitGeneratedCase({
+        admitter: input.admitter,
+        batchIndex: input.batchIndex,
+        caseIndex: globalCaseIndex,
+        semanticCase,
+        spanId,
+        telemetry: input.telemetry,
+        traceId: input.traceId,
+        workerId,
+        workerSpanId: workerTrace.spanId,
+      }, input.config)
+      if (admission.accepted) {
+        accepted += 1
+        acceptedSemanticCases.push(semanticCase)
+        acceptedFuzzCases.push(...admission.fuzzCases)
+      } else {
+        rejected += 1
+      }
+    }
+
+    yield* runJoernShards({
+      acceptedFuzzCases,
+      acceptedSemanticCases,
+      batchIndex: input.batchIndex,
+      config: input.config,
+      joernMode: input.joernMode,
+      joernShardSize: input.joernShardSize,
+      oracle: input.oracle,
+      telemetry: input.telemetry,
+      traceId: input.traceId,
+      workerId,
+      workerSpanId: workerTrace.spanId,
+    })
+
+    yield* input.telemetry.emit(input.config, "attune.fuzz.worker_completed", {
+      accepted,
+      batchIndex: input.batchIndex,
+      caseCount: input.workerPlans.length,
+      rejected,
+      workerId,
+      "otel.parent_span_id": input.batchTraceSpanId,
+      "otel.span_id": workerTrace.spanId,
+      "otel.trace_id": input.traceId,
+    })
+    yield* input.telemetry.flush
+    return { accepted, rejected }
+  })
+
 export const makeSemanticFuzzScheduler = (runtime: PropertyHarnessConfig): SemanticFuzzSchedulerService => ({
   run: (config) => Effect.gen(function* runFuzzPipeline() {
     const corpus = yield* SemanticCorpusStore
@@ -317,229 +718,20 @@ export const makeSemanticFuzzScheduler = (runtime: PropertyHarnessConfig): Seman
 
         const workerSummaries = yield* Effect.forEach(
           planChunks,
-          (workerPlans, workerIndex) => Effect.gen(function* runSemanticWorker() {
-            const workerId = `semantic-worker-${workerIndex}`
-            const workerTrace = makeFuzzTrace()
-            yield* telemetry.emit(config, "attune.fuzz.worker_started", {
-              batchIndex,
-              caseCount: workerPlans.length,
-              mode: config.mode,
-              workerId,
-              "otel.parent_span_id": batchTrace.spanId,
-              "otel.span_id": workerTrace.spanId,
-              "otel.trace_id": trace.traceId,
-            })
-            yield* telemetry.flush
-
-            let accepted = 0
-            let rejected = 0
-            const acceptedSemanticCases: SemanticCase[] = []
-            const acceptedFuzzCases: FuzzCase[] = []
-
-            for (const [caseIndex, plan] of workerPlans.entries()) {
-              const spanId = makeFuzzTrace().spanId
-              const globalCaseIndex = workerIndex + caseIndex * planChunks.length
-              const result = yield* mutator.applyDetailed(plan)
-              const semanticCase = result.case
-              yield* telemetry.emit(config, "attune.fuzz.case_generated", {
-                appliedMutations: result.applied.map((mutation) => mutation.kind).join(","),
-                batchIndex,
-                caseIndex: globalCaseIndex,
-                rejectedMutations: result.rejected.map((mutation) => `${mutation.kind}:${mutation.reason}`).join(";"),
-                workerId,
-                ...semanticCasePayload({
-                  parentSpanId: workerTrace.spanId,
-                  semanticCase,
-                  spanId,
-                  traceId: trace.traceId,
-                }),
-              })
-              for (const mutation of result.applied) {
-                yield* telemetry.emit(config, "attune.fuzz.mutation_applied", {
-                  batchIndex,
-                  caseIndex: globalCaseIndex,
-                  mutationKind: mutation.kind,
-                  targetFile: mutation.targetFile,
-                  workerId,
-                  ...semanticCasePayload({
-                    parentSpanId: workerTrace.spanId,
-                    semanticCase,
-                    spanId: makeFuzzTrace().spanId,
-                    traceId: trace.traceId,
-                  }),
-                })
-              }
-
-              const admission = yield* admitter.admit(semanticCase)
-              if (admission.accepted) {
-                accepted += 1
-                acceptedSemanticCases.push(semanticCase)
-                acceptedFuzzCases.push(...(yield* admitter.toFuzzCases(semanticCase)))
-                yield* telemetry.emit(config, "attune.fuzz.case_admitted", {
-                  batchIndex,
-                  caseIndex: globalCaseIndex,
-                  files: admission.files.length,
-                  workerId,
-                  ...semanticCasePayload({
-                    parentSpanId: workerTrace.spanId,
-                    semanticCase,
-                    spanId,
-                    traceId: trace.traceId,
-                  }),
-                })
-              } else {
-                rejected += 1
-                yield* telemetry.emit(config, "attune.fuzz.case_rejected", {
-                  batchIndex,
-                  caseIndex: globalCaseIndex,
-                  diagnostics: admission.diagnostics,
-                  workerId,
-                  ...semanticCasePayload({
-                    parentSpanId: workerTrace.spanId,
-                    semanticCase,
-                    spanId,
-                    traceId: trace.traceId,
-                  }),
-                })
-              }
-            }
-
-            if (joernMode !== "none" && acceptedFuzzCases.length > 0) {
-              const firstCase = acceptedSemanticCases[0]
-              const joernShards = chunksBySize(acceptedFuzzCases, joernShardSize)
-
-              for (const [shardIndex, joernShard] of joernShards.entries()) {
-                const oracleStartedAt = Date.now()
-                yield* telemetry.emit(config, "attune.fuzz.joern_import_started", {
-                  batchIndex,
-                  caseCount: joernShard.length,
-                  shardCount: joernShards.length,
-                  shardIndex,
-                  workerId,
-                  "otel.parent_span_id": workerTrace.spanId,
-                  "otel.span_id": makeFuzzTrace().spanId,
-                  "otel.trace_id": trace.traceId,
-                })
-                yield* telemetry.flush
-
-                if (joernMode === "import") {
-                  const importResult = yield* Effect.either(oracle.importJoernProject(joernShard))
-                  if (importResult._tag === "Left") {
-                    yield* emitCounterexampleEvents({
-                      batchIndex,
-                      error: importResult.left,
-                      failureClass: "joern-import",
-                      firstCase,
-                      shardIndex,
-                      telemetry,
-                      traceId: trace.traceId,
-                      workerId,
-                      workerSpanId: workerTrace.spanId,
-                    }, config)
-                    continue
-                  }
-                  yield* telemetry.emit(config, "attune.fuzz.joern_import_completed", {
-                    batchIndex,
-                    caseCount: importResult.right.caseCount,
-                    durationMs: Date.now() - oracleStartedAt,
-                    joernWorkerId: importResult.right.workerId,
-                    projectName: importResult.right.projectName,
-                    projectPath: importResult.right.projectPath,
-                    shardCount: joernShards.length,
-                    shardIndex,
-                    workspacePath: importResult.right.workspacePath,
-                    workerId,
-                    "otel.parent_span_id": workerTrace.spanId,
-                    "otel.span_id": makeFuzzTrace().spanId,
-                    "otel.trace_id": trace.traceId,
-                  })
-                  yield* telemetry.flush
-                } else {
-                  const oracleResult = yield* Effect.either(oracle.runJoernQueries(joernShard, {
-                    ...(config.queryBudget === undefined ? {} : { queryBudget: config.queryBudget }),
-                    ...(config.queryFeedback === undefined ? {} : { queryFeedback: config.queryFeedback }),
-                  }))
-                  if (oracleResult._tag === "Left") {
-                    yield* emitCounterexampleEvents({
-                      batchIndex,
-                      error: oracleResult.left,
-                      failureClass: "oracle-disagreement",
-                      firstCase,
-                      shardIndex,
-                      telemetry,
-                      traceId: trace.traceId,
-                      workerId,
-                      workerSpanId: workerTrace.spanId,
-                    }, config)
-                    continue
-                  }
-                  yield* telemetry.emit(config, "attune.fuzz.joern_import_completed", {
-                    batchIndex,
-                    caseCount: oracleResult.right.caseCount,
-                    durationMs: Date.now() - oracleStartedAt,
-                    joernWorkerId: oracleResult.right.workerId,
-                    projectName: oracleResult.right.projectName,
-                    projectPath: oracleResult.right.projectPath,
-                    shardCount: joernShards.length,
-                    shardIndex,
-                    workspacePath: oracleResult.right.workspacePath,
-                    workerId,
-                    "otel.parent_span_id": workerTrace.spanId,
-                    "otel.span_id": makeFuzzTrace().spanId,
-                    "otel.trace_id": trace.traceId,
-                  })
-                  yield* telemetry.emit(config, "attune.fuzz.joern_oracle_completed", {
-                    batchIndex,
-                    caseCount: oracleResult.right.caseCount,
-                    durationMs: Date.now() - oracleStartedAt,
-                    joernWorkerId: oracleResult.right.workerId,
-                    projectName: oracleResult.right.projectName,
-                    queryResults: oracleResult.right.queryResults,
-                    shardCount: joernShards.length,
-                    shardIndex,
-                    workerId,
-                    "otel.parent_span_id": workerTrace.spanId,
-                    "otel.span_id": makeFuzzTrace().spanId,
-                    "otel.trace_id": trace.traceId,
-                  })
-                  yield* Effect.forEach(
-                    oracleResult.right.queryResults,
-                    (queryResult) => telemetry.emit(config, "attune.fuzz.query_completed", {
-                      batchIndex,
-                      caseCount: oracleResult.right.caseCount,
-                      cpgql: queryResult.cpgql,
-                      joernWorkerId: oracleResult.right.workerId,
-                      projectName: oracleResult.right.projectName,
-                      queryFingerprint: queryResult.fingerprint,
-                      queryKind: queryResult.kind,
-                      queryName: queryResult.name,
-                      queryPreview: queryResult.preview,
-                      rowCount: queryResult.rowCount,
-                      shardCount: joernShards.length,
-                      shardIndex,
-                      workerId,
-                      "otel.parent_span_id": workerTrace.spanId,
-                      "otel.span_id": makeFuzzTrace().spanId,
-                      "otel.trace_id": trace.traceId,
-                    }),
-                  )
-                  yield* telemetry.flush
-                }
-              }
-            }
-
-            yield* telemetry.emit(config, "attune.fuzz.worker_completed", {
-              accepted,
-              batchIndex,
-              caseCount: workerPlans.length,
-              rejected,
-              workerId,
-              "otel.parent_span_id": batchTrace.spanId,
-              "otel.span_id": workerTrace.spanId,
-              "otel.trace_id": trace.traceId,
-            })
-            yield* telemetry.flush
-            return { accepted, rejected }
+          (workerPlans, workerIndex) => runSemanticWorker({
+            admitter,
+            batchIndex,
+            batchTraceSpanId: batchTrace.spanId,
+            config,
+            joernMode,
+            joernShardSize,
+            mutator,
+            oracle,
+            planChunkCount: planChunks.length,
+            telemetry,
+            traceId: trace.traceId,
+            workerIndex,
+            workerPlans,
           }),
           { concurrency: workerCount },
         )

@@ -23,6 +23,43 @@
         "command": "node scripts/architecture/source-bom-check.mjs"
       }
     },
+    "policy-install-hooks": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "git config core.hooksPath .githooks"
+      },
+      "metadata": {
+        "description": "Install the repo-owned Nix/Nx Git hooks for commit and push validation."
+      }
+    },
+    "policy-commit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "bash nix/policy-hooks/secret-path-hygiene.sh",
+          "bash nix/policy-hooks/undeclared-workflow-policy.sh",
+          "bash nix/policy-hooks/touched-source-bom-ownership.sh",
+          "bash nix/policy-hooks/openspec-feasible-validation.sh",
+          "bash nix/policy-hooks/focused-architecture-lint.sh"
+        ],
+        "parallel": false
+      },
+      "metadata": {
+        "description": "Default pre-commit policy gate for staged changes."
+      }
+    },
+    "policy-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm exec nx run workspace:policy-fast"
+        ],
+        "parallel": false
+      },
+      "metadata": {
+        "description": "Default pre-push policy gate."
+      }
+    },
     "arch:scan": {
       "executor": "nx:run-commands",
       "options": {
@@ -32,10 +69,52 @@
         "description": "Low-level architecture scanner. The public npm arch:scan script is a compatibility alias to workspace:policy-architecture."
       }
     },
+    "arch:deps": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec depcruise packages --config .dependency-cruiser.cjs --output-type err"
+      }
+    },
+    "arch:cycles": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec madge packages --ts-config tsconfig.base.json --extensions ts,tsx --circular"
+      }
+    },
+    "arch:unused": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec knip --config knip.json"
+      }
+    },
+    "arch:complexity": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint packages --config eslint.config.mjs --max-warnings 0"
+      }
+    },
+    "arch:duplicates": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec jscpd --config .jscpd.json"
+      }
+    },
+    "arch:types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/architecture/ts-extended-diagnostics.mjs"
+      }
+    },
+    "arch:churn": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/architecture/churn-complexity.mjs"
+      }
+    },
     "arch:mutation": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node scripts/architecture/mutation.mjs"
+        "command": "pnpm exec stryker run stryker.conf.json"
       },
       "metadata": {
         "description": "Explicit mutation-pressure architecture gate. Only workspace:policy-proof-pressure invokes this target."
@@ -47,6 +126,12 @@
         "commands": [
           "pnpm exec nx run attune-architecture-lint:test",
           "pnpm exec nx run workspace:arch:scan",
+          "pnpm exec nx run workspace:arch:deps",
+          "pnpm exec nx run workspace:arch:cycles",
+          "pnpm exec nx run workspace:arch:complexity",
+          "pnpm exec nx run workspace:arch:duplicates",
+          "pnpm exec nx run workspace:arch:types",
+          "pnpm exec nx run workspace:arch:churn",
           "pnpm exec nx run effect-oxlint-policy:test",
           "pnpm exec nx run effect-oxlint-policy:build",
           "pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet"
@@ -84,7 +169,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "pnpm exec nx run workspace:policy-fast",
+          "pnpm exec nx run workspace:policy-push",
           "pnpm exec nx run workspace:policy-proof-pressure"
         ],
         "parallel": false

@@ -1,42 +1,24 @@
-# Dispatch and Attune app boundaries
+# Attune FoldKit app boundary
 
-Attune has two FoldKit app concepts. Keep them separate unless a future
-OpenSpec change explicitly defines a bridge.
+The product FoldKit UI is the only FoldKit app in this workspace.
 
-## Product Attune FoldKit app
+Use `packages/attune-foldkit` for WorkbenchSnapshot review, motifs, evidence
+packets, findings, codebase discovery flows, human promotion workflows, the
+constrained FoldKit MDX page grammar, and the Vite web boot.
 
-The product app is the customer-facing discovery UI. Put WorkbenchSnapshot
-review, motifs, evidence packets, findings, codebase discovery flows, and human
-promotion workflows here. Product UI work should use discovery/domain packages
-such as `packages/attuned-discovery` and any future product FoldKit app package.
-Do not add private operator feed pages to the product app.
+The package name is `@attune/foldkit-ui` and the Nx project is
+`attune-foldkit`.
 
-## Dispatch operator FoldKit app
+## Removed Dispatch surface
 
-Dispatch is the private operator app/feed for Linear, Codex, agent, validation,
-run, and safety-gate status. It is not a customer-facing motif review surface.
-Its current package map is intentionally small:
+The former private Dispatch operator packages were removed from this project:
 
-- `packages/dispatch-schema`: shared Dispatch operator schemas and constrained
-  FoldKit-MDX data shapes.
-- `packages/dispatch-core`: Dispatch fixtures, derivations, constrained MDX
-  compilation, and RSS/Atom/JSON feed rendering.
-- `packages/dispatch-foldkit`: FoldKit model, messages, update, and views for
-  the private Dispatch operator app. The package name is
-  `@attune/dispatch-operator-foldkit` and the Nx project is
-  `dispatch-operator-foldkit`.
-- `packages/dispatch-web`: Vite boot package for the private Dispatch operator
-  app. The package name is `@attune/dispatch-operator-web` and the Nx project is
-  `dispatch-operator-web`.
+- `packages/dispatch-schema`
+- `packages/dispatch-core`
+- `packages/dispatch-foldkit`
+- `packages/dispatch-web`
 
-Dispatch feed work and run/agent status projections belong in `dispatch-core`
-unless they need a new persistence boundary. Shared schemas/types belong in
-`dispatch-schema`; do not create new `dispatch-*` packages for incidental type
-sharing.
-
-## Consolidation note
-
-`dispatch-feed` was merged into `dispatch-core` because feed rendering is a pure
-projection over Dispatch items and did not need a standalone package. Future
-splits should happen only around a durable boundary, a separate runtime, or a
-human-reviewed deployment concern.
+Do not add Dispatch pages, feeds, or `dispatch-*` packages back into the
+product app as incidental monitoring UI. If a separate private operator app is
+needed later, create it as its own reviewed change with a separate runtime and
+package boundary.

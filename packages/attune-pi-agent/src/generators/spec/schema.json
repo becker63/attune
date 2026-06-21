@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Implementation spec name."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Output directory.",
+      "default": "specs/pi-agent"
+    }
+  },
+  "required": ["name"]
+}

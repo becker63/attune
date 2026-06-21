@@ -22,7 +22,7 @@ Every platform provider SHALL have Live, DryRun, and Test implementations.
 - **AND** it does not spawn subprocesses or touch external systems.
 
 ### Requirement: Live subprocesses are hidden behind providers
-Live providers MAY use subprocesses internally.
+Live providers MUST hide subprocess invocation behind typed provider contracts.
 
 #### Scenario: Live provider shells out
 - **WHEN** a Live provider invokes a subprocess

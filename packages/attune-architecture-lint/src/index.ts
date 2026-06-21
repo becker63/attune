@@ -185,7 +185,7 @@ const checkSourceBomOwnership = (
   }
 }
 
-const isNxFacade = (command: string): boolean => /(^|\s)(nx|corepack pnpm exec nx|pnpm exec nx)\s/.test(command)
+const isNxFacade = (command: string): boolean => /(^|\s)(nx|pnpm exec nx)\s/.test(command)
 
 const looksLikeWorkflowSurface = (name: string, command: string): boolean => {
   const workflowNames = /^(build|check|deploy|generate|lint|release|test|typecheck|validate)(:|$)/

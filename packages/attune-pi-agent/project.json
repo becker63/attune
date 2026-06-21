@@ -1,0 +1,56 @@
+{
+  "name": "attune-pi-agent",
+  "root": "packages/attune-pi-agent",
+  "sourceRoot": "packages/attune-pi-agent/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": "packages/attune-pi-agent",
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsup src/index.ts src/pi-extension.ts src/generators/spec/generator.ts src/generators/permission-policy/generator.ts src/generators/test-obligation/generator.ts src/generators/taskplane-task/generator.ts --format esm,cjs --dts --sourcemap --clean"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-pi-agent",
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsgo --noEmit"
+      }
+    },
+    "typecheck:classic": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-pi-agent",
+        "command": "node ../../scripts/codex/pnpm.mjs exec tsc --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json packages/attune-pi-agent --quiet"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-pi-agent",
+        "command": "node ../../scripts/codex/pnpm.mjs exec vitest run"
+      }
+    },
+    "property": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-pi-agent",
+        "command": "node ../../scripts/codex/pnpm.mjs exec vitest run test/*.property.test.ts"
+      }
+    },
+    "mutation": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-pi-agent",
+        "command": "node ../../scripts/codex/pnpm.mjs exec stryker run stryker.conf.json"
+      }
+    }
+  }
+}

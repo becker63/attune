@@ -8,27 +8,27 @@
       "outputs": ["{projectRoot}/dist"],
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "../../node_modules/.bin/tsup src/index.ts src/provider/alchemy-resource.ts --format esm,cjs --dts --sourcemap --clean"
+        "command": "pnpm exec tsup src/index.ts src/provider/alchemy-resource.ts --format esm,cjs --dts --sourcemap --clean"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "../../node_modules/.bin/tsgo --noEmit"
+        "command": "pnpm exec tsgo --noEmit"
       }
     },
     "typecheck:classic": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "../../node_modules/.bin/tsc --noEmit"
+        "command": "pnpm exec tsc --noEmit"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node_modules/.bin/oxlint --config root-oxlintrc.json packages/platform-alchemy-k8s --quiet"
+        "command": "pnpm exec oxlint --config root-oxlintrc.json packages/platform-alchemy-k8s --quiet"
       }
     },
     "generate-crd-types": {
@@ -37,7 +37,7 @@
       "outputs": ["{projectRoot}/src/generated/crds.ts", "{projectRoot}/src/generated/crds"],
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generationStage.ts emit-generated"
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec tsx scripts/generationStage.ts emit-generated"
       }
     },
     "emit-crd-manifests": {
@@ -46,7 +46,7 @@
       "outputs": ["{projectRoot}/src/generated/crds"],
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generationStage.ts emit-crd-manifests"
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec tsx scripts/generationStage.ts emit-crd-manifests"
       }
     },
     "emit-crd-types": {
@@ -55,7 +55,7 @@
       "outputs": ["{projectRoot}/src/generated/crds.ts"],
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generationStage.ts emit-crd-types"
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec tsx scripts/generationStage.ts emit-crd-types"
       }
     },
     "emit-generated": {
@@ -63,8 +63,8 @@
       "outputs": ["{projectRoot}/src/generated/crds.ts", "{projectRoot}/src/generated/crds"],
       "options": {
         "commands": [
-          "node_modules/.bin/nx run platform-alchemy-k8s:emit-crd-manifests",
-          "node_modules/.bin/nx run platform-alchemy-k8s:emit-crd-types"
+          "pnpm exec nx run platform-alchemy-k8s:emit-crd-manifests",
+          "pnpm exec nx run platform-alchemy-k8s:emit-crd-types"
         ],
         "parallel": false
       }
@@ -74,7 +74,7 @@
       "outputs": ["{projectRoot}/src/resources/ResourceRegistry.generated.ts"],
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp ../../node_modules/.bin/tsx scripts/generationStage.ts sync-k8s-resources"
+        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec tsx scripts/generationStage.ts sync-k8s-resources"
       }
     },
     "generate": {
@@ -86,8 +86,8 @@
       ],
       "options": {
         "commands": [
-          "node_modules/.bin/nx run platform-alchemy-k8s:emit-generated",
-          "node_modules/.bin/nx run platform-alchemy-k8s:sync-k8s-resources"
+          "pnpm exec nx run platform-alchemy-k8s:emit-generated",
+          "pnpm exec nx run platform-alchemy-k8s:sync-k8s-resources"
         ],
         "parallel": false
       }
@@ -104,7 +104,7 @@
       "dependsOn": ["generate"],
       "options": {
         "cwd": "packages/platform-alchemy-k8s",
-        "command": "../../node_modules/.bin/vitest run"
+        "command": "pnpm exec vitest run"
       }
     }
   }

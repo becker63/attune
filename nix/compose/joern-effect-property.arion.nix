@@ -96,7 +96,6 @@ in
   ];
   services.property.image.rawConfig = {
     Env = [
-      "${envVars.corepackEnableDownloadPrompt}=0"
       "${envVars.joernBinary}=${joern}/bin/joern"
       "${envVars.joernHome}=${joern}"
       "${envVars.joernCpgVersion}=${cpgVersion}"
@@ -127,10 +126,9 @@ in
 
   services.property.service = {
     command = ''
-      bash -lc "rm -rf /work/attune && mkdir -p /work/attune && cd /workspace && tar --exclude='./.git' --exclude='./.nx' --exclude='./imports' --exclude='./node_modules' --exclude='./reports' --exclude='./result' --exclude='./workspace' -cf - . | tar -C /work/attune -xf - && ln -s /workspace/node_modules /work/attune/node_modules && cd /work/attune && ./node_modules/.bin/nx run ${nxTarget}"
+      bash -lc "rm -rf /work/attune && mkdir -p /work/attune && cd /workspace && tar --exclude='./.git' --exclude='./.nx' --exclude='./imports' --exclude='./node_modules' --exclude='./reports' --exclude='./result' --exclude='./workspace' -cf - . | tar -C /work/attune -xf - && ln -s /workspace/node_modules /work/attune/node_modules && cd /work/attune && pnpm exec nx run ${nxTarget}"
     '';
     environment = {
-      COREPACK_ENABLE_DOWNLOAD_PROMPT = "0";
       JAVA_TOOL_OPTIONS = "-XX:ActiveProcessorCount=${cpuCount} -Djava.io.tmpdir=/tmp";
       JOERN_EFFECT_FUZZ_CASES = fuzzCaseCount;
       JOERN_EFFECT_FUZZ_BATCHES = fuzzBatchCount;

@@ -1,5 +1,5 @@
 import type { Selection } from "../../pure/builder/select.js"
-import type { FilterValue, TraversalSegment } from "../../pure/builder/traversal.js"
+import type { FilterValue, TraversalSegment } from "../../pure/builder/traversalAst.js"
 
 export const escapeScalaString = (value: string): string =>
   value

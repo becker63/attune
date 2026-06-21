@@ -1,0 +1,39 @@
+{
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/**",
+        "test/**"
+      ],
+      "reason": "Architecture policy scanner and tests are policy source for the Source BOM ratchet itself."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "attune-architecture-lint",
+  "projectRoot": "packages/attune-architecture-lint",
+  "queryCheckTargetNotes": [
+    {
+      "note": "The package owns repo architecture policy; extend this shard as checks graduate from inventory to blocking rules.",
+      "target": "test"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "test",
+    "typecheck"
+  ],
+  "waivers": []
+}

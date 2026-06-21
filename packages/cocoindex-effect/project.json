@@ -8,34 +8,34 @@
       "outputs": ["{projectRoot}/dist"],
       "options": {
         "cwd": "packages/cocoindex-effect",
-        "command": "../../node_modules/.bin/tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
+        "command": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/cocoindex-effect",
-        "command": "../../node_modules/.bin/tsgo --noEmit"
+        "command": "pnpm exec tsgo --noEmit"
       }
     },
     "typecheck:classic": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/cocoindex-effect",
-        "command": "../../node_modules/.bin/tsc --noEmit"
+        "command": "pnpm exec tsc --noEmit"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node_modules/.bin/oxlint --config root-oxlintrc.json packages/cocoindex-effect --quiet"
+        "command": "pnpm exec oxlint --config root-oxlintrc.json packages/cocoindex-effect --quiet"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/cocoindex-effect",
-        "command": "../../node_modules/.bin/vitest run"
+        "command": "pnpm exec vitest run"
       }
     },
     "inspect-cocoindex-mcp": {
@@ -43,7 +43,7 @@
       "outputs": ["{projectRoot}/src/generated/cocoindex-code-mcp.ts"],
       "options": {
         "cwd": "packages/cocoindex-effect",
-        "command": "../../node_modules/.bin/tsx scripts/generationStage.ts inspect-cocoindex-mcp"
+        "command": "pnpm exec tsx scripts/generationStage.ts inspect-cocoindex-mcp"
       }
     },
     "emit-mcp-schema": {
@@ -51,21 +51,21 @@
       "outputs": ["{projectRoot}/src/generated/cocoindex-code-mcp.ts"],
       "options": {
         "cwd": "packages/cocoindex-effect",
-        "command": "../../node_modules/.bin/tsx scripts/generationStage.ts emit-mcp-schema"
+        "command": "pnpm exec tsx scripts/generationStage.ts emit-mcp-schema"
       }
     },
     "scaffold-mcp-search-tool": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/src/cocoindex/tools/search.ts"],
       "options": {
-        "command": "node_modules/.bin/nx generate @attune/nx:cocoindex-mcp-tool search --directory packages/cocoindex-effect/src/cocoindex/tools --toolName search"
+        "command": "pnpm exec nx generate @attune/nx:cocoindex-mcp-tool search --directory packages/cocoindex-effect/src/cocoindex/tools --toolName search"
       }
     },
     "sync-mcp-tools": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/src/cocoindex/tools/ToolRegistry.generated.ts"],
       "options": {
-        "command": "node_modules/.bin/nx generate @attune/nx:sync-cocoindex-mcp-tools --directory packages/cocoindex-effect/src/cocoindex/tools --registry packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts"
+        "command": "pnpm exec nx generate @attune/nx:sync-cocoindex-mcp-tools --directory packages/cocoindex-effect/src/cocoindex/tools --registry packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts"
       }
     },
     "generate": {
@@ -76,8 +76,8 @@
       ],
       "options": {
         "commands": [
-          "node_modules/.bin/nx run cocoindex-effect:emit-mcp-schema",
-          "node_modules/.bin/nx run cocoindex-effect:sync-mcp-tools"
+          "pnpm exec nx run cocoindex-effect:emit-mcp-schema",
+          "pnpm exec nx run cocoindex-effect:sync-mcp-tools"
         ],
         "parallel": false
       }

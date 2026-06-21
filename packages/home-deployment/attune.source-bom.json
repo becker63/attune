@@ -1,0 +1,55 @@
+{
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "alchemy.run.ts",
+        "src/alchemy.ts",
+        "src/lifecycle.ts",
+        "src/model.ts",
+        "src/providers.ts",
+        "test/**"
+      ],
+      "reason": "Day-0 Effect/Alchemy providers and typed runbook resources are hand-authored because destructive provisioning semantics require human review before generator promotion."
+    }
+  ],
+  "ownedFiles": [
+    "alchemy.run.ts",
+    "package.json",
+    "project.json",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "home-deployment",
+  "projectRoot": "packages/home-deployment",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Day-0 provider idempotence is covered by home-deployment tests and the harden-day0-provider-idempotence OpenSpec change.",
+      "target": "test"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "alchemy.run.ts",
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "typecheck"
+  ],
+  "waivers": [
+    {
+      "expires": null,
+      "paths": [
+        "src/model.ts",
+        "src/providers.ts"
+      ],
+      "reason": "Provider/resource grammar should become @attune/nx-owned after the Day-0 graph stabilizes."
+    }
+  ]
+}

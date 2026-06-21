@@ -93,8 +93,10 @@ const decodeJoernQueryResponse = (body: string): Effect.Effect<
     ),
   )
 
+const ansiEscapePattern = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "gu")
+
 const stripAnsi = (value: string): string =>
-  value.replace(/\u001b\[[0-9;]*m/gu, "")
+  value.replace(ansiEscapePattern, "")
 
 const parseScalaStringResult = (value: string): string | undefined => {
   const quoted = value.match(/^val\s+res\d+:\s+String\s+=\s+("(?:(?:\\.)|[^"\\])*")$/su)

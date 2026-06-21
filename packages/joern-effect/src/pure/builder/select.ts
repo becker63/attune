@@ -1,6 +1,9 @@
 import { Schema } from "effect"
 import type { Property } from "./property.js"
 
+// Heterogeneous selections carry each field's Property<A>; the index type has to
+// admit all Property instantiations so SelectionResult can recover A per key.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Selection = Record<string, Property<any>>
 
 export type SelectionResult<S extends Selection> = {

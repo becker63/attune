@@ -1,0 +1,59 @@
+{
+  "generatedOutputs": [
+    {
+      "generator": "scripts/write-generator-cjs-wrappers.mjs",
+      "outputs": [
+        "dist/**"
+      ],
+      "sources": [
+        "src/generators/**",
+        "src/internal/**",
+        "generators.json"
+      ],
+      "target": "build"
+    }
+  ],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/generators/**",
+        "src/internal/**",
+        "test/**"
+      ],
+      "reason": "@attune/nx is the generator grammar package; its generator source is intentionally hand-authored."
+    }
+  ],
+  "ownedFiles": [
+    "README.md",
+    "generators.json",
+    "package.json",
+    "project.json",
+    "scripts/**",
+    "src/**",
+    "test/**",
+    "tsconfig.build.json",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "attune-nx",
+  "projectRoot": "packages/attune-nx",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Generator tests verify deterministic Source BOM upserts and sync registry behavior.",
+      "target": "test"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/generators/**",
+    "src/internal/**",
+    "test/**",
+    "generators.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "typecheck"
+  ],
+  "waivers": []
+}

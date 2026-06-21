@@ -25,7 +25,7 @@ const run = (command: string, args: ReadonlyArray<string>): void => {
 switch (stage) {
   case "inspect-cocoindex-mcp":
   case "emit-mcp-schema":
-    run("../../node_modules/.bin/tsx", ["scripts/generate-cocoindex-mcp-types.ts"])
+    run("pnpm exec tsx", ["scripts/generate-cocoindex-mcp-types.ts"])
     break
   default:
     console.error(`Unknown cocoindex-effect generation stage: ${stage ?? "<missing>"}`)

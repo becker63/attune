@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: nix/hosts/local/thinkcentre-secrets\.yaml$
+    age: replace-with-operator-or-bootstrap-public-age-recipient

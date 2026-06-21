@@ -1,0 +1,26 @@
+{
+  "operator": {
+    "ageRecipient": "replace-with-operator-public-age-recipient",
+    "publicOnly": true
+  },
+  "bootstrap": {
+    "ageRecipientPath": "nix/hosts/local/bootstrap-age-recipient.txt",
+    "privateKeyPath": "nix/hosts/local/bootstrap-age-key.txt",
+    "publicOnly": false,
+    "rotationRequiredAfterFirstBoot": true
+  },
+  "hosts": {
+    "attune-cp-1": {
+      "ageRecipientPath": "nix/hosts/sops-recipients/hosts/attune-cp-1.age",
+      "tailscaleSecretName": "tailscale/attune-cp-1/auth-key"
+    },
+    "attune-cp-2": {
+      "ageRecipientPath": "nix/hosts/sops-recipients/hosts/attune-cp-2.age",
+      "tailscaleSecretName": "tailscale/attune-cp-2/auth-key"
+    },
+    "attune-cp-3": {
+      "ageRecipientPath": "nix/hosts/sops-recipients/hosts/attune-cp-3.age",
+      "tailscaleSecretName": "tailscale/attune-cp-3/auth-key"
+    }
+  }
+}

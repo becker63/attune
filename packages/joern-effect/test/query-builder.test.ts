@@ -18,10 +18,11 @@ describe("query builder", () => {
       })
 
     expect(query.cpgql).toMatchInlineSnapshot(`
-      "cpg.method.name("handleRequest").call.name("exec|spawn|eval")
+      "import io.shiftleft.semanticcpg.language.locationCreator
+      cpg.method.name("handleRequest").call.name("exec|spawn|eval")
         .map(n => Map(
           "code" -> n.code,
-          "file" -> n.filename,
+          "file" -> n.location.filename,
           "line" -> n.lineNumber,
           "method" -> n.methodFullName
         ))
