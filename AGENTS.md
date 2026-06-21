@@ -40,28 +40,30 @@ git remote add attune https://github.com/becker63/attune.git 2>/dev/null || true
 git fetch attune main
 ```
 
-Use the cloud image's preinstalled Node.js for normal TypeScript, Nx, and pnpm
-commands. Do not install a second Node runtime just to run workspace scripts.
+Use Nx targets and `@attune/nx` generators as the public workflow API. Nix is
+the reproducible toolchain substrate for those targets; do not teach Corepack,
+global package-manager bootstrap, or ad-hoc package scripts as the normal agent
+entrypoint.
 
-The canonical cloud-first bootstrap and smoke check is:
+The canonical cloud smoke checks are Nx-owned targets:
 
 ```bash
-corepack enable
-corepack pnpm install --frozen-lockfile
-NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx graph --file=/tmp/attune-nx-graph.json
-NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run attune-nx:typecheck
-NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run attuned-discovery:typecheck
+nx graph --file=/tmp/attune-nx-graph.json
+nx run workspace:policy-fast
+nx run attune-nx:typecheck
+nx run attuned-discovery:typecheck
 ```
 
-The same path is available as `corepack pnpm run codex:bootstrap` and
-`corepack pnpm run codex:check`. See
+When an Nx binary is not already on PATH, enter the repository dev shell and run
+the same public targets from there. Inside the dev shell, `pnpm exec nx ...` is
+only an implementation detail for reaching Nx; the stable workflow surface is
+still the Nx target or generator name. See
 `docs/platform/codex-cloud-environment.md` before changing environment or
 validation guidance.
 
-Nix is optional for ordinary Codex cloud validation. Install or enter Nix only
-when a task explicitly needs Nix-backed validation, Joern runtime/schema work,
-OpenSpec shell tooling unavailable on PATH, CocoIndex toolchains, Kubernetes
-generator/toolchain work, Docker/Arion property campaigns, or local
+Use Nix when the cloud runner needs the repository toolchain, policy gates,
+Joern runtime/schema work, OpenSpec shell tooling, CocoIndex toolchains,
+Kubernetes generator/toolchain work, Docker/Arion property campaigns, or local
 reproducibility. If `nix` is needed and missing in the cloud environment,
 install it intentionally and report why:
 
@@ -151,33 +153,32 @@ Default order:
 CocoIndex MCP and Joern proof-router DSL work may be tracked elsewhere. Do not
 block this bootstrap queue on them unless the issue explicitly says so.
 
-## Nx And Generators
+## Nx, Nix, Source BOM, And Generators
 
-For JS-only work, use this shape or the root `package.json` scripts with the
-cloud image's preinstalled Node.js:
-
-```bash
-NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx ...
-```
-
-For work that depends on repo toolchains, run the same commands through Nix
-after installing Nix:
+Use Nx targets/generators as the public command surface. Use Nix as the
+substrate that supplies the reproducible tools behind those targets, not as a
+replacement public API. Useful commands:
 
 ```bash
-nix develop -c corepack pnpm exec nx show projects
-nix develop -c corepack pnpm exec nx run <project>:typecheck
-nix develop -c corepack pnpm exec nx run <project>:test
-nix develop -c corepack pnpm exec nx run <project>:build
+nx show projects
+nx run <project>:typecheck
+nx run <project>:test
+nx run <project>:build
+nx run workspace:policy-fast
+nx run workspace:policy-architecture
+nx run workspace:policy-proof-pressure
+nx run workspace:source-bom-check
 ```
 
-Useful commands:
+When the local shell lacks `nx`, enter the dev shell first and invoke the same
+targets from inside it. `pnpm exec nx ...` may appear there only as an
+inside-dev-shell detail; docs and Linear reports should name the Nx target or
+generator that is the stable workflow contract.
 
-```bash
-NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx show projects
-NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run <project>:typecheck
-NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run <project>:test
-NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run <project>:build
-```
+Before editing repeated or generated shapes, query Source BOM shard ownership
+and prefer an `@attune/nx` generator or sync generator over hand-written drift.
+If the Source BOM shard is missing, ambiguous, or points to another owner, stop
+and report the follow-up instead of guessing.
 
 Current `@attune/nx` generators:
 
@@ -219,6 +220,10 @@ Run the smallest validation that proves the slice:
 - Build only when packaging or app boot changes.
 - OpenSpec validation when changing OpenSpec artifacts.
 - Generator typecheck/tests when changing `@attune/nx`.
+- `workspace:policy-fast` for normal policy coverage.
+- `workspace:policy-architecture`, `workspace:policy-proof-pressure`, and
+  `workspace:source-bom-check` when the slice touches policy, proof pressure,
+  or Source BOM ownership.
 
 If validation cannot run, report why and include the exact command attempted.
 

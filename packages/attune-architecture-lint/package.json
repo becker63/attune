@@ -1,0 +1,29 @@
+{
+  "name": "@attune/architecture-lint",
+  "version": "0.0.0",
+  "description": "Typed architecture policy checks for Attune workspace conventions.",
+  "type": "module",
+  "bin": {
+    "attune-architecture-lint": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "effect": "4.0.0-beta.78"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  }
+}

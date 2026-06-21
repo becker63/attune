@@ -21,6 +21,22 @@
     "tag": {
       "type": "string",
       "description": "Effect Context.Tag identifier."
+    },
+    "project": {
+      "type": "string",
+      "description": "Owning Nx project recorded in Source BOM provenance."
+    },
+    "generatorVersion": {
+      "type": "string",
+      "description": "Generator package version recorded in Source BOM provenance."
+    },
+    "generatorRevision": {
+      "type": "string",
+      "description": "Generator source revision recorded in Source BOM provenance."
+    },
+    "openspecChangeId": {
+      "type": "string",
+      "description": "OpenSpec change id recorded in Source BOM provenance."
     }
   },
   "required": ["name"],
