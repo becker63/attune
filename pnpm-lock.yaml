@@ -57,6 +57,19 @@ importers:
         specifier: ^3.2.2
         version: 3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
 
+  packages/attune-architecture-lint:
+    dependencies:
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.2
+        version: 3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
+
   packages/attune-nx:
     devDependencies:
       typescript:
