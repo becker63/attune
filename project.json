@@ -5,14 +5,14 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "corepack pnpm exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+        "command": "pnpm exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
       }
     },
     "check": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "corepack pnpm exec nx run workspace:policy-fast"
+          "pnpm exec nx run workspace:policy-fast"
         ],
         "parallel": false
       }
@@ -45,11 +45,11 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "corepack pnpm exec nx run attune-architecture-lint:test",
-          "corepack pnpm exec nx run workspace:arch:scan",
-          "corepack pnpm exec nx run effect-oxlint-policy:test",
-          "corepack pnpm exec nx run effect-oxlint-policy:build",
-          "corepack pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+          "pnpm exec nx run attune-architecture-lint:test",
+          "pnpm exec nx run workspace:arch:scan",
+          "pnpm exec nx run effect-oxlint-policy:test",
+          "pnpm exec nx run effect-oxlint-policy:build",
+          "pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet"
         ],
         "parallel": false
       },
@@ -61,8 +61,8 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "corepack pnpm exec nx run workspace:policy-architecture",
-          "corepack pnpm exec nx run workspace:arch:mutation"
+          "pnpm exec nx run workspace:policy-architecture",
+          "pnpm exec nx run workspace:arch:mutation"
         ],
         "parallel": false
       }
@@ -71,10 +71,10 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "corepack pnpm exec nx graph --file=/tmp/attune-nx-graph.json",
-          "corepack pnpm exec nx run attune-nx:test",
-          "corepack pnpm exec nx run workspace:source-bom-check",
-          "corepack pnpm exec nx run workspace:policy-architecture",
+          "pnpm exec nx graph --file=/tmp/attune-nx-graph.json",
+          "pnpm exec nx run attune-nx:test",
+          "pnpm exec nx run workspace:source-bom-check",
+          "pnpm exec nx run workspace:policy-architecture",
           "node scripts/codex/verify-pr-completion.mjs"
         ],
         "parallel": false
@@ -84,8 +84,8 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "corepack pnpm exec nx run workspace:policy-fast",
-          "corepack pnpm exec nx run workspace:policy-proof-pressure"
+          "pnpm exec nx run workspace:policy-fast",
+          "pnpm exec nx run workspace:policy-proof-pressure"
         ],
         "parallel": false
       }
