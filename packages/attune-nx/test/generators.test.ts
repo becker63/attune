@@ -46,6 +46,9 @@ describe("attune-nx generators", () => {
     expect(source).toContain("Drizzle tables belong behind this persistence/read-model boundary")
     expect(source).toContain("export const evidenceRecordedViewKey = \"discovery.evidence\" as const")
     expect(tree.files.get("src/discovery/events/index.ts")).toContain('export * from "./evidence-recorded.js"')
+    expect(tree.files.get("src/discovery/events/source.bom.jsonl")).toContain('"schema":"attune.source-bom.v1"')
+    expect(tree.files.get("src/discovery/events/source.bom.jsonl")).toContain('"generator":"@attune/nx:discovery-event"')
+    expect(tree.files.get("src/discovery/events/source.bom.jsonl")).toContain('"path":"src/discovery/events/evidence-recorded.ts"')
   })
 
   it("generates Effect service boundary ownership comments", () => {
@@ -56,5 +59,7 @@ describe("attune-nx generators", () => {
     const source = tree.files.get("src/effect/services/decision-runner.ts") ?? ""
     expect(source).toContain("world-changing effects live in Effect services, not atoms")
     expect(source).toContain("export class DecisionRunner extends Context.Tag")
+    expect(tree.files.get("src/effect/services/source.bom.jsonl")).toContain('"generator":"@attune/nx:effect-service"')
+    expect(tree.files.get("src/effect/services/source.bom.jsonl")).toContain('"path":"src/effect/services/decision-runner.ts"')
   })
 })

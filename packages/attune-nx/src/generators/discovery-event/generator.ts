@@ -1,5 +1,6 @@
 import { upsertExport } from "../../internal/barrel.js"
 import { joinPath, relativeModulePath } from "../../internal/paths.js"
+import { upsertSourceBomRecord } from "../../internal/source-bom.js"
 import { type GeneratorTask, type GeneratorTree, writeTextIfChanged } from "../../internal/tree.js"
 import { toNames } from "../../internal/names.js"
 
@@ -77,6 +78,13 @@ export default function discoveryEventGenerator(
   const filePath = joinPath(directory, `${names.fileName}.ts`)
 
   writeTextIfChanged(tree, filePath, eventSource(names, eventType, viewKey))
+  upsertSourceBomRecord(tree, {
+    capability: "attune-source-bom",
+    generator: "@attune/nx:discovery-event",
+    path: filePath,
+    owner: "packages/attuned-discovery",
+    description: `Discovery event, projection, and Reactivity ViewKey generated for ${names.className}.`,
+  })
 
   if (schema.export ?? true) {
     const indexPath = joinPath(directory, "index.ts")

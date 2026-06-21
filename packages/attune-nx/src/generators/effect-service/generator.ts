@@ -1,5 +1,6 @@
 import { upsertExport } from "../../internal/barrel.js"
 import { joinPath, relativeModulePath } from "../../internal/paths.js"
+import { upsertSourceBomRecord } from "../../internal/source-bom.js"
 import { type GeneratorTask, type GeneratorTree, writeTextIfChanged } from "../../internal/tree.js"
 import { toNames } from "../../internal/names.js"
 
@@ -47,6 +48,13 @@ export default function effectServiceGenerator(
   const tag = schema.tag ?? `@attune/service/${names.className}`
 
   writeTextIfChanged(tree, filePath, serviceTemplate({ tag }, names))
+  upsertSourceBomRecord(tree, {
+    capability: "attune-source-bom",
+    generator: "@attune/nx:effect-service",
+    path: filePath,
+    owner: "packages/attune-nx",
+    description: `Effect service boundary generated for ${names.className}.`,
+  })
 
   if (schema.export ?? true) {
     const indexPath = joinPath(directory, "index.ts")
