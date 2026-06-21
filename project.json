@@ -17,6 +17,19 @@
         ],
         "parallel": false
       }
+    },
+    "policy-fast": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "bash nix/policy-hooks/secret-path-hygiene.sh",
+          "bash nix/policy-hooks/touched-source-bom-ownership.sh",
+          "bash nix/policy-hooks/undeclared-workflow-policy.sh",
+          "bash nix/policy-hooks/focused-architecture-lint.sh",
+          "bash nix/policy-hooks/openspec-feasible-validation.sh"
+        ],
+        "parallel": false
+      }
     }
   }
 }
