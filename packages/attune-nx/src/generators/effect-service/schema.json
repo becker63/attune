@@ -20,7 +20,7 @@
     },
     "tag": {
       "type": "string",
-      "description": "Effect Context.Tag identifier."
+      "description": "Effect Context.Service identifier."
     }
   },
   "required": ["name"],

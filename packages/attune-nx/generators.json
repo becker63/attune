@@ -9,7 +9,7 @@
     "effect-service": {
       "factory": "./dist/generators/effect-service/generator",
       "schema": "./src/generators/effect-service/schema.json",
-      "description": "Create an Effect service boundary with a Context.Tag, live Layer shell, and export boundary."
+      "description": "Create an Effect service boundary with a Context.Service, live Layer shell, and export boundary."
     },
     "joern-template": {
       "factory": "./dist/generators/joern-template/generator",

@@ -22,10 +22,10 @@ export interface ${names.className}Service {
   readonly run: Effect.Effect<void>
 }
 
-export class ${names.className} extends Context.Tag("${schema.tag}")<
+export class ${names.className} extends Context.Service<
   ${names.className},
   ${names.className}Service
->() {}
+>()("${schema.tag}") {}
 
 export const make${names.className} = (): ${names.className}Service => ({
   run: Effect.void,

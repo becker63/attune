@@ -58,7 +58,7 @@ describe("attune-nx generators", () => {
 
     const source = tree.files.get("src/effect/services/decision-runner.ts") ?? ""
     expect(source).toContain("world-changing effects live in Effect services, not atoms")
-    expect(source).toContain("export class DecisionRunner extends Context.Tag")
+    expect(source).toContain("export class DecisionRunner extends Context.Service")
   })
 
   it("syncs CocoIndex MCP tool registries", () => {

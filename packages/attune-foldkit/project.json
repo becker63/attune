@@ -1,0 +1,58 @@
+{
+  "name": "attune-foldkit",
+  "root": "packages/attune-foldkit",
+  "sourceRoot": "packages/attune-foldkit/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": "packages/attune-foldkit",
+        "command": "node_modules/.bin/vite build"
+      }
+    },
+    "build:lib": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": "packages/attune-foldkit",
+        "command": "../../node_modules/.bin/tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-foldkit",
+        "command": "../../node_modules/.bin/tsgo --noEmit"
+      }
+    },
+    "typecheck:classic": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-foldkit",
+        "command": "../../node_modules/.bin/tsc --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node_modules/.bin/oxlint --config root-oxlintrc.json packages/attune-foldkit --quiet"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-foldkit",
+        "command": "node_modules/.bin/vite --host 127.0.0.1 --port 5174"
+      }
+    },
+    "test": {
+      "dependsOn": [],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/attune-foldkit",
+        "command": "../../node_modules/.bin/vitest run"
+      }
+    }
+  }
+}
