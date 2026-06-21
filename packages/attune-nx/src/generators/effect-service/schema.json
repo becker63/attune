@@ -21,6 +21,18 @@
     "tag": {
       "type": "string",
       "description": "Effect Context.Service identifier."
+    },
+    "project": {
+      "type": "string",
+      "description": "Owning Nx project name for the Source BOM entry."
+    },
+    "projectRoot": {
+      "type": "string",
+      "description": "Owning project root for the project-local attune.source-bom.json shard."
+    },
+    "openspecChange": {
+      "type": "string",
+      "description": "OpenSpec change id recorded on the Source BOM entry when available."
     }
   },
   "required": ["name"],

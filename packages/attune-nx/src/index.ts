@@ -16,3 +16,27 @@ export { default as syncCocoIndexMcpToolsGenerator } from "./generators/sync-coc
 export type { SyncCocoIndexMcpToolsGeneratorSchema } from "./generators/sync-cocoindex-mcp-tools/generator.js"
 export { default as syncK8sResourcesGenerator } from "./generators/sync-k8s-resources/generator.js"
 export type { SyncK8sResourcesGeneratorSchema } from "./generators/sync-k8s-resources/generator.js"
+export {
+  makeSourceBomEffectSchemas,
+  normalizeSourceBomOptions,
+  sourceBomEntryId,
+  sourceBomOptionsHash,
+  sourceBomRootIndexFileName,
+  sourceBomRootIndexSchemaVersion,
+  sourceBomShardFileName,
+  sourceBomShardSchemaVersion,
+  upsertSourceBomEntry,
+} from "./internal/source-bom.js"
+export type {
+  SourceBomEditableRegion,
+  SourceBomEntry,
+  SourceBomGeneratorIdentity,
+  SourceBomJsonObject,
+  SourceBomJsonValue,
+  SourceBomProjectShard,
+  SourceBomRootIndex,
+  SourceBomRootIndexShard,
+  SourceBomShapeKind,
+  SourceBomWaiver,
+  UpsertSourceBomEntryInput,
+} from "./internal/source-bom.js"

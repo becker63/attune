@@ -1,5 +1,6 @@
 import { upsertExport } from "../../internal/barrel.js"
 import { joinPath, relativeModulePath } from "../../internal/paths.js"
+import { sourceBomEntryId, upsertSourceBomEntry } from "../../internal/source-bom.js"
 import { type GeneratorTask, type GeneratorTree, writeTextIfChanged } from "../../internal/tree.js"
 import { toNames } from "../../internal/names.js"
 
@@ -8,6 +9,9 @@ export interface EffectServiceGeneratorSchema {
   readonly directory?: string
   readonly export?: boolean
   readonly tag?: string
+  readonly project?: string
+  readonly projectRoot?: string
+  readonly openspecChange?: string
 }
 
 const serviceTemplate = (schema: Required<Pick<EffectServiceGeneratorSchema, "tag">>, names: ReturnType<typeof toNames>): string => `import { Context, Effect, Layer } from "effect"
@@ -45,11 +49,47 @@ export default function effectServiceGenerator(
   const directory = schema.directory ?? "src/effect/services"
   const filePath = joinPath(directory, `${names.fileName}.ts`)
   const tag = schema.tag ?? `@attune/service/${names.className}`
+  const shouldExport = schema.export ?? true
 
   writeTextIfChanged(tree, filePath, serviceTemplate({ tag }, names))
 
-  if (schema.export ?? true) {
+  if (shouldExport) {
     const indexPath = joinPath(directory, "index.ts")
     upsertExport(tree, indexPath, relativeModulePath(indexPath, filePath))
   }
+
+  const project =
+    schema.project ??
+    (schema.projectRoot === undefined || schema.projectRoot === "."
+      ? undefined
+      : schema.projectRoot.split("/").filter(Boolean).at(-1))
+
+  upsertSourceBomEntry(tree, {
+    id: sourceBomEntryId(project ?? "workspace", "effect-service", names.fileName),
+    kind: "effect-service",
+    ...(project === undefined ? {} : { project }),
+    ...(schema.projectRoot === undefined ? {} : { projectRoot: schema.projectRoot }),
+    generator: {
+      name: "@attune/nx:effect-service",
+      version: "0.0.0",
+    },
+    normalizedOptions: {
+      directory,
+      export: shouldExport,
+      name: schema.name,
+      tag,
+    },
+    generatedOutputs: [filePath],
+    ownedFiles: [filePath],
+    editableRegions: [
+      {
+        file: filePath,
+        region: "service-implementation",
+        description: "Service implementation, live layer construction, and package-local fake/test layers.",
+      },
+    ],
+    syncTargets: ["@attune/nx:effect-service"],
+    checkTargets: project === undefined ? ["attune-nx:typecheck"] : [`${project}:typecheck`],
+    ...(schema.openspecChange === undefined ? {} : { openspecChange: schema.openspecChange }),
+  })
 }
