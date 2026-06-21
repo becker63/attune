@@ -12,29 +12,29 @@ Before a Codex-delegated Linear issue may move to Done, the runner or human oper
 
 If PR creation fails, keep or return the issue to In Progress or Todo and comment with the failure reason. If validation fails after a PR is created, keep the issue out of Done and comment with the PR URL plus the validation failure summary. Docs/spec-only work still needs a PR unless the issue explicitly says no PR is required.
 
-Use the verifier before moving an issue to Done:
+Use the Nx-owned completion gate before moving an issue to Done:
 
 ```bash
 CODEX_COMPLETION_COMMIT=<sha> \
 GITHUB_PR_URL=https://github.com/becker63/attune/pull/<number> \
 LINEAR_ISSUE_ID=ATT-26 \
-node scripts/codex/pnpm.mjs run codex:check
+nx run workspace:policy-fast
 ```
 
-The verifier fetches the GitHub PR, confirms it targets `main`, checks that the PR head matches the completion commit, and optionally checks that the PR title or body mentions the Linear issue ID.
+`workspace:policy-fast` is the public gate target. When the completion environment variables are supplied, it must include the PR verifier behavior: fetch the GitHub PR, confirm it targets `main`, check that the PR head matches the completion commit, and optionally check that the PR title or body mentions the Linear issue ID.
 
 ## Recovery audit command
 
 Run the recovery audit whenever a human reports that Codex cloud threads are missing PRs:
 
 ```bash
-node scripts/codex/pnpm.mjs run codex:audit-prs
+nx run workspace:codex-audit-prs
 ```
 
 Override the audited issue/commit list with `CODEX_AUDIT_COMMITS`, for example:
 
 ```bash
-CODEX_AUDIT_COMMITS=ATT-14:09e2046,ATT-21:a4863a5 node scripts/codex/pnpm.mjs run codex:audit-prs
+CODEX_AUDIT_COMMITS=ATT-14:09e2046,ATT-21:a4863a5 nx run workspace:codex-audit-prs
 ```
 
 The audit intentionally reports three states: PR exists and needs Linear linking, commit exists but needs a GitHub PR against `main`, or no visible commit/branch exists and the Codex thread artifact must be recovered or the work re-run. It does not treat local `make_pr` metadata as sufficient.

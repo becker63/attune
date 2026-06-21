@@ -5,17 +5,95 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+        "command": "corepack pnpm exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
       }
     },
     "check": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "node scripts/codex/pnpm.mjs exec nx run-many -t lint,typecheck --all",
-          "openspec validate --all --no-interactive"
+          "corepack pnpm exec nx run workspace:policy-fast"
         ],
         "parallel": false
+      }
+    },
+    "source-bom-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/architecture/source-bom-check.mjs"
+      }
+    },
+    "arch:scan": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/architecture/scan.mjs"
+      },
+      "metadata": {
+        "description": "Low-level architecture scanner. The public npm arch:scan script is a compatibility alias to workspace:policy-architecture."
+      }
+    },
+    "arch:mutation": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/architecture/mutation.mjs"
+      },
+      "metadata": {
+        "description": "Explicit mutation-pressure architecture gate. Only workspace:policy-proof-pressure invokes this target."
+      }
+    },
+    "policy-architecture": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "corepack pnpm exec nx run attune-architecture-lint:test",
+          "corepack pnpm exec nx run workspace:arch:scan",
+          "corepack pnpm exec nx run effect-oxlint-policy:test",
+          "corepack pnpm exec nx run effect-oxlint-policy:build",
+          "corepack pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+        ],
+        "parallel": false
+      },
+      "metadata": {
+        "description": "Nx-owned public architecture policy gate that composes attune-architecture-lint, architecture scan, and Effect oxlint policy checks."
+      }
+    },
+    "policy-proof-pressure": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "corepack pnpm exec nx run workspace:policy-architecture",
+          "corepack pnpm exec nx run workspace:arch:mutation"
+        ],
+        "parallel": false
+      }
+    },
+    "policy-fast": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "corepack pnpm exec nx graph --file=/tmp/attune-nx-graph.json",
+          "corepack pnpm exec nx run attune-nx:test",
+          "corepack pnpm exec nx run workspace:source-bom-check",
+          "corepack pnpm exec nx run workspace:policy-architecture",
+          "node scripts/codex/verify-pr-completion.mjs"
+        ],
+        "parallel": false
+      }
+    },
+    "policy-all": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "corepack pnpm exec nx run workspace:policy-fast",
+          "corepack pnpm exec nx run workspace:policy-proof-pressure"
+        ],
+        "parallel": false
+      }
+    },
+    "codex-audit-prs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/codex/audit-pr-recovery.mjs"
       }
     }
   }

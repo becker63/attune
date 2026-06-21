@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "shards": [
+    {
+      "project": "cocoindex-effect",
+      "projectRoot": "packages/cocoindex-effect",
+      "shard": "packages/cocoindex-effect/attune.source-bom.json"
+    },
+    {
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "shard": "packages/joern-effect/attune.source-bom.json"
+    },
+    {
+      "project": "platform-alchemy-k8s",
+      "projectRoot": "packages/platform-alchemy-k8s",
+      "shard": "packages/platform-alchemy-k8s/attune.source-bom.json"
+    }
+  ]
+}
