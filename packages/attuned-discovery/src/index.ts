@@ -1257,6 +1257,11 @@ export type DiscoveryRunAtomWorkspace = Readonly<{
   readonly getActiveHypotheses: () => ReadonlyArray<MotifHypothesis>
   readonly getRecentEvidence: () => ReadonlyArray<EvidencePacket>
   readonly getReviewQueue: () => ReadonlyArray<ReviewItem>
+  readonly getScoreFeatures: () => RunScoreFeatures
+  readonly getPlateau: () => PlateauState
+  readonly getDecisionPacket: (iteration: number) => DecisionPacket
+  readonly getFoldScene: (iteration: number) => FoldScene
+  readonly getWorkbenchSnapshot: (iteration: number) => WorkbenchSnapshot
   readonly inspect: () => ReadonlyArray<Readonly<{ label: string; key: ViewKey; version: number }>>
   readonly dispose: () => void
 }>
@@ -1316,7 +1321,7 @@ const makeRunAtomWorkspace = (
     return value
   }
 
-  return {
+  const workspace: DiscoveryRunAtomWorkspace = {
     runId,
     getRun: () => evaluate(RunAtoms.runAtom(runId)),
     getRunMetrics: () => evaluate(RunAtoms.runMetricsAtom(runId)),
@@ -1325,6 +1330,25 @@ const makeRunAtomWorkspace = (
     getActiveHypotheses: () => evaluate(HypothesisAtoms.activeHypothesesAtom(runId)),
     getRecentEvidence: () => evaluate(EvidenceAtoms.recentEvidenceAtom(runId)),
     getReviewQueue: () => evaluate(ReviewQueueAtoms.reviewQueueAtom(runId)),
+    getScoreFeatures: () => deriveRunScoreFeaturesFromReadModelWorkspace(workspace),
+    getPlateau: () => derivePlateauStateFromReadModelWorkspace(workspace),
+    getDecisionPacket: (iteration) =>
+      deriveDecisionPacketFromReadModelWorkspace(workspace, iteration),
+    getFoldScene: (iteration) => deriveFoldScene(workspace.getDecisionPacket(iteration)),
+    getWorkbenchSnapshot: (iteration) => {
+      const scene = workspace.getFoldScene(iteration)
+
+      return {
+        runId,
+        version: workspace.getRunMetrics().projectionVersion,
+        decisionPacket: workspace.getDecisionPacket(iteration),
+        scene,
+        reviewQueue: workspace.getReviewQueue().slice(0, 6),
+        report: deriveReportSnapshot(
+          emptyFrozenReportProjection(runId, scene.sceneId),
+        ),
+      }
+    },
     inspect: () =>
       [...cache.values()].map(({ atom, version }) => ({
         label: atom.label,
@@ -1337,9 +1361,86 @@ const makeRunAtomWorkspace = (
       onDispose()
     },
   }
+
+  return workspace
 }
 
 const serializeViewKey = (key: ViewKey): string => key.join("|")
+
+export const deriveRunScoreFeaturesFromReadModelWorkspace = (
+  workspace: Pick<
+    DiscoveryRunAtomWorkspace,
+    "getAnchors" | "getActiveHypotheses" | "getRecentEvidence" | "getReviewQueue"
+  >,
+): RunScoreFeatures => {
+  const hypotheses = workspace.getActiveHypotheses()
+
+  return {
+    anchorCount: workspace.getAnchors().length,
+    hypothesisCount: hypotheses.length,
+    evidenceCount: workspace.getRecentEvidence().length,
+    reviewQueueCount: workspace.getReviewQueue().length,
+    averageHypothesisScore:
+      hypotheses.length === 0
+        ? 0
+        : hypotheses.reduce((sum, hypothesis) => sum + hypothesis.score, 0) /
+          hypotheses.length,
+  }
+}
+
+export const derivePlateauStateFromReadModelWorkspace = (
+  workspace: Pick<DiscoveryRunAtomWorkspace, "getRun" | "getScoreFeatures">,
+): PlateauState => {
+  const run = workspace.getRun()
+  const features = workspace.getScoreFeatures()
+
+  if (run.status === "plateaued" || run.status === "completed") {
+    return { plateaued: true, reason: `run status is ${run.status}` }
+  }
+
+  if (
+    run.budget.joernRunsRemaining === 0 &&
+    run.budget.anchorSearchesRemaining === 0 &&
+    features.evidenceCount > 0
+  ) {
+    return { plateaued: true, reason: "bounded discovery budget is exhausted" }
+  }
+
+  return { plateaued: false, reason: "active run still has discovery budget" }
+}
+
+export const deriveDecisionPacketFromReadModelWorkspace = (
+  workspace: Pick<
+    DiscoveryRunAtomWorkspace,
+    | "getRun"
+    | "getAnchors"
+    | "getActiveHypotheses"
+    | "getRecentEvidence"
+    | "getPlateau"
+  >,
+  iteration: number,
+): DecisionPacket => {
+  const run = workspace.getRun()
+  const anchors = workspace.getAnchors()
+  const hypotheses = workspace.getActiveHypotheses()
+  const evidence = workspace.getRecentEvidence()
+  const plateau = workspace.getPlateau()
+  const availableDecisions = plateau.plateaued
+    ? [stopDecision(run.runId)]
+    : deriveAvailableDecisions(run, anchors, hypotheses)
+  const bestNextAction = availableDecisions[0] ?? stopDecision(run.runId)
+
+  return {
+    packetId: `${run.runId}:packet:${iteration}`,
+    run,
+    anchors: anchors.slice(0, 8),
+    hypotheses: hypotheses.slice(0, 8),
+    evidence: evidence.slice(0, 8),
+    budget: run.budget,
+    availableDecisions,
+    bestNextAction,
+  }
+}
 
 export const buildFixtureWorkbenchSnapshot = (): WorkbenchSnapshot => {
   const domainProjection = replayDiscoveryEvents(fixtureDiscoveryEvents);

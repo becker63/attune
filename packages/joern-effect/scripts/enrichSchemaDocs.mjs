@@ -46,6 +46,14 @@ const readScalaString = (source, start) => {
   return undefined
 }
 
+const readScalaStringEndAt = (source, index) => {
+  if (source.slice(index, index + 3) === '"""') {
+    const end = source.indexOf('"""', index + 3)
+    return end < 0 ? undefined : end + 3
+  }
+  return source[index] === '"' ? readScalaString(source, index)?.end : undefined
+}
+
 const extractCall = (source, callIndex) => {
   const open = source.indexOf("(", callIndex)
   if (open < 0) return undefined
@@ -53,18 +61,13 @@ const extractCall = (source, callIndex) => {
   let depth = 0
   let index = open
   while (index < source.length) {
-    if (source.slice(index, index + 3) === '"""') {
-      const end = source.indexOf('"""', index + 3)
-      if (end < 0) return undefined
-      index = end + 3
+    const stringEnd = readScalaStringEndAt(source, index)
+    if (stringEnd === undefined && source[index] === '"') return undefined
+    if (stringEnd !== undefined) {
+      index = stringEnd
       continue
     }
-
     const char = source[index]
-    if (char === '"') {
-      index = readScalaString(source, index)?.end ?? source.length
-      continue
-    }
     if (char === "(") depth++
     if (char === ")") {
       depth--

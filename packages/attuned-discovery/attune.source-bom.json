@@ -1,0 +1,50 @@
+{
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/index.ts",
+        "src/memory/**",
+        "src/projection/**",
+        "test/**"
+      ],
+      "reason": "Discovery schema, EventLog facade, read model, Reactivity, and atom view slices predate dedicated event/projection/atom-family generators."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "attuned-discovery",
+  "projectRoot": "packages/attuned-discovery",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Backfill @attune/nx discovery-event, projection, atom-family, and derived-atom generators before expanding repeated discovery shapes.",
+      "target": "test"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "typecheck"
+  ],
+  "waivers": [
+    {
+      "expires": null,
+      "paths": [
+        "src/index.ts"
+      ],
+      "reason": "Current discovery facade is intentionally consolidated until the generator split lands."
+    }
+  ]
+}

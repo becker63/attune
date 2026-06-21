@@ -42,7 +42,7 @@ describe("attune architecture policy lint", () => {
 
   it("allows Nx facade scripts", () => {
     withWorkspace({
-      "package.json": JSON.stringify({ scripts: { typecheck: "NX_DAEMON=false corepack pnpm exec nx run attune-architecture-lint:typecheck" } }),
+      "package.json": JSON.stringify({ scripts: { typecheck: "nx run attune-architecture-lint:typecheck" } }),
     }, (workspaceRoot) => {
       const result = scanWorkspace({ workspaceRoot })
       expect(result.exitCode).toBe(0)

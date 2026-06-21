@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { Effect } from "effect"
+import { Effect, Scope } from "effect"
 import { startMcpStdioClient } from "../src/mcp/stdio.js"
 
 type ToolDefinition = Readonly<{
@@ -32,7 +32,7 @@ const main = Effect.gen(function* generateCocoIndexMcpTypes() {
   })
 })
 
-const inspectTools = (): Effect.Effect<ReadonlyArray<ToolDefinition>, unknown> =>
+const inspectTools = (): Effect.Effect<ReadonlyArray<ToolDefinition>, unknown, Scope.Scope> =>
   Effect.acquireRelease(
     startMcpStdioClient({
       command: process.env.COCOINDEX_MCP_COMMAND ?? "ccc",

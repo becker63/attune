@@ -8,28 +8,28 @@
       "outputs": ["{projectRoot}/dist"],
       "options": {
         "cwd": "packages/attune-architecture-lint",
-        "command": "../../node_modules/.bin/tsc -p tsconfig.build.json"
+        "command": "pnpm exec tsc -p tsconfig.build.json"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attune-architecture-lint",
-        "command": "../../node_modules/.bin/tsc --noEmit"
+        "command": "pnpm exec tsc --noEmit"
       }
     },
     "typecheck:classic": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attune-architecture-lint",
-        "command": "../../node_modules/.bin/tsc --noEmit"
+        "command": "pnpm exec tsc --noEmit"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "packages/attune-architecture-lint",
-        "command": "../../node_modules/.bin/vitest run"
+        "command": "pnpm exec vitest run"
       }
     }
   }

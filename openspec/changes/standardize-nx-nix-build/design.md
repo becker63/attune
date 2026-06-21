@@ -267,7 +267,7 @@ Rollback strategy: because this is a planning and migration change, rollback mea
 
 ## Open Questions
 
-- Which package manager should the Nix shell expose for the workspace: npm, pnpm, yarn, or corepack-selected pnpm?
+- Which package manager should the Nix shell expose for the workspace: pnpm from the Nix toolchain or another explicitly pinned Nix package?
 - Should generated `joern-effect` files be checked in initially, or should the package publish only from generated build artifacts?
 - Which Joern version should be pinned in Nix for the first validated generation pass?
 - How much of the imported Buck2 work should be deleted immediately versus kept under `imports/**` until feature migration is complete?

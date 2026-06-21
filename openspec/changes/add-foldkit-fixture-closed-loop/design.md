@@ -1,6 +1,6 @@
 ## Context
 
-The current semantic workbench work already has typed discovery packets, fixture services, event replay, derived snapshots, and Dispatch/FoldKit rendering. The next risk is architectural drift: a "fake" closed loop could become a backend-only fixture that proves little about the actual product surface, or a UI mock that never exercises the semantic event/projection contract.
+The current semantic workbench work already has typed discovery packets, fixture services, event replay, derived snapshots, and FoldKit rendering. The next risk is architectural drift: a "fake" closed loop could become a backend-only fixture that proves little about the actual product surface, or a UI mock that never exercises the semantic event/projection contract.
 
 This change defines the fake route as a FoldKit-driven closed loop. FoldKit owns the route interaction state and emits typed fixture workbench events. Durable fixture events flow into the read model, invalidate real run-scoped Effect `Reactivity` keys, and are read through Effect's experimental `AtomRegistry` that the later asynchronous route will use. FoldKit receives atom-derived `DecisionPacket`, evidence, report, and `WorkbenchSnapshot` values; it does not own an independent durable projection.
 
@@ -10,7 +10,7 @@ This change defines the fake route as a FoldKit-driven closed loop. FoldKit owns
 
 - Make the first fake closed loop a real route-level experience, not only a package unit test.
 - Let FoldKit model the user-visible event sequence for the fixture route.
-- Propagate fixture events through the read-model projection, Effect `Reactivity` keys, and Effect `AtomRegistry` atoms before Dispatch/FoldKit render state updates.
+- Propagate fixture events through the read-model projection, Effect `Reactivity` keys, and Effect `AtomRegistry` atoms before FoldKit render state updates.
 - Prove deterministic replay and freshness: same event stream produces the same `DecisionPacket`, and evidence changes the `WorkbenchSnapshot` version.
 - Make the fixture route hot-swappable with the future async backend because both routes consume atom-derived snapshots.
 - Keep fake clients deterministic while preserving production contracts for anchors, decisions, evidence, report sections, scene state, and run summary metrics.
@@ -24,7 +24,7 @@ This change defines the fake route as a FoldKit-driven closed loop. FoldKit owns
 - Production Neon rollout.
 - Queue/subscription/background-worker orchestration.
 - Scheduler/admission, leases, budgets beyond fixture budget, Kubernetes apply, or app-server exposure.
-- New product surfaces beyond the FoldKit fixture route and Dispatch render propagation.
+- New product surfaces beyond the FoldKit fixture route and Workbench render propagation.
 
 ## Prerequisites
 
@@ -48,7 +48,7 @@ Alternative considered: keep all fake loop events inside `attuned-discovery`. Re
 
 ### Effect AtomRegistry owns the read-side DAG
 
-The fixture route will not build its own durable projection in `dispatch-foldkit`. Durable fixture facts are materialized into the read model, projection writes use Effect `Reactivity.mutation(...)` to invalidate domain keys after successful writes, and Effect atoms derive the `DecisionPacket`, review queue, scene/report state, and `WorkbenchSnapshot` consumed by FoldKit.
+The fixture route will not build its own durable projection in `attune-foldkit`. Durable fixture facts are materialized into the read model, projection writes use Effect `Reactivity.mutation(...)` to invalidate domain keys after successful writes, and Effect atoms derive the `DecisionPacket`, review queue, scene/report state, and `WorkbenchSnapshot` consumed by FoldKit.
 
 Rationale: this makes the fake route structurally identical to the async route at the read boundary. When the real backend exists, the fake services can be swapped for real services without migrating FoldKit state ownership.
 
@@ -62,7 +62,7 @@ FoldKit messages such as `StartFixtureRequested`, `FixtureStepRequested`, and `R
 
 Rationale: this keeps FoldKit in the loop as the user-visible state machine without letting FoldKit own durable facts.
 
-Alternative considered: initialize `serverSnapshot` from `buildFixtureWorkbenchSnapshot()` in `dispatch-core`. Rejected because a static snapshot does not prove command execution, event projection, Reactivity invalidation, atom recomputation, or snapshot refresh propagation.
+Alternative considered: initialize `serverSnapshot` directly from `buildFixtureWorkbenchSnapshot()`. Rejected because a static snapshot does not prove command execution, event projection, Reactivity invalidation, atom recomputation, or snapshot refresh propagation.
 
 ### Fixture events adapt into semantic domain events
 
@@ -88,22 +88,25 @@ Rationale: the fake route should be reliable and deterministic. The async route 
 
 Alternative considered: design both routes in one change. Rejected because it would blur testable fake-loop acceptance criteria and expand scope before the route proof exists.
 
+Follow-up: propose the async route as a separate change that covers command submission, background execution, subscriptions, retries, cancellation, real CocoIndex/Joern/optimizer clients, durable persistence, and production cache semantics. That route should keep FoldKit on the same atom-derived `WorkbenchSnapshot` contract, so replacing fixture services does not require migrating UI-owned durable projection state.
+
 ## Risks / Trade-offs
 
 - Fake route becomes too polished and hides missing async behavior -> Mitigation: label it fixture mode in state and docs, and keep async orchestration explicitly out of scope.
 - FoldKit events duplicate semantic events -> Mitigation: define an adapter boundary and keep selection/lifecycle as UI events while durable facts become semantic events.
 - Tests overfit to fixture data -> Mitigation: assert contracts and event ordering, not only literal text rendering.
-- Dispatch state diverges from workbench state -> Mitigation: drive both from the same Effect-atom-derived `WorkbenchSnapshot` and verify render propagation in tests.
+- FoldKit state diverges from workbench state -> Mitigation: drive render state from the same Effect-atom-derived `WorkbenchSnapshot` and verify render propagation in tests.
 - Fixture route bypasses server atoms for convenience -> Mitigation: make Effect-atom-derived snapshots a spec requirement and put integration of #10/#9/#7 before route tasks.
 - Run summary becomes cosmetic -> Mitigation: require measured fixture fields for search time, proof time, cache hit/miss, useful evidence count, and event count.
+- Fixture tests accidentally depend on infrastructure -> Mitigation: keep tests local-only and confirm they require no real CocoIndex, real Joern, Pi/local model process, Neon, queue, subscription, or Kubernetes dependency.
 
 ## Migration Plan
 
 1. Integrate the read-model, Effect Reactivity, and Effect AtomRegistry atom stack.
-2. Add fixture route event types, fixture step definitions, and replay helpers in the FoldKit/Dispatch boundary.
+2. Add fixture route event types, fixture step definitions, and replay helpers in the FoldKit boundary.
 3. Add a fixture runtime adapter from durable fixture steps to semantic discovery/report events.
 4. Wire FoldKit commands to call the fixture runtime and return refreshed `ServerSnapshotChanged`/fixture-step messages.
-5. Wire fixture route initialization through `workbenchSnapshotAtom(runId)` in the existing Dispatch/FoldKit model.
+5. Wire fixture route initialization through `workbenchSnapshotAtom(runId)` in the existing FoldKit model.
 6. Add tests for replay determinism, atom freshness, snapshot freshness, command behavior, and render propagation.
 7. Keep existing backend fixture tests passing.
 
@@ -111,6 +114,6 @@ Rollback is straightforward: remove the fixture route event stream and adapter w
 
 ## Open Questions
 
-- Should the fixture route live under the existing Dispatch workbench route, or under a clearly named fixture/demo route that can sit beside the future async route?
+- Should the fixture route stay on the Workbench route, or move under a clearly named fixture/demo route that can sit beside the future async route?
 - Which exact event names should become public test fixtures versus internal implementation detail?
-- Should the run summary be displayed in Dispatch immediately, or only asserted in tests for this slice?
+- Should the run summary be displayed in Workbench immediately, or only asserted in tests for this slice?

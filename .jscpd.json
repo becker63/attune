@@ -1,0 +1,20 @@
+{
+  "path": ["packages"],
+  "format": ["typescript", "javascript", "json", "css"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.nx/**",
+    "**/src/generated/**",
+    "**/schema/**",
+    "**/*.generated.ts",
+    "**/*.test.ts",
+    "**/vitest.config.ts"
+  ],
+  "minTokens": 80,
+  "minLines": 8,
+  "mode": "weak",
+  "reporters": ["console"],
+  "threshold": 3,
+  "noSymlinks": true
+}

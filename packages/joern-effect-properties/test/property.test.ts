@@ -97,6 +97,19 @@ const stepNames = [
 
 const starterNames = ["method", "call", "typeDecl", "file", "identifier"] as const
 
+const traversalOrderToken = (segment: TraversalSegment): string => {
+  switch (segment.kind) {
+    case "step":
+      return `.${segment.name}`
+    case "filter":
+      return `.${segment.name}(`
+    case "propertyFilter":
+      return `.${segment.property}(`
+    case "operation":
+      return segment.name === "take" ? ".take(" : ".dedup"
+  }
+}
+
 const identifier = fc
   .tuple(fc.constantFrom("field", "value", "line", "file", "method"), fc.nat(50))
   .map(([prefix, index]) => `${prefix}${index}`)
@@ -404,18 +417,7 @@ describe("property-based query behavior", () => {
 
         let cursor = 0
         for (const segment of segments.slice(1)) {
-          const token =
-            segment.kind === "step"
-              ? `.${segment.name}`
-              : segment.kind === "filter"
-                ? `.${segment.name}(`
-                : segment.kind === "propertyFilter"
-                  ? `.${segment.property}(`
-                  : segment.kind === "operation" && segment.name === "take"
-                    ? ".take("
-                    : segment.kind === "operation"
-                      ? ".dedup"
-                      : ""
+          const token = traversalOrderToken(segment)
           const next = emitted.indexOf(token, cursor)
           expect(next).toBeGreaterThanOrEqual(cursor)
           cursor = next + token.length

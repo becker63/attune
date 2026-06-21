@@ -1,51 +1,23 @@
-import { Context, Effect, Schema } from "effect"
+import { Effect, Schema } from "effect"
 import { Query } from "../../edge/runtime/Query.js"
 import { emitSelect, emitTraversal, escapeScalaString } from "../../edge/runtime/emitCpgql.js"
 import { Joern } from '../../edge/runtime/Joern.js';
 import type { JoernService } from '../../edge/runtime/Joern.js';
 import type { Selection, SelectionResult } from "../builder/select.js"
 import { selectionSchema } from "../builder/select.js"
-import { Traversal } from '../builder/traversal.js';
+import {
+  BoundFlow,
+  BoundTraversal,
+  FlowTraversal,
+  MaterializationBuilder,
+  type MaterializedGraphRefShape,
+  Traversal,
+} from '../builder/traversal.js';
+import { CpgProgramBuilder } from "./CpgProgramBuilder.js"
+import type { CpgProgramBuilderService } from "./CpgProgramBuilder.js"
 import { CpgGraph, EvidenceGraph, evidenceGraphSummary, evidenceNodeSummary, findingFromNode, graphFact, GraphAnalysisError, GraphMaterializationError, protocolDeviation } from './Evidence.js';
 import type { GraphFact, ProtocolDeviation, Finding } from './Evidence.js';
-
-export type VariableId = `v${number}`
-export type BindingPhase = "remote" | "flow" | "materialized" | "derived" | "evidence"
-
-export type BoundLike = {
-  readonly variable: string
-  readonly bindingName: string
-  readonly cpgqlName: string
-  readonly phase: BindingPhase
-}
-
-export type BindingAst = {
-  readonly _tag: "RemoteTraversalBinding" | "RemoteFlowBinding" | "MaterializedGraphBinding" | "GraphPassBinding"
-  readonly variable: VariableId
-  readonly name: string
-  readonly cpgqlName: string
-  readonly phase: BindingPhase
-  readonly cpgql?: string
-  readonly root?: VariableId
-  readonly source?: VariableId
-  readonly sink?: VariableId
-  readonly relation?: "reachableBy" | "reachableByFlows"
-  readonly filters?: readonly FlowFilterAst[]
-  readonly includes?: readonly GraphIncludeAst[]
-}
-
-export type FlowFilterAst = {
-  readonly _tag: "Where" | "WhereNot"
-  readonly cpgql: string
-}
-
-export type GraphIncludeAst = {
-  readonly _tag: "Path" | "Traversal" | "Nearest" | "Missing"
-  readonly cpgql?: string
-  readonly variable?: string
-  readonly cpgqlName?: string
-  readonly phase?: BindingPhase
-}
+import type { BindingAst, BindingPhase, BoundLike, GraphIncludeAst, VariableId } from "./model.js"
 
 export type CompiledCpgProgram<Out> = {
   readonly title: string
@@ -127,7 +99,7 @@ export class CpgProgramBuilderState {
   }
 }
 
-export type CpgProgramBuilderService = {
+type InternalCpgProgramBuilderService = {
   readonly state: CpgProgramBuilderState
   readonly bindTraversal: (name: string, traversal: Traversal) => BoundTraversal
   readonly bindFlow: (name: string, flow: FlowTraversal) => BoundFlow
@@ -143,15 +115,11 @@ export type CpgProgramBuilderService = {
   ) => RowsOutput<SelectionResult<S>>
 }
 
-export class CpgProgramBuilder extends Context.Tag(
-  "joern-effect/CpgProgramBuilder",
-)<CpgProgramBuilder, CpgProgramBuilderService>() {}
-
-const makeBuilder = (): CpgProgramBuilderService => {
+const makeBuilder = (): InternalCpgProgramBuilderService => {
   const state = new CpgProgramBuilderState()
 
   return {
-    bindFlow: (name, flow) => {
+    bindFlow: (name: string, flow: FlowTraversal) => {
       const variable = state.nextId()
       const cpgqlName = state.nextCpgqlName(name, variable)
       state.bindings.push({
@@ -168,7 +136,7 @@ const makeBuilder = (): CpgProgramBuilderService => {
       })
       return new BoundFlow(variable, name, cpgqlName)
     },
-    bindGraphFact: (name, fact) => {
+    bindGraphFact: (name: string, fact: GraphFactBuilder) => {
       const variable = state.nextId()
       const cpgqlName = state.nextCpgqlName(name, variable)
       state.bindings.push({
@@ -181,7 +149,7 @@ const makeBuilder = (): CpgProgramBuilderService => {
       })
       return new GraphFactRef(variable, name, cpgqlName, fact)
     },
-    bindGraphPath: (name, path) => {
+    bindGraphPath: (name: string, path: GraphPathBuilder) => {
       const variable = state.nextId()
       const cpgqlName = state.nextCpgqlName(name, variable)
       state.bindings.push({
@@ -194,7 +162,7 @@ const makeBuilder = (): CpgProgramBuilderService => {
       })
       return new GraphPathRef(variable, name, cpgqlName, path)
     },
-    bindMaterializedGraph: (name, materialization) => {
+    bindMaterializedGraph: (name: string, materialization: MaterializationBuilder) => {
       const variable = state.nextId()
       const cpgqlName = state.nextCpgqlName(name, variable)
       const root =
@@ -214,7 +182,7 @@ const makeBuilder = (): CpgProgramBuilderService => {
       })
       return new MaterializedGraphRef(variable, name, cpgqlName, materialization)
     },
-    bindTraversal: (name, traversal) => {
+    bindTraversal: (name: string, traversal: Traversal) => {
       const variable = state.nextId()
       const cpgqlName = state.nextCpgqlName(name, variable)
       state.bindings.push({
@@ -227,153 +195,13 @@ const makeBuilder = (): CpgProgramBuilderService => {
       })
       return new BoundTraversal(variable, name, cpgqlName)
     },
-    rows: (traversal, selection) => ({
+    rows: <S extends Selection>(traversal: Traversal, selection: S) => ({
       _tag: "RowsOutput",
       traversal,
       selection,
       schema: selectionSchema(selection),
     }),
     state,
-  }
-}
-
-export class BoundTraversal extends Traversal implements BoundLike {
-  readonly phase = "remote" as const
-
-  constructor(
-    readonly variable: VariableId,
-    readonly bindingName: string,
-    readonly cpgqlName: string,
-  ) {
-    super([{ kind: "variable", name: cpgqlName }])
-  }
-}
-
-export class BoundFlow implements BoundLike {
-  readonly phase = "flow" as const
-
-  constructor(
-    readonly variable: VariableId,
-    readonly bindingName: string,
-    readonly cpgqlName: string,
-  ) {}
-
-  materializeGraph(name: string): MaterializationBuilder {
-    return new MaterializationBuilder(name, this)
-  }
-}
-
-export class FlowTraversal {
-  constructor(
-    readonly sink: Traversal,
-    readonly source: BoundTraversal,
-    readonly relation: "reachableBy" | "reachableByFlows",
-    readonly filters: readonly FlowFilterAst[] = [],
-  ) {}
-
-  where(predicate: (flow: FlowRef) => Traversal | FlowPredicate): FlowTraversal {
-    return this.filter("Where", predicate)
-  }
-
-  whereNot(predicate: (flow: FlowRef) => Traversal | FlowPredicate): FlowTraversal {
-    return this.filter("WhereNot", predicate)
-  }
-
-  private filter(
-    tag: "Where" | "WhereNot",
-    predicate: (flow: FlowRef) => Traversal | FlowPredicate,
-  ): FlowTraversal {
-    const result = predicate(new FlowRef())
-    const cpgql = result instanceof Traversal ? emitTraversal(result.segments) : result.cpgql
-    return new FlowTraversal(this.sink, this.source, this.relation, [
-      ...this.filters,
-      { _tag: tag, cpgql },
-    ])
-  }
-
-  as(name: string): Effect.Effect<BoundFlow, never, CpgProgramBuilder> {
-    return CpgProgramBuilder.pipe(Effect.map((builder) => builder.bindFlow(name, this)))
-  }
-}
-
-export class FlowPredicate {
-  constructor(readonly cpgql: string) {}
-}
-
-export class FlowElementsRef extends Traversal {
-  constructor() {
-    super([{ kind: "variable", name: "flow.elements" }])
-  }
-
-  intersects(bound: BoundLike): FlowPredicate {
-    return new FlowPredicate(`flow.elements.exists(element => ${bound.cpgqlName}.l.contains(element))`)
-  }
-}
-
-export class FlowRef {
-  readonly elements = new FlowElementsRef()
-}
-
-export class MaterializationBuilder {
-  readonly includes: GraphIncludeAst[] = []
-
-  constructor(
-    readonly name: string,
-    readonly root: Traversal | BoundTraversal | BoundFlow,
-  ) {}
-
-  includingPath(): this {
-    this.includes.push({ _tag: "Path" })
-    return this
-  }
-
-  including(value: BoundLike | ((node: Traversal) => Traversal)): this {
-    if (typeof value === "function") {
-      this.includes.push({
-        _tag: "Traversal",
-        cpgql: emitTraversal(value(new Traversal([{ kind: "variable", name: "node" }])).segments),
-      })
-    } else {
-      this.includes.push({
-        _tag: "Traversal",
-        cpgqlName: value.cpgqlName,
-        phase: value.phase,
-        variable: value.variable,
-      })
-    }
-    return this
-  }
-
-  includingNearest(value: BoundLike): this {
-    this.includes.push({
-      _tag: "Nearest",
-      cpgqlName: value.cpgqlName,
-      phase: value.phase,
-      variable: value.variable,
-    })
-    return this
-  }
-
-  includingMissing(value: BoundLike): this {
-    this.includes.push({
-      _tag: "Missing",
-      cpgqlName: value.cpgqlName,
-      phase: value.phase,
-      variable: value.variable,
-    })
-    return this
-  }
-
-  as(name: string): Effect.Effect<MaterializedGraphRef, never, CpgProgramBuilder> {
-    return CpgProgramBuilder.pipe(
-      Effect.map((builder) => builder.bindMaterializedGraph(name, this)),
-    )
-  }
-
-  [Symbol.iterator](): Effect.EffectGenerator<
-    Effect.Effect<MaterializedGraphRef, never, CpgProgramBuilder>
-  > {
-    return this.as(this.name)[Symbol.iterator]()
   }
 }
 
@@ -439,7 +267,7 @@ export class ShortestPathBuilder {
   as(name: string): Effect.Effect<GraphPathRef, never, CpgProgramBuilder> {
     return CpgProgramBuilder.pipe(
       Effect.map((builder) =>
-        builder.bindGraphPath(name, new GraphPathBuilder(this.graph, this.source, this.sink)),
+        builder.bindGraphPath(name, new GraphPathBuilder(this.graph, this.source, this.sink)) as GraphPathRef,
       ),
     )
   }
@@ -460,7 +288,7 @@ export class GraphBoundaryApi {
         builder.bindGraphFact(
           "boundary crossing",
           new GraphFactBuilder(this.graph, "BoundaryCrossing", [source, sink]),
-        ),
+        ) as GraphFactRef,
       ),
     )
   }
@@ -471,7 +299,7 @@ export class GraphCentralityApi {
   bridgeNodes(): Effect.Effect<GraphFactRef, never, CpgProgramBuilder> {
     return CpgProgramBuilder.pipe(
       Effect.map((builder) =>
-        builder.bindGraphFact("bridge nodes", new GraphFactBuilder(this.graph, "BridgeNodes")),
+        builder.bindGraphFact("bridge nodes", new GraphFactBuilder(this.graph, "BridgeNodes")) as GraphFactRef,
       ),
     )
   }
@@ -495,7 +323,7 @@ export class NeighborhoodDistanceBuilder {
         builder.bindGraphFact(
           `neighborhood within ${distance}`,
           new GraphFactBuilder(this.graph, "Neighborhood", [this.root], { distance }),
-        ),
+        ) as GraphFactRef,
       ),
     )
   }
@@ -539,7 +367,7 @@ export class MissingStepsBuilder {
           new GraphFactBuilder(this.graph, "MissingSteps", this.expectedSteps, {
             sequenceName: this.sequenceName,
           }),
-        ),
+        ) as GraphFactRef,
       ),
     )
   }
@@ -563,7 +391,7 @@ export class ConnectedSmallestBuilder {
     const [source, sink] = this.anchors
     return CpgProgramBuilder.pipe(
       Effect.map((builder) =>
-        builder.bindGraphPath(name, new GraphPathBuilder(this.graph, source, sink)),
+        builder.bindGraphPath(name, new GraphPathBuilder(this.graph, source, sink)) as GraphPathRef,
       ),
     )
   }
@@ -976,7 +804,7 @@ const queryEvidence = (
   joern: JoernService,
   title: string,
   bindings: readonly BindingAst[],
-  graph: MaterializedGraphRef,
+  graph: MaterializedGraphRefShape,
 ): Effect.Effect<
   Schema.Schema.Type<typeof EvidenceGraph>,
   import("../../edge/runtime/errors.js").JoernError | import("../../edge/runtime/errors.js").JoernDecodeError
@@ -1088,7 +916,7 @@ export const CpgProgram = {
       E,
       CpgProgramBuilder
     >).pipe(
-      Effect.provideService(CpgProgramBuilder, builder),
+      Effect.provideService(CpgProgramBuilder, builder as CpgProgramBuilderService),
       Effect.map((output) => {
         const cpgql = compileOutput(program.title, builder.state.bindings, output)
         return {
@@ -1108,7 +936,7 @@ export const CpgProgram = {
   ): CpgProgramDefinition<Out, E> => new CpgProgramDefinition(title, body),
 
   runEvidenceGraph: <E>(
-    program: CpgProgramDefinition<MaterializedGraphRef, E>,
+    program: CpgProgramDefinition<MaterializedGraphRefShape, E>,
   ): Effect.Effect<
     Schema.Schema.Type<typeof EvidenceGraph>,
     | E
@@ -1118,7 +946,7 @@ export const CpgProgram = {
   > => {
     const builder = makeBuilder()
     return program.body.pipe(
-      Effect.provideService(CpgProgramBuilder, builder),
+      Effect.provideService(CpgProgramBuilder, builder as CpgProgramBuilderService),
       Effect.flatMap((graph) =>
         Joern.pipe(
           Effect.flatMap((joern) =>
@@ -1146,7 +974,7 @@ export const CpgProgram = {
       E,
       CpgProgramBuilder
     >).pipe(
-      Effect.provideService(CpgProgramBuilder, builder),
+      Effect.provideService(CpgProgramBuilder, builder as CpgProgramBuilderService),
       Effect.flatMap((output) =>
         Joern.pipe(
           Effect.flatMap((joern) => {

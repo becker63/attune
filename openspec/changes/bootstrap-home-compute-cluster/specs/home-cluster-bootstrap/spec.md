@@ -1,11 +1,13 @@
 ## ADDED Requirements
 
 ### Requirement: Host inventory is captured before install
-Attune SHALL provide an inventory workflow for the three ThinkCentre nodes before installing the cluster.
+Attune SHALL provide an inventory workflow for exactly the three existing ThinkCentre nodes before installing the cluster.
 
 #### Scenario: Inventory is collected
 - **WHEN** the operator runs the inventory helper or fills the inventory template
-- **THEN** the inventory records hostname, intended role, MAC address, disk target, LAN IP or DHCP reservation, SSH key, and Tailscale identity plan
+- **THEN** the inventory records hostname, intended role, bootstrap SSH identity plan, Tailscale identity plan, and evidence-required slots for MAC address, network reservation, hardware facts, and disk identity
+- **AND** unknown local facts remain unknown or blocked until collected from local evidence
+- **AND** disk identity is approved from local probe evidence at gate time rather than from a fabricated or placeholder predeclaration
 - **AND** the inventory file contains no secret tokens.
 
 ### Requirement: NixOS installer image can be generated

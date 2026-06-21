@@ -56,6 +56,8 @@ let
       pkgs.gnused
       pkgs.gnutar
       pkgs.gzip
+      pkgs.nodejs_22
+      pkgs.pnpm
     ];
     pathsToLink = [
       "/bin"
@@ -71,10 +73,9 @@ nix2container.packages.${system}.nix2container.buildImage {
     Cmd = [
       "/bin/bash"
       "-lc"
-      "rm -rf /work/attune && mkdir -p /work/attune && cd /workspace && tar --exclude='./.git' --exclude='./.nx' --exclude='./imports' --exclude='./node_modules' --exclude='./reports' --exclude='./result' --exclude='./workspace' -cf - . | tar -C /work/attune -xf - && ln -s /workspace/node_modules /work/attune/node_modules && cd /work/attune && ./node_modules/.bin/nx run ${nxTarget}"
+      "rm -rf /work/attune && mkdir -p /work/attune && cd /workspace && tar --exclude='./.git' --exclude='./.nx' --exclude='./imports' --exclude='./node_modules' --exclude='./reports' --exclude='./result' --exclude='./workspace' -cf - . | tar -C /work/attune -xf - && ln -s /workspace/node_modules /work/attune/node_modules && cd /work/attune && pnpm exec nx run ${nxTarget}"
     ];
     Env = [
-      "${envVars.corepackEnableDownloadPrompt}=0"
       "${envVars.joernBinary}=${joern}/bin/joern"
       "${envVars.joernHome}=${joern}"
       "${envVars.joernCpgVersion}=${cpgVersion}"

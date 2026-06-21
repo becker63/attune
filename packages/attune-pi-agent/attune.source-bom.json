@@ -1,0 +1,68 @@
+{
+  "generatedOutputs": [
+    {
+      "generator": "@attune/pi-agent generators",
+      "outputs": [
+        "generated Pi spec, taskplane, test-obligation, and permission-policy artifacts"
+      ],
+      "sources": [
+        "src/generators/**"
+      ],
+      "target": "test"
+    }
+  ],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/schema/**",
+        "src/pi/**",
+        "src/permissions/**",
+        "src/generators/**",
+        "test/**"
+      ],
+      "reason": "Initial private Pi extension and generator catalog landed as a bootstrapping package before its own generator provenance can be recursively generated."
+    }
+  ],
+  "ownedFiles": [
+    "docs/**",
+    "generators.json",
+    "package.json",
+    "project.json",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "tsup.config.ts",
+    "vitest.config.ts"
+  ],
+  "project": "attune-pi-agent",
+  "projectRoot": "packages/attune-pi-agent",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Mutation and property targets provide proof pressure for the Pi agent permission and spec interview surfaces.",
+      "target": "property"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "generators.json",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "property",
+    "mutation",
+    "typecheck"
+  ],
+  "waivers": [
+    {
+      "expires": null,
+      "paths": [
+        "src/fixtures/**"
+      ],
+      "reason": "Fixture command strings are policy examples used by tests and should be reviewed through the Pi agent tests before promotion."
+    }
+  ]
+}

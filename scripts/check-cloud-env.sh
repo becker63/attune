@@ -6,13 +6,13 @@ export TMPDIR=/tmp
 export TEMP=/tmp
 export TMP=/tmp
 
-if ! command -v corepack >/dev/null 2>&1; then
-  echo "missing cloud dependency: corepack is not available on PATH" >&2
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "missing cloud dependency: pnpm is not available on PATH" >&2
+  echo "enter the Nix dev shell first: nix develop" >&2
   exit 1
 fi
 
-corepack enable
-corepack pnpm install --frozen-lockfile
-corepack pnpm exec nx graph --file=/tmp/attune-nx-graph.json
-corepack pnpm exec nx run attune-nx:typecheck
-corepack pnpm exec nx run attuned-discovery:typecheck
+pnpm install --frozen-lockfile
+pnpm exec nx graph --file=/tmp/attune-nx-graph.json
+pnpm exec nx run attune-nx:typecheck
+pnpm exec nx run attuned-discovery:typecheck

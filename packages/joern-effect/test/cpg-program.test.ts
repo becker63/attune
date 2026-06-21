@@ -141,7 +141,8 @@ describe("CpgProgram", () => {
             expect(compiled.cpgql).toContain('n._astOut.map(dst => __jeEdge(n, dst, "AST"))')
             expect(compiled.cpgql).toContain('n._reachingDefOut.map(dst => __jeEdge(n, dst, "REACHING_DEF"))')
             expect(compiled.cpgql).not.toContain("_astOut()")
-            expect(compiled.cpgql).toContain('"edges" -> __edges')
+            expect(compiled.cpgql).toContain("val __edgesJson = __edges.toJson")
+            expect(compiled.cpgql).toContain('"edges":${__edgesJson}')
           }),
         ),
       ),

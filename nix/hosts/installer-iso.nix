@@ -1,13 +1,23 @@
-{ config, pkgs, ... }:
 {
-  isoImage.isoName = "attune-installer.iso";
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
+  image.baseName = lib.mkForce "attune-installer";
+  image.fileName = lib.mkForce "attune-installer.iso";
+  isoImage.squashfsCompression = "zstd -Xcompression-level 6";
 
   networking.hostName = "attune-installer";
 
   environment.systemPackages = [
+    pkgs.age
     pkgs.curl
     pkgs.git
+    pkgs.jq
     pkgs.nixos-anywhere
+    pkgs.sops
     pkgs.tailscale
     pkgs.vim
   ];

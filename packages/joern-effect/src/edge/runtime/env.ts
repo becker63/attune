@@ -1,8 +1,6 @@
 export const EnvVars = {
   Ci: "CI",
   CodePropertyGraphDir: "CODEPROPERTYGRAPH_DIR",
-  CorepackEnableDownloadPrompt: "COREPACK_ENABLE_DOWNLOAD_PROMPT",
-  CorepackEnableProjectSpec: "COREPACK_ENABLE_PROJECT_SPEC",
   Home: "HOME",
   JavaHome: "JAVA_HOME",
   JoernBinary: "JOERN_BINARY",

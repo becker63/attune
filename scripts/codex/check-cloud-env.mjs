@@ -7,7 +7,6 @@ const env = {
   TMPDIR: process.env.TMPDIR ?? "/tmp",
   TEMP: process.env.TEMP ?? process.env.TMPDIR ?? "/tmp",
   TMP: process.env.TMP ?? process.env.TMPDIR ?? "/tmp",
-  COREPACK_ENABLE_DOWNLOAD_PROMPT: "0",
 }
 
 const commands = [
