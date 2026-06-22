@@ -91,6 +91,289 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("rejects missing package contracts, package view graphs, and property evidence markers after migration", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/no-contract/package.json": JSON.stringify({ name: "@attune/no-contract" }),
+      "packages/no-views/package.json": JSON.stringify({ name: "@attune/no-views" }),
+      "packages/no-views/src/attune.package.ts": [
+        "export const PackageContract = definePackageContract({",
+        "  packageId: \"no-views\",",
+        "  waivers: [] as const,",
+        "})",
+      ].join("\n"),
+      "packages/no-evidence/package.json": JSON.stringify({ name: "@attune/no-evidence" }),
+      "packages/no-evidence/src/attune.package.ts": [
+        "export const PackageViews = definePackageViews({",
+        "  reactivityKeys: [\"no-evidence.changed\"],",
+        "  atoms: [\"noEvidenceAtom\"],",
+        "})",
+        "export const PackageContract = definePackageContract({",
+        "  packageId: \"no-evidence\",",
+        "  views: PackageViews,",
+        "  waivers: [] as const,",
+        "})",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "missing-package-contract",
+        filePath: "packages/no-contract/package.json",
+      }),
+      expect.objectContaining({
+        code: "missing-package-view-graph",
+        filePath: "packages/no-views/src/attune.package.ts",
+      }),
+      expect.objectContaining({
+        code: "missing-property-evidence-harness",
+        filePath: "packages/no-evidence/src/attune.package.ts",
+      }),
+    ]))
+  })
+
+  it("rejects mutating package operations that do not touch Reactivity keys or atoms", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/no-operation-touch/package.json": JSON.stringify({ name: "@attune/no-operation-touch" }),
+      "packages/no-operation-touch/src/attune.package.ts": packageContractSource({
+        packageId: "no-operation-touch",
+        viewsBody: [
+          "  reactivityKeys: [\"operation.changed\"],",
+          "  atoms: [\"operationAtom\"],",
+        ],
+        operationsBody: [
+          "export const MutatingOperation = defineOperation({",
+          "  id: \"write-operation\",",
+          "  kind: \"command\",",
+          "  input: CommandInput,",
+          "  output: CommandOutput,",
+          "  laws: [],",
+          "} as const)",
+        ],
+        operationIds: ["MutatingOperation"],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "operation-missing-reactivity-touch",
+        filePath: "packages/no-operation-touch/src/attune.package.ts",
+      }),
+    ]))
+  })
+
+  it("rejects dead Reactivity keys and unobserved operation-to-view movement when graph metadata is detectable", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/dead-key/package.json": JSON.stringify({ name: "@attune/dead-key" }),
+      "packages/dead-key/src/attune.package.ts": packageContractSource({
+        packageId: "dead-key",
+        viewsBody: [
+          "  reactivityKeys: [\"used.changed\", \"dead.changed\"],",
+          "  atoms: [\"readModelAtom\", \"summaryAtom\", \"packageViewAtom\"],",
+          "  baseAtoms: [{ id: \"readModelAtom\", refreshesOn: [\"used.changed\"] }],",
+          "  derivedAtoms: [{ id: \"summaryAtom\", reads: [\"readModelAtom\"] }],",
+          "  packageViewAtoms: [{ id: \"packageViewAtom\", reads: [\"summaryAtom\"] }],",
+        ],
+        operationsBody: [
+          "export const DeadWriteOperation = defineOperation({",
+          "  id: \"dead-write\",",
+          "  kind: \"projection\",",
+          "  input: CommandInput,",
+          "  output: CommandOutput,",
+          "  views: touches(PackageViews, {",
+          "    reactivityKeys: [\"dead.changed\"],",
+          "    atoms: [\"packageViewAtom\"],",
+          "  } as const),",
+          "  laws: [],",
+          "} as const)",
+        ],
+        operationIds: ["DeadWriteOperation"],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "dead-reactivity-key",
+        filePath: "packages/dead-key/src/attune.package.ts",
+      }),
+      expect.objectContaining({
+        code: "unobserved-operation-reactivity-key",
+        filePath: "packages/dead-key/src/attune.package.ts",
+      }),
+    ]))
+  })
+
+  it("rejects derived atoms that subscribe directly to Reactivity keys without durable-read metadata", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/derived-subscription/package.json": JSON.stringify({ name: "@attune/derived-subscription" }),
+      "packages/derived-subscription/src/attune.package.ts": packageContractSource({
+        packageId: "derived-subscription",
+        viewsBody: [
+          "  reactivityKeys: [\"source.changed\"],",
+          "  atoms: [\"sourceAtom\", \"derivedAtom\", \"packageViewAtom\"],",
+          "  baseAtoms: [{ id: \"sourceAtom\", refreshesOn: [\"source.changed\"] }],",
+          "  derivedAtoms: [{ id: \"derivedAtom\", reads: [\"sourceAtom\"] }],",
+          "  packageViewAtoms: [{ id: \"packageViewAtom\", reads: [\"derivedAtom\"] }],",
+        ],
+        operationsBody: [
+          "export const DerivedAtomOperation = defineOperation({",
+          "  id: \"derived-atom\",",
+          "  kind: \"atom-family\",",
+          "  input: CommandInput,",
+          "  output: CommandOutput,",
+          "  views: touches(PackageViews, {",
+          "    reactivityKeys: [\"source.changed\"],",
+          "    atoms: [\"derivedAtom\"],",
+          "  } as const),",
+          "  laws: [],",
+          "  atom: {",
+          "    derivedAtoms: [\"derivedAtom\"],",
+          "    subscribesTo: [\"source.changed\"],",
+          "  } as const,",
+          "} as const)",
+        ],
+        operationIds: ["DerivedAtomOperation"],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "derived-atom-direct-reactivity-subscription",
+        filePath: "packages/derived-subscription/src/attune.package.ts",
+      }),
+    ]))
+  })
+
+  it("accepts coherent operation to Reactivity key to base atom to derived atom to package view movement", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/coherent-views/package.json": JSON.stringify({ name: "@attune/coherent-views" }),
+      "packages/coherent-views/src/attune.package.ts": packageContractSource({
+        packageId: "coherent-views",
+        viewsBody: [
+          "  reactivityKeys: [\"coherent.changed\"],",
+          "  atoms: [\"readModelAtom\", \"summaryAtom\", \"packageViewAtom\"],",
+          "  baseAtoms: [{ id: \"readModelAtom\", refreshesOn: [\"coherent.changed\"] }],",
+          "  derivedAtoms: [{ id: \"summaryAtom\", reads: [\"readModelAtom\"] }],",
+          "  packageViewAtoms: [{ id: \"packageViewAtom\", reads: [\"summaryAtom\"] }],",
+        ],
+        operationsBody: [
+          "export const ProjectionOperation = defineOperation({",
+          "  id: \"project-coherent-view\",",
+          "  kind: \"projection\",",
+          "  input: CommandInput,",
+          "  output: CommandOutput,",
+          "  views: touches(PackageViews, {",
+          "    reactivityKeys: [\"coherent.changed\"],",
+          "    atoms: [\"readModelAtom\"],",
+          "  } as const),",
+          "  laws: [],",
+          "} as const)",
+        ],
+        operationIds: ["ProjectionOperation"],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.outputLines).toEqual([])
+  })
+
+  it("rejects package-local scripts and arbitrary nx run-commands once outside the TODO migration-debt allowlist", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/new-product/package.json": JSON.stringify({
+        name: "@attune/new-product",
+        scripts: {
+          test: "vitest run",
+        },
+      }),
+      "packages/new-product/project.json": JSON.stringify({
+        name: "new-product",
+        root: "packages/new-product",
+        targets: {
+          test: {
+            executor: "nx:run-commands",
+            options: {
+              command: "pnpm exec vitest run",
+            },
+          },
+        },
+      }),
+      "packages/new-product/src/attune.package.ts": [
+        "export const PackageViews = definePackageViews({",
+        "  reactivityKeys: [\"new-product.changed\"],",
+        "  atoms: [\"newProductAtom\"],",
+        "})",
+        "export const PackageContract = definePackageContract({",
+        "  packageId: \"new-product\",",
+        "  views: PackageViews,",
+        "  waivers: [{ category: \"temporary-command-surface\", owner: \"fixture\", reason: \"fixture\", review: \"fixture\" }],",
+        "})",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "package-local-scripts",
+        filePath: "packages/new-product/package.json",
+      }),
+      expect.objectContaining({
+        code: "arbitrary-run-commands",
+        filePath: "packages/new-product/project.json",
+      }),
+    ]))
+  })
+
+  it("rejects stale architecture-lint final-surface references and expired migration waivers", () => {
+    const workspaceRoot = makeWorkspace({
+      "docs/final-framework-surface.md": [
+        "# Final Framework Surface",
+        "",
+        "Use packages/attune-architecture-lint as the final architecture package.",
+      ].join("\n"),
+      "packages/expired-waiver/package.json": JSON.stringify({ name: "@attune/expired-waiver" }),
+      "packages/expired-waiver/src/attune.package.ts": [
+        "export const PackageViews = definePackageViews({",
+        "  reactivityKeys: [\"expired-waiver.changed\"],",
+        "  atoms: [\"expiredWaiverAtom\"],",
+        "})",
+        "export const PackageContract = definePackageContract({",
+        "  packageId: \"expired-waiver\",",
+        "  views: PackageViews,",
+        "  waivers: [{ category: \"temporary-migration-adapter\", owner: \"fixture\", reason: \"fixture\", expiresOn: \"2026-06-21\" }],",
+        "})",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "stale-architecture-lint-reference",
+        filePath: "docs/final-framework-surface.md",
+      }),
+      expect.objectContaining({
+        code: "expired-migration-waiver",
+        filePath: "packages/expired-waiver/src/attune.package.ts",
+      }),
+    ]))
+  })
+
   it("allows local cache artifacts and legitimate generated source", () => {
     const workspaceRoot = makeWorkspace({
       ".attune/cache/protocol/protocol-delta-report.json": JSON.stringify({
@@ -156,4 +439,33 @@ function makeWorkspace(files: Record<string, string>): string {
 
 function importFrom(imports: string, source: string): string {
   return ["import ", imports, " from ", JSON.stringify(source)].join("")
+}
+
+function packageContractSource(input: {
+  readonly packageId: string
+  readonly viewsBody: readonly string[]
+  readonly operationsBody: readonly string[]
+  readonly operationIds: readonly string[]
+}): string {
+  return [
+    "const CommandInput = {}",
+    "const CommandOutput = {}",
+    "const definePackageViews = (views) => views",
+    "const definePackageContract = (contract) => contract",
+    "const defineOperation = (operation) => operation",
+    "const defineTypeGuidance = (guidance) => guidance",
+    "const touches = (_views, touched) => touched",
+    "export const PackageViews = definePackageViews({",
+    ...input.viewsBody,
+    "} as const)",
+    ...input.operationsBody,
+    "export const PackageContract = definePackageContract({",
+    `  packageId: "${input.packageId}",`,
+    "  packageKind: \"core-discovery-runtime\",",
+    "  views: PackageViews,",
+    `  operations: [${input.operationIds.join(", ")}] as const,`,
+    "  waivers: [] as const,",
+    "} as const)",
+    "export const PackageTypeGuidance = defineTypeGuidance({ operations: {} })",
+  ].join("\n")
 }

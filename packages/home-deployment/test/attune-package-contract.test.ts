@@ -162,6 +162,11 @@ describe("home-deployment package contract", () => {
       executionBoundary: "rendered-only",
       liveExecutionAllowed: false,
     })
+    expect(PackageFuzzHandlers["manual-proof-confirmation"]()).toMatchObject({
+      resourceId: "attune-cp-1:nixos-anywhere-install",
+      proofRef: "gate:attune-cp-1:disk-wipe-confirmed:2026-01-01T00:00:00.000Z",
+      expiresAt: "2026-01-01T00:30:00.000Z",
+    })
     expect(commandIntentBoundaryOperation.laws).toContain("side-effect.declared-boundary")
   })
 
@@ -194,5 +199,10 @@ describe("home-deployment package contract", () => {
       liveModes: ["DryRun", "Test"],
       waivedLiveMode: "Live",
     })
+    expect(partitions["command-intent-boundary"]).toEqual(expect.arrayContaining([
+      "command-intent-boundary.action-mode",
+      "command-intent-boundary.rendered-command",
+      "providerGateAtom.moves",
+    ]))
   })
 })

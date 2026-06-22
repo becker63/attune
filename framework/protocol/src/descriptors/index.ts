@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto"
-
 import type {
   AttunePackageContract,
 } from "../../../../packages/attune-architecture-lint/src/package-contract/index.js"
@@ -72,7 +70,25 @@ const sortJson = (value: unknown): unknown => {
 }
 
 export const hashProtocolValue = (value: unknown): string =>
-  createHash("sha256").update(stableJson(value)).digest("hex")
+  stableHash(stableJson(value))
+
+const stableHash = (input: string): string => {
+  let left = 0x811c9dc5
+  let right = 0x811c9dc5 ^ input.length
+
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input.charCodeAt(index)
+    left ^= char
+    left = Math.imul(left, 0x01000193)
+    right ^= char + index
+    right = Math.imul(right, 0x85ebca6b)
+  }
+
+  return [
+    (left >>> 0).toString(16).padStart(8, "0"),
+    (right >>> 0).toString(16).padStart(8, "0"),
+  ].join("")
+}
 
 export const descriptorFromPackageContract = (
   source: AttuneProtocolSource,

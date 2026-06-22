@@ -18,12 +18,6 @@
       "require": "./dist/provider/alchemy-resource.cjs"
     }
   },
-  "scripts": {
-    "build": "tsup src/index.ts src/provider/alchemy-resource.ts --format esm,cjs --dts --sourcemap --clean",
-    "generate": "tsx scripts/generate-crd-types.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
   "dependencies": {
     "@attune/framework-protocol": "workspace:*",
     "@effect/platform-bun": "4.0.0-beta.85",

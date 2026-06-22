@@ -343,6 +343,57 @@ export const PackageViewAtomOutput = Schema.Struct({
 })
 export type PackageViewAtomOutput = typeof PackageViewAtomOutput.Type
 
+export const ProofEvidenceTier = Schema.Literal(
+  "commit",
+  "push",
+  "proof-pressure",
+  "nightly",
+)
+export type ProofEvidenceTier = typeof ProofEvidenceTier.Type
+
+export const ProofPropertyEvidenceSummary = Schema.Struct({
+  packageId: Schema.Literal("joern-effect-properties"),
+  operationId: Schema.String,
+  tier: ProofEvidenceTier,
+  status: WorkerEvidenceStatus,
+  runId: Schema.String,
+  seed: Schema.Number,
+  shardId: Schema.String,
+  workerId: Schema.optional(Schema.String),
+  lawIds: Schema.Array(Schema.String),
+  reactivityKeys: Schema.Array(Schema.String),
+  atomIds: Schema.Array(Schema.String),
+  coveragePointIds: Schema.Array(Schema.String),
+  counterexampleSeedId: Schema.optional(Schema.String),
+})
+export type ProofPropertyEvidenceSummary = typeof ProofPropertyEvidenceSummary.Type
+
+export const ProofAtomGraphCoverageSummary = Schema.Struct({
+  operationId: Schema.String,
+  requiredEdges: Schema.Array(Schema.String),
+  movedEdges: Schema.Array(Schema.String),
+  missingEdges: Schema.Array(Schema.String),
+  reactivityKeysHit: Schema.Array(Schema.String),
+  atomsRefreshed: Schema.Array(Schema.String),
+  viewAtomsChanged: Schema.Array(Schema.String),
+})
+export type ProofAtomGraphCoverageSummary =
+  typeof ProofAtomGraphCoverageSummary.Type
+
+export const ProofTypedTargetIntent = Schema.Struct({
+  targetName: Schema.String,
+  intendedExecutor: Schema.Literal(
+    "attune:package-check",
+    "attune:generated",
+    "attune:toolchain",
+  ),
+  resourceTier: ProofEvidenceTier,
+  commandSurfaceWaiverId: Schema.optional(Schema.String),
+  operationIds: Schema.Array(Schema.String),
+  typedOptions: Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+})
+export type ProofTypedTargetIntent = typeof ProofTypedTargetIntent.Type
+
 const propertyRunKeys = [
   "joern-effect-properties.property-run.changed",
   "joern-effect-properties.telemetry.changed",
@@ -481,6 +532,7 @@ export const propertyHarnessRuntimeOperation = defineOperation({
     service: "joern-effect-properties/PropertyHarnessRuntime",
     boundary: "makePropertyHarnessRuntimeLayer",
     eventRuntime: "local-or-axiom",
+    evidenceShape: "ProofPropertyEvidenceSummary",
   } as const,
 } as const)
 
@@ -500,6 +552,7 @@ export const semanticCorpusStoreOperation = defineOperation({
     service: "joern-effect-properties/SemanticCorpusStore",
     boundary: "curated-plus-promoted-seeds",
     cache: "private framework/runtime or in-memory fixture",
+    evidenceShape: "ProofPropertyEvidenceSummary",
   } as const,
 } as const)
 
@@ -519,6 +572,7 @@ export const counterexampleStoreOperation = defineOperation({
     service: "joern-effect-properties/CounterexampleStore",
     boundary: "record-list-promote-counterexamples",
     storage: "in-memory fixture now; private protocol cache later",
+    evidenceShape: "ProofPropertyEvidenceSummary",
   } as const,
 } as const)
 
@@ -542,6 +596,8 @@ export const semanticMutatorOperation = defineOperation({
     project: "joern-effect-properties",
     output: "in-memory-fuzz-case",
     generatedFiles: [] as const,
+    intendedExecutor: "attune:generated",
+    typedOptionsSchema: "ProofTypedTargetIntent",
   } as const,
 } as const)
 
@@ -566,6 +622,7 @@ export const semanticFuzzSchedulerOperation = defineOperation({
     service: "joern-effect-properties/SemanticFuzzScheduler",
     boundary: "runFuzzer",
     schedules: ["corpus", "mutator", "workspace-pool", "oracle", "telemetry"],
+    evidenceShape: "ProofPropertyEvidenceSummary",
   } as const,
 } as const)
 
@@ -591,6 +648,7 @@ export const joernWorkspacePoolOperation = defineOperation({
     desiredStateSchema: "JoernWorkspaceWorker",
     observationSchema: "ImportedProjectWorkspace",
     liveApply: false,
+    evidenceShape: "ProofPropertyEvidenceSummary",
   } as const,
 } as const)
 
@@ -613,6 +671,7 @@ export const fuzzOracleOperation = defineOperation({
     registry: "compileGeneratedDslPrograms",
     templateKinds: ["query-recipe", "oracle-comparison"],
     evidence: ["FuzzQueryRecipeResult", "FuzzExpectationMismatchError"],
+    evidenceShape: "ProofPropertyEvidenceSummary",
   } as const,
 } as const)
 
@@ -656,6 +715,7 @@ export const coverageSearchFeedbackOperation = defineOperation({
     inputEvent: "CoverageSearchMergeInput",
     state: "CoverageSearchSummary",
     replay: "mergeCoverageSearchEvidence",
+    evidenceShape: "ProofAtomGraphCoverageSummary",
   } as const,
 } as const)
 
@@ -676,6 +736,7 @@ export const workerPropertyWrapperOperation = defineOperation({
     boundary: "defineWorkerPropertyDescriptor",
     workerBackend: "@fast-check/worker",
     rpcBackend: "future optional; no runtime @effect/rpc import",
+    evidenceShape: "ProofPropertyEvidenceSummary",
   } as const,
 } as const)
 
@@ -728,6 +789,224 @@ export const propertyProofViewAtomsOperation = defineOperation({
   } as const,
 } as const)
 
+export const PackageOperations = [
+  propertyHarnessRuntimeOperation,
+  semanticCorpusStoreOperation,
+  counterexampleStoreOperation,
+  semanticMutatorOperation,
+  semanticFuzzSchedulerOperation,
+  joernWorkspacePoolOperation,
+  fuzzOracleOperation,
+  fuzzTelemetryOperation,
+  coverageSearchFeedbackOperation,
+  workerPropertyWrapperOperation,
+  propertyProofViewAtomsOperation,
+] as const
+
+export type JoernEffectPropertiesOperationId =
+  (typeof PackageOperations)[number]["id"]
+
+const evidenceFor = (
+  operation: (typeof PackageOperations)[number],
+  tier: ProofEvidenceTier,
+  coveragePointIds: readonly string[],
+) => ({
+  packageId: "joern-effect-properties",
+  operationId: operation.id,
+  tier,
+  status: "passed",
+  runId: "joern-effect-properties-fixture-run",
+  seed: 1_337,
+  shardId: "shard-0-of-1",
+  lawIds: operation.laws ?? [],
+  reactivityKeys: operation.views?.reactivityKeys ?? [],
+  atomIds: operation.views?.atoms ?? [],
+  coveragePointIds,
+} as const satisfies ProofPropertyEvidenceSummary)
+
+export const PackageEvidenceShapes = {
+  "property-harness-runtime": evidenceFor(
+    propertyHarnessRuntimeOperation,
+    "commit",
+    ["src/attuneProperty.ts:checkAttuneProperty"],
+  ),
+  "semantic-corpus-store": evidenceFor(
+    semanticCorpusStoreOperation,
+    "commit",
+    ["src/fuzz/services/corpus.ts:listSeeds"],
+  ),
+  "counterexample-store": {
+    ...evidenceFor(
+      counterexampleStoreOperation,
+      "commit",
+      ["src/fuzz/services/counterexamples.ts:record"],
+    ),
+    counterexampleSeedId: "promoted-counterexample-fixture",
+  },
+  "semantic-mutator": evidenceFor(
+    semanticMutatorOperation,
+    "push",
+    ["src/fuzz/services/mutator.ts:mutate"],
+  ),
+  "semantic-fuzz-scheduler": evidenceFor(
+    semanticFuzzSchedulerOperation,
+    "proof-pressure",
+    ["src/fuzz/pipeline/runner.ts:runFuzzPipeline"],
+  ),
+  "joern-workspace-pool": {
+    ...evidenceFor(
+      joernWorkspacePoolOperation,
+      "proof-pressure",
+      ["src/fuzz/services/workspacePool.ts:withWorkspace"],
+    ),
+    workerId: "joern-fuzz-worker-fixture",
+  },
+  "fuzz-oracle": {
+    ...evidenceFor(
+      fuzzOracleOperation,
+      "proof-pressure",
+      ["src/fuzz/services/oracle.ts:queryOracle"],
+    ),
+    workerId: "joern-fuzz-worker-fixture",
+  },
+  "fuzz-telemetry": evidenceFor(
+    fuzzTelemetryOperation,
+    "commit",
+    ["src/events.ts:writePropertyEvent"],
+  ),
+  "coverage-search-feedback": evidenceFor(
+    coverageSearchFeedbackOperation,
+    "commit",
+    ["src/coverageSearch.ts:mergeCoverageSearchEvidence"],
+  ),
+  "worker-property-wrapper": {
+    ...evidenceFor(
+      workerPropertyWrapperOperation,
+      "push",
+      ["src/workerProperty.ts:defineWorkerPropertyDescriptor"],
+    ),
+    workerId: "worker-0",
+  },
+  "property-proof-view-atoms": evidenceFor(
+    propertyProofViewAtomsOperation,
+    "commit",
+    ["src/coverageSearch.ts:mergeAtomGraphMovements"],
+  ),
+} as const satisfies {
+  readonly [Id in JoernEffectPropertiesOperationId]: ProofPropertyEvidenceSummary
+}
+export type PackageEvidenceShapes = typeof PackageEvidenceShapes
+
+export const PackageAtomGraphCoverage = {
+  "property-harness-runtime": {
+    operationId: "property-harness-runtime",
+    requiredEdges: ["property-harness-runtime->propertyRunAtom"],
+    movedEdges: ["property-harness-runtime->propertyRunAtom"],
+    missingEdges: [],
+    reactivityKeysHit: propertyRunKeys,
+    atomsRefreshed: ["propertyRunAtom"],
+    viewAtomsChanged: ["propertyRunAtom", "telemetryEventAtom"],
+  },
+  "semantic-fuzz-scheduler": {
+    operationId: "semantic-fuzz-scheduler",
+    requiredEdges: ["semantic-fuzz-scheduler->fuzzRunAtom"],
+    movedEdges: ["semantic-fuzz-scheduler->fuzzRunAtom"],
+    missingEdges: [],
+    reactivityKeysHit: fuzzRunKeys,
+    atomsRefreshed: ["fuzzRunAtom", "workerShardAtom", "workspacePoolAtom"],
+    viewAtomsChanged: ["fuzzRunAtom", "workerShardAtom", "workspacePoolAtom"],
+  },
+  "coverage-search-feedback": {
+    operationId: "coverage-search-feedback",
+    requiredEdges: ["coverage-search-feedback->coverageFeedbackAtom"],
+    movedEdges: ["coverage-search-feedback->coverageFeedbackAtom"],
+    missingEdges: [],
+    reactivityKeysHit: coverageKeys,
+    atomsRefreshed: ["coverageFeedbackAtom", "weakOracleFindingAtom"],
+    viewAtomsChanged: ["coverageFeedbackAtom", "weakOracleFindingAtom"],
+  },
+  "worker-property-wrapper": {
+    operationId: "worker-property-wrapper",
+    requiredEdges: ["worker-property-wrapper->workerShardAtom"],
+    movedEdges: ["worker-property-wrapper->workerShardAtom"],
+    missingEdges: [],
+    reactivityKeysHit: workerKeys,
+    atomsRefreshed: ["workerShardAtom", "propertyRunAtom", "counterexampleAtom"],
+    viewAtomsChanged: ["workerShardAtom", "propertyRunAtom", "counterexampleAtom"],
+  },
+} as const satisfies Readonly<Record<string, ProofAtomGraphCoverageSummary>>
+export type PackageAtomGraphCoverage = typeof PackageAtomGraphCoverage
+
+export const PackageTargetIntents = [
+  {
+    targetName: "property",
+    intendedExecutor: "attune:package-check",
+    resourceTier: "commit",
+    commandSurfaceWaiverId: "joern-effect-properties/typed-executor-migration",
+    operationIds: ["property-harness-runtime", "worker-property-wrapper"],
+    typedOptions: {
+      runner: "vitest",
+      evidenceOutput: ".attune/cache/joern-effect-properties/property-evidence.jsonl",
+      localEvents: true,
+      workerCount: 1,
+    },
+  },
+  {
+    targetName: "fuzz:smoke",
+    intendedExecutor: "attune:toolchain",
+    resourceTier: "commit",
+    commandSurfaceWaiverId: "joern-effect-properties/typed-executor-migration",
+    operationIds: ["semantic-fuzz-scheduler", "semantic-mutator", "fuzz-telemetry"],
+    typedOptions: {
+      preset: "smoke",
+      joernMode: "none",
+      queryFeedback: false,
+      evidenceOutput: ".attune/cache/joern-effect-properties/fuzz-smoke.jsonl",
+    },
+  },
+  {
+    targetName: "fuzz:workbench",
+    intendedExecutor: "attune:toolchain",
+    resourceTier: "push",
+    commandSurfaceWaiverId: "joern-effect-properties/typed-executor-migration",
+    operationIds: [
+      "semantic-fuzz-scheduler",
+      "joern-workspace-pool",
+      "fuzz-oracle",
+      "coverage-search-feedback",
+    ],
+    typedOptions: {
+      preset: "workbench",
+      joernMode: "query",
+      queryFeedback: true,
+      workerCount: 2,
+    },
+  },
+  {
+    targetName: "fuzz:campaign",
+    intendedExecutor: "attune:toolchain",
+    resourceTier: "proof-pressure",
+    commandSurfaceWaiverId: "joern-effect-properties/typed-executor-migration",
+    operationIds: [
+      "semantic-fuzz-scheduler",
+      "joern-workspace-pool",
+      "fuzz-oracle",
+      "coverage-search-feedback",
+      "worker-property-wrapper",
+    ],
+    typedOptions: {
+      preset: "campaign",
+      joernMode: "query",
+      queryFeedback: true,
+      workerCount: 2,
+      timeoutMs: 14_400_000,
+      arion: true,
+      nixImage: "joern-effect-property-image",
+    },
+  },
+] as const satisfies readonly ProofTypedTargetIntent[]
+export type PackageTargetIntents = typeof PackageTargetIntents
+
 export const PackageContract = definePackageContract({
   packageId: "joern-effect-properties",
   sourceRoot: "packages/joern-effect-properties/src",
@@ -736,23 +1015,14 @@ export const PackageContract = definePackageContract({
   services: PropertyProofServices,
   providedServices: PropertyProofServices,
   requiredServices: PropertyProofRequiredServices,
-  operations: [
-    propertyHarnessRuntimeOperation,
-    semanticCorpusStoreOperation,
-    counterexampleStoreOperation,
-    semanticMutatorOperation,
-    semanticFuzzSchedulerOperation,
-    joernWorkspacePoolOperation,
-    fuzzOracleOperation,
-    fuzzTelemetryOperation,
-    coverageSearchFeedbackOperation,
-    workerPropertyWrapperOperation,
-    propertyProofViewAtomsOperation,
-  ] as const,
+  operations: PackageOperations,
   provenance: {
     generator: "@attune/nx:package-contract",
     customizedFor: "Joern property proof runtime and workerized fuzz harness",
     openspecChangeId: "standardize-effect-package-contracts",
+    evidenceShapes: "PackageEvidenceShapes",
+    atomGraphCoverage: "PackageAtomGraphCoverage",
+    targetIntents: "PackageTargetIntents",
   } as const,
   waivers: [
     {
@@ -810,9 +1080,6 @@ export const PackageTestLayer = {
   },
 } as const
 export type PackageTestLayer = typeof PackageTestLayer
-
-export type JoernEffectPropertiesOperationId =
-  (typeof PackageContract.operations)[number]["id"]
 
 export const PackageFuzzHandlers = {
   "property-harness-runtime": () => ({

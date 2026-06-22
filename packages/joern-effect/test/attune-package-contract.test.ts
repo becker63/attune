@@ -1,12 +1,17 @@
 import { describe, expect, expectTypeOf, it } from "vitest"
+import { Schema } from "effect"
 
 import { decodePackageContract } from "@attune/framework-protocol"
 import {
+  JoernSharedEvidenceSummary,
+  JoernTypedTargetIntent,
   PackageContract,
+  PackageEvidenceShapes,
   PackageFuzzHandlers,
   PackageLayer,
   PackageProperties,
   PackageTestLayer,
+  PackageTargetIntents,
   PackageTypeGuidance,
   PackageViews,
   generatedSchemaCoverageOperation,
@@ -115,8 +120,46 @@ describe("joern-effect package contract", () => {
         "joern-effect/context-tag-services",
         "joern-effect/process-runtime-boundary",
         "joern-effect/template-registry-generation-gap",
+        "joern-effect/typed-executor-migration",
       ]),
     )
+  })
+
+  it("declares shared evidence summaries and typed target intents for Joern toolchain surfaces", () => {
+    const operationIds = new Set(requiredOperationIds)
+    const decodeEvidence = Schema.decodeUnknownSync(JoernSharedEvidenceSummary)
+    const decodeTarget = Schema.decodeUnknownSync(JoernTypedTargetIntent)
+
+    expect(Object.keys(PackageEvidenceShapes)).toEqual([...requiredOperationIds])
+    for (const [operationId, evidence] of Object.entries(PackageEvidenceShapes)) {
+      expect(operationIds.has(operationId as (typeof requiredOperationIds)[number])).toBe(true)
+      expect(decodeEvidence(evidence)).toMatchObject({
+        operationId,
+      })
+      expect(evidence.protocolEvidenceKinds).toEqual(expect.arrayContaining([
+        expect.stringMatching(/property-run|atom-movement|coverage-point|reactivity-key|law-observed/),
+      ]))
+    }
+
+    expect(PackageTargetIntents.map((target) => target.targetName)).toEqual([
+      "test",
+      "emit-generated",
+      "extract-cpg-schema",
+    ])
+    for (const target of PackageTargetIntents) {
+      expect(decodeTarget(target)).toMatchObject({
+        commandSurfaceWaiverId: "joern-effect/typed-executor-migration",
+      })
+      expect(target.operationIds.every((operationId) => operationIds.has(operationId))).toBe(true)
+    }
+    expect(PackageTargetIntents.find((target) => target.targetName === "extract-cpg-schema"))
+      ?.toMatchObject({
+        intendedExecutor: "attune:toolchain",
+        resourceTier: "proof-pressure",
+        typedOptions: {
+          toolchain: "joern",
+        },
+      })
   })
 
   it("exposes type-guidance partitions for generated proof audits", () => {

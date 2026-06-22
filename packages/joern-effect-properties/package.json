@@ -17,17 +17,6 @@
     "dist",
     "nix"
   ],
-  "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean --external joern-effect",
-    "property": "tsx scripts/runPropertyVitest.ts",
-    "property:joern": "tsx scripts/runPropertyVitest.ts",
-    "test": "tsx scripts/runPropertyVitest.ts",
-    "typecheck": "tsc --noEmit",
-    "fuzz:smoke": "tsx scripts/runFuzzer.ts --preset smoke",
-    "fuzz:workbench": "tsx scripts/runFuzzer.ts --preset workbench",
-    "fuzz:nightly": "tsx scripts/runFuzzer.ts --preset nightly",
-    "fuzz:campaign": "tsx scripts/runFuzzer.ts --preset campaign"
-  },
   "dependencies": {
     "@axiomhq/js": "^1.7.0",
     "@attune/framework-protocol": "workspace:*",

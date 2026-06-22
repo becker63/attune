@@ -30,9 +30,20 @@ const proofFor = (resource: PlannedResource) => ({
       : resource.kind === "UsbMediaWrite"
         ? "usb-media-write-approved"
         : resource.kind === "NixosAnywhereInstall"
-          ? `${resource.id.split(":")[0]}:disk-wipe-confirmed`
-          : resource.id,
+        ? `${resource.id.split(":")[0]}:disk-wipe-confirmed`
+        : resource.id,
   evidenceRef: `test://${resource.id}`,
+  confirmedAt: "2026-06-22T12:00:00.000Z",
+})
+
+const approvalFor = (resource: PlannedResource, proof = proofFor(resource)) => ({
+  approvalId: `approval:${resource.id}`,
+  gateId: proof.gateId,
+  resourceId: resource.id,
+  approvedBy: "test-operator",
+  approvedAt: "2026-06-22T12:01:00.000Z",
+  proofRef: proof.evidenceRef,
+  expiresAt: "2999-01-01T00:00:00.000Z",
 })
 
 const asStatus = (resource: PlannedResource, status: PlannedResource["status"]): PlannedResource => {
@@ -278,11 +289,18 @@ describe("home-deployment", () => {
         evidenceRef: "test://wrong-host-disk-proof",
       })),
     ).toThrow("requires proof for gate attune-cp-1:disk-wipe-confirmed")
+    const proof = proofFor(resource)
+    expect(() =>
+      Effect.runSync(runProviderTransition(providers, resource, proof)),
+    ).toThrow("requires current destructive approval")
+    expect(() =>
+      Effect.runSync(runProviderTransition(providers, resource, proof, {
+        ...approvalFor(resource, proof),
+        expiresAt: "2000-01-01T00:00:00.000Z",
+      })),
+    ).toThrow("stale destructive approval")
     expect(
-      Effect.runSync(runProviderTransition(providers, resource, {
-        gateId: "attune-cp-1:disk-wipe-confirmed",
-        evidenceRef: "test://disk-proof",
-      })).mutated,
+      Effect.runSync(runProviderTransition(providers, resource, proof, approvalFor(resource, proof))).mutated,
     ).toBe(true)
   })
 
@@ -320,11 +338,15 @@ describe("home-deployment", () => {
         evidenceRef: "test://wrong-usb-proof",
       })),
     ).toThrow("requires proof for gate usb-media-write-approved")
+    const proof = proofFor(resource)
+    expect(() =>
+      Effect.runSync(runProviderTransition(providers, resource, proof, {
+        ...approvalFor(resource, proof),
+        resourceId: "installer-image",
+      })),
+    ).toThrow("requires approval for the exact resource")
     expect(
-      Effect.runSync(runProviderTransition(providers, resource, {
-        gateId: "usb-media-write-approved",
-        evidenceRef: "test://usb-proof",
-      })).mutated,
+      Effect.runSync(runProviderTransition(providers, resource, proof, approvalFor(resource, proof))).mutated,
     ).toBe(true)
   })
 
@@ -540,14 +562,18 @@ describe("home-deployment", () => {
 
     const results = plan.resources.map((resource) => {
       const runnable = resource.status === "blocked" ? asPlanned(resource) : resource
+      const proof = resource.kind === "ManualGate" ||
+          resource.kind === "MachineBinding" ||
+          resource.kind === "UsbMediaWrite" ||
+          resource.kind === "NixosAnywhereInstall"
+        ? proofFor(resource)
+        : undefined
       return Effect.runSync(runProviderTransition(
         providers,
         runnable,
-        resource.kind === "ManualGate" ||
-            resource.kind === "MachineBinding" ||
-            resource.kind === "UsbMediaWrite" ||
-            resource.kind === "NixosAnywhereInstall"
-          ? proofFor(resource)
+        proof,
+        resource.kind === "UsbMediaWrite" || resource.kind === "NixosAnywhereInstall"
+          ? approvalFor(resource, proof)
           : undefined,
       ))
     })

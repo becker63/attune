@@ -110,7 +110,7 @@ const sourceBomInput = (
   openspecChangeId: "standardize-effect-package-contracts",
 })
 
-const futureSnapshotSurfaces = [
+const phase2SnapshotSurfaces = [
   {
     generator: "@attune/nx:package-contract",
     assertion: "snapshots src/attune.package.ts, contract registration, and compile-only assertions",
@@ -121,7 +121,7 @@ const futureSnapshotSurfaces = [
   },
   {
     generator: "@attune/nx:package-contract",
-    assertion: "snapshots generated Effect RPC package harness and operation registry",
+    assertion: "snapshots generated operation registry and property evidence plan",
   },
   {
     generator: "@attune/nx:package-contract",
@@ -391,8 +391,8 @@ describe("attune-nx generator snapshots", () => {
     `)
   })
 
-  it("names the extension slots for later Phase 2 generators without requiring them yet", () => {
-    expect(futureSnapshotSurfaces).toMatchInlineSnapshot(`
+  it("names the Phase 2 snapshot surfaces for generator materialization", () => {
+    expect(phase2SnapshotSurfaces).toMatchInlineSnapshot(`
       [
         {
           "assertion": "snapshots src/attune.package.ts, contract registration, and compile-only assertions",
@@ -403,7 +403,7 @@ describe("attune-nx generator snapshots", () => {
           "generator": "@attune/nx:atom-view",
         },
         {
-          "assertion": "snapshots generated Effect RPC package harness and operation registry",
+          "assertion": "snapshots generated operation registry and property evidence plan",
           "generator": "@attune/nx:package-contract",
         },
         {

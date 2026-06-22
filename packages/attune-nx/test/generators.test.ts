@@ -115,6 +115,30 @@ describe("attune-nx generators", () => {
           targetHome: "@attune/nx:package-contract",
           owner: "type-guidance-agent",
         }),
+        expect.objectContaining({
+          capability: "operation-registry",
+          currentHome: "@attune/nx:package-contract",
+          targetHome: "@attune/nx:package-contract",
+          owner: "attune-nx-framework-generator-integration-agent",
+        }),
+        expect.objectContaining({
+          capability: "property-evidence-plan",
+          currentHome: "@attune/nx:package-contract",
+          targetHome: "@attune/nx:package-contract",
+          owner: "attune-nx-framework-generator-integration-agent",
+        }),
+        expect.objectContaining({
+          capability: "worker-property-module",
+          currentHome: "@attune/nx:package-contract",
+          targetHome: "@attune/nx:package-contract",
+          owner: "attune-nx-framework-generator-integration-agent",
+        }),
+        expect.objectContaining({
+          capability: "no-checked-in-report-policy",
+          currentHome: "@attune/nx:package-contract",
+          targetHome: "@attune/nx:package-contract",
+          owner: "attune-nx-framework-generator-integration-agent",
+        }),
       ]),
     )
   })

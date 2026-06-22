@@ -33,14 +33,6 @@
     "generators.json",
     "src/generators/**/schema.json"
   ],
-  "scripts": {
-    "build": "tsup --config tsup.config.ts",
-    "lint": "oxlint --config ../../root-oxlintrc.json . --quiet",
-    "mutation": "stryker run stryker.conf.json",
-    "property": "vitest run test/*.property.test.ts",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
-  },
   "dependencies": {
     "@attune/framework-protocol": "workspace:*",
     "effect": "4.0.0-beta.78"

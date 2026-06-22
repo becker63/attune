@@ -13,6 +13,9 @@ export default defineConfig({
       "@attune/framework-protocol": fileURLToPath(
         new URL("../protocol/src/index.ts", import.meta.url),
       ),
+      "@attune/framework-sqlite": fileURLToPath(
+        new URL("../sqlite/src/index.ts", import.meta.url),
+      ),
       effect: require.resolve("effect"),
     },
   },

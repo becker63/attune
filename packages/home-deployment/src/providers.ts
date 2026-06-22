@@ -34,6 +34,17 @@ export type ProviderTransitionResult = typeof ProviderTransitionResult.Type
 export interface ManualProof {
   readonly gateId: string
   readonly evidenceRef: string
+  readonly confirmedAt?: string
+}
+
+export interface DestructiveApproval {
+  readonly approvalId: string
+  readonly gateId: string
+  readonly resourceId: string
+  readonly approvedBy: string
+  readonly approvedAt: string
+  readonly proofRef: string
+  readonly expiresAt?: string
 }
 
 export type ProviderEffect = Effect.Effect<ProviderTransitionResult>
@@ -72,7 +83,11 @@ export interface MachineInventoryProvider {
 
 export interface UsbMediaProvider {
   readonly mode: PlatformProviderMode
-  readonly writeInstaller: (resource: PlannedResource, proof: ManualProof | undefined) => ProviderEffect
+  readonly writeInstaller: (
+    resource: PlannedResource,
+    proof: ManualProof | undefined,
+    approval: DestructiveApproval | undefined,
+  ) => ProviderEffect
 }
 
 export interface DiskoProvider {
@@ -84,7 +99,11 @@ export interface DiskoProvider {
 export interface NixosAnywhereProvider {
   readonly mode: PlatformProviderMode
   readonly stageExtraFiles: (resource: PlannedResource) => ProviderEffect
-  readonly installHost: (resource: PlannedResource, proof: ManualProof | undefined) => ProviderEffect
+  readonly installHost: (
+    resource: PlannedResource,
+    proof: ManualProof | undefined,
+    approval: DestructiveApproval | undefined,
+  ) => ProviderEffect
 }
 
 export interface SshProvider {
@@ -228,6 +247,44 @@ const assertProof = (resource: PlannedResource, proof: ManualProof | undefined):
   }
 }
 
+const parseTime = (label: string, value: string): number => {
+  const parsed = Date.parse(value)
+  if (Number.isNaN(parsed)) {
+    throw new Error(`Destructive approval ${label} must be an ISO timestamp.`)
+  }
+  return parsed
+}
+
+const assertDestructiveApproval = (
+  resource: PlannedResource,
+  proof: ManualProof | undefined,
+  approval: DestructiveApproval | undefined,
+): void => {
+  if (approval === undefined) {
+    throw new Error(`Resource ${resource.id} requires current destructive approval before provider execution.`)
+  }
+  if (proof === undefined) {
+    throw new Error(`Resource ${resource.id} requires typed manual proof before destructive approval can be used.`)
+  }
+  const expectedGateId = expectedProofGateId(resource)
+  if (expectedGateId !== undefined && approval.gateId !== expectedGateId) {
+    throw new Error(`Resource ${resource.id} requires approval for gate ${expectedGateId}; received ${approval.gateId}.`)
+  }
+  if (approval.resourceId !== resource.id) {
+    throw new Error(`Resource ${resource.id} requires approval for the exact resource; received ${approval.resourceId}.`)
+  }
+  if (approval.proofRef !== proof.evidenceRef) {
+    throw new Error(`Resource ${resource.id} requires approval tied to proof ${proof.evidenceRef}; received ${approval.proofRef}.`)
+  }
+  const approvedAt = parseTime("approvedAt", approval.approvedAt)
+  if (proof.confirmedAt !== undefined && approvedAt < parseTime("proof confirmedAt", proof.confirmedAt)) {
+    throw new Error(`Resource ${resource.id} has stale destructive approval predating the current proof.`)
+  }
+  if (approval.expiresAt !== undefined && parseTime("expiresAt", approval.expiresAt) <= Date.now()) {
+    throw new Error(`Resource ${resource.id} has stale destructive approval ${approval.approvalId}.`)
+  }
+}
+
 const commandUnavailable = (
   provider: string,
   mode: PlatformProviderMode,
@@ -345,6 +402,7 @@ const requireDestructiveProofThen = (
   provider: string,
   resource: PlannedResource,
   proof: ManualProof | undefined,
+  approval: DestructiveApproval | undefined,
 ): ProviderEffect => {
   if (resource.status === "ready") {
     return observedEvidenceResult(provider, mode, resource)
@@ -358,6 +416,7 @@ const requireDestructiveProofThen = (
       observed !== undefined
         ? Effect.succeed(observed)
         : Effect.sync(() => assertProof(resource, proof)).pipe(
+            Effect.tap(() => Effect.sync(() => assertDestructiveApproval(resource, proof, approval))),
             Effect.flatMap(() => observeOrSimulate(mode, provider, resource, true)),
           )),
   )
@@ -417,7 +476,8 @@ const createPlatformProviders = (mode: PlatformProviderMode): PlatformProviders 
   },
   usbMedia: {
     mode,
-    writeInstaller: (resource, proof) => requireDestructiveProofThen(mode, "UsbMediaProvider", resource, proof),
+    writeInstaller: (resource, proof, approval) =>
+      requireDestructiveProofThen(mode, "UsbMediaProvider", resource, proof, approval),
   },
   disko: {
     mode,
@@ -427,7 +487,8 @@ const createPlatformProviders = (mode: PlatformProviderMode): PlatformProviders 
   nixosAnywhere: {
     mode,
     stageExtraFiles: (resource) => observeThenApply(mode, "NixosAnywhereProvider", resource),
-    installHost: (resource, proof) => requireDestructiveProofThen(mode, "NixosAnywhereProvider", resource, proof),
+    installHost: (resource, proof, approval) =>
+      requireDestructiveProofThen(mode, "NixosAnywhereProvider", resource, proof, approval),
   },
   ssh: {
     mode,
@@ -485,6 +546,7 @@ export const runProviderTransition = (
   providers: PlatformProviders,
   resource: PlannedResource,
   proof?: ManualProof,
+  approval?: DestructiveApproval,
 ): ProviderEffect => {
   switch (resource.kind) {
     case "OperatorMachine":
@@ -517,7 +579,7 @@ export const runProviderTransition = (
       return providers.nix.evaluateHostOutput(resource)
     case "UsbInstallMedia":
     case "UsbMediaWrite":
-      return providers.usbMedia.writeInstaller(resource, proof)
+      return providers.usbMedia.writeInstaller(resource, proof, approval)
     case "SshReachability":
       return providers.ssh.probeReachability(resource)
     case "DiskIdentityProbe":
@@ -527,7 +589,7 @@ export const runProviderTransition = (
     case "NixosAnywhereExtraFiles":
       return providers.nixosAnywhere.stageExtraFiles(resource)
     case "NixosAnywhereInstall":
-      return providers.nixosAnywhere.installHost(resource, proof)
+      return providers.nixosAnywhere.installHost(resource, proof, approval)
     case "TailscaleSecretAvailability":
       return providers.sops.verifySecretSet(resource)
     case "TailscaleReadiness":

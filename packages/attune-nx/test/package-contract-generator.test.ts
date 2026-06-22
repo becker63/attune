@@ -37,6 +37,14 @@ class MemoryTree implements GeneratorTree {
 }
 
 describe("@attune/nx package-contract generator", () => {
+  it("exposes a source-local .js bridge for Nx source mode", async () => {
+    const sourceLocal = await import(
+      "../src/generators/package-contract/generator.js"
+    )
+
+    expect(sourceLocal.default).toBe(packageContractGenerator)
+  })
+
   it("is executable through the real Nx generator surface in local source mode", () => {
     const nxBin = resolve(repositoryRoot, "node_modules/.bin/nx")
     const output = execFileSync(
@@ -82,6 +90,12 @@ describe("@attune/nx package-contract generator", () => {
 
     const contract =
       tree.files.get("packages/attune-nx/src/attune.package.ts") ?? ""
+    const generated =
+      tree.files.get("packages/attune-nx/src/attune.package.generated.ts") ??
+      ""
+    const property =
+      tree.files.get("packages/attune-nx/src/attune.package.property.ts") ??
+      ""
     const typecheck =
       tree.files.get("packages/attune-nx/src/attune.package.typecheck.ts") ??
       ""
@@ -117,12 +131,28 @@ describe("@attune/nx package-contract generator", () => {
       '"coverage:package-contract-generator:package-view"',
     )
 
+    expect(generated).toContain("PackageOperationRegistry")
+    expect(generated).toContain("PackagePropertyEvidencePlan")
+    expect(generated).toContain("PackageAtomViewGraph")
+    expect(generated).toContain("PackageProtocolReportPolicy")
+    expect(generated).toContain('workerModule: "./attune.package.property.js"')
+    expect(generated).toContain('evidenceRoot: ".attune/cache/property-evidence"')
+    expect(generated).toContain("checkedInProtocolReports: false")
+    expect(generated).not.toContain("ProtocolDelta.md")
+    expect(generated).not.toContain("protocol-report")
+
+    expect(property).toContain('from "@fast-check/worker"')
+    expect(property).toContain("propertyFor(new URL(import.meta.url)")
+    expect(property).toContain('randomSource: "worker"')
+    expect(property).toContain("PackageWorkerProperties")
+
     expect(typecheck).toContain("AssertPackageContract")
     expect(typecheck).toContain("AssertTypeGuidanceComplete")
     expect(typecheck).toContain("AssertExactHandlers")
     expect(typecheck).toContain("AssertPropertyHarnesses")
+    expect(typecheck).toContain('from "./attune.package.generated.js"')
     expect(typecheck).toContain(
-      'readonly "package-contract-generator": () => unknown',
+      "PackageFuzzHandlers",
     )
   })
 
@@ -171,6 +201,8 @@ describe("@attune/nx package-contract generator", () => {
         sourceRoot: "packages/effect-oxlint-policy",
       },
       ownedFiles: [
+        "packages/effect-oxlint-policy/src/attune.package.generated.ts",
+        "packages/effect-oxlint-policy/src/attune.package.property.ts",
         "packages/effect-oxlint-policy/src/attune.package.ts",
         "packages/effect-oxlint-policy/src/attune.package.typecheck.ts",
       ],
@@ -214,6 +246,8 @@ describe("@attune/nx package-contract generator", () => {
     expect([...second.files.keys()].sort()).toEqual([
       "attune.source-bom.index.json",
       "packages/home-deployment/attune.source-bom.json",
+      "packages/home-deployment/src/attune.package.generated.ts",
+      "packages/home-deployment/src/attune.package.property.ts",
       "packages/home-deployment/src/attune.package.ts",
       "packages/home-deployment/src/attune.package.typecheck.ts",
     ])

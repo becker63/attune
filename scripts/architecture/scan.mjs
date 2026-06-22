@@ -16,4 +16,4 @@ if (violations.length > 0) {
   process.exit(1)
 }
 
-console.log("Architecture scan passed: public policy aliases delegate to Nx-owned targets without Corepack or node_modules/.bin.")
+console.log("Architecture scan passed: root package scripts are absent or delegate to Nx-owned targets without Corepack or node_modules/.bin.")

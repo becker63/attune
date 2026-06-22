@@ -1,4 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest"
+import { Schema } from "effect"
 
 import {
   assertExactHandlers,
@@ -13,12 +14,18 @@ import {
 } from "@attune/framework-protocol"
 import {
   PackageContract,
+  PackageAtomGraphCoverage,
+  PackageEvidenceShapes,
   PackageFuzzHandlers,
   PackageLayer,
   PackageProperties,
   PackageTestLayer,
+  PackageTargetIntents,
   PackageTypeGuidance,
   PackageViews,
+  ProofAtomGraphCoverageSummary,
+  ProofPropertyEvidenceSummary,
+  ProofTypedTargetIntent,
   coverageSearchFeedbackOperation,
   fuzzOracleOperation,
   propertyProofViewAtomsOperation,
@@ -183,5 +190,63 @@ describe("joern-effect-properties package contract", () => {
         kind: "operation-precondition",
       }),
     )
+  })
+
+  it("connects proof targets to shared property evidence and atom graph coverage shapes", () => {
+    const operationIds = new Set(requiredOperationIds)
+    const decodeEvidence = Schema.decodeUnknownSync(ProofPropertyEvidenceSummary)
+    const decodeCoverage = Schema.decodeUnknownSync(ProofAtomGraphCoverageSummary)
+    const decodeTarget = Schema.decodeUnknownSync(ProofTypedTargetIntent)
+
+    expect(Object.keys(PackageEvidenceShapes)).toEqual([...requiredOperationIds])
+    for (const [operationId, evidence] of Object.entries(PackageEvidenceShapes)) {
+      expect(operationIds.has(operationId as (typeof requiredOperationIds)[number])).toBe(true)
+      expect(decodeEvidence(evidence)).toMatchObject({
+        operationId,
+        packageId: "joern-effect-properties",
+        runId: "joern-effect-properties-fixture-run",
+      })
+      expect(evidence.reactivityKeys.length).toBeGreaterThan(0)
+      expect(evidence.atomIds.length).toBeGreaterThan(0)
+      expect(evidence.lawIds).toEqual(expect.arrayContaining(["schema.decode"]))
+    }
+
+    expect(Object.keys(PackageAtomGraphCoverage)).toEqual([
+      "property-harness-runtime",
+      "semantic-fuzz-scheduler",
+      "coverage-search-feedback",
+      "worker-property-wrapper",
+    ])
+    for (const coverage of Object.values(PackageAtomGraphCoverage)) {
+      expect(decodeCoverage(coverage)).toMatchObject({
+        missingEdges: [],
+      })
+      expect(operationIds.has(coverage.operationId as (typeof requiredOperationIds)[number]))
+        .toBe(true)
+      expect(coverage.movedEdges.length).toBeGreaterThan(0)
+    }
+
+    expect(PackageTargetIntents.map((target) => target.targetName)).toEqual([
+      "property",
+      "fuzz:smoke",
+      "fuzz:workbench",
+      "fuzz:campaign",
+    ])
+    for (const target of PackageTargetIntents) {
+      expect(decodeTarget(target)).toMatchObject({
+        commandSurfaceWaiverId: "joern-effect-properties/typed-executor-migration",
+      })
+      expect(target.operationIds.every((operationId) => operationIds.has(operationId)))
+        .toBe(true)
+    }
+    expect(PackageTargetIntents.find((target) => target.targetName === "fuzz:campaign"))
+      ?.toMatchObject({
+        intendedExecutor: "attune:toolchain",
+        resourceTier: "proof-pressure",
+        typedOptions: {
+          arion: true,
+          nixImage: "joern-effect-property-image",
+        },
+      })
   })
 })

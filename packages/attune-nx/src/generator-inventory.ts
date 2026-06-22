@@ -4,6 +4,10 @@ export type GeneratorMigrationCapability =
   | "atom-view"
   | "compile-only-assertion"
   | "type-guidance"
+  | "operation-registry"
+  | "property-evidence-plan"
+  | "worker-property-module"
+  | "no-checked-in-report-policy"
   | "source-bom-provenance"
   | "sync-registry"
 
@@ -33,6 +37,10 @@ export interface Phase2GeneratorGap {
     | "atom-view"
     | "compile-only-assertion"
     | "type-guidance"
+    | "operation-registry"
+    | "property-evidence-plan"
+    | "worker-property-module"
+    | "no-checked-in-report-policy"
   >
   readonly currentHome: `@attune/nx:${string}` | null
   readonly targetHome: `@attune/nx:${string}`
@@ -46,6 +54,10 @@ export const requiredPhase2GeneratorCapabilities = [
   "atom-view",
   "compile-only-assertion",
   "type-guidance",
+  "operation-registry",
+  "property-evidence-plan",
+  "worker-property-module",
+  "no-checked-in-report-policy",
 ] as const satisfies readonly Phase2GeneratorGap["capability"][]
 
 export const phase2GeneratorGapMap = [
@@ -110,6 +122,51 @@ export const phase2GeneratorGapMap = [
       "property evidence partition names",
     ],
   },
+  {
+    capability: "operation-registry",
+    currentHome: "@attune/nx:package-contract",
+    targetHome: "@attune/nx:package-contract",
+    owner: "attune-nx-framework-generator-integration-agent",
+    requiredOutput: [
+      "attune.package.generated.ts",
+      "PackageOperationRegistry",
+      "PackageFuzzHandlers",
+      "PackageProperties",
+    ],
+  },
+  {
+    capability: "property-evidence-plan",
+    currentHome: "@attune/nx:package-contract",
+    targetHome: "@attune/nx:package-contract",
+    owner: "attune-nx-framework-generator-integration-agent",
+    requiredOutput: [
+      "PackagePropertyEvidencePlan",
+      "gitignored evidence root",
+      "no checked-in protocol reports flag",
+    ],
+  },
+  {
+    capability: "worker-property-module",
+    currentHome: "@attune/nx:package-contract",
+    targetHome: "@attune/nx:package-contract",
+    owner: "attune-nx-framework-generator-integration-agent",
+    requiredOutput: [
+      "attune.package.property.ts",
+      "propertyFor(new URL(import.meta.url))",
+      "worker isolation/random-source metadata",
+    ],
+  },
+  {
+    capability: "no-checked-in-report-policy",
+    currentHome: "@attune/nx:package-contract",
+    targetHome: "@attune/nx:package-contract",
+    owner: "attune-nx-framework-generator-integration-agent",
+    requiredOutput: [
+      "PackageProtocolReportPolicy",
+      "allowed ephemeral cache roots",
+      "forbidden checked-in reports",
+    ],
+  },
 ] as const satisfies readonly Phase2GeneratorGap[]
 
 export const attuneNxGeneratorInventory = [
@@ -163,19 +220,32 @@ export const attuneNxGeneratorInventory = [
     schema: "src/generators/package-contract/schema.json",
     currentOutput: [
       "src/attune.package.ts",
+      "src/attune.package.generated.ts",
+      "src/attune.package.property.ts",
       "src/attune.package.typecheck.ts",
       "Effect Schema-backed PackageContract",
+      "PackageOperationRegistry",
+      "PackagePropertyEvidencePlan",
+      "worker-compatible property module",
       "PackageTypeGuidance artifact",
+      "no checked-in protocol report policy",
       "Source BOM provenance",
     ],
     migrationCapabilities: {
       "package-contract": "present",
       "compile-only-assertion": "present",
       "type-guidance": "present",
+      "operation-registry": "present",
+      "property-evidence-plan": "present",
+      "worker-property-module": "present",
+      "no-checked-in-report-policy": "present",
       "source-bom-provenance": "present",
       "atom-view": "needs-extension",
     },
-    phase2Owner: ["package-contract-generator-agent"],
+    phase2Owner: [
+      "package-contract-generator-agent",
+      "attune-nx-framework-generator-integration-agent",
+    ],
   },
   {
     id: "atom-view",

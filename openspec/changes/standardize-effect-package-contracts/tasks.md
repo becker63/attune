@@ -16,25 +16,25 @@
 
 - [x] 1A.1 Define root `framework/` project layout outside `packages/`, including `framework/protocol`, `framework/runtime`, `framework/sqlite`, `framework/language-service`, `framework/nx`, and `framework/testing`, plus workspace/Nx inclusion rules.
 - [x] 1A.2 Add `framework/protocol` public DSL and Effect Schema descriptors for protocol descriptors, obligations, generated artifact records, evidence events, deltas, waivers, repair actions, and diagnostics.
-- [ ] 1A.3 Add `framework/runtime` private `ProtocolRuntime`, `ProtocolQuery`, `ProtocolDiagnostics`, and `ProtocolProjection` services behind Effect layers.
-- [ ] 1A.4 Add `framework/sqlite` local SQLite/Drizzle store behind Effect services, with deterministic descriptor hashing and generated artifact hash recording in gitignored runtime/cache.
+- [x] 1A.3 Add `framework/runtime` private `ProtocolRuntime`, `ProtocolQuery`, `ProtocolDiagnostics`, and `ProtocolProjection` services behind Effect layers.
+- [x] 1A.4 Add `framework/sqlite` local SQLite/Drizzle store behind Effect services, with deterministic descriptor hashing and generated artifact hash recording in gitignored runtime/cache.
 - [x] 1A.5 Add `framework/language-service` diagnostics, quick info, code actions, and code lenses as the primary rich framework view over ProtocolDiagnostics.
 - [ ] 1A.6 Add `framework/nx` generators, executors, graph integration, and materialization actions used by language-service code actions and checks.
-- [ ] 1A.7 Add `framework/testing` evidence producers, FastCheck hooks, operation registry, replay helpers, and atom graph observer helpers.
+- [x] 1A.7 Add `framework/testing` evidence producers, FastCheck hooks, operation registry, replay helpers, and atom graph observer helpers.
 - [x] 1A.8 Add import-boundary and information-hiding checks so product packages cannot import framework runtime/sqlite/language-service/Nx internals, raw Drizzle tables, or ProtocolStore internals.
 - [x] 1A.9 Add no-checked-in-report policy for ProtocolDelta reports, obligation reports, evidence summaries, Markdown/JSON architecture summaries, Linear/GitHub summaries, and cloud-agent report artifacts.
 - [x] 1A.10 Add validation tests for descriptor encoding/decoding, SQLite lifecycle, deterministic hashing, stale generated source diagnostics, ProtocolDelta-to-language-service diagnostic projection, quick info, code-action planning, code lenses, import-boundary rejection, local cache behavior, and no-report-file drift.
 
 ## 1B. Static DSL And Mostly-Deduced IDs
 
-- [ ] 1B.1 Keep `docs/attuned/Attune Framework Core Primitives.md` current as the canonical primitive vocabulary for packages, services, layers, schemas, operations, commands, queries, projections, codecs, event facades, Reactivity keys, atoms/views, resource providers, generators, policy rules, Joern templates, obligations, evidence, diagnostics, and repair actions.
-- [ ] 1B.2 Add static framework DSL extraction APIs that use TypeScript compiler/language-service APIs to resolve source declarations, symbols, imports, source ranges, and type information for protocol declarations.
-- [ ] 1B.3 Add symbol/object-reference authoring helpers for operations, services, schemas, Reactivity keys, atoms/views, laws, waivers, generators, providers, and generated artifact owners.
-- [ ] 1B.4 Derive stable protocol IDs, explicit ID override behavior, descriptor identity, source ranges, artifact ownership, and repair-action metadata from static source declarations.
-- [ ] 1B.5 Derive operation-to-view edges by traversing declared Reactivity key -> base atom -> derived atom -> package view atom dataflow.
+- [x] 1B.1 Keep `docs/attuned/Attune Framework Core Primitives.md` current as the canonical primitive vocabulary for packages, services, layers, schemas, operations, commands, queries, projections, codecs, event facades, Reactivity keys, atoms/views, resource providers, generators, policy rules, Joern templates, obligations, evidence, diagnostics, and repair actions.
+- [x] 1B.2 Add static framework DSL extraction APIs that use TypeScript compiler/language-service APIs to resolve source declarations, symbols, imports, source ranges, and type information for protocol declarations.
+- [x] 1B.3 Add symbol/object-reference authoring helpers for operations, services, schemas, Reactivity keys, atoms/views, laws, waivers, generators, providers, and generated artifact owners.
+- [x] 1B.4 Derive stable protocol IDs, explicit ID override behavior, descriptor identity, source ranges, artifact ownership, and repair-action metadata from static source declarations.
+- [x] 1B.5 Derive operation-to-view edges by traversing declared Reactivity key -> base atom -> derived atom -> package view atom dataflow.
 - [ ] 1B.6 Generate exact operation registries, handler maps, property maps, evidence producer maps, type-guidance partitions, and optional RPC descriptors from the operation tuple.
-- [ ] 1B.7 Add string-reference ratchet diagnostics for avoidable raw string cross-references while preserving serialized IDs for cache, replay, diagnostics, external boundaries, and generated artifacts.
-- [ ] 1B.8 Add derived ID roundtrip validation for symbol -> descriptor -> serialized ID -> cache/evidence/diagnostic flows.
+- [x] 1B.7 Add string-reference ratchet diagnostics for avoidable raw string cross-references while preserving serialized IDs for cache, replay, diagnostics, external boundaries, and generated artifacts.
+- [x] 1B.8 Add derived ID roundtrip validation for symbol -> descriptor -> serialized ID -> cache/evidence/diagnostic flows.
 
 ## 2. Canonical Nx Generators
 
@@ -44,8 +44,8 @@
 - [x] 2.4 Add or extend a package-contract generator or sync generator that creates `src/attune.package.ts`.
 - [x] 2.5 Add generators or sync generators for Reactivity keys, base atoms, derived atoms, package view atoms, and package atom graph registration.
 - [ ] 2.6 Generate Schema-coded internal package harness modules from package contracts, including optional RPC-backed harness groups, operation-specific harness entries, control operations, handler layers backed by `PackageTestLayer`, and operation registries.
-- [ ] 2.7 Generate worker-compatible property modules with hoisted properties and `propertyFor(new URL(import.meta.url))` for workerized targets.
-- [ ] 2.8 Add `framework-sync`, `framework-diagnostics`, `protocol-materialize`, language-service materialization hooks, and local cache/check generators or equivalent deterministic framework Nx actions.
+- [x] 2.7 Generate worker-compatible property modules with hoisted properties and `propertyFor(new URL(import.meta.url))` for workerized targets.
+- [x] 2.8 Add `framework-sync`, `framework-diagnostics`, `protocol-materialize`, language-service materialization hooks, and local cache/check generators or equivalent deterministic framework Nx actions.
 - [ ] 2.9 Update generator tests to assert canonical service shape, minimal/pure package contract output, package contract registration, typed builder output, compile-only type assertion module output, inferred law output, atom graph registration, optional Effect RPC harness shape, worker-compatible property shape, generated type-guidance output, protocol descriptor/materialization output, language-service diagnostic ownership, no checked-in report output, and deterministic output.
 
 ## 3. Nx Graph Integration
@@ -67,22 +67,22 @@
 
 ## 4. Atom/Reactivity Package Views
 
-- [ ] 4.1 Define the package-level atom graph model for public auditable operations, Reactivity keys, base atoms, derived atoms, package view atoms, and operation-to-view graph edges without requiring atoms for private helpers.
-- [ ] 4.2 Add conformance checks that reject active packages with service operations but no package atom/Reactivity view graph.
+- [x] 4.1 Define the package-level atom graph model for public auditable operations, Reactivity keys, base atoms, derived atoms, package view atoms, and operation-to-view graph edges without requiring atoms for private helpers.
+- [x] 4.2 Add conformance checks that reject active packages with service operations but no package atom/Reactivity view graph.
 - [ ] 4.3 Add architecture checks that reject durable writes, provider actions, external service calls, scheduler/resource lifecycle, EventLog appends, and hidden mutable state inside atoms.
-- [ ] 4.4 Add conformance checks that require operations mutating meaningful package facts to connect to Reactivity keys and base atoms.
-- [ ] 4.5 Add dead-invalidation detection for Reactivity keys with no subscribing base atoms.
-- [ ] 4.6 Add checks that derived atoms compose base atoms or other derived atoms instead of manually subscribing to Reactivity keys unless they directly read durable facts.
-- [ ] 4.7 Add tests for coherent operation-to-Reactivity-to-base-atom-to-derived-atom graph movement.
+- [x] 4.4 Add conformance checks that require operations mutating meaningful package facts to connect to Reactivity keys and base atoms.
+- [x] 4.5 Add dead-invalidation detection for Reactivity keys with no subscribing base atoms.
+- [x] 4.6 Add checks that derived atoms compose base atoms or other derived atoms instead of manually subscribing to Reactivity keys unless they directly read durable facts.
+- [x] 4.7 Add tests for coherent operation-to-Reactivity-to-base-atom-to-derived-atom graph movement.
 
 ## 5. Framework Materialization And Runtime Cache
 
 - [ ] 5.1 Move final semantic protocol truth into package source declarations, generated source required by build/typecheck, and gitignored framework runtime/cache rather than checked-in report/ledger artifacts.
 - [ ] 5.2 Materialize DI graph summaries, atom/Reactivity graph summaries, property evidence indexes, atom graph coverage facts, generated artifact hashes, and waiver state inside framework runtime/cache or language-service/Nx diagnostics.
 - [ ] 5.3 Treat Source BOM and generator-shape manifests as legacy migration scaffolding or temporary compatibility views, not final semantic workflow surfaces.
-- [ ] 5.4 Add checks that fail checked-in ProtocolDelta reports, obligation reports, evidence summaries, Markdown/JSON architecture summaries, Linear/GitHub summaries, cloud-agent report artifacts, and manually maintained report truth.
+- [x] 5.4 Add checks that fail checked-in ProtocolDelta reports, obligation reports, evidence summaries, Markdown/JSON architecture summaries, Linear/GitHub summaries, cloud-agent report artifacts, and manually maintained report truth.
 - [ ] 5.5 Add sync/check targets that fail stale generated source required by build/typecheck while allowing ephemeral debug/CI output under gitignored cache paths.
-- [ ] 5.6 Add language-service and Nx diagnostic projections for missing materialization, stale generated source, missing evidence, stale local cache, and import-boundary violations.
+- [x] 5.6 Add language-service and Nx diagnostic projections for missing materialization, stale generated source, missing evidence, stale local cache, and import-boundary violations.
 
 ## 6. Property Evidence Runtime
 
@@ -151,7 +151,7 @@
 
 - [x] 11.1 Migrate `joern-effect` to package contracts for Joern runtime, CPG program builder, generated traversal DSL, generated properties, template operations, template registry atoms, query evidence atoms, and generated schema coverage atoms.
 - [x] 11.2 Migrate `joern-effect-properties` to package contracts for property harness runtime, corpus store, mutator, scheduler, workspace pool, oracle, telemetry, counterexample store services, fuzz run atoms, and counterexample corpus atoms.
-- [ ] 11.3 Connect existing Joern property and fuzz targets to the shared property evidence and atom graph coverage summary shape.
+- [x] 11.3 Connect existing Joern property and fuzz targets to the shared property evidence and atom graph coverage summary shape.
 - [ ] 11.4 Replace Joern/proof CLI scripts, direct Nix/Arion/env command strings, Vitest spawning wrappers, and generation stubs with typed Nx executors and contract-visible options.
 
 ## 12. Platform Package Migration
@@ -165,13 +165,13 @@
 
 - [x] 13.1 Update root `AGENTS.md` with the diagnostics-first framework workflow: read language-service diagnostics and Nx check output, open the referenced `src/attune.package.ts`, use `@attune/nx`, implement inside generated `Effect.Service`, update Effect Schema metadata/laws, expose or update package atoms/Reactivity keys, run Nx conformance/property/coverage targets, and report validation results plus remaining diagnostics.
 - [x] 13.2 Update cloud and local environment docs so validation examples name only the minimal Nx-owned public surface: `workspace:policy-fast`, `workspace:policy-proof-pressure`, focused diagnostic targets such as `workspace:package-contracts-check`, project `typecheck`/`test`, and `@attune/nx` generators. Package-manager, Nix, shell, and wrapper commands may be documented only as executor implementation internals or initial workspace bootstrap where unavoidable.
-- [ ] 13.3 Update generator docs/templates to describe canonical Effect Schema package contracts, Effect Schema Arbitrary input generation, package atom/Reactivity view graphs, workerized property targets, and mandatory operation-kind classification.
-- [ ] 13.4 Update OpenSpec/agent implementation guidance to require package-contract, atom graph, and property-evidence considerations in future changes.
-- [ ] 13.5 Document the canonical package contract shape, typed builder API, compile-only assertion modules, inferred type helpers, exact handler/property maps, inferred law model, invariant ownership ladder, public auditable operation boundary, pure/minimal package layer allowance, compact law kernel, package-level atom view model, generic executor family, and package archetype migration flow.
-- [ ] 13.6 Document generated Schema-coded package harnesses, optional Effect RPC backend tradeoffs, type-guided fuzzing, `PackageTypeGuidance`, property evidence tiers, replay metadata, atom graph coverage, targeted reruns, worker/shard metadata, `@fast-check/worker` isolation levels, random-source tradeoffs, and V8/Istanbul coverage-guided search.
-- [ ] 13.7 Document Source BOM/generator-shape as legacy migration scaffolding or temporary compatibility views, the local waiver source model, and the final no-checked-in-report posture.
-- [ ] 13.8 Document FastCheck transform/filter rules: Schema-derived base arbitraries, type-guidance partitions, search transforms before filters, measured rejection rates, corpus replay, and generator-quality findings.
-- [ ] 13.9 Document Attune Framework, root `framework/` layout, Protocol Runtime, Protocol Store, Protocol Obligations, Protocol Evidence, internal ProtocolDelta, language-service diagnostics, quick info, code actions, code lenses, Nx output, import boundaries, no checked-in protocol reports, and the rule that agents repair diagnostics rather than raw internals.
+- [x] 13.3 Update generator docs/templates to describe canonical Effect Schema package contracts, Effect Schema Arbitrary input generation, package atom/Reactivity view graphs, workerized property targets, and mandatory operation-kind classification.
+- [x] 13.4 Update OpenSpec/agent implementation guidance to require package-contract, atom graph, and property-evidence considerations in future changes.
+- [x] 13.5 Document the canonical package contract shape, typed builder API, compile-only assertion modules, inferred type helpers, exact handler/property maps, inferred law model, invariant ownership ladder, public auditable operation boundary, pure/minimal package layer allowance, compact law kernel, package-level atom view model, generic executor family, and package archetype migration flow.
+- [x] 13.6 Document generated Schema-coded package harnesses, optional Effect RPC backend tradeoffs, type-guided fuzzing, `PackageTypeGuidance`, property evidence tiers, replay metadata, atom graph coverage, targeted reruns, worker/shard metadata, `@fast-check/worker` isolation levels, random-source tradeoffs, and V8/Istanbul coverage-guided search.
+- [x] 13.7 Document Source BOM/generator-shape as legacy migration scaffolding or temporary compatibility views, the local waiver source model, and the final no-checked-in-report posture.
+- [x] 13.8 Document FastCheck transform/filter rules: Schema-derived base arbitraries, type-guidance partitions, search transforms before filters, measured rejection rates, corpus replay, and generator-quality findings.
+- [x] 13.9 Document Attune Framework, root `framework/` layout, Protocol Runtime, Protocol Store, Protocol Obligations, Protocol Evidence, internal ProtocolDelta, language-service diagnostics, quick info, code actions, code lenses, Nx output, import boundaries, no checked-in protocol reports, and the rule that agents repair diagnostics rather than raw internals.
 
 ## 14. Validation And Ratchet
 
@@ -193,9 +193,9 @@
 - [x] 15.5 Run Phase 3 property/evidence agents for generated package harnesses, property runtime, worker execution, coverage search, negative property fixtures, and worker validation.
 - [x] 15.6 Run Phase 4 tooling package agents for `attune-nx`, `attune-architecture`, `effect-oxlint-policy`, and tooling policy validation.
 - [x] 15.7 Run Phase 5 product package agents for `attuned-discovery`, `cocoindex-effect`, `attune-foldkit`, `attune-pi-agent`, and product boundary validation.
-- [ ] 15.8 Run Phase 6 proof package agents for `joern-effect`, `joern-effect-properties`, and proof-pressure validation.
-- [ ] 15.9 Run Phase 7 platform/resource agents for `platform-alchemy-k8s`, `home-deployment`, and provider safety validation.
+- [x] 15.8 Run Phase 6 proof package agents for `joern-effect`, `joern-effect-properties`, and proof-pressure validation.
+- [x] 15.9 Run Phase 7 platform/resource agents for `platform-alchemy-k8s`, `home-deployment`, and provider safety validation.
 - [ ] 15.10 Run Phase 8 docs/ratchet agents for agent docs, generated ledger cleanup, final ratchet, and final policy validation.
 - [ ] 15.11 Require every agent handoff to include changed files, generated files, validation commands, package contract status, residual migration debt, blockers, and next-agent recommendations.
 - [ ] 15.12 Integrate each wave only after implementation and validation agents agree on exit criteria or record an explicit OpenSpec blocker.
-- [ ] 15.13 Run Phase 1A Attune Framework Foundation agents for framework layout, protocol DSL, private runtime, SQLite/Drizzle store, language-service view, framework Nx materialization, testing/evidence helpers, and independent validation.
+- [x] 15.13 Run Phase 1A Attune Framework Foundation agents for framework layout, protocol DSL, private runtime, SQLite/Drizzle store, language-service view, framework Nx materialization, testing/evidence helpers, and independent validation.

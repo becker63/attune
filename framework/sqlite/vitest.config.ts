@@ -13,9 +13,6 @@ export default defineConfig({
       "@attune/framework-protocol": fileURLToPath(
         new URL("../protocol/src/index.ts", import.meta.url),
       ),
-      "@attune/framework-runtime": fileURLToPath(
-        new URL("../runtime/src/index.ts", import.meta.url),
-      ),
       effect: require.resolve("effect"),
     },
   },

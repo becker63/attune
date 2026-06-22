@@ -159,6 +159,7 @@ export const DestructiveApprovalRecord = Schema.Struct({
   approvedBy: Schema.String,
   approvedAt: Schema.String,
   proofRef: Schema.String,
+  expiresAt: Schema.optional(Schema.String),
 })
 export type DestructiveApprovalRecord = typeof DestructiveApprovalRecord.Type
 
@@ -780,6 +781,7 @@ export const PackageFuzzHandlers = {
     approvedBy: "operator",
     approvedAt: "2026-01-01T00:00:00.000Z",
     proofRef: "gate:attune-cp-1:disk-wipe-confirmed:2026-01-01T00:00:00.000Z",
+    expiresAt: "2026-01-01T00:30:00.000Z",
   }),
   "command-intent-boundary": () => ({
     resourceId: "attune-cp-1:nixos-anywhere-install",

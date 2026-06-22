@@ -164,6 +164,34 @@ export const GeneratedSchemaCoverageOutput = Schema.Struct({
 })
 export type GeneratedSchemaCoverageOutput = typeof GeneratedSchemaCoverageOutput.Type
 
+export const JoernSharedEvidenceSummary = Schema.Struct({
+  evidenceKind: Schema.Literal(
+    "query-evidence",
+    "compiled-program-evidence",
+    "generated-schema-coverage",
+    "template-registry-evidence",
+  ),
+  operationId: Schema.String,
+  protocolEvidenceKinds: Schema.Array(Schema.String),
+  reactivityKeys: Schema.Array(Schema.String),
+  atomIds: Schema.Array(Schema.String),
+})
+export type JoernSharedEvidenceSummary = typeof JoernSharedEvidenceSummary.Type
+
+export const JoernTypedTargetIntent = Schema.Struct({
+  targetName: Schema.String,
+  intendedExecutor: Schema.Literal(
+    "attune:package-check",
+    "attune:generated",
+    "attune:toolchain",
+  ),
+  resourceTier: Schema.Literal("commit", "push", "proof-pressure", "nightly"),
+  commandSurfaceWaiverId: Schema.optional(Schema.String),
+  operationIds: Schema.Array(Schema.String),
+  typedOptions: Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+})
+export type JoernTypedTargetIntent = typeof JoernTypedTargetIntent.Type
+
 const runtimeKeys = [
   "joern-effect.runtime.query.changed",
   "joern-effect.query-evidence.changed",
@@ -255,6 +283,7 @@ export const joernRuntimeQueryOperation = defineOperation({
     service: "joern-effect/Joern",
     boundary: "http-json-query",
     typedQuery: "Query<A> schema decode",
+    evidenceShape: "JoernSharedEvidenceSummary",
   } as const,
 } as const)
 
@@ -273,6 +302,7 @@ export const cpgProgramBuilderOperation = defineOperation({
   metadata: {
     service: "joern-effect/CpgProgramBuilder",
     compiler: "CpgProgram.compile",
+    evidenceShape: "JoernSharedEvidenceSummary",
     outputKinds: [
       "RowsOutput",
       "FindingsOutput",
@@ -299,6 +329,8 @@ export const generatedTraversalDslOperation = defineOperation({
     name: "joern-effect:emit-generated",
     project: "joern-effect",
     output: "src/pure/generated",
+    intendedExecutor: "attune:generated",
+    typedOptionsSchema: "JoernTypedTargetIntent",
   } as const,
 } as const)
 
@@ -318,6 +350,7 @@ export const joernTemplateBoundaryOperation = defineOperation({
     registry: "TemplateRegistry.generated.ts",
     templateKinds: ["query-template", "proof-template", "evidence-template"],
     evidence: ["Finding", "GraphFact", "ProtocolDeviation"],
+    evidenceShape: "JoernSharedEvidenceSummary",
   } as const,
 } as const)
 
@@ -361,6 +394,106 @@ export const generatedSchemaCoverageOperation = defineOperation({
   } as const,
 } as const)
 
+export const PackageOperations = [
+  joernRuntimeQueryOperation,
+  cpgProgramBuilderOperation,
+  generatedTraversalDslOperation,
+  joernTemplateBoundaryOperation,
+  queryEvidenceViewOperation,
+  generatedSchemaCoverageOperation,
+] as const
+
+export type JoernEffectOperationId = (typeof PackageOperations)[number]["id"]
+
+export const PackageEvidenceShapes = {
+  "joern-runtime-query": {
+    evidenceKind: "query-evidence",
+    operationId: "joern-runtime-query",
+    protocolEvidenceKinds: ["property-run", "reactivity-key", "atom-movement"],
+    reactivityKeys: runtimeKeys,
+    atomIds: ["joernRuntimeAtom", "queryEvidenceAtom"],
+  },
+  "cpg-program-builder": {
+    evidenceKind: "compiled-program-evidence",
+    operationId: "cpg-program-builder",
+    protocolEvidenceKinds: ["property-run", "coverage-point", "atom-movement"],
+    reactivityKeys: builderKeys,
+    atomIds: ["cpgProgramBuilderAtom", "queryEvidenceAtom"],
+  },
+  "generated-traversal-dsl": {
+    evidenceKind: "generated-schema-coverage",
+    operationId: "generated-traversal-dsl",
+    protocolEvidenceKinds: ["property-run", "coverage-point", "atom-movement"],
+    reactivityKeys: generatedKeys,
+    atomIds: ["traversalDslAtom", "generatedSchemaCoverageAtom"],
+  },
+  "joern-template-boundary": {
+    evidenceKind: "template-registry-evidence",
+    operationId: "joern-template-boundary",
+    protocolEvidenceKinds: ["property-run", "law-observed", "atom-movement"],
+    reactivityKeys: templateKeys,
+    atomIds: ["templateRegistryAtom", "queryEvidenceAtom"],
+  },
+  "query-evidence-view": {
+    evidenceKind: "query-evidence",
+    operationId: "query-evidence-view",
+    protocolEvidenceKinds: ["atom-movement", "reactivity-key"],
+    reactivityKeys: ["joern-effect.query-evidence.changed"],
+    atomIds: ["queryEvidenceAtom", "joernRuntimeAtom", "cpgProgramBuilderAtom"],
+  },
+  "generated-schema-coverage": {
+    evidenceKind: "generated-schema-coverage",
+    operationId: "generated-schema-coverage",
+    protocolEvidenceKinds: ["atom-movement", "coverage-point"],
+    reactivityKeys: ["joern-effect.generated-schema-coverage.changed"],
+    atomIds: ["generatedSchemaCoverageAtom", "traversalDslAtom"],
+  },
+} as const satisfies { readonly [Id in JoernEffectOperationId]: JoernSharedEvidenceSummary }
+export type PackageEvidenceShapes = typeof PackageEvidenceShapes
+
+export const PackageTargetIntents = [
+  {
+    targetName: "test",
+    intendedExecutor: "attune:package-check",
+    resourceTier: "commit",
+    commandSurfaceWaiverId: "joern-effect/typed-executor-migration",
+    operationIds: [
+      "joern-runtime-query",
+      "cpg-program-builder",
+      "query-evidence-view",
+      "generated-schema-coverage",
+    ],
+    typedOptions: {
+      checkKind: "vitest",
+      evidenceOutput: ".attune/cache/joern-effect/test-evidence.jsonl",
+    },
+  },
+  {
+    targetName: "emit-generated",
+    intendedExecutor: "attune:generated",
+    resourceTier: "push",
+    commandSurfaceWaiverId: "joern-effect/typed-executor-migration",
+    operationIds: ["generated-traversal-dsl"],
+    typedOptions: {
+      generatedRoot: "packages/joern-effect/src/pure/generated",
+      schemaInput: "packages/joern-effect/schema/joern-cpg-schema.1.7.70.json",
+    },
+  },
+  {
+    targetName: "extract-cpg-schema",
+    intendedExecutor: "attune:toolchain",
+    resourceTier: "proof-pressure",
+    commandSurfaceWaiverId: "joern-effect/typed-executor-migration",
+    operationIds: ["generated-traversal-dsl", "joern-template-boundary"],
+    typedOptions: {
+      toolchain: "joern",
+      envOptions: ["JOERN_HOME", "JOERN_CPG_VERSION"],
+      outputRoot: "packages/joern-effect/schema",
+    },
+  },
+] as const satisfies readonly JoernTypedTargetIntent[]
+export type PackageTargetIntents = typeof PackageTargetIntents
+
 export const PackageContract = definePackageContract({
   packageId: "joern-effect",
   sourceRoot: "packages/joern-effect/src",
@@ -373,18 +506,13 @@ export const PackageContract = definePackageContract({
     "joern.http-transport",
     "joern.cpg-schema-source",
   ] as const,
-  operations: [
-    joernRuntimeQueryOperation,
-    cpgProgramBuilderOperation,
-    generatedTraversalDslOperation,
-    joernTemplateBoundaryOperation,
-    queryEvidenceViewOperation,
-    generatedSchemaCoverageOperation,
-  ] as const,
+  operations: PackageOperations,
   provenance: {
     generator: "@attune/nx:package-contract",
     customizedFor: "joern-effect runtime and generated CPG DSL",
     openspecChangeId: "standardize-effect-package-contracts",
+    evidenceShapes: "PackageEvidenceShapes",
+    targetIntents: "PackageTargetIntents",
   } as const,
   waivers: [
     {
@@ -410,6 +538,14 @@ export const PackageContract = definePackageContract({
       reason:
         "Template registry and evidence targets are declared as package boundaries before generated template registry source is materialized in this package.",
       review: "standardize-effect-package-contracts task 11.1",
+    },
+    {
+      id: "joern-effect/typed-executor-migration",
+      category: "temporary-migration-adapter",
+      owner: "proof-package-evidence-integration-agent",
+      reason:
+        "Project targets and package scripts still use codex pnpm wrappers, Joern env variables, and shell redirection until attune:generated/toolchain executors land; PackageTargetIntents declares the typed options expected by the replacement.",
+      review: "standardize-effect-package-contracts task 11.4",
     },
   ] as const,
 } as const)
@@ -446,9 +582,6 @@ export const PackageTestLayer = {
   },
 } as const
 export type PackageTestLayer = typeof PackageTestLayer
-
-export type JoernEffectOperationId =
-  (typeof PackageContract.operations)[number]["id"]
 
 export const PackageFuzzHandlers = {
   "joern-runtime-query": () => ({

@@ -1,9 +1,11 @@
 import type {
   PackageContract,
+  PackageEvidenceShapes,
   PackageFuzzHandlers,
   PackageLayer,
   PackageProperties,
   PackageTestLayer,
+  PackageTargetIntents,
   PackageTypeGuidance,
 } from "./attune.package.js"
 
@@ -55,6 +57,15 @@ type GuidanceOperationIds<Guidance> =
     ? Extract<keyof Operations, string>
     : never
 
+type EvidenceShapeOperationIds<EvidenceShapes> = Extract<keyof EvidenceShapes, string>
+
+type TargetIntentOperationIds<TargetIntents> =
+  TargetIntents extends readonly (infer TargetIntent)[]
+    ? TargetIntent extends { readonly operationIds: readonly (infer Id extends string)[] }
+      ? Id
+      : never
+    : never
+
 type _PackageContract = AssertTrue<
   PackageContract extends {
     readonly packageId: "joern-effect"
@@ -84,6 +95,14 @@ type _PackageTestLayer = AssertTrue<
 >
 type _PackageTypeGuidance = AssertTrue<
   ExactKeys<OperationIds<PackageContract>, GuidanceOperationIds<PackageTypeGuidance>>
+>
+type _PackageEvidenceShapes = AssertTrue<
+  ExactKeys<OperationIds<PackageContract>, EvidenceShapeOperationIds<PackageEvidenceShapes>>
+>
+type _PackageTargetIntentsReferenceKnownOperations = AssertTrue<
+  [Exclude<TargetIntentOperationIds<PackageTargetIntents>, OperationIds<PackageContract>>] extends [never]
+    ? true
+    : false
 >
 
 export {}

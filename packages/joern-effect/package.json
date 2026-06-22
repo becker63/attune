@@ -18,15 +18,6 @@
     "README.md",
     "schema"
   ],
-  "scripts": {
-    "build": "tsup",
-    "test": "vitest run && tsd --typings dist/index.d.ts --files test/type-inference.test-d.ts",
-    "typecheck": "tsc --noEmit",
-    "generate": "tsx scripts/generate.ts",
-    "render-readme": "tsx scripts/renderReadme.ts",
-    "enrich-schema-docs": "node scripts/enrichSchemaDocs.mjs",
-    "extract-schema:joern": "javac -proc:none -cp \"${JOERN_HOME}/lib/*\" scripts/ExtractCpgSchema.java && java -cp \"scripts:${JOERN_HOME}/lib/*\" ExtractCpgSchema ${JOERN_CPG_VERSION:-unknown}"
-  },
   "dependencies": {
     "@attune/framework-protocol": "workspace:*",
     "effect": "^3.16.12",
