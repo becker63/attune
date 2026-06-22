@@ -4,7 +4,7 @@
     {
       "id": "attune-architecture.policy-rule",
       "project": "attune-architecture",
-      "projectRoot": "packages/attune-architecture-lint",
+      "projectRoot": "packages/attune-architecture",
       "kind": "architecture-policy-rule",
       "generator": "@attune/nx:architecture-policy-rule",
       "status": "migrate",
@@ -14,7 +14,7 @@
     {
       "id": "attune-architecture.shape-conformance-policy",
       "project": "attune-architecture",
-      "projectRoot": "packages/attune-architecture-lint",
+      "projectRoot": "packages/attune-architecture",
       "kind": "generator-shape-conformance",
       "generator": "@attune/nx:shape-conformance-policy",
       "status": "manual",
@@ -24,7 +24,7 @@
     {
       "id": "attune-architecture.package-contract",
       "project": "attune-architecture",
-      "projectRoot": "packages/attune-architecture-lint",
+      "projectRoot": "packages/attune-architecture",
       "kind": "package-contract",
       "generator": "@attune/nx:package-contract",
       "status": "generated",
@@ -33,7 +33,7 @@
         "Architecture policy operations, package views, law inference, waivers, and compile-only assertions are generated and checked together."
       ],
       "notes": "Phase 4 architecture migration generated the package contract files; final package path rename remains open.",
-      "sourceBomShard": "packages/attune-architecture-lint/attune.source-bom.json"
+      "sourceBomShard": "packages/attune-architecture/attune.source-bom.json"
     },
     {
       "id": "attune-foldkit.scene-atom",

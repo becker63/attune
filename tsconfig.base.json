@@ -23,7 +23,7 @@
       "@attune/framework-testing": ["./framework/testing/src/index.ts"],
       "@attune/foldkit-ui": ["./packages/attune-foldkit/src/index.ts"],
       "@attune/home-deployment": ["./packages/home-deployment/src/index.ts"],
-      "@attune/architecture": ["./packages/attune-architecture-lint/src/index.ts"],
+      "@attune/architecture": ["./packages/attune-architecture/src/index.ts"],
       "@attune/platform-alchemy-k8s": ["./packages/platform-alchemy-k8s/src/index.ts"],
       "@attune/pi-agent": ["./packages/attune-pi-agent/src/index.ts"],
       "joern-effect": ["./packages/joern-effect/src/index.ts"],

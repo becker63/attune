@@ -11,6 +11,7 @@ import {
   frameworkDiagnosticsAction,
   hashGeneratedArtifactContent,
   operationRegistryAction,
+  packageHarnessAction,
   propertyEvidenceAction,
   protocolMaterializeAction,
   typeGuidanceAction,
@@ -55,6 +56,9 @@ describe("@attune/framework-nx", () => {
     expect(operationRegistryAction("demo", "packages/demo/src/attune.package.ts", "op").generatorOrTarget).toBe(
       "@attune/framework-nx:operation-registry",
     )
+    expect(packageHarnessAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
+      "@attune/framework-nx:package-harness",
+    )
     expect(propertyEvidenceAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
       "@attune/framework-nx:protocol-evidence",
     )
@@ -66,6 +70,19 @@ describe("@attune/framework-nx", () => {
       generatorOrTarget: "workspace:package-contracts-check",
       validationTarget: "workspace:package-contracts-check",
     })
+  })
+
+  it("generates Schema-coded package harness content", () => {
+    const artifact = createGeneratedArtifact(descriptor, "package-harness")
+
+    expect(artifact.path).toBe("packages/demo/src/generated/attune-package-harness.ts")
+    expect(artifact.generatorId).toBe("@attune/framework-nx:package-harness")
+    expect(artifact.content).toContain("createPackageHarnessClient")
+    expect(artifact.content).toContain("definePackageHarnessHandlers")
+    expect(artifact.content).toContain("publicAccessorHandler(\"project\")")
+    expect(artifact.content).toContain("PackageHarnessEvidenceProducers")
+    expect(artifact.content).toContain('"rpcId": "demo.operation.project"')
+    expect(artifact.content).toContain('"status": "optional"')
   })
 
   it("generates operation registry content without source-local runtime imports", () => {
@@ -134,18 +151,21 @@ describe("@attune/framework-nx", () => {
     expect(plan.actions.map((action) => action.actionId)).toEqual([
       "attune.protocol.materialize",
       "attune.protocol.framework-diagnostics",
+      "attune.protocol.package-harness",
       "attune.protocol.operation-registry",
       "attune.protocol.property-evidence",
       "attune.protocol.atom-view-edge",
       "attune.protocol.type-guidance",
     ])
     expect(plan.generatedArtifacts.map((artifact) => artifact.kind satisfies FrameworkNxGeneratedArtifactKind)).toEqual([
+      "package-harness",
       "operation-registry",
       "property-evidence",
       "atom-view-edges",
       "type-guidance",
     ])
     expect(plan.generatedArtifactRecords.map((record) => record.status)).toEqual([
+      "missing",
       "current",
       "missing",
       "missing",

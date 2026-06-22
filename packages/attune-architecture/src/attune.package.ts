@@ -353,7 +353,7 @@ export const WorkspacePolicySummaryOperation = defineOperation({
 
 export const PackageContract = definePackageContract({
   packageId: "attune-architecture",
-  sourceRoot: "packages/attune-architecture-lint/src",
+  sourceRoot: "packages/attune-architecture/src",
   packageKind: "architecture-policy",
   views: PackageViews,
   services: [] as const,
@@ -371,7 +371,7 @@ export const PackageContract = definePackageContract({
   provenance: {
     generator: "@attune/nx:package-contract",
     project: "attune-architecture",
-    physicalProjectRoot: "packages/attune-architecture-lint",
+    physicalProjectRoot: "packages/attune-architecture",
     openspecChangeId: "standardize-effect-package-contracts",
   } as const,
   waivers: [] as const,

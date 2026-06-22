@@ -1,5 +1,12 @@
 export type OperationId = string
 
+export type OperationTuple = readonly {
+  readonly id: string
+}[]
+
+export type OperationTupleIds<Operations extends OperationTuple> =
+  Operations[number]["id"]
+
 export type OperationMapEntry = (...args: readonly never[]) => unknown
 
 export type OperationRegistry<Handlers extends Readonly<Record<string, unknown>>> = Readonly<{
@@ -61,6 +68,11 @@ const compareText = (left: string, right: string): number =>
 const sortedUnique = (values: Iterable<string>): readonly string[] =>
   [...new Set(values)].sort(compareText)
 
+export const operationIdsFromTuple = <const Operations extends OperationTuple>(
+  operations: Operations,
+): readonly OperationTupleIds<Operations>[] =>
+  sortedUnique(operations.map((operation) => operation.id)) as readonly OperationTupleIds<Operations>[]
+
 export const exactOperationMapCoverage = (
   expectedOperationIds: readonly string[],
   operationMap: Readonly<Record<string, unknown>>,
@@ -109,6 +121,26 @@ export const assertExactOperationMapCoverage = (
     throw new OperationMapCoverageError(packageId, mapKind, coverage)
   }
   return coverage
+}
+
+export const defineExactOperationMap = <
+  const OperationIds extends readonly string[],
+  const OperationMap extends Readonly<Record<OperationIds[number], unknown>>,
+>(
+  input: Readonly<{
+    readonly packageId: string
+    readonly mapKind: string
+    readonly operationIds: OperationIds
+    readonly map: OperationMap
+  }>,
+): OperationMap => {
+  assertExactOperationMapCoverage(
+    input.packageId,
+    input.mapKind,
+    input.operationIds,
+    input.map,
+  )
+  return input.map
 }
 
 export const defineOperationRegistry = <

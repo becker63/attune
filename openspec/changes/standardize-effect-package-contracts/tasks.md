@@ -6,7 +6,7 @@
 - [ ] 1.4 Classify package-contract invariants by enforcement boundary: TypeScript contract builders for type-expressible local invariants, Effect Schema for runtime/encoded boundary values, Nx/generated sync for repo/file/freshness/command-surface facts, FastCheck/provider observation for behavioral facts, and `attune-architecture` only for residual repo-wide policy.
 - [ ] 1.5 Define waiver categories and validation rules for lower-level `Context.Tag`, hidden configuration reads, unauditable operations, atom write violations, invalid explicit law claims, invalid view references, and legacy boundaries.
 - [ ] 1.6 Add contract decoding and validation helpers to the architecture policy package while avoiding duplicate checks for invariants already rejected by typed helpers or Schema decoders.
-- [ ] 1.7 Rename `attune-architecture-lint` to final package identity `attune-architecture`, including package id, project id, path, bin/docs references, generated ledger owner, and public API surfaces where applicable.
+- [x] 1.7 Rename `attune-architecture-lint` to final package identity `attune-architecture`, including package id, project id, path, bin/docs references, generated ledger owner, and public API surfaces where applicable.
 - [ ] 1.8 Add fixture contracts that cover canonical services, waived `Context.Tag` services, pure packages with empty/minimal layers, private helpers excluded from operation metadata, duplicate operation ids, invalid law ids, invalid view references, missing kind-specific metadata, missing layers, missing schemas, missing atom view graphs, hidden configuration dependency failures, and the expected boundary that rejects each case.
 - [ ] 1.9 Add waiver diagnostics/Nx output sourced from local `src/attune.package.ts` waivers, without checked-in waiver summary reports as source truth.
 - [ ] 1.10 Add final-ratchet checks that reject migration-only aliases, duplicate public command surfaces, expired temporary waivers, stale generated files, checked-in protocol reports, and manually maintained derived ledger/report truth.
@@ -32,7 +32,7 @@
 - [x] 1B.3 Add symbol/object-reference authoring helpers for operations, services, schemas, Reactivity keys, atoms/views, laws, waivers, generators, providers, and generated artifact owners.
 - [x] 1B.4 Derive stable protocol IDs, explicit ID override behavior, descriptor identity, source ranges, artifact ownership, and repair-action metadata from static source declarations.
 - [x] 1B.5 Derive operation-to-view edges by traversing declared Reactivity key -> base atom -> derived atom -> package view atom dataflow.
-- [ ] 1B.6 Generate exact operation registries, handler maps, property maps, evidence producer maps, type-guidance partitions, and optional RPC descriptors from the operation tuple.
+- [x] 1B.6 Generate exact operation registries, handler maps, property maps, evidence producer maps, type-guidance partitions, and optional RPC descriptors from the operation tuple.
 - [x] 1B.7 Add string-reference ratchet diagnostics for avoidable raw string cross-references while preserving serialized IDs for cache, replay, diagnostics, external boundaries, and generated artifacts.
 - [x] 1B.8 Add derived ID roundtrip validation for symbol -> descriptor -> serialized ID -> cache/evidence/diagnostic flows.
 
@@ -43,17 +43,17 @@
 - [x] 2.3 Add generated `PackageLayer` and `PackageTestLayer` registration to service scaffolds.
 - [x] 2.4 Add or extend a package-contract generator or sync generator that creates `src/attune.package.ts`.
 - [x] 2.5 Add generators or sync generators for Reactivity keys, base atoms, derived atoms, package view atoms, and package atom graph registration.
-- [ ] 2.6 Generate Schema-coded internal package harness modules from package contracts, including optional RPC-backed harness groups, operation-specific harness entries, control operations, handler layers backed by `PackageTestLayer`, and operation registries.
+- [x] 2.6 Generate Schema-coded internal package harness modules from package contracts, including optional RPC-backed harness groups, operation-specific harness entries, control operations, handler layers backed by `PackageTestLayer`, and operation registries.
 - [x] 2.7 Generate worker-compatible property modules with hoisted properties and `propertyFor(new URL(import.meta.url))` for workerized targets.
 - [x] 2.8 Add `framework-sync`, `framework-diagnostics`, `protocol-materialize`, language-service materialization hooks, and local cache/check generators or equivalent deterministic framework Nx actions.
 - [ ] 2.9 Update generator tests to assert canonical service shape, minimal/pure package contract output, package contract registration, typed builder output, compile-only type assertion module output, inferred law output, atom graph registration, optional Effect RPC harness shape, worker-compatible property shape, generated type-guidance output, protocol descriptor/materialization output, language-service diagnostic ownership, no checked-in report output, and deterministic output.
 
 ## 3. Nx Graph Integration
 
-- [ ] 3.1 Add contract discovery for `src/attune.package.ts` across active Nx projects.
-- [ ] 3.2 Derive package-level DI dependency summaries from package contracts and Effect layer requirements.
-- [ ] 3.3 Derive package-level atom/Reactivity graph summaries from package contracts and source discovery.
-- [ ] 3.4 Add Nx graph metadata or project graph plugin output for contract-derived package dependencies and package view graph facts.
+- [x] 3.1 Add contract discovery for `src/attune.package.ts` across active Nx projects.
+- [x] 3.2 Derive package-level DI dependency summaries from package contracts and Effect layer requirements.
+- [x] 3.3 Derive package-level atom/Reactivity graph summaries from package contracts and source discovery.
+- [x] 3.4 Add Nx graph metadata or project graph plugin output for contract-derived package dependencies and package view graph facts.
 - [ ] 3.5 Add inferred or verified targets for `sync-package-contract`, `protocol-materialize`, `framework-diagnostics`, `service-conformance`, `property`, `coverage-conformance`, `atom-graph-conformance`, and `check-generated`.
 - [ ] 3.6 Add affected-run coverage so schema, service, package-contract, Reactivity key, and atom graph changes trigger dependent property and conformance targets.
 - [ ] 3.7 Add workerized property shard targets for package, operation, seed range, coverage corpus, worker count, timeout, isolation level, and resource tier.
@@ -91,9 +91,9 @@
 - [x] 6.3 Add Effect Schema arbitrary derivation with `Arbitrary.make` for operation inputs and generated output/error schema validation.
 - [x] 6.4 Add coverage-search transform support over Schema-derived arbitraries, including transform ids, target partitions, weighted corpus replay, and deterministic replay metadata.
 - [x] 6.5 Add measured filter support that records filter id, reason, rejection count, acceptance rate, and generator-quality findings for high-rejection filters.
-- [ ] 6.6 Add a generated package harness runtime so generated property and fuzz runners invoke public package operations through Schema-backed harness protocols instead of private package functions or custom invocation envelopes. Runtime `@effect/rpc` is optional until Effect 4 compatibility is resolved.
+- [x] 6.6 Add a generated package harness runtime so generated property and fuzz runners invoke public package operations through Schema-backed harness protocols instead of private package functions or custom invocation envelopes. Runtime `@effect/rpc` is optional until Effect 4 compatibility is resolved.
 - [x] 6.7 Add workerized property execution using `@fast-check/worker` `propertyFor` and worker-aware `assert`.
-- [ ] 6.8 Run generated audits through generated Schema-coded harness clients whose handlers call public service accessors and `PackageTestLayer`; use Effect RPC only as an optional backend once compatible.
+- [x] 6.8 Run generated audits through generated Schema-coded harness clients whose handlers call public service accessors and `PackageTestLayer`; use Effect RPC only as an optional backend once compatible.
 - [ ] 6.9 Observe Reactivity keys, base atom refreshes, derived atom recomputations, package view atom diffs, and view transitions through generated Schema-backed harness control operations during property runs.
 - [ ] 6.10 Emit structured protocol evidence through the private framework runtime/store for package id, service id, operation id, optional RPC id, inferred law ids, seed, run count, Reactivity keys hit, atoms refreshed, view atoms changed, laws checked, missing graph coverage, transform/filter metadata, worker id, shard id, isolation level, random source, timeout settings, and counterexample references.
 - [ ] 6.11 Persist replay metadata for failures in local framework runtime/cache and surface it through language-service/Nx diagnostics or optional ephemeral debug/CI output, including seed, shrink path, generated value summary, Schema-coded harness payload/exit summary, transform/filter metadata, worker metadata, and Attune failure context.
@@ -105,9 +105,9 @@
 
 ## 7. Law Packs And Graph Coverage
 
-- [ ] 7.1 Implement the compact shared law kernel for schema validation, determinism/idempotence, side-effect boundaries, and view movement, then map `query`, `command`, `codec`, `projection`, `event-facade`, `atom-family`, `resource-provider`, `generator`, `policy-rule`, and `joern-template` operations onto that kernel with package-specific extension hooks.
-- [ ] 7.2 Implement metadata-driven law inference from operation kind, input/output/error schemas, Schema annotations, touched views, resource observation metadata, destructive proof/approval metadata, projection event/state metadata, generator option/tree/output/provenance metadata, policy finding metadata, and Joern/template metadata.
-- [ ] 7.3 Add package-specific law-pack extension hooks to package contracts.
+- [x] 7.1 Implement the compact shared law kernel for schema validation, determinism/idempotence, side-effect boundaries, and view movement, then map `query`, `command`, `codec`, `projection`, `event-facade`, `atom-family`, `resource-provider`, `generator`, `policy-rule`, and `joern-template` operations onto that kernel with package-specific extension hooks.
+- [x] 7.2 Implement metadata-driven law inference from operation kind, input/output/error schemas, Schema annotations, touched views, resource observation metadata, destructive proof/approval metadata, projection event/state metadata, generator option/tree/output/provenance metadata, policy finding metadata, and Joern/template metadata.
+- [x] 7.3 Add package-specific law-pack extension hooks to package contracts.
 - [ ] 7.4 Add atom/Reactivity graph coverage recording to generated property audits.
 - [ ] 7.5 Add coverage conformance checks for missing required Reactivity keys, atom refreshes, package view atom changes, schema variants, type-guidance partitions, transitions, and expected error paths.
 - [ ] 7.6 Add targeted rerun support that biases arbitraries toward missing atom/Reactivity graph movement and missing type-guidance partitions while preserving deterministic replay metadata.
@@ -121,7 +121,7 @@
 
 ## 8. Policy Wiring
 
-- [ ] 8.1 Add `workspace:package-contracts-check`.
+- [x] 8.1 Add `workspace:package-contracts-check`.
 - [ ] 8.2 Add `workspace:atom-graph-conformance`.
 - [ ] 8.3 Add `workspace:property-evidence`.
 - [ ] 8.4 Add `workspace:coverage-conformance`.

@@ -4,8 +4,8 @@
   "shards": [
     {
       "project": "attune-architecture",
-      "projectRoot": "packages/attune-architecture-lint",
-      "shard": "packages/attune-architecture-lint/attune.source-bom.json"
+      "projectRoot": "packages/attune-architecture",
+      "shard": "packages/attune-architecture/attune.source-bom.json"
     },
     {
       "project": "attune-foldkit",

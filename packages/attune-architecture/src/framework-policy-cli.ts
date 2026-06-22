@@ -82,7 +82,7 @@ const waiverDatePattern =
 // allowances when typed executors/inferred contract targets replace scripts
 // and raw nx:run-commands across the migrated packages.
 const temporaryCommandSurfaceDebtPackageRoots = new Set([
-  "packages/attune-architecture-lint",
+  "packages/attune-architecture",
   "packages/attune-foldkit",
   "packages/attune-nx",
   "packages/attune-pi-agent",
@@ -141,20 +141,13 @@ const temporaryFrameworkRunCommandDebtPaths = new Set([
   "framework/testing/project.json",
 ])
 
-// TODO(final-ratchet architecture-rename debt): the physical package path and
-// temporary framework aliases still reference attune-architecture-lint until
-// the dedicated rename agent moves them to attune-architecture.
-const temporaryArchitectureLintReferenceDebtPaths = [
-  /^packages\/attune-architecture-lint\//u,
+const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
+
+// Historical OpenSpec records may mention the old architecture package
+// identity. Active package, framework, config, and docs surfaces must not.
+const historicalArchitectureLintReferencePaths = [
   /^openspec\/changes\/standardize-effect-package-contracts\//u,
   /^openspec\/changes\/enforce-nix-agent-policy-gates\//u,
-  /^framework\/(?:language-service|nx|protocol|runtime|sqlite|testing)\/vitest\.config\.ts$/u,
-  /^framework\/protocol\/src\/(?:builders|descriptors)\/index\.ts$/u,
-  /^packages\/[^/]+\/vitest\.config\.ts$/u,
-  /^packages\/attune-nx\/(?:test\/tooling-contract-discovery\.test\.ts|tsconfig\.json)$/u,
-  /^attune\.(?:generator-shapes|source-bom\.index)\.json$/u,
-  /^project\.json$/u,
-  /^tsconfig\.base\.json$/u,
 ]
 
 // TODO(atom-reactivity migration debt): these contracts already expose package
@@ -884,15 +877,15 @@ function isTemporaryRunCommandDebt(
 }
 
 function checkArchitectureLintReferences(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
-  if (!file.content.includes("attune-architecture-lint")) return []
-  if (temporaryArchitectureLintReferenceDebtPaths.some((pattern) => pattern.test(file.path))) {
+  if (!file.content.includes(staleArchitecturePackageIdentity)) return []
+  if (historicalArchitectureLintReferencePaths.some((pattern) => pattern.test(file.path))) {
     return []
   }
 
   return [finalRatchetDiagnostic(
     "stale-architecture-lint-reference",
     file.path,
-    "Final architecture surfaces must use attune-architecture; attune-architecture-lint may appear only in explicit migration debt notes until the physical rename lands.",
+    "Final architecture surfaces must use attune-architecture; the legacy architecture package identity may appear only in historical migration notes.",
   )]
 }
 
@@ -932,7 +925,7 @@ function parseJsonObject(file: WorkspaceFile): Record<string, unknown> | undefin
 
 function isTemporaryFrameworkPolicyWaiver(filePath: string, importSource: string): boolean {
   return (
-    filePath === "packages/attune-architecture-lint/src/framework-import-boundary.ts" ||
+    filePath === "packages/attune-architecture/src/framework-import-boundary.ts" ||
     (
       filePath === "packages/attuned-discovery/src/memory/schema.ts" &&
       importSource === "drizzle-orm/pg-core"

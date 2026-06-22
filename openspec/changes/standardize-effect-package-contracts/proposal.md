@@ -82,8 +82,8 @@ watch the diagnostic disappear.
 - Downgrade MCP to a future optional adapter over framework diagnostic/query
   services, not a core package, task, exit criterion, or implementation wave.
 - Finalize the broad architecture package identity as `attune-architecture`.
-  Treat `attune-architecture-lint` only as the current pre-rename package
-  identity during migration.
+  Treat the old architecture-lint identity only as historical migration
+  context.
 - Extend Nx integration so package contracts create inferred targets for
   service conformance, property audits, coverage conformance, and generated
   ledger synchronization.

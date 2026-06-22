@@ -1,8 +1,13 @@
 import type {
   AttuneProtocolEvidenceEvent,
-  ProtocolEvidenceKind,
 } from "@attune/framework-protocol"
+import {
+  AttuneProtocolEvidenceEventSchema,
+  type ProtocolEvidenceKind,
+} from "@attune/framework-protocol"
+import { Schema } from "effect"
 
+import { defineExactOperationMap } from "./operation-registry.js"
 import type { PropertyTier, ReplayMetadata } from "./replay-metadata.js"
 
 export type EvidenceProducerContext = Readonly<{
@@ -27,6 +32,9 @@ export type EvidenceProducer = Readonly<{
   readonly operationId?: string
   readonly produce: (context: EvidenceProducerContext) => readonly AttuneProtocolEvidenceEvent[]
 }>
+
+export type EvidenceProducerMap<OperationId extends string = string> =
+  Readonly<Record<OperationId, EvidenceProducer>>
 
 export const evidenceEventId = (
   context: EvidenceProducerContext,
@@ -55,7 +63,7 @@ export const evidenceEvent = (
       ...(operationIdOrInput === undefined ? {} : { operationId: operationIdOrInput }),
     }
 
-  return {
+  return Schema.decodeUnknownSync(AttuneProtocolEvidenceEventSchema)({
     eventId: evidenceEventId(context, input),
     runId: context.runId,
     protocolId: context.protocolId,
@@ -64,7 +72,7 @@ export const evidenceEvent = (
     kind: input.kind,
     observedAt: context.observedAt,
     ...(input.payload === undefined ? {} : { payload: input.payload }),
-  }
+  }) as AttuneProtocolEvidenceEvent
 }
 
 export const defineEvidenceProducer = (
@@ -76,6 +84,29 @@ export const collectEvidence = (
   producers: readonly EvidenceProducer[],
 ): readonly AttuneProtocolEvidenceEvent[] =>
   producers.flatMap((producer) => producer.produce(context))
+
+export const defineEvidenceProducerMap = <
+  const OperationIds extends readonly string[],
+  const Producers extends EvidenceProducerMap<OperationIds[number]>,
+>(
+  input: Readonly<{
+    readonly packageId: string
+    readonly operationIds: OperationIds
+    readonly producers: Producers
+  }>,
+): Producers =>
+  defineExactOperationMap({
+    packageId: input.packageId,
+    mapKind: "evidence-producer-map",
+    operationIds: input.operationIds,
+    map: input.producers,
+  })
+
+export const collectEvidenceFromMap = (
+  context: EvidenceProducerContext,
+  producers: EvidenceProducerMap,
+): readonly AttuneProtocolEvidenceEvent[] =>
+  collectEvidence(context, Object.values(producers))
 
 export const propertyRunEvidence = (
   context: EvidenceProducerContext,

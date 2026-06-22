@@ -26,7 +26,7 @@
     "shape-conformance": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm exec tsx packages/attune-architecture-lint/src/shape-conformance-cli.ts"
+        "command": "pnpm exec tsx packages/attune-architecture/src/shape-conformance-cli.ts"
       },
       "metadata": {
         "description": "Effect Schema-backed generator shape inventory and Source BOM conformance check."
@@ -49,7 +49,7 @@
     "framework-policy-check": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm exec tsx packages/attune-architecture-lint/src/framework-policy-cli.ts"
+        "command": "pnpm exec tsx packages/attune-architecture/src/framework-policy-cli.ts"
       },
       "metadata": {
         "description": "Focused framework import-boundary and no checked-in protocol report policy check."

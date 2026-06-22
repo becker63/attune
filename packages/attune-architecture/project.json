@@ -1,34 +1,34 @@
 {
   "name": "attune-architecture",
-  "root": "packages/attune-architecture-lint",
-  "sourceRoot": "packages/attune-architecture-lint/src",
+  "root": "packages/attune-architecture",
+  "sourceRoot": "packages/attune-architecture/src",
   "targets": {
     "build": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/dist"],
       "options": {
-        "cwd": "packages/attune-architecture-lint",
+        "cwd": "packages/attune-architecture",
         "command": "pnpm exec tsc -p tsconfig.build.json"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "packages/attune-architecture-lint",
+        "cwd": "packages/attune-architecture",
         "command": "pnpm exec tsc --noEmit"
       }
     },
     "typecheck:classic": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "packages/attune-architecture-lint",
+        "cwd": "packages/attune-architecture",
         "command": "pnpm exec tsc --noEmit"
       }
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "cwd": "packages/attune-architecture-lint",
+        "cwd": "packages/attune-architecture",
         "command": "pnpm exec vitest run"
       }
     }

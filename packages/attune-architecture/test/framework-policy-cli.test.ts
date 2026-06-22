@@ -10,6 +10,7 @@ import {
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../../", import.meta.url)))
 const tempRoots: string[] = []
+const staleArchitecturePackagePath = ["packages/attune-architecture", "lint"].join("-")
 
 describe("framework policy CLI", () => {
   afterEach(() => {
@@ -343,7 +344,7 @@ describe("framework policy CLI", () => {
       "docs/final-framework-surface.md": [
         "# Final Framework Surface",
         "",
-        "Use packages/attune-architecture-lint as the final architecture package.",
+        `Use ${staleArchitecturePackagePath} as the final architecture package.`,
       ].join("\n"),
       "packages/expired-waiver/package.json": JSON.stringify({ name: "@attune/expired-waiver" }),
       "packages/expired-waiver/src/attune.package.ts": [

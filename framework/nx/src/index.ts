@@ -29,6 +29,7 @@ export const FrameworkNxActionPlanSchema = Schema.Struct({
 })
 
 export const FrameworkNxGeneratedArtifactKindSchema = Schema.Literals([
+  "package-harness",
   "operation-registry",
   "property-evidence",
   "atom-view-edges",
@@ -72,6 +73,7 @@ export interface FrameworkNxMaterializationPlan {
 
 const generatorTargets = {
   protocolMaterialize: "@attune/framework-nx:protocol-materialize",
+  packageHarness: "@attune/framework-nx:package-harness",
   operationRegistry: "@attune/framework-nx:operation-registry",
   propertyEvidence: "@attune/framework-nx:protocol-evidence",
   atomViewEdge: "@attune/framework-nx:atom-view-edge",
@@ -80,6 +82,7 @@ const generatorTargets = {
 } as const
 
 const generatedFileNames: Record<FrameworkNxGeneratedArtifactKind, string> = {
+  "package-harness": "attune-package-harness.ts",
   "operation-registry": "attune-operation-registry.ts",
   "property-evidence": "attune-property-evidence.ts",
   "atom-view-edges": "attune-atom-view-edges.ts",
@@ -87,6 +90,7 @@ const generatedFileNames: Record<FrameworkNxGeneratedArtifactKind, string> = {
 }
 
 const artifactGeneratorIds: Record<FrameworkNxGeneratedArtifactKind, string> = {
+  "package-harness": generatorTargets.packageHarness,
   "operation-registry": generatorTargets.operationRegistry,
   "property-evidence": generatorTargets.propertyEvidence,
   "atom-view-edges": generatorTargets.atomViewEdge,
@@ -139,6 +143,25 @@ export const operationRegistryAction = (
     packageId,
     ...optionalOperation(operationId),
     generatorOrTarget: generatorTargets.operationRegistry,
+    options: {
+      packageId,
+      ...optionalOperation(operationId),
+    },
+    validationTarget: validationTargetFor(packageId),
+  })
+
+export const packageHarnessAction = (
+  packageId: string,
+  sourcePath: string,
+  operationId?: string,
+): FrameworkNxActionPlan =>
+  createFrameworkNxActionPlan({
+    actionId: "attune.protocol.package-harness",
+    title: "Generate Schema-coded package harness",
+    sourcePath,
+    packageId,
+    ...optionalOperation(operationId),
+    generatorOrTarget: generatorTargets.packageHarness,
     options: {
       packageId,
       ...optionalOperation(operationId),
@@ -273,6 +296,7 @@ export const createFrameworkMaterializationPlan = (
   candidateOutputPaths: readonly string[] = [],
 ): FrameworkNxMaterializationPlan => {
   const generatedArtifacts = ([
+    "package-harness",
     "operation-registry",
     "property-evidence",
     "atom-view-edges",
@@ -287,6 +311,7 @@ export const createFrameworkMaterializationPlan = (
     actions: [
       protocolMaterializeAction(descriptor.packageId, descriptor.sourcePath),
       frameworkDiagnosticsAction(descriptor.packageId, descriptor.sourcePath),
+      packageHarnessAction(descriptor.packageId, descriptor.sourcePath),
       operationRegistryAction(descriptor.packageId, descriptor.sourcePath),
       propertyEvidenceAction(descriptor.packageId, descriptor.sourcePath),
       atomViewEdgeAction(descriptor.packageId, descriptor.sourcePath),
@@ -337,6 +362,8 @@ const generatedArtifactContent = (
   kind: FrameworkNxGeneratedArtifactKind,
 ): string => {
   switch (kind) {
+    case "package-harness":
+      return packageHarnessContent(descriptor)
     case "operation-registry":
       return operationRegistryContent(descriptor)
     case "property-evidence":
@@ -355,6 +382,83 @@ const header = (target: string, descriptor: AttuneProtocolDescriptor): string =>
     `// Descriptor: ${descriptor.descriptorHash}`,
     "",
   ].join("\n")
+
+const packageHarnessContent = (descriptor: AttuneProtocolDescriptor): string =>
+  `${header(generatorTargets.packageHarness, descriptor)}import {
+  createPackageHarnessClient,
+  defineEvidenceProducer,
+  definePackageEvidenceProducerMap,
+  definePackageHarnessHandlers,
+  propertyRunEvidence,
+  publicAccessorHandler,
+} from "@attune/framework-testing"
+import {
+  PackageContract,
+  PackageTestLayer,
+} from "../attune.package.js"
+
+export const PackageHarnessOperationIds = ${tsLiteral(descriptor.operations.map((operation) => operation.id))} as const
+
+export const PackageHarnessProtocol = ${tsLiteral({
+    packageId: descriptor.packageId,
+    protocolId: descriptor.protocolId,
+    descriptorHash: descriptor.descriptorHash,
+    controls: [
+      "reset",
+      "snapshot",
+      "observe",
+      "flush-evidence",
+      "replay-counterexample",
+      "get-coverage",
+      "get-atom-graph",
+    ],
+    operations: descriptor.operations.map((operation) => ({
+      operationId: operation.id,
+      operationKind: operation.kind,
+      rpcId: `${descriptor.packageId}.operation.${operation.id}`,
+      payloadSchema: `${descriptor.packageId}.${operation.id}.input`,
+      successSchema: `${descriptor.packageId}.${operation.id}.output`,
+      ...(operation.errorSchema === undefined
+        ? {}
+        : { errorSchema: `${descriptor.packageId}.${operation.id}.error` }),
+      evidenceSchema: `${descriptor.packageId}.${operation.id}.evidence`,
+      replaySchema: `${descriptor.packageId}.${operation.id}.replay`,
+    })),
+    effectRpcBackend: {
+      adapter: "@effect/rpc",
+      status: "optional",
+      reason: "Schema-coded harness protocol is the root; runtime RPC remains a future backend.",
+    },
+  })} as const
+
+export const PackageHarnessHandlers = definePackageHarnessHandlers(PackageContract, {
+${descriptor.operations.map((operation) => `  ${JSON.stringify(operation.id)}: publicAccessorHandler(${JSON.stringify(operation.id)}),`).join("\n")}
+} as const)
+export type PackageHarnessHandlers = typeof PackageHarnessHandlers
+
+export const PackageHarnessEvidenceProducers = definePackageEvidenceProducerMap(PackageContract, {
+${descriptor.operations.map((operation) => `  ${JSON.stringify(operation.id)}: defineEvidenceProducer({
+    id: ${JSON.stringify(`${operation.id}.property-evidence`)},
+    operationId: ${JSON.stringify(operation.id)},
+    produce: (context) => [
+      propertyRunEvidence(context, ${JSON.stringify(operation.id)}, {
+        harness: "schema-coded-package-harness",
+        rpcId: ${JSON.stringify(`${descriptor.packageId}.operation.${operation.id}`)},
+        laws: ${tsLiteral(operation.laws ?? [])},
+      }),
+    ],
+  }),`).join("\n")}
+} as const)
+export type PackageHarnessEvidenceProducers = typeof PackageHarnessEvidenceProducers
+
+export const PackageHarnessClient = createPackageHarnessClient({
+  contract: PackageContract,
+  packageTestLayer: PackageTestLayer,
+  handlers: PackageHarnessHandlers,
+  evidenceProducers: PackageHarnessEvidenceProducers,
+})
+export type PackageHarnessClient = typeof PackageHarnessClient
+`
 
 const operationRegistryContent = (descriptor: AttuneProtocolDescriptor): string =>
   `${header(generatorTargets.operationRegistry, descriptor)}export const OperationRegistry = ${tsLiteral({

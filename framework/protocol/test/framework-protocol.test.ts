@@ -1,7 +1,15 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { Schema } from "effect"
 import { describe, expect, it } from "vitest"
+import {
+  ProtocolLawDescriptorSchema,
+  inferLawIds,
+  inferLaws,
+  isLawAllowedForOperation,
+  missingMetadataForOperation,
+} from "../src/laws/index.js"
 import {
   baseAtom,
   definePackageViewGraph,
@@ -47,6 +55,92 @@ describe("@attune/framework-protocol", () => {
     expect(contract.packageId).toBe("demo")
     expect(contract.operations[0]?.kind).toBe("projection")
     expect(protocolIdForPackage(contract.packageId)).toBe("attune/package/demo")
+  })
+
+  it("infers framework-owned protocol laws from operation kind and metadata", () => {
+    const operation = {
+      id: "nixos-anywhere-install",
+      kind: "resource-provider",
+      schemas: {
+        input: "InstallInput",
+        output: "InstallEvidence",
+        error: "InstallError",
+      },
+      resource: {
+        observes: true,
+        observationSchema: "InstalledHostObservation",
+        desiredStateSchema: "DesiredHost",
+        currentProofSchema: "CurrentDiskProof",
+        approvalSchema: "DestructiveApproval",
+        destructive: true,
+      },
+      touches: {
+        reactivityKeys: ["host-readiness", "destructive-approval"],
+        atoms: ["hostReadinessAtom", "providerGateAtom"],
+      },
+    } as const
+
+    expect(inferLawIds(operation)).toEqual([
+      "schema.decode",
+      "schema.encode",
+      "schema.error-decode",
+      "side-effect.declared-boundary",
+      "resource.observe-before-apply",
+      "view.reactivity-key-moves",
+      "view.atom-moves",
+      "resource.observed-idempotence",
+      "resource.current-destructive-proof",
+      "resource.destructive-approval",
+      "resource.no-repeat-destructive",
+    ])
+    expect(missingMetadataForOperation(operation)).toEqual([])
+    expect(isLawAllowedForOperation("resource.destructive-approval", operation)).toBe(true)
+    expect(Schema.decodeUnknownSync(ProtocolLawDescriptorSchema)(inferLaws(operation)[0])).toMatchObject({
+      id: "schema.decode",
+      source: "shared-kernel",
+    })
+  })
+
+  it("keeps package-specific protocol law extensions explicit", () => {
+    const operation = {
+      id: "effect-service-generator",
+      kind: "generator",
+      generator: {
+        optionsSchema: "GeneratorOptions",
+        virtualTreeSchema: "Tree",
+        outputSchema: "GeneratedFiles",
+        provenanceSchema: "GeneratorProvenance",
+      },
+      views: {
+        packageViews: ["generatedFileDiffAtom"],
+      },
+      customLaws: [{
+        id: "generator.provenance-recorded",
+        family: "generator-provenance",
+        severity: "required",
+        operationKinds: ["generator"],
+        description: "Generated file provenance is recorded in the package-specific ledger.",
+        source: "custom-extension",
+        metadata: { owner: "@attune/nx:effect-service" },
+      }],
+    } as const
+
+    expect(inferLawIds(operation)).toEqual([
+      "schema.decode",
+      "schema.encode",
+      "determinism.same-input-same-output",
+      "side-effect.virtual-tree-only",
+      "generator.options-decode",
+      "generator.deterministic-output",
+      "generator.provenance-recorded",
+      "generator.no-untracked-output",
+      "view.package-view-moves",
+      "generator.provenance-recorded",
+    ])
+    expect(inferLaws(operation).at(-1)).toMatchObject({
+      source: "custom-extension",
+      metadata: { owner: "@attune/nx:effect-service" },
+    })
   })
 
   it("projects protocol deltas into framework diagnostics", () => {

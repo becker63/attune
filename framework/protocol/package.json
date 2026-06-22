@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./laws": {
+      "types": "./src/laws/index.ts",
+      "import": "./src/laws/index.ts"
+    },
     "./package.json": "./package.json"
   },
   "dependencies": {

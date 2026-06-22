@@ -121,7 +121,7 @@ const phase2SnapshotSurfaces = [
   },
   {
     generator: "@attune/nx:package-contract",
-    assertion: "snapshots generated operation registry and property evidence plan",
+    assertion: "snapshots generated Schema-coded package harness, operation registry, and property evidence plan",
   },
   {
     generator: "@attune/nx:package-contract",
@@ -403,7 +403,7 @@ describe("attune-nx generator snapshots", () => {
           "generator": "@attune/nx:atom-view",
         },
         {
-          "assertion": "snapshots generated operation registry and property evidence plan",
+          "assertion": "snapshots generated Schema-coded package harness, operation registry, and property evidence plan",
           "generator": "@attune/nx:package-contract",
         },
         {

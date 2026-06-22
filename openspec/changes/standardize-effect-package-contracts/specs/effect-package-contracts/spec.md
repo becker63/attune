@@ -478,15 +478,15 @@ canonical package contract shape or carries a documented temporary waiver.
   `attune-architecture`, `effect-oxlint-policy`, `attuned-discovery`,
   `cocoindex-effect`, `joern-effect`, `joern-effect-properties`,
   `attune-foldkit`, `attune-pi-agent`, `platform-alchemy-k8s`, and
-  `home-deployment`, with `attune-architecture-lint` treated only as the
-  current pre-rename package identity during migration
+  `home-deployment`, with the old architecture-lint identity treated only as
+  historical migration context
 
 #### Scenario: Architecture package uses final identity
 - **WHEN** final package contracts, generated ledgers, docs, binaries, Nx
   targets, or package ids refer to the architecture policy package
-- **THEN** they MUST use `attune-architecture`; `attune-architecture-lint` MAY
-  appear only in migration inventory or compatibility notes that explicitly
-  identify it as the current pre-rename package identity
+- **THEN** they MUST use `attune-architecture`; the old architecture-lint
+  identity MAY appear only in historical migration inventory or compatibility
+  notes
 
 #### Scenario: Policy ratchet is enabled
 - **WHEN** all active packages have contracts and minimal generated property

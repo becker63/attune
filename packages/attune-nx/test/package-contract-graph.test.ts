@@ -1,12 +1,19 @@
+import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
 import {
+  PackageContractGraphError,
+  createPackageContractGraphNode,
+  derivePackageContractWorkspaceGraph,
+  discoverPackageContractSourceViews,
   discoverPackageContracts,
   inferPackageContractTargetSemantics,
   packageContractTargetSemantics,
+  readPackageContractRuntimeFacts,
   summarizePackageContract,
   summarizePackageContractAtomGraph,
   summarizePackageContractDependencies,
+  summarizePackageContractModule,
 } from "../src/package-contract-graph.js"
 
 describe("package contract graph helpers", () => {
@@ -117,6 +124,11 @@ describe("package contract graph helpers", () => {
         "ProjectionStore",
         "Reactivity",
       ],
+      layerServiceEdges: [{
+        layerId: "layer:0",
+        provides: ["DiscoveryPackageLayer"],
+        requires: ["Clock"],
+      }],
       operationServiceEdges: [
         {
           operationId: "record-evidence",
@@ -165,6 +177,9 @@ describe("package contract graph helpers", () => {
         "promotionAtom",
         "workbenchAtom",
       ],
+      sourceDiscoveredReactivityKeys: [],
+      sourceDiscoveredAtoms: [],
+      sourceViewFiles: [],
       operationViewEdges: [
         {
           operationId: "promote-packet",
@@ -203,6 +218,224 @@ describe("package contract graph helpers", () => {
     expect(summary.packageId).toBe("home-deployment")
     expect(summary.dependencies.requiredServiceIds).toEqual(["OperatorPrompt"])
     expect(summary.atomGraph.declaredAtoms).toEqual(["hostReadinessAtom"])
+  })
+
+  it("summarizes module layer requirements and static source-discovered view facts", () => {
+    const source = {
+      path: "packages/demo/src/attune.package.ts",
+      text: `
+        const sharedKeys = ["demo.shared"] as const
+        export const PackageViews = definePackageViews({
+          reactivityKeys: [...sharedKeys, "demo.changed"],
+          atoms: ["demoAtom"] as const,
+        } as const)
+        export const project = defineOperation({
+          id: "project",
+          views: touches(PackageViews, {
+            reactivityKeys: sharedKeys,
+            atoms: ["projectAtom"],
+          } as const),
+        } as const)
+      `,
+    }
+    const summary = summarizePackageContractModule({
+      PackageContract: {
+        packageId: "demo",
+        packageKind: "core-discovery-runtime",
+        views: {
+          reactivityKeys: ["demo.changed"],
+          atoms: ["demoAtom"],
+        },
+        services: ["DemoService"],
+        operations: [],
+      },
+      PackageLayer: {
+        provides: ["DemoService"],
+        requires: ["Clock"],
+        metadata: { role: "demo-live" },
+      },
+      PackageTestLayer: {
+        provides: ["DemoService"],
+        requires: ["FixtureStore"],
+        metadata: { role: "demo-test" },
+      },
+    }, {
+      sourceFiles: [source],
+    })
+
+    expect(discoverPackageContractSourceViews(source)).toEqual({
+      sourcePath: "packages/demo/src/attune.package.ts",
+      reactivityKeys: ["demo.changed", "demo.shared"],
+      atoms: ["demoAtom", "projectAtom"],
+    })
+    expect(summary.dependencies.layerServiceEdges).toEqual([
+      {
+        layerId: "demo-live",
+        provides: ["DemoService"],
+        requires: ["Clock"],
+      },
+      {
+        layerId: "demo-test",
+        provides: ["DemoService"],
+        requires: ["FixtureStore"],
+      },
+    ])
+    expect(summary.dependencies.requiredServiceIds).toEqual(["Clock", "FixtureStore"])
+    expect(summary.atomGraph.sourceDiscoveredAtoms).toEqual(["demoAtom", "projectAtom"])
+  })
+
+  it("derives workspace graph metadata and DI edges from decoded contract modules", () => {
+    const graph = derivePackageContractWorkspaceGraph([
+      {
+        projectName: "provider",
+        projectRoot: "packages/provider",
+        contractPath: "packages/provider/src/attune.package.ts",
+        module: {
+          PackageContract: {
+            packageId: "provider",
+            packageKind: "core-discovery-runtime",
+            views: { reactivityKeys: ["provider.changed"], atoms: ["providerAtom"] },
+            services: ["ProviderService"],
+            operations: [{
+              id: "provide",
+              kind: "query",
+              input: "ProviderInput",
+              output: "ProviderOutput",
+            }],
+          },
+          PackageLayer: {
+            provides: ["ProviderService"],
+            requires: [],
+            metadata: { role: "provider-live" },
+          },
+        },
+      },
+      {
+        projectName: "consumer",
+        projectRoot: "packages/consumer",
+        contractPath: "packages/consumer/src/attune.package.ts",
+        module: {
+          PackageContract: {
+            packageId: "consumer",
+            packageKind: "agent-extension",
+            views: { reactivityKeys: ["consumer.changed"], atoms: ["consumerAtom"] },
+            services: ["ConsumerService"],
+            operations: [{
+              id: "consume",
+              kind: "command",
+              input: "ConsumerInput",
+              output: "ConsumerOutput",
+              dependencies: ["ProviderService"],
+              views: { reactivityKeys: ["consumer.changed"], atoms: ["consumerAtom"] },
+            }],
+          },
+          PackageLayer: {
+            provides: ["ConsumerService"],
+            requires: ["ProviderService", "external.Clock"],
+            metadata: { role: "consumer-live" },
+          },
+        },
+      },
+    ])
+
+    expect(graph.projectMetadata.consumer?.attune.packageContract.packageId).toBe("consumer")
+    expect(graph.serviceOwners).toEqual([
+      { serviceId: "ConsumerService", projectName: "consumer", packageId: "consumer" },
+      { serviceId: "ProviderService", projectName: "provider", packageId: "provider" },
+    ])
+    expect(graph.dependencyEdges).toEqual([
+      {
+        type: "attune-di",
+        sourceProjectName: "consumer",
+        sourcePackageId: "consumer",
+        targetProjectName: "provider",
+        targetPackageId: "provider",
+        serviceIds: ["ProviderService"],
+        operationIds: ["consume"],
+        layerIds: ["consumer-live"],
+      },
+    ])
+    expect(graph.unresolvedServiceRequirements).toEqual([
+      {
+        projectName: "consumer",
+        packageId: "consumer",
+        serviceId: "external.Clock",
+        operationIds: [],
+        layerIds: ["consumer-live"],
+      },
+    ])
+  })
+
+  it("fails graph node derivation with project context for invalid contracts", () => {
+    expect(() =>
+      createPackageContractGraphNode({
+        projectName: "bad-project",
+        projectRoot: "packages/bad-project",
+        contractPath: "packages/bad-project/src/attune.package.ts",
+        module: {
+          PackageContract: {
+            packageId: "bad-project",
+            views: { reactivityKeys: [], atoms: [] },
+            operations: [],
+          },
+        },
+      })
+    ).toThrow(PackageContractGraphError)
+  })
+
+  it("reads framework runtime facts through ProtocolQuery-shaped services", async () => {
+    const facts = await readPackageContractRuntimeFacts({
+      getPackageSummary: (packageId) =>
+        Effect.succeed({
+          packageId,
+          protocolId: `attune/package/${packageId}`,
+          descriptorHash: "descriptor-hash",
+          operationCount: 2,
+          obligationCount: 7,
+          evidenceCount: 3,
+          staleGeneratedArtifactCount: 1,
+        }),
+      listDeltas: (packageId) =>
+        Effect.succeed([{
+          deltaId: "delta:demo:generated-artifact",
+          protocolId: `attune/package/${packageId}`,
+          packageId,
+          kind: "stale-generated-source",
+          sourcePath: "packages/demo/src/generated/attune-operation-registry.ts",
+          explanation: "Generated artifact is stale.",
+          repairActions: [{
+            id: "refresh-protocol-materialization",
+            title: "Refresh protocol materialization",
+            kind: "nx-generator",
+            target: "@attune/framework-nx:protocol-materialize",
+            options: { packageId },
+          }],
+        }]),
+    }, "demo", {
+      generatedArtifacts: [{
+        artifactId: "demo:registry",
+        protocolId: "attune/package/demo",
+        packageId: "demo",
+        path: "packages/demo/src/generated/attune-operation-registry.ts",
+        generatorId: "@attune/framework-nx:operation-registry",
+        expectedHash: "expected",
+        actualHash: "actual",
+        status: "stale",
+      }],
+    })
+
+    expect(facts).toMatchObject({
+      packageId: "demo",
+      descriptorHash: "descriptor-hash",
+      deltaKinds: ["stale-generated-source"],
+      repairTargets: ["@attune/framework-nx:protocol-materialize"],
+      generatedArtifactHashes: [{
+        artifactId: "demo:registry",
+        expectedHash: "expected",
+        actualHash: "actual",
+        status: "stale",
+      }],
+    })
   })
 
   it("describes inferred target metadata for package contract targets", () => {

@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 
 const architectureContract = fileURLToPath(
-  new URL("../attune-architecture-lint/src/package-contract/index.ts", import.meta.url),
+  new URL("../attune-architecture/src/package-contract/index.ts", import.meta.url),
 )
 const frameworkProtocol = fileURLToPath(
   new URL("../../framework/protocol/src/index.ts", import.meta.url),

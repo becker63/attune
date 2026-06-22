@@ -40,7 +40,7 @@ describe("attune-architecture package contract", () => {
   it("declares the architecture package identity and auditable operations", () => {
     expect(PackageContract.packageId).toBe("attune-architecture")
     expect(PackageContract.packageKind).toBe("architecture-policy")
-    expect(PackageContract.sourceRoot).toBe("packages/attune-architecture-lint/src")
+    expect(PackageContract.sourceRoot).toBe("packages/attune-architecture/src")
     expect(PackageContract.operations.map((operation) => operation.id)).toEqual([...requiredOperationIds])
 
     expectTypeOf<ArchitectureOperationId>().toEqualTypeOf<(typeof requiredOperationIds)[number]>()

@@ -2066,8 +2066,8 @@ agents will recreate the drift this change is designed to remove.
 ### Decision: `attune-architecture` is the final policy package
 
 The final package name is `attune-architecture`, with final package path
-`packages/attune-architecture`. The current `attune-architecture-lint` identity
-is only a pre-rename migration fact and must not survive as the final package
+`packages/attune-architecture`. The old architecture-lint identity is only a
+historical pre-rename migration fact and must not survive as the final package
 id, binary, documentation name, generated ledger owner, or public package
 surface.
 

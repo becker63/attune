@@ -122,7 +122,10 @@ describe("@attune/nx package-contract generator", () => {
       'export const PackageLayer = Layer.empty',
     )
     expect(contract).toContain(
-      'export const PackageTestLayer = Layer.empty',
+      "export const PackageHarnessAccessors",
+    )
+    expect(contract).toContain(
+      "publicAccessors: PackageHarnessAccessors",
     )
     expect(contract).toContain(
       "export const PackageTypeGuidance = defineTypeGuidance",
@@ -132,7 +135,17 @@ describe("@attune/nx package-contract generator", () => {
     )
 
     expect(generated).toContain("PackageOperationRegistry")
+    expect(generated).toContain("createPackageHarnessClient")
+    expect(generated).toContain("PackageHarnessHandlers")
+    expect(generated).toContain("publicAccessorHandler(\"package-contract-generator\")")
+    expect(generated).toContain("PackageHarnessEvidenceProducers")
+    expect(generated).toContain("PackageHarnessClient")
     expect(generated).toContain("PackagePropertyEvidencePlan")
+    expect(generated).toContain('harness: "PackageHarnessClient"')
+    expect(generated).toContain('handlerMap: "PackageHarnessHandlers"')
+    expect(generated).toContain('evidenceProducerMap: "PackageHarnessEvidenceProducers"')
+    expect(generated).toContain('"harness.schema-coded-client"')
+    expect(generated).toContain('"evidence.producer-map"')
     expect(generated).toContain("PackageAtomViewGraph")
     expect(generated).toContain("PackageProtocolReportPolicy")
     expect(generated).toContain('workerModule: "./attune.package.property.js"')
@@ -181,7 +194,7 @@ describe("@attune/nx package-contract generator", () => {
     expect(contract).toContain('policy: {')
     expect(contract).toContain('services: [] as const')
     expect(contract).toContain('export const PackageLayer = Layer.empty')
-    expect(contract).toContain('export const PackageTestLayer = Layer.empty')
+    expect(contract).toContain('publicAccessors: PackageHarnessAccessors')
     expect(shard).toMatchObject({
       schemaVersion: 1,
       project: "effect-oxlint-policy",

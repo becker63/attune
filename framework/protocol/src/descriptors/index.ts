@@ -1,6 +1,6 @@
 import type {
   AttunePackageContract,
-} from "../../../../packages/attune-architecture-lint/src/package-contract/index.js"
+} from "../../../../packages/attune-architecture/src/package-contract/index.js"
 import {
   OperationKindSchema,
   PackageContractSchema,
@@ -8,7 +8,7 @@ import {
   PackageViewsSchema,
   TouchedViewsSchema,
   type DecodedPackageContract,
-} from "../../../../packages/attune-architecture-lint/src/package-contract/index.js"
+} from "../../../../packages/attune-architecture/src/package-contract/index.js"
 import { Schema } from "effect"
 
 import { obligationId, type AttuneProtocolObligation } from "../obligations/index.js"

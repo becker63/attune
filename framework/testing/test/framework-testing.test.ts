@@ -6,19 +6,31 @@ import {
   assertExactOperationMapCoverage,
   atomMovementEvidence,
   checkFastCheckProperty,
+  checkPackageHarnessProperty,
   counterexampleCacheEntry,
+  defineEvidenceProducerMap,
   defineEvidenceProducer,
+  definePackageEvidenceProducerMap,
+  definePackageHarnessHandlers,
+  createPackageHarnessClient,
   defineOperationRegistry,
   exactOperationMapCoverage,
   mergeAtomGraphObservations,
   normalizeWorkerMetadata,
   observedMovement,
   operationHandler,
+  publicAccessorHandler,
   propertyRunEvidence,
   schemaArbitrarySlot,
   workerEvidenceMetadata,
   workerReplayMetadata,
 } from "../src/index.js"
+import {
+  defineOperation,
+  definePackageContract,
+  definePackageViews,
+  touches,
+} from "@attune/framework-protocol"
 
 describe("@attune/framework-testing", () => {
   it("defines operation registries and evidence producers for generated harnesses", () => {
@@ -59,6 +71,37 @@ describe("@attune/framework-testing", () => {
     })
     expect(() =>
       assertExactOperationMapCoverage("demo", "property-map", ["read"], { read: true, stale: true }),
+    ).toThrow("Extra: stale")
+  })
+
+  it("checks exact evidence producer maps", () => {
+    const producers = defineEvidenceProducerMap({
+      packageId: "demo",
+      operationIds: ["read", "write"] as const,
+      producers: {
+        read: defineEvidenceProducer({
+          id: "read-evidence",
+          operationId: "read",
+          produce: () => [],
+        }),
+        write: defineEvidenceProducer({
+          id: "write-evidence",
+          operationId: "write",
+          produce: () => [],
+        }),
+      },
+    })
+
+    expect(Object.keys(producers)).toEqual(["read", "write"])
+    expect(() =>
+      defineEvidenceProducerMap({
+        packageId: "demo",
+        operationIds: ["read"] as const,
+        producers: {
+          read: defineEvidenceProducer({ id: "read", produce: () => [] }),
+          stale: defineEvidenceProducer({ id: "stale", produce: () => [] }),
+        },
+      }),
     ).toThrow("Extra: stale")
   })
 
@@ -171,6 +214,166 @@ describe("@attune/framework-testing", () => {
       payload: {
         arbitrarySource: {
           kind: "provided",
+        },
+      },
+    })
+  })
+
+  it("invokes Schema-coded package harness entries through PackageTestLayer accessors", async () => {
+    const PackageViews = definePackageViews({
+      reactivityKeys: ["demo.changed"],
+      atoms: ["demoAtom"],
+    } as const)
+    const IncrementInput = Schema.Struct({ value: Schema.Number })
+    const IncrementOutput = Schema.Struct({ value: Schema.Number })
+    const IncrementError = Schema.Struct({ message: Schema.String })
+    const incrementOperation = defineOperation({
+      id: "increment",
+      kind: "command",
+      input: IncrementInput,
+      output: IncrementOutput,
+      error: IncrementError,
+      views: touches(PackageViews, {
+        reactivityKeys: ["demo.changed"],
+        atoms: ["demoAtom"],
+      } as const),
+      laws: ["schema.decode", "schema.encode", "view.atom-moves"],
+    } as const)
+    const PackageContract = definePackageContract({
+      packageId: "demo",
+      packageKind: "core-discovery-runtime",
+      views: PackageViews,
+      operations: [incrementOperation] as const,
+    } as const)
+    const PackageTestLayer = {
+      publicAccessors: {
+        increment: (input: { readonly value: number }) => ({
+          value: input.value + 1,
+        }),
+      },
+    } as const
+    const handlers = definePackageHarnessHandlers(PackageContract, {
+      increment: publicAccessorHandler("increment"),
+    })
+    const evidenceProducers = definePackageEvidenceProducerMap(PackageContract, {
+      increment: defineEvidenceProducer({
+        id: "increment-law",
+        operationId: "increment",
+        produce: (context) => [
+          propertyRunEvidence(context, "increment", {
+            source: "generated-evidence-producer-map",
+          }),
+        ],
+      }),
+    })
+    const client = createPackageHarnessClient({
+      atomGraphObserver: {
+        observe: () => [
+          {
+            reactivityKey: "demo.changed",
+            packageViewAtom: "demoAtom",
+            changed: true,
+          },
+        ],
+      },
+      contract: PackageContract,
+      evidenceProducers,
+      handlers,
+      packageTestLayer: PackageTestLayer,
+    })
+
+    const exit = await client.operations.increment.invoke(
+      { value: 41 },
+      {
+        observedAt: "2026-06-22T00:00:00.000Z",
+        replay: { seed: 42 },
+        runId: "run-42",
+      },
+    )
+
+    expect(exit.status).toBe("success")
+    expect(exit.success).toEqual({ value: 42 })
+    expect(exit.encodedSuccess).toEqual({ value: 42 })
+    expect(exit.evidence.map((event) => event.kind)).toEqual([
+      "property-run",
+      "schema-decode",
+      "schema-decode",
+      "reactivity-key",
+      "property-run",
+      "property-run",
+    ])
+  })
+
+  it("runs worker-compatible property evidence through the package harness client", async () => {
+    const PackageViews = definePackageViews({
+      reactivityKeys: ["demo.changed"],
+      atoms: ["demoAtom"],
+    } as const)
+    const IncrementInput = Schema.Struct({ value: Schema.Number })
+    const IncrementOutput = Schema.Struct({ value: Schema.Number })
+    const incrementOperation = defineOperation({
+      id: "increment",
+      kind: "command",
+      input: IncrementInput,
+      output: IncrementOutput,
+      views: touches(PackageViews, {
+        reactivityKeys: ["demo.changed"],
+        atoms: ["demoAtom"],
+      } as const),
+      laws: ["schema.decode"],
+    } as const)
+    const PackageContract = definePackageContract({
+      packageId: "demo",
+      packageKind: "core-discovery-runtime",
+      views: PackageViews,
+      operations: [incrementOperation] as const,
+    } as const)
+    const PackageTestLayer = {
+      publicAccessors: {
+        increment: (input: { readonly value: number }) => ({
+          value: input.value + 1,
+        }),
+      },
+    } as const
+    const handlers = definePackageHarnessHandlers(PackageContract, {
+      increment: publicAccessorHandler("increment"),
+    })
+    const worker = workerEvidenceMetadata({
+      packageId: "demo",
+      propertyId: "demo.increment.property",
+      target: "framework-testing:test",
+      operationId: "increment",
+    }, normalizeWorkerMetadata({
+      generatedValuesSerializable: true,
+      resourceTier: "debug",
+      seed: 7,
+      workerCount: 1,
+    }))
+    const client = createPackageHarnessClient({
+      contract: PackageContract,
+      handlers,
+      packageTestLayer: PackageTestLayer,
+    })
+
+    const result = await checkPackageHarnessProperty({
+      arbitrary: schemaArbitrarySlot(IncrementInput, { schemaId: "IncrementInput" }),
+      client,
+      numRuns: 2,
+      operationId: "increment",
+      seed: 7,
+      worker,
+      validateOutput: (output) => {
+        expect(output.value).toBeGreaterThan(Number.NEGATIVE_INFINITY)
+      },
+    })
+
+    expect(result.status).toBe("passed")
+    expect(result.validation.outputSuccesses).toBe(2)
+    expect(result.events.some((event) => event.kind === "schema-decode")).toBe(true)
+    expect(result.events[0]?.payload).toMatchObject({
+      payload: {
+        worker: {
+          workerId: "demo:demo.increment.property:shard-0-of-1",
         },
       },
     })

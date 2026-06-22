@@ -6,7 +6,11 @@ import { Schema } from "effect"
 import { describe, expect, it } from "vitest"
 
 import { PackageContractSchema } from "@attune/framework-protocol"
-import { discoverPackageContracts, type NxProjectLike } from "../src/package-contract-graph.js"
+import {
+  derivePackageContractWorkspaceGraph,
+  discoverPackageContracts,
+  type NxProjectLike,
+} from "../src/package-contract-graph.js"
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..")
 
@@ -93,7 +97,7 @@ describe("product package contract discovery", () => {
   })
 
   it("decodes product contracts and summarizes contract-owned boundary surfaces", async () => {
-    const summaries = await Promise.all(
+    const contractModules = await Promise.all(
       productProjectFiles.map(async (projectFile) => {
         const project = readProject(projectFile)
         const module = await importPackageContractModule(project)
@@ -106,6 +110,8 @@ describe("product package contract discovery", () => {
         ]
 
         return {
+          project,
+          module,
           projectName: project.name,
           packageId: decoded.packageId,
           packageKind: decoded.packageKind,
@@ -123,6 +129,18 @@ describe("product package contract discovery", () => {
           operationIds,
         }
       }),
+    )
+    const summaries = contractModules.map(
+      ({ project: _project, module: _module, ...summary }) => summary,
+    )
+    const graph = derivePackageContractWorkspaceGraph(
+      contractModules.map(({ project, module }) => ({
+        projectName: project.name ?? project.root,
+        projectRoot: project.root,
+        ...(project.sourceRoot === undefined ? {} : { sourceRoot: project.sourceRoot }),
+        contractPath: `${project.root}/src/attune.package.ts`,
+        module,
+      })),
     )
 
     expect(
@@ -159,6 +177,21 @@ describe("product package contract discovery", () => {
       expect(summary.propertyIds, `${summary.projectName} properties`).toEqual(summary.operationIds)
       expect(summary.typeGuidanceIds, `${summary.projectName} type guidance`).toEqual(summary.operationIds)
     }
+
+    expect(graph.projects.map((project) => ({
+      projectName: project.projectName,
+      packageId: project.packageId,
+      operationCount: project.operationCount,
+      reactivityKeyCount: project.atomGraph.declaredReactivityKeys.length,
+      atomCount: project.atomGraph.declaredAtoms.length,
+    }))).toEqual(summaries.map((summary) => ({
+      projectName: summary.projectName,
+      packageId: summary.packageId,
+      operationCount: summary.operationCount,
+      reactivityKeyCount: summary.reactivityKeyCount,
+      atomCount: summary.atomCount,
+    })))
+    expect(graph.projectMetadata["attune-foldkit"]?.attune.packageContract.descriptorHash).toMatch(/^[0-9a-f]+$/)
   })
 })
 
