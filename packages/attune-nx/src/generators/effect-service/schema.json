@@ -20,7 +20,28 @@
     },
     "tag": {
       "type": "string",
-      "description": "Effect Context.Tag identifier."
+      "description": "Effect.Service identifier."
+    },
+    "operationId": {
+      "type": "string",
+      "description": "Auditable operation id recorded in the generated package-contract placeholder."
+    },
+    "operationKind": {
+      "type": "string",
+      "description": "Canonical Attune operation kind recorded in the generated package-contract placeholder.",
+      "default": "command",
+      "enum": [
+        "codec",
+        "query",
+        "command",
+        "projection",
+        "event-facade",
+        "atom-family",
+        "resource-provider",
+        "generator",
+        "policy-rule",
+        "joern-template"
+      ]
     },
     "project": {
       "type": "string",

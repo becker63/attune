@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
+  "shapeManifest": "attune.generator-shapes.json",
   "shards": [
     {
-      "project": "attune-architecture-lint",
+      "project": "attune-architecture",
       "projectRoot": "packages/attune-architecture-lint",
       "shard": "packages/attune-architecture-lint/attune.source-bom.json"
     },

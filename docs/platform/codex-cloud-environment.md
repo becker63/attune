@@ -33,16 +33,16 @@ target that ran:
 
 ```bash
 nx run workspace:policy-fast
-nx run workspace:policy-architecture
 nx run workspace:policy-proof-pressure
-nx run workspace:source-bom-check
+nx run workspace:package-contracts-check
 ```
 
 - `workspace:policy-fast` is the ordinary Codex gate.
-- `workspace:policy-architecture` covers architecture and boundary rules.
-- `workspace:policy-proof-pressure` covers proof-pressure and evidence routing
-  expectations.
-- `workspace:source-bom-check` verifies Source BOM ownership and provenance.
+- `workspace:policy-proof-pressure` covers proof-pressure, workerized fuzzing,
+  mutation, Joern, container, and provider/resource evidence expectations.
+- `workspace:package-contracts-check` is the focused diagnostic/repair target
+  for package contracts, generated ledgers, generator provenance, and Source BOM
+  ownership.
 
 If a policy target is not ready on the current branch, run targeted docs grep
 checks for the migration at hand and report the remaining transitional

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest"
 import { scanWorkspace } from "../src/index.js"
 
 const withWorkspace = (files: Record<string, string>, run: (workspace: string) => void): void => {
-  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "attune-architecture-lint-"))
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "attune-architecture-"))
   try {
     for (const [relativePath, content] of Object.entries(files)) {
       const target = path.join(workspace, relativePath)
@@ -18,7 +18,7 @@ const withWorkspace = (files: Record<string, string>, run: (workspace: string) =
   }
 }
 
-describe("attune architecture policy lint", () => {
+describe("attune architecture policy", () => {
   it("emits typed rule ids for undeclared workflow surfaces", () => {
     withWorkspace({
       "package.json": JSON.stringify({ scripts: { typecheck: "tsc --noEmit" } }),
@@ -42,7 +42,7 @@ describe("attune architecture policy lint", () => {
 
   it("allows Nx facade scripts", () => {
     withWorkspace({
-      "package.json": JSON.stringify({ scripts: { typecheck: "nx run attune-architecture-lint:typecheck" } }),
+      "package.json": JSON.stringify({ scripts: { typecheck: "nx run attune-architecture:typecheck" } }),
     }, (workspaceRoot) => {
       const result = scanWorkspace({ workspaceRoot })
       expect(result.exitCode).toBe(0)

@@ -8,6 +8,12 @@ importers:
 
   .:
     devDependencies:
+      '@effect/rpc':
+        specifier: 0.75.1
+        version: 0.75.1(@effect/platform@0.96.2(effect@4.0.0-beta.85))(effect@4.0.0-beta.85)
+      '@fast-check/worker':
+        specifier: 0.6.0
+        version: 0.6.0
       '@nx/js':
         specifier: ^22.2.0
         version: 22.7.5(@babel/traverse@7.29.7)(nx@22.7.5)
@@ -138,6 +144,13 @@ importers:
         version: 3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
 
   packages/attune-nx:
+    dependencies:
+      '@attune/architecture':
+        specifier: workspace:*
+        version: link:../attune-architecture-lint
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
     devDependencies:
       typescript:
         specifier: ^5.8.3
@@ -1255,6 +1268,17 @@ packages:
       effect: ^4.0.0-beta.85
       ioredis: ^5.7.0
 
+  '@effect/platform@0.96.2':
+    resolution: {integrity: sha512-oJm3UztdzZvK7BXkFSV3IdyGuqQrhLmViG/hMDZh99ski7aADesNuv19z4R0heH3bAXnSt/Nb8O9KJQ886C0Tg==}
+    peerDependencies:
+      effect: ^3.21.4
+
+  '@effect/rpc@0.75.1':
+    resolution: {integrity: sha512-8yxF8+mMGGEbF8BUCp34HjdJj7CvTpGeZxBcpsDF6v7zPiGbJL1UDLzA8ZqYjmcngBHhPecbmeONTk/LiLAaEg==}
+    peerDependencies:
+      '@effect/platform': ^0.96.1
+      effect: ^3.21.2
+
   '@effect/vitest@4.0.0-beta.85':
     resolution: {integrity: sha512-iQC5grIDhZFvvug1HdoMVk9S+UxurXMlhnQm31NBpRcEh/ulvK82wSbZ4X5BrsMJTqxJgrKeC27p64HMcpgM5g==}
     peerDependencies:
@@ -1629,6 +1653,9 @@ packages:
   '@eslint/plugin-kit@0.7.2':
     resolution: {integrity: sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@fast-check/worker@0.6.0':
+    resolution: {integrity: sha512-RHudoP4XJH0uRopFMyn7CzX4zgDBg6CqZcyPcAkrcxTxXMK1ISRbX55jjr/coW9pmtSV+CfSC98Qh0U4hRbf5Q==}
 
   '@floating-ui/core@1.7.5':
     resolution: {integrity: sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==}
@@ -4889,6 +4916,9 @@ packages:
     resolution: {integrity: sha512-4kmO/MdyUIkLIvTPr8VHLil4AtoKIoniWPIEk5+CDy0xnWC84azhSFmuJ7PxZdsYtiP5kEeQsORAVIeMgxT+Hw==}
     hasBin: true
 
+  msgpackr@1.12.1:
+    resolution: {integrity: sha512-4EUH9tQHnMmEgzW/MdAP0KIfa1T9AF+htl0ffe2n5vb2EKn9y2co8ccpgWko6S52Jy1PQZKwRnx5/KkYjtd9MQ==}
+
   msgpackr@2.0.4:
     resolution: {integrity: sha512-o1C5KRmuRt+apqMr1HuGSqWStZoRBUpEsCsl15uM9VdAF1qHLtvMOU2En747EnTyEl6c4pzPewRMFF31s1CNbA==}
 
@@ -7456,6 +7486,19 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  '@effect/platform@0.96.2(effect@4.0.0-beta.85)':
+    dependencies:
+      effect: 4.0.0-beta.85
+      find-my-way-ts: 0.1.6
+      msgpackr: 1.12.1
+      multipasta: 0.2.7
+
+  '@effect/rpc@0.75.1(@effect/platform@0.96.2(effect@4.0.0-beta.85))(effect@4.0.0-beta.85)':
+    dependencies:
+      '@effect/platform': 0.96.2(effect@4.0.0-beta.85)
+      effect: 4.0.0-beta.85
+      msgpackr: 1.12.1
+
   '@effect/vitest@4.0.0-beta.85(effect@4.0.0-beta.85)(vitest@3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
     dependencies:
       effect: 4.0.0-beta.85
@@ -7688,6 +7731,11 @@ snapshots:
     dependencies:
       '@eslint/core': 1.2.1
       levn: 0.4.1
+
+  '@fast-check/worker@0.6.0':
+    dependencies:
+      fast-check: 4.8.0
+      pure-rand: 8.4.0
 
   '@floating-ui/core@1.7.5':
     dependencies:
@@ -10741,6 +10789,10 @@ snapshots:
       '@msgpackr-extract/msgpackr-extract-linux-x64': 3.0.4
       '@msgpackr-extract/msgpackr-extract-win32-x64': 3.0.4
     optional: true
+
+  msgpackr@1.12.1:
+    optionalDependencies:
+      msgpackr-extract: 3.0.4
 
   msgpackr@2.0.4:
     optionalDependencies:

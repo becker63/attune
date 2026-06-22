@@ -1,6 +1,9 @@
 node_modules/
 .nx/
 .alchemy/
+.attune/cache/
+.attune/cache/protocol.sqlite
+.attune/cache/protocol/
 .stryker-tmp/
 dist/
 buck-out/

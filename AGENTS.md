@@ -161,9 +161,8 @@ nx run <project>:typecheck
 nx run <project>:test
 nx run <project>:build
 nx run workspace:policy-fast
-nx run workspace:policy-architecture
 nx run workspace:policy-proof-pressure
-nx run workspace:source-bom-check
+nx run workspace:package-contracts-check
 ```
 
 When the local shell lacks `nx`, enter the dev shell first and invoke the same
@@ -217,9 +216,10 @@ Run the smallest validation that proves the slice:
 - OpenSpec validation when changing OpenSpec artifacts.
 - Generator typecheck/tests when changing `@attune/nx`.
 - `workspace:policy-fast` for normal policy coverage.
-- `workspace:policy-architecture`, `workspace:policy-proof-pressure`, and
-  `workspace:source-bom-check` when the slice touches policy, proof pressure,
-  or Source BOM ownership.
+- `workspace:package-contracts-check` when the slice touches package contract,
+  generated ledger, generator provenance, or Source BOM ownership.
+- `workspace:policy-proof-pressure` when the slice touches proof pressure,
+  workerized fuzzing, mutation, Joern, container, or provider/resource evidence.
 
 If validation cannot run, report why and include the exact command attempted.
 

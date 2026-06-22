@@ -1,0 +1,22 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "framework-nx",
+  "projectType": "library",
+  "root": "framework/nx",
+  "sourceRoot": "framework/nx/src",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsc -p framework/nx/tsconfig.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config framework/nx/vitest.config.ts"
+      }
+    }
+  },
+  "tags": ["scope:framework", "attune:framework", "attune:internal"]
+}

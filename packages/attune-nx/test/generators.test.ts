@@ -2,8 +2,24 @@ import { describe, expect, it } from "vitest"
 
 import discoveryEventGenerator from "../src/generators/discovery-event/generator.js"
 import effectServiceGenerator from "../src/generators/effect-service/generator.js"
+import {
+  attuneNxGeneratorInventory,
+  phase2GeneratorGapMap,
+  requiredPhase2GeneratorCapabilities,
+} from "../src/generator-inventory.js"
 import { upsertSourceBom } from "../src/internal/source-bom.js"
 import type { GeneratorTree } from "../src/internal/tree.js"
+
+interface GeneratorsJson {
+  readonly generators: Record<
+    string,
+    {
+      readonly factory: string
+      readonly schema: string
+      readonly description: string
+    }
+  >
+}
 
 class MemoryTree implements GeneratorTree {
   readonly files = new Map<string, string>()
@@ -33,6 +49,76 @@ class MemoryTree implements GeneratorTree {
 }
 
 describe("attune-nx generators", () => {
+  it("keeps the Phase 0 generator inventory aligned with registered generators", async () => {
+    const generatorsJson = JSON.parse(
+      await import("node:fs/promises").then(({ readFile }) =>
+        readFile(new URL("../generators.json", import.meta.url), "utf8"),
+      ),
+    ) as GeneratorsJson
+    const registered = Object.keys(generatorsJson.generators).sort()
+    const inventoried = attuneNxGeneratorInventory
+      .map((entry) => entry.id)
+      .sort()
+
+    expect(inventoried).toEqual(registered)
+
+    for (const entry of attuneNxGeneratorInventory) {
+      const registration = generatorsJson.generators[entry.id]
+      expect(registration?.schema).toEqual(`./${entry.schema}`)
+      expect(registration?.description).toBeTruthy()
+      await expect(
+        import("node:fs/promises").then(({ access }) =>
+          access(new URL(`../${entry.implementation}`, import.meta.url)),
+        ),
+      ).resolves.toBeUndefined()
+      await expect(
+        import("node:fs/promises").then(({ access }) =>
+          access(new URL(`../${entry.schema}`, import.meta.url)),
+        ),
+      ).resolves.toBeUndefined()
+    }
+  })
+
+  it("records the Phase 2 generator gaps for package-contract migration", () => {
+    expect(phase2GeneratorGapMap.map((entry) => entry.capability)).toEqual(
+      requiredPhase2GeneratorCapabilities,
+    )
+    expect(phase2GeneratorGapMap).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          capability: "effect-service",
+          currentHome: "@attune/nx:effect-service",
+          targetHome: "@attune/nx:effect-service",
+          owner: "effect-service-generator-agent",
+        }),
+        expect.objectContaining({
+          capability: "package-contract",
+          currentHome: "@attune/nx:package-contract",
+          targetHome: "@attune/nx:package-contract",
+          owner: "package-contract-generator-agent",
+        }),
+        expect.objectContaining({
+          capability: "atom-view",
+          currentHome: "@attune/nx:atom-view",
+          targetHome: "@attune/nx:atom-view",
+          owner: "atom-view-generator-agent",
+        }),
+        expect.objectContaining({
+          capability: "compile-only-assertion",
+          currentHome: "@attune/nx:package-contract",
+          targetHome: "@attune/nx:package-contract",
+          owner: "package-contract-generator-agent",
+        }),
+        expect.objectContaining({
+          capability: "type-guidance",
+          currentHome: "@attune/nx:package-contract",
+          targetHome: "@attune/nx:package-contract",
+          owner: "type-guidance-agent",
+        }),
+      ]),
+    )
+  })
+
   it("generates DiscoveryEvents facade and projection ownership comments", () => {
     const tree = new MemoryTree()
 
@@ -80,7 +166,10 @@ describe("attune-nx generators", () => {
     expect(source).toContain(
       "world-changing effects live in Effect services, not atoms",
     )
-    expect(source).toContain("export class DecisionRunner extends Context.Tag")
+    expect(source).toContain(
+      "export class DecisionRunner extends Effect.Service<DecisionRunner>()",
+    )
+    expect(source).toContain("    accessors: true,")
 
     const shard = JSON.parse(
       tree.files.get("packages/decision-core/attune.source-bom.json") ?? "{}",
@@ -100,6 +189,8 @@ describe("attune-nx generators", () => {
         directory: "packages/decision-core/src/effect/services",
         export: true,
         name: "Decision Runner",
+        operationId: "decision-runner.run",
+        operationKind: "command",
         tag: "@attune/service/DecisionRunner",
       },
       ownedFiles: [
@@ -108,7 +199,7 @@ describe("attune-nx generators", () => {
       ],
       syncTargets: [{ project: "decision-core", target: "sync-effect-layers" }],
       checkTargets: [{ project: "decision-core", target: "typecheck" }],
-      openspecChangeId: "enforce-nix-agent-policy-gates",
+      openspecChangeId: "standardize-effect-package-contracts",
     })
     expect(shard.entries[0].optionsHash).toMatch(/^fnv1a32:/)
 

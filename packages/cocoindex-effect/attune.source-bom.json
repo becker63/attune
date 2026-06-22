@@ -1,4 +1,85 @@
 {
+  "entries": [
+    {
+      "checkTargets": [
+        {
+          "project": "cocoindex-effect",
+          "target": "typecheck"
+        },
+        {
+          "project": "workspace",
+          "target": "package-contracts-check"
+        }
+      ],
+      "editableRegions": [
+        {
+          "description": "Semantic recall package contract; add public CocoIndex/repository operations through package-contract sync/generation.",
+          "file": "src/attune.package.ts",
+          "marker": "definePackageContract"
+        },
+        {
+          "description": "Compile-only contract assertions; regenerate when operation ids, layers, handlers, properties, or type guidance change.",
+          "file": "src/attune.package.typecheck.ts",
+          "marker": "AssertPackageContract"
+        }
+      ],
+      "generatorName": "@attune/nx:package-contract",
+      "openspecChangeId": "standardize-effect-package-contracts",
+      "options": {
+        "operationIds": [
+          "ensure-indexed",
+          "search-anchors",
+          "search-similar-anchors",
+          "get-anchor",
+          "fixture-client-query",
+          "normalize-raw-hits",
+          "decode-mcp-search-result",
+          "repository-session",
+          "repository-intelligence-query",
+          "repository-tool-status-view",
+          "command-lifecycle",
+          "mcp-lifecycle",
+          "emit-mcp-schema",
+          "sync-mcp-tool-registry"
+        ],
+        "packageId": "cocoindex-effect",
+        "packageKind": "semantic-recall-service",
+        "project": "cocoindex-effect",
+        "sourceRoot": "packages/cocoindex-effect/src"
+      },
+      "optionsHash": "fnv1a32:cocoindex-effect-contract",
+      "ownedFiles": [
+        "src/attune.package.ts",
+        "src/attune.package.typecheck.ts"
+      ],
+      "owningProject": "cocoindex-effect",
+      "projectRoot": "packages/cocoindex-effect",
+      "sourceShapeKind": "package-contract",
+      "syncTargets": [
+        {
+          "project": "cocoindex-effect",
+          "target": "sync-package-contract"
+        }
+      ]
+    }
+  ],
+  "contractShards": [
+    {
+      "generator": "@attune/nx:package-contract",
+      "outputs": [
+        "src/attune.package.ts",
+        "src/attune.package.typecheck.ts",
+        "test/attune-package-contract.test.ts"
+      ],
+      "sources": [
+        "project.json",
+        "src/**",
+        "test/**"
+      ],
+      "status": "generated",
+      "target": "sync-package-contract"
+    }
+  ],
   "generatedOutputs": [
     {
       "generator": "scripts/generationStage.ts emit-mcp-schema",

@@ -1,4 +1,21 @@
 {
+  "contractShards": [
+    {
+      "generator": "@attune/nx:package-contract",
+      "outputs": [
+        "src/attune.package.ts",
+        "src/attune.package.typecheck.ts",
+        "test/attune-package-contract.test.ts"
+      ],
+      "sources": [
+        "project.json",
+        "src/**",
+        "test/**"
+      ],
+      "status": "generated",
+      "target": "sync-package-contract"
+    }
+  ],
   "generatedOutputs": [],
   "historicalHandAuthoredShapes": [
     {
@@ -12,12 +29,15 @@
   "ownedFiles": [
     "package.json",
     "project.json",
+    "src/attune.package.ts",
+    "src/attune.package.typecheck.ts",
     "src/**",
+    "test/attune-package-contract.test.ts",
     "test/**",
     "tsconfig.json",
     "vitest.config.ts"
   ],
-  "project": "attune-architecture-lint",
+  "project": "attune-architecture",
   "projectRoot": "packages/attune-architecture-lint",
   "queryCheckTargetNotes": [
     {

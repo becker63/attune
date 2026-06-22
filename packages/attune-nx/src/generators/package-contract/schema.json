@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "PackageContractGeneratorSchema",
+  "title": "Attune Package Contract",
+  "type": "object",
+  "properties": {
+    "packageId": {
+      "type": "string",
+      "description": "Stable Attune package id, for example attune-nx."
+    },
+    "packageKind": {
+      "type": "string",
+      "description": "Attune package archetype.",
+      "enum": [
+        "generator-tooling",
+        "architecture-policy",
+        "policy-plugin",
+        "core-discovery-runtime",
+        "semantic-recall-service",
+        "foldkit-ui",
+        "agent-extension",
+        "joern-runtime-and-dsl",
+        "property-proof-runtime",
+        "platform-resource-provider",
+        "day0-resource-runbook"
+      ]
+    },
+    "sourceRoot": {
+      "type": "string",
+      "description": "Package root recorded in the generated contract, for example packages/attune-nx."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Source directory where attune.package.ts files should be written. Defaults to <sourceRoot>/src when sourceRoot is provided, otherwise src."
+    },
+    "project": {
+      "type": "string",
+      "description": "Owning Nx project id for generated provenance."
+    },
+    "operationId": {
+      "type": "string",
+      "description": "Optional seed operation id. Defaults to <packageId>-boundary."
+    },
+    "operationKind": {
+      "type": "string",
+      "description": "Optional seed operation kind.",
+      "enum": [
+        "codec",
+        "query",
+        "command",
+        "projection",
+        "event-facade",
+        "atom-family",
+        "resource-provider",
+        "generator",
+        "policy-rule",
+        "joern-template"
+      ],
+      "default": "query"
+    },
+    "operationName": {
+      "type": "string",
+      "description": "Optional human-readable operation name used for generated schema identifiers."
+    },
+    "generatorVersion": {
+      "type": "string",
+      "description": "Generator version recorded in Source BOM provenance."
+    },
+    "generatorRevision": {
+      "type": "string",
+      "description": "Generator revision recorded in Source BOM provenance."
+    },
+    "openspecChangeId": {
+      "type": "string",
+      "description": "OpenSpec change id recorded in Source BOM provenance."
+    }
+  },
+  "required": ["packageId", "packageKind"],
+  "additionalProperties": false
+}

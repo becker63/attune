@@ -5,7 +5,7 @@
     "rootDir": ".",
     "types": ["node", "vitest/globals"],
     "paths": {
-      "@attune/architecture-lint": ["./src/index.ts"]
+      "@attune/architecture": ["./src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]

@@ -9,7 +9,17 @@
     "effect-service": {
       "factory": "./dist/generators/effect-service/generator",
       "schema": "./src/generators/effect-service/schema.json",
-      "description": "Create an Effect service boundary with a Context.Service, live Layer shell, and export boundary."
+      "description": "Create a canonical Effect.Service boundary with operation metadata, PackageLayer, PackageTestLayer, and Source BOM provenance."
+    },
+    "package-contract": {
+      "factory": "./dist/generators/package-contract/generator",
+      "schema": "./src/generators/package-contract/schema.json",
+      "description": "Create an Effect Schema-backed Attune package contract with compile-only assertions and type guidance."
+    },
+    "atom-view": {
+      "factory": "./dist/generators/atom-view/generator",
+      "schema": "./src/generators/atom-view/schema.json",
+      "description": "Create package-level Reactivity keys, atom shells, and atom graph registration."
     },
     "joern-template": {
       "factory": "./dist/generators/joern-template/generator",

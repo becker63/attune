@@ -1,0 +1,22 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "framework-sqlite",
+  "projectType": "library",
+  "root": "framework/sqlite",
+  "sourceRoot": "framework/sqlite/src",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsc -p framework/sqlite/tsconfig.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config framework/sqlite/vitest.config.ts"
+      }
+    }
+  },
+  "tags": ["scope:framework", "attune:framework", "attune:internal"]
+}

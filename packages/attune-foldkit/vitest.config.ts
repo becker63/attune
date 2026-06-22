@@ -4,6 +4,12 @@ import { fileURLToPath } from "node:url"
 export default defineConfig({
   resolve: {
     alias: {
+      "@attune/architecture": fileURLToPath(
+        new URL("../attune-architecture-lint/src/index.ts", import.meta.url),
+      ),
+      "@attune/framework-protocol": fileURLToPath(
+        new URL("../../framework/protocol/src/index.ts", import.meta.url),
+      ),
       "@attune/attuned-discovery": fileURLToPath(
         new URL("../attuned-discovery/src/index.ts", import.meta.url),
       ),

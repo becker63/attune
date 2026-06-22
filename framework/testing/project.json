@@ -1,0 +1,22 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "framework-testing",
+  "projectType": "library",
+  "root": "framework/testing",
+  "sourceRoot": "framework/testing/src",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsc -p framework/testing/tsconfig.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config framework/testing/vitest.config.ts"
+      }
+    }
+  },
+  "tags": ["scope:framework", "attune:framework"]
+}

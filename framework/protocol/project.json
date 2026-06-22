@@ -1,0 +1,22 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "framework-protocol",
+  "projectType": "library",
+  "root": "framework/protocol",
+  "sourceRoot": "framework/protocol/src",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsc -p framework/protocol/tsconfig.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config framework/protocol/vitest.config.ts"
+      }
+    }
+  },
+  "tags": ["scope:framework", "attune:framework"]
+}

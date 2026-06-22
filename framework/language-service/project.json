@@ -1,0 +1,22 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "framework-language-service",
+  "projectType": "library",
+  "root": "framework/language-service",
+  "sourceRoot": "framework/language-service/src",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsc -p framework/language-service/tsconfig.json --noEmit"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --config framework/language-service/vitest.config.ts"
+      }
+    }
+  },
+  "tags": ["scope:framework", "attune:framework", "attune:internal"]
+}

@@ -1,4 +1,62 @@
 {
+  "entries": [
+    {
+      "checkTargets": [
+        {
+          "project": "attune-nx",
+          "target": "typecheck"
+        },
+        {
+          "project": "workspace",
+          "target": "package-contracts-check"
+        }
+      ],
+      "editableRegions": [
+        {
+          "description": "Customized generator-tooling package contract; preserve generated module exports and assertion shape.",
+          "file": "packages/attune-nx/src/attune.package.ts",
+          "marker": "Generated-shape contract customized for @attune/nx itself."
+        },
+        {
+          "description": "Compile-only contract assertions; update when operation ids change.",
+          "file": "packages/attune-nx/src/attune.package.typecheck.ts",
+          "marker": "AssertPackageContract"
+        }
+      ],
+      "generatorName": "@attune/nx:package-contract",
+      "openspecChangeId": "standardize-effect-package-contracts",
+      "options": {
+        "directory": "packages/attune-nx/src",
+        "operationIds": [
+          "generate-effect-service",
+          "generate-package-contract",
+          "generate-atom-view",
+          "query-generator-inventory",
+          "infer-package-contract-graph",
+          "upsert-source-bom-provenance",
+          "normalize-executor-intent"
+        ],
+        "packageId": "attune-nx",
+        "packageKind": "generator-tooling",
+        "project": "attune-nx",
+        "sourceRoot": "packages/attune-nx"
+      },
+      "optionsHash": "fnv1a32:7c940244",
+      "ownedFiles": [
+        "packages/attune-nx/src/attune.package.ts",
+        "packages/attune-nx/src/attune.package.typecheck.ts"
+      ],
+      "owningProject": "attune-nx",
+      "projectRoot": "packages/attune-nx",
+      "sourceShapeKind": "package-contract",
+      "syncTargets": [
+        {
+          "project": "attune-nx",
+          "target": "sync-package-contract"
+        }
+      ]
+    }
+  ],
   "generatedOutputs": [
     {
       "generator": "scripts/write-generator-cjs-wrappers.mjs",
@@ -11,6 +69,23 @@
         "generators.json"
       ],
       "target": "build"
+    }
+  ],
+  "contractShards": [
+    {
+      "generator": "@attune/nx:package-contract",
+      "outputs": [
+        "src/attune.package.ts",
+        "src/attune.package.typecheck.ts"
+      ],
+      "sources": [
+        "generators.json",
+        "project.json",
+        "src/**",
+        "test/**"
+      ],
+      "status": "generated",
+      "target": "sync-package-contract"
     }
   ],
   "historicalHandAuthoredShapes": [

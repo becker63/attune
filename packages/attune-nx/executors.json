@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/nx/schemas/executors-schema.json",
+  "executors": {
+    "package-check": {
+      "implementation": "./dist/executors/package-check/executor.js",
+      "schema": "./src/executors/package-check/schema.json",
+      "description": "Normalize package contract, conformance, property, coverage, typecheck, test, and lint check intent for an Attune package."
+    },
+    "generated": {
+      "implementation": "./dist/executors/generated/executor.js",
+      "schema": "./src/executors/generated/schema.json",
+      "description": "Normalize generated artifact sync, stale-output, ledger, and provenance intent for an Attune package."
+    },
+    "toolchain": {
+      "implementation": "./dist/executors/toolchain/executor.js",
+      "schema": "./src/executors/toolchain/schema.json",
+      "description": "Normalize Attune typed external toolchain intent for Nix, Joern, Arion, Alchemy, Vite, Kubernetes, mutation, worker fuzz, TypeScript, test, and lint workflows."
+    }
+  }
+}

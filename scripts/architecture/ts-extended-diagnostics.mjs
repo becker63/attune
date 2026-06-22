@@ -15,8 +15,8 @@ for (const tsconfig of packageTsconfigs) {
   try {
     const output = execFileSync(
       "pnpm",
-      ["exec", "tsc", "--noEmit", "--extendedDiagnostics", "--project", tsconfig],
-      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+      ["exec", "tsc", "--noEmit", "--extendedDiagnostics", "--project", "tsconfig.json"],
+      { cwd: packageDir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
     );
     console.log(output.trim());
   } catch (error) {

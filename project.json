@@ -23,6 +23,28 @@
         "command": "node scripts/architecture/source-bom-check.mjs"
       }
     },
+    "shape-conformance": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsx packages/attune-architecture-lint/src/shape-conformance-cli.ts"
+      },
+      "metadata": {
+        "description": "Effect Schema-backed generator shape inventory and Source BOM conformance check."
+      }
+    },
+    "package-contracts-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm exec nx run workspace:source-bom-check",
+          "pnpm exec nx run workspace:shape-conformance"
+        ],
+        "parallel": false
+      },
+      "metadata": {
+        "description": "Focused diagnostic target for package contract/source ownership and generator shape conformance during the Effect package-contract migration."
+      }
+    },
     "policy-install-hooks": {
       "executor": "nx:run-commands",
       "options": {
@@ -66,7 +88,7 @@
         "command": "node scripts/architecture/scan.mjs"
       },
       "metadata": {
-        "description": "Low-level architecture scanner. The public npm arch:scan script is a compatibility alias to workspace:policy-architecture."
+        "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:package-contracts-check."
       }
     },
     "arch:deps": {
@@ -124,7 +146,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "pnpm exec nx run attune-architecture-lint:test",
+          "pnpm exec nx run attune-architecture:test",
           "pnpm exec nx run workspace:arch:scan",
           "pnpm exec nx run workspace:arch:deps",
           "pnpm exec nx run workspace:arch:cycles",
@@ -139,14 +161,25 @@
         "parallel": false
       },
       "metadata": {
-        "description": "Nx-owned public architecture policy gate that composes attune-architecture-lint, architecture scan, and Effect oxlint policy checks."
+        "description": "Internal compatibility aggregate retained during migration. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:package-contracts-check."
       }
     },
     "policy-proof-pressure": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "pnpm exec nx run workspace:policy-architecture",
+          "pnpm exec nx run workspace:package-contracts-check",
+          "pnpm exec nx run attune-architecture:test",
+          "pnpm exec nx run workspace:arch:scan",
+          "pnpm exec nx run workspace:arch:deps",
+          "pnpm exec nx run workspace:arch:cycles",
+          "pnpm exec nx run workspace:arch:complexity",
+          "pnpm exec nx run workspace:arch:duplicates",
+          "pnpm exec nx run workspace:arch:types",
+          "pnpm exec nx run workspace:arch:churn",
+          "pnpm exec nx run effect-oxlint-policy:test",
+          "pnpm exec nx run effect-oxlint-policy:build",
+          "pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet",
           "pnpm exec nx run workspace:arch:mutation"
         ],
         "parallel": false
@@ -158,8 +191,18 @@
         "commands": [
           "pnpm exec nx graph --file=/tmp/attune-nx-graph.json",
           "pnpm exec nx run attune-nx:test",
-          "pnpm exec nx run workspace:source-bom-check",
-          "pnpm exec nx run workspace:policy-architecture",
+          "pnpm exec nx run workspace:package-contracts-check",
+          "pnpm exec nx run attune-architecture:test",
+          "pnpm exec nx run workspace:arch:scan",
+          "pnpm exec nx run workspace:arch:deps",
+          "pnpm exec nx run workspace:arch:cycles",
+          "pnpm exec nx run workspace:arch:complexity",
+          "pnpm exec nx run workspace:arch:duplicates",
+          "pnpm exec nx run workspace:arch:types",
+          "pnpm exec nx run workspace:arch:churn",
+          "pnpm exec nx run effect-oxlint-policy:test",
+          "pnpm exec nx run effect-oxlint-policy:build",
+          "pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet",
           "node scripts/codex/verify-pr-completion.mjs"
         ],
         "parallel": false

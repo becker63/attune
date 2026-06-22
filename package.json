@@ -18,7 +18,7 @@
     "codex:check": "node scripts/codex/pnpm.mjs exec nx run workspace:policy-fast",
     "codex:cloud-check": "node scripts/codex/pnpm.mjs exec nx run workspace:policy-fast",
     "codex:audit-prs": "node scripts/codex/audit-pr-recovery.mjs",
-    "arch:scan": "node scripts/codex/pnpm.mjs exec nx run workspace:policy-architecture",
+    "arch:scan": "node scripts/codex/pnpm.mjs exec nx run workspace:arch:scan",
     "arch:mutation": "node scripts/codex/pnpm.mjs exec nx run workspace:arch:mutation",
     "source-bom:check": "node scripts/codex/pnpm.mjs exec nx run workspace:source-bom-check",
     "policy:commit": "node scripts/codex/pnpm.mjs exec nx run workspace:policy-commit",
@@ -26,6 +26,8 @@
     "policy:all": "node scripts/codex/pnpm.mjs exec nx run workspace:policy-all"
   },
   "devDependencies": {
+    "@effect/rpc": "0.75.1",
+    "@fast-check/worker": "0.6.0",
     "@nx/js": "^22.2.0",
     "@nx/workspace": "^22.2.0",
     "@stryker-mutator/core": "^9.6.1",

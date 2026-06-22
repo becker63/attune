@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "title": "Attune toolchain executor",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "targetProject": { "type": "string", "minLength": 1 },
+    "tool": {
+      "type": "string",
+      "enum": [
+        "nix",
+        "joern",
+        "arion",
+        "alchemy",
+        "vite",
+        "kubernetes",
+        "mutation",
+        "worker-fuzz",
+        "typescript",
+        "test-runner",
+        "linter"
+      ],
+      "default": "nix"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "plan",
+        "check",
+        "build",
+        "test",
+        "generate",
+        "serve",
+        "deploy",
+        "destroy",
+        "fuzz",
+        "mutate",
+        "extract-schema",
+        "smoke"
+      ],
+      "default": "check"
+    },
+    "toolId": { "type": "string", "minLength": 1 },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        ]
+      },
+      "default": {}
+    },
+    "inputs": { "$ref": "#/definitions/stringArray" },
+    "outputs": { "$ref": "#/definitions/stringArray" },
+    "evidenceOutputs": { "$ref": "#/definitions/stringArray" },
+    "configDependencies": { "$ref": "#/definitions/stringArray" },
+    "resourceTier": { "$ref": "#/definitions/resourceTier" },
+    "workerBudget": { "$ref": "#/definitions/workerBudget" },
+    "timeoutSeconds": { "type": "integer", "minimum": 1 },
+    "destructiveGate": { "$ref": "#/definitions/destructiveGate" },
+    "resourceProviderGate": { "$ref": "#/definitions/resourceProviderGate" },
+    "dryRun": { "type": "boolean", "default": true }
+  },
+  "definitions": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "default": []
+    },
+    "resourceTier": {
+      "type": "string",
+      "enum": ["local", "standard", "heavy", "external", "destructive"],
+      "default": "local"
+    },
+    "workerBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxWorkers": { "type": "integer", "minimum": 1 },
+        "shardCount": { "type": "integer", "minimum": 1 },
+        "shardIndex": { "type": "integer", "minimum": 0 },
+        "seedRange": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "integer" },
+            "end": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "destructiveGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": { "type": "boolean", "default": true },
+        "proof": { "type": "string", "minLength": 1 },
+        "approval": { "type": "string", "minLength": 1 },
+        "observation": { "type": "string", "minLength": 1 }
+      }
+    },
+    "resourceProviderGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": { "type": "boolean", "default": true },
+        "provider": { "type": "string", "minLength": 1 },
+        "operation": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -3,10 +3,16 @@
   "compilerOptions": {
     "noEmit": true,
     "types": [],
-    "rootDir": "src",
+    "rootDir": "../..",
     "paths": {
+      "@attune/architecture": [
+        "../attune-architecture-lint/src/package-contract/index.ts"
+      ],
+      "@attune/framework-protocol": [
+        "../../framework/protocol/src/index.ts"
+      ],
       "@attune/nx": ["./src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

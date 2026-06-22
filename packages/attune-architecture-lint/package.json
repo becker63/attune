@@ -1,10 +1,10 @@
 {
-  "name": "@attune/architecture-lint",
+  "name": "@attune/architecture",
   "version": "0.0.0",
   "description": "Typed architecture policy checks for Attune workspace conventions.",
   "type": "module",
   "bin": {
-    "attune-architecture-lint": "./dist/cli.js"
+    "attune-architecture": "./dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

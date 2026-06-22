@@ -1,5 +1,5 @@
 {
-  "name": "attune-architecture-lint",
+  "name": "attune-architecture",
   "root": "packages/attune-architecture-lint",
   "sourceRoot": "packages/attune-architecture-lint/src",
   "targets": {
