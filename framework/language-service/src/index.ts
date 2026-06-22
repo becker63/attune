@@ -241,6 +241,16 @@ export const quickInfoForDiagnostic = (
   const observed = context.summary === undefined
     ? undefined
     : `${context.summary.evidenceCount}/${context.summary.obligationCount}`
+  const runtimeState = context.summary === undefined
+    ? []
+    : [
+      `evidence runs: ${context.summary.evidenceRunCount}`,
+      `coverage feedback: ${context.summary.coverageFeedbackCount}`,
+      `waivers: ${context.summary.activeWaiverCount} active, ${context.summary.waiverIssueCount} issues`,
+      ...(context.summary.replayMetadataCount === 0
+        ? []
+        : [`replay metadata: ${context.summary.replayMetadataCount}`]),
+    ]
   return {
     sourcePath: diagnostic.sourcePath,
     packageId: diagnostic.packageId,
@@ -256,6 +266,7 @@ export const quickInfoForDiagnostic = (
         `expected evidence: ${context.obligation.expectedEvidenceKinds.join(", ") || "none"}`,
       ]),
       ...(observed === undefined ? [] : [`evidence: ${observed} obligations observed`]),
+      ...runtimeState,
       diagnostic.explanation,
     ].join("\n"),
   }

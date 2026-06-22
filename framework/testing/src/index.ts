@@ -1,4 +1,5 @@
 export * from "./atom-graph-observer.js"
+export * from "./coverage-guided-fuzzer.js"
 export * from "./evidence-producer.js"
 export * from "./fastcheck.js"
 export * from "./operation-registry.js"

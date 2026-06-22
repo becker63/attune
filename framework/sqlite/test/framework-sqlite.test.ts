@@ -11,7 +11,10 @@ import {
   generatedArtifactContentHash,
   sqliteBackendName,
   withDescriptorHash,
+  type ProtocolCoverageFeedback,
+  type ProtocolReplayMetadata,
   type ProtocolStoreApi,
+  type ProtocolWaiverState,
 } from "../src/index.js"
 import type {
   AttuneGeneratedArtifactRecord,
@@ -60,7 +63,7 @@ describe("@attune/framework-sqlite", () => {
     const health = Effect.runSync(store.health())
     expect(health.ok).toBe(true)
     expect(health.backend).toBe(sqliteBackendName)
-    expect(health.migrationVersion).toBe(1)
+    expect(health.migrationVersion).toBe(2)
 
     Effect.runSync(store.putDescriptor(demoDescriptor()))
     expect(Effect.runSync(store.health()).rowCounts.descriptors).toBe(1)
@@ -70,7 +73,7 @@ describe("@attune/framework-sqlite", () => {
 
     const reinitialized = Effect.runSync(store.reinitialize())
     expect(reinitialized.ok).toBe(true)
-    expect(reinitialized.migrationVersion).toBe(1)
+    expect(reinitialized.migrationVersion).toBe(2)
     Effect.runSync(store.close())
   })
 
@@ -87,7 +90,25 @@ describe("@attune/framework-sqlite", () => {
     expect(snapshot.evidenceRuns).toEqual([demoEvidenceRun])
     expect(snapshot.evidence).toEqual([demoEvidenceEvent])
     expect(snapshot.generatedArtifacts).toEqual([demoGeneratedArtifact])
+    expect(snapshot.replayMetadata).toEqual([demoReplayMetadata])
+    expect(snapshot.waiverState).toEqual([demoWaiverState])
+    expect(snapshot.coverageFeedback).toEqual([demoCoverageFeedback])
     expect(snapshot.deltas).toEqual([demoDelta])
+
+    expect(Effect.runSync(store.health()).rowCounts).toMatchObject({
+      replayMetadata: 1,
+      waiverState: 1,
+      coverageFeedback: 1,
+    })
+    expect(Effect.runSync(store.listReplayMetadata({ packageId: "demo" }))).toEqual([
+      demoReplayMetadata,
+    ])
+    expect(Effect.runSync(store.listWaiverState({ packageId: "demo" }))).toEqual([
+      demoWaiverState,
+    ])
+    expect(Effect.runSync(store.listCoverageFeedback({ packageId: "demo" }))).toEqual([
+      demoCoverageFeedback,
+    ])
 
     const filteredDeltas = Effect.runSync(store.listDeltas({ packageId: "demo" }))
     expect(filteredDeltas).toEqual([demoDelta])
@@ -107,6 +128,9 @@ describe("@attune/framework-sqlite", () => {
     expect(snapshot.evidenceRuns).toHaveLength(1)
     expect(snapshot.evidence).toHaveLength(1)
     expect(snapshot.generatedArtifacts).toHaveLength(1)
+    expect(snapshot.replayMetadata).toHaveLength(1)
+    expect(snapshot.waiverState).toHaveLength(1)
+    expect(snapshot.coverageFeedback).toHaveLength(1)
     expect(snapshot.deltas).toHaveLength(1)
   })
 
@@ -130,6 +154,9 @@ const roundtripProtocolState = (store: ProtocolStoreApi): void => {
   Effect.runSync(store.recordEvidenceRun(demoEvidenceRun))
   Effect.runSync(store.recordEvidence(demoEvidenceEvent))
   Effect.runSync(store.recordGeneratedArtifact(demoGeneratedArtifact))
+  Effect.runSync(store.recordReplayMetadata(demoReplayMetadata))
+  Effect.runSync(store.recordWaiverState(demoWaiverState))
+  Effect.runSync(store.recordCoverageFeedback(demoCoverageFeedback))
   Effect.runSync(store.putDeltas([demoDelta]))
 }
 
@@ -155,6 +182,8 @@ const demoDescriptor = (): AttuneProtocolDescriptor =>
       inputSchema: "Struct",
       outputSchema: "Void",
     }],
+    waivers: [],
+    coverageExpectations: [],
   })
 
 const demoObligation: AttuneProtocolObligation = {
@@ -198,6 +227,48 @@ const demoGeneratedArtifact: AttuneGeneratedArtifactRecord = {
   expectedHash: generatedArtifactContentHash("expected artifact\n"),
   actualHash: generatedArtifactContentHash("actual artifact\n"),
   status: "stale",
+}
+
+const demoReplayMetadata: ProtocolReplayMetadata = {
+  replayId: "replay-1",
+  runId: "run-1",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  operationId: "operation",
+  propertyId: "demo.operation.property",
+  seed: 42,
+  shrinkPath: "0:1",
+  generatedValueSummary: "{ value: 1 }",
+  status: "failed",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoWaiverState: ProtocolWaiverState = {
+  waiverId: "waiver-1",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  category: "property",
+  status: "active",
+  targetObligationId: "demo:operation:property",
+  operationId: "operation",
+  owner: "framework",
+  reason: "temporary property harness migration",
+  reviewAt: "2026-07-22",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoCoverageFeedback: ProtocolCoverageFeedback = {
+  coverageId: "coverage-1",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  operationId: "operation",
+  kind: "atom-graph",
+  status: "hit",
+  coveragePoint: "demo.changed->demo.view",
+  seed: 42,
+  workerId: "worker-1",
+  shardId: "shard-1",
+  recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
 const demoDelta: AttuneProtocolDelta = {

@@ -24,6 +24,10 @@ export const runtimeProtocolStoreFromSqlite = (
     sqliteStore.putObligations(batch).pipe(
       Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "putObligations"))),
     ),
+  recordEvidenceRun: (run) =>
+    sqliteStore.recordEvidenceRun(run).pipe(
+      Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "recordEvidenceRun"))),
+    ),
   recordGeneratedArtifact: (record) =>
     sqliteStore.recordGeneratedArtifact(record).pipe(
       Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "recordGeneratedArtifact"))),
@@ -31,6 +35,18 @@ export const runtimeProtocolStoreFromSqlite = (
   recordEvidence: (event) =>
     sqliteStore.recordEvidence(event).pipe(
       Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "recordEvidence"))),
+    ),
+  recordReplayMetadata: (metadata) =>
+    sqliteStore.recordReplayMetadata(metadata).pipe(
+      Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "recordReplayMetadata"))),
+    ),
+  recordWaiverState: (waiver) =>
+    sqliteStore.recordWaiverState(waiver).pipe(
+      Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "recordWaiverState"))),
+    ),
+  recordCoverageFeedback: (feedback) =>
+    sqliteStore.recordCoverageFeedback(feedback).pipe(
+      Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "recordCoverageFeedback"))),
     ),
   putDeltas: (deltas) =>
     sqliteStore.putDeltas(deltas).pipe(
@@ -45,8 +61,12 @@ export const runtimeProtocolStoreFromSqlite = (
       Effect.map((snapshot) => ({
         descriptors: snapshot.descriptors,
         obligations: snapshot.obligations,
+        evidenceRuns: snapshot.evidenceRuns,
         evidence: snapshot.evidence,
         generatedArtifacts: snapshot.generatedArtifacts,
+        replayMetadata: snapshot.replayMetadata,
+        waiverState: snapshot.waiverState,
+        coverageFeedback: snapshot.coverageFeedback,
         deltas: snapshot.deltas,
       })),
       Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "snapshot"))),

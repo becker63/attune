@@ -1,3 +1,7 @@
+import { spawn } from "node:child_process"
+import { existsSync } from "node:fs"
+import { relative, resolve } from "node:path"
+
 export const resourceTiers = [
   "local",
   "standard",
@@ -17,7 +21,9 @@ export interface ExecutorDiagnostic {
     | "ATTUNE_EXECUTOR_EXPECTED_PARAMETERS"
     | "ATTUNE_EXECUTOR_EXPECTED_STRING"
     | "ATTUNE_EXECUTOR_EXPECTED_STRING_ARRAY"
+    | "ATTUNE_EXECUTOR_EVIDENCE_OUTPUT_NOT_CACHE"
     | "ATTUNE_EXECUTOR_GATE_INCOMPLETE"
+    | "ATTUNE_EXECUTOR_RAW_COMMAND_LEAK"
     | "ATTUNE_EXECUTOR_UNKNOWN_OPTION"
     | "ATTUNE_EXECUTOR_UNTYPED_SHELL"
   readonly path: string
@@ -37,6 +43,34 @@ export class ExecutorOptionError extends Error {
 export interface ExecutorContextLike {
   readonly projectName?: string
   readonly targetName?: string
+  readonly root?: string
+  readonly cwd?: string
+  readonly projectsConfigurations?: {
+    readonly projects?: Readonly<
+      Record<
+        string,
+        {
+          readonly root?: string
+          readonly sourceRoot?: string
+        }
+      >
+    >
+  }
+  readonly projectGraph?: {
+    readonly nodes?: Readonly<
+      Record<
+        string,
+        {
+          readonly data?: {
+            readonly root?: string
+            readonly sourceRoot?: string
+          }
+        }
+      >
+    >
+  }
+  readonly processRunner?: ExecutorProcessRunner
+  readonly summarySink?: (summary: ExecutorRunSummary) => void
 }
 
 export interface NormalizedSeedRange {
@@ -81,7 +115,7 @@ export interface NormalizedCommonExecutorOptions {
 
 export interface ExecutorIntent<Action extends Record<string, unknown>> {
   readonly executor: `attune:${string}`
-  readonly executionMode: "intent-only"
+  readonly executionMode: "dry-run" | "execute"
   readonly project: string | null
   readonly target: string | null
   readonly inputs: readonly string[]
@@ -96,6 +130,91 @@ export interface ExecutorIntent<Action extends Record<string, unknown>> {
     readonly resourceProvider: NormalizedResourceProviderGate | null
   }
   readonly action: Action
+}
+
+export interface ExecutorProcessPlan {
+  readonly kind: "process"
+  readonly label: string
+  readonly adapter: string
+  readonly executable: string
+  readonly args: readonly string[]
+  readonly cwd: string
+  readonly env?: Readonly<Record<string, string>>
+}
+
+export interface ExecutorNoopPlan {
+  readonly kind: "no-op"
+  readonly label: string
+  readonly adapter: string
+  readonly reason: string
+}
+
+export interface ExecutorUnsupportedPlan {
+  readonly kind: "unsupported"
+  readonly label: string
+  readonly reason: string
+}
+
+export type ExecutorTypedPlan =
+  | ExecutorProcessPlan
+  | ExecutorNoopPlan
+  | ExecutorUnsupportedPlan
+
+export interface ExecutorProcessResult {
+  readonly exitCode: number | null
+  readonly signal: NodeJS.Signals | null
+  readonly timedOut: boolean
+  readonly error: string | null
+}
+
+export type ExecutorProcessRunner = (
+  plan: ExecutorProcessPlan,
+  options: {
+    readonly timeoutSeconds: number
+  },
+) => Promise<ExecutorProcessResult>
+
+export interface ExecutorRunSummary {
+  readonly kind: "attune.executor.summary"
+  readonly executor: `attune:${string}`
+  readonly executionMode: "dry-run" | "execute"
+  readonly status: "dry-run" | "passed" | "failed" | "unsupported"
+  readonly project: string | null
+  readonly target: string | null
+  readonly resourceTier: ResourceTier
+  readonly timeoutSeconds: number
+  readonly inputs: readonly string[]
+  readonly outputs: readonly string[]
+  readonly evidenceOutputs: readonly string[]
+  readonly cacheOnlyEvidence: true
+  readonly action: Record<string, unknown>
+  readonly plans: readonly ExecutorPlanSummary[]
+  readonly results: readonly ExecutorPlanResultSummary[]
+}
+
+export interface ExecutorPlanSummary {
+  readonly kind: ExecutorTypedPlan["kind"]
+  readonly label: string
+  readonly adapter: string | null
+  readonly executable: string | null
+  readonly args: readonly string[]
+  readonly cwd: string | null
+  readonly reason: string | null
+}
+
+export interface ExecutorPlanResultSummary {
+  readonly label: string
+  readonly status: "skipped" | "passed" | "failed"
+  readonly exitCode: number | null
+  readonly signal: NodeJS.Signals | null
+  readonly timedOut: boolean
+  readonly error: string | null
+}
+
+export interface ExecutorRunResult<Intent extends ExecutorIntent<Record<string, unknown>>> {
+  readonly success: boolean
+  readonly intent: Intent
+  readonly summary: ExecutorRunSummary
 }
 
 const forbiddenShellOptionKeys = new Set([
@@ -137,6 +256,7 @@ export const normalizeOptionsRecord = (
 } => {
   const diagnostics: ExecutorDiagnostic[] = []
   collectForbiddenShellOptions(value, "$", diagnostics)
+  collectRawCommandLeaks(value, "$", diagnostics)
 
   if (!isRecord(value)) {
     diagnostics.push({
@@ -232,7 +352,7 @@ export const createIntent = <Action extends Record<string, unknown>>(input: {
   readonly action: Action
 }): ExecutorIntent<Action> => ({
   executor: input.executor,
-  executionMode: "intent-only",
+  executionMode: input.common.dryRun ? "dry-run" : "execute",
   project: input.common.targetProject ?? input.context?.projectName ?? null,
   target: input.context?.targetName ?? null,
   inputs: input.common.inputs,
@@ -248,6 +368,227 @@ export const createIntent = <Action extends Record<string, unknown>>(input: {
   },
   action: input.action,
 })
+
+export const runTypedExecutor = async <
+  Intent extends ExecutorIntent<Record<string, unknown>>,
+>(input: {
+  readonly intent: Intent
+  readonly common: NormalizedCommonExecutorOptions
+  readonly plans: readonly ExecutorTypedPlan[]
+  readonly context?: ExecutorContextLike | undefined
+  readonly runner?: ExecutorProcessRunner | undefined
+}): Promise<ExecutorRunResult<Intent>> => {
+  const workspaceRoot = resolveWorkspaceRoot(input.context)
+  const timeoutSeconds =
+    input.common.timeoutSeconds ??
+    defaultTimeoutSecondsByTier[input.common.resourceTier]
+
+  if (!input.common.dryRun) {
+    assertEvidenceOutputsAreCacheOnly(input.common.evidenceOutputs)
+  }
+
+  const planSummaries = input.plans.map((plan) =>
+    summarizePlan(plan, workspaceRoot),
+  )
+
+  if (input.common.dryRun) {
+    const summary = createRunSummary({
+      intent: input.intent,
+      common: input.common,
+      timeoutSeconds,
+      status: "dry-run",
+      plans: planSummaries,
+      results: input.plans.map((plan) => ({
+        label: plan.label,
+        status: "skipped",
+        exitCode: null,
+        signal: null,
+        timedOut: false,
+        error: null,
+      })),
+    })
+
+    emitRunSummary(summary, input.context)
+    return { success: true, intent: input.intent, summary }
+  }
+
+  const unsupported = input.plans.find((plan) => plan.kind === "unsupported")
+  if (unsupported !== undefined) {
+    const summary = createRunSummary({
+      intent: input.intent,
+      common: input.common,
+      timeoutSeconds,
+      status: "unsupported",
+      plans: planSummaries,
+      results: input.plans.map((plan) => ({
+        label: plan.label,
+        status: plan === unsupported ? "failed" : "skipped",
+        exitCode: null,
+        signal: null,
+        timedOut: false,
+        error:
+          plan === unsupported && plan.kind === "unsupported"
+            ? plan.reason
+            : null,
+      })),
+    })
+
+    emitRunSummary(summary, input.context)
+    return { success: false, intent: input.intent, summary }
+  }
+
+  const runner = input.runner ?? input.context?.processRunner ?? defaultProcessRunner
+  const results: ExecutorPlanResultSummary[] = []
+
+  for (const plan of input.plans) {
+    if (plan.kind === "no-op") {
+      results.push({
+        label: plan.label,
+        status: "skipped",
+        exitCode: null,
+        signal: null,
+        timedOut: false,
+        error: null,
+      })
+      continue
+    }
+
+    if (plan.kind === "unsupported") {
+      results.push({
+        label: plan.label,
+        status: "failed",
+        exitCode: null,
+        signal: null,
+        timedOut: false,
+        error: plan.reason,
+      })
+      break
+    }
+
+    const result = await runner(plan, { timeoutSeconds })
+    const passed =
+      result.exitCode === 0 && result.signal === null && !result.timedOut
+    results.push({
+      label: plan.label,
+      status: passed ? "passed" : "failed",
+      exitCode: result.exitCode,
+      signal: result.signal,
+      timedOut: result.timedOut,
+      error: result.error,
+    })
+
+    if (!passed) {
+      break
+    }
+  }
+
+  const success = results.every((result) => result.status !== "failed")
+  const summary = createRunSummary({
+    intent: input.intent,
+    common: input.common,
+    timeoutSeconds,
+    status: success ? "passed" : "failed",
+    plans: planSummaries,
+    results,
+  })
+
+  emitRunSummary(summary, input.context)
+  return { success, intent: input.intent, summary }
+}
+
+export const defaultProcessRunner: ExecutorProcessRunner = (
+  plan,
+  options,
+) =>
+  new Promise((resolveProcess) => {
+    let settled = false
+    let timedOut = false
+    const child = spawn(plan.executable, plan.args, {
+      cwd: plan.cwd,
+      env:
+        plan.env === undefined
+          ? process.env
+          : { ...process.env, ...plan.env },
+      shell: false,
+      stdio: "inherit",
+    })
+
+    const timeout = setTimeout(() => {
+      timedOut = true
+      child.kill("SIGTERM")
+    }, options.timeoutSeconds * 1000)
+
+    child.on("error", (error) => {
+      if (settled) {
+        return
+      }
+
+      settled = true
+      clearTimeout(timeout)
+      resolveProcess({
+        exitCode: 127,
+        signal: null,
+        timedOut,
+        error: error.message,
+      })
+    })
+
+    child.on("exit", (exitCode, signal) => {
+      if (settled) {
+        return
+      }
+
+      settled = true
+      clearTimeout(timeout)
+      resolveProcess({
+        exitCode,
+        signal,
+        timedOut,
+        error: null,
+      })
+    })
+  })
+
+export const resolveWorkspaceRoot = (
+  context?: ExecutorContextLike | undefined,
+): string => resolve(context?.root ?? context?.cwd ?? process.cwd())
+
+export const resolveProjectRoot = (
+  common: Pick<NormalizedCommonExecutorOptions, "targetProject">,
+  context?: ExecutorContextLike | undefined,
+): string => {
+  const workspaceRoot = resolveWorkspaceRoot(context)
+  const projectName = common.targetProject ?? context?.projectName ?? null
+  if (projectName === null) {
+    return workspaceRoot
+  }
+
+  const projectRoot =
+    context?.projectsConfigurations?.projects?.[projectName]?.root ??
+    context?.projectGraph?.nodes?.[projectName]?.data?.root
+  if (projectRoot !== undefined && projectRoot.length > 0) {
+    return resolve(workspaceRoot, projectRoot)
+  }
+
+  const packagesRoot = resolve(workspaceRoot, "packages", projectName)
+  if (
+    existsSync(resolve(packagesRoot, "project.json")) ||
+    existsSync(resolve(packagesRoot, "package.json"))
+  ) {
+    return packagesRoot
+  }
+
+  return workspaceRoot
+}
+
+export const relativeToWorkspace = (
+  path: string,
+  context?: ExecutorContextLike | undefined,
+): string => {
+  const workspaceRoot = resolveWorkspaceRoot(context)
+  const relativePath = relative(workspaceRoot, path).replaceAll("\\", "/")
+  return relativePath.length === 0 ? "." : relativePath
+}
 
 export const throwIfDiagnostics = (
   diagnostics: readonly ExecutorDiagnostic[],
@@ -448,6 +789,191 @@ const collectForbiddenShellOptions = (
 
     collectForbiddenShellOptions(entry, `${path}.${key}`, diagnostics)
   }
+}
+
+const collectRawCommandLeaks = (
+  value: unknown,
+  path: string,
+  diagnostics: ExecutorDiagnostic[],
+): void => {
+  if (typeof value === "string") {
+    const leak = detectRawCommandLeak(value)
+    if (leak !== null) {
+      diagnostics.push({
+        code: "ATTUNE_EXECUTOR_RAW_COMMAND_LEAK",
+        path,
+        message: `${path} contains a raw ${leak} command surface. Use typed Attune executor options instead.`,
+      })
+    }
+    return
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) =>
+      collectRawCommandLeaks(entry, `${path}[${index}]`, diagnostics),
+    )
+    return
+  }
+
+  if (!isRecord(value)) {
+    return
+  }
+
+  for (const [key, entry] of Object.entries(value)) {
+    collectRawCommandLeaks(entry, `${path}.${key}`, diagnostics)
+  }
+}
+
+const detectRawCommandLeak = (value: string): string | null => {
+  const trimmed = value.trim()
+  if (trimmed.length === 0) {
+    return null
+  }
+
+  if (/[;&|`]|(?:^|\s)(?:>\||>|<)|\$\(/u.test(trimmed)) {
+    return "shell"
+  }
+
+  if (
+    /^(?:node\s+)?(?:\.\.\/)*scripts\/codex\/pnpm\.mjs(?:\s|$)/u.test(
+      trimmed,
+    ) ||
+    /^(?:pnpm|npm|yarn|bun)(?:\s|$)/u.test(trimmed)
+  ) {
+    return "package-manager"
+  }
+
+  if (/^nix\s+(?:build|develop|flake|run|shell)(?:\s|$)/u.test(trimmed)) {
+    return "nix"
+  }
+
+  if (/^(?:bash|sh|zsh)\s+-c(?:\s|$)/u.test(trimmed)) {
+    return "shell"
+  }
+
+  if (
+    /^(?:tsx|ts-node|tsc|tsgo|vitest|stryker|joern|arion|kubectl|helm|docker|podman)\s/u.test(
+      trimmed,
+    )
+  ) {
+    return "tool"
+  }
+
+  return null
+}
+
+const defaultTimeoutSecondsByTier: Readonly<Record<ResourceTier, number>> = {
+  local: 120,
+  standard: 300,
+  heavy: 900,
+  external: 1_800,
+  destructive: 1_800,
+}
+
+const assertEvidenceOutputsAreCacheOnly = (
+  evidenceOutputs: readonly string[],
+): void => {
+  const diagnostics = evidenceOutputs
+    .filter((output) => !isCacheEvidenceOutput(output))
+    .map((output) => ({
+      code: "ATTUNE_EXECUTOR_EVIDENCE_OUTPUT_NOT_CACHE" as const,
+      path: "$.evidenceOutputs",
+      message: `${output} is not a gitignored Attune cache evidence output. Use .attune/cache/** or .nx/cache/**, or rely on stdout.`,
+    }))
+
+  throwIfDiagnostics(diagnostics)
+}
+
+const isCacheEvidenceOutput = (output: string): boolean =>
+  output === ".attune/cache" ||
+  output.startsWith(".attune/cache/") ||
+  output === ".nx/cache" ||
+  output.startsWith(".nx/cache/")
+
+const summarizePlan = (
+  plan: ExecutorTypedPlan,
+  workspaceRoot: string,
+): ExecutorPlanSummary => {
+  if (plan.kind === "process") {
+    const cwd = relative(workspaceRoot, plan.cwd).replaceAll("\\", "/")
+    return {
+      kind: plan.kind,
+      label: plan.label,
+      adapter: plan.adapter,
+      executable: plan.executable,
+      args: plan.args,
+      cwd: cwd.length === 0 ? "." : cwd,
+      reason: null,
+    }
+  }
+
+  return {
+    kind: plan.kind,
+    label: plan.label,
+    adapter: plan.kind === "no-op" ? plan.adapter : null,
+    executable: null,
+    args: [],
+    cwd: null,
+    reason: plan.reason,
+  }
+}
+
+const createRunSummary = <Intent extends ExecutorIntent<Record<string, unknown>>>(
+  input: {
+    readonly intent: Intent
+    readonly common: NormalizedCommonExecutorOptions
+    readonly timeoutSeconds: number
+    readonly status: ExecutorRunSummary["status"]
+    readonly plans: readonly ExecutorPlanSummary[]
+    readonly results: readonly ExecutorPlanResultSummary[]
+  },
+): ExecutorRunSummary => ({
+  kind: "attune.executor.summary",
+  executor: input.intent.executor,
+  executionMode: input.intent.executionMode,
+  status: input.status,
+  project: input.intent.project,
+  target: input.intent.target,
+  resourceTier: input.common.resourceTier,
+  timeoutSeconds: input.timeoutSeconds,
+  inputs: input.intent.inputs,
+  outputs: input.intent.outputs,
+  evidenceOutputs: input.intent.evidenceOutputs,
+  cacheOnlyEvidence: true,
+  action: input.intent.action,
+  plans: input.plans,
+  results: input.results,
+})
+
+const emitRunSummary = (
+  summary: ExecutorRunSummary,
+  context?: ExecutorContextLike | undefined,
+): void => {
+  if (context?.summarySink !== undefined) {
+    context.summarySink(summary)
+    return
+  }
+
+  console.log(`ATTUNE_EXECUTOR_SUMMARY ${stableStringify(summary)}`)
+}
+
+const stableStringify = (value: unknown): string =>
+  JSON.stringify(sortJsonValue(value))
+
+const sortJsonValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(sortJsonValue)
+  }
+
+  if (!isRecord(value)) {
+    return value
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => [key, sortJsonValue(entry)]),
+  )
 }
 
 const normalizeWorkerBudget = (

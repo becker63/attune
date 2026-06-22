@@ -4,6 +4,7 @@ import {
   hashProtocolValue,
   type AttuneProtocolDescriptor,
   type AttuneProtocolEvidenceEvent,
+  type AttuneProtocolEvidenceRun,
   type AttuneGeneratedArtifactRecord,
 } from "@attune/framework-protocol"
 import {
@@ -22,7 +23,10 @@ import {
   explainObligation,
   getPackageSummary,
   getRepairPlan,
+  type ProtocolCoverageFeedback,
+  type ProtocolReplayMetadata,
   type ProtocolStoreSnapshot,
+  type ProtocolWaiverState,
 } from "../src/index.js"
 
 const demoDescriptor = {
@@ -47,7 +51,119 @@ const demoDescriptor = {
     inputSchema: "ProjectInput",
     outputSchema: "ProjectOutput",
   }],
+  waivers: [],
+  coverageExpectations: [],
 } as const
+
+const demoEvidenceRun: AttuneProtocolEvidenceRun = {
+  runId: "run-1",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  tier: "commit",
+  status: "failed",
+  startedAt: "2026-06-22T00:00:00.000Z",
+  completedAt: "2026-06-22T00:00:02.000Z",
+}
+
+const demoPropertyEvidence: AttuneProtocolEvidenceEvent = {
+  eventId: "demo:project:property-run",
+  runId: "run-1",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  operationId: "project",
+  kind: "property-run",
+  observedAt: "2026-06-22T00:00:01.000Z",
+}
+
+const demoReplayMetadata: ProtocolReplayMetadata = {
+  replayId: "demo:project:replay",
+  runId: "run-1",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  operationId: "project",
+  propertyId: "demo.project.property",
+  seed: 42,
+  shrinkPath: "0:1",
+  generatedValueSummary: "{ event: 'changed' }",
+  status: "failed",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoActiveWaiver: ProtocolWaiverState = {
+  waiverId: "demo:project:law-waiver",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  category: "law",
+  status: "active",
+  targetObligationId: "demo:project:law:projection.deterministic-replay",
+  operationId: "project",
+  owner: "framework",
+  reason: "projection replay law is temporarily migrated",
+  reviewAt: "2026-07-22",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoExpiredWaiver: ProtocolWaiverState = {
+  ...demoActiveWaiver,
+  waiverId: "demo:project:expired-waiver",
+  status: "expired",
+  reason: "temporary waiver review date passed",
+  expiresAt: "2026-06-01",
+}
+
+const demoAtomCoverage: ProtocolCoverageFeedback = {
+  coverageId: "demo:project:atom-coverage",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  operationId: "project",
+  kind: "atom-graph",
+  status: "hit",
+  coveragePoint: "demo.changed->demoView",
+  seed: 42,
+  workerId: "worker-1",
+  shardId: "shard-1",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoTypeCoverage: ProtocolCoverageFeedback = {
+  coverageId: "demo:type-guidance:coverage",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  kind: "type-partition",
+  status: "hit",
+  coveragePoint: "ProjectInput.variant.default",
+  seed: 42,
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoFilterFeedback: ProtocolCoverageFeedback = {
+  coverageId: "demo:project:high-rejection-filter",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  operationId: "project",
+  kind: "filter",
+  status: "filtered",
+  coveragePoint: "ProjectInput.valid-event",
+  filterId: "project-valid-event-filter",
+  rejectionCount: 250,
+  acceptanceRate: 0.05,
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoWeakOracleFeedback: ProtocolCoverageFeedback = {
+  coverageId: "demo:project:weak-oracle",
+  protocolId: "attune/package/demo",
+  packageId: "demo",
+  operationId: "project",
+  kind: "implementation",
+  status: "hit",
+  coveragePoint: "packages/demo/src/project.ts:17",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+  payload: {
+    expectedGraphMovement: true,
+    observedGraphMovement: false,
+  },
+}
 
 const provideRuntime = <A, E>(
   effect: Effect.Effect<
@@ -139,6 +255,74 @@ describe("@attune/framework-runtime", () => {
     expect(diagnostics[0]?.code).toBe("attune/protocol/missing-obligation")
   })
 
+  it("computes deltas from evidence, waiver state, coverage feedback, and replay metadata", () => {
+    const deltas = computeProtocolDeltas({
+      protocolId: "attune/package/demo",
+      packageId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+      obligations: [{
+        obligationId: "demo:project:property",
+        protocolId: "attune/package/demo",
+        packageId: "demo",
+        operationId: "project",
+        kind: "property",
+        reason: "property evidence required",
+      }, {
+        obligationId: "demo:project:view-movement",
+        protocolId: "attune/package/demo",
+        packageId: "demo",
+        operationId: "project",
+        kind: "view-movement",
+        reason: "atom graph evidence required",
+      }, {
+        obligationId: "demo:type-guidance",
+        protocolId: "attune/package/demo",
+        packageId: "demo",
+        kind: "type-guidance",
+        reason: "type guidance coverage required",
+      }, {
+        obligationId: "demo:project:law:projection.deterministic-replay",
+        protocolId: "attune/package/demo",
+        packageId: "demo",
+        operationId: "project",
+        kind: "law",
+        reason: "law evidence required",
+      }],
+      evidence: [demoPropertyEvidence],
+      waiverState: [demoActiveWaiver, demoExpiredWaiver],
+      coverageFeedback: [
+        demoAtomCoverage,
+        demoTypeCoverage,
+        demoFilterFeedback,
+        demoWeakOracleFeedback,
+      ],
+      replayMetadata: [demoReplayMetadata],
+      generatedArtifacts: [{
+        artifactId: "demo:registry",
+        protocolId: "attune/package/demo",
+        packageId: "demo",
+        path: "packages/demo/src/generated/operation-registry.ts",
+        generatorId: "@attune/framework-nx:operation-registry",
+        expectedHash: "expected",
+        actualHash: "actual",
+        status: "current",
+      }],
+    })
+
+    expect(deltas.map((delta) => delta.kind)).toEqual(expect.arrayContaining([
+      "stale-generated-source",
+      "waiver-issue",
+      "blocked-obligation",
+      "high-rejection-filter",
+      "weak-oracle",
+    ]))
+    expect(deltas.some((delta) => delta.kind === "missing-obligation")).toBe(false)
+    expect(deltas.find((delta) => delta.kind === "blocked-obligation")?.repairActions[0]).toMatchObject({
+      id: "replay-counterexample",
+      options: expect.objectContaining({ seed: 42, shrinkPath: "0:1" }),
+    })
+  })
+
   it("provisions ProtocolRuntime/Query/Diagnostics through Effect layers", async () => {
     const result = await Effect.runPromise(
       provideRuntime(Effect.gen(function* protocolRuntimeProvisioning() {
@@ -184,6 +368,101 @@ describe("@attune/framework-runtime", () => {
     )
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
       "attune/protocol/missing-obligation",
+    )
+  })
+
+  it("records and reads property evidence cache state through runtime/query services", async () => {
+    const result = await Effect.runPromise(
+      provideRuntime(Effect.gen(function* propertyEvidenceRuntimeState() {
+        const runtime = yield* ProtocolRuntime
+        const query = yield* ProtocolQuery
+        const diagnostics = yield* ProtocolDiagnostics
+
+        yield* runtime.materializeDescriptor(demoDescriptor)
+        yield* runtime.recordEvidenceRun(demoEvidenceRun)
+        yield* runtime.recordEvidence(demoPropertyEvidence)
+        yield* runtime.recordReplayMetadata(demoReplayMetadata)
+        yield* runtime.recordWaiverState(demoActiveWaiver)
+        yield* runtime.recordCoverageFeedback(demoAtomCoverage)
+        yield* runtime.recordCoverageFeedback(demoTypeCoverage)
+        yield* runtime.recordCoverageFeedback(demoFilterFeedback)
+
+        const summary = yield* query.getPackageSummary("demo")
+        const state = yield* query.getPackageEvidenceState("demo")
+        const deltas = yield* query.listDeltas("demo")
+        const projected = yield* diagnostics.diagnosticsForFile(
+          "packages/demo/src/attune.package.ts",
+          { packageId: "demo", protocolId: "attune/package/demo" },
+        )
+
+        return { summary, state, deltas, projected }
+      })),
+    )
+
+    expect(result.summary).toMatchObject({
+      evidenceRunCount: 1,
+      evidenceCount: 1,
+      replayMetadataCount: 1,
+      coverageFeedbackCount: 3,
+      activeWaiverCount: 1,
+      waiverIssueCount: 0,
+    })
+    expect(result.state).toMatchObject({
+      evidenceRuns: [demoEvidenceRun],
+      evidence: [demoPropertyEvidence],
+      replayMetadata: [demoReplayMetadata],
+      waiverState: [demoActiveWaiver],
+    })
+    expect(result.state.coverageFeedback.map((feedback) => feedback.coverageId)).toEqual([
+      "demo:project:atom-coverage",
+      "demo:type-guidance:coverage",
+      "demo:project:high-rejection-filter",
+    ])
+    expect(result.deltas.map((delta) => delta.kind)).toEqual(expect.arrayContaining([
+      "blocked-obligation",
+      "high-rejection-filter",
+    ]))
+    expect(result.deltas.some((delta) =>
+      delta.obligationId === "demo:project:law:projection.deterministic-replay"
+    )).toBe(false)
+    expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
+      "attune/protocol/high-rejection-filter",
+    )
+  })
+
+  it("keeps evidence cache output out of checked-in report artifacts", async () => {
+    const result = await Effect.runPromise(
+      provideRuntime(Effect.gen(function* noReportOutputForEvidenceState() {
+        const runtime = yield* ProtocolRuntime
+        const query = yield* ProtocolQuery
+
+        yield* runtime.materializeDescriptor(demoDescriptor)
+        yield* runtime.recordEvidenceRun(demoEvidenceRun)
+        yield* runtime.recordEvidence(demoPropertyEvidence)
+        yield* runtime.recordReplayMetadata(demoReplayMetadata)
+        yield* runtime.recordCoverageFeedback(demoFilterFeedback)
+
+        const state = yield* query.getPackageEvidenceState("demo")
+        const deltas = yield* query.listDeltas("demo")
+
+        return { state, deltas }
+      })),
+    )
+
+    expect(result.state.generatedArtifacts).toEqual([])
+    expect(result.state.replayMetadata).toEqual([demoReplayMetadata])
+    expect(result.state.coverageFeedback).toEqual([demoFilterFeedback])
+    expect(result.deltas.flatMap((delta) => delta.repairActions)).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "source-edit",
+        }),
+      ]),
+    )
+    expect(result.deltas.map((delta) => delta.sourcePath)).not.toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/report|summary/u),
+      ]),
     )
   })
 
@@ -285,6 +564,8 @@ describe("@attune/framework-runtime", () => {
         inputSchema: "Struct",
         outputSchema: "Void",
       }],
+      waivers: [],
+      coverageExpectations: [],
     })
     const staleArtifact: AttuneGeneratedArtifactRecord = {
       artifactId: "sqlite-demo:registry",
@@ -314,17 +595,37 @@ describe("@attune/framework-runtime", () => {
 
         const receipt = yield* runtime.materializeDescriptor(descriptor)
         yield* runtime.recordGeneratedArtifact(staleArtifact)
+        yield* runtime.recordEvidenceRun({
+          runId: "run-1",
+          protocolId: descriptor.protocolId,
+          packageId: descriptor.packageId,
+          tier: "commit",
+          status: "passed",
+          startedAt: "2026-06-22T00:00:00.000Z",
+          completedAt: "2026-06-22T00:00:02.000Z",
+        })
         yield* runtime.recordEvidence(propertyEvidence)
+        yield* runtime.recordCoverageFeedback({
+          coverageId: "sqlite-demo:operation:atom-coverage",
+          protocolId: descriptor.protocolId,
+          packageId: descriptor.packageId,
+          operationId: "operation",
+          kind: "atom-graph",
+          status: "hit",
+          coveragePoint: "sqlite-demo.changed->sqlite-demo.view",
+          recordedAt: "2026-06-22T00:00:01.000Z",
+        })
         yield* runtime.refreshDeltas(descriptor.packageId)
 
         const summary = yield* query.getPackageSummary(descriptor.packageId)
+        const evidenceState = yield* query.getPackageEvidenceState(descriptor.packageId)
         const deltas = yield* query.listDeltas(descriptor.packageId)
         const projected = yield* diagnostics.diagnosticsForFile(
           descriptor.sourcePath,
           { packageId: descriptor.packageId, protocolId: descriptor.protocolId },
         )
 
-        return { receipt, summary, deltas, projected }
+        return { receipt, summary, evidenceState, deltas, projected }
       })),
     )
 
@@ -336,9 +637,13 @@ describe("@attune/framework-runtime", () => {
     expect(result.summary).toMatchObject({
       operationCount: 1,
       obligationCount: 6,
+      evidenceRunCount: 1,
       evidenceCount: 1,
+      coverageFeedbackCount: 1,
       staleGeneratedArtifactCount: 1,
     })
+    expect(result.evidenceState.evidenceRuns).toHaveLength(1)
+    expect(result.evidenceState.coverageFeedback).toHaveLength(1)
     expect(result.deltas.map((delta) => delta.kind)).toEqual(
       expect.arrayContaining(["missing-obligation", "stale-generated-source"]),
     )

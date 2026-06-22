@@ -5,22 +5,98 @@ import {
   AttuneProtocolDescriptorSchema,
   AttuneProtocolDiagnosticSchema,
   AttuneProtocolEvidenceEventSchema,
+  AttuneProtocolEvidenceRunSchema,
   AttuneProtocolObligationSchema,
   type AttuneGeneratedArtifactRecord,
   type AttuneProtocolDelta,
   type AttuneProtocolDescriptor,
   type AttuneProtocolDiagnostic,
   type AttuneProtocolEvidenceEvent,
+  type AttuneProtocolEvidenceRun,
   type AttuneProtocolObligation,
 } from "@attune/framework-protocol"
 
 import type { ProtocolRuntimeSnapshot } from "./ProtocolProjection.js"
 
+export const ProtocolReplayMetadataSchema = Schema.Struct({
+  replayId: Schema.String,
+  runId: Schema.String,
+  protocolId: Schema.String,
+  packageId: Schema.String,
+  operationId: Schema.optional(Schema.String),
+  propertyId: Schema.optional(Schema.String),
+  seed: Schema.Number,
+  shrinkPath: Schema.optional(Schema.String),
+  generatedValueSummary: Schema.optional(Schema.String),
+  harnessPayloadSummary: Schema.optional(Schema.String),
+  exitSummary: Schema.optional(Schema.String),
+  status: Schema.Literals(["recorded", "replayed", "failed"] as const),
+  recordedAt: Schema.String,
+  payload: Schema.optional(Schema.Unknown),
+})
+
+export type ProtocolReplayMetadata = typeof ProtocolReplayMetadataSchema.Type
+
+export const ProtocolWaiverStateSchema = Schema.Struct({
+  waiverId: Schema.String,
+  protocolId: Schema.String,
+  packageId: Schema.String,
+  category: Schema.String,
+  status: Schema.Literals(["active", "expired", "invalid"] as const),
+  targetObligationId: Schema.optional(Schema.String),
+  operationId: Schema.optional(Schema.String),
+  targetId: Schema.optional(Schema.String),
+  owner: Schema.optional(Schema.String),
+  reason: Schema.String,
+  reviewAt: Schema.optional(Schema.String),
+  expiresAt: Schema.optional(Schema.String),
+  recordedAt: Schema.String,
+  payload: Schema.optional(Schema.Unknown),
+})
+
+export type ProtocolWaiverState = typeof ProtocolWaiverStateSchema.Type
+
+export const ProtocolCoverageFeedbackSchema = Schema.Struct({
+  coverageId: Schema.String,
+  protocolId: Schema.String,
+  packageId: Schema.String,
+  operationId: Schema.optional(Schema.String),
+  kind: Schema.Literals([
+    "type-partition",
+    "atom-graph",
+    "implementation",
+    "filter",
+    "law",
+    "schema-branch",
+    "transition",
+    "error-path",
+  ] as const),
+  status: Schema.Literals(["hit", "missed", "unreachable", "filtered", "retained"] as const),
+  coveragePoint: Schema.String,
+  sourcePath: Schema.optional(Schema.String),
+  seed: Schema.optional(Schema.Number),
+  shrinkPath: Schema.optional(Schema.String),
+  transformId: Schema.optional(Schema.String),
+  filterId: Schema.optional(Schema.String),
+  rejectionCount: Schema.optional(Schema.Number),
+  acceptanceRate: Schema.optional(Schema.Number),
+  workerId: Schema.optional(Schema.String),
+  shardId: Schema.optional(Schema.String),
+  recordedAt: Schema.String,
+  payload: Schema.optional(Schema.Unknown),
+})
+
+export type ProtocolCoverageFeedback = typeof ProtocolCoverageFeedbackSchema.Type
+
 export interface ProtocolStoreSnapshot {
   readonly descriptors: readonly unknown[]
   readonly obligations: readonly unknown[]
+  readonly evidenceRuns: readonly unknown[]
   readonly evidence: readonly unknown[]
   readonly generatedArtifacts: readonly unknown[]
+  readonly replayMetadata: readonly unknown[]
+  readonly waiverState: readonly unknown[]
+  readonly coverageFeedback: readonly unknown[]
   readonly deltas: readonly unknown[]
 }
 
@@ -31,11 +107,23 @@ export interface ProtocolStoreApi {
   readonly putObligations: (
     batch: readonly AttuneProtocolObligation[],
   ) => Effect.Effect<void, ProtocolStoreError>
+  readonly recordEvidenceRun: (
+    run: AttuneProtocolEvidenceRun,
+  ) => Effect.Effect<void, ProtocolStoreError>
   readonly recordGeneratedArtifact: (
     record: AttuneGeneratedArtifactRecord,
   ) => Effect.Effect<void, ProtocolStoreError>
   readonly recordEvidence: (
     event: AttuneProtocolEvidenceEvent,
+  ) => Effect.Effect<void, ProtocolStoreError>
+  readonly recordReplayMetadata: (
+    metadata: ProtocolReplayMetadata,
+  ) => Effect.Effect<void, ProtocolStoreError>
+  readonly recordWaiverState: (
+    waiver: ProtocolWaiverState,
+  ) => Effect.Effect<void, ProtocolStoreError>
+  readonly recordCoverageFeedback: (
+    feedback: ProtocolCoverageFeedback,
   ) => Effect.Effect<void, ProtocolStoreError>
   readonly putDeltas: (
     deltas: readonly AttuneProtocolDelta[],
@@ -76,8 +164,12 @@ export const makeInMemoryProtocolStore = (
 ): ProtocolStoreApi => {
   let descriptors: readonly unknown[] = initial.descriptors ?? []
   let obligations: readonly unknown[] = initial.obligations ?? []
+  let evidenceRuns: readonly unknown[] = initial.evidenceRuns ?? []
   let evidence: readonly unknown[] = initial.evidence ?? []
   let generatedArtifacts: readonly unknown[] = initial.generatedArtifacts ?? []
+  let replayMetadata: readonly unknown[] = initial.replayMetadata ?? []
+  let waiverState: readonly unknown[] = initial.waiverState ?? []
+  let coverageFeedback: readonly unknown[] = initial.coverageFeedback ?? []
   let deltas: readonly unknown[] = initial.deltas ?? []
 
   return {
@@ -100,6 +192,15 @@ export const makeInMemoryProtocolStore = (
           ...batch,
         ]
       }),
+    recordEvidenceRun: (run) =>
+      Effect.sync(() => {
+        evidenceRuns = [
+          ...evidenceRuns.filter((candidate) =>
+            !hasStringProperty(candidate, "runId", run.runId)
+          ),
+          run,
+        ]
+      }),
     recordGeneratedArtifact: (record) =>
       Effect.sync(() => {
         generatedArtifacts = [
@@ -111,7 +212,39 @@ export const makeInMemoryProtocolStore = (
       }),
     recordEvidence: (event) =>
       Effect.sync(() => {
-        evidence = [...evidence, event]
+        evidence = [
+          ...evidence.filter((candidate) =>
+            !hasStringProperty(candidate, "eventId", event.eventId)
+          ),
+          event,
+        ]
+      }),
+    recordReplayMetadata: (metadata) =>
+      Effect.sync(() => {
+        replayMetadata = [
+          ...replayMetadata.filter((candidate) =>
+            !hasStringProperty(candidate, "replayId", metadata.replayId)
+          ),
+          metadata,
+        ]
+      }),
+    recordWaiverState: (waiver) =>
+      Effect.sync(() => {
+        waiverState = [
+          ...waiverState.filter((candidate) =>
+            !hasStringProperty(candidate, "waiverId", waiver.waiverId)
+          ),
+          waiver,
+        ]
+      }),
+    recordCoverageFeedback: (feedback) =>
+      Effect.sync(() => {
+        coverageFeedback = [
+          ...coverageFeedback.filter((candidate) =>
+            !hasStringProperty(candidate, "coverageId", feedback.coverageId)
+          ),
+          feedback,
+        ]
       }),
     putDeltas: (nextDeltas) =>
       Effect.sync(() => {
@@ -132,8 +265,12 @@ export const makeInMemoryProtocolStore = (
       Effect.succeed({
         descriptors,
         obligations,
+        evidenceRuns,
         evidence,
         generatedArtifacts,
+        replayMetadata,
+        waiverState,
+        coverageFeedback,
         deltas,
       }),
   }
@@ -175,6 +312,16 @@ const isProtocolDeltaFor = (
   typeof value.packageId === "string" &&
   packageIds.has(value.packageId)
 
+const hasStringProperty = (
+  value: unknown,
+  property: string,
+  expected: string,
+): boolean =>
+  typeof value === "object" &&
+  value !== null &&
+  property in value &&
+  (value as Record<string, unknown>)[property] === expected
+
 const decodeBatch = <A>(
   schema: unknown,
   values: readonly unknown[],
@@ -208,6 +355,11 @@ export const decodeProtocolStoreSnapshot = (
       snapshot.obligations,
       "obligations",
     )
+    const evidenceRuns = yield* decodeBatch<AttuneProtocolEvidenceRun>(
+      AttuneProtocolEvidenceRunSchema,
+      snapshot.evidenceRuns,
+      "evidenceRuns",
+    )
     const evidence = yield* decodeBatch<AttuneProtocolEvidenceEvent>(
       AttuneProtocolEvidenceEventSchema,
       snapshot.evidence,
@@ -218,13 +370,38 @@ export const decodeProtocolStoreSnapshot = (
       snapshot.generatedArtifacts,
       "generatedArtifacts",
     )
+    const replayMetadata = yield* decodeBatch<ProtocolReplayMetadata>(
+      ProtocolReplayMetadataSchema,
+      snapshot.replayMetadata,
+      "replayMetadata",
+    )
+    const waiverState = yield* decodeBatch<ProtocolWaiverState>(
+      ProtocolWaiverStateSchema,
+      snapshot.waiverState,
+      "waiverState",
+    )
+    const coverageFeedback = yield* decodeBatch<ProtocolCoverageFeedback>(
+      ProtocolCoverageFeedbackSchema,
+      snapshot.coverageFeedback,
+      "coverageFeedback",
+    )
     const deltas = yield* decodeBatch<AttuneProtocolDelta>(
       AttuneProtocolDeltaSchema,
       snapshot.deltas,
       "deltas",
     )
 
-    return { descriptors, obligations, evidence, generatedArtifacts, deltas }
+    return {
+      descriptors,
+      obligations,
+      evidenceRuns,
+      evidence,
+      generatedArtifacts,
+      replayMetadata,
+      waiverState,
+      coverageFeedback,
+      deltas,
+    }
   })
 
 export const diagnosticFromQueryError = (

@@ -74,6 +74,7 @@ export interface AttunePackageContract<
   readonly operations: Operations
   readonly services?: readonly string[]
   readonly provenance?: unknown
+  readonly coverageExpectations?: readonly unknown[]
   readonly waivers?: readonly unknown[]
 }
 

@@ -46,6 +46,33 @@
         "description": "Focused diagnostic target for package contract/source ownership and generator shape conformance during the Effect package-contract migration."
       }
     },
+    "atom-graph-conformance": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsx packages/attune-architecture/src/framework-policy-cli.ts --only atom-graph"
+      },
+      "metadata": {
+        "description": "Cheap deterministic package atom/Reactivity graph conformance diagnostics."
+      }
+    },
+    "property-evidence": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsx packages/attune-architecture/src/framework-policy-cli.ts --only property-evidence"
+      },
+      "metadata": {
+        "description": "Cheap deterministic property evidence and worker target metadata diagnostics."
+      }
+    },
+    "coverage-conformance": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsx packages/attune-architecture/src/framework-policy-cli.ts --only coverage-conformance"
+      },
+      "metadata": {
+        "description": "Cheap deterministic package coverage guidance conformance diagnostics."
+      }
+    },
     "framework-policy-check": {
       "executor": "nx:run-commands",
       "options": {
@@ -68,16 +95,12 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "bash nix/policy-hooks/secret-path-hygiene.sh",
-          "bash nix/policy-hooks/undeclared-workflow-policy.sh",
-          "bash nix/policy-hooks/touched-source-bom-ownership.sh",
-          "bash nix/policy-hooks/openspec-feasible-validation.sh",
-          "bash nix/policy-hooks/focused-architecture-lint.sh"
+          "pnpm exec nx run workspace:policy-fast"
         ],
         "parallel": false
       },
       "metadata": {
-        "description": "Default pre-commit policy gate for staged changes."
+        "description": "Default pre-commit policy gate; composes through workspace:policy-fast."
       }
     },
     "policy-push": {
@@ -89,7 +112,7 @@
         "parallel": false
       },
       "metadata": {
-        "description": "Default pre-push policy gate."
+        "description": "Default pre-push policy gate; heavy/manual push campaigns use workspace:policy-proof-pressure."
       }
     },
     "arch:scan": {
@@ -179,6 +202,9 @@
       "options": {
         "commands": [
           "pnpm exec nx run workspace:package-contracts-check",
+          "pnpm exec nx run workspace:atom-graph-conformance",
+          "pnpm exec nx run workspace:property-evidence",
+          "pnpm exec nx run workspace:coverage-conformance",
           "pnpm exec nx run attune-architecture:test",
           "pnpm exec nx run workspace:arch:scan",
           "pnpm exec nx run workspace:arch:deps",
@@ -190,9 +216,17 @@
           "pnpm exec nx run effect-oxlint-policy:test",
           "pnpm exec nx run effect-oxlint-policy:build",
           "pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet",
+          "pnpm exec nx run joern-effect-properties:property",
+          "pnpm exec nx run joern-effect-properties:property-joern",
+          "pnpm exec nx run joern-effect-properties:fuzz:smoke",
+          "pnpm exec nx run attune-pi-agent:property",
+          "pnpm exec nx run attune-pi-agent:mutation",
           "pnpm exec nx run workspace:arch:mutation"
         ],
         "parallel": false
+      },
+      "metadata": {
+        "description": "Heavy/manual proof-pressure surface for property, Joern, fuzz, mutation, coverage, and architecture campaigns."
       }
     },
     "policy-fast": {
@@ -202,6 +236,9 @@
           "pnpm exec nx graph --file=/tmp/attune-nx-graph.json",
           "pnpm exec nx run attune-nx:test",
           "pnpm exec nx run workspace:package-contracts-check",
+          "pnpm exec nx run workspace:atom-graph-conformance",
+          "pnpm exec nx run workspace:property-evidence",
+          "pnpm exec nx run workspace:coverage-conformance",
           "pnpm exec nx run attune-architecture:test",
           "pnpm exec nx run workspace:arch:scan",
           "pnpm exec nx run workspace:arch:deps",

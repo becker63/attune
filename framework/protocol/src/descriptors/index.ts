@@ -12,6 +12,16 @@ import {
 import { Schema } from "effect"
 
 import { obligationId, type AttuneProtocolObligation } from "../obligations/index.js"
+import { AttuneProtocolWaiverSchema, decodeProtocolWaivers } from "../waivers/index.js"
+
+export const AttuneCoverageExpectationSchema = Schema.Struct({
+  id: Schema.String,
+  operationId: Schema.optional(Schema.String),
+  tier: Schema.Literals(["commit", "push", "proof-pressure", "nightly", "debug"] as const),
+  required: Schema.Boolean,
+  evidenceKinds: Schema.Array(Schema.String),
+})
+export type AttuneCoverageExpectation = typeof AttuneCoverageExpectationSchema.Type
 
 export const AttuneProtocolOperationDescriptorSchema = Schema.Struct({
   id: Schema.String,
@@ -32,6 +42,9 @@ export const AttuneProtocolDescriptorSchema = Schema.Struct({
   views: PackageViewsSchema,
   services: Schema.Array(Schema.String),
   operations: Schema.Array(AttuneProtocolOperationDescriptorSchema),
+  provenance: Schema.optional(Schema.Unknown),
+  waivers: Schema.Array(AttuneProtocolWaiverSchema),
+  coverageExpectations: Schema.Array(AttuneCoverageExpectationSchema),
 })
 
 export type AttuneProtocolOperationDescriptor = typeof AttuneProtocolOperationDescriptorSchema.Type
@@ -112,6 +125,9 @@ export const descriptorFromPackageContract = (
     views: decoded.views,
     services: decoded.services ?? [],
     operations,
+    ...(decoded.provenance === undefined ? {} : { provenance: decoded.provenance }),
+    waivers: decodeProtocolWaivers(decoded.waivers ?? []),
+    coverageExpectations: [],
   }
 
   return {

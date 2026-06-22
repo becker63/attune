@@ -47,6 +47,8 @@ const demoDescriptor = {
     inputSchema: "ProjectInput",
     outputSchema: "ProjectOutput",
   }],
+  waivers: [],
+  coverageExpectations: [],
 } as const
 
 const provideRuntime = <A, E>(
@@ -228,12 +230,111 @@ describe("@attune/framework-language-service", () => {
 
     expect(view.quickInfo.some((info) =>
       info.text.includes("expected evidence: property-run") &&
-      info.text.includes("evidence: 0/6 obligations observed")
+      info.text.includes("evidence: 0/6 obligations observed") &&
+      info.text.includes("coverage feedback: 0") &&
+      info.text.includes("waivers: 0 active, 0 issues")
     )).toBe(true)
     expect(view.codeLenses.map((lens) => lens.title)).toEqual(expect.arrayContaining([
       "4 missing obligations",
       "evidence: 0/6 obligations observed",
     ]))
+  })
+
+  it("projects replay, waiver, coverage, and weak-oracle findings from runtime deltas", async () => {
+    const view = await Effect.runPromise(
+      provideRuntime(Effect.gen(function* propertyEvidenceProjectionFixture() {
+        const runtime = yield* ProtocolRuntime
+        const query = yield* ProtocolQuery
+        const diagnostics = yield* ProtocolDiagnostics
+
+        yield* runtime.materializeDescriptor(demoDescriptor)
+        yield* runtime.recordEvidenceRun({
+          runId: "run-1",
+          protocolId,
+          packageId: "demo",
+          tier: "commit",
+          status: "failed",
+          startedAt: "2026-06-22T00:00:00.000Z",
+          completedAt: "2026-06-22T00:00:02.000Z",
+        })
+        yield* runtime.recordReplayMetadata({
+          replayId: "demo:project:replay",
+          runId: "run-1",
+          protocolId,
+          packageId: "demo",
+          operationId: "project",
+          propertyId: "demo.project.property",
+          seed: 42,
+          shrinkPath: "0:1",
+          generatedValueSummary: "{ event: 'changed' }",
+          status: "failed",
+          recordedAt: "2026-06-22T00:00:01.500Z",
+        })
+        yield* runtime.recordWaiverState({
+          waiverId: "demo:expired-waiver",
+          protocolId,
+          packageId: "demo",
+          category: "property",
+          status: "expired",
+          operationId: "project",
+          owner: "framework",
+          reason: "temporary waiver expired",
+          expiresAt: "2026-06-01",
+          recordedAt: "2026-06-22T00:00:01.500Z",
+        })
+        yield* runtime.recordCoverageFeedback({
+          coverageId: "demo:project:filter",
+          protocolId,
+          packageId: "demo",
+          operationId: "project",
+          kind: "filter",
+          status: "filtered",
+          coveragePoint: "ProjectInput.valid-event",
+          filterId: "project-valid-event-filter",
+          rejectionCount: 250,
+          acceptanceRate: 0.05,
+          recordedAt: "2026-06-22T00:00:01.500Z",
+        })
+        yield* runtime.recordCoverageFeedback({
+          coverageId: "demo:project:weak-oracle",
+          protocolId,
+          packageId: "demo",
+          operationId: "project",
+          kind: "implementation",
+          status: "hit",
+          coveragePoint: "packages/demo/src/project.ts:17",
+          recordedAt: "2026-06-22T00:00:01.500Z",
+          payload: {
+            expectedGraphMovement: true,
+            observedGraphMovement: false,
+          },
+        })
+
+        return yield* projectLanguageServiceViewFromRuntime(
+          { diagnostics, query },
+          { sourcePath, packageId: "demo", protocolId },
+        )
+      })),
+    )
+
+    expect(view.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(expect.arrayContaining([
+      "attune/protocol/blocked-obligation",
+      "attune/protocol/waiver-issue",
+      "attune/protocol/high-rejection-filter",
+      "attune/protocol/weak-oracle",
+    ]))
+    expect(view.quickInfo.some((info) =>
+      info.text.includes("replay metadata: 1") &&
+      info.text.includes("coverage feedback: 2") &&
+      info.text.includes("waivers: 0 active, 1 issues")
+    )).toBe(true)
+    expect(Object.values(view.codeActions).flat().map((entry) => entry.action.target)).toEqual(
+      expect.arrayContaining([
+        "workspace:property-evidence",
+        "workspace:coverage-conformance",
+        "workspace:package-contracts-check",
+      ]),
+    )
   })
 
   it("filters direct generated-file source edits from code actions", () => {

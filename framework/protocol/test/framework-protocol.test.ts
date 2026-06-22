@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { Schema } from "effect"
-import { describe, expect, it } from "vitest"
+import { describe, expect, expectTypeOf, it } from "vitest"
 import {
   ProtocolLawDescriptorSchema,
   inferLawIds,
@@ -11,6 +11,11 @@ import {
   missingMetadataForOperation,
 } from "../src/laws/index.js"
 import {
+  AttuneProtocolWaiverSchema,
+  assertExactHandlers,
+  assertPackageContract,
+  assertPropertyHarnesses,
+  assertTypeGuidanceComplete,
   baseAtom,
   definePackageViewGraph,
   deriveProtocolObligations,
@@ -29,7 +34,14 @@ import {
   reactivityKey,
   roundtripSourceReference,
   touchedViewsFromReferences,
+  diagnoseProtocolWaivers,
+  defineTypeGuidance,
+  query,
+  waiverDeltasFromFindings,
   views,
+  type InputOf,
+  type OperationIds,
+  type OutputOf,
 } from "../src/index.js"
 
 describe("@attune/framework-protocol", () => {
@@ -55,6 +67,51 @@ describe("@attune/framework-protocol", () => {
     expect(contract.packageId).toBe("demo")
     expect(contract.operations[0]?.kind).toBe("projection")
     expect(protocolIdForPackage(contract.packageId)).toBe("attune/package/demo")
+  })
+
+  it("exposes compile-only contract conformance helpers through the public framework facade", () => {
+    const LookupInput = Schema.Struct({ id: Schema.String })
+    const LookupOutput = Schema.Struct({ value: Schema.String })
+    const PackageViews = views({
+      reactivityKeys: ["demo.changed"],
+      atoms: ["demoAtom"],
+    } as const)
+    const contract = defineAttunePackage({
+      packageId: "demo",
+      packageKind: "core-discovery-runtime",
+      views: PackageViews,
+      operations: [
+        query({
+          id: "lookup",
+          input: LookupInput,
+          output: LookupOutput,
+          views: { reactivityKeys: ["demo.changed"], atoms: ["demoAtom"] },
+          laws: ["schema.decode"] as const,
+        }),
+      ],
+    } as const)
+    const handlers = {
+      lookup: () => ({ value: "ok" }),
+    } as const
+    const properties = {
+      lookup: () => true,
+    } as const
+    const typeGuidance = defineTypeGuidance(contract, {
+      operations: {
+        lookup: {
+          lawPartitions: [{ id: "schema.decode", kind: "law", from: "explicit-law" }],
+          viewPartitions: [{ id: "demo.changed", kind: "reactivity-key", from: "touches.reactivity-key" }],
+        },
+      },
+    } as const)
+
+    expect(assertPackageContract(contract)).toBe(true)
+    expect(assertExactHandlers(contract, handlers)).toBe(true)
+    expect(assertPropertyHarnesses(contract, properties)).toBe(true)
+    expect(assertTypeGuidanceComplete(contract, typeGuidance)).toBe(true)
+    expectTypeOf<OperationIds<typeof contract>>().toEqualTypeOf<"lookup">()
+    expectTypeOf<InputOf<typeof contract, "lookup">>().toEqualTypeOf<{ readonly id: string }>()
+    expectTypeOf<OutputOf<typeof contract, "lookup">>().toEqualTypeOf<{ readonly value: string }>()
   })
 
   it("infers framework-owned protocol laws from operation kind and metadata", () => {
@@ -202,6 +259,8 @@ describe("@attune/framework-protocol", () => {
         inputSchema: "demo-input-schema",
         outputSchema: "demo-output-schema",
       }],
+      waivers: [],
+      coverageExpectations: [],
     }))
     expect(deriveProtocolObligations(descriptor).map((obligation) => obligation.kind)).toEqual([
       "handler",
@@ -211,6 +270,37 @@ describe("@attune/framework-protocol", () => {
       "type-guidance",
       "generated-artifact",
     ])
+  })
+
+  it("decodes local waiver metadata and projects waiver findings into protocol deltas", () => {
+    const waiver = Schema.decodeUnknownSync(AttuneProtocolWaiverSchema)({
+      id: "demo/temporary-generator-bridge",
+      category: "temporary-migration-adapter",
+      owner: "framework-protocol-test",
+      reason: "The generated registry bridge is still being replaced by framework/nx.",
+      expiresOn: "2026-06-21",
+    })
+
+    const findings = diagnoseProtocolWaivers({
+      packageId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+      today: "2026-06-22",
+      waivers: [waiver],
+    })
+    expect(findings).toEqual([expect.objectContaining({
+      code: "attune/protocol/waiver/expired-temporary",
+      severity: "error",
+      waiverId: "demo/temporary-generator-bridge",
+    })])
+
+    expect(waiverDeltasFromFindings({
+      protocolId: "attune/package/demo",
+      findings,
+    })).toEqual([expect.objectContaining({
+      kind: "waiver-issue",
+      packageId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+    })])
   })
 
   it("derives stable ids from source declarations while preserving explicit overrides", () => {

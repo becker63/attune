@@ -4,6 +4,7 @@ import { Schema } from "effect"
 
 export * from "./package-contract/index.js"
 export * from "./command-surface-conformance.js"
+export * from "./framework-atom-implementation-policy.js"
 export * from "./framework-import-boundary.js"
 export * from "./framework-no-report-policy.js"
 

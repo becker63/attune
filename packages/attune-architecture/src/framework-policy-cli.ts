@@ -9,6 +9,11 @@ import {
   type FrameworkImportBoundaryFile,
 } from "./framework-import-boundary.js"
 import {
+  checkAtomImplementationPolicy,
+  type AtomImplementationPolicyDiagnostic,
+  type AtomImplementationPolicyFile,
+} from "./framework-atom-implementation-policy.js"
+import {
   checkFrameworkNoReportPolicy,
   type FrameworkNoReportDiagnostic,
   type FrameworkNoReportFile,
@@ -19,8 +24,23 @@ interface WorkspaceFile {
   readonly content: string
 }
 
+export type FrameworkPolicyCheck =
+  | "all"
+  | "import-boundary"
+  | "no-report"
+  | "atom-graph"
+  | "property-evidence"
+  | "coverage-conformance"
+  | "policy-surface"
+  | "final-ratchet"
+
+export interface FrameworkPolicyWorkspaceOptions {
+  readonly checks?: readonly FrameworkPolicyCheck[]
+}
+
 export interface FrameworkPolicyWorkspaceResult {
   readonly importDiagnostics: readonly FrameworkImportBoundaryDiagnostic[]
+  readonly atomImplementationDiagnostics: readonly AtomImplementationPolicyDiagnostic[]
   readonly noReportDiagnostics: readonly FrameworkNoReportDiagnostic[]
   readonly ratchetDiagnostics: readonly FrameworkFinalRatchetDiagnostic[]
   readonly outputLines: readonly string[]
@@ -39,9 +59,12 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "dead-reactivity-key"
   | "unobserved-operation-reactivity-key"
   | "derived-atom-direct-reactivity-subscription"
+  | "missing-coverage-conformance"
+  | "worker-target-metadata"
   | "package-local-scripts"
   | "arbitrary-run-commands"
   | "stale-architecture-lint-reference"
+  | "stale-policy-architecture-guidance"
   | "expired-migration-waiver"
 
 export interface FrameworkFinalRatchetDiagnostic {
@@ -74,9 +97,12 @@ const packageContractViewsRegistrationPattern = /\bviews\s*:\s*PackageViews\b/u
 const serviceOperationPattern = /\b(?:defineOperation|command|projection|eventFacade|resourceProvider|generator|policyRule|joernTemplate)\s*\(/u
 const propertyEvidenceHarnessPattern =
   /\b(PackageProperties|PackageFuzzHandlers|PackageTypeGuidance|PackageFuzzRpcGroup|defineTypeGuidance|propertyFor\s*\(|coverageSearch|evidenceProducer)\b/u
+const coverageConformancePattern =
+  /\b(PackageTypeGuidance|defineTypeGuidance|coverageSearch|coverageExpectations|coverageConformance)\b/u
 const explicitWaiverPattern = /\bwaivers\s*:\s*\[(?!\s*\]\s*as\s+const)/u
 const waiverDatePattern =
   /\b(?:expires|expiresOn|expiresAt|reviewBy|reviewDate)\s*:\s*["'](?<date>\d{4}-\d{2}-\d{2})["']/gu
+const stalePolicyArchitectureTargetPattern = /\bworkspace:policy-architecture\b/u
 
 // TODO(final-ratchet command-surface debt): remove these package-local
 // allowances when typed executors/inferred contract targets replace scripts
@@ -109,8 +135,10 @@ const temporaryRootRunCommandDebtTargets = new Set([
   "arch:scan",
   "arch:types",
   "arch:unused",
+  "atom-graph-conformance",
   "check",
   "codex-audit-prs",
+  "coverage-conformance",
   "framework-policy-check",
   "lint",
   "package-contracts-check",
@@ -123,6 +151,7 @@ const temporaryRootRunCommandDebtTargets = new Set([
   "policy-push",
   "pr-recovery-audit",
   "pr-verify",
+  "property-evidence",
   "shape-conformance",
   "source-bom-check",
   "ts:extended-diagnostics",
@@ -142,6 +171,18 @@ const temporaryFrameworkRunCommandDebtPaths = new Set([
 ])
 
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
+
+// TODO(final-ratchet worker-target debt): package-local proof/fuzz targets are
+// still raw migration surfaces. They remain allowed until the generic
+// attune:toolchain/package-check executors own worker budget metadata in those
+// package project files.
+const temporaryWorkerTargetMetadataDebt = new Set([
+  "packages/joern-effect-properties/project.json#fuzz:container",
+  "packages/joern-effect-properties/project.json#fuzz:dsl-four-hour:container",
+  "packages/joern-effect-properties/project.json#fuzz:dsl-four-hour:direct",
+  "packages/joern-effect-properties/project.json#fuzz:nightly:container",
+  "packages/joern-effect-properties/project.json#property-joern:container",
+])
 
 // Historical OpenSpec records may mention the old architecture package
 // identity. Active package, framework, config, and docs surfaces must not.
@@ -219,35 +260,55 @@ interface OperationViewMetadata {
   readonly hasDirectDurableRead: boolean
 }
 
-export const checkFrameworkPolicyWorkspace = (root: string): FrameworkPolicyWorkspaceResult => {
+export const checkFrameworkPolicyWorkspace = (
+  root: string,
+  options: FrameworkPolicyWorkspaceOptions = {},
+): FrameworkPolicyWorkspaceResult => {
   const workspaceRoot = path.resolve(root)
   const files = collectFiles(workspaceRoot)
+  const selectedChecks = normalizePolicyChecks(options.checks)
 
   const importResultRaw = checkFrameworkImportBoundary({
     files: files
       .filter((file) => sourceFilePattern.test(file.path))
       .map((file): FrameworkImportBoundaryFile => ({ path: file.path, content: file.content })),
   })
-  const importDiagnostics = importResultRaw.diagnostics.filter(
-    (diagnostic) => !isTemporaryFrameworkPolicyWaiver(diagnostic.filePath, diagnostic.importSource),
-  )
+  const importDiagnostics = isPolicyCheckEnabled(selectedChecks, "import-boundary")
+    ? importResultRaw.diagnostics.filter(
+      (diagnostic) => !isTemporaryFrameworkPolicyWaiver(diagnostic.filePath, diagnostic.importSource),
+    )
+    : []
 
+  const atomImplementationResult = checkAtomImplementationPolicy({
+    files: files
+      .filter((file) => sourceFilePattern.test(file.path))
+      .map((file): AtomImplementationPolicyFile => ({ path: file.path, content: file.content })),
+  })
+  const atomImplementationDiagnostics = isPolicyCheckEnabled(selectedChecks, "atom-graph")
+    ? atomImplementationResult.diagnostics
+    : []
   const noReportResult = checkFrameworkNoReportPolicy({
     files: files
       .filter(isProtocolReportCandidate)
       .map((file): FrameworkNoReportFile => ({ path: file.path, content: file.content })),
   })
+  const noReportDiagnostics = isPolicyCheckEnabled(selectedChecks, "no-report")
+    ? noReportResult.diagnostics
+    : []
   const ratchetDiagnostics = checkFinalRatchetPolicy(files)
+    .filter((diagnostic) => isRatchetDiagnosticEnabled(selectedChecks, diagnostic.code))
 
   const outputLines = [
     ...importDiagnostics.map(formatImportDiagnostic),
-    ...noReportResult.diagnostics.map(formatNoReportDiagnostic),
+    ...atomImplementationDiagnostics.map(formatAtomImplementationDiagnostic),
+    ...noReportDiagnostics.map(formatNoReportDiagnostic),
     ...ratchetDiagnostics.map(formatFinalRatchetDiagnostic),
   ]
 
   return {
     importDiagnostics,
-    noReportDiagnostics: noReportResult.diagnostics,
+    atomImplementationDiagnostics,
+    noReportDiagnostics,
     ratchetDiagnostics,
     outputLines,
     exitCode: outputLines.length > 0 ? 1 : 0,
@@ -258,8 +319,11 @@ export const runFrameworkPolicyCli = (
   argv: readonly string[] = process.argv,
   writeLine: (line: string) => void = console.log,
 ): number => {
-  const workspaceRoot = path.resolve(argv[2] ?? process.cwd())
-  const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+  const cliOptions = parseFrameworkPolicyCliArgs(argv.slice(2))
+  const result = checkFrameworkPolicyWorkspace(
+    cliOptions.workspaceRoot,
+    cliOptions.checks === undefined ? {} : { checks: cliOptions.checks },
+  )
 
   for (const line of result.outputLines) {
     writeLine(line)
@@ -268,9 +332,116 @@ export const runFrameworkPolicyCli = (
   return result.exitCode
 }
 
-if (isCliEntryPoint(import.meta.url, process.argv[1])) {
-  process.exitCode = runFrameworkPolicyCli()
+interface FrameworkPolicyCliOptions {
+  readonly workspaceRoot: string
+  readonly checks: readonly FrameworkPolicyCheck[] | undefined
 }
+
+const parseFrameworkPolicyCliArgs = (args: readonly string[]): FrameworkPolicyCliOptions => {
+  let workspaceRoot: string | undefined
+  const checks: FrameworkPolicyCheck[] = []
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]
+    if (arg === undefined) continue
+
+    if (arg === "--only" || arg === "--check") {
+      const next = args[index + 1]
+      if (next !== undefined) checks.push(...parsePolicyCheckList(next))
+      index += 1
+      continue
+    }
+
+    if (arg.startsWith("--only=") || arg.startsWith("--check=")) {
+      checks.push(...parsePolicyCheckList(arg.slice(arg.indexOf("=") + 1)))
+      continue
+    }
+
+    if (!arg.startsWith("--") && workspaceRoot === undefined) {
+      workspaceRoot = arg
+    }
+  }
+
+  return {
+    workspaceRoot: path.resolve(workspaceRoot ?? process.cwd()),
+    checks: checks.length === 0 ? undefined : checks,
+  }
+}
+
+function parsePolicyCheckList(value: string): readonly FrameworkPolicyCheck[] {
+  return value.split(",").map((entry) => parsePolicyCheck(entry.trim())).filter(
+    (entry): entry is FrameworkPolicyCheck => entry !== undefined,
+  )
+}
+
+function parsePolicyCheck(value: string): FrameworkPolicyCheck | undefined {
+  switch (value) {
+    case "all":
+    case "import-boundary":
+    case "no-report":
+    case "atom-graph":
+    case "property-evidence":
+    case "coverage-conformance":
+    case "policy-surface":
+    case "final-ratchet":
+      return value
+    case "atom-graph-conformance":
+      return "atom-graph"
+    default:
+      return undefined
+  }
+}
+
+function normalizePolicyChecks(checks: readonly FrameworkPolicyCheck[] | undefined): ReadonlySet<FrameworkPolicyCheck> {
+  return new Set(checks === undefined || checks.length === 0 ? ["all"] : checks)
+}
+
+function isPolicyCheckEnabled(
+  checks: ReadonlySet<FrameworkPolicyCheck>,
+  check: FrameworkPolicyCheck,
+): boolean {
+  return checks.has("all") || checks.has(check)
+}
+
+function isRatchetDiagnosticEnabled(
+  checks: ReadonlySet<FrameworkPolicyCheck>,
+  code: FrameworkFinalRatchetDiagnosticCode,
+): boolean {
+  if (checks.has("all") || checks.has("final-ratchet")) return true
+
+  if (checks.has("atom-graph") && atomGraphDiagnosticCodes.has(code)) return true
+  if (checks.has("property-evidence") && propertyEvidenceDiagnosticCodes.has(code)) return true
+  if (checks.has("coverage-conformance") && coverageConformanceDiagnosticCodes.has(code)) return true
+  return checks.has("policy-surface") && policySurfaceDiagnosticCodes.has(code)
+}
+
+const atomGraphDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
+  "missing-package-contract",
+  "missing-package-view-graph",
+  "operation-missing-reactivity-touch",
+  "dead-reactivity-key",
+  "unobserved-operation-reactivity-key",
+  "derived-atom-direct-reactivity-subscription",
+])
+
+const propertyEvidenceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
+  "missing-package-contract",
+  "missing-property-evidence-harness",
+  "worker-target-metadata",
+])
+
+const coverageConformanceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
+  "missing-package-contract",
+  "missing-coverage-conformance",
+])
+
+const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
+  "package-local-scripts",
+  "arbitrary-run-commands",
+  "stale-architecture-lint-reference",
+  "stale-policy-architecture-guidance",
+  "expired-migration-waiver",
+])
 
 function collectFiles(root: string): readonly WorkspaceFile[] {
   const out: WorkspaceFile[] = []
@@ -349,6 +520,17 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
       ))
     }
 
+    if (
+      !coverageConformancePattern.test(contractFile.content) &&
+      !explicitWaiverPattern.test(contractFile.content)
+    ) {
+      diagnostics.push(finalRatchetDiagnostic(
+        "missing-coverage-conformance",
+        contractPath,
+        "Package contract must expose PackageTypeGuidance, coverageSearch, or coverage expectations for cheap coverage conformance.",
+      ))
+    }
+
     diagnostics.push(...checkAtomReactivityConformance(packageRoot, contractFile))
     diagnostics.push(...findExpiredMigrationWaivers(contractFile))
   }
@@ -356,6 +538,8 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
   for (const file of files) {
     diagnostics.push(...checkCommandSurfaceFile(file))
     diagnostics.push(...checkArchitectureLintReferences(file))
+    diagnostics.push(...checkPolicyArchitectureGuidance(file))
+    diagnostics.push(...checkWorkerTargetMetadata(file))
   }
 
   return diagnostics
@@ -889,6 +1073,146 @@ function checkArchitectureLintReferences(file: WorkspaceFile): readonly Framewor
   )]
 }
 
+function checkPolicyArchitectureGuidance(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
+  if (!/\.(json|jsonc|md|mdx|txt)$/u.test(file.path)) return []
+  if (!stalePolicyArchitectureTargetPattern.test(file.content)) return []
+  if (historicalArchitectureLintReferencePaths.some((pattern) => pattern.test(file.path))) return []
+
+  return file.content
+    .split(/\r?\n/u)
+    .flatMap((line, index) => {
+      if (!stalePolicyArchitectureTargetPattern.test(line) || isInternalPolicyArchitectureGuidance(line)) {
+        return []
+      }
+
+      return [finalRatchetDiagnostic(
+        "stale-policy-architecture-guidance",
+        file.path,
+        `Line ${index + 1} promotes workspace:policy-architecture; public policy guidance must route through workspace:policy-fast, workspace:policy-proof-pressure, or focused diagnostic targets.`,
+      )]
+    })
+}
+
+function isInternalPolicyArchitectureGuidance(line: string): boolean {
+  return /\b(internal|compatibility|do not promote|must not promote|stale|historical|MUST NOT|SHALL NOT)\b/u.test(line)
+}
+
+function checkWorkerTargetMetadata(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
+  if (file.path !== "project.json" && !file.path.endsWith("/project.json")) return []
+
+  const parsed = parseJsonObject(file)
+  if (parsed === undefined || !isRecord(parsed.targets)) return []
+
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+  for (const [targetName, rawTarget] of Object.entries(parsed.targets)) {
+    if (!isRecord(rawTarget) || !isWorkerizedTarget(targetName, rawTarget)) continue
+    if (temporaryWorkerTargetMetadataDebt.has(`${file.path}#${targetName}`)) continue
+
+    const missing = missingWorkerMetadataFields(rawTarget)
+    if (missing.length === 0) continue
+
+    diagnostics.push(finalRatchetDiagnostic(
+      "worker-target-metadata",
+      file.path,
+      `Workerized target ${targetName} must declare ${missing.join(", ")} through Nx target options or target metadata.`,
+    ))
+  }
+
+  return diagnostics
+}
+
+function isWorkerizedTarget(targetName: string, target: Record<string, unknown>): boolean {
+  const options = readRecord(target.options)
+  if (isRecord(options.workerBudget)) return true
+  if (options.tool === "worker-fuzz") return true
+
+  const targetText = JSON.stringify({
+    executor: target.executor,
+    metadata: target.metadata,
+    options,
+    targetName,
+  }).toLowerCase()
+
+  return (
+    /\bworker(?:ized|s)?\b/u.test(targetName) ||
+    targetText.includes("@fast-check/worker") ||
+    targetText.includes("worker-fuzz") ||
+    /(?:^|[^a-z])--workers(?:[^a-z]|$)/u.test(targetText) ||
+    /_workers\b/u.test(targetText)
+  )
+}
+
+function missingWorkerMetadataFields(target: Record<string, unknown>): readonly string[] {
+  const workerMetadata = workerMetadataRecords(target)
+  const missing: string[] = []
+
+  if (!hasMetadataField(workerMetadata, ["maxWorkers", "workerCount", "workers"])) {
+    missing.push("worker count")
+  }
+
+  if (!hasMetadataField(workerMetadata, ["timeoutSeconds", "timeoutMs", "timeout"])) {
+    missing.push("timeout")
+  }
+
+  if (!hasMetadataField(workerMetadata, ["isolationLevel", "isolation"])) {
+    missing.push("isolation level")
+  }
+
+  if (!hasMetadataField(workerMetadata, ["seedRange", "seedStart", "seed"])) {
+    missing.push("seed range")
+  }
+
+  if (!hasShardMetadata(workerMetadata)) {
+    missing.push("shard id/count")
+  }
+
+  if (!hasMetadataField(workerMetadata, ["randomSource"])) {
+    missing.push("random source")
+  }
+
+  return missing
+}
+
+function workerMetadataRecords(target: Record<string, unknown>): readonly Record<string, unknown>[] {
+  const options = readRecord(target.options)
+  const metadata = readRecord(target.metadata)
+  const attuneMetadata = readRecord(metadata.attune)
+  const workerBudget = readRecord(options.workerBudget)
+
+  return [
+    options,
+    workerBudget,
+    readRecord(options.worker),
+    readRecord(metadata.worker),
+    readRecord(attuneMetadata.worker),
+  ]
+}
+
+function hasShardMetadata(records: readonly Record<string, unknown>[]): boolean {
+  return records.some((record) =>
+    hasMetadataValue(record.shardId) ||
+    (
+      (hasMetadataValue(record.shardCount) || hasMetadataValue(record.totalShards)) &&
+      (hasMetadataValue(record.shardIndex) || hasMetadataValue(record.shard))
+    )
+  )
+}
+
+function hasMetadataField(
+  records: readonly Record<string, unknown>[],
+  fields: readonly string[],
+): boolean {
+  return records.some((record) => fields.some((field) => hasMetadataValue(record[field])))
+}
+
+function hasMetadataValue(value: unknown): boolean {
+  if (typeof value === "string") return value.trim().length > 0
+  if (typeof value === "number") return Number.isFinite(value)
+  if (typeof value === "boolean") return true
+  if (Array.isArray(value)) return value.length > 0
+  return isRecord(value) && Object.keys(value).length > 0
+}
+
 function findExpiredMigrationWaivers(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
   const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
   waiverDatePattern.lastIndex = 0
@@ -923,6 +1247,10 @@ function parseJsonObject(file: WorkspaceFile): Record<string, unknown> | undefin
   return isRecord(parsed) ? parsed : undefined
 }
 
+function readRecord(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {}
+}
+
 function isTemporaryFrameworkPolicyWaiver(filePath: string, importSource: string): boolean {
   return (
     filePath === "packages/attune-architecture/src/framework-import-boundary.ts" ||
@@ -949,6 +1277,16 @@ function formatNoReportDiagnostic(diagnostic: FrameworkNoReportDiagnostic): stri
     diagnostic.ruleId,
     diagnostic.category,
     diagnostic.filePath,
+    diagnostic.message,
+  ].join(" ")
+}
+
+function formatAtomImplementationDiagnostic(diagnostic: AtomImplementationPolicyDiagnostic): string {
+  return [
+    "ERROR",
+    diagnostic.ruleId,
+    diagnostic.code,
+    `${diagnostic.filePath}:${diagnostic.line}:${diagnostic.column}`,
     diagnostic.message,
   ].join(" ")
 }
@@ -987,4 +1325,8 @@ function escapeRegExp(value: string): string {
 
 function isCliEntryPoint(moduleUrl: string, entryPoint: string | undefined): boolean {
   return entryPoint !== undefined && path.resolve(fileURLToPath(moduleUrl)) === path.resolve(entryPoint)
+}
+
+if (isCliEntryPoint(import.meta.url, process.argv[1])) {
+  process.exitCode = runFrameworkPolicyCli()
 }

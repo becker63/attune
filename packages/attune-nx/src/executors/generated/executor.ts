@@ -4,9 +4,13 @@ import {
   type ExecutorContextLike,
   type ExecutorIntent,
   type ExecutorDiagnostic,
+  type ExecutorRunResult,
+  type ExecutorTypedPlan,
   isRecord,
   normalizeCommonOptions,
   normalizeOptionsRecord,
+  resolveWorkspaceRoot,
+  runTypedExecutor,
   readEnum,
   readOptionalString,
   throwIfDiagnostics,
@@ -137,10 +141,97 @@ export const createGeneratedIntent = (
 export default async function generatedExecutor(
   options: unknown,
   context: ExecutorContextLike,
-): Promise<{ success: boolean; intent: GeneratedIntent }> {
+): Promise<ExecutorRunResult<GeneratedIntent>> {
   const normalized = normalizeGeneratedOptions(options)
   const intent = createGeneratedIntent(normalized, context)
-  return { success: true, intent }
+  return runTypedExecutor({
+    intent,
+    common: normalized,
+    plans: createGeneratedPlans(normalized, context),
+    context,
+  })
+}
+
+export const createGeneratedPlans = (
+  options: NormalizedGeneratedOptions,
+  context?: ExecutorContextLike,
+): readonly ExecutorTypedPlan[] => {
+  const workspaceRoot = resolveWorkspaceRoot(context)
+
+  switch (options.operation) {
+    case "check":
+      if (options.outputs.length === 0) {
+        return [
+          {
+            kind: "unsupported",
+            label: "generated:check",
+            reason:
+              "generated check execution requires typed outputs so git diff is scoped.",
+          },
+        ]
+      }
+
+      return [
+        {
+          kind: "process",
+          label: "generated:check",
+          adapter: "git-diff-exit-code",
+          executable: "git",
+          args: ["diff", "--exit-code", "--", ...options.outputs],
+          cwd: workspaceRoot,
+        },
+      ]
+    case "diff":
+      if (options.outputs.length === 0) {
+        return [
+          {
+            kind: "unsupported",
+            label: "generated:diff",
+            reason:
+              "generated diff execution requires typed outputs so git diff is scoped.",
+          },
+        ]
+      }
+
+      return [
+        {
+          kind: "process",
+          label: "generated:diff",
+          adapter: "git-diff",
+          executable: "git",
+          args: ["diff", "--", ...options.outputs],
+          cwd: workspaceRoot,
+        },
+      ]
+    case "verify-provenance":
+      return [
+        {
+          kind: "no-op",
+          label: "generated:verify-provenance",
+          adapter: "typed-provenance-summary",
+          reason:
+            "provenance fields were decoded from typed executor options and are emitted in the summary.",
+        },
+      ]
+    case "sync":
+      return [
+        {
+          kind: "unsupported",
+          label: "generated:sync",
+          reason:
+            "generated sync still needs per-generator typed option mapping before dryRun=false can run it safely.",
+        },
+      ]
+    case "emit-ledger":
+      return [
+        {
+          kind: "unsupported",
+          label: "generated:emit-ledger",
+          reason:
+            "checked-in ledger/report emission is not a final executor output; use generated source or gitignored cache materialization.",
+        },
+      ]
+  }
 }
 
 const normalizeProvenance = (

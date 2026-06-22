@@ -157,3 +157,39 @@ export const counterexampleEvidence = (
       ),
     },
   })
+
+export const coveragePointEvidence = (
+  context: EvidenceProducerContext,
+  operationId: string,
+  payload: unknown,
+): AttuneProtocolEvidenceEvent =>
+  evidenceEvent(context, {
+    kind: "coverage-point",
+    operationId,
+    payload: {
+      replay: context.replay,
+      ...(
+        payload && typeof payload === "object"
+          ? payload as Readonly<Record<string, unknown>>
+          : { value: payload }
+      ),
+    },
+  })
+
+export const weakOracleEvidence = (
+  context: EvidenceProducerContext,
+  operationId: string,
+  payload: unknown,
+): AttuneProtocolEvidenceEvent =>
+  evidenceEvent(context, {
+    kind: "weak-oracle",
+    operationId,
+    payload: {
+      replay: context.replay,
+      ...(
+        payload && typeof payload === "object"
+          ? payload as Readonly<Record<string, unknown>>
+          : { value: payload }
+      ),
+    },
+  })

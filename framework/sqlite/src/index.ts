@@ -53,8 +53,81 @@ export interface ProtocolStoreRowCounts {
   readonly evidenceRuns: number
   readonly evidence: number
   readonly generatedArtifacts: number
+  readonly replayMetadata: number
+  readonly waiverState: number
+  readonly coverageFeedback: number
   readonly deltas: number
 }
+
+export const ProtocolReplayMetadataSchema = Schema.Struct({
+  replayId: Schema.String,
+  runId: Schema.String,
+  protocolId: Schema.String,
+  packageId: Schema.String,
+  operationId: Schema.optional(Schema.String),
+  propertyId: Schema.optional(Schema.String),
+  seed: Schema.Number,
+  shrinkPath: Schema.optional(Schema.String),
+  generatedValueSummary: Schema.optional(Schema.String),
+  harnessPayloadSummary: Schema.optional(Schema.String),
+  exitSummary: Schema.optional(Schema.String),
+  status: Schema.Literals(["recorded", "replayed", "failed"] as const),
+  recordedAt: Schema.String,
+  payload: Schema.optional(Schema.Unknown),
+})
+
+export type ProtocolReplayMetadata = typeof ProtocolReplayMetadataSchema.Type
+
+export const ProtocolWaiverStateSchema = Schema.Struct({
+  waiverId: Schema.String,
+  protocolId: Schema.String,
+  packageId: Schema.String,
+  category: Schema.String,
+  status: Schema.Literals(["active", "expired", "invalid"] as const),
+  targetObligationId: Schema.optional(Schema.String),
+  operationId: Schema.optional(Schema.String),
+  targetId: Schema.optional(Schema.String),
+  owner: Schema.optional(Schema.String),
+  reason: Schema.String,
+  reviewAt: Schema.optional(Schema.String),
+  expiresAt: Schema.optional(Schema.String),
+  recordedAt: Schema.String,
+  payload: Schema.optional(Schema.Unknown),
+})
+
+export type ProtocolWaiverState = typeof ProtocolWaiverStateSchema.Type
+
+export const ProtocolCoverageFeedbackSchema = Schema.Struct({
+  coverageId: Schema.String,
+  protocolId: Schema.String,
+  packageId: Schema.String,
+  operationId: Schema.optional(Schema.String),
+  kind: Schema.Literals([
+    "type-partition",
+    "atom-graph",
+    "implementation",
+    "filter",
+    "law",
+    "schema-branch",
+    "transition",
+    "error-path",
+  ] as const),
+  status: Schema.Literals(["hit", "missed", "unreachable", "filtered", "retained"] as const),
+  coveragePoint: Schema.String,
+  sourcePath: Schema.optional(Schema.String),
+  seed: Schema.optional(Schema.Number),
+  shrinkPath: Schema.optional(Schema.String),
+  transformId: Schema.optional(Schema.String),
+  filterId: Schema.optional(Schema.String),
+  rejectionCount: Schema.optional(Schema.Number),
+  acceptanceRate: Schema.optional(Schema.Number),
+  workerId: Schema.optional(Schema.String),
+  shardId: Schema.optional(Schema.String),
+  recordedAt: Schema.String,
+  payload: Schema.optional(Schema.Unknown),
+})
+
+export type ProtocolCoverageFeedback = typeof ProtocolCoverageFeedbackSchema.Type
 
 export interface ProtocolStoreSnapshot {
   readonly descriptors: readonly AttuneProtocolDescriptor[]
@@ -62,6 +135,9 @@ export interface ProtocolStoreSnapshot {
   readonly evidenceRuns: readonly AttuneProtocolEvidenceRun[]
   readonly evidence: readonly AttuneProtocolEvidenceEvent[]
   readonly generatedArtifacts: readonly AttuneGeneratedArtifactRecord[]
+  readonly replayMetadata: readonly ProtocolReplayMetadata[]
+  readonly waiverState: readonly ProtocolWaiverState[]
+  readonly coverageFeedback: readonly ProtocolCoverageFeedback[]
   readonly deltas: readonly AttuneProtocolDelta[]
 }
 
@@ -83,6 +159,15 @@ export interface ProtocolStoreApi {
   ) => Effect.Effect<void, ProtocolStoreError>
   readonly recordEvidenceRun: (
     run: AttuneProtocolEvidenceRun,
+  ) => Effect.Effect<void, ProtocolStoreError>
+  readonly recordReplayMetadata: (
+    metadata: ProtocolReplayMetadata,
+  ) => Effect.Effect<void, ProtocolStoreError>
+  readonly recordWaiverState: (
+    waiver: ProtocolWaiverState,
+  ) => Effect.Effect<void, ProtocolStoreError>
+  readonly recordCoverageFeedback: (
+    feedback: ProtocolCoverageFeedback,
   ) => Effect.Effect<void, ProtocolStoreError>
   readonly recordGeneratedArtifact: (
     record: AttuneGeneratedArtifactRecord,
@@ -109,6 +194,15 @@ export interface ProtocolStoreApi {
   readonly listEvidenceRuns: (
     filter?: ProtocolStoreFilter,
   ) => Effect.Effect<readonly AttuneProtocolEvidenceRun[], ProtocolStoreError>
+  readonly listReplayMetadata: (
+    filter?: ProtocolStoreFilter,
+  ) => Effect.Effect<readonly ProtocolReplayMetadata[], ProtocolStoreError>
+  readonly listWaiverState: (
+    filter?: ProtocolStoreFilter,
+  ) => Effect.Effect<readonly ProtocolWaiverState[], ProtocolStoreError>
+  readonly listCoverageFeedback: (
+    filter?: ProtocolStoreFilter,
+  ) => Effect.Effect<readonly ProtocolCoverageFeedback[], ProtocolStoreError>
   readonly listEvidence: (
     filter?: ProtocolStoreFilter,
   ) => Effect.Effect<readonly AttuneProtocolEvidenceEvent[], ProtocolStoreError>
@@ -138,6 +232,9 @@ export const descriptorHashForStorage = (
     views: candidate.views,
     services: candidate.services,
     operations: candidate.operations,
+    ...(candidate.provenance === undefined ? {} : { provenance: candidate.provenance }),
+    waivers: candidate.waivers,
+    coverageExpectations: candidate.coverageExpectations,
   }
 
   return hashProtocolValue(withoutHash)
@@ -159,6 +256,9 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
   let evidenceRuns: readonly AttuneProtocolEvidenceRun[] = []
   let evidence: readonly AttuneProtocolEvidenceEvent[] = []
   let generatedArtifacts: readonly AttuneGeneratedArtifactRecord[] = []
+  let replayMetadata: readonly ProtocolReplayMetadata[] = []
+  let waiverState: readonly ProtocolWaiverState[] = []
+  let coverageFeedback: readonly ProtocolCoverageFeedback[] = []
   let deltas: readonly AttuneProtocolDelta[] = []
 
   const rowCounts = (): ProtocolStoreRowCounts => ({
@@ -167,6 +267,9 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
     evidenceRuns: evidenceRuns.length,
     evidence: evidence.length,
     generatedArtifacts: generatedArtifacts.length,
+    replayMetadata: replayMetadata.length,
+    waiverState: waiverState.length,
+    coverageFeedback: coverageFeedback.length,
     deltas: deltas.length,
   })
 
@@ -188,6 +291,9 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
         evidenceRuns = []
         evidence = []
         generatedArtifacts = []
+        replayMetadata = []
+        waiverState = []
+        coverageFeedback = []
         deltas = []
       }),
     reinitialize: () =>
@@ -197,6 +303,9 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
         evidenceRuns = []
         evidence = []
         generatedArtifacts = []
+        replayMetadata = []
+        waiverState = []
+        coverageFeedback = []
         deltas = []
         return health()
       }),
@@ -227,6 +336,30 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
         const decoded = decodePayload<AttuneProtocolEvidenceRun>(AttuneProtocolEvidenceRunSchema, run)
         evidenceRuns = [
           ...evidenceRuns.filter((candidate) => candidate.runId !== decoded.runId),
+          decoded,
+        ]
+      }),
+    recordReplayMetadata: (metadata) =>
+      Effect.sync(() => {
+        const decoded = decodePayload<ProtocolReplayMetadata>(ProtocolReplayMetadataSchema, metadata)
+        replayMetadata = [
+          ...replayMetadata.filter((candidate) => candidate.replayId !== decoded.replayId),
+          decoded,
+        ]
+      }),
+    recordWaiverState: (waiver) =>
+      Effect.sync(() => {
+        const decoded = decodePayload<ProtocolWaiverState>(ProtocolWaiverStateSchema, waiver)
+        waiverState = [
+          ...waiverState.filter((candidate) => candidate.waiverId !== decoded.waiverId),
+          decoded,
+        ]
+      }),
+    recordCoverageFeedback: (feedback) =>
+      Effect.sync(() => {
+        const decoded = decodePayload<ProtocolCoverageFeedback>(ProtocolCoverageFeedbackSchema, feedback)
+        coverageFeedback = [
+          ...coverageFeedback.filter((candidate) => candidate.coverageId !== decoded.coverageId),
           decoded,
         ]
       }),
@@ -275,6 +408,12 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
       Effect.succeed(obligations.filter((candidate) => matchesFilter(candidate, filter))),
     listEvidenceRuns: (filter = {}) =>
       Effect.succeed(evidenceRuns.filter((candidate) => matchesFilter(candidate, filter))),
+    listReplayMetadata: (filter = {}) =>
+      Effect.succeed(replayMetadata.filter((candidate) => matchesFilter(candidate, filter))),
+    listWaiverState: (filter = {}) =>
+      Effect.succeed(waiverState.filter((candidate) => matchesFilter(candidate, filter))),
+    listCoverageFeedback: (filter = {}) =>
+      Effect.succeed(coverageFeedback.filter((candidate) => matchesFilter(candidate, filter))),
     listEvidence: (filter = {}) =>
       Effect.succeed(evidence.filter((candidate) => matchesFilter(candidate, filter))),
     listGeneratedArtifacts: (filter = {}) =>
@@ -288,6 +427,9 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
         evidenceRuns,
         evidence,
         generatedArtifacts,
+        replayMetadata,
+        waiverState,
+        coverageFeedback,
         deltas,
       }),
     close: () => Effect.void,
@@ -322,6 +464,21 @@ export const createSqliteProtocolStore = ({
   const putEvidenceRunStatement = database.prepare(`
     INSERT OR REPLACE INTO protocol_evidence_runs
       (run_id, protocol_id, package_id, tier, status, started_at, completed_at, payload_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `)
+  const putReplayMetadataStatement = database.prepare(`
+    INSERT OR REPLACE INTO protocol_replay_metadata
+      (replay_id, run_id, protocol_id, package_id, operation_id, status, seed, payload_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `)
+  const putWaiverStateStatement = database.prepare(`
+    INSERT OR REPLACE INTO protocol_waiver_state
+      (waiver_id, protocol_id, package_id, operation_id, category, status, payload_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `)
+  const putCoverageFeedbackStatement = database.prepare(`
+    INSERT OR REPLACE INTO protocol_coverage_feedback
+      (coverage_id, protocol_id, package_id, operation_id, kind, status, coverage_point, payload_json)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
   const putEvidenceEventStatement = database.prepare(`
@@ -411,6 +568,47 @@ export const createSqliteProtocolStore = ({
           decoded.startedAt,
           decoded.completedAt ?? null,
           encodePayload(AttuneProtocolEvidenceRunSchema, decoded),
+        )
+      }),
+    recordReplayMetadata: (metadata) =>
+      storeEffect("recordReplayMetadata", () => {
+        const decoded = decodePayload<ProtocolReplayMetadata>(ProtocolReplayMetadataSchema, metadata)
+        putReplayMetadataStatement.run(
+          decoded.replayId,
+          decoded.runId,
+          decoded.protocolId,
+          decoded.packageId,
+          decoded.operationId ?? null,
+          decoded.status,
+          decoded.seed,
+          encodePayload(ProtocolReplayMetadataSchema, decoded),
+        )
+      }),
+    recordWaiverState: (waiver) =>
+      storeEffect("recordWaiverState", () => {
+        const decoded = decodePayload<ProtocolWaiverState>(ProtocolWaiverStateSchema, waiver)
+        putWaiverStateStatement.run(
+          decoded.waiverId,
+          decoded.protocolId,
+          decoded.packageId,
+          decoded.operationId ?? null,
+          decoded.category,
+          decoded.status,
+          encodePayload(ProtocolWaiverStateSchema, decoded),
+        )
+      }),
+    recordCoverageFeedback: (feedback) =>
+      storeEffect("recordCoverageFeedback", () => {
+        const decoded = decodePayload<ProtocolCoverageFeedback>(ProtocolCoverageFeedbackSchema, feedback)
+        putCoverageFeedbackStatement.run(
+          decoded.coverageId,
+          decoded.protocolId,
+          decoded.packageId,
+          decoded.operationId ?? null,
+          decoded.kind,
+          decoded.status,
+          decoded.coveragePoint,
+          encodePayload(ProtocolCoverageFeedbackSchema, decoded),
         )
       }),
     recordGeneratedArtifact: (record) =>
@@ -519,6 +717,33 @@ export const createSqliteProtocolStore = ({
           filter,
         )
       ),
+    listReplayMetadata: (filter = {}) =>
+      storeEffect("listReplayMetadata", () =>
+        readPayloads<ProtocolReplayMetadata>(
+          database,
+          protocolReplayMetadataTable,
+          ProtocolReplayMetadataSchema,
+          filter,
+        )
+      ),
+    listWaiverState: (filter = {}) =>
+      storeEffect("listWaiverState", () =>
+        readPayloads<ProtocolWaiverState>(
+          database,
+          protocolWaiverStateTable,
+          ProtocolWaiverStateSchema,
+          filter,
+        )
+      ),
+    listCoverageFeedback: (filter = {}) =>
+      storeEffect("listCoverageFeedback", () =>
+        readPayloads<ProtocolCoverageFeedback>(
+          database,
+          protocolCoverageFeedbackTable,
+          ProtocolCoverageFeedbackSchema,
+          filter,
+        )
+      ),
     listEvidence: (filter = {}) =>
       storeEffect("listEvidence", () =>
         readPayloads<AttuneProtocolEvidenceEvent>(
@@ -562,6 +787,21 @@ export const createSqliteProtocolStore = ({
           database,
           protocolEvidenceRunTable,
           AttuneProtocolEvidenceRunSchema,
+        ),
+        replayMetadata: readPayloads<ProtocolReplayMetadata>(
+          database,
+          protocolReplayMetadataTable,
+          ProtocolReplayMetadataSchema,
+        ),
+        waiverState: readPayloads<ProtocolWaiverState>(
+          database,
+          protocolWaiverStateTable,
+          ProtocolWaiverStateSchema,
+        ),
+        coverageFeedback: readPayloads<ProtocolCoverageFeedback>(
+          database,
+          protocolCoverageFeedbackTable,
+          ProtocolCoverageFeedbackSchema,
         ),
         evidence: readPayloads<AttuneProtocolEvidenceEvent>(
           database,
@@ -672,6 +912,56 @@ const protocolEvidenceRunTable = {
   }),
 } as const
 
+const protocolReplayMetadataTable = {
+  name: "protocol_replay_metadata",
+  primaryKey: "replay_id",
+  payloadColumn: "payload_json",
+  orderBy: "replay_id",
+  rowSchema: Schema.Struct({
+    replay_id: Schema.String,
+    run_id: Schema.String,
+    protocol_id: Schema.String,
+    package_id: Schema.String,
+    operation_id: Schema.NullOr(Schema.String),
+    status: Schema.String,
+    seed: Schema.Number,
+    payload_json: Schema.String,
+  }),
+} as const
+
+const protocolWaiverStateTable = {
+  name: "protocol_waiver_state",
+  primaryKey: "waiver_id",
+  payloadColumn: "payload_json",
+  orderBy: "waiver_id",
+  rowSchema: Schema.Struct({
+    waiver_id: Schema.String,
+    protocol_id: Schema.String,
+    package_id: Schema.String,
+    operation_id: Schema.NullOr(Schema.String),
+    category: Schema.String,
+    status: Schema.String,
+    payload_json: Schema.String,
+  }),
+} as const
+
+const protocolCoverageFeedbackTable = {
+  name: "protocol_coverage_feedback",
+  primaryKey: "coverage_id",
+  payloadColumn: "payload_json",
+  orderBy: "coverage_id",
+  rowSchema: Schema.Struct({
+    coverage_id: Schema.String,
+    protocol_id: Schema.String,
+    package_id: Schema.String,
+    operation_id: Schema.NullOr(Schema.String),
+    kind: Schema.String,
+    status: Schema.String,
+    coverage_point: Schema.String,
+    payload_json: Schema.String,
+  }),
+} as const
+
 const protocolEvidenceEventTable = {
   name: "protocol_evidence_events",
   primaryKey: "event_id",
@@ -709,6 +999,9 @@ const protocolTables = [
   protocolObligationTable,
   protocolGeneratedArtifactTable,
   protocolEvidenceRunTable,
+  protocolReplayMetadataTable,
+  protocolWaiverStateTable,
+  protocolCoverageFeedbackTable,
   protocolEvidenceEventTable,
   protocolDeltaTable,
 ] as const
@@ -756,6 +1049,38 @@ CREATE TABLE IF NOT EXISTS protocol_evidence_runs (
   payload_json TEXT NOT NULL
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS protocol_replay_metadata (
+  replay_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  protocol_id TEXT NOT NULL,
+  package_id TEXT NOT NULL,
+  operation_id TEXT,
+  status TEXT NOT NULL,
+  seed REAL NOT NULL,
+  payload_json TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS protocol_waiver_state (
+  waiver_id TEXT PRIMARY KEY,
+  protocol_id TEXT NOT NULL,
+  package_id TEXT NOT NULL,
+  operation_id TEXT,
+  category TEXT NOT NULL,
+  status TEXT NOT NULL,
+  payload_json TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS protocol_coverage_feedback (
+  coverage_id TEXT PRIMARY KEY,
+  protocol_id TEXT NOT NULL,
+  package_id TEXT NOT NULL,
+  operation_id TEXT,
+  kind TEXT NOT NULL,
+  status TEXT NOT NULL,
+  coverage_point TEXT NOT NULL,
+  payload_json TEXT NOT NULL
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS protocol_evidence_events (
   event_id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL,
@@ -777,11 +1102,50 @@ CREATE TABLE IF NOT EXISTS protocol_deltas (
 ) STRICT;
 `
 
+const runtimeEvidenceCacheMigrationSql = `
+CREATE TABLE IF NOT EXISTS protocol_replay_metadata (
+  replay_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL,
+  protocol_id TEXT NOT NULL,
+  package_id TEXT NOT NULL,
+  operation_id TEXT,
+  status TEXT NOT NULL,
+  seed REAL NOT NULL,
+  payload_json TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS protocol_waiver_state (
+  waiver_id TEXT PRIMARY KEY,
+  protocol_id TEXT NOT NULL,
+  package_id TEXT NOT NULL,
+  operation_id TEXT,
+  category TEXT NOT NULL,
+  status TEXT NOT NULL,
+  payload_json TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS protocol_coverage_feedback (
+  coverage_id TEXT PRIMARY KEY,
+  protocol_id TEXT NOT NULL,
+  package_id TEXT NOT NULL,
+  operation_id TEXT,
+  kind TEXT NOT NULL,
+  status TEXT NOT NULL,
+  coverage_point TEXT NOT NULL,
+  payload_json TEXT NOT NULL
+) STRICT;
+`
+
 const migrations = [
   {
     version: 1,
     name: "init-protocol-store",
     sql: initialMigrationSql,
+  },
+  {
+    version: 2,
+    name: "add-property-evidence-cache-state",
+    sql: runtimeEvidenceCacheMigrationSql,
   },
 ] as const
 
@@ -835,6 +1199,9 @@ const sqliteRowCounts = (database: DatabaseSync): ProtocolStoreRowCounts => ({
   evidenceRuns: tableCount(database, protocolEvidenceRunTable.name),
   evidence: tableCount(database, protocolEvidenceEventTable.name),
   generatedArtifacts: tableCount(database, protocolGeneratedArtifactTable.name),
+  replayMetadata: tableCount(database, protocolReplayMetadataTable.name),
+  waiverState: tableCount(database, protocolWaiverStateTable.name),
+  coverageFeedback: tableCount(database, protocolCoverageFeedbackTable.name),
   deltas: tableCount(database, protocolDeltaTable.name),
 })
 

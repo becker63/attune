@@ -8,6 +8,7 @@ import {
 import {
   computeProtocolDeltas,
   diagnosticsForProtocol,
+  projectionSnapshot,
   type ProtocolProjectionApi,
   type ProtocolProjectionInput,
   type ProtocolRuntimeSnapshot,
@@ -27,8 +28,23 @@ export interface PackageProtocolSummary {
   readonly descriptorHash?: string
   readonly operationCount: number
   readonly obligationCount: number
+  readonly evidenceRunCount: number
   readonly evidenceCount: number
+  readonly replayMetadataCount: number
+  readonly coverageFeedbackCount: number
+  readonly activeWaiverCount: number
+  readonly waiverIssueCount: number
   readonly staleGeneratedArtifactCount: number
+}
+
+export interface PackageEvidenceState {
+  readonly packageId: string
+  readonly evidenceRuns: ProtocolRuntimeSnapshot["evidenceRuns"]
+  readonly evidence: ProtocolRuntimeSnapshot["evidence"]
+  readonly replayMetadata: ProtocolRuntimeSnapshot["replayMetadata"]
+  readonly generatedArtifacts: ProtocolRuntimeSnapshot["generatedArtifacts"]
+  readonly waiverState: ProtocolRuntimeSnapshot["waiverState"]
+  readonly coverageFeedback: ProtocolRuntimeSnapshot["coverageFeedback"]
 }
 
 export interface ObligationExplanation {
@@ -52,6 +68,9 @@ export interface ProtocolQueryApi {
   readonly listDeltas: (
     packageId: string,
   ) => Effect.Effect<readonly AttuneProtocolDelta[], ProtocolQueryError>
+  readonly getPackageEvidenceState: (
+    packageId: string,
+  ) => Effect.Effect<PackageEvidenceState, ProtocolQueryError>
   readonly getDiagnosticsForFile: (
     sourcePath: string,
   ) => Effect.Effect<readonly AttuneProtocolDiagnostic[], ProtocolQueryError>
@@ -66,12 +85,7 @@ export interface ProtocolQueryApi {
 export const getPackageSummary = (
   input: ProtocolProjectionInput,
 ): PackageProtocolSummary => {
-  const snapshot = {
-    descriptors: input.descriptors ?? [],
-    obligations: input.obligations ?? [],
-    evidence: input.evidence ?? [],
-    generatedArtifacts: input.generatedArtifacts ?? [],
-  }
+  const snapshot = projectionSnapshot(input)
   const descriptor = snapshot.descriptors.find((candidate) => candidate.packageId === input.packageId)
   return {
     packageId: input.packageId,
@@ -79,9 +93,26 @@ export const getPackageSummary = (
     ...(descriptor === undefined ? {} : { descriptorHash: descriptor.descriptorHash }),
     operationCount: descriptor?.operations.length ?? 0,
     obligationCount: snapshot.obligations.filter((obligation) => obligation.packageId === input.packageId).length,
+    evidenceRunCount: snapshot.evidenceRuns.filter((run) => run.packageId === input.packageId).length,
     evidenceCount: snapshot.evidence.filter((event) => event.packageId === input.packageId).length,
+    replayMetadataCount: snapshot.replayMetadata.filter((metadata) =>
+      metadata.packageId === input.packageId
+    ).length,
+    coverageFeedbackCount: snapshot.coverageFeedback.filter((feedback) =>
+      feedback.packageId === input.packageId
+    ).length,
+    activeWaiverCount: snapshot.waiverState.filter((waiver) =>
+      waiver.packageId === input.packageId && waiver.status === "active"
+    ).length,
+    waiverIssueCount: snapshot.waiverState.filter((waiver) =>
+      waiver.packageId === input.packageId && waiver.status !== "active"
+    ).length,
     staleGeneratedArtifactCount: snapshot.generatedArtifacts.filter((artifact) =>
-      artifact.packageId === input.packageId && artifact.status !== "current"
+      artifact.packageId === input.packageId &&
+      (
+        artifact.status !== "current" ||
+        (artifact.actualHash !== undefined && artifact.actualHash !== artifact.expectedHash)
+      )
     ).length,
   }
 }
@@ -141,6 +172,10 @@ export const makeProtocolQuery = (
       obligations: snapshot.obligations.filter((obligation) => obligation.packageId === packageId),
       evidence: snapshot.evidence.filter((event) => event.packageId === packageId),
       generatedArtifacts: snapshot.generatedArtifacts.filter((artifact) => artifact.packageId === packageId),
+      evidenceRuns: snapshot.evidenceRuns.filter((run) => run.packageId === packageId),
+      replayMetadata: snapshot.replayMetadata.filter((metadata) => metadata.packageId === packageId),
+      waiverState: snapshot.waiverState.filter((waiver) => waiver.packageId === packageId),
+      coverageFeedback: snapshot.coverageFeedback.filter((feedback) => feedback.packageId === packageId),
     }
 
     const deltas = snapshot.deltas?.filter((delta) => delta.packageId === packageId)
@@ -165,6 +200,18 @@ export const makeProtocolQuery = (
     listDeltas: (packageId) =>
       typedSnapshot().pipe(
         Effect.map((snapshot) => deltasForPackage(snapshot, packageId)),
+      ),
+    getPackageEvidenceState: (packageId) =>
+      typedSnapshot().pipe(
+        Effect.map((snapshot) => ({
+          packageId,
+          evidenceRuns: snapshot.evidenceRuns.filter((run) => run.packageId === packageId),
+          evidence: snapshot.evidence.filter((event) => event.packageId === packageId),
+          replayMetadata: snapshot.replayMetadata.filter((metadata) => metadata.packageId === packageId),
+          generatedArtifacts: snapshot.generatedArtifacts.filter((artifact) => artifact.packageId === packageId),
+          waiverState: snapshot.waiverState.filter((waiver) => waiver.packageId === packageId),
+          coverageFeedback: snapshot.coverageFeedback.filter((feedback) => feedback.packageId === packageId),
+        })),
       ),
     getDiagnosticsForFile: (sourcePath) =>
       typedSnapshot().pipe(

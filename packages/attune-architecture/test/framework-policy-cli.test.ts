@@ -132,6 +132,10 @@ describe("framework policy CLI", () => {
         code: "missing-property-evidence-harness",
         filePath: "packages/no-evidence/src/attune.package.ts",
       }),
+      expect.objectContaining({
+        code: "missing-coverage-conformance",
+        filePath: "packages/no-evidence/src/attune.package.ts",
+      }),
     ]))
   })
 
@@ -256,6 +260,117 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("rejects mutation, provider, scheduler, external, and mutable state work hidden inside atom implementations", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/unsafe-atoms/package.json": JSON.stringify({ name: "@attune/unsafe-atoms" }),
+      "packages/unsafe-atoms/src/attune.package.ts": packageContractSource({
+        packageId: "unsafe-atoms",
+        viewsBody: [
+          "  reactivityKeys: [\"unsafe.changed\"],",
+          "  atoms: [\"unsafeAtom\"],",
+          "  baseAtoms: [{ id: \"unsafeAtom\", refreshesOn: [\"unsafe.changed\"] }],",
+          "  packageViewAtoms: [{ id: \"unsafeAtom\", reads: [\"unsafeAtom\"] }],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+      "packages/unsafe-atoms/src/atoms/workbench.package-view-atom.ts": [
+        "import { Effect } from \"effect\"",
+        "export const workbenchPackageViewAtom = {",
+        "  read: async ({ eventLog, projectionStore, provider }) => {",
+        "    let cachedSnapshot",
+        "    await eventLog.append({ type: \"FactRecorded\" })",
+        "    await projectionStore.write(\"fact\", {})",
+        "    await provider.apply({ kind: \"bucket\" })",
+        "    await fetch(\"https://example.invalid/status\")",
+        "    Effect.fork(Effect.never)",
+        "    return cachedSnapshot",
+        "  },",
+        "}",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(1)
+    expect(result.atomImplementationDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "atom-hidden-mutable-state",
+        filePath: "packages/unsafe-atoms/src/atoms/workbench.package-view-atom.ts",
+        line: 4,
+      }),
+      expect.objectContaining({
+        code: "atom-eventlog-mutation",
+        filePath: "packages/unsafe-atoms/src/atoms/workbench.package-view-atom.ts",
+        line: 5,
+      }),
+      expect.objectContaining({
+        code: "atom-durable-write",
+        filePath: "packages/unsafe-atoms/src/atoms/workbench.package-view-atom.ts",
+        line: 6,
+      }),
+      expect.objectContaining({
+        code: "atom-provider-action",
+        filePath: "packages/unsafe-atoms/src/atoms/workbench.package-view-atom.ts",
+        line: 7,
+      }),
+      expect.objectContaining({
+        code: "atom-external-service-call",
+        filePath: "packages/unsafe-atoms/src/atoms/workbench.package-view-atom.ts",
+        line: 8,
+      }),
+      expect.objectContaining({
+        code: "atom-scheduler-resource-lifecycle",
+        filePath: "packages/unsafe-atoms/src/atoms/workbench.package-view-atom.ts",
+        line: 9,
+      }),
+    ]))
+    expect(result.outputLines).toEqual(expect.arrayContaining([
+      expect.stringContaining(
+        "attune/atom-implementation-boundary atom-eventlog-mutation packages/unsafe-atoms/src/atoms/workbench.package-view-atom.ts:5:",
+      ),
+    ]))
+  })
+
+  it("accepts recomputable atom reads and ignores fixture or generator templates", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/pure-atoms/package.json": JSON.stringify({ name: "@attune/pure-atoms" }),
+      "packages/pure-atoms/src/attune.package.ts": packageContractSource({
+        packageId: "pure-atoms",
+        viewsBody: [
+          "  reactivityKeys: [\"pure.changed\"],",
+          "  atoms: [\"sourceAtom\", \"summaryAtom\"],",
+          "  baseAtoms: [{ id: \"sourceAtom\", refreshesOn: [\"pure.changed\"] }],",
+          "  packageViewAtoms: [{ id: \"summaryAtom\", reads: [\"sourceAtom\"] }],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+      "packages/pure-atoms/src/atoms/workbench.package-view-atom.ts": [
+        "export const workbenchPackageViewAtom = (sourceAtom) => ({",
+        "  id: \"summaryAtom\",",
+        "  read: () => ({",
+        "    status: sourceAtom.read().status,",
+        "    evidenceCount: sourceAtom.read().evidence.length,",
+        "  }),",
+        "})",
+      ].join("\n"),
+      "packages/pure-atoms/src/fixtures/unsafe-atom-fixture.ts": [
+        "let fixtureState = 0",
+        "export const fixtureAtom = () => fetch(\"https://example.invalid\")",
+      ].join("\n"),
+      "packages/pure-atoms/src/generators/atom-view/generator.ts": [
+        "export const atomTemplate = `let generatedState = 0`",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.atomImplementationDiagnostics).toEqual([])
+    expect(result.outputLines).toEqual([])
+  })
+
   it("accepts coherent operation to Reactivity key to base atom to derived atom to package view movement", () => {
     const workspaceRoot = makeWorkspace({
       "packages/coherent-views/package.json": JSON.stringify({ name: "@attune/coherent-views" }),
@@ -339,13 +454,14 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("rejects stale architecture-lint final-surface references and expired migration waivers", () => {
+  it("rejects stale architecture-lint final-surface references, stale policy target guidance, and expired migration waivers", () => {
     const workspaceRoot = makeWorkspace({
       "docs/final-framework-surface.md": [
         "# Final Framework Surface",
         "",
         `Use ${staleArchitecturePackagePath} as the final architecture package.`,
       ].join("\n"),
+      "docs/stale-policy-target.md": "Run workspace:policy-architecture before opening a PR.",
       "packages/expired-waiver/package.json": JSON.stringify({ name: "@attune/expired-waiver" }),
       "packages/expired-waiver/src/attune.package.ts": [
         "export const PackageViews = definePackageViews({",
@@ -369,10 +485,114 @@ describe("framework policy CLI", () => {
         filePath: "docs/final-framework-surface.md",
       }),
       expect.objectContaining({
+        code: "stale-policy-architecture-guidance",
+        filePath: "docs/stale-policy-target.md",
+      }),
+      expect.objectContaining({
         code: "expired-migration-waiver",
         filePath: "packages/expired-waiver/src/attune.package.ts",
       }),
     ]))
+  })
+
+  it("rejects workerized targets that omit static worker metadata", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/worker-policy/package.json": JSON.stringify({ name: "@attune/worker-policy" }),
+      "packages/worker-policy/project.json": JSON.stringify({
+        name: "worker-policy",
+        root: "packages/worker-policy",
+        targets: {
+          "worker-property": {
+            executor: "attune:toolchain",
+            options: {
+              tool: "worker-fuzz",
+              timeoutSeconds: 120,
+              workerBudget: {
+                maxWorkers: 2,
+                seedRange: { start: 1, end: 100 },
+              },
+            },
+          },
+          "worker-property-complete": {
+            executor: "attune:toolchain",
+            options: {
+              tool: "worker-fuzz",
+              timeoutSeconds: 120,
+              workerBudget: {
+                maxWorkers: 2,
+                seedRange: { start: 1, end: 100 },
+                shardCount: 2,
+                shardIndex: 0,
+              },
+            },
+            metadata: {
+              attune: {
+                worker: {
+                  isolationLevel: "file",
+                  randomSource: "main-thread",
+                },
+              },
+            },
+          },
+        },
+      }),
+      "packages/worker-policy/src/attune.package.ts": packageContractSource({
+        packageId: "worker-policy",
+        viewsBody: [
+          "  reactivityKeys: [\"worker-policy.changed\"],",
+          "  atoms: [\"workerPolicyAtom\"],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["property-evidence"] })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual([
+      expect.objectContaining({
+        code: "worker-target-metadata",
+        filePath: "packages/worker-policy/project.json",
+        message: expect.stringContaining("isolation level"),
+      }),
+    ])
+  })
+
+  it("supports focused CLI policy slices", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/no-coverage/package.json": JSON.stringify({ name: "@attune/no-coverage" }),
+      "packages/no-coverage/src/attune.package.ts": [
+        "export const PackageViews = definePackageViews({",
+        "  reactivityKeys: [\"no-coverage.changed\"],",
+        "  atoms: [\"noCoverageAtom\"],",
+        "})",
+        "export const PackageContract = definePackageContract({",
+        "  packageId: \"no-coverage\",",
+        "  views: PackageViews,",
+        "  waivers: [] as const,",
+        "})",
+      ].join("\n"),
+    })
+    const outputLines: string[] = []
+
+    const exitCode = runFrameworkPolicyCli([
+      "node",
+      "framework-policy-cli.ts",
+      "--only",
+      "coverage-conformance",
+      workspaceRoot,
+    ], (line) => {
+      outputLines.push(line)
+    })
+
+    expect(exitCode).toBe(1)
+    expect(outputLines).toEqual([
+      expect.stringContaining("missing-coverage-conformance"),
+    ])
+    expect(outputLines).not.toEqual([
+      expect.stringContaining("missing-property-evidence-harness"),
+    ])
   })
 
   it("allows local cache artifacts and legitimate generated source", () => {

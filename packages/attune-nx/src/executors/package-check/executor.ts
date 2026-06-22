@@ -3,8 +3,14 @@ import {
   createIntent,
   type ExecutorContextLike,
   type ExecutorIntent,
+  type ExecutorRunResult,
+  type ExecutorTypedPlan,
   normalizeCommonOptions,
   normalizeOptionsRecord,
+  relativeToWorkspace,
+  resolveProjectRoot,
+  resolveWorkspaceRoot,
+  runTypedExecutor,
   readEnum,
   throwIfDiagnostics,
   type NormalizedCommonExecutorOptions,
@@ -88,10 +94,73 @@ export const createPackageCheckIntent = (
 export default async function packageCheckExecutor(
   options: unknown,
   context: ExecutorContextLike,
-): Promise<{ success: boolean; intent: PackageCheckIntent }> {
+): Promise<ExecutorRunResult<PackageCheckIntent>> {
   const normalized = normalizePackageCheckOptions(options)
   const intent = createPackageCheckIntent(normalized, context)
-  return { success: true, intent }
+  return runTypedExecutor({
+    intent,
+    common: normalized,
+    plans: createPackageCheckPlans(normalized, context),
+    context,
+  })
+}
+
+export const createPackageCheckPlans = (
+  options: NormalizedPackageCheckOptions,
+  context?: ExecutorContextLike,
+): readonly ExecutorTypedPlan[] => {
+  const workspaceRoot = resolveWorkspaceRoot(context)
+  const projectRoot = resolveProjectRoot(options, context)
+  const projectPath = relativeToWorkspace(projectRoot, context)
+
+  return options.checks.map((check): ExecutorTypedPlan => {
+    switch (check) {
+      case "typecheck":
+        return {
+          kind: "process",
+          label: "package-check:typecheck",
+          adapter: "pnpm-exec-tsgo",
+          executable: "pnpm",
+          args: ["exec", "tsgo", "--noEmit"],
+          cwd: projectRoot,
+        }
+      case "test":
+        return {
+          kind: "process",
+          label: "package-check:test",
+          adapter: "pnpm-exec-vitest",
+          executable: "pnpm",
+          args: ["exec", "vitest", "run"],
+          cwd: projectRoot,
+        }
+      case "lint":
+        return {
+          kind: "process",
+          label: "package-check:lint",
+          adapter: "pnpm-exec-oxlint",
+          executable: "pnpm",
+          args: [
+            "exec",
+            "oxlint",
+            "--config",
+            "root-oxlintrc.json",
+            projectPath,
+            "--quiet",
+          ],
+          cwd: workspaceRoot,
+        }
+      case "contract":
+      case "service-conformance":
+      case "atom-graph":
+      case "property-evidence":
+      case "coverage-conformance":
+        return {
+          kind: "unsupported",
+          label: `package-check:${check}`,
+          reason: `${check} still needs a framework diagnostic/conformance adapter before dryRun=false can replace run-commands.`,
+        }
+    }
+  })
 }
 
 const normalizeChecks = (

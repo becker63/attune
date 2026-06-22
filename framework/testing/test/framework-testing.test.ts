@@ -4,10 +4,13 @@ import fc from "fast-check"
 import {
   CounterexampleCacheEntrySchema,
   assertExactOperationMapCoverage,
+  atomGraphMovementRecordsFromObservations,
   atomMovementEvidence,
   checkFastCheckProperty,
   checkPackageHarnessProperty,
   counterexampleCacheEntry,
+  coverageConformanceRecordsFromAtomGraph,
+  coveragePointEvidence,
   defineEvidenceProducerMap,
   defineEvidenceProducer,
   definePackageEvidenceProducerMap,
@@ -15,15 +18,23 @@ import {
   createPackageHarnessClient,
   defineOperationRegistry,
   exactOperationMapCoverage,
+  mergeCoverageSearchEvidence,
+  mergeCoverageWorkerShards,
   mergeAtomGraphObservations,
   normalizeWorkerMetadata,
   observedMovement,
   operationHandler,
+  planTargetedCoverageRerun,
   publicAccessorHandler,
   propertyRunEvidence,
   schemaArbitrarySlot,
+  weakOracleEvidence,
   workerEvidenceMetadata,
   workerReplayMetadata,
+  type CoverageSearchIdentity,
+  type ImplementationCoveragePointDelta,
+  type MeasuredFilterRecord,
+  type TypeGuidancePartitionRecord,
 } from "../src/index.js"
 import {
   defineOperation,
@@ -31,6 +42,52 @@ import {
   definePackageViews,
   touches,
 } from "@attune/framework-protocol"
+
+const coverageCase = (
+  input: Partial<CoverageSearchIdentity> = {},
+): CoverageSearchIdentity => ({
+  operationId: input.operationId ?? "increment",
+  packageId: input.packageId ?? "demo",
+  seed: input.seed ?? 101,
+  shardId: input.shardId ?? "shard-a",
+  ...(input.corpusSeedId === undefined ? {} : { corpusSeedId: input.corpusSeedId }),
+  ...(input.generatedValueSummary === undefined ? {} : { generatedValueSummary: input.generatedValueSummary }),
+  ...(input.shrinkPath === undefined ? {} : { shrinkPath: input.shrinkPath }),
+  ...(input.workerId === undefined ? {} : { workerId: input.workerId }),
+})
+
+const partition = (
+  input: Partial<TypeGuidancePartitionRecord> & Pick<TypeGuidancePartitionRecord, "partitionId" | "status">,
+): TypeGuidancePartitionRecord => ({
+  ...coverageCase(input),
+  partitionId: input.partitionId,
+  partitionKind: input.partitionKind ?? "input",
+  ...(input.source === undefined ? {} : { source: input.source }),
+  status: input.status,
+})
+
+const filter = (
+  input: Partial<MeasuredFilterRecord> & Pick<MeasuredFilterRecord, "accepted" | "filterId" | "rejected">,
+): MeasuredFilterRecord => ({
+  ...coverageCase(input),
+  accepted: input.accepted,
+  filterId: input.filterId,
+  reason: input.reason ?? "operation precondition",
+  rejected: input.rejected,
+  source: input.source ?? "operation-precondition",
+})
+
+const coverage = (
+  input: Partial<ImplementationCoveragePointDelta> & Pick<ImplementationCoveragePointDelta, "pointId">,
+): ImplementationCoveragePointDelta => ({
+  ...coverageCase(input),
+  afterCount: input.afterCount ?? 1,
+  beforeCount: input.beforeCount ?? 0,
+  coverageTool: input.coverageTool ?? "v8",
+  pointId: input.pointId,
+  pointKind: input.pointKind ?? "branch",
+  sourceFile: input.sourceFile ?? "src/increment.ts",
+})
 
 describe("@attune/framework-testing", () => {
   it("defines operation registries and evidence producers for generated harnesses", () => {
@@ -375,6 +432,359 @@ describe("@attune/framework-testing", () => {
         worker: {
           workerId: "demo:demo.increment.property:shard-0-of-1",
         },
+      },
+    })
+  })
+
+  it("records atom/Reactivity graph coverage for generated property audits", () => {
+    const observations = [
+      {
+        reactivityKey: "demo.changed",
+        baseAtom: "demoBaseAtom",
+        derivedAtom: "demoDerivedAtom",
+        packageViewAtom: "demoViewAtom",
+        changed: true,
+        diff: { after: 2, before: 1 },
+      },
+      {
+        reactivityKey: "demo.idle",
+        packageViewAtom: "idleViewAtom",
+        changed: false,
+      },
+    ] as const
+
+    const movements = atomGraphMovementRecordsFromObservations({
+      observations,
+      operationId: "increment",
+      packageId: "demo",
+      replay: {
+        path: "0:1",
+        seed: 55,
+        shardId: "shard-2",
+        workerId: "worker-a",
+      },
+    })
+    const conformance = coverageConformanceRecordsFromAtomGraph({
+      observations,
+      operationId: "increment",
+      packageId: "demo",
+      replay: { seed: 55, shardId: "shard-2" },
+    })
+
+    expect(movements[0]).toMatchObject({
+      edgeId: "increment->demo.changed->demoBaseAtom->demoDerivedAtom->demoViewAtom",
+      moved: true,
+      seed: 55,
+      shardId: "shard-2",
+      shrinkPath: "0:1",
+      workerId: "worker-a",
+    })
+    expect(conformance.map((record) => [record.kind, record.requirementId, record.status])).toEqual([
+      ["reactivity-key", "reactivity:demo.changed", "hit"],
+      ["atom-refresh", "base-atom:demoBaseAtom", "hit"],
+      ["atom-refresh", "derived-atom:demoDerivedAtom", "hit"],
+      ["package-view-atom-change", "package-view:demoViewAtom", "hit"],
+      ["reactivity-key", "reactivity:demo.idle", "miss"],
+      ["package-view-atom-change", "package-view:idleViewAtom", "miss"],
+    ])
+  })
+
+  it("merges coverage conformance, filters, and retained seeds deterministically", () => {
+    const summary = mergeCoverageSearchEvidence({
+      coverageConformance: [
+        {
+          ...coverageCase({ seed: 12, shardId: "worker-1" }),
+          kind: "schema-variant",
+          requirementId: "input.negative",
+          schemaVariantId: "negative",
+          status: "hit",
+        },
+        {
+          ...coverageCase({ seed: 11, shardId: "worker-0" }),
+          kind: "expected-error-path",
+          requirementId: "error.out-of-range",
+          errorPathId: "out-of-range",
+          status: "miss",
+        },
+      ],
+      filters: [
+        filter({
+          accepted: 1,
+          filterId: "valid-state",
+          rejected: 99,
+          seed: 12,
+          shardId: "worker-1",
+        }),
+      ],
+      requiredCoverage: [
+        {
+          kind: "schema-variant",
+          operationId: "increment",
+          packageId: "demo",
+          requirementId: "input.negative",
+          schemaVariantId: "negative",
+        },
+        {
+          errorPathId: "out-of-range",
+          kind: "expected-error-path",
+          operationId: "increment",
+          packageId: "demo",
+          requirementId: "error.out-of-range",
+        },
+      ],
+      typeGuidancePartitions: [
+        partition({
+          generatedValueSummary: "{\"value\":-1}",
+          partitionId: "input.negative",
+          seed: 12,
+          shardId: "worker-1",
+          status: "hit",
+        }),
+      ],
+    })
+
+    expect(summary.coverageConformance.map((item) => [item.requirementId, item.status])).toEqual([
+      ["error.out-of-range", "missing"],
+      ["input.negative", "hit"],
+    ])
+    expect(summary.findings).toContainEqual(expect.objectContaining({
+      filterId: "valid-state",
+      kind: "high-rejection-filter",
+    }))
+    expect(summary.findings).toContainEqual(expect.objectContaining({
+      kind: "missing-coverage-requirement",
+      requirementId: "error.out-of-range",
+      requirementKind: "expected-error-path",
+    }))
+    expect(summary.retainedSeeds[0]).toMatchObject({
+      seed: 12,
+      shardId: "worker-1",
+      score: 21,
+    })
+  })
+
+  it("plans targeted reruns while preserving replay metadata", () => {
+    const summary = mergeCoverageSearchEvidence({
+      atomGraphMovements: [
+        {
+          ...coverageCase({
+            seed: 404,
+            shardId: "shard-a",
+            shrinkPath: "0:2",
+            workerId: "worker-a",
+          }),
+          edgeId: "increment->demoViewAtom",
+          moved: false,
+          reactivityKey: "demo.changed",
+          viewAtomId: "demoViewAtom",
+        },
+      ],
+      coverageDeltas: [
+        coverage({
+          pointId: "branch:17",
+          seed: 404,
+          shardId: "shard-a",
+          shrinkPath: "0:2",
+          workerId: "worker-a",
+        }),
+      ],
+      requiredAtomGraphEdges: [
+        {
+          edgeId: "increment->demoViewAtom",
+          operationId: "increment",
+          packageId: "demo",
+          reactivityKey: "demo.changed",
+          viewAtomId: "demoViewAtom",
+        },
+      ],
+      requiredLaws: [
+        {
+          lawIds: ["view.package-view-moves"],
+          operationId: "increment",
+          packageId: "demo",
+        },
+      ],
+      typeGuidancePartitions: [
+        partition({
+          partitionId: "input.rare",
+          seed: 404,
+          shardId: "shard-a",
+          shrinkPath: "0:2",
+          status: "hit",
+          workerId: "worker-a",
+        }),
+      ],
+    })
+    const plan = planTargetedCoverageRerun({ summary })
+
+    expect(plan.targets.map((target) => [target.targetKind, target.targetId])).toEqual([
+      ["atom-graph-edge", "increment->demoViewAtom"],
+      ["atom-graph-edge", "increment->demoViewAtom"],
+      ["law", "view.package-view-moves"],
+    ])
+    expect(plan.seeds[0]).toMatchObject({
+      replay: {
+        seed: 404,
+        shardId: "shard-a",
+        shrinkPath: "0:2",
+        workerId: "worker-a",
+      },
+      targetKinds: expect.arrayContaining(["atom-graph-edge", "coverage-point", "law", "type-guidance-partition"]),
+    })
+  })
+
+  it("merges V8/Istanbul evidence across worker shards and detects dead harnesses", () => {
+    const merged = mergeCoverageWorkerShards([
+      {
+        shardId: "shard-1",
+        status: "passed",
+        tier: "proof-pressure",
+        workerId: "worker-b",
+        coverage: {
+          coverageDeltas: [
+            coverage({
+              afterCount: 3,
+              beforeCount: 1,
+              coverageTool: "istanbul",
+              pointId: "line:10",
+              seed: 7,
+              shardId: "shard-1",
+              workerId: "worker-b",
+            }),
+          ],
+        },
+      },
+      {
+        shardId: "shard-0",
+        status: "passed",
+        tier: "proof-pressure",
+        workerId: "worker-a",
+        coverage: {
+          typeGuidancePartitions: [
+            partition({
+              operationId: "dry-harness",
+              partitionId: "input.fixture",
+              seed: 8,
+              shardId: "shard-0",
+              status: "hit",
+              workerId: "worker-a",
+            }),
+          ],
+        },
+      },
+    ])
+
+    expect(merged.workerShards.map((shard) => shard.shardId)).toEqual(["shard-0", "shard-1"])
+    expect(merged.coverageDeltas).toEqual([
+      expect.objectContaining({
+        coverageTool: "istanbul",
+        delta: 2,
+        pointId: "line:10",
+      }),
+    ])
+    expect(merged.findings).toContainEqual(expect.objectContaining({
+      kind: "dead-harness",
+      operationId: "dry-harness",
+      semanticCaseCount: 1,
+    }))
+  })
+
+  it("flags weak oracles when implementation coverage lacks laws or expected paths", () => {
+    const summary = mergeCoverageSearchEvidence({
+      coverageDeltas: [
+        coverage({
+          pointId: "branch:typed-error",
+          seed: 77,
+          sourceFile: "src/increment.ts",
+        }),
+      ],
+      requiredCoverage: [
+        {
+          errorPathId: "negative-input",
+          kind: "expected-error-path",
+          operationId: "increment",
+          packageId: "demo",
+          requirementId: "error.negative-input",
+        },
+      ],
+      requiredLaws: [
+        {
+          lawIds: ["schema.decode", "view.package-view-moves"],
+          operationId: "increment",
+          packageId: "demo",
+        },
+      ],
+    })
+
+    expect(summary.findings).toContainEqual(expect.objectContaining({
+      kind: "weak-oracle",
+      missingLawIds: ["schema.decode", "view.package-view-moves"],
+      missingRequirementIds: ["error.negative-input"],
+      severity: "warning",
+    }))
+  })
+
+  it("flags weak oracles when survived mutants sit on atom-covered paths", () => {
+    const summary = mergeCoverageSearchEvidence({
+      atomGraphMovements: [
+        {
+          ...coverageCase({ seed: 88, shardId: "mutation-shard" }),
+          edgeId: "increment->demoViewAtom",
+          moved: true,
+          viewAtomId: "demoViewAtom",
+        },
+      ],
+      mutationSurvivals: [
+        {
+          ...coverageCase({ seed: 88, shardId: "mutation-shard" }),
+          atomGraphEdgeId: "increment->demoViewAtom",
+          mutationId: "mutant-1",
+          pointId: "branch:mutation-1",
+          pointKind: "branch",
+          sourceFile: "src/increment.ts",
+          survived: true,
+        },
+      ],
+    })
+
+    expect(summary.mutationSurvivals).toEqual([
+      expect.objectContaining({
+        mutationId: "mutant-1",
+        survivedCount: 1,
+      }),
+    ])
+    expect(summary.findings).toContainEqual(expect.objectContaining({
+      kind: "weak-oracle",
+      survivedMutationIds: ["mutant-1"],
+    }))
+  })
+
+  it("emits coverage-point and weak-oracle protocol evidence helpers", () => {
+    const context = {
+      protocolId: "attune/package/demo",
+      packageId: "demo",
+      runId: "run-coverage",
+      observedAt: "2026-06-22T00:00:00.000Z",
+      replay: { seed: 909, path: "1:0" },
+    } as const
+
+    expect(coveragePointEvidence(context, "increment", {
+      pointId: "line:10",
+      sourceFile: "src/increment.ts",
+    })).toMatchObject({
+      kind: "coverage-point",
+      payload: {
+        pointId: "line:10",
+        replay: { seed: 909, path: "1:0" },
+      },
+    })
+    expect(weakOracleEvidence(context, "increment", {
+      missingLawIds: ["schema.decode"],
+    })).toMatchObject({
+      kind: "weak-oracle",
+      payload: {
+        missingLawIds: ["schema.decode"],
+        replay: { seed: 909, path: "1:0" },
       },
     })
   })
