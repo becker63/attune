@@ -19,6 +19,6 @@ describe("@attune/framework-language-service", () => {
     }
 
     expect(codeActionsForDiagnostic(diagnostic)[0]?.kind).toBe("nx-generator")
-    expect(diagnosticCodeLens(diagnostic).title).toBe("1 suggested actions")
+    expect(diagnosticCodeLens(diagnostic).title).toBe("1 suggested actions for missing obligations")
   })
 })

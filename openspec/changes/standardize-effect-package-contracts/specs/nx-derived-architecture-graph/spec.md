@@ -217,6 +217,30 @@ SHALL NOT be the workflow surface.
   declarations, generated source required by build/typecheck, language-service
   diagnostics, Nx output, or gitignored local cache
 
+### Requirement: Nx materialization derives protocol graph from static DSL
+Nx materialization SHALL derive protocol descriptors, generated artifact
+ownership, source ranges, and repair actions from static framework DSL
+declarations and TypeScript symbol resolution.
+
+#### Scenario: Source declaration owns artifact
+- **WHEN** a generator materializes an operation registry, typecheck module,
+  evidence scaffold, type-guidance artifact, atom view edge, or descriptor
+- **THEN** the generated artifact record MUST point back to the source
+  declaration symbol/range and stable serialized ID
+
+#### Scenario: Paths are derived from workspace graph
+- **WHEN** Nx materializes source paths, artifact paths, generated artifact
+  ownership, or repair-action targets
+- **THEN** it MUST derive those paths from the Nx project graph, project source
+  root, declaration location, generator options, and stable serialized ID rather
+  than requiring package authors to hand-maintain path strings
+
+#### Scenario: String-only cross-reference remains
+- **WHEN** a migrated package still uses raw string references where symbol
+  references are available
+- **THEN** Nx or framework diagnostics SHOULD report a migration diagnostic and
+  suggest converting to symbol/object references
+
 ### Requirement: Nx checks contract type-inference outputs
 The Nx integration SHALL treat package-contract type inference as a checked
 boundary. Generated artifacts that depend on operation ids, inferred laws,

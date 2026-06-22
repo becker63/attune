@@ -92,88 +92,115 @@ const acceptanceRate = (filter: FilterEvidence): number => {
   return total === 0 ? 1 : filter.accepted / total
 }
 
-const analyzePropertyEvidence = (fixture: PropertyEvidenceFixture): readonly PropertyFinding[] => {
-  const findings: PropertyFinding[] = []
-  const hitCoverage = fixture.implementationCoverage.filter((point) => point.hitCount > 0)
-  const partitionById = new Map(fixture.typePartitions.map((partition) => [partition.id, partition]))
-  const observedAtomMovementKeys = new Set(fixture.observedAtomMovements.map(atomMovementKey))
-  const declaredTypedErrors = new Set(fixture.declaredTypedErrors)
-
-  if (fixture.runCount > 0 && hitCoverage.length === 0) {
-    findings.push(finding(fixture, "dead-harness-path", {
+const deadHarnessFindings = (
+  fixture: PropertyEvidenceFixture,
+  hitCoverage: readonly CoveragePoint[],
+): readonly PropertyFinding[] =>
+  fixture.runCount > 0 && hitCoverage.length === 0
+    ? [finding(fixture, "dead-harness-path", {
       coveragePointIds: fixture.implementationCoverage.map((point) => point.id),
       runCount: fixture.runCount,
-    }))
-  }
+    })]
+    : []
 
-  for (const partitionId of fixture.requiredTypePartitions) {
+const typePartitionFindings = (
+  fixture: PropertyEvidenceFixture,
+): readonly PropertyFinding[] => {
+  const partitionById = new Map(fixture.typePartitions.map((partition) => [partition.id, partition]))
+  return fixture.requiredTypePartitions.flatMap((partitionId): readonly PropertyFinding[] => {
     const partition = partitionById.get(partitionId)
-    if (partition === undefined || partition.status === "missed" || partition.status === "filtered") {
-      findings.push(finding(fixture, "missing-type-partition", {
+    return partition === undefined || partition.status === "missed" || partition.status === "filtered"
+      ? [finding(fixture, "missing-type-partition", {
         partitionId,
         status: partition?.status ?? "absent",
-      }))
-    }
-  }
+      })]
+      : []
+  })
+}
 
-  for (const filterEvidence of fixture.filters) {
+const highFilterRejectionFindings = (
+  fixture: PropertyEvidenceFixture,
+): readonly PropertyFinding[] =>
+  fixture.filters.flatMap((filterEvidence): readonly PropertyFinding[] => {
     const rate = acceptanceRate(filterEvidence)
-    if (filterEvidence.accepted + filterEvidence.rejected > 0 && rate < 0.2) {
-      findings.push(finding(fixture, "high-filter-rejection", {
+    return filterEvidence.accepted + filterEvidence.rejected > 0 && rate < 0.2
+      ? [finding(fixture, "high-filter-rejection", {
         accepted: filterEvidence.accepted,
         acceptanceRate: rate,
         filterId: filterEvidence.id,
         reason: filterEvidence.reason,
         rejected: filterEvidence.rejected,
-      }))
-    }
-  }
+      })]
+      : []
+  })
 
-  for (const expectedError of fixture.expectedErrorPaths) {
-    if (expectedError.status === "unreachable") {
-      findings.push(finding(fixture, "unreachable-expected-error", {
-        expectedErrorId: expectedError.id,
-      }))
-    }
-  }
+const unreachableExpectedErrorFindings = (
+  fixture: PropertyEvidenceFixture,
+): readonly PropertyFinding[] =>
+  fixture.expectedErrorPaths
+    .filter((expectedError) => expectedError.status === "unreachable")
+    .map((expectedError) => finding(fixture, "unreachable-expected-error", {
+      expectedErrorId: expectedError.id,
+    }))
 
-  for (const movement of fixture.expectedAtomMovements) {
-    const key = atomMovementKey(movement)
-    if (!observedAtomMovementKeys.has(key)) {
-      findings.push(finding(fixture, "missing-atom-movement", {
+const missingAtomMovementFindings = (
+  fixture: PropertyEvidenceFixture,
+): readonly PropertyFinding[] => {
+  const observedAtomMovementKeys = new Set(fixture.observedAtomMovements.map(atomMovementKey))
+  return fixture.expectedAtomMovements
+    .filter((movement) => !observedAtomMovementKeys.has(atomMovementKey(movement)))
+    .map((movement) => finding(fixture, "missing-atom-movement", {
         atomId: movement.atomId,
         reactivityKey: movement.reactivityKey,
         viewAtomId: movement.viewAtomId,
       }))
-    }
-  }
+}
 
-  for (const error of fixture.observedTypedErrors) {
-    if (!declaredTypedErrors.has(error.id)) {
-      findings.push(finding(fixture, "undeclared-typed-error", {
+const undeclaredTypedErrorFindings = (
+  fixture: PropertyEvidenceFixture,
+): readonly PropertyFinding[] => {
+  const declaredTypedErrors = new Set(fixture.declaredTypedErrors)
+  return fixture.observedTypedErrors
+    .filter((error) => !declaredTypedErrors.has(error.id))
+    .map((error) => finding(fixture, "undeclared-typed-error", {
         errorId: error.id,
         source: error.source,
       }))
-    }
-  }
+}
 
-  for (const mutation of fixture.mutations) {
-    if (mutation.covered && mutation.atomMovementObserved && mutation.survived) {
-      findings.push(finding(fixture, "weak-oracle", {
+const mutationWeakOracleFindings = (
+  fixture: PropertyEvidenceFixture,
+): readonly PropertyFinding[] =>
+  fixture.mutations
+    .filter((mutation) => mutation.covered && mutation.atomMovementObserved && mutation.survived)
+    .map((mutation) => finding(fixture, "weak-oracle", {
         mutationId: mutation.id,
         source: "mutation-survival",
       }))
-    }
-  }
 
-  if (hitCoverage.length > 0 && fixture.lawObservations.length === 0 && fixture.observedAtomMovements.length === 0) {
-    findings.push(finding(fixture, "weak-oracle", {
+const semanticObservationWeakOracleFindings = (
+  fixture: PropertyEvidenceFixture,
+  hitCoverage: readonly CoveragePoint[],
+): readonly PropertyFinding[] =>
+  hitCoverage.length > 0 && fixture.lawObservations.length === 0 && fixture.observedAtomMovements.length === 0
+    ? [finding(fixture, "weak-oracle", {
       coveragePointIds: hitCoverage.map((point) => point.id),
       source: "covered-implementation-without-semantic-observation",
-    }))
-  }
+    })]
+    : []
 
-  return findings
+const analyzePropertyEvidence = (fixture: PropertyEvidenceFixture): readonly PropertyFinding[] => {
+  const hitCoverage = fixture.implementationCoverage.filter((point) => point.hitCount > 0)
+  return [
+    ...deadHarnessFindings(fixture, hitCoverage),
+    ...typePartitionFindings(fixture),
+    ...highFilterRejectionFindings(fixture),
+    ...unreachableExpectedErrorFindings(fixture),
+    ...missingAtomMovementFindings(fixture),
+    ...undeclaredTypedErrorFindings(fixture),
+    ...mutationWeakOracleFindings(fixture),
+    ...semanticObservationWeakOracleFindings(fixture, hitCoverage),
+  ]
 }
 
 const baseEvidence: PropertyEvidenceFixture = {

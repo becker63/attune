@@ -48,6 +48,45 @@ separate accepted contract model.
   contract data or be deterministically recomputable from Schema-backed
   contract data and generated provenance
 
+### Requirement: Package contracts use symbol references before string references
+Package contracts SHALL prefer symbol/object references to operations, services,
+schemas, Reactivity keys, atoms, laws, waivers, and generated artifact owners.
+Raw string references MAY remain at serialized boundaries and migration
+scaffolding, but new authored contract code SHOULD use typed references.
+
+#### Scenario: View reference uses symbol
+- **WHEN** an operation declares a write or semantic view relation
+- **THEN** it SHOULD reference a `reactivityKey`, atom, or view declaration
+  value instead of a raw string ID
+
+#### Scenario: Service reference uses Effect service value
+- **WHEN** an operation is implemented by or requires a service
+- **THEN** it SHOULD reference the Effect service/tag/class value instead of a
+  raw service ID string
+
+#### Scenario: Law reference uses descriptor
+- **WHEN** an operation extends inferred laws
+- **THEN** it SHOULD use a typed law descriptor or law extension helper instead
+  of a raw law ID string
+
+#### Scenario: Law ID is inferred
+- **WHEN** an operation declares its operation kind, schemas, metadata, and
+  view graph relations
+- **THEN** the framework SHOULD infer law IDs from those typed declarations and
+  serialize them during materialization
+
+#### Scenario: Waiver target uses symbol
+- **WHEN** a package waives a noncanonical service, operation, command surface,
+  provider, or generated artifact exception
+- **THEN** the waiver SHOULD target the source symbol/object when available and
+  serialize the stable target ID during materialization
+
+#### Scenario: Waiver constructor is typed
+- **WHEN** a package declares a waiver
+- **THEN** it SHOULD use a typed waiver constructor that encodes waiver
+  category, owner/review metadata, and the symbol/object target instead of a
+  raw target ID string
+
 ### Requirement: Package contract builders provide deep type inference
 Package contracts SHALL be authored through typed helpers such as
 `definePackageContract`, `definePackageViews`, `touches`, and kind-specific
@@ -136,6 +175,22 @@ type-guidance partitions, and layer requirement checks.
 - **THEN** the failing type SHOULD include an agent-readable branded diagnostic
   naming the package, operation id when available, failing invariant, expected
   known ids or kinds, and the generated or authored source path to repair
+
+### Requirement: Handler and property maps are generated exact registries
+The framework SHALL generate or sync exact operation registries, handler maps,
+property maps, evidence producer maps, and optional RPC descriptors from the
+operation tuple rather than requiring authors to manually maintain raw
+string-keyed maps.
+
+#### Scenario: Operation is added
+- **WHEN** a package adds a public auditable operation
+- **THEN** generated registry/check output MUST report or repair missing
+  handler, property, evidence, and type-guidance entries for that operation
+
+#### Scenario: Operation is removed or renamed
+- **WHEN** an operation disappears or changes stable ID
+- **THEN** stale registry entries MUST fail typecheck or generated-output
+  conformance
 
 ### Requirement: Type safety owns type-expressible invariants
 Package-contract invariants that TypeScript can express SHALL be enforced by

@@ -93,6 +93,75 @@ importers:
         specifier: ^3.2.2
         version: 3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
 
+  framework/language-service:
+    dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@attune/framework-runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+
+  framework/nx:
+    dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@attune/framework-runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+
+  framework/protocol:
+    dependencies:
+      '@attune/architecture':
+        specifier: workspace:*
+        version: link:../../packages/attune-architecture-lint
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+
+  framework/runtime:
+    dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+
+  framework/sqlite:
+    dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@attune/framework-runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+
+  framework/testing:
+    dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@attune/framework-runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+      fast-check:
+        specifier: ^3.23.2
+        version: 3.23.2
+
   packages/attune-architecture-lint:
     dependencies:
       effect:
@@ -111,6 +180,9 @@ importers:
       '@attune/attuned-discovery':
         specifier: workspace:*
         version: link:../attuned-discovery
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       '@effect/platform-browser':
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78(effect@4.0.0-beta.78)
@@ -148,6 +220,9 @@ importers:
       '@attune/architecture':
         specifier: workspace:*
         version: link:../attune-architecture-lint
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
@@ -158,6 +233,9 @@ importers:
 
   packages/attune-pi-agent:
     dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
@@ -192,6 +270,9 @@ importers:
 
   packages/attuned-discovery:
     dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260619.1)(@libsql/client@0.17.4)(@opentelemetry/api@1.9.0)(mysql2@3.22.5(@types/node@22.19.21))(pg@8.22.0)
@@ -214,6 +295,9 @@ importers:
 
   packages/cocoindex-effect:
     dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
@@ -233,6 +317,9 @@ importers:
 
   packages/effect-oxlint-policy:
     dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
@@ -242,6 +329,9 @@ importers:
 
   packages/home-deployment:
     dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       '@attune/platform-alchemy-k8s':
         specifier: workspace:*
         version: link:../platform-alchemy-k8s
@@ -279,6 +369,9 @@ importers:
 
   packages/joern-effect:
     dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       effect:
         specifier: ^3.16.12
         version: 3.21.3
@@ -322,6 +415,9 @@ importers:
 
   packages/joern-effect-properties:
     dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       '@axiomhq/js':
         specifier: ^1.7.0
         version: 1.7.0
@@ -356,6 +452,9 @@ importers:
 
   packages/platform-alchemy-k8s:
     dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../../framework/protocol
       '@effect/platform-bun':
         specifier: 4.0.0-beta.85
         version: 4.0.0-beta.85(effect@4.0.0-beta.85)

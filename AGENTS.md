@@ -1,14 +1,15 @@
 # Attune Codex Agent Guide
 
-This file is the standing contract for Codex agents delegated from Linear in the
-`attune1` workspace. Read it before editing. If a Linear issue conflicts with
-this file, stop and ask for clarification in Linear or in the Codex thread.
+This file is the standing contract for Codex agents working in the Attune
+monorepo. Read it before editing. If a task conflicts with this file, stop and
+ask for clarification in the Codex thread before changing files.
 
 ## Mission
 
-Attune is an Effect-first code intelligence system. Linear is the work ledger,
-Codex is the implementation agent, OpenSpec is the planning gate, Nx generators
-are the source-code grammar, and GitHub PRs are the review boundary.
+Attune is an Effect-first code intelligence system and an agent-legible
+framework for package protocols. Codex is the implementation agent, OpenSpec is
+the planning gate, Nx generators/checks are the public workflow surface, and
+GitHub PRs are the review boundary.
 
 The northstar loop is:
 
@@ -27,11 +28,11 @@ Humans promote.
 
 ## Cloud Codex Environment
 
-Linear-delegated Codex work must run in the Attune ChatGPT/Codex workspace and
-the Attune cloud environment for the GitHub repository `becker63/attune`.
-Do not continue from a home-network or unrelated Codex workspace. If the Linear
-session opens in the wrong workspace/environment, stop and report the mismatch
-in Linear instead of editing files.
+Cloud Codex work should run in the Attune ChatGPT/Codex workspace and the
+Attune cloud environment for the GitHub repository `becker63/attune`. Local
+worker tasks may run from this checkout when explicitly requested. Do not
+continue from an unrelated workspace/environment; report the mismatch before
+editing files.
 
 The canonical remote is:
 
@@ -88,7 +89,37 @@ Read the relevant source docs before broad changes:
 
 For material product changes, create or link an OpenSpec proposal before
 implementation. Small docs and narrow follow-ups may proceed directly when the
-Linear issue is explicit and low risk.
+task is explicit and low risk.
+
+## Attune Framework Workflow
+
+Attune Framework lives under root `framework/` and defines the programming
+model. Packages under `packages/` consume the public protocol DSL, especially
+`@attune/framework-protocol`, through `src/attune.package.ts`. Framework
+runtime, SQLite/Drizzle store, language-service internals, and Nx internals are
+private framework implementation details.
+
+For package or framework-facing work, start from framework diagnostics:
+
+1. Read TypeScript language-service diagnostics and Nx check output.
+2. Open the referenced `src/attune.package.ts` or generated source boundary.
+3. Use `@attune/nx` generators, sync generators, or framework code actions for
+   repeated shapes and materialization.
+4. Implement behavior inside generated `Effect.Service` boundaries and update
+   Effect Schema-backed operation metadata, laws, waivers, and provenance.
+5. Expose or update package Reactivity keys, base atoms, derived atoms, package
+   view atoms, and operation-to-view edges for meaningful package state.
+6. Run the smallest Nx-owned conformance, property, coverage, typecheck, or
+   policy target that proves the slice.
+7. Report validation results plus any remaining diagnostics.
+
+Agents repair diagnostics rather than raw protocol internals. Do not hand-edit
+raw descriptor JSON, SQLite rows, Drizzle tables, ProtocolStore internals,
+ProtocolDelta reports, obligation reports, evidence summaries, architecture
+summaries, or generated ledger/status files as source truth. Protocol evidence
+from FastCheck/property runs belongs in framework services, stdout/CI artifacts,
+or gitignored local cache such as `.attune/cache`; checked-in protocol reports
+are not part of the core workflow.
 
 ## Repo Map
 
@@ -98,7 +129,9 @@ Linear issue is explicit and low risk.
   the first schema, fixture, event replay, projection, and WorkbenchSnapshot
   slice.
 - `packages/cocoindex-effect`: Effect service boundary and MCP-facing code for
-  CocoIndex semantic recall.
+  CocoIndex semantic recall. MCP is not a core Attune Framework path; future
+  MCP work should adapt framework diagnostics/query services rather than expose
+  raw internals.
 - `packages/joern-effect`: generated Joern CPGQL bindings and proof-template
   DSL surface.
 - `packages/joern-effect-properties`: property, fuzzer, Axiom, and Joern-backed
@@ -113,11 +146,11 @@ Linear issue is explicit and low risk.
   Kubernetes generation should become an `@attune/nx` generator issue before
   repeated hand-written resource shapes expand.
 
-## Linear Operating Loop
+## Agent Operating Loop
 
-For every delegated issue:
+For every delegated task:
 
-1. Read the Linear issue fully.
+1. Read the task and relevant OpenSpec/source docs fully.
 2. Identify the source doc or OpenSpec change.
 3. Confirm the issue is low risk or has explicit human-review gates.
 4. Work one implementation slice only.
@@ -126,8 +159,8 @@ For every delegated issue:
 7. Open a PR when requested or when the issue explicitly asks for it.
 8. Never silently merge.
 
-Keep Linear current. A good status update says what changed, what passed, what
-failed, what is blocked, and what the next issue should be.
+A good status update says what changed, what passed, what failed, what is
+blocked, and what the next issue should be.
 
 ## Scheduling Rules
 
@@ -136,7 +169,7 @@ narrow. Prefer a chain of small issues over a heroic multi-day issue.
 
 Default order:
 
-1. Codex agent contract and Linear delegation protocol.
+1. Codex agent contract and framework diagnostics workflow.
 2. Northstar backlog projection from docs.
 3. EventLog and `DiscoveryEvents` facade.
 4. Drizzle/Neon durable projections.
@@ -146,8 +179,8 @@ Default order:
 8. FoldKit workbench progress projection.
 9. Nx generator expansion for repeated shapes.
 
-CocoIndex MCP and Joern proof-router DSL work may be tracked elsewhere. Do not
-block this bootstrap queue on them unless the issue explicitly says so.
+CocoIndex adapters and Joern proof-router DSL work may be tracked elsewhere. Do
+not block this bootstrap queue on them unless the issue explicitly says so.
 
 ## Nx, Nix, Source BOM, And Generators
 
@@ -167,13 +200,15 @@ nx run workspace:package-contracts-check
 
 When the local shell lacks `nx`, enter the dev shell first and invoke the same
 targets from inside it. `pnpm exec nx ...` may appear there only as an
-inside-dev-shell detail; docs and Linear reports should name the Nx target or
+inside-dev-shell detail; docs and agent reports should name the Nx target or
 generator that is the stable workflow contract.
 
 Before editing repeated or generated shapes, query Source BOM shard ownership
 and prefer an `@attune/nx` generator or sync generator over hand-written drift.
 If the Source BOM shard is missing, ambiguous, or points to another owner, stop
-and report the follow-up instead of guessing.
+and report the follow-up instead of guessing. Treat Source BOM and
+generator-shape manifests as migration scaffolding or temporary compatibility
+views, not final semantic workflow surfaces.
 
 Current `@attune/nx` generators:
 
@@ -184,11 +219,12 @@ Current `@attune/nx` generators:
 - `@attune/nx:sync-joern-templates`
 - `@attune/nx:sync-cocoindex-mcp-tools`
 
-The northstar docs call for more generators: event, decision, projection,
-atom-family, derived-atom, score-feature, decision-packet-field, and
-foldkit-scene-atom. If an issue needs one of those repeated shapes, create or
-extend a generator when practical. Otherwise, leave a Linear follow-up explaining
-the missing generator.
+The framework migration calls for more generators and sync actions: protocol
+materialization, framework diagnostics, package contract sync, event, decision,
+projection, atom-family, derived-atom, score-feature, decision-packet-field, and
+foldkit-scene-atom. If a task needs one of those repeated shapes, create or
+extend a generator when practical. Otherwise, leave a follow-up explaining the
+missing generator.
 
 ## Safety Rules
 
@@ -212,6 +248,13 @@ Run the smallest validation that proves the slice:
 
 - Package typecheck for schema/API changes.
 - Package tests for behavior changes.
+- Focused framework diagnostics such as `workspace:package-contracts-check`
+  for package contracts, law metadata, generated provenance, waivers, stale
+  generated source, import boundaries, local cache state, and no checked-in
+  report checks.
+- Atom graph/property/coverage conformance targets when the slice changes
+  Reactivity keys, atoms, package views, generated FastCheck evidence, replay,
+  or coverage guidance.
 - Build only when packaging or app boot changes.
 - OpenSpec validation when changing OpenSpec artifacts.
 - Generator typecheck/tests when changing `@attune/nx`.
@@ -225,7 +268,7 @@ If validation cannot run, report why and include the exact command attempted.
 
 ## Reporting Template
 
-Use this shape in Linear comments or PR summaries:
+Use this shape in agent handoffs or PR summaries:
 
 ```text
 Changed:

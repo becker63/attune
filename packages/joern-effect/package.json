@@ -28,6 +28,7 @@
     "extract-schema:joern": "javac -proc:none -cp \"${JOERN_HOME}/lib/*\" scripts/ExtractCpgSchema.java && java -cp \"scripts:${JOERN_HOME}/lib/*\" ExtractCpgSchema ${JOERN_CPG_VERSION:-unknown}"
   },
   "dependencies": {
+    "@attune/framework-protocol": "workspace:*",
     "effect": "^3.16.12",
     "graphology": "^0.26.0",
     "graphology-types": "^0.24.8",

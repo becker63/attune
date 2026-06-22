@@ -216,6 +216,223 @@ Framework Views
   Future optional: FoldKit UI, MCP adapter, ephemeral debug reports.
 ```
 
+### Decision: Protocol IDs are mostly deduced from typed source declarations
+
+The authored protocol surface should prefer symbols, object references, and
+typed declarations over manually threaded string references. Stable string IDs
+still exist, but they are serialized identities, not the primary authoring
+mechanism.
+
+Authoring should prefer:
+
+```ts
+export const projectionChanged = reactivityKey("discovery.projection")
+
+export const discoveryReadModel = baseAtom({
+  refreshesOn: [projectionChanged],
+  output: DiscoveryReadModel,
+})
+
+export const workbenchSnapshot = packageViewAtom({
+  reads: [discoveryReadModel],
+  output: WorkbenchSnapshot,
+})
+
+export const eventReplayProjection = projection({
+  input: DiscoveryEventSequence,
+  output: WorkbenchSnapshot,
+  writes: [projectionChanged],
+  laws: inferLaws(),
+})
+```
+
+Over:
+
+```ts
+projection("event-replay-projection", {
+  touches: ["workbenchSnapshotAtom"],
+  laws: ["projection.deterministic-replay"],
+})
+```
+
+The framework materializer computes:
+
+```txt
+operation id
+operation kind
+stable descriptor identity
+input/output/error types
+inferred laws
+obligations
+reachable view graph
+handler/property registry entries
+type-guidance partitions
+generated artifact ownership
+evidence expectations
+diagnostic source ranges
+repair actions
+```
+
+Explicit stable ID overrides remain available when history/cache/replay
+identity must survive source renames.
+
+### Decision: Strings survive at serialization boundaries, not authoring edges
+
+Keep stable IDs for:
+
+```txt
+cache keys
+descriptor hashes
+evidence/replay identity
+diagnostic codes
+Nx target names
+artifact manifests
+external process/file/worker boundaries
+debug output
+```
+
+Do not require humans to manually cross-reference those strings inside package
+declarations when a symbol reference can express the same relationship.
+
+Examples:
+
+```txt
+Operation authoring:
+  prefer eventReplayProjection symbol
+  serialize "event-replay-projection"
+
+View authoring:
+  prefer workbenchSnapshot atom symbol
+  serialize "workbenchSnapshotAtom"
+
+Service authoring:
+  prefer DiscoveryEvents service value
+  serialize "attuned-discovery/DiscoveryEvents"
+
+Law authoring:
+  prefer inferLaws() or typed law descriptor
+  serialize "projection.deterministic-replay"
+
+Waiver authoring:
+  prefer waive(CocoIndexClient, waivers.contextServiceShape(...))
+  serialize category and target ID
+```
+
+### Decision: Static framework declarations define intent; implementation analysis verifies
+
+The materializer may parse source files, resolve symbols, inspect imports, and
+derive source ranges, but it must not treat arbitrary implementation scanning
+as the semantic source of truth.
+
+The rule is:
+
+```txt
+Declarations define intended semantics.
+Static analysis verifies implementation shape.
+Runtime evidence proves behavior.
+```
+
+Allowed derivation:
+
+```txt
+reactivityKey(...) declarations
+baseAtom(...) declarations
+derivedAtom(...) declarations
+packageViewAtom(...) declarations
+projection(...) declarations
+resourceProvider(...) declarations
+generator(...) declarations
+policyRule(...) declarations
+Effect service references
+Effect Schema references
+typed waiver constructors
+```
+
+Risky inference that should remain validation/suggestion only:
+
+```txt
+guessing operation writes by scanning arbitrary function bodies
+guessing package-level atoms by naming convention only
+guessing destructive provider semantics from command strings
+guessing laws from implementation branches without contract metadata
+```
+
+The framework should use the TypeScript compiler API, language-service APIs, or
+ts-morph-style extraction to resolve symbols, imports, source ranges, and type
+information where needed. Declarations remain the source of semantic intent.
+
+### Decision: View edges are derived from the declared dataflow graph
+
+Package authors should declare semantic roots and view graph nodes. They should
+not manually maintain every downstream atom/view reference.
+
+Example:
+
+```ts
+const projectionChanged = reactivityKey("discovery.projection")
+
+const readModel = baseAtom({
+  refreshesOn: [projectionChanged],
+  output: DiscoveryReadModel,
+})
+
+const workbenchSnapshot = derivedAtom({
+  reads: [readModel],
+  output: WorkbenchSnapshot,
+})
+
+const replay = projection({
+  input: DiscoveryEventSequence,
+  output: WorkbenchSnapshot,
+  writes: [projectionChanged],
+})
+```
+
+The framework derives:
+
+```txt
+replay
+  writes projectionChanged
+  refreshes readModel
+  recomputes workbenchSnapshot
+```
+
+This derived edge creates view-movement obligations and diagnostics.
+
+### Decision: The protocol reference ladder
+
+```txt
+Level 0:
+  raw string IDs everywhere
+
+Level 1:
+  branded string IDs
+
+Level 2:
+  literal-preserving builders
+
+Level 3:
+  symbol/object references
+
+Level 4:
+  static DSL extraction through TypeScript compiler/language-service APIs
+
+Level 5:
+  generated exact registries over the operation tuple
+
+Level 6:
+  Effect Schema-coded runtime boundaries
+
+Level 7:
+  generated invocation harness or optional RPC backend
+
+Level 8:
+  language-service diagnostics from obligations minus evidence
+```
+
+The framework target is Level 3-8. Level 0-2 may exist only as migration
+scaffolding or serialized artifacts.
+
 ### Decision: Framework code lives under root `framework/`
 
 The Attune framework lives under a root `framework/` directory outside

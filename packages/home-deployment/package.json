@@ -24,6 +24,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@attune/framework-protocol": "workspace:*",
     "@attune/platform-alchemy-k8s": "workspace:*",
     "@effect/platform-bun": "4.0.0-beta.85",
     "@effect/platform-node": "4.0.0-beta.85",

@@ -248,6 +248,60 @@ interface ProtocolQueryApi {
 }
 ```
 
+### Requirement: Protocol identifiers are mostly deduced from typed source declarations
+The framework SHALL prefer typed source declarations, symbols, object
+references, and static DSL extraction over manually threaded string references
+for local authoring. Stable string IDs SHALL remain serialized protocol
+identities for cache, replay, diagnostics, external boundaries, and generated
+artifacts.
+
+#### Scenario: Operation ID is derived
+- **WHEN** an operation is declared as an exported symbol or property inside
+  the framework DSL
+- **THEN** the framework MAY derive the operation ID from the symbol/property
+  name
+- **AND** it MUST allow an explicit stable ID override when
+  history/cache/replay identity must survive source renames
+
+#### Scenario: String reference is serialized identity
+- **WHEN** a protocol descriptor, evidence event, replay seed, diagnostic, or
+  generated artifact crosses a runtime/file/worker/cache boundary
+- **THEN** stable string IDs MUST be present as serialized identity
+- **BUT** package authors SHOULD NOT manually thread those IDs through local
+  declarations when symbol references are available
+
+#### Scenario: Source symbol maps to serialized ID
+- **WHEN** a source declaration defines an operation, atom, Reactivity key,
+  service, law, waiver target, or generated artifact owner
+- **THEN** materialization MUST preserve the source symbol, source range, and
+  stable serialized ID needed for diagnostics and repair actions
+
+#### Scenario: Obligation ID is derived
+- **WHEN** the framework derives obligations from operation kind, schemas, laws,
+  view graph, generated artifact expectations, waivers, and package metadata
+- **THEN** obligation IDs MUST be derived from the materialized descriptor and
+  source declaration identity rather than hand-authored as local
+  cross-reference strings
+
+### Requirement: Static declarations define protocol intent
+The framework SHALL derive protocol descriptors from static framework
+declarations rather than arbitrary implementation scanning.
+
+#### Scenario: DSL declaration is analyzed
+- **WHEN** a package declares `reactivityKey`, `baseAtom`, `derivedAtom`,
+  `packageViewAtom`, `projection`, `command`, `query`, `resourceProvider`,
+  `generator`, `policyRule`, or related framework DSL values
+- **THEN** the materializer MAY use TypeScript compiler or language-service APIs
+  to resolve symbols, imports, source ranges, and type information
+
+#### Scenario: Implementation scan is not source of truth
+- **WHEN** arbitrary implementation code appears to call an atom, emit a key,
+  read an env var, spawn a process, or perform a provider action
+- **THEN** the framework MAY report validation findings or suggestions
+- **BUT** it MUST NOT silently infer primary semantic intent from that
+  implementation scan without a source declaration or explicit generated
+  contract metadata
+
 ### Requirement: Language service is the primary rich framework view
 The TypeScript language service SHALL be the primary rich view over Protocol
 Runtime state. It SHALL surface file-positioned diagnostics, quick info, code

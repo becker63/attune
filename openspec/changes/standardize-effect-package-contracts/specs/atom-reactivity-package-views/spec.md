@@ -73,6 +73,26 @@ that refresh their read-model inputs.
   to it
 - **THEN** atom graph conformance MUST report the key as a dead invalidation
 
+### Requirement: View edges are derived from declared dataflow
+The framework SHALL derive operation-to-view obligations by walking declared
+Reactivity key, base atom, derived atom, and package view atom relationships.
+
+#### Scenario: Operation writes Reactivity key
+- **WHEN** an operation declares that it writes or emits a Reactivity key
+- **THEN** the framework MUST derive all reachable base atoms, derived atoms,
+  and package view atoms from the declared view graph
+
+#### Scenario: Manual downstream atom list is absent
+- **WHEN** a reachable atom/view can be derived from declared dataflow
+- **THEN** package authors SHOULD NOT be required to manually list that
+  downstream atom in the operation declaration
+
+#### Scenario: Unreachable write is diagnosed
+- **WHEN** an operation writes a Reactivity key but no package view atom is
+  reachable
+- **THEN** framework diagnostics MUST report an unobserved write or missing
+  semantic view edge
+
 ### Requirement: Derived atoms compose base atoms
 Derived atoms SHALL compose base atoms or other derived atoms. They SHALL NOT
 manually subscribe to Reactivity keys unless they directly read durable package

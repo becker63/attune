@@ -246,6 +246,49 @@ Exit criteria:
 - Source BOM and generator-shape are legacy migration scaffolding or temporary
   compatibility views, not final semantic workflow surfaces.
 
+## Phase 1B: Static DSL And Mostly-Deduced IDs
+
+Purpose: reduce stringly protocol authoring by making package declarations
+symbol-first and deriving stable protocol identities, view edges, obligations,
+registries, and diagnostics from static framework DSL declarations.
+
+Implementation agents:
+
+- `primitive-docs-agent`
+  - Owns docs/attuned core primitive docs and docs index updates.
+- `static-dsl-extraction-agent`
+  - Owns framework/protocol and framework/nx extraction APIs.
+  - Uses TypeScript compiler/language-service APIs to resolve source
+    declarations, symbols, imports, and source ranges.
+- `symbol-reference-dsl-agent`
+  - Owns public DSL helpers for operation, service, schema, Reactivity key,
+    atom, law, and waiver symbol references.
+- `derived-id-materializer-agent`
+  - Owns stable ID derivation, explicit ID override rules, descriptor identity,
+    generated artifact ownership, and source range metadata.
+- `view-edge-derivation-agent`
+  - Owns Reactivity key -> base atom -> derived atom -> package view atom
+    traversal and obligation derivation.
+
+Validation agents:
+
+- `string-reference-ratchet-agent`
+  - Adds diagnostics for raw string references where symbol references are
+    available.
+  - Keeps migration allowances explicit and temporary.
+- `derived-id-roundtrip-validation-agent`
+  - Tests symbol -> descriptor -> serialized ID -> cache/evidence/diagnostic
+    roundtrip.
+
+Exit criteria:
+
+- Core primitive docs exist.
+- Spec defines authored semantic roots vs derived graph.
+- DSL supports symbol/object references.
+- Materializer derives stable IDs and source ranges.
+- View edges are derived from declared dataflow.
+- Raw string references are migration diagnostics where avoidable.
+
 ## Phase 2: Nx Generator And Executor Surface
 
 Purpose: make generated source the normal path before migrating packages.

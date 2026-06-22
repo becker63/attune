@@ -37,12 +37,22 @@
       "options": {
         "commands": [
           "pnpm exec nx run workspace:source-bom-check",
-          "pnpm exec nx run workspace:shape-conformance"
+          "pnpm exec nx run workspace:shape-conformance",
+          "pnpm exec nx run workspace:framework-policy-check"
         ],
         "parallel": false
       },
       "metadata": {
         "description": "Focused diagnostic target for package contract/source ownership and generator shape conformance during the Effect package-contract migration."
+      }
+    },
+    "framework-policy-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsx packages/attune-architecture-lint/src/framework-policy-cli.ts"
+      },
+      "metadata": {
+        "description": "Focused framework import-boundary and no checked-in protocol report policy check."
       }
     },
     "policy-install-hooks": {

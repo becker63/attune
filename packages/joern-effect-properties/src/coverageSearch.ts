@@ -631,6 +631,44 @@ export const findWeakOracleCoverage = (
   }).toSorted(compareByKey(findingKey))
 }
 
+type ReplayRetention = {
+  replay: CoverageReplayRef
+  reasons: Set<string>
+  score: number
+}
+
+const rememberReplayRetention = (
+  reasonsByReplay: Map<string, ReplayRetention>,
+  replay: CoverageReplayRef,
+  reason: string,
+  score: number,
+): void => {
+  const key = coverageSearchCaseKey(replay)
+  const current = reasonsByReplay.get(key) ?? {
+    replay,
+    reasons: new Set<string>(),
+    score: 0,
+  }
+  if (current.reasons.has(reason)) {
+    return
+  }
+
+  current.reasons.add(reason)
+  current.score += score
+  reasonsByReplay.set(key, current)
+}
+
+const rememberReplayRetentionBatch = (
+  reasonsByReplay: Map<string, ReplayRetention>,
+  replayRefs: readonly CoverageReplayRef[],
+  reason: string,
+  score: number,
+): void => {
+  for (const replay of replayRefs) {
+    rememberReplayRetention(reasonsByReplay, replay, reason, score)
+  }
+}
+
 export const rankCorpusSeedRetention = (
   input: Readonly<{
     readonly atomGraphMovements?: readonly AtomGraphMovementSummary[]
@@ -640,62 +678,42 @@ export const rankCorpusSeedRetention = (
     readonly typeGuidancePartitions?: readonly PartitionCoverageSummary[]
   }>,
 ): readonly RetainedCorpusSeed[] => {
-  const reasonsByReplay = new Map<string, {
-    replay: CoverageReplayRef
-    reasons: Set<string>
-    score: number
-  }>()
-  const addReplay = (
-    replay: CoverageReplayRef,
-    reason: string,
-    score: number,
-  ): void => {
-    const key = coverageSearchCaseKey(replay)
-    const current = reasonsByReplay.get(key) ?? {
-      replay,
-      reasons: new Set<string>(),
-      score: 0,
-    }
-    if (!current.reasons.has(reason)) {
-      current.reasons.add(reason)
-      current.score += score
-    }
-    reasonsByReplay.set(key, current)
-  }
+  const reasonsByReplay = new Map<string, ReplayRetention>()
 
-  for (const partition of input.typeGuidancePartitions ?? []) {
-    if (partition.status !== "hit") {
-      continue
-    }
-    for (const replay of partition.replay) {
-      addReplay(replay, `type-guidance:${partition.partitionKind}:${partition.partitionId}`, 10)
-    }
+  for (const partition of (input.typeGuidancePartitions ?? []).filter((item) => item.status === "hit")) {
+    rememberReplayRetentionBatch(
+      reasonsByReplay,
+      partition.replay,
+      `type-guidance:${partition.partitionKind}:${partition.partitionId}`,
+      10,
+    )
   }
   for (const coverage of input.coverageDeltas ?? []) {
-    for (const replay of coverage.replay) {
-      addReplay(replay, `coverage:${coverage.sourceFile}:${coverage.pointKind}:${coverage.pointId}`, 8)
-    }
+    rememberReplayRetentionBatch(
+      reasonsByReplay,
+      coverage.replay,
+      `coverage:${coverage.sourceFile}:${coverage.pointKind}:${coverage.pointId}`,
+      8,
+    )
   }
-  for (const movement of input.atomGraphMovements ?? []) {
-    if (!movement.moved) {
-      continue
-    }
-    for (const replay of movement.replay) {
-      addReplay(replay, `atom-graph:${movement.edgeId}`, 6)
-    }
+  for (const movement of (input.atomGraphMovements ?? []).filter((item) => item.moved)) {
+    rememberReplayRetentionBatch(
+      reasonsByReplay,
+      movement.replay,
+      `atom-graph:${movement.edgeId}`,
+      6,
+    )
   }
-  for (const law of input.lawObservations ?? []) {
-    if (law.hitCount === 0) {
-      continue
-    }
-    for (const replay of law.replay) {
-      addReplay(replay, `law:${law.lawId}`, 4)
-    }
+  for (const law of (input.lawObservations ?? []).filter((item) => item.hitCount > 0)) {
+    rememberReplayRetentionBatch(reasonsByReplay, law.replay, `law:${law.lawId}`, 4)
   }
   for (const finding of input.findings ?? []) {
-    for (const replay of finding.replay) {
-      addReplay(replay, `finding:${finding.kind}`, finding.kind === "weak-oracle" ? 3 : 1)
-    }
+    rememberReplayRetentionBatch(
+      reasonsByReplay,
+      finding.replay,
+      `finding:${finding.kind}`,
+      finding.kind === "weak-oracle" ? 3 : 1,
+    )
   }
 
   return [...reasonsByReplay.values()]

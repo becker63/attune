@@ -10,9 +10,15 @@ Start with `attuned/`. Those documents are the current guiding light for the pro
 - Joern proves through known templates.
 - The model proposes bounded decisions; the runtime validates and records them.
 
+Core framework vocabulary:
+
+- `attuned/Attune Framework Core Primitives.md` - package, service, operation,
+  projection, atom/view, Reactivity, provider, generator, policy, evidence,
+  diagnostic, repair action, and mostly deduced ID authoring rules.
+
 The raw imported repositories remain under `imports/` on disk during migration, but `docs/` is the tracked documentation home.
 
-## Current Reports
+## Historical Migration Notes
 
 - `joern-effect-fuzzer-run-report.md` - status and findings for the semantic
   fuzzer, DSL-heavy Joern runs, expectation-bearing counterexamples, and the

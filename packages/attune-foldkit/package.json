@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@attune/attuned-discovery": "workspace:*",
+    "@attune/framework-protocol": "workspace:*",
     "@effect/platform-browser": "4.0.0-beta.78",
     "effect": "4.0.0-beta.78",
     "foldkit": "0.106.0"

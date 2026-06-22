@@ -1,3 +1,13 @@
+import { Schema } from "effect"
+
+export const AttuneProtocolActionSchema = Schema.Struct({
+  id: Schema.String,
+  title: Schema.String,
+  kind: Schema.Literals(["nx-generator", "nx-check", "source-edit", "debug"] as const),
+  target: Schema.optional(Schema.String),
+  options: Schema.optional(Schema.Record(Schema.String, Schema.Unknown)),
+})
+
 export interface AttuneProtocolDiagnostic {
   readonly code: string
   readonly severity: "error" | "warning" | "info"
@@ -19,6 +29,27 @@ export interface AttuneProtocolAction {
   readonly options?: Readonly<Record<string, unknown>>
 }
 
+export const SourceRangeSchema = Schema.Struct({
+  start: Schema.Number,
+  end: Schema.Number,
+})
+
+export const AttuneProtocolDiagnosticSchema = Schema.Struct({
+  code: Schema.String,
+  severity: Schema.Literals(["error", "warning", "info"] as const),
+  packageId: Schema.String,
+  protocolId: Schema.optional(Schema.String),
+  operationId: Schema.optional(Schema.String),
+  obligationId: Schema.optional(Schema.String),
+  sourcePath: Schema.String,
+  range: Schema.optional(SourceRangeSchema),
+  explanation: Schema.String,
+  suggestedActions: Schema.Array(AttuneProtocolActionSchema),
+  relatedEvidence: Schema.Array(Schema.String),
+})
+
+export type SourceRange = typeof SourceRangeSchema.Type
+
 export interface AttuneProtocolDelta {
   readonly deltaId: string
   readonly protocolId: string
@@ -36,6 +67,25 @@ export interface AttuneProtocolDelta {
   readonly explanation: string
   readonly repairActions: readonly AttuneProtocolAction[]
 }
+
+export const AttuneProtocolDeltaSchema = Schema.Struct({
+  deltaId: Schema.String,
+  protocolId: Schema.String,
+  packageId: Schema.String,
+  kind: Schema.Literals([
+    "missing-obligation",
+    "stale-generated-source",
+    "blocked-obligation",
+    "weak-oracle",
+    "high-rejection-filter",
+    "waiver-issue",
+  ] as const),
+  sourcePath: Schema.String,
+  operationId: Schema.optional(Schema.String),
+  obligationId: Schema.optional(Schema.String),
+  explanation: Schema.String,
+  repairActions: Schema.Array(AttuneProtocolActionSchema),
+})
 
 export const diagnosticFromDelta = (
   delta: AttuneProtocolDelta,

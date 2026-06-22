@@ -4,6 +4,9 @@ import { defineConfig } from "vitest/config"
 export default defineConfig({
   resolve: {
     alias: {
+      "@attune/framework-protocol": fileURLToPath(
+        new URL("../../framework/protocol/src/index.ts", import.meta.url),
+      ),
       "joern-effect": fileURLToPath(new URL("../joern-effect/src/index.ts", import.meta.url)),
     },
   },

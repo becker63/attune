@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@axiomhq/js": "^1.7.0",
+    "@attune/framework-protocol": "workspace:*",
     "effect": "^3.16.12",
     "fast-check": "^3.23.2",
     "joern-effect": "workspace:*",

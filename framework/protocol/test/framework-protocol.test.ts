@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
 import {
+  deriveProtocolObligations,
   defineAttunePackage,
+  descriptorFromPackageContract,
   diagnosticFromDelta,
+  hashProtocolValue,
   projection,
   protocolIdForPackage,
   views,
@@ -50,5 +53,55 @@ describe("@attune/framework-protocol", () => {
 
     expect(diagnostic.code).toBe("attune/protocol/missing-obligation")
     expect(diagnostic.suggestedActions[0]?.title).toContain("evidence")
+  })
+
+  it("derives stable descriptor hashes and obligations from package contracts", () => {
+    const PackageViews = views({
+      reactivityKeys: ["demo.changed"],
+      atoms: ["demoAtom"],
+    } as const)
+    const contract = defineAttunePackage({
+      packageId: "demo",
+      packageKind: "core-discovery-runtime",
+      views: PackageViews,
+      operations: [
+        projection({
+          id: "demo-projection",
+          input: "demo-input-schema" as never,
+          output: "demo-output-schema" as never,
+          laws: ["projection.deterministic-replay"],
+          views: { reactivityKeys: ["demo.changed"], atoms: ["demoAtom"] },
+        }),
+      ],
+    } as const)
+
+    const descriptor = descriptorFromPackageContract({
+      sourcePath: "packages/demo/src/attune.package.ts",
+      contract,
+    })
+    expect(descriptor.descriptorHash).toBe(hashProtocolValue({
+      protocolId: "attune/package/demo",
+      packageId: "demo",
+      packageKind: "core-discovery-runtime",
+      sourcePath: "packages/demo/src/attune.package.ts",
+      views: PackageViews,
+      services: [],
+      operations: [{
+        id: "demo-projection",
+        kind: "projection",
+        views: { reactivityKeys: ["demo.changed"], atoms: ["demoAtom"] },
+        laws: ["projection.deterministic-replay"],
+        inputSchema: "demo-input-schema",
+        outputSchema: "demo-output-schema",
+      }],
+    }))
+    expect(deriveProtocolObligations(descriptor).map((obligation) => obligation.kind)).toEqual([
+      "handler",
+      "property",
+      "law",
+      "view-movement",
+      "type-guidance",
+      "generated-artifact",
+    ])
   })
 })

@@ -1,10 +1,27 @@
-# Codex Cloud Environment
+# Codex Cloud And Local Environment
 
-This is the cloud-first setup and validation path for Linear-delegated Codex
-agents in Attune. Nx targets and `@attune/nx` generators are the public workflow
-API. Nix supplies the reproducible toolchain substrate for those targets; agents
-should not teach Corepack setup, global package-manager bootstrap, or root helper
-scripts as the normal workflow.
+This is the cloud and local worker setup path for Codex agents in Attune. Nx
+targets, framework diagnostics, and `@attune/nx` generators are the public
+workflow API. Nix supplies the reproducible toolchain substrate for those
+targets; agents should not teach Corepack setup, global package-manager
+bootstrap, shell wrappers, or root helper scripts as the normal workflow.
+
+The target Attune Framework loop is diagnostics-first:
+
+```text
+language-service diagnostic or Nx check output
+  -> referenced src/attune.package.ts or generated source boundary
+  -> @attune/nx generator, sync generator, or framework code action
+  -> generated Effect.Service / Effect Schema contract metadata
+  -> framework runtime/cache evidence
+  -> language-service and Nx diagnostics clear
+```
+
+Agents should repair diagnostics and package contracts, not raw protocol
+runtime internals. Protocol Runtime, Protocol Store, descriptor hashes,
+obligations, evidence indexes, repair plans, and ProtocolDelta facts are private
+framework materialization. Public views are TypeScript language-service
+diagnostics, quick info, code actions, code lenses, and Nx check output.
 
 ## Canonical smoke check
 
@@ -26,7 +43,7 @@ public Nx targets from there. Inside that shell, `pnpm exec nx ...` is an
 implementation detail for reaching the Nx binary, not the workflow contract that
 agents should document as user-facing guidance.
 
-## Policy suites
+## Diagnostics And Policy Suites
 
 Use the smallest policy target that proves the change, and report the exact Nx
 target that ran:
@@ -41,20 +58,44 @@ nx run workspace:package-contracts-check
 - `workspace:policy-proof-pressure` covers proof-pressure, workerized fuzzing,
   mutation, Joern, container, and provider/resource evidence expectations.
 - `workspace:package-contracts-check` is the focused diagnostic/repair target
-  for package contracts, generated ledgers, generator provenance, and Source BOM
-  ownership.
+  for package contracts, typed law metadata, generated provenance, waivers,
+  stale generated source, import boundaries, local framework cache state, and
+  no checked-in protocol report checks.
 
 If a policy target is not ready on the current branch, run targeted docs grep
 checks for the migration at hand and report the remaining transitional
 references explicitly.
 
-## Source BOM and generator expectations
+## Framework Repair Surface
+
+For package changes, prefer this repair path:
+
+1. Read language-service diagnostics or Nx diagnostic output.
+2. Open the referenced `src/attune.package.ts`, generated typecheck module, or
+   package view graph source.
+3. Use `@attune/nx` generators or sync generators to refresh repeated shapes.
+4. Implement behavior inside generated `Effect.Service` classes and update
+   Effect Schema-backed operation metadata, laws, waivers, and provenance.
+5. Update Reactivity keys, base atoms, derived atoms, package view atoms, and
+   operation-to-view edges when meaningful package state changes.
+6. Run the focused package check, property, atom graph, coverage, typecheck, or
+   policy target that corresponds to the diagnostic.
+
+Do not edit raw descriptor JSON, SQLite rows, Drizzle tables, ProtocolStore
+internals, ProtocolDelta reports, obligation reports, evidence summaries, or
+architecture summary reports as the source of truth.
+
+## Source BOM And Generator Expectations
 
 Before editing repeated, generated, or template-like source shapes, agents must
 query the relevant Source BOM shard ownership and prefer an `@attune/nx`
 generator or sync generator. Do not hand-edit repeated shapes when a generator
 owns the shape. If the Source BOM shard is missing or ambiguous, document the
-blocker and create a follow-up rather than inventing ownership.
+blocker and create a follow-up rather than inventing ownership. Source BOM and
+generator-shape manifests are migration scaffolding or temporary compatibility
+views; final semantic workflow surfaces are source declarations, generated
+source required by build/typecheck, framework runtime/cache state,
+language-service diagnostics, and Nx output.
 
 Useful generator workflow surface:
 
@@ -81,6 +122,13 @@ For broad JS/TS checks, prefer the Nx target selected by the workspace policy
 suite instead of teaching package-manager scripts. If a target fails, report the
 exact command and classify the failure using the inventory below. Propose a
 follow-up issue when the fix is larger than the current slice.
+
+Framework evidence produced by property or fuzz targets should be stored through
+framework services, printed to stdout, uploaded as CI artifacts, or written
+under gitignored cache paths such as `.attune/cache`. Do not check in
+ProtocolDelta reports, obligation reports, evidence summaries, Markdown/JSON
+architecture summaries, cloud-agent summaries, or generated status reports as
+protocol truth.
 
 ## Environment failure inventory
 
