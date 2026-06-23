@@ -45,7 +45,7 @@
         "Architecture policy operations, package views, law inference, waivers, and compile-only assertions are generated and checked together."
       ],
       "notes": "Phase 4 architecture migration generated the package contract files; final package path rename remains open.",
-      "sourceBomShard": "framework/architecture/attune.source-bom.json"
+      "sourceBomShard": "framework/architecture/src/generated/source-bom/attune-architecture.json"
     },
     {
       "id": "attune-foldkit.scene-atom",

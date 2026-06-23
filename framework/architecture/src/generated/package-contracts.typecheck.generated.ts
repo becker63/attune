@@ -7,7 +7,7 @@ import type {
   AssertTrue,
   AssertTypeGuidanceComplete,
 } from "@attune/framework-protocol"
-import type * as FrameworkArchitecture from "../attune.package.js"
+import type * as FrameworkArchitecture from "./package-contracts/attune-architecture/attune.contract.generated.js"
 import type * as FrameworkOxlintPolicy from "./package-contracts/effect-oxlint-policy/attune.contract.generated.js"
 import type * as AttuneFoldkit from "./package-contracts/attune-foldkit/attune.contract.generated.js"
 import type * as AttuneNx from "./package-contracts/attune-nx/attune.contract.generated.js"

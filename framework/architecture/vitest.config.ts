@@ -16,6 +16,10 @@ export default defineConfig({
         find: "@attune/framework-protocol",
         replacement: fileURLToPath(new URL("../protocol/src/index.ts", import.meta.url)),
       },
+      {
+        find: "joern-effect/package-effect",
+        replacement: fileURLToPath(new URL("../../packages/joern-effect/node_modules/effect/dist/esm/index.js", import.meta.url)),
+      },
     ],
   },
   test: {

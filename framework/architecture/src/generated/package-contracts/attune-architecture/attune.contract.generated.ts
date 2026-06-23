@@ -11,10 +11,10 @@ import {
   definePackageViews,
   defineTypeGuidance,
   touches,
-} from "../../protocol/src/package-contract/index.js"
+} from "@attune/framework-protocol"
 import { createAttuneGenerated } from "./attune.generated.js"
 
-export { PackageContractSchema } from "../../protocol/src/package-contract/index.js"
+export { PackageContractSchema } from "@attune/framework-protocol"
 
 export const PackageViews = definePackageViews({
   reactivityKeys: [

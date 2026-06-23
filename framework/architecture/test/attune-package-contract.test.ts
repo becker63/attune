@@ -14,7 +14,7 @@ import {
   TypeGuidanceValidationOperation,
   WorkspacePolicySummaryOperation,
   type ArchitectureOperationId,
-} from "../src/attune.package.js"
+} from "../src/generated/package-contracts/attune-architecture/attune.contract.generated.js"
 import {
   assertExactHandlers,
   assertPackageContract,

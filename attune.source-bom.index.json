@@ -5,7 +5,7 @@
     {
       "project": "attune-architecture",
       "projectRoot": "framework/architecture",
-      "shard": "framework/architecture/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/attune-architecture.json"
     },
     {
       "project": "attune-foldkit",

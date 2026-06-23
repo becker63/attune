@@ -134,6 +134,7 @@ const packageLocalAttuneCompanionNames = [
   "attune.source-bom.json",
 ] as const
 const oneFileSurfaceCompletedRoots = new Set([
+  "framework/architecture",
   "packages/attune-nx",
   "packages/attune-pi-agent",
   "packages/home-deployment",
