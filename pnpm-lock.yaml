@@ -93,6 +93,22 @@ importers:
         specifier: ^3.2.2
         version: 3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
 
+  framework/architecture:
+    dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.2
+        version: 3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
+
   framework/language-service:
     dependencies:
       '@attune/framework-protocol':
@@ -101,6 +117,9 @@ importers:
       '@attune/framework-runtime':
         specifier: workspace:*
         version: link:../runtime
+      '@attune/framework-sqlite':
+        specifier: workspace:*
+        version: link:../sqlite
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
@@ -113,21 +132,45 @@ importers:
       '@attune/framework-runtime':
         specifier: workspace:*
         version: link:../runtime
+      '@attune/framework-sqlite':
+        specifier: workspace:*
+        version: link:../sqlite
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
+      nx:
+        specifier: ^22.2.0
+        version: 22.7.5
+
+  framework/oxlint-policy:
+    dependencies:
+      '@attune/framework-protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      effect:
+        specifier: 4.0.0-beta.78
+        version: 4.0.0-beta.78
+      effect-oxlint:
+        specifier: ^0.3.2
+        version: 0.3.2(effect@4.0.0-beta.78)
 
   framework/protocol:
     dependencies:
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   framework/runtime:
     dependencies:
       '@attune/framework-protocol':
         specifier: workspace:*
         version: link:../protocol
+      '@attune/framework-sqlite':
+        specifier: workspace:*
+        version: link:../sqlite
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
@@ -137,9 +180,6 @@ importers:
       '@attune/framework-protocol':
         specifier: workspace:*
         version: link:../protocol
-      '@attune/framework-runtime':
-        specifier: workspace:*
-        version: link:../runtime
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
@@ -158,22 +198,6 @@ importers:
       fast-check:
         specifier: ^3.23.2
         version: 3.23.2
-
-  framework/architecture:
-    dependencies:
-      '@attune/framework-protocol':
-        specifier: workspace:*
-        version: link:../protocol
-      effect:
-        specifier: 4.0.0-beta.78
-        version: 4.0.0-beta.78
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.2
-        version: 3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
 
   packages/attune-foldkit:
     dependencies:
@@ -311,18 +335,6 @@ importers:
       vitest:
         specifier: ^3.2.2
         version: 3.2.6(@types/node@22.19.21)(happy-dom@20.10.6)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
-
-  framework/oxlint-policy:
-    dependencies:
-      '@attune/framework-protocol':
-        specifier: workspace:*
-        version: link:../protocol
-      effect:
-        specifier: 4.0.0-beta.78
-        version: 4.0.0-beta.78
-      effect-oxlint:
-        specifier: ^0.3.2
-        version: 0.3.2(effect@4.0.0-beta.78)
 
   packages/home-deployment:
     dependencies:
