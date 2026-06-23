@@ -286,6 +286,7 @@
         "parameters": {
           "targets": [
             "joern-effect:emit-generated",
+            "joern-effect:emit-fast-check-arbitraries",
             "joern-effect:render-readme"
           ]
         },
@@ -303,6 +304,7 @@
         "artifact": "generator-shape",
         "outputs": [
           "packages/joern-effect/src/pure/generated",
+          "packages/joern-effect/src/internal/generated",
           "packages/joern-effect/README.md",
           "packages/joern-effect/schema"
         ],

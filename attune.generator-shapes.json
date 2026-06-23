@@ -539,6 +539,20 @@
       ]
     },
     {
+      "id": "joern-effect.generated-fast-check-arbitraries",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "generated-joern-fast-check-arbitraries",
+      "generator": "scripts/generationStage.ts emit-fast-check-arbitraries",
+      "status": "generated",
+      "paths": [
+        "schema/joern-cpg-schema.1.7.70.json",
+        "scripts/generationStage.ts",
+        "src/pure/codegen/**",
+        "src/internal/generated/fast-check-arbitraries.ts"
+      ]
+    },
+    {
       "id": "joern-effect.generated-readme",
       "project": "joern-effect",
       "projectRoot": "packages/joern-effect",

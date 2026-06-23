@@ -1,3 +1,6 @@
+import { Effect } from "effect"
+import { generateFastCheckArbitraries } from "../src/pure/codegen/generate.js"
+
 const knownStages = new Set([
   "extract-cpg-schema",
   "enrich-schema-docs",
@@ -21,5 +24,17 @@ if (stage === undefined || !knownStages.has(stage)) {
   process.exit(1)
 }
 
-console.log(`joern-effect generation stage registered: ${stage}`)
-console.log("This stage is currently implemented by the aggregate TypeScript generator during migration.")
+if (stage === "emit-fast-check-arbitraries") {
+  Effect.runPromise(
+    generateFastCheckArbitraries(
+      "src/internal/generated",
+      "schema/joern-cpg-schema.1.7.70.json",
+    ),
+  ).catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+} else {
+  console.log(`joern-effect generation stage registered: ${stage}`)
+  console.log("This stage is currently implemented by the aggregate TypeScript generator during migration.")
+}

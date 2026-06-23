@@ -17,6 +17,18 @@
       "target": "emit-generated"
     },
     {
+      "generator": "scripts/generationStage.ts emit-fast-check-arbitraries",
+      "outputs": [
+        "src/internal/generated/fast-check-arbitraries.ts"
+      ],
+      "sources": [
+        "schema/joern-cpg-schema.1.7.70.json",
+        "src/pure/codegen/**",
+        "scripts/generationStage.ts"
+      ],
+      "target": "emit-fast-check-arbitraries"
+    },
+    {
       "generator": "scripts/renderReadme.ts",
       "outputs": [
         "README.md"
