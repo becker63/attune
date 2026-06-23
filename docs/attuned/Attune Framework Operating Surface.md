@@ -64,8 +64,10 @@ src/attune.package.typecheck.ts
 attune.source-bom.json
 ```
 
-Existing files with those names are staged migration debt. New generated
-material should target framework-owned locations such as:
+Existing generated contract, generated registry, and Source BOM files with
+those names are staged migration debt. Compile-only assertions now live in the
+framework-owned aggregate. New generated material should target framework-owned
+locations such as:
 
 ```text
 .attune/cache/generated/<project>/...

@@ -475,7 +475,7 @@ export const repairPlanForDiagnostic = (
     doNotEdit: [
       "src/attune.generated.ts",
       "src/attune.contract.generated.ts",
-      "src/attune.package.typecheck.ts",
+      "framework-owned package-contract typecheck aggregate",
       "attune.source-bom.json",
     ],
     validateAfter: [

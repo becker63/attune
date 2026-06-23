@@ -104,7 +104,7 @@ export const phase2GeneratorGapMap = [
     targetHome: "@attune/nx:package-contract",
     owner: "package-contract-generator-agent",
     requiredOutput: [
-      "src/attune.package.typecheck.ts",
+      "framework-owned package-contract typecheck aggregate",
       "AssertPackageContract usage",
       "AssertExactHandlers usage",
       "AssertLayerSatisfiesRequiredServices usage",
@@ -222,7 +222,6 @@ export const attuneNxGeneratorInventory = [
       "src/attune.package.ts",
       "src/attune.package.generated.ts",
       "src/attune.package.property.ts",
-      "src/attune.package.typecheck.ts",
       "Effect Schema-backed PackageContract",
       "PackageOperationRegistry",
       "PackagePropertyEvidencePlan",

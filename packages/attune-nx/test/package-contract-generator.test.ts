@@ -74,7 +74,7 @@ describe("@attune/nx package-contract generator", () => {
     expect(output).not.toContain("Cannot find module")
   })
 
-  it("generates an Effect Schema-backed package contract and compile-only assertions", () => {
+  it("generates an Effect Schema-backed package contract without package-local typecheck companions", () => {
     const tree = new MemoryTree()
 
     packageContractGenerator(tree, {
@@ -95,9 +95,6 @@ describe("@attune/nx package-contract generator", () => {
       ""
     const property =
       tree.files.get("packages/attune-nx/src/attune.package.property.ts") ??
-      ""
-    const typecheck =
-      tree.files.get("packages/attune-nx/src/attune.package.typecheck.ts") ??
       ""
 
     expect(contract).toContain(
@@ -176,14 +173,7 @@ describe("@attune/nx package-contract generator", () => {
     expect(property).toContain('randomSource: "worker"')
     expect(property).toContain("PackageWorkerProperties")
 
-    expect(typecheck).toContain("AssertPackageContract")
-    expect(typecheck).toContain("AssertTypeGuidanceComplete")
-    expect(typecheck).toContain("AssertExactHandlers")
-    expect(typecheck).toContain("AssertPropertyHarnesses")
-    expect(typecheck).toContain('from "./attune.package.generated.js"')
-    expect(typecheck).toContain(
-      "PackageFuzzHandlers",
-    )
+    expect(tree.files.has("packages/attune-nx/src/attune.package.typecheck.ts")).toBe(false)
   })
 
   it("supports pure/minimal package layer output for non-service packages", () => {
@@ -235,7 +225,6 @@ describe("@attune/nx package-contract generator", () => {
         "framework/oxlint-policy/src/attune.package.generated.ts",
         "framework/oxlint-policy/src/attune.package.property.ts",
         "framework/oxlint-policy/src/attune.package.ts",
-        "framework/oxlint-policy/src/attune.package.typecheck.ts",
       ],
       syncTargets: [
         {
@@ -280,7 +269,6 @@ describe("@attune/nx package-contract generator", () => {
       "packages/home-deployment/src/attune.package.generated.ts",
       "packages/home-deployment/src/attune.package.property.ts",
       "packages/home-deployment/src/attune.package.ts",
-      "packages/home-deployment/src/attune.package.typecheck.ts",
     ])
     expect(second.files).toEqual(first.files)
     expect(

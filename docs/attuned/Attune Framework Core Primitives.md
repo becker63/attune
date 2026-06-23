@@ -229,9 +229,10 @@ export const PackageContract = defineAttunePackage({
 } as const)
 ```
 
-Companion files complete the boundary:
+Framework-owned materialization completes the boundary:
 
-- `src/attune.package.typecheck.ts` holds compile-only assertions.
+- `framework/architecture/src/generated/package-contracts.typecheck.generated.ts`
+  holds compile-only package contract assertions.
 - `PackageLayer` describes package-owned live capabilities when they exist.
 - `PackageTestLayer` supplies deterministic test/audit capabilities.
 - `PackageTypeGuidance` partitions operation inputs, outputs, errors, views,

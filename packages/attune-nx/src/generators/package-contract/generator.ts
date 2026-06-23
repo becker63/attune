@@ -762,53 +762,12 @@ export const PackageWorkerProperties = {
 export type PackageWorkerProperties = typeof PackageWorkerProperties
 `
 
-const typecheckSource = (): string => `import type {
-  AssertExactHandlers,
-  AssertLayerProvidesPackageServices,
-  AssertLayerSatisfiesRequiredServices,
-  AssertPackageContract,
-  AssertPropertyHarnesses,
-  AssertTrue,
-  AssertTypeGuidanceComplete,
-} from "@attune/framework-protocol"
-import type {
-  PackageContract,
-  PackageLayer,
-  PackageTestLayer,
-  PackageTypeGuidance,
-} from "./attune.package.js"
-import type {
-  PackageFuzzHandlers,
-  PackageProperties,
-} from "./attune.package.generated.js"
-
-type _PackageContract = AssertTrue<AssertPackageContract<PackageContract>>
-type _PackageFuzzHandlers = AssertTrue<
-  AssertExactHandlers<PackageContract, PackageFuzzHandlers>
->
-type _PackageProperties = AssertTrue<
-  AssertPropertyHarnesses<PackageContract, PackageProperties>
->
-type _PackageLayer = AssertTrue<
-  AssertLayerProvidesPackageServices<PackageContract, PackageLayer>
->
-type _PackageTestLayer = AssertTrue<
-  AssertLayerSatisfiesRequiredServices<PackageContract, PackageTestLayer>
->
-type _PackageTypeGuidance = AssertTrue<
-  AssertTypeGuidanceComplete<PackageContract, PackageTypeGuidance>
->
-
-export {}
-`
-
 export default function packageContractGenerator(
   tree: GeneratorTree,
   schema: PackageContractGeneratorSchema,
 ): GeneratorTask {
   const model = modelFor(schema)
   const contractPath = joinPath(model.directory, "attune.package.ts")
-  const typecheckPath = joinPath(model.directory, "attune.package.typecheck.ts")
 
   writeTextIfChanged(tree, contractPath, contractSource(model))
   writeTextIfChanged(tree, model.generatedPath, generatedSource(model))
@@ -817,7 +776,6 @@ export default function packageContractGenerator(
     model.workerPropertyPath,
     workerPropertySource(model),
   )
-  writeTextIfChanged(tree, typecheckPath, typecheckSource())
 
   upsertSourceBom(tree, {
     generatorName: "@attune/nx:package-contract",
@@ -840,7 +798,6 @@ export default function packageContractGenerator(
       contractPath,
       model.generatedPath,
       model.workerPropertyPath,
-      typecheckPath,
     ],
     editableRegions: [
       {
@@ -860,12 +817,6 @@ export default function packageContractGenerator(
         marker: "propertyFor(new URL(import.meta.url)",
         description:
           "Worker-compatible property module scaffold; property runtime supplies arbitraries.",
-      },
-      {
-        file: typecheckPath,
-        marker: "AssertPackageContract",
-        description:
-          "Compile-only contract assertions; regenerate when operations change.",
       },
     ],
     syncTargets: [

@@ -4,7 +4,6 @@
       "generator": "@attune/nx:package-contract",
       "outputs": [
         "src/attune.package.ts",
-        "src/attune.package.typecheck.ts",
         "test/attune-package-contract.test.ts"
       ],
       "sources": [
@@ -30,7 +29,6 @@
     "package.json",
     "project.json",
     "src/attune.package.ts",
-    "src/attune.package.typecheck.ts",
     "src/**",
     "test/attune-package-contract.test.ts",
     "test/**",

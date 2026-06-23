@@ -20,6 +20,8 @@ const productProjectFiles = [
   "packages/attune-foldkit/project.json",
   "packages/attune-pi-agent/project.json",
 ] as const
+const centralTypecheckAggregate =
+  "framework/architecture/src/generated/package-contracts.typecheck.generated.ts"
 
 const ownersByProjectName = {
   "attuned-discovery": "attuned-discovery-migration-agent",
@@ -57,7 +59,7 @@ interface PackageContractModule {
 }
 
 describe("product package contract discovery", () => {
-  it("requires Phase 5 product packages to expose contract and typecheck modules", () => {
+  it("requires Phase 5 product packages to expose contract modules and central typecheck aggregate", () => {
     const projects = Object.fromEntries(
       productProjectFiles.map((projectFile) => {
         const project = readProject(projectFile)
@@ -68,31 +70,25 @@ describe("product package contract discovery", () => {
     const expectedContractFiles = Object.values(projects).map((project) =>
       `${project.root}/src/attune.package.ts`,
     )
-    const expectedTypecheckFiles = Object.values(projects).map((project) =>
-      `${project.root}/src/attune.package.typecheck.ts`,
-    )
-    const expectedFiles = [...expectedContractFiles, ...expectedTypecheckFiles]
+    const expectedFiles = [...expectedContractFiles, centralTypecheckAggregate]
 
     const existingFiles = expectedFiles.filter((path) =>
       existsSync(resolve(repositoryRoot, path)),
     )
     const discovery = discoverPackageContracts(projects, { existingFiles })
-    const missingTypecheckFiles = expectedTypecheckFiles.filter((path) =>
-      !existingFiles.includes(path),
-    )
+    const missingCentralTypecheckAggregate = existingFiles.includes(centralTypecheckAggregate)
+      ? []
+      : [centralTypecheckAggregate]
 
     expect({
       missingContractFiles: discovery.missingContracts.map((entry) => ({
         path: entry.contractPath,
         owner: ownerFor(entry.projectName),
       })),
-      missingTypecheckFiles: missingTypecheckFiles.map((path) => ({
-        path,
-        owner: ownerForProjectRoot(path),
-      })),
+      missingCentralTypecheckAggregate,
     }).toEqual({
       missingContractFiles: [],
-      missingTypecheckFiles: [],
+      missingCentralTypecheckAggregate: [],
     })
   })
 
@@ -203,14 +199,6 @@ function readProject(path: string): NxProjectLike & { readonly root: string } {
 
 function ownerFor(projectName: string): string {
   return ownersByProjectName[projectName as keyof typeof ownersByProjectName] ?? "product-migration-agent"
-}
-
-function ownerForProjectRoot(path: string): string {
-  const projectName = Object.keys(ownersByProjectName).find((name) =>
-    path.startsWith(`packages/${name}/`),
-  )
-
-  return projectName === undefined ? "product-migration-agent" : ownerFor(projectName)
 }
 
 async function importPackageContractModule(

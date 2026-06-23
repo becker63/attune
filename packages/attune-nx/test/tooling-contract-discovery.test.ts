@@ -17,9 +17,11 @@ const toolingProjectFiles = [
   "framework/architecture/project.json",
   "framework/oxlint-policy/project.json",
 ] as const
+const centralTypecheckAggregate =
+  "framework/architecture/src/generated/package-contracts.typecheck.generated.ts"
 
 describe("tooling package contract discovery", () => {
-  it("requires Phase 4 tooling packages to expose contract and typecheck modules", () => {
+  it("requires Phase 4 tooling packages to expose contract modules and central typecheck aggregate", () => {
     const projects = Object.fromEntries(
       toolingProjectFiles.map((projectFile) => {
         const project = readProject(projectFile)
@@ -30,25 +32,22 @@ describe("tooling package contract discovery", () => {
     const expectedContractFiles = Object.values(projects).map((project) =>
       `${project.root}/src/attune.package.ts`,
     )
-    const expectedTypecheckFiles = Object.values(projects).map((project) =>
-      `${project.root}/src/attune.package.typecheck.ts`,
-    )
-    const expectedFiles = [...expectedContractFiles, ...expectedTypecheckFiles]
+    const expectedFiles = [...expectedContractFiles, centralTypecheckAggregate]
 
     const existingFiles = expectedFiles.filter((path) =>
       existsSync(resolve(repositoryRoot, path)),
     )
     const discovery = discoverPackageContracts(projects, { existingFiles })
-    const missingTypecheckFiles = expectedTypecheckFiles.filter((path) =>
-      !existingFiles.includes(path),
-    )
+    const missingCentralTypecheckAggregate = existingFiles.includes(centralTypecheckAggregate)
+      ? []
+      : [centralTypecheckAggregate]
 
     expect({
       missingContractFiles: discovery.missingContracts.map((entry) => entry.contractPath),
-      missingTypecheckFiles,
+      missingCentralTypecheckAggregate,
     }).toEqual({
       missingContractFiles: [],
-      missingTypecheckFiles: [],
+      missingCentralTypecheckAggregate: [],
     })
   })
 

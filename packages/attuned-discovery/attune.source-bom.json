@@ -16,11 +16,6 @@
           "description": "Core discovery runtime package boundary; add event, projection, query, atom, and codec operations through package-contract sync/generation.",
           "file": "src/attune.package.ts",
           "marker": "definePackageContract"
-        },
-        {
-          "description": "Compile-only contract assertions; regenerate when operation ids or package views change.",
-          "file": "src/attune.package.typecheck.ts",
-          "marker": "AssertPackageContract"
         }
       ],
       "generatorName": "@attune/nx:package-contract",
@@ -44,7 +39,6 @@
       "optionsHash": "fnv1a32:9b71c50a",
       "ownedFiles": [
         "src/attune.package.ts",
-        "src/attune.package.typecheck.ts",
         "test/attune-package-contract.test.ts"
       ],
       "owningProject": "attuned-discovery",
@@ -63,7 +57,6 @@
       "generator": "@attune/nx:package-contract",
       "outputs": [
         "src/attune.package.ts",
-        "src/attune.package.typecheck.ts",
         "test/attune-package-contract.test.ts"
       ],
       "sources": [
@@ -91,7 +84,6 @@
     "package.json",
     "project.json",
     "src/attune.package.ts",
-    "src/attune.package.typecheck.ts",
     "src/**",
     "test/attune-package-contract.test.ts",
     "test/**",

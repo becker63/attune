@@ -8,7 +8,7 @@ ask for clarification in the Codex thread before changing files.
 
 Attune is an Effect-first code intelligence system and an agent-legible
 framework for package protocols. Codex is the implementation agent, OpenSpec is
-the planning gate, Nx generators/checks are the public workflow surface, and
+the planning gate, Nx check/repair targets are the public workflow surface, and
 GitHub PRs are the review boundary.
 
 The northstar loop is:
@@ -153,8 +153,10 @@ src/attune.package.typecheck.ts
 attune.source-bom.json
 ```
 
-Existing files with those names are migration scaffolding until Nx repair and
-ProtocolStore projection fully own their materialization.
+Existing generated contract, generated registry, and Source BOM companions are
+migration scaffolding until Nx repair and ProtocolStore projection fully own
+their materialization. Compile-only package assertions live in the
+framework-owned aggregate, not package-local typecheck files.
 
 Do not manually expand `attune.package.ts` with derived handler maps,
 properties, type-guidance partitions, RPC descriptors, coverage-search plans,
@@ -165,8 +167,9 @@ target before editing generated or derived protocol artifacts by hand.
 
 ## Repo Map
 
-- `packages/attune-nx`: local Nx generators and sync generators. Prefer these
-  over hand-building repeated code shapes.
+- `packages/attune-nx`: local Nx generators and sync generators. Reach them
+  through Attune check/repair diagnostics and repair plans unless debugging an
+  advanced generator issue.
 - `packages/attuned-discovery`: current semantic discovery package. It contains
   the first schema, fixture, event replay, projection, and WorkbenchSnapshot
   slice.

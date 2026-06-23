@@ -493,9 +493,13 @@ export const packageContractTargetSemantics = [
   {
     targetName: "sync-package-contract",
     category: "sync",
-    purpose: "Regenerate the package contract, compile-only assertion shell, type-guidance shell, and provenance records from Nx-owned metadata.",
+    purpose: "Regenerate the package contract, generated companion shells, central compile-only assertion aggregate, and provenance records from Nx-owned metadata.",
     reads: ["project.json", "attune.source-bom.json", "src/attune.package.ts"],
-    writes: ["src/attune.package.ts", "src/attune.package.typecheck.ts", "attune.source-bom.json"],
+    writes: [
+      "src/attune.package.ts",
+      ".attune/cache/typecheck/package-contracts.typecheck.ts",
+      "attune.source-bom.json",
+    ],
     dependsOn: [],
     evidence: ["deterministic generated contract files", "updated Source BOM shard"],
     affectedBy: ["package-contract", "schema", "service", "reactivity-key", "atom-graph"],

@@ -30,7 +30,7 @@ Phase 2 generator work now has these homes:
   operation schema slots, `PackageLayer`, `PackageTestLayer`, and service
   provenance.
 - `@attune/nx:package-contract`: `src/attune.package.ts`,
-  `src/attune.package.typecheck.ts`, compile-only assertions, and
+  generated companion material, framework-owned compile-only assertions, and
   `PackageTypeGuidance`.
 - `@attune/nx:atom-view`: Reactivity keys, base atoms, derived atoms, package
   view atoms, and package atom graph registration.

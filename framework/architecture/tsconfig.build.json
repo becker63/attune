@@ -7,5 +7,10 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "exclude": ["dist", "test", "**/*.test.ts"]
+  "exclude": [
+    "dist",
+    "test",
+    "**/*.test.ts",
+    "src/generated/package-contracts.typecheck.generated.ts"
+  ]
 }
