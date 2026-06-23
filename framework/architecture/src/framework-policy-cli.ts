@@ -463,9 +463,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
       continue
     }
 
-    const semanticContractFile =
-      filesByPath.get(`${packageRoot}/src/attune.contract.generated.ts`) ??
-      contractFile
+    const semanticContractFile = findSemanticPackageContractFile(packageRoot, contractFile, filesByPath)
 
     if (
       !packageViewGraphPattern.test(semanticContractFile.content) ||
@@ -522,6 +520,23 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
   }
 
   return diagnostics
+}
+
+function findSemanticPackageContractFile(
+  packageRoot: string,
+  contractFile: WorkspaceFile,
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): WorkspaceFile {
+  const packageLocalGeneratedContract = filesByPath.get(`${packageRoot}/src/attune.contract.generated.ts`)
+  if (packageLocalGeneratedContract !== undefined) return packageLocalGeneratedContract
+
+  const projectName = projectNameForRoot(packageRoot, filesByPath)
+  const frameworkGeneratedContract = filesByPath.get(
+    `framework/architecture/src/generated/package-contracts/${projectName}/attune.contract.generated.ts`,
+  )
+  if (frameworkGeneratedContract !== undefined) return frameworkGeneratedContract
+
+  return contractFile
 }
 
 function checkPackageLocalAttuneSurface(

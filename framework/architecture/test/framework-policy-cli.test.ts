@@ -168,6 +168,47 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("accepts framework-owned generated contract materialization as the semantic companion", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/centralized-contract/package.json": JSON.stringify({ name: "@attune/centralized-contract" }),
+      "packages/centralized-contract/src/attune.package.ts": [
+        "export const PackageDeclaration = defineAttunePackage({",
+        "  id: \"centralized-contract\",",
+        "  kind: \"core-discovery-runtime\",",
+        "  operations: [] as const,",
+        "  views: [] as const,",
+        "} as const)",
+      ].join("\n"),
+      "framework/architecture/src/generated/package-contracts/centralized-contract/attune.contract.generated.ts": packageContractSource({
+        packageId: "centralized-contract",
+        viewsBody: [
+          "  reactivityKeys: [\"centralized.changed\"],",
+          "  atoms: [\"centralizedAtom\"],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.ratchetDiagnostics).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "missing-package-view-graph",
+      }),
+      expect.objectContaining({
+        code: "missing-property-evidence-harness",
+      }),
+      expect.objectContaining({
+        code: "missing-coverage-conformance",
+      }),
+      expect.objectContaining({
+        code: "package-local-attune-companion",
+      }),
+    ]))
+  })
+
   it("warns when package declarations grow past the staged slim-file threshold", () => {
     const workspaceRoot = makeWorkspace({
       "packages/large-contract/package.json": JSON.stringify({ name: "@attune/large-contract" }),

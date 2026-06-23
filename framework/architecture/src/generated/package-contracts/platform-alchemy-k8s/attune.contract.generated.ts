@@ -8,7 +8,7 @@ import {
   defineTypeGuidance,
   touches,
 } from "@attune/framework-protocol"
-import { createAttuneGenerated } from "../../../framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.generated.js"
+import { createAttuneGenerated } from "./attune.generated.js"
 
 export { PackageContractSchema } from "@attune/framework-protocol"
 

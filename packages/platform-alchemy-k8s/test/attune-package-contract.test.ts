@@ -22,7 +22,7 @@ import {
   PackageViews,
   observeKubernetesProviderEvidenceOperation,
   renderKubernetesResourcePlanOperation,
-} from "../src/attune.package.js"
+} from "../../../framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.js"
 
 const requiredOperationIds = [
   "render-kubernetes-resource-plan",

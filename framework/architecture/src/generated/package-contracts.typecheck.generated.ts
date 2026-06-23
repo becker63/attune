@@ -17,7 +17,7 @@ import type * as CocoindexEffect from "../../../../packages/cocoindex-effect/src
 import type * as HomeDeployment from "../../../../packages/home-deployment/src/attune.package.js"
 import type * as JoernEffect from "../../../../packages/joern-effect/src/attune.package.js"
 import type * as JoernEffectProperties from "../../../../packages/joern-effect-properties/src/attune.package.js"
-import type * as PlatformAlchemyK8s from "../../../../packages/platform-alchemy-k8s/src/attune.package.js"
+import type * as PlatformAlchemyK8s from "./package-contracts/platform-alchemy-k8s/attune.contract.generated.js"
 
 type _FrameworkArchitecture = readonly [
   AssertTrue<AssertPackageContract<FrameworkArchitecture.PackageContract>>,
