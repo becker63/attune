@@ -135,6 +135,7 @@ const packageLocalAttuneCompanionNames = [
 ] as const
 const oneFileSurfaceCompletedRoots = new Set([
   "packages/attune-pi-agent",
+  "packages/home-deployment",
   "packages/platform-alchemy-k8s",
 ])
 

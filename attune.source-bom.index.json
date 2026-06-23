@@ -40,7 +40,7 @@
     {
       "project": "home-deployment",
       "projectRoot": "packages/home-deployment",
-      "shard": "packages/home-deployment/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/home-deployment.json"
     },
     {
       "project": "joern-effect",

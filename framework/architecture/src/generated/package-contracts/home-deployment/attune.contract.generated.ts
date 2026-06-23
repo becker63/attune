@@ -7,6 +7,7 @@ import {
   definePackageViews,
   defineTypeGuidance,
   touches,
+  type AnySchema,
 } from "@attune/framework-protocol"
 
 import {
@@ -15,15 +16,18 @@ import {
   OperationClassification,
   ResourceKind,
   ResourceStatus,
-} from "./model.ts"
+} from "../../../../../../packages/home-deployment/src/model.js"
 import {
   PlatformProviderMode,
   ProviderTransitionResult,
-} from "./providers.ts"
-import { HomeDeploymentStateSchema } from "./state.ts"
+} from "../../../../../../packages/home-deployment/src/providers.js"
+import { HomeDeploymentStateSchema } from "../../../../../../packages/home-deployment/src/state.js"
 import { createAttuneGenerated } from "./attune.generated.js"
 
 export { PackageContractSchema } from "@attune/framework-protocol"
+
+const packageSchema = <SchemaValue>(schema: SchemaValue): SchemaValue & AnySchema =>
+  schema as SchemaValue & AnySchema
 
 export const PackageViews = definePackageViews({
   reactivityKeys: [
@@ -89,7 +93,7 @@ export type HomeDeploymentContractError = typeof HomeDeploymentContractError.Typ
 
 export const DeploymentConfigBoundaryInput = Schema.Struct({
   source: Schema.Literals(["default", "provided", "effect-config"] as const),
-  config: Schema.optional(HomeDeploymentConfig),
+  config: Schema.optional(packageSchema(HomeDeploymentConfig)),
   redactedEnvKeys: Schema.Array(Schema.String),
 })
 export type DeploymentConfigBoundaryInput = typeof DeploymentConfigBoundaryInput.Type
@@ -104,7 +108,7 @@ export const DeploymentConfigBoundaryOutput = Schema.Struct({
 export type DeploymentConfigBoundaryOutput = typeof DeploymentConfigBoundaryOutput.Type
 
 export const Day0LifecycleProjectionInput = Schema.Struct({
-  config: HomeDeploymentConfig,
+  config: packageSchema(HomeDeploymentConfig),
   confirmedGateIds: Schema.Array(Schema.String),
   completedResourceIds: Schema.Array(Schema.String),
   failedResourceIds: Schema.Array(Schema.String),
@@ -115,14 +119,14 @@ export const Day0LifecycleProjectionOutput = Schema.Struct({
   name: Schema.String,
   hostnames: Schema.Array(Schema.String),
   resourceIds: Schema.Array(Schema.String),
-  phases: Schema.Array(DeploymentPhase),
+  phases: Schema.Array(packageSchema(DeploymentPhase)),
   blockedResourceIds: Schema.Array(Schema.String),
   destructiveResourceIds: Schema.Array(Schema.String),
 })
 export type Day0LifecycleProjectionOutput = typeof Day0LifecycleProjectionOutput.Type
 
 export const PhaseSummaryQueryInput = Schema.Struct({
-  phase: Schema.optional(DeploymentPhase),
+  phase: Schema.optional(packageSchema(DeploymentPhase)),
   includeBlocked: Schema.Boolean,
 })
 export type PhaseSummaryQueryInput = typeof PhaseSummaryQueryInput.Type
@@ -136,11 +140,11 @@ export const PhaseSummaryQueryOutput = Schema.Struct({
 export type PhaseSummaryQueryOutput = typeof PhaseSummaryQueryOutput.Type
 
 export const ProviderTransitionBoundaryInput = Schema.Struct({
-  mode: PlatformProviderMode,
+  mode: packageSchema(PlatformProviderMode),
   resourceId: Schema.String,
-  resourceKind: ResourceKind,
-  operation: OperationClassification,
-  resourceStatus: ResourceStatus,
+  resourceKind: packageSchema(ResourceKind),
+  operation: packageSchema(OperationClassification),
+  resourceStatus: packageSchema(ResourceStatus),
   desiredStateObserved: Schema.Boolean,
   hasManualProof: Schema.Boolean,
   hasDestructiveApproval: Schema.Boolean,
@@ -167,7 +171,7 @@ export const DestructiveApprovalRecord = Schema.Struct({
 export type DestructiveApprovalRecord = typeof DestructiveApprovalRecord.Type
 
 export const NixosAnywhereInstallInput = Schema.Struct({
-  mode: PlatformProviderMode,
+  mode: packageSchema(PlatformProviderMode),
   resourceId: Schema.String,
   hostname: Schema.String,
   desiredStateObserved: Schema.Boolean,
@@ -177,7 +181,7 @@ export const NixosAnywhereInstallInput = Schema.Struct({
 export type NixosAnywhereInstallInput = typeof NixosAnywhereInstallInput.Type
 
 export const AlchemyStackBoundaryInput = Schema.Struct({
-  providerMode: PlatformProviderMode,
+  providerMode: packageSchema(PlatformProviderMode),
   execute: Schema.Boolean,
   recordState: Schema.Boolean,
   resourceId: Schema.optional(Schema.String),
@@ -197,14 +201,14 @@ export type AlchemyStackBoundaryOutput = typeof AlchemyStackBoundaryOutput.Type
 export const LocalStateCommandInput = Schema.Struct({
   action: Schema.Literals(["read", "record-gate", "record-evidence", "complete-resource", "fail-resource"] as const),
   statePath: Schema.optional(Schema.String),
-  state: HomeDeploymentStateSchema,
+  state: packageSchema(HomeDeploymentStateSchema),
   gateId: Schema.optional(Schema.String),
   resourceId: Schema.optional(Schema.String),
 })
 export type LocalStateCommandInput = typeof LocalStateCommandInput.Type
 
 export const LocalStateCommandOutput = Schema.Struct({
-  state: HomeDeploymentStateSchema,
+  state: packageSchema(HomeDeploymentStateSchema),
   changedReactivityKeys: Schema.Array(Schema.String),
 })
 export type LocalStateCommandOutput = typeof LocalStateCommandOutput.Type
@@ -221,7 +225,7 @@ export const CommandIntentBoundaryInput = Schema.Struct({
   resourceId: Schema.String,
   provider: Schema.String,
   action: CommandIntentAction,
-  mode: PlatformProviderMode,
+  mode: packageSchema(PlatformProviderMode),
   command: Schema.Array(Schema.String),
   execute: Schema.Boolean,
   destructive: Schema.Boolean,
@@ -404,7 +408,7 @@ export const providerTransitionOperation = defineOperation({
   kind: "resource-provider",
   observes: true,
   input: ProviderTransitionBoundaryInput,
-  output: ProviderTransitionResult,
+  output: packageSchema(ProviderTransitionResult),
   error: HomeDeploymentContractError,
   views: touches(PackageViews, {
     reactivityKeys: [
@@ -440,7 +444,7 @@ export const nixosAnywhereInstallOperation = defineOperation({
   kind: "resource-provider",
   observes: true,
   input: NixosAnywhereInstallInput,
-  output: ProviderTransitionResult,
+  output: packageSchema(ProviderTransitionResult),
   error: HomeDeploymentContractError,
   views: touches(PackageViews, {
     reactivityKeys: [

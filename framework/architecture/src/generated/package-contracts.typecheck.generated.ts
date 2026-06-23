@@ -14,7 +14,7 @@ import type * as AttuneNx from "../../../../packages/attune-nx/src/attune.packag
 import type * as AttunePiAgent from "./package-contracts/attune-pi-agent/attune.contract.generated.js"
 import type * as AttunedDiscovery from "./package-contracts/attuned-discovery/attune.contract.generated.js"
 import type * as CocoindexEffect from "./package-contracts/cocoindex-effect/attune.contract.generated.js"
-import type * as HomeDeployment from "../../../../packages/home-deployment/src/attune.package.js"
+import type * as HomeDeployment from "./package-contracts/home-deployment/attune.contract.generated.js"
 import type * as JoernEffect from "../../../../packages/joern-effect/src/attune.package.js"
 import type * as JoernEffectProperties from "../../../../packages/joern-effect-properties/src/attune.package.js"
 import type * as PlatformAlchemyK8s from "./package-contracts/platform-alchemy-k8s/attune.contract.generated.js"

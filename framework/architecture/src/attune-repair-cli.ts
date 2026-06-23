@@ -41,6 +41,7 @@ const safeRelocationProjectIds = new Set([
   "attune-foldkit",
   "attune-pi-agent",
   "attuned-discovery",
+  "home-deployment",
   "platform-alchemy-k8s",
 ])
 
