@@ -12,6 +12,7 @@
     "dist",
     "test",
     "**/*.test.ts",
+    "src/generated/package-contracts/**",
     "src/generated/package-contracts.typecheck.generated.ts"
   ]
 }

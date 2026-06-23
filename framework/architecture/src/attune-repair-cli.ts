@@ -37,7 +37,11 @@ const repairProjects: readonly RepairProject[] = [
     projectRoot: "packages/platform-alchemy-k8s",
   },
 ]
-const safeRelocationProjectIds = new Set(["platform-alchemy-k8s"])
+const safeRelocationProjectIds = new Set([
+  "attune-foldkit",
+  "attuned-discovery",
+  "platform-alchemy-k8s",
+])
 
 const workspaceRoot = process.env["ATTUNE_REPAIR_WORKSPACE_ROOT"] ?? process.cwd()
 const args = process.argv.slice(2)
@@ -142,6 +146,7 @@ function relocateGeneratedCompanions(project: RepairProject): readonly RepairAct
     moveFileIfPresent(
       `${project.projectRoot}/src/attune.contract.generated.ts`,
       `${centralRoot}/attune.contract.generated.ts`,
+      (content) => rewritePackageLocalGeneratedContractImports(content, project),
     ),
   ].flat()
 }
@@ -196,11 +201,15 @@ function relocateSourceBom(project: RepairProject): readonly RepairAction[] {
   return actions
 }
 
-function moveFileIfPresent(from: string, to: string): readonly RepairAction[] {
+function moveFileIfPresent(
+  from: string,
+  to: string,
+  transform: (content: string) => string = (content) => content,
+): readonly RepairAction[] {
   const source = absolute(from)
   if (!fs.existsSync(source)) return []
 
-  const content = fs.readFileSync(source, "utf8")
+  const content = transform(fs.readFileSync(source, "utf8"))
   const destination = absolute(to)
   const destinationContent = fs.existsSync(destination)
     ? fs.readFileSync(destination, "utf8")
@@ -412,6 +421,21 @@ function readRepairKind(): RepairKind | null {
 
 function frameworkPackageContractRoot(project: string): string {
   return `framework/architecture/src/generated/package-contracts/${project}`
+}
+
+function rewritePackageLocalGeneratedContractImports(
+  content: string,
+  project: RepairProject,
+): string {
+  const sourcePrefix = path.posix.relative(
+    frameworkPackageContractRoot(project.project),
+    `${project.projectRoot}/src`,
+  )
+
+  return content.replace(
+    /from "\.\/(?!attune\.generated\.js)([^"]+)"/gu,
+    (_match, importedPath: string) => `from "${sourcePrefix}/${importedPath}"`,
+  )
 }
 
 function generatedContractPath(project: RepairProject): string {

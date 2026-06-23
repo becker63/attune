@@ -1,7 +1,6 @@
 import { defineAttunePackageDeclaration } from "@attune/framework-protocol"
 
 export { PackageContractSchema } from "@attune/framework-protocol"
-export * from "./attune.contract.generated.js"
 
 export const PackageViewRoots = {
   reactivityKeys: [
@@ -51,6 +50,11 @@ export const PackageDeclaration = defineAttunePackageDeclaration({
       id: "discovery-event-log-append",
       kind: "event-facade",
       name: "DiscoveryEventLog append",
+    },
+    {
+      id: "event-replay-projection",
+      kind: "projection",
+      name: "Event replay projection",
     },
     {
       id: "read-model-query",

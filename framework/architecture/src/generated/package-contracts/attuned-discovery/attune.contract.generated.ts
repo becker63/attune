@@ -31,7 +31,7 @@ import {
   ReviewItem,
   RunSummary,
   WorkbenchSnapshot,
-} from "./index.js"
+} from "../../../../../../packages/attuned-discovery/src/index.js"
 import { createAttuneGenerated } from "./attune.generated.js"
 
 export { PackageContractSchema } from "@attune/framework-protocol"

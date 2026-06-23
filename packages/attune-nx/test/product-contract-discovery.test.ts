@@ -204,7 +204,15 @@ function ownerFor(projectName: string): string {
 async function importPackageContractModule(
   project: NxProjectLike & { readonly root: string },
 ): Promise<PackageContractModule> {
-  const contractPath = resolve(repositoryRoot, project.root, "src/attune.package.ts")
+  const centralContractPath = resolve(
+    repositoryRoot,
+    "framework/architecture/src/generated/package-contracts",
+    project.name ?? project.root,
+    "attune.contract.generated.ts",
+  )
+  const contractPath = existsSync(centralContractPath)
+    ? centralContractPath
+    : resolve(repositoryRoot, project.root, "src/attune.package.ts")
   const imported = await import(pathToFileURL(contractPath).href) as Partial<PackageContractModule>
   for (const exportName of [
     "PackageContract",

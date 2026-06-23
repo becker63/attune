@@ -10,7 +10,7 @@
     {
       "project": "attune-foldkit",
       "projectRoot": "packages/attune-foldkit",
-      "shard": "packages/attune-foldkit/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/attune-foldkit.json"
     },
     {
       "project": "attune-nx",

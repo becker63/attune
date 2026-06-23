@@ -18,7 +18,7 @@ import {
 import {
   activityFixtureItems,
   activitySummaryCounts,
-} from "./activity.js"
+} from "../../../../../../packages/attune-foldkit/src/activity.js"
 import {
   FixtureRouteEvent,
   FixtureRouteModel,
@@ -26,17 +26,17 @@ import {
   FixtureStepResult,
   FixtureTraceEntry,
   initialFixtureRouteModel,
-} from "./fixture-route.js"
-import { attuneFoldkitSiteFixture } from "./fixtures/app-site-fixture.js"
-import { mdxViewFixture } from "./fixtures/mdx-view-fixture.js"
-import { Model } from "./model.js"
-import { Message } from "./message.js"
+} from "../../../../../../packages/attune-foldkit/src/fixture-route.js"
+import { attuneFoldkitSiteFixture } from "../../../../../../packages/attune-foldkit/src/fixtures/app-site-fixture.js"
+import { mdxViewFixture } from "../../../../../../packages/attune-foldkit/src/fixtures/mdx-view-fixture.js"
+import { Model } from "../../../../../../packages/attune-foldkit/src/model.js"
+import { Message } from "../../../../../../packages/attune-foldkit/src/message.js"
 import {
   ActivityItem,
   AttuneRoute,
   FoldkitMdxComponentName,
   FoldkitPage,
-} from "./schema.js"
+} from "../../../../../../packages/attune-foldkit/src/schema.js"
 import { createAttuneGenerated } from "./attune.generated.js"
 
 export { PackageContractSchema } from "@attune/framework-protocol"
