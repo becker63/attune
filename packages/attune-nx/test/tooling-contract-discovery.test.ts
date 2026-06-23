@@ -60,7 +60,7 @@ describe("tooling package contract discovery", () => {
             projectName: project.name ?? project.root,
             projectRoot: project.root,
             ...(project.sourceRoot === undefined ? {} : { sourceRoot: project.sourceRoot }),
-            contractPath: `${project.root}/src/attune.package.ts`,
+            contractPath: packageContractModulePath(project),
             module: await importPackageContractModule(project),
           }
         }),
@@ -103,6 +103,18 @@ function readProject(path: string): NxProjectLike & { readonly root: string } {
 async function importPackageContractModule(
   project: NxProjectLike & { readonly root: string },
 ) {
-  const contractPath = resolve(repositoryRoot, project.root, "src/attune.package.ts")
-  return await import(pathToFileURL(contractPath).href)
+  return await import(pathToFileURL(resolve(repositoryRoot, packageContractModulePath(project))).href)
+}
+
+function packageContractModulePath(
+  project: NxProjectLike & { readonly root: string },
+): string {
+  const centralContractPath = [
+    "framework/architecture/src/generated/package-contracts",
+    project.name ?? project.root,
+    "attune.contract.generated.ts",
+  ].join("/")
+  return existsSync(resolve(repositoryRoot, centralContractPath))
+    ? centralContractPath
+    : `${project.root}/src/attune.package.ts`
 }

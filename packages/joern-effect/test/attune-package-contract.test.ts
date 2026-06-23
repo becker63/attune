@@ -20,7 +20,7 @@ import {
   joernTemplateBoundaryOperation,
   queryEvidenceViewOperation,
   type JoernEffectOperationId,
-} from "../src/attune.package.js"
+} from "../../../framework/architecture/src/generated/package-contracts/joern-effect/attune.contract.generated.js"
 
 type OperationIds<Contract> =
   Contract extends { readonly operations: readonly (infer Operation)[] }

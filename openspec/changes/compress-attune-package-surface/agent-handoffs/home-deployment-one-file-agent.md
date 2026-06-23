@@ -23,6 +23,10 @@ Changed:
   in `framework/architecture/src/attune-repair-cli.ts`.
 - Added `packages/home-deployment` to the completed one-file ratchet roots in
   `framework/architecture/src/framework-policy-cli.ts`.
+- Added a narrow generated-contract boundary cast in the relocated
+  home-deployment contract so framework-owned compatibility material can consume
+  package-authored schemas despite the current package/framework `effect`
+  version split.
 
 Contract status:
 - `packages/home-deployment/src/attune.package.ts` is now the only
@@ -36,6 +40,7 @@ Validated:
 - `nx run home-deployment:typecheck --skipNxCache`
 - `nx run home-deployment:test --skipNxCache`
 - `nx run workspace:package-contracts-check --skipNxCache`
+- `nx run attune-architecture:typecheck --skipNxCache`
 - `git diff --check`
 
 Failures:
@@ -44,6 +49,10 @@ Failures:
 Validation notes:
 - `home-deployment:test` also ran its declared `platform-alchemy-k8s:build`
   dependency successfully.
+- The first extra `attune-architecture:typecheck` run failed on `effect`
+  beta.78/beta.85 schema type identity conflicts after moving the generated
+  file under `framework/architecture`. The generated boundary cast fixed that,
+  and the rerun passed.
 - `workspace:package-contracts-check` still reports staged one-file-surface
   warnings for unmoved roots: `attune-nx`, `joern-effect`,
   `joern-effect-properties`, `framework/architecture`, and

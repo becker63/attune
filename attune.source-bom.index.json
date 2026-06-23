@@ -15,7 +15,7 @@
     {
       "project": "attune-nx",
       "projectRoot": "packages/attune-nx",
-      "shard": "packages/attune-nx/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/attune-nx.json"
     },
     {
       "project": "attune-pi-agent",
@@ -35,7 +35,7 @@
     {
       "project": "effect-oxlint-policy",
       "projectRoot": "framework/oxlint-policy",
-      "shard": "framework/oxlint-policy/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json"
     },
     {
       "project": "home-deployment",
@@ -45,12 +45,12 @@
     {
       "project": "joern-effect",
       "projectRoot": "packages/joern-effect",
-      "shard": "packages/joern-effect/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/joern-effect.json"
     },
     {
       "project": "joern-effect-properties",
       "projectRoot": "packages/joern-effect-properties",
-      "shard": "packages/joern-effect-properties/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/joern-effect-properties.json"
     },
     {
       "project": "platform-alchemy-k8s",

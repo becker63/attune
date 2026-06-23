@@ -16,7 +16,7 @@ import {
   PackageTypeGuidance,
   PackageViews,
   PolicyRuleIds,
-} from "../src/attune.package.js"
+} from "../../architecture/src/generated/package-contracts/effect-oxlint-policy/attune.contract.generated.js"
 
 describe("effect-oxlint-policy package contract", () => {
   it("declares the policy-plugin package and policy-rule operation ids", () => {

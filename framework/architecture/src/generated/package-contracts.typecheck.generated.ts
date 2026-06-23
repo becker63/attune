@@ -8,15 +8,15 @@ import type {
   AssertTypeGuidanceComplete,
 } from "@attune/framework-protocol"
 import type * as FrameworkArchitecture from "../attune.package.js"
-import type * as FrameworkOxlintPolicy from "../../../oxlint-policy/src/attune.package.js"
+import type * as FrameworkOxlintPolicy from "./package-contracts/effect-oxlint-policy/attune.contract.generated.js"
 import type * as AttuneFoldkit from "./package-contracts/attune-foldkit/attune.contract.generated.js"
-import type * as AttuneNx from "../../../../packages/attune-nx/src/attune.package.js"
+import type * as AttuneNx from "./package-contracts/attune-nx/attune.contract.generated.js"
 import type * as AttunePiAgent from "./package-contracts/attune-pi-agent/attune.contract.generated.js"
 import type * as AttunedDiscovery from "./package-contracts/attuned-discovery/attune.contract.generated.js"
 import type * as CocoindexEffect from "./package-contracts/cocoindex-effect/attune.contract.generated.js"
 import type * as HomeDeployment from "./package-contracts/home-deployment/attune.contract.generated.js"
-import type * as JoernEffect from "../../../../packages/joern-effect/src/attune.package.js"
-import type * as JoernEffectProperties from "../../../../packages/joern-effect-properties/src/attune.package.js"
+import type * as JoernEffect from "./package-contracts/joern-effect/attune.contract.generated.js"
+import type * as JoernEffectProperties from "./package-contracts/joern-effect-properties/attune.contract.generated.js"
 import type * as PlatformAlchemyK8s from "./package-contracts/platform-alchemy-k8s/attune.contract.generated.js"
 
 type _FrameworkArchitecture = readonly [

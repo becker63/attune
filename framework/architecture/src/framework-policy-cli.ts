@@ -134,9 +134,13 @@ const packageLocalAttuneCompanionNames = [
   "attune.source-bom.json",
 ] as const
 const oneFileSurfaceCompletedRoots = new Set([
+  "packages/attune-nx",
   "packages/attune-pi-agent",
   "packages/home-deployment",
+  "packages/joern-effect",
+  "packages/joern-effect-properties",
   "packages/platform-alchemy-k8s",
+  "framework/oxlint-policy",
 ])
 
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
