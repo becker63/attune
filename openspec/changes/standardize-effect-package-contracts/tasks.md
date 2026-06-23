@@ -217,5 +217,5 @@
 - [x] 17.4 Add a staged package declaration size ratchet that warns above the configured threshold and recommends generated/materialized alternatives plus Nx repair targets.
 - [x] 17.5 Add public workspace aliases `workspace:attune-check` and `workspace:attune-repair` over typed Nx actions.
 - [x] 17.6 Update OpenSpec and docs to state that package declarations are source intent, SQLite is private projection state, and Nx repairs are the public action surface.
-- [ ] 17.7 Expand per-project repair targets (`<project>:attune:repair-*`) from documented action names into full deterministic generators/executors for registries, properties, type guidance, evidence, and generated freshness.
+- [x] 17.7 Expand per-project repair targets (`<project>:attune:repair-*`) from documented action names into full deterministic generators/executors for registries, properties, type guidance, evidence, and generated freshness.
 - [x] 17.8 Continue shrinking remaining package declarations below the warning threshold by moving package-specific schema/helper bulk into focused authored modules or generated artifacts.

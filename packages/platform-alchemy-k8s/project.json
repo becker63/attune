@@ -247,15 +247,174 @@
       },
       "options": {
         "targetProject": "platform-alchemy-k8s",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "platform-alchemy-k8s:attune:repair-registry",
+            "platform-alchemy-k8s:attune:repair-properties",
+            "platform-alchemy-k8s:attune:repair-type-guidance",
+            "platform-alchemy-k8s:attune:repair-evidence",
+            "platform-alchemy-k8s:attune:repair-generated"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune:repair-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for operation registry. Public agents should prefer platform-alchemy-k8s:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "registry",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "platform-alchemy-k8s",
         "tool": "architecture",
         "action": "generate",
         "toolId": "attune-repair",
         "parameters": {
           "allSafe": true,
-          "project": "platform-alchemy-k8s"
+          "project": "platform-alchemy-k8s",
+          "kind": "registry"
         },
-        "dryRun": false
-      }
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts"
+      ]
+    },
+    "attune:repair-properties": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property registry. Public agents should prefer platform-alchemy-k8s:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "properties",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "platform-alchemy-k8s",
+          "kind": "properties"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/platform-alchemy-k8s/attune-property-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/attune-property-registry.ts"
+      ]
+    },
+    "attune:repair-type-guidance": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for type-guidance. Public agents should prefer platform-alchemy-k8s:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "type-guidance",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "platform-alchemy-k8s",
+          "kind": "type-guidance"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/platform-alchemy-k8s/attune-type-guidance.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/attune-type-guidance.ts"
+      ]
+    },
+    "attune:repair-evidence": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for evidence scaffold. Public agents should prefer platform-alchemy-k8s:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "evidence",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "platform-alchemy-k8s",
+          "kind": "evidence"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/platform-alchemy-k8s/attune-property-evidence.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/evidence/platform-alchemy-k8s/evidence-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/attune-property-evidence.ts",
+        "{workspaceRoot}/.attune/cache/evidence/platform-alchemy-k8s/evidence-scaffold.json"
+      ]
+    },
+    "attune:repair-generated": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for generated freshness. Public agents should prefer platform-alchemy-k8s:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "generated",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "platform-alchemy-k8s",
+          "kind": "generated"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/platform-alchemy-k8s/generated-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/generated-freshness.json"
+      ]
     }
   }
 }

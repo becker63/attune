@@ -1,36 +1,56 @@
 #!/usr/bin/env tsx
 import * as fs from "node:fs"
 import * as path from "node:path"
+import { createHash } from "node:crypto"
 
 interface RepairProject {
   readonly project: string
   readonly projectRoot: string
 }
 
+type RepairKind =
+  | "evidence"
+  | "generated"
+  | "properties"
+  | "registry"
+  | "type-guidance"
+
 interface RepairAction {
-  readonly kind: "move" | "update" | "delete" | "noop"
+  readonly kind: "create" | "move" | "update" | "delete" | "noop"
   readonly path: string
   readonly message: string
 }
 
-const safeRelocationProjects: readonly RepairProject[] = [
+const repairProjects: readonly RepairProject[] = [
+  { project: "attune-foldkit", projectRoot: "packages/attune-foldkit" },
+  { project: "attune-nx", projectRoot: "packages/attune-nx" },
+  { project: "attune-pi-agent", projectRoot: "packages/attune-pi-agent" },
+  { project: "attuned-discovery", projectRoot: "packages/attuned-discovery" },
+  { project: "cocoindex-effect", projectRoot: "packages/cocoindex-effect" },
+  { project: "effect-oxlint-policy", projectRoot: "framework/oxlint-policy" },
+  { project: "home-deployment", projectRoot: "packages/home-deployment" },
+  { project: "joern-effect", projectRoot: "packages/joern-effect" },
+  { project: "joern-effect-properties", projectRoot: "packages/joern-effect-properties" },
+  { project: "attune-architecture", projectRoot: "framework/architecture" },
   {
     project: "platform-alchemy-k8s",
     projectRoot: "packages/platform-alchemy-k8s",
   },
 ]
+const safeRelocationProjectIds = new Set(["platform-alchemy-k8s"])
 
 const workspaceRoot = process.env["ATTUNE_REPAIR_WORKSPACE_ROOT"] ?? process.cwd()
 const args = process.argv.slice(2)
 const requestedProject = readArg("--project")
+const requestedKind = readRepairKind()
 const dryRun = args.includes("--dry-run")
 
 const selectedProjects = requestedProject === null
-  ? safeRelocationProjects
-  : safeRelocationProjects.filter((entry) => entry.project === requestedProject)
+  ? repairProjects
+  : repairProjects.filter((entry) => entry.project === requestedProject)
 
 if (requestedProject !== null && selectedProjects.length === 0) {
-  console.error(`Attune repair has no safe generated-relocation plan for project ${requestedProject}.`)
+  console.error(`Attune repair has no known project metadata for ${requestedProject}.`)
   process.exit(1)
 }
 
@@ -46,12 +66,70 @@ if (actions.length === 0) {
 }
 
 function repairProject(project: RepairProject): readonly RepairAction[] {
+  if (requestedKind !== null) return materializeRepairKind(project, requestedKind)
+  if (!safeRelocationProjectIds.has(project.project)) return []
+
   return [
     ...relocateGeneratedCompanions(project),
     ...removePackageLocalGeneratedExport(project),
     ...updateTypecheckAggregate(project),
     ...relocateSourceBom(project),
   ]
+}
+
+function materializeRepairKind(
+  project: RepairProject,
+  kind: RepairKind,
+): readonly RepairAction[] {
+  switch (kind) {
+    case "registry":
+      return materializeGeneratedText(
+        `.attune/cache/generated/${project.project}/attune-operation-registry.ts`,
+        generatedRegistryContent(project),
+        `${project.project} operation registry projection`,
+      )
+    case "properties":
+      return materializeGeneratedText(
+        `.attune/cache/generated/${project.project}/attune-property-registry.ts`,
+        generatedPropertyRegistryContent(project),
+        `${project.project} property registry projection`,
+      )
+    case "type-guidance":
+      return materializeGeneratedText(
+        `.attune/cache/generated/${project.project}/attune-type-guidance.ts`,
+        generatedTypeGuidanceContent(project),
+        `${project.project} type-guidance projection`,
+      )
+    case "evidence":
+      return [
+        ...materializeGeneratedText(
+          `.attune/cache/generated/${project.project}/attune-property-evidence.ts`,
+          generatedEvidenceScaffoldContent(project),
+          `${project.project} evidence scaffold projection`,
+        ),
+        ...materializeGeneratedText(
+          `.attune/cache/evidence/${project.project}/evidence-scaffold.json`,
+          generatedEvidenceScaffoldJson(project),
+          `${project.project} evidence cache projection`,
+        ),
+      ]
+    case "generated":
+      return [
+        ...materializeGeneratedText(
+          `.attune/cache/generated/${project.project}/generated-freshness.json`,
+          generatedFreshnessContent(project),
+          `${project.project} generated freshness projection`,
+        ),
+        ...(safeRelocationProjectIds.has(project.project)
+          ? [
+            ...relocateGeneratedCompanions(project),
+            ...removePackageLocalGeneratedExport(project),
+            ...updateTypecheckAggregate(project),
+            ...relocateSourceBom(project),
+          ]
+          : []),
+      ]
+  }
 }
 
 function relocateGeneratedCompanions(project: RepairProject): readonly RepairAction[] {
@@ -169,6 +247,120 @@ function rewriteJsonFile(
   }]
 }
 
+function materializeGeneratedText(
+  relativePath: string,
+  content: string,
+  message: string,
+): readonly RepairAction[] {
+  const existing = readText(relativePath)
+  if (existing === content) return []
+
+  writeText(relativePath, content)
+  return [{
+    kind: existing === null ? "create" : "update",
+    path: relativePath,
+    message,
+  }]
+}
+
+function generatedRegistryContent(project: RepairProject): string {
+  return generatedTs(project, "operation-registry", [
+    `export const packageId = ${JSON.stringify(project.project)} as const`,
+    `export const packageRoot = ${JSON.stringify(project.projectRoot)} as const`,
+    "export const sourceDeclaration = \"src/attune.package.ts\" as const",
+    `export const generatedContract = ${JSON.stringify(generatedContractPath(project))} as const`,
+    `export const operationRegistryProjection = ${JSON.stringify({
+      generatedFrom: generatedContractPath(project),
+      packageId: project.project,
+      projection: "operation-registry",
+    }, null, 2)} as const`,
+  ])
+}
+
+function generatedPropertyRegistryContent(project: RepairProject): string {
+  return generatedTs(project, "property-registry", [
+    `export const packageId = ${JSON.stringify(project.project)} as const`,
+    `export const propertyRegistryProjection = ${JSON.stringify({
+      generatedFrom: generatedContractPath(project),
+      packageId: project.project,
+      projection: "property-registry",
+    }, null, 2)} as const`,
+  ])
+}
+
+function generatedTypeGuidanceContent(project: RepairProject): string {
+  return generatedTs(project, "type-guidance", [
+    `export const packageId = ${JSON.stringify(project.project)} as const`,
+    `export const typeGuidanceProjection = ${JSON.stringify({
+      generatedFrom: generatedContractPath(project),
+      packageId: project.project,
+      projection: "type-guidance",
+    }, null, 2)} as const`,
+  ])
+}
+
+function generatedEvidenceScaffoldContent(project: RepairProject): string {
+  return generatedTs(project, "property-evidence", [
+    `export const packageId = ${JSON.stringify(project.project)} as const`,
+    `export const PropertyEvidenceScaffold = ${JSON.stringify({
+      expectedEvents: ["property-run", "law-observed", "atom-movement"],
+      generatedFrom: generatedContractPath(project),
+      packageId: project.project,
+      packageRoot: project.projectRoot,
+      projection: "property-evidence",
+    }, null, 2)} as const`,
+  ])
+}
+
+function generatedEvidenceScaffoldJson(project: RepairProject): string {
+  return `${JSON.stringify({
+    generatedBy: "attune-repair",
+    generatedFrom: generatedContractPath(project),
+    packageId: project.project,
+    packageRoot: project.projectRoot,
+    projection: "evidence-scaffold",
+  }, null, 2)}\n`
+}
+
+function generatedFreshnessContent(project: RepairProject): string {
+  const artifacts = [
+    generatedContractPath(project),
+    `${frameworkPackageContractRoot(project.project)}/attune.generated.ts`,
+    `framework/architecture/src/generated/source-bom/${project.project}.json`,
+    `${project.projectRoot}/src/attune.contract.generated.ts`,
+    `${project.projectRoot}/src/attune.generated.ts`,
+    `${project.projectRoot}/attune.source-bom.json`,
+  ]
+    .map((artifactPath) => {
+      const content = readText(artifactPath)
+      return content === null
+        ? { path: artifactPath, status: "missing" as const }
+        : { path: artifactPath, status: "present" as const, sha256: hashText(content) }
+    })
+    .filter((artifact) => artifact.status === "present")
+
+  return `${JSON.stringify({
+    generatedBy: "attune-repair",
+    packageId: project.project,
+    packageRoot: project.projectRoot,
+    projection: "generated-freshness",
+    artifacts,
+  }, null, 2)}\n`
+}
+
+function generatedTs(
+  project: RepairProject,
+  projection: string,
+  body: readonly string[],
+): string {
+  return [
+    "/* @generated by workspace:attune-repair. Do not edit directly. */",
+    `/* Projection: ${projection}; Package: ${project.project}. */`,
+    ...body,
+    "",
+  ].join("\n")
+}
+
 function replaceSourceBomShard(
   value: unknown,
   legacyShard: string,
@@ -201,8 +393,29 @@ function readArg(name: string): string | null {
   return args[index + 1] ?? null
 }
 
+function readRepairKind(): RepairKind | null {
+  const kind = readArg("--kind")
+  if (kind === null) return null
+  if (
+    kind === "evidence" ||
+    kind === "generated" ||
+    kind === "properties" ||
+    kind === "registry" ||
+    kind === "type-guidance"
+  ) {
+    return kind
+  }
+
+  console.error(`Unsupported Attune repair kind ${kind}.`)
+  process.exit(1)
+}
+
 function frameworkPackageContractRoot(project: string): string {
   return `framework/architecture/src/generated/package-contracts/${project}`
+}
+
+function generatedContractPath(project: RepairProject): string {
+  return `${frameworkPackageContractRoot(project.project)}/attune.contract.generated.ts`
 }
 
 function readText(relativePath: string): string | null {
@@ -219,4 +432,8 @@ function writeText(relativePath: string, content: string): void {
 
 function absolute(relativePath: string): string {
   return path.join(workspaceRoot, relativePath)
+}
+
+function hashText(content: string): string {
+  return createHash("sha256").update(content).digest("hex")
 }

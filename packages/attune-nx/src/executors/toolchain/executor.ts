@@ -489,11 +489,15 @@ function createArchitectureGeneratePlan(
   switch (options.toolId) {
     case "attune-repair": {
       const project = readStringParameter(options, "project")
+      const kind = readStringParameter(options, "kind")
+      const diagnostic = readStringParameter(options, "diagnostic")
       return [tsxPlan(
         "toolchain:architecture:attune-repair",
         "framework/architecture/src/attune-repair-cli.ts",
         [
           ...(project === null ? [] : ["--project", project]),
+          ...(kind === null ? [] : ["--kind", kind]),
+          ...(diagnostic === null ? [] : ["--diagnostic", diagnostic]),
           ...(readBooleanParameter(options, "allSafe", true) ? ["--all-safe"] : []),
         ],
         context.workspaceRoot,
@@ -841,7 +845,7 @@ const allowedParameterKeys = (
     case "architecture:check":
       return ["only"]
     case "architecture:generate":
-      return ["allSafe", "project"]
+      return ["allSafe", "diagnostic", "kind", "project"]
     case "architecture:mutate":
       return ["config"]
     case "bundler:build":

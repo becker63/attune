@@ -44,6 +44,24 @@ describe("attune repair CLI", () => {
     expect(index.shards[0]?.shard).toBe("framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json")
   })
 
+  it("materializes deterministic repair-kind cache artifacts", () => {
+    const workspaceRoot = makeRepairWorkspace()
+
+    const registry = runRepair(workspaceRoot, "--kind", "registry")
+    const freshness = runRepair(workspaceRoot, "--kind", "generated")
+
+    expect(registry.status).toBe(0)
+    expect(freshness.status).toBe(0)
+    expect(fs.readFileSync(
+      path.join(workspaceRoot, ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts"),
+      "utf8",
+    )).toContain("operation-registry")
+    expect(fs.readFileSync(
+      path.join(workspaceRoot, ".attune/cache/generated/platform-alchemy-k8s/generated-freshness.json"),
+      "utf8",
+    )).toContain("\"projection\": \"generated-freshness\"")
+  })
+
   it("refuses to overwrite divergent framework-owned generated materialization", () => {
     const workspaceRoot = makeRepairWorkspace({
       "packages/platform-alchemy-k8s/src/attune.generated.ts": "export const local = true\n",

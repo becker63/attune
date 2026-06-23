@@ -444,6 +444,46 @@ describe("attune-nx executors", () => {
     ])
   })
 
+  it("plans internal Attune repair kinds through the same typed materializer", async () => {
+    const calls: ExecutorProcessPlan[] = []
+    const result = await toolchainExecutor(
+      {
+        targetProject: "attuned-discovery",
+        tool: "architecture",
+        action: "generate",
+        toolId: "attune-repair",
+        parameters: {
+          allSafe: true,
+          project: "attuned-discovery",
+          kind: "registry",
+          diagnostic: "D123",
+        },
+        dryRun: false,
+      },
+      createExecutorContext({ calls }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(calls).toEqual([
+      expect.objectContaining({
+        adapter: "pnpm-exec-tsx",
+        executable: "pnpm",
+        args: [
+          "exec",
+          "tsx",
+          "framework/architecture/src/attune-repair-cli.ts",
+          "--project",
+          "attuned-discovery",
+          "--kind",
+          "registry",
+          "--diagnostic",
+          "D123",
+          "--all-safe",
+        ],
+      }),
+    ])
+  })
+
   it("plans worker fuzz and Arion container runs through typed resource metadata", async () => {
     const calls: ExecutorProcessPlan[] = []
     const fuzz = await toolchainExecutor(

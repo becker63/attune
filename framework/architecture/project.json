@@ -89,11 +89,169 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "workspace:attune-repair"
+            "attune-architecture:attune:repair-registry",
+            "attune-architecture:attune:repair-properties",
+            "attune-architecture:attune:repair-type-guidance",
+            "attune-architecture:attune:repair-evidence",
+            "attune-architecture:attune:repair-generated"
           ]
         },
         "dryRun": false
       }
+    },
+    "attune:repair-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for operation registry. Public agents should prefer attune-architecture:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "registry",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-architecture",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-architecture",
+          "kind": "registry"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-architecture/attune-operation-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-architecture/attune-operation-registry.ts"
+      ]
+    },
+    "attune:repair-properties": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property registry. Public agents should prefer attune-architecture:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "properties",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-architecture",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-architecture",
+          "kind": "properties"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-architecture/attune-property-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-architecture/attune-property-registry.ts"
+      ]
+    },
+    "attune:repair-type-guidance": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for type-guidance. Public agents should prefer attune-architecture:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "type-guidance",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-architecture",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-architecture",
+          "kind": "type-guidance"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-architecture/attune-type-guidance.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-architecture/attune-type-guidance.ts"
+      ]
+    },
+    "attune:repair-evidence": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for evidence scaffold. Public agents should prefer attune-architecture:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "evidence",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-architecture",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-architecture",
+          "kind": "evidence"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-architecture/attune-property-evidence.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/evidence/attune-architecture/evidence-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-architecture/attune-property-evidence.ts",
+        "{workspaceRoot}/.attune/cache/evidence/attune-architecture/evidence-scaffold.json"
+      ]
+    },
+    "attune:repair-generated": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for generated freshness. Public agents should prefer attune-architecture:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "generated",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-architecture",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-architecture",
+          "kind": "generated"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-architecture/generated-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-architecture/generated-freshness.json"
+      ]
     }
   }
 }
