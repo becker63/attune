@@ -166,7 +166,7 @@
         }
       }
     },
-    "property-joern:direct": {
+    "property-joern:container-direct": {
       "executor": "@attune/nx:toolchain",
       "options": {
         "targetProject": "joern-effect-properties",
@@ -201,8 +201,24 @@
         }
       }
     },
+    "property-joern:container-image": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "nix",
+        "action": "build",
+        "toolId": "joern-effect-property-image",
+        "parameters": {
+          "attr": ".#joern-effect-property-image"
+        },
+        "dryRun": false
+      }
+    },
     "property-joern:container": {
       "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        "property-joern:container-image"
+      ],
       "options": {
         "targetProject": "joern-effect-properties",
         "tool": "arion",
@@ -214,7 +230,7 @@
           "workers": 2,
           "cpusPerWorker": 2,
           "cpus": 4,
-          "nxTarget": "joern-effect-properties:property-joern:direct"
+          "nxTarget": "joern-effect-properties:property-joern:container-direct"
         },
         "resourceTier": "external",
         "evidenceOutputs": [
@@ -369,6 +385,9 @@
     },
     "fuzz:container": {
       "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        "property-joern:container-image"
+      ],
       "options": {
         "targetProject": "joern-effect-properties",
         "tool": "arion",
@@ -409,6 +428,9 @@
     },
     "fuzz:nightly:container": {
       "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        "property-joern:container-image"
+      ],
       "options": {
         "targetProject": "joern-effect-properties",
         "tool": "arion",
@@ -449,6 +471,9 @@
     },
     "fuzz:dsl-four-hour:container": {
       "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        "property-joern:container-image"
+      ],
       "options": {
         "targetProject": "joern-effect-properties",
         "tool": "arion",

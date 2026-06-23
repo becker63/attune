@@ -52,7 +52,7 @@ Current state:
 
 - `5.11`: implementation completed and now ready for blocker/validation bookkeeping.
 - `8.4`: complete (host Joern-gated property target validated in this environment).
-- `8.5`: blocked in this environment (missing `arion` binary; `spawn arion ENOENT`).
+- `8.5`: containerized target now executes via Nx+flake+Arion but fails due 4 property assertions in `test/property.test.ts`.
 
 ## Priority
 
@@ -67,7 +67,7 @@ Known remaining work:
 
 * `5.11`: add the real `joern-effect` Effect service boundary, likely `JoernTemplateExecutor`, using `@attune/nx:effect-service` where feasible. **Complete.**
 * `8.4`: run host `/dev/shm` Joern-gated property validation only if the exact target is available. **Complete.**
-* `8.5`: run containerized Joern-gated property validation only if the exact target is available. **Blocked by environment (`arion` missing).**
+* `8.5`: run containerized Joern-gated property validation only if the exact target is available. **Code-blocked by failing assertions in the containered property suite.**
 
 For `5.11`, inspect:
 
@@ -108,7 +108,7 @@ For `8.4`, run the exact host Joern-gated target from `packages/joern-effect-pro
 nx run joern-effect-properties:property-joern --skipNxCache
 ```
 
-For `8.5`, run the exact containerized target, likely:
+For `8.5`, run the exact containerized target:
 
 ```bash
 nx run joern-effect-properties:property-joern:container --skipNxCache
