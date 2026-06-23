@@ -60,11 +60,43 @@ Re-ran both required paths to keep the blocker state fresh:
 - `nx run joern-effect-properties:property-joern --skipNxCache` ✅ (passed again in this pass; 13 files / 68 tests)
 - `nx run joern-effect-properties:property-joern:container --skipNxCache` ❌
   - Build dependency target `property-joern:container-image` succeeds (`nix build .#joern-effect-property-image`).
-  - Container starts and executes `joern-effect-properties:property-joern:container-direct` successfully, but property suite fails with the same 4 assertions in `packages/joern-effect-properties/test/property.test.ts`:
+  - Arion composes and runs container with `joern-effect-properties:property-joern:container-direct`.
+  - Property suite still fails with the same 4 assertions in `packages/joern-effect-properties/test/property.test.ts`:
     - `source/sink scenarios pass the typed OXC -> Joern -> Graphology pipeline` (`expected 'safe' to be 'finding'`)
-    - `generated TypeScript call sites round-trip through Joern rows` (falsiness at invariant check)
+    - `generated TypeScript call sites round-trip through Joern rows` (failing invariant check)
     - `generated TypeScript call sites materialize schema-edge evidence graphs` (`Generated TypeScript evidence graph did not satisfy schema-edge invariants`)
     - `generated TypeScript service shapes produce graph facts through the V2 surface` (falsiness at graph-fact predicate)
-  - This confirms the host/container split is real in this environment and remains code-blocked in `joern-effect-properties`.
+  - Summary in this slice:
+    - `ATTUNE_EXECUTOR_SUMMARY ... "target":"property-joern:container-direct","status":"failed","exitCode":1`
+    - `NX   Running target property-joern:container-direct for project joern-effect-properties failed`
+  - This confirms the containerized mode is still code-blocked by environment/runtime parity vs host run.
 
-No code artifacts were changed in this pass; only validation was re-run and evidence clarified.
+- `nx run joern-effect-properties:property-joern --skipNxCache` (host `/dev/shm` gated, nixDevShell enabled) ✅
+  - Target completed successfully in this same environment:
+    - `Test Files 13 passed (13)`
+    - `Tests 68 passed (68)`
+    - `duration ~96s`
+    - `status:"passed","exitCode":0`
+  - This preserves `8.4` as complete where available.
+
+Current local evidence status (this run):
+
+- `nix/compose/joern-effect-property.arion.nix` now carries explicit passthrough env defaults for:
+  - `JOERN_EFFECT_DEBUG`
+  - `JOERN_EFFECT_E2E_RUNS`
+- This keeps the compose layer explicit for diagnostics and debugging, but does **not** resolve the 8.5 assertion failures.
+
+One incidental runtime-layer tweak was made:
+- `nix/compose/joern-effect-property.arion.nix` now adds configurable `JOERN_EFFECT_DEBUG` and `JOERN_EFFECT_E2E_RUNS` env passthrough so containerized runs can mirror host property settings.
+
+Validation slice for this commit:
+
+- `nx run joern-effect-properties:property-joern --skipNxCache` ✅
+- `nx run joern-effect-properties:property-joern:container --skipNxCache` ❌
+- `nx run workspace:package-contracts-check --skipNxCache` ✅
+- `openspec validate standardize-nx-nix-build --type change` ✅
+- `git diff --check` ✅
+
+Validation not run in this slice:
+- `nx run workspace:policy-fast`
+- `nx run joern-effect-properties:property-joern:container --skipNxCache` with alternate JOERN_EFFECT_* permutations (beyond the two checked states above).
