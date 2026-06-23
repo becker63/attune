@@ -18,6 +18,8 @@ Validated:
   - Evidence: 13 test files / 68 tests passed, summary exit status passed.
 - `openspec validate standardize-nx-nix-build --type change`
   - Result: PASS
+- `openspec validate standardize-nx-nix-build --type change --strict`
+  - Result: PASS
 - `git diff --check`
   - Result: PASS
 
