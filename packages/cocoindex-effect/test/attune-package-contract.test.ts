@@ -25,7 +25,7 @@ import {
   normalizeRawHitsOperation,
   searchAnchorsOperation,
   syncMcpToolRegistryOperation,
-} from "../src/attune.package.js"
+} from "../../../framework/architecture/src/generated/package-contracts/cocoindex-effect/attune.contract.generated.js"
 
 const requiredOperationIds = [
   "ensure-indexed",

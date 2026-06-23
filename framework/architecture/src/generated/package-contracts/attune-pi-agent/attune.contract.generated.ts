@@ -9,17 +9,17 @@ import {
   touches,
 } from "@attune/framework-protocol"
 
-import { EvidenceFixture, EvidenceMatrix } from "./schema/evidence.js"
+import { EvidenceFixture, EvidenceMatrix } from "../../../../../../packages/attune-pi-agent/src/schema/evidence.js"
 import {
   PermissionCheck,
   PermissionProfile,
   PermissionRuleKind,
-} from "./schema/permission-profile.js"
+} from "../../../../../../packages/attune-pi-agent/src/schema/permission-profile.js"
 import {
   AttuneSpecConversationState,
   AttuneSpecConversationTurn,
-} from "./schema/pi-conversation.js"
-import { SpecInterviewInput, SpecInterviewResult } from "./schema/spec-interview.js"
+} from "../../../../../../packages/attune-pi-agent/src/schema/pi-conversation.js"
+import { SpecInterviewInput, SpecInterviewResult } from "../../../../../../packages/attune-pi-agent/src/schema/spec-interview.js"
 import { createAttuneGenerated } from "./attune.generated.js"
 
 export { PackageContractSchema } from "@attune/framework-protocol"

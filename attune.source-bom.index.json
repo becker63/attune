@@ -20,7 +20,7 @@
     {
       "project": "attune-pi-agent",
       "projectRoot": "packages/attune-pi-agent",
-      "shard": "packages/attune-pi-agent/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/attune-pi-agent.json"
     },
     {
       "project": "attuned-discovery",
@@ -30,7 +30,7 @@
     {
       "project": "cocoindex-effect",
       "projectRoot": "packages/cocoindex-effect",
-      "shard": "packages/cocoindex-effect/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/cocoindex-effect.json"
     },
     {
       "project": "effect-oxlint-policy",

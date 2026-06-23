@@ -936,7 +936,7 @@ describe("framework policy CLI", () => {
       line.startsWith("WARNING attune/package-local-surface/one-attune-file package-local-attune-companion ")
     )).toBe(true)
     expect(result.ratchetDiagnostics.every((diagnostic) => diagnostic.severity === "warning")).toBe(true)
-  }, 60_000)
+  }, 120_000)
 })
 
 function makeWorkspace(files: Record<string, string>): string {

@@ -1,7 +1,6 @@
 import { defineAttunePackageDeclaration } from "@attune/framework-protocol"
 
 export { PackageContractSchema } from "@attune/framework-protocol"
-export * from "./attune.contract.generated.js"
 
 export const PackageViewRoots = {
   reactivityKeys: [

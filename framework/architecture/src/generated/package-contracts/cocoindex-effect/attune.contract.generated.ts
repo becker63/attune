@@ -12,7 +12,7 @@ import {
 import {
   CocoIndexClientFixture,
   type CocoIndexFixtureInput,
-} from "./CocoIndexClientFixture.js"
+} from "../../../../../../packages/cocoindex-effect/src/CocoIndexClientFixture.js"
 import {
   CocoIndexFixtureLifecycle,
   JoernDslFixtureLifecycle,
@@ -20,7 +20,7 @@ import {
   RepositorySessionRequest,
   RepositoryToolStatus,
   makeNoopJoernDslClient,
-} from "./RepositoryIntelligence.js"
+} from "../../../../../../packages/cocoindex-effect/src/RepositoryIntelligence.js"
 import {
   AnchorCard,
   CocoIndexCommandEnvelope,
@@ -31,10 +31,10 @@ import {
   RawCocoIndexHit,
   SearchAnchorsRequest,
   SearchSimilarAnchorsRequest,
-} from "./model.js"
+} from "../../../../../../packages/cocoindex-effect/src/model.js"
 import {
   CocoIndexMcpSearchResult,
-} from "./generated/cocoindex-code-mcp.js"
+} from "../../../../../../packages/cocoindex-effect/src/generated/cocoindex-code-mcp.js"
 import { createAttuneGenerated } from "./attune.generated.js"
 
 export { PackageContractSchema } from "@attune/framework-protocol"

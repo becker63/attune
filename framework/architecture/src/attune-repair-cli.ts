@@ -39,6 +39,7 @@ const repairProjects: readonly RepairProject[] = [
 ]
 const safeRelocationProjectIds = new Set([
   "attune-foldkit",
+  "attune-pi-agent",
   "attuned-discovery",
   "platform-alchemy-k8s",
 ])

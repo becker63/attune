@@ -2,7 +2,6 @@ import { Schema } from "effect"
 import { describe, expect, expectTypeOf, it } from "vitest"
 
 import {
-  PackageContractSchema,
   assertExactHandlers,
   assertLayerProvidesPackageServices,
   assertLayerSatisfiesRequiredServices,
@@ -21,12 +20,13 @@ import {
   PackageTestLayer,
   PackageTypeGuidance,
   PackageViews,
+  PackageContractSchema,
   PiAgentServices,
   decidePermissionOperation,
   generatePermissionPolicyArtifactOperation,
   generatorLaws,
   policyRuleLaws,
-} from "../src/attune.package.js"
+} from "../../../framework/architecture/src/generated/package-contracts/attune-pi-agent/attune.contract.generated.js"
 
 type PiAgentOperationId = OperationIds<typeof PackageContract>
 
