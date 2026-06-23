@@ -5,6 +5,7 @@
   "targets": {
     "build": {
       "executor": "@attune/nx:toolchain",
+      "dependsOn": [],
       "outputs": [
         "{projectRoot}/dist"
       ],
@@ -43,6 +44,7 @@
     },
     "test": {
       "executor": "@attune/nx:package-check",
+      "dependsOn": [],
       "options": {
         "dryRun": false,
         "checks": [
