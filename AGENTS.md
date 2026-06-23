@@ -41,9 +41,9 @@ git remote add attune https://github.com/becker63/attune.git 2>/dev/null || true
 git fetch attune main
 ```
 
-Use Nx targets and `@attune/nx` generators as the public workflow API. Nix is
-the reproducible toolchain substrate for those targets; do not teach Corepack,
-global package-manager bootstrap, or ad-hoc package scripts as the normal agent
+Use Nx targets as the public workflow API. Nix is the reproducible toolchain
+substrate for those targets; do not teach Corepack, global package-manager
+bootstrap, raw generators, or ad-hoc package scripts as the normal agent
 entrypoint.
 
 The canonical cloud smoke checks are Nx-owned targets:
@@ -104,14 +104,16 @@ For package or framework-facing work, use the simple loop:
 ```bash
 nx run workspace:attune-check
 nx run workspace:attune-repair
+nx run <project>:attune-check
+nx run <project>:attune-repair
 nx run <project>:typecheck
 nx run <project>:test
 ```
 
-Use `workspace:package-contracts-check` when you need the narrower contract
-diagnostic surface, and `workspace:policy-fast` for the normal policy gate.
-Future project repair targets should follow the shape
-`nx run <project>:attune:repair`.
+Use `workspace:package-contracts-check`, `workspace:framework-policy-check`,
+`workspace:policy-fast`, and generator-specific targets only as advanced or
+debugging surfaces. The normal first response is check output, then the repair
+target suggested by diagnostics.
 
 For package declarations:
 
@@ -119,8 +121,7 @@ For package declarations:
 2. Open the referenced `src/attune.package.ts` declaration.
 3. Keep `attune.package.ts` small: package id/kind, operations, schemas,
    services, view roots, waivers, and rare custom laws only.
-4. Use `@attune/nx` generators, sync generators, or framework code actions for
-   repeated shapes and materialization.
+4. Run the suggested `attune-repair` target before choosing a generator by hand.
 5. Implement behavior inside generated `Effect.Service` boundaries and update
    Effect Schema-backed operation metadata, laws, waivers, and provenance.
 6. Expose or update package Reactivity keys, base atoms, derived atoms, package
@@ -137,14 +138,30 @@ from FastCheck/property runs belongs in framework services, stdout/CI artifacts,
 or gitignored local cache such as `.attune/cache`; checked-in protocol reports
 are not part of the core workflow.
 
+Each package should normally have exactly one package-local Attune file:
+
+```text
+src/attune.package.ts
+```
+
+Do not create package-local Attune compiler output as the normal path:
+
+```text
+src/attune.generated.ts
+src/attune.contract.generated.ts
+src/attune.package.typecheck.ts
+attune.source-bom.json
+```
+
+Existing files with those names are migration scaffolding until Nx repair and
+ProtocolStore projection fully own their materialization.
+
 Do not manually expand `attune.package.ts` with derived handler maps,
 properties, type-guidance partitions, RPC descriptors, coverage-search plans,
 evidence producer maps, worker metadata, or generated artifact ledgers. Those
-belong in deterministic generated companions such as
-`src/attune.contract.generated.ts` and `src/attune.generated.ts`, focused
-package-local evidence modules, or private ProtocolStore projections. Run the
-suggested Nx repair target before editing generated or derived protocol
-artifacts by hand.
+belong in framework-owned generated/cache materialization, focused evidence
+modules, or private ProtocolStore projections. Run the suggested Nx repair
+target before editing generated or derived protocol artifacts by hand.
 
 ## Repo Map
 
@@ -209,18 +226,21 @@ not block this bootstrap queue on them unless the issue explicitly says so.
 
 ## Nx, Nix, Source BOM, And Generators
 
-Use Nx targets/generators as the public command surface. Use Nix as the
-substrate that supplies the reproducible tools behind those targets, not as a
-replacement public API. Useful commands:
+Use Nx targets as the public command surface. Use Nix as the substrate that
+supplies the reproducible tools behind those targets, not as a replacement
+public API. Useful commands:
 
 ```bash
 nx show projects
+nx run workspace:attune-check
+nx run workspace:attune-repair
+nx run <project>:attune-check
+nx run <project>:attune-repair
 nx run <project>:typecheck
 nx run <project>:test
 nx run <project>:build
 nx run workspace:policy-fast
 nx run workspace:policy-proof-pressure
-nx run workspace:package-contracts-check
 ```
 
 When the local shell lacks `nx`, enter the dev shell first and invoke the same
@@ -228,28 +248,12 @@ targets from inside it. `pnpm exec nx ...` may appear there only as an
 inside-dev-shell detail; docs and agent reports should name the Nx target or
 generator that is the stable workflow contract.
 
-Before editing repeated or generated shapes, query Source BOM shard ownership
-and prefer an `@attune/nx` generator or sync generator over hand-written drift.
-If the Source BOM shard is missing, ambiguous, or points to another owner, stop
-and report the follow-up instead of guessing. Treat Source BOM and
+Before editing repeated or generated shapes, run `attune-check` and use the
+repair action it suggests. Generators remain important, but they are normal
+repair implementations rather than default agent memory. If a diagnostic has no
+safe repair, report the follow-up instead of guessing. Treat Source BOM and
 generator-shape manifests as migration scaffolding or temporary compatibility
 views, not final semantic workflow surfaces.
-
-Current `@attune/nx` generators:
-
-- `@attune/nx:effect-service`
-- `@attune/nx:joern-template`
-- `@attune/nx:cocoindex-mcp-tool`
-- `@attune/nx:sync-effect-layers`
-- `@attune/nx:sync-joern-templates`
-- `@attune/nx:sync-cocoindex-mcp-tools`
-
-The framework migration calls for more generators and sync actions: protocol
-materialization, framework diagnostics, package contract sync, event, decision,
-projection, atom-family, derived-atom, score-feature, decision-packet-field, and
-foldkit-scene-atom. If a task needs one of those repeated shapes, create or
-extend a generator when practical. Otherwise, leave a follow-up explaining the
-missing generator.
 
 ## Safety Rules
 

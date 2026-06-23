@@ -482,9 +482,12 @@ describe("@attune/framework-runtime", () => {
     )
 
     expect(result.explanation?.expectedEvidenceKinds).toContain("atom-movement")
-    expect(result.repairPlan?.actions[0]?.target).toBe(
-      "@attune/framework-nx:atom-view-edge",
-    )
+    expect(result.repairPlan?.actions[0]).toMatchObject({
+      target: "demo:attune-repair",
+      options: expect.objectContaining({
+        internalGenerator: "@attune/framework-nx:atom-view-edge",
+      }),
+    })
   })
 
   it("keeps pure query helpers available for focused projections", () => {
@@ -512,9 +515,12 @@ describe("@attune/framework-runtime", () => {
     expect(explainObligation(input, "demo:project:view-movement")?.expectedEvidenceKinds).toContain(
       "atom-movement",
     )
-    expect(getRepairPlan(input, "delta:demo:project:view-movement")?.actions[0]?.target).toBe(
-      "@attune/framework-nx:atom-view-edge",
-    )
+    expect(getRepairPlan(input, "delta:demo:project:view-movement")?.actions[0]).toMatchObject({
+      target: "demo:attune-repair",
+      options: expect.objectContaining({
+        internalGenerator: "@attune/framework-nx:atom-view-edge",
+      }),
+    })
   })
 
   it("projects invalid stored payloads as diagnostics", async () => {

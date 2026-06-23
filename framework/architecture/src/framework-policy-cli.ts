@@ -49,8 +49,11 @@ export interface FrameworkPolicyWorkspaceResult {
 }
 
 export const FrameworkFinalRatchetRuleId = "attune/framework-final-ratchet" as const
+export const PackageLocalAttuneSurfaceRuleId = "attune/package-local-surface/one-attune-file" as const
 
-export type FrameworkFinalRatchetRuleId = typeof FrameworkFinalRatchetRuleId
+export type FrameworkFinalRatchetRuleId =
+  | typeof FrameworkFinalRatchetRuleId
+  | typeof PackageLocalAttuneSurfaceRuleId
 
 export type FrameworkFinalRatchetDiagnosticCode =
   | "missing-package-contract"
@@ -75,6 +78,7 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "stale-generated-file"
   | "manual-derived-truth"
   | "package-declaration-too-large"
+  | "package-local-attune-companion"
 
 export interface FrameworkFinalRatchetDiagnostic {
   readonly ruleId: FrameworkFinalRatchetRuleId
@@ -123,6 +127,12 @@ const manualDerivedTruthMarkerPattern =
   /\b(?:attune-manual-derived-truth|manualProtocolTruth|manualDerivedTruth|derivedTruth\s*:\s*["']manual["'])\b/u
 const packageDeclarationWarningLineThreshold = 180
 const packageDeclarationErrorLineThreshold = 260
+const packageLocalAttuneCompanionNames = [
+  "src/attune.contract.generated.ts",
+  "src/attune.generated.ts",
+  "src/attune.package.typecheck.ts",
+  "attune.source-bom.json",
+] as const
 
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
 
@@ -395,6 +405,7 @@ const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode
   "migration-only-alias",
   "stale-generated-file",
   "manual-derived-truth",
+  "package-local-attune-companion",
 ])
 
 function collectFiles(root: string): readonly WorkspaceFile[] {
@@ -490,9 +501,16 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     }
 
     diagnostics.push(...checkPackageContractResidualPolicy(packageRoot, semanticContractFile))
+    diagnostics.push(...checkPackageLocalAttuneSurface(packageRoot, filesByPath))
     diagnostics.push(...checkPackageDeclarationSize(packageRoot, contractFile))
     diagnostics.push(...checkAtomReactivityConformance(packageRoot, semanticContractFile))
     diagnostics.push(...findExpiredMigrationWaivers(semanticContractFile))
+  }
+
+  for (const packageRoot of findAuthoredAttuneRoots(files)) {
+    if (activePackageRoots.includes(packageRoot)) continue
+    const filesByPath = new Map(files.map((file) => [file.path, file]))
+    diagnostics.push(...checkPackageLocalAttuneSurface(packageRoot, filesByPath))
   }
 
   for (const file of files) {
@@ -504,6 +522,29 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
   }
 
   return diagnostics
+}
+
+function checkPackageLocalAttuneSurface(
+  packageRoot: string,
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): readonly FrameworkFinalRatchetDiagnostic[] {
+  const companionPaths = packageLocalAttuneCompanionNames
+    .map((name) => `${packageRoot}/${name}`)
+    .filter((candidatePath) => filesByPath.has(candidatePath))
+
+  if (companionPaths.length === 0) return []
+
+  return [finalRatchetDiagnostic(
+    "package-local-attune-companion",
+    `${packageRoot}/src/attune.package.ts`,
+    [
+      `Package ${packageRoot} still has package-local Attune companion files: ${companionPaths.join(", ")}.`,
+      "The final package-local Attune surface is src/attune.package.ts only.",
+      "Move generated contract companions, generated registries, typecheck assertions, and Source BOM shards to framework-owned cache/projection state.",
+      `Run nx run ${projectNameForRoot(packageRoot, filesByPath)}:attune-repair or workspace:attune-repair when the repair target supports this root.`,
+    ].join(" "),
+    "warning",
+  )]
 }
 
 function checkPackageDeclarationSize(
@@ -525,7 +566,7 @@ function checkPackageDeclarationSize(
     [
       `Package declaration ${packageRoot}/src/attune.package.ts has ${lineCount} lines and exceeds the staged ${threshold} line threshold.`,
       "Move derived handlers, properties, type guidance, RPC descriptors, evidence maps, coverage search plans, and generated artifact metadata into generated files or ProtocolStore projections.",
-      `Run nx run ${projectNameFromPackageRoot(packageRoot)}:attune:repair or workspace:attune-repair when available.`,
+      `Run nx run ${projectNameFromPackageRoot(packageRoot)}:attune-repair or workspace:attune-repair when available.`,
     ].join(" "),
     severity,
   )]
@@ -694,8 +735,33 @@ function findActivePackageRoots(files: readonly WorkspaceFile[]): readonly strin
   return [...roots].sort()
 }
 
+function findAuthoredAttuneRoots(files: readonly WorkspaceFile[]): readonly string[] {
+  const roots = new Set<string>()
+
+  for (const file of files) {
+    const match = /^(?<root>(?:packages|framework)\/[^/]+)\/src\/attune\.package\.ts$/u.exec(file.path)
+    const root = match?.groups?.root
+    if (root !== undefined) roots.add(root)
+  }
+
+  return [...roots].sort()
+}
+
 function projectNameFromPackageRoot(packageRoot: string): string {
   return packageRoot.split("/").at(-1) ?? packageRoot
+}
+
+function projectNameForRoot(
+  packageRoot: string,
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): string {
+  const projectFile = filesByPath.get(`${packageRoot}/project.json`)
+  if (projectFile !== undefined) {
+    const project = parseJsonObject(projectFile)
+    if (typeof project?.name === "string") return project.name
+  }
+
+  return projectNameFromPackageRoot(packageRoot)
 }
 
 function checkAtomReactivityConformance(
@@ -1478,7 +1544,9 @@ function finalRatchetDiagnostic(
   severity: FrameworkFinalRatchetDiagnostic["severity"] = "error",
 ): FrameworkFinalRatchetDiagnostic {
   return {
-    ruleId: FrameworkFinalRatchetRuleId,
+    ruleId: code === "package-local-attune-companion"
+      ? PackageLocalAttuneSurfaceRuleId
+      : FrameworkFinalRatchetRuleId,
     code,
     severity,
     filePath,

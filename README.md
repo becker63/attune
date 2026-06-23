@@ -52,9 +52,10 @@ nx run <project>:test
 ```
 
 Nx is the public workflow surface. Nix supplies the reproducible tools behind
-those targets. Package declarations should stay small; generated framework
-consequences live in generated companions, framework services, or gitignored
-cache. See `docs/attuned/Attune Framework Operating Surface.md`.
+those targets. A normal package's Attune surface should be
+`src/attune.package.ts`; generated framework consequences belong to Nx repair,
+framework services, ProtocolStore projections, or gitignored cache. See
+`docs/attuned/Attune Framework Operating Surface.md`.
 
 Container-backed fuzzing and proof pressure are exposed through Nx targets
 backed by the Nix/Arion runtime:

@@ -111,9 +111,9 @@ describe("command surface conformance", () => {
       files: [{
         path: "AGENTS.md",
         content: [
-          "Run workspace:policy-fast for commit checks.",
-          "Run workspace:policy-proof-pressure for heavy campaigns.",
-          "Use workspace:package-contracts-check for focused repair.",
+          "Run workspace:attune-check first.",
+          "Run workspace:attune-repair when diagnostics offer a safe repair.",
+          "Use project:typecheck and project:test for focused validation.",
         ].join("\n"),
       }],
     })
@@ -184,6 +184,21 @@ describe("command surface conformance", () => {
         }),
       ]),
     )
+  })
+
+  it("warns when public docs teach direct generator invocation before diagnostics", () => {
+    const result = checkCommandSurfaceConformance({
+      files: [{
+        path: "docs/attuned/example.md",
+        content: "Run nx generate @attune/nx:effect-service to fix the package.",
+      }],
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.diagnostics).toContainEqual(expect.objectContaining({
+      ruleId: "attune/command-surface/direct-generator-doc",
+      severity: "warning",
+    }))
   })
 
   it("allows raw bootstrap or inside-dev-shell details when classified internal", () => {

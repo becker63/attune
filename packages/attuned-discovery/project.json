@@ -67,6 +67,51 @@
         ],
         "dryRun": false
       }
+    },
+    "attune-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable attune-check verb.",
+        "attune": {
+          "tier": "public",
+          "surface": "check"
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:attune-check"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune-repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable attune-repair verb when available.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:attune-repair"
+          ]
+        },
+        "dryRun": false
+      }
     }
   }
 }

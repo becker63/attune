@@ -422,7 +422,7 @@ export const diagnosticFromQueryError = (
       id: "refresh-protocol-materialization",
       title: "Refresh protocol materialization",
       kind: "nx-check",
-      target: "workspace:package-contracts-check",
+      target: "workspace:attune-check",
       options: { packageId: error.packageId ?? fallback.packageId },
     }],
     relatedEvidence: [],

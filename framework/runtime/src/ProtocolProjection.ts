@@ -125,16 +125,18 @@ export const computeProtocolDeltas = (
         sourcePath: input.sourcePath,
         obligationId: obligation.obligationId,
         explanation: obligation.reason,
-        repairActions: [{
-          id: repairActionIdForObligation(obligation),
-          title: repairActionTitleForObligation(obligation),
-          kind: "nx-generator",
-          target: repairActionTargetForObligation(obligation),
-          options: {
-            packageId: input.packageId,
-            ...(obligation.operationId === undefined ? {} : { operationId: obligation.operationId }),
-          },
-        }],
+      repairActions: [{
+        id: repairActionIdForObligation(obligation),
+        title: repairActionTitleForObligation(obligation),
+        kind: "nx-generator",
+        target: `${input.packageId}:attune-repair`,
+        options: {
+          packageId: input.packageId,
+          repairKind: repairActionKindForObligation(obligation),
+          internalGenerator: repairActionTargetForObligation(obligation),
+          ...(obligation.operationId === undefined ? {} : { operationId: obligation.operationId }),
+        },
+      }],
       }
 
       return {
@@ -153,8 +155,12 @@ export const computeProtocolDeltas = (
         id: "refresh-protocol-materialization",
         title: "Refresh protocol materialization",
         kind: "nx-generator" as const,
-        target: "@attune/framework-nx:protocol-materialize",
-        options: { packageId: input.packageId },
+        target: `${input.packageId}:attune-repair`,
+        options: {
+          packageId: input.packageId,
+          repairKind: "protocol-materialize",
+          internalGenerator: "@attune/framework-nx:protocol-materialize",
+        },
       }],
     })),
     ...waiverIssues.map((waiver) => ({
@@ -170,7 +176,7 @@ export const computeProtocolDeltas = (
         id: "refresh-waiver-state",
         title: "Review package waiver state",
         kind: "nx-check" as const,
-        target: "workspace:package-contracts-check",
+        target: "workspace:attune-check",
         options: {
           packageId: input.packageId,
           waiverId: waiver.waiverId,
@@ -189,9 +195,10 @@ export const computeProtocolDeltas = (
         id: "replay-counterexample",
         title: "Replay counterexample",
         kind: "nx-check" as const,
-        target: "workspace:property-evidence",
+        target: "workspace:attune-check",
         options: {
           packageId: input.packageId,
+          internalTarget: "workspace:property-evidence",
           replayId: metadata.replayId,
           runId: metadata.runId,
           seed: metadata.seed,
@@ -211,9 +218,10 @@ export const computeProtocolDeltas = (
         id: "repair-generator-filter",
         title: "Review generated filter or schema partition",
         kind: "nx-check" as const,
-        target: "workspace:coverage-conformance",
+        target: "workspace:attune-check",
         options: {
           packageId: input.packageId,
+          internalTarget: "workspace:coverage-conformance",
           coverageId: feedback.coverageId,
           coveragePoint: feedback.coveragePoint,
         },
@@ -231,9 +239,10 @@ export const computeProtocolDeltas = (
         id: "strengthen-property-oracle",
         title: "Strengthen property oracle",
         kind: "nx-check" as const,
-        target: "workspace:property-evidence",
+        target: "workspace:attune-check",
         options: {
           packageId: input.packageId,
+          internalTarget: "workspace:property-evidence",
           coverageId: feedback.coverageId,
           coveragePoint: feedback.coveragePoint,
         },
@@ -335,6 +344,17 @@ const repairActionTitleForObligation = (obligation: AttuneProtocolObligation): s
       return "Generate missing atom view edge"
     default:
       return "Generate property evidence scaffold"
+  }
+}
+
+const repairActionKindForObligation = (obligation: AttuneProtocolObligation): string => {
+  switch (obligation.kind) {
+    case "type-guidance":
+      return "type-guidance"
+    case "view-movement":
+      return "atom-view-edge"
+    default:
+      return "property-evidence"
   }
 }
 

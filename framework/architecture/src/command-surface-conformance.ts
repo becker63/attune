@@ -3,6 +3,7 @@ export type CommandSurfaceRuleId =
   | "attune/command-surface/package-script"
   | "attune/command-surface/stale-policy-architecture"
   | "attune/command-surface/raw-tool-doc"
+  | "attune/command-surface/direct-generator-doc"
 
 export interface CommandSurfaceDiagnostic {
   readonly ruleId: CommandSurfaceRuleId
@@ -29,6 +30,7 @@ export interface CommandSurfaceConformanceResult {
 
 const rawToolPattern = /(^|[`"\s])(arion|alchemy|bash|bun|corepack|deno|docker|helm|joern|kubectl|nix|nixos-rebuild|node|npm|npx|pnpm|podman|sh|stryker|tsx|ts-node|tsc|vite|vitest|yarn|zsh)(\s|$)/iu
 const stalePolicyArchitecturePattern = /\bworkspace:policy-architecture\b/u
+const directAttuneGeneratorDocPattern = /\bnx\s+(?:g|generate)\s+@attune\/nx:[\w-]+/u
 
 export const checkCommandSurfaceConformance = ({
   files,
@@ -107,6 +109,14 @@ const checkDocCommandSurface = (file: CommandSurfaceFile): readonly CommandSurfa
         file.path,
         "attune/command-surface/raw-tool-doc",
         `Line ${index + 1} documents a raw tool invocation as public workflow; route the surface through Nx.`,
+      ))
+    }
+
+    if (directAttuneGeneratorDocPattern.test(line) && !isInternalGuidance(file, line)) {
+      diagnostics.push(warning(
+        file.path,
+        "attune/command-surface/direct-generator-doc",
+        `Line ${index + 1} documents a direct @attune/nx generator invocation as public workflow; prefer attune-check diagnostics and attune-repair.`,
       ))
     }
   })
@@ -256,6 +266,17 @@ const error = (
 ): CommandSurfaceDiagnostic => ({
   ruleId,
   severity: "error",
+  filePath,
+  message,
+})
+
+const warning = (
+  filePath: string,
+  ruleId: CommandSurfaceRuleId,
+  message: string,
+): CommandSurfaceDiagnostic => ({
+  ruleId,
+  severity: "warning",
   filePath,
   message,
 })

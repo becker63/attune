@@ -197,6 +197,47 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("warns when package-local Attune companions remain beside the authored declaration", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/generated-companions/package.json": JSON.stringify({ name: "@attune/generated-companions" }),
+      "packages/generated-companions/src/attune.package.ts": packageContractSource({
+        packageId: "generated-companions",
+        viewsBody: [
+          "  reactivityKeys: [\"generated.changed\"],",
+          "  atoms: [\"generatedAtom\"],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+      "packages/generated-companions/src/attune.contract.generated.ts": packageContractSource({
+        packageId: "generated-companions",
+        viewsBody: [
+          "  reactivityKeys: [\"generated.changed\"],",
+          "  atoms: [\"generatedAtom\"],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+      "packages/generated-companions/src/attune.generated.ts": "export const generatedRegistry = true\n",
+      "packages/generated-companions/src/attune.package.typecheck.ts": "export {}\n",
+      "packages/generated-companions/attune.source-bom.json": JSON.stringify({ project: "generated-companions" }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "package-local-attune-companion",
+        filePath: "packages/generated-companions/src/attune.package.ts",
+        severity: "warning",
+      }),
+    ]))
+    expect(result.outputLines).toEqual(expect.arrayContaining([
+      expect.stringContaining("attune/package-local-surface/one-attune-file package-local-attune-companion"),
+    ]))
+  })
+
   it("rejects mutating package operations that do not touch Reactivity keys or atoms", () => {
     const workspaceRoot = makeWorkspace({
       "packages/no-operation-touch/package.json": JSON.stringify({ name: "@attune/no-operation-touch" }),
@@ -815,7 +856,8 @@ describe("framework policy CLI", () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.outputLines.every((line) =>
-      line.startsWith("WARNING attune/framework-final-ratchet package-declaration-too-large ")
+      line.startsWith("WARNING attune/framework-final-ratchet package-declaration-too-large ") ||
+      line.startsWith("WARNING attune/package-local-surface/one-attune-file package-local-attune-companion ")
     )).toBe(true)
     expect(result.ratchetDiagnostics.every((diagnostic) => diagnostic.severity === "warning")).toBe(true)
   }, 60_000)

@@ -1,6 +1,7 @@
 import {
   hashProtocolValue,
   type AttuneGeneratedArtifactRecord,
+  type AttuneProtocolDiagnostic,
   type AttuneProtocolDescriptor,
   type AttuneProtocolOperationDescriptor,
 } from "@attune/framework-protocol"
@@ -17,6 +18,23 @@ export interface FrameworkNxActionPlan {
   readonly validationTarget?: string
 }
 
+export interface AttuneRepairPlan {
+  readonly diagnosticId: string
+  readonly safety: "safe" | "needs-review" | "manual-only"
+  readonly target: string
+  readonly command: string
+  readonly generator?: string
+  readonly repairKind: string
+  readonly changes: readonly {
+    readonly path: string
+    readonly kind: "create" | "update" | "delete" | "regenerate"
+    readonly generated: boolean
+  }[]
+  readonly doNotEdit?: readonly string[]
+  readonly validateAfter?: readonly string[]
+  readonly explanation: string
+}
+
 export const FrameworkNxActionPlanSchema = Schema.Struct({
   actionId: Schema.String,
   title: Schema.String,
@@ -26,6 +44,23 @@ export const FrameworkNxActionPlanSchema = Schema.Struct({
   generatorOrTarget: Schema.String,
   options: Schema.Record(Schema.String, Schema.Unknown),
   validationTarget: Schema.optional(Schema.String),
+})
+
+export const AttuneRepairPlanSchema = Schema.Struct({
+  diagnosticId: Schema.String,
+  safety: Schema.Literals(["safe", "needs-review", "manual-only"] as const),
+  target: Schema.String,
+  command: Schema.String,
+  generator: Schema.optional(Schema.String),
+  repairKind: Schema.String,
+  changes: Schema.Array(Schema.Struct({
+    path: Schema.String,
+    kind: Schema.Literals(["create", "update", "delete", "regenerate"] as const),
+    generated: Schema.Boolean,
+  })),
+  doNotEdit: Schema.optional(Schema.Array(Schema.String)),
+  validateAfter: Schema.optional(Schema.Array(Schema.String)),
+  explanation: Schema.String,
 })
 
 export const FrameworkNxGeneratedArtifactKindSchema = Schema.Literals([
@@ -78,18 +113,71 @@ const generatorTargets = {
   propertyEvidence: "@attune/framework-nx:protocol-evidence",
   atomViewEdge: "@attune/framework-nx:atom-view-edge",
   typeGuidance: "@attune/framework-nx:type-guidance",
-  frameworkDiagnostics: "workspace:package-contracts-check",
+  frameworkDiagnostics: "workspace:attune-check",
+  packageContract: "@attune/nx:package-contract",
+  effectService: "@attune/nx:effect-service",
+  joernTemplate: "@attune/nx:joern-template",
+  cocoindexMcpTool: "@attune/nx:cocoindex-mcp-tool",
 } as const
 
 export const frameworkRepairTargets = {
   workspaceCheck: "workspace:attune-check",
   workspaceRepair: "workspace:attune-repair",
-  projectRepair: (project: string): string => `${project}:attune:repair`,
-  projectRepairRegistry: (project: string): string => `${project}:attune:repair-registry`,
-  projectRepairProperties: (project: string): string => `${project}:attune:repair-properties`,
-  projectRepairTypeGuidance: (project: string): string => `${project}:attune:repair-type-guidance`,
-  projectRepairEvidence: (project: string): string => `${project}:attune:repair-evidence`,
-  projectRepairGenerated: (project: string): string => `${project}:attune:repair-generated`,
+  projectCheck: (project: string): string => `${project}:attune-check`,
+  projectRepair: (project: string): string => `${project}:attune-repair`,
+  internalProjectRepairRegistry: (project: string): string => `${project}:attune:repair-registry`,
+  internalProjectRepairProperties: (project: string): string => `${project}:attune:repair-properties`,
+  internalProjectRepairTypeGuidance: (project: string): string => `${project}:attune:repair-type-guidance`,
+  internalProjectRepairEvidence: (project: string): string => `${project}:attune:repair-evidence`,
+  internalProjectRepairGenerated: (project: string): string => `${project}:attune:repair-generated`,
+} as const
+
+const repairRoutes = {
+  "attune/protocol/missing-package-contract": {
+    generator: generatorTargets.packageContract,
+    repairKind: "package-contract",
+    changePath: "src/attune.package.ts",
+  },
+  "attune/protocol/stale-package-contract": {
+    generator: generatorTargets.packageContract,
+    repairKind: "package-contract",
+    changePath: "src/attune.package.ts",
+  },
+  "attune/protocol/missing-generated-registry": {
+    generator: generatorTargets.operationRegistry,
+    repairKind: "operation-registry",
+    changePath: ".attune/cache/generated/<project>/attune-operation-registry.ts",
+  },
+  "attune/protocol/missing-property-scaffold": {
+    generator: generatorTargets.propertyEvidence,
+    repairKind: "property-evidence",
+    changePath: ".attune/cache/generated/<project>/attune-property-evidence.ts",
+  },
+  "attune/protocol/missing-type-guidance": {
+    generator: generatorTargets.typeGuidance,
+    repairKind: "type-guidance",
+    changePath: ".attune/cache/generated/<project>/attune-type-guidance.ts",
+  },
+  "attune/protocol/missing-effect-service-boundary": {
+    generator: generatorTargets.effectService,
+    repairKind: "effect-service",
+    changePath: "src/<service>.ts",
+  },
+  "attune/protocol/missing-view-observer": {
+    generator: generatorTargets.atomViewEdge,
+    repairKind: "atom-view-edge",
+    changePath: ".attune/cache/generated/<project>/attune-atom-view-edges.ts",
+  },
+  "attune/protocol/missing-joern-template": {
+    generator: generatorTargets.joernTemplate,
+    repairKind: "joern-template",
+    changePath: "src/templates/<template>.ts",
+  },
+  "attune/protocol/missing-cocoindex-tool": {
+    generator: generatorTargets.cocoindexMcpTool,
+    repairKind: "cocoindex-tool",
+    changePath: "src/tools/<tool>.ts",
+  },
 } as const
 
 const generatedFileNames: Record<FrameworkNxGeneratedArtifactKind, string> = {
@@ -249,7 +337,8 @@ export const frameworkDiagnosticsAction = (
 export const generatedArtifactPath = (
   sourcePath: string,
   kind: FrameworkNxGeneratedArtifactKind,
-): string => `${sourceDirectory(sourcePath)}/generated/${generatedFileNames[kind]}`
+  packageId = projectNameFromSourcePath(sourcePath),
+): string => `.attune/cache/generated/${packageId}/${generatedFileNames[kind]}`
 
 export const createDescriptorHashRecord = (
   descriptor: AttuneProtocolDescriptor,
@@ -272,7 +361,7 @@ export const createGeneratedArtifact = (
   const content = generatedArtifactContent(descriptor, kind)
   return {
     kind,
-    path: generatedArtifactPath(descriptor.sourcePath, kind),
+    path: generatedArtifactPath(descriptor.sourcePath, kind, descriptor.packageId),
     generatorId: artifactGeneratorIds[kind],
     content,
     contentHash: hashGeneratedArtifactContent(content),
@@ -307,7 +396,7 @@ export const createFrameworkMaterializationPlan = (
   candidateOutputPaths: readonly string[] = [],
 ): FrameworkNxMaterializationPlan => {
   const generatedArtifacts = ([
-    "package-harness",
+      "package-harness",
     "operation-registry",
     "property-evidence",
     "atom-view-edges",
@@ -348,16 +437,54 @@ export const detectCheckedInReportOutputs = (
     .map((path) => ({
       path,
       reason: "Protocol reports and summaries must be emitted to stdout, CI artifacts, or gitignored cache paths.",
-      suggestedTarget: generatorTargets.frameworkDiagnostics,
+      suggestedTarget: frameworkRepairTargets.workspaceCheck,
     }))
 
 export const hasCheckedInReportOutputs = (paths: readonly string[]): boolean =>
   detectCheckedInReportOutputs(paths).length > 0
 
-const sourceDirectory = (sourcePath: string): string => {
+const projectNameFromSourcePath = (sourcePath: string): string => {
   const normalized = sourcePath.replaceAll("\\", "/")
-  const index = normalized.lastIndexOf("/")
-  return index === -1 ? "." : normalized.slice(0, index)
+  const match = /^(?:packages|framework)\/(?<project>[^/]+)\//u.exec(normalized)
+  return match?.groups?.project ?? "workspace"
+}
+
+export const repairPlanForDiagnostic = (
+  diagnostic: Pick<AttuneProtocolDiagnostic, "code" | "packageId" | "sourcePath" | "explanation"> & {
+    readonly diagnosticId?: string
+  },
+): AttuneRepairPlan | undefined => {
+  const route = repairRoutes[diagnostic.code as keyof typeof repairRoutes]
+  if (route === undefined) return undefined
+
+  const target = frameworkRepairTargets.projectRepair(diagnostic.packageId)
+  const changePath = route.changePath.replace("<project>", diagnostic.packageId)
+
+  return {
+    diagnosticId: diagnostic.diagnosticId ?? diagnostic.code,
+    safety: "safe",
+    target,
+    command: `nx run ${target} --diagnostic ${diagnostic.diagnosticId ?? diagnostic.code}`,
+    generator: route.generator,
+    repairKind: route.repairKind,
+    changes: [{
+      path: changePath,
+      kind: route.repairKind === "package-contract" ? "update" : "regenerate",
+      generated: changePath.includes(".attune/cache/") || changePath.includes(".generated."),
+    }],
+    doNotEdit: [
+      "src/attune.generated.ts",
+      "src/attune.contract.generated.ts",
+      "src/attune.package.typecheck.ts",
+      "attune.source-bom.json",
+    ],
+    validateAfter: [
+      frameworkRepairTargets.projectCheck(diagnostic.packageId),
+      `${diagnostic.packageId}:typecheck`,
+      `${diagnostic.packageId}:test`,
+    ],
+    explanation: diagnostic.explanation,
+  }
 }
 
 const isEphemeralOutputPath = (path: string): boolean => {

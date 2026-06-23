@@ -1,6 +1,7 @@
 import { Schema } from "effect"
 import { describe, expect, it } from "vitest"
 import {
+  AttuneRepairPlanSchema,
   FrameworkNxActionPlanSchema,
   atomViewEdgeAction,
   createDescriptorHashRecord,
@@ -14,6 +15,7 @@ import {
   packageHarnessAction,
   propertyEvidenceAction,
   protocolMaterializeAction,
+  repairPlanForDiagnostic,
   typeGuidanceAction,
   type FrameworkNxGeneratedArtifactKind,
 } from "../src/index.js"
@@ -69,15 +71,15 @@ describe("@attune/framework-nx", () => {
       "@attune/framework-nx:type-guidance",
     )
     expect(frameworkDiagnosticsAction("demo", "packages/demo/src/attune.package.ts")).toMatchObject({
-      generatorOrTarget: "workspace:package-contracts-check",
-      validationTarget: "workspace:package-contracts-check",
+      generatorOrTarget: "workspace:attune-check",
+      validationTarget: "workspace:attune-check",
     })
   })
 
   it("generates Schema-coded package harness content", () => {
     const artifact = createGeneratedArtifact(descriptor, "package-harness")
 
-    expect(artifact.path).toBe("packages/demo/src/generated/attune-package-harness.ts")
+    expect(artifact.path).toBe(".attune/cache/generated/demo/attune-package-harness.ts")
     expect(artifact.generatorId).toBe("@attune/framework-nx:package-harness")
     expect(artifact.content).toContain("createPackageHarnessClient")
     expect(artifact.content).toContain("definePackageHarnessHandlers")
@@ -90,7 +92,7 @@ describe("@attune/framework-nx", () => {
   it("generates operation registry content without source-local runtime imports", () => {
     const artifact = createGeneratedArtifact(descriptor, "operation-registry")
 
-    expect(artifact.path).toBe("packages/demo/src/generated/attune-operation-registry.ts")
+    expect(artifact.path).toBe(".attune/cache/generated/demo/attune-operation-registry.ts")
     expect(artifact.generatorId).toBe("@attune/framework-nx:operation-registry")
     expect(artifact.content).toContain("export const OperationRegistry")
     expect(artifact.content).toContain('"id": "project"')
@@ -147,7 +149,7 @@ describe("@attune/framework-nx", () => {
   it("builds a full protocol materialization plan", () => {
     const existingContent = createGeneratedArtifact(descriptor, "operation-registry").content
     const plan = createFrameworkMaterializationPlan(descriptor, {
-      "packages/demo/src/generated/attune-operation-registry.ts": existingContent,
+      ".attune/cache/generated/demo/attune-operation-registry.ts": existingContent,
     })
 
     expect(plan.actions.map((action) => action.actionId)).toEqual([
@@ -188,6 +190,26 @@ describe("@attune/framework-nx", () => {
       "packages/demo/protocol-delta-report.json",
       "packages/demo/evidence-summary.md",
     ])
-    expect(findings[0]?.suggestedTarget).toBe("workspace:package-contracts-check")
+    expect(findings[0]?.suggestedTarget).toBe("workspace:attune-check")
+  })
+
+  it("routes repairable diagnostics to public attune-repair targets", () => {
+    const repair = repairPlanForDiagnostic({
+      diagnosticId: "D123",
+      code: "attune/protocol/missing-generated-registry",
+      packageId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+      explanation: "Operation registry is missing.",
+    })
+
+    expect(repair).toBeDefined()
+    expect(repair?.command).toBe("nx run demo:attune-repair --diagnostic D123")
+    expect(repair?.target).toBe("demo:attune-repair")
+    expect(repair?.generator).toBe("@attune/framework-nx:operation-registry")
+    expect(repair?.changes[0]).toMatchObject({
+      path: ".attune/cache/generated/demo/attune-operation-registry.ts",
+      generated: true,
+    })
+    expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).repairKind).toBe("operation-registry")
   })
 })

@@ -139,7 +139,10 @@ describe("@attune/framework-language-service", () => {
         id: "generate",
         title: "Generate property evidence scaffold",
         kind: "nx-generator" as const,
-        target: "@attune/framework-nx:protocol-evidence",
+        target: "demo:attune-repair",
+        options: {
+          internalGenerator: "@attune/framework-nx:protocol-evidence",
+        },
       }],
       relatedEvidence: [],
     }
@@ -183,7 +186,7 @@ describe("@attune/framework-language-service", () => {
     expect(view.quickInfo[0]?.text).toContain("invalid-store-payload")
     expect(view.codeActions[Object.keys(view.codeActions)[0] ?? ""]?.[0]?.action).toMatchObject({
       kind: "nx-check",
-      target: "workspace:package-contracts-check",
+      target: "workspace:attune-check",
     })
   })
 
@@ -197,7 +200,10 @@ describe("@attune/framework-language-service", () => {
     expect(stale?.suggestedActions[0]).toMatchObject({
       id: "refresh-protocol-materialization",
       kind: "nx-generator",
-      target: "@attune/framework-nx:protocol-materialize",
+      target: "demo:attune-repair",
+      options: {
+        internalGenerator: "@attune/framework-nx:protocol-materialize",
+      },
     })
     expect(
       Object.values(view.codeActions).flat().some((action) => action.action.kind === "source-edit"),
@@ -212,15 +218,24 @@ describe("@attune/framework-language-service", () => {
     expect(actions).toEqual(expect.arrayContaining([
       expect.objectContaining({
         id: "generate-protocol-evidence",
-        target: "@attune/framework-nx:protocol-evidence",
+        target: "demo:attune-repair",
+        options: expect.objectContaining({
+          internalGenerator: "@attune/framework-nx:protocol-evidence",
+        }),
       }),
       expect.objectContaining({
         id: "generate-atom-view-edge",
-        target: "@attune/framework-nx:atom-view-edge",
+        target: "demo:attune-repair",
+        options: expect.objectContaining({
+          internalGenerator: "@attune/framework-nx:atom-view-edge",
+        }),
       }),
       expect.objectContaining({
         id: "refresh-type-guidance",
-        target: "@attune/framework-nx:type-guidance",
+        target: "demo:attune-repair",
+        options: expect.objectContaining({
+          internalGenerator: "@attune/framework-nx:type-guidance",
+        }),
       }),
     ]))
   })
@@ -330,9 +345,7 @@ describe("@attune/framework-language-service", () => {
     )).toBe(true)
     expect(Object.values(view.codeActions).flat().map((entry) => entry.action.target)).toEqual(
       expect.arrayContaining([
-        "workspace:property-evidence",
-        "workspace:coverage-conformance",
-        "workspace:package-contracts-check",
+        "workspace:attune-check",
       ]),
     )
   })
