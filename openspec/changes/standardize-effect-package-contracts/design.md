@@ -701,9 +701,9 @@ checked-in report files.
 `src/attune.package.ts` is the authored language-framework boundary. It should
 contain the source-level intent needed for diagnostics, quick info, code
 actions, and code lenses: package id/kind, public operation declarations,
-operation kind, schemas, service references, semantic writes/observes, view
-roots, explicit waivers, rare custom laws, and stable id overrides where replay
-or history requires them.
+operation id/name/kind, schema and service references, semantic writes/observes,
+view roots, explicit waivers, rare custom laws, and stable id overrides where
+replay or history requires them.
 
 Derived consequences do not belong in the authored declaration. Handler maps,
 property maps, type-guidance partitions, RPC descriptors, coverage-search
@@ -723,7 +723,8 @@ coverage reducer, generated artifact ledger, or migration ratchet,
 it should be generated, materialized, or stored in ProtocolStore.
 ```
 
-Generated companions such as `src/attune.generated.ts`,
+Generated companions such as `src/attune.contract.generated.ts`,
+`src/attune.generated.ts`,
 `src/attune.operation-registry.generated.ts`,
 `src/attune.property-registry.generated.ts`,
 `src/attune.type-guidance.generated.ts`, `src/attune.evidence.generated.ts`,

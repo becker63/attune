@@ -3,8 +3,9 @@ Goal: Make `src/attune.package.ts` files smaller authored language-framework dec
 
 Changed:
 - Split derived `PackageFuzzRpcGroup`, `PackageFuzzHandlers`, `PackageProperties`, and `PackageTypeGuidance` bulk out of active package declarations into `src/attune.generated.ts` companions.
+- Split materialized Schema/operation/contract/layer bulk out of active package declarations into `src/attune.contract.generated.ts` companions while keeping `src/attune.package.ts` as the readable operation/view root.
 - Added slim authored declaration types in `@attune/framework-protocol`: `AttunePackageDeclaration`, `AttuneOperationDeclaration`, service/view/law/waiver declaration references, and `defineAttunePackageDeclaration`.
-- Added staged framework policy diagnostics for large package declarations. The ratchet now emits warning diagnostics with suggested Nx repair targets instead of silently accepting 1,000-line declarations.
+- Added staged framework policy diagnostics for large package declarations. The ratchet now warns above 180 lines with suggested Nx repair targets instead of silently accepting manifest-sized declarations.
 - Added public workspace aliases `workspace:attune-check` and `workspace:attune-repair`; the first checks framework/package-contract conformance and the second currently runs the conservative package-contract materialization/check loop.
 - Updated OpenSpec design, tasks, migration plan, and capability specs to state that package declarations are authored source intent, derived data belongs in generated artifacts or ProtocolStore projections, SQLite is private projection state, and Nx repairs are the public action surface.
 - Simplified AGENTS/README/docs around the loop: edit small declaration, run Nx check, read diagnostics, run Nx repair, re-run checks.
@@ -12,23 +13,23 @@ Changed:
 Package file line-count before/after:
 
 ```text
-framework/architecture/src/attune.package.ts                 551 -> 371
-framework/oxlint-policy/src/attune.package.ts                648 -> 304
-packages/attune-foldkit/src/attune.package.ts               1037 -> 670
-packages/attune-nx/src/attune.package.ts                     678 -> 408
-packages/attune-pi-agent/src/attune.package.ts               967 -> 556
-packages/attuned-discovery/src/attune.package.ts            1026 -> 714
-packages/cocoindex-effect/src/attune.package.ts             1025 -> 659
-packages/home-deployment/src/attune.package.ts              1174 -> 715
-packages/joern-effect-properties/src/attune.package.ts      1524 -> 1112
-packages/joern-effect/src/attune.package.ts                  895 -> 607
-packages/platform-alchemy-k8s/src/attune.package.ts          617 -> 348
+framework/architecture/src/attune.package.ts                 551 -> 93
+framework/oxlint-policy/src/attune.package.ts                648 -> 62
+packages/attune-foldkit/src/attune.package.ts               1037 -> 106
+packages/attune-nx/src/attune.package.ts                     678 -> 74
+packages/attune-pi-agent/src/attune.package.ts               967 -> 103
+packages/attuned-discovery/src/attune.package.ts            1026 -> 91
+packages/cocoindex-effect/src/attune.package.ts             1025 -> 114
+packages/home-deployment/src/attune.package.ts              1174 -> 102
+packages/joern-effect-properties/src/attune.package.ts      1524 -> 101
+packages/joern-effect/src/attune.package.ts                  895 -> 70
+packages/platform-alchemy-k8s/src/attune.package.ts          617 -> 58
 
-total                                                       10142 -> 6464
-average                                                     922 -> 588
+total                                                       10142 -> 974
+average                                                     922 -> 89
 ```
 
-Average `attune.package.ts` size decreased by about 334 lines per file, or 36 percent. The largest remaining declaration is `packages/joern-effect-properties/src/attune.package.ts` at 1112 lines.
+Average `attune.package.ts` size decreased by about 833 lines per file, or 90 percent. The final average is about 89 LOC, inside the requested 80-180 LOC authoring band. The largest remaining declaration is `packages/cocoindex-effect/src/attune.package.ts` at 114 lines.
 
 Generated/materialized artifacts introduced:
 - Added generated companions:
@@ -43,7 +44,19 @@ Generated/materialized artifacts introduced:
   - `packages/joern-effect-properties/src/attune.generated.ts`
   - `packages/joern-effect/src/attune.generated.ts`
   - `packages/platform-alchemy-k8s/src/attune.generated.ts`
-- Generated companions are deterministic generated-source placeholders for the next richer `@attune/nx:attune-repair` materializer. They carry derived handler/property/type-guidance/RPC bulk so authored package files can keep shrinking.
+- Added materialized contract companions:
+  - `framework/architecture/src/attune.contract.generated.ts`
+  - `framework/oxlint-policy/src/attune.contract.generated.ts`
+  - `packages/attune-foldkit/src/attune.contract.generated.ts`
+  - `packages/attune-nx/src/attune.contract.generated.ts`
+  - `packages/attune-pi-agent/src/attune.contract.generated.ts`
+  - `packages/attuned-discovery/src/attune.contract.generated.ts`
+  - `packages/cocoindex-effect/src/attune.contract.generated.ts`
+  - `packages/home-deployment/src/attune.contract.generated.ts`
+  - `packages/joern-effect-properties/src/attune.contract.generated.ts`
+  - `packages/joern-effect/src/attune.contract.generated.ts`
+  - `packages/platform-alchemy-k8s/src/attune.contract.generated.ts`
+- Generated companions are deterministic generated-source placeholders for the next richer `@attune/nx:attune-repair` materializer. `attune.contract.generated.ts` carries materialized Schema/operation/contract/layer bulk, and `attune.generated.ts` carries derived handler/property/type-guidance/RPC bulk.
 
 SQLite/ProtocolStore behavior changed:
 - No runtime SQLite implementation behavior changed in this cleanup slice.
@@ -84,11 +97,10 @@ Not run:
 - Live provider/resource flows.
 
 Residual debt:
-- Nine package declarations still emit staged `package-declaration-too-large` warnings. This is intentional Phase B ratchet behavior; they do not fail policy yet.
-- `joern-effect-properties` remains the largest declaration and should be the next deep shrink target.
+- The current package declarations are below the 180-line warning threshold and average about 89 LOC.
 - Current `workspace:attune-repair` is a conservative check/materialization alias; richer deterministic per-project repair generators still need implementation.
 - Shape conformance still reports 33 migrate shapes and 1 manual shape; those should become generated framework/Nx repairs over time.
-- Generated companions were introduced by this cleanup pass, but the generator that owns them must become the actual materialization authority.
+- Generated/materialized companions were introduced by this cleanup pass, but the generator that owns them must become the actual materialization authority.
 
 Next agent:
-- Implement the real `framework/nx` package declaration materializer/repair generator that regenerates `attune.generated.ts` companions from `attune.package.ts`, writes ProtocolStore projections, and gives the language service concrete code actions for each staged warning.
+- Implement the real `framework/nx` package declaration materializer/repair generator that regenerates `attune.contract.generated.ts` and `attune.generated.ts` companions from `attune.package.ts`, writes ProtocolStore projections, and gives the language service concrete code actions for generated-materialization drift.

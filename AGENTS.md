@@ -140,9 +140,10 @@ are not part of the core workflow.
 Do not manually expand `attune.package.ts` with derived handler maps,
 properties, type-guidance partitions, RPC descriptors, coverage-search plans,
 evidence producer maps, worker metadata, or generated artifact ledgers. Those
-belong in deterministic generated companions such as `src/attune.generated.ts`,
-focused package-local evidence modules, or private ProtocolStore projections.
-Run the suggested Nx repair target before editing generated or derived protocol
+belong in deterministic generated companions such as
+`src/attune.contract.generated.ts` and `src/attune.generated.ts`, focused
+package-local evidence modules, or private ProtocolStore projections. Run the
+suggested Nx repair target before editing generated or derived protocol
 artifacts by hand.
 
 ## Repo Map

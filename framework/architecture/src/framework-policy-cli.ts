@@ -121,8 +121,8 @@ const staleGeneratedMarkerPattern =
   /\b(?:attune-stale-generated|staleGenerated|generatedArtifactStale|needs-regeneration)\b/u
 const manualDerivedTruthMarkerPattern =
   /\b(?:attune-manual-derived-truth|manualProtocolTruth|manualDerivedTruth|derivedTruth\s*:\s*["']manual["'])\b/u
-const packageDeclarationWarningLineThreshold = 250
-const packageDeclarationErrorLineThreshold = 400
+const packageDeclarationWarningLineThreshold = 180
+const packageDeclarationErrorLineThreshold = 260
 
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
 
@@ -452,9 +452,13 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
       continue
     }
 
+    const semanticContractFile =
+      filesByPath.get(`${packageRoot}/src/attune.contract.generated.ts`) ??
+      contractFile
+
     if (
-      !packageViewGraphPattern.test(contractFile.content) ||
-      !packageContractViewsRegistrationPattern.test(contractFile.content)
+      !packageViewGraphPattern.test(semanticContractFile.content) ||
+      !packageContractViewsRegistrationPattern.test(semanticContractFile.content)
     ) {
       diagnostics.push(finalRatchetDiagnostic(
         "missing-package-view-graph",
@@ -464,8 +468,8 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     }
 
     if (
-      !propertyEvidenceHarnessPattern.test(contractFile.content) &&
-      !explicitWaiverPattern.test(contractFile.content)
+      !propertyEvidenceHarnessPattern.test(semanticContractFile.content) &&
+      !explicitWaiverPattern.test(semanticContractFile.content)
     ) {
       diagnostics.push(finalRatchetDiagnostic(
         "missing-property-evidence-harness",
@@ -475,8 +479,8 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     }
 
     if (
-      !coverageConformancePattern.test(contractFile.content) &&
-      !explicitWaiverPattern.test(contractFile.content)
+      !coverageConformancePattern.test(semanticContractFile.content) &&
+      !explicitWaiverPattern.test(semanticContractFile.content)
     ) {
       diagnostics.push(finalRatchetDiagnostic(
         "missing-coverage-conformance",
@@ -485,10 +489,10 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
       ))
     }
 
-    diagnostics.push(...checkPackageContractResidualPolicy(packageRoot, contractFile))
+    diagnostics.push(...checkPackageContractResidualPolicy(packageRoot, semanticContractFile))
     diagnostics.push(...checkPackageDeclarationSize(packageRoot, contractFile))
-    diagnostics.push(...checkAtomReactivityConformance(packageRoot, contractFile))
-    diagnostics.push(...findExpiredMigrationWaivers(contractFile))
+    diagnostics.push(...checkAtomReactivityConformance(packageRoot, semanticContractFile))
+    diagnostics.push(...findExpiredMigrationWaivers(semanticContractFile))
   }
 
   for (const file of files) {

@@ -104,6 +104,7 @@ export interface AttuneOperationDeclaration<
   Error extends AnySchema | undefined = AnySchema | undefined,
 > {
   readonly id?: Id
+  readonly name?: string
   readonly kind: Kind
   readonly input?: Input
   readonly output?: Output

@@ -15,7 +15,7 @@ Use `workspace:package-contracts-check` for focused contract diagnostics and
 
 - Package id and kind.
 - Public operation declarations.
-- Operation kind, input/output/error schemas, and service references.
+- Operation id, name, kind, schema references, and service references.
 - Semantic writes, observes, Reactivity keys, atoms, and view roots.
 - Explicit waivers with owner/review metadata.
 - Rare custom laws that cannot be inferred.
@@ -32,7 +32,8 @@ Use `workspace:package-contracts-check` for focused contract diagnostics and
 - Source BOM or generator-shape migration metadata.
 - Replay or counterexample manifests.
 
-Those belong in generated companions such as `src/attune.generated.ts`, focused
+Those belong in generated companions such as
+`src/attune.contract.generated.ts` and `src/attune.generated.ts`, focused
 package-local evidence modules, framework testing helpers, or private
 ProtocolStore projections.
 
