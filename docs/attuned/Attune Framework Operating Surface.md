@@ -79,13 +79,30 @@ locations such as:
 
 ## What SQLite Does
 
-SQLite is the private framework projection database. It may store descriptors,
-obligations, source ranges, generated artifact hashes, evidence events, replay
-metadata, counterexample metadata, deltas, diagnostics, and repair plans under
-gitignored cache paths such as `.attune/cache`.
+SQLite is the private framework projection database and program index. It may
+store Nx projects and targets, TypeScript source files and exported symbols,
+Effect Schema descriptor rows, dependency edges, generated artifact hashes,
+observations, evidence events, replay metadata, counterexample metadata,
+diagnostics, repair plans, and invalidation logs under gitignored cache paths
+such as `.attune/cache`.
 
 Product packages must not import framework SQLite, raw Drizzle tables, or
 ProtocolStore internals.
+
+The boring direction is:
+
+```text
+Nx graph + TS symbols + Effect Schema
+  -> SQLite facts
+  -> SQL views/triggers
+  -> Reactivity
+  -> atoms
+  -> diagnostics/repairs
+```
+
+Current package-contract generated companions and Source BOM shards are
+compatibility inputs to this index while the migration is active, not long-term
+package-local source truth.
 
 ## What Nx Repairs Do
 

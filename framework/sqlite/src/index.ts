@@ -20,6 +20,8 @@ import {
 } from "@attune/framework-protocol"
 import { Context, Data, Effect, Layer, Schema } from "effect"
 
+export * from "./ProgramIndex.js"
+
 export const defaultProtocolCachePath = ".attune/cache/protocol.sqlite"
 
 export const sqliteBackendName = "node:sqlite"

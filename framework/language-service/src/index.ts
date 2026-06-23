@@ -7,9 +7,11 @@ import type {
 import { Effect } from "effect"
 import {
   diagnosticsForProtocol,
+  programIndexDiagnosticsForFile,
   type ObligationExplanation,
   type PackageProtocolSummary,
   type ProtocolDiagnosticsApi,
+  type ProgramIndexApi,
   type ProtocolProjectionInput,
   type ProtocolQueryApi,
 } from "@attune/framework-runtime"
@@ -478,3 +480,22 @@ export const projectLanguageServiceViewFromRuntime = (
       deltaLenses,
     })
   })
+
+export const projectLanguageServiceViewFromProgramIndex = (
+  programIndex: ProgramIndexApi,
+  request: Pick<LanguageServiceProjectionRequest, "sourcePath" | "sourceRanges">,
+): Effect.Effect<LanguageServiceView, never> =>
+  programIndexDiagnosticsForFile(programIndex, request.sourcePath).pipe(
+    Effect.map((diagnostics) =>
+      viewFromDiagnostics(diagnostics, {
+        sourcePath: request.sourcePath,
+        ...(request.sourceRanges === undefined ? {} : { sourceRanges: request.sourceRanges }),
+      })
+    ),
+    Effect.catch(() =>
+      Effect.succeed(viewFromDiagnostics([], {
+        sourcePath: request.sourcePath,
+        ...(request.sourceRanges === undefined ? {} : { sourceRanges: request.sourceRanges }),
+      }))
+    ),
+  )

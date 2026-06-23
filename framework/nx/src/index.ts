@@ -7,6 +7,8 @@ import {
 } from "@attune/framework-protocol"
 import { Schema } from "effect"
 
+export * from "./ProgramGraphIndex.js"
+
 export interface FrameworkNxActionPlan {
   readonly actionId: string
   readonly title: string

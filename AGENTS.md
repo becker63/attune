@@ -158,6 +158,14 @@ migration scaffolding until Nx repair and ProtocolStore projection fully own
 their materialization. Compile-only package assertions live in the
 framework-owned aggregate, not package-local typecheck files.
 
+The new consolidation direction is that Attune indexes the TypeScript/Effect/Nx
+program first. Nx project graph facts, TypeScript exported symbols, Effect
+Schema descriptor rows, generated artifact freshness, observations,
+diagnostics, repairs, and invalidation events belong in the local SQLite
+program index under `.attune/cache`. Current package-contract/generated
+companions remain transitional compatibility inputs to that index, not a second
+public ontology agents should memorize.
+
 Do not manually expand `attune.package.ts` with derived handler maps,
 properties, type-guidance partitions, RPC descriptors, coverage-search plans,
 evidence producer maps, worker metadata, or generated artifact ledgers. Those

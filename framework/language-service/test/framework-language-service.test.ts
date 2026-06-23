@@ -16,10 +16,12 @@ import {
   codeActionsForDiagnostic,
   diagnosticCodeLens,
   isDirectGeneratedFileWriteAction,
+  projectLanguageServiceViewFromProgramIndex,
   projectLanguageServiceViewFromRuntime,
   sourceRangeIndexFromFixtures,
   sourceRangeKey,
 } from "../src/index.js"
+import { createInMemoryProgramIndex } from "@attune/framework-sqlite"
 
 const sourcePath = "packages/demo/src/attune.package.ts"
 const generatedPath = "packages/demo/src/generated/operation-registry.ts"
@@ -188,6 +190,45 @@ describe("@attune/framework-language-service", () => {
       kind: "nx-check",
       target: "workspace:attune-check",
     })
+  })
+
+  it("projects program-index diagnostics through the language-service view", async () => {
+    const index = createInMemoryProgramIndex()
+    await Effect.runPromise(Effect.gen(function* seedProgramIndexDiagnostic() {
+      yield* index.putProjects([{
+        id: "demo",
+        root: "packages/demo",
+        sourceRoot: "packages/demo/src",
+        projectType: "library",
+        hash: "demo",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }])
+      yield* index.putSourceFiles([{
+        id: "file:demo",
+        projectId: "demo",
+        path: sourcePath,
+        hash: "source",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }])
+      yield* index.putDiagnostics([{
+        id: "diagnostic:demo:schema",
+        projectId: "demo",
+        sourceFileId: "file:demo",
+        code: "attune/program-index/schema-non-serializable",
+        severity: "warning",
+        message: "Schema contains executable Effect behavior.",
+      }])
+    }))
+
+    const view = await Effect.runPromise(projectLanguageServiceViewFromProgramIndex(index, {
+      sourcePath,
+    }))
+
+    expect(view.diagnostics[0]).toMatchObject({
+      code: "attune/program-index/schema-non-serializable",
+      displayMessage: expect.stringContaining("Schema contains executable Effect behavior."),
+    })
+    expect(view.quickInfo[0]?.text).toContain("package: demo")
   })
 
   it("surfaces stale generated source as an Nx repair instead of a file edit", async () => {

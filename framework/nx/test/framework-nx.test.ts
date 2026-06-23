@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 import { describe, expect, it } from "vitest"
 import {
   AttuneRepairPlanSchema,
@@ -11,6 +11,8 @@ import {
   detectCheckedInReportOutputs,
   frameworkDiagnosticsAction,
   hashGeneratedArtifactContent,
+  ingestNxProjectGraphRows,
+  nxProjectGraphToProgramIndexRows,
   operationRegistryAction,
   packageHarnessAction,
   propertyEvidenceAction,
@@ -20,6 +22,8 @@ import {
   type FrameworkNxGeneratedArtifactKind,
 } from "../src/index.js"
 import type { AttuneProtocolDescriptor } from "@attune/framework-protocol"
+import { createInMemoryProgramIndex } from "@attune/framework-sqlite"
+import type { ProjectGraph } from "nx/src/devkit-exports"
 
 const descriptor: AttuneProtocolDescriptor = {
   protocolId: "attune/package/demo",
@@ -212,4 +216,97 @@ describe("@attune/framework-nx", () => {
     })
     expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).repairKind).toBe("operation-registry")
   })
+
+  it("serializes Nx project graph facts into program-index rows", () => {
+    const rows = nxProjectGraphToProgramIndexRows(fixtureProjectGraph, "2026-06-23T00:00:00.000Z")
+
+    expect(rows.projects).toEqual([
+      expect.objectContaining({
+        id: "consumer",
+        root: "packages/consumer",
+        sourceRoot: "packages/consumer/src",
+      }),
+      expect.objectContaining({
+        id: "provider",
+        root: "framework/provider",
+        sourceRoot: "framework/provider/src",
+      }),
+    ])
+    expect(rows.targets).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        projectId: "consumer",
+        name: "attune-check",
+        executor: "@attune/nx:package-check",
+        optionsJson: "{\"checks\":[\"attune\"]}",
+      }),
+    ]))
+    expect(rows.edges).toEqual([
+      expect.objectContaining({
+        fromSymbolId: "project:consumer",
+        toSymbolId: "project:provider",
+        kind: "project-dependency:static",
+        source: "nx-project-graph",
+      }),
+    ])
+  })
+
+  it("ingests Nx graph rows into the program index action layer", () => {
+    const index = createInMemoryProgramIndex()
+    const rows = nxProjectGraphToProgramIndexRows(fixtureProjectGraph, "2026-06-23T00:00:00.000Z")
+
+    Effect.runSync(ingestNxProjectGraphRows(index, rows))
+
+    expect(Effect.runSync(index.listProjects()).map((project) => project.id)).toEqual([
+      "consumer",
+      "provider",
+    ])
+    expect(Effect.runSync(index.listTargets({ projectId: "consumer" }))).toEqual([
+      expect.objectContaining({
+        projectId: "consumer",
+        name: "attune-check",
+      }),
+    ])
+    expect(Effect.runSync(index.listEdges({ symbolId: "project:consumer" }))[0]).toMatchObject({
+      toSymbolId: "project:provider",
+    })
+  })
 })
+
+const fixtureProjectGraph = {
+  nodes: {
+    consumer: {
+      name: "consumer",
+      type: "lib",
+      data: {
+        root: "packages/consumer",
+        sourceRoot: "packages/consumer/src",
+        projectType: "library",
+        targets: {
+          "attune-check": {
+            executor: "@attune/nx:package-check",
+            options: { checks: ["attune"] },
+            configurations: {},
+          },
+        },
+      },
+    },
+    provider: {
+      name: "provider",
+      type: "lib",
+      data: {
+        root: "framework/provider",
+        sourceRoot: "framework/provider/src",
+        projectType: "library",
+        targets: {},
+      },
+    },
+  },
+  dependencies: {
+    consumer: [{
+      source: "consumer",
+      target: "provider",
+      type: "static",
+    }],
+    provider: [],
+  },
+} satisfies ProjectGraph

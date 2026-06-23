@@ -4,13 +4,20 @@ import { describe, expect, it } from "vitest"
 import {
   ProtocolStore,
   ProtocolStoreTest,
+  ProgramIndex,
+  ProgramIndexTest,
   createInMemoryProtocolStore,
+  createInMemoryProgramIndex,
   createSqliteProtocolStore,
+  createSqliteProgramIndex,
   defaultProtocolCachePath,
+  defaultProgramIndexPath,
   descriptorHashForStorage,
   generatedArtifactContentHash,
+  programIndexContentHash,
   sqliteBackendName,
   withDescriptorHash,
+  type ProgramIndexApi,
   type ProtocolCoverageFeedback,
   type ProtocolReplayMetadata,
   type ProtocolStoreApi,
@@ -30,12 +37,20 @@ describe("@attune/framework-sqlite", () => {
     expect(defaultProtocolCachePath).toBe(".attune/cache/protocol.sqlite")
   })
 
+  it("keeps the program index path under the gitignored framework cache", () => {
+    expect(defaultProgramIndexPath).toBe(".attune/cache/program-index.sqlite")
+  })
+
   it("records deterministic descriptor and generated artifact hashes", () => {
     const descriptor = demoDescriptor()
     expect(descriptor.descriptorHash).toBe(descriptorHashForStorage(descriptor))
 
     const artifactHash = generatedArtifactContentHash("export const generated = true\n")
     expect(artifactHash).toMatch(/^[a-f0-9]{64}$/u)
+  })
+
+  it("records deterministic program-index content hashes", () => {
+    expect(programIndexContentHash("export const indexed = true\n")).toMatch(/^[a-f0-9]{64}$/u)
   })
 
   it("hides protocol state behind an Effect service API", () => {
@@ -58,6 +73,26 @@ describe("@attune/framework-sqlite", () => {
     expect(result.snapshot.obligations).toHaveLength(1)
   })
 
+  it("hides program-index state behind an Effect service API", () => {
+    const result = Effect.runSync(
+      Effect.gen(function* testProgramIndexService() {
+        const index = yield* ProgramIndex
+        yield* seedProgramIndex(index)
+
+        return yield* index.listProjectHealth()
+      }).pipe(Effect.provide(ProgramIndexTest())),
+    )
+
+    expect(result[0]).toMatchObject({
+      projectId: "demo",
+      sourceFileCount: 1,
+      symbolCount: 1,
+      diagnosticCount: 1,
+      staleArtifactCount: 1,
+      safeRepairCount: 1,
+    })
+  })
+
   it("initializes, reports health, resets, and reinitializes SQLite state", () => {
     const store = createSqliteProtocolStore({ path: ":memory:" })
     const health = Effect.runSync(store.health())
@@ -75,6 +110,26 @@ describe("@attune/framework-sqlite", () => {
     expect(reinitialized.ok).toBe(true)
     expect(reinitialized.migrationVersion).toBe(2)
     Effect.runSync(store.close())
+  })
+
+  it("initializes, reports health, resets, and reinitializes SQLite program index state", () => {
+    const index = createSqliteProgramIndex({ path: ":memory:" })
+    const health = Effect.runSync(index.health())
+    expect(health.ok).toBe(true)
+    expect(health.backend).toBe(sqliteBackendName)
+    expect(health.migrationVersion).toBe(3)
+
+    Effect.runSync(seedProgramIndex(index))
+    expect(Effect.runSync(index.health()).rowCounts.projects).toBe(1)
+
+    Effect.runSync(index.reset())
+    expect(Effect.runSync(index.health()).rowCounts.projects).toBe(0)
+    expect(Effect.runSync(index.health()).rowCounts.invalidations).toBe(0)
+
+    const reinitialized = Effect.runSync(index.reinitialize())
+    expect(reinitialized.ok).toBe(true)
+    expect(reinitialized.migrationVersion).toBe(3)
+    Effect.runSync(index.close())
   })
 
   it("roundtrips descriptor, obligation, artifact, evidence, and delta rows through SQLite", () => {
@@ -118,6 +173,54 @@ describe("@attune/framework-sqlite", () => {
     Effect.runSync(store.close())
   })
 
+  it("roundtrips program facts through SQLite views and invalidations", () => {
+    const index = createSqliteProgramIndex({ path: ":memory:" })
+    Effect.runSync(seedProgramIndex(index))
+
+    expect(Effect.runSync(index.listSymbolsByFile("packages/demo/src/attune.package.ts"))).toEqual([
+      expect.objectContaining({
+        path: "packages/demo/src/attune.package.ts",
+        symbol_id: "demo:Snapshot",
+        kind: "schema",
+      }),
+    ])
+    expect(Effect.runSync(index.listSchemaSerializationIssues("demo"))).toEqual([
+      expect.objectContaining({
+        id: "schema:demo:Snapshot",
+        serialization_status: "partial",
+      }),
+    ])
+    expect(Effect.runSync(index.listStaleArtifacts("demo"))[0]).toMatchObject({
+      id: "demo:attune.generated",
+      status: "stale",
+    })
+    expect(Effect.runSync(index.listDiagnosticsByFile("packages/demo/src/attune.package.ts"))[0]).toMatchObject({
+      diagnostic_id: "diagnostic:demo:schema",
+      severity: "warning",
+    })
+    expect(Effect.runSync(index.listRepairableDiagnostics("demo"))[0]).toMatchObject({
+      repair_id: "repair:demo:schema",
+      safety: "safe",
+      nx_target: "demo:attune-repair",
+    })
+    expect(Effect.runSync(index.listPackageLocalAttuneCompanions("demo"))[0]).toMatchObject({
+      path: "packages/demo/src/attune.generated.ts",
+    })
+
+    const invalidations = Effect.runSync(index.listInvalidations({ unconsumed: true }))
+    expect(invalidations.map((entry) => entry.key)).toEqual(expect.arrayContaining([
+      "symbol",
+      "schema",
+      "artifact",
+      "diagnostic",
+      "repair",
+    ]))
+
+    Effect.runSync(index.markInvalidationsConsumed(invalidations.map((entry) => entry.id), "now"))
+    expect(Effect.runSync(index.listInvalidations({ unconsumed: true }))).toEqual([])
+    Effect.runSync(index.close())
+  })
+
   it("roundtrips the same row shapes through the in-memory test store", () => {
     const store = createInMemoryProtocolStore()
     roundtripProtocolState(store)
@@ -134,6 +237,20 @@ describe("@attune/framework-sqlite", () => {
     expect(snapshot.deltas).toHaveLength(1)
   })
 
+  it("roundtrips program facts through the in-memory test index", () => {
+    const index = createInMemoryProgramIndex()
+    Effect.runSync(seedProgramIndex(index))
+
+    expect(Effect.runSync(index.listProjectHealth())[0]).toMatchObject({
+      projectId: "demo",
+      warningCount: 1,
+      staleArtifactCount: 1,
+    })
+    expect(Effect.runSync(index.listSchemaSerializationIssues("demo"))[0]).toMatchObject({
+      id: "schema:demo:Snapshot",
+    })
+  })
+
   it("rejects invalid stored payloads through Schema-coded row decoding", () => {
     const store = createSqliteProtocolStore({ path: ":memory:" })
     const invalid = {
@@ -147,6 +264,96 @@ describe("@attune/framework-sqlite", () => {
     Effect.runSync(store.close())
   })
 })
+
+const seedProgramIndex = (index: ProgramIndexApi): Effect.Effect<void, unknown> =>
+  Effect.gen(function* seedIndex() {
+    yield* index.putProjects([{
+      id: "demo",
+      root: "packages/demo",
+      sourceRoot: "packages/demo/src",
+      projectType: "library",
+      hash: "project-hash",
+      updatedAt: "2026-06-23T00:00:00.000Z",
+    }])
+    yield* index.putTargets([{
+      projectId: "demo",
+      name: "attune-check",
+      executor: "@attune/nx:package-check",
+      optionsJson: "{}",
+      configurationsJson: "{}",
+    }])
+    yield* index.putSourceFiles([{
+      id: "file:demo:attune",
+      projectId: "demo",
+      path: "packages/demo/src/attune.package.ts",
+      hash: "source-hash",
+      updatedAt: "2026-06-23T00:00:00.000Z",
+    }])
+    yield* index.putSymbols([{
+      id: "demo:Snapshot",
+      projectId: "demo",
+      sourceFileId: "file:demo:attune",
+      exportName: "Snapshot",
+      localName: "Snapshot",
+      kind: "schema",
+      rangeJson: "{\"start\":{\"line\":1,\"character\":1},\"end\":{\"line\":1,\"character\":30}}",
+      hash: "symbol-hash",
+    }])
+    yield* index.putSchemaDescriptors([{
+      id: "schema:demo:Snapshot",
+      symbolId: "demo:Snapshot",
+      role: "boundary",
+      astHash: "schema-hash",
+      descriptorVersion: 1,
+      shapeJson: "{\"type\":\"Struct\"}",
+      annotationsJson: "{}",
+      serializationStatus: "partial",
+      nonSerializableFeaturesJson: "[\"filter\"]",
+    }])
+    yield* index.putEdges([{
+      id: "edge:demo:Snapshot:Schema",
+      fromSymbolId: "demo:Snapshot",
+      toSymbolId: "external:effect:Schema",
+      kind: "import",
+      source: "typescript",
+    }])
+    yield* index.putArtifacts([{
+      id: "demo:attune.generated",
+      projectId: "demo",
+      path: "packages/demo/src/attune.generated.ts",
+      kind: "generated-protocol-companion",
+      builtFromHash: "source-hash",
+      currentHash: "stale-hash",
+      status: "stale",
+    }])
+    yield* index.putObservations([{
+      id: "observation:demo:test",
+      symbolId: "demo:Snapshot",
+      projectId: "demo",
+      kind: "test",
+      status: "passed",
+      payloadJson: "{}",
+      createdAt: "2026-06-23T00:00:00.000Z",
+    }])
+    yield* index.putDiagnostics([{
+      id: "diagnostic:demo:schema",
+      projectId: "demo",
+      sourceFileId: "file:demo:attune",
+      code: "attune/program-index/schema-non-serializable",
+      severity: "warning",
+      message: "Schema contains executable features.",
+      causeJson: "{\"features\":[\"filter\"]}",
+    }])
+    yield* index.putRepairs([{
+      id: "repair:demo:schema",
+      diagnosticId: "diagnostic:demo:schema",
+      safety: "safe",
+      nxTarget: "demo:attune-repair",
+      repairKind: "schema-descriptor-refresh",
+      payloadJson: "{}",
+      createdAt: "2026-06-23T00:00:00.000Z",
+    }])
+  })
 
 const roundtripProtocolState = (store: ProtocolStoreApi): void => {
   Effect.runSync(store.putDescriptor(demoDescriptor()))

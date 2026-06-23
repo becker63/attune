@@ -361,6 +361,16 @@ const defaultProtocolFactoryKinds = {
   packageViewAtom: { kind: "package-view-atom", namespace: "view" },
   serviceRef: { kind: "service", namespace: "service" },
   schemaRef: { kind: "schema", namespace: "schema" },
+  Struct: { kind: "schema", namespace: "schema" },
+  Literal: { kind: "schema", namespace: "schema" },
+  Literals: { kind: "schema", namespace: "schema" },
+  Union: { kind: "schema", namespace: "schema" },
+  Array: { kind: "schema", namespace: "schema" },
+  Record: { kind: "schema", namespace: "schema" },
+  NullOr: { kind: "schema", namespace: "schema" },
+  Optional: { kind: "schema", namespace: "schema" },
+  transform: { kind: "schema", namespace: "schema" },
+  filter: { kind: "schema", namespace: "schema" },
   artifactOwner: { kind: "generated-artifact-owner", namespace: "artifact" },
   projection: { kind: "operation", namespace: "operation" },
   query: { kind: "operation", namespace: "operation" },
@@ -447,6 +457,20 @@ const exportedDeclarationName = (
     node.name !== undefined
   ) {
     return node.name.text
+  }
+
+  return undefined
+}
+
+const initializerTextForExportedDeclaration = (
+  sourceFile: ts.SourceFile,
+  node: ts.Node,
+): string | undefined => {
+  if (ts.isVariableStatement(node)) {
+    const declaration = node.declarationList.declarations[0]
+    if (declaration?.initializer !== undefined) {
+      return declaration.initializer.getText(sourceFile)
+    }
   }
 
   return undefined
@@ -650,10 +674,6 @@ export const extractProtocolSourceSummary = (
       if (exportName === undefined) continue
 
       const call = findProtocolCall(statement, protocolFactoryNames)
-      if (call === undefined) continue
-
-      const factoryName = calledIdentifier(call)
-      const factoryInfo = factoryName === undefined ? undefined : protocolFactoryKinds.get(factoryName)
       const range = rangeForNode(sourceFile, statement)
       const declaration = sourceDeclaration({
         sourcePath: sourceFile.fileName,
@@ -661,6 +681,41 @@ export const extractProtocolSourceSummary = (
         symbolName: declarationSymbolName(checker, statement, exportName),
         range,
       })
+      const type = checker.getTypeAtLocation(statement)
+
+      if (call === undefined) {
+        const referencedIdentifiers = collectReferencedIdentifiers(statement)
+        const imports = referencedIdentifiers
+          .map((identifier) => importByFileAndLocalName.get(`${sourceFile.fileName}:${identifier}`))
+          .filter((sourceImport): sourceImport is ProtocolSourceImport => sourceImport !== undefined)
+        const id = stableIdFromDeclaration(declaration, idDerivationOptions({
+          packageId: options.packageId,
+          namespace: "symbol",
+          explicitId: undefined,
+        }))
+        const reference: SourceReference = {
+          id,
+          kind: "exported-symbol",
+          declaration,
+        }
+        const initializerText = initializerTextForExportedDeclaration(sourceFile, statement)
+
+        extractedDeclarations.push({
+          kind: reference.kind,
+          id,
+          declaration,
+          typeText: checker.typeToString(type),
+          ...(initializerText === undefined ? {} : { initializerText }),
+          referencedIdentifiers,
+          imports,
+          stringLiterals: [],
+          sourceReference: reference,
+        })
+        continue
+      }
+
+      const factoryName = calledIdentifier(call)
+      const factoryInfo = factoryName === undefined ? undefined : protocolFactoryKinds.get(factoryName)
       const explicitId = explicitIdFromCall(call)
       const idOptions = idDerivationOptions({
         packageId: options.packageId,
@@ -668,7 +723,6 @@ export const extractProtocolSourceSummary = (
         explicitId,
       })
       const id = stableIdFromDeclaration(declaration, idOptions)
-      const type = checker.getTypeAtLocation(statement)
       const referencedIdentifiers = collectReferencedIdentifiers(call)
       const imports = referencedIdentifiers
         .map((identifier) => importByFileAndLocalName.get(`${sourceFile.fileName}:${identifier}`))
@@ -686,7 +740,7 @@ export const extractProtocolSourceSummary = (
         id,
         declaration,
         typeText: checker.typeToString(type),
-        initializerText: call.getText(sourceFile),
+        initializerText: initializerTextForExportedDeclaration(sourceFile, statement) ?? call.getText(sourceFile),
         referencedIdentifiers,
         imports,
         ...(explicitId === undefined ? {} : { explicitId }),

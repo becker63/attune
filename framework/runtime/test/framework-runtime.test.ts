@@ -1,4 +1,7 @@
 import { Effect } from "effect"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
 import { describe, expect, it } from "vitest"
 import {
   hashProtocolValue,
@@ -9,6 +12,8 @@ import {
 } from "@attune/framework-protocol"
 import {
   InMemoryProtocolStoreLive,
+  compatibilityRowsFromCurrentPackageContracts,
+  consumeProgramIndexInvalidations,
   ProtocolDiagnostics,
   ProtocolDiagnosticsLive,
   ProtocolProjectionLive,
@@ -17,7 +22,18 @@ import {
   ProtocolRuntime,
   ProtocolRuntimeLive,
   ProtocolStore,
+  diagnosticsForFileAtom,
+  materializeCompatibilityRows,
+  materializeProgramSourceIndex,
+  programIndexDiagnosticsForFile,
+  programSourceIndexRows,
+  projectIndexAtom,
+  reactivityEventsFromInvalidations,
+  repairPlansAtom,
   SqliteRuntimeProtocolStoreLive,
+  sourceFileSymbolsAtom,
+  staleArtifactsAtom,
+  workspaceHealthAtom,
   computeProtocolDeltas,
   diagnosticsForProtocol,
   explainObligation,
@@ -28,6 +44,7 @@ import {
   type ProtocolStoreSnapshot,
   type ProtocolWaiverState,
 } from "../src/index.js"
+import { createInMemoryProgramIndex } from "@attune/framework-sqlite"
 
 const demoDescriptor = {
   protocolId: "attune/package/demo",
@@ -233,6 +250,170 @@ describe("@attune/framework-runtime", () => {
       "missing-obligation",
       "stale-generated-source",
     ])
+  })
+
+  it("indexes TypeScript/Effect source facts into program-index rows", () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), "attune-program-index-"))
+    const fixturePath = join(fixtureDir, "attune.package.ts")
+    writeFileSync(fixturePath, [
+      "import { Schema } from \"effect\"",
+      "import { packageViewAtom, projection, reactivityKey } from \"@attune/framework-protocol\"",
+      "",
+      "export const helperValue = 42",
+      "export const Snapshot = Schema.Struct({ value: Schema.String }).pipe(Schema.filter(() => true))",
+      "export const projectionChanged = reactivityKey({",
+      "  sourcePath: \"fixture/attune.package.ts\",",
+      "  symbolName: \"projectionChanged\",",
+      "})",
+      "export const workbenchSnapshot = packageViewAtom({",
+      "  sourcePath: \"fixture/attune.package.ts\",",
+      "  symbolName: \"workbenchSnapshot\",",
+      "})",
+      "export const eventReplayProjection = projection({",
+      "  id: \"event-replay-projection\",",
+      "  input: Snapshot,",
+      "  output: Snapshot,",
+      "  views: { reactivityKeys: [projectionChanged.id], atoms: [workbenchSnapshot.id] },",
+      "})",
+    ].join("\n"))
+
+    try {
+      const rows = programSourceIndexRows({
+        projectId: "demo",
+        sourceFiles: [fixturePath],
+        now: "2026-06-23T00:00:00.000Z",
+      })
+
+      expect(rows.sourceFiles).toHaveLength(1)
+      expect(rows.symbols.map((symbol) => [symbol.exportName, symbol.kind])).toEqual(expect.arrayContaining([
+        ["helperValue", "exported-symbol"],
+        ["Snapshot", "schema"],
+        ["projectionChanged", "reactivity-key"],
+        ["workbenchSnapshot", "package-view-atom"],
+        ["eventReplayProjection", "operation"],
+      ]))
+      expect(rows.schemaDescriptors[0]).toMatchObject({
+        symbolId: "demo:Snapshot",
+        serializationStatus: "partial",
+        nonSerializableFeaturesJson: "[\"filter\"]",
+      })
+      expect(rows.diagnostics[0]).toMatchObject({
+        code: "attune/program-index/schema-non-serializable",
+        severity: "warning",
+      })
+      expect(rows.repairs[0]).toMatchObject({
+        safety: "safe",
+        nxTarget: "demo:attune-repair",
+      })
+      expect(rows.edges.map((edge) => edge.kind)).toContain("identifier-reference")
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
+  it("derives read-only program atoms and protocol diagnostics from program-index facts", () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), "attune-program-index-"))
+    const fixturePath = join(fixtureDir, "attune.package.ts")
+    writeFileSync(fixturePath, [
+      "import { Schema } from \"effect\"",
+      "export const Snapshot = Schema.Struct({ value: Schema.String }).pipe(Schema.filter(() => true))",
+    ].join("\n"))
+
+    try {
+      const index = createInMemoryProgramIndex()
+      Effect.runSync(index.putProjects([{
+        id: "demo",
+        root: "packages/demo",
+        sourceRoot: "packages/demo/src",
+        projectType: "library",
+        hash: "demo",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }]))
+      Effect.runSync(materializeProgramSourceIndex(index, {
+        projectId: "demo",
+        sourceFiles: [fixturePath],
+        now: "2026-06-23T00:00:00.000Z",
+      }))
+      Effect.runSync(materializeCompatibilityRows(index, {
+        projectId: "demo",
+        root: "packages/demo",
+        now: "2026-06-23T00:00:00.000Z",
+        paths: [
+          "packages/demo/src/attune.package.ts",
+          "packages/demo/src/attune.generated.ts",
+          "packages/demo/attune.source-bom.json",
+        ],
+        contentByPath: {
+          "packages/demo/src/attune.package.ts": "source",
+          "packages/demo/src/attune.generated.ts": "generated",
+          "packages/demo/attune.source-bom.json": "{}",
+        },
+      }))
+
+      const symbols = Effect.runSync(sourceFileSymbolsAtom(fixturePath).read(index))
+      expect(symbols[0]).toMatchObject({ symbol_id: "demo:Snapshot", kind: "schema" })
+      expect(Effect.runSync(diagnosticsForFileAtom(fixturePath).read(index))[0]).toMatchObject({
+        code: "attune/program-index/schema-non-serializable",
+      })
+      expect(Effect.runSync(repairPlansAtom("demo").read(index))[0]).toMatchObject({
+        safety: "safe",
+      })
+      expect(Effect.runSync(staleArtifactsAtom("demo").read(index))).toEqual([])
+      expect(Effect.runSync(projectIndexAtom("demo").read(index)).project).toMatchObject({
+        id: "demo",
+      })
+      expect(Effect.runSync(workspaceHealthAtom().read(index))[0]).toMatchObject({
+        projectId: "demo",
+        symbolCount: 1,
+        diagnosticCount: 1,
+        safeRepairCount: 1,
+      })
+      expect(Effect.runSync(programIndexDiagnosticsForFile(index, fixturePath))[0]).toMatchObject({
+        code: "attune/program-index/schema-non-serializable",
+        packageId: "demo",
+        sourcePath: fixturePath,
+      })
+
+      const invalidations = Effect.runSync(index.listInvalidations({ unconsumed: true }))
+      expect(reactivityEventsFromInvalidations(invalidations).map((event) => event.reactivityKey)).toEqual(
+        expect.arrayContaining(["attune.program.schema.schema:demo:Snapshot"]),
+      )
+      expect(Effect.runSync(consumeProgramIndexInvalidations(index)).length).toBeGreaterThan(0)
+      expect(Effect.runSync(index.listInvalidations({ unconsumed: true }))).toEqual([])
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
+  it("adapts generated companions and Source BOM files as compatibility input rows", () => {
+    const rows = compatibilityRowsFromCurrentPackageContracts({
+      projectId: "demo",
+      root: "packages/demo",
+      now: "2026-06-23T00:00:00.000Z",
+      paths: [
+        "packages/demo/src/attune.package.ts",
+        "packages/demo/src/attune.contract.generated.ts",
+        "packages/demo/src/attune.generated.ts",
+        "packages/demo/attune.source-bom.json",
+        "framework/architecture/src/generated/package-contracts.typecheck.generated.ts",
+      ],
+      contentByPath: {
+        "packages/demo/src/attune.package.ts": "source",
+        "packages/demo/src/attune.contract.generated.ts": "contract",
+        "packages/demo/src/attune.generated.ts": "generated",
+        "packages/demo/attune.source-bom.json": "{}",
+        "framework/architecture/src/generated/package-contracts.typecheck.generated.ts": "types",
+      },
+    })
+
+    expect(rows.artifacts.map((artifact) => artifact.kind)).toEqual([
+      "attune-package-source",
+      "generated-contract-companion",
+      "generated-protocol-companion",
+      "source-bom",
+      "package-contract-typecheck-aggregate",
+    ])
+    expect(rows.observations).toHaveLength(4)
   })
 
   it("projects deltas as framework diagnostics", () => {
