@@ -497,6 +497,7 @@ export const packageContractTargetSemantics = [
     reads: ["project.json", "src/attune.package.ts", "Source BOM projection"],
     writes: [
       "src/attune.package.ts",
+      "framework/architecture/src/generated/package-contracts/<project>/*",
       ".attune/cache/typecheck/package-contracts.typecheck.ts",
       ".attune/cache/source-bom/<project>.json",
       "framework/architecture/src/generated/source-bom/<project>.json",

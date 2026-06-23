@@ -40,6 +40,15 @@ framework-owned locations rather than hand-maintained in package source trees.
 - **AND** product package source SHALL NOT import framework cache, SQLite,
   ProtocolStore, or generated compiler-output internals
 
+#### Scenario: Generated TypeScript must remain checked in during migration
+
+- **WHEN** generated package-contract TypeScript must remain checked in before
+  virtual/cache module support is reliable
+- **THEN** the generated material SHALL move toward a framework-owned path such
+  as `framework/architecture/src/generated/package-contracts/<project>/*`
+- **AND** package-local generated companions SHALL be treated as staged
+  compatibility debt rather than final package source
+
 #### Scenario: Typecheck assertions are required
 
 - **WHEN** compile-only package contract assertions are required

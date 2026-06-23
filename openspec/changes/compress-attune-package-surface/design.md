@@ -75,14 +75,17 @@ metadata, descriptor exports, and artifact freshness records move toward:
 .attune/cache/source-bom/<project>.json
 .attune/cache/protocol/<project>/*
 .attune/cache/evidence/<project>/*
+framework/architecture/src/generated/package-contracts/<project>/*
 framework/architecture/src/generated/source-bom/<project>.json
 ```
 
 When checked-in generated TypeScript is temporarily needed for TypeScript or Nx
 constraints, it must be treated as a compatibility exception with a removal
-task. When Source BOM projections must remain checked in during migration, they
-belong under a framework-owned generated inventory path instead of package roots.
-Product package source must not import generated cache files directly.
+task and live under a framework-owned generated package-contract path rather
+than package source. When Source BOM projections must remain checked in during
+migration, they belong under a framework-owned generated inventory path instead
+of package roots. Product package source must not import generated cache files
+directly.
 
 ### Decision: Check and repair are the public framework verbs
 
