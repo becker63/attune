@@ -38,7 +38,7 @@
     "vitest.config.ts"
   ],
   "project": "attune-architecture",
-  "projectRoot": "packages/attune-architecture",
+  "projectRoot": "framework/architecture",
   "queryCheckTargetNotes": [
     {
       "note": "The package owns repo architecture policy; extend this shard as checks graduate from inventory to blocking rules.",

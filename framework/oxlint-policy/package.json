@@ -1,5 +1,5 @@
 {
-  "name": "@attune/effect-oxlint-policy",
+  "name": "@attune/framework-oxlint-policy",
   "version": "0.0.0",
   "private": true,
   "type": "module",

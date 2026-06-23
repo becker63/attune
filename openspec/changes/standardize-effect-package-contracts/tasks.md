@@ -199,3 +199,12 @@
 - [x] 15.11 Require every agent handoff to include changed files, generated files, validation commands, package contract status, residual migration debt, blockers, and next-agent recommendations.
 - [x] 15.12 Integrate each wave only after implementation and validation agents agree on exit criteria or record an explicit OpenSpec blocker.
 - [x] 15.13 Run Phase 1A Attune Framework Foundation agents for framework layout, protocol DSL, private runtime, SQLite/Drizzle store, language-service view, framework Nx materialization, testing/evidence helpers, and independent validation.
+
+## 16. Archive Hardening
+
+- [x] 16.1 Move the canonical package-contract kernel from the residual architecture package into `framework/protocol/src/package-contract` and invert dependencies so `framework/protocol` no longer imports `attune-architecture`.
+- [x] 16.2 Move the residual architecture policy project out of `packages/` into `framework/architecture`, keeping the Nx project id/bin identity `attune-architecture` while making it consume `@attune/framework-protocol`.
+- [x] 16.3 Move the Effect oxlint policy plugin out of `packages/` into `framework/oxlint-policy`, keeping the Nx project id `effect-oxlint-policy` and updating the oxlint plugin load path.
+- [x] 16.4 Classify historical run-report docs with an explicit migration marker and reject new checked-in generic fuzzer/proof/run reports through the no-report policy.
+- [x] 16.5 Adopt source-reference view derivation in a flagship `attuned-discovery` operation and prove it feeds operation registry and operation-to-view graph derivation.
+- [x] 16.6 Run archive-hardening validation: focused framework/package typechecks and tests, `workspace:package-contracts-check`, `workspace:framework-policy-check`, `workspace:policy-fast`, OpenSpec strict validation, and `git diff --check`.

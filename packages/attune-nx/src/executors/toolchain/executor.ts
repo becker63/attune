@@ -412,12 +412,12 @@ function createArchitectureCheckPlan(
     case "source-bom":
       return [nodeScriptPlan("toolchain:architecture:source-bom", "scripts/architecture/source-bom-check.mjs", context)]
     case "shape-conformance":
-      return [tsxPlan("toolchain:architecture:shape-conformance", "packages/attune-architecture/src/shape-conformance-cli.ts", [], context.workspaceRoot)]
+      return [tsxPlan("toolchain:architecture:shape-conformance", "framework/architecture/src/shape-conformance-cli.ts", [], context.workspaceRoot)]
     case "framework-policy": {
       const only = readStringParameter(options, "only")
       return [tsxPlan(
         "toolchain:architecture:framework-policy",
-        "packages/attune-architecture/src/framework-policy-cli.ts",
+        "framework/architecture/src/framework-policy-cli.ts",
         only === null ? [] : ["--only", only],
         context.workspaceRoot,
       )]

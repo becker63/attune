@@ -8,12 +8,14 @@
     "node_modules/**",
     "schema/**",
     "src/generated/**",
+    "framework/**/dist/**",
+    "framework/**/node_modules/**",
     "packages/**/dist/**",
     "packages/**/node_modules/**",
     "workspace/**",
     "repomix-output.xml"
   ],
-  "jsPlugins": ["../packages/effect-oxlint-policy/dist/index.js"],
+  "jsPlugins": ["../framework/oxlint-policy/dist/index.js"],
   "categories": {
     "correctness": "off",
     "suspicious": "off",

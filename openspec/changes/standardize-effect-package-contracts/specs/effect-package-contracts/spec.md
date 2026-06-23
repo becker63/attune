@@ -587,3 +587,6 @@ source freshness for that boundary.
 - **THEN** they MUST be treated as legacy scaffolding, temporary compatibility
   views, or ephemeral debug/CI output rather than final checked-in semantic
   source truth
+- **AND** retained historical migration notes MUST be explicitly labeled as
+  historical context, MUST NOT be package-contract evidence, and MUST NOT be the
+  location for new protocol/evidence/fuzzer run reports

@@ -1,4 +1,4 @@
-export * from "../../../../packages/attune-architecture/src/package-contract/index.js"
+export * from "../package-contract/index.js"
 
 export type OperationKind =
   | "codec"

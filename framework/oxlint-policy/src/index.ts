@@ -189,7 +189,7 @@ export const noHandAuthoredArchitectureShapes = Rule.define({
 
 export default Plugin.define({
   name: "attune",
-  specifier: "./packages/effect-oxlint-policy/dist/index.js",
+  specifier: "./framework/oxlint-policy/dist/index.js",
   rules: {
     "no-raw-process-env": noRawProcessEnv,
     "no-raw-node-apis": noRawNodeApis,

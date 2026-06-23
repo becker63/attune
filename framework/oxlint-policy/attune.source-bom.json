@@ -36,7 +36,7 @@
         "packageId": "effect-oxlint-policy",
         "packageKind": "policy-plugin",
         "project": "effect-oxlint-policy",
-        "sourceRoot": "packages/effect-oxlint-policy"
+        "sourceRoot": "framework/oxlint-policy"
       },
       "optionsHash": "fnv1a32:d153d74e",
       "ownedFiles": [
@@ -44,7 +44,7 @@
         "src/attune.package.typecheck.ts"
       ],
       "owningProject": "effect-oxlint-policy",
-      "projectRoot": "packages/effect-oxlint-policy",
+      "projectRoot": "framework/oxlint-policy",
       "sourceShapeKind": "package-contract",
       "syncTargets": [
         {
@@ -89,7 +89,7 @@
     "tsconfig.json"
   ],
   "project": "effect-oxlint-policy",
-  "projectRoot": "packages/effect-oxlint-policy",
+  "projectRoot": "framework/oxlint-policy",
   "queryCheckTargetNotes": [
     {
       "note": "Build output is consumed by the root oxlint Effect policy config.",

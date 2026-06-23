@@ -1,7 +1,7 @@
 {
   "name": "effect-oxlint-policy",
-  "root": "packages/effect-oxlint-policy",
-  "sourceRoot": "packages/effect-oxlint-policy/src",
+  "root": "framework/oxlint-policy",
+  "sourceRoot": "framework/oxlint-policy/src",
   "projectType": "library",
   "targets": {
     "build": {

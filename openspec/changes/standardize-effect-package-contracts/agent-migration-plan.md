@@ -384,11 +384,11 @@ Implementation agents:
   - Migrates generator services, generator plan atoms, generated file diff
     atoms, provenance atoms, and property evidence.
 - `attune-architecture-migration-agent`
-  - Owns: `packages/attune-architecture`.
+  - Owns: `framework/architecture`.
   - Migrates policy-rule operations, policy finding atoms, waiver summary
     atoms, package-contract coverage atoms, and final ratchet checks.
 - `effect-oxlint-policy-migration-agent`
-  - Owns: `packages/effect-oxlint-policy`.
+  - Owns: `framework/oxlint-policy`.
   - Migrates policy-rule operations, policy result atoms, and generated
     property evidence.
 

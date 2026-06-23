@@ -64,6 +64,9 @@ const agentProtocolReportSignature: FrameworkProtocolReportClassification = {
 const reportFileExtensionPattern = /\.(json|jsonc|md|mdx|txt)$/iu
 const sourceLikeExtensionPattern = /\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$/iu
 const cachePathPattern = /(^|\/)(\.attune\/cache|\.nx\/cache|node_modules|dist|coverage|tmp|temp)(\/|$)/iu
+const historicalMigrationNotePathPattern = /^docs\/[^/]+\.(md|mdx|txt)$/iu
+const historicalMigrationNoteMarkerPattern =
+  /^# .+\n\nHistorical migration note only\. This file is not protocol source truth or\s+package-contract evidence;/iu
 
 const pathSignatures: readonly [RegExp, FrameworkProtocolReportClassification][] = [
   [/\bprotocol[-_. ]?deltas?\b|\bdelta[-_. ]?report\b/iu, protocolDeltaReportSignature],
@@ -71,6 +74,10 @@ const pathSignatures: readonly [RegExp, FrameworkProtocolReportClassification][]
   [/\bevidence[-_. ]?(summary|report|status)\b|\bproperty[-_. ]?evidence[-_. ]?(summary|report|status)\b/iu, evidenceSummaryReportSignature],
   [/\barchitecture[-_. ]?(summary|report|status)\b|\battune[-_. ]?architecture[-_. ]?(summary|report|status)\b/iu, architectureSummaryReportSignature],
   [/\b(linear|github|cloud[-_. ]?agent)[-_. ]?(protocol[-_. ]?)?(summary|report|status)\b|\bprotocol[-_. ]?(linear|github|cloud[-_. ]?agent)[-_. ]?(summary|report|status)\b/iu, agentProtocolReportSignature],
+]
+
+const genericRunReportPathSignatures: readonly [RegExp, FrameworkProtocolReportClassification][] = [
+  [/\b(fuzz|fuzzer|property|proof|run)[-_. ]?(report|summary|status)\b|\b(report|summary|status)[-_. ]?(fuzz|fuzzer|property|proof|run)\b/iu, evidenceSummaryReportSignature],
 ]
 
 const reportTypeSignatures: readonly [RegExp, FrameworkProtocolReportClassification][] = [
@@ -132,13 +139,27 @@ export const classifyFrameworkProtocolReport = (
   const jsonSignature = findJsonSignature(file.content)
   if (jsonSignature) return jsonSignature
 
-  return findMarkdownSignature(file.content)
+  const markdownSignature = findMarkdownSignature(file.content)
+  if (markdownSignature) return markdownSignature
+
+  if (isHistoricalMigrationNote(normalizedPath, file.content)) return undefined
+
+  return findGenericRunReportPathSignature(normalizedPath)
 }
 
 const findPathSignature = (normalizedPath: string): FrameworkProtocolReportClassification | undefined => {
   const basename = normalizedPath.split("/").at(-1) ?? normalizedPath
   return pathSignatures.find(([pattern]) => pattern.test(basename))?.[1]
 }
+
+const findGenericRunReportPathSignature = (normalizedPath: string): FrameworkProtocolReportClassification | undefined => {
+  const basename = normalizedPath.split("/").at(-1) ?? normalizedPath
+  return genericRunReportPathSignatures.find(([pattern]) => pattern.test(basename))?.[1]
+}
+
+const isHistoricalMigrationNote = (normalizedPath: string, content: string): boolean =>
+  historicalMigrationNotePathPattern.test(normalizedPath) &&
+  historicalMigrationNoteMarkerPattern.test(content)
 
 const findJsonSignature = (content: string): FrameworkProtocolReportClassification | undefined => {
   let parsed: unknown

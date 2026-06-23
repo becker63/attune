@@ -7,6 +7,8 @@ import {
   assertPackageContract,
   assertPropertyHarnesses,
   assertTypeGuidanceComplete,
+  deriveOperationRegistry,
+  deriveOperationToViewEdges,
   inferLawIds,
   packagePartitionIds,
   type OperationIds,
@@ -21,7 +23,11 @@ import {
   BaseAtomFamilyOperation,
   DomainCodecInput,
   DomainEventCodecOperation,
+  DecisionPacketAtomRef,
   EventReplayProjectionOperation,
+  EventReplayProjectionSourceViewGraph,
+  EventReplayProjectionViews,
+  FoldSceneAtomRef,
   PackageContract,
   PackageContractSchema,
   PackageFuzzHandlers,
@@ -31,7 +37,10 @@ import {
   PackageTestLayer,
   PackageTypeGuidance,
   PackageViews,
+  ProjectionChangedKeyRef,
+  ReadModelProjectionAtomRef,
   ReadModelQueryOperation,
+  WorkbenchSnapshotAtomRef,
   type AttunedDiscoveryOperationId,
 } from "../src/attune.package.js"
 
@@ -138,6 +147,37 @@ describe("attuned-discovery package contract", () => {
       "attuned-discovery.projection.changed",
     )
     expect(BaseAtomFamilyOperation.views?.atoms).toContain("runStateAtom")
+  })
+
+  it("uses source references for event replay projection view derivation", () => {
+    const registry = deriveOperationRegistry([EventReplayProjectionOperation] as const)
+
+    expect(registry["event-replay-projection"].views).toBe(
+      EventReplayProjectionViews,
+    )
+    expect(EventReplayProjectionViews.reactivityKeys?.[0]).toBe(
+      ProjectionChangedKeyRef.id,
+    )
+    expect(EventReplayProjectionViews.atoms?.[0]).toBe(
+      ReadModelProjectionAtomRef.id,
+    )
+    expect(ProjectionChangedKeyRef.declaration).toMatchObject({
+      sourcePath: "packages/attuned-discovery/src/attune.package.ts",
+      exportName: "ProjectionChangedKeyRef",
+    })
+
+    expect(
+      deriveOperationToViewEdges(
+        EventReplayProjectionOperation,
+        EventReplayProjectionSourceViewGraph,
+      ),
+    ).toEqual([{
+      operationId: "event-replay-projection",
+      reactivityKey: ProjectionChangedKeyRef.id,
+      baseAtom: ReadModelProjectionAtomRef.id,
+      derivedAtoms: [DecisionPacketAtomRef.id, FoldSceneAtomRef.id],
+      packageViewAtoms: [WorkbenchSnapshotAtomRef.id],
+    }])
   })
 
   it("keeps inferred laws and type-guidance partitions aligned", () => {

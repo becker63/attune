@@ -1,7 +1,7 @@
 {
   "name": "attune-architecture",
-  "root": "packages/attune-architecture",
-  "sourceRoot": "packages/attune-architecture/src",
+  "root": "framework/architecture",
+  "sourceRoot": "framework/architecture/src",
   "targets": {
     "build": {
       "executor": "@attune/nx:toolchain",

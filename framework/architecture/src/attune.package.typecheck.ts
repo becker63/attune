@@ -6,7 +6,7 @@ import type {
   AssertPropertyHarnesses,
   AssertTrue,
   AssertTypeGuidanceComplete,
-} from "./package-contract/index.js"
+} from "../../protocol/src/package-contract/index.js"
 import type {
   PackageContract,
   PackageFuzzHandlers,

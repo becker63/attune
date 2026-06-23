@@ -18,7 +18,7 @@ import {
   type FrameworkNoReportDiagnostic,
   type FrameworkNoReportFile,
 } from "./framework-no-report-policy.js"
-import { CanonicalLawIds, isLawAllowedForOperation, type LawId } from "./package-contract/laws.js"
+import { CanonicalLawIds, isLawAllowedForOperation, type LawId } from "../../protocol/src/package-contract/index.js"
 
 interface WorkspaceFile {
   readonly path: string
@@ -96,7 +96,7 @@ const ignoredDirs = new Set([
 ])
 
 const reportPathPattern =
-  /(^|\/)(reports?|artifacts?|agent-output|protocol-output|\.attune\/protocol)(\/|$)|\b(protocol[-_. ]?delta|delta[-_. ]?report|obligation[-_. ]?(report|summary|status)|evidence[-_. ]?(summary|report|status)|architecture[-_. ]?(summary|report|status)|cloud[-_. ]?agent[-_. ]?(summary|report|status)|github[-_. ]?(summary|report|status)|linear[-_. ]?(summary|report|status))\b/iu
+  /(^|\/)(reports?|artifacts?|agent-output|protocol-output|\.attune\/protocol)(\/|$)|\b(protocol[-_. ]?delta|delta[-_. ]?report|obligation[-_. ]?(report|summary|status)|evidence[-_. ]?(summary|report|status)|architecture[-_. ]?(summary|report|status)|cloud[-_. ]?agent[-_. ]?(summary|report|status)|github[-_. ]?(summary|report|status)|linear[-_. ]?(summary|report|status)|(fuzz|fuzzer|property|proof|run)[-_. ]?(report|summary|status)|(report|summary|status)[-_. ]?(fuzz|fuzzer|property|proof|run))\b/iu
 
 const policyClockDate = "2026-06-22"
 
@@ -1381,7 +1381,7 @@ function readRecord(value: unknown): Record<string, unknown> {
 
 function isTemporaryFrameworkPolicyWaiver(filePath: string, importSource: string): boolean {
   return (
-    filePath === "packages/attune-architecture/src/framework-import-boundary.ts" ||
+    filePath === "framework/architecture/src/framework-import-boundary.ts" ||
     (
       filePath === "packages/attuned-discovery/src/memory/schema.ts" &&
       importSource === "drizzle-orm/pg-core"

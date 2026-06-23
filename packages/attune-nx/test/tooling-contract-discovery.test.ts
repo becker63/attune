@@ -14,8 +14,8 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../.
 
 const toolingProjectFiles = [
   "packages/attune-nx/project.json",
-  "packages/attune-architecture/project.json",
-  "packages/effect-oxlint-policy/project.json",
+  "framework/architecture/project.json",
+  "framework/oxlint-policy/project.json",
 ] as const
 
 describe("tooling package contract discovery", () => {

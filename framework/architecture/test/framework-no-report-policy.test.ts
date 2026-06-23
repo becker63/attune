@@ -108,6 +108,99 @@ describe("framework no checked-in protocol report policy", () => {
     }))
   })
 
+  it("rejects checked-in generic fuzzer and run report artifacts", () => {
+    const result = checkFrameworkNoReportPolicy({
+      files: [
+        {
+          path: "docs/new-fuzzer-run-report.md",
+          content: [
+            "# New Fuzzer Run Report",
+            "",
+            "Accepted cases, rejected cases, counterexamples, and missing observations.",
+          ].join("\n"),
+        },
+        {
+          path: "reports/proof-run-summary.txt",
+          content: "proof run completed with missing evidence",
+        },
+      ],
+    })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        category: "evidence-summary-report",
+        filePath: "docs/new-fuzzer-run-report.md",
+      }),
+      expect.objectContaining({
+        category: "evidence-summary-report",
+        filePath: "reports/proof-run-summary.txt",
+      }),
+    ]))
+  })
+
+  it("allows explicitly marked historical migration run-report docs", () => {
+    const result = checkFrameworkNoReportPolicy({
+      files: [{
+        path: "docs/joern-effect-fuzzer-run-report.md",
+        content: [
+          "# Joern Effect Fuzzer Run Report",
+          "",
+          "Historical migration note only. This file is not protocol source truth or",
+          "package-contract evidence; future protocol/evidence run reports should be",
+          "emitted through framework diagnostics, Nx output, CI artifacts, stdout, or",
+          "gitignored local cache.",
+          "",
+          "Date: 2026-06-18",
+        ].join("\n"),
+      }],
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.diagnostics).toEqual([])
+  })
+
+  it("does not let historical markers bypass core protocol report signatures", () => {
+    const result = checkFrameworkNoReportPolicy({
+      files: [
+        {
+          path: "docs/architecture-summary.md",
+          content: [
+            "# Architecture Summary Report",
+            "",
+            "Historical migration note only. This file is not protocol source truth or",
+            "package-contract evidence; future protocol/evidence run reports should be",
+            "emitted through framework diagnostics.",
+          ].join("\n"),
+        },
+        {
+          path: "docs/old-run-report.md",
+          content: [
+            "# Old Run Report",
+            "",
+            "Historical migration note only. This file is not protocol source truth or",
+            "package-contract evidence; future protocol/evidence run reports should be",
+            "emitted through framework diagnostics.",
+            "",
+            "## Evidence Summary",
+          ].join("\n"),
+        },
+      ],
+    })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        category: "architecture-summary-report",
+        filePath: "docs/architecture-summary.md",
+      }),
+      expect.objectContaining({
+        category: "evidence-summary-report",
+        filePath: "docs/old-run-report.md",
+      }),
+    ]))
+  })
+
   it("allows source-like generated artifacts that mention protocol diagnostics", () => {
     const result = checkFrameworkNoReportPolicy({
       files: [

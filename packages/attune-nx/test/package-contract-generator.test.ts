@@ -192,21 +192,22 @@ describe("@attune/nx package-contract generator", () => {
     packageContractGenerator(tree, {
       packageId: "effect-oxlint-policy",
       packageKind: "policy-plugin",
-      directory: "packages/effect-oxlint-policy/src",
+      directory: "framework/oxlint-policy/src",
+      project: "effect-oxlint-policy",
       operationId: "scan-effect-policy",
       operationKind: "policy-rule",
     })
 
     const contract =
-      tree.files.get("packages/effect-oxlint-policy/src/attune.package.ts") ??
+      tree.files.get("framework/oxlint-policy/src/attune.package.ts") ??
       ""
     const shard = JSON.parse(
       tree.files.get(
-        "packages/effect-oxlint-policy/attune.source-bom.json",
+        "framework/oxlint-policy/attune.source-bom.json",
       ) ?? "{}",
     )
 
-    expect(contract).toContain('sourceRoot: "packages/effect-oxlint-policy"')
+    expect(contract).toContain('sourceRoot: "framework/oxlint-policy"')
     expect(contract).toContain('packageKind: "policy-plugin"')
     expect(contract).toContain('policy: {')
     expect(contract).toContain('services: [] as const')
@@ -215,26 +216,26 @@ describe("@attune/nx package-contract generator", () => {
     expect(shard).toMatchObject({
       schemaVersion: 1,
       project: "effect-oxlint-policy",
-      projectRoot: "packages/effect-oxlint-policy",
+      projectRoot: "framework/oxlint-policy",
     })
     expect(shard.entries[0]).toMatchObject({
       generatorName: "@attune/nx:package-contract",
       owningProject: "effect-oxlint-policy",
       sourceShapeKind: "package-contract",
       options: {
-        directory: "packages/effect-oxlint-policy/src",
+        directory: "framework/oxlint-policy/src",
         operationId: "scan-effect-policy",
         operationKind: "policy-rule",
         packageId: "effect-oxlint-policy",
         packageKind: "policy-plugin",
         project: "effect-oxlint-policy",
-        sourceRoot: "packages/effect-oxlint-policy",
+        sourceRoot: "framework/oxlint-policy",
       },
       ownedFiles: [
-        "packages/effect-oxlint-policy/src/attune.package.generated.ts",
-        "packages/effect-oxlint-policy/src/attune.package.property.ts",
-        "packages/effect-oxlint-policy/src/attune.package.ts",
-        "packages/effect-oxlint-policy/src/attune.package.typecheck.ts",
+        "framework/oxlint-policy/src/attune.package.generated.ts",
+        "framework/oxlint-policy/src/attune.package.property.ts",
+        "framework/oxlint-policy/src/attune.package.ts",
+        "framework/oxlint-policy/src/attune.package.typecheck.ts",
       ],
       syncTargets: [
         {

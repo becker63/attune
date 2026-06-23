@@ -9,9 +9,9 @@ import {
   definePackageViews,
   defineTypeGuidance,
   touches,
-} from "./package-contract/index.js"
+} from "../../protocol/src/package-contract/index.js"
 
-export { PackageContractSchema } from "./package-contract/index.js"
+export { PackageContractSchema } from "../../protocol/src/package-contract/index.js"
 
 export const PackageViews = definePackageViews({
   reactivityKeys: [
@@ -353,7 +353,7 @@ export const WorkspacePolicySummaryOperation = defineOperation({
 
 export const PackageContract = definePackageContract({
   packageId: "attune-architecture",
-  sourceRoot: "packages/attune-architecture/src",
+  sourceRoot: "framework/architecture/src",
   packageKind: "architecture-policy",
   views: PackageViews,
   services: [] as const,
@@ -371,7 +371,7 @@ export const PackageContract = definePackageContract({
   provenance: {
     generator: "@attune/nx:package-contract",
     project: "attune-architecture",
-    physicalProjectRoot: "packages/attune-architecture",
+    physicalProjectRoot: "framework/architecture",
     openspecChangeId: "standardize-effect-package-contracts",
   } as const,
   waivers: [] as const,

@@ -2,9 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "rootDir": ".",
+    "rootDir": "../..",
     "types": ["node", "vitest/globals"],
     "paths": {
+      "@attune/framework-protocol": ["../protocol/src/index.ts"],
+      "@attune/framework-protocol/package-contract": ["../protocol/src/package-contract/index.ts"],
       "@attune/architecture": ["./src/index.ts"]
     }
   },

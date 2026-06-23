@@ -1,10 +1,16 @@
 import { Layer, Schema } from "effect"
 import {
+  baseAtom,
   defineOperation,
   definePackageContract,
   definePackageFuzzRpcGroup,
   definePackageViews,
   defineTypeGuidance,
+  definePackageViewGraph,
+  derivedAtom,
+  packageViewAtom,
+  projection,
+  reactivityKey,
   touches,
 } from "@attune/framework-protocol"
 
@@ -237,6 +243,82 @@ export const DomainCodecOutput = Schema.Struct({
 })
 export type DomainCodecOutput = typeof DomainCodecOutput.Type
 
+const packageContractSourcePath = "packages/attuned-discovery/src/attune.package.ts"
+
+const sourceReferenceId = <const Id extends string>(
+  reference: { readonly id: string },
+  expected: Id,
+): Id => {
+  if (reference.id !== expected) {
+    throw new Error(`Attuned Discovery source reference ${expected} resolved to ${reference.id}`)
+  }
+
+  return reference.id as Id
+}
+
+export const ProjectionChangedKeyRef = reactivityKey({
+  sourcePath: packageContractSourcePath,
+  exportName: "ProjectionChangedKeyRef",
+  symbolName: "ProjectionChangedKeyRef",
+}, {
+  packageId: "attuned-discovery",
+  explicitId: "attuned-discovery.projection.changed",
+})
+
+export const ReadModelProjectionAtomRef = baseAtom({
+  sourcePath: packageContractSourcePath,
+  exportName: "ReadModelProjectionAtomRef",
+  symbolName: "ReadModelProjectionAtomRef",
+}, {
+  packageId: "attuned-discovery",
+  explicitId: "readModelProjectionAtom",
+})
+
+export const DecisionPacketAtomRef = derivedAtom({
+  sourcePath: packageContractSourcePath,
+  exportName: "DecisionPacketAtomRef",
+  symbolName: "DecisionPacketAtomRef",
+}, {
+  packageId: "attuned-discovery",
+  explicitId: "decisionPacketAtom",
+})
+
+export const FoldSceneAtomRef = derivedAtom({
+  sourcePath: packageContractSourcePath,
+  exportName: "FoldSceneAtomRef",
+  symbolName: "FoldSceneAtomRef",
+}, {
+  packageId: "attuned-discovery",
+  explicitId: "foldSceneAtom",
+})
+
+export const WorkbenchSnapshotAtomRef = packageViewAtom({
+  sourcePath: packageContractSourcePath,
+  exportName: "WorkbenchSnapshotAtomRef",
+  symbolName: "WorkbenchSnapshotAtomRef",
+}, {
+  packageId: "attuned-discovery",
+  explicitId: "workbenchSnapshotAtom",
+})
+
+const projectionChangedKeyId = sourceReferenceId(
+  ProjectionChangedKeyRef,
+  "attuned-discovery.projection.changed",
+)
+const readModelProjectionAtomId = sourceReferenceId(
+  ReadModelProjectionAtomRef,
+  "readModelProjectionAtom",
+)
+const decisionPacketAtomId = sourceReferenceId(
+  DecisionPacketAtomRef,
+  "decisionPacketAtom",
+)
+const foldSceneAtomId = sourceReferenceId(FoldSceneAtomRef, "foldSceneAtom")
+const workbenchSnapshotAtomId = sourceReferenceId(
+  WorkbenchSnapshotAtomRef,
+  "workbenchSnapshotAtom",
+)
+
 const eventLogKeys = [
   "attuned-discovery.event-log.appended",
   "attuned-discovery.projection.changed",
@@ -332,6 +414,42 @@ const codecLaws = [
   "view.atom-moves",
 ] as const
 
+export const EventReplayProjectionViews = touches(PackageViews, {
+  reactivityKeys: [
+    projectionChangedKeyId,
+    "attuned-discovery.run-state.changed",
+    "attuned-discovery.run-metrics.changed",
+    "attuned-discovery.anchors.changed",
+    "attuned-discovery.families.changed",
+    "attuned-discovery.hypotheses.changed",
+    "attuned-discovery.evidence.changed",
+    "attuned-discovery.review-queue.changed",
+  ],
+  atoms: [readModelProjectionAtomId, ...baseAtomIds],
+} as const)
+
+export const EventReplayProjectionSourceViewGraph = definePackageViewGraph({
+  reactivityKeys: [projectionChangedKeyId],
+  baseAtoms: [{
+    id: readModelProjectionAtomId,
+    refreshesOn: [projectionChangedKeyId],
+  }],
+  derivedAtoms: [
+    {
+      id: decisionPacketAtomId,
+      reads: [readModelProjectionAtomId],
+    },
+    {
+      id: foldSceneAtomId,
+      reads: [decisionPacketAtomId],
+    },
+  ],
+  packageViewAtoms: [{
+    id: workbenchSnapshotAtomId,
+    reads: [foldSceneAtomId],
+  }],
+} as const)
+
 export const DiscoveryEventsFacadeOperation = defineOperation({
   id: "discovery-events-facade",
   name: "DiscoveryEvents event facade",
@@ -379,17 +497,13 @@ export const DiscoveryEventLogAppendOperation = defineOperation({
   } as const,
 } as const)
 
-export const EventReplayProjectionOperation = defineOperation({
+export const EventReplayProjectionOperation = projection({
   id: "event-replay-projection",
   name: "Event replay projection",
-  kind: "projection",
   input: ProjectionReplayInput,
   output: ProjectionReplayOutput,
   error: DiscoveryContractError,
-  views: touches(PackageViews, {
-    reactivityKeys: readModelKeys,
-    atoms: ["readModelProjectionAtom", ...baseAtomIds],
-  } as const),
+  views: EventReplayProjectionViews,
   laws: projectionLaws,
   projection: {
     eventSchema: "DiscoveryEvent",

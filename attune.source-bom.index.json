@@ -4,8 +4,8 @@
   "shards": [
     {
       "project": "attune-architecture",
-      "projectRoot": "packages/attune-architecture",
-      "shard": "packages/attune-architecture/attune.source-bom.json"
+      "projectRoot": "framework/architecture",
+      "shard": "framework/architecture/attune.source-bom.json"
     },
     {
       "project": "attune-foldkit",
@@ -34,8 +34,8 @@
     },
     {
       "project": "effect-oxlint-policy",
-      "projectRoot": "packages/effect-oxlint-policy",
-      "shard": "packages/effect-oxlint-policy/attune.source-bom.json"
+      "projectRoot": "framework/oxlint-policy",
+      "shard": "framework/oxlint-policy/attune.source-bom.json"
     },
     {
       "project": "home-deployment",

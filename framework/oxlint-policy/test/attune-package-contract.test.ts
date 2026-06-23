@@ -22,7 +22,7 @@ describe("effect-oxlint-policy package contract", () => {
   it("declares the policy-plugin package and policy-rule operation ids", () => {
     expect(PackageContract.packageId).toBe("effect-oxlint-policy")
     expect(PackageContract.packageKind).toBe("policy-plugin")
-    expect(PackageContract.sourceRoot).toBe("packages/effect-oxlint-policy")
+    expect(PackageContract.sourceRoot).toBe("framework/oxlint-policy")
     expect(PackageContract.operations.map((operation) => operation.id)).toEqual([
       "no-raw-process-env",
       "no-raw-node-apis",

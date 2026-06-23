@@ -79,11 +79,17 @@ watch the diagnostic disappear.
   cloud-agent report artifacts from the core workflow. Debug/CI reports may be
   emitted ephemerally to stdout, uploaded as CI artifacts, or written under
   gitignored cache paths only.
+- Allow retained pre-ratchet historical migration notes under `docs/` only when
+  explicitly labeled as historical context and not as protocol source truth,
+  package-contract evidence, or a place for new fuzzer/run reports.
 - Downgrade MCP to a future optional adapter over framework diagnostic/query
   services, not a core package, task, exit criterion, or implementation wave.
-- Finalize the broad architecture package identity as `attune-architecture`.
-  Treat the old architecture-lint identity only as historical migration
-  context.
+- Finalize the broad architecture policy identity as `attune-architecture`
+  under `framework/architecture`; the package-contract kernel lives in
+  `framework/protocol`, and the old architecture-lint identity is historical
+  migration context only.
+- Move the Effect oxlint plugin into `framework/oxlint-policy` while preserving
+  the Nx project id `effect-oxlint-policy` for existing policy composition.
 - Extend Nx integration so package contracts create inferred targets for
   service conformance, property audits, coverage conformance, and generated
   ledger synchronization.

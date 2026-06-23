@@ -256,7 +256,7 @@ export const noHandAuthoredArchitectureShapesOperation = defineOperation({
 
 export const PackageContract = definePackageContract({
   packageId: "effect-oxlint-policy",
-  sourceRoot: "packages/effect-oxlint-policy",
+  sourceRoot: "framework/oxlint-policy",
   packageKind: "policy-plugin",
   views: PackageViews,
   services: [] as const,

@@ -415,6 +415,16 @@ report projections as semantic workflow artifacts.
   diagnostics, Nx output, source declarations, generated source required by the
   build, or local gitignored cache
 
+#### Scenario: Historical migration note is retained
+- **WHEN** an already checked-in historical migration note under `docs/`
+  includes fuzzer/run report context from before the final framework ratchet
+- **THEN** policy MAY allow it only if the file is explicitly labeled as a
+  historical migration note and says it is not protocol source truth or
+  package-contract evidence
+- **AND** new fuzzer/run reports without that marker MUST fail and move to
+  language-service diagnostics, Nx output, CI artifacts, stdout, or gitignored
+  cache
+
 #### Scenario: Generated source is required by build
 - **WHEN** a generated operation registry, typecheck module, property scaffold,
   or framework source file is required for build/typecheck correctness

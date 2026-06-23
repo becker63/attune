@@ -10,7 +10,7 @@ import {
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../../", import.meta.url)))
 const tempRoots: string[] = []
-const staleArchitecturePackagePath = ["packages/attune-architecture", "lint"].join("-")
+const staleArchitecturePackagePath = ["attune-architecture", "lint"].join("-")
 
 describe("framework policy CLI", () => {
   afterEach(() => {
@@ -90,6 +90,35 @@ describe("framework policy CLI", () => {
       expect.objectContaining({ category: "architecture-summary-report" }),
       expect.objectContaining({ category: "agent-protocol-report" }),
     ]))
+  })
+
+  it("classifies historical fuzzer run reports without allowing new checked-in run reports", () => {
+    const workspaceRoot = makeWorkspace({
+      "docs/joern-effect-fuzzer-run-report.md": [
+        "# Joern Effect Fuzzer Run Report",
+        "",
+        "Historical migration note only. This file is not protocol source truth or",
+        "package-contract evidence; future protocol/evidence run reports should be",
+        "emitted through framework diagnostics, Nx output, CI artifacts, stdout, or",
+        "gitignored local cache.",
+      ].join("\n"),
+      "docs/new-fuzzer-run-report.md": [
+        "# New Fuzzer Run Report",
+        "",
+        "Accepted cases, rejected cases, counterexamples, and missing observations.",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(1)
+    expect(result.noReportDiagnostics).toContainEqual(expect.objectContaining({
+      category: "evidence-summary-report",
+      filePath: "docs/new-fuzzer-run-report.md",
+    }))
+    expect(result.noReportDiagnostics).not.toContainEqual(expect.objectContaining({
+      filePath: "docs/joern-effect-fuzzer-run-report.md",
+    }))
   })
 
   it("rejects missing package contracts, package view graphs, and property evidence markers after migration", () => {

@@ -12,10 +12,13 @@
       "types": "./src/laws/index.ts",
       "import": "./src/laws/index.ts"
     },
+    "./package-contract": {
+      "types": "./src/package-contract/index.ts",
+      "import": "./src/package-contract/index.ts"
+    },
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@attune/architecture": "workspace:*",
     "effect": "4.0.0-beta.78",
     "typescript": "^5.8.3"
   }
