@@ -17,14 +17,20 @@ Validated:
 - `nx run joern-effect-properties:property-joern --skipNxCache` (host Joern-gated `/dev/shm` mode) ✅
   - Command completed successfully: 13/13 files, 68/68 tests passed.
   - This implies task `8.4` is code-complete in this environment.
+- `nx run joern-effect-properties:property-joern --skipNxCache` with `JOERN_EFFECT_FUZZ_CASES=1` ✅
+  - Command completed successfully (same 13/13 files and 68/68 tests), establishing the environment-sensitive failure is not caused by fast-check case count.
 - `nx run joern-effect-properties:property-joern:container --skipNxCache` ❌
   - Command launched image build from flake and then ran containerized target via `arion`.
-  - Container run failed because property suite reported 4 failures in `test/property.test.ts`:
+  - First container run (default case count) failed because property suite reported 4 failures in `test/property.test.ts`:
     - “source/sink scenarios pass the typed OXC -> Joern -> Graphology pipeline” (expected `'safe'` vs `'finding'`)
     - “generated TypeScript call sites round-trip through Joern rows”
     - “generated TypeScript call sites materialize schema-edge evidence graphs”
     - “generated TypeScript service shapes produce graph facts through the V2 surface”
-  - This is a code-level failure path, not an environment/tooling discovery failure.
+- A follow-up container run with `JOERN_EFFECT_FUZZ_CASES=1` failed with the same 4 logical assertions after the image warm-up.
+- `nx run joern-effect-properties:property-joern:container-direct --skipNxCache` with `JOERN_EFFECT_FUZZ_CASES=1` ❌
+  - Demonstrates non-container direct target requires Nix toolchain/Joern PATH (`nixDevShell=false` intentionally):
+    - `JoernExecutableNotFoundError: Could not find Joern...` in `test/invariants.property.test.ts` and all container-target property assertions.
+    - This is expected for the `container-direct` target and confirms its role as an inside-container target, not a local-replacement.
 - `git diff --check` ✅
 - `openspec validate standardize-nx-nix-build --type change` ✅
 
@@ -34,9 +40,13 @@ Not run:
 Residual migration debt:
 - `standardize-nx-nix-build` task `8.5` remains incomplete until `property-joern:container` passes end-to-end.
 - Property-failure triage remains code work in `packages/joern-effect-properties`/`packages/joern-effect`.
+- Containerized and host Joern execution diverge on the same property suite despite passing host checks; likely requires deeper inspection of container runtime determinism (`joern-effect-property` image + mounted repo/workspace layout).
 
 Blocked by:
-- Task `8.5` currently blocked by code-failing property assertions inside the containerized property run (same suite used by `property-joern:container-direct`).
+- Task `8.5` currently blocked by code-failing property assertions inside the containerized property run (same suite used by `property-joern:container-direct`) with deterministic reproduction:
+  - `classification !== finding` for source/sink evidence (`safe` observed),
+  - missing schema-edge invariants for generated TS graph materialization,
+  - missing V2 graph-fact payloads.
 
 Next agent:
 - Keep container target in place and fix/follow-up property assertions so `nx run joern-effect-properties:property-joern:container --skipNxCache` passes; then update OpenSpec task `8.5` accordingly.
