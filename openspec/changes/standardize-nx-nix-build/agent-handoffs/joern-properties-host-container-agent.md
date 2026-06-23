@@ -50,3 +50,21 @@ Blocked by:
 
 Next agent:
 - Keep container target in place and fix/follow-up property assertions so `nx run joern-effect-properties:property-joern:container --skipNxCache` passes; then update OpenSpec task `8.5` accordingly.
+
+---
+
+Update (2026-06-23):
+
+Re-ran both required paths to keep the blocker state fresh:
+
+- `nx run joern-effect-properties:property-joern --skipNxCache` ✅ (passed again in this pass; 13 files / 68 tests)
+- `nx run joern-effect-properties:property-joern:container --skipNxCache` ❌
+  - Build dependency target `property-joern:container-image` succeeds (`nix build .#joern-effect-property-image`).
+  - Container starts and executes `joern-effect-properties:property-joern:container-direct` successfully, but property suite fails with the same 4 assertions in `packages/joern-effect-properties/test/property.test.ts`:
+    - `source/sink scenarios pass the typed OXC -> Joern -> Graphology pipeline` (`expected 'safe' to be 'finding'`)
+    - `generated TypeScript call sites round-trip through Joern rows` (falsiness at invariant check)
+    - `generated TypeScript call sites materialize schema-edge evidence graphs` (`Generated TypeScript evidence graph did not satisfy schema-edge invariants`)
+    - `generated TypeScript service shapes produce graph facts through the V2 surface` (falsiness at graph-fact predicate)
+  - This confirms the host/container split is real in this environment and remains code-blocked in `joern-effect-properties`.
+
+No code artifacts were changed in this pass; only validation was re-run and evidence clarified.
