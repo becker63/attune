@@ -51,7 +51,8 @@ openspec instructions apply --change <change> --json
 Current state:
 
 - `5.11`: implementation completed and now ready for blocker/validation bookkeeping.
-- `8.4` / `8.5`: pending until explicit commands are proven runnable.
+- `8.4`: complete (host Joern-gated property target validated in this environment).
+- `8.5`: blocked in this environment (missing `arion` binary; `spawn arion ENOENT`).
 
 ## Priority
 
@@ -65,8 +66,8 @@ Current state:
 Known remaining work:
 
 * `5.11`: add the real `joern-effect` Effect service boundary, likely `JoernTemplateExecutor`, using `@attune/nx:effect-service` where feasible. **Complete.**
-* `8.4`: run host `/dev/shm` Joern-gated property validation only if the exact target is available.
-* `8.5`: run containerized Joern-gated property validation only if the exact target is available.
+* `8.4`: run host `/dev/shm` Joern-gated property validation only if the exact target is available. **Complete.**
+* `8.5`: run containerized Joern-gated property validation only if the exact target is available. **Blocked by environment (`arion` missing).**
 
 For `5.11`, inspect:
 

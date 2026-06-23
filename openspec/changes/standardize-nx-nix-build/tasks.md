@@ -81,7 +81,7 @@
 - [x] 8.1 Run the root Nx workspace validation target from inside the Nix environment.
 - [x] 8.2 Run `joern-effect` generation and generation check targets from inside the Nix environment.
 - [x] 8.3 Run cheap `joern-effect` property/typecheck/build targets from inside the Nix environment.
-- [ ] 8.4 Run the Joern-gated property target with host `/dev/shm` when available.
+- [x] 8.4 Run the Joern-gated property target with host `/dev/shm` when available.
 - [ ] 8.5 Run the containerized Joern-gated property target through the Nx surface.
 - [x] 8.6 Confirm no active supported workflow invokes Buck2.
 - [x] 8.7 Confirm active workspace/package discovery ignores `imports/**`.
