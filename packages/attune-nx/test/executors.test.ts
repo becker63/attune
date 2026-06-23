@@ -444,6 +444,30 @@ describe("attune-nx executors", () => {
     ])
   })
 
+  it("plans tool version validation through the architecture check surface", async () => {
+    const calls: ExecutorProcessPlan[] = []
+    const result = await toolchainExecutor(
+      {
+        targetProject: "workspace",
+        tool: "architecture",
+        action: "check",
+        toolId: "tool-versions",
+        dryRun: false,
+      },
+      createExecutorContext({ calls }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(calls).toEqual([
+      expect.objectContaining({
+        adapter: "node-script",
+        executable: "node",
+        args: ["scripts/architecture/tool-versions.mjs"],
+        cwd: expect.stringMatching(/\/attune\/?$/u),
+      }),
+    ])
+  })
+
   it("plans internal Attune repair kinds through the same typed materializer", async () => {
     const calls: ExecutorProcessPlan[] = []
     const result = await toolchainExecutor(

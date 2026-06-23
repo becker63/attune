@@ -412,6 +412,8 @@ function createArchitectureCheckPlan(
       ], context.workspaceRoot)]
     case "source-bom":
       return [nodeScriptPlan("toolchain:architecture:source-bom", "scripts/architecture/source-bom-check.mjs", context)]
+    case "tool-versions":
+      return [nodeScriptPlan("toolchain:architecture:tool-versions", "scripts/architecture/tool-versions.mjs", context)]
     case "shape-conformance":
       return [tsxPlan("toolchain:architecture:shape-conformance", "framework/architecture/src/shape-conformance-cli.ts", [], context.workspaceRoot)]
     case "framework-policy": {

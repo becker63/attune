@@ -12,7 +12,7 @@
 - [x] 2.1 Add a root Nix flake or shell that provisions Node, the selected package manager, Nx access, OpenSpec access, Joern runtime support, and required shell tools.
 - [x] 2.2 Ensure the Nix environment works under WSL without relying on Windows global Node, npm, or shell shims.
 - [x] 2.3 Add a single documented local entrypoint for entering the environment and running Nx commands.
-- [ ] 2.4 Add a validation command that prints the pinned tool versions used by active targets.
+- [x] 2.4 Add a validation command that prints the pinned tool versions used by active targets.
 - [x] 2.5 Create the root Nix directory layout for toolchains, package wrappers, containers, compose definitions, shared modules, and helper libraries.
 - [x] 2.6 Migrate reusable Joern, Node, OpenSpec, and tmpfs/runtime path constants from imported Nix work into the root Nix layout.
 
@@ -33,7 +33,7 @@
 
 - [x] 4.1 Remove Buck2 from active build, test, check, generation, and validation documentation.
 - [x] 4.2 Delete or quarantine active Buck2 configuration so no supported target requires Buck2.
-- [ ] 4.3 Add a guard or validation note that prevents reintroducing Buck2 as an active workflow without a new OpenSpec change.
+- [x] 4.3 Add a guard or validation note that prevents reintroducing Buck2 as an active workflow without a new OpenSpec change.
 
 ## 5. joern-effect Nx Code Generation
 
@@ -56,8 +56,8 @@
 - [x] 6.2 Add cheap `joern-effect` property targets for generated traversal descriptions, builder determinism, decoding, and evidence/materialization boundaries where available.
 - [x] 6.3 Add explicit temp-store mode support to the property harness for host `/dev/shm`, container tmpfs, normal temp fallback, and unavailable-mode reporting.
 - [x] 6.4 Add a separate Joern-gated property or integration target that uses the Nix-provisioned Joern runtime.
-- [ ] 6.5 Add a Nix-managed nix2container image and Arion runtime definition for Joern-gated property runs with tmpfs-backed storage.
-- [ ] 6.6 Expose the containerized property runtime through Nx targets rather than direct container commands.
+- [x] 6.5 Add a Nix-managed nix2container image and Arion runtime definition for Joern-gated property runs with tmpfs-backed storage.
+- [x] 6.6 Expose the containerized property runtime through Nx targets rather than direct container commands.
 - [x] 6.7 Ensure property failures record seed, path, generated-case summary, temp-store mode, and target metadata through the configured report/telemetry path.
 - [x] 6.8 Add `joern-effect` typecheck, build, and package validation targets to Nx.
 - [x] 6.9 Verify cheap local `joern-effect` targets run without optional telemetry credentials.
@@ -68,9 +68,9 @@
 - [x] 7.1 Document the standard developer workflow: enter Nix, run Nx, generate `joern-effect`, check generated freshness, run tests.
 - [x] 7.2 Document the package target map so Codex and humans can discover the correct Nx entrypoints.
 - [x] 7.3 Document the division of responsibilities: Nix provisions tools, Nx orchestrates tasks, OpenSpec governs build-contract changes.
-- [ ] 7.4 Update agent-facing notes to instruct agents to use Nx targets instead of package-private scripts.
-- [ ] 7.5 Document the Nix directory layout and where to add future toolchains, packages, containers, compose definitions, and shared modules.
-- [ ] 7.6 Document property target modes: cheap, Joern-gated local `/dev/shm`, and Joern-gated container tmpfs.
+- [x] 7.4 Update agent-facing notes to instruct agents to use Nx targets instead of package-private scripts.
+- [x] 7.5 Document the Nix directory layout and where to add future toolchains, packages, containers, compose definitions, and shared modules.
+- [x] 7.6 Document property target modes: cheap, Joern-gated local `/dev/shm`, and Joern-gated container tmpfs.
 - [x] 7.7 Document the attuned Nx generator catalog and which generators are active in the `joern-effect` migration.
 - [x] 7.8 Document which Discovery-specific generators are deferred until their packages are promoted.
 - [x] 7.9 Document the `joern-effect` generation stage graph and how it replaces the previous hand-rolled generation pipeline.

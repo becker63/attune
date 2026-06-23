@@ -55,7 +55,8 @@ Nx is the public workflow surface. Nix supplies the reproducible tools behind
 those targets. A normal package's Attune surface should be
 `src/attune.package.ts`; generated framework consequences belong to Nx repair,
 framework services, ProtocolStore projections, or gitignored cache. See
-`docs/attuned/Attune Framework Operating Surface.md`.
+`docs/attuned/Attune Framework Operating Surface.md` and
+`docs/platform/nx-nix-workflow.md`.
 
 Container-backed fuzzing and proof pressure are exposed through Nx targets
 backed by the Nix/Arion runtime:

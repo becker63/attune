@@ -18,6 +18,8 @@ Core framework vocabulary:
 - `attuned/Attune Framework Operating Surface.md` - the short agent-facing loop
   for small package declarations, Nx repairs, private SQLite projection state,
   generated companions, and what not to hand-edit.
+- `platform/nx-nix-workflow.md` - the Nx-first/Nix-backed workflow contract,
+  active Nix directory layout, Buck2 guard, and Joern property target modes.
 
 The raw imported repositories remain under `imports/` on disk during migration, but `docs/` is the tracked documentation home.
 

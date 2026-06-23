@@ -2,7 +2,7 @@
 
 - [x] 1.1 Create `openspec/changes/effect-alchemy-platform-lifecycle/`.
 - [x] 1.2 Add proposal, design, tasks, `.openspec.yaml`, and capability specs.
-- [ ] 1.3 Validate OpenSpec strictly once `openspec` is available on PATH.
+- [x] 1.3 Validate OpenSpec strictly once `openspec` is available on PATH.
 
 ## 2. Platform Model And Providers
 

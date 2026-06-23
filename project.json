@@ -68,6 +68,19 @@
         "dryRun": false
       }
     },
+    "tool-versions": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Print pinned Nix/Nx tool versions used by active workspace targets."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "tool-versions",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
     "shape-conformance": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
