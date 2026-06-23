@@ -166,6 +166,41 @@
         }
       }
     },
+    "property-joern:direct": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "test",
+        "toolId": "property-vitest",
+        "parameters": {
+          "nixDevShell": false
+        },
+        "resourceTier": "standard",
+        "timeoutSeconds": 240,
+        "workerBudget": {
+          "maxWorkers": 1,
+          "shardCount": 1,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1,
+            "end": 1000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "main-thread"
+          }
+        }
+      }
+    },
     "property-joern:container": {
       "executor": "@attune/nx:toolchain",
       "options": {
@@ -178,7 +213,8 @@
           "tmpfsSize": "10g",
           "workers": 2,
           "cpusPerWorker": 2,
-          "cpus": 4
+          "cpus": 4,
+          "nxTarget": "joern-effect-properties:property-joern:direct"
         },
         "resourceTier": "external",
         "evidenceOutputs": [
