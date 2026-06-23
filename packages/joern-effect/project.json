@@ -180,15 +180,21 @@
     "emit-template-registry": {
       "executor": "@attune/nx:toolchain",
       "outputs": [
-        "{projectRoot}/src/generated/TemplateRegistry.generated.ts"
+        "{projectRoot}/src/joern/templates/TemplateRegistry.generated.ts"
       ],
       "options": {
         "targetProject": "joern-effect",
-        "tool": "joern",
+        "tool": "nx",
         "action": "generate",
-        "toolId": "generation-stage",
+        "toolId": "@attune/nx:sync-joern-templates",
         "parameters": {
-          "stage": "emit-template-registry"
+          "generator": "@attune/nx:sync-joern-templates",
+          "arguments": [
+            "--directory",
+            "packages/joern-effect/src/joern/templates",
+            "--registry",
+            "packages/joern-effect/src/joern/templates/TemplateRegistry.generated.ts"
+          ]
         },
         "dryRun": false
       }
@@ -286,6 +292,7 @@
         "parameters": {
           "targets": [
             "joern-effect:emit-generated",
+            "joern-effect:emit-template-registry",
             "joern-effect:emit-fast-check-arbitraries",
             "joern-effect:render-readme"
           ]
@@ -305,6 +312,7 @@
         "outputs": [
           "packages/joern-effect/src/pure/generated",
           "packages/joern-effect/src/internal/generated",
+          "packages/joern-effect/src/joern/templates",
           "packages/joern-effect/README.md",
           "packages/joern-effect/schema"
         ],

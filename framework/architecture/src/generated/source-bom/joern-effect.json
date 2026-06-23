@@ -29,6 +29,29 @@
       "target": "emit-fast-check-arbitraries"
     },
     {
+      "generator": "@attune/nx:joern-template",
+      "outputs": [
+        "src/joern/templates/dangerous-call.ts",
+        "src/joern/templates/index.ts"
+      ],
+      "sources": [
+        "packages/attune-nx/src/generators/joern-template/**"
+      ],
+      "target": "joern-template"
+    },
+    {
+      "generator": "@attune/nx:sync-joern-templates",
+      "outputs": [
+        "src/joern/templates/TemplateRegistry.generated.ts",
+        "src/joern/templates/index.ts"
+      ],
+      "sources": [
+        "src/joern/templates/*.ts",
+        "packages/attune-nx/src/generators/sync-joern-templates/**"
+      ],
+      "target": "sync-joern-templates"
+    },
+    {
       "generator": "scripts/renderReadme.ts",
       "outputs": [
         "README.md"

@@ -582,6 +582,36 @@
       ]
     },
     {
+      "id": "joern-effect.generated-dangerous-call-template",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "generated-joern-template",
+      "generator": "@attune/nx:joern-template",
+      "status": "generated",
+      "paths": [
+        "src/joern/templates/dangerous-call.ts",
+        "src/joern/templates/index.ts"
+      ],
+      "invariants": [
+        "Known template source, binding schema, evidence schema, renderer shell, and barrel export are generated together."
+      ]
+    },
+    {
+      "id": "joern-effect.generated-template-registry",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "generated-joern-template-registry",
+      "generator": "@attune/nx:sync-joern-templates",
+      "status": "generated",
+      "paths": [
+        "src/joern/templates/*.ts",
+        "src/joern/templates/TemplateRegistry.generated.ts"
+      ],
+      "invariants": [
+        "Known Joern templates participate in the generated registry and template barrel."
+      ]
+    },
+    {
       "id": "joern-effect.query-builder",
       "project": "joern-effect",
       "projectRoot": "packages/joern-effect",
