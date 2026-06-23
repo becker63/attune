@@ -7,7 +7,10 @@ import {
   phase2GeneratorGapMap,
   requiredPhase2GeneratorCapabilities,
 } from "../src/generator-inventory.js"
-import { upsertSourceBom } from "../src/internal/source-bom.js"
+import {
+  sourceBomCacheShardPath,
+  upsertSourceBom,
+} from "../src/internal/source-bom.js"
 import type { GeneratorTree } from "../src/internal/tree.js"
 
 interface GeneratorsJson {
@@ -279,5 +282,11 @@ describe("attune-nx generators", () => {
       "packages/example/src/a.ts",
       "packages/example/src/b.ts",
     ])
+  })
+
+  it("exposes framework-owned Source BOM cache shard paths", () => {
+    expect(sourceBomCacheShardPath("attuned-discovery")).toBe(
+      ".attune/cache/source-bom/attuned-discovery.json",
+    )
   })
 })

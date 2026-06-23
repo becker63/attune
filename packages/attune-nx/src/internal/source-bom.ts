@@ -111,6 +111,9 @@ export const sourceBomShardPath = (projectRoot: string): string =>
     ? sourceBomShardFileName
     : joinPath(projectRoot, sourceBomShardFileName)
 
+export const sourceBomCacheShardPath = (project: string): string =>
+  joinPath(".attune/cache/source-bom", `${project}.json`)
+
 export const inferProjectRootFromDirectory = (directory: string): string => {
   const segments = directory.split("/").filter(Boolean)
   const sourceIndex = segments.indexOf("src")

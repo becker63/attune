@@ -33,9 +33,12 @@ for (const [position, entry] of index.shards.entries()) {
   seenProjects.add(entry.project)
   seenRoots.add(entry.projectRoot)
 
-  const expectedShard = `${entry.projectRoot}/attune.source-bom.json`
-  if (entry.shard !== expectedShard) {
-    fail(`${label} shard must be ${expectedShard}, got ${entry.shard}`)
+  const legacyShard = `${entry.projectRoot}/attune.source-bom.json`
+  const cacheShard = `.attune/cache/source-bom/${entry.project}.json`
+  const usesLegacyShard = entry.shard === legacyShard
+  const usesCacheShard = entry.shard === cacheShard
+  if (!usesLegacyShard && !usesCacheShard) {
+    fail(`${label} shard must be ${legacyShard} or ${cacheShard}, got ${entry.shard}`)
   }
   if (!existsSync(entry.shard)) {
     fail(`${label} points to missing shard ${entry.shard}`)
@@ -58,8 +61,11 @@ for (const [position, entry] of index.shards.entries()) {
     }
   }
   const actualRoot = dirname(entry.shard)
-  if (relative(entry.projectRoot, actualRoot) !== "") {
+  if (usesLegacyShard && relative(entry.projectRoot, actualRoot) !== "") {
     fail(`${entry.shard} must live directly under projectRoot ${entry.projectRoot}`)
+  }
+  if (usesCacheShard && actualRoot !== ".attune/cache/source-bom") {
+    fail(`${entry.shard} cache shard must live under .attune/cache/source-bom`)
   }
 }
 
