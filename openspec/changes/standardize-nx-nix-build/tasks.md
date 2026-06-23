@@ -47,7 +47,7 @@
 - [x] 5.8 Ensure generated public surfaces remain descriptive and do not execute Joern, spawn processes, read filesystem/env, parse runtime JSON, or emit telemetry during construction.
 - [x] 5.9 Decide whether schema-derived FastCheck arbitrary helpers are generated outputs, and if so place them under an internal/test-support generated path covered by freshness checks.
 - [x] 5.10 Use `@attune/nx:joern-template` to create known Joern proof-template source inputs, including binding schema, evidence schema, renderer shell, decoder test, fixture test, and registry participation.
-- [ ] 5.11 Use `@attune/nx:effect-service` where `joern-effect` needs Effect service boundaries such as `JoernTemplateExecutor` or runtime clients.
+- [x] 5.11 Use `@attune/nx:effect-service` where `joern-effect` needs Effect service boundaries such as `JoernTemplateExecutor` or runtime clients.
 - [x] 5.12 Keep pipeline execution in stage targets/executors; do not hide the Joern generation pipeline inside a broad macro generator.
 
 ## 6. joern-effect Validation Targets

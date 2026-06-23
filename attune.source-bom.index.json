@@ -1,11 +1,15 @@
 {
   "schemaVersion": 1,
-  "shapeManifest": "attune.generator-shapes.json",
   "shards": [
     {
       "project": "attune-architecture",
       "projectRoot": "framework/architecture",
       "shard": "framework/architecture/src/generated/source-bom/attune-architecture.json"
+    },
+    {
+      "project": "effect-oxlint-policy",
+      "projectRoot": "framework/oxlint-policy",
+      "shard": "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json"
     },
     {
       "project": "attune-foldkit",
@@ -33,24 +37,19 @@
       "shard": "framework/architecture/src/generated/source-bom/cocoindex-effect.json"
     },
     {
-      "project": "effect-oxlint-policy",
-      "projectRoot": "framework/oxlint-policy",
-      "shard": "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json"
-    },
-    {
       "project": "home-deployment",
       "projectRoot": "packages/home-deployment",
       "shard": "framework/architecture/src/generated/source-bom/home-deployment.json"
     },
     {
-      "project": "joern-effect",
-      "projectRoot": "packages/joern-effect",
-      "shard": "framework/architecture/src/generated/source-bom/joern-effect.json"
-    },
-    {
       "project": "joern-effect-properties",
       "projectRoot": "packages/joern-effect-properties",
       "shard": "framework/architecture/src/generated/source-bom/joern-effect-properties.json"
+    },
+    {
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "shard": "framework/architecture/src/generated/source-bom/joern-effect.json"
     },
     {
       "project": "platform-alchemy-k8s",
