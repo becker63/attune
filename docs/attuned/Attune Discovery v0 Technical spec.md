@@ -1,5 +1,6 @@
 **Status:** updated technical architecture spec  
-**Primary stack:** Effect, Effect Experimental EventLog/EventGroup, Effect Experimental Reactivity, Drizzle/Postgres, `effect-atom`, Nx, CocoIndex, Pi, Joern, FoldKit, FoldKit DevTools MCP  
+**Primary stack:** Effect, Effect Experimental EventLog/EventGroup, Effect Experimental Reactivity, Drizzle/Postgres, `effect-atom`, Nx, CocoIndex, Pi, Joern, FoldKit
+**Optional adapters:** FoldKit DevTools/OpenAPI/MCP adapters may inspect framework diagnostic/query projections, but they are not the core Attune Framework workflow surface.
 **Purpose:** give an implementation agent enough structure to build the first real vertical slice without rediscovering the architecture.
 
 ---
@@ -188,11 +189,14 @@ Nx gives source-code grammar.
 The agent fills implementation inside generated boundaries.
 ```
 
-### 1.6 FoldKit is both human UI and agent inspection surface
+### 1.6 FoldKit is both human UI and optional agent inspection surface
 
 FoldKit is not just rendering. It is the human-readable and agent-readable inspection surface over the same atom graph used by Pi.
 
-In development, FoldKit DevTools MCP provides a live agent interface for:
+In the final Attune Framework posture, TypeScript language-service diagnostics
+and Nx check output are the primary agent-facing workflow. FoldKit DevTools,
+OpenAPI, or MCP may provide optional inspection adapters over the same
+diagnostic/query projections for:
 
 ```txt
 current Model
@@ -204,7 +208,10 @@ schema-validated Message dispatch
 time travel / replay
 ```
 
-So Attune gets a development-time agent analysis interface nearly for free, as long as the FoldKit Model is backed by the atom projection graph.
+So Attune can get development-time agent analysis interfaces when useful, as
+long as the FoldKit Model is backed by the atom projection graph. These
+adapters do not replace package contracts, language-service diagnostics, Nx
+targets, or generated framework materialization.
 
 ---
 
@@ -390,7 +397,7 @@ packages/
       HumanReviewScene.ts
       ScoreFeaturesScene.ts
       RuleCandidateScene.ts
-      DevToolsMcpNotes.md
+      DevToolsAdapterNotes.md
       index.ts
 
   attune-nx/
@@ -2137,15 +2144,22 @@ Use atom dependencies.
 
 ---
 
-## 15. FoldKit DevTools MCP as the free analysis interface
+## 15. FoldKit DevTools as an optional analysis adapter
 
 ### 15.1 Product insight
 
-FoldKit ships a DevTools MCP server that exposes a running FoldKit app to AI agents.
+FoldKit can expose a running app to AI agents through DevTools, OpenAPI, or a
+future MCP adapter.
 
-That means Attune does not need a separate agent observability API for v0.
+That adapter path is not the core Attune Framework workflow for v0. Agents
+start from language-service diagnostics and Nx output, then repair
+`src/attune.package.ts`, generated framework source, Effect Schema metadata,
+and package atom/Reactivity views.
 
-If the FoldKit Model is backed by the atom projection graph, external agents can inspect Attune runs through the running app.
+If the FoldKit Model is backed by the atom projection graph and framework
+diagnostic/query projections, external agents can inspect Attune runs through
+the running app without reading protocol store internals or checked-in report
+artifacts.
 
 ```txt
 EventLog
@@ -2154,13 +2168,14 @@ EventLog
   → Atom graph
   → FoldKit Model
   → FoldKit DevTools
-  → FoldKit DevTools MCP
+  → optional DevTools/OpenAPI/MCP adapter
   → external AI agent
 ```
 
 ### 15.2 What external agents get
 
-Through FoldKit DevTools MCP, agents can inspect and interact with the running app:
+Through an optional FoldKit inspection adapter, agents can inspect and interact
+with the running app:
 
 ```txt
 foldkit_list_runtimes
@@ -2303,7 +2318,7 @@ There are two agent surfaces:
 Pi / local discovery agent:
   acts inside the run through AgentDecision
 
-FoldKit DevTools MCP / external analysis agent:
+FoldKit DevTools/OpenAPI/MCP adapter / external analysis agent:
   inspects and navigates the FoldKit runtime
 ```
 
@@ -2311,7 +2326,7 @@ Rule:
 
 ```txt
 Pi is an actor.
-FoldKit MCP agents are inspectors.
+External inspection adapters are inspectors.
 ```
 
 Do not collapse these APIs.
@@ -2653,13 +2668,13 @@ Reactivity ordering: mutation writes before refresh
 Joern evidence decoder robustness
 ```
 
-### 18.8 FoldKit MCP smoke tests
+### 18.8 FoldKit inspection adapter smoke tests
 
-In dev mode:
+In dev mode, if an inspection adapter is enabled:
 
 ```txt
 start FoldKit app
-connect foldkit-devtools MCP
+connect foldkit-devtools adapter
 foldkit_list_runtimes finds runtime
 foldkit_get_model returns DiscoveryInspectorModel
 foldkit_get_message_schema returns Message schema
@@ -2686,7 +2701,7 @@ Reactivity.mutation keys
 atom evaluation
 atom refresh
 FoldKit scene generation
-FoldKit DevTools MCP inspection
+FoldKit DevTools inspection
 ```
 
 Useful metrics:
@@ -2705,7 +2720,7 @@ plateau reasons
 Reactivity invalidation count per run
 atom graph size per run
 atom refresh count per run
-FoldKit MCP inspection calls
+FoldKit adapter inspection calls
 ```
 
 Axiom can consume OTEL traces/logs later.
@@ -2814,7 +2829,7 @@ Drizzle projects durable run state
   ↓
 Atoms derive higher-order metrics
   ↓
-FoldKit DevTools MCP exposes run analysis
+FoldKit DevTools or another optional inspection adapter exposes run analysis
   ↓
 Frontier agent inspects successes and failures
   ↓
@@ -2858,7 +2873,7 @@ Given this run state, choose one safe next action.
 Level 2: frontier steering agent.
 
 ```txt
-FoldKit DevTools MCP
+FoldKit DevTools or optional inspection adapter
   → inspect many runs
   → compare yield
   → identify missing templates/fields/views
@@ -3074,7 +3089,7 @@ Router validates and handles.
 FoldKit scene explains run state.
 ```
 
-### Phase 4: FoldKit DevTools MCP analysis loop
+### Phase 4: FoldKit DevTools analysis adapter loop
 
 Build:
 
@@ -3082,7 +3097,7 @@ Build:
 DiscoveryInspectorModel
 DiscoveryInspectorMessage
 FoldKit DevTools config with Message schema
-DevTools MCP smoke test
+DevTools adapter smoke test
 run overview scene
 decision packet scene
 hypothesis lineage scene
@@ -3091,7 +3106,7 @@ hypothesis lineage scene
 Acceptance:
 
 ```txt
-External AI agent can inspect run through FoldKit MCP.
+External AI agent can inspect run through an optional FoldKit adapter.
 Agent can select run/iteration/hypothesis by dispatching typed FoldKit Messages.
 Agent can diff models before/after runtime messages.
 ```
@@ -3116,7 +3131,7 @@ Acceptance:
 Runs are replayable.
 Atom views match replayed Drizzle state.
 Long runs are observable.
-FoldKit MCP can inspect replayed/debug states.
+FoldKit adapters can inspect replayed/debug states.
 ```
 
 ### Phase 6: Higher-order batch steering
@@ -3135,7 +3150,7 @@ Nx generator workflow for new templates/views
 Acceptance:
 
 ```txt
-A frontier agent can inspect batch run outcomes through FoldKit MCP,
+A frontier agent can inspect batch run outcomes through an optional FoldKit adapter,
 generate a new Joern template or DecisionPacket field through Nx,
 run tests,
 and trigger/compare a new local batch.
@@ -3162,7 +3177,7 @@ When implementing this architecture, the agent should follow these rules:
 12. Do not manually invalidate derived views.
 13. Keep Workflow thin: it asks views for packets and plateau state.
 14. Keep FoldKit scene generation derived from atoms, not direct queries.
-15. Treat FoldKit DevTools MCP as the default development-time agent inspection interface.
+15. Treat language-service diagnostics and Nx output as the default agent inspection interface; FoldKit DevTools/OpenAPI/MCP adapters are optional.
 16. Keep FoldKit inspector messages separate from discovery AgentDecision commands.
 17. Require human review for rule promotion and capability expansion.
 ```
@@ -3206,7 +3221,7 @@ These are the external projects this spec is aligned with:
 - CocoIndex Code: AST-based semantic code search over codebases, usable through CLI/agent integrations and appropriate as Attune’s recall layer.
 - Effect Experimental EventLog/EventGroup and SQL EventJournal: used as the durable event-sourcing substrate.
 - Pi agent core: stateful TS agent loop with tool execution and event streaming; used only as a bounded decision client.
-- FoldKit DevTools MCP: development-time MCP server exposing running FoldKit apps to AI agents via model snapshots, message history, diffs, schemas, dispatch, and time travel.
+- FoldKit DevTools/OpenAPI/MCP adapters: optional inspection adapters exposing running FoldKit apps or framework diagnostic/query projections to AI agents via model snapshots, message history, diffs, schemas, dispatch, and time travel. They are not the core framework workflow surface.
 
 ---
 
@@ -3266,7 +3281,7 @@ Control:
 
 Inspection:
   FoldKit Model
-  FoldKit DevTools MCP
+  Optional FoldKit inspection adapter
 ```
 
 ---
@@ -3293,7 +3308,7 @@ Recall side:
   CocoIndex search → AnchorCard → anchors.retrieved
 
 Inspection side:
-  Atom graph → FoldKit Model → DevTools → DevTools MCP / OpenAPI
+  Atom graph → FoldKit Model → DevTools → optional OpenAPI/MCP adapter
 
 Growth side:
   Nx generators → services/events/decisions/projections/atoms/templates
@@ -3302,5 +3317,5 @@ Growth side:
 Final sentence:
 
 ```txt
-Attune Discovery is an Effect event-sourced write system with Effect Reactivity as its freshness layer, a server-side effect-atom projection graph as its reasoning layer, CocoIndex as semantic recall, Joern as structural proof, Pi as bounded decision client, FoldKit/FoldKit DevTools MCP as its explanation and inspection surface, and Nx generators as its source-code grammar.
+Attune Discovery is an Effect event-sourced write system with Effect Reactivity as its freshness layer, a server-side effect-atom projection graph as its reasoning layer, CocoIndex as semantic recall, Joern as structural proof, Pi as bounded decision client, FoldKit plus framework diagnostics as its explanation and inspection surface, optional DevTools/OpenAPI/MCP adapters over those projections, and Nx generators as its source-code grammar.
 ```

@@ -23,10 +23,6 @@
     "src/generators/**/schema.json",
     "src/executors/**/schema.json"
   ],
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/write-generator-cjs-wrappers.mjs",
-    "typecheck": "tsc --noEmit"
-  },
   "devDependencies": {
     "typescript": "^5.8.3"
   },

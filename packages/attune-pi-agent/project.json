@@ -4,52 +4,108 @@
   "sourceRoot": "packages/attune-pi-agent/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/attune-pi-agent",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsup src/index.ts src/pi-extension.ts src/generators/spec/generator.ts src/generators/permission-policy/generator.ts src/generators/test-obligation/generator.ts src/generators/taskplane-task/generator.ts --format esm,cjs --dts --sourcemap --clean"
+        "targetProject": "attune-pi-agent",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts",
+            "src/pi-extension.ts",
+            "src/generators/spec/generator.ts",
+            "src/generators/permission-policy/generator.ts",
+            "src/generators/test-obligation/generator.ts",
+            "src/generators/taskplane-task/generator.ts"
+          ],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attune-pi-agent",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsgo --noEmit"
+        "targetProject": "attune-pi-agent",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attune-pi-agent",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsc --noEmit"
+        "targetProject": "attune-pi-agent",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json packages/attune-pi-agent --quiet"
+        "targetProject": "attune-pi-agent",
+        "checks": [
+          "lint"
+        ],
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attune-pi-agent",
-        "command": "node ../../scripts/codex/pnpm.mjs exec vitest run"
+        "targetProject": "attune-pi-agent",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
       }
     },
     "property": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attune-pi-agent",
-        "command": "node ../../scripts/codex/pnpm.mjs exec vitest run test/*.property.test.ts"
+        "targetProject": "attune-pi-agent",
+        "tool": "test-runner",
+        "action": "test",
+        "toolId": "vitest",
+        "parameters": {
+          "files": [
+            "test/*.property.test.ts"
+          ]
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/attune-pi-agent"
+        ],
+        "dryRun": false
       }
     },
     "mutation": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attune-pi-agent",
-        "command": "node ../../scripts/codex/pnpm.mjs exec stryker run stryker.conf.json"
+        "targetProject": "attune-pi-agent",
+        "tool": "mutation",
+        "action": "mutate",
+        "toolId": "stryker",
+        "parameters": {
+          "config": "stryker.conf.json"
+        },
+        "resourceTier": "heavy",
+        "evidenceOutputs": [
+          ".attune/cache/mutation/attune-pi-agent"
+        ],
+        "dryRun": false
       }
     }
   }

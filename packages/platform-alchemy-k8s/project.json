@@ -4,107 +4,213 @@
   "sourceRoot": "packages/platform-alchemy-k8s/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/platform-alchemy-k8s",
-        "command": "pnpm exec tsup src/index.ts src/provider/alchemy-resource.ts --format esm,cjs --dts --sourcemap --clean"
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts",
+            "src/provider/alchemy-resource.ts"
+          ],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/platform-alchemy-k8s",
-        "command": "pnpm exec tsgo --noEmit"
+        "targetProject": "platform-alchemy-k8s",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/platform-alchemy-k8s",
-        "command": "pnpm exec tsc --noEmit"
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "pnpm exec oxlint --config root-oxlintrc.json packages/platform-alchemy-k8s --quiet"
+        "targetProject": "platform-alchemy-k8s",
+        "checks": [
+          "lint"
+        ],
+        "dryRun": false
       }
     },
     "generate-crd-types": {
-      "executor": "nx:run-commands",
-      "inputs": ["{projectRoot}/src/crds/**/*.ts", "{projectRoot}/scripts/generate-crd-types.ts"],
-      "outputs": ["{projectRoot}/src/generated/crds.ts", "{projectRoot}/src/generated/crds"],
+      "executor": "@attune/nx:toolchain",
+      "inputs": [
+        "{projectRoot}/src/crds/**/*.ts",
+        "{projectRoot}/scripts/generate-crd-types.ts"
+      ],
+      "outputs": [
+        "{projectRoot}/src/generated/crds.ts",
+        "{projectRoot}/src/generated/crds"
+      ],
       "options": {
-        "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec tsx scripts/generationStage.ts emit-generated"
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "kubernetes",
+        "action": "generate",
+        "toolId": "platform-alchemy-k8s:generation-stage",
+        "parameters": {
+          "stage": "emit-generated",
+          "tmpDir": true
+        },
+        "dryRun": false
       }
     },
     "emit-crd-manifests": {
-      "executor": "nx:run-commands",
-      "inputs": ["{projectRoot}/src/crds/**/*.ts", "{projectRoot}/scripts/generate-crd-types.ts"],
-      "outputs": ["{projectRoot}/src/generated/crds"],
+      "executor": "@attune/nx:toolchain",
+      "inputs": [
+        "{projectRoot}/src/crds/**/*.ts",
+        "{projectRoot}/scripts/generate-crd-types.ts"
+      ],
+      "outputs": [
+        "{projectRoot}/src/generated/crds"
+      ],
       "options": {
-        "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec tsx scripts/generationStage.ts emit-crd-manifests"
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "kubernetes",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-crd-manifests",
+          "tmpDir": true
+        },
+        "dryRun": false
       }
     },
     "emit-crd-types": {
-      "executor": "nx:run-commands",
-      "inputs": ["{projectRoot}/src/crds/**/*.ts", "{projectRoot}/scripts/generate-crd-types.ts"],
-      "outputs": ["{projectRoot}/src/generated/crds.ts"],
+      "executor": "@attune/nx:toolchain",
+      "inputs": [
+        "{projectRoot}/src/crds/**/*.ts",
+        "{projectRoot}/scripts/generate-crd-types.ts"
+      ],
+      "outputs": [
+        "{projectRoot}/src/generated/crds.ts"
+      ],
       "options": {
-        "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec tsx scripts/generationStage.ts emit-crd-types"
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "kubernetes",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-crd-types",
+          "tmpDir": true
+        },
+        "dryRun": false
       }
     },
     "emit-generated": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/generated/crds.ts", "{projectRoot}/src/generated/crds"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/generated/crds.ts",
+        "{projectRoot}/src/generated/crds"
+      ],
       "options": {
-        "commands": [
-          "pnpm exec nx run platform-alchemy-k8s:emit-crd-manifests",
-          "pnpm exec nx run platform-alchemy-k8s:emit-crd-types"
-        ],
-        "parallel": false
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "platform-alchemy-k8s-emit-generated",
+        "parameters": {
+          "targets": [
+            "platform-alchemy-k8s:emit-crd-manifests",
+            "platform-alchemy-k8s:emit-crd-types"
+          ]
+        },
+        "dryRun": false
       }
     },
     "sync-k8s-resources": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/resources/ResourceRegistry.generated.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/resources/ResourceRegistry.generated.ts"
+      ],
       "options": {
-        "cwd": "packages/platform-alchemy-k8s",
-        "command": "TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec tsx scripts/generationStage.ts sync-k8s-resources"
+        "targetProject": "platform-alchemy-k8s",
+        "tool": "kubernetes",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "sync-k8s-resources",
+          "tmpDir": true
+        },
+        "dryRun": false
       }
     },
     "generate": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "outputs": [
         "{projectRoot}/src/generated/crds.ts",
         "{projectRoot}/src/generated/crds",
         "{projectRoot}/src/resources/ResourceRegistry.generated.ts"
       ],
       "options": {
-        "commands": [
-          "pnpm exec nx run platform-alchemy-k8s:emit-generated",
-          "pnpm exec nx run platform-alchemy-k8s:sync-k8s-resources"
-        ],
-        "parallel": false
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "platform-alchemy-k8s-generate",
+        "parameters": {
+          "targets": [
+            "platform-alchemy-k8s:emit-generated",
+            "platform-alchemy-k8s:sync-k8s-resources"
+          ]
+        },
+        "dryRun": false
       }
     },
     "check-generated": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["generate"],
+      "executor": "@attune/nx:generated",
+      "dependsOn": [
+        "generate"
+      ],
       "options": {
-        "command": "git diff --exit-code -- packages/platform-alchemy-k8s/src/generated/crds.ts packages/platform-alchemy-k8s/src/generated/crds packages/platform-alchemy-k8s/src/resources/ResourceRegistry.generated.ts"
+        "targetProject": "platform-alchemy-k8s",
+        "operation": "check",
+        "artifact": "generator-shape",
+        "outputs": [
+          "packages/platform-alchemy-k8s/src/generated/crds.ts",
+          "packages/platform-alchemy-k8s/src/generated/crds",
+          "packages/platform-alchemy-k8s/src/resources/ResourceRegistry.generated.ts"
+        ],
+        "provenance": {
+          "generatorName": "platform-alchemy-k8s:generationStage",
+          "owner": "platform-alchemy-k8s"
+        },
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["generate"],
+      "executor": "@attune/nx:package-check",
+      "dependsOn": [
+        "generate"
+      ],
       "options": {
-        "cwd": "packages/platform-alchemy-k8s",
-        "command": "pnpm exec vitest run"
+        "targetProject": "platform-alchemy-k8s",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
       }
     }
   }

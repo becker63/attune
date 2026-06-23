@@ -26,12 +26,14 @@ switch (stage) {
   case "emit-crd-manifests":
   case "emit-crd-types":
   case "emit-generated":
-    run("pnpm exec tsx", ["scripts/generate-crd-types.ts", stage])
+    run("pnpm", ["exec", "tsx", "scripts/generate-crd-types.ts", stage])
     break
   case "sync-k8s-resources":
     run(
-      "pnpm exec nx",
+      "pnpm",
       [
+        "exec",
+        "nx",
         "generate",
         "@attune/nx:sync-k8s-resources",
         "--directory",

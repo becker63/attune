@@ -1,6 +1,5 @@
 import { Effect } from "effect"
 import {
-  decodePackageContract,
   descriptorFromPackageContract,
   type AttuneGeneratedArtifactRecord,
   type AttuneProtocolDelta,
@@ -12,6 +11,8 @@ type DescriptorPackageContractInput = Parameters<typeof descriptorFromPackageCon
 
 export type PackageContractTargetName =
   | "sync-package-contract"
+  | "protocol-materialize"
+  | "framework-diagnostics"
   | "service-conformance"
   | "property"
   | "coverage-conformance"
@@ -20,6 +21,8 @@ export type PackageContractTargetName =
 
 export type PackageContractTargetCategory =
   | "sync"
+  | "materialization"
+  | "diagnostics"
   | "conformance"
   | "property"
   | "coverage"
@@ -33,8 +36,30 @@ export interface PackageContractTargetSemantics {
   readonly writes: readonly string[]
   readonly dependsOn: readonly PackageContractTargetName[]
   readonly evidence: readonly string[]
+  readonly affectedBy: readonly PackageContractAffectedChangeKind[]
+  readonly runtimeInputs: readonly PackageContractRuntimeInputName[]
   readonly cacheable: boolean
 }
+
+export type PackageContractAffectedChangeKind =
+  | "package-contract"
+  | "schema"
+  | "service"
+  | "reactivity-key"
+  | "atom-graph"
+  | "generated-artifact"
+  | "runtime-delta"
+  | "waiver"
+  | "coverage"
+
+export type PackageContractRuntimeInputName =
+  | "descriptor-hash"
+  | "generated-artifact-hash"
+  | "internal-protocol-delta"
+  | "repair-action"
+  | "runtime-diagnostic"
+  | "waiver-state"
+  | "evidence-state"
 
 export interface NxProjectLike {
   readonly name?: string
@@ -238,6 +263,7 @@ export interface PackageContractGraphNodeMetadata {
   readonly packageKind: string
   readonly protocolId: string
   readonly descriptorHash: string
+  readonly operationIds: readonly string[]
   readonly operationCount: number
   readonly dependencies: PackageContractDependencySummary
   readonly atomGraph: PackageContractAtomGraphSummary
@@ -282,6 +308,102 @@ export interface PackageContractWorkspaceGraphMetadata {
   readonly unresolvedServiceRequirements: readonly PackageContractUnresolvedServiceRequirement[]
 }
 
+export interface PackageContractAffectedChange {
+  readonly projectName?: string
+  readonly packageId?: string
+  readonly kind: PackageContractAffectedChangeKind
+  readonly serviceIds?: readonly string[]
+  readonly reactivityKeys?: readonly string[]
+  readonly atoms?: readonly string[]
+}
+
+export interface PackageContractAffectedTarget {
+  readonly projectName: string
+  readonly packageId: string
+  readonly targetName: PackageContractTargetName
+  readonly reason: string
+  readonly changeKind: PackageContractAffectedChangeKind
+  readonly propagatedFromProjectName?: string
+  readonly runtimeInputs: readonly PackageContractRuntimeInputName[]
+}
+
+export type PackageContractWorkerIsolationLevel =
+  | "main-thread"
+  | "worker-thread"
+  | "process"
+  | "container"
+
+export type PackageContractResourceTier =
+  | "commit"
+  | "push"
+  | "proof-pressure"
+  | "nightly"
+
+export interface PackageContractSeedRange {
+  readonly start: number
+  readonly end: number
+}
+
+export interface PackageContractWorkerShardMetadata {
+  readonly targetName: string
+  readonly packageId: string
+  readonly operationId: string
+  readonly propertyId: string
+  readonly shardId: string
+  readonly shardIndex: number
+  readonly shardCount: number
+  readonly seedRange: PackageContractSeedRange
+  readonly coverageCorpus: string
+  readonly workerCount: number
+  readonly timeoutMs: number
+  readonly isolationLevel: PackageContractWorkerIsolationLevel
+  readonly resourceTier: PackageContractResourceTier
+  readonly randomSource: "main-thread" | "worker"
+  readonly evidenceOutput: string
+}
+
+export interface PackageContractWorkerShardOptions {
+  readonly operationIds?: readonly string[]
+  readonly shardCount?: number
+  readonly seedsPerShard?: number
+  readonly seedStart?: number
+  readonly coverageCorpus?: string
+  readonly workerCount?: number
+  readonly timeoutMs?: number
+  readonly isolationLevel?: PackageContractWorkerIsolationLevel
+  readonly resourceTier?: PackageContractResourceTier
+  readonly randomSource?: "main-thread" | "worker"
+}
+
+export interface PackageContractMergeTargetMetadata {
+  readonly targetName: "property-evidence-merge" | "atom-graph-coverage-merge"
+  readonly packageId: string
+  readonly reads: readonly string[]
+  readonly writes: readonly string[]
+  readonly dependsOn: readonly string[]
+  readonly deterministicOrder: readonly string[]
+  readonly evidence: readonly string[]
+}
+
+export interface PackageContractShardSummary {
+  readonly packageId: string
+  readonly operationId?: string
+  readonly shardId: string
+  readonly workerId?: string
+  readonly propertyEvidenceArtifacts?: readonly string[]
+  readonly atomGraphCoverageArtifacts?: readonly string[]
+  readonly status?: string
+}
+
+export interface PackageContractMergedShardSummary {
+  readonly packageId: string
+  readonly shardIds: readonly string[]
+  readonly workerIds: readonly string[]
+  readonly propertyEvidenceArtifacts: readonly string[]
+  readonly atomGraphCoverageArtifacts: readonly string[]
+  readonly statuses: readonly string[]
+}
+
 export interface PackageProtocolRuntimeSummaryLike {
   readonly packageId: string
   readonly protocolId: string
@@ -289,6 +411,11 @@ export interface PackageProtocolRuntimeSummaryLike {
   readonly operationCount: number
   readonly obligationCount: number
   readonly evidenceCount: number
+  readonly evidenceRunCount?: number
+  readonly replayMetadataCount?: number
+  readonly coverageFeedbackCount?: number
+  readonly activeWaiverCount?: number
+  readonly waiverIssueCount?: number
   readonly staleGeneratedArtifactCount: number
 }
 
@@ -309,9 +436,15 @@ export interface PackageContractRuntimeFacts {
   readonly obligationCount: number
   readonly evidenceCount: number
   readonly staleGeneratedArtifactCount: number
+  readonly evidenceRunCount: number
+  readonly replayMetadataCount: number
+  readonly coverageFeedbackCount: number
+  readonly activeWaiverCount: number
+  readonly waiverIssueCount: number
   readonly deltaCount: number
   readonly deltaKinds: readonly AttuneProtocolDelta["kind"][]
   readonly repairTargets: readonly string[]
+  readonly diagnosticCodes: readonly string[]
   readonly generatedArtifactHashes: readonly PackageContractGeneratedArtifactHashSummary[]
 }
 
@@ -322,10 +455,20 @@ export interface PackageContractRuntimeQueryLike {
   readonly listDeltas: (
     packageId: string,
   ) => Effect.Effect<readonly AttuneProtocolDelta[], unknown, never>
+  readonly getPackageEvidenceState?: (
+    packageId: string,
+  ) => Effect.Effect<{
+    readonly generatedArtifacts: readonly AttuneGeneratedArtifactRecord[]
+  }, unknown, never>
+  readonly getDiagnosticsForFile?: (
+    sourcePath: string,
+  ) => Effect.Effect<readonly { readonly code: string }[], unknown, never>
 }
 
 export interface PackageContractRuntimeFactOptions {
   readonly generatedArtifacts?: readonly AttuneGeneratedArtifactRecord[]
+  readonly sourcePath?: string
+  readonly diagnostics?: readonly { readonly code: string }[]
 }
 
 export class PackageContractGraphError extends Error {
@@ -355,7 +498,33 @@ export const packageContractTargetSemantics = [
     writes: ["src/attune.package.ts", "src/attune.package.typecheck.ts", "attune.source-bom.json"],
     dependsOn: [],
     evidence: ["deterministic generated contract files", "updated Source BOM shard"],
+    affectedBy: ["package-contract", "schema", "service", "reactivity-key", "atom-graph"],
+    runtimeInputs: [],
     cacheable: false,
+  },
+  {
+    targetName: "protocol-materialize",
+    category: "materialization",
+    purpose: "Materialize protocol descriptors, descriptor hashes, obligations, generated artifact expectations, and local runtime cache state from package contracts.",
+    reads: ["src/attune.package.ts", "src/**/*.ts", ".attune/cache/protocol/**/*"],
+    writes: [".attune/cache/protocol/**/*", "src/generated/attune-*.ts"],
+    dependsOn: ["sync-package-contract"],
+    evidence: ["protocol descriptor hash", "generated artifact hash records", "obligation derivation"],
+    affectedBy: ["package-contract", "schema", "service", "reactivity-key", "atom-graph", "generated-artifact"],
+    runtimeInputs: ["descriptor-hash", "generated-artifact-hash"],
+    cacheable: true,
+  },
+  {
+    targetName: "framework-diagnostics",
+    category: "diagnostics",
+    purpose: "Project ProtocolQuery diagnostics, internal deltas, waiver state, and repair actions into Nx check output.",
+    reads: ["src/attune.package.ts", ".attune/cache/protocol/**/*"],
+    writes: [],
+    dependsOn: ["protocol-materialize"],
+    evidence: ["ProtocolDelta diagnostics", "repair actions", "waiver state"],
+    affectedBy: ["runtime-delta", "waiver", "generated-artifact", "coverage"],
+    runtimeInputs: ["internal-protocol-delta", "repair-action", "runtime-diagnostic", "waiver-state"],
+    cacheable: true,
   },
   {
     targetName: "service-conformance",
@@ -363,8 +532,10 @@ export const packageContractTargetSemantics = [
     purpose: "Check that Effect service ids, required services, and package layer declarations match the package contract.",
     reads: ["src/attune.package.ts", "src/**/*.ts"],
     writes: [],
-    dependsOn: ["sync-package-contract"],
+    dependsOn: ["protocol-materialize"],
     evidence: ["DI service graph summary", "compile-only service assertions"],
+    affectedBy: ["package-contract", "schema", "service", "runtime-delta"],
+    runtimeInputs: ["descriptor-hash", "internal-protocol-delta"],
     cacheable: true,
   },
   {
@@ -372,19 +543,23 @@ export const packageContractTargetSemantics = [
     category: "property",
     purpose: "Run Schema-derived package-boundary property tests and persist replayable seeds as evidence.",
     reads: ["src/attune.package.ts", "src/**/*.property.ts"],
-    writes: ["coverage/property-evidence.json"],
+    writes: [".attune/cache/property-evidence/**/*.json"],
     dependsOn: ["service-conformance"],
     evidence: ["FastCheck seeds", "Schema arbitrary partitions", "operation law results"],
+    affectedBy: ["package-contract", "schema", "service", "reactivity-key", "atom-graph", "runtime-delta"],
+    runtimeInputs: ["descriptor-hash", "evidence-state", "internal-protocol-delta"],
     cacheable: true,
   },
   {
     targetName: "coverage-conformance",
     category: "coverage",
     purpose: "Compare V8 and property evidence against contract-declared operation, law, and type-guidance coverage.",
-    reads: ["src/attune.package.ts", "coverage/**/*"],
-    writes: ["coverage/semantic-coverage.json"],
+    reads: ["src/attune.package.ts", ".attune/cache/property-evidence/**/*", ".attune/cache/coverage/**/*"],
+    writes: [".attune/cache/coverage/semantic-coverage.json"],
     dependsOn: ["property"],
     evidence: ["operation coverage matrix", "type-guidance partition hits"],
+    affectedBy: ["package-contract", "schema", "service", "reactivity-key", "atom-graph", "coverage"],
+    runtimeInputs: ["evidence-state", "runtime-diagnostic"],
     cacheable: true,
   },
   {
@@ -392,19 +567,23 @@ export const packageContractTargetSemantics = [
     category: "conformance",
     purpose: "Check that declared Reactivity keys and atoms account for operation view movement.",
     reads: ["src/attune.package.ts", "src/**/*atom*.ts", "src/**/*reactivity*.ts"],
-    writes: ["coverage/atom-graph-evidence.json"],
+    writes: [".attune/cache/atom-graph-evidence.json"],
     dependsOn: ["service-conformance"],
     evidence: ["operation-to-Reactivity edges", "operation-to-atom edges"],
+    affectedBy: ["package-contract", "reactivity-key", "atom-graph", "runtime-delta"],
+    runtimeInputs: ["descriptor-hash", "evidence-state", "runtime-diagnostic"],
     cacheable: true,
   },
   {
     targetName: "check-generated",
     category: "generation",
     purpose: "Fail when generated contract, service, atom, or evidence files drift from their Nx generator provenance.",
-    reads: ["attune.source-bom.json", "src/**/*.ts"],
+    reads: ["attune.source-bom.json", "src/**/*.ts", ".attune/cache/protocol/**/*"],
     writes: [],
-    dependsOn: ["sync-package-contract"],
+    dependsOn: ["protocol-materialize"],
     evidence: ["Source BOM ownership", "generator options hash", "generated-file diff"],
+    affectedBy: ["package-contract", "generated-artifact", "runtime-delta"],
+    runtimeInputs: ["generated-artifact-hash", "internal-protocol-delta", "repair-action"],
     cacheable: true,
   },
 ] as const satisfies readonly PackageContractTargetSemantics[]
@@ -596,7 +775,6 @@ export function createPackageContractGraphNode(
   input: PackageContractGraphNodeInput,
 ): PackageContractGraphNodeMetadata {
   const contract = packageContractFromModule(input.module, input.projectName, input.contractPath)
-  const decoded = decodeContractForGraph(input.projectName, input.contractPath, contract)
   const descriptor = descriptorForGraph(input.projectName, input.contractPath, contract)
   const summary = summarizePackageContract(contract, {
     packageLayer: input.module.PackageLayer,
@@ -609,11 +787,12 @@ export function createPackageContractGraphNode(
     projectRoot: normalizeRelativePath(input.projectRoot),
     sourceRoot: normalizeRelativePath(input.sourceRoot ?? `${input.projectRoot}/src`),
     contractPath: normalizeRelativePath(input.contractPath),
-    packageId: decoded.packageId,
-    packageKind: decoded.packageKind,
+    packageId: descriptor.packageId,
+    packageKind: descriptor.packageKind,
     protocolId: descriptor.protocolId,
     descriptorHash: descriptor.descriptorHash,
-    operationCount: decoded.operations.length,
+    operationIds: uniqueSorted(descriptor.operations.map((operation) => operation.id)),
+    operationCount: descriptor.operations.length,
     dependencies: summary.dependencies,
     atomGraph: summary.atomGraph,
     targetSemantics: packageContractTargetSemantics,
@@ -693,6 +872,7 @@ export function summarizePackageContractRuntimeFacts(
   deltas: readonly AttuneProtocolDelta[] = [],
   options: PackageContractRuntimeFactOptions = {},
 ): PackageContractRuntimeFacts {
+  const diagnostics = options.diagnostics ?? []
   return {
     packageId: summary.packageId,
     protocolId: summary.protocolId,
@@ -700,6 +880,11 @@ export function summarizePackageContractRuntimeFacts(
     operationCount: summary.operationCount,
     obligationCount: summary.obligationCount,
     evidenceCount: summary.evidenceCount,
+    evidenceRunCount: summary.evidenceRunCount ?? 0,
+    replayMetadataCount: summary.replayMetadataCount ?? 0,
+    coverageFeedbackCount: summary.coverageFeedbackCount ?? 0,
+    activeWaiverCount: summary.activeWaiverCount ?? 0,
+    waiverIssueCount: summary.waiverIssueCount ?? 0,
     staleGeneratedArtifactCount: summary.staleGeneratedArtifactCount,
     deltaCount: deltas.length,
     deltaKinds: uniqueSorted(deltas.map((delta) => delta.kind)) as readonly AttuneProtocolDelta["kind"][],
@@ -710,6 +895,7 @@ export function summarizePackageContractRuntimeFacts(
           .filter((target): target is string => typeof target === "string" && target.length > 0)
       ),
     ),
+    diagnosticCodes: uniqueSorted(diagnostics.map((diagnostic) => diagnostic.code)),
     generatedArtifactHashes: (options.generatedArtifacts ?? []).map((artifact) => ({
       artifactId: artifact.artifactId,
       path: artifact.path,
@@ -726,11 +912,26 @@ export async function readPackageContractRuntimeFacts(
   packageId: string,
   options: PackageContractRuntimeFactOptions = {},
 ): Promise<PackageContractRuntimeFacts> {
-  const [summary, deltas] = await Promise.all([
+  const [summary, deltas, evidenceState, diagnostics] = await Promise.all([
     Effect.runPromise(query.getPackageSummary(packageId)),
     Effect.runPromise(query.listDeltas(packageId)),
+    query.getPackageEvidenceState === undefined
+      ? Promise.resolve(null)
+      : Effect.runPromise(query.getPackageEvidenceState(packageId)),
+    query.getDiagnosticsForFile === undefined || options.sourcePath === undefined
+      ? Promise.resolve(options.diagnostics ?? [])
+      : Effect.runPromise(query.getDiagnosticsForFile(options.sourcePath)),
   ])
-  return summarizePackageContractRuntimeFacts(summary, deltas, options)
+  const runtimeOptions: PackageContractRuntimeFactOptions = {
+    ...options,
+    diagnostics,
+  }
+  const generatedArtifacts = evidenceState?.generatedArtifacts ?? options.generatedArtifacts
+  return summarizePackageContractRuntimeFacts(
+    summary,
+    deltas,
+    generatedArtifacts === undefined ? runtimeOptions : { ...runtimeOptions, generatedArtifacts },
+  )
 }
 
 export function inferPackageContractTargetSemantics(
@@ -738,6 +939,181 @@ export function inferPackageContractTargetSemantics(
 ): readonly PackageContractTargetSemantics[] {
   const requested = new Set(targetNames)
   return packageContractTargetSemantics.filter((target) => requested.has(target.targetName))
+}
+
+export function derivePackageContractAffectedTargets(
+  graph: PackageContractWorkspaceGraphMetadata,
+  changes: readonly PackageContractAffectedChange[],
+): readonly PackageContractAffectedTarget[] {
+  const targets: PackageContractAffectedTarget[] = []
+  const projectByName = new Map(graph.projects.map((project) => [project.projectName, project]))
+  const projectByPackage = new Map(graph.projects.map((project) => [project.packageId, project]))
+
+  for (const change of changes) {
+    const directProject = directProjectForChange(change, projectByName, projectByPackage)
+    if (directProject !== undefined) {
+      targets.push(...affectedTargetsForProject(directProject, change, affectedReasonFor(change, directProject)))
+    }
+    targets.push(...servicePropagationTargetsForChange(graph, change, directProject, projectByName))
+  }
+
+  return uniqueAffectedTargets(targets)
+}
+
+function affectedTargetsForProject(
+  project: PackageContractGraphNodeMetadata,
+  change: PackageContractAffectedChange,
+  reason: string,
+  propagatedFromProjectName?: string,
+): readonly PackageContractAffectedTarget[] {
+  return targetsForChange(change.kind, project).map((target) => ({
+    projectName: project.projectName,
+    packageId: project.packageId,
+    targetName: target.targetName,
+    reason,
+    changeKind: change.kind,
+    ...(propagatedFromProjectName === undefined ? {} : { propagatedFromProjectName }),
+    runtimeInputs: target.runtimeInputs,
+  }))
+}
+
+function servicePropagationTargetsForChange(
+  graph: PackageContractWorkspaceGraphMetadata,
+  change: PackageContractAffectedChange,
+  directProject: PackageContractGraphNodeMetadata | undefined,
+  projectByName: ReadonlyMap<string, PackageContractGraphNodeMetadata>,
+): readonly PackageContractAffectedTarget[] {
+  if (change.kind !== "service") return []
+
+  const serviceIds = new Set(change.serviceIds ?? directProject?.dependencies.providedServiceIds ?? [])
+  return graph.dependencyEdges.flatMap((edge) => {
+    if (!serviceEdgeMatchesChange(edge, directProject, serviceIds)) return []
+    const consumer = projectByName.get(edge.sourceProjectName)
+    if (consumer === undefined) return []
+
+    return affectedTargetsForProject(
+      consumer,
+      change,
+      `DI service dependency changed through ${edge.serviceIds.join(", ")}`,
+      edge.targetProjectName,
+    )
+  })
+}
+
+function serviceEdgeMatchesChange(
+  edge: PackageContractGraphDependencyEdge,
+  directProject: PackageContractGraphNodeMetadata | undefined,
+  serviceIds: ReadonlySet<string>,
+): boolean {
+  if (directProject !== undefined && edge.targetProjectName !== directProject.projectName) return false
+  return serviceIds.size === 0 || edge.serviceIds.some((serviceId) => serviceIds.has(serviceId))
+}
+
+export function inferWorkerizedPropertyShardMetadata(
+  project: PackageContractGraphNodeMetadata,
+  options: PackageContractWorkerShardOptions = {},
+): readonly PackageContractWorkerShardMetadata[] {
+  const operationIds = uniqueSorted(options.operationIds ?? project.operationIds)
+  const shardCount = positiveInteger(options.shardCount, 1)
+  const seedsPerShard = positiveInteger(options.seedsPerShard, 100)
+  const seedStart = nonNegativeInteger(options.seedStart, 0)
+  const workerCount = positiveInteger(options.workerCount, 1)
+  const timeoutMs = positiveInteger(options.timeoutMs, 30_000)
+  const coverageCorpus = options.coverageCorpus ?? `.attune/cache/property-evidence/${project.packageId}/corpus.json`
+  const isolationLevel = options.isolationLevel ?? "worker-thread"
+  const resourceTier = options.resourceTier ?? "commit"
+  const randomSource = options.randomSource ?? "worker"
+
+  return operationIds.flatMap((operationId) =>
+    Array.from({ length: shardCount }, (_, shardIndex) => {
+      const shardSeedStart = seedStart + shardIndex * seedsPerShard
+      const shardSeedEnd = shardSeedStart + seedsPerShard - 1
+      const shardId = `shard-${shardIndex}-of-${shardCount}`
+      return {
+        targetName: `property:${operationId}:${shardId}`,
+        packageId: project.packageId,
+        operationId,
+        propertyId: `${project.packageId}.${operationId}.property`,
+        shardId,
+        shardIndex,
+        shardCount,
+        seedRange: {
+          start: shardSeedStart,
+          end: shardSeedEnd,
+        },
+        coverageCorpus,
+        workerCount,
+        timeoutMs,
+        isolationLevel,
+        resourceTier,
+        randomSource,
+        evidenceOutput: `.attune/cache/property-evidence/${project.packageId}/${operationId}/${shardId}.json`,
+      }
+    })
+  )
+}
+
+export function inferDeterministicMergeTargetMetadata(
+  project: PackageContractGraphNodeMetadata,
+): readonly PackageContractMergeTargetMetadata[] {
+  const shardPattern = `.attune/cache/property-evidence/${project.packageId}/**/*.json`
+  return [
+    {
+      targetName: "property-evidence-merge",
+      packageId: project.packageId,
+      reads: [shardPattern],
+      writes: [`.attune/cache/property-evidence/${project.packageId}/merged.json`],
+      dependsOn: project.operationIds.map((operationId) => `property:${operationId}:*`),
+      deterministicOrder: ["packageId", "operationId", "shardId", "workerId"],
+      evidence: ["merged property evidence", "replay seed index"],
+    },
+    {
+      targetName: "atom-graph-coverage-merge",
+      packageId: project.packageId,
+      reads: [shardPattern],
+      writes: [`.attune/cache/atom-graph/${project.packageId}/coverage-summary.json`],
+      dependsOn: ["property-evidence-merge", "atom-graph-conformance"],
+      deterministicOrder: ["packageId", "operationId", "shardId", "workerId", "atomGraphEdge"],
+      evidence: ["merged atom graph coverage summary", "missing graph edge diagnostics"],
+    },
+  ]
+}
+
+export function mergePackageContractShardSummaries(
+  shards: readonly PackageContractShardSummary[],
+): readonly PackageContractMergedShardSummary[] {
+  const groups = new Map<string, PackageContractShardSummary[]>()
+  for (const shard of shards) {
+    const group = groups.get(shard.packageId) ?? []
+    group.push(shard)
+    groups.set(shard.packageId, group)
+  }
+
+  return [...groups.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([packageId, group]) => {
+      const ordered = group.toSorted(compareShardSummaries)
+      return {
+        packageId,
+        shardIds: uniqueSorted(ordered.map((shard) => shard.shardId)),
+        workerIds: uniqueSorted(
+          ordered
+            .map((shard) => shard.workerId)
+            .filter((workerId): workerId is string => workerId !== undefined),
+        ),
+        propertyEvidenceArtifacts: uniqueSorted(
+          ordered.flatMap((shard) => shard.propertyEvidenceArtifacts ?? []),
+        ),
+        atomGraphCoverageArtifacts: uniqueSorted(
+          ordered.flatMap((shard) => shard.atomGraphCoverageArtifacts ?? []),
+        ),
+        statuses: uniqueSorted(
+          ordered
+            .map((shard) => shard.status)
+            .filter((status): status is string => status !== undefined),
+        ),
+      }
+    })
 }
 
 function discoverProjectContract(
@@ -807,22 +1183,6 @@ function packageContractFromModule(
     contractPath,
     reason: "PackageContract export is missing or is not an object",
   })
-}
-
-function decodeContractForGraph(
-  projectName: string,
-  contractPath: string,
-  contract: PackageContractLike,
-) {
-  try {
-    return decodePackageContract(contract)
-  } catch (error) {
-    throw new PackageContractGraphError({
-      projectName,
-      contractPath,
-      reason: errorMessage(error),
-    })
-  }
 }
 
 function descriptorForGraph(
@@ -1025,6 +1385,122 @@ function compareUnresolvedRequirements(
     left.serviceId.localeCompare(right.serviceId)
 }
 
+function directProjectForChange(
+  change: PackageContractAffectedChange,
+  projectByName: ReadonlyMap<string, PackageContractGraphNodeMetadata>,
+  projectByPackage: ReadonlyMap<string, PackageContractGraphNodeMetadata>,
+): PackageContractGraphNodeMetadata | undefined {
+  if (change.projectName !== undefined) {
+    return projectByName.get(change.projectName)
+  }
+  if (change.packageId !== undefined) {
+    return projectByPackage.get(change.packageId)
+  }
+
+  if (change.reactivityKeys !== undefined || change.atoms !== undefined) {
+    const reactivityKeys = new Set(change.reactivityKeys ?? [])
+    const atoms = new Set(change.atoms ?? [])
+    return [...projectByName.values()].find((project) =>
+      project.atomGraph.declaredReactivityKeys.some((key) => reactivityKeys.has(key)) ||
+      project.atomGraph.declaredAtoms.some((atom) => atoms.has(atom))
+    )
+  }
+
+  return undefined
+}
+
+function targetsForChange(
+  changeKind: PackageContractAffectedChangeKind,
+  project: PackageContractGraphNodeMetadata,
+): readonly PackageContractTargetSemantics[] {
+  const affected = packageContractTargetSemantics.filter((target) =>
+    (target.affectedBy as readonly PackageContractAffectedChangeKind[]).includes(changeKind)
+  )
+
+  if (changeKind === "reactivity-key") {
+    return affected.filter((target) =>
+      target.targetName === "property" ||
+      target.targetName === "coverage-conformance" ||
+      target.targetName === "atom-graph-conformance" ||
+      target.targetName === "protocol-materialize"
+    )
+  }
+
+  if (changeKind === "atom-graph" && project.atomGraph.declaredAtoms.length === 0) {
+    return affected.filter((target) => target.targetName !== "atom-graph-conformance")
+  }
+
+  return affected
+}
+
+function affectedReasonFor(
+  change: PackageContractAffectedChange,
+  project: PackageContractGraphNodeMetadata,
+): string {
+  switch (change.kind) {
+    case "schema":
+      return "operation schema changed; property and coverage conformance must refresh"
+    case "service":
+      return "service contract changed; DI conformance and dependent property targets must refresh"
+    case "reactivity-key":
+      return "Reactivity key changed; atom graph and semantic coverage must refresh"
+    case "atom-graph":
+      return "atom graph changed; view movement conformance must refresh"
+    case "generated-artifact":
+      return "generated artifact hash changed; materialization checks must refresh"
+    case "runtime-delta":
+      return "Protocol runtime delta changed; framework diagnostics must refresh"
+    case "waiver":
+      return "waiver state changed; framework diagnostics must refresh"
+    case "coverage":
+      return "coverage evidence changed; coverage diagnostics must refresh"
+    case "package-contract":
+      return `package contract changed for ${project.packageId}`
+  }
+}
+
+function uniqueAffectedTargets(
+  targets: readonly PackageContractAffectedTarget[],
+): readonly PackageContractAffectedTarget[] {
+  const byKey = new Map<string, PackageContractAffectedTarget>()
+  for (const target of targets) {
+    const key = [
+      target.projectName,
+      target.targetName,
+      target.changeKind,
+      target.propagatedFromProjectName ?? "",
+    ].join(":")
+    const existing = byKey.get(key)
+    if (existing === undefined) {
+      byKey.set(key, target)
+      continue
+    }
+    byKey.set(key, {
+      ...existing,
+      runtimeInputs: uniqueSorted([
+        ...existing.runtimeInputs,
+        ...target.runtimeInputs,
+      ]) as readonly PackageContractRuntimeInputName[],
+    })
+  }
+
+  return [...byKey.values()].sort((left, right) =>
+    left.projectName.localeCompare(right.projectName) ||
+    left.targetName.localeCompare(right.targetName) ||
+    left.changeKind.localeCompare(right.changeKind)
+  )
+}
+
+function compareShardSummaries(
+  left: PackageContractShardSummary,
+  right: PackageContractShardSummary,
+): number {
+  return left.packageId.localeCompare(right.packageId) ||
+    (left.operationId ?? "").localeCompare(right.operationId ?? "") ||
+    left.shardId.localeCompare(right.shardId) ||
+    (left.workerId ?? "").localeCompare(right.workerId ?? "")
+}
+
 function operationEntries(contract: PackageContractLike): readonly PackageContractOperationLike[] {
   if (Array.isArray(contract.operations)) {
     return contract.operations
@@ -1078,6 +1554,14 @@ function stringList(value: unknown): readonly string[] {
 
 function uniqueSorted(values: Iterable<string>): readonly string[] {
   return [...new Set([...values].filter((value) => value.length > 0))].sort()
+}
+
+function positiveInteger(value: number | undefined, fallback: number): number {
+  return Number.isInteger(value) && value !== undefined && value > 0 ? value : fallback
+}
+
+function nonNegativeInteger(value: number | undefined, fallback: number): number {
+  return Number.isInteger(value) && value !== undefined && value >= 0 ? value : fallback
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {

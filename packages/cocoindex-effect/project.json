@@ -4,89 +4,184 @@
   "sourceRoot": "packages/cocoindex-effect/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/cocoindex-effect",
-        "command": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
+        "targetProject": "cocoindex-effect",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts"
+          ],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/cocoindex-effect",
-        "command": "pnpm exec tsgo --noEmit"
+        "targetProject": "cocoindex-effect",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/cocoindex-effect",
-        "command": "pnpm exec tsc --noEmit"
+        "targetProject": "cocoindex-effect",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "pnpm exec oxlint --config root-oxlintrc.json packages/cocoindex-effect --quiet"
+        "targetProject": "cocoindex-effect",
+        "checks": [
+          "lint"
+        ],
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/cocoindex-effect",
-        "command": "pnpm exec vitest run"
+        "targetProject": "cocoindex-effect",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
       }
     },
     "inspect-cocoindex-mcp": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/generated/cocoindex-code-mcp.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/generated/cocoindex-code-mcp.ts"
+      ],
       "options": {
-        "cwd": "packages/cocoindex-effect",
-        "command": "pnpm exec tsx scripts/generationStage.ts inspect-cocoindex-mcp"
+        "targetProject": "cocoindex-effect",
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "inspect-cocoindex-mcp"
+        },
+        "dryRun": false
       }
     },
     "emit-mcp-schema": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/generated/cocoindex-code-mcp.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/generated/cocoindex-code-mcp.ts"
+      ],
       "options": {
-        "cwd": "packages/cocoindex-effect",
-        "command": "pnpm exec tsx scripts/generationStage.ts emit-mcp-schema"
+        "targetProject": "cocoindex-effect",
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-mcp-schema"
+        },
+        "dryRun": false
       }
     },
     "scaffold-mcp-search-tool": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/cocoindex/tools/search.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/cocoindex/tools/search.ts"
+      ],
       "options": {
-        "command": "pnpm exec nx generate @attune/nx:cocoindex-mcp-tool search --directory packages/cocoindex-effect/src/cocoindex/tools --toolName search"
+        "targetProject": "cocoindex-effect",
+        "tool": "nx",
+        "action": "generate",
+        "toolId": "@attune/nx:cocoindex-mcp-tool",
+        "parameters": {
+          "generator": "@attune/nx:cocoindex-mcp-tool",
+          "arguments": [
+            "search",
+            "--directory",
+            "packages/cocoindex-effect/src/cocoindex/tools",
+            "--toolName",
+            "search"
+          ]
+        },
+        "dryRun": false
       }
     },
     "sync-mcp-tools": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/cocoindex/tools/ToolRegistry.generated.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/cocoindex/tools/ToolRegistry.generated.ts"
+      ],
       "options": {
-        "command": "pnpm exec nx generate @attune/nx:sync-cocoindex-mcp-tools --directory packages/cocoindex-effect/src/cocoindex/tools --registry packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts"
+        "targetProject": "cocoindex-effect",
+        "tool": "nx",
+        "action": "generate",
+        "toolId": "@attune/nx:sync-cocoindex-mcp-tools",
+        "parameters": {
+          "generator": "@attune/nx:sync-cocoindex-mcp-tools",
+          "arguments": [
+            "--directory",
+            "packages/cocoindex-effect/src/cocoindex/tools",
+            "--registry",
+            "packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts"
+          ]
+        },
+        "dryRun": false
       }
     },
     "generate": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "outputs": [
         "{projectRoot}/src/generated/cocoindex-code-mcp.ts",
         "{projectRoot}/src/cocoindex/tools/ToolRegistry.generated.ts"
       ],
       "options": {
-        "commands": [
-          "pnpm exec nx run cocoindex-effect:emit-mcp-schema",
-          "pnpm exec nx run cocoindex-effect:sync-mcp-tools"
-        ],
-        "parallel": false
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "cocoindex-effect-generate",
+        "parameters": {
+          "targets": [
+            "cocoindex-effect:emit-mcp-schema",
+            "cocoindex-effect:sync-mcp-tools"
+          ]
+        },
+        "dryRun": false
       }
     },
     "check-generated": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["generate"],
+      "executor": "@attune/nx:generated",
+      "dependsOn": [
+        "generate"
+      ],
       "options": {
-        "command": "git diff --exit-code -- packages/cocoindex-effect/src/generated packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts"
+        "targetProject": "cocoindex-effect",
+        "operation": "check",
+        "artifact": "rpc-harness",
+        "outputs": [
+          "packages/cocoindex-effect/src/generated",
+          "packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts"
+        ],
+        "provenance": {
+          "generatorName": "@attune/nx:sync-cocoindex-mcp-tools",
+          "owner": "cocoindex-effect"
+        },
+        "dryRun": false
       }
     }
   }

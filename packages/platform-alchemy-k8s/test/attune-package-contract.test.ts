@@ -47,8 +47,8 @@ describe("platform-alchemy-k8s package contract", () => {
     >()
 
     const decoded = decodePackageContract(PackageContract)
-    expect(decoded.packageId).toBe("platform-alchemy-k8s")
-    expect(decoded.operations).toHaveLength(requiredOperationIds.length)
+    expect(decoded.contract?.packageId).toBe("platform-alchemy-k8s")
+    expect(decoded.contract?.operations).toHaveLength(requiredOperationIds.length)
   })
 
   it("records resource readiness and provider evidence views", () => {

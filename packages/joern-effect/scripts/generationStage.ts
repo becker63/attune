@@ -10,6 +10,8 @@ const knownStages = new Set([
   "emit-template-bindings",
   "emit-template-evidence",
   "emit-fast-check-arbitraries",
+  "emit-generated",
+  "render-readme",
 ])
 
 const stage = process.argv[2]

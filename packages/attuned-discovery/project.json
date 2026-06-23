@@ -4,38 +4,68 @@
   "sourceRoot": "packages/attuned-discovery/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/attuned-discovery",
-        "command": "pnpm exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
+        "targetProject": "attuned-discovery",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts"
+          ],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attuned-discovery",
-        "command": "pnpm exec tsgo --noEmit"
+        "targetProject": "attuned-discovery",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attuned-discovery",
-        "command": "pnpm exec tsc --noEmit"
+        "targetProject": "attuned-discovery",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "pnpm exec oxlint --config root-oxlintrc.json packages/attuned-discovery --quiet"
+        "targetProject": "attuned-discovery",
+        "checks": [
+          "lint"
+        ],
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attuned-discovery",
-        "command": "pnpm exec vitest run"
+        "targetProject": "attuned-discovery",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
       }
     }
   }

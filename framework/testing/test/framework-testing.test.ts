@@ -28,6 +28,7 @@ import {
   publicAccessorHandler,
   propertyRunEvidence,
   schemaArbitrarySlot,
+  typeGuidancePartitionEvidence,
   weakOracleEvidence,
   workerEvidenceMetadata,
   workerReplayMetadata,
@@ -345,16 +346,27 @@ describe("@attune/framework-testing", () => {
         observedAt: "2026-06-22T00:00:00.000Z",
         replay: { seed: 42 },
         runId: "run-42",
+        typeGuidance: [
+          {
+            partitionId: "increment.input.positive",
+            partitionKind: "schema-boundary",
+            source: "generated-type-guidance",
+            status: "hit",
+          },
+        ],
       },
     )
 
     expect(exit.status).toBe("success")
     expect(exit.success).toEqual({ value: 42 })
     expect(exit.encodedSuccess).toEqual({ value: 42 })
+    expect(client.controls.observe.rpc.rpcId).toBe("demo.control.observe")
     expect(exit.evidence.map((event) => event.kind)).toEqual([
       "property-run",
       "schema-decode",
+      "type-guidance",
       "schema-decode",
+      "property-run",
       "reactivity-key",
       "property-run",
       "property-run",
@@ -785,6 +797,20 @@ describe("@attune/framework-testing", () => {
       payload: {
         missingLawIds: ["schema.decode"],
         replay: { seed: 909, path: "1:0" },
+      },
+    })
+    expect(typeGuidancePartitionEvidence(context, "increment", {
+      filterId: "positive-input",
+      partitionId: "increment.input.positive",
+      partitionKind: "schema-boundary",
+      status: "filtered",
+    })).toMatchObject({
+      kind: "type-guidance",
+      payload: {
+        filterId: "positive-input",
+        partitionId: "increment.input.positive",
+        replay: { seed: 909, path: "1:0" },
+        status: "filtered",
       },
     })
   })

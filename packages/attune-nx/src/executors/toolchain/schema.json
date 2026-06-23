@@ -12,13 +12,18 @@
         "joern",
         "arion",
         "alchemy",
+        "architecture",
+        "bundler",
+        "generation-stage",
+        "nx",
         "vite",
         "kubernetes",
         "mutation",
         "worker-fuzz",
         "typescript",
         "test-runner",
-        "linter"
+        "linter",
+        "workspace"
       ],
       "default": "nix"
     },
@@ -34,6 +39,7 @@
         "deploy",
         "destroy",
         "fuzz",
+        "install",
         "mutate",
         "extract-schema",
         "smoke"

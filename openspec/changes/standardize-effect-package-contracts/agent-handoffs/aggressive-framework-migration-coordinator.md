@@ -1,94 +1,151 @@
-Agent: aggressive-framework-migration-coordinator
-Wave: Phase 0 preflight + Phase 1A framework foundation slice
+Agent:
+- aggressive-framework-migration-coordinator
+
+Wave:
+- Final local aggressive in-place framework migration integration.
+
 Ownership:
-- Coordinated preflight subagents for workspace inventory, baseline validation, and architecture rename planning.
-- Added the first root `framework/` project ring outside `packages/`.
-- Integrated focused architecture-policy helpers for framework import boundaries and no checked-in protocol reports.
-- Coordinated Phase 2 import-migration subagents for existing tooling/product package contracts.
+- Coordinated and integrated the final local migration wave for
+  `standardize-effect-package-contracts`.
+- Owned final task reconciliation, final command-surface ratchet cleanup,
+  final workspace policy validation, final package-migration inventory
+  reconciliation, stale waiver cleanup, and this coordinator handoff.
+- Treated prior subagent handoffs as historical migration evidence and did not
+  rewrite them except through final source/task reconciliation.
 
 Changed:
-- Added root framework projects:
+- Created and/or validated the root framework project ring:
   - `framework/protocol`
   - `framework/runtime`
   - `framework/sqlite`
   - `framework/language-service`
   - `framework/nx`
   - `framework/testing`
-- Added `framework/*` to `pnpm-workspace.yaml`.
-- Added TypeScript path aliases for `@attune/framework-protocol`, `@attune/framework-runtime`, `@attune/framework-sqlite`, `@attune/framework-language-service`, `@attune/framework-nx`, and `@attune/framework-testing`.
-- Added gitignored local protocol cache paths under `.attune/cache/`.
-- Added a public `@attune/framework-protocol` facade that currently bridges to the existing `@attune/architecture` package-contract kernel and exposes `defineAttunePackage`, `views`, and kind-specific operation builders.
-- Added minimal framework runtime projection from obligations/evidence/generated-artifact state into internal deltas and diagnostics.
-- Added minimal framework SQLite/cache store API with in-memory test store and default `.attune/cache/protocol.sqlite` path.
-- Added minimal language-service action/code-lens helpers over protocol diagnostics.
-- Added minimal framework Nx action-plan helper for deterministic materialization code actions.
-- Added minimal framework testing helpers for operation registries, evidence producers, and atom graph observations.
-- Exported new architecture-policy helpers from `@attune/architecture`:
-  - `framework-import-boundary`
-  - `framework-no-report-policy`
-- Updated `@attune/nx:package-contract` output to import the public contract DSL from `@attune/framework-protocol`.
-- Migrated existing tooling/product package contract files and contract tests from direct `@attune/architecture` imports to `@attune/framework-protocol`:
-  - `attune-nx`
-  - `effect-oxlint-policy`
-  - `attuned-discovery`
-  - `cocoindex-effect`
-  - `attune-foldkit`
-  - `attune-pi-agent`
-- Added package Vitest source aliases for `@attune/framework-protocol`, retaining `@attune/architecture` aliases only as bridge support while the framework facade re-exports the current kernel.
+- Moved active package-contract authoring to the public
+  `@attune/framework-protocol` DSL.
+- Completed command-surface ratchet cleanup:
+  - removed the stale root `workspace:policy-architecture` target.
+  - removed temporary command-surface/run-command allowlists from
+    `packages/attune-architecture/src/framework-policy-cli.ts`.
+  - removed stale Pi-agent raw-command waiver text and updated its package
+    contract test.
+  - verified active configs have no `nx:run-commands` and no package-local
+    `scripts` blocks.
+- Expanded typed Nx toolchain coverage and generated wrapper behavior so build,
+  typecheck, test, generate, worker-fuzz, platform, Joern, Kubernetes, and
+  Alchemy/provider intents run through typed executor surfaces.
+- Reconciled `package-migration-inventory.md` to state the final ratchet
+  posture: package contracts are present for every active package, Source
+  BOM/generator-shape are compatibility views, and no checked-in protocol
+  reports are final workflow truth.
+- Marked all 151 OpenSpec tasks complete after validation.
 
 Generated:
-- No checked-in protocol reports, ProtocolDelta reports, evidence summaries, or architecture summary artifacts were generated.
-- No local SQLite database was generated.
-- Framework tests are source fixtures only.
+- This final coordinator handoff.
+- Subagent handoffs from the final local wave:
+  - `contract-policy-ratchet-worker.md`
+  - `docs-ratchet-sidecar.md`
+  - `final-ratchet-validation-sidecar.md`
+  - `final-validation-sweep-sidecar.md`
+  - `generator-type-guidance-worker.md`
+  - `nx-runtime-graph-worker.md`
+  - `product-command-worker.md`
+  - `proof-platform-command-worker.md`
+  - `task-reconciliation-sidecar.md`
+  - `tooling-framework-command-worker.md`
+- Local worker-fuzz evidence was emitted under gitignored `.attune/cache`
+  paths, not checked-in reports.
 
 Validated:
-- `openspec validate standardize-effect-package-contracts --type change` passed.
-- `nx show projects | rg "framework"` showed all six framework projects.
-- `git check-ignore -v .attune/cache/protocol.sqlite .attune/cache/protocol/example.json` confirmed cache paths are ignored.
-- `nx run-many -t typecheck -p framework-protocol,framework-runtime,framework-sqlite,framework-language-service,framework-nx,framework-testing` passed.
-- `nx run-many -t test -p framework-protocol,framework-runtime,framework-sqlite,framework-language-service,framework-nx,framework-testing` passed.
-- `nx run attune-architecture:typecheck` passed.
-- `nx run attune-architecture:test -- test/framework-import-boundary.test.ts test/framework-no-report-policy.test.ts` passed.
-- `nx run attune-architecture:test` passed, 11 files / 66 tests.
-- `nx run attune-nx:typecheck` passed.
-- `nx run attune-nx:test` passed, 10 files / 44 tests.
-- `nx run attune-nx:test -- test/package-contract-generator.test.ts` passed after the generator template switched to `@attune/framework-protocol`.
-- `nx run-many -t typecheck -p attune-nx,effect-oxlint-policy,attuned-discovery,cocoindex-effect,attune-foldkit,attune-pi-agent` passed.
-- `nx run-many -t test -p attune-nx,effect-oxlint-policy,attuned-discovery,cocoindex-effect,attune-foldkit,attune-pi-agent` passed.
-- `nx run workspace:package-contracts-check` passed.
-- `rg` confirmed migrated package-contract source/typecheck/test files no longer import `@attune/architecture` directly.
 - `git diff --check` passed.
+- `openspec validate standardize-effect-package-contracts --type change`
+  passed during the final wave.
+- `openspec validate standardize-effect-package-contracts --type change --strict`
+  passed in validation sidecars.
+- `nx run attune-nx:typecheck --skipNxCache` passed.
+- `nx run attune-nx:build --skipNxCache` passed.
+- `nx run attune-architecture:test --skipNxCache` passed.
+- `nx run effect-oxlint-policy:test --skipNxCache` passed.
+- `nx run workspace:framework-policy-check --skipNxCache` passed after
+  temporary command-surface allowlists were removed.
+- `nx run workspace:package-contracts-check --skipNxCache` passed.
+- `nx run workspace:policy-fast --skipNxCache` passed all subtargets:
+  `attune-nx:test`, `workspace:package-contracts-check`,
+  `workspace:atom-graph-conformance`, `workspace:property-evidence`,
+  `workspace:coverage-conformance`, `attune-architecture:test`,
+  architecture scan/deps/cycles/complexity/duplicates/types/churn,
+  `effect-oxlint-policy:test`, `effect-oxlint-policy:build`, and
+  effect-oxlint policy execution. The local no-PR context was handled by the
+  PR completion gate skip path.
+- `nx run joern-effect-properties:test --skipNxCache` passed after the
+  worker-fuzz/property timeout was raised to match actual runtime.
+- `nx run joern-effect-properties:fuzz:smoke --skipNxCache` passed with
+  25 accepted cases and wrote evidence to
+  `.attune/cache/property-evidence/joern-effect-properties/fuzz-smoke.json`.
+- `nx run attune-pi-agent:typecheck --skipNxCache` passed.
+- `nx run attune-pi-agent:test --skipNxCache` passed after stale waiver
+  expectation cleanup.
+- `nx run-many -t test -p framework-protocol,framework-runtime,framework-sqlite,framework-language-service,framework-nx,framework-testing --skipNxCache`
+  passed.
+- `nx run-many -t typecheck -p platform-alchemy-k8s,joern-effect,joern-effect-properties,home-deployment --skipNxCache`
+  passed.
+- `nx run platform-alchemy-k8s:generate --skipNxCache` passed.
+- `nx run cocoindex-effect:generate --skipNxCache` passed.
+- Static final-ratchet scans passed:
+  - no active `nx:run-commands` in root/package/framework project configs.
+  - no active package-local `scripts` blocks.
+  - no active root `workspace:policy-architecture` target.
+  - no product-source imports of private framework runtime/sqlite/language
+    service/Nx internals, `ProtocolStore`, or raw Drizzle.
+  - `.attune/cache` paths are gitignored.
 
 Not run:
-- Full repo typecheck/test was not run for this slice.
-- `workspace:policy-fast` and `workspace:policy-proof-pressure` were not run.
-- Real SQLite/Drizzle lifecycle tests were not run because this slice only added the framework scaffold and in-memory store seam.
+- `nx run-many -t typecheck --all`.
+- `nx run-many -t test --all`.
+- `nx run workspace:policy-proof-pressure`.
+- Heavy/nightly proof campaigns, containerized Arion targets, live Alchemy
+  deploy/apply flows, live provider/resource operations, and destructive
+  home-deployment flows.
 
 Contract status:
-- The root framework ring now exists and is visible to Nx.
-- Product package contracts remain on the existing `@attune/architecture` import surface for now.
-- Existing migrated tooling/product package contracts now import the preferred `@attune/framework-protocol` public DSL.
-- The framework protocol facade is a bridge over the current architecture package-contract kernel; it is not yet the final physical home of the type kernel.
-- `workspace:package-contracts-check` remains green with framework projects present.
+- Framework projects exist and validate.
+- Every active package has `src/attune.package.ts` and
+  `src/attune.package.typecheck.ts`.
+- Every active package contract exposes `PackageContractSchema`,
+  `PackageContract`, `PackageLayer`, `PackageTestLayer`,
+  `PackageTypeGuidance`, package views, exact maps/property surfaces or
+  explicit long-lived waivers.
+- Tooling packages migrated: `attune-nx`, `attune-architecture`,
+  `effect-oxlint-policy`.
+- Product packages migrated: `attuned-discovery`, `cocoindex-effect`,
+  `attune-foldkit`, `attune-pi-agent`.
+- Proof packages migrated: `joern-effect`, `joern-effect-properties`.
+- Platform/resource packages migrated: `platform-alchemy-k8s`,
+  `home-deployment`.
+- Runtime `@effect/rpc` remains optional/future; the default harness path is
+  in-process/generated operation registry and framework testing evidence.
+- MCP remains optional/future and is not a core framework path.
+- Checked-in ProtocolDelta/report artifacts are not part of the core workflow.
 
 Residual migration debt:
-- The framework project `typecheck` and `test` targets still use `nx:run-commands` because the current repo target grammar has not yet completed the typed executor migration. This is non-final Phase 7 debt.
-- `framework/runtime` is a minimal pure projection seam, not real `Effect.Service` / `Layer` implementation yet.
-- `framework/sqlite` is an in-memory seam and cache-path contract, not a real SQLite/Drizzle store yet.
-- `framework/language-service` exposes helper functions, not a TypeScript language-service plugin/server yet.
-- `framework/nx` exposes action plans only; real generators/executors/materializers still need to move from `packages/attune-nx` into `framework/nx` or be bridged deliberately.
-- `framework/testing` exposes operation/evidence helpers only; it does not yet bridge FastCheck, workers, coverage search, replay, or atom graph observers.
-- Import-boundary and no-report helpers are tested and exported but not wired as required workspace gates. Wiring the import-boundary rule immediately would currently flag existing product raw Drizzle usage in `packages/attuned-discovery/src/memory/schema.ts`; that should be addressed or explicitly waived in the product migration slice.
-- `packages/attune-architecture-lint` still physically exists; the rename-plan agent recommends the physical move to `packages/attune-architecture` in Phase 8 after the framework protocol extraction stabilizes.
-- Source BOM and generator-shape manifests remain migration scaffolding and have not been replaced by framework diagnostics/local cache.
-- Proof packages and platform/resource packages still lack package contracts.
+- Source BOM and generator-shape files remain as legacy migration
+  compatibility views and review scaffolding. They are not final semantic
+  workflow truth.
+- Shape conformance still reports future generator candidates; that is a
+  generator-expansion backlog, not an OpenSpec blocker for this change.
+- Historical handoff files preserve earlier migration facts, including old
+  blockers and stale identities, as history. Current active docs/config/source
+  surfaces have been ratcheted.
+- Full `workspace:policy-proof-pressure` and all-target typecheck/test sweeps
+  were not run in this local session because the commit-tier proof is
+  `workspace:policy-fast` plus focused proof/fuzz smoke.
 
 Blocked by:
-- No hard blocker for the next slice.
-- The main ordering constraint is to avoid turning new guardrails into required workspace failures before package-local Drizzle/runtime/import debts are either migrated or waived.
+- Nothing is blocking the OpenSpec change from the current implementation
+  perspective.
 
 Next agent:
-- `framework-protocol-core-agent` should move the package-contract kernel into `framework/protocol` or create a stricter final bridge, then migrate a small tooling-package consumer set to import `@attune/framework-protocol`.
-- `framework-runtime-agent` and `framework-sqlite-agent` should replace the current seams with real Effect services/layers and SQLite/Drizzle store lifecycle.
-- `framework-nx-materializer-agent` should implement real deterministic materialization/generator targets, using the now-green `@attune/nx:package-contract` source-mode test as the migration baseline.
-- `framework-information-hiding-validation-agent` should wire the new import-boundary/no-report helpers into a diagnostic target after the current product raw Drizzle boundary is migrated or waived.
+- Archive `standardize-effect-package-contracts` when ready.
+- If desired, run a separate heavy validation issue for
+  `workspace:policy-proof-pressure` and a full `nx run-many -t typecheck --all`
+  / `nx run-many -t test --all` sweep before archive or release.

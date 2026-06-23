@@ -123,6 +123,48 @@ export const propertyRunEvidence = (
     },
   })
 
+export type TypeGuidancePartitionEvidenceStatus =
+  | "hit"
+  | "miss"
+  | "filtered"
+  | "unreachable"
+
+export const typeGuidancePartitionEvidence = (
+  context: EvidenceProducerContext,
+  operationId: string,
+  input: Readonly<{
+    readonly partitionId: string
+    readonly status: TypeGuidancePartitionEvidenceStatus
+    readonly corpusSeedId?: string
+    readonly filterId?: string
+    readonly partitionKind?: string
+    readonly reason?: string
+    readonly source?: string
+  }>,
+): AttuneProtocolEvidenceEvent =>
+  evidenceEvent(context, {
+    kind: "type-guidance",
+    operationId,
+    payload: {
+      corpusSeedId: input.corpusSeedId,
+      filterId: input.filterId,
+      partitionId: input.partitionId,
+      partitionKind: input.partitionKind,
+      reason: input.reason,
+      replay: context.replay,
+      source: input.source,
+      status: input.status,
+    },
+    sequence: [
+      "type-guidance",
+      input.partitionKind ?? "partition",
+      input.partitionId,
+      input.status,
+      input.filterId ?? "",
+      input.corpusSeedId ?? "",
+    ].join(":"),
+  })
+
 export const lawObservedEvidence = (
   context: EvidenceProducerContext,
   operationId: string,

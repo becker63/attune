@@ -23,6 +23,10 @@ export const toolchainKinds = [
   "joern",
   "arion",
   "alchemy",
+  "architecture",
+  "bundler",
+  "generation-stage",
+  "nx",
   "vite",
   "kubernetes",
   "mutation",
@@ -30,6 +34,7 @@ export const toolchainKinds = [
   "typescript",
   "test-runner",
   "linter",
+  "workspace",
 ] as const
 
 export type ToolchainKind = (typeof toolchainKinds)[number]
@@ -44,6 +49,7 @@ export const toolchainActions = [
   "deploy",
   "destroy",
   "fuzz",
+  "install",
   "mutate",
   "extract-schema",
   "smoke",
@@ -191,12 +197,30 @@ type ToolchainPlanFactory = (
 ) => readonly ExecutorTypedPlan[]
 
 const toolchainPlanFactories: Readonly<Record<string, ToolchainPlanFactory>> = {
+  "alchemy:deploy": createAlchemyProviderIntentPlan,
+  "alchemy:plan": createAlchemyProviderIntentPlan,
+  "alchemy:smoke": createAlchemyProviderIntentPlan,
+  "architecture:check": createArchitectureCheckPlan,
+  "architecture:mutate": createArchitectureMutationPlan,
+  "arion:deploy": createArionDeployPlan,
+  "bundler:build": createBundlerBuildPlan,
+  "generation-stage:generate": createGenerationStagePlan,
+  "joern:generate": createGenerationStagePlan,
+  "kubernetes:generate": createGenerationStagePlan,
+  "nix:build": createNixBuildPlan,
+  "nx:generate": createNxGeneratePlan,
   "typescript:check": createTypeScriptCheckPlan,
+  "typescript:build": createTypeScriptBuildPlan,
   "test-runner:test": createTestRunnerPlan,
   "test-runner:smoke": createTestRunnerPlan,
   "linter:check": createLinterCheckPlan,
   "vite:build": createViteBuildPlan,
+  "vite:serve": createViteServePlan,
   "mutation:mutate": createMutationPlan,
+  "worker-fuzz:fuzz": createWorkerFuzzPlan,
+  "worker-fuzz:test": createWorkerPropertyPlan,
+  "workspace:check": createWorkspaceCheckPlan,
+  "workspace:install": createWorkspaceInstallPlan,
 }
 
 function createTypeScriptCheckPlan(
@@ -215,6 +239,60 @@ function createTypeScriptCheckPlan(
       classic ? "tsc" : "tsgo",
       "--noEmit",
       ...(tsconfig === null ? [] : ["-p", tsconfig]),
+    ],
+    cwd: context.projectRoot,
+  }]
+}
+
+function createTypeScriptBuildPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const tsconfig = readStringParameter(options, "tsconfig") ?? "tsconfig.build.json"
+  const plans: ExecutorTypedPlan[] = [{
+    kind: "process",
+    label: "toolchain:typescript:build",
+    adapter: "pnpm-exec-tsc",
+    executable: "pnpm",
+    args: ["exec", "tsc", "-p", tsconfig],
+    cwd: context.projectRoot,
+  }]
+  if (readStringParameter(options, "postBuild") === "attune-nx-generator-cjs-wrappers") {
+    plans.push({
+      kind: "process",
+      label: "toolchain:typescript:build:post-build",
+      adapter: "node-script",
+      executable: "node",
+      args: ["scripts/write-generator-cjs-wrappers.mjs"],
+      cwd: context.projectRoot,
+    })
+  }
+  return plans
+}
+
+function createBundlerBuildPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const entryPoints = readStringArrayParameter(options, "entryPoints")
+  const format = readStringParameter(options, "format")
+  const outDir = readStringParameter(options, "outDir")
+  const external = readStringArrayParameter(options, "external")
+  return [{
+    kind: "process",
+    label: "toolchain:bundler:build",
+    adapter: "pnpm-exec-tsup",
+    executable: "pnpm",
+    args: [
+      "exec",
+      "tsup",
+      ...entryPoints,
+      ...(format === null ? [] : ["--format", format]),
+      ...(readBooleanParameter(options, "dts", false) ? ["--dts"] : []),
+      ...(readBooleanParameter(options, "sourcemap", false) ? ["--sourcemap"] : []),
+      ...(readBooleanParameter(options, "clean", false) ? ["--clean"] : []),
+      ...external.flatMap((dependency) => ["--external", dependency]),
+      ...(outDir === null ? [] : ["--out-dir", outDir]),
     ],
     cwd: context.projectRoot,
   }]
@@ -279,6 +357,27 @@ function createViteBuildPlan(
   }]
 }
 
+function createViteServePlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const host = readStringParameter(options, "host")
+  const port = readNumberParameter(options, "port")
+  return [{
+    kind: "process",
+    label: "toolchain:vite:serve",
+    adapter: "pnpm-exec-vite",
+    executable: "pnpm",
+    args: [
+      "exec",
+      "vite",
+      ...(host === null ? [] : ["--host", host]),
+      ...(port === null ? [] : ["--port", String(port)]),
+    ],
+    cwd: context.projectRoot,
+  }]
+}
+
 function createMutationPlan(
   options: NormalizedToolchainOptions,
   context: ToolchainPlanContext,
@@ -291,6 +390,409 @@ function createMutationPlan(
     args: ["exec", "stryker", "run", readStringParameter(options, "config") ?? "stryker.conf.json"],
     cwd: context.projectRoot,
   }]
+}
+
+function createArchitectureCheckPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  switch (options.toolId) {
+    case "root-lint":
+      return [pnpmExecPlan("toolchain:architecture:root-lint", "pnpm-exec-oxlint", [
+        "oxlint",
+        "--config",
+        "root-oxlintrc.json",
+        "package.json",
+        "project.json",
+        "nx.json",
+        "tsconfig.base.json",
+        "packages",
+        "--quiet",
+      ], context.workspaceRoot)]
+    case "source-bom":
+      return [nodeScriptPlan("toolchain:architecture:source-bom", "scripts/architecture/source-bom-check.mjs", context)]
+    case "shape-conformance":
+      return [tsxPlan("toolchain:architecture:shape-conformance", "packages/attune-architecture/src/shape-conformance-cli.ts", [], context.workspaceRoot)]
+    case "framework-policy": {
+      const only = readStringParameter(options, "only")
+      return [tsxPlan(
+        "toolchain:architecture:framework-policy",
+        "packages/attune-architecture/src/framework-policy-cli.ts",
+        only === null ? [] : ["--only", only],
+        context.workspaceRoot,
+      )]
+    }
+    case "scan":
+      return [nodeScriptPlan("toolchain:architecture:scan", "scripts/architecture/scan.mjs", context)]
+    case "deps":
+      return [pnpmExecPlan("toolchain:architecture:deps", "pnpm-exec-depcruise", [
+        "depcruise",
+        "packages",
+        "--config",
+        ".dependency-cruiser.cjs",
+        "--output-type",
+        "err",
+      ], context.workspaceRoot)]
+    case "cycles":
+      return [pnpmExecPlan("toolchain:architecture:cycles", "pnpm-exec-madge", [
+        "madge",
+        "packages",
+        "--ts-config",
+        "tsconfig.base.json",
+        "--extensions",
+        "ts,tsx",
+        "--circular",
+      ], context.workspaceRoot)]
+    case "unused":
+      return [pnpmExecPlan("toolchain:architecture:unused", "pnpm-exec-knip", ["knip", "--config", "knip.json"], context.workspaceRoot)]
+    case "complexity":
+      return [pnpmExecPlan("toolchain:architecture:complexity", "pnpm-exec-eslint", [
+        "eslint",
+        "packages",
+        "--config",
+        "eslint.config.mjs",
+        "--max-warnings",
+        "0",
+      ], context.workspaceRoot)]
+    case "duplicates":
+      return [pnpmExecPlan("toolchain:architecture:duplicates", "pnpm-exec-jscpd", ["jscpd", "--config", ".jscpd.json"], context.workspaceRoot)]
+    case "types":
+      return [nodeScriptPlan("toolchain:architecture:types", "scripts/architecture/ts-extended-diagnostics.mjs", context)]
+    case "churn":
+      return [nodeScriptPlan("toolchain:architecture:churn", "scripts/architecture/churn-complexity.mjs", context)]
+    case "effect-oxlint-policy":
+      return [pnpmExecPlan("toolchain:architecture:effect-oxlint-policy", "pnpm-exec-oxlint", [
+        "oxlint",
+        "--config",
+        "oxlint/effect-oxlint-policy.json",
+        "package.json",
+        "project.json",
+        "nx.json",
+        "tsconfig.base.json",
+        "packages",
+        "--quiet",
+      ], context.workspaceRoot)]
+    case "verify-pr-completion":
+      return [nodeScriptPlan("toolchain:architecture:verify-pr-completion", "scripts/codex/verify-pr-completion.mjs", context)]
+    case "codex-audit-prs":
+      return [nodeScriptPlan("toolchain:architecture:codex-audit-prs", "scripts/codex/audit-pr-recovery.mjs", context)]
+    default:
+      return [unsupportedToolchainPlan(options)]
+  }
+}
+
+function createArchitectureMutationPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  if (options.toolId !== "stryker") return [unsupportedToolchainPlan(options)]
+  return createMutationPlan(options, context)
+}
+
+function createWorkspaceCheckPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const graphFile = readStringParameter(options, "graphFile")
+  const targets = readStringArrayParameter(options, "targets")
+  const plans: ExecutorTypedPlan[] = [
+    ...(graphFile === null
+      ? []
+      : [pnpmExecPlan("toolchain:workspace:graph", "pnpm-exec-nx-graph", ["nx", "graph", `--file=${graphFile}`], context.workspaceRoot)]),
+    ...targets.map((target) =>
+      pnpmExecPlan(`toolchain:workspace:${target}`, "pnpm-exec-nx-run", ["nx", "run", target], context.workspaceRoot)
+    ),
+  ]
+
+  if (readBooleanParameter(options, "effectOxlintPolicy", false)) {
+    plans.push(...createArchitectureCheckPlan({ ...options, toolId: "effect-oxlint-policy" }, context))
+  }
+  if (readBooleanParameter(options, "verifyPrCompletion", false)) {
+    plans.push(...createArchitectureCheckPlan({ ...options, toolId: "verify-pr-completion" }, context))
+  }
+
+  if (plans.length === 0) return [unsupportedToolchainPlan(options)]
+  return plans
+}
+
+function createWorkspaceInstallPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  if (options.toolId !== "git-hooks") return [unsupportedToolchainPlan(options)]
+  return [{
+    kind: "process",
+    label: "toolchain:workspace:install-git-hooks",
+    adapter: "git-config-hooks-path",
+    executable: "git",
+    args: ["config", "core.hooksPath", ".githooks"],
+    cwd: context.workspaceRoot,
+  }]
+}
+
+function createAlchemyProviderIntentPlan(
+  options: NormalizedToolchainOptions,
+): readonly ExecutorTypedPlan[] {
+  return [{
+    kind: "no-op",
+    label: `toolchain:alchemy:${options.action}`,
+    adapter: "typed-provider-intent",
+    reason:
+      "Alchemy provider intent is typed and gated; live provider execution is handled by the package provider boundary, not generic workspace shell.",
+  }]
+}
+
+function createGenerationStagePlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const stage = readStringParameter(options, "stage")
+  if (stage === null) {
+    return [{
+      kind: "unsupported",
+      label: `toolchain:${options.tool}:${options.action}`,
+      reason: "generation stage execution requires $.parameters.stage.",
+    }]
+  }
+
+  const script = readStringParameter(options, "script") ?? "scripts/generationStage.ts"
+  const plan: ExecutorTypedPlan = {
+    kind: "process",
+    label: `toolchain:${options.tool}:${options.action}`,
+    adapter: "pnpm-exec-tsx-generation-stage",
+    executable: "pnpm",
+    args: ["exec", "tsx", script, stage],
+    cwd: context.projectRoot,
+    ...(readBooleanParameter(options, "tmpDir", false)
+      ? { env: {
+        TMPDIR: "/tmp",
+        TEMP: "/tmp",
+        TMP: "/tmp",
+      } }
+      : {}),
+  }
+  return [plan]
+}
+
+function pnpmExecPlan(
+  label: string,
+  adapter: string,
+  args: readonly string[],
+  cwd: string,
+): ExecutorTypedPlan {
+  return {
+    kind: "process",
+    label,
+    adapter,
+    executable: "pnpm",
+    args: ["exec", ...args],
+    cwd,
+  }
+}
+
+function nodeScriptPlan(
+  label: string,
+  script: string,
+  context: ToolchainPlanContext,
+): ExecutorTypedPlan {
+  return {
+    kind: "process",
+    label,
+    adapter: "node-script",
+    executable: "node",
+    args: [script],
+    cwd: context.workspaceRoot,
+  }
+}
+
+function tsxPlan(
+  label: string,
+  script: string,
+  args: readonly string[],
+  cwd: string,
+): ExecutorTypedPlan {
+  return pnpmExecPlan(label, "pnpm-exec-tsx", ["tsx", script, ...args], cwd)
+}
+
+function createNxGeneratePlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const generator = readStringParameter(options, "generator")
+  if (generator === null) {
+    return [{
+      kind: "unsupported",
+      label: "toolchain:nx:generate",
+      reason: "Nx generator execution requires $.parameters.generator.",
+    }]
+  }
+
+  return [{
+    kind: "process",
+    label: "toolchain:nx:generate",
+    adapter: "pnpm-exec-nx-generate",
+    executable: "pnpm",
+    args: [
+      "exec",
+      "nx",
+      "generate",
+      generator,
+      ...readStringArrayParameter(options, "arguments"),
+    ],
+    cwd: context.workspaceRoot,
+  }]
+}
+
+function createNixBuildPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const attr = readStringParameter(options, "attr")
+  return [{
+    kind: "process",
+    label: "toolchain:nix:build",
+    adapter: "nix-build-attr",
+    executable: "nix",
+    args: ["build", ...(attr === null ? [] : [attr])],
+    cwd: context.workspaceRoot,
+  }]
+}
+
+function createArionDeployPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const composeFile = readStringParameter(options, "composeFile")
+  if (composeFile === null) {
+    return [{
+      kind: "unsupported",
+      label: "toolchain:arion:deploy",
+      reason: "Arion deploy execution requires $.parameters.composeFile.",
+    }]
+  }
+
+  return [{
+    kind: "process",
+    label: "toolchain:arion:deploy",
+    adapter: "arion-up-abort-on-exit",
+    executable: "arion",
+    args: ["-f", composeFile, "up", "--abort-on-container-exit"],
+    cwd: context.workspaceRoot,
+    env: {
+      ...(readStringParameter(options, "tmpfsSize") === null
+        ? {}
+        : { JOERN_EFFECT_PROPERTY_TMPFS_SIZE: readStringParameter(options, "tmpfsSize") ?? "" }),
+      ...(readNumberParameter(options, "workers") === null
+        ? {}
+        : { JOERN_EFFECT_PROPERTY_WORKERS: String(readNumberParameter(options, "workers")) }),
+      ...(readNumberParameter(options, "cpusPerWorker") === null
+        ? {}
+        : { JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER: String(readNumberParameter(options, "cpusPerWorker")) }),
+      ...(readNumberParameter(options, "cpus") === null
+        ? {}
+        : { JOERN_EFFECT_PROPERTY_CPUS: String(readNumberParameter(options, "cpus")) }),
+      ...(readStringParameter(options, "nxTarget") === null
+        ? {}
+        : { JOERN_EFFECT_PROPERTY_NX_TARGET: readStringParameter(options, "nxTarget") ?? "" }),
+    },
+  }]
+}
+
+function createWorkerPropertyPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  return createWorkerScriptPlan({
+    label: "toolchain:worker-fuzz:test",
+    script: readStringParameter(options, "script") ?? "scripts/runPropertyVitest.ts",
+    args: readStringArrayParameter(options, "arguments"),
+    nixDevShell: readBooleanParameter(options, "nixDevShell", false),
+    context,
+  })
+}
+
+function createWorkerFuzzPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  const preset = readStringParameter(options, "preset")
+  const args = [
+    ...(preset === null ? [] : ["--preset", preset]),
+    ...workerFuzzOptionalArgs(options),
+  ]
+  return createWorkerScriptPlan({
+    label: "toolchain:worker-fuzz:fuzz",
+    script: readStringParameter(options, "script") ?? "scripts/runFuzzer.ts",
+    args,
+    nixDevShell: readBooleanParameter(options, "nixDevShell", false),
+    context,
+  })
+}
+
+function createWorkerScriptPlan(input: {
+  readonly label: string
+  readonly script: string
+  readonly args: readonly string[]
+  readonly nixDevShell?: boolean
+  readonly context: ToolchainPlanContext
+}): readonly ExecutorTypedPlan[] {
+  if (input.nixDevShell === true) {
+    return [{
+      kind: "process",
+      label: input.label,
+      adapter: "nix-develop-pnpm-exec-tsx-worker",
+      executable: "nix",
+      args: [
+        "develop",
+        "--command",
+        "pnpm",
+        "exec",
+        "tsx",
+        input.script,
+        ...input.args,
+      ],
+      cwd: input.context.projectRoot,
+    }]
+  }
+
+  return [{
+    kind: "process",
+    label: input.label,
+    adapter: "pnpm-exec-tsx-worker",
+    executable: "pnpm",
+    args: ["exec", "tsx", input.script, ...input.args],
+    cwd: input.context.projectRoot,
+  }]
+}
+
+function workerFuzzOptionalArgs(
+  options: NormalizedToolchainOptions,
+): readonly string[] {
+  const numericArgs = [
+    ["batches", "--batches"],
+    ["cases", "--cases"],
+    ["joernShardSize", "--joern-shard-size"],
+    ["maxMutators", "--max-mutators"],
+    ["queryBudget", "--query-budget"],
+    ["workers", "--workers"],
+  ] as const
+  const booleanArgs = [["queryFeedback", "--query-feedback"]] as const
+  const stringArgs = [["runId", "--run-id"]] as const
+
+  return [
+    ...numericArgs.flatMap(([key, flag]) => {
+      const value = readNumberParameter(options, key)
+      return value === null ? [] : [flag, String(value)]
+    }),
+    ...booleanArgs.flatMap(([key, flag]) => {
+      const value = options.parameters[key]
+      return typeof value === "boolean" ? [flag, String(value)] : []
+    }),
+    ...stringArgs.flatMap(([key, flag]) => {
+      const value = readStringParameter(options, key)
+      return value === null ? [] : [flag, value]
+    }),
+  ]
 }
 
 const unsupportedToolchainPlan = (
@@ -307,6 +809,28 @@ const allowedParameterKeys = (
   switch (`${options.tool}:${options.action}`) {
     case "typescript:check":
       return ["classic", "tsconfig"]
+    case "typescript:build":
+      return ["postBuild", "tsconfig"]
+    case "alchemy:plan":
+    case "alchemy:deploy":
+    case "alchemy:smoke":
+      return []
+    case "architecture:check":
+      return ["only"]
+    case "architecture:mutate":
+      return ["config"]
+    case "bundler:build":
+      return ["clean", "dts", "entryPoints", "external", "format", "outDir", "sourcemap"]
+    case "generation-stage:generate":
+    case "joern:generate":
+    case "kubernetes:generate":
+      return ["script", "stage", "tmpDir"]
+    case "nx:generate":
+      return ["arguments", "generator"]
+    case "nix:build":
+      return ["attr"]
+    case "arion:deploy":
+      return ["composeFile", "cpus", "cpusPerWorker", "nxTarget", "tmpfsSize", "workers"]
     case "test-runner:test":
     case "test-runner:smoke":
       return ["files"]
@@ -314,8 +838,30 @@ const allowedParameterKeys = (
       return ["config", "paths", "quiet"]
     case "vite:build":
       return ["mode", "outDir"]
+    case "vite:serve":
+      return ["host", "port"]
     case "mutation:mutate":
       return ["config"]
+    case "worker-fuzz:test":
+      return ["arguments", "nixDevShell", "script"]
+    case "worker-fuzz:fuzz":
+      return [
+        "batches",
+        "cases",
+        "joernShardSize",
+        "maxMutators",
+        "nixDevShell",
+        "preset",
+        "queryBudget",
+        "queryFeedback",
+        "runId",
+        "script",
+        "workers",
+      ]
+    case "workspace:check":
+      return ["effectOxlintPolicy", "graphFile", "targets", "verifyPrCompletion"]
+    case "workspace:install":
+      return []
     default:
       return []
   }
@@ -351,6 +897,14 @@ const readBooleanParameter = (
 ): boolean => {
   const value = options.parameters[key]
   return typeof value === "boolean" ? value : fallback
+}
+
+const readNumberParameter = (
+  options: NormalizedToolchainOptions,
+  key: string,
+): number | null => {
+  const value = options.parameters[key]
+  return typeof value === "number" ? value : null
 }
 
 const readStringArrayParameter = (

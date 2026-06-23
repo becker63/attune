@@ -56,9 +56,9 @@ describe("home-deployment package contract", () => {
     >()
 
     const decoded = decodePackageContract(PackageContract)
-    expect(decoded.packageId).toBe("home-deployment")
-    expect(decoded.packageKind).toBe("day0-resource-runbook")
-    expect(decoded.operations).toHaveLength(requiredOperationIds.length)
+    expect(decoded.contract?.packageId).toBe("home-deployment")
+    expect(decoded.contract?.packageKind).toBe("day0-resource-runbook")
+    expect(decoded.contract?.operations).toHaveLength(requiredOperationIds.length)
   })
 
   it("records all required Day-0 package views and atoms", () => {

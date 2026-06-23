@@ -30,6 +30,8 @@ const descriptor: AttuneProtocolDescriptor = {
     reactivityKeys: ["demo.changed"],
     atoms: ["demoView"],
   },
+  waivers: [],
+  coverageExpectations: [],
   operations: [{
     id: "project",
     kind: "projection",

@@ -1,5 +1,10 @@
 # Joern Effect Fuzzer Run Report
 
+Historical migration note only. This file is not protocol source truth or
+package-contract evidence; future protocol/evidence run reports should be
+emitted through framework diagnostics, Nx output, CI artifacts, stdout, or
+gitignored local cache.
+
 Date: 2026-06-18
 
 ## What Changed

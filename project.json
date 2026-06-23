@@ -3,272 +3,382 @@
   "root": ".",
   "targets": {
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "pnpm exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "root-lint",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "check": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "commands": [
-          "pnpm exec nx run workspace:policy-fast"
-        ],
-        "parallel": false
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:policy-fast"
+          ]
+        },
+        "dryRun": false
       }
     },
     "source-bom-check": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "node scripts/architecture/source-bom-check.mjs"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "source-bom",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "shape-conformance": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm exec tsx packages/attune-architecture/src/shape-conformance-cli.ts"
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Effect Schema-backed generator shape inventory and Source BOM conformance check."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "shape-conformance",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "package-contracts-check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "pnpm exec nx run workspace:source-bom-check",
-          "pnpm exec nx run workspace:shape-conformance",
-          "pnpm exec nx run workspace:framework-policy-check"
-        ],
-        "parallel": false
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Focused diagnostic target for package contract/source ownership and generator shape conformance during the Effect package-contract migration."
+        "description": "Focused diagnostic target for package contract/source ownership and generator shape conformance during the Effect package-contract migration.",
+        "attune": {
+          "runtimeChecks": [
+            "descriptor-decode",
+            "descriptor-hash",
+            "generated-artifact-hash",
+            "internal-protocol-delta-diagnostics",
+            "waiver-state",
+            "import-boundary",
+            "local-cache",
+            "no-checked-in-report"
+          ],
+          "readModel": "ProtocolQuery"
+        }
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:source-bom-check",
+            "workspace:shape-conformance",
+            "workspace:framework-policy-check"
+          ]
+        },
+        "dryRun": false
       }
     },
     "atom-graph-conformance": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm exec tsx packages/attune-architecture/src/framework-policy-cli.ts --only atom-graph"
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Cheap deterministic package atom/Reactivity graph conformance diagnostics."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {
+          "only": "atom-graph"
+        },
+        "dryRun": false
       }
     },
     "property-evidence": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm exec tsx packages/attune-architecture/src/framework-policy-cli.ts --only property-evidence"
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Cheap deterministic property evidence and worker target metadata diagnostics."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {
+          "only": "property-evidence"
+        },
+        "dryRun": false
       }
     },
     "coverage-conformance": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm exec tsx packages/attune-architecture/src/framework-policy-cli.ts --only coverage-conformance"
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Cheap deterministic package coverage guidance conformance diagnostics."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {
+          "only": "coverage-conformance"
+        },
+        "dryRun": false
       }
     },
     "framework-policy-check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm exec tsx packages/attune-architecture/src/framework-policy-cli.ts"
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Focused framework import-boundary and no checked-in protocol report policy check."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "policy-install-hooks": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "git config core.hooksPath .githooks"
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Install the repo-owned Nix/Nx Git hooks for commit and push validation."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "install",
+        "toolId": "git-hooks",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "policy-commit": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "pnpm exec nx run workspace:policy-fast"
-        ],
-        "parallel": false
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Default pre-commit policy gate; composes through workspace:policy-fast."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:policy-fast"
+          ]
+        },
+        "dryRun": false
       }
     },
     "policy-push": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "pnpm exec nx run workspace:policy-fast"
-        ],
-        "parallel": false
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Default pre-push policy gate; heavy/manual push campaigns use workspace:policy-proof-pressure."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:policy-fast"
+          ]
+        },
+        "dryRun": false
       }
     },
     "arch:scan": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node scripts/architecture/scan.mjs"
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:package-contracts-check."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "scan",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "arch:deps": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "pnpm exec depcruise packages --config .dependency-cruiser.cjs --output-type err"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "deps",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "arch:cycles": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "pnpm exec madge packages --ts-config tsconfig.base.json --extensions ts,tsx --circular"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "cycles",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "arch:unused": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "pnpm exec knip --config knip.json"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "unused",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "arch:complexity": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "pnpm exec eslint packages --config eslint.config.mjs --max-warnings 0"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "complexity",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "arch:duplicates": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "pnpm exec jscpd --config .jscpd.json"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "duplicates",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "arch:types": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "node scripts/architecture/ts-extended-diagnostics.mjs"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "types",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "arch:churn": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "node scripts/architecture/churn-complexity.mjs"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "churn",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "arch:mutation": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm exec stryker run stryker.conf.json"
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Explicit mutation-pressure architecture gate. Only workspace:policy-proof-pressure invokes this target."
-      }
-    },
-    "policy-architecture": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "pnpm exec nx run attune-architecture:test",
-          "pnpm exec nx run workspace:arch:scan",
-          "pnpm exec nx run workspace:arch:deps",
-          "pnpm exec nx run workspace:arch:cycles",
-          "pnpm exec nx run workspace:arch:complexity",
-          "pnpm exec nx run workspace:arch:duplicates",
-          "pnpm exec nx run workspace:arch:types",
-          "pnpm exec nx run workspace:arch:churn",
-          "pnpm exec nx run effect-oxlint-policy:test",
-          "pnpm exec nx run effect-oxlint-policy:build",
-          "pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet"
-        ],
-        "parallel": false
       },
-      "metadata": {
-        "description": "Internal compatibility aggregate retained during migration. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:package-contracts-check."
+      "options": {
+        "tool": "architecture",
+        "action": "mutate",
+        "toolId": "stryker",
+        "parameters": {
+          "config": "stryker.conf.json"
+        },
+        "resourceTier": "heavy",
+        "evidenceOutputs": [
+          ".attune/cache/mutation/workspace-architecture"
+        ],
+        "dryRun": false
       }
     },
     "policy-proof-pressure": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          "pnpm exec nx run workspace:package-contracts-check",
-          "pnpm exec nx run workspace:atom-graph-conformance",
-          "pnpm exec nx run workspace:property-evidence",
-          "pnpm exec nx run workspace:coverage-conformance",
-          "pnpm exec nx run attune-architecture:test",
-          "pnpm exec nx run workspace:arch:scan",
-          "pnpm exec nx run workspace:arch:deps",
-          "pnpm exec nx run workspace:arch:cycles",
-          "pnpm exec nx run workspace:arch:complexity",
-          "pnpm exec nx run workspace:arch:duplicates",
-          "pnpm exec nx run workspace:arch:types",
-          "pnpm exec nx run workspace:arch:churn",
-          "pnpm exec nx run effect-oxlint-policy:test",
-          "pnpm exec nx run effect-oxlint-policy:build",
-          "pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet",
-          "pnpm exec nx run joern-effect-properties:property",
-          "pnpm exec nx run joern-effect-properties:property-joern",
-          "pnpm exec nx run joern-effect-properties:fuzz:smoke",
-          "pnpm exec nx run attune-pi-agent:property",
-          "pnpm exec nx run attune-pi-agent:mutation",
-          "pnpm exec nx run workspace:arch:mutation"
-        ],
-        "parallel": false
-      },
+      "executor": "@attune/nx:toolchain",
       "metadata": {
         "description": "Heavy/manual proof-pressure surface for property, Joern, fuzz, mutation, coverage, and architecture campaigns."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:package-contracts-check",
+            "workspace:atom-graph-conformance",
+            "workspace:property-evidence",
+            "workspace:coverage-conformance",
+            "attune-architecture:test",
+            "workspace:arch:scan",
+            "workspace:arch:deps",
+            "workspace:arch:cycles",
+            "workspace:arch:complexity",
+            "workspace:arch:duplicates",
+            "workspace:arch:types",
+            "workspace:arch:churn",
+            "effect-oxlint-policy:test",
+            "effect-oxlint-policy:build",
+            "joern-effect-properties:property",
+            "joern-effect-properties:property-joern",
+            "joern-effect-properties:fuzz:smoke",
+            "attune-pi-agent:property",
+            "attune-pi-agent:mutation",
+            "workspace:arch:mutation"
+          ],
+          "effectOxlintPolicy": true
+        },
+        "dryRun": false
       }
     },
     "policy-fast": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "commands": [
-          "pnpm exec nx graph --file=/tmp/attune-nx-graph.json",
-          "pnpm exec nx run attune-nx:test",
-          "pnpm exec nx run workspace:package-contracts-check",
-          "pnpm exec nx run workspace:atom-graph-conformance",
-          "pnpm exec nx run workspace:property-evidence",
-          "pnpm exec nx run workspace:coverage-conformance",
-          "pnpm exec nx run attune-architecture:test",
-          "pnpm exec nx run workspace:arch:scan",
-          "pnpm exec nx run workspace:arch:deps",
-          "pnpm exec nx run workspace:arch:cycles",
-          "pnpm exec nx run workspace:arch:complexity",
-          "pnpm exec nx run workspace:arch:duplicates",
-          "pnpm exec nx run workspace:arch:types",
-          "pnpm exec nx run workspace:arch:churn",
-          "pnpm exec nx run effect-oxlint-policy:test",
-          "pnpm exec nx run effect-oxlint-policy:build",
-          "pnpm exec oxlint --config oxlint/effect-oxlint-policy.json package.json project.json nx.json tsconfig.base.json packages --quiet",
-          "node scripts/codex/verify-pr-completion.mjs"
-        ],
-        "parallel": false
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "attune-nx:test",
+            "workspace:package-contracts-check",
+            "workspace:atom-graph-conformance",
+            "workspace:property-evidence",
+            "workspace:coverage-conformance",
+            "attune-architecture:test",
+            "workspace:arch:scan",
+            "workspace:arch:deps",
+            "workspace:arch:cycles",
+            "workspace:arch:complexity",
+            "workspace:arch:duplicates",
+            "workspace:arch:types",
+            "workspace:arch:churn",
+            "effect-oxlint-policy:test",
+            "effect-oxlint-policy:build"
+          ],
+          "graphFile": "/tmp/attune-nx-graph.json",
+          "effectOxlintPolicy": true,
+          "verifyPrCompletion": true
+        },
+        "dryRun": false
       }
     },
     "policy-all": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "commands": [
-          "pnpm exec nx run workspace:policy-push",
-          "pnpm exec nx run workspace:policy-proof-pressure"
-        ],
-        "parallel": false
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:policy-push",
+            "workspace:policy-proof-pressure"
+          ]
+        },
+        "dryRun": false
       }
     },
     "codex-audit-prs": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "node scripts/codex/audit-pr-recovery.mjs"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "codex-audit-prs",
+        "parameters": {},
+        "dryRun": false
       }
     }
   }

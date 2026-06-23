@@ -87,6 +87,7 @@ const generatedFrameworkTestingImport = (): string => [
   "  definePackageHarnessHandlers,",
   "  propertyRunEvidence,",
   "  publicAccessorHandler,",
+  "  typeGuidancePartitionEvidence,",
   "}",
   ["fr", "om"].join(""),
   literal("@attune/framework-testing"),
@@ -243,11 +244,107 @@ const lawPartitions = (laws: readonly string[]): string =>
     )
     .join("\n")
 
+const metadataGuidanceSourceKind = (
+  operationKind: PackageContractOperationKind,
+): string | undefined => {
+  const byKind: Partial<Record<PackageContractOperationKind, string>> = {
+    generator: "generator-metadata",
+    "joern-template": "joern-metadata",
+    "policy-rule": "policy-metadata",
+    projection: "projection-metadata",
+    "resource-provider": "resource-metadata",
+  }
+  return byKind[operationKind]
+}
+
+const metadataGuidanceLabel = (
+  operationKind: PackageContractOperationKind,
+): string | undefined => {
+  const byKind: Partial<Record<PackageContractOperationKind, string>> = {
+    generator: "generator.metadata",
+    "joern-template": "joern.metadata",
+    "policy-rule": "policy.metadata",
+    projection: "projection.metadata",
+    "resource-provider": "resource.metadata",
+  }
+  return byKind[operationKind]
+}
+
+const kindSpecificGuidancePartitions = (
+  model: PackageContractGeneratorModel,
+): string => {
+  const operationId = model.operationId
+  const partition = (
+    id: string,
+    kind: string,
+    from: string,
+    label?: string,
+  ): string =>
+    `        {\n          id: ${literal(id)},\n          kind: ${literal(kind)},\n          from: ${literal(from)},${label === undefined ? "" : `\n          label: ${literal(label)},`}\n        },`
+
+  switch (model.operationKind) {
+    case "generator":
+      return partition(
+        `${operationId}.generator.provenance`,
+        "generator-provenance",
+        "generator.metadata",
+        "@attune/nx:package-contract",
+      )
+    case "joern-template":
+      return partition(
+        `${operationId}.joern.template`,
+        "joern-template",
+        "joern.metadata",
+      )
+    case "policy-rule":
+      return partition(
+        `${operationId}.policy.finding`,
+        "policy-finding",
+        "policy.metadata",
+      )
+    case "projection":
+      return partition(
+        `${operationId}.projection.transition`,
+        "projection-transition",
+        "projection.metadata",
+      )
+    case "resource-provider":
+      return [
+        partition(
+          `${operationId}.resource.observed`,
+          "resource-state",
+          "resource.metadata",
+        ),
+        partition(
+          `${operationId}.destructive.gate`,
+          "destructive-gate",
+          "resource.metadata",
+        ),
+      ].join("\n")
+    case "atom-family":
+      return partition(
+        `${operationId}.atom.family`,
+        "atom",
+        "atom.metadata",
+      )
+    case "codec":
+    case "command":
+    case "event-facade":
+    case "query":
+      return ""
+  }
+}
+
 const contractSource = (model: PackageContractGeneratorModel): string => {
   const className = model.operationNames.className
   const operationProperty = model.operationNames.propertyName
   const metadata = operationMetadata(model)
   const metadataBlock = metadata.length > 0 ? `${metadata}\n` : ""
+  const metadataSourceKind = metadataGuidanceSourceKind(model.operationKind)
+  const metadataSourceLabel = metadataGuidanceLabel(model.operationKind)
+  const kindPartitions = kindSpecificGuidancePartitions(model)
+  const kindPartitionsBlock =
+    kindPartitions.length === 0 ? "" : `${kindPartitions}\n`
 
   return `import { Layer, Schema } from "effect"
 import {
@@ -342,12 +439,43 @@ export const PackageTypeGuidance = defineTypeGuidance(PackageContract, {
     "contract.operation",
     "effect-schema.ast",
     "inferred-law",
+    ${literal(`operation.kind.${model.operationKind}`)},
+    ${metadataSourceLabel === undefined ? "" : `${literal(metadataSourceLabel)},`}
+  ],
+  sources: [
+    {
+      id: ${literal(`operation:${model.operationId}`)},
+      label: ${literal(model.operationId)},
+      kind: "contract-operation",
+      operationId: ${literal(model.operationId)},
+    },
+    ${metadataSourceKind === undefined ? "" : `{
+      id: ${literal(`metadata:${model.operationId}`)},
+      label: ${literal(metadataSourceLabel ?? `${model.operationKind}.metadata`)},
+      kind: ${literal(metadataSourceKind)},
+      operationId: ${literal(model.operationId)},
+    },`}
   ],
   operations: {
     ${literal(model.operationId)}: {
       sourceLabels: [
         ${literal(`operation.kind.${model.operationKind}`)},
         "effect-schema.ast",
+        ${metadataSourceLabel === undefined ? "" : `${literal(metadataSourceLabel)},`}
+      ],
+      sources: [
+        {
+          id: ${literal(`operation:${model.operationId}`)},
+          label: ${literal(model.operationId)},
+          kind: "contract-operation",
+          operationId: ${literal(model.operationId)},
+        },
+        ${metadataSourceKind === undefined ? "" : `{
+          id: ${literal(`metadata:${model.operationId}`)},
+          label: ${literal(metadataSourceLabel ?? `${model.operationKind}.metadata`)},
+          kind: ${literal(metadataSourceKind)},
+          operationId: ${literal(model.operationId)},
+        },`}
       ],
       schemaSources: [
         {
@@ -369,12 +497,25 @@ export const PackageTypeGuidance = defineTypeGuidance(PackageContract, {
           source: "effect-schema",
         },
       ],
+      partitions: [
+        {
+          id: ${literal(`${model.operationId}.operation-id`)},
+          kind: "operation-id",
+          from: "contract.operation",
+        },
+        {
+          id: ${literal(`${model.operationId}.operation-kind.${model.operationKind}`)},
+          kind: "operation-kind",
+          from: "operation.kind",
+        },
+${kindPartitionsBlock}      ],
       inputPartitions: [
         {
           id: ${literal(`${model.operationId}.input`)},
           kind: "schema-boundary",
           from: "schema.input",
           sourceId: ${literal(`schema:${model.operationId}:input`)},
+          transformIds: [${literal(`${model.operationId}.schema-guided`)}],
         },
       ],
       outputPartitions: [
@@ -418,6 +559,16 @@ ${lawPartitions(model.laws)}
           reason: "Generated package contract keeps semantic view movement visible.",
         },
       ],
+      transforms: [
+        {
+          id: ${literal(`${model.operationId}.schema-guided`)},
+          kind: "schema-annotation",
+          targetPartitionId: ${literal(`${model.operationId}.input`)},
+          sourceLabel: "effect-schema.ast",
+          reason: "Schema-derived arbitraries stay authoritative before coverage bias is applied.",
+        },
+      ],
+      filters: [],
     },
   },
 } as const)
@@ -469,6 +620,18 @@ export const PackageHarnessEvidenceProducers = definePackageEvidenceProducerMap(
         rpcId: ${literal(`${model.packageId}.operation.${model.operationId}`)},
         laws: ${stringArray(model.laws)},
       }),
+      typeGuidancePartitionEvidence(context, ${literal(model.operationId)}, {
+        partitionId: ${literal(`${model.operationId}.input`)},
+        partitionKind: "schema-boundary",
+        source: "generated-type-guidance",
+        status: "miss",
+      }),
+      typeGuidancePartitionEvidence(context, ${literal(model.operationId)}, {
+        partitionId: ${literal(`${model.reactivityKey}.moves`)},
+        partitionKind: "reactivity-key",
+        source: "generated-type-guidance",
+        status: "miss",
+      }),
     ],
   }),
 } as const
@@ -481,6 +644,9 @@ export const PackageHarnessClient = createPackageHarnessClient({
   evidenceProducers: PackageHarnessEvidenceProducers,
 })
 export type PackageHarnessClient = typeof PackageHarnessClient
+
+export const PackageHarnessControls = PackageHarnessClient.controls
+export type PackageHarnessControls = typeof PackageHarnessControls
 
 export const PackageFuzzHandlers = PackageHarnessHandlers
 export type PackageFuzzHandlers = typeof PackageFuzzHandlers
@@ -495,8 +661,10 @@ const propertyFor = <const Operation extends { readonly id: string; readonly law
       "schema.decode",
       "schema.encode",
       "harness.schema-coded-client",
+      "harness.control.observe",
       "handler.exact-operation-map",
       "evidence.producer-map",
+      "type-guidance.partitions",
       "view.atom-moves",
       "property.worker-compatible-module",
     ],

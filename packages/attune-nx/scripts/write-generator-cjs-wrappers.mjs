@@ -1,5 +1,15 @@
-import { mkdir, writeFile } from "node:fs/promises"
+import { cp, mkdir, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
+const emittedExecutorRoot = join(packageRoot, "dist", "packages", "attune-nx", "src", "executors")
+const registeredExecutorRoot = join(packageRoot, "dist", "executors")
+
+await cp(emittedExecutorRoot, registeredExecutorRoot, {
+  force: true,
+  recursive: true,
+})
 
 const wrappers = [
   "cocoindex-mcp-tool",

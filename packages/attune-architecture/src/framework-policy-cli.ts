@@ -18,6 +18,7 @@ import {
   type FrameworkNoReportDiagnostic,
   type FrameworkNoReportFile,
 } from "./framework-no-report-policy.js"
+import { CanonicalLawIds, isLawAllowedForOperation, type LawId } from "./package-contract/laws.js"
 
 interface WorkspaceFile {
   readonly path: string
@@ -66,6 +67,13 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "stale-architecture-lint-reference"
   | "stale-policy-architecture-guidance"
   | "expired-migration-waiver"
+  | "duplicate-operation-id"
+  | "invalid-law-id"
+  | "invalid-view-reference"
+  | "hidden-configuration-without-waiver"
+  | "migration-only-alias"
+  | "stale-generated-file"
+  | "manual-derived-truth"
 
 export interface FrameworkFinalRatchetDiagnostic {
   readonly ruleId: FrameworkFinalRatchetRuleId
@@ -103,86 +111,17 @@ const explicitWaiverPattern = /\bwaivers\s*:\s*\[(?!\s*\]\s*as\s+const)/u
 const waiverDatePattern =
   /\b(?:expires|expiresOn|expiresAt|reviewBy|reviewDate)\s*:\s*["'](?<date>\d{4}-\d{2}-\d{2})["']/gu
 const stalePolicyArchitectureTargetPattern = /\bworkspace:policy-architecture\b/u
-
-// TODO(final-ratchet command-surface debt): remove these package-local
-// allowances when typed executors/inferred contract targets replace scripts
-// and raw nx:run-commands across the migrated packages.
-const temporaryCommandSurfaceDebtPackageRoots = new Set([
-  "packages/attune-architecture",
-  "packages/attune-foldkit",
-  "packages/attune-nx",
-  "packages/attune-pi-agent",
-  "packages/attuned-discovery",
-  "packages/cocoindex-effect",
-  "packages/effect-oxlint-policy",
-  "packages/home-deployment",
-  "packages/joern-effect",
-  "packages/joern-effect-properties",
-  "packages/platform-alchemy-k8s",
-])
-
-// TODO(final-ratchet workspace-command debt): these root targets still compose
-// legacy command strings during migration; the public surface remains the Nx
-// target names while executor replacement is pending.
-const temporaryRootRunCommandDebtTargets = new Set([
-  "arch:cycles",
-  "arch:churn",
-  "arch:complexity",
-  "arch:deps",
-  "arch:duplicates",
-  "arch:mutation",
-  "arch:policy",
-  "arch:scan",
-  "arch:types",
-  "arch:unused",
-  "atom-graph-conformance",
-  "check",
-  "codex-audit-prs",
-  "coverage-conformance",
-  "framework-policy-check",
-  "lint",
-  "package-contracts-check",
-  "policy-all",
-  "policy-architecture",
-  "policy-commit",
-  "policy-fast",
-  "policy-install-hooks",
-  "policy-proof-pressure",
-  "policy-push",
-  "pr-recovery-audit",
-  "pr-verify",
-  "property-evidence",
-  "shape-conformance",
-  "source-bom-check",
-  "ts:extended-diagnostics",
-  "workspace:complexity",
-])
-
-// TODO(final-ratchet framework-project debt): root framework projects are new
-// migration scaffolding and still use run-commands for test/typecheck until
-// framework/nx owns typed executors for them.
-const temporaryFrameworkRunCommandDebtPaths = new Set([
-  "framework/language-service/project.json",
-  "framework/nx/project.json",
-  "framework/protocol/project.json",
-  "framework/runtime/project.json",
-  "framework/sqlite/project.json",
-  "framework/testing/project.json",
-])
+const hiddenConfigurationPattern =
+  /\b(?:hiddenConfiguration|hiddenConfig|hiddenConfigurationDependencies|hiddenConfigDependencies)\s*:\s*(?:true|\[|\{)/u
+const hiddenConfigurationWaiverPattern = /\bcategory\s*:\s*["']hidden-configuration["']/u
+const migrationOnlyAliasPattern =
+  /\b(?:migrationOnlyAlias|migrationAlias|compatibilityExport|diagnosticsOnlyException|reportOnlyException)\s*:\s*true\b/u
+const staleGeneratedMarkerPattern =
+  /\b(?:attune-stale-generated|staleGenerated|generatedArtifactStale|needs-regeneration)\b/u
+const manualDerivedTruthMarkerPattern =
+  /\b(?:attune-manual-derived-truth|manualProtocolTruth|manualDerivedTruth|derivedTruth\s*:\s*["']manual["'])\b/u
 
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
-
-// TODO(final-ratchet worker-target debt): package-local proof/fuzz targets are
-// still raw migration surfaces. They remain allowed until the generic
-// attune:toolchain/package-check executors own worker budget metadata in those
-// package project files.
-const temporaryWorkerTargetMetadataDebt = new Set([
-  "packages/joern-effect-properties/project.json#fuzz:container",
-  "packages/joern-effect-properties/project.json#fuzz:dsl-four-hour:container",
-  "packages/joern-effect-properties/project.json#fuzz:dsl-four-hour:direct",
-  "packages/joern-effect-properties/project.json#fuzz:nightly:container",
-  "packages/joern-effect-properties/project.json#property-joern:container",
-])
 
 // Historical OpenSpec records may mention the old architecture package
 // identity. Active package, framework, config, and docs surfaces must not.
@@ -441,6 +380,13 @@ const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode
   "stale-architecture-lint-reference",
   "stale-policy-architecture-guidance",
   "expired-migration-waiver",
+  "duplicate-operation-id",
+  "invalid-law-id",
+  "invalid-view-reference",
+  "hidden-configuration-without-waiver",
+  "migration-only-alias",
+  "stale-generated-file",
+  "manual-derived-truth",
 ])
 
 function collectFiles(root: string): readonly WorkspaceFile[] {
@@ -531,6 +477,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
       ))
     }
 
+    diagnostics.push(...checkPackageContractResidualPolicy(packageRoot, contractFile))
     diagnostics.push(...checkAtomReactivityConformance(packageRoot, contractFile))
     diagnostics.push(...findExpiredMigrationWaivers(contractFile))
   }
@@ -540,6 +487,158 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     diagnostics.push(...checkArchitectureLintReferences(file))
     diagnostics.push(...checkPolicyArchitectureGuidance(file))
     diagnostics.push(...checkWorkerTargetMetadata(file))
+    diagnostics.push(...checkFinalCleanupFile(file))
+  }
+
+  return diagnostics
+}
+
+function checkPackageContractResidualPolicy(
+  packageRoot: string,
+  contractFile: WorkspaceFile,
+): readonly FrameworkFinalRatchetDiagnostic[] {
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+  const operations = extractSourceOperationPolicyMetadata(contractFile.content)
+  const graph = extractPackageAtomGraph(contractFile.content)
+
+  diagnostics.push(...findDuplicateSourceOperationIds(contractFile.path, operations))
+  diagnostics.push(...findInvalidSourceLawIds(contractFile.path, operations))
+  diagnostics.push(...findInvalidSourceViewReferences(contractFile.path, operations, graph))
+
+  if (hiddenConfigurationPattern.test(contractFile.content) && !hiddenConfigurationWaiverPattern.test(contractFile.content)) {
+    diagnostics.push(finalRatchetDiagnostic(
+      "hidden-configuration-without-waiver",
+      contractFile.path,
+      `Package ${packageRoot} declares hidden configuration dependencies without a hidden-configuration waiver.`,
+    ))
+  }
+
+  if (migrationOnlyAliasPattern.test(contractFile.content)) {
+    diagnostics.push(finalRatchetDiagnostic(
+      "migration-only-alias",
+      contractFile.path,
+      `Package ${packageRoot} still declares a migration-only alias, compatibility export, or report-only exception marker after final ratchet.`,
+    ))
+  }
+
+  return diagnostics
+}
+
+interface SourceOperationPolicyMetadata {
+  readonly id: string
+  readonly kind: string
+  readonly laws: readonly string[]
+  readonly reactivityKeys: readonly string[]
+  readonly atoms: readonly string[]
+}
+
+function extractSourceOperationPolicyMetadata(content: string): readonly SourceOperationPolicyMetadata[] {
+  return extractCallArguments(content, "defineOperation")
+    .map((operationBlock): SourceOperationPolicyMetadata | undefined => {
+      const id = extractFirstStringProperty(operationBlock, "id")
+      const kind = extractFirstStringProperty(operationBlock, "kind")
+      if (id === undefined || kind === undefined) return undefined
+
+      return {
+        id,
+        kind,
+        laws: extractStringArrayValues(operationBlock, "laws"),
+        reactivityKeys: extractStringArrayValues(operationBlock, "reactivityKeys"),
+        atoms: extractStringArrayValues(operationBlock, "atoms"),
+      }
+    })
+    .filter((operation): operation is SourceOperationPolicyMetadata => operation !== undefined)
+}
+
+function findDuplicateSourceOperationIds(
+  filePath: string,
+  operations: readonly SourceOperationPolicyMetadata[],
+): readonly FrameworkFinalRatchetDiagnostic[] {
+  const seen = new Set<string>()
+  const duplicateIds = new Set<string>()
+
+  for (const operation of operations) {
+    if (seen.has(operation.id)) duplicateIds.add(operation.id)
+    seen.add(operation.id)
+  }
+
+  return [...duplicateIds].map((operationId) => finalRatchetDiagnostic(
+    "duplicate-operation-id",
+    filePath,
+    `Package contract declares duplicate operation id ${operationId}; operation ids must be unique before generated harnesses and ledgers can be trusted.`,
+  ))
+}
+
+function findInvalidSourceLawIds(
+  filePath: string,
+  operations: readonly SourceOperationPolicyMetadata[],
+): readonly FrameworkFinalRatchetDiagnostic[] {
+  const canonicalLawIds = new Set<string>(CanonicalLawIds)
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+
+  for (const operation of operations) {
+    for (const lawId of operation.laws) {
+      if (!canonicalLawIds.has(lawId)) {
+        diagnostics.push(finalRatchetDiagnostic(
+          "invalid-law-id",
+          filePath,
+          `Operation ${operation.id} declares unknown law id ${lawId}.`,
+        ))
+        continue
+      }
+
+      if (!isLawAllowedForOperation(lawId as LawId, {
+        id: operation.id,
+        kind: operation.kind,
+        views: {
+          reactivityKeys: operation.reactivityKeys,
+          atoms: operation.atoms,
+        },
+      } as Parameters<typeof isLawAllowedForOperation>[1])) {
+        diagnostics.push(finalRatchetDiagnostic(
+          "invalid-law-id",
+          filePath,
+          `Operation ${operation.id} declares law ${lawId}, which is not allowed for ${operation.kind} metadata.`,
+        ))
+      }
+    }
+  }
+
+  return diagnostics
+}
+
+function findInvalidSourceViewReferences(
+  filePath: string,
+  operations: readonly SourceOperationPolicyMetadata[],
+  graph: PackageAtomGraph,
+): readonly FrameworkFinalRatchetDiagnostic[] {
+  const reactivityKeys = new Set(graph.reactivityKeys)
+  const atoms = new Set([
+    ...graph.atoms,
+    ...graph.baseAtoms.map((atom) => atom.id),
+    ...graph.derivedAtoms.map((atom) => atom.id),
+    ...graph.packageViewAtoms.map((atom) => atom.id),
+  ])
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+
+  for (const operation of operations) {
+    for (const key of operation.reactivityKeys) {
+      if (reactivityKeys.has(key)) continue
+      diagnostics.push(finalRatchetDiagnostic(
+        "invalid-view-reference",
+        filePath,
+        `Operation ${operation.id} touches unknown Reactivity key ${key}.`,
+      ))
+    }
+
+    for (const atom of operation.atoms) {
+      if (atoms.has(atom)) continue
+      diagnostics.push(finalRatchetDiagnostic(
+        "invalid-view-reference",
+        filePath,
+        `Operation ${operation.id} touches unknown atom ${atom}.`,
+      ))
+    }
   }
 
   return diagnostics
@@ -1015,7 +1114,6 @@ function checkCommandSurfaceFile(file: WorkspaceFile): readonly FrameworkFinalRa
 function checkPackageJsonScripts(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
   const packageRoot = packageRootForManifest(file.path)
   if (packageRoot === undefined) return []
-  if (temporaryCommandSurfaceDebtPackageRoots.has(packageRoot)) return []
 
   const parsed = parseJsonObject(file)
   if (parsed === undefined || !isRecord(parsed.scripts) || Object.keys(parsed.scripts).length === 0) {
@@ -1033,12 +1131,10 @@ function checkProjectJsonRunCommands(file: WorkspaceFile): readonly FrameworkFin
   const parsed = parseJsonObject(file)
   if (parsed === undefined || !isRecord(parsed.targets)) return []
 
-  const packageRoot = packageRootForManifest(file.path)
   const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
 
   for (const [targetName, rawTarget] of Object.entries(parsed.targets)) {
     if (!isRecord(rawTarget) || rawTarget.executor !== "nx:run-commands") continue
-    if (isTemporaryRunCommandDebt(file.path, packageRoot, targetName)) continue
 
     diagnostics.push(finalRatchetDiagnostic(
       "arbitrary-run-commands",
@@ -1048,16 +1144,6 @@ function checkProjectJsonRunCommands(file: WorkspaceFile): readonly FrameworkFin
   }
 
   return diagnostics
-}
-
-function isTemporaryRunCommandDebt(
-  filePath: string,
-  packageRoot: string | undefined,
-  targetName: string,
-): boolean {
-  if (packageRoot !== undefined) return temporaryCommandSurfaceDebtPackageRoots.has(packageRoot)
-  if (temporaryFrameworkRunCommandDebtPaths.has(filePath)) return true
-  return filePath === "project.json" && temporaryRootRunCommandDebtTargets.has(targetName)
 }
 
 function checkArchitectureLintReferences(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
@@ -1106,7 +1192,6 @@ function checkWorkerTargetMetadata(file: WorkspaceFile): readonly FrameworkFinal
   const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
   for (const [targetName, rawTarget] of Object.entries(parsed.targets)) {
     if (!isRecord(rawTarget) || !isWorkerizedTarget(targetName, rawTarget)) continue
-    if (temporaryWorkerTargetMetadataDebt.has(`${file.path}#${targetName}`)) continue
 
     const missing = missingWorkerMetadataFields(rawTarget)
     if (missing.length === 0) continue
@@ -1119,6 +1204,49 @@ function checkWorkerTargetMetadata(file: WorkspaceFile): readonly FrameworkFinal
   }
 
   return diagnostics
+}
+
+function checkFinalCleanupFile(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+
+  if (
+    isGeneratedArtifactPath(file.path) &&
+    staleGeneratedMarkerPattern.test(file.content) &&
+    !isGeneratedCleanupExemptPath(file.path)
+  ) {
+    diagnostics.push(finalRatchetDiagnostic(
+      "stale-generated-file",
+      file.path,
+      "Generated source or generated compatibility views must be refreshed before the final ratchet; stale generated markers are not allowed as checked-in truth.",
+    ))
+  }
+
+  if (manualDerivedTruthMarkerPattern.test(file.content) && isDerivedTruthFilePath(file.path)) {
+    diagnostics.push(finalRatchetDiagnostic(
+      "manual-derived-truth",
+      file.path,
+      "Source BOM, generator-shape, waiver, coverage, and protocol summary facts must be generated or projected, not maintained as manual derived truth.",
+    ))
+  }
+
+  return diagnostics
+}
+
+function isGeneratedCleanupExemptPath(filePath: string): boolean {
+  return filePath.startsWith("openspec/changes/standardize-effect-package-contracts/")
+}
+
+function isGeneratedArtifactPath(filePath: string): boolean {
+  return /(^|\/)(generated|__generated__)(\/|$)|\.generated\.[cm]?[jt]sx?$/u.test(filePath)
+}
+
+function isDerivedTruthFilePath(filePath: string): boolean {
+  return (
+    filePath === "attune.generator-shapes.json" ||
+    filePath === "attune.source-bom.index.json" ||
+    /(^|\/)attune\.source-bom\.json$/u.test(filePath) ||
+    /(^|\/)(reports?|artifacts?|protocol-output)(\/|$)/u.test(filePath)
+  )
 }
 
 function isWorkerizedTarget(targetName: string, target: Record<string, unknown>): boolean {

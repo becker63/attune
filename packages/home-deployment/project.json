@@ -4,32 +4,134 @@
   "sourceRoot": "packages/home-deployment/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "pnpm exec tsup src/index.ts src/alchemy.ts --format esm,cjs --dts --sourcemap --clean"
+        "targetProject": "home-deployment",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts",
+            "src/alchemy.ts"
+          ],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "pnpm exec tsgo --noEmit"
+        "targetProject": "home-deployment",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "pnpm exec tsc --noEmit"
+        "targetProject": "home-deployment",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "pnpm exec vitest run"
+        "targetProject": "home-deployment",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
+      }
+    },
+    "alchemy:plan": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "alchemy",
+        "action": "plan",
+        "toolId": "home-deployment-day0-stack",
+        "outputs": [
+          ".attune/cache/home-deployment/alchemy-plan"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/home-deployment/provider-evidence"
+        ],
+        "resourceTier": "external",
+        "resourceProviderGate": {
+          "required": true,
+          "provider": "alchemy",
+          "operation": "plan",
+          "evidence": "home-deployment/day0-plan-dry-run"
+        },
+        "dryRun": true
+      }
+    },
+    "alchemy:deploy": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "alchemy",
+        "action": "deploy",
+        "toolId": "home-deployment-day0-stack",
+        "outputs": [
+          ".attune/cache/home-deployment/alchemy-deploy"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/home-deployment/provider-evidence"
+        ],
+        "resourceTier": "destructive",
+        "destructiveGate": {
+          "required": true,
+          "proof": "home-deployment/current-observation-proof",
+          "approval": "home-deployment/destructive-approval",
+          "observation": "home-deployment/desired-state-observed"
+        },
+        "resourceProviderGate": {
+          "required": true,
+          "provider": "alchemy",
+          "operation": "deploy",
+          "evidence": "home-deployment/day0-deploy-dry-run"
+        },
+        "dryRun": true
+      }
+    },
+    "safety-simulation": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "alchemy",
+        "action": "smoke",
+        "toolId": "home-deployment-provider-safety-simulation",
+        "outputs": [
+          ".attune/cache/home-deployment/safety-simulation"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/home-deployment/provider-evidence"
+        ],
+        "resourceTier": "standard",
+        "resourceProviderGate": {
+          "required": true,
+          "provider": "home-deployment",
+          "operation": "safety-simulation",
+          "evidence": "home-deployment/provider-safety-simulation"
+        },
+        "dryRun": true
       }
     }
   }

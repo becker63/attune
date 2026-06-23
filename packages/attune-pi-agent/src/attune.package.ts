@@ -444,14 +444,6 @@ export const PackageContract = definePackageContract({
         "Existing property tests use hand-authored fast-check arbitraries until generated Schema-derived package properties cover the same permission and evidence partitions.",
       review: "standardize-effect-package-contracts property harness generation",
     },
-    {
-      id: "attune-pi-agent/raw-command-surfaces",
-      category: "legacy-boundary",
-      owner: "attune-pi-agent-migration-agent",
-      reason:
-        "package.json scripts and project.json run-commands remain pre-ratchet command-surface debt; typed Nx executor migration is owned by task 10.5.",
-      review: "standardize-effect-package-contracts task 10.5",
-    },
   ] as const,
 } as const)
 export type PackageContract = typeof PackageContract

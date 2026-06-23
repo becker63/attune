@@ -57,7 +57,7 @@ describe("joern-effect package contract", () => {
     >()
 
     const decoded = decodePackageContract(PackageContract)
-    expect(decoded.operations.map((operation) => operation.kind)).toEqual([
+    expect(decoded.contract?.operations.map((operation) => operation.kind)).toEqual([
       "command",
       "query",
       "generator",

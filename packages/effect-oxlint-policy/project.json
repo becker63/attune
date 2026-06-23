@@ -5,25 +5,47 @@
   "projectType": "library",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "command": "pnpm exec tsup src/index.ts --format esm --dts --out-dir dist",
-        "cwd": "packages/effect-oxlint-policy"
-      },
-      "outputs": ["{projectRoot}/dist"]
+        "targetProject": "effect-oxlint-policy",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts"
+          ],
+          "format": "esm",
+          "dts": true,
+          "sourcemap": false,
+          "clean": true,
+          "outDir": "dist"
+        },
+        "dryRun": false
+      }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "pnpm exec tsc -p tsconfig.json --noEmit",
-        "cwd": "packages/effect-oxlint-policy"
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true,
+          "tsconfig": "tsconfig.json"
+        }
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "pnpm exec vitest run test/*.test.ts",
-        "cwd": "packages/effect-oxlint-policy"
+        "dryRun": false,
+        "checks": [
+          "test"
+        ]
       }
     }
   }

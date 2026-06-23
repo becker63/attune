@@ -4,38 +4,58 @@
   "sourceRoot": "packages/attune-nx/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/attune-nx",
-        "command": "pnpm exec tsc -p tsconfig.build.json && node scripts/write-generator-cjs-wrappers.mjs"
+        "targetProject": "attune-nx",
+        "tool": "typescript",
+        "action": "build",
+        "toolId": "tsc",
+        "parameters": {
+          "tsconfig": "tsconfig.build.json",
+          "postBuild": "attune-nx-generator-cjs-wrappers"
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attune-nx",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsgo --noEmit"
+        "dryRun": false,
+        "checks": [
+          "typecheck"
+        ]
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attune-nx",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsc --noEmit"
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true
+        }
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json packages/attune-nx --quiet"
+        "dryRun": false,
+        "checks": [
+          "lint"
+        ]
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attune-nx",
-        "command": "pnpm exec vitest run"
+        "dryRun": false,
+        "checks": [
+          "test"
+        ]
       }
     }
   }

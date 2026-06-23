@@ -174,12 +174,11 @@ describe("attune-pi-agent package contract", () => {
     )
   })
 
-  it("records pre-ratchet waivers instead of hiding unresolved host and command surfaces", () => {
+  it("records only active waivers instead of stale command-surface debt", () => {
     expect(PackageContract.waivers.map((waiver) => waiver.id)).toEqual([
       "attune-pi-agent/pi-host-extension-boundary",
       "attune-pi-agent/run-artifact-filesystem-writer",
       "attune-pi-agent/custom-fastcheck-arbitraries",
-      "attune-pi-agent/raw-command-surfaces",
     ])
   })
 })

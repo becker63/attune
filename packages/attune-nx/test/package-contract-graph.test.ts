@@ -4,10 +4,14 @@ import { describe, expect, it } from "vitest"
 import {
   PackageContractGraphError,
   createPackageContractGraphNode,
+  derivePackageContractAffectedTargets,
   derivePackageContractWorkspaceGraph,
   discoverPackageContractSourceViews,
   discoverPackageContracts,
+  inferDeterministicMergeTargetMetadata,
   inferPackageContractTargetSemantics,
+  inferWorkerizedPropertyShardMetadata,
+  mergePackageContractShardSummaries,
   packageContractTargetSemantics,
   readPackageContractRuntimeFacts,
   summarizePackageContract,
@@ -429,6 +433,7 @@ describe("package contract graph helpers", () => {
       descriptorHash: "descriptor-hash",
       deltaKinds: ["stale-generated-source"],
       repairTargets: ["@attune/framework-nx:protocol-materialize"],
+      diagnosticCodes: [],
       generatedArtifactHashes: [{
         artifactId: "demo:registry",
         expectedHash: "expected",
@@ -441,6 +446,8 @@ describe("package contract graph helpers", () => {
   it("describes inferred target metadata for package contract targets", () => {
     expect(packageContractTargetSemantics.map((target) => target.targetName)).toEqual([
       "sync-package-contract",
+      "protocol-materialize",
+      "framework-diagnostics",
       "service-conformance",
       "property",
       "coverage-conformance",
@@ -458,6 +465,8 @@ describe("package contract graph helpers", () => {
         targetName: "property",
         category: "property",
         dependsOn: ["service-conformance"],
+        affectedBy: expect.arrayContaining(["schema", "service", "reactivity-key", "atom-graph"]),
+        runtimeInputs: expect.arrayContaining(["descriptor-hash", "evidence-state"]),
         evidence: expect.arrayContaining(["FastCheck seeds"]),
       }),
       expect.objectContaining({
@@ -467,5 +476,288 @@ describe("package contract graph helpers", () => {
         evidence: expect.arrayContaining(["operation coverage matrix"]),
       }),
     ])
+  })
+
+  it("propagates affected targets through derived DI dependencies and atom graph changes", () => {
+    const graph = derivePackageContractWorkspaceGraph([
+      {
+        projectName: "provider",
+        projectRoot: "packages/provider",
+        contractPath: "packages/provider/src/attune.package.ts",
+        module: {
+          PackageContract: {
+            packageId: "provider",
+            packageKind: "core-discovery-runtime",
+            views: { reactivityKeys: ["provider.changed"], atoms: ["providerAtom"] },
+            services: ["ProviderService"],
+            operations: [{
+              id: "provide",
+              kind: "query",
+              input: "ProviderInput",
+              output: "ProviderOutput",
+            }],
+          },
+          PackageLayer: {
+            provides: ["ProviderService"],
+            requires: [],
+          },
+        },
+      },
+      {
+        projectName: "consumer",
+        projectRoot: "packages/consumer",
+        contractPath: "packages/consumer/src/attune.package.ts",
+        module: {
+          PackageContract: {
+            packageId: "consumer",
+            packageKind: "agent-extension",
+            views: { reactivityKeys: ["consumer.changed"], atoms: ["consumerAtom"] },
+            services: ["ConsumerService"],
+            operations: [{
+              id: "consume",
+              kind: "command",
+              input: "ConsumerInput",
+              output: "ConsumerOutput",
+              dependencies: ["ProviderService"],
+              views: { reactivityKeys: ["consumer.changed"], atoms: ["consumerAtom"] },
+            }],
+          },
+        },
+      },
+    ])
+
+    const affected = derivePackageContractAffectedTargets(graph, [
+      {
+        projectName: "provider",
+        kind: "service",
+        serviceIds: ["ProviderService"],
+      },
+      {
+        packageId: "consumer",
+        kind: "reactivity-key",
+        reactivityKeys: ["consumer.changed"],
+      },
+    ])
+
+    expect(affected).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        projectName: "consumer",
+        targetName: "service-conformance",
+        changeKind: "service",
+        propagatedFromProjectName: "provider",
+        runtimeInputs: expect.arrayContaining(["descriptor-hash", "internal-protocol-delta"]),
+      }),
+      expect.objectContaining({
+        projectName: "consumer",
+        targetName: "property",
+        changeKind: "reactivity-key",
+      }),
+      expect.objectContaining({
+        projectName: "consumer",
+        targetName: "atom-graph-conformance",
+        changeKind: "reactivity-key",
+      }),
+    ]))
+  })
+
+  it("derives workerized property shard metadata and deterministic merge targets", () => {
+    const node = createPackageContractGraphNode({
+      projectName: "demo",
+      projectRoot: "packages/demo",
+      contractPath: "packages/demo/src/attune.package.ts",
+      module: {
+        PackageContract: {
+          packageId: "demo",
+          packageKind: "core-discovery-runtime",
+          views: { reactivityKeys: ["demo.changed"], atoms: ["demoAtom"] },
+          services: ["DemoService"],
+          operations: [
+            { id: "alpha", kind: "query", input: "Input", output: "Output" },
+            { id: "beta", kind: "command", input: "Input", output: "Output" },
+          ],
+        },
+      },
+    })
+
+    const shards = inferWorkerizedPropertyShardMetadata(node, {
+      operationIds: ["beta"],
+      shardCount: 2,
+      seedsPerShard: 50,
+      seedStart: 1_000,
+      workerCount: 4,
+      timeoutMs: 45_000,
+      isolationLevel: "worker-thread",
+      resourceTier: "proof-pressure",
+    })
+
+    expect(shards).toEqual([
+      expect.objectContaining({
+        targetName: "property:beta:shard-0-of-2",
+        packageId: "demo",
+        operationId: "beta",
+        seedRange: { start: 1_000, end: 1_049 },
+        workerCount: 4,
+        timeoutMs: 45_000,
+        isolationLevel: "worker-thread",
+        resourceTier: "proof-pressure",
+        randomSource: "worker",
+        evidenceOutput: ".attune/cache/property-evidence/demo/beta/shard-0-of-2.json",
+      }),
+      expect.objectContaining({
+        targetName: "property:beta:shard-1-of-2",
+        seedRange: { start: 1_050, end: 1_099 },
+      }),
+    ])
+
+    expect(inferDeterministicMergeTargetMetadata(node)).toEqual([
+      expect.objectContaining({
+        targetName: "property-evidence-merge",
+        reads: [".attune/cache/property-evidence/demo/**/*.json"],
+        writes: [".attune/cache/property-evidence/demo/merged.json"],
+        deterministicOrder: ["packageId", "operationId", "shardId", "workerId"],
+      }),
+      expect.objectContaining({
+        targetName: "atom-graph-coverage-merge",
+        writes: [".attune/cache/atom-graph/demo/coverage-summary.json"],
+        deterministicOrder: ["packageId", "operationId", "shardId", "workerId", "atomGraphEdge"],
+      }),
+    ])
+  })
+
+  it("merges workerized shard summaries deterministically regardless of completion order", () => {
+    const left = mergePackageContractShardSummaries([
+      {
+        packageId: "demo",
+        operationId: "beta",
+        shardId: "shard-1-of-2",
+        workerId: "worker-b",
+        propertyEvidenceArtifacts: [".attune/cache/property-evidence/demo/beta/shard-1-of-2.json"],
+        atomGraphCoverageArtifacts: [".attune/cache/atom-graph/demo/beta/shard-1-of-2.json"],
+        status: "passed",
+      },
+      {
+        packageId: "demo",
+        operationId: "alpha",
+        shardId: "shard-0-of-2",
+        workerId: "worker-a",
+        propertyEvidenceArtifacts: [".attune/cache/property-evidence/demo/alpha/shard-0-of-2.json"],
+        atomGraphCoverageArtifacts: [".attune/cache/atom-graph/demo/alpha/shard-0-of-2.json"],
+        status: "passed",
+      },
+    ])
+    const right = mergePackageContractShardSummaries([
+      {
+        packageId: "demo",
+        operationId: "alpha",
+        shardId: "shard-0-of-2",
+        workerId: "worker-a",
+        propertyEvidenceArtifacts: [".attune/cache/property-evidence/demo/alpha/shard-0-of-2.json"],
+        atomGraphCoverageArtifacts: [".attune/cache/atom-graph/demo/alpha/shard-0-of-2.json"],
+        status: "passed",
+      },
+      {
+        packageId: "demo",
+        operationId: "beta",
+        shardId: "shard-1-of-2",
+        workerId: "worker-b",
+        propertyEvidenceArtifacts: [".attune/cache/property-evidence/demo/beta/shard-1-of-2.json"],
+        atomGraphCoverageArtifacts: [".attune/cache/atom-graph/demo/beta/shard-1-of-2.json"],
+        status: "passed",
+      },
+    ])
+
+    expect(left).toEqual(right)
+    expect(left).toEqual([{
+      packageId: "demo",
+      shardIds: ["shard-0-of-2", "shard-1-of-2"],
+      workerIds: ["worker-a", "worker-b"],
+      propertyEvidenceArtifacts: [
+        ".attune/cache/property-evidence/demo/alpha/shard-0-of-2.json",
+        ".attune/cache/property-evidence/demo/beta/shard-1-of-2.json",
+      ],
+      atomGraphCoverageArtifacts: [
+        ".attune/cache/atom-graph/demo/alpha/shard-0-of-2.json",
+        ".attune/cache/atom-graph/demo/beta/shard-1-of-2.json",
+      ],
+      statuses: ["passed"],
+    }])
+  })
+
+  it("reads generated artifact hashes and diagnostics from framework runtime read models", async () => {
+    const facts = await readPackageContractRuntimeFacts({
+      getPackageSummary: (packageId) =>
+        Effect.succeed({
+          packageId,
+          protocolId: `attune/package/${packageId}`,
+          descriptorHash: "descriptor-hash",
+          operationCount: 1,
+          obligationCount: 2,
+          evidenceRunCount: 1,
+          evidenceCount: 4,
+          replayMetadataCount: 1,
+          coverageFeedbackCount: 3,
+          activeWaiverCount: 1,
+          waiverIssueCount: 1,
+          staleGeneratedArtifactCount: 1,
+        }),
+      listDeltas: (packageId) =>
+        Effect.succeed([{
+          deltaId: "delta:demo:waiver",
+          protocolId: `attune/package/${packageId}`,
+          packageId,
+          kind: "waiver-issue",
+          sourcePath: "packages/demo/src/attune.package.ts",
+          explanation: "Waiver needs review.",
+          repairActions: [{
+            id: "refresh-waiver-state",
+            title: "Review package waiver state",
+            kind: "nx-check",
+            target: "workspace:package-contracts-check",
+            options: { packageId },
+          }],
+        }]),
+      getPackageEvidenceState: (packageId) =>
+        Effect.succeed({
+          generatedArtifacts: [{
+            artifactId: "demo:typecheck",
+            protocolId: `attune/package/${packageId}`,
+            packageId,
+            path: "packages/demo/src/attune.package.typecheck.ts",
+            generatorId: "@attune/framework-nx:typecheck",
+            expectedHash: "expected",
+            actualHash: "actual",
+            status: "stale",
+          }],
+        }),
+      getDiagnosticsForFile: () =>
+        Effect.succeed([
+          { code: "attune/protocol/waiver-issue" },
+          { code: "attune/protocol/stale-generated-source" },
+        ]),
+    }, "demo", {
+      sourcePath: "packages/demo/src/attune.package.ts",
+    })
+
+    expect(facts).toMatchObject({
+      packageId: "demo",
+      descriptorHash: "descriptor-hash",
+      evidenceRunCount: 1,
+      replayMetadataCount: 1,
+      coverageFeedbackCount: 3,
+      activeWaiverCount: 1,
+      waiverIssueCount: 1,
+      deltaKinds: ["waiver-issue"],
+      repairTargets: ["workspace:package-contracts-check"],
+      diagnosticCodes: [
+        "attune/protocol/stale-generated-source",
+        "attune/protocol/waiver-issue",
+      ],
+      generatedArtifactHashes: [{
+        artifactId: "demo:typecheck",
+        expectedHash: "expected",
+        actualHash: "actual",
+        status: "stale",
+      }],
+    })
   })
 })

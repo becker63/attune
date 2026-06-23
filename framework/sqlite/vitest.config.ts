@@ -18,6 +18,6 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["framework/sqlite/test/**/*.test.ts"],
+    include: ["test/**/*.test.ts"],
   },
 })

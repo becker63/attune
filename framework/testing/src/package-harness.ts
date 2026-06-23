@@ -1,9 +1,11 @@
 import {
   AttuneProtocolEvidenceEventSchema,
   PackageFuzzRpcControlIds,
+  controlRpcDescriptorById,
   definePackageFuzzRpcGroup,
   operationRpcDescriptorById,
   type AttuneProtocolEvidenceEvent,
+  type ControlRpcDescriptor,
   type OperationById,
   type OperationIds,
   type OperationRpcDescriptor,
@@ -25,6 +27,8 @@ import {
   type EvidenceEventInput,
   type EvidenceProducerMap,
   type EvidenceProducerContext,
+  type TypeGuidancePartitionEvidenceStatus,
+  typeGuidancePartitionEvidence,
 } from "./evidence-producer.js"
 import {
   checkFastCheckProperty,
@@ -76,7 +80,18 @@ export type PackageHarnessInvokeOptions = Readonly<{
   readonly propertyId?: string
   readonly replay?: ReplayMetadata
   readonly runId?: string
+  readonly typeGuidance?: readonly PackageHarnessTypeGuidanceObservation[]
   readonly worker?: WorkerEvidenceMetadata
+}>
+
+export type PackageHarnessTypeGuidanceObservation = Readonly<{
+  readonly partitionId: string
+  readonly status: TypeGuidancePartitionEvidenceStatus
+  readonly corpusSeedId?: string
+  readonly filterId?: string
+  readonly partitionKind?: string
+  readonly reason?: string
+  readonly source?: string
 }>
 
 export type PackageHarnessRecordEvidence = (
@@ -130,6 +145,21 @@ export interface PackageHarnessOperationEntry<
   ) => Promise<PackageHarnessExit>
 }
 
+export interface PackageHarnessControlEntry<
+  PackageId extends string,
+  ControlId extends PackageFuzzRpcControlId,
+> {
+  readonly controlId: ControlId
+  readonly rpc: ControlRpcDescriptor<PackageId, ControlId>
+}
+
+export type PackageHarnessControlEntries<PackageId extends string> = {
+  readonly [ControlId in PackageFuzzRpcControlId]: PackageHarnessControlEntry<
+    PackageId,
+    ControlId
+  >
+}
+
 export type PackageHarnessOperationEntries<Contract extends PackageHarnessContract> = {
   readonly [OperationId in OperationIds<Contract>]: PackageHarnessOperationEntry<
     Contract,
@@ -143,6 +173,7 @@ export interface PackageHarnessClient<
   Handlers extends PackageHarnessHandlerMap<Contract, PackageTestLayer>,
 > {
   readonly contract: Contract
+  readonly controls: PackageHarnessControlEntries<PackageIdOf<Contract>>
   readonly packageTestLayer: PackageTestLayer
   readonly group: PackageFuzzRpcGroup<Contract>
   readonly operationIds: readonly OperationIds<Contract>[]
@@ -273,9 +304,19 @@ export const createPackageHarnessClient = <
       },
     ]),
   ) as PackageHarnessOperationEntries<Contract>
+  const controls = Object.fromEntries(
+    PackageFuzzRpcControlIds.map((controlId) => [
+      controlId,
+      {
+        controlId,
+        rpc: controlRpcDescriptorById(group, controlId),
+      },
+    ]),
+  ) as PackageHarnessControlEntries<PackageIdOf<Contract>>
 
   return {
     contract: input.contract,
+    controls,
     group,
     handlers,
     invoke,
@@ -431,6 +472,12 @@ const invokePackageHarnessOperation = async <
       invocation.payload,
     )
     recordSchemaEvidence(recordEvidence, "payload", rpc, decodedInput)
+    recordTypeGuidanceEvidence(
+      evidence,
+      evidenceContext,
+      input.operationId,
+      input.options.typeGuidance ?? [],
+    )
 
     const handler = input.handlers[input.operationId] as unknown as PackageHarnessHandler<
       Contract,
@@ -453,14 +500,24 @@ const invokePackageHarnessOperation = async <
     recordSchemaEvidence(recordEvidence, "success", rpc, encodedSuccess)
 
     if (input.atomGraphObserver !== undefined) {
-      evidence.push(...atomMovementEvidence(
-        evidenceContext,
-        input.operationId,
-        input.atomGraphObserver.observe({
+      const observations = input.atomGraphObserver.observe({
           packageId: input.contract.packageId,
           operationId: input.operationId,
           ...optionalReplay(evidenceContext.replay),
-        }),
+        })
+      recordEvidence({
+        kind: "property-run",
+        payload: {
+          controlId: "observe",
+          observationCount: observations.length,
+          rpcId: controlRpcDescriptorById(input.group, "observe").rpcId,
+        },
+        sequence: "control:observe",
+      })
+      evidence.push(...atomMovementEvidence(
+        evidenceContext,
+        input.operationId,
+        observations,
       ))
     }
 
@@ -502,6 +559,17 @@ const invokePackageHarnessOperation = async <
       recordEvidence,
       rpc,
     })
+  }
+}
+
+const recordTypeGuidanceEvidence = (
+  evidence: AttuneProtocolEvidenceEvent[],
+  context: EvidenceProducerContext,
+  operationId: string,
+  observations: readonly PackageHarnessTypeGuidanceObservation[],
+): void => {
+  for (const observation of observations) {
+    evidence.push(typeGuidancePartitionEvidence(context, operationId, observation))
   }
 }
 

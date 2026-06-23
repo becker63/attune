@@ -309,13 +309,215 @@ describe("attune-nx executors", () => {
     ])
   })
 
+  it("plans package bundling without accepting a shell command string", async () => {
+    const calls: ExecutorProcessPlan[] = []
+    const result = await toolchainExecutor(
+      {
+        targetProject: "attune-pi-agent",
+        tool: "bundler",
+        action: "build",
+        parameters: {
+          entryPoints: ["src/index.ts", "src/pi-extension.ts"],
+          format: "esm,cjs",
+          dts: true,
+          sourcemap: true,
+          clean: true,
+        },
+        dryRun: false,
+      },
+      createExecutorContext({ calls }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(calls).toEqual([
+      expect.objectContaining({
+        adapter: "pnpm-exec-tsup",
+        executable: "pnpm",
+        args: [
+          "exec",
+          "tsup",
+          "src/index.ts",
+          "src/pi-extension.ts",
+          "--format",
+          "esm,cjs",
+          "--dts",
+          "--sourcemap",
+          "--clean",
+        ],
+      }),
+    ])
+  })
+
+  it("plans typed generation stages and Nx generators without project shell strings", async () => {
+    const calls: ExecutorProcessPlan[] = []
+    const generation = await toolchainExecutor(
+      {
+        targetProject: "platform-alchemy-k8s",
+        tool: "generation-stage",
+        action: "generate",
+        parameters: {
+          stage: "emit-crd-types",
+          tmpDir: true,
+        },
+        dryRun: false,
+      },
+      createExecutorContext({ calls }),
+    )
+
+    const nxGenerate = await toolchainExecutor(
+      {
+        targetProject: "cocoindex-effect",
+        tool: "nx",
+        action: "generate",
+        parameters: {
+          generator: "@attune/nx:sync-cocoindex-mcp-tools",
+          arguments: [
+            "--directory",
+            "packages/cocoindex-effect/src/cocoindex/tools",
+            "--registry",
+            "packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts",
+          ],
+        },
+        dryRun: false,
+      },
+      createExecutorContext({ calls }),
+    )
+
+    expect(generation.success).toBe(true)
+    expect(nxGenerate.success).toBe(true)
+    expect(calls).toEqual([
+      expect.objectContaining({
+        adapter: "pnpm-exec-tsx-generation-stage",
+        executable: "pnpm",
+        args: ["exec", "tsx", "scripts/generationStage.ts", "emit-crd-types"],
+        env: { TMP: "/tmp", TEMP: "/tmp", TMPDIR: "/tmp" },
+      }),
+      expect.objectContaining({
+        adapter: "pnpm-exec-nx-generate",
+        executable: "pnpm",
+        args: [
+          "exec",
+          "nx",
+          "generate",
+          "@attune/nx:sync-cocoindex-mcp-tools",
+          "--directory",
+          "packages/cocoindex-effect/src/cocoindex/tools",
+          "--registry",
+          "packages/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts",
+        ],
+      }),
+    ])
+  })
+
+  it("plans worker fuzz and Arion container runs through typed resource metadata", async () => {
+    const calls: ExecutorProcessPlan[] = []
+    const fuzz = await toolchainExecutor(
+      {
+        targetProject: "joern-effect-properties",
+        tool: "worker-fuzz",
+        action: "fuzz",
+        resourceTier: "heavy",
+        workerBudget: {
+          maxWorkers: 2,
+          shardCount: 4,
+          shardIndex: 1,
+          seedRange: { start: 100, end: 200 },
+        },
+        parameters: {
+          preset: "campaign",
+          batches: 24,
+          cases: 12,
+          joernShardSize: 12,
+          maxMutators: 4,
+          queryBudget: 120,
+          queryFeedback: true,
+          workers: 2,
+          runId: "joern-effect-dsl-4h-static",
+        },
+        dryRun: false,
+        evidenceOutputs: [".attune/cache/joern-effect-properties/fuzz.json"],
+      },
+      createExecutorContext({ calls }),
+    )
+
+    const arion = await toolchainExecutor(
+      {
+        targetProject: "joern-effect-properties",
+        tool: "arion",
+        action: "deploy",
+        resourceTier: "external",
+        parameters: {
+          composeFile: "nix/compose/joern-effect-property.arion.nix",
+          tmpfsSize: "8g",
+          workers: 2,
+          cpusPerWorker: 2,
+          cpus: 4,
+          nxTarget: "joern-effect-properties:fuzz:workbench:direct",
+        },
+        dryRun: false,
+        evidenceOutputs: [".attune/cache/joern-effect-properties/arion.json"],
+      },
+      createExecutorContext({ calls }),
+    )
+
+    expect(fuzz.success).toBe(true)
+    expect(arion.success).toBe(true)
+    expect(calls).toEqual([
+      expect.objectContaining({
+        adapter: "pnpm-exec-tsx-worker",
+        executable: "pnpm",
+        args: [
+          "exec",
+          "tsx",
+          "scripts/runFuzzer.ts",
+          "--preset",
+          "campaign",
+          "--batches",
+          "24",
+          "--cases",
+          "12",
+          "--joern-shard-size",
+          "12",
+          "--max-mutators",
+          "4",
+          "--query-budget",
+          "120",
+          "--workers",
+          "2",
+          "--query-feedback",
+          "true",
+          "--run-id",
+          "joern-effect-dsl-4h-static",
+        ],
+      }),
+      expect.objectContaining({
+        adapter: "arion-up-abort-on-exit",
+        executable: "arion",
+        args: [
+          "-f",
+          "nix/compose/joern-effect-property.arion.nix",
+          "up",
+          "--abort-on-container-exit",
+        ],
+        env: expect.objectContaining({
+          JOERN_EFFECT_PROPERTY_CPUS: "4",
+          JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER: "2",
+          JOERN_EFFECT_PROPERTY_NX_TARGET:
+            "joern-effect-properties:fuzz:workbench:direct",
+          JOERN_EFFECT_PROPERTY_TMPFS_SIZE: "8g",
+          JOERN_EFFECT_PROPERTY_WORKERS: "2",
+        }),
+      }),
+    ])
+  })
+
   it("reports unsupported behaviorful modes without falling back to a shell", async () => {
     const calls: ExecutorProcessPlan[] = []
     const result = await toolchainExecutor(
       {
         targetProject: "joern-effect-properties",
         tool: "nix",
-        action: "build",
+        action: "destroy",
         dryRun: false,
       },
       createExecutorContext({ calls }),
@@ -328,9 +530,9 @@ describe("attune-nx executors", () => {
       plans: [
         {
           kind: "unsupported",
-          label: "toolchain:nix:build",
+          label: "toolchain:nix:destroy",
           reason:
-            "nix:build has typed intent metadata but no behaviorful adapter in this executor slice.",
+            "nix:destroy has typed intent metadata but no behaviorful adapter in this executor slice.",
         },
       ],
     })

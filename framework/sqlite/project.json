@@ -6,15 +6,24 @@
   "sourceRoot": "framework/sqlite/src",
   "targets": {
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "pnpm exec tsc -p framework/sqlite/tsconfig.json --noEmit"
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true,
+          "tsconfig": "tsconfig.json"
+        }
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "pnpm exec vitest run --config framework/sqlite/vitest.config.ts"
+        "dryRun": false,
+        "checks": [
+          "test"
+        ]
       }
     }
   },

@@ -130,6 +130,16 @@ describe("@attune/nx package-contract generator", () => {
     expect(contract).toContain(
       "export const PackageTypeGuidance = defineTypeGuidance",
     )
+    expect(contract).toContain('kind: "contract-operation"')
+    expect(contract).toContain('kind: "generator-metadata"')
+    expect(contract).toContain('kind: "operation-id"')
+    expect(contract).toContain('kind: "operation-kind"')
+    expect(contract).toContain('kind: "generator-provenance"')
+    expect(contract).toContain(
+      'transformIds: ["package-contract-generator.schema-guided"]',
+    )
+    expect(contract).toContain('transforms: [')
+    expect(contract).toContain('filters: []')
     expect(contract).toContain(
       '"coverage:package-contract-generator:package-view"',
     )
@@ -140,12 +150,19 @@ describe("@attune/nx package-contract generator", () => {
     expect(generated).toContain("publicAccessorHandler(\"package-contract-generator\")")
     expect(generated).toContain("PackageHarnessEvidenceProducers")
     expect(generated).toContain("PackageHarnessClient")
+    expect(generated).toContain("PackageHarnessControls")
+    expect(generated).toContain("typeGuidancePartitionEvidence")
     expect(generated).toContain("PackagePropertyEvidencePlan")
     expect(generated).toContain('harness: "PackageHarnessClient"')
     expect(generated).toContain('handlerMap: "PackageHarnessHandlers"')
     expect(generated).toContain('evidenceProducerMap: "PackageHarnessEvidenceProducers"')
+    expect(generated).toContain('"harness.control.observe"')
     expect(generated).toContain('"harness.schema-coded-client"')
     expect(generated).toContain('"evidence.producer-map"')
+    expect(generated).toContain('"type-guidance.partitions"')
+    expect(generated).toContain('partitionKind: "schema-boundary"')
+    expect(generated).toContain('partitionKind: "reactivity-key"')
+    expect(generated).toContain('status: "miss"')
     expect(generated).toContain("PackageAtomViewGraph")
     expect(generated).toContain("PackageProtocolReportPolicy")
     expect(generated).toContain('workerModule: "./attune.package.property.js"')
@@ -268,5 +285,11 @@ describe("@attune/nx package-contract generator", () => {
     expect(
       second.files.get("packages/home-deployment/src/attune.package.ts"),
     ).toContain('observes: {')
+    expect(
+      second.files.get("packages/home-deployment/src/attune.package.ts"),
+    ).toContain('"nixos-anywhere-install.resource.observed"')
+    expect(
+      second.files.get("packages/home-deployment/src/attune.package.ts"),
+    ).toContain('"nixos-anywhere-install.destructive.gate"')
   })
 })

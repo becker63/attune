@@ -4,32 +4,50 @@
   "sourceRoot": "packages/attune-architecture/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/attune-architecture",
-        "command": "pnpm exec tsc -p tsconfig.build.json"
+        "targetProject": "attune-architecture",
+        "tool": "typescript",
+        "action": "build",
+        "toolId": "tsc",
+        "parameters": {
+          "tsconfig": "tsconfig.build.json"
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attune-architecture",
-        "command": "pnpm exec tsc --noEmit"
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true
+        }
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attune-architecture",
-        "command": "pnpm exec tsc --noEmit"
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true
+        }
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attune-architecture",
-        "command": "pnpm exec vitest run"
+        "dryRun": false,
+        "checks": [
+          "test"
+        ]
       }
     }
   }

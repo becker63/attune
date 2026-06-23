@@ -4,161 +4,313 @@
   "sourceRoot": "packages/joern-effect/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsup"
+        "targetProject": "joern-effect",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsgo --noEmit"
+        "targetProject": "joern-effect",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsc --noEmit"
+        "targetProject": "joern-effect",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json packages/joern-effect --quiet"
+        "targetProject": "joern-effect",
+        "checks": [
+          "lint"
+        ],
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec vitest run"
+        "targetProject": "joern-effect",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
       }
     },
     "extract-cpg-schema": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/schema"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/schema"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs run extract-schema:joern > schema/joern-cpg-schema.${JOERN_CPG_VERSION:-unknown}.json"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "extract-cpg-schema"
+        },
+        "dryRun": false
       }
     },
     "enrich-schema-docs": {
-      "executor": "nx:run-commands",
-      "inputs": ["{projectRoot}/schema/**/*", "{projectRoot}/scripts/enrichSchemaDocs.mjs"],
-      "outputs": ["{projectRoot}/schema"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/schema"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts enrich-schema-docs"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "enrich-schema-docs"
+        },
+        "dryRun": false
       }
     },
     "normalize-schema": {
-      "executor": "nx:run-commands",
-      "inputs": ["{projectRoot}/schema/**/*", "{projectRoot}/src/pure/codegen/normalizeSchema.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts normalize-schema"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "normalize-schema"
+        },
+        "dryRun": false
       }
     },
     "emit-schema-modules": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/pure/generated/schema.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/pure/generated/schema.ts"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-schema-modules"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-schema-modules"
+        },
+        "dryRun": false
       }
     },
     "emit-node-types": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/pure/generated/nodes.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/pure/generated/nodes.ts"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-node-types"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-node-types"
+        },
+        "dryRun": false
       }
     },
     "emit-property-metadata": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/pure/generated/prop.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/pure/generated/prop.ts"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-property-metadata"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-property-metadata"
+        },
+        "dryRun": false
       }
     },
     "emit-traversal-dsl": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/pure/generated/cpg.ts", "{projectRoot}/src/pure/generated/traversal.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/pure/generated/cpg.ts",
+        "{projectRoot}/src/pure/generated/traversal.ts"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-traversal-dsl"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-traversal-dsl"
+        },
+        "dryRun": false
       }
     },
     "emit-template-registry": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/generated/TemplateRegistry.generated.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/generated/TemplateRegistry.generated.ts"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-template-registry"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-template-registry"
+        },
+        "dryRun": false
       }
     },
     "emit-template-bindings": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/generated/TemplateBindings.generated.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/generated/TemplateBindings.generated.ts"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-template-bindings"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-template-bindings"
+        },
+        "dryRun": false
       }
     },
     "emit-template-evidence": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/generated/TemplateEvidence.generated.ts"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/generated/TemplateEvidence.generated.ts"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-template-evidence"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-template-evidence"
+        },
+        "dryRun": false
       }
     },
     "emit-fast-check-arbitraries": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/internal/generated"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/internal/generated"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsx scripts/generationStage.ts emit-fast-check-arbitraries"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-fast-check-arbitraries"
+        },
+        "dryRun": false
       }
     },
     "emit-generated": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/pure/generated"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/pure/generated"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "JOERN_CPG_SCHEMA_JSON=\"${JOERN_CPG_SCHEMA_JSON:-schema/joern-cpg-schema.${JOERN_CPG_VERSION:-1.7.70}.json}\" node ../../scripts/codex/pnpm.mjs run generate"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-generated"
+        },
+        "dryRun": false
       }
     },
     "render-readme": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/README.md"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/README.md"
+      ],
       "options": {
-        "cwd": "packages/joern-effect",
-        "command": "node ../../scripts/codex/pnpm.mjs run render-readme"
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "render-readme"
+        },
+        "dryRun": false
       }
     },
     "generate": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src/pure/generated", "{projectRoot}/README.md"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/pure/generated",
+        "{projectRoot}/README.md"
+      ],
       "options": {
-        "commands": [
-          "node scripts/codex/pnpm.mjs exec nx run joern-effect:emit-generated",
-          "node scripts/codex/pnpm.mjs exec nx run joern-effect:render-readme"
-        ],
-        "parallel": false
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "joern-effect-generate",
+        "parameters": {
+          "targets": [
+            "joern-effect:emit-generated",
+            "joern-effect:render-readme"
+          ]
+        },
+        "dryRun": false
       }
     },
     "check-generated": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["generate"],
+      "executor": "@attune/nx:generated",
+      "dependsOn": [
+        "generate"
+      ],
       "options": {
-        "command": "git diff --exit-code -- packages/joern-effect/src/pure/generated packages/joern-effect/README.md packages/joern-effect/schema"
+        "targetProject": "joern-effect",
+        "operation": "check",
+        "artifact": "generator-shape",
+        "outputs": [
+          "packages/joern-effect/src/pure/generated",
+          "packages/joern-effect/README.md",
+          "packages/joern-effect/schema"
+        ],
+        "provenance": {
+          "generatorName": "joern-effect:generationStage",
+          "owner": "joern-effect"
+        },
+        "dryRun": false
       }
     }
   }

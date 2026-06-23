@@ -15,6 +15,6 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["framework/protocol/test/**/*.test.ts"],
+    include: ["test/**/*.test.ts"],
   },
 })

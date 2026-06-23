@@ -6,6 +6,7 @@ export type ProtocolEvidenceKind =
   | "property-run"
   | "atom-movement"
   | "reactivity-key"
+  | "type-guidance"
   | "coverage-point"
   | "counterexample"
   | "weak-oracle"
@@ -16,6 +17,7 @@ export const ProtocolEvidenceKindSchema = Schema.Literals([
   "property-run",
   "atom-movement",
   "reactivity-key",
+  "type-guidance",
   "coverage-point",
   "counterexample",
   "weak-oracle",

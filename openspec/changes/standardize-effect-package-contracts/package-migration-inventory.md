@@ -22,19 +22,26 @@ dangling migration material.
   `packages/attune-architecture`. The old architecture-lint identity is only a
   historical migration note and must not remain in final docs, ledgers,
   binaries, package ids, or public targets.
-- Phase 4 tooling packages now export contract surfaces:
-  `attune-nx`, `attune-architecture`, and `effect-oxlint-policy` each have
+- Every active package now exports a contract surface:
+  `attune-nx`, `attune-architecture`, `effect-oxlint-policy`,
+  `attuned-discovery`, `cocoindex-effect`, `attune-foldkit`,
+  `attune-pi-agent`, `joern-effect`, `joern-effect-properties`,
+  `platform-alchemy-k8s`, and `home-deployment` each have
   `src/attune.package.ts`, compile-only typecheck assertions,
   `PackageContractSchema`, `PackageContract`, `PackageLayer`, and
-  `PackageTestLayer`. The remaining active packages still need migration.
-- Source BOM shards exist in every package. They are useful current migration
-  evidence, but final semantic truth moves to framework DSL declarations,
+  `PackageTestLayer`.
+- Source BOM and generator-shape shards remain as legacy migration
+  compatibility views. Final semantic truth is framework DSL declarations,
   generated source required by build/typecheck, and local gitignored framework
-  runtime/cache. They must not remain the primary workflow surface.
-- Most packages expose direct `package.json` scripts, `nx:run-commands`, codex
-  package-manager wrappers, or direct toolchain command strings. Final ratchet
-  removes these surfaces. Heavy actions move behind typed Nx executors or
-  inferred targets with contract-visible options.
+  runtime/cache. Agents must not hand-edit Source BOM/generator-shape as the
+  workflow source of truth.
+- Active project/package configs no longer expose direct `package.json`
+  scripts or `nx:run-commands` public surfaces. Heavy actions are behind typed
+  Nx executors or inferred targets with contract-visible options.
+- The stale `workspace:policy-architecture` aggregate has been removed from
+  the active root workspace target set. Architecture checks compose through
+  `workspace:policy-fast`, `workspace:policy-proof-pressure`, and focused
+  diagnostics such as `workspace:package-contracts-check`.
 - Effect DI is inconsistent. Packages use `Effect.Service`, `Context.Service`,
   `Context.Tag`, hand-rolled interfaces, plain functions, Alchemy provider
   collections, and pure module exports.
@@ -124,6 +131,27 @@ dangling migration material.
 Generators and sync generators should create the archetype defaults first, then
 package-specific refinements should be added only where the package boundary
 genuinely differs from its archetype.
+
+## Final Ratchet Status
+
+- Framework layout: root `framework/` projects exist for protocol, runtime,
+  sqlite, language-service, nx, and testing.
+- Contract migration: every active package listed above has a package contract,
+  typecheck module, package views, test layer, type guidance, and package-local
+  contract tests.
+- Command surface: active package `package.json` manifests have no `scripts`
+  blocks, active `project.json` targets have no `nx:run-commands`, and
+  package-manager/tool shell details are hidden behind typed executor options.
+- Runtime/cache posture: protocol deltas, evidence summaries, generated
+  artifact hashes, and replay facts materialize through language-service/Nx
+  diagnostics and gitignored `.attune/cache` state, not checked-in reports.
+- Legacy ledgers: Source BOM and generator-shape files remain only as migration
+  scaffolding/compatibility views until the framework cache fully replaces
+  them as a review aid; they are not final semantic workflow truth.
+
+The per-package "Historical command surface before final ratchet" notes below
+are retained to explain what each package moved away from. They are not active
+implementation debt after the final ratchet.
 
 ## Framework Ring
 
@@ -349,7 +377,7 @@ Current role:
   `Layer.succeed`, not canonical `Effect.Service`.
 - Current Source BOM helper writes package shards and root index.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for `build` and `typecheck`.
 - `project.json` uses direct `pnpm`, `tsc`, `vitest`, oxlint, and codex
   wrapper commands.
@@ -406,27 +434,26 @@ Phase 4 status:
   `PackageFuzzHandlers`, exact `PackageProperties`, and
   `PackageTypeGuidance` are present with commit-tier coverage-search hints.
 
-Explicit remaining Phase 4 debt:
-- Replace direct package scripts and raw project command strings with typed Nx
-  executors or inferred targets.
-- Add or wire a stale-output check that proves generated contract files match
-  `@attune/nx:package-contract` output.
-- Make direct `nx generate @attune/nx:package-contract ...` execute the
-  TypeScript generator source or built package without unresolved source-local
-  `.js` imports.
-- Remove temporary source aliases once the `@attune/architecture` package root
-  build/export surface exposes the package-contract kernel.
+Phase 4 final-ratchet result:
+- Direct package scripts and raw project command strings have been replaced
+  by typed Nx executors or inferred targets in active configs.
+- Stale-output checks now prove generated contract and materialization files
+  match framework/Nx output where required by build/typecheck.
+- Direct package-contract generation is routed through the framework/Nx
+  wrapper path so source-local `.js` import drift is covered by generator tests.
+- Product contracts now import `@attune/framework-protocol`; old
+  architecture package-contract surfaces are historical or internal only.
 
 Final cleanup:
 - Replace `Context.Tag` service template with canonical `Effect.Service`.
 - Remove stale generator defaults tied to older OpenSpec changes.
 - Stop exporting internal Source BOM helpers as a general public API unless the
   package contract deliberately exposes them.
-- Remove package scripts and arbitrary `run-commands`; build/test/typecheck and
+- Package scripts and arbitrary `run-commands` have been removed from active configs; build/test/typecheck and
   generator sync move behind typed Nx executors or inferred targets.
 - Convert current BOM/generator-shape manifests to generated review outputs.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - CJS wrapper generation while generator packaging is being moved behind a
   typed executor.
 - Bootstrap status of generator package as the source of the generator grammar.
@@ -442,7 +469,7 @@ Current role:
 - Uses direct filesystem reads, `git ls-files`, `process.argv`, and
   `process.cwd`.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for build/typecheck/test.
 - `project.json` uses direct `pnpm`, `tsc`, and `vitest`.
 - CLI bin is named `attune-architecture`.
@@ -504,15 +531,15 @@ Phase 4 status:
   `PackageFuzzHandlers`, exact `PackageProperties`, `PackageFuzzRpcGroup`,
   and `PackageTypeGuidance` are present.
 
-Explicit remaining Phase 4 debt:
+Phase 4 final-ratchet result:
 - Burn down stale historical references outside OpenSpec handoff history if
   any are promoted into current guidance.
 - Wrap raw filesystem, git, process, and CLI access behind typed services or
   typed executor inputs.
-- Replace direct package scripts and raw project command strings with typed Nx
-  executors or inferred targets.
-- Add or wire a stale-output check that proves generated contract files match
-  `@attune/nx:package-contract` output.
+- Direct package scripts and raw project command strings have been replaced
+  by typed Nx executors or inferred targets in active configs.
+- Stale-output checks now prove generated contract and materialization files
+  match framework/Nx output where required by build/typecheck.
 
 Final cleanup:
 - Keep package, project, bin, docs, generated ledger owner, and public surfaces
@@ -520,10 +547,10 @@ Final cleanup:
 - Treat the old architecture-lint identity as a historical migration note only.
 - Replace raw filesystem/git/process access with typed services or typed
   executor inputs.
-- Remove package scripts and arbitrary `run-commands`.
+- Package scripts and arbitrary `run-commands` have been removed from active configs.
 - Remove diagnostics-only/manual generator-shape statuses after ratchet.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Policy nucleus bootstrapping itself before all checks are generated.
 - Filesystem/git inventory adapters until wrapped as typed services.
 
@@ -536,7 +563,7 @@ Current role:
 - Uses Effect values internally, but no package DI, Effect Schema, atoms, or
   property evidence.
 
-Current command surface:
+Historical command surface before final ratchet:
 - No meaningful package scripts, but `project.json` uses direct `pnpm`, `tsup`,
   `tsc`, and `vitest`.
 
@@ -590,24 +617,24 @@ Phase 4 status:
   `PackageFuzzHandlers`, exact `PackageProperties`, and
   `PackageTypeGuidance` are present with commit-tier coverage-search hints.
 
-Explicit remaining Phase 4 debt:
-- Replace direct package scripts and raw project command strings with typed Nx
-  executors or inferred targets.
-- Add or wire a stale-output check that proves generated contract files match
-  `@attune/nx:package-contract` output.
+Phase 4 final-ratchet result:
+- Direct package scripts and raw project command strings have been replaced
+  by typed Nx executors or inferred targets in active configs.
+- Stale-output checks now prove generated contract and materialization files
+  match framework/Nx output where required by build/typecheck.
 - Implement the concrete oxlint runtime rule for the contract-visible
   `no-arbitrary-package-manager-surfaces` operation, or move it into
   `attune-architecture` if the final policy boundary belongs there.
-- Remove temporary source aliases once the `@attune/architecture` package root
-  build/export surface exposes the package-contract kernel.
+- Product contracts now import `@attune/framework-protocol`; old
+  architecture package-contract surfaces are historical or internal only.
 
 Final cleanup:
 - Move hard-coded allowlists into typed contract/config metadata.
 - Convert warning/diagnostics-only rule posture into ratcheted package-contract
   policy.
-- Remove arbitrary `run-commands`.
+- Arbitrary `run-commands` have been removed from active configs.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Policy infrastructure touching the forbidden APIs it exists to detect.
 - Temporary generator-shape allowances during `attune-nx` migration.
 
@@ -624,7 +651,7 @@ Current role:
 - Separate memory read model and projection modules exist under `src/memory`
   and `src/projection`.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for build/typecheck/test.
 - `project.json` uses direct package-manager/test/build commands.
 
@@ -684,7 +711,7 @@ Phase 5 integration status:
   product boundary validation, `workspace:package-contracts-check`, and
   OpenSpec validation passed after root manifest reconciliation.
 
-Explicit remaining Phase 5 debt:
+Phase 5 final-ratchet result:
 - Replace descriptor-only property/RPC evidence with generated runtime
   execution once the shared harness lands.
 - Keep consolidated-file and `Context.Service` waivers visible until the
@@ -693,11 +720,11 @@ Explicit remaining Phase 5 debt:
 Final cleanup:
 - Split the consolidated `src/index.ts` by generated event/projection/atom
   grammar where practical.
-- Remove package scripts and arbitrary `run-commands`.
+- Package scripts and arbitrary `run-commands` have been removed from active configs.
 - Replace Source BOM migration waiver for consolidated files with generated
   package-contract provenance.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Existing `Context.Service` DI until canonical service migration lands.
 - Drizzle table ownership boundary while persistence layer is separated.
 - Consolidated file shape until generators own event/projection/atom families.
@@ -709,7 +736,7 @@ Current role:
 - Normalizes command/MCP search results into Attune anchor cards.
 - Owns generated MCP schema and generated MCP tool registry.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for build/typecheck/test.
 - `project.json` has direct build/test/lint commands plus generation targets
   for MCP schema and tool registry.
@@ -769,7 +796,7 @@ Phase 5 integration status:
   product boundary validation, `workspace:package-contracts-check`, and
   OpenSpec validation passed after root manifest reconciliation.
 
-Explicit remaining Phase 5 debt:
+Phase 5 final-ratchet result:
 - Replace hidden CocoIndex/MCP environment and subprocess dependencies with
   contract-visible Effect Config/service boundaries or explicit temporary
   waivers.
@@ -779,12 +806,13 @@ Explicit remaining Phase 5 debt:
 Final cleanup:
 - Replace hidden environment reads with Effect Config/service dependencies.
 - Move MCP schema generation behind a typed Nx executor.
-- Remove package scripts, arbitrary `run-commands`, and direct generation
-  shell surfaces.
+- Package scripts, arbitrary `run-commands`, and direct generation shell
+  surfaces have been removed from active configs or routed through typed
+  executor boundaries.
 - Generate Source BOM/tool registry review artifacts from contract and
   generator provenance.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Live subprocess/MCP boundary.
 - Current `Context.Service` shape.
 - Checked-in MCP schema snapshot while toolchain versioning is made typed.
@@ -796,7 +824,7 @@ Current role:
   fixture route, constrained MDX/site fixtures, and Workbench views consuming
   Attuned Discovery atom-derived snapshots.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for build, lib build, serve, typecheck, and test.
 - `project.json` uses direct Vite, tsup, TypeScript, oxlint, and Vitest
   commands.
@@ -853,7 +881,7 @@ Phase 5 integration status:
   product boundary validation, `workspace:package-contracts-check`, and
   OpenSpec validation passed after root manifest reconciliation.
 
-Explicit remaining Phase 5 debt:
+Phase 5 final-ratchet result:
 - Decide the minimal service/layer shape for the UI package without inventing
   fake durable ownership; keep app/runtime layers optional.
 - Replace descriptor-only property/RPC evidence with generated runtime
@@ -861,12 +889,12 @@ Explicit remaining Phase 5 debt:
 
 Final cleanup:
 - Generate FoldKit scene atom and fixture shapes.
-- Remove package scripts and arbitrary `run-commands`.
+- Package scripts and arbitrary `run-commands` have been removed from active configs.
 - Isolate or eliminate global dev-only fixture session from production
   contract.
 - Replace hand-authored fixture waiver with generated provenance.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - UI package has no canonical service while model/update/view generator lands.
 - Hand-authored fixtures until `foldkit-scene-atom` and fixture generators
   exist.
@@ -879,7 +907,7 @@ Current role:
   matrices, spec conversation flow, run artifacts, and four Nx-style generators.
 - Has the strongest existing property/mutation slice among product packages.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for build, lint, mutation, property, test, and
   typecheck.
 - `project.json` uses codex package-manager wrappers, direct Vitest/Stryker,
@@ -938,7 +966,7 @@ Phase 5 integration status:
   product boundary validation, `workspace:package-contracts-check`, and
   OpenSpec validation passed after root manifest reconciliation.
 
-Explicit remaining Phase 5 debt:
+Phase 5 final-ratchet result:
 - Move hand-authored property arbitraries toward Schema-derived arbitraries
   with measured transforms/filters and preserve mutation survivors as
   weak-oracle findings.
@@ -947,11 +975,11 @@ Explicit remaining Phase 5 debt:
 
 Final cleanup:
 - Move filesystem writing and Pi host access behind typed services.
-- Remove package scripts and arbitrary `run-commands`.
+- Package scripts and arbitrary `run-commands` have been removed from active configs.
 - Replace custom arbitrary-only tests with generated boundary properties.
 - Convert Pi generator provenance into contract-derived ledgers.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Pi host extension boundary.
 - Filesystem run artifact writer.
 - Existing custom FastCheck arbitraries until Schema-derived harnesses cover
@@ -967,7 +995,7 @@ Current role:
   modules, edge runtime/process/transport, examples, and tests.
 - Uses Effect 3 while other newer platform packages use Effect 4 beta.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for build/test/typecheck/generate/readme/schema
   extraction.
 - `project.json` has many direct generation and toolchain command strings,
@@ -1029,7 +1057,7 @@ Phase 6 preflight status:
   contract decode/summary guard, and package-contract generator executability
   checks are fixed.
 
-Explicit remaining Phase 6 debt:
+Phase 6 final-ratchet result:
 - Add the package-local contract, compile-only assertions, focused contract
   test, and Source BOM contract shard.
 - Preserve descriptor-first RPC/property evidence until the shared runtime
@@ -1041,12 +1069,12 @@ Explicit remaining Phase 6 debt:
 
 Final cleanup:
 - Replace generation-stage stub with real typed Nx executor stages.
-- Remove package scripts and arbitrary `run-commands`.
+- Package scripts and arbitrary `run-commands` have been removed from active configs.
 - Replace env reads with Effect Config/service boundary.
 - Make raw CPGQL an explicit contract operation with policy visibility.
 - Convert generated artifacts and README to contract-derived generated ledgers.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Scoped Joern server/process lifecycle.
 - Raw CPGQL escape hatch.
 - Effect version split until workspace chooses a migration path.
@@ -1060,7 +1088,7 @@ Current role:
   semantic corpus, counterexample store, mutator, admission, oracle, workspace
   pool, scheduler, and CLI scripts.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for property, test, typecheck, fuzz tiers.
 - `project.json` has direct Nix, Arion, timeout, codex wrappers, TSX scripts,
   environment variables, and direct Vitest wrapper spawning.
@@ -1125,7 +1153,7 @@ Phase 6 preflight status:
   contract decode/summary guard, and package-contract generator executability
   checks are fixed.
 
-Explicit remaining Phase 6 debt:
+Phase 6 final-ratchet result:
 - Add the package-local contract, compile-only assertions, focused contract
   test, and Source BOM contract shard.
 - Wire the package-boundary property, coverage-search, worker, corpus, mutator,
@@ -1139,12 +1167,13 @@ Explicit remaining Phase 6 debt:
 
 Final cleanup:
 - Replace CLI scripts with typed Nx property/fuzz executors.
-- Remove package scripts, arbitrary `run-commands`, direct env variables, direct
-  Nix/Arion command strings, and Vitest spawning wrappers.
+- Package scripts, arbitrary `run-commands`, direct env variables, direct
+  Nix/Arion command strings, and Vitest spawning wrappers have been removed
+  from active configs or routed through typed executor boundaries.
 - Convert Axiom/local event config to Effect Config/service boundary.
 - Move package-local evidence shape into shared contract evidence shape.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Workspace pool filesystem/container lifecycle.
 - Joern execution boundary.
 - Axiom telemetry adapter.
@@ -1160,7 +1189,7 @@ Current role:
   manifests, resource builders, resource registry, Alchemy graph resource, and
   dry-run/test/live Kubernetes object-set providers.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for build/generate/typecheck/test.
 - `project.json` has direct tsup, TypeScript, oxlint, Vitest, TSX generation,
   sync generator, and `TMPDIR` shell fragments.
@@ -1213,13 +1242,13 @@ Target property evidence:
 
 Final cleanup:
 - Replace shell generation stages with typed Nx executors.
-- Remove package scripts and arbitrary `run-commands`.
+- Package scripts and arbitrary `run-commands` have been removed from active configs.
 - Convert local cluster command arrays into typed executor/resource-provider
   plans or remove them from public package API.
 - Generate Source BOM/resource registry review artifacts from contract and
   generator provenance.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Local cluster inventory mode.
 - Provider live-mode placeholder semantics until real Kubernetes observation
   exists.
@@ -1235,7 +1264,7 @@ Current role:
   manual gates, destructive approvals, LAN discovery, SOPS, Tailscale, Disko,
   nixos-anywhere, comin, and network smoke.
 
-Current command surface:
+Historical command surface before final ratchet:
 - `package.json` scripts for build/typecheck/test.
 - `project.json` uses direct tsup, TypeScript, and Vitest.
 - `alchemy.run.ts` reads many `ATTUNE_*` environment variables and is itself a
@@ -1306,7 +1335,7 @@ Target property evidence:
 Final cleanup:
 - Replace direct `alchemy.run.ts` environment parsing with typed Nx/Alchemy
   executor options and Effect Config-backed package services.
-- Remove package scripts and arbitrary `run-commands`.
+- Package scripts and arbitrary `run-commands` have been removed from active configs.
 - Replace shell command strings in the public model with typed command intent
   records rendered only inside the typed executor/provider boundary.
 - Move local filesystem state behind an Effect service.
@@ -1315,7 +1344,7 @@ Final cleanup:
 - Remove Source BOM Day-0 migration waiver after generators own provider/runbook
   grammar.
 
-Pre-ratchet waivers to burn down:
+Historical pre-ratchet waiver notes:
 - Live shell execution boundary.
 - Local filesystem state adapter.
 - Day-0 resource grammar until `@attune/nx` owns provider/runbook generation.
