@@ -46,18 +46,17 @@ Not run:
 Contract status:
 - `platform-alchemy-k8s/src/attune.package.ts` is now the only package-local
   Attune TypeScript source file for that project.
-- `platform-alchemy-k8s` still has package-local `attune.source-bom.json`.
-- `workspace:framework-policy-check` now warns for `platform-alchemy-k8s` only
-  because of the remaining package-local Source BOM shard; it no longer reports
-  package-local generated TypeScript companions for that package.
+- Follow-up repair-ratchet work also moved `platform-alchemy-k8s` off
+  package-local `attune.source-bom.json`; see
+  `repair-ratchet-agent.md`.
+- `workspace:framework-policy-check` no longer warns for
+  `platform-alchemy-k8s` package-local Attune companions after the later
+  Source BOM relocation.
 
 Residual migration debt:
-- Move `platform-alchemy-k8s/attune.source-bom.json` to the framework-owned
-  Source BOM projection path.
 - Teach `attune-repair` to regenerate the central package-contract
   materialization.
 - Repeat the generated companion relocation for remaining packages.
 
 Next agent:
-- Move `platform-alchemy-k8s` Source BOM into the framework-owned projection, or
-  repeat this generated-contract relocation pattern for another small package.
+- Repeat this generated-contract relocation pattern for another small package.

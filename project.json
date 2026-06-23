@@ -49,13 +49,11 @@
         "description": "Public Attune Framework repair/materialization surface. Runs deterministic framework materialization and diagnostics without raw shell or checked-in reports."
       },
       "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
         "parameters": {
-          "targets": [
-            "workspace:package-contracts-check"
-          ]
+          "allSafe": true
         },
         "dryRun": false
       }

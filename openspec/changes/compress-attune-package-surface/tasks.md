@@ -34,7 +34,7 @@
 ## 6. Real Relocation Ratchet
 
 - [x] 6.1 Replace package-local `src/attune.package.typecheck.ts` files with a framework-owned package-contract typecheck aggregate.
-- [ ] 6.2 Move generated contract companions out of package source or behind a framework-owned generated/cache lookup.
+- [x] 6.2 Move generated contract companions out of package source or behind a framework-owned generated/cache lookup.
 - [x] 6.3 Add Source BOM cache/projection path compatibility and move at least one normal package ring off package-local `attune.source-bom.json`.
-- [ ] 6.4 Make `attune-repair` apply the safe typecheck/generated/BOM relocation instead of only routing repair plans.
-- [ ] 6.5 Ratchet `attune/package-local-surface/one-attune-file` from staged warning toward error once generated companions and Source BOM shards move.
+- [x] 6.4 Make `attune-repair` apply the safe typecheck/generated/BOM relocation instead of only routing repair plans.
+- [x] 6.5 Ratchet `attune/package-local-surface/one-attune-file` from staged warning toward error once generated companions and Source BOM shards move.

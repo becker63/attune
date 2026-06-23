@@ -55,7 +55,7 @@
     {
       "project": "platform-alchemy-k8s",
       "projectRoot": "packages/platform-alchemy-k8s",
-      "shard": "packages/platform-alchemy-k8s/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json"
     }
   ]
 }

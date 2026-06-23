@@ -409,6 +409,41 @@ describe("attune-nx executors", () => {
     ])
   })
 
+  it("plans public Attune repair through the framework-owned repair materializer", async () => {
+    const calls: ExecutorProcessPlan[] = []
+    const result = await toolchainExecutor(
+      {
+        targetProject: "platform-alchemy-k8s",
+        tool: "architecture",
+        action: "generate",
+        toolId: "attune-repair",
+        parameters: {
+          allSafe: true,
+          project: "platform-alchemy-k8s",
+        },
+        dryRun: false,
+      },
+      createExecutorContext({ calls }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(calls).toEqual([
+      expect.objectContaining({
+        adapter: "pnpm-exec-tsx",
+        executable: "pnpm",
+        args: [
+          "exec",
+          "tsx",
+          "framework/architecture/src/attune-repair-cli.ts",
+          "--project",
+          "platform-alchemy-k8s",
+          "--all-safe",
+        ],
+        cwd: expect.stringMatching(/\/attune\/?$/u),
+      }),
+    ])
+  })
+
   it("plans worker fuzz and Arion container runs through typed resource metadata", async () => {
     const calls: ExecutorProcessPlan[] = []
     const fuzz = await toolchainExecutor(
@@ -713,6 +748,9 @@ const createExecutorContext = (input?: {
       },
       "joern-effect-properties": {
         root: "packages/joern-effect-properties",
+      },
+      "platform-alchemy-k8s": {
+        root: "packages/platform-alchemy-k8s",
       },
     },
   },

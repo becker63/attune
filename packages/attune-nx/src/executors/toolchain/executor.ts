@@ -201,6 +201,7 @@ const toolchainPlanFactories: Readonly<Record<string, ToolchainPlanFactory>> = {
   "alchemy:plan": createAlchemyProviderIntentPlan,
   "alchemy:smoke": createAlchemyProviderIntentPlan,
   "architecture:check": createArchitectureCheckPlan,
+  "architecture:generate": createArchitectureGeneratePlan,
   "architecture:mutate": createArchitectureMutationPlan,
   "arion:deploy": createArionDeployPlan,
   "bundler:build": createBundlerBuildPlan,
@@ -476,6 +477,28 @@ function createArchitectureCheckPlan(
       return [nodeScriptPlan("toolchain:architecture:verify-pr-completion", "scripts/codex/verify-pr-completion.mjs", context)]
     case "codex-audit-prs":
       return [nodeScriptPlan("toolchain:architecture:codex-audit-prs", "scripts/codex/audit-pr-recovery.mjs", context)]
+    default:
+      return [unsupportedToolchainPlan(options)]
+  }
+}
+
+function createArchitectureGeneratePlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  switch (options.toolId) {
+    case "attune-repair": {
+      const project = readStringParameter(options, "project")
+      return [tsxPlan(
+        "toolchain:architecture:attune-repair",
+        "framework/architecture/src/attune-repair-cli.ts",
+        [
+          ...(project === null ? [] : ["--project", project]),
+          ...(readBooleanParameter(options, "allSafe", true) ? ["--all-safe"] : []),
+        ],
+        context.workspaceRoot,
+      )]
+    }
     default:
       return [unsupportedToolchainPlan(options)]
   }
@@ -817,6 +840,8 @@ const allowedParameterKeys = (
       return []
     case "architecture:check":
       return ["only"]
+    case "architecture:generate":
+      return ["allSafe", "project"]
     case "architecture:mutate":
       return ["config"]
     case "bundler:build":

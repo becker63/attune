@@ -133,6 +133,9 @@ const packageLocalAttuneCompanionNames = [
   "src/attune.package.typecheck.ts",
   "attune.source-bom.json",
 ] as const
+const oneFileSurfaceCompletedRoots = new Set([
+  "packages/platform-alchemy-k8s",
+])
 
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
 
@@ -549,6 +552,8 @@ function checkPackageLocalAttuneSurface(
 
   if (companionPaths.length === 0) return []
 
+  const severity = oneFileSurfaceCompletedRoots.has(packageRoot) ? "error" : "warning"
+
   return [finalRatchetDiagnostic(
     "package-local-attune-companion",
     `${packageRoot}/src/attune.package.ts`,
@@ -558,7 +563,7 @@ function checkPackageLocalAttuneSurface(
       "Move generated contract companions, generated registries, typecheck assertions, and Source BOM shards to framework-owned cache/projection state.",
       `Run nx run ${projectNameForRoot(packageRoot, filesByPath)}:attune-repair or workspace:attune-repair when the repair target supports this root.`,
     ].join(" "),
-    "warning",
+    severity,
   )]
 }
 

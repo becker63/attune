@@ -247,13 +247,12 @@
       },
       "options": {
         "targetProject": "platform-alchemy-k8s",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
         "parameters": {
-          "targets": [
-            "workspace:attune-repair"
-          ]
+          "allSafe": true,
+          "project": "platform-alchemy-k8s"
         },
         "dryRun": false
       }
