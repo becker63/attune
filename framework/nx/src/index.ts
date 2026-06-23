@@ -81,6 +81,17 @@ const generatorTargets = {
   frameworkDiagnostics: "workspace:package-contracts-check",
 } as const
 
+export const frameworkRepairTargets = {
+  workspaceCheck: "workspace:attune-check",
+  workspaceRepair: "workspace:attune-repair",
+  projectRepair: (project: string): string => `${project}:attune:repair`,
+  projectRepairRegistry: (project: string): string => `${project}:attune:repair-registry`,
+  projectRepairProperties: (project: string): string => `${project}:attune:repair-properties`,
+  projectRepairTypeGuidance: (project: string): string => `${project}:attune:repair-type-guidance`,
+  projectRepairEvidence: (project: string): string => `${project}:attune:repair-evidence`,
+  projectRepairGenerated: (project: string): string => `${project}:attune:repair-generated`,
+} as const
+
 const generatedFileNames: Record<FrameworkNxGeneratedArtifactKind, string> = {
   "package-harness": "attune-package-harness.ts",
   "operation-registry": "attune-operation-registry.ts",

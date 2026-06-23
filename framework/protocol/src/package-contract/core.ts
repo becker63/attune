@@ -71,6 +71,68 @@ export type DecodedPackageContract = typeof PackageContractSchema.Type
 
 export type AnySchema = Schema.Top
 
+export interface AttuneServiceReference {
+  readonly id: string
+  readonly source?: string
+}
+
+export interface AttuneViewReference {
+  readonly id: string
+  readonly kind?: "reactivity-key" | "atom" | "package-view-atom"
+}
+
+export type AttuneLawDescriptor =
+  | string
+  | {
+    readonly id: string
+    readonly reason?: string
+  }
+
+export interface AttuneWaiverDeclaration {
+  readonly id: string
+  readonly category: string
+  readonly owner: string
+  readonly reason: string
+  readonly review?: string
+}
+
+export interface AttuneOperationDeclaration<
+  Id extends string = string,
+  Kind extends OperationKind = OperationKind,
+  Input extends AnySchema | undefined = AnySchema | undefined,
+  Output extends AnySchema | undefined = AnySchema | undefined,
+  Error extends AnySchema | undefined = AnySchema | undefined,
+> {
+  readonly id?: Id
+  readonly kind: Kind
+  readonly input?: Input
+  readonly output?: Output
+  readonly error?: Error
+  readonly service?: AttuneServiceReference
+  readonly writes?: readonly AttuneViewReference[]
+  readonly observes?: readonly AttuneViewReference[]
+  readonly laws?: "infer" | readonly AttuneLawDescriptor[]
+  readonly explicitStableId?: string
+}
+
+export interface AttunePackageDeclaration<
+  Id extends string = string,
+  Kind extends string = string,
+  Operations extends readonly AttuneOperationDeclaration[] = readonly AttuneOperationDeclaration[],
+> {
+  readonly id: Id
+  readonly kind: Kind
+  readonly operations: Operations
+  readonly views?: readonly AttuneViewReference[]
+  readonly services?: readonly AttuneServiceReference[]
+  readonly waivers?: readonly AttuneWaiverDeclaration[]
+  readonly customLaws?: readonly AttuneLawDescriptor[]
+}
+
+export const defineAttunePackageDeclaration = <const Declaration extends AttunePackageDeclaration>(
+  declaration: Declaration,
+): Declaration => declaration
+
 export interface PackageViews<
   ReactivityKeys extends readonly string[] = readonly string[],
   Atoms extends readonly string[] = readonly string[],

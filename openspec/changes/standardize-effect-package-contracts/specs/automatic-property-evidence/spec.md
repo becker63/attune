@@ -95,6 +95,27 @@ view references by hand.
 - **THEN** generated property, fuzz, replay, and evidence modules MUST fail
   typecheck or generated-output conformance until regenerated
 
+### Requirement: Evidence maps are not authored in package declarations
+The framework SHALL NOT require package authors to inline property, fuzzer,
+replay, coverage-search, or evidence producer metadata in
+`attune.package.ts`. That metadata SHALL be generated, discovered, or stored as
+protocol projection state.
+
+#### Scenario: Property harness targets operation
+- **WHEN** an operation requires property evidence
+- **THEN** generated or package-local evidence modules MAY implement the
+  harness
+- **AND** `attune.package.ts` SHALL only identify the operation/source intent
+  needed for diagnostics and repair when the package declaration participates in
+  the evidence workflow
+
+#### Scenario: Coverage search needs retained state
+- **WHEN** FastCheck retains seeds, coverage feedback, weak-oracle findings, or
+  counterexample replay metadata
+- **THEN** that state SHALL live in generated evidence modules, framework
+  testing helpers, stdout/CI artifacts, or private ProtocolStore/cache
+  projections, not package declarations
+
 ### Requirement: Evidence expectations are derived from operation symbols and obligations
 Generated property and evidence modules SHALL derive operation identity, law
 obligations, type-guidance partitions, view obligations, replay payloads, and

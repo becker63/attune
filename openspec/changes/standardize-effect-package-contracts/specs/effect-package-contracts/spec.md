@@ -192,6 +192,47 @@ string-keyed maps.
 - **THEN** stale registry entries MUST fail typecheck or generated-output
   conformance
 
+### Requirement: Package declaration files stay small and authored
+`src/attune.package.ts` files SHALL contain source-level package intent rather
+than generated or derived protocol manifests.
+
+#### Scenario: Package declares operations
+- **WHEN** a package defines public operations
+- **THEN** `attune.package.ts` SHOULD declare operation kind, schemas, service
+  references, semantic writes/observes, waivers, and custom laws only when
+  needed
+- **AND** it SHOULD NOT inline generated handler maps, property maps,
+  type-guidance partitions, RPC descriptors, evidence producer maps, coverage
+  search plans, worker/fuzzer metadata, or generated artifact ledgers
+
+#### Scenario: Package declaration grows too large
+- **WHEN** `attune.package.ts` exceeds the configured line-count threshold
+- **THEN** framework policy SHOULD report a diagnostic
+- **AND** the diagnostic SHOULD suggest generated/materialized alternatives and
+  Nx repair targets
+
+### Requirement: Derived protocol data moves to generated artifacts or ProtocolStore
+The framework SHALL materialize derived package data outside of authored
+package declarations.
+
+#### Scenario: Operation registry is needed
+- **WHEN** an operation tuple is declared
+- **THEN** Nx repair/materialization SHOULD generate or refresh the exact
+  operation registry instead of requiring a hand-maintained map in
+  `attune.package.ts`
+
+#### Scenario: Type guidance is needed
+- **WHEN** schemas, laws, views, coverage observations, or retained seeds imply
+  type-guidance partitions
+- **THEN** type guidance SHOULD be generated or recorded as protocol projection
+  state rather than manually enumerated in `attune.package.ts`
+
+#### Scenario: Evidence expectation is needed
+- **WHEN** an operation requires property or fuzzer evidence
+- **THEN** evidence expectations SHOULD be derived from descriptors and stored
+  as obligations/diagnostics rather than manually copied into the package
+  declaration
+
 ### Requirement: Type safety owns type-expressible invariants
 Package-contract invariants that TypeScript can express SHALL be enforced by
 generated typed builders, branded diagnostics, inferred law types, handler map

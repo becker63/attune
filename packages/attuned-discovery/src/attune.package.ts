@@ -30,6 +30,7 @@ import {
   RunSummary,
   WorkbenchSnapshot,
 } from "./index.js"
+import { createAttuneGenerated } from "./attune.generated.js"
 
 export { PackageContractSchema } from "@attune/framework-protocol"
 
@@ -684,343 +685,30 @@ export type PackageTestLayer = typeof PackageTestLayer
 export type AttunedDiscoveryOperationId =
   (typeof PackageContract.operations)[number]["id"]
 
-export const PackageFuzzRpcGroup = definePackageFuzzRpcGroup(PackageContract)
-
-export const PackageFuzzHandlers = {
-  "discovery-events-facade": () => ({
-    appended: true,
-    eventId: "event:fixture",
-    eventTag: "DiscoveryRunStarted",
-  }),
-  "discovery-event-log-append": () => ({
-    appended: true,
-    eventId: "event:fixture",
-    announcedKeys: [...eventLogKeys],
-  }),
-  "event-replay-projection": () => ({
-    version: 1,
-    runIds: ["fixture-run"],
-    anchorCount: 0,
-    familyCount: 0,
-    hypothesisCount: 0,
-    evidenceCount: 0,
-    reviewQueueCount: 0,
-    announcedKeys: [...readModelKeys],
-  }),
-  "read-model-query": () => ({
-    metrics: [],
-    anchors: [],
-    families: [],
-    hypotheses: [],
-    evidence: [],
-    reviewQueue: [],
-  }),
-  "reactivity-key-map": () => ({
-    eventTag: "DiscoveryRunStarted",
-    keys: ["attuned-discovery.run-state.changed"],
-  }),
-  "base-atom-family": () => ({
-    atomId: "runStateAtom",
-    reactivityKeys: ["attuned-discovery.run-state.changed"],
-    version: 1,
-    valueSummary: "DiscoveryRun",
-  }),
-  "derived-workbench-atom-family": () => ({
-    atomId: "workbenchSnapshotAtom",
-    dependsOnAtoms: [...baseAtomIds, "decisionPacketAtom", "foldSceneAtom"],
-    valueKind: "workbench-snapshot" as const,
-    viewVersion: 1,
-  }),
-  "domain-event-codecs": () => ({
-    codec: "DiscoveryEvent",
-    decoded: true,
-    encoded: true,
-  }),
-} as const satisfies { readonly [Id in AttunedDiscoveryOperationId]: () => unknown }
+const PackageGenerated = createAttuneGenerated({
+  PackageContract,
+  atomFamilyLaws,
+  BaseAtomFamilyOperation,
+  baseAtomIds,
+  codecLaws,
+  DerivedWorkbenchAtomFamilyOperation,
+  DiscoveryEventLogAppendOperation,
+  DiscoveryEventsFacadeOperation,
+  DomainEventCodecOperation,
+  eventFacadeLaws,
+  eventLogKeys,
+  EventReplayProjectionOperation,
+  projectionLaws,
+  queryLaws,
+  ReactivityKeyMapOperation,
+  readModelKeys,
+  ReadModelQueryOperation,
+} as const)
+export const PackageFuzzRpcGroup = PackageGenerated.PackageFuzzRpcGroup
+export const PackageFuzzHandlers = PackageGenerated.PackageFuzzHandlers
+export const PackageProperties = PackageGenerated.PackageProperties
+export const PackageTypeGuidance = PackageGenerated.PackageTypeGuidance
+export type PackageFuzzRpcGroup = typeof PackageFuzzRpcGroup
 export type PackageFuzzHandlers = typeof PackageFuzzHandlers
-
-export const PackageProperties = {
-  "discovery-events-facade": {
-    property:
-      "Schema-derived DiscoveryEvent values append only through DiscoveryEvents/DiscoveryEventLog and move declared views.",
-  },
-  "discovery-event-log-append": {
-    property:
-      "EventLog append evidence records the event id and declared Reactivity keys.",
-  },
-  "event-replay-projection": {
-    property:
-      "Equivalent event sequences replay to deterministic projection summaries.",
-  },
-  "read-model-query": {
-    property:
-      "Read-model queries are readonly and expose projection-backed package view state.",
-  },
-  "reactivity-key-map": {
-    property:
-      "Every DiscoveryEvent variant maps to the Reactivity keys that refresh its base atoms.",
-  },
-  "base-atom-family": {
-    property:
-      "Base atoms subscribe to projection Reactivity keys and do not perform durable writes.",
-  },
-  "derived-workbench-atom-family": {
-    property:
-      "Score, plateau, DecisionPacket, FoldScene, and WorkbenchSnapshot atoms compose base atoms.",
-  },
-  "domain-event-codecs": {
-    property:
-      "Domain, event, report, DecisionPacket, FoldScene, WorkbenchSnapshot, and RunSummary codecs decode through Effect Schema.",
-  },
-} as const satisfies {
-  readonly [Id in AttunedDiscoveryOperationId]: { readonly property: string }
-}
 export type PackageProperties = typeof PackageProperties
-
-const lawPartitions = <const Laws extends readonly string[]>(laws: Laws) =>
-  laws.map((id) => ({
-    id,
-    kind: "law" as const,
-    from: "inferred-law",
-  })) as {
-    readonly [Index in keyof Laws]: {
-      readonly id: Laws[Index]
-      readonly kind: "law"
-      readonly from: "inferred-law"
-    }
-  }
-
-type OperationWithGuidance = {
-  readonly id: string
-  readonly kind: string
-  readonly input: unknown
-  readonly output: unknown
-  readonly error?: unknown
-  readonly views?: {
-    readonly reactivityKeys?: readonly string[]
-    readonly atoms?: readonly string[]
-  }
-  readonly laws?: readonly string[]
-}
-
-const schemaSources = (operation: OperationWithGuidance) => [
-  {
-    id: `schema:${operation.id}:input`,
-    role: "input" as const,
-    label: `${operation.id}.input`,
-    source: "effect-schema",
-  },
-  {
-    id: `schema:${operation.id}:output`,
-    role: "output" as const,
-    label: `${operation.id}.output`,
-    source: "effect-schema",
-  },
-  {
-    id: `schema:${operation.id}:error`,
-    role: "error" as const,
-    label: `${operation.id}.error`,
-    source: "effect-schema",
-  },
-] as const
-
-const viewPartitions = (operation: OperationWithGuidance) => [
-  ...(operation.views?.reactivityKeys ?? []).map((id) => ({
-    id: `${id}.moves`,
-    kind: "reactivity-key" as const,
-    from: "operation.views.reactivityKeys",
-  })),
-  ...(operation.views?.atoms ?? []).map((id) => ({
-    id: `${id}.moves`,
-    kind: "atom" as const,
-    from: "operation.views.atoms",
-  })),
-]
-
-const operationGuidance = <
-  const Operation extends OperationWithGuidance,
-  const Laws extends readonly string[],
->(
-  operation: Operation,
-  laws: Laws,
-  options: {
-    readonly inputPartitionId: string
-    readonly outputPartitionId: string
-    readonly coverageTargetId: string
-    readonly transformId: string
-    readonly filterId?: string
-  },
-) => ({
-  sourceLabels: [
-    `operation.kind.${operation.kind}`,
-    "effect-schema.ast",
-    "package-view-graph",
-  ],
-  sources: [
-    {
-      id: `operation:${operation.id}`,
-      label: operation.id,
-      kind: "contract-operation" as const,
-      operationId: operation.id,
-    },
-  ],
-  schemaSources: schemaSources(operation),
-  inputPartitions: [
-    {
-      id: options.inputPartitionId,
-      kind: "schema-boundary" as const,
-      from: "schema.input",
-      sourceId: `schema:${operation.id}:input`,
-      transformIds: [options.transformId],
-      ...(options.filterId ? { filterIds: [options.filterId] } : {}),
-    },
-  ],
-  outputPartitions: [
-    {
-      id: options.outputPartitionId,
-      kind: "output-variant" as const,
-      from: "schema.output",
-      sourceId: `schema:${operation.id}:output`,
-    },
-  ],
-  errorPartitions: [
-    {
-      id: `${operation.id}.typed-error`,
-      kind: "typed-error-variant" as const,
-      from: "schema.error",
-      sourceId: `schema:${operation.id}:error`,
-    },
-  ],
-  lawPartitions: lawPartitions(laws),
-  viewPartitions: viewPartitions(operation),
-  coverageSearch: [
-    {
-      id: `coverage:${operation.id}:${options.coverageTargetId}`,
-      targetPartitionId: options.coverageTargetId,
-      tier: "commit" as const,
-      required: true,
-    },
-  ],
-  transforms: [
-    {
-      id: options.transformId,
-      kind: "coverage-bias" as const,
-      targetPartitionId: options.coverageTargetId,
-      reason: "Bias generated cases toward missing Discovery package view movement.",
-    },
-  ],
-  filters: options.filterId
-    ? [
-      {
-        id: options.filterId,
-        kind: "operation-precondition" as const,
-        reason:
-          "Keep run-scoped generated cases inside a single deterministic discovery run.",
-        targetPartitionId: options.inputPartitionId,
-        expectedAcceptanceRate: 0.9,
-      },
-    ]
-    : [],
-} as const)
-
-export const PackageTypeGuidance = defineTypeGuidance(PackageContract, {
-  sourceLabels: [
-    "contract.operation",
-    "effect-schema.ast",
-    "operation.kind.core-discovery-runtime",
-    "declared-view",
-    "atom-reactivity-graph",
-  ],
-  sources: [
-    {
-      id: "contract:attuned-discovery",
-      label: "attuned-discovery package contract",
-      kind: "contract-operation",
-    },
-    {
-      id: "views:attuned-discovery",
-      label: "attuned-discovery Reactivity and atom graph",
-      kind: "declared-view",
-    },
-  ],
-  operations: {
-    "discovery-events-facade": operationGuidance(
-      DiscoveryEventsFacadeOperation,
-      eventFacadeLaws,
-      {
-        inputPartitionId: "discovery-events-facade.event-variant",
-        outputPartitionId: "discovery-events-facade.appended",
-        coverageTargetId: "attuned-discovery.event-log.appended.moves",
-        transformId: "discovery-events-facade.event-variant-bias",
-      },
-    ),
-    "discovery-event-log-append": operationGuidance(
-      DiscoveryEventLogAppendOperation,
-      eventFacadeLaws,
-      {
-        inputPartitionId: "discovery-event-log-append.event-variant",
-        outputPartitionId: "discovery-event-log-append.announced-keys",
-        coverageTargetId: "attuned-discovery.projection.changed.moves",
-        transformId: "discovery-event-log-append.reactivity-bias",
-      },
-    ),
-    "event-replay-projection": operationGuidance(
-      EventReplayProjectionOperation,
-      projectionLaws,
-      {
-        inputPartitionId: "event-replay-projection.event-sequence",
-        outputPartitionId: "event-replay-projection.projection-summary",
-        coverageTargetId: "readModelProjectionAtom.moves",
-        transformId: "event-replay-projection.sequence-coverage",
-      },
-    ),
-    "read-model-query": operationGuidance(ReadModelQueryOperation, queryLaws, {
-      inputPartitionId: "read-model-query.query-kind",
-      outputPartitionId: "read-model-query.snapshot-branch",
-      coverageTargetId: "workbenchSnapshotAtom.moves",
-      transformId: "read-model-query.snapshot-coverage",
-      filterId: "read-model-query.fixture-run-scope",
-    }),
-    "reactivity-key-map": operationGuidance(
-      ReactivityKeyMapOperation,
-      queryLaws,
-      {
-        inputPartitionId: "reactivity-key-map.event-variant",
-        outputPartitionId: "reactivity-key-map.keys",
-        coverageTargetId: "attuned-discovery.review-queue.changed.moves",
-        transformId: "reactivity-key-map.event-key-coverage",
-      },
-    ),
-    "base-atom-family": operationGuidance(
-      BaseAtomFamilyOperation,
-      atomFamilyLaws,
-      {
-        inputPartitionId: "base-atom-family.atom-id",
-        outputPartitionId: "base-atom-family.observation",
-        coverageTargetId: "runStateAtom.moves",
-        transformId: "base-atom-family.atom-coverage",
-      },
-    ),
-    "derived-workbench-atom-family": operationGuidance(
-      DerivedWorkbenchAtomFamilyOperation,
-      atomFamilyLaws,
-      {
-        inputPartitionId: "derived-workbench-atom-family.atom-id",
-        outputPartitionId: "derived-workbench-atom-family.view-kind",
-        coverageTargetId: "workbenchSnapshotAtom.moves",
-        transformId: "derived-workbench-atom-family.view-coverage",
-      },
-    ),
-    "domain-event-codecs": operationGuidance(
-      DomainEventCodecOperation,
-      codecLaws,
-      {
-        inputPartitionId: "domain-event-codecs.codec-kind",
-        outputPartitionId: "domain-event-codecs.decode-result",
-        coverageTargetId: "domainCodecAtom.moves",
-        transformId: "domain-event-codecs.schema-branch-coverage",
-      },
-    ),
-  },
-} as const)
 export type PackageTypeGuidance = typeof PackageTypeGuidance

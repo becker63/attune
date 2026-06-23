@@ -73,6 +73,18 @@ migration ratchet is complete.
 - **THEN** the documented command MUST name the Nx target
   `workspace:package-contracts-check`
 
+#### Scenario: Agent runs framework check
+- **WHEN** an agent wants the simple Attune Framework diagnostic surface
+- **THEN** the documented command SHOULD name `workspace:attune-check`, which
+  composes package-contract, generated materialization, import-boundary,
+  no-report, local-cache, and framework diagnostic checks
+
+#### Scenario: Agent runs framework repair
+- **WHEN** an agent wants to refresh generated protocol artifacts or local
+  framework projections
+- **THEN** the documented command SHOULD name `workspace:attune-repair` or a
+  project-specific repair target such as `<project>:attune:repair`
+
 #### Scenario: Architecture umbrella target is not introduced
 - **WHEN** agent-facing docs, generated command help, project targets, or
   policy reports describe the final public policy surface
@@ -106,6 +118,29 @@ migration ratchet is complete.
 - **WHEN** final-ratchet policy scans migrated packages
 - **THEN** arbitrary `nx:run-commands` shell strings MUST fail and the package
   MUST use a typed Nx executor or inferred target instead
+
+### Requirement: Nx repairs are the preferred protocol drift fix
+Nx SHALL provide repair targets for generated protocol artifacts, package
+declarations, registries, type guidance, evidence scaffolds, and artifact
+freshness.
+
+#### Scenario: Diagnostic has deterministic fix
+- **WHEN** framework diagnostics identify stale generated output, missing
+  registry entries, missing evidence scaffolds, or avoidable
+  package-declaration bloat
+- **THEN** the diagnostic SHOULD include an Nx repair action
+
+#### Scenario: Agent repairs package contract
+- **WHEN** a coding agent sees a framework diagnostic
+- **THEN** the documented path SHOULD be to run the suggested Nx repair target
+  before hand-editing generated or derived protocol artifacts
+
+#### Scenario: Repair updates projection state
+- **WHEN** an Nx repair target materializes descriptors, obligations,
+  generated artifact records, evidence expectations, freshness hashes, or
+  diagnostics
+- **THEN** it SHOULD update generated source and the private ProtocolStore
+  projection rather than expanding `attune.package.ts`
 
 #### Scenario: Temporary command waiver exists before ratchet
 - **WHEN** a package has not yet completed migration and still needs a temporary

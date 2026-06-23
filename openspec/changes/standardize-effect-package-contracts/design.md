@@ -696,6 +696,77 @@ code lenses:
 The language service must not require MCP, checked-in ProtocolDelta files, or
 checked-in report files.
 
+### Decision: Package declarations are source intent, not derived manifests
+
+`src/attune.package.ts` is the authored language-framework boundary. It should
+contain the source-level intent needed for diagnostics, quick info, code
+actions, and code lenses: package id/kind, public operation declarations,
+operation kind, schemas, service references, semantic writes/observes, view
+roots, explicit waivers, rare custom laws, and stable id overrides where replay
+or history requires them.
+
+Derived consequences do not belong in the authored declaration. Handler maps,
+property maps, type-guidance partitions, RPC descriptors, coverage-search
+plans, evidence producer maps, generated artifact ledgers, repair plans,
+worker/fuzzer metadata, Source BOM/generator-shape migration metadata, and
+large replay or counterexample manifests are generated, materialized, or stored
+in ProtocolStore.
+
+The rule of thumb is:
+
+```txt
+If the language service needs it to explain the authored protocol boundary,
+it may be in attune.package.ts.
+
+If it exists only to satisfy a checker, fuzzer, registry, RPC descriptor,
+coverage reducer, generated artifact ledger, or migration ratchet,
+it should be generated, materialized, or stored in ProtocolStore.
+```
+
+Generated companions such as `src/attune.generated.ts`,
+`src/attune.operation-registry.generated.ts`,
+`src/attune.property-registry.generated.ts`,
+`src/attune.type-guidance.generated.ts`, `src/attune.evidence.generated.ts`,
+or `src/attune.rpc.generated.ts` may be large. They must be deterministic,
+owned by Nx, freshness checked, repairable, and safe to regenerate. The package
+declaration itself stays readable.
+
+### Decision: SQLite enables smaller package declarations
+
+SQLite remains a private ProtocolStore adapter because smaller authored package
+files need somewhere deterministic to materialize protocol consequences. The
+store may hold protocol descriptors, descriptor hashes, source ranges,
+obligations, evidence events, coverage feedback, replay/counterexample
+metadata, generated artifact records, artifact freshness hashes, waivers,
+deltas, diagnostics, repair plans, and package summaries.
+
+SQLite is not package authoring truth. Product packages must not import
+`@attune/framework-sqlite`, raw ProtocolStore internals, raw Drizzle tables, or
+descriptor/delta tables. Normal package declarations should depend on
+`@attune/framework-protocol`; evidence tests may use public
+`@attune/framework-testing` helpers.
+
+### Decision: Nx repairs are the public action surface
+
+Framework diagnostics should prefer deterministic Nx repair targets over
+manual expansion of `attune.package.ts`. The intended loop is:
+
+```txt
+language-service diagnostic
+  -> code action / suggested Nx target
+  -> Nx repair materializes descriptor, registry, and evidence scaffold
+  -> SQLite ProtocolStore projection updates
+  -> language-service diagnostic disappears or narrows
+```
+
+The public surface should converge on `workspace:attune-check`,
+`workspace:attune-repair`, and project-level repairs such as
+`<project>:attune:repair`, `<project>:attune:repair-registry`,
+`<project>:attune:repair-properties`, `<project>:attune:repair-type-guidance`,
+`<project>:attune:repair-evidence`, and
+`<project>:attune:repair-generated`. These are typed Nx actions over framework
+services and generated artifacts, not package-manager scripts or raw shell.
+
 ### Decision: Protocol reports are ephemeral, not checked-in workflow artifacts
 
 The framework does not require checked-in ProtocolDelta reports, obligation

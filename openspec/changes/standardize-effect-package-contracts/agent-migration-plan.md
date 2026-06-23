@@ -561,6 +561,53 @@ Exit criteria:
   `workspace:policy-proof-pressure`.
 - The OpenSpec change is ready to archive with no dangling migration material.
 
+## Phase 9: Small Declaration And Repair Cleanup
+
+Purpose: make Attune feel like a language framework rather than a manifest
+framework by keeping `src/attune.package.ts` small and moving derived
+consequences into generated artifacts, private ProtocolStore projections, and
+Nx repair actions.
+
+Implementation agents:
+
+- `small-package-declaration-agent`
+  - Owns: active `src/attune.package.ts` files.
+  - Moves handler maps, property maps, type-guidance partitions, RPC
+    descriptors, evidence metadata, coverage-search plans, and generated
+    artifact ledgers into generated companions or package-local evidence
+    modules.
+- `framework-repair-surface-agent`
+  - Owns: `framework/nx`, root workspace targets, and repair action schemas.
+  - Expands `workspace:attune-repair` and project-level `attune:repair-*`
+    targets into deterministic generators/executors that update generated
+    source and private ProtocolStore projections.
+- `declaration-size-ratchet-agent`
+  - Owns: architecture policy checks and diagnostics.
+  - Promotes the staged package declaration LOC warning into a hard ratchet
+    only after packages are below the agreed threshold or carry reviewed
+    exceptions.
+
+Validation agents:
+
+- `small-package-validation-agent`
+  - Runs line-count inventory, package typechecks, package contract tests,
+    `workspace:framework-policy-check`, and generated freshness checks.
+- `repair-loop-validation-agent`
+  - Adds fixtures proving diagnostics include repair actions, repairs refresh
+    generated files/cache, and package authors do not need to edit derived maps
+    by hand.
+
+Exit criteria:
+
+- Average `src/attune.package.ts` size decreases and the largest remaining
+  declarations have explicit shrink paths.
+- Derived handler/property/type-guidance/RPC/evidence bulk is generated,
+  materialized, or moved to focused package-local modules.
+- `workspace:attune-check` and `workspace:attune-repair` are the simple public
+  agent loop.
+- Product packages still do not import framework runtime/sqlite internals.
+- No checked-in protocol reports or evidence dumps are introduced.
+
 ## Integration Cadence
 
 1. Spawn implementation agents for one wave.

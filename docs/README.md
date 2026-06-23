@@ -15,6 +15,9 @@ Core framework vocabulary:
 - `attuned/Attune Framework Core Primitives.md` - package, service, operation,
   projection, atom/view, Reactivity, provider, generator, policy, evidence,
   diagnostic, repair action, and mostly deduced ID authoring rules.
+- `attuned/Attune Framework Operating Surface.md` - the short agent-facing loop
+  for small package declarations, Nx repairs, private SQLite projection state,
+  generated companions, and what not to hand-edit.
 
 The raw imported repositories remain under `imports/` on disk during migration, but `docs/` is the tracked documentation home.
 

@@ -339,6 +339,8 @@ type PartitionIds<Entry, Key extends string> =
     ? Partition extends { readonly id: infer Id } ? Extract<Id, string> : never
     : never
 
+type IsBroadString<Value> = string extends Value ? true : false
+
 type OperationLawIds<Operation> =
   Operation extends { readonly laws: infer Laws } ? StringItems<Laws> : never
 
@@ -346,11 +348,12 @@ type MissingLawGuidancePairs<C, Guidance> =
   OperationsOf<C>[number] extends infer Operation
     ? Operation extends unknown
       ? OperationIdOf<Operation> extends infer Id extends string
-        ? Exclude<
-          OperationLawIds<Operation>,
-          PartitionIds<GuidanceOperationEntry<Guidance, Id>, "lawPartitions">
-        > extends infer Missing extends string
-          ? [Missing] extends [never] ? never : `${Id}:${Missing}`
+        ? PartitionIds<GuidanceOperationEntry<Guidance, Id>, "lawPartitions"> extends infer LawPartitions extends string
+          ? IsBroadString<LawPartitions> extends true
+            ? never
+            : Exclude<OperationLawIds<Operation>, LawPartitions> extends infer Missing extends string
+              ? [Missing] extends [never] ? never : `${Id}:${Missing}`
+              : never
           : never
         : never
       : never
@@ -362,11 +365,12 @@ type StaleLawGuidancePairs<C, Guidance> =
       ? OperationIdOf<Operation> extends infer Id extends string
         ? OperationLawIds<Operation> extends never
           ? never
-          : Exclude<
-            PartitionIds<GuidanceOperationEntry<Guidance, Id>, "lawPartitions">,
-            OperationLawIds<Operation>
-          > extends infer Stale extends string
-            ? [Stale] extends [never] ? never : `${Id}:${Stale}`
+          : PartitionIds<GuidanceOperationEntry<Guidance, Id>, "lawPartitions"> extends infer LawPartitions extends string
+            ? IsBroadString<LawPartitions> extends true
+              ? never
+              : Exclude<LawPartitions, OperationLawIds<Operation>> extends infer Stale extends string
+                ? [Stale] extends [never] ? never : `${Id}:${Stale}`
+                : never
             : never
         : never
       : never

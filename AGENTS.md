@@ -99,19 +99,35 @@ model. Packages under `packages/` consume the public protocol DSL, especially
 runtime, SQLite/Drizzle store, language-service internals, and Nx internals are
 private framework implementation details.
 
-For package or framework-facing work, start from framework diagnostics:
+For package or framework-facing work, use the simple loop:
+
+```bash
+nx run workspace:attune-check
+nx run workspace:attune-repair
+nx run <project>:typecheck
+nx run <project>:test
+```
+
+Use `workspace:package-contracts-check` when you need the narrower contract
+diagnostic surface, and `workspace:policy-fast` for the normal policy gate.
+Future project repair targets should follow the shape
+`nx run <project>:attune:repair`.
+
+For package declarations:
 
 1. Read TypeScript language-service diagnostics and Nx check output.
-2. Open the referenced `src/attune.package.ts` or generated source boundary.
-3. Use `@attune/nx` generators, sync generators, or framework code actions for
+2. Open the referenced `src/attune.package.ts` declaration.
+3. Keep `attune.package.ts` small: package id/kind, operations, schemas,
+   services, view roots, waivers, and rare custom laws only.
+4. Use `@attune/nx` generators, sync generators, or framework code actions for
    repeated shapes and materialization.
-4. Implement behavior inside generated `Effect.Service` boundaries and update
+5. Implement behavior inside generated `Effect.Service` boundaries and update
    Effect Schema-backed operation metadata, laws, waivers, and provenance.
-5. Expose or update package Reactivity keys, base atoms, derived atoms, package
+6. Expose or update package Reactivity keys, base atoms, derived atoms, package
    view atoms, and operation-to-view edges for meaningful package state.
-6. Run the smallest Nx-owned conformance, property, coverage, typecheck, or
+7. Run the smallest Nx-owned conformance, property, coverage, typecheck, or
    policy target that proves the slice.
-7. Report validation results plus any remaining diagnostics.
+8. Report validation results plus any remaining diagnostics.
 
 Agents repair diagnostics rather than raw protocol internals. Do not hand-edit
 raw descriptor JSON, SQLite rows, Drizzle tables, ProtocolStore internals,
@@ -120,6 +136,14 @@ summaries, or generated ledger/status files as source truth. Protocol evidence
 from FastCheck/property runs belongs in framework services, stdout/CI artifacts,
 or gitignored local cache such as `.attune/cache`; checked-in protocol reports
 are not part of the core workflow.
+
+Do not manually expand `attune.package.ts` with derived handler maps,
+properties, type-guidance partitions, RPC descriptors, coverage-search plans,
+evidence producer maps, worker metadata, or generated artifact ledgers. Those
+belong in deterministic generated companions such as `src/attune.generated.ts`,
+focused package-local evidence modules, or private ProtocolStore projections.
+Run the suggested Nx repair target before editing generated or derived protocol
+artifacts by hand.
 
 ## Repo Map
 

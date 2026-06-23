@@ -180,6 +180,24 @@ and not a product package API.
 - **THEN** it SHOULD use gitignored cache locations such as
   `.attune/cache/protocol.sqlite`, `.attune/cache/protocol/*`, or `.nx/cache/*`
 
+### Requirement: SQLite is private projection state
+The framework SHALL treat SQLite as a private ProtocolStore adapter for
+materialized protocol state, not as authored package truth.
+
+#### Scenario: Nx repair materializes protocol state
+- **WHEN** an Nx repair target derives descriptors, obligations, generated
+  artifact records, evidence expectations, or diagnostics
+- **THEN** the runtime MAY persist those projections in SQLite
+- **AND** product packages MUST NOT import SQLite, Drizzle, or raw
+  ProtocolStore internals
+
+#### Scenario: Language service queries protocol state
+- **WHEN** the language service needs diagnostics, quick info, code actions,
+  code lenses, package summaries, obligation explanations, or repair plans
+- **THEN** it SHOULD query protocol projection services backed by ProtocolStore
+- **AND** it SHOULD NOT require giant package declarations to carry all derived
+  state
+
 ### Requirement: SQLite is the first backend
 The Protocol Store SHALL use SQLite locally for deterministic, cheap,
 inspectable materialization of descriptors, obligations, generated artifact

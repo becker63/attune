@@ -168,6 +168,35 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("warns when package declarations grow past the staged slim-file threshold", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/large-contract/package.json": JSON.stringify({ name: "@attune/large-contract" }),
+      "packages/large-contract/src/attune.package.ts": [
+        packageContractSource({
+          packageId: "large-contract",
+          viewsBody: [
+            "  reactivityKeys: [\"large.changed\"],",
+            "  atoms: [\"largeAtom\"],",
+          ],
+          operationsBody: [],
+          operationIds: [],
+        }),
+        ...Array.from({ length: 260 }, (_, index) => `// derived manifest line ${index}`),
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "package-declaration-too-large",
+        filePath: "packages/large-contract/src/attune.package.ts",
+        severity: "warning",
+      }),
+    ]))
+  })
+
   it("rejects mutating package operations that do not touch Reactivity keys or atoms", () => {
     const workspaceRoot = makeWorkspace({
       "packages/no-operation-touch/package.json": JSON.stringify({ name: "@attune/no-operation-touch" }),
@@ -785,7 +814,10 @@ describe("framework policy CLI", () => {
     const result = checkFrameworkPolicyWorkspace(repoRoot)
 
     expect(result.exitCode).toBe(0)
-    expect(result.outputLines).toEqual([])
+    expect(result.outputLines.every((line) =>
+      line.startsWith("WARNING attune/framework-final-ratchet package-declaration-too-large ")
+    )).toBe(true)
+    expect(result.ratchetDiagnostics.every((diagnostic) => diagnostic.severity === "warning")).toBe(true)
   }, 60_000)
 })
 

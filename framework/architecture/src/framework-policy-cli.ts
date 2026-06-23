@@ -74,11 +74,12 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "migration-only-alias"
   | "stale-generated-file"
   | "manual-derived-truth"
+  | "package-declaration-too-large"
 
 export interface FrameworkFinalRatchetDiagnostic {
   readonly ruleId: FrameworkFinalRatchetRuleId
   readonly code: FrameworkFinalRatchetDiagnosticCode
-  readonly severity: "error"
+  readonly severity: "error" | "warning"
   readonly filePath: string
   readonly message: string
 }
@@ -120,6 +121,8 @@ const staleGeneratedMarkerPattern =
   /\b(?:attune-stale-generated|staleGenerated|generatedArtifactStale|needs-regeneration)\b/u
 const manualDerivedTruthMarkerPattern =
   /\b(?:attune-manual-derived-truth|manualProtocolTruth|manualDerivedTruth|derivedTruth\s*:\s*["']manual["'])\b/u
+const packageDeclarationWarningLineThreshold = 250
+const packageDeclarationErrorLineThreshold = 400
 
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
 
@@ -243,6 +246,11 @@ export const checkFrameworkPolicyWorkspace = (
     ...noReportDiagnostics.map(formatNoReportDiagnostic),
     ...ratchetDiagnostics.map(formatFinalRatchetDiagnostic),
   ]
+  const hasError =
+    importDiagnostics.length > 0 ||
+    atomImplementationDiagnostics.length > 0 ||
+    noReportDiagnostics.length > 0 ||
+    ratchetDiagnostics.some((diagnostic) => diagnostic.severity === "error")
 
   return {
     importDiagnostics,
@@ -250,7 +258,7 @@ export const checkFrameworkPolicyWorkspace = (
     noReportDiagnostics,
     ratchetDiagnostics,
     outputLines,
-    exitCode: outputLines.length > 0 ? 1 : 0,
+    exitCode: hasError ? 1 : 0,
   }
 }
 
@@ -478,6 +486,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     }
 
     diagnostics.push(...checkPackageContractResidualPolicy(packageRoot, contractFile))
+    diagnostics.push(...checkPackageDeclarationSize(packageRoot, contractFile))
     diagnostics.push(...checkAtomReactivityConformance(packageRoot, contractFile))
     diagnostics.push(...findExpiredMigrationWaivers(contractFile))
   }
@@ -491,6 +500,31 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
   }
 
   return diagnostics
+}
+
+function checkPackageDeclarationSize(
+  packageRoot: string,
+  contractFile: WorkspaceFile,
+): readonly FrameworkFinalRatchetDiagnostic[] {
+  const lineCount = contractFile.content.split(/\r?\n/u).length
+  if (lineCount <= packageDeclarationWarningLineThreshold) return []
+
+  const severity = "warning" as const
+  const threshold =
+    lineCount > packageDeclarationErrorLineThreshold
+      ? packageDeclarationErrorLineThreshold
+      : packageDeclarationWarningLineThreshold
+
+  return [finalRatchetDiagnostic(
+    "package-declaration-too-large",
+    contractFile.path,
+    [
+      `Package declaration ${packageRoot}/src/attune.package.ts has ${lineCount} lines and exceeds the staged ${threshold} line threshold.`,
+      "Move derived handlers, properties, type guidance, RPC descriptors, evidence maps, coverage search plans, and generated artifact metadata into generated files or ProtocolStore projections.",
+      `Run nx run ${projectNameFromPackageRoot(packageRoot)}:attune:repair or workspace:attune-repair when available.`,
+    ].join(" "),
+    severity,
+  )]
 }
 
 function checkPackageContractResidualPolicy(
@@ -654,6 +688,10 @@ function findActivePackageRoots(files: readonly WorkspaceFile[]): readonly strin
   }
 
   return [...roots].sort()
+}
+
+function projectNameFromPackageRoot(packageRoot: string): string {
+  return packageRoot.split("/").at(-1) ?? packageRoot
 }
 
 function checkAtomReactivityConformance(
@@ -1421,7 +1459,7 @@ function formatAtomImplementationDiagnostic(diagnostic: AtomImplementationPolicy
 
 function formatFinalRatchetDiagnostic(diagnostic: FrameworkFinalRatchetDiagnostic): string {
   return [
-    "ERROR",
+    diagnostic.severity.toUpperCase(),
     diagnostic.ruleId,
     diagnostic.code,
     diagnostic.filePath,
@@ -1433,11 +1471,12 @@ function finalRatchetDiagnostic(
   code: FrameworkFinalRatchetDiagnosticCode,
   filePath: string,
   message: string,
+  severity: FrameworkFinalRatchetDiagnostic["severity"] = "error",
 ): FrameworkFinalRatchetDiagnostic {
   return {
     ruleId: FrameworkFinalRatchetRuleId,
     code,
-    severity: "error",
+    severity,
     filePath,
     message,
   }

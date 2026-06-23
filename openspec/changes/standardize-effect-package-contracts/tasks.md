@@ -208,3 +208,14 @@
 - [x] 16.4 Classify historical run-report docs with an explicit migration marker and reject new checked-in generic fuzzer/proof/run reports through the no-report policy.
 - [x] 16.5 Adopt source-reference view derivation in a flagship `attuned-discovery` operation and prove it feeds operation registry and operation-to-view graph derivation.
 - [x] 16.6 Run archive-hardening validation: focused framework/package typechecks and tests, `workspace:package-contracts-check`, `workspace:framework-policy-check`, `workspace:policy-fast`, OpenSpec strict validation, and `git diff --check`.
+
+## 17. Small Package Declaration Cleanup
+
+- [x] 17.1 Audit active `src/attune.package.ts` file sizes and classify bloat into authored roots versus derived/generated handler, property, type-guidance, RPC, coverage, evidence, and artifact material.
+- [x] 17.2 Add a slim authoring declaration type surface in `framework/protocol` so package declarations can model language-service roots without carrying every derived consequence.
+- [x] 17.3 Move generated handler/property/type-guidance/RPC bulk from active package declarations into deterministic `src/attune.generated.ts` companion artifacts while preserving package contract exports.
+- [x] 17.4 Add a staged package declaration size ratchet that warns above the configured threshold and recommends generated/materialized alternatives plus Nx repair targets.
+- [x] 17.5 Add public workspace aliases `workspace:attune-check` and `workspace:attune-repair` over typed Nx actions.
+- [x] 17.6 Update OpenSpec and docs to state that package declarations are source intent, SQLite is private projection state, and Nx repairs are the public action surface.
+- [ ] 17.7 Expand per-project repair targets (`<project>:attune:repair-*`) from documented action names into full deterministic generators/executors for registries, properties, type guidance, evidence, and generated freshness.
+- [ ] 17.8 Continue shrinking remaining package declarations below the warning threshold by moving package-specific schema/helper bulk into focused authored modules or generated artifacts.
