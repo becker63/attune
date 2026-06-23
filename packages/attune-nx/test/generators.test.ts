@@ -9,6 +9,7 @@ import {
 } from "../src/generator-inventory.js"
 import {
   sourceBomCacheShardPath,
+  sourceBomFrameworkShardPath,
   upsertSourceBom,
 } from "../src/internal/source-bom.js"
 import type { GeneratorTree } from "../src/internal/tree.js"
@@ -287,6 +288,9 @@ describe("attune-nx generators", () => {
   it("exposes framework-owned Source BOM cache shard paths", () => {
     expect(sourceBomCacheShardPath("attuned-discovery")).toBe(
       ".attune/cache/source-bom/attuned-discovery.json",
+    )
+    expect(sourceBomFrameworkShardPath("attuned-discovery")).toBe(
+      "framework/architecture/src/generated/source-bom/attuned-discovery.json",
     )
   })
 })

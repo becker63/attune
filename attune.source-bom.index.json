@@ -25,7 +25,7 @@
     {
       "project": "attuned-discovery",
       "projectRoot": "packages/attuned-discovery",
-      "shard": "packages/attuned-discovery/attune.source-bom.json"
+      "shard": "framework/architecture/src/generated/source-bom/attuned-discovery.json"
     },
     {
       "project": "cocoindex-effect",

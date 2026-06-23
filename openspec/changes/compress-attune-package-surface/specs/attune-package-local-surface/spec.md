@@ -57,6 +57,15 @@ framework-owned locations rather than hand-maintained in package source trees.
 - **AND** package-local `attune.source-bom.json` files SHALL be treated as
   temporary migration artifacts unless explicitly waived
 
+#### Scenario: Source BOM must remain checked in during migration
+
+- **WHEN** Source BOM projection data must remain checked in before
+  `attune-repair` can regenerate it from ProtocolStore/cache state
+- **THEN** the projection SHALL live under a framework-owned generated inventory
+  path such as `framework/architecture/src/generated/source-bom/<project>.json`
+- **AND** package roots SHALL NOT regain package-local `attune.source-bom.json`
+  files as the normal workflow
+
 ### Requirement: Package declaration size remains bounded
 
 The one-file authoring rule SHALL preserve small package declarations rather

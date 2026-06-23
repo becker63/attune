@@ -56,6 +56,33 @@ describe("Source BOM check", () => {
     })
   })
 
+  it("accepts checked-in framework-owned Source BOM projection shards", () => {
+    withWorkspace({
+      "attune.source-bom.index.json": JSON.stringify({
+        schemaVersion: 1,
+        shards: [{
+          project: "example",
+          projectRoot: "packages/example",
+          shard: "framework/architecture/src/generated/source-bom/example.json",
+        }],
+      }),
+      "framework/architecture/src/generated/source-bom/example.json": JSON.stringify({
+        schemaVersion: 1,
+        project: "example",
+        projectRoot: "packages/example",
+        ownedFiles: ["src/attune.package.ts"],
+        generatedOutputs: [],
+      }),
+    }, (workspace) => {
+      const output = execFileSync(process.execPath, [sourceBomCheckScript], {
+        cwd: workspace,
+        encoding: "utf8",
+      })
+
+      expect(output).toContain("Source BOM check passed")
+    })
+  })
+
   it("rejects unexpected Source BOM shard locations", () => {
     withWorkspace({
       "attune.source-bom.index.json": JSON.stringify({
@@ -80,7 +107,7 @@ describe("Source BOM check", () => {
           encoding: "utf8",
           stdio: "pipe",
         }),
-      ).toThrow(/shard must be packages\/example\/attune\.source-bom\.json or \.attune\/cache\/source-bom\/example\.json/)
+      ).toThrow(/shard must be packages\/example\/attune\.source-bom\.json, \.attune\/cache\/source-bom\/example\.json, or framework\/architecture\/src\/generated\/source-bom\/example\.json/)
     })
   })
 })

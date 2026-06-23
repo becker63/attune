@@ -35,10 +35,12 @@ for (const [position, entry] of index.shards.entries()) {
 
   const legacyShard = `${entry.projectRoot}/attune.source-bom.json`
   const cacheShard = `.attune/cache/source-bom/${entry.project}.json`
+  const frameworkShard = `framework/architecture/src/generated/source-bom/${entry.project}.json`
   const usesLegacyShard = entry.shard === legacyShard
   const usesCacheShard = entry.shard === cacheShard
-  if (!usesLegacyShard && !usesCacheShard) {
-    fail(`${label} shard must be ${legacyShard} or ${cacheShard}, got ${entry.shard}`)
+  const usesFrameworkShard = entry.shard === frameworkShard
+  if (!usesLegacyShard && !usesCacheShard && !usesFrameworkShard) {
+    fail(`${label} shard must be ${legacyShard}, ${cacheShard}, or ${frameworkShard}, got ${entry.shard}`)
   }
   if (!existsSync(entry.shard)) {
     fail(`${label} points to missing shard ${entry.shard}`)
@@ -66,6 +68,9 @@ for (const [position, entry] of index.shards.entries()) {
   }
   if (usesCacheShard && actualRoot !== ".attune/cache/source-bom") {
     fail(`${entry.shard} cache shard must live under .attune/cache/source-bom`)
+  }
+  if (usesFrameworkShard && actualRoot !== "framework/architecture/src/generated/source-bom") {
+    fail(`${entry.shard} framework shard must live under framework/architecture/src/generated/source-bom`)
   }
 }
 
