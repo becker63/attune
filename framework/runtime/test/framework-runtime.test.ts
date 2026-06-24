@@ -389,7 +389,7 @@ describe("@attune/framework-runtime", () => {
       expect(Effect.runSync(workspaceHealthAtom().read(index))[0]).toMatchObject({
         projectId: "demo",
         symbolCount: 1,
-        diagnosticCount: 1,
+        diagnosticCount: 4,
         safeRepairCount: 1,
       })
       expect(Effect.runSync(programIndexDiagnosticsForFile(index, fixturePath))[0]).toMatchObject({
@@ -546,6 +546,13 @@ describe("@attune/framework-runtime", () => {
       "source-bom",
       "package-contract-typecheck-aggregate",
     ])
+    expect(rows.sourceFiles.map((sourceFile) => sourceFile.path)).toEqual([
+      "packages/demo/src/attune.package.ts",
+      "packages/demo/src/attune.contract.generated.ts",
+      "packages/demo/src/attune.generated.ts",
+      "packages/demo/attune.source-bom.json",
+      "framework/architecture/src/generated/package-contracts.typecheck.generated.ts",
+    ])
     expect(rows.observations).toHaveLength(4)
     expect(rows.observations.map((observation) =>
       JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
@@ -554,6 +561,51 @@ describe("@attune/framework-runtime", () => {
       "generated-companion-compat",
       "source-bom-compat",
       "package-contract-compat",
+    ])
+    expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "attune/program-index/package-local-companion",
+      "attune/program-index/package-local-companion",
+      "attune/program-index/package-local-companion",
+      "attune/program-index/source-bom-compatibility",
+    ])
+    expect(rows.repairs.map((repair) => [repair.safety, repair.repairKind])).toEqual([
+      ["needs-review", "generated-companion-relocation"],
+      ["needs-review", "generated-companion-relocation"],
+      ["needs-review", "generated-companion-relocation"],
+      ["needs-review", "source-ownership-projection"],
+    ])
+  })
+
+  it("materializes missing and checked-in report artifacts as mechanical diagnostics", () => {
+    const rows = compatibilityRowsFromCurrentPackageContracts({
+      projectId: "demo",
+      root: "packages/demo",
+      now: "2026-06-23T00:00:00.000Z",
+      paths: [
+        "packages/demo/src/attune.package.ts",
+        "packages/demo/src/attune.generated.ts",
+        "reports/protocol-delta-report.json",
+      ],
+      contentByPath: {
+        "packages/demo/src/attune.package.ts": "source",
+        "reports/protocol-delta-report.json": "{}",
+      },
+    })
+
+    expect(rows.artifacts.map((artifact) => [artifact.path, artifact.status])).toEqual([
+      ["packages/demo/src/attune.package.ts", "current"],
+      ["packages/demo/src/attune.generated.ts", "missing"],
+      ["reports/protocol-delta-report.json", "current"],
+    ])
+    expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "attune/program-index/artifact-missing",
+      "attune/program-index/package-local-companion",
+      "attune/program-index/checked-in-report-artifact",
+    ])
+    expect(rows.repairs.map((repair) => [repair.safety, repair.repairKind, repair.nxTarget])).toEqual([
+      ["safe", "artifact-refresh", "demo:attune-repair"],
+      ["needs-review", "generated-companion-relocation", "demo:attune-repair"],
+      ["manual-only", "checked-in-report-removal", undefined],
     ])
   })
 

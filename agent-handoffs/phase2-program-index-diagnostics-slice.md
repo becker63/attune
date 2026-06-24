@@ -13,6 +13,10 @@ Date: 2026-06-24
   when the index has no rows for the requested file or the index read fails.
 - Language-service runtime projection can consume the program-index-backed
   diagnostics service and expose repair hints from indexed repair rows.
+- Compatibility artifact ingestion now emits source_file, artifact,
+  observation, diagnostic, and repair rows for missing/stale artifacts,
+  package-local generated companions, source-bom compatibility inputs, and
+  checked-in report artifacts.
 
 ## Validation
 
@@ -24,9 +28,6 @@ Date: 2026-06-24
 
 ## Still Open
 
-- Expand `ProgramIndexProjection` materialization for stale/missing artifact,
-  package-local generated companion, compatibility source, and checked-in
-  report diagnostics.
 - Route check executor internals through program-index materialization and mark
   diagnostic origin as program-index, compatibility, or parity.
 - Add Ring A diagnostic parity fixtures before deleting old diagnostic helpers.

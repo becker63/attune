@@ -22,7 +22,7 @@
 
 ## 2. Program-Index Primary Diagnostics
 
-- [ ] 2.1 Extend `ProgramIndexProjection` so it can materialize diagnostic rows for stale or missing artifacts, package-local generated companions, schema descriptor serialization issues, Source BOM compatibility rows, checked-in report artifacts, and repairable diagnostics.
+- [x] 2.1 Extend `ProgramIndexProjection` so it can materialize diagnostic rows for stale or missing artifacts, package-local generated companions, schema descriptor serialization issues, Source BOM compatibility rows, checked-in report artifacts, and repairable diagnostics.
 - [x] 2.2 Make `ProtocolDiagnostics` prefer program-index diagnostic rows or views while preserving compatibility fallback when the index is empty or unavailable.
 - [x] 2.3 Add runtime tests proving a fixture program index produces diagnostics with source path, range, code, severity, message, and cause payload.
 - [x] 2.4 Make language-service diagnostic lookup read through `ProtocolDiagnostics` or `ProtocolQuery` backed by program-index projections.

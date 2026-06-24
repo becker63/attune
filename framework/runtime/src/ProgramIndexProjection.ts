@@ -80,8 +80,11 @@ export interface ProgramCompatibilityInput {
 }
 
 export interface ProgramCompatibilityRows {
+  readonly sourceFiles: readonly ProgramIndexSourceFile[]
   readonly artifacts: readonly ProgramIndexArtifact[]
   readonly observations: readonly ProgramIndexObservation[]
+  readonly diagnostics: readonly ProgramIndexDiagnostic[]
+  readonly repairs: readonly ProgramIndexRepair[]
 }
 
 export const projectIndexAtom = (projectId: string): ProgramIndexAtom<ProjectIndexProjection> => ({
@@ -356,6 +359,7 @@ export const compatibilityRowsFromCurrentPackageContracts = (
   const artifacts = input.paths.map((path) => {
     const content = input.contentByPath?.[path]
     const currentHash = content === undefined ? undefined : programIndexContentHash(content)
+    const status = compatibilityArtifactStatus(input.contentByPath, content)
     return {
       id: `compat:${input.projectId}:${path}`,
       projectId: input.projectId,
@@ -363,9 +367,17 @@ export const compatibilityRowsFromCurrentPackageContracts = (
       kind: compatibilityArtifactKind(path),
       builtFromHash: hashProtocolValue({ projectId: input.projectId, root: input.root }),
       ...(currentHash === undefined ? {} : { currentHash }),
-      status: "current" as const,
+      status,
     } satisfies ProgramIndexArtifact
   })
+  const sourceFiles = artifacts.map((artifact) => ({
+    id: sourceFileId(input.projectId, artifact.path),
+    projectId: input.projectId,
+    path: artifact.path,
+    hash: artifact.currentHash ?? programIndexContentHash(`${artifact.status}:${artifact.path}`),
+    updatedAt: now,
+  } satisfies ProgramIndexSourceFile))
+  const sourceFileByPath = new Map(sourceFiles.map((sourceFile) => [sourceFile.path, sourceFile]))
   const observations = artifacts
     .filter((artifact) => artifact.kind !== "attune-package-source")
     .map((artifact) => ({
@@ -381,7 +393,13 @@ export const compatibilityRowsFromCurrentPackageContracts = (
       }),
       createdAt: now,
     } satisfies ProgramIndexObservation))
-  return { artifacts, observations }
+  const diagnostics = artifacts.flatMap((artifact) =>
+    compatibilityDiagnosticsFromArtifact(input.projectId, artifact, sourceFileByPath.get(artifact.path))
+  )
+  const repairs = diagnostics.map((diagnostic) =>
+    compatibilityRepairForDiagnostic(input.projectId, diagnostic, now)
+  )
+  return { sourceFiles, artifacts, observations, diagnostics, repairs }
 }
 
 export const materializeCompatibilityRows = (
@@ -390,8 +408,11 @@ export const materializeCompatibilityRows = (
 ): Effect.Effect<ProgramCompatibilityRows, unknown> => {
   const rows = compatibilityRowsFromCurrentPackageContracts(input)
   return Effect.gen(function* writeCompatibilityRows() {
+    yield* index.putSourceFiles(rows.sourceFiles)
     yield* index.putArtifacts(rows.artifacts)
     yield* index.putObservations(rows.observations)
+    yield* index.putDiagnostics(rows.diagnostics)
+    yield* index.putRepairs(rows.repairs)
     return rows
   })
 }
@@ -474,6 +495,148 @@ const compatibilitySourceMetadata = (path: string): string => {
   if (/src\/attune\.(?:contract\.)?generated\.ts$/u.test(path)) return "generated-companion-compat"
   return "package-contract-compat"
 }
+
+const compatibilityArtifactStatus = (
+  contentByPath: Readonly<Record<string, string>> | undefined,
+  content: string | undefined,
+): ProgramIndexArtifact["status"] => {
+  if (content !== undefined) return "current"
+  return contentByPath === undefined ? "unknown" : "missing"
+}
+
+const compatibilityDiagnosticsFromArtifact = (
+  projectId: string,
+  artifact: ProgramIndexArtifact,
+  sourceFile: ProgramIndexSourceFile | undefined,
+): readonly ProgramIndexDiagnostic[] => {
+  const cause = {
+    fact: "artifact",
+    artifactId: artifact.id,
+    path: artifact.path,
+    status: artifact.status,
+    compatibilitySource: compatibilitySourceMetadata(artifact.path),
+  }
+  const sourceFileFields = sourceFile === undefined ? {} : { sourceFileId: sourceFile.id }
+  const rows: ProgramIndexDiagnostic[] = []
+
+  if (artifact.status === "missing" || artifact.status === "stale") {
+    rows.push({
+      id: `diagnostic:${artifact.id}:${artifact.status}`,
+      projectId,
+      ...sourceFileFields,
+      code: `attune/program-index/artifact-${artifact.status}`,
+      severity: artifact.status === "missing" ? "error" : "warning",
+      message: `artifact fact is ${artifact.status} for ${artifact.path}.`,
+      causeJson: programIndexJson(cause),
+    })
+  }
+
+  if (isPackageLocalAttuneCompanionPath(artifact.path)) {
+    rows.push({
+      id: `diagnostic:${artifact.id}:package-local-companion`,
+      projectId,
+      ...sourceFileFields,
+      code: "attune/program-index/package-local-companion",
+      severity: "warning",
+      message: `artifact fact is package-local generated companion ${artifact.path}; framework-owned artifact projection should replace it.`,
+      causeJson: programIndexJson(cause),
+    })
+  }
+
+  if (compatibilitySourceMetadata(artifact.path) === "source-bom-compat") {
+    rows.push({
+      id: `diagnostic:${artifact.id}:source-bom-compat`,
+      projectId,
+      ...sourceFileFields,
+      code: "attune/program-index/source-bom-compatibility",
+      severity: "info",
+      message: `observation fact records source-bom compatibility input ${artifact.path}; source ownership should derive from program-index facts.`,
+      causeJson: programIndexJson({ ...cause, fact: "observation" }),
+    })
+  }
+
+  if (isCheckedInReportArtifactPath(artifact.path)) {
+    rows.push({
+      id: `diagnostic:${artifact.id}:checked-in-report`,
+      projectId,
+      ...sourceFileFields,
+      code: "attune/program-index/checked-in-report-artifact",
+      severity: "error",
+      message: `artifact fact points at checked-in report output ${artifact.path}; observations and diagnostics belong in cache, stdout, or CI artifacts.`,
+      causeJson: programIndexJson(cause),
+    })
+  }
+
+  return rows
+}
+
+const compatibilityRepairForDiagnostic = (
+  projectId: string,
+  diagnostic: ProgramIndexDiagnostic,
+  now: string,
+): ProgramIndexRepair => {
+  const repair = compatibilityRepairMetadata(diagnostic.code)
+  return {
+    id: `repair:${diagnostic.id}`,
+    diagnosticId: diagnostic.id,
+    safety: repair.safety,
+    ...(repair.nxTarget === undefined ? {} : { nxTarget: repair.nxTarget(projectId) }),
+    repairKind: repair.repairKind,
+    payloadJson: programIndexJson({
+      source: "program-index",
+      diagnostic: diagnostic.code,
+      cause: diagnostic.causeJson === undefined ? undefined : JSON.parse(diagnostic.causeJson) as unknown,
+    }),
+    createdAt: now,
+  }
+}
+
+const compatibilityRepairMetadata = (
+  code: string,
+): {
+  readonly safety: ProgramIndexRepair["safety"]
+  readonly repairKind: string
+  readonly nxTarget?: (projectId: string) => string
+} => {
+  switch (code) {
+    case "attune/program-index/artifact-missing":
+    case "attune/program-index/artifact-stale":
+      return {
+        safety: "safe",
+        repairKind: "artifact-refresh",
+        nxTarget: (projectId) => `${projectId}:attune-repair`,
+      }
+    case "attune/program-index/package-local-companion":
+      return {
+        safety: "needs-review",
+        repairKind: "generated-companion-relocation",
+        nxTarget: (projectId) => `${projectId}:attune-repair`,
+      }
+    case "attune/program-index/source-bom-compatibility":
+      return {
+        safety: "needs-review",
+        repairKind: "source-ownership-projection",
+        nxTarget: () => "workspace:attune-repair",
+      }
+    case "attune/program-index/checked-in-report-artifact":
+      return {
+        safety: "manual-only",
+        repairKind: "checked-in-report-removal",
+      }
+    default:
+      return {
+        safety: "needs-review",
+        repairKind: "program-index-diagnostic-review",
+      }
+  }
+}
+
+const isPackageLocalAttuneCompanionPath = (path: string): boolean =>
+  /(^|\/)attune\.source-bom\.json$/u.test(path) ||
+  /(^|\/)src\/attune\.(generated|contract\.generated|package\.typecheck)\.ts$/u.test(path)
+
+const isCheckedInReportArtifactPath = (path: string): boolean =>
+  /(^|\/)(reports?|artifacts?|agent-output|protocol-output)(\/|$)|\b(protocol[-_. ]?delta|obligation[-_. ]?(report|summary|status)|evidence[-_. ]?(summary|report|status)|architecture[-_. ]?(summary|report|status)|cloud[-_. ]?agent[-_. ]?(summary|report|status)|(fuzz|fuzzer|property|proof|run)[-_. ]?(report|summary|status)|(report|summary|status)[-_. ]?(fuzz|fuzzer|property|proof|run))\b/iu.test(path)
 
 const stringValue = (
   row: ProgramIndexViewRow,
