@@ -731,8 +731,10 @@ describe("package contract graph helpers", () => {
         }),
       getDiagnosticsForFile: () =>
         Effect.succeed([
+          { code: "attune/program-index/artifact-stale", origin: "program-index" },
+          { code: "attune/protocol/stale-generated-source", origin: "compatibility" },
           { code: "attune/protocol/waiver-issue" },
-          { code: "attune/protocol/stale-generated-source" },
+          { code: "attune/protocol/waiver-issue", origin: "program-index" },
         ]),
     }, "demo", {
       sourcePath: "packages/demo/src/attune.package.ts",
@@ -749,8 +751,14 @@ describe("package contract graph helpers", () => {
       deltaKinds: ["waiver-issue"],
       repairTargets: ["workspace:package-contracts-check"],
       diagnosticCodes: [
+        "attune/program-index/artifact-stale",
         "attune/protocol/stale-generated-source",
         "attune/protocol/waiver-issue",
+      ],
+      diagnostics: [
+        { code: "attune/program-index/artifact-stale", origin: "program-index" },
+        { code: "attune/protocol/stale-generated-source", origin: "compatibility" },
+        { code: "attune/protocol/waiver-issue", origin: "both" },
       ],
       generatedArtifactHashes: [{
         artifactId: "demo:typecheck",

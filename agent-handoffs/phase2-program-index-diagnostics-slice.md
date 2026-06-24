@@ -17,6 +17,14 @@ Date: 2026-06-24
   observation, diagnostic, and repair rows for missing/stale artifacts,
   package-local generated companions, source-bom compatibility inputs, and
   checked-in report artifacts.
+- `workspace:attune-check` now reaches `workspace:program-index-materialize`
+  first through `workspace:package-contracts-check`, materializing Nx project
+  graph, TypeScript source, schema_descriptor, edge, artifact, observation,
+  diagnostic, and repair facts into `.attune/cache/program-index.sqlite` before
+  compatibility checks run.
+- Direct `package-check` contract checks now route to the public
+  `workspace:attune-check` path, and the runtime read model records diagnostic
+  origins as `program-index`, `compatibility`, or `both`.
 
 ## Validation
 
@@ -25,9 +33,13 @@ Date: 2026-06-24
 - `nx run framework-protocol:typecheck --skipNxCache`
 - `nx run framework-runtime:typecheck --skipNxCache`
 - `nx run framework-language-service:typecheck --skipNxCache`
+- `nx run attune-nx:test --skipNxCache`
+- `nx run attune-nx:typecheck --skipNxCache`
+- `nx run attune-architecture:test --skipNxCache`
+- `nx run attune-architecture:build --skipNxCache`
+- `nx run workspace:program-index-materialize --skipNxCache`
+- `nx run workspace:attune-check --skipNxCache`
 
 ## Still Open
 
-- Route check executor internals through program-index materialization and mark
-  diagnostic origin as program-index, compatibility, or parity.
 - Add Ring A diagnostic parity fixtures before deleting old diagnostic helpers.

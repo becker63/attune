@@ -428,6 +428,16 @@ export interface PackageContractGeneratedArtifactHashSummary {
   readonly status: AttuneGeneratedArtifactRecord["status"]
 }
 
+export type PackageContractDiagnosticOrigin =
+  | "program-index"
+  | "compatibility"
+  | "both"
+
+export interface PackageContractRuntimeDiagnosticSummary {
+  readonly code: string
+  readonly origin: PackageContractDiagnosticOrigin
+}
+
 export interface PackageContractRuntimeFacts {
   readonly packageId: string
   readonly protocolId: string
@@ -445,6 +455,7 @@ export interface PackageContractRuntimeFacts {
   readonly deltaKinds: readonly AttuneProtocolDelta["kind"][]
   readonly repairTargets: readonly string[]
   readonly diagnosticCodes: readonly string[]
+  readonly diagnostics: readonly PackageContractRuntimeDiagnosticSummary[]
   readonly generatedArtifactHashes: readonly PackageContractGeneratedArtifactHashSummary[]
 }
 
@@ -462,13 +473,19 @@ export interface PackageContractRuntimeQueryLike {
   }, unknown, never>
   readonly getDiagnosticsForFile?: (
     sourcePath: string,
-  ) => Effect.Effect<readonly { readonly code: string }[], unknown, never>
+  ) => Effect.Effect<readonly {
+    readonly code: string
+    readonly origin?: PackageContractDiagnosticOrigin
+  }[], unknown, never>
 }
 
 export interface PackageContractRuntimeFactOptions {
   readonly generatedArtifacts?: readonly AttuneGeneratedArtifactRecord[]
   readonly sourcePath?: string
-  readonly diagnostics?: readonly { readonly code: string }[]
+  readonly diagnostics?: readonly {
+    readonly code: string
+    readonly origin?: PackageContractDiagnosticOrigin
+  }[]
 }
 
 export class PackageContractGraphError extends Error {
@@ -879,6 +896,7 @@ export function summarizePackageContractRuntimeFacts(
   options: PackageContractRuntimeFactOptions = {},
 ): PackageContractRuntimeFacts {
   const diagnostics = options.diagnostics ?? []
+  const diagnosticSummaries = summarizeRuntimeDiagnostics(diagnostics)
   return {
     packageId: summary.packageId,
     protocolId: summary.protocolId,
@@ -901,7 +919,8 @@ export function summarizePackageContractRuntimeFacts(
           .filter((target): target is string => typeof target === "string" && target.length > 0)
       ),
     ),
-    diagnosticCodes: uniqueSorted(diagnostics.map((diagnostic) => diagnostic.code)),
+    diagnosticCodes: diagnosticSummaries.map((diagnostic) => diagnostic.code),
+    diagnostics: diagnosticSummaries,
     generatedArtifactHashes: (options.generatedArtifacts ?? []).map((artifact) => ({
       artifactId: artifact.artifactId,
       path: artifact.path,
@@ -938,6 +957,40 @@ export async function readPackageContractRuntimeFacts(
     deltas,
     generatedArtifacts === undefined ? runtimeOptions : { ...runtimeOptions, generatedArtifacts },
   )
+}
+
+const summarizeRuntimeDiagnostics = (
+  diagnostics: readonly {
+    readonly code: string
+    readonly origin?: PackageContractDiagnosticOrigin
+  }[],
+): readonly PackageContractRuntimeDiagnosticSummary[] => {
+  const originsByCode = new Map<string, Set<PackageContractDiagnosticOrigin>>()
+
+  for (const diagnostic of diagnostics) {
+    const origins = originsByCode.get(diagnostic.code) ?? new Set<PackageContractDiagnosticOrigin>()
+    origins.add(diagnostic.origin ?? inferredDiagnosticOrigin(diagnostic.code))
+    originsByCode.set(diagnostic.code, origins)
+  }
+
+  return [...originsByCode.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([code, origins]) => ({
+      code,
+      origin: mergedDiagnosticOrigin(origins),
+    }))
+}
+
+const inferredDiagnosticOrigin = (code: string): PackageContractDiagnosticOrigin =>
+  code.startsWith("attune/program-index/") ? "program-index" : "compatibility"
+
+const mergedDiagnosticOrigin = (
+  origins: ReadonlySet<PackageContractDiagnosticOrigin>,
+): PackageContractDiagnosticOrigin => {
+  if (origins.has("both")) return "both"
+  if (origins.has("program-index") && origins.has("compatibility")) return "both"
+  if (origins.has("program-index")) return "program-index"
+  return "compatibility"
 }
 
 export function inferPackageContractTargetSemantics(

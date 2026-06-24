@@ -218,6 +218,30 @@ describe("attune-nx executors", () => {
     expect(summaries).toEqual([result.summary])
   })
 
+  it("routes package contract checks through workspace attune-check", async () => {
+    const calls: ExecutorProcessPlan[] = []
+    const result = await packageCheckExecutor(
+      {
+        targetProject: "attune-nx",
+        checks: ["contract"],
+      },
+      createExecutorContext({ calls }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(calls).toEqual([])
+    expect(result.summary.plans).toEqual([
+      expect.objectContaining({
+        kind: "process",
+        label: "package-check:program-index-diagnostics",
+        adapter: "pnpm-exec-nx-run",
+        executable: "pnpm",
+        args: ["exec", "nx", "run", "workspace:attune-check"],
+        cwd: ".",
+      }),
+    ])
+  })
+
   it("executes safe package checks through typed adapters when dryRun is false", async () => {
     const calls: ExecutorProcessPlan[] = []
     const summaries: ExecutorRunSummary[] = []

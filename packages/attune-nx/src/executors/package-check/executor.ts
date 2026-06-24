@@ -113,28 +113,28 @@ export const createPackageCheckPlans = (
   const projectRoot = resolveProjectRoot(options, context)
   const projectPath = relativeToWorkspace(projectRoot, context)
 
-  return options.checks.map((check): ExecutorTypedPlan => {
+  return options.checks.flatMap((check): readonly ExecutorTypedPlan[] => {
     switch (check) {
       case "typecheck":
-        return {
+        return [{
           kind: "process",
           label: "package-check:typecheck",
           adapter: "pnpm-exec-tsgo",
           executable: "pnpm",
           args: ["exec", "tsgo", "--noEmit"],
           cwd: projectRoot,
-        }
+        }]
       case "test":
-        return {
+        return [{
           kind: "process",
           label: "package-check:test",
           adapter: "pnpm-exec-vitest",
           executable: "pnpm",
           args: ["exec", "vitest", "run"],
           cwd: projectRoot,
-        }
+        }]
       case "lint":
-        return {
+        return [{
           kind: "process",
           label: "package-check:lint",
           adapter: "pnpm-exec-oxlint",
@@ -148,17 +148,25 @@ export const createPackageCheckPlans = (
             "--quiet",
           ],
           cwd: workspaceRoot,
-        }
+        }]
       case "contract":
+        return [{
+          kind: "process",
+          label: "package-check:program-index-diagnostics",
+          adapter: "pnpm-exec-nx-run",
+          executable: "pnpm",
+          args: ["exec", "nx", "run", "workspace:attune-check"],
+          cwd: workspaceRoot,
+        }]
       case "service-conformance":
       case "atom-graph":
       case "property-evidence":
       case "coverage-conformance":
-        return {
+        return [{
           kind: "unsupported",
           label: `package-check:${check}`,
           reason: `${check} still needs a framework diagnostic/conformance adapter before dryRun=false can replace run-commands.`,
-        }
+        }]
     }
   })
 }

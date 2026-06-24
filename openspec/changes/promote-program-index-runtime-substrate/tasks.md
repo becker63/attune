@@ -27,8 +27,8 @@
 - [x] 2.3 Add runtime tests proving a fixture program index produces diagnostics with source path, range, code, severity, message, and cause payload.
 - [x] 2.4 Make language-service diagnostic lookup read through `ProtocolDiagnostics` or `ProtocolQuery` backed by program-index projections.
 - [x] 2.5 Add language-service tests for diagnostics by file path and repair hints from indexed repair rows.
-- [ ] 2.6 Route package/workspace check executor internals through program-index materialization before reporting diagnostics.
-- [ ] 2.7 Preserve old package-contract check output as compatibility fallback and mark whether check diagnostics came from program-index, compatibility, or both.
+- [x] 2.6 Route package/workspace check executor internals through program-index materialization before reporting diagnostics.
+- [x] 2.7 Preserve old package-contract check output as compatibility fallback and mark whether check diagnostics came from program-index, compatibility, or both.
 - [ ] 2.8 Add diagnostic parity fixtures for at least one low-risk package from Ring A and classify mismatches.
 - [ ] 2.9 Validate Phase 2 with `nx run framework-runtime:test --skipNxCache`, `nx run framework-language-service:test --skipNxCache`, `nx run framework-nx:test --skipNxCache`, `nx run attune-nx:test --skipNxCache`, and `nx run workspace:attune-check --skipNxCache`.
 

@@ -95,9 +95,18 @@ importers:
 
   framework/architecture:
     dependencies:
+      '@attune/framework-nx':
+        specifier: workspace:*
+        version: link:../nx
       '@attune/framework-protocol':
         specifier: workspace:*
         version: link:../protocol
+      '@attune/framework-runtime':
+        specifier: workspace:*
+        version: link:../runtime
+      '@attune/framework-sqlite':
+        specifier: workspace:*
+        version: link:../sqlite
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78

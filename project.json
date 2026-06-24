@@ -68,6 +68,33 @@
         "dryRun": false
       }
     },
+    "program-index-materialize": {
+      "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        {
+          "projects": [
+            "attune-nx"
+          ],
+          "target": "build"
+        }
+      ],
+      "metadata": {
+        "description": "Materialize mechanical project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, and repair facts into the SQLite program index before compatibility checks report diagnostics."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "program-index-materialize",
+        "parameters": {},
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/program-index.sqlite"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/program-index.sqlite"
+      ]
+    },
     "tool-versions": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
@@ -118,6 +145,7 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
+            "workspace:program-index-materialize",
             "workspace:source-bom-check",
             "workspace:shape-conformance",
             "workspace:framework-policy-check"

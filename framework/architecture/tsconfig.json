@@ -9,8 +9,11 @@
     "types": ["node", "vitest/globals"],
     "paths": {
       "@attune/attuned-discovery": ["../../packages/attuned-discovery/src/index.ts"],
+      "@attune/framework-nx": ["../nx/src/index.ts"],
       "@attune/framework-protocol": ["../protocol/src/index.ts"],
       "@attune/framework-protocol/package-contract": ["../protocol/src/package-contract/index.ts"],
+      "@attune/framework-runtime": ["../runtime/src/index.ts"],
+      "@attune/framework-sqlite": ["../sqlite/src/index.ts"],
       "@attune/architecture": ["./src/index.ts"],
       "joern-effect/package-effect": ["../../packages/joern-effect/node_modules/effect/dist/dts/index.d.ts"]
     }
