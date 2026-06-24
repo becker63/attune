@@ -52,6 +52,9 @@ export const materializeWorkspaceProgramIndex = async (
   try {
     index = createSqliteProgramIndex({ path: indexPath })
     await Effect.runPromise(index.initialize())
+    if (options.project === undefined) {
+      await Effect.runPromise(index.reset())
+    }
     const graphRows = await Effect.runPromise(
       materializeNxProjectGraphIntoProgramIndex(index, {
         preferCached: options.preferCached ?? true,
@@ -275,8 +278,11 @@ const ignoredReportDirectories = new Set([
   "temp",
 ])
 
-const isCheckedInReportArtifactPath = (path: string): boolean =>
-  /(^|\/)(reports?|artifacts?|agent-output|protocol-output)(\/|$)|\b(protocol[-_. ]?delta|obligation[-_. ]?(report|summary|status)|evidence[-_. ]?(summary|report|status)|architecture[-_. ]?(summary|report|status)|cloud[-_. ]?agent[-_. ]?(summary|report|status)|(fuzz|fuzzer|property|proof|run)[-_. ]?(report|summary|status)|(report|summary|status)[-_. ]?(fuzz|fuzzer|property|proof|run))\b/iu.test(path)
+const isCheckedInReportArtifactPath = (path: string): boolean => {
+  if (/(^|\/)src\/artifacts\/.*\.[cm]?[jt]sx?$/u.test(path)) return false
+
+  return /(^|\/)(reports?|artifacts?|agent-output|protocol-output)(\/|$)|\b(protocol[-_. ]?delta|obligation[-_. ]?(report|summary|status)|evidence[-_. ]?(summary|report|status)|architecture[-_. ]?(summary|report|status)|cloud[-_. ]?agent[-_. ]?(summary|report|status)|(fuzz|fuzzer|property|proof|run)[-_. ]?(report|summary|status)|(report|summary|status)[-_. ]?(fuzz|fuzzer|property|proof|run))\b/iu.test(path)
+}
 
 const materializeCompatibilityArtifacts = async (
   index: ProgramIndexApi,

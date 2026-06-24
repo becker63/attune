@@ -1636,8 +1636,11 @@ const isPackageLocalAttuneCompanionPath = (path: string): boolean =>
 const isPackageLocalSourceBomCompatibilityPath = (path: string): boolean =>
   /(^|\/)attune\.source-bom\.json$/u.test(path)
 
-const isCheckedInReportArtifactPath = (path: string): boolean =>
-  /(^|\/)(reports?|artifacts?|agent-output|protocol-output)(\/|$)|\b(protocol[-_. ]?delta|obligation[-_. ]?(report|summary|status)|evidence[-_. ]?(summary|report|status)|architecture[-_. ]?(summary|report|status)|cloud[-_. ]?agent[-_. ]?(summary|report|status)|(fuzz|fuzzer|property|proof|run)[-_. ]?(report|summary|status)|(report|summary|status)[-_. ]?(fuzz|fuzzer|property|proof|run))\b/iu.test(path)
+const isCheckedInReportArtifactPath = (path: string): boolean => {
+  if (/(^|\/)src\/artifacts\/.*\.[cm]?[jt]sx?$/u.test(path)) return false
+
+  return /(^|\/)(reports?|artifacts?|agent-output|protocol-output)(\/|$)|\b(protocol[-_. ]?delta|obligation[-_. ]?(report|summary|status)|evidence[-_. ]?(summary|report|status)|architecture[-_. ]?(summary|report|status)|cloud[-_. ]?agent[-_. ]?(summary|report|status)|(fuzz|fuzzer|property|proof|run)[-_. ]?(report|summary|status)|(report|summary|status)[-_. ]?(fuzz|fuzzer|property|proof|run))\b/iu.test(path)
+}
 
 const stringValue = (
   row: ProgramIndexViewRow,

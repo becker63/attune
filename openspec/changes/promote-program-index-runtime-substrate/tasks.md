@@ -98,15 +98,15 @@
 
 ## 8. Final Validation And Archive Readiness
 
-- [ ] 8.1 Run `openspec validate promote-program-index-runtime-substrate --type change`.
-- [ ] 8.2 Run `git diff --check`.
-- [ ] 8.3 Run `nx run framework-sqlite:test --skipNxCache`.
-- [ ] 8.4 Run `nx run framework-runtime:test --skipNxCache`.
-- [ ] 8.5 Run `nx run framework-nx:test --skipNxCache`.
-- [ ] 8.6 Run `nx run framework-language-service:test --skipNxCache`.
-- [ ] 8.7 Run `nx run attune-architecture:test --skipNxCache`.
-- [ ] 8.8 Run `nx run workspace:attune-check --skipNxCache`.
-- [ ] 8.9 Run `nx run workspace:attune-repair --dryRun --skipNxCache`.
-- [ ] 8.10 Run touched package tests for any package roots edited during this change.
-- [ ] 8.11 Write `agent-handoffs/final-validation.md` with validations, residual blockers, archive readiness, and follow-up split recommendations.
-- [ ] 8.12 Confirm heavy proof-pressure, container fuzzing, provider, Kubernetes, and destructive actions were not run unless explicitly authorized.
+- [x] 8.1 Run `openspec validate promote-program-index-runtime-substrate --type change`.
+- [x] 8.2 Run `git diff --check`.
+- [x] 8.3 Run `nx run framework-sqlite:test --skipNxCache`.
+- [x] 8.4 Run `nx run framework-runtime:test --skipNxCache`.
+- [x] 8.5 Run `nx run framework-nx:test --skipNxCache`.
+- [x] 8.6 Run `nx run framework-language-service:test --skipNxCache`.
+- [x] 8.7 Run `nx run attune-architecture:test --skipNxCache`.
+- [x] 8.8 Run `nx run workspace:attune-check --skipNxCache`.
+- [x] 8.9 Run `nx run workspace:attune-repair --dryRun --skipNxCache`.
+- [x] 8.10 Run touched package tests for any package roots edited during this change.
+- [x] 8.11 Write `agent-handoffs/final-validation.md` with validations, residual blockers, archive readiness, and follow-up split recommendations.
+- [x] 8.12 Confirm heavy proof-pressure, container fuzzing, provider, Kubernetes, and destructive actions were not run unless explicitly authorized.

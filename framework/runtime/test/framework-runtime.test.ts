@@ -605,10 +605,12 @@ describe("@attune/framework-runtime", () => {
       paths: [
         "packages/demo/src/attune.package.ts",
         "packages/demo/src/attune.generated.ts",
+        "packages/demo/src/artifacts/evidence-matrix.ts",
         "reports/protocol-delta-report.json",
       ],
       contentByPath: {
         "packages/demo/src/attune.package.ts": "source",
+        "packages/demo/src/artifacts/evidence-matrix.ts": "export const sourceArtifactHelper = true\n",
         "reports/protocol-delta-report.json": "{}",
       },
     })
@@ -616,6 +618,7 @@ describe("@attune/framework-runtime", () => {
     expect(rows.artifacts.map((artifact) => [artifact.path, artifact.status])).toEqual([
       ["packages/demo/src/attune.package.ts", "current"],
       ["packages/demo/src/attune.generated.ts", "missing"],
+      ["packages/demo/src/artifacts/evidence-matrix.ts", "current"],
       ["reports/protocol-delta-report.json", "current"],
     ])
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([

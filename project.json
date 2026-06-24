@@ -40,6 +40,7 @@
             "workspace:package-contracts-check"
           ]
         },
+        "timeoutSeconds": 240,
         "dryRun": false
       }
     },
@@ -151,6 +152,7 @@
             "workspace:framework-policy-check"
           ]
         },
+        "timeoutSeconds": 240,
         "dryRun": false
       }
     },

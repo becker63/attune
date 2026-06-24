@@ -25,17 +25,10 @@ The raw imported repositories remain under `imports/` on disk during migration, 
 
 ## Historical Migration Notes
 
-These files are retained as migration context. They are not protocol source
-truth, package-contract evidence, or the normal place for new run reports;
-future protocol reports belong in framework diagnostics, Nx output, CI
-artifacts, stdout, or gitignored local cache. Historical run-report files in
-this section must carry the "Historical migration note only" marker so the
-no-checked-in-report policy can distinguish retained migration context from new
-checked-in evidence/status reports.
+These files are retained as migration context. They are not source truth or the
+normal place for new run reports; future run records belong in framework
+diagnostics, Nx output, CI artifacts, stdout, or gitignored local cache.
 
-- `joern-effect-fuzzer-run-report.md` - status and findings for the semantic
-  fuzzer, DSL-heavy Joern runs, expectation-bearing counterexamples, and the
-  Axiom/OTLP workbench.
 - `joern-effect-expectation-fuzzer-classification.md` - classification pass over
   the first expectation-bearing counterexamples, plus representative row and
   Graphology query shapes.
