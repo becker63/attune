@@ -434,13 +434,12 @@
       "generator": "@attune/nx:package-contract",
       "status": "generated",
       "paths": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "invariants": [
-        "CocoIndex client queries, repository intelligence operations, MCP lifecycle commands, normalization codecs, generated registry sync, package layers, fuzz handlers, properties, and type guidance stay in one generated contract shard."
+        "CocoIndex source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Phase 5 product migration generated the package contract files; final command-surface cleanup remains open.",
+      "notes": "Ring B program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
       "sourceBomShard": "framework/architecture/src/generated/source-bom/cocoindex-effect.json"
     },
     {

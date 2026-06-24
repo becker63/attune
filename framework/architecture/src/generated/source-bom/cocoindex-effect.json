@@ -13,7 +13,7 @@
       ],
       "editableRegions": [
         {
-          "description": "Semantic recall package contract; add public CocoIndex/repository operations through package-contract sync/generation.",
+          "description": "Semantic recall authored source boundary; add exported symbols in the package file and validate through program-index-backed check.",
           "file": "src/attune.package.ts",
           "marker": "definePackageContract"
         }
@@ -61,8 +61,7 @@
     {
       "generator": "@attune/nx:package-contract",
       "outputs": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "sources": [
         "project.json",
