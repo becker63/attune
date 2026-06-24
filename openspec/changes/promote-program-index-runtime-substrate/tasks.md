@@ -1,18 +1,18 @@
 ## 0. Big Cut Coordination
 
-- [ ] 0.1 Add a coordination handoff at `agent-handoffs/phase0-big-cut-boundary.md` summarizing the frozen boundary, current compatibility inputs, stop conditions, and next safe agents.
-- [ ] 0.2 Confirm the current worktree is clean or only contains this change's files before code implementation begins.
-- [ ] 0.3 Validate this OpenSpec change with `openspec validate promote-program-index-runtime-substrate --type change`.
-- [ ] 0.4 Record the subagent ownership table for Phase 1 through Phase 7 in the phase0 handoff.
-- [ ] 0.5 Document that package-contract generated outputs are compatibility inputs and program-index diagnostics/repairs are the target runtime path.
-- [ ] 0.6 Document the mechanical vocabulary boundary: `project`, `target`, `source_file`, `symbol`, `schema_descriptor`, `edge`, `artifact`, `observation`, `diagnostic`, `repair`, and `invalidation`.
-- [ ] 0.7 Document old Attune nouns as temporary legacy labels only: package contract, protocol, operation, view, law, obligation, evidence, delta, type guidance, Source BOM, generator shape, fuzz handler, property map, and RPC group.
-- [ ] 0.8 Add stop conditions for any implementation that expands old ontology concepts instead of mapping them to mechanical facts.
+- [x] 0.1 Add a coordination handoff at `agent-handoffs/phase0-big-cut-boundary.md` summarizing the frozen boundary, current compatibility inputs, stop conditions, and next safe agents.
+- [x] 0.2 Confirm the current worktree is clean or only contains this change's files before code implementation begins.
+- [x] 0.3 Validate this OpenSpec change with `openspec validate promote-program-index-runtime-substrate --type change`.
+- [x] 0.4 Record the subagent ownership table for Phase 1 through Phase 7 in the phase0 handoff.
+- [x] 0.5 Document that package-contract generated outputs are compatibility inputs and program-index diagnostics/repairs are the target runtime path.
+- [x] 0.6 Document the mechanical vocabulary boundary: `project`, `target`, `source_file`, `symbol`, `schema_descriptor`, `edge`, `artifact`, `observation`, `diagnostic`, `repair`, and `invalidation`.
+- [x] 0.7 Document old Attune nouns as temporary legacy labels only: package contract, protocol, operation, view, law, obligation, evidence, delta, type guidance, Source BOM, generator shape, fuzz handler, property map, and RPC group.
+- [x] 0.8 Add stop conditions for any implementation that expands old ontology concepts instead of mapping them to mechanical facts.
 
 ## 1. Mechanical Ontology Cut
 
 - [ ] 1.1 Audit primary runtime code and docs for old ontology names presented as source truth rather than compatibility vocabulary.
-- [ ] 1.2 Add a mechanical vocabulary map in the phase0 handoff showing each old noun and its mechanical replacement row or view.
+- [x] 1.2 Add a mechanical vocabulary map in the phase0 handoff showing each old noun and its mechanical replacement row or view.
 - [ ] 1.3 Add tests or policy fixtures that reject new first-class Package, Protocol, Operation, View, Law, Obligation, Evidence, Delta, TypeGuidance, SourceBOM, GeneratorShape, FuzzHandler, PropertyMap, or RpcGroup runtime tables in the program-index path.
 - [ ] 1.4 Update diagnostic copy for the program-index path so the primary explanation names the missing, stale, invalid, observed, or repairable mechanical fact.
 - [ ] 1.5 Ensure compatibility adapters may mention old nouns only as source metadata or explanatory labels.
