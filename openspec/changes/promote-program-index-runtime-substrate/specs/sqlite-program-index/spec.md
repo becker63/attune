@@ -21,7 +21,8 @@ database for mechanical workspace facts once materialization succeeds.
 
 ### Requirement: Program index stores compatibility facts with source metadata
 
-Compatibility rows SHALL identify the transitional source that produced them.
+Compatibility rows SHALL identify the transitional source that produced them
+and SHALL remain migration scaffolding rather than permanent primary ontology.
 
 #### Scenario: Compatibility fact is inserted
 - **WHEN** Attune indexes data from package-contract generated output, Source
@@ -35,6 +36,13 @@ Compatibility rows SHALL identify the transitional source that produced them.
 - **WHEN** a migrated package no longer has package-local generated companions
 - **THEN** program-index materialization SHALL NOT fail solely because those
   package-local companions are absent
+
+#### Scenario: Mechanical row reaches parity
+- **WHEN** mechanical program-index rows answer the same check, repair,
+  freshness, and diagnostic questions as a compatibility source
+- **THEN** that compatibility source SHALL no longer be required for primary
+  materialization
+- **AND** active check and repair paths SHALL prefer the mechanical rows
 
 ### Requirement: SQL views provide mechanical derivations
 
