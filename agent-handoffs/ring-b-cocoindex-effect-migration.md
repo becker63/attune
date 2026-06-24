@@ -29,12 +29,12 @@ Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/package-contracts/cocoindex-effect/attune.generated.ts`
 - `framework/architecture/src/generated/package-contracts/cocoindex-effect/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/cocoindex-effect.json`
-- `.attune/cache/generated/cocoindex-effect/attune-operation-registry.ts`
-- `.attune/cache/generated/cocoindex-effect/attune-property-registry.ts`
-- `.attune/cache/generated/cocoindex-effect/attune-type-guidance.ts`
-- `.attune/cache/generated/cocoindex-effect/attune-property-evidence.ts`
-- `.attune/cache/generated/cocoindex-effect/generated-freshness.json`
-- `.attune/cache/evidence/cocoindex-effect/evidence-scaffold.json`
+- `.attune/cache/generated/cocoindex-effect/attune-symbol-registry.ts`
+- `.attune/cache/generated/cocoindex-effect/attune-property-observations.ts`
+- `.attune/cache/generated/cocoindex-effect/attune-schema-observations.ts`
+- `.attune/cache/generated/cocoindex-effect/attune-observation-scaffold.ts`
+- `.attune/cache/generated/cocoindex-effect/artifact-freshness.json`
+- `.attune/cache/observations/cocoindex-effect/observation-scaffold.json`
 
 These retained files are framework-owned compatibility inputs or local cache
 artifacts, not authored package source. Product generated MCP schema and tool
@@ -54,15 +54,14 @@ Not run:
 
 Risks:
 - `packages/cocoindex-effect/project.json` still exposes internal
-  compatibility repair target names for registry, type-guidance, generated
-  freshness, and observation/evidence scaffolding. They remain implementation
-  routes behind the public `attune-repair` surface until Phase 7 removes or
-  renames them.
+  mechanical repair target names for symbol registry, property observations,
+  schema observations, artifact freshness, and observation scaffolding. They
+  remain implementation routes behind the public `attune-repair` surface.
 - Shared framework-owned compatibility generated outputs still import old
   helper APIs. They are outside this package-local deletion slice.
 
 Follow-ups:
 - Continue Ring B with `joern-effect`.
-- In Phase 7, remove or quarantine the shared compatibility generated outputs,
-  cache helpers, and internal old-noun repair target names after all ring
+- In Phase 7, remove or quarantine the shared compatibility generated outputs and remaining
+  cache helper APIs after all ring
   handoffs identify the remaining blockers.

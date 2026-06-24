@@ -1418,20 +1418,20 @@ const compatibilityArtifactKind = (path: string): string => {
   if (/framework\/architecture\/src\/generated\/package-contracts\/[^/]+\/attune\.generated\.ts$/u.test(path)) {
     return "framework-generated-companion-artifact"
   }
-  if (/\.attune\/cache\/generated\/[^/]+\/attune-operation-registry\.ts$/u.test(path)) {
+  if (/\.attune\/cache\/generated\/[^/]+\/attune-symbol-registry\.ts$/u.test(path)) {
     return "framework-generated-symbol-registry"
   }
-  if (/\.attune\/cache\/generated\/[^/]+\/attune-property-registry\.ts$/u.test(path)) {
-    return "framework-generated-observation-registry"
+  if (/\.attune\/cache\/generated\/[^/]+\/attune-property-observations\.ts$/u.test(path)) {
+    return "framework-generated-property-observations"
   }
-  if (/\.attune\/cache\/generated\/[^/]+\/attune-type-guidance\.ts$/u.test(path)) {
-    return "framework-generated-type-observations"
+  if (/\.attune\/cache\/generated\/[^/]+\/attune-schema-observations\.ts$/u.test(path)) {
+    return "framework-generated-schema-observations"
   }
-  if (/\.attune\/cache\/generated\/[^/]+\/attune-property-evidence\.ts$/u.test(path)) {
+  if (/\.attune\/cache\/generated\/[^/]+\/attune-observation-scaffold\.ts$/u.test(path)) {
     return "framework-generated-observation-artifact"
   }
-  if (/\.attune\/cache\/generated\/[^/]+\/generated-freshness\.json$/u.test(path)) {
-    return "framework-generated-freshness-artifact"
+  if (/\.attune\/cache\/generated\/[^/]+\/artifact-freshness\.json$/u.test(path)) {
+    return "framework-generated-artifact-freshness"
   }
   if (/src\/attune\.contract\.generated\.ts$/u.test(path)) return "generated-contract-companion"
   if (/src\/attune\.generated\.ts$/u.test(path)) return "generated-protocol-companion"
@@ -1581,9 +1581,9 @@ const compatibilityRepairMetadata = (
     case "attune/program-index/artifact-stale":
       return {
         safety: "safe",
-        repairKind: "artifact-refresh",
+        repairKind: "artifact-freshness",
         nxTarget: (projectId) => `${projectId}:attune-repair`,
-        route: () => "attune-repair-cli:generated",
+        route: () => "attune-repair-cli:artifact-freshness",
         validationAfterTargets: (projectId) => [
           `${projectId}:attune-check`,
           `${projectId}:typecheck`,
@@ -1592,9 +1592,9 @@ const compatibilityRepairMetadata = (
     case "attune/program-index/package-local-companion":
       return {
         safety: "needs-review",
-        repairKind: "generated-companion-relocation",
+        repairKind: "artifact-relocation",
         nxTarget: (projectId) => `${projectId}:attune-repair`,
-        route: () => "attune-repair-cli:generated",
+        route: () => "attune-repair-cli:artifact-freshness",
         validationAfterTargets: (projectId) => [
           `${projectId}:attune-check`,
           `${projectId}:typecheck`,
@@ -1607,7 +1607,7 @@ const compatibilityRepairMetadata = (
         safety: "needs-review",
         repairKind: "source-ownership-projection",
         nxTarget: () => "workspace:attune-repair",
-        route: () => "attune-repair-cli:generated",
+        route: () => "attune-repair-cli:artifact-freshness",
         validationAfterTargets: () => ["workspace:attune-check"],
       }
     case "attune/program-index/checked-in-report-artifact":

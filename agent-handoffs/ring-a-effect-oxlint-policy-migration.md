@@ -34,7 +34,7 @@ Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/package-contracts/effect-oxlint-policy/attune.generated.ts`
 - `framework/architecture/src/generated/package-contracts/effect-oxlint-policy/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/effect-oxlint-policy.json`
-- `.attune/cache/generated/effect-oxlint-policy/generated-freshness.json`
+- `.attune/cache/generated/effect-oxlint-policy/artifact-freshness.json`
 
 These retained files are framework-owned compatibility inputs or local cache
 artifacts, not authored package source. They remain only until Phase 7 can

@@ -26,12 +26,12 @@ Removed surfaces:
 Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/package-contracts/joern-effect/attune.generated.ts`
 - `framework/architecture/src/generated/package-contracts/joern-effect/attune.contract.generated.ts`
-- `.attune/cache/generated/joern-effect/attune-operation-registry.ts`
-- `.attune/cache/generated/joern-effect/attune-property-registry.ts`
-- `.attune/cache/generated/joern-effect/attune-type-guidance.ts`
-- `.attune/cache/generated/joern-effect/attune-property-evidence.ts`
-- `.attune/cache/generated/joern-effect/generated-freshness.json`
-- `.attune/cache/evidence/joern-effect/evidence-scaffold.json`
+- `.attune/cache/generated/joern-effect/attune-symbol-registry.ts`
+- `.attune/cache/generated/joern-effect/attune-property-observations.ts`
+- `.attune/cache/generated/joern-effect/attune-schema-observations.ts`
+- `.attune/cache/generated/joern-effect/attune-observation-scaffold.ts`
+- `.attune/cache/generated/joern-effect/artifact-freshness.json`
+- `.attune/cache/observations/joern-effect/observation-scaffold.json`
 
 These retained files are framework-owned compatibility inputs or local cache
 artifacts, not authored package source. Product Joern generated bindings,
@@ -51,15 +51,15 @@ Not run:
   Kubernetes, Alchemy, and destructive actions were not run.
 
 Risks:
-- `packages/joern-effect/project.json` still exposes internal compatibility
-  repair target names for registry, type-guidance, generated freshness, and
-  observation/evidence scaffolding. They remain implementation routes behind
-  the public `attune-repair` surface until Phase 7 removes or renames them.
+- `packages/joern-effect/project.json` still exposes internal mechanical
+  repair target names for symbol registry, schema observations, artifact freshness, and
+  observation scaffolding. They remain implementation routes behind
+  the public `attune-repair` surface.
 - Shared framework-owned compatibility generated outputs still import old
   helper APIs. They are outside this package-local deletion slice.
 
 Follow-ups:
 - Continue Phase 6 with Ring C using cheap validation only.
-- In Phase 7, remove or quarantine the shared compatibility generated outputs,
-  cache helpers, and internal old-noun repair target names after Ring C
+- In Phase 7, remove or quarantine the shared compatibility generated outputs and remaining
+  cache helper APIs after Ring C
   handoffs identify remaining blockers.

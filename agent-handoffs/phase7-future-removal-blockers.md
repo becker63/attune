@@ -73,11 +73,11 @@ validated deletion slice and replacement path.
 
 ### Internal repair route names
 
-- Current surface:
-  - `attune:repair-registry`
-  - `attune:repair-properties`
-  - `attune:repair-type-guidance`
-  - `attune:repair-evidence`
+- Renamed in Phase 9.5:
+  - `attune:repair-symbol-registry`
+  - `attune:repair-property-observations`
+  - `attune:repair-schema-observations`
+  - `attune:repair-observations`
 - Replacement path:
   - program-index repair rows with mechanical repair kinds behind public
     `attune-repair` targets

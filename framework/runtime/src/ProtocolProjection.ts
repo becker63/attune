@@ -328,44 +328,44 @@ const isWeakOracleCoverage = (
 const repairActionIdForObligation = (obligation: AttuneProtocolObligation): string => {
   switch (obligation.kind) {
     case "type-guidance":
-      return "refresh-type-guidance"
+      return "refresh-schema-observations"
     case "view-movement":
-      return "generate-atom-view-edge"
+      return "generate-atom-projection-edge"
     default:
-      return "generate-protocol-evidence"
+      return "generate-observation-scaffold"
   }
 }
 
 const repairActionTitleForObligation = (obligation: AttuneProtocolObligation): string => {
   switch (obligation.kind) {
     case "type-guidance":
-      return "Refresh type-guidance partitions"
+      return "Refresh schema observations"
     case "view-movement":
-      return "Generate missing atom view edge"
+      return "Generate missing atom projection edge"
     default:
-      return "Generate property evidence scaffold"
+      return "Generate observation scaffold"
   }
 }
 
 const repairActionKindForObligation = (obligation: AttuneProtocolObligation): string => {
   switch (obligation.kind) {
     case "type-guidance":
-      return "type-guidance"
+      return "schema-observations"
     case "view-movement":
-      return "atom-view-edge"
+      return "atom-projection-edge"
     default:
-      return "property-evidence"
+      return "observation-scaffold"
   }
 }
 
 const repairActionTargetForObligation = (obligation: AttuneProtocolObligation): string => {
   switch (obligation.kind) {
     case "type-guidance":
-      return "@attune/framework-nx:type-guidance"
+      return "@attune/framework-nx:schema-observations"
     case "view-movement":
-      return "@attune/framework-nx:atom-view-edge"
+      return "@attune/framework-nx:atom-projection-edge"
     default:
-      return "@attune/framework-nx:protocol-evidence"
+      return "@attune/framework-nx:observation-scaffold"
   }
 }
 

@@ -139,24 +139,24 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "attune-foldkit:attune:repair-registry",
-            "attune-foldkit:attune:repair-properties",
-            "attune-foldkit:attune:repair-type-guidance",
-            "attune-foldkit:attune:repair-evidence",
-            "attune-foldkit:attune:repair-generated"
+            "attune-foldkit:attune:repair-symbol-registry",
+            "attune-foldkit:attune:repair-property-observations",
+            "attune-foldkit:attune:repair-schema-observations",
+            "attune-foldkit:attune:repair-observations",
+            "attune-foldkit:attune:repair-artifact-freshness"
           ]
         },
         "dryRun": false
       }
     },
-    "attune:repair-registry": {
+    "attune:repair-symbol-registry": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for operation registry. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "registry",
+          "repairKind": "symbol-registry",
           "safeOnly": true
         }
       },
@@ -168,25 +168,25 @@
         "parameters": {
           "allSafe": true,
           "project": "attune-foldkit",
-          "kind": "registry"
+          "kind": "symbol-registry"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/attune-foldkit/attune-operation-registry.ts"
+          ".attune/cache/generated/attune-foldkit/attune-symbol-registry.ts"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/attune-operation-registry.ts"
+        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/attune-symbol-registry.ts"
       ]
     },
-    "attune:repair-properties": {
+    "attune:repair-property-observations": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for property registry. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "properties",
+          "repairKind": "property-observations",
           "safeOnly": true
         }
       },
@@ -198,25 +198,25 @@
         "parameters": {
           "allSafe": true,
           "project": "attune-foldkit",
-          "kind": "properties"
+          "kind": "property-observations"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/attune-foldkit/attune-property-registry.ts"
+          ".attune/cache/generated/attune-foldkit/attune-property-observations.ts"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/attune-property-registry.ts"
+        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/attune-property-observations.ts"
       ]
     },
-    "attune:repair-type-guidance": {
+    "attune:repair-schema-observations": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for type-guidance. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "type-guidance",
+          "repairKind": "schema-observations",
           "safeOnly": true
         }
       },
@@ -228,25 +228,25 @@
         "parameters": {
           "allSafe": true,
           "project": "attune-foldkit",
-          "kind": "type-guidance"
+          "kind": "schema-observations"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/attune-foldkit/attune-type-guidance.ts"
+          ".attune/cache/generated/attune-foldkit/attune-schema-observations.ts"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/attune-type-guidance.ts"
+        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/attune-schema-observations.ts"
       ]
     },
-    "attune:repair-evidence": {
+    "attune:repair-observations": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for evidence scaffold. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "evidence",
+          "repairKind": "observations",
           "safeOnly": true
         }
       },
@@ -258,29 +258,29 @@
         "parameters": {
           "allSafe": true,
           "project": "attune-foldkit",
-          "kind": "evidence"
+          "kind": "observations"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/attune-foldkit/attune-property-evidence.ts"
+          ".attune/cache/generated/attune-foldkit/attune-observation-scaffold.ts"
         ],
         "evidenceOutputs": [
-          ".attune/cache/evidence/attune-foldkit/evidence-scaffold.json"
+          ".attune/cache/observations/attune-foldkit/observation-scaffold.json"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/attune-property-evidence.ts",
-        "{workspaceRoot}/.attune/cache/evidence/attune-foldkit/evidence-scaffold.json"
+        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/attune-foldkit/observation-scaffold.json"
       ]
     },
-    "attune:repair-generated": {
+    "attune:repair-artifact-freshness": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for generated freshness. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer attune-foldkit:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "generated",
+          "repairKind": "artifact-freshness",
           "safeOnly": true
         }
       },
@@ -292,15 +292,15 @@
         "parameters": {
           "allSafe": true,
           "project": "attune-foldkit",
-          "kind": "generated"
+          "kind": "artifact-freshness"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/attune-foldkit/generated-freshness.json"
+          ".attune/cache/generated/attune-foldkit/artifact-freshness.json"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/generated-freshness.json"
+        "{workspaceRoot}/.attune/cache/generated/attune-foldkit/artifact-freshness.json"
       ]
     }
   }

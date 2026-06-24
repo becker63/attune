@@ -34,8 +34,7 @@ Not run:
 
 Risks:
 - Framework-owned compatibility generated outputs and cache helper APIs remain
-  as demolition scaffolding until Phase 7 can delete, rename, or quarantine
-  them after Ring B and Ring C validation.
+  as implementation routes behind the public `attune-repair` surface after Ring B and Ring C validation.
 
 Follow-ups:
 - Continue Ring B validation.

@@ -22,12 +22,12 @@ Removed surfaces:
 
 Retained compatibility-only surfaces:
 - `packages/home-deployment/src/attune.package.ts`
-- `.attune/cache/generated/home-deployment/attune-operation-registry.ts`
-- `.attune/cache/generated/home-deployment/attune-property-registry.ts`
-- `.attune/cache/generated/home-deployment/attune-type-guidance.ts`
-- `.attune/cache/generated/home-deployment/attune-property-evidence.ts`
-- `.attune/cache/generated/home-deployment/generated-freshness.json`
-- `.attune/cache/evidence/home-deployment/evidence-scaffold.json`
+- `.attune/cache/generated/home-deployment/attune-symbol-registry.ts`
+- `.attune/cache/generated/home-deployment/attune-property-observations.ts`
+- `.attune/cache/generated/home-deployment/attune-schema-observations.ts`
+- `.attune/cache/generated/home-deployment/attune-observation-scaffold.ts`
+- `.attune/cache/generated/home-deployment/artifact-freshness.json`
+- `.attune/cache/observations/home-deployment/observation-scaffold.json`
 
 These retained files are authored compatibility input or local cache artifacts,
 not permanent public workflow truth. Phase 7 should remove or mechanically
@@ -52,11 +52,10 @@ Notes:
 Risks:
 - `packages/home-deployment/src/attune.package.ts` still exports legacy
   declaration names and schema helper exports from `@attune/framework-protocol`.
-- `packages/home-deployment/project.json` still exposes internal compatibility
-  repair target names for registry, type-guidance, properties, generated
-  freshness, and observation/evidence scaffolding. They remain implementation
-  routes behind the public `attune-repair` surface until Phase 7 removes or
-  mechanically renames them.
+- `packages/home-deployment/project.json` still exposes internal mechanical
+  repair target names for symbol registry, schema observations, property
+  observations, artifact freshness, and observation scaffolding. They remain
+  implementation routes behind the public `attune-repair` surface.
 - Provider-domain terms such as proof, observation, evidence, and operation are
   still product vocabulary in the Day-0 runbook model. Phase 7 should separate
   legitimate provider-domain language from framework compatibility nouns.

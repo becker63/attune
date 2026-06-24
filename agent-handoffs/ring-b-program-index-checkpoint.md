@@ -33,8 +33,7 @@ Not run:
 
 Risks:
 - Framework-owned compatibility generated outputs, cache helper APIs, and
-  internal old-noun repair target names remain as demolition scaffolding until
-  Phase 7 can delete, rename, or quarantine them after Ring C validation.
+  internal repair target names are mechanical implementation routes behind public `attune-repair` after Ring C validation.
 
 Follow-ups:
 - Continue Ring C validation with cheap tests only.

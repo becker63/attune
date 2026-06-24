@@ -29,17 +29,18 @@ Retained compatibility-only surfaces:
 - `packages/attune-pi-agent/src/attune.package.ts`
 - `framework/architecture/src/generated/package-contracts/attune-pi-agent/attune.generated.ts`
 - `framework/architecture/src/generated/package-contracts/attune-pi-agent/attune.contract.generated.ts`
-- `.attune/cache/generated/attune-pi-agent/attune-operation-registry.ts`
-- `.attune/cache/generated/attune-pi-agent/attune-property-registry.ts`
-- `.attune/cache/generated/attune-pi-agent/attune-type-guidance.ts`
-- `.attune/cache/generated/attune-pi-agent/attune-property-evidence.ts`
-- `.attune/cache/generated/attune-pi-agent/generated-freshness.json`
-- `.attune/cache/evidence/attune-pi-agent/evidence-scaffold.json`
+- `.attune/cache/generated/attune-pi-agent/attune-symbol-registry.ts`
+- `.attune/cache/generated/attune-pi-agent/attune-property-observations.ts`
+- `.attune/cache/generated/attune-pi-agent/attune-schema-observations.ts`
+- `.attune/cache/generated/attune-pi-agent/attune-observation-scaffold.ts`
+- `.attune/cache/generated/attune-pi-agent/artifact-freshness.json`
+- `.attune/cache/observations/attune-pi-agent/observation-scaffold.json`
 
 These retained files are authored declaration input, framework-owned
 compatibility output, or local cache artifacts. They are not permanent public
-workflow truth; Phase 7 should remove or rename the compatibility APIs and
-helpers once all Ring C packages have parity.
+workflow truth; Phase 9.5 renamed the internal cache routes, and remaining
+compatibility APIs/helpers must be deleted, quarantined, or archived before
+archive readiness.
 
 Validated:
 - `pnpm exec nx run attune-pi-agent:test --skipNxCache`
@@ -55,11 +56,10 @@ Not run:
   destructive actions were not run.
 
 Risks:
-- `packages/attune-pi-agent/project.json` still exposes internal compatibility
-  repair target names for registry, type-guidance, properties, generated
-  freshness, and observation/evidence scaffolding. They remain implementation
-  routes behind the public `attune-repair` surface until Phase 7 removes or
-  mechanically renames them.
+- `packages/attune-pi-agent/project.json` still exposes internal mechanical
+  repair target names for symbol registry, schema observations, property
+  observations, artifact freshness, and observation scaffolding. They remain
+  implementation routes behind the public `attune-repair` surface.
 - `src/attune.package.ts` still imports the legacy schema helper as authored
   compatibility input. It should be replaced by mechanical declaration/query
   helpers once the shared framework compatibility layer is demolished.

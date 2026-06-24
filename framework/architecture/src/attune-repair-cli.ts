@@ -16,11 +16,11 @@ interface RepairProject {
 }
 
 type RepairKind =
-  | "evidence"
-  | "generated"
-  | "properties"
-  | "registry"
-  | "type-guidance"
+  | "artifact-freshness"
+  | "observations"
+  | "property-observations"
+  | "schema-observations"
+  | "symbol-registry"
 
 interface RepairAction {
   readonly kind: "create" | "move" | "update" | "delete" | "noop"
@@ -195,29 +195,31 @@ function indexedPlanReason(plan: AttuneRepairPlan): string {
 
 function repairKindForIndexedPlan(plan: AttuneRepairPlan): RepairKind | null {
   switch (plan.route) {
-    case "attune-repair-cli:registry":
-      return "registry"
-    case "attune-repair-cli:properties":
-      return "properties"
-    case "attune-repair-cli:type-guidance":
-      return "type-guidance"
-    case "attune-repair-cli:evidence":
-      return "evidence"
-    case "attune-repair-cli:generated":
-      return "generated"
+    case "attune-repair-cli:symbol-registry":
+      return "symbol-registry"
+    case "attune-repair-cli:property-observations":
+      return "property-observations"
+    case "attune-repair-cli:schema-observations":
+      return "schema-observations"
+    case "attune-repair-cli:observations":
+      return "observations"
+    case "attune-repair-cli:artifact-freshness":
+      return "artifact-freshness"
     default:
       break
   }
 
   switch (plan.repairKind) {
-    case "operation-registry":
-      return "registry"
-    case "property-evidence":
-      return "evidence"
-    case "type-guidance":
-      return "type-guidance"
-    case "artifact-refresh":
-      return "generated"
+    case "symbol-registry":
+      return "symbol-registry"
+    case "property-observations":
+      return "property-observations"
+    case "schema-observations":
+      return "schema-observations"
+    case "observation-scaffold":
+      return "observations"
+    case "artifact-freshness":
+      return "artifact-freshness"
     default:
       return null
   }
@@ -228,43 +230,43 @@ function materializeRepairKind(
   kind: RepairKind,
 ): readonly RepairAction[] {
   switch (kind) {
-    case "registry":
+    case "symbol-registry":
       return materializeGeneratedText(
-        `.attune/cache/generated/${project.project}/attune-operation-registry.ts`,
-        generatedRegistryContent(project),
-        `${project.project} operation registry projection`,
+        `.attune/cache/generated/${project.project}/attune-symbol-registry.ts`,
+        generatedSymbolRegistryContent(project),
+        `${project.project} symbol registry projection`,
       )
-    case "properties":
+    case "property-observations":
       return materializeGeneratedText(
-        `.attune/cache/generated/${project.project}/attune-property-registry.ts`,
-        generatedPropertyRegistryContent(project),
-        `${project.project} property registry projection`,
+        `.attune/cache/generated/${project.project}/attune-property-observations.ts`,
+        generatedPropertyObservationsContent(project),
+        `${project.project} property observation projection`,
       )
-    case "type-guidance":
+    case "schema-observations":
       return materializeGeneratedText(
-        `.attune/cache/generated/${project.project}/attune-type-guidance.ts`,
-        generatedTypeGuidanceContent(project),
-        `${project.project} type-guidance projection`,
+        `.attune/cache/generated/${project.project}/attune-schema-observations.ts`,
+        generatedSchemaObservationsContent(project),
+        `${project.project} schema observation projection`,
       )
-    case "evidence":
+    case "observations":
       return [
         ...materializeGeneratedText(
-          `.attune/cache/generated/${project.project}/attune-property-evidence.ts`,
-          generatedEvidenceScaffoldContent(project),
-          `${project.project} evidence scaffold projection`,
+          `.attune/cache/generated/${project.project}/attune-observation-scaffold.ts`,
+          generatedObservationScaffoldContent(project),
+          `${project.project} observation scaffold projection`,
         ),
         ...materializeGeneratedText(
-          `.attune/cache/evidence/${project.project}/evidence-scaffold.json`,
-          generatedEvidenceScaffoldJson(project),
-          `${project.project} evidence cache projection`,
+          `.attune/cache/observations/${project.project}/observation-scaffold.json`,
+          generatedObservationScaffoldJson(project),
+          `${project.project} observation cache projection`,
         ),
       ]
-    case "generated":
+    case "artifact-freshness":
       return [
         ...materializeGeneratedText(
-          `.attune/cache/generated/${project.project}/generated-freshness.json`,
+          `.attune/cache/generated/${project.project}/artifact-freshness.json`,
           generatedFreshnessContent(project),
-          `${project.project} generated freshness projection`,
+          `${project.project} artifact freshness projection`,
         ),
         ...(safeRelocationProjectIds.has(project.project)
           ? [
@@ -400,62 +402,62 @@ function materializeGeneratedText(
   }]
 }
 
-function generatedRegistryContent(project: RepairProject): string {
-  return generatedTs(project, "operation-registry", [
-    `export const packageId = ${JSON.stringify(project.project)} as const`,
-    `export const packageRoot = ${JSON.stringify(project.projectRoot)} as const`,
+function generatedSymbolRegistryContent(project: RepairProject): string {
+  return generatedTs(project, "symbol-registry", [
+    `export const projectId = ${JSON.stringify(project.project)} as const`,
+    `export const projectRoot = ${JSON.stringify(project.projectRoot)} as const`,
     "export const sourceDeclaration = \"src/attune.package.ts\" as const",
     `export const projectFactsSource = ${JSON.stringify(projectFactsPath(project))} as const`,
-    `export const operationRegistryProjection = ${JSON.stringify({
+    `export const symbolRegistryProjection = ${JSON.stringify({
       generatedFrom: projectFactsPath(project),
-      packageId: project.project,
-      projection: "operation-registry",
+      projectId: project.project,
+      projection: "symbol-registry",
     }, null, 2)} as const`,
   ])
 }
 
-function generatedPropertyRegistryContent(project: RepairProject): string {
-  return generatedTs(project, "property-registry", [
-    `export const packageId = ${JSON.stringify(project.project)} as const`,
-    `export const propertyRegistryProjection = ${JSON.stringify({
+function generatedPropertyObservationsContent(project: RepairProject): string {
+  return generatedTs(project, "property-observations", [
+    `export const projectId = ${JSON.stringify(project.project)} as const`,
+    `export const propertyObservationsProjection = ${JSON.stringify({
       generatedFrom: projectFactsPath(project),
-      packageId: project.project,
-      projection: "property-registry",
+      projectId: project.project,
+      projection: "property-observations",
     }, null, 2)} as const`,
   ])
 }
 
-function generatedTypeGuidanceContent(project: RepairProject): string {
-  return generatedTs(project, "type-guidance", [
-    `export const packageId = ${JSON.stringify(project.project)} as const`,
-    `export const typeGuidanceProjection = ${JSON.stringify({
+function generatedSchemaObservationsContent(project: RepairProject): string {
+  return generatedTs(project, "schema-observations", [
+    `export const projectId = ${JSON.stringify(project.project)} as const`,
+    `export const schemaObservationsProjection = ${JSON.stringify({
       generatedFrom: projectFactsPath(project),
-      packageId: project.project,
-      projection: "type-guidance",
+      projectId: project.project,
+      projection: "schema-observations",
     }, null, 2)} as const`,
   ])
 }
 
-function generatedEvidenceScaffoldContent(project: RepairProject): string {
-  return generatedTs(project, "property-evidence", [
-    `export const packageId = ${JSON.stringify(project.project)} as const`,
-    `export const PropertyEvidenceScaffold = ${JSON.stringify({
-      expectedEvents: ["property-run", "law-observed", "atom-movement"],
+function generatedObservationScaffoldContent(project: RepairProject): string {
+  return generatedTs(project, "observation-scaffold", [
+    `export const projectId = ${JSON.stringify(project.project)} as const`,
+    `export const ObservationScaffold = ${JSON.stringify({
+      expectedEvents: ["property-run", "diagnostic-rule-observed", "atom-movement"],
       generatedFrom: projectFactsPath(project),
-      packageId: project.project,
-      packageRoot: project.projectRoot,
-      projection: "property-evidence",
+      projectId: project.project,
+      projectRoot: project.projectRoot,
+      projection: "observation-scaffold",
     }, null, 2)} as const`,
   ])
 }
 
-function generatedEvidenceScaffoldJson(project: RepairProject): string {
+function generatedObservationScaffoldJson(project: RepairProject): string {
   return `${JSON.stringify({
     generatedBy: "attune-repair",
     generatedFrom: projectFactsPath(project),
-    packageId: project.project,
-    packageRoot: project.projectRoot,
-    projection: "evidence-scaffold",
+    projectId: project.project,
+    projectRoot: project.projectRoot,
+    projection: "observation-scaffold",
   }, null, 2)}\n`
 }
 
@@ -477,9 +479,9 @@ function generatedFreshnessContent(project: RepairProject): string {
 
   return `${JSON.stringify({
     generatedBy: "attune-repair",
-    packageId: project.project,
-    packageRoot: project.projectRoot,
-    projection: "generated-freshness",
+    projectId: project.project,
+    projectRoot: project.projectRoot,
+    projection: "artifact-freshness",
     artifacts,
   }, null, 2)}\n`
 }
@@ -491,7 +493,7 @@ function generatedTs(
 ): string {
   return [
     "/* @generated by workspace:attune-repair. Do not edit directly. */",
-    `/* Projection: ${projection}; Package: ${project.project}. */`,
+    `/* Projection: ${projection}; Project: ${project.project}. */`,
     ...body,
     "",
   ].join("\n")
@@ -533,11 +535,11 @@ function readRepairKind(): RepairKind | null {
   const kind = readArg("--kind")
   if (kind === null) return null
   if (
-    kind === "evidence" ||
-    kind === "generated" ||
-    kind === "properties" ||
-    kind === "registry" ||
-    kind === "type-guidance"
+    kind === "artifact-freshness" ||
+    kind === "observations" ||
+    kind === "property-observations" ||
+    kind === "schema-observations" ||
+    kind === "symbol-registry"
   ) {
     return kind
   }

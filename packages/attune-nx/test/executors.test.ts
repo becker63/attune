@@ -110,7 +110,7 @@ describe("attune-nx executors", () => {
   it("normalizes generated artifact intent with provenance metadata", () => {
     const normalized = normalizeGeneratedOptions({
       operation: "verify-provenance",
-      artifact: "source-bom",
+      artifact: "source-artifacts",
       generator: "@attune/nx:effect-service",
       staleOutputPolicy: "fail",
       provenance: {
@@ -128,7 +128,7 @@ describe("attune-nx executors", () => {
       action: {
         kind: "generated",
         operation: "verify-provenance",
-        artifact: "source-bom",
+        artifact: "source-artifacts",
         generator: "@attune/nx:effect-service",
         staleOutputPolicy: "fail",
       },
@@ -284,7 +284,7 @@ describe("attune-nx executors", () => {
       {
         targetProject: "attune-nx",
         operation: "check",
-        artifact: "package-contract",
+        artifact: "project-facts",
         outputs: ["packages/attune-nx/src/attune.package.ts"],
         dryRun: false,
       },
@@ -546,7 +546,7 @@ describe("attune-nx executors", () => {
         parameters: {
           allSafe: true,
           project: "attuned-discovery",
-          kind: "registry",
+          kind: "symbol-registry",
           diagnostic: "D123",
         },
         dryRun: false,
@@ -566,7 +566,7 @@ describe("attune-nx executors", () => {
           "--project",
           "attuned-discovery",
           "--kind",
-          "registry",
+          "symbol-registry",
           "--diagnostic",
           "D123",
           "--all-safe",
@@ -777,7 +777,7 @@ describe("attune-nx executors", () => {
     const diagnostics = captureDiagnostics(() =>
       normalizeGeneratedOptions({
         operation: "sync",
-        artifact: "package-contract",
+        artifact: "project-facts",
         provenance: {
           owner: "attune-nx",
           script: "tsx scripts/sync.ts",

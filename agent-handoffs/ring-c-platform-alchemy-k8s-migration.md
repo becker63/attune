@@ -25,12 +25,12 @@ Removed surfaces:
 
 Retained compatibility-only surfaces:
 - `packages/platform-alchemy-k8s/src/attune.package.ts`
-- `.attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts`
-- `.attune/cache/generated/platform-alchemy-k8s/attune-property-registry.ts`
-- `.attune/cache/generated/platform-alchemy-k8s/attune-type-guidance.ts`
-- `.attune/cache/generated/platform-alchemy-k8s/attune-property-evidence.ts`
-- `.attune/cache/generated/platform-alchemy-k8s/generated-freshness.json`
-- `.attune/cache/evidence/platform-alchemy-k8s/evidence-scaffold.json`
+- `.attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts`
+- `.attune/cache/generated/platform-alchemy-k8s/attune-property-observations.ts`
+- `.attune/cache/generated/platform-alchemy-k8s/attune-schema-observations.ts`
+- `.attune/cache/generated/platform-alchemy-k8s/attune-observation-scaffold.ts`
+- `.attune/cache/generated/platform-alchemy-k8s/artifact-freshness.json`
+- `.attune/cache/observations/platform-alchemy-k8s/observation-scaffold.json`
 
 These retained files are authored compatibility input or local cache artifacts,
 not permanent public workflow truth. Phase 7 should remove or mechanically
@@ -55,8 +55,8 @@ Risks:
 - `packages/platform-alchemy-k8s/src/attune.package.ts` still exports legacy
   declaration names and schema helper exports from `@attune/framework-protocol`.
 - `packages/platform-alchemy-k8s/project.json` still exposes internal
-  compatibility repair target names for registry, type-guidance, properties,
-  generated freshness, and observation/evidence scaffolding. They remain
+  mechanical repair target names for symbol registry, schema observations, property observations,
+  artifact freshness, and observation scaffolding. They remain
   implementation routes behind the public `attune-repair` surface until Phase
   7 removes or mechanically renames them.
 - Provider-domain terms such as provider evidence and operation remain

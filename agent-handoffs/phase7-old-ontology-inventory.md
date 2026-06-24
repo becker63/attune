@@ -35,16 +35,16 @@ Inventory:
   diagnostics, repair rows, and cache-owned generated artifacts replaced the
   active check/repair consumers. These files must stay out of checked-in
   workflow truth.
-- Internal repair target names `attune:repair-registry`,
-  `attune:repair-properties`, `attune:repair-type-guidance`, and
-  `attune:repair-evidence` in project `project.json` files:
-  rename mechanically. Replacement: program-index repair rows with mechanical
-  repair kinds and public `attune-repair` targets.
-- `.attune/cache/generated/**/attune-operation-registry.ts`,
-  `attune-property-registry.ts`, `attune-type-guidance.ts`,
-  `attune-property-evidence.ts`, and `.attune/cache/evidence/**`: cache-only
-  compatibility outputs. They are not checked in, but their producing repair
-  kinds and names should be mechanically renamed or deleted.
+- Internal repair target names in project `project.json` files were renamed to
+  `attune:repair-symbol-registry`, `attune:repair-property-observations`,
+  `attune:repair-schema-observations`, `attune:repair-observations`, and
+  `attune:repair-artifact-freshness`. Replacement: program-index repair rows
+  with mechanical repair kinds and public `attune-repair` targets.
+- `.attune/cache/generated/**/attune-symbol-registry.ts`,
+  `attune-property-observations.ts`, `attune-schema-observations.ts`,
+  `attune-observation-scaffold.ts`, and `.attune/cache/observations/**`:
+  cache-only outputs. They are not checked in, and their producing repair kinds now
+  use mechanical names behind the public `attune-repair` targets.
 - `framework/protocol/src/package-contract/**`,
   `framework/protocol/src/descriptors/**`, `framework/protocol/src/laws/**`,
   `framework/protocol/src/obligations/**`, `framework/protocol/src/evidence/**`,

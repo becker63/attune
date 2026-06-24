@@ -41,10 +41,11 @@ Not run:
 
 Risks:
 - Shared framework-owned compatibility generated outputs, cache helper APIs,
-  authored declaration helpers, and internal old-noun repair target names
-  remain as demolition scaffolding. The user expectation is explicit: these
-  compatibility APIs and helpers should be removed, renamed, quarantined, or
-  archived by the time this migration is finished, not preserved permanently.
+  and authored declaration helpers remain as demolition scaffolding. Phase 9.5
+  renamed the internal repair target names; the user expectation is explicit:
+  remaining compatibility APIs and helpers should be removed, renamed,
+  quarantined, or archived by the time this migration is finished, not
+  preserved permanently.
 - Ring C provider-domain language still includes terms such as proof,
   observation, evidence, and operation. Phase 7 must separate legitimate
   product/provider vocabulary from old framework ontology before final drift

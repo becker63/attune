@@ -264,8 +264,8 @@ describe("@attune/framework-runtime", () => {
         artifactId: "demo:registry",
         protocolId: "attune/package/demo",
         packageId: "demo",
-        path: "packages/demo/src/generated/operation-registry.ts",
-        generatorId: "@attune/framework-nx:operation-registry",
+        path: "packages/demo/src/generated/symbol-registry.ts",
+        generatorId: "@attune/framework-nx:symbol-registry",
         expectedHash: "expected",
         actualHash: "actual",
         status: "stale",
@@ -585,10 +585,10 @@ describe("@attune/framework-runtime", () => {
       repair.route,
       repair.validationAfterTargetsJson,
     ])).toEqual([
-      ["needs-review", "generated-companion-relocation", "attune-repair-cli:generated", "[\"demo:attune-check\",\"demo:typecheck\"]"],
-      ["needs-review", "generated-companion-relocation", "attune-repair-cli:generated", "[\"demo:attune-check\",\"demo:typecheck\"]"],
-      ["needs-review", "generated-companion-relocation", "attune-repair-cli:generated", "[\"demo:attune-check\",\"demo:typecheck\"]"],
-      ["needs-review", "source-ownership-projection", "attune-repair-cli:generated", "[\"workspace:attune-check\"]"],
+      ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
+      ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
+      ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
+      ["needs-review", "source-ownership-projection", "attune-repair-cli:artifact-freshness", "[\"workspace:attune-check\"]"],
     ])
   })
 
@@ -627,8 +627,8 @@ describe("@attune/framework-runtime", () => {
       repair.nxTarget,
       repair.route,
     ])).toEqual([
-      ["safe", "artifact-refresh", "demo:attune-repair", "attune-repair-cli:generated"],
-      ["needs-review", "generated-companion-relocation", "demo:attune-repair", "attune-repair-cli:generated"],
+      ["safe", "artifact-freshness", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
+      ["needs-review", "artifact-relocation", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
       ["manual-only", "checked-in-report-removal", "workspace:attune-repair", "manual:remove-checked-in-report"],
     ])
   })
@@ -656,10 +656,10 @@ describe("@attune/framework-runtime", () => {
       repair.nxTarget,
       repair.route,
     ])).toEqual([
-      ["safe", "artifact-refresh", "demo:attune-repair", "attune-repair-cli:generated"],
-      ["needs-review", "generated-companion-relocation", "demo:attune-repair", "attune-repair-cli:generated"],
-      ["needs-review", "source-ownership-projection", "workspace:attune-repair", "attune-repair-cli:generated"],
-      ["needs-review", "source-ownership-projection", "workspace:attune-repair", "attune-repair-cli:generated"],
+      ["safe", "artifact-freshness", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
+      ["needs-review", "artifact-relocation", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
+      ["needs-review", "source-ownership-projection", "workspace:attune-repair", "attune-repair-cli:artifact-freshness"],
+      ["needs-review", "source-ownership-projection", "workspace:attune-repair", "attune-repair-cli:artifact-freshness"],
     ])
   })
 
@@ -823,8 +823,8 @@ describe("@attune/framework-runtime", () => {
         artifactId: "demo:registry",
         protocolId: "attune/package/demo",
         packageId: "demo",
-        path: "packages/demo/src/generated/operation-registry.ts",
-        generatorId: "@attune/framework-nx:operation-registry",
+        path: "packages/demo/src/generated/symbol-registry.ts",
+        generatorId: "@attune/framework-nx:symbol-registry",
         expectedHash: "expected",
         actualHash: "actual",
         status: "current",
@@ -857,8 +857,8 @@ describe("@attune/framework-runtime", () => {
           artifactId: "demo:registry",
           protocolId: "attune/package/demo",
           packageId: "demo",
-          path: "packages/demo/src/generated/operation-registry.ts",
-          generatorId: "@attune/framework-nx:operation-registry",
+          path: "packages/demo/src/generated/symbol-registry.ts",
+          generatorId: "@attune/framework-nx:symbol-registry",
           expectedHash: "expected",
           actualHash: "actual",
           status: "stale",
@@ -1007,7 +1007,7 @@ describe("@attune/framework-runtime", () => {
     expect(result.repairPlan?.actions[0]).toMatchObject({
       target: "demo:attune-repair",
       options: expect.objectContaining({
-        internalGenerator: "@attune/framework-nx:atom-view-edge",
+        internalGenerator: "@attune/framework-nx:atom-projection-edge",
       }),
     })
   })
@@ -1040,7 +1040,7 @@ describe("@attune/framework-runtime", () => {
     expect(getRepairPlan(input, "delta:demo:project:view-movement")?.actions[0]).toMatchObject({
       target: "demo:attune-repair",
       options: expect.objectContaining({
-        internalGenerator: "@attune/framework-nx:atom-view-edge",
+        internalGenerator: "@attune/framework-nx:atom-projection-edge",
       }),
     })
   })
@@ -1099,8 +1099,8 @@ describe("@attune/framework-runtime", () => {
       artifactId: "sqlite-demo:registry",
       protocolId: descriptor.protocolId,
       packageId: descriptor.packageId,
-      path: "packages/sqlite-demo/src/generated/operation-registry.ts",
-      generatorId: "@attune/framework-nx:operation-registry",
+      path: "packages/sqlite-demo/src/generated/symbol-registry.ts",
+      generatorId: "@attune/framework-nx:symbol-registry",
       expectedHash: "expected",
       actualHash: "actual",
       status: "stale",

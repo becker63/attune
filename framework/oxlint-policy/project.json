@@ -87,24 +87,24 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "effect-oxlint-policy:attune:repair-registry",
-            "effect-oxlint-policy:attune:repair-properties",
-            "effect-oxlint-policy:attune:repair-type-guidance",
-            "effect-oxlint-policy:attune:repair-evidence",
-            "effect-oxlint-policy:attune:repair-generated"
+            "effect-oxlint-policy:attune:repair-symbol-registry",
+            "effect-oxlint-policy:attune:repair-property-observations",
+            "effect-oxlint-policy:attune:repair-schema-observations",
+            "effect-oxlint-policy:attune:repair-observations",
+            "effect-oxlint-policy:attune:repair-artifact-freshness"
           ]
         },
         "dryRun": false
       }
     },
-    "attune:repair-registry": {
+    "attune:repair-symbol-registry": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for operation registry. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "registry",
+          "repairKind": "symbol-registry",
           "safeOnly": true
         }
       },
@@ -116,25 +116,25 @@
         "parameters": {
           "allSafe": true,
           "project": "effect-oxlint-policy",
-          "kind": "registry"
+          "kind": "symbol-registry"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/effect-oxlint-policy/attune-operation-registry.ts"
+          ".attune/cache/generated/effect-oxlint-policy/attune-symbol-registry.ts"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/attune-operation-registry.ts"
+        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/attune-symbol-registry.ts"
       ]
     },
-    "attune:repair-properties": {
+    "attune:repair-property-observations": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for property registry. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "properties",
+          "repairKind": "property-observations",
           "safeOnly": true
         }
       },
@@ -146,25 +146,25 @@
         "parameters": {
           "allSafe": true,
           "project": "effect-oxlint-policy",
-          "kind": "properties"
+          "kind": "property-observations"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/effect-oxlint-policy/attune-property-registry.ts"
+          ".attune/cache/generated/effect-oxlint-policy/attune-property-observations.ts"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/attune-property-registry.ts"
+        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/attune-property-observations.ts"
       ]
     },
-    "attune:repair-type-guidance": {
+    "attune:repair-schema-observations": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for type-guidance. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "type-guidance",
+          "repairKind": "schema-observations",
           "safeOnly": true
         }
       },
@@ -176,25 +176,25 @@
         "parameters": {
           "allSafe": true,
           "project": "effect-oxlint-policy",
-          "kind": "type-guidance"
+          "kind": "schema-observations"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/effect-oxlint-policy/attune-type-guidance.ts"
+          ".attune/cache/generated/effect-oxlint-policy/attune-schema-observations.ts"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/attune-type-guidance.ts"
+        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/attune-schema-observations.ts"
       ]
     },
-    "attune:repair-evidence": {
+    "attune:repair-observations": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for evidence scaffold. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "evidence",
+          "repairKind": "observations",
           "safeOnly": true
         }
       },
@@ -206,29 +206,29 @@
         "parameters": {
           "allSafe": true,
           "project": "effect-oxlint-policy",
-          "kind": "evidence"
+          "kind": "observations"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/effect-oxlint-policy/attune-property-evidence.ts"
+          ".attune/cache/generated/effect-oxlint-policy/attune-observation-scaffold.ts"
         ],
         "evidenceOutputs": [
-          ".attune/cache/evidence/effect-oxlint-policy/evidence-scaffold.json"
+          ".attune/cache/observations/effect-oxlint-policy/observation-scaffold.json"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/attune-property-evidence.ts",
-        "{workspaceRoot}/.attune/cache/evidence/effect-oxlint-policy/evidence-scaffold.json"
+        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/effect-oxlint-policy/observation-scaffold.json"
       ]
     },
-    "attune:repair-generated": {
+    "attune:repair-artifact-freshness": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Internal Attune Framework repair for generated freshness. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer effect-oxlint-policy:attune-repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
-          "repairKind": "generated",
+          "repairKind": "artifact-freshness",
           "safeOnly": true
         }
       },
@@ -240,15 +240,15 @@
         "parameters": {
           "allSafe": true,
           "project": "effect-oxlint-policy",
-          "kind": "generated"
+          "kind": "artifact-freshness"
         },
         "dryRun": false,
         "outputs": [
-          ".attune/cache/generated/effect-oxlint-policy/generated-freshness.json"
+          ".attune/cache/generated/effect-oxlint-policy/artifact-freshness.json"
         ]
       },
       "outputs": [
-        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/generated-freshness.json"
+        "{workspaceRoot}/.attune/cache/generated/effect-oxlint-policy/artifact-freshness.json"
       ]
     }
   }

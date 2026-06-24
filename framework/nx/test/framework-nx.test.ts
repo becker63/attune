@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   AttuneRepairPlanSchema,
   FrameworkNxActionPlanSchema,
-  atomViewEdgeAction,
+  atomProjectionEdgeAction,
   createDescriptorHashRecord,
   createFrameworkMaterializationPlan,
   createGeneratedArtifact,
@@ -13,13 +13,13 @@ import {
   hashGeneratedArtifactContent,
   ingestNxProjectGraphRows,
   nxProjectGraphToProgramIndexRows,
-  operationRegistryAction,
+  symbolRegistryAction,
   programHarnessAction,
-  propertyEvidenceAction,
+  observationScaffoldAction,
   protocolMaterializeAction,
   repairPlanForDiagnostic,
   repairPlanFromProgramIndexRow,
-  typeGuidanceAction,
+  schemaObservationsAction,
   type FrameworkNxGeneratedArtifactKind,
 } from "../src/index.js"
 import type { AttuneProtocolDescriptor } from "@attune/framework-protocol"
@@ -62,18 +62,18 @@ describe("@attune/framework-nx", () => {
   })
 
   it("plans the deterministic code actions the language service can offer", () => {
-    expect(operationRegistryAction("demo", "packages/demo/src/attune.package.ts", "op").generatorOrTarget).toBe(
-      "@attune/framework-nx:operation-registry",
+    expect(symbolRegistryAction("demo", "packages/demo/src/attune.package.ts", "op").generatorOrTarget).toBe(
+      "@attune/framework-nx:symbol-registry",
     )
     expect(programHarnessAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
       "@attune/framework-nx:program-harness",
     )
-    expect(propertyEvidenceAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
-      "@attune/framework-nx:protocol-evidence",
+    expect(observationScaffoldAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
+      "@attune/framework-nx:observation-scaffold",
     )
-    expect(atomViewEdgeAction("demo", "packages/demo/src/attune.package.ts").title).toContain("atom view")
-    expect(typeGuidanceAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
-      "@attune/framework-nx:type-guidance",
+    expect(atomProjectionEdgeAction("demo", "packages/demo/src/attune.package.ts").title).toContain("atom projection")
+    expect(schemaObservationsAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
+      "@attune/framework-nx:schema-observations",
     )
     expect(frameworkDiagnosticsAction("demo", "packages/demo/src/attune.package.ts")).toMatchObject({
       generatorOrTarget: "workspace:attune-check",
@@ -94,46 +94,46 @@ describe("@attune/framework-nx", () => {
     expect(artifact.content).toContain('"status": "optional"')
   })
 
-  it("generates operation registry content without source-local runtime imports", () => {
-    const artifact = createGeneratedArtifact(descriptor, "operation-registry")
+  it("generates symbol registry content without source-local runtime imports", () => {
+    const artifact = createGeneratedArtifact(descriptor, "symbol-registry")
 
-    expect(artifact.path).toBe(".attune/cache/generated/demo/attune-operation-registry.ts")
-    expect(artifact.generatorId).toBe("@attune/framework-nx:operation-registry")
-    expect(artifact.content).toContain("export const OperationRegistry")
-    expect(artifact.content).toContain('"id": "project"')
-    expect(artifact.content).toContain('"kind": "projection"')
+    expect(artifact.path).toBe(".attune/cache/generated/demo/attune-symbol-registry.ts")
+    expect(artifact.generatorId).toBe("@attune/framework-nx:symbol-registry")
+    expect(artifact.content).toContain("export const SymbolRegistry")
+    expect(artifact.content).toContain('"symbolId": "project"')
+    expect(artifact.content).toContain('"symbolKind": "projection"')
     expect(artifact.content).not.toMatch(/from "\.\.\/attune\.package\.js"/)
     expect(artifact.contentHash).toBe(hashGeneratedArtifactContent(artifact.content))
   })
 
-  it("generates property evidence scaffold content", () => {
-    const artifact = createGeneratedArtifact(descriptor, "property-evidence")
+  it("generates observation scaffold content", () => {
+    const artifact = createGeneratedArtifact(descriptor, "observation-scaffold")
 
-    expect(artifact.content).toContain("export const PropertyEvidenceScaffold")
+    expect(artifact.content).toContain("export const ObservationScaffold")
     expect(artifact.content).toContain('"property-run"')
-    expect(artifact.content).toContain('"law-observed"')
+    expect(artifact.content).toContain('"diagnostic-rule-observed"')
     expect(artifact.content).toContain('"atom-movement"')
   })
 
-  it("generates atom view edge content", () => {
-    const artifact = createGeneratedArtifact(descriptor, "atom-view-edges")
+  it("generates atom projection edge content", () => {
+    const artifact = createGeneratedArtifact(descriptor, "atom-projection-edges")
 
-    expect(artifact.content).toContain("export const AtomViewEdges")
+    expect(artifact.content).toContain("export const AtomProjectionEdges")
     expect(artifact.content).toContain('"reactivityKey": "demo.changed"')
     expect(artifact.content).toContain('"atomId": "demoView"')
   })
 
-  it("generates type-guidance refresh content", () => {
-    const artifact = createGeneratedArtifact(descriptor, "type-guidance")
+  it("generates schema-observations refresh content", () => {
+    const artifact = createGeneratedArtifact(descriptor, "schema-observations")
 
-    expect(artifact.content).toContain("export const PackageTypeGuidance")
+    expect(artifact.content).toContain("export const SchemaObservations")
     expect(artifact.content).toContain('"schema": "DemoEvent"')
     expect(artifact.content).toContain('"project.atom-graph-movement"')
-    expect(artifact.content).toContain('"project.law.projection.deterministic-replay"')
+    expect(artifact.content).toContain('"project.diagnostic-rule.projection.deterministic-replay"')
   })
 
   it("records descriptor hash and generated artifact hash state", () => {
-    const artifact = createGeneratedArtifact(descriptor, "operation-registry")
+    const artifact = createGeneratedArtifact(descriptor, "symbol-registry")
     const current = createGeneratedArtifactRecord(descriptor, artifact, artifact.content)
     const stale = createGeneratedArtifactRecord(descriptor, artifact, `${artifact.content}\n// stale`)
     const missing = createGeneratedArtifactRecord(descriptor, artifact)
@@ -152,26 +152,26 @@ describe("@attune/framework-nx", () => {
   })
 
   it("builds a full protocol materialization plan", () => {
-    const existingContent = createGeneratedArtifact(descriptor, "operation-registry").content
+    const existingContent = createGeneratedArtifact(descriptor, "symbol-registry").content
     const plan = createFrameworkMaterializationPlan(descriptor, {
-      ".attune/cache/generated/demo/attune-operation-registry.ts": existingContent,
+      ".attune/cache/generated/demo/attune-symbol-registry.ts": existingContent,
     })
 
     expect(plan.actions.map((action) => action.actionId)).toEqual([
       "attune.protocol.materialize",
       "attune.protocol.framework-diagnostics",
       "attune.protocol.program-harness",
-      "attune.protocol.operation-registry",
-      "attune.protocol.property-evidence",
-      "attune.protocol.atom-view-edge",
-      "attune.protocol.type-guidance",
+      "attune.program.symbol-registry",
+      "attune.program.observation-scaffold",
+      "attune.program.atom-projection-edge",
+      "attune.program.schema-observations",
     ])
     expect(plan.generatedArtifacts.map((artifact) => artifact.kind satisfies FrameworkNxGeneratedArtifactKind)).toEqual([
       "program-harness",
-      "operation-registry",
-      "property-evidence",
-      "atom-view-edges",
-      "type-guidance",
+      "symbol-registry",
+      "observation-scaffold",
+      "atom-projection-edges",
+      "schema-observations",
     ])
     expect(plan.generatedArtifactRecords.map((record) => record.status)).toEqual([
       "missing",
@@ -188,7 +188,7 @@ describe("@attune/framework-nx", () => {
       "packages/demo/protocol-delta-report.json",
       "packages/demo/evidence-summary.md",
       ".attune/cache/protocol-delta-report.json",
-      "packages/demo/src/generated/attune-operation-registry.ts",
+      "packages/demo/src/generated/attune-symbol-registry.ts",
     ])
 
     expect(findings.map((finding) => finding.path)).toEqual([
@@ -201,21 +201,21 @@ describe("@attune/framework-nx", () => {
   it("routes repairable diagnostics to public attune-repair targets", () => {
     const repair = repairPlanForDiagnostic({
       diagnosticId: "D123",
-      code: "attune/protocol/missing-generated-registry",
+      code: "attune/program-index/missing-symbol-registry",
       packageId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
-      explanation: "Operation registry is missing.",
+      explanation: "Symbol registry artifact is missing.",
     })
 
     expect(repair).toBeDefined()
     expect(repair?.command).toBe("nx run demo:attune-repair --diagnostic D123")
     expect(repair?.target).toBe("demo:attune-repair")
-    expect(repair?.generator).toBe("@attune/framework-nx:operation-registry")
+    expect(repair?.generator).toBe("@attune/framework-nx:symbol-registry")
     expect(repair?.changes[0]).toMatchObject({
-      path: ".attune/cache/generated/demo/attune-operation-registry.ts",
+      path: ".attune/cache/generated/demo/attune-symbol-registry.ts",
       generated: true,
     })
-    expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).repairKind).toBe("operation-registry")
+    expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).repairKind).toBe("symbol-registry")
   })
 
   it("routes safe program-index repair rows to public Nx targets", () => {
@@ -229,11 +229,11 @@ describe("@attune/framework-nx", () => {
       message: "artifact fact is missing for generated registry.",
       safety: "safe",
       nx_target: "demo:attune-repair",
-      repair_kind: "artifact-refresh",
-      route: "attune-repair-cli:generated",
+      repair_kind: "artifact-freshness",
+      route: "attune-repair-cli:artifact-freshness",
       payload_json: JSON.stringify({
         cause: {
-          path: ".attune/cache/generated/demo/attune-operation-registry.ts",
+          path: ".attune/cache/generated/demo/attune-symbol-registry.ts",
         },
       }),
       validation_after_targets_json: JSON.stringify([
@@ -248,10 +248,10 @@ describe("@attune/framework-nx", () => {
       safety: "safe",
       target: "demo:attune-repair",
       command: "nx run demo:attune-repair --diagnostic diagnostic:demo:artifact",
-      route: "attune-repair-cli:generated",
-      repairKind: "artifact-refresh",
+      route: "attune-repair-cli:artifact-freshness",
+      repairKind: "artifact-freshness",
       changes: [{
-        path: ".attune/cache/generated/demo/attune-operation-registry.ts",
+        path: ".attune/cache/generated/demo/attune-symbol-registry.ts",
         kind: "regenerate",
         generated: true,
       }],
@@ -260,7 +260,7 @@ describe("@attune/framework-nx", () => {
         "demo:typecheck",
       ],
     })
-    expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).route).toBe("attune-repair-cli:generated")
+    expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).route).toBe("attune-repair-cli:artifact-freshness")
   })
 
   it("keeps needs-review and manual-only indexed repairs non-safe", () => {
@@ -272,7 +272,7 @@ describe("@attune/framework-nx", () => {
       safety: "needs-review",
       nx_target: "demo:attune-repair",
       repair_kind: "source-file-ownership-projection",
-      route: "attune-repair-cli:generated",
+      route: "attune-repair-cli:artifact-freshness",
       created_at: "2026-06-24T00:00:00.000Z",
     })
     const manual = repairPlanFromProgramIndexRow({

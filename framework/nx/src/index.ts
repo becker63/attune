@@ -70,10 +70,10 @@ export const AttuneRepairPlanSchema = Schema.Struct({
 
 export const FrameworkNxGeneratedArtifactKindSchema = Schema.Literals([
   "program-harness",
-  "operation-registry",
-  "property-evidence",
-  "atom-view-edges",
-  "type-guidance",
+  "symbol-registry",
+  "observation-scaffold",
+  "atom-projection-edges",
+  "schema-observations",
 ] as const)
 export type FrameworkNxGeneratedArtifactKind = typeof FrameworkNxGeneratedArtifactKindSchema.Type
 
@@ -114,10 +114,10 @@ export interface FrameworkNxMaterializationPlan {
 const generatorTargets = {
   protocolMaterialize: "@attune/framework-nx:protocol-materialize",
   programHarness: "@attune/framework-nx:program-harness",
-  operationRegistry: "@attune/framework-nx:operation-registry",
-  propertyEvidence: "@attune/framework-nx:protocol-evidence",
-  atomViewEdge: "@attune/framework-nx:atom-view-edge",
-  typeGuidance: "@attune/framework-nx:type-guidance",
+  symbolRegistry: "@attune/framework-nx:symbol-registry",
+  observationScaffold: "@attune/framework-nx:observation-scaffold",
+  atomProjectionEdge: "@attune/framework-nx:atom-projection-edge",
+  schemaObservations: "@attune/framework-nx:schema-observations",
   frameworkDiagnostics: "workspace:attune-check",
   packageContract: "@attune/nx:package-contract",
   effectService: "@attune/nx:effect-service",
@@ -130,55 +130,57 @@ export const frameworkRepairTargets = {
   workspaceRepair: "workspace:attune-repair",
   projectCheck: (project: string): string => `${project}:attune-check`,
   projectRepair: (project: string): string => `${project}:attune-repair`,
-  internalProjectRepairRegistry: (project: string): string => `${project}:attune:repair-registry`,
-  internalProjectRepairProperties: (project: string): string => `${project}:attune:repair-properties`,
-  internalProjectRepairTypeGuidance: (project: string): string => `${project}:attune:repair-type-guidance`,
-  internalProjectRepairEvidence: (project: string): string => `${project}:attune:repair-evidence`,
-  internalProjectRepairGenerated: (project: string): string => `${project}:attune:repair-generated`,
+  internalProjectRepairSymbolRegistry: (project: string): string => `${project}:attune:repair-symbol-registry`,
+  internalProjectRepairPropertyObservations: (project: string): string =>
+    `${project}:attune:repair-property-observations`,
+  internalProjectRepairSchemaObservations: (project: string): string => `${project}:attune:repair-schema-observations`,
+  internalProjectRepairObservations: (project: string): string => `${project}:attune:repair-observations`,
+  internalProjectRepairArtifactFreshness: (project: string): string =>
+    `${project}:attune:repair-artifact-freshness`,
 } as const
 
 const repairRoutes = {
-  "attune/protocol/missing-package-contract": {
+  "attune/program-index/missing-project-facts": {
     generator: generatorTargets.packageContract,
-    repairKind: "package-contract",
+    repairKind: "project-facts",
     changePath: "src/attune.package.ts",
   },
-  "attune/protocol/stale-package-contract": {
+  "attune/program-index/stale-project-facts": {
     generator: generatorTargets.packageContract,
-    repairKind: "package-contract",
+    repairKind: "project-facts",
     changePath: "src/attune.package.ts",
   },
-  "attune/protocol/missing-generated-registry": {
-    generator: generatorTargets.operationRegistry,
-    repairKind: "operation-registry",
-    changePath: ".attune/cache/generated/<project>/attune-operation-registry.ts",
+  "attune/program-index/missing-symbol-registry": {
+    generator: generatorTargets.symbolRegistry,
+    repairKind: "symbol-registry",
+    changePath: ".attune/cache/generated/<project>/attune-symbol-registry.ts",
   },
-  "attune/protocol/missing-property-scaffold": {
-    generator: generatorTargets.propertyEvidence,
-    repairKind: "property-evidence",
-    changePath: ".attune/cache/generated/<project>/attune-property-evidence.ts",
+  "attune/program-index/missing-observation-scaffold": {
+    generator: generatorTargets.observationScaffold,
+    repairKind: "observation-scaffold",
+    changePath: ".attune/cache/generated/<project>/attune-observation-scaffold.ts",
   },
-  "attune/protocol/missing-type-guidance": {
-    generator: generatorTargets.typeGuidance,
-    repairKind: "type-guidance",
-    changePath: ".attune/cache/generated/<project>/attune-type-guidance.ts",
+  "attune/program-index/missing-schema-observations": {
+    generator: generatorTargets.schemaObservations,
+    repairKind: "schema-observations",
+    changePath: ".attune/cache/generated/<project>/attune-schema-observations.ts",
   },
-  "attune/protocol/missing-effect-service-boundary": {
+  "attune/program-index/missing-effect-service-boundary": {
     generator: generatorTargets.effectService,
     repairKind: "effect-service",
     changePath: "src/<service>.ts",
   },
-  "attune/protocol/missing-view-observer": {
-    generator: generatorTargets.atomViewEdge,
-    repairKind: "atom-view-edge",
-    changePath: ".attune/cache/generated/<project>/attune-atom-view-edges.ts",
+  "attune/program-index/missing-atom-projection-edge": {
+    generator: generatorTargets.atomProjectionEdge,
+    repairKind: "atom-projection-edge",
+    changePath: ".attune/cache/generated/<project>/attune-atom-projection-edges.ts",
   },
-  "attune/protocol/missing-joern-template": {
+  "attune/program-index/missing-joern-template": {
     generator: generatorTargets.joernTemplate,
     repairKind: "joern-template",
     changePath: "src/templates/<template>.ts",
   },
-  "attune/protocol/missing-cocoindex-tool": {
+  "attune/program-index/missing-cocoindex-tool": {
     generator: generatorTargets.cocoindexMcpTool,
     repairKind: "cocoindex-tool",
     changePath: "src/tools/<tool>.ts",
@@ -187,18 +189,18 @@ const repairRoutes = {
 
 const generatedFileNames: Record<FrameworkNxGeneratedArtifactKind, string> = {
   "program-harness": "attune-program-harness.ts",
-  "operation-registry": "attune-operation-registry.ts",
-  "property-evidence": "attune-property-evidence.ts",
-  "atom-view-edges": "attune-atom-view-edges.ts",
-  "type-guidance": "attune-type-guidance.ts",
+  "symbol-registry": "attune-symbol-registry.ts",
+  "observation-scaffold": "attune-observation-scaffold.ts",
+  "atom-projection-edges": "attune-atom-projection-edges.ts",
+  "schema-observations": "attune-schema-observations.ts",
 }
 
 const artifactGeneratorIds: Record<FrameworkNxGeneratedArtifactKind, string> = {
   "program-harness": generatorTargets.programHarness,
-  "operation-registry": generatorTargets.operationRegistry,
-  "property-evidence": generatorTargets.propertyEvidence,
-  "atom-view-edges": generatorTargets.atomViewEdge,
-  "type-guidance": generatorTargets.typeGuidance,
+  "symbol-registry": generatorTargets.symbolRegistry,
+  "observation-scaffold": generatorTargets.observationScaffold,
+  "atom-projection-edges": generatorTargets.atomProjectionEdge,
+  "schema-observations": generatorTargets.schemaObservations,
 }
 
 const reportPathPatterns = [
@@ -235,18 +237,18 @@ export const protocolMaterializeAction = (
     validationTarget: validationTargetFor(packageId),
   })
 
-export const operationRegistryAction = (
+export const symbolRegistryAction = (
   packageId: string,
   sourcePath: string,
   operationId?: string,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
-    actionId: "attune.protocol.operation-registry",
-    title: "Generate operation registry",
+    actionId: "attune.program.symbol-registry",
+    title: "Generate symbol registry",
     sourcePath,
     packageId,
     ...optionalOperation(operationId),
-    generatorOrTarget: generatorTargets.operationRegistry,
+    generatorOrTarget: generatorTargets.symbolRegistry,
     options: {
       packageId,
       ...optionalOperation(operationId),
@@ -273,18 +275,18 @@ export const programHarnessAction = (
     validationTarget: validationTargetFor(packageId),
   })
 
-export const propertyEvidenceAction = (
+export const observationScaffoldAction = (
   packageId: string,
   sourcePath: string,
   operationId?: string,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
-    actionId: "attune.protocol.property-evidence",
-    title: "Generate property evidence scaffold",
+    actionId: "attune.program.observation-scaffold",
+    title: "Generate observation scaffold",
     sourcePath,
     packageId,
     ...optionalOperation(operationId),
-    generatorOrTarget: generatorTargets.propertyEvidence,
+    generatorOrTarget: generatorTargets.observationScaffold,
     options: {
       packageId,
       ...optionalOperation(operationId),
@@ -292,18 +294,18 @@ export const propertyEvidenceAction = (
     validationTarget: validationTargetFor(packageId),
   })
 
-export const atomViewEdgeAction = (
+export const atomProjectionEdgeAction = (
   packageId: string,
   sourcePath: string,
   operationId?: string,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
-    actionId: "attune.protocol.atom-view-edge",
-    title: "Generate missing atom view edge",
+    actionId: "attune.program.atom-projection-edge",
+    title: "Generate missing atom projection edge",
     sourcePath,
     packageId,
     ...optionalOperation(operationId),
-    generatorOrTarget: generatorTargets.atomViewEdge,
+    generatorOrTarget: generatorTargets.atomProjectionEdge,
     options: {
       packageId,
       ...optionalOperation(operationId),
@@ -311,16 +313,16 @@ export const atomViewEdgeAction = (
     validationTarget: validationTargetFor(packageId),
   })
 
-export const typeGuidanceAction = (
+export const schemaObservationsAction = (
   packageId: string,
   sourcePath: string,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
-    actionId: "attune.protocol.type-guidance",
-    title: "Refresh type-guidance partitions",
+    actionId: "attune.program.schema-observations",
+    title: "Refresh schema observations",
     sourcePath,
     packageId,
-    generatorOrTarget: generatorTargets.typeGuidance,
+    generatorOrTarget: generatorTargets.schemaObservations,
     options: { packageId },
     validationTarget: validationTargetFor(packageId),
   })
@@ -401,11 +403,11 @@ export const createFrameworkMaterializationPlan = (
   candidateOutputPaths: readonly string[] = [],
 ): FrameworkNxMaterializationPlan => {
   const generatedArtifacts = ([
-      "program-harness",
-    "operation-registry",
-    "property-evidence",
-    "atom-view-edges",
-    "type-guidance",
+    "program-harness",
+    "symbol-registry",
+    "observation-scaffold",
+    "atom-projection-edges",
+    "schema-observations",
   ] as const).map((kind) => createGeneratedArtifact(descriptor, kind))
 
   return {
@@ -417,10 +419,10 @@ export const createFrameworkMaterializationPlan = (
       protocolMaterializeAction(descriptor.packageId, descriptor.sourcePath),
       frameworkDiagnosticsAction(descriptor.packageId, descriptor.sourcePath),
       programHarnessAction(descriptor.packageId, descriptor.sourcePath),
-      operationRegistryAction(descriptor.packageId, descriptor.sourcePath),
-      propertyEvidenceAction(descriptor.packageId, descriptor.sourcePath),
-      atomViewEdgeAction(descriptor.packageId, descriptor.sourcePath),
-      typeGuidanceAction(descriptor.packageId, descriptor.sourcePath),
+      symbolRegistryAction(descriptor.packageId, descriptor.sourcePath),
+      observationScaffoldAction(descriptor.packageId, descriptor.sourcePath),
+      atomProjectionEdgeAction(descriptor.packageId, descriptor.sourcePath),
+      schemaObservationsAction(descriptor.packageId, descriptor.sourcePath),
     ],
     generatedArtifacts,
     generatedArtifactRecords: generatedArtifacts.map((artifact) =>
@@ -474,7 +476,7 @@ export const repairPlanForDiagnostic = (
     repairKind: route.repairKind,
     changes: [{
       path: changePath,
-      kind: route.repairKind === "package-contract" ? "update" : "regenerate",
+      kind: route.repairKind === "project-facts" ? "update" : "regenerate",
       generated: changePath.includes(".attune/cache/") || changePath.includes(".generated."),
     }],
     doNotEdit: [
@@ -592,7 +594,9 @@ const repairChangeKind = (
   safety: AttuneRepairPlan["safety"],
 ): AttuneRepairPlan["changes"][number]["kind"] => {
   if (safety === "manual-only" && /removal|delete/u.test(repairKind)) return "delete"
-  if (/refresh|generated|registry|guidance|evidence/u.test(repairKind)) return "regenerate"
+  if (/refresh|generated|registry|guidance|evidence|observation|schema|artifact-freshness/u.test(repairKind)) {
+    return "regenerate"
+  }
   return "update"
 }
 
@@ -617,14 +621,14 @@ const generatedArtifactContent = (
   switch (kind) {
     case "program-harness":
       return programHarnessContent(descriptor)
-    case "operation-registry":
-      return operationRegistryContent(descriptor)
-    case "property-evidence":
-      return propertyEvidenceContent(descriptor)
-    case "atom-view-edges":
-      return atomViewEdgeContent(descriptor)
-    case "type-guidance":
-      return typeGuidanceContent(descriptor)
+    case "symbol-registry":
+      return symbolRegistryContent(descriptor)
+    case "observation-scaffold":
+      return observationScaffoldContent(descriptor)
+    case "atom-projection-edges":
+      return atomProjectionEdgeContent(descriptor)
+    case "schema-observations":
+      return schemaObservationsContent(descriptor)
   }
 }
 
@@ -691,7 +695,7 @@ export type ProgramHarnessHandlers = typeof ProgramHarnessHandlers
 
 export const ProgramHarnessObservationProducers = defineProjectObservationProducerMap(PackageContract, {
 ${descriptor.operations.map((operation) => `  ${JSON.stringify(operation.id)}: defineObservationProducer({
-    id: ${JSON.stringify(`${operation.id}.property-evidence`)},
+    id: ${JSON.stringify(`${operation.id}.observation-scaffold`)},
     operationId: ${JSON.stringify(operation.id)},
     produce: (context) => [
       propertyRunObservation(context, ${JSON.stringify(operation.id)}, {
@@ -713,79 +717,79 @@ export const ProgramHarnessClient = createProgramHarnessClient({
 export type ProgramHarnessClient = typeof ProgramHarnessClient
 `
 
-const operationRegistryContent = (descriptor: AttuneProtocolDescriptor): string =>
-  `${header(generatorTargets.operationRegistry, descriptor)}export const OperationRegistry = ${tsLiteral({
-    packageId: descriptor.packageId,
-    protocolId: descriptor.protocolId,
+const symbolRegistryContent = (descriptor: AttuneProtocolDescriptor): string =>
+  `${header(generatorTargets.symbolRegistry, descriptor)}export const SymbolRegistry = ${tsLiteral({
+    projectId: descriptor.packageId,
+    schemaDescriptorId: descriptor.protocolId,
     descriptorHash: descriptor.descriptorHash,
-    operations: descriptor.operations.map((operation) => ({
-      id: operation.id,
-      kind: operation.kind,
+    symbols: descriptor.operations.map((operation) => ({
+      symbolId: operation.id,
+      symbolKind: operation.kind,
       inputSchema: operation.inputSchema,
       outputSchema: operation.outputSchema,
       ...(operation.errorSchema === undefined ? {} : { errorSchema: operation.errorSchema }),
-      laws: operation.laws ?? [],
-      views: normalizeViews(operation),
+      diagnosticRules: operation.laws ?? [],
+      projectionEdges: normalizeProjectionEdges(operation),
     })),
   })} as const
 
-export type OperationRegistry = typeof OperationRegistry
+export type SymbolRegistry = typeof SymbolRegistry
 `
 
-const propertyEvidenceContent = (descriptor: AttuneProtocolDescriptor): string =>
-  `${header(generatorTargets.propertyEvidence, descriptor)}export const PropertyEvidenceScaffold = ${tsLiteral({
-    packageId: descriptor.packageId,
-    protocolId: descriptor.protocolId,
+const observationScaffoldContent = (descriptor: AttuneProtocolDescriptor): string =>
+  `${header(generatorTargets.observationScaffold, descriptor)}export const ObservationScaffold = ${tsLiteral({
+    projectId: descriptor.packageId,
+    schemaDescriptorId: descriptor.protocolId,
     descriptorHash: descriptor.descriptorHash,
-    evidenceKinds: ["schema-decode", "property-run", "law-observed", "atom-movement"],
-    operations: descriptor.operations.map((operation) => ({
-      operationId: operation.id,
-      operationKind: operation.kind,
-      requiredEvidence: [
+    observationKinds: ["schema-decode", "property-run", "diagnostic-rule-observed", "atom-movement"],
+    symbols: descriptor.operations.map((operation) => ({
+      symbolId: operation.id,
+      symbolKind: operation.kind,
+      requiredObservations: [
         "schema-decode",
         "property-run",
-        ...((operation.laws?.length ?? 0) > 0 ? ["law-observed"] : []),
-        ...(hasTouchedViews(operation) ? ["atom-movement", "reactivity-key"] : []),
+        ...((operation.laws?.length ?? 0) > 0 ? ["diagnostic-rule-observed"] : []),
+        ...(hasTouchedProjectionEdges(operation) ? ["atom-movement", "reactivity-key"] : []),
       ],
-      laws: operation.laws ?? [],
-      views: normalizeViews(operation),
+      diagnosticRules: operation.laws ?? [],
+      projectionEdges: normalizeProjectionEdges(operation),
     })),
   })} as const
 
-export type PropertyEvidenceScaffold = typeof PropertyEvidenceScaffold
+export type ObservationScaffold = typeof ObservationScaffold
 `
 
-const atomViewEdgeContent = (descriptor: AttuneProtocolDescriptor): string =>
-  `${header(generatorTargets.atomViewEdge, descriptor)}export const AtomViewEdges = ${tsLiteral({
-    packageId: descriptor.packageId,
-    protocolId: descriptor.protocolId,
+const atomProjectionEdgeContent = (descriptor: AttuneProtocolDescriptor): string =>
+  `${header(generatorTargets.atomProjectionEdge, descriptor)}export const AtomProjectionEdges = ${tsLiteral({
+    projectId: descriptor.packageId,
+    schemaDescriptorId: descriptor.protocolId,
     descriptorHash: descriptor.descriptorHash,
     reactivityKeys: descriptor.views.reactivityKeys,
     atoms: descriptor.views.atoms,
-    edges: descriptor.operations.flatMap(operationViewEdges),
+    edges: descriptor.operations.flatMap(symbolProjectionEdges),
   })} as const
 
-export type AtomViewEdges = typeof AtomViewEdges
+export type AtomProjectionEdges = typeof AtomProjectionEdges
 `
 
-const typeGuidanceContent = (descriptor: AttuneProtocolDescriptor): string =>
-  `${header(generatorTargets.typeGuidance, descriptor)}export const PackageTypeGuidance = ${tsLiteral({
-    packageId: descriptor.packageId,
-    protocolId: descriptor.protocolId,
+const schemaObservationsContent = (descriptor: AttuneProtocolDescriptor): string =>
+  `${header(generatorTargets.schemaObservations, descriptor)}export const SchemaObservations = ${tsLiteral({
+    projectId: descriptor.packageId,
+    schemaDescriptorId: descriptor.protocolId,
     descriptorHash: descriptor.descriptorHash,
     sourceLabels: [
-      "contract.operation",
+      "project.symbol",
       "effect-schema.ast",
-      "inferred-law",
-      "atom-view-edge",
+      "diagnostic-rule",
+      "atom-projection-edge",
     ],
-    operations: Object.fromEntries(
+    symbols: Object.fromEntries(
       descriptor.operations.map((operation) => [
         operation.id,
         {
-          operationId: operation.id,
-          operationKind: operation.kind,
-          sourceLabels: ["contract.operation", `${operation.kind}.metadata`],
+          symbolId: operation.id,
+          symbolKind: operation.kind,
+          sourceLabels: ["project.symbol", `${operation.kind}.metadata`],
           schemaSources: [
             { id: `${operation.id}.input`, schema: operation.inputSchema, role: "input" },
             { id: `${operation.id}.output`, schema: operation.outputSchema, role: "output" },
@@ -796,37 +800,37 @@ const typeGuidanceContent = (descriptor: AttuneProtocolDescriptor): string =>
           partitions: [
             `${operation.id}.input`,
             `${operation.id}.output`,
-            ...((operation.laws ?? []).map((law) => `${operation.id}.law.${law}`)),
+            ...((operation.laws ?? []).map((law) => `${operation.id}.diagnostic-rule.${law}`)),
             ...((operation.views?.reactivityKeys ?? []).map((key) => `${operation.id}.reactivity.${key}`)),
             ...((operation.views?.atoms ?? []).map((atom) => `${operation.id}.atom.${atom}`)),
           ],
           coverageSearch: [
             `${operation.id}.${operation.kind}.schema-branches`,
-            ...(hasTouchedViews(operation) ? [`${operation.id}.atom-graph-movement`] : []),
+            ...(hasTouchedProjectionEdges(operation) ? [`${operation.id}.atom-graph-movement`] : []),
           ],
         },
       ]),
     ),
   })} as const
 
-export type PackageTypeGuidance = typeof PackageTypeGuidance
+export type SchemaObservations = typeof SchemaObservations
 `
 
-const normalizeViews = (
+const normalizeProjectionEdges = (
   operation: AttuneProtocolOperationDescriptor,
 ): { readonly reactivityKeys: readonly string[]; readonly atoms: readonly string[] } => ({
   reactivityKeys: operation.views?.reactivityKeys ?? [],
   atoms: operation.views?.atoms ?? [],
 })
 
-const hasTouchedViews = (operation: AttuneProtocolOperationDescriptor): boolean =>
+const hasTouchedProjectionEdges = (operation: AttuneProtocolOperationDescriptor): boolean =>
   (operation.views?.reactivityKeys?.length ?? 0) > 0 ||
   (operation.views?.atoms?.length ?? 0) > 0
 
-const operationViewEdges = (
+const symbolProjectionEdges = (
   operation: AttuneProtocolOperationDescriptor,
 ): readonly {
-  readonly operationId: string
+  readonly symbolId: string
   readonly reactivityKey?: string
   readonly atomId?: string
 }[] => {
@@ -835,21 +839,21 @@ const operationViewEdges = (
 
   if (keys.length === 0) {
     return atoms.map((atomId) => ({
-      operationId: operation.id,
+      symbolId: operation.id,
       atomId,
     }))
   }
 
   if (atoms.length === 0) {
     return keys.map((reactivityKey) => ({
-      operationId: operation.id,
+      symbolId: operation.id,
       reactivityKey,
     }))
   }
 
   return keys.flatMap((reactivityKey) =>
     atoms.map((atomId) => ({
-      operationId: operation.id,
+      symbolId: operation.id,
       reactivityKey,
       atomId,
     }))

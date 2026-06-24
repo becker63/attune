@@ -18,15 +18,15 @@ import {
 } from "../shared.js"
 
 export const generatedArtifactKinds = [
-  "package-contract",
-  "source-bom",
-  "generator-shape",
-  "rpc-harness",
-  "property-harness",
+  "project-facts",
+  "source-artifacts",
+  "artifact-provenance",
+  "transport-harness",
+  "observation-harness",
   "atom-graph",
-  "waiver-summary",
-  "di-graph",
-  "coverage-summary",
+  "diagnostic-waivers",
+  "injection-edges",
+  "coverage-observations",
 ] as const
 
 export type GeneratedArtifactKind = (typeof generatedArtifactKinds)[number]
@@ -101,7 +101,7 @@ export const normalizeGeneratedOptions = (
       record["artifact"],
       "$.artifact",
       generatedArtifactKinds,
-      "package-contract",
+      "project-facts",
       diagnostics,
     ),
     generator: readOptionalString(record["generator"], "$.generator", diagnostics),

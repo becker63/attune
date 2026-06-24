@@ -23,12 +23,12 @@ Removed surfaces:
 
 Retained compatibility-only surfaces:
 - `packages/joern-effect-properties/src/attune.package.ts`
-- `.attune/cache/generated/joern-effect-properties/attune-operation-registry.ts`
-- `.attune/cache/generated/joern-effect-properties/attune-property-registry.ts`
-- `.attune/cache/generated/joern-effect-properties/attune-type-guidance.ts`
-- `.attune/cache/generated/joern-effect-properties/attune-property-evidence.ts`
-- `.attune/cache/generated/joern-effect-properties/generated-freshness.json`
-- `.attune/cache/evidence/joern-effect-properties/evidence-scaffold.json`
+- `.attune/cache/generated/joern-effect-properties/attune-symbol-registry.ts`
+- `.attune/cache/generated/joern-effect-properties/attune-property-observations.ts`
+- `.attune/cache/generated/joern-effect-properties/attune-schema-observations.ts`
+- `.attune/cache/generated/joern-effect-properties/attune-observation-scaffold.ts`
+- `.attune/cache/generated/joern-effect-properties/artifact-freshness.json`
+- `.attune/cache/observations/joern-effect-properties/observation-scaffold.json`
 
 These retained files are authored compatibility input or local cache artifacts,
 not permanent public workflow truth. Phase 7 should remove or mechanically
@@ -56,8 +56,8 @@ Risks:
   legacy declaration names and schema helper exports from
   `@attune/framework-protocol`.
 - `packages/joern-effect-properties/project.json` still exposes internal
-  compatibility repair target names for registry, type-guidance, properties,
-  generated freshness, and observation/evidence scaffolding. They remain
+  mechanical repair target names for symbol registry, schema observations, property observations,
+  artifact freshness, and observation scaffolding. They remain
   implementation routes behind the public `attune-repair` surface until Phase
   7 removes or mechanically renames them.
 

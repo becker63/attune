@@ -34,12 +34,12 @@ Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/package-contracts/attuned-discovery/attune.generated.ts`
 - `framework/architecture/src/generated/package-contracts/attuned-discovery/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/attuned-discovery.json`
-- `.attune/cache/generated/attuned-discovery/attune-operation-registry.ts`
-- `.attune/cache/generated/attuned-discovery/attune-property-registry.ts`
-- `.attune/cache/generated/attuned-discovery/attune-type-guidance.ts`
-- `.attune/cache/generated/attuned-discovery/attune-property-evidence.ts`
-- `.attune/cache/generated/attuned-discovery/generated-freshness.json`
-- `.attune/cache/evidence/attuned-discovery/evidence-scaffold.json`
+- `.attune/cache/generated/attuned-discovery/attune-symbol-registry.ts`
+- `.attune/cache/generated/attuned-discovery/attune-property-observations.ts`
+- `.attune/cache/generated/attuned-discovery/attune-schema-observations.ts`
+- `.attune/cache/generated/attuned-discovery/attune-observation-scaffold.ts`
+- `.attune/cache/generated/attuned-discovery/artifact-freshness.json`
+- `.attune/cache/observations/attuned-discovery/observation-scaffold.json`
 
 These retained files are framework-owned compatibility inputs or local cache
 artifacts, not authored package source. They remain only until Phase 7 can
@@ -60,16 +60,15 @@ Not run:
   proof-pressure actions were not applicable and were not run.
 
 Risks:
-- `packages/attuned-discovery/project.json` still exposes internal compatibility
-  repair target names for registry, type-guidance, generated freshness, and
-  observation/evidence scaffolding. They are retained as implementation routes
-  behind the public `attune-repair` surface until Phase 7 can remove or rename
-  the helper APIs safely.
+- `packages/attuned-discovery/project.json` still exposes internal mechanical
+  repair target names for symbol registry, schema observations, artifact freshness, and
+  observation scaffolding. They are implementation routes behind the public
+  `attune-repair` surface.
 - Shared framework-owned compatibility generated outputs still import old
   helper APIs. They are outside this package-local deletion slice.
 
 Follow-ups:
 - Continue Ring A with `attune-foldkit`.
-- In Phase 7, remove or quarantine the shared compatibility generated outputs,
-  cache helpers, and internal old-noun repair target names after the completed
+- In Phase 7, remove or quarantine the shared compatibility generated outputs and remaining
+  cache helper APIs after the completed
   ring handoffs identify the remaining blockers.

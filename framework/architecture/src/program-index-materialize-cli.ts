@@ -233,11 +233,11 @@ const existingCompatibilityArtifactPaths = (
     `${projectRoot}/attune.source-bom.json`,
     `.attune/cache/source-bom/${projectId}.json`,
     `framework/architecture/src/generated/source-bom/${projectId}.json`,
-    `.attune/cache/generated/${projectId}/attune-operation-registry.ts`,
-    `.attune/cache/generated/${projectId}/attune-property-registry.ts`,
-    `.attune/cache/generated/${projectId}/attune-type-guidance.ts`,
-    `.attune/cache/generated/${projectId}/attune-property-evidence.ts`,
-    `.attune/cache/generated/${projectId}/generated-freshness.json`,
+    `.attune/cache/generated/${projectId}/attune-symbol-registry.ts`,
+    `.attune/cache/generated/${projectId}/attune-property-observations.ts`,
+    `.attune/cache/generated/${projectId}/attune-schema-observations.ts`,
+    `.attune/cache/generated/${projectId}/attune-observation-scaffold.ts`,
+    `.attune/cache/generated/${projectId}/artifact-freshness.json`,
   ]
 
   return candidates

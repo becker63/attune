@@ -49,19 +49,19 @@ describe("attune repair CLI", () => {
   it("materializes deterministic repair-kind cache artifacts", () => {
     const workspaceRoot = makeRepairWorkspace()
 
-    const registry = runRepair(workspaceRoot, "--kind", "registry")
-    const freshness = runRepair(workspaceRoot, "--kind", "generated")
+    const registry = runRepair(workspaceRoot, "--kind", "symbol-registry")
+    const freshness = runRepair(workspaceRoot, "--kind", "artifact-freshness")
 
     expect(registry.status).toBe(0)
     expect(freshness.status).toBe(0)
     expect(fs.readFileSync(
-      path.join(workspaceRoot, ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts"),
+      path.join(workspaceRoot, ".attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts"),
       "utf8",
-    )).toContain("operation-registry")
+    )).toContain("symbol-registry")
     expect(fs.readFileSync(
-      path.join(workspaceRoot, ".attune/cache/generated/platform-alchemy-k8s/generated-freshness.json"),
+      path.join(workspaceRoot, ".attune/cache/generated/platform-alchemy-k8s/artifact-freshness.json"),
       "utf8",
-    )).toContain("\"projection\": \"generated-freshness\"")
+    )).toContain("\"projection\": \"artifact-freshness\"")
   })
 
   it("removes package-local generated companions without writing framework outputs", () => {
@@ -100,12 +100,12 @@ describe("attune repair CLI", () => {
 
     expect(result.status).toBe(0)
     expect(result.stdout).toContain("Program index repair rows: 3 total (1 safe, 1 needs-review, 1 manual-only, 0 blocked).")
-    expect(result.stdout).toContain("SAFE platform-alchemy-k8s:attune-repair diagnostic:platform:artifact operation-registry")
+    expect(result.stdout).toContain("SAFE platform-alchemy-k8s:attune-repair diagnostic:platform:artifact symbol-registry")
     expect(result.stdout).toContain("NEEDS-REVIEW platform-alchemy-k8s:attune-repair diagnostic:platform:review")
     expect(result.stdout).toContain("MANUAL-ONLY workspace:attune-repair diagnostic:platform:manual")
     expect(fs.existsSync(path.join(
       workspaceRoot,
-      ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts",
+      ".attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts",
     ))).toBe(false)
   })
 
@@ -118,7 +118,7 @@ describe("attune repair CLI", () => {
     expect(result.status).toBe(0)
     expect(fs.existsSync(path.join(
       workspaceRoot,
-      ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts",
+      ".attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts",
     ))).toBe(true)
     expect(fs.existsSync(path.join(workspaceRoot, "packages/platform-alchemy-k8s/attune.source-bom.json"))).toBe(true)
     expect(fs.existsSync(path.join(workspaceRoot, "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json"))).toBe(false)
@@ -210,10 +210,10 @@ function seedRepairRows(index: ProgramIndexApi): Effect.Effect<void, unknown> {
         sourceFileId: "file:platform:attune",
         code: "attune/program-index/artifact-missing",
         severity: "warning",
-        message: "artifact fact is missing for operation registry.",
+        message: "artifact fact is missing for symbol registry.",
         causeJson: JSON.stringify({
           fact: "artifact",
-          path: ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts",
+          path: ".attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts",
         }),
       },
       {
@@ -239,11 +239,11 @@ function seedRepairRows(index: ProgramIndexApi): Effect.Effect<void, unknown> {
         diagnosticId: "diagnostic:platform:artifact",
         safety: "safe",
         nxTarget: "platform-alchemy-k8s:attune-repair",
-        repairKind: "operation-registry",
-        route: "attune-repair-cli:registry",
+        repairKind: "symbol-registry",
+        route: "attune-repair-cli:symbol-registry",
         payloadJson: JSON.stringify({
           cause: {
-            path: ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts",
+            path: ".attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts",
           },
         }),
         validationAfterTargetsJson: JSON.stringify(["platform-alchemy-k8s:attune-check"]),
@@ -254,8 +254,8 @@ function seedRepairRows(index: ProgramIndexApi): Effect.Effect<void, unknown> {
         diagnosticId: "diagnostic:platform:review",
         safety: "needs-review",
         nxTarget: "platform-alchemy-k8s:attune-repair",
-        repairKind: "generated-companion-relocation",
-        route: "attune-repair-cli:generated",
+        repairKind: "artifact-relocation",
+        route: "attune-repair-cli:artifact-freshness",
         validationAfterTargetsJson: JSON.stringify(["platform-alchemy-k8s:attune-check"]),
         createdAt: "2026-06-24T00:00:00.000Z",
       },

@@ -35,13 +35,13 @@ Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/package-contracts/attune-nx/attune.generated.ts`
 - `framework/architecture/src/generated/package-contracts/attune-nx/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/attune-nx.json`
-- `.attune/cache/generated/attune-nx/generated-freshness.json`
+- `.attune/cache/generated/attune-nx/artifact-freshness.json`
 
 These retained files are compatibility generator/helper surfaces or
-framework-owned compatibility inputs. They remain only until Phase 7 can delete,
-rename, or quarantine the package-contract generator, graph helpers, generated
-aggregate, and old-noun repair routes without losing the public check/repair
-workflow.
+framework-owned compatibility inputs. Phase 9.5 renamed the old internal
+repair routes; the package-contract generator, graph helpers, and generated
+aggregate still need deletion, quarantine, or mechanical replacement without
+losing the public check/repair workflow.
 
 Validated:
 - `pnpm exec nx run attune-nx:test --skipNxCache`
@@ -58,9 +58,9 @@ Risks:
 - `attune-nx` still owns the old package-contract generator and graph helper
   APIs, so this slice cannot delete every compatibility helper without a
   broader replacement for generator tests and discovery tests.
-- The public project repair target still routes to internal old-noun repair
-  kinds. Phase 7 must remove or rename those helpers rather than preserving
-  them as permanent compatibility APIs.
+- The public project repair target now routes through mechanical internal
+  repair kinds; remaining package-contract generator and graph APIs should not
+  survive archive readiness as permanent compatibility APIs.
 
 Follow-ups:
 - Continue Ring B with `cocoindex-effect` and `joern-effect`.

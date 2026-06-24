@@ -13,17 +13,17 @@
     "artifact": {
       "type": "string",
       "enum": [
-        "package-contract",
-        "source-bom",
-        "generator-shape",
-        "rpc-harness",
-        "property-harness",
+        "project-facts",
+        "source-artifacts",
+        "artifact-provenance",
+        "transport-harness",
+        "observation-harness",
         "atom-graph",
-        "waiver-summary",
-        "di-graph",
-        "coverage-summary"
+        "diagnostic-waivers",
+        "injection-edges",
+        "coverage-observations"
       ],
-      "default": "package-contract"
+      "default": "project-facts"
     },
     "generator": { "type": "string", "minLength": 1 },
     "staleOutputPolicy": {
