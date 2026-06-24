@@ -83,7 +83,7 @@
 - [x] 6.8 Validate Ring C package `joern-effect-properties` with cheap property tests only unless explicitly authorized, remove active old-noun/generated-companion surfaces where parity is proven, and write `agent-handoffs/ring-c-joern-effect-properties-migration.md`.
 - [x] 6.9 Validate Ring C package `home-deployment` with cheap tests only and no live provider actions, remove active old-noun/generated-companion surfaces where parity is proven, then write `agent-handoffs/ring-c-home-deployment-migration.md`.
 - [x] 6.10 Validate Ring C package `platform-alchemy-k8s` with cheap tests only and no live Kubernetes or Alchemy apply actions, remove active old-noun/generated-companion surfaces where parity is proven, then write `agent-handoffs/ring-c-platform-alchemy-k8s-migration.md`.
-- [ ] 6.11 Run `workspace:attune-check` after each completed ring and record ring-level diagnostics or blockers.
+- [x] 6.11 Run `workspace:attune-check` after each completed ring and record ring-level diagnostics or blockers.
 
 ## 7. Old Ontology Demotion
 
