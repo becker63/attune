@@ -302,7 +302,7 @@ export const programSourceIndexRows = (
         ...(symbol?.rangeJson === undefined ? {} : { rangeJson: symbol.rangeJson }),
         code: "attune/program-index/schema-non-serializable",
         severity: "warning" as const,
-        message: "Effect Schema descriptor contains executable features that remain owned by the TypeScript symbol.",
+        message: "schema_descriptor fact is partial for this symbol; executable Effect Schema features remain owned by the source_file.",
         ...(descriptor.nonSerializableFeaturesJson === undefined ? {} : {
           causeJson: descriptor.nonSerializableFeaturesJson,
         }),
@@ -372,9 +372,10 @@ export const compatibilityRowsFromCurrentPackageContracts = (
       kind: "compatibility-input",
       status: "recorded",
       payloadJson: programIndexJson({
+        compatibilitySource: compatibilitySourceMetadata(artifact.path),
         path: artifact.path,
         kind: artifact.kind,
-        note: "Current package-contract/generated-companion compatibility input.",
+        note: "Legacy package-contract/generated-companion label recorded as compatibility input.",
       }),
       createdAt: now,
     } satisfies ProgramIndexObservation))
@@ -438,6 +439,13 @@ const compatibilityArtifactKind = (path: string): string => {
   if (/package-contracts\.typecheck\.generated\.ts$/u.test(path)) return "package-contract-typecheck-aggregate"
   if (/type-guidance/u.test(path)) return "type-guidance-compatibility"
   return "generated-contract-shard"
+}
+
+const compatibilitySourceMetadata = (path: string): string => {
+  if (/attune\.source-bom\.json$/u.test(path)) return "source-bom-compat"
+  if (/type-guidance/u.test(path)) return "type-guidance-compat"
+  if (/src\/attune\.(?:contract\.)?generated\.ts$/u.test(path)) return "generated-companion-compat"
+  return "package-contract-compat"
 }
 
 const stringValue = (

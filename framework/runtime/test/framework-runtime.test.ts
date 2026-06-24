@@ -300,6 +300,7 @@ describe("@attune/framework-runtime", () => {
       expect(rows.diagnostics[0]).toMatchObject({
         code: "attune/program-index/schema-non-serializable",
         severity: "warning",
+        message: expect.stringContaining("schema_descriptor fact"),
       })
       expect(rows.repairs[0]).toMatchObject({
         safety: "safe",
@@ -414,6 +415,14 @@ describe("@attune/framework-runtime", () => {
       "package-contract-typecheck-aggregate",
     ])
     expect(rows.observations).toHaveLength(4)
+    expect(rows.observations.map((observation) =>
+      JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
+    )).toEqual([
+      "generated-companion-compat",
+      "generated-companion-compat",
+      "source-bom-compat",
+      "package-contract-compat",
+    ])
   })
 
   it("projects deltas as framework diagnostics", () => {

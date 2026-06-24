@@ -785,6 +785,61 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("rejects old ontology runtime objects in primary program-index paths", () => {
+    const workspaceRoot = makeWorkspace({
+      "framework/sqlite/src/ProgramIndex.ts": [
+        "export interface ProgramIndexOperation { readonly id: string }",
+        "const migration = `CREATE TABLE IF NOT EXISTS law (id TEXT PRIMARY KEY) STRICT;`",
+      ].join("\n"),
+      "framework/runtime/src/ProgramIndexProjection.ts": [
+        "export class ProgramIndexPackageContract { readonly id = \"legacy\" }",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "old-ontology-runtime-object",
+        filePath: "framework/sqlite/src/ProgramIndex.ts",
+        message: expect.stringContaining("Operation"),
+      }),
+      expect.objectContaining({
+        code: "old-ontology-runtime-object",
+        filePath: "framework/sqlite/src/ProgramIndex.ts",
+        message: expect.stringContaining("law"),
+      }),
+      expect.objectContaining({
+        code: "old-ontology-runtime-object",
+        filePath: "framework/runtime/src/ProgramIndexProjection.ts",
+        message: expect.stringContaining("PackageContract"),
+      }),
+    ]))
+    expect(result.outputLines).toEqual(expect.arrayContaining([
+      expect.stringContaining("Use mechanical facts instead"),
+    ]))
+  })
+
+  it("allows compatibility source metadata labels in program-index adapters", () => {
+    const workspaceRoot = makeWorkspace({
+      "framework/runtime/src/ProgramIndexProjection.ts": [
+        "export type ProgramIndexViewRow = Readonly<Record<string, string>>",
+        "export const compatibilitySources = [",
+        "  \"package-contract-compat\",",
+        "  \"source-bom-compat\",",
+        "  \"type-guidance-compat\",",
+        "  \"generated-companion-compat\",",
+        "] as const",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.ratchetDiagnostics).toEqual([])
+  })
+
   it("rejects workerized targets that omit static worker metadata", () => {
     const workspaceRoot = makeWorkspace({
       "packages/worker-policy/package.json": JSON.stringify({ name: "@attune/worker-policy" }),

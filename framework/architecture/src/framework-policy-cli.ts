@@ -77,6 +77,7 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "migration-only-alias"
   | "stale-generated-file"
   | "manual-derived-truth"
+  | "old-ontology-runtime-object"
   | "package-declaration-too-large"
   | "package-local-attune-companion"
 
@@ -125,6 +126,10 @@ const staleGeneratedMarkerPattern =
   /\b(?:attune-stale-generated|staleGenerated|generatedArtifactStale|needs-regeneration)\b/u
 const manualDerivedTruthMarkerPattern =
   /\b(?:attune-manual-derived-truth|manualProtocolTruth|manualDerivedTruth|derivedTruth\s*:\s*["']manual["'])\b/u
+const oldOntologyRuntimeObjectPattern =
+  /\b(?:export\s+)?(?:interface|type|class|const)\s+ProgramIndex(?<name>PackageContract|ProtocolDescriptor|Protocol|Operation|PackageView|Law|Obligation|Evidence|Delta|TypeGuidance|SourceBOM|SourceBom|GeneratorShape|FuzzHandler|PropertyMap|RpcGroup)\b/u
+const oldOntologyRuntimeTablePattern =
+  /\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?<name>package_contract|protocol_descriptor|protocol|operation|package_view|view|law|obligation|evidence|delta|type_guidance|source_bom|generator_shape|fuzz_handler|property_map|rpc_group)\b/iu
 const packageDeclarationWarningLineThreshold = 180
 const packageDeclarationErrorLineThreshold = 260
 const packageLocalAttuneCompanionNames = [
@@ -415,6 +420,7 @@ const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode
   "migration-only-alias",
   "stale-generated-file",
   "manual-derived-truth",
+  "old-ontology-runtime-object",
   "package-local-attune-companion",
 ])
 
@@ -527,6 +533,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     diagnostics.push(...checkPolicyArchitectureGuidance(file))
     diagnostics.push(...checkWorkerTargetMetadata(file))
     diagnostics.push(...checkFinalCleanupFile(file))
+    diagnostics.push(...checkMechanicalProgramOntologyFile(file))
   }
 
   return diagnostics
@@ -1365,6 +1372,59 @@ function checkFinalCleanupFile(file: WorkspaceFile): readonly FrameworkFinalRatc
   }
 
   return diagnostics
+}
+
+function checkMechanicalProgramOntologyFile(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
+  if (!isPrimaryProgramIndexPath(file.path)) return []
+
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+  const lines = file.content.split(/\r?\n/u)
+
+  for (const [lineIndex, line] of lines.entries()) {
+    const objectMatch = oldOntologyRuntimeObjectPattern.exec(line)
+    if (objectMatch !== null) {
+      diagnostics.push(oldOntologyRuntimeObjectDiagnostic(
+        file.path,
+        lineIndex + 1,
+        objectMatch.groups?.name ?? "old ontology object",
+      ))
+    }
+
+    const tableMatch = oldOntologyRuntimeTablePattern.exec(line)
+    if (tableMatch !== null) {
+      diagnostics.push(oldOntologyRuntimeObjectDiagnostic(
+        file.path,
+        lineIndex + 1,
+        tableMatch.groups?.name ?? "old ontology table",
+      ))
+    }
+  }
+
+  return diagnostics
+}
+
+function isPrimaryProgramIndexPath(filePath: string): boolean {
+  return (
+    filePath === "framework/sqlite/src/ProgramIndex.ts" ||
+    filePath === "framework/runtime/src/ProgramIndexProjection.ts" ||
+    filePath === "framework/nx/src/ProgramGraphIndex.ts"
+  )
+}
+
+function oldOntologyRuntimeObjectDiagnostic(
+  filePath: string,
+  line: number,
+  name: string,
+): FrameworkFinalRatchetDiagnostic {
+  return finalRatchetDiagnostic(
+    "old-ontology-runtime-object",
+    filePath,
+    [
+      `Line ${line} adds ${name} as a program-index runtime object.`,
+      "Use mechanical facts instead: project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, or invalidation.",
+      "Old ontology terms may appear only as compatibility source metadata, legacy-adapter labels, historical context, or future-delete plans.",
+    ].join(" "),
+  )
 }
 
 function isGeneratedCleanupExemptPath(filePath: string): boolean {
