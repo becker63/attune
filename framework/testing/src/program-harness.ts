@@ -1,10 +1,12 @@
 import {
   ProgramObservationSchema,
+  type ProgramObservation,
+} from "@attune/framework-protocol"
+import {
   ProgramObservationRpcControlIds,
   controlRpcDescriptorById,
   defineProgramObservationRpcGroup,
   operationRpcDescriptorById,
-  type ProgramObservation,
   type ControlRpcDescriptor,
   type SymbolIds,
   type SymbolById,
@@ -14,7 +16,7 @@ import {
   type ProjectIdOf,
   type InputOf,
   type OutputOf,
-} from "@attune/framework-protocol"
+} from "../../protocol/src/project-facts/index.js"
 import { Schema } from "effect"
 
 import {

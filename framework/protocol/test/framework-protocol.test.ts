@@ -12,19 +12,12 @@ import {
 } from "../src/diagnostic-rules/index.js"
 import {
   AttuneProtocolWaiverSchema,
-  assertExactHandlers,
-  assertPackageContract,
-  assertPropertyHarnesses,
-  assertTypeGuidanceComplete,
   baseAtom,
   definePackageViewGraph,
   deriveDiagnosticRequirements,
   deriveSymbolProjectionEdges,
   deriveSymbolRegistry,
   diagnoseAvoidableStringReferences,
-  defineOperation,
-  definePackageContract,
-  definePackageViews,
   derivedAtom,
   schemaDescriptorFromProjectFacts,
   diagnosticFromRepairFinding,
@@ -36,12 +29,21 @@ import {
   roundtripSourceReference,
   touchedViewsFromReferences,
   diagnoseProtocolWaivers,
-  defineTypeGuidance,
   waiverDeltasFromFindings,
+} from "../src/index.js"
+import {
+  assertExactHandlers,
+  assertPackageContract,
+  assertPropertyHarnesses,
+  assertTypeGuidanceComplete,
+  defineOperation,
+  definePackageContract,
+  definePackageViews,
+  defineTypeGuidance,
   type InputOf,
   type SymbolIds,
   type OutputOf,
-} from "../src/index.js"
+} from "../src/project-facts/index.js"
 
 describe("@attune/framework-protocol", () => {
   it("keeps package authoring on the public framework facade", () => {

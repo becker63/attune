@@ -42,7 +42,7 @@ import {
   definePackageContract,
   definePackageViews,
   touches,
-} from "@attune/framework-protocol"
+} from "../../protocol/src/project-facts/index.js"
 
 const coverageCase = (
   input: Partial<CoverageSearchIdentity> = {},

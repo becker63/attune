@@ -1,4 +1,31 @@
-export * from "./project-facts/index.js"
+export {
+  OperationKindSchema,
+  OperationKinds,
+  ProjectKindSchema,
+  ProjectKinds,
+  attuneTypeDiagnostic,
+  defineAttuneProjectFacts,
+} from "./project-facts/core.js"
+export type {
+  AnySchema,
+  AttuneBrandedDiagnostic,
+  AttuneDiagnosticRuleDescriptor,
+  AttuneProjectEdgeFact,
+  AttuneProjectFacts,
+  AttuneProjectSymbolFact,
+  AttuneServiceReference,
+  AttuneTypeDiagnostic,
+  AttuneTypeError,
+  AttuneViewReference,
+  AttuneWaiverDeclaration,
+  OperationKind,
+  ProjectKind,
+  ProjectRuntimeRoots,
+  ProjectSymbolKind,
+  TouchedAtomIdsOf,
+  TouchedViewKeysOf,
+  TouchedViews,
+} from "./project-facts/core.js"
 export {
   ProgramCoverageExpectationSchema,
   ProgramSchemaDescriptorSchema,
