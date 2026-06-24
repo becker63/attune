@@ -331,6 +331,8 @@ describe("@attune/framework-runtime", () => {
       expect(rows.repairs[0]).toMatchObject({
         safety: "safe",
         nxTarget: "demo:attune-repair",
+        route: "workspace:program-index-materialize",
+        validationAfterTargetsJson: "[\"demo:attune-check\",\"demo:typecheck\"]",
       })
       expect(rows.edges.map((edge) => edge.kind)).toContain("identifier-reference")
     } finally {
@@ -450,10 +452,15 @@ describe("@attune/framework-runtime", () => {
         safety: "safe",
         nxTarget: "demo:attune-repair",
         repairKind: "schema-descriptor-refresh",
+        route: "workspace:program-index-materialize",
         payloadJson: JSON.stringify({
           artifact: "schema_descriptor",
           sourceFile: demoDescriptor.sourcePath,
         }),
+        validationAfterTargetsJson: JSON.stringify([
+          "demo:attune-check",
+          "demo:typecheck",
+        ]),
         createdAt: "2026-06-23T00:00:00.000Z",
       }])
     }))
@@ -494,6 +501,11 @@ describe("@attune/framework-runtime", () => {
           diagnosticId: "diagnostic:demo:schema",
           safety: "safe",
           repairKind: "schema-descriptor-refresh",
+          route: "workspace:program-index-materialize",
+          validationAfterTargets: [
+            "demo:attune-check",
+            "demo:typecheck",
+          ],
         }),
       }],
       relatedEvidence: ["program-index:cause"],
@@ -571,11 +583,16 @@ describe("@attune/framework-runtime", () => {
       "attune/program-index/package-local-companion",
       "attune/program-index/source-bom-compatibility",
     ])
-    expect(rows.repairs.map((repair) => [repair.safety, repair.repairKind])).toEqual([
-      ["needs-review", "generated-companion-relocation"],
-      ["needs-review", "generated-companion-relocation"],
-      ["needs-review", "generated-companion-relocation"],
-      ["needs-review", "source-ownership-projection"],
+    expect(rows.repairs.map((repair) => [
+      repair.safety,
+      repair.repairKind,
+      repair.route,
+      repair.validationAfterTargetsJson,
+    ])).toEqual([
+      ["needs-review", "generated-companion-relocation", "attune-repair-cli:generated", "[\"demo:attune-check\",\"demo:typecheck\"]"],
+      ["needs-review", "generated-companion-relocation", "attune-repair-cli:generated", "[\"demo:attune-check\",\"demo:typecheck\"]"],
+      ["needs-review", "generated-companion-relocation", "attune-repair-cli:generated", "[\"demo:attune-check\",\"demo:typecheck\"]"],
+      ["needs-review", "source-ownership-projection", "attune-repair-cli:generated", "[\"workspace:attune-check\"]"],
     ])
   })
 
@@ -605,10 +622,15 @@ describe("@attune/framework-runtime", () => {
       "attune/program-index/package-local-companion",
       "attune/program-index/checked-in-report-artifact",
     ])
-    expect(rows.repairs.map((repair) => [repair.safety, repair.repairKind, repair.nxTarget])).toEqual([
-      ["safe", "artifact-refresh", "demo:attune-repair"],
-      ["needs-review", "generated-companion-relocation", "demo:attune-repair"],
-      ["manual-only", "checked-in-report-removal", undefined],
+    expect(rows.repairs.map((repair) => [
+      repair.safety,
+      repair.repairKind,
+      repair.nxTarget,
+      repair.route,
+    ])).toEqual([
+      ["safe", "artifact-refresh", "demo:attune-repair", "attune-repair-cli:generated"],
+      ["needs-review", "generated-companion-relocation", "demo:attune-repair", "attune-repair-cli:generated"],
+      ["manual-only", "checked-in-report-removal", "workspace:attune-repair", "manual:remove-checked-in-report"],
     ])
   })
 

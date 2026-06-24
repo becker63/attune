@@ -508,7 +508,7 @@ function createArchitectureGeneratePlan(
       const project = readStringParameter(options, "project")
       const kind = readStringParameter(options, "kind")
       const diagnostic = readStringParameter(options, "diagnostic")
-      return [tsxPlan(
+      const plan = tsxPlan(
         "toolchain:architecture:attune-repair",
         "framework/architecture/src/attune-repair-cli.ts",
         [
@@ -516,9 +516,12 @@ function createArchitectureGeneratePlan(
           ...(kind === null ? [] : ["--kind", kind]),
           ...(diagnostic === null ? [] : ["--diagnostic", diagnostic]),
           ...(readBooleanParameter(options, "allSafe", true) ? ["--all-safe"] : []),
+          ...(options.dryRun ? ["--dry-run"] : []),
         ],
         context.workspaceRoot,
-      )]
+      )
+      if (plan.kind !== "process") return [unsupportedToolchainPlan(options)]
+      return [{ ...plan, runInDryRun: true }]
     }
     default:
       return [unsupportedToolchainPlan(options)]

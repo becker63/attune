@@ -319,10 +319,15 @@ export const programSourceIndexRows = (
     safety: "safe" as const,
     nxTarget: `${input.projectId}:attune-repair`,
     repairKind: "schema-descriptor-refresh",
+    route: "workspace:program-index-materialize",
     payloadJson: programIndexJson({
       source: "program-index",
       diagnostic: diagnostic.code,
     }),
+    validationAfterTargetsJson: programIndexJson([
+      `${input.projectId}:attune-check`,
+      `${input.projectId}:typecheck`,
+    ]),
     createdAt: now,
   }))
 
@@ -582,11 +587,13 @@ const compatibilityRepairForDiagnostic = (
     safety: repair.safety,
     ...(repair.nxTarget === undefined ? {} : { nxTarget: repair.nxTarget(projectId) }),
     repairKind: repair.repairKind,
+    route: repair.route(projectId),
     payloadJson: programIndexJson({
       source: "program-index",
       diagnostic: diagnostic.code,
       cause: diagnostic.causeJson === undefined ? undefined : JSON.parse(diagnostic.causeJson) as unknown,
     }),
+    validationAfterTargetsJson: programIndexJson(repair.validationAfterTargets(projectId)),
     createdAt: now,
   }
 }
@@ -597,6 +604,8 @@ const compatibilityRepairMetadata = (
   readonly safety: ProgramIndexRepair["safety"]
   readonly repairKind: string
   readonly nxTarget?: (projectId: string) => string
+  readonly route: (projectId: string) => string
+  readonly validationAfterTargets: (projectId: string) => readonly string[]
 } => {
   switch (code) {
     case "attune/program-index/artifact-missing":
@@ -605,28 +614,46 @@ const compatibilityRepairMetadata = (
         safety: "safe",
         repairKind: "artifact-refresh",
         nxTarget: (projectId) => `${projectId}:attune-repair`,
+        route: () => "attune-repair-cli:generated",
+        validationAfterTargets: (projectId) => [
+          `${projectId}:attune-check`,
+          `${projectId}:typecheck`,
+        ],
       }
     case "attune/program-index/package-local-companion":
       return {
         safety: "needs-review",
         repairKind: "generated-companion-relocation",
         nxTarget: (projectId) => `${projectId}:attune-repair`,
+        route: () => "attune-repair-cli:generated",
+        validationAfterTargets: (projectId) => [
+          `${projectId}:attune-check`,
+          `${projectId}:typecheck`,
+        ],
       }
     case "attune/program-index/source-bom-compatibility":
       return {
         safety: "needs-review",
         repairKind: "source-ownership-projection",
         nxTarget: () => "workspace:attune-repair",
+        route: () => "attune-repair-cli:generated",
+        validationAfterTargets: () => ["workspace:attune-check"],
       }
     case "attune/program-index/checked-in-report-artifact":
       return {
         safety: "manual-only",
         repairKind: "checked-in-report-removal",
+        nxTarget: () => "workspace:attune-repair",
+        route: () => "manual:remove-checked-in-report",
+        validationAfterTargets: () => ["workspace:attune-check"],
       }
     default:
       return {
         safety: "needs-review",
         repairKind: "program-index-diagnostic-review",
+        nxTarget: (projectId) => `${projectId}:attune-repair`,
+        route: () => "manual:review-program-index-diagnostic",
+        validationAfterTargets: (projectId) => [`${projectId}:attune-check`],
       }
   }
 }
@@ -675,7 +702,9 @@ const programIndexRepairRowToProtocolAction = (
   const nxTarget = stringValue(row, "nx_target")
   const repairKind = stringValue(row, "repair_kind")
   const safety = stringValue(row, "safety")
+  const route = stringValue(row, "route")
   const payload = jsonValueFromRow(row, "payload_json")
+  const validationAfterTargets = stringArrayValueFromRow(row, "validation_after_targets_json")
   return {
     id: stringValue(row, "repair_id", stringValue(row, "diagnostic_id", "program-index-repair")),
     title: repairKind.length === 0
@@ -687,10 +716,21 @@ const programIndexRepairRowToProtocolAction = (
       source: "program-index",
       diagnosticId: stringValue(row, "diagnostic_id"),
       safety,
+      ...(route.length === 0 ? {} : { route }),
       ...(repairKind.length === 0 ? {} : { repairKind }),
+      ...(validationAfterTargets.length === 0 ? {} : { validationAfterTargets }),
       ...(payload === undefined ? {} : { payload }),
     },
   }
+}
+
+const stringArrayValueFromRow = (
+  row: ProgramIndexViewRow,
+  key: string,
+): readonly string[] => {
+  const value = jsonValueFromRow(row, key)
+  if (!Array.isArray(value)) return []
+  return value.filter((entry): entry is string => typeof entry === "string")
 }
 
 const jsonValueFromRow = (

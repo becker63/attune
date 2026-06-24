@@ -4,7 +4,9 @@ import * as path from "node:path"
 import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 
+import { Effect } from "effect"
 import { afterEach, describe, expect, it } from "vitest"
+import { createSqliteProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../../", import.meta.url)))
 const cliPath = path.join(repoRoot, "framework/architecture/src/attune-repair-cli.ts")
@@ -105,6 +107,38 @@ describe("attune repair CLI", () => {
     expect(centralized).toContain("from \"./attune.generated.js\"")
     expect(fs.existsSync(path.join(workspaceRoot, "packages/attune-foldkit/src/attune.contract.generated.ts"))).toBe(false)
   })
+
+  it("dry-runs program-index repair rows by safety class", () => {
+    const workspaceRoot = makeRepairWorkspace()
+    seedRepairProgramIndex(workspaceRoot)
+
+    const result = runRepair(workspaceRoot, "--dry-run")
+
+    expect(result.status).toBe(0)
+    expect(result.stdout).toContain("Program index repair rows: 3 total (1 safe, 1 needs-review, 1 manual-only, 0 blocked).")
+    expect(result.stdout).toContain("SAFE platform-alchemy-k8s:attune-repair diagnostic:platform:artifact operation-registry")
+    expect(result.stdout).toContain("NEEDS-REVIEW platform-alchemy-k8s:attune-repair diagnostic:platform:review")
+    expect(result.stdout).toContain("MANUAL-ONLY workspace:attune-repair diagnostic:platform:manual")
+    expect(fs.existsSync(path.join(
+      workspaceRoot,
+      ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts",
+    ))).toBe(false)
+  })
+
+  it("executes only safe program-index repair routes by default", () => {
+    const workspaceRoot = makeRepairWorkspace()
+    seedRepairProgramIndex(workspaceRoot)
+
+    const result = runRepair(workspaceRoot)
+
+    expect(result.status).toBe(0)
+    expect(fs.existsSync(path.join(
+      workspaceRoot,
+      ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts",
+    ))).toBe(true)
+    expect(fs.existsSync(path.join(workspaceRoot, "packages/platform-alchemy-k8s/attune.source-bom.json"))).toBe(true)
+    expect(fs.existsSync(path.join(workspaceRoot, "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json"))).toBe(false)
+  })
 })
 
 function makeRepairWorkspace(extraFiles: Record<string, string> = {}): string {
@@ -159,6 +193,99 @@ function runRepair(workspaceRoot: string, ...args: readonly string[]): ReturnTyp
       ...process.env,
       ATTUNE_REPAIR_WORKSPACE_ROOT: workspaceRoot,
     },
+  })
+}
+
+function seedRepairProgramIndex(workspaceRoot: string): void {
+  const indexPath = path.join(workspaceRoot, ".attune/cache/program-index.sqlite")
+  const index = createSqliteProgramIndex({ path: indexPath })
+  Effect.runSync(seedRepairRows(index))
+  Effect.runSync(index.close())
+}
+
+function seedRepairRows(index: ProgramIndexApi): Effect.Effect<void, unknown> {
+  return Effect.gen(function* seedRows() {
+    yield* index.putProjects([{
+      id: "platform-alchemy-k8s",
+      root: "packages/platform-alchemy-k8s",
+      sourceRoot: "packages/platform-alchemy-k8s/src",
+      projectType: "library",
+      updatedAt: "2026-06-24T00:00:00.000Z",
+    }])
+    yield* index.putSourceFiles([{
+      id: "file:platform:attune",
+      projectId: "platform-alchemy-k8s",
+      path: "packages/platform-alchemy-k8s/src/attune.package.ts",
+      hash: "source",
+      updatedAt: "2026-06-24T00:00:00.000Z",
+    }])
+    yield* index.putDiagnostics([
+      {
+        id: "diagnostic:platform:artifact",
+        projectId: "platform-alchemy-k8s",
+        sourceFileId: "file:platform:attune",
+        code: "attune/program-index/artifact-missing",
+        severity: "warning",
+        message: "artifact fact is missing for operation registry.",
+        causeJson: JSON.stringify({
+          fact: "artifact",
+          path: ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts",
+        }),
+      },
+      {
+        id: "diagnostic:platform:review",
+        projectId: "platform-alchemy-k8s",
+        sourceFileId: "file:platform:attune",
+        code: "attune/program-index/package-local-companion",
+        severity: "warning",
+        message: "source_file repair changes authored package surface.",
+      },
+      {
+        id: "diagnostic:platform:manual",
+        projectId: "platform-alchemy-k8s",
+        sourceFileId: "file:platform:attune",
+        code: "attune/program-index/checked-in-report-artifact",
+        severity: "error",
+        message: "checked-in report artifact requires manual removal.",
+      },
+    ])
+    yield* index.putRepairs([
+      {
+        id: "repair:platform:artifact",
+        diagnosticId: "diagnostic:platform:artifact",
+        safety: "safe",
+        nxTarget: "platform-alchemy-k8s:attune-repair",
+        repairKind: "operation-registry",
+        route: "attune-repair-cli:registry",
+        payloadJson: JSON.stringify({
+          cause: {
+            path: ".attune/cache/generated/platform-alchemy-k8s/attune-operation-registry.ts",
+          },
+        }),
+        validationAfterTargetsJson: JSON.stringify(["platform-alchemy-k8s:attune-check"]),
+        createdAt: "2026-06-24T00:00:00.000Z",
+      },
+      {
+        id: "repair:platform:review",
+        diagnosticId: "diagnostic:platform:review",
+        safety: "needs-review",
+        nxTarget: "platform-alchemy-k8s:attune-repair",
+        repairKind: "generated-companion-relocation",
+        route: "attune-repair-cli:generated",
+        validationAfterTargetsJson: JSON.stringify(["platform-alchemy-k8s:attune-check"]),
+        createdAt: "2026-06-24T00:00:00.000Z",
+      },
+      {
+        id: "repair:platform:manual",
+        diagnosticId: "diagnostic:platform:manual",
+        safety: "manual-only",
+        nxTarget: "workspace:attune-repair",
+        repairKind: "checked-in-report-removal",
+        route: "manual:remove-checked-in-report",
+        validationAfterTargetsJson: JSON.stringify(["workspace:attune-check"]),
+        createdAt: "2026-06-24T00:00:00.000Z",
+      },
+    ])
   })
 }
 

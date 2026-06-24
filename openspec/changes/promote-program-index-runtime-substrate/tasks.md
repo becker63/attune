@@ -34,15 +34,15 @@
 
 ## 3. Program-Index Repair Routing
 
-- [ ] 3.1 Expand program-index repair rows to represent diagnostic id, safety class, public Nx target, internal repair kind, generator or materializer route, payload JSON, and validation-after targets.
-- [ ] 3.2 Add a SQL view or query helper for repairable diagnostics by workspace, project, file, and diagnostic id.
-- [ ] 3.3 Add invalidation rows for repair insert, update, and delete operations.
-- [ ] 3.4 Update `attune-repair` routing to prefer program-index repair rows while preserving existing generator maps as compatibility implementations.
-- [ ] 3.5 Add tests proving safe repair rows route to expected Nx targets or generators.
-- [ ] 3.6 Add tests proving `needs-review` and `manual-only` repair rows are reported but not executed by default safe repair.
-- [ ] 3.7 Ensure repair dry-run summarizes safe, needs-review, manual-only, and blocked repair plans without writing source or checked-in reports.
-- [ ] 3.8 Encode safety rules so generated/cache/framework-owned repairs may be safe, stable-id or package declaration repairs require review, and provider/destructive repairs are manual-only or review-gated.
-- [ ] 3.9 Validate Phase 3 with `nx run framework-sqlite:test --skipNxCache`, `nx run framework-runtime:test --skipNxCache`, `nx run framework-nx:test --skipNxCache`, `nx run attune-nx:test --skipNxCache`, and `nx run workspace:attune-repair --dryRun --skipNxCache`.
+- [x] 3.1 Expand program-index repair rows to represent diagnostic id, safety class, public Nx target, internal repair kind, generator or materializer route, payload JSON, and validation-after targets.
+- [x] 3.2 Add a SQL view or query helper for repairable diagnostics by workspace, project, file, and diagnostic id.
+- [x] 3.3 Add invalidation rows for repair insert, update, and delete operations.
+- [x] 3.4 Update `attune-repair` routing to prefer program-index repair rows while preserving existing generator maps as compatibility implementations.
+- [x] 3.5 Add tests proving safe repair rows route to expected Nx targets or generators.
+- [x] 3.6 Add tests proving `needs-review` and `manual-only` repair rows are reported but not executed by default safe repair.
+- [x] 3.7 Ensure repair dry-run summarizes safe, needs-review, manual-only, and blocked repair plans without writing source or checked-in reports.
+- [x] 3.8 Encode safety rules so generated/cache/framework-owned repairs may be safe, stable-id or package declaration repairs require review, and provider/destructive repairs are manual-only or review-gated.
+- [x] 3.9 Validate Phase 3 with `nx run framework-sqlite:test --skipNxCache`, `nx run framework-runtime:test --skipNxCache`, `nx run framework-nx:test --skipNxCache`, `nx run attune-nx:test --skipNxCache`, and `nx run workspace:attune-repair --dryRun --skipNxCache`.
 
 ## 4. Compatibility Adapters
 

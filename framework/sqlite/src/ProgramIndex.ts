@@ -108,7 +108,9 @@ export interface ProgramIndexRepair {
   readonly safety: "safe" | "needs-review" | "manual-only"
   readonly nxTarget?: string
   readonly repairKind?: string
+  readonly route?: string
   readonly payloadJson?: string
+  readonly validationAfterTargetsJson?: string
   readonly createdAt: string
 }
 
@@ -188,6 +190,11 @@ export interface ProgramIndexInvalidationFilter {
   readonly unconsumed?: boolean
 }
 
+export interface ProgramIndexRepairableDiagnosticFilter extends ProgramIndexProjectFilter {
+  readonly path?: string
+  readonly diagnosticId?: string
+}
+
 export type ProgramIndexViewRow = Readonly<Record<string, string | number | null>>
 
 export interface ProgramIndexApi {
@@ -224,6 +231,9 @@ export interface ProgramIndexApi {
   ) => Effect.Effect<void, ProgramIndexError>
   readonly putRepairs: (
     rows: readonly ProgramIndexRepair[],
+  ) => Effect.Effect<void, ProgramIndexError>
+  readonly deleteRepairs: (
+    ids: readonly string[],
   ) => Effect.Effect<void, ProgramIndexError>
   readonly recordInvalidation: (
     key: string,
@@ -282,7 +292,7 @@ export interface ProgramIndexApi {
     path?: string,
   ) => Effect.Effect<readonly ProgramIndexViewRow[], ProgramIndexError>
   readonly listRepairableDiagnostics: (
-    projectId?: string,
+    filter?: string | ProgramIndexRepairableDiagnosticFilter,
   ) => Effect.Effect<readonly ProgramIndexViewRow[], ProgramIndexError>
   readonly listProjectHealth: () => Effect.Effect<readonly ProgramIndexProjectHealth[], ProgramIndexError>
   readonly listSchemaSerializationIssues: (
@@ -426,6 +436,12 @@ export const createInMemoryProgramIndex = (): ProgramIndexApi => {
         repairs = upsertMany(repairs, rows, (row) => row.id)
         for (const row of rows) record("repair", row.id)
       }),
+    deleteRepairs: (ids) =>
+      Effect.sync(() => {
+        const selected = new Set(ids)
+        repairs = repairs.filter((row) => !selected.has(row.id))
+        for (const id of ids) record("repair", id)
+      }),
     recordInvalidation: (key, subject) => Effect.sync(() => record(key, subject)),
     listProjects: (filter = {}) => Effect.succeed(projects.filter((row) => matchesProject(row, filter))),
     listTargets: (filter = {}) => Effect.succeed(targets.filter((row) => matchesProject(row, filter))),
@@ -481,8 +497,13 @@ export const createInMemoryProgramIndex = (): ProgramIndexApi => {
         .map((row) => viewRow(row))),
     listDiagnosticsByFile: (path) =>
       Effect.succeed(diagnosticsByFileRows(sourceFiles, diagnostics, path)),
-    listRepairableDiagnostics: (projectId) =>
-      Effect.succeed(repairableDiagnosticRows(diagnostics, repairs, projectId)),
+    listRepairableDiagnostics: (filter) =>
+      Effect.succeed(repairableDiagnosticRows(
+        sourceFiles,
+        diagnostics,
+        repairs,
+        normalizeRepairableDiagnosticFilter(filter),
+      )),
     listProjectHealth: () =>
       Effect.succeed(projectHealthRows(projects, sourceFiles, symbols, artifacts, diagnostics, repairs)),
     listSchemaSerializationIssues: (projectId) =>
@@ -575,9 +596,21 @@ export const createSqliteProgramIndex = ({
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
   const putRepair = database.prepare(`
-    INSERT OR REPLACE INTO repair
-      (id, diagnostic_id, safety, nx_target, repair_kind, payload_json, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO repair
+      (id, diagnostic_id, safety, nx_target, repair_kind, route, payload_json, validation_after_targets_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      diagnostic_id = excluded.diagnostic_id,
+      safety = excluded.safety,
+      nx_target = excluded.nx_target,
+      repair_kind = excluded.repair_kind,
+      route = excluded.route,
+      payload_json = excluded.payload_json,
+      validation_after_targets_json = excluded.validation_after_targets_json,
+      created_at = excluded.created_at
+  `)
+  const deleteRepair = database.prepare(`
+    DELETE FROM repair WHERE id = ?
   `)
   const putInvalidation = database.prepare(`
     INSERT INTO invalidation_log (key, subject) VALUES (?, ?)
@@ -738,10 +771,15 @@ export const createSqliteProgramIndex = ({
           row.safety,
           row.nxTarget ?? null,
           row.repairKind ?? null,
+          row.route ?? null,
           row.payloadJson ?? null,
+          row.validationAfterTargetsJson ?? null,
           row.createdAt,
         )
       }
+    }),
+    deleteRepairs: (ids) => indexEffect("deleteRepairs", () => {
+      for (const id of ids) deleteRepair.run(id)
     }),
     recordInvalidation: (key, subject) => indexEffect("recordInvalidation", () => putInvalidation.run(key, subject)),
     listProjects: (filter = {}) => indexEffect("listProjects", () => readProjects(database, filter)),
@@ -770,8 +808,11 @@ export const createSqliteProgramIndex = ({
       indexEffect("listStaleArtifacts", () => readView(database, "stale_artifacts", projectId === undefined ? "" : "project_id = ?", projectId === undefined ? [] : [projectId])),
     listDiagnosticsByFile: (path) =>
       indexEffect("listDiagnosticsByFile", () => readView(database, "diagnostics_by_file", path === undefined ? "" : "path = ?", path === undefined ? [] : [path])),
-    listRepairableDiagnostics: (projectId) =>
-      indexEffect("listRepairableDiagnostics", () => readView(database, "repairable_diagnostics", projectId === undefined ? "" : "project_id = ?", projectId === undefined ? [] : [projectId])),
+    listRepairableDiagnostics: (filter) =>
+      indexEffect("listRepairableDiagnostics", () => {
+        const repairableFilter = whereRepairableDiagnostic(normalizeRepairableDiagnosticFilter(filter))
+        return readView(database, "repairable_diagnostics", repairableFilter.sql, repairableFilter.parameters)
+      }),
     listProjectHealth: () => indexEffect("listProjectHealth", () => readProjectHealth(database)),
     listSchemaSerializationIssues: (projectId) =>
       indexEffect("listSchemaSerializationIssues", () => readView(database, "symbols_with_schema_serialization_issues", projectId === undefined ? "" : "project_id = ?", projectId === undefined ? [] : [projectId])),
@@ -856,6 +897,13 @@ const matchesDiagnostic = (
   matchesProject(row, filter) &&
   (filter.sourceFileId === undefined || row.sourceFileId === filter.sourceFileId)
 
+const normalizeRepairableDiagnosticFilter = (
+  filter: string | ProgramIndexRepairableDiagnosticFilter | undefined,
+): ProgramIndexRepairableDiagnosticFilter => {
+  if (typeof filter === "string") return { projectId: filter }
+  return filter ?? {}
+}
+
 const viewRow = (row: object): ProgramIndexViewRow =>
   Object.fromEntries(
     Object.entries(row as Record<string, unknown>).filter((entry): entry is [string, string | number | null] => {
@@ -909,27 +957,41 @@ const diagnosticsByFileRows = (
 }
 
 const repairableDiagnosticRows = (
+  sourceFiles: readonly ProgramIndexSourceFile[],
   diagnostics: readonly ProgramIndexDiagnostic[],
   repairs: readonly ProgramIndexRepair[],
-  projectId?: string,
+  filter: ProgramIndexRepairableDiagnosticFilter = {},
 ): readonly ProgramIndexViewRow[] => {
   const diagnosticById = new Map(diagnostics.map((diagnostic) => [diagnostic.id, diagnostic]))
+  const sourceFileById = new Map(sourceFiles.map((sourceFile) => [sourceFile.id, sourceFile]))
   return repairs.flatMap((repair) => {
     const diagnostic = diagnosticById.get(repair.diagnosticId)
-    if (diagnostic === undefined || (projectId !== undefined && diagnostic.projectId !== projectId)) {
+    const sourceFile = diagnostic?.sourceFileId === undefined
+      ? undefined
+      : sourceFileById.get(diagnostic.sourceFileId)
+    if (
+      diagnostic === undefined ||
+      (filter.projectId !== undefined && diagnostic.projectId !== filter.projectId) ||
+      (filter.path !== undefined && sourceFile?.path !== filter.path) ||
+      (filter.diagnosticId !== undefined && diagnostic.id !== filter.diagnosticId)
+    ) {
       return []
     }
     return [viewRow({
       repair_id: repair.id,
       diagnostic_id: diagnostic.id,
       project_id: diagnostic.projectId ?? null,
+      source_file_id: diagnostic.sourceFileId ?? null,
+      path: sourceFile?.path ?? null,
       code: diagnostic.code,
       severity: diagnostic.severity,
       message: diagnostic.message,
       safety: repair.safety,
       nx_target: repair.nxTarget ?? null,
       repair_kind: repair.repairKind ?? null,
+      route: repair.route ?? null,
       payload_json: repair.payloadJson ?? null,
+      validation_after_targets_json: repair.validationAfterTargetsJson ?? null,
       created_at: repair.createdAt,
     })]
   })
@@ -1126,16 +1188,20 @@ SELECT
   repair.diagnostic_id,
   diagnostic.project_id,
   diagnostic.source_file_id,
+  source_file.path,
   diagnostic.code,
   diagnostic.severity,
   diagnostic.message,
   repair.safety,
   repair.nx_target,
   repair.repair_kind,
+  NULL AS route,
   repair.payload_json,
+  NULL AS validation_after_targets_json,
   repair.created_at
 FROM repair
-JOIN diagnostic ON diagnostic.id = repair.diagnostic_id;
+JOIN diagnostic ON diagnostic.id = repair.diagnostic_id
+LEFT JOIN source_file ON source_file.id = diagnostic.source_file_id;
 
 CREATE VIEW IF NOT EXISTS project_health AS
 SELECT
@@ -1285,6 +1351,33 @@ BEGIN
 END;
 `
 
+const programIndexRepairRoutingMigrationSql = `
+ALTER TABLE repair ADD COLUMN route TEXT;
+ALTER TABLE repair ADD COLUMN validation_after_targets_json TEXT;
+
+DROP VIEW IF EXISTS repairable_diagnostics;
+CREATE VIEW repairable_diagnostics AS
+SELECT
+  repair.id AS repair_id,
+  repair.diagnostic_id,
+  diagnostic.project_id,
+  diagnostic.source_file_id,
+  source_file.path,
+  diagnostic.code,
+  diagnostic.severity,
+  diagnostic.message,
+  repair.safety,
+  repair.nx_target,
+  repair.repair_kind,
+  repair.route,
+  repair.payload_json,
+  repair.validation_after_targets_json,
+  repair.created_at
+FROM repair
+JOIN diagnostic ON diagnostic.id = repair.diagnostic_id
+LEFT JOIN source_file ON source_file.id = diagnostic.source_file_id;
+`
+
 const programIndexMigrations = [
   {
     version: 1,
@@ -1300,6 +1393,11 @@ const programIndexMigrations = [
     version: 3,
     name: "add-program-index-invalidations",
     sql: programIndexInvalidationMigrationSql,
+  },
+  {
+    version: 4,
+    name: "add-program-index-repair-routing",
+    sql: programIndexRepairRoutingMigrationSql,
   },
 ] as const
 
@@ -1603,6 +1701,26 @@ const whereDiagnostic = (
   return { sql: clauses.join(" AND "), parameters }
 }
 
+const whereRepairableDiagnostic = (
+  filter: ProgramIndexRepairableDiagnosticFilter,
+): { readonly sql: string; readonly parameters: readonly string[] } => {
+  const clauses: string[] = []
+  const parameters: string[] = []
+  if (filter.projectId !== undefined) {
+    clauses.push("project_id = ?")
+    parameters.push(filter.projectId)
+  }
+  if (filter.path !== undefined) {
+    clauses.push("path = ?")
+    parameters.push(filter.path)
+  }
+  if (filter.diagnosticId !== undefined) {
+    clauses.push("diagnostic_id = ?")
+    parameters.push(filter.diagnosticId)
+  }
+  return { sql: clauses.join(" AND "), parameters }
+}
+
 const projectFromRow = (row: Record<string, unknown>): ProgramIndexProject => ({
   id: stringFromRow(row, "id"),
   root: stringFromRow(row, "root"),
@@ -1696,7 +1814,9 @@ const repairFromRow = (row: Record<string, unknown>): ProgramIndexRepair => ({
   safety: stringFromRow(row, "safety") as ProgramIndexRepair["safety"],
   ...optionalStringProperty("nxTarget", row.nx_target),
   ...optionalStringProperty("repairKind", row.repair_kind),
+  ...optionalStringProperty("route", row.route),
   ...optionalStringProperty("payloadJson", row.payload_json),
+  ...optionalStringProperty("validationAfterTargetsJson", row.validation_after_targets_json),
   createdAt: stringFromRow(row, "created_at"),
 })
 

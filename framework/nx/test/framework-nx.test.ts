@@ -18,6 +18,7 @@ import {
   propertyEvidenceAction,
   protocolMaterializeAction,
   repairPlanForDiagnostic,
+  repairPlanFromProgramIndexRow,
   typeGuidanceAction,
   type FrameworkNxGeneratedArtifactKind,
 } from "../src/index.js"
@@ -215,6 +216,91 @@ describe("@attune/framework-nx", () => {
       generated: true,
     })
     expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).repairKind).toBe("operation-registry")
+  })
+
+  it("routes safe program-index repair rows to public Nx targets", () => {
+    const repair = repairPlanFromProgramIndexRow({
+      repair_id: "repair:demo:artifact",
+      diagnostic_id: "diagnostic:demo:artifact",
+      project_id: "demo",
+      path: "packages/demo/src/attune.package.ts",
+      code: "attune/program-index/artifact-missing",
+      severity: "error",
+      message: "artifact fact is missing for generated registry.",
+      safety: "safe",
+      nx_target: "demo:attune-repair",
+      repair_kind: "artifact-refresh",
+      route: "attune-repair-cli:generated",
+      payload_json: JSON.stringify({
+        cause: {
+          path: ".attune/cache/generated/demo/attune-operation-registry.ts",
+        },
+      }),
+      validation_after_targets_json: JSON.stringify([
+        "demo:attune-check",
+        "demo:typecheck",
+      ]),
+      created_at: "2026-06-24T00:00:00.000Z",
+    })
+
+    expect(repair).toMatchObject({
+      diagnosticId: "diagnostic:demo:artifact",
+      safety: "safe",
+      target: "demo:attune-repair",
+      command: "nx run demo:attune-repair --diagnostic diagnostic:demo:artifact",
+      route: "attune-repair-cli:generated",
+      repairKind: "artifact-refresh",
+      changes: [{
+        path: ".attune/cache/generated/demo/attune-operation-registry.ts",
+        kind: "regenerate",
+        generated: true,
+      }],
+      validateAfter: [
+        "demo:attune-check",
+        "demo:typecheck",
+      ],
+    })
+    expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).route).toBe("attune-repair-cli:generated")
+  })
+
+  it("keeps needs-review and manual-only indexed repairs non-safe", () => {
+    const review = repairPlanFromProgramIndexRow({
+      repair_id: "repair:demo:review",
+      diagnostic_id: "diagnostic:demo:review",
+      project_id: "demo",
+      message: "repair changes authored source_file facts.",
+      safety: "needs-review",
+      nx_target: "demo:attune-repair",
+      repair_kind: "source-file-ownership-projection",
+      route: "attune-repair-cli:generated",
+      created_at: "2026-06-24T00:00:00.000Z",
+    })
+    const manual = repairPlanFromProgramIndexRow({
+      repair_id: "repair:workspace:manual",
+      diagnostic_id: "diagnostic:workspace:manual",
+      project_id: "workspace",
+      message: "checked-in report artifact requires human removal.",
+      safety: "manual-only",
+      nx_target: "workspace:attune-repair",
+      repair_kind: "checked-in-report-removal",
+      route: "manual:remove-checked-in-report",
+      payload_json: JSON.stringify({
+        cause: {
+          path: "reports/protocol-delta-report.json",
+        },
+      }),
+      created_at: "2026-06-24T00:00:00.000Z",
+    })
+
+    expect(review?.safety).toBe("needs-review")
+    expect(manual).toMatchObject({
+      safety: "manual-only",
+      changes: [{
+        path: "reports/protocol-delta-report.json",
+        kind: "delete",
+        generated: false,
+      }],
+    })
   })
 
   it("serializes Nx project graph facts into program-index rows", () => {

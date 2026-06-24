@@ -468,6 +468,49 @@ describe("attune-nx executors", () => {
     ])
   })
 
+  it("executes public Attune repair dry-run as a read-only repair summary", async () => {
+    const calls: ExecutorProcessPlan[] = []
+    const result = await toolchainExecutor(
+      {
+        targetProject: "platform-alchemy-k8s",
+        tool: "architecture",
+        action: "generate",
+        toolId: "attune-repair",
+        parameters: {
+          allSafe: true,
+          project: "platform-alchemy-k8s",
+        },
+        dryRun: true,
+      },
+      createExecutorContext({ calls }),
+    )
+
+    expect(result.success).toBe(true)
+    expect(calls).toEqual([
+      expect.objectContaining({
+        adapter: "pnpm-exec-tsx",
+        executable: "pnpm",
+        args: [
+          "exec",
+          "tsx",
+          "framework/architecture/src/attune-repair-cli.ts",
+          "--project",
+          "platform-alchemy-k8s",
+          "--all-safe",
+          "--dry-run",
+        ],
+      }),
+    ])
+    expect(result.summary).toMatchObject({
+      executionMode: "dry-run",
+      status: "dry-run",
+      results: [{
+        label: "toolchain:architecture:attune-repair",
+        status: "passed",
+      }],
+    })
+  })
+
   it("plans tool version validation through the architecture check surface", async () => {
     const calls: ExecutorProcessPlan[] = []
     const result = await toolchainExecutor(

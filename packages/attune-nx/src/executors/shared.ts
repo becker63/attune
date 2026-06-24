@@ -140,6 +140,7 @@ export interface ExecutorProcessPlan {
   readonly args: readonly string[]
   readonly cwd: string
   readonly env?: Readonly<Record<string, string>>
+  readonly runInDryRun?: boolean
 }
 
 export interface ExecutorNoopPlan {
@@ -383,33 +384,27 @@ export const runTypedExecutor = async <
     input.common.timeoutSeconds ??
     defaultTimeoutSecondsByTier[input.common.resourceTier]
 
-  if (!input.common.dryRun) {
-    assertEvidenceOutputsAreCacheOnly(input.common.evidenceOutputs)
-  }
+  assertEvidenceOutputsForMode(input.common)
 
   const planSummaries = input.plans.map((plan) =>
     summarizePlan(plan, workspaceRoot),
   )
 
   if (input.common.dryRun) {
+    const runner = input.runner ?? input.context?.processRunner ?? defaultProcessRunner
+    const results = await runDryRunPlans(input.plans, runner, timeoutSeconds)
+    const success = results.every((result) => result.status !== "failed")
     const summary = createRunSummary({
       intent: input.intent,
       common: input.common,
       timeoutSeconds,
-      status: "dry-run",
+      status: success ? "dry-run" : "failed",
       plans: planSummaries,
-      results: input.plans.map((plan) => ({
-        label: plan.label,
-        status: "skipped",
-        exitCode: null,
-        signal: null,
-        timedOut: false,
-        error: null,
-      })),
+      results,
     })
 
     emitRunSummary(summary, input.context)
-    return { success: true, intent: input.intent, summary }
+    return { success, intent: input.intent, summary }
   }
 
   const unsupported = input.plans.find((plan) => plan.kind === "unsupported")
@@ -495,6 +490,58 @@ export const runTypedExecutor = async <
   emitRunSummary(summary, input.context)
   return { success, intent: input.intent, summary }
 }
+
+const assertEvidenceOutputsForMode = (
+  common: NormalizedCommonExecutorOptions,
+): void => {
+  if (!common.dryRun) {
+    assertEvidenceOutputsAreCacheOnly(common.evidenceOutputs)
+  }
+}
+
+const runDryRunPlans = async (
+  plans: readonly ExecutorTypedPlan[],
+  runner: ExecutorProcessRunner,
+  timeoutSeconds: number,
+): Promise<readonly ExecutorPlanResultSummary[]> => {
+  const results: ExecutorPlanResultSummary[] = []
+  for (const plan of plans) {
+    const result = await runDryRunPlan(plan, runner, timeoutSeconds)
+    results.push(result)
+    if (result.status === "failed") break
+  }
+  return results
+}
+
+const runDryRunPlan = async (
+  plan: ExecutorTypedPlan,
+  runner: ExecutorProcessRunner,
+  timeoutSeconds: number,
+): Promise<ExecutorPlanResultSummary> => {
+  if (plan.kind !== "process" || plan.runInDryRun !== true) {
+    return skippedPlanResult(plan.label)
+  }
+
+  const result = await runner(plan, { timeoutSeconds })
+  const passed = result.exitCode === 0 && result.signal === null && !result.timedOut
+  return {
+    label: plan.label,
+    status: passed ? "passed" : "failed",
+    exitCode: result.exitCode,
+    signal: result.signal,
+    timedOut: result.timedOut,
+    error: result.error,
+  }
+}
+
+const skippedPlanResult = (label: string): ExecutorPlanResultSummary => ({
+  label,
+  status: "skipped",
+  exitCode: null,
+  signal: null,
+  timedOut: false,
+  error: null,
+})
 
 export const defaultProcessRunner: ExecutorProcessRunner = (
   plan,

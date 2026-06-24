@@ -5,6 +5,7 @@ import {
   type AttuneProtocolDescriptor,
   type AttuneProtocolOperationDescriptor,
 } from "@attune/framework-protocol"
+import type { ProgramIndexViewRow } from "@attune/framework-sqlite"
 import { Schema } from "effect"
 
 export * from "./ProgramGraphIndex.js"
@@ -26,6 +27,7 @@ export interface AttuneRepairPlan {
   readonly target: string
   readonly command: string
   readonly generator?: string
+  readonly route?: string
   readonly repairKind: string
   readonly changes: readonly {
     readonly path: string
@@ -54,6 +56,7 @@ export const AttuneRepairPlanSchema = Schema.Struct({
   target: Schema.String,
   command: Schema.String,
   generator: Schema.optional(Schema.String),
+  route: Schema.optional(Schema.String),
   repairKind: Schema.String,
   changes: Schema.Array(Schema.Struct({
     path: Schema.String,
@@ -488,6 +491,116 @@ export const repairPlanForDiagnostic = (
     explanation: diagnostic.explanation,
   }
 }
+
+export const repairPlanFromProgramIndexRow = (
+  row: ProgramIndexViewRow,
+): AttuneRepairPlan | undefined => {
+  const diagnosticId = stringValue(row, "diagnostic_id")
+  if (diagnosticId.length === 0) return undefined
+
+  const projectId = stringValue(row, "project_id", "workspace")
+  const safety = repairSafety(row["safety"] ?? null)
+  const target = stringValue(row, "nx_target", projectId === "workspace"
+    ? frameworkRepairTargets.workspaceRepair
+    : frameworkRepairTargets.projectRepair(projectId))
+  const repairKind = stringValue(row, "repair_kind", "program-index-repair")
+  const route = stringValue(row, "route")
+  const payload = jsonValue(row, "payload_json")
+  const validationAfter = stringArrayValue(row, "validation_after_targets_json")
+  const changePath = repairChangePath(row, payload)
+
+  return {
+    diagnosticId,
+    safety,
+    target,
+    command: `nx run ${target} --diagnostic ${diagnosticId}`,
+    ...(route.length === 0 ? {} : { route }),
+    repairKind,
+    changes: [{
+      path: changePath,
+      kind: repairChangeKind(repairKind, safety),
+      generated: isGeneratedRepairPath(changePath),
+    }],
+    doNotEdit: [
+      ".attune/cache/program-index.sqlite",
+      "framework-owned generated artifacts unless the repair route writes them",
+    ],
+    validateAfter: validationAfter.length === 0 ? [target] : validationAfter,
+    explanation: stringValue(row, "message", "Program-index repair row is repairable."),
+  }
+}
+
+const stringValue = (
+  row: ProgramIndexViewRow,
+  key: string,
+  fallback = "",
+): string => {
+  const value = row[key]
+  return typeof value === "string" && value.length > 0 ? value : fallback
+}
+
+const repairSafety = (value: ProgramIndexViewRow[string]): AttuneRepairPlan["safety"] =>
+  value === "safe" || value === "needs-review" || value === "manual-only"
+    ? value
+    : "needs-review"
+
+const jsonValue = (
+  row: ProgramIndexViewRow,
+  key: string,
+): unknown | undefined => {
+  const value = row[key]
+  if (typeof value !== "string" || value.length === 0) return undefined
+  try {
+    return JSON.parse(value) as unknown
+  } catch {
+    return value
+  }
+}
+
+const stringArrayValue = (
+  row: ProgramIndexViewRow,
+  key: string,
+): readonly string[] => {
+  const value = jsonValue(row, key)
+  if (!Array.isArray(value)) return []
+  return value.filter((entry): entry is string => typeof entry === "string")
+}
+
+const repairChangePath = (
+  row: ProgramIndexViewRow,
+  payload: unknown,
+): string => {
+  const payloadPath = pathFromRepairPayload(payload)
+  if (payloadPath.length > 0) return payloadPath
+  return stringValue(row, "path", "program-index repair row")
+}
+
+const pathFromRepairPayload = (payload: unknown): string => {
+  if (typeof payload !== "object" || payload === null) return ""
+  const record = payload as Record<string, unknown>
+  if (typeof record.path === "string") return record.path
+  if (typeof record.artifactPath === "string") return record.artifactPath
+  if (typeof record.sourceFile === "string") return record.sourceFile
+  const cause = record.cause
+  if (typeof cause !== "object" || cause === null) return ""
+  const causeRecord = cause as Record<string, unknown>
+  return typeof causeRecord.path === "string" ? causeRecord.path : ""
+}
+
+const repairChangeKind = (
+  repairKind: string,
+  safety: AttuneRepairPlan["safety"],
+): AttuneRepairPlan["changes"][number]["kind"] => {
+  if (safety === "manual-only" && /removal|delete/u.test(repairKind)) return "delete"
+  if (/refresh|generated|registry|guidance|evidence/u.test(repairKind)) return "regenerate"
+  return "update"
+}
+
+const isGeneratedRepairPath = (path: string): boolean =>
+  path.startsWith(".attune/cache/") ||
+  path.includes("/generated/") ||
+  path.includes(".generated.") ||
+  path.includes("framework/architecture/src/generated/")
 
 const isEphemeralOutputPath = (path: string): boolean => {
   const normalized = path.replaceAll("\\", "/")

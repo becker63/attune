@@ -117,7 +117,7 @@ describe("@attune/framework-sqlite", () => {
     const health = Effect.runSync(index.health())
     expect(health.ok).toBe(true)
     expect(health.backend).toBe(sqliteBackendName)
-    expect(health.migrationVersion).toBe(3)
+    expect(health.migrationVersion).toBe(4)
 
     Effect.runSync(seedProgramIndex(index))
     expect(Effect.runSync(index.health()).rowCounts.projects).toBe(1)
@@ -128,7 +128,7 @@ describe("@attune/framework-sqlite", () => {
 
     const reinitialized = Effect.runSync(index.reinitialize())
     expect(reinitialized.ok).toBe(true)
-    expect(reinitialized.migrationVersion).toBe(3)
+    expect(reinitialized.migrationVersion).toBe(4)
     Effect.runSync(index.close())
   })
 
@@ -200,9 +200,22 @@ describe("@attune/framework-sqlite", () => {
     })
     expect(Effect.runSync(index.listRepairableDiagnostics("demo"))[0]).toMatchObject({
       repair_id: "repair:demo:schema",
+      path: "packages/demo/src/attune.package.ts",
       safety: "safe",
       nx_target: "demo:attune-repair",
+      route: "workspace:program-index-materialize",
+      validation_after_targets_json: "[\"demo:attune-check\",\"demo:typecheck\"]",
     })
+    expect(Effect.runSync(index.listRepairableDiagnostics({
+      diagnosticId: "diagnostic:demo:schema",
+      path: "packages/demo/src/attune.package.ts",
+      projectId: "demo",
+    }))).toHaveLength(1)
+    expect(Effect.runSync(index.listRepairableDiagnostics({
+      diagnosticId: "diagnostic:demo:schema",
+      path: "packages/demo/src/other.ts",
+      projectId: "demo",
+    }))).toEqual([])
     expect(Effect.runSync(index.listPackageLocalAttuneCompanions("demo"))[0]).toMatchObject({
       path: "packages/demo/src/attune.generated.ts",
     })
@@ -218,6 +231,40 @@ describe("@attune/framework-sqlite", () => {
 
     Effect.runSync(index.markInvalidationsConsumed(invalidations.map((entry) => entry.id), "now"))
     expect(Effect.runSync(index.listInvalidations({ unconsumed: true }))).toEqual([])
+    Effect.runSync(index.close())
+  })
+
+  it("records repair invalidations for insert, update, and delete", () => {
+    const index = createSqliteProgramIndex({ path: ":memory:" })
+    Effect.runSync(index.putRepairs([{
+      id: "repair:demo:route",
+      diagnosticId: "diagnostic:demo:route",
+      safety: "safe",
+      nxTarget: "demo:attune-repair",
+      repairKind: "artifact-refresh",
+      route: "attune-repair-cli:generated",
+      payloadJson: "{}",
+      validationAfterTargetsJson: "[\"demo:attune-check\"]",
+      createdAt: "2026-06-23T00:00:00.000Z",
+    }]))
+    Effect.runSync(index.putRepairs([{
+      id: "repair:demo:route",
+      diagnosticId: "diagnostic:demo:route",
+      safety: "needs-review",
+      nxTarget: "demo:attune-repair",
+      repairKind: "artifact-refresh",
+      route: "attune-repair-cli:generated",
+      payloadJson: "{}",
+      validationAfterTargetsJson: "[\"demo:attune-check\"]",
+      createdAt: "2026-06-23T00:00:01.000Z",
+    }]))
+    Effect.runSync(index.deleteRepairs(["repair:demo:route"]))
+
+    expect(Effect.runSync(index.listInvalidations({ key: "repair" })).map((entry) => entry.subject)).toEqual([
+      "repair:demo:route",
+      "repair:demo:route",
+      "repair:demo:route",
+    ])
     Effect.runSync(index.close())
   })
 
@@ -350,7 +397,9 @@ const seedProgramIndex = (index: ProgramIndexApi): Effect.Effect<void, unknown> 
       safety: "safe",
       nxTarget: "demo:attune-repair",
       repairKind: "schema-descriptor-refresh",
+      route: "workspace:program-index-materialize",
       payloadJson: "{}",
+      validationAfterTargetsJson: "[\"demo:attune-check\",\"demo:typecheck\"]",
       createdAt: "2026-06-23T00:00:00.000Z",
     }])
   })

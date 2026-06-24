@@ -2,6 +2,13 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { createHash } from "node:crypto"
+import { Effect } from "effect"
+import { repairPlanFromProgramIndexRow, type AttuneRepairPlan } from "@attune/framework-nx"
+import {
+  createSqliteProgramIndex,
+  defaultProgramIndexPath,
+  type ProgramIndexViewRow,
+} from "@attune/framework-sqlite"
 
 interface RepairProject {
   readonly project: string
@@ -52,7 +59,12 @@ const workspaceRoot = process.env["ATTUNE_REPAIR_WORKSPACE_ROOT"] ?? process.cwd
 const args = process.argv.slice(2)
 const requestedProject = readArg("--project")
 const requestedKind = readRepairKind()
+const requestedDiagnostic = readArg("--diagnostic")
 const dryRun = args.includes("--dry-run")
+const programIndexPath =
+  readArg("--index-path") ??
+  process.env["ATTUNE_REPAIR_PROGRAM_INDEX_PATH"] ??
+  absolute(defaultProgramIndexPath)
 
 const selectedProjects = requestedProject === null
   ? repairProjects
@@ -63,7 +75,10 @@ if (requestedProject !== null && selectedProjects.length === 0) {
   process.exit(1)
 }
 
-const actions = selectedProjects.flatMap((project) => repairProject(project))
+const indexedRepairPlans = requestedKind === null ? readIndexedRepairPlans() : []
+if (indexedRepairPlans.length > 0) printIndexedRepairSummary(indexedRepairPlans)
+
+const actions = selectedProjects.flatMap((project) => repairProject(project, indexedRepairPlans))
 
 if (actions.length === 0) {
   console.log("Attune repair: no safe generated/package-surface relocation actions were needed.")
@@ -74,8 +89,17 @@ if (actions.length === 0) {
   }
 }
 
-function repairProject(project: RepairProject): readonly RepairAction[] {
+interface IndexedRepairPlan {
+  readonly row: ProgramIndexViewRow
+  readonly plan: AttuneRepairPlan | undefined
+}
+
+function repairProject(
+  project: RepairProject,
+  indexedPlans: readonly IndexedRepairPlan[],
+): readonly RepairAction[] {
   if (requestedKind !== null) return materializeRepairKind(project, requestedKind)
+  if (indexedPlans.length > 0) return materializeIndexedSafeRepairs(project, indexedPlans)
   if (!safeRelocationProjectIds.has(project.project)) return []
 
   return [
@@ -84,6 +108,120 @@ function repairProject(project: RepairProject): readonly RepairAction[] {
     ...updateTypecheckAggregate(project),
     ...relocateSourceBom(project),
   ]
+}
+
+function readIndexedRepairPlans(): readonly IndexedRepairPlan[] {
+  if (!fs.existsSync(programIndexPath)) return []
+
+  const index = createSqliteProgramIndex({ path: programIndexPath })
+  try {
+    const rows = Effect.runSync(index.listRepairableDiagnostics({
+      ...(requestedProject === null ? {} : { projectId: requestedProject }),
+      ...(requestedDiagnostic === null ? {} : { diagnosticId: requestedDiagnostic }),
+    }))
+    return rows.map((row) => ({
+      row,
+      plan: repairPlanFromProgramIndexRow(row),
+    }))
+  } catch (error) {
+    console.error(
+      `Attune repair: program-index repair rows unavailable from ${programIndexPath}: ${errorMessage(error)}`,
+    )
+    return []
+  } finally {
+    Effect.runSync(index.close())
+  }
+}
+
+function printIndexedRepairSummary(indexedPlans: readonly IndexedRepairPlan[]): void {
+  const plans = indexedPlans.map((entry) => entry.plan).filter((plan): plan is AttuneRepairPlan => plan !== undefined)
+  const safe = plans.filter((plan) => plan.safety === "safe").length
+  const needsReview = plans.filter((plan) => plan.safety === "needs-review").length
+  const manualOnly = plans.filter((plan) => plan.safety === "manual-only").length
+  const blocked = plans.filter((plan) => plan.safety === "safe" && repairKindForIndexedPlan(plan) === null).length
+
+  console.log(
+    `Program index repair rows: ${indexedPlans.length} total ` +
+      `(${safe} safe, ${needsReview} needs-review, ${manualOnly} manual-only, ${blocked} blocked).`,
+  )
+
+  for (const entry of indexedPlans) {
+    if (entry.plan === undefined) {
+      console.log("BLOCKED unknown diagnostic row missing repair plan metadata")
+      continue
+    }
+    const status = indexedPlanStatus(entry.plan)
+    const validation = entry.plan.validateAfter?.join(",") ?? "none"
+    console.log(
+      `${status} ${entry.plan.target} ${entry.plan.diagnosticId} ` +
+        `${entry.plan.repairKind} route=${entry.plan.route ?? "none"} validate=${validation} ` +
+        `${indexedPlanReason(entry.plan)}`,
+    )
+  }
+}
+
+function materializeIndexedSafeRepairs(
+  project: RepairProject,
+  indexedPlans: readonly IndexedRepairPlan[],
+): readonly RepairAction[] {
+  const materializerKinds = new Set<RepairKind>()
+  for (const entry of indexedPlans) {
+    if (entry.plan === undefined || entry.plan.safety !== "safe") continue
+    if (!targetsRepairProject(entry.plan, project)) continue
+    const kind = repairKindForIndexedPlan(entry.plan)
+    if (kind !== null) materializerKinds.add(kind)
+  }
+
+  return [...materializerKinds].flatMap((kind) => materializeRepairKind(project, kind))
+}
+
+function targetsRepairProject(plan: AttuneRepairPlan, project: RepairProject): boolean {
+  return plan.target === `${project.project}:attune-repair` ||
+    (plan.target === "workspace:attune-repair" && requestedProject === project.project)
+}
+
+function indexedPlanStatus(plan: AttuneRepairPlan): string {
+  if (plan.safety === "safe" && repairKindForIndexedPlan(plan) === null) return "BLOCKED"
+  return plan.safety.toUpperCase()
+}
+
+function indexedPlanReason(plan: AttuneRepairPlan): string {
+  if (plan.safety === "safe" && repairKindForIndexedPlan(plan) === null) {
+    return "no automatic materializer route is available"
+  }
+  if (plan.safety === "needs-review") return "review required before execution"
+  if (plan.safety === "manual-only") return "manual action required"
+  return "safe automatic route"
+}
+
+function repairKindForIndexedPlan(plan: AttuneRepairPlan): RepairKind | null {
+  switch (plan.route) {
+    case "attune-repair-cli:registry":
+      return "registry"
+    case "attune-repair-cli:properties":
+      return "properties"
+    case "attune-repair-cli:type-guidance":
+      return "type-guidance"
+    case "attune-repair-cli:evidence":
+      return "evidence"
+    case "attune-repair-cli:generated":
+      return "generated"
+    default:
+      break
+  }
+
+  switch (plan.repairKind) {
+    case "operation-registry":
+      return "registry"
+    case "property-evidence":
+      return "evidence"
+    case "type-guidance":
+      return "type-guidance"
+    case "artifact-refresh":
+      return "generated"
+    default:
+      return null
+  }
 }
 
 function materializeRepairKind(
@@ -465,4 +603,8 @@ function absolute(relativePath: string): string {
 
 function hashText(content: string): string {
   return createHash("sha256").update(content).digest("hex")
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
