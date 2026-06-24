@@ -67,9 +67,9 @@
 - [x] 5.5 Ensure touched-source-bom hooks accept staged package/framework source covered by framework-owned or cache-owned projections.
 - [x] 5.6 Add warning-first policy diagnostics for project-local generated companions when parity exists.
 - [x] 5.7 Preserve `.attune/cache/**` as ignored framework-owned cache while keeping checked-in protocol report artifacts forbidden.
-- [ ] 5.8 Remove or quarantine project-local generated companions for rings whose framework-owned artifact lookup and program-index freshness checks pass.
-- [ ] 5.9 Remove old generated/source ownership terminology from active project-ring docs after mechanical replacements are validated.
-- [ ] 5.10 Validate Phase 5 with `nx run attune-architecture:test --skipNxCache`, `nx run workspace:package-contracts-check --skipNxCache`, `nx run workspace:source-bom-check --skipNxCache`, and `bash -n nix/policy-hooks/touched-source-bom-ownership.sh`.
+- [x] 5.8 Remove or quarantine project-local generated companions for rings whose framework-owned artifact lookup and program-index freshness checks pass.
+- [x] 5.9 Remove old generated/source ownership terminology from active project-ring docs after mechanical replacements are validated.
+- [x] 5.10 Validate Phase 5 with `nx run attune-architecture:test --skipNxCache`, `nx run workspace:package-contracts-check --skipNxCache`, `nx run workspace:source-bom-check --skipNxCache`, and `bash -n nix/policy-hooks/touched-source-bom-ownership.sh`.
 
 ## 6. Project Rings
 

@@ -15,11 +15,19 @@ Changed:
 Ownership Proof:
 - `attune.source-bom.index.json` points all 11 registered projects at
   `framework/architecture/src/generated/source-bom/<project>.json`.
+- `rg --files | rg '(^|/)src/attune\.(generated|contract\.generated|package\.typecheck)\.ts$|(^|/)attune\.source-bom\.json$'`
+  returns no project-local generated companion or package-root source ownership
+  files in the active workspace.
 - `.attune/cache/` remains gitignored, and no-report policy tests continue to
   reject checked-in report artifacts while allowing local cache artifacts.
 - `nix/policy-hooks/touched-source-bom-ownership.sh` accepts staged
   package/framework source when the root Source BOM index points at either the
   framework-owned or cache-owned projection.
+- No active ring-specific handoff existed before Phase 6. The Phase 6 ring
+  handoffs must describe replacements as project, source_file, symbol,
+  schema_descriptor, edge, artifact, observation, diagnostic, repair, and
+  invalidation facts; old generated/source ownership terms are retained only as
+  compatibility labels or deletion blockers.
 
 Validated:
 - `pnpm exec nx run attune-architecture:test --skipNxCache`
@@ -27,6 +35,7 @@ Validated:
 - `pnpm exec nx run workspace:package-contracts-check --skipNxCache`
 - `pnpm exec nx run workspace:source-bom-check --skipNxCache`
 - `bash -n nix/policy-hooks/touched-source-bom-ownership.sh`
+- `pnpm exec nx run workspace:policy-commit --timeoutSeconds=600`
 
 Not run:
 - Ring-specific project check/test targets remain pending in Phase 6.
@@ -39,7 +48,8 @@ Risks:
   ownership wording once each ring handoff is validated.
 
 Follow-ups:
-- Remove or quarantine remaining compatibility generated outputs ring by ring
-  only after check/repair/freshness parity passes for that ring.
-- Update project-ring docs and handoffs so old generated/source ownership terms
-  are not presented as normal workflow.
+- Remove or quarantine remaining framework-owned compatibility generated
+  outputs ring by ring only after check/repair/freshness parity passes for that
+  ring.
+- Keep Phase 6 ring handoffs in mechanical vocabulary and record old terms only
+  as compatibility labels, deletion blockers, or future-change risks.
