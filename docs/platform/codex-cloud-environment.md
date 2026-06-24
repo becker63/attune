@@ -10,18 +10,18 @@ The target Attune Framework loop is diagnostics-first:
 
 ```text
 language-service diagnostic or Nx check output
-  -> referenced src/attune.package.ts or generated source boundary
-  -> @attune/nx generator, sync generator, or framework code action
-  -> generated Effect.Service / Effect Schema contract metadata
-  -> framework runtime/cache evidence
+  -> referenced source_file, symbol, schema_descriptor, edge, artifact, or repair fact
+  -> nx run workspace:attune-repair or nx run <project>:attune-repair
+  -> generated/cache artifacts and program-index rows
+  -> framework runtime/cache observations
   -> language-service and Nx diagnostics clear
 ```
 
-Agents should repair diagnostics and package contracts, not raw protocol
-runtime internals. Protocol Runtime, Protocol Store, descriptor hashes,
-obligations, evidence indexes, repair plans, and ProtocolDelta facts are private
-framework materialization. Public views are TypeScript language-service
-diagnostics, quick info, code actions, code lenses, and Nx check output.
+Agents should repair diagnostics and program-index facts, not raw framework
+runtime internals. Descriptor hashes, observations, repair rows, invalidation
+rows, and compatibility adapter projections are private framework
+materialization. Public surfaces are TypeScript language-service diagnostics,
+quick info, code actions, code lenses, and Nx check output.
 
 ## Canonical smoke check
 
@@ -51,16 +51,11 @@ target that ran:
 ```bash
 nx run workspace:policy-fast
 nx run workspace:policy-proof-pressure
-nx run workspace:package-contracts-check
 ```
 
 - `workspace:policy-fast` is the ordinary Codex gate.
 - `workspace:policy-proof-pressure` covers proof-pressure, workerized fuzzing,
-  mutation, Joern, container, and provider/resource evidence expectations.
-- `workspace:package-contracts-check` is the focused diagnostic/repair target
-  for package contracts, typed law metadata, generated provenance, waivers,
-  stale generated source, import boundaries, local framework cache state, and
-  no checked-in protocol report checks.
+  mutation, Joern, container, and provider/resource observation expectations.
 
 If a policy target is not ready on the current branch, run targeted docs grep
 checks for the migration at hand and report the remaining transitional
@@ -71,42 +66,31 @@ references explicitly.
 For package changes, prefer this repair path:
 
 1. Read language-service diagnostics or Nx diagnostic output.
-2. Open the referenced `src/attune.package.ts`, generated typecheck module, or
-   package view graph source.
-3. Use `@attune/nx` generators or sync generators to refresh repeated shapes.
+2. Open the referenced source file or generated compatibility boundary.
+3. Run `nx run workspace:attune-repair` or the suggested project repair target
+   to refresh repeated shapes.
 4. Implement behavior inside generated `Effect.Service` classes and update
-   Effect Schema-backed operation metadata, laws, waivers, and provenance.
-5. Update Reactivity keys, base atoms, derived atoms, package view atoms, and
-   operation-to-view edges when meaningful package state changes.
+   Effect Schema-backed source metadata, validation metadata, waivers, and
+   provenance.
+5. Update Reactivity keys, base atoms, derived atoms, package state atoms, and
+   source-to-artifact edges when meaningful package state changes.
 6. Run the focused package check, property, atom graph, coverage, typecheck, or
    policy target that corresponds to the diagnostic.
 
-Do not edit raw descriptor JSON, SQLite rows, Drizzle tables, ProtocolStore
-internals, ProtocolDelta reports, obligation reports, evidence summaries, or
-architecture summary reports as the source of truth.
+Do not edit raw descriptor JSON, SQLite rows, Drizzle tables, private store
+internals, diagnostic dumps, observation summaries, or architecture summary
+reports as the source of truth.
 
-## Source BOM And Generator Expectations
+## Compatibility Source And Generator Expectations
 
 Before editing repeated, generated, or template-like source shapes, agents must
-query the relevant Source BOM shard ownership and prefer an `@attune/nx`
-generator or sync generator. Do not hand-edit repeated shapes when a generator
-owns the shape. If the Source BOM shard is missing or ambiguous, document the
-blocker and create a follow-up rather than inventing ownership. Source BOM and
-generator-shape manifests are migration scaffolding or temporary compatibility
-views; final semantic workflow surfaces are source declarations, generated
-source required by build/typecheck, framework runtime/cache state,
-language-service diagnostics, and Nx output.
-
-Useful generator workflow surface:
-
-```bash
-nx generate @attune/nx:effect-service <options>
-nx generate @attune/nx:joern-template <options>
-nx generate @attune/nx:cocoindex-mcp-tool <options>
-nx generate @attune/nx:sync-effect-layers <options>
-nx generate @attune/nx:sync-joern-templates <options>
-nx generate @attune/nx:sync-cocoindex-mcp-tools <options>
-```
+run the relevant `attune-check` target and use the repair it suggests. Do not
+hand-edit repeated shapes when a repair owns the shape. If ownership is missing
+or ambiguous, document the blocker and create a follow-up rather than inventing
+ownership. Legacy source ownership and generator-shape manifests are migration
+scaffolding or temporary compatibility data; final semantic workflow surfaces
+are source declarations, generated source required by build/typecheck,
+framework runtime/cache state, language-service diagnostics, and Nx output.
 
 ## Ordinary validation commands
 
@@ -123,12 +107,11 @@ suite instead of teaching package-manager scripts. If a target fails, report the
 exact command and classify the failure using the inventory below. Propose a
 follow-up issue when the fix is larger than the current slice.
 
-Framework evidence produced by property or fuzz targets should be stored through
-framework services, printed to stdout, uploaded as CI artifacts, or written
-under gitignored cache paths such as `.attune/cache`. Do not check in
-ProtocolDelta reports, obligation reports, evidence summaries, Markdown/JSON
-architecture summaries, cloud-agent summaries, or generated status reports as
-protocol truth.
+Framework observations produced by property or fuzz targets should be stored
+through framework services, printed to stdout, uploaded as CI artifacts, or
+written under gitignored cache paths such as `.attune/cache`. Do not check in
+diagnostic dumps, observation summaries, Markdown/JSON architecture summaries,
+cloud-agent summaries, or generated status reports as source truth.
 
 ## Environment failure inventory
 

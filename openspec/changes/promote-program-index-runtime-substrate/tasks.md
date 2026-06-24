@@ -16,7 +16,7 @@
 - [x] 1.3 Add tests or policy fixtures that reject new first-class Package, Protocol, Operation, View, Law, Obligation, Evidence, Delta, TypeGuidance, SourceBOM, GeneratorShape, FuzzHandler, PropertyMap, or RpcGroup runtime tables in the program-index path.
 - [x] 1.4 Update diagnostic copy for the program-index path so the primary explanation names the missing, stale, invalid, observed, or repairable mechanical fact.
 - [x] 1.5 Ensure compatibility adapters may mention old nouns only as source metadata or explanatory labels.
-- [ ] 1.6 Add docs/policy checks that reject old ontology nouns in active public operating docs for migrated rings.
+- [x] 1.6 Add docs/policy checks that reject old ontology nouns in active public operating docs for migrated rings.
 - [x] 1.7 Add a naming inventory for public runtime exports and classify old-noun exports as delete, rename-to-mechanical, legacy-adapter-only, or future-change.
 - [x] 1.8 Validate the ontology cut with `openspec validate promote-program-index-runtime-substrate --type change` and the focused policy/runtime tests introduced in this section.
 

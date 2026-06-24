@@ -6,10 +6,10 @@ ask for clarification in the Codex thread before changing files.
 
 ## Mission
 
-Attune is an Effect-first code intelligence system and an agent-legible
-framework for package protocols. Codex is the implementation agent, OpenSpec is
-the planning gate, Nx check/repair targets are the public workflow surface, and
-GitHub PRs are the review boundary.
+Attune is an Effect-first code intelligence system with an agent-legible
+program index. Codex is the implementation agent, OpenSpec is the planning
+gate, Nx check/repair targets are the public workflow surface, and GitHub PRs
+are the review boundary.
 
 The northstar loop is:
 
@@ -94,10 +94,10 @@ task is explicit and low risk.
 ## Attune Framework Workflow
 
 Attune Framework lives under root `framework/` and defines the programming
-model. Packages under `packages/` consume the public protocol DSL, especially
-`@attune/framework-protocol`, through `src/attune.package.ts`. Framework
-runtime, SQLite/Drizzle store, language-service internals, and Nx internals are
-private framework implementation details.
+model. Packages under `packages/` expose their small authored Attune
+declaration through `src/attune.package.ts`. Framework runtime,
+SQLite/Drizzle store, language-service internals, and Nx internals are private
+framework implementation details.
 
 For package or framework-facing work, use the simple loop:
 
@@ -110,33 +110,35 @@ nx run <project>:typecheck
 nx run <project>:test
 ```
 
-Use `workspace:package-contracts-check`, `workspace:framework-policy-check`,
-`workspace:policy-fast`, and generator-specific targets only as advanced or
-debugging surfaces. The normal first response is check output, then the repair
-target suggested by diagnostics.
+Use `workspace:framework-policy-check`, `workspace:policy-fast`, and
+generator-specific targets only as advanced or debugging surfaces. The normal
+first response is check output, then the repair target suggested by
+diagnostics.
 
 For package declarations:
 
 1. Read TypeScript language-service diagnostics and Nx check output.
 2. Open the referenced `src/attune.package.ts` declaration.
-3. Keep `attune.package.ts` small: package id/kind, operations, schemas,
-   services, view roots, waivers, and rare custom laws only.
+3. Keep `attune.package.ts` small: package id/kind, source-facing action
+   entries, schemas, services, rendered state roots, waivers, and rare custom
+   validation metadata only.
 4. Run the suggested `attune-repair` target before choosing a generator by hand.
 5. Implement behavior inside generated `Effect.Service` boundaries and update
-   Effect Schema-backed operation metadata, laws, waivers, and provenance.
-6. Expose or update package Reactivity keys, base atoms, derived atoms, package
-   view atoms, and operation-to-view edges for meaningful package state.
+   Effect Schema-backed source metadata, validation metadata, waivers, and
+   provenance.
+6. Expose or update Reactivity keys, base atoms, derived atoms, package state
+   atoms, and source-to-artifact edges for meaningful package state.
 7. Run the smallest Nx-owned conformance, property, coverage, typecheck, or
    policy target that proves the slice.
 8. Report validation results plus any remaining diagnostics.
 
-Agents repair diagnostics rather than raw protocol internals. Do not hand-edit
-raw descriptor JSON, SQLite rows, Drizzle tables, ProtocolStore internals,
-ProtocolDelta reports, obligation reports, evidence summaries, architecture
-summaries, or generated ledger/status files as source truth. Protocol evidence
-from FastCheck/property runs belongs in framework services, stdout/CI artifacts,
-or gitignored local cache such as `.attune/cache`; checked-in protocol reports
-are not part of the core workflow.
+Agents repair diagnostics rather than raw framework internals. Do not hand-edit
+raw descriptor JSON, SQLite rows, Drizzle tables, private store internals,
+diagnostic dumps, validation summaries, architecture summaries, or generated
+ledger/status files as source truth. Property and fuzz validation output belongs
+in framework services, stdout/CI artifacts, or gitignored local cache such as
+`.attune/cache`; checked-in validation reports are not part of the core
+workflow.
 
 Each package should normally have exactly one package-local Attune file:
 
@@ -153,25 +155,25 @@ src/attune.package.typecheck.ts
 attune.source-bom.json
 ```
 
-Existing generated contract, generated registry, and Source BOM companions are
-migration scaffolding until Nx repair and ProtocolStore projection fully own
-their materialization. Compile-only package assertions live in the
-framework-owned aggregate, not package-local typecheck files.
+Existing legacy generated companions and source ownership shards are migration
+scaffolding until Nx repair and the program-index projection fully own their
+materialization. Compile-only package assertions live in the framework-owned
+aggregate, not package-local typecheck files.
 
 The new consolidation direction is that Attune indexes the TypeScript/Effect/Nx
 program first. Nx project graph facts, TypeScript exported symbols, Effect
 Schema descriptor rows, generated artifact freshness, observations,
 diagnostics, repairs, and invalidation events belong in the local SQLite
-program index under `.attune/cache`. Current package-contract/generated
-companions remain transitional compatibility inputs to that index, not a second
-public ontology agents should memorize.
+program index under `.attune/cache`. Legacy package-contract/generated-companion
+compatibility inputs are transitional scaffolding, not a second public ontology
+agents should memorize.
 
-Do not manually expand `attune.package.ts` with derived handler maps,
-properties, type-guidance partitions, RPC descriptors, coverage-search plans,
-evidence producer maps, worker metadata, or generated artifact ledgers. Those
-belong in framework-owned generated/cache materialization, focused evidence
-modules, or private ProtocolStore projections. Run the suggested Nx repair
-target before editing generated or derived protocol artifacts by hand.
+Do not manually expand `attune.package.ts` with derived handler maps, property
+tables, type partitions, RPC descriptors, coverage-search plans, validation
+producer maps, worker metadata, or generated artifact ledgers. Those belong in
+framework-owned generated/cache materialization, focused validation modules, or
+private program-index projections. Run the suggested Nx repair target before
+editing generated or derived program-index artifacts by hand.
 
 ## Repo Map
 
@@ -192,7 +194,7 @@ target before editing generated or derived protocol artifacts by hand.
 - `docs/dispatch-app-boundaries.md`: current FoldKit app boundary. Dispatch
   packages were removed from this project; product Workbench/FoldKit UI must not
   hide Dispatch as an incidental page.
-- `packages/attune-foldkit`: product FoldKit model, update, messages, view
+- `packages/attune-foldkit`: product FoldKit model, update, messages, render
   logic, constrained MDX fixtures, activity helpers, and Vite web boot
   (`attune-foldkit`, `@attune/foldkit-ui`).
 - `packages/platform-alchemy-k8s`: Kubernetes/Alchemy platform resource package.
@@ -227,7 +229,7 @@ Default order:
 3. EventLog and `DiscoveryEvents` facade.
 4. Drizzle/Neon durable projections.
 5. Effect Reactivity keys.
-6. Server-side effect-atom view graph.
+6. Server-side effect-atom graph.
 7. DecisionPacket, score, plateau, and FoldKit scene atoms.
 8. FoldKit workbench progress projection.
 9. Nx generator expansion for repeated shapes.
@@ -235,7 +237,7 @@ Default order:
 CocoIndex adapters and Joern proof-router DSL work may be tracked elsewhere. Do
 not block this bootstrap queue on them unless the issue explicitly says so.
 
-## Nx, Nix, Source BOM, And Generators
+## Nx, Nix, And Compatibility Generators
 
 Use Nx targets as the public command surface. Use Nix as the substrate that
 supplies the reproducible tools behind those targets, not as a replacement
@@ -262,9 +264,9 @@ generator that is the stable workflow contract.
 Before editing repeated or generated shapes, run `attune-check` and use the
 repair action it suggests. Generators remain important, but they are normal
 repair implementations rather than default agent memory. If a diagnostic has no
-safe repair, report the follow-up instead of guessing. Treat Source BOM and
-generator-shape manifests as migration scaffolding or temporary compatibility
-views, not final semantic workflow surfaces.
+safe repair, report the follow-up instead of guessing. Treat legacy source
+ownership shards and generator-shape manifests as migration scaffolding or
+temporary compatibility data, not final semantic workflow surfaces.
 
 ## Safety Rules
 
@@ -273,12 +275,12 @@ views, not final semantic workflow surfaces.
 - Do not put durable writes inside atoms.
 - Projection writes should announce Reactivity keys.
 - Base atoms may subscribe to Reactivity keys; derived atoms should compose.
-- Do not manually invalidate derived views.
+- Do not manually invalidate derived projections.
 - FoldKit owns interaction state, not durable discovery truth.
 - Pi/local model output is a bounded `AgentDecision`, not state ownership.
 - Agents must not author arbitrary Joern queries in v0.
 - CocoIndex recall is not proof; normalize results before use.
-- Joern proof output should be normalized into evidence packets.
+- Joern proof output should be normalized into observation packets.
 - Rego, Nix, Kubernetes, scheduler/admission, worker safety, budget/lease, and
   app-server exposure work require human review unless explicitly downgraded.
 
@@ -288,21 +290,21 @@ Run the smallest validation that proves the slice:
 
 - Package typecheck for schema/API changes.
 - Package tests for behavior changes.
-- Focused framework diagnostics such as `workspace:package-contracts-check`
-  for package contracts, law metadata, generated provenance, waivers, stale
-  generated source, import boundaries, local cache state, and no checked-in
-  report checks.
+- Focused framework diagnostics such as `workspace:framework-policy-check`
+  for source metadata, generated provenance, waivers, stale generated source,
+  import boundaries, local cache state, and no checked-in report checks.
 - Atom graph/property/coverage conformance targets when the slice changes
-  Reactivity keys, atoms, package views, generated FastCheck evidence, replay,
-  or coverage guidance.
+  Reactivity keys, atoms, package state projections, generated FastCheck
+  observations, replay, or coverage guidance.
 - Build only when packaging or app boot changes.
 - OpenSpec validation when changing OpenSpec artifacts.
 - Generator typecheck/tests when changing `@attune/nx`.
 - `workspace:policy-fast` for normal policy coverage.
-- `workspace:package-contracts-check` when the slice touches package contract,
-  generated ledger, generator provenance, or Source BOM ownership.
+- `workspace:framework-policy-check` when the slice touches generated ledgers,
+  generator provenance, or legacy source ownership scaffolding.
 - `workspace:policy-proof-pressure` when the slice touches proof pressure,
-  workerized fuzzing, mutation, Joern, container, or provider/resource evidence.
+  workerized fuzzing, mutation, Joern, container, or provider/resource
+  observations.
 
 If validation cannot run, report why and include the exact command attempted.
 

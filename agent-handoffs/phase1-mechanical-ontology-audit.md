@@ -87,11 +87,20 @@ It rejects names such as `ProgramIndexPackageContract`,
 `ProgramIndexPropertyMap`, and `ProgramIndexRpcGroup`, plus equivalent old SQL
 table names. It intentionally allows compatibility labels and SQL view rows.
 
+The same policy surface now reports `old-ontology-active-doc` for active
+operating docs that teach old ontology nouns as normal workflow vocabulary.
+The guard covers:
+
+- `AGENTS.md`
+- `docs/attuned/Attune Framework Operating Surface.md`
+- `docs/platform/codex-cloud-environment.md`
+
+Those docs now present the SQLite program index and mechanical rows as the
+normal model. Old nouns may remain only in explicitly legacy, compatibility,
+migration, quarantine, archive, or deletion context.
+
 ## Remaining Phase 1 Work
 
-- Rewrite active operating docs to teach mechanical facts as the normal model.
-- Extend drift checks to active docs for migrated rings once the docs are
-  rewritten.
 - Continue diagnostic copy updates as Phase 2 moves check and language-service
   reads to program-index diagnostics first.
 - Delete, mechanically rename, or quarantine compatibility APIs and helpers

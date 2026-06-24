@@ -78,6 +78,7 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "stale-generated-file"
   | "manual-derived-truth"
   | "old-ontology-runtime-object"
+  | "old-ontology-active-doc"
   | "package-declaration-too-large"
   | "package-local-attune-companion"
 
@@ -130,6 +131,13 @@ const oldOntologyRuntimeObjectPattern =
   /\b(?:export\s+)?(?:interface|type|class|const)\s+ProgramIndex(?<name>PackageContract|ProtocolDescriptor|Protocol|Operation|PackageView|Law|Obligation|Evidence|Delta|TypeGuidance|SourceBOM|SourceBom|GeneratorShape|FuzzHandler|PropertyMap|RpcGroup)\b/u
 const oldOntologyRuntimeTablePattern =
   /\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?<name>package_contract|protocol_descriptor|protocol|operation|package_view|view|law|obligation|evidence|delta|type_guidance|source_bom|generator_shape|fuzz_handler|property_map|rpc_group)\b/iu
+const oldOntologyActiveDocNounPattern =
+  /\b(?<term>package[- ]contracts?|protocol(?:store|delta)?|operations?|package[- ]views?|view roots?|view graph|operation-to-view|laws?|obligations?|evidence|deltas?|source[- ]bom|generator[- ]shapes?|type[- ]guidance|fuzz handlers?|property maps?|rpc groups?|generated companions?)\b/iu
+const activeOperatingDocPaths = new Set([
+  "AGENTS.md",
+  "docs/attuned/Attune Framework Operating Surface.md",
+  "docs/platform/codex-cloud-environment.md",
+])
 const packageDeclarationWarningLineThreshold = 180
 const packageDeclarationErrorLineThreshold = 260
 const packageLocalAttuneCompanionNames = [
@@ -421,6 +429,7 @@ const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode
   "stale-generated-file",
   "manual-derived-truth",
   "old-ontology-runtime-object",
+  "old-ontology-active-doc",
   "package-local-attune-companion",
 ])
 
@@ -534,6 +543,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     diagnostics.push(...checkWorkerTargetMetadata(file))
     diagnostics.push(...checkFinalCleanupFile(file))
     diagnostics.push(...checkMechanicalProgramOntologyFile(file))
+    diagnostics.push(...checkActiveOperatingDocFile(file))
   }
 
   return diagnostics
@@ -1423,6 +1433,67 @@ function oldOntologyRuntimeObjectDiagnostic(
       `Line ${line} adds ${name} as a program-index runtime object.`,
       "Use mechanical facts instead: project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, or invalidation.",
       "Old ontology terms may appear only as compatibility source metadata, legacy-adapter labels, historical context, or future-delete plans.",
+    ].join(" "),
+  )
+}
+
+function checkActiveOperatingDocFile(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
+  if (!activeOperatingDocPaths.has(file.path)) return []
+
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+  const lines = file.content.split(/\r?\n/u)
+  let previousNonEmptyLine = ""
+  let fenceIntroLine = ""
+  let inFence = false
+
+  for (const [lineIndex, line] of lines.entries()) {
+    const trimmed = line.trim()
+    if (trimmed.startsWith("```")) {
+      inFence = !inFence
+      fenceIntroLine = inFence ? previousNonEmptyLine : ""
+      if (trimmed !== "") previousNonEmptyLine = trimmed
+      continue
+    }
+
+    const match = oldOntologyActiveDocNounPattern.exec(line)
+    if (
+      match !== null &&
+      !isOldOntologyActiveDocContextAllowed(line, previousNonEmptyLine, inFence ? fenceIntroLine : "")
+    ) {
+      diagnostics.push(oldOntologyActiveDocDiagnostic(
+        file.path,
+        lineIndex + 1,
+        match.groups?.term ?? "old ontology noun",
+      ))
+    }
+
+    if (trimmed !== "") previousNonEmptyLine = trimmed
+  }
+
+  return diagnostics
+}
+
+function isOldOntologyActiveDocContextAllowed(
+  line: string,
+  previousNonEmptyLine: string,
+  fenceIntroLine: string,
+): boolean {
+  const context = `${line} ${previousNonEmptyLine} ${fenceIntroLine}`.toLowerCase()
+  return /\b(?:compatibility|legacy|migration|migrat(?:e|ion)|temporary|transitional|scaffolding|archive|historical|delete|deletion|quarantine|do not|must not|not source truth|not final|negative list)\b/u.test(context)
+}
+
+function oldOntologyActiveDocDiagnostic(
+  filePath: string,
+  line: number,
+  term: string,
+): FrameworkFinalRatchetDiagnostic {
+  return finalRatchetDiagnostic(
+    "old-ontology-active-doc",
+    filePath,
+    [
+      `Line ${line} teaches ${term} in an active operating doc.`,
+      "Use mechanical program facts as the primary vocabulary: project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, and invalidation.",
+      "Old ontology nouns in active docs must be explicitly framed as legacy compatibility, historical/archive context, or deletion/quarantine work.",
     ].join(" "),
   )
 }

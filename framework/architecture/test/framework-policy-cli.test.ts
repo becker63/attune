@@ -840,6 +840,59 @@ describe("framework policy CLI", () => {
     expect(result.ratchetDiagnostics).toEqual([])
   })
 
+  it("rejects old ontology nouns in active public operating docs", () => {
+    const workspaceRoot = makeWorkspace({
+      "docs/attuned/Attune Framework Operating Surface.md": [
+        "# Attune Framework Operating Surface",
+        "",
+        "Agents should edit package contracts, protocol operations, laws, and evidence first.",
+      ].join("\n"),
+      "docs/reference/historical-protocol-note.md": [
+        "# Historical Protocol Note",
+        "",
+        "Archived notes may retain protocol wording.",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "old-ontology-active-doc",
+        filePath: "docs/attuned/Attune Framework Operating Surface.md",
+        message: expect.stringContaining("package contracts"),
+      }),
+    ]))
+    expect(result.ratchetDiagnostics).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        filePath: "docs/reference/historical-protocol-note.md",
+      }),
+    ]))
+  })
+
+  it("allows old ontology nouns in active docs when framed as compatibility deletion work", () => {
+    const workspaceRoot = makeWorkspace({
+      "AGENTS.md": [
+        "# Attune Codex Agent Guide",
+        "",
+        "Legacy package-contract and generated companion inputs are compatibility scaffolding that must be deleted before archive readiness.",
+        "",
+        "Do not add these compatibility filenames as normal package source:",
+        "",
+        "```text",
+        "attune.source-bom.json",
+        "src/attune.contract.generated.ts",
+        "```",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.ratchetDiagnostics).toEqual([])
+  })
+
   it("rejects workerized targets that omit static worker metadata", () => {
     const workspaceRoot = makeWorkspace({
       "packages/worker-policy/package.json": JSON.stringify({ name: "@attune/worker-policy" }),
