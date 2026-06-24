@@ -1,6 +1,6 @@
 import type {
-  AttuneProtocolAction,
-  AttuneProtocolDiagnostic,
+  ProgramRepairAction,
+  ProgramDiagnostic,
   SourceDeclarationRange,
   SourceRange,
 } from "@attune/framework-protocol"
@@ -16,11 +16,11 @@ import {
   type ProgramFactQueryApi,
 } from "@attune/framework-runtime"
 
-type RuntimeDiagnostic = AttuneProtocolDiagnostic & {
+type RuntimeDiagnostic = ProgramDiagnostic & {
   readonly range?: SourceRange
 }
 
-export interface LanguageServiceDiagnostic extends AttuneProtocolDiagnostic {
+export interface LanguageServiceDiagnostic extends ProgramDiagnostic {
   readonly range?: SourceRange
   readonly displayMessage: string
 }
@@ -28,13 +28,13 @@ export interface LanguageServiceDiagnostic extends AttuneProtocolDiagnostic {
 export interface LanguageServiceCodeAction {
   readonly diagnosticCode: string
   readonly sourcePath: string
-  readonly action: AttuneProtocolAction
+  readonly action: ProgramRepairAction
 }
 
 export interface LanguageServiceCodeLens {
   readonly title: string
   readonly sourcePath: string
-  readonly action?: AttuneProtocolAction
+  readonly action?: ProgramRepairAction
 }
 
 export interface LanguageServiceQuickInfo {
@@ -164,7 +164,7 @@ const rangeForDiagnostic = (
 }
 
 const diagnosticDisplayMessage = (
-  diagnostic: AttuneProtocolDiagnostic,
+  diagnostic: ProgramDiagnostic,
 ): string => {
   if (diagnostic.code === "attune/protocol/invalid-store-payload") {
     return `Invalid program fact store payload for ${diagnostic.packageId}: ${diagnostic.explanation}`
@@ -189,7 +189,7 @@ const isGeneratedSourcePath = (path: string): boolean =>
   /\.generated\.[cm]?[jt]sx?$/.test(path)
 
 const actionMentionsGeneratedPath = (
-  action: AttuneProtocolAction,
+  action: ProgramRepairAction,
 ): boolean => {
   const candidates = [
     ...(action.target === undefined ? [] : [action.target]),
@@ -199,14 +199,14 @@ const actionMentionsGeneratedPath = (
 }
 
 export const isDirectGeneratedFileWriteAction = (
-  diagnostic: AttuneProtocolDiagnostic,
-  action: AttuneProtocolAction,
+  diagnostic: ProgramDiagnostic,
+  action: ProgramRepairAction,
 ): boolean =>
   action.kind === "source-edit" &&
   (isGeneratedSourcePath(diagnostic.sourcePath) || actionMentionsGeneratedPath(action))
 
 export const diagnosticCodeLens = (
-  diagnostic: AttuneProtocolDiagnostic,
+  diagnostic: ProgramDiagnostic,
 ): LanguageServiceCodeLens => {
   const action = diagnostic.suggestedActions[0]
   const missing = diagnostic.code.includes("missing-obligation")
@@ -223,7 +223,7 @@ export const diagnosticCodeLens = (
 }
 
 export const codeActionsForDiagnostic = (
-  diagnostic: AttuneProtocolDiagnostic,
+  diagnostic: ProgramDiagnostic,
 ): readonly LanguageServiceCodeAction[] =>
   diagnostic.suggestedActions
     .filter((action) => !isDirectGeneratedFileWriteAction(diagnostic, action))
@@ -234,7 +234,7 @@ export const codeActionsForDiagnostic = (
     }))
 
 export const quickInfoForDiagnostic = (
-  diagnostic: AttuneProtocolDiagnostic,
+  diagnostic: ProgramDiagnostic,
   context: {
     readonly summary?: ProjectFactSummary
     readonly diagnosticRule?: DiagnosticRuleExplanation
@@ -274,7 +274,7 @@ export const quickInfoForDiagnostic = (
   }
 }
 
-const diagnosticKey = (diagnostic: AttuneProtocolDiagnostic): string =>
+const diagnosticKey = (diagnostic: ProgramDiagnostic): string =>
   [
     diagnostic.sourcePath,
     diagnostic.code,
@@ -283,7 +283,7 @@ const diagnosticKey = (diagnostic: AttuneProtocolDiagnostic): string =>
   ].join("#")
 
 const groupCodeActions = (
-  diagnostics: readonly AttuneProtocolDiagnostic[],
+  diagnostics: readonly ProgramDiagnostic[],
 ): Readonly<Record<string, readonly LanguageServiceCodeAction[]>> =>
   Object.fromEntries(
     diagnostics.map((diagnostic) => [
@@ -301,7 +301,7 @@ const summaryCodeLens = (
 })
 
 const missingObservationCodeLens = (
-  diagnostics: readonly AttuneProtocolDiagnostic[],
+  diagnostics: readonly ProgramDiagnostic[],
   sourcePath: string,
 ): LanguageServiceCodeLens | undefined => {
   const count = diagnostics.filter((diagnostic) =>
@@ -315,7 +315,7 @@ const missingObservationCodeLens = (
 }
 
 const collectProjectIds = (
-  diagnostics: readonly AttuneProtocolDiagnostic[],
+  diagnostics: readonly ProgramDiagnostic[],
   fallback?: string,
 ): readonly string[] =>
   [...new Set([
@@ -348,7 +348,7 @@ const collectSummaries = (
 
 const collectDiagnosticRuleExplanations = (
   query: ProgramFactQueryApi,
-  diagnostics: readonly AttuneProtocolDiagnostic[],
+  diagnostics: readonly ProgramDiagnostic[],
 ): Effect.Effect<ReadonlyMap<string, DiagnosticRuleExplanation>, never> => {
   const obligationIds = [
     ...new Set(diagnostics.flatMap((diagnostic) =>
@@ -385,11 +385,11 @@ const collectRepairFindingLenses = (
       query.listRepairFindings(projectId).pipe(
         Effect.map((repairFindings) =>
           repairFindings
-            .filter((delta) => delta.kind === "stale-generated-source")
-            .map((delta) => ({
+            .filter((finding) => finding.kind === "stale-generated-source")
+            .map((finding) => ({
               title: "stale artifact",
-              sourcePath: delta.sourcePath,
-              ...(delta.repairActions[0] === undefined ? {} : { action: delta.repairActions[0] }),
+              sourcePath: finding.sourcePath,
+              ...(finding.repairActions[0] === undefined ? {} : { action: finding.repairActions[0] }),
             } satisfies LanguageServiceCodeLens))
         ),
         Effect.catch(() => Effect.succeed([])),

@@ -3,8 +3,8 @@ import { existsSync, readFileSync } from "node:fs"
 import {
   extractProtocolSourceSummary,
   hashProtocolValue,
-  type AttuneProtocolAction,
-  type AttuneProtocolDiagnostic,
+  type ProgramRepairAction,
+  type ProgramDiagnostic,
   type ProtocolSourceDeclaration,
   type SourceRange,
 } from "@attune/framework-protocol"
@@ -1351,7 +1351,7 @@ const escapeRegExp = (
 export const programIndexDiagnosticsForFile = (
   index: ProgramIndexApi,
   filePath: string,
-): Effect.Effect<readonly AttuneProtocolDiagnostic[], unknown> =>
+): Effect.Effect<readonly ProgramDiagnostic[], unknown> =>
   Effect.gen(function* readProgramIndexDiagnosticsForFile() {
     const [diagnosticRows, repairRows] = yield* Effect.all([
       index.listDiagnosticsByFile(filePath),
@@ -1377,7 +1377,7 @@ export const programIndexDiagnosticsForFile = (
 export const programIndexDiagnosticRowToProtocolDiagnostic = (
   row: ProgramIndexViewRow,
   repairRows: readonly ProgramIndexViewRow[] = [],
-): AttuneProtocolDiagnostic => {
+): ProgramDiagnostic => {
   const range = sourceRangeFromRow(row)
   const cause = jsonValueFromRow(row, "cause_json")
   return {
@@ -1653,7 +1653,7 @@ const stringValue = (
 
 const diagnosticSeverity = (
   value: ProgramIndexViewRow[string],
-): AttuneProtocolDiagnostic["severity"] =>
+): ProgramDiagnostic["severity"] =>
   value === "error" || value === "warning" || value === "info" ? value : "info"
 
 const sourceRangeFromRow = (
@@ -1675,7 +1675,7 @@ const sourceRangeFromRow = (
 
 const programIndexRepairRowToProtocolAction = (
   row: ProgramIndexViewRow,
-): AttuneProtocolAction => {
+): ProgramRepairAction => {
   const nxTarget = stringValue(row, "nx_target")
   const repairKind = stringValue(row, "repair_kind")
   const safety = stringValue(row, "safety")

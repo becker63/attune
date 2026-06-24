@@ -25,7 +25,7 @@ import {
 } from "../src/index.js"
 import type {
   AttuneGeneratedArtifactRecord,
-  AttuneProtocolDelta,
+  ProgramRepairFinding,
   AttuneProtocolDescriptor,
   AttuneProtocolEvidenceEvent,
   AttuneProtocolEvidenceRun,
@@ -132,7 +132,7 @@ describe("@attune/framework-sqlite", () => {
     Effect.runSync(index.close())
   })
 
-  it("roundtrips descriptor, obligation, artifact, evidence, and delta rows through SQLite", () => {
+  it("roundtrips descriptor, obligation, artifact, evidence, and finding rows through SQLite", () => {
     const store = createSqliteProgramFactStore({ path: ":memory:" })
     roundtripProgramFactState(store)
 
@@ -148,7 +148,7 @@ describe("@attune/framework-sqlite", () => {
     expect(snapshot.replayMetadata).toEqual([demoReplayMetadata])
     expect(snapshot.waiverState).toEqual([demoWaiverState])
     expect(snapshot.coverageFeedback).toEqual([demoCoverageFeedback])
-    expect(snapshot.repairFindings).toEqual([demoDelta])
+    expect(snapshot.repairFindings).toEqual([demoRepairFinding])
 
     expect(Effect.runSync(store.health()).rowCounts).toMatchObject({
       replayMetadata: 1,
@@ -166,7 +166,7 @@ describe("@attune/framework-sqlite", () => {
     ])
 
     const filteredDeltas = Effect.runSync(store.listRepairFindings({ packageId: "demo" }))
-    expect(filteredDeltas).toEqual([demoDelta])
+    expect(filteredDeltas).toEqual([demoRepairFinding])
 
     Effect.runSync(store.replaceRepairFindings("demo", []))
     expect(Effect.runSync(store.listRepairFindings({ packageId: "demo" }))).toEqual([])
@@ -413,7 +413,7 @@ const roundtripProgramFactState = (store: ProgramFactStoreApi): void => {
   Effect.runSync(store.recordReplayObservation(demoReplayMetadata))
   Effect.runSync(store.recordDiagnosticWaiver(demoWaiverState))
   Effect.runSync(store.recordCoverageObservation(demoCoverageFeedback))
-  Effect.runSync(store.putRepairFindings([demoDelta]))
+  Effect.runSync(store.putRepairFindings([demoRepairFinding]))
 }
 
 const demoDescriptor = (): AttuneProtocolDescriptor =>
@@ -527,8 +527,8 @@ const demoCoverageFeedback: CoverageObservationFeedback = {
   recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
-const demoDelta: AttuneProtocolDelta = {
-  deltaId: "delta:artifact-1",
+const demoRepairFinding: ProgramRepairFinding = {
+  findingId: "finding:artifact-1",
   protocolId: "attune/package/demo",
   packageId: "demo",
   kind: "stale-generated-source",

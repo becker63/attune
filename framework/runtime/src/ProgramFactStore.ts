@@ -1,16 +1,16 @@
 import { Context, Data, Effect, Layer, Schema } from "effect"
 import {
   AttuneGeneratedArtifactRecordSchema,
-  AttuneProtocolDeltaSchema,
+  ProgramRepairFindingSchema,
   AttuneProtocolDescriptorSchema,
-  AttuneProtocolDiagnosticSchema,
+  ProgramDiagnosticSchema,
   AttuneProtocolEvidenceEventSchema,
   AttuneProtocolEvidenceRunSchema,
   AttuneProtocolObligationSchema,
   type AttuneGeneratedArtifactRecord,
-  type AttuneProtocolDelta,
+  type ProgramRepairFinding,
   type AttuneProtocolDescriptor,
-  type AttuneProtocolDiagnostic,
+  type ProgramDiagnostic,
   type AttuneProtocolEvidenceEvent,
   type AttuneProtocolEvidenceRun,
   type AttuneProtocolObligation,
@@ -126,11 +126,11 @@ export interface ProgramFactStoreApi {
     feedback: CoverageObservationFeedback,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly putRepairFindings: (
-    repairFindings: readonly AttuneProtocolDelta[],
+    repairFindings: readonly ProgramRepairFinding[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly replaceRepairFindings: (
     packageId: string,
-    repairFindings: readonly AttuneProtocolDelta[],
+    repairFindings: readonly ProgramRepairFinding[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly snapshot: () => Effect.Effect<ProgramFactStoreSnapshot, ProgramFactStoreError>
 }
@@ -246,19 +246,19 @@ export const makeInMemoryProgramFactStore = (
           feedback,
         ]
       }),
-    putRepairFindings: (nextDeltas) =>
+    putRepairFindings: (nextFindings) =>
       Effect.sync(() => {
-        const packageIds = new Set(nextDeltas.map((delta) => delta.packageId))
+        const packageIds = new Set(nextFindings.map((finding) => finding.packageId))
         repairFindings = [
           ...repairFindings.filter((candidate) => !isRepairFindingFor(candidate, packageIds)),
-          ...nextDeltas,
+          ...nextFindings,
         ]
       }),
-    replaceRepairFindings: (packageId, nextDeltas) =>
+    replaceRepairFindings: (packageId, nextFindings) =>
       Effect.sync(() => {
         repairFindings = [
           ...repairFindings.filter((candidate) => !isRepairFindingFor(candidate, new Set([packageId]))),
-          ...nextDeltas,
+          ...nextFindings,
         ]
       }),
     snapshot: () =>
@@ -385,8 +385,8 @@ export const decodeProgramFactStoreSnapshot = (
       snapshot.coverageFeedback,
       "coverageFeedback",
     )
-    const repairFindings = yield* decodeBatch<AttuneProtocolDelta>(
-      AttuneProtocolDeltaSchema,
+    const repairFindings = yield* decodeBatch<ProgramRepairFinding>(
+      ProgramRepairFindingSchema,
       snapshot.repairFindings,
       "repairFindings",
     )
@@ -411,7 +411,7 @@ export const diagnosticFromQueryError = (
     readonly sourcePath: string
     readonly protocolId?: string
   },
-): AttuneProtocolDiagnostic => {
+): ProgramDiagnostic => {
   const diagnostic = {
     code: "attune/protocol/invalid-store-payload",
     severity: "error",
@@ -427,9 +427,9 @@ export const diagnosticFromQueryError = (
     }],
     relatedEvidence: [],
     ...(fallback.protocolId === undefined ? {} : { protocolId: fallback.protocolId }),
-  } satisfies AttuneProtocolDiagnostic
+  } satisfies ProgramDiagnostic
 
-  return Schema.decodeUnknownSync(AttuneProtocolDiagnosticSchema)(diagnostic) as AttuneProtocolDiagnostic
+  return Schema.decodeUnknownSync(ProgramDiagnosticSchema)(diagnostic) as ProgramDiagnostic
 }
 
 export const mapStoreError = (

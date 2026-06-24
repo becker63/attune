@@ -272,7 +272,7 @@ describe("@attune/framework-runtime", () => {
       }],
     })
 
-    expect(repairFindings.map((delta) => delta.kind)).toEqual([
+    expect(repairFindings.map((finding) => finding.kind)).toEqual([
       "missing-obligation",
       "stale-generated-source",
     ])
@@ -601,12 +601,12 @@ describe("@attune/framework-runtime", () => {
         "packages/demo/src/attune.package.ts",
         "packages/demo/src/attune.generated.ts",
         "packages/demo/src/artifacts/evidence-matrix.ts",
-        "reports/protocol-delta-report.json",
+        "reports/protocol-finding-report.json",
       ],
       contentByPath: {
         "packages/demo/src/attune.package.ts": "source",
         "packages/demo/src/artifacts/evidence-matrix.ts": "export const sourceArtifactHelper = true\n",
-        "reports/protocol-delta-report.json": "{}",
+        "reports/protocol-finding-report.json": "{}",
       },
     })
 
@@ -614,7 +614,7 @@ describe("@attune/framework-runtime", () => {
       ["packages/demo/src/attune.package.ts", "current"],
       ["packages/demo/src/attune.generated.ts", "missing"],
       ["packages/demo/src/artifacts/evidence-matrix.ts", "current"],
-      ["reports/protocol-delta-report.json", "current"],
+      ["reports/protocol-finding-report.json", "current"],
     ])
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
       "attune/program-index/artifact-missing",
@@ -831,15 +831,15 @@ describe("@attune/framework-runtime", () => {
       }],
     })
 
-    expect(repairFindings.map((delta) => delta.kind)).toEqual(expect.arrayContaining([
+    expect(repairFindings.map((finding) => finding.kind)).toEqual(expect.arrayContaining([
       "stale-generated-source",
       "waiver-issue",
       "blocked-obligation",
       "high-rejection-filter",
       "weak-oracle",
     ]))
-    expect(repairFindings.some((delta) => delta.kind === "missing-obligation")).toBe(false)
-    expect(repairFindings.find((delta) => delta.kind === "blocked-obligation")?.repairActions[0]).toMatchObject({
+    expect(repairFindings.some((finding) => finding.kind === "missing-obligation")).toBe(false)
+    expect(repairFindings.find((finding) => finding.kind === "blocked-obligation")?.repairActions[0]).toMatchObject({
       id: "replay-counterexample",
       options: expect.objectContaining({ seed: 42, shrinkPath: "0:1" }),
     })
@@ -885,7 +885,7 @@ describe("@attune/framework-runtime", () => {
       diagnosticRuleCount: 6,
       staleArtifactCount: 1,
     })
-    expect(result.repairFindings.map((delta) => delta.kind)).toEqual(
+    expect(result.repairFindings.map((finding) => finding.kind)).toEqual(
       expect.arrayContaining(["missing-obligation", "stale-generated-source"]),
     )
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
@@ -940,12 +940,12 @@ describe("@attune/framework-runtime", () => {
       "demo:type-guidance:coverage",
       "demo:project:high-rejection-filter",
     ])
-    expect(result.repairFindings.map((delta) => delta.kind)).toEqual(expect.arrayContaining([
+    expect(result.repairFindings.map((finding) => finding.kind)).toEqual(expect.arrayContaining([
       "blocked-obligation",
       "high-rejection-filter",
     ]))
-    expect(result.repairFindings.some((delta) =>
-      delta.obligationId === "demo:project:law:projection.deterministic-replay"
+    expect(result.repairFindings.some((finding) =>
+      finding.obligationId === "demo:project:law:projection.deterministic-replay"
     )).toBe(false)
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
       "attune/protocol/high-rejection-filter",
@@ -974,14 +974,14 @@ describe("@attune/framework-runtime", () => {
     expect(result.state.artifacts).toEqual([])
     expect(result.state.replayObservations).toEqual([demoReplayMetadata])
     expect(result.state.coverageObservations).toEqual([demoFilterFeedback])
-    expect(result.repairFindings.flatMap((delta) => delta.repairActions)).not.toEqual(
+    expect(result.repairFindings.flatMap((finding) => finding.repairActions)).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           kind: "source-edit",
         }),
       ]),
     )
-    expect(result.repairFindings.map((delta) => delta.sourcePath)).not.toEqual(
+    expect(result.repairFindings.map((finding) => finding.sourcePath)).not.toEqual(
       expect.arrayContaining([
         expect.stringMatching(/report|summary/u),
       ]),
@@ -997,7 +997,7 @@ describe("@attune/framework-runtime", () => {
         yield* runtime.materializeSchemaDescriptor(demoDescriptor)
 
         const explanation = yield* query.explainDiagnosticRule("demo:project:view-movement")
-        const repairPlan = yield* query.getRepairPlan("delta:demo:project:view-movement")
+        const repairPlan = yield* query.getRepairPlan("finding:demo:project:view-movement")
 
         return { explanation, repairPlan }
       })),
@@ -1037,7 +1037,7 @@ describe("@attune/framework-runtime", () => {
     expect(explainDiagnosticRule(input, "demo:project:view-movement")?.expectedObservationKinds).toContain(
       "atom-movement",
     )
-    expect(getRepairPlan(input, "delta:demo:project:view-movement")?.actions[0]).toMatchObject({
+    expect(getRepairPlan(input, "finding:demo:project:view-movement")?.actions[0]).toMatchObject({
       target: "demo:attune-repair",
       options: expect.objectContaining({
         internalGenerator: "@attune/framework-nx:atom-projection-edge",
@@ -1172,11 +1172,11 @@ describe("@attune/framework-runtime", () => {
     })
     expect(result.evidenceState.observationRuns).toHaveLength(1)
     expect(result.evidenceState.coverageObservations).toHaveLength(1)
-    expect(result.repairFindings.map((delta) => delta.kind)).toEqual(
+    expect(result.repairFindings.map((finding) => finding.kind)).toEqual(
       expect.arrayContaining(["missing-obligation", "stale-generated-source"]),
     )
-    expect(result.repairFindings.some((delta) =>
-      delta.obligationId === "sqlite-demo:operation:property"
+    expect(result.repairFindings.some((finding) =>
+      finding.obligationId === "sqlite-demo:operation:property"
     )).toBe(false)
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
       "attune/protocol/stale-generated-source",

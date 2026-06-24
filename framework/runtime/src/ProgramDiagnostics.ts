@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from "effect"
-import type { AttuneProtocolDiagnostic } from "@attune/framework-protocol"
+import type { ProgramDiagnostic } from "@attune/framework-protocol"
 import { ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
 import { ProgramFactQuery, type ProgramFactQueryApi } from "./ProgramFactQuery.js"
@@ -13,7 +13,7 @@ export interface ProgramDiagnosticsApi {
       readonly packageId?: string
       readonly protocolId?: string
     },
-  ) => Effect.Effect<readonly AttuneProtocolDiagnostic[], never>
+  ) => Effect.Effect<readonly ProgramDiagnostic[], never>
 }
 
 export const makeProgramDiagnostics = (

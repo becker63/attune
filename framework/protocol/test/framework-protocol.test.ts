@@ -25,7 +25,7 @@ import {
   defineAttunePackage,
   derivedAtom,
   descriptorFromPackageContract,
-  diagnosticFromDelta,
+  diagnosticFromRepairFinding,
   extractProtocolSourceSummary,
   hashProtocolValue,
   packageViewAtom,
@@ -201,8 +201,8 @@ describe("@attune/framework-protocol", () => {
   })
 
   it("projects protocol deltas into framework diagnostics", () => {
-    const diagnostic = diagnosticFromDelta({
-      deltaId: "delta-1",
+    const diagnostic = diagnosticFromRepairFinding({
+      findingId: "finding-1",
       protocolId: "attune/package/demo",
       packageId: "demo",
       kind: "missing-obligation",

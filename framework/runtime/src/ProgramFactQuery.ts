@@ -1,8 +1,8 @@
 import { Context, Effect, Layer } from "effect"
 import {
   requiredEvidenceKindsFor,
-  type AttuneProtocolDelta,
-  type AttuneProtocolDiagnostic,
+  type ProgramRepairFinding,
+  type ProgramDiagnostic,
 } from "@attune/framework-protocol"
 
 import {
@@ -58,7 +58,7 @@ export interface DiagnosticRuleExplanation {
 export interface RepairPlan {
   readonly repairFindingId: string
   readonly projectId: string
-  readonly actions: readonly AttuneProtocolDelta["repairActions"][number][]
+  readonly actions: readonly ProgramRepairFinding["repairActions"][number][]
 }
 
 export interface ProgramFactQueryApi {
@@ -67,13 +67,13 @@ export interface ProgramFactQueryApi {
   ) => Effect.Effect<ProjectFactSummary, ProgramFactQueryError>
   readonly listRepairFindings: (
     projectId: string,
-  ) => Effect.Effect<readonly AttuneProtocolDelta[], ProgramFactQueryError>
+  ) => Effect.Effect<readonly ProgramRepairFinding[], ProgramFactQueryError>
   readonly getProjectObservationState: (
     projectId: string,
   ) => Effect.Effect<ProjectObservationState, ProgramFactQueryError>
   readonly getDiagnosticsForFile: (
     sourcePath: string,
-  ) => Effect.Effect<readonly AttuneProtocolDiagnostic[], ProgramFactQueryError>
+  ) => Effect.Effect<readonly ProgramDiagnostic[], ProgramFactQueryError>
   readonly explainDiagnosticRule: (
     diagnosticRuleId: string,
   ) => Effect.Effect<DiagnosticRuleExplanation | undefined, ProgramFactQueryError>
@@ -139,13 +139,13 @@ export const getRepairPlan = (
   input: ProgramFactProjectionInput,
   repairFindingId: string,
 ): RepairPlan | undefined => {
-  const delta = computeProgramFactFindings(input).find((candidate) => candidate.deltaId === repairFindingId)
-  if (delta === undefined) return undefined
+  const finding = computeProgramFactFindings(input).find((candidate) => candidate.findingId === repairFindingId)
+  if (finding === undefined) return undefined
 
   return {
-    repairFindingId: delta.deltaId,
-    projectId: delta.packageId,
-    actions: delta.repairActions,
+    repairFindingId: finding.findingId,
+    projectId: finding.packageId,
+    actions: finding.repairActions,
   }
 }
 
@@ -178,15 +178,15 @@ export const makeProgramFactQuery = (
       coverageFeedback: snapshot.coverageFeedback.filter((feedback) => feedback.packageId === projectId),
     }
 
-    const repairFindings = snapshot.repairFindings?.filter((delta) => delta.packageId === projectId)
+    const repairFindings = snapshot.repairFindings?.filter((finding) => finding.packageId === projectId)
     return repairFindings === undefined ? input : { ...input, repairFindings }
   }
 
   const repairFindingsForProject = (
     snapshot: ProgramFactRuntimeSnapshot,
     projectId: string,
-  ): readonly AttuneProtocolDelta[] => {
-    const storedRepairFindings = snapshot.repairFindings?.filter((delta) => delta.packageId === projectId) ?? []
+  ): readonly ProgramRepairFinding[] => {
+    const storedRepairFindings = snapshot.repairFindings?.filter((finding) => finding.packageId === projectId) ?? []
     if (storedRepairFindings.length > 0) return storedRepairFindings
 
     return projection.computeRepairFindings(projectInput(snapshot, projectId))
@@ -244,16 +244,16 @@ export const makeProgramFactQuery = (
     getRepairPlan: (repairFindingId) =>
       typedSnapshot().pipe(
         Effect.map((snapshot) => {
-          const delta = snapshot.repairFindings?.find((candidate) => candidate.deltaId === repairFindingId) ??
+          const finding = snapshot.repairFindings?.find((candidate) => candidate.findingId === repairFindingId) ??
             snapshot.descriptors
               .flatMap((descriptor) => repairFindingsForProject(snapshot, descriptor.packageId))
-              .find((candidate) => candidate.deltaId === repairFindingId)
-          if (delta === undefined) return undefined
+              .find((candidate) => candidate.findingId === repairFindingId)
+          if (finding === undefined) return undefined
 
           return {
-            repairFindingId: delta.deltaId,
-            projectId: delta.packageId,
-            actions: delta.repairActions,
+            repairFindingId: finding.findingId,
+            projectId: finding.packageId,
+            actions: finding.repairActions,
           }
         }),
       ),

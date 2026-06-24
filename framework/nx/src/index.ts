@@ -1,7 +1,7 @@
 import {
   hashProtocolValue,
   type AttuneGeneratedArtifactRecord,
-  type AttuneProtocolDiagnostic,
+  type ProgramDiagnostic,
   type AttuneProtocolDescriptor,
   type AttuneProtocolOperationDescriptor,
 } from "@attune/framework-protocol"
@@ -457,7 +457,7 @@ const projectNameFromSourcePath = (sourcePath: string): string => {
 }
 
 export const repairPlanForDiagnostic = (
-  diagnostic: Pick<AttuneProtocolDiagnostic, "code" | "packageId" | "sourcePath" | "explanation"> & {
+  diagnostic: Pick<ProgramDiagnostic, "code" | "packageId" | "sourcePath" | "explanation"> & {
     readonly diagnosticId?: string
   },
 ): AttuneRepairPlan | undefined => {

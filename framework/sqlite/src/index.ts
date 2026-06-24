@@ -5,14 +5,14 @@ import { DatabaseSync } from "node:sqlite"
 
 import {
   AttuneGeneratedArtifactRecordSchema,
-  AttuneProtocolDeltaSchema,
+  ProgramRepairFindingSchema,
   AttuneProtocolDescriptorSchema,
   AttuneProtocolEvidenceEventSchema,
   AttuneProtocolEvidenceRunSchema,
   AttuneProtocolObligationSchema,
   hashProtocolValue,
   type AttuneGeneratedArtifactRecord,
-  type AttuneProtocolDelta,
+  type ProgramRepairFinding,
   type AttuneProtocolDescriptor,
   type AttuneProtocolEvidenceEvent,
   type AttuneProtocolEvidenceRun,
@@ -140,7 +140,7 @@ export interface ProgramFactStoreSnapshot {
   readonly replayMetadata: readonly ReplayObservationMetadata[]
   readonly waiverState: readonly DiagnosticWaiverState[]
   readonly coverageFeedback: readonly CoverageObservationFeedback[]
-  readonly repairFindings: readonly AttuneProtocolDelta[]
+  readonly repairFindings: readonly ProgramRepairFinding[]
 }
 
 export interface ProgramFactStoreFilter {
@@ -178,11 +178,11 @@ export interface ProgramFactStoreApi {
     event: AttuneProtocolEvidenceEvent,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly putRepairFindings: (
-    repairFindings: readonly AttuneProtocolDelta[],
+    repairFindings: readonly ProgramRepairFinding[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly replaceRepairFindings: (
     packageId: string,
-    repairFindings: readonly AttuneProtocolDelta[],
+    repairFindings: readonly ProgramRepairFinding[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly getSchemaDescriptor: (
     protocolId: string,
@@ -213,7 +213,7 @@ export interface ProgramFactStoreApi {
   ) => Effect.Effect<readonly AttuneGeneratedArtifactRecord[], ProgramFactStoreError>
   readonly listRepairFindings: (
     filter?: ProgramFactStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolDelta[], ProgramFactStoreError>
+  ) => Effect.Effect<readonly ProgramRepairFinding[], ProgramFactStoreError>
   readonly snapshot: () => Effect.Effect<ProgramFactStoreSnapshot, ProgramFactStoreError>
   readonly close: () => Effect.Effect<void, ProgramFactStoreError>
 }
@@ -261,7 +261,7 @@ export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
   let replayMetadata: readonly ReplayObservationMetadata[] = []
   let waiverState: readonly DiagnosticWaiverState[] = []
   let coverageFeedback: readonly CoverageObservationFeedback[] = []
-  let repairFindings: readonly AttuneProtocolDelta[] = []
+  let repairFindings: readonly ProgramRepairFinding[] = []
 
   const rowCounts = (): ProgramFactStoreRowCounts => ({
     descriptors: descriptors.length,
@@ -381,21 +381,21 @@ export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
           decoded,
         ]
       }),
-    putRepairFindings: (nextDeltas) =>
+    putRepairFindings: (nextFindings) =>
       Effect.sync(() => {
-        const decoded = nextDeltas.map((candidate) =>
-          decodePayload<AttuneProtocolDelta>(AttuneProtocolDeltaSchema, candidate),
+        const decoded = nextFindings.map((candidate) =>
+          decodePayload<ProgramRepairFinding>(ProgramRepairFindingSchema, candidate),
         )
-        const incoming = new Set(decoded.map((delta) => delta.deltaId))
+        const incoming = new Set(decoded.map((finding) => finding.findingId))
         repairFindings = [
-          ...repairFindings.filter((candidate) => !incoming.has(candidate.deltaId)),
+          ...repairFindings.filter((candidate) => !incoming.has(candidate.findingId)),
           ...decoded,
         ]
       }),
-    replaceRepairFindings: (packageId, nextDeltas) =>
+    replaceRepairFindings: (packageId, nextFindings) =>
       Effect.sync(() => {
-        const decoded = nextDeltas.map((candidate) =>
-          decodePayload<AttuneProtocolDelta>(AttuneProtocolDeltaSchema, candidate),
+        const decoded = nextFindings.map((candidate) =>
+          decodePayload<ProgramRepairFinding>(ProgramRepairFindingSchema, candidate),
         )
         repairFindings = [
           ...repairFindings.filter((candidate) => candidate.packageId !== packageId),
@@ -488,13 +488,13 @@ export const createSqliteProgramFactStore = ({
       (event_id, run_id, protocol_id, package_id, operation_id, kind, payload_json)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `)
-  const putDeltaStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_deltas
-      (delta_id, protocol_id, package_id, descriptor_hash, kind, payload_json, status)
+  const putRepairFindingStatement = database.prepare(`
+    INSERT OR REPLACE INTO program_repair_findings
+      (finding_id, protocol_id, package_id, descriptor_hash, kind, payload_json, status)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `)
-  const deletePackageDeltasStatement = database.prepare(`
-    DELETE FROM protocol_deltas WHERE package_id = ?
+  const deletePackageRepairFindingsStatement = database.prepare(`
+    DELETE FROM program_repair_findings WHERE package_id = ?
   `)
 
   const storeEffect = <A>(
@@ -641,39 +641,39 @@ export const createSqliteProgramFactStore = ({
           encodePayload(AttuneProtocolEvidenceEventSchema, decoded),
         )
       }),
-    putRepairFindings: (nextDeltas) =>
+    putRepairFindings: (nextFindings) =>
       storeEffect("putRepairFindings", () => {
-        for (const delta of nextDeltas.map((candidate) =>
-          decodePayload<AttuneProtocolDelta>(AttuneProtocolDeltaSchema, candidate)
+        for (const finding of nextFindings.map((candidate) =>
+          decodePayload<ProgramRepairFinding>(ProgramRepairFindingSchema, candidate)
         )) {
-          putDeltaStatement.run(
-            delta.deltaId,
-            delta.protocolId,
-            delta.packageId,
-            descriptorHashForProgramFactStore(database, delta.protocolId),
-            delta.kind,
-            encodePayload(AttuneProtocolDeltaSchema, delta),
+          putRepairFindingStatement.run(
+            finding.findingId,
+            finding.protocolId,
+            finding.packageId,
+            descriptorHashForProgramFactStore(database, finding.protocolId),
+            finding.kind,
+            encodePayload(ProgramRepairFindingSchema, finding),
             "open",
           )
         }
       }),
-    replaceRepairFindings: (packageId, nextDeltas) =>
+    replaceRepairFindings: (packageId, nextFindings) =>
       storeEffect("replaceRepairFindings", () => {
-        const decoded = nextDeltas.map((candidate) =>
-          decodePayload<AttuneProtocolDelta>(AttuneProtocolDeltaSchema, candidate)
+        const decoded = nextFindings.map((candidate) =>
+          decodePayload<ProgramRepairFinding>(ProgramRepairFindingSchema, candidate)
         )
 
         database.exec("BEGIN IMMEDIATE")
         try {
-          deletePackageDeltasStatement.run(packageId)
-          for (const delta of decoded) {
-            putDeltaStatement.run(
-              delta.deltaId,
-              delta.protocolId,
-              delta.packageId,
-              descriptorHashForProgramFactStore(database, delta.protocolId),
-              delta.kind,
-              encodePayload(AttuneProtocolDeltaSchema, delta),
+          deletePackageRepairFindingsStatement.run(packageId)
+          for (const finding of decoded) {
+            putRepairFindingStatement.run(
+              finding.findingId,
+              finding.protocolId,
+              finding.packageId,
+              descriptorHashForProgramFactStore(database, finding.protocolId),
+              finding.kind,
+              encodePayload(ProgramRepairFindingSchema, finding),
               "open",
             )
           }
@@ -766,10 +766,10 @@ export const createSqliteProgramFactStore = ({
       ),
     listRepairFindings: (filter = {}) =>
       storeEffect("listRepairFindings", () =>
-        readPayloads<AttuneProtocolDelta>(
+        readPayloads<ProgramRepairFinding>(
           database,
-          protocolDeltaTable,
-          AttuneProtocolDeltaSchema,
+          programRepairFindingTable,
+          ProgramRepairFindingSchema,
           filter,
         )
       ),
@@ -815,10 +815,10 @@ export const createSqliteProgramFactStore = ({
           protocolGeneratedArtifactTable,
           AttuneGeneratedArtifactRecordSchema,
         ),
-        repairFindings: readPayloads<AttuneProtocolDelta>(
+        repairFindings: readPayloads<ProgramRepairFinding>(
           database,
-          protocolDeltaTable,
-          AttuneProtocolDeltaSchema,
+          programRepairFindingTable,
+          ProgramRepairFindingSchema,
         ),
       })),
     close: () => storeEffect("close", () => database.close()),
@@ -980,13 +980,13 @@ const protocolEvidenceEventTable = {
   }),
 } as const
 
-const protocolDeltaTable = {
-  name: "protocol_deltas",
-  primaryKey: "delta_id",
+const programRepairFindingTable = {
+  name: "program_repair_findings",
+  primaryKey: "finding_id",
   payloadColumn: "payload_json",
-  orderBy: "delta_id",
+  orderBy: "finding_id",
   rowSchema: Schema.Struct({
-    delta_id: Schema.String,
+    finding_id: Schema.String,
     protocol_id: Schema.String,
     package_id: Schema.String,
     descriptor_hash: Schema.NullOr(Schema.String),
@@ -1005,7 +1005,7 @@ const programFactTables = [
   protocolWaiverStateTable,
   protocolCoverageFeedbackTable,
   protocolEvidenceEventTable,
-  protocolDeltaTable,
+  programRepairFindingTable,
 ] as const
 
 const initialMigrationSql = `
@@ -1093,8 +1093,8 @@ CREATE TABLE IF NOT EXISTS protocol_evidence_events (
   payload_json TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_deltas (
-  delta_id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS program_repair_findings (
+  finding_id TEXT PRIMARY KEY,
   protocol_id TEXT NOT NULL,
   package_id TEXT NOT NULL,
   descriptor_hash TEXT,
@@ -1204,7 +1204,7 @@ const sqliteRowCounts = (database: DatabaseSync): ProgramFactStoreRowCounts => (
   replayMetadata: tableCount(database, protocolReplayMetadataTable.name),
   waiverState: tableCount(database, protocolWaiverStateTable.name),
   coverageFeedback: tableCount(database, protocolCoverageFeedbackTable.name),
-  repairFindings: tableCount(database, protocolDeltaTable.name),
+  repairFindings: tableCount(database, programRepairFindingTable.name),
 })
 
 const tableCount = (database: DatabaseSync, table: string): number => {

@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 
-import type { AttuneProtocolDelta } from "../diagnostics/index.js"
+import type { ProgramRepairFinding } from "../diagnostics/index.js"
 
 export const ProtocolWaiverCategories = [
   "lower-level-context-tag",
@@ -108,9 +108,9 @@ export const diagnoseProtocolWaivers = (
 export const waiverDeltasFromFindings = (input: {
   readonly protocolId: string
   readonly findings: readonly AttuneProtocolWaiverFinding[]
-}): readonly AttuneProtocolDelta[] =>
+}): readonly ProgramRepairFinding[] =>
   input.findings.map((finding) => ({
-    deltaId: `${input.protocolId}:${finding.waiverId}:${finding.code}`,
+    findingId: `${input.protocolId}:${finding.waiverId}:${finding.code}`,
     protocolId: input.protocolId,
     packageId: finding.packageId,
     kind: "waiver-issue",

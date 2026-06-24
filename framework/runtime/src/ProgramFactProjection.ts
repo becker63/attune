@@ -1,12 +1,12 @@
 import { Context, Layer } from "effect"
 import {
   deriveProtocolObligations,
-  diagnosticFromDelta,
+  diagnosticFromRepairFinding,
   requiredEvidenceKindsFor,
   type AttuneGeneratedArtifactRecord,
-  type AttuneProtocolDelta,
+  type ProgramRepairFinding,
   type AttuneProtocolDescriptor,
-  type AttuneProtocolDiagnostic,
+  type ProgramDiagnostic,
   type AttuneProtocolEvidenceEvent,
   type AttuneProtocolEvidenceRun,
   type AttuneProtocolObligation,
@@ -26,7 +26,7 @@ export interface ProgramFactRuntimeSnapshot {
   readonly replayMetadata: readonly ReplayObservationMetadata[]
   readonly waiverState: readonly DiagnosticWaiverState[]
   readonly coverageFeedback: readonly CoverageObservationFeedback[]
-  readonly repairFindings?: readonly AttuneProtocolDelta[]
+  readonly repairFindings?: readonly ProgramRepairFinding[]
 }
 
 export interface ProgramFactProjectionInput extends Partial<ProgramFactRuntimeSnapshot> {
@@ -39,7 +39,7 @@ export interface ProgramFactProjectionApi {
   readonly deriveObligations: (
     descriptor: AttuneProtocolDescriptor,
   ) => readonly AttuneProtocolObligation[]
-  readonly computeRepairFindings: (input: ProgramFactProjectionInput) => readonly AttuneProtocolDelta[]
+  readonly computeRepairFindings: (input: ProgramFactProjectionInput) => readonly ProgramRepairFinding[]
 }
 
 const evidenceKey = (event: AttuneProtocolEvidenceEvent): string =>
@@ -89,7 +89,7 @@ export const projectionSnapshot = (
 
 export const computeProgramFactFindings = (
   input: ProgramFactProjectionInput,
-): readonly AttuneProtocolDelta[] => {
+): readonly ProgramRepairFinding[] => {
   const snapshot = projectionSnapshot(input)
   const observed = new Set([
     ...snapshot.evidence.map(evidenceKey),
@@ -117,8 +117,8 @@ export const computeProgramFactFindings = (
 
   return [
     ...missingEvidence.map((obligation) => {
-      const delta: AttuneProtocolDelta = {
-        deltaId: `delta:${obligation.obligationId}`,
+      const finding: ProgramRepairFinding = {
+        findingId: `finding:${obligation.obligationId}`,
         protocolId: input.protocolId,
         packageId: input.packageId,
         kind: "missing-obligation",
@@ -140,12 +140,12 @@ export const computeProgramFactFindings = (
       }
 
       return {
-        ...delta,
+        ...finding,
         ...(obligation.operationId === undefined ? {} : { operationId: obligation.operationId }),
       }
     }),
     ...staleArtifacts.map((artifact) => ({
-      deltaId: `delta:${artifact.artifactId}`,
+      findingId: `finding:${artifact.artifactId}`,
       protocolId: input.protocolId,
       packageId: input.packageId,
       kind: "stale-generated-source" as const,
@@ -164,7 +164,7 @@ export const computeProgramFactFindings = (
       }],
     })),
     ...waiverIssues.map((waiver) => ({
-      deltaId: `delta:${waiver.waiverId}`,
+      findingId: `finding:${waiver.waiverId}`,
       protocolId: input.protocolId,
       packageId: input.packageId,
       kind: "waiver-issue" as const,
@@ -184,7 +184,7 @@ export const computeProgramFactFindings = (
       }],
     })),
     ...replayFailures.map((metadata) => ({
-      deltaId: `delta:${metadata.replayId}`,
+      findingId: `finding:${metadata.replayId}`,
       protocolId: input.protocolId,
       packageId: input.packageId,
       kind: "blocked-obligation" as const,
@@ -207,7 +207,7 @@ export const computeProgramFactFindings = (
       }],
     })),
     ...highRejectionFilters.map((feedback) => ({
-      deltaId: `delta:${feedback.coverageId}`,
+      findingId: `finding:${feedback.coverageId}`,
       protocolId: input.protocolId,
       packageId: input.packageId,
       kind: "high-rejection-filter" as const,
@@ -228,7 +228,7 @@ export const computeProgramFactFindings = (
       }],
     })),
     ...weakOracleFindings.map((feedback) => ({
-      deltaId: `delta:${feedback.coverageId}`,
+      findingId: `finding:${feedback.coverageId}`,
       protocolId: input.protocolId,
       packageId: input.packageId,
       kind: "weak-oracle" as const,
@@ -371,8 +371,8 @@ const repairActionTargetForObligation = (obligation: AttuneProtocolObligation): 
 
 export const diagnosticsForProgramFacts = (
   input: ProgramFactProjectionInput,
-): readonly AttuneProtocolDiagnostic[] =>
-  computeProgramFactFindings(input).map(diagnosticFromDelta)
+): readonly ProgramDiagnostic[] =>
+  computeProgramFactFindings(input).map(diagnosticFromRepairFinding)
 
 export const ProgramFactProjectionLiveValue: ProgramFactProjectionApi = {
   deriveObligations: deriveProtocolObligations,
