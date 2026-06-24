@@ -279,7 +279,7 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("errors when a completed one-file root regains package-local Attune companions", () => {
+  it("warns when a completed one-file root lacks replacement parity for package-local Attune companions", () => {
     const workspaceRoot = makeWorkspace({
       "packages/platform-alchemy-k8s/package.json": JSON.stringify({ name: "@attune/platform-alchemy-k8s" }),
       "packages/platform-alchemy-k8s/src/attune.package.ts": [
@@ -291,6 +291,56 @@ describe("framework policy CLI", () => {
         "} as const)",
       ].join("\n"),
       "packages/platform-alchemy-k8s/attune.source-bom.json": JSON.stringify({ project: "platform-alchemy-k8s" }),
+      "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.ts": packageContractSource({
+        packageId: "platform-alchemy-k8s",
+        viewsBody: [
+          "  reactivityKeys: [\"platform.changed\"],",
+          "  atoms: [\"platformAtom\"],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "package-local-attune-companion",
+        filePath: "packages/platform-alchemy-k8s/src/attune.package.ts",
+        severity: "warning",
+      }),
+    ]))
+  })
+
+  it("errors when a completed one-file root regains package-local companions after replacement parity", () => {
+    const workspaceRoot = makeWorkspace({
+      "attune.source-bom.index.json": JSON.stringify({
+        schemaVersion: 1,
+        shards: [{
+          project: "platform-alchemy-k8s",
+          projectRoot: "packages/platform-alchemy-k8s",
+          shard: "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json",
+        }],
+      }),
+      "packages/platform-alchemy-k8s/package.json": JSON.stringify({ name: "@attune/platform-alchemy-k8s" }),
+      "packages/platform-alchemy-k8s/src/attune.package.ts": [
+        "export const PackageDeclaration = defineAttunePackage({",
+        "  id: \"platform-alchemy-k8s\",",
+        "  kind: \"platform-resource-provider\",",
+        "  operations: [] as const,",
+        "  views: [] as const,",
+        "} as const)",
+      ].join("\n"),
+      "packages/platform-alchemy-k8s/attune.source-bom.json": JSON.stringify({ project: "platform-alchemy-k8s" }),
+      "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json": JSON.stringify({
+        schemaVersion: 1,
+        project: "platform-alchemy-k8s",
+        projectRoot: "packages/platform-alchemy-k8s",
+        ownedFiles: ["src/attune.package.ts"],
+        generatedOutputs: [],
+      }),
       "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.ts": packageContractSource({
         packageId: "platform-alchemy-k8s",
         viewsBody: [

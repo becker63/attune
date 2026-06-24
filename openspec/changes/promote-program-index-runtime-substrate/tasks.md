@@ -65,7 +65,7 @@
 - [ ] 5.3 Keep project-local `src/attune.package.ts` as the authored source boundary for migrated rings.
 - [ ] 5.4 Move Source BOM ownership toward framework/cache projections while keeping the root Source BOM index accurate.
 - [ ] 5.5 Ensure touched-source-bom hooks accept staged package/framework source covered by framework-owned or cache-owned projections.
-- [ ] 5.6 Add warning-first policy diagnostics for project-local generated companions when parity exists.
+- [x] 5.6 Add warning-first policy diagnostics for project-local generated companions when parity exists.
 - [ ] 5.7 Preserve `.attune/cache/**` as ignored framework-owned cache while keeping checked-in protocol report artifacts forbidden.
 - [ ] 5.8 Remove or quarantine project-local generated companions for rings whose framework-owned artifact lookup and program-index freshness checks pass.
 - [ ] 5.9 Remove old generated/source ownership terminology from active project-ring docs after mechanical replacements are validated.

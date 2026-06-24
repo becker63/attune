@@ -576,7 +576,10 @@ function checkPackageLocalAttuneSurface(
 
   if (companionPaths.length === 0) return []
 
-  const severity = oneFileSurfaceCompletedRoots.has(packageRoot) ? "error" : "warning"
+  const parity = packageLocalAttuneSurfaceParity(packageRoot, companionPaths, filesByPath)
+  const severity = oneFileSurfaceCompletedRoots.has(packageRoot) && parity.complete
+    ? "error"
+    : "warning"
 
   return [finalRatchetDiagnostic(
     "package-local-attune-companion",
@@ -585,10 +588,93 @@ function checkPackageLocalAttuneSurface(
       `Package ${packageRoot} still has package-local Attune companion files: ${companionPaths.join(", ")}.`,
       "The final package-local Attune surface is src/attune.package.ts only.",
       "Move generated contract companions, generated registries, typecheck assertions, and Source BOM shards to framework-owned cache/projection state.",
+      parity.complete
+        ? "Program-index replacement paths exist for the remaining companion files."
+        : `Replacement paths are not complete yet: ${parity.missingReplacements.join(", ")}.`,
       `Run nx run ${projectNameForRoot(packageRoot, filesByPath)}:attune-repair or workspace:attune-repair when the repair target supports this root.`,
     ].join(" "),
     severity,
   )]
+}
+
+function packageLocalAttuneSurfaceParity(
+  packageRoot: string,
+  companionPaths: readonly string[],
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): { readonly complete: boolean; readonly missingReplacements: readonly string[] } {
+  const projectName = projectNameForRoot(packageRoot, filesByPath)
+  const missingReplacements = companionPaths.flatMap((companionPath) =>
+    packageLocalCompanionReplacementExists(packageRoot, projectName, companionPath, filesByPath)
+      ? []
+      : [packageLocalCompanionReplacementLabel(projectName, companionPath)]
+  )
+  return {
+    complete: missingReplacements.length === 0,
+    missingReplacements,
+  }
+}
+
+function packageLocalCompanionReplacementExists(
+  packageRoot: string,
+  projectName: string,
+  companionPath: string,
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): boolean {
+  if (companionPath.endsWith("/src/attune.contract.generated.ts")) {
+    return filesByPath.has(`framework/architecture/src/generated/package-contracts/${projectName}/attune.contract.generated.ts`)
+  }
+  if (companionPath.endsWith("/src/attune.generated.ts")) {
+    return filesByPath.has(`framework/architecture/src/generated/package-contracts/${projectName}/attune.generated.ts`)
+  }
+  if (companionPath.endsWith("/src/attune.package.typecheck.ts")) {
+    return filesByPath.has("framework/architecture/src/generated/package-contracts.typecheck.generated.ts")
+  }
+  if (companionPath.endsWith("/attune.source-bom.json")) {
+    return sourceOwnershipProjectionExists(packageRoot, projectName, filesByPath)
+  }
+  return false
+}
+
+function packageLocalCompanionReplacementLabel(
+  projectName: string,
+  companionPath: string,
+): string {
+  if (companionPath.endsWith("/src/attune.contract.generated.ts")) {
+    return `framework generated contract for ${projectName}`
+  }
+  if (companionPath.endsWith("/src/attune.generated.ts")) {
+    return `framework generated companion for ${projectName}`
+  }
+  if (companionPath.endsWith("/src/attune.package.typecheck.ts")) {
+    return "framework package-contract typecheck aggregate"
+  }
+  if (companionPath.endsWith("/attune.source-bom.json")) {
+    return `framework/cache source ownership projection for ${projectName}`
+  }
+  return `mechanical replacement for ${companionPath}`
+}
+
+function sourceOwnershipProjectionExists(
+  packageRoot: string,
+  projectName: string,
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): boolean {
+  const indexFile = filesByPath.get("attune.source-bom.index.json")
+  if (indexFile === undefined) return false
+  const index = parseJsonRecord(indexFile.content)
+  const shards = Array.isArray(index?.shards) ? index.shards : []
+  return shards.some((entry) => {
+    if (!isRecord(entry)) return false
+    if (entry.project !== projectName || entry.projectRoot !== packageRoot) return false
+    const shard = typeof entry.shard === "string" ? entry.shard : ""
+    return (
+      (
+        shard === `.attune/cache/source-bom/${projectName}.json` ||
+        shard === `framework/architecture/src/generated/source-bom/${projectName}.json`
+      ) &&
+      filesByPath.has(shard)
+    )
+  })
 }
 
 function checkPackageDeclarationSize(
@@ -1714,6 +1800,15 @@ function finalRatchetDiagnostic(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function parseJsonRecord(content: string): Record<string, unknown> | undefined {
+  try {
+    const value = JSON.parse(content) as unknown
+    return isRecord(value) ? value : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function escapeRegExp(value: string): string {
