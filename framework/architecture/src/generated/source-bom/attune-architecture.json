@@ -3,8 +3,7 @@
     {
       "generator": "@attune/nx:package-contract",
       "outputs": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "sources": [
         "project.json",
@@ -30,7 +29,6 @@
     "project.json",
     "src/attune.package.ts",
     "src/**",
-    "test/attune-package-contract.test.ts",
     "test/**",
     "tsconfig.json",
     "vitest.config.ts"

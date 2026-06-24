@@ -38,13 +38,12 @@
       "generator": "@attune/nx:package-contract",
       "status": "generated",
       "paths": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "invariants": [
-        "Architecture policy operations, package views, law inference, waivers, and compile-only assertions are generated and checked together."
+        "Architecture policy exported symbols, schema/edge metadata, diagnostics, repairs, waivers, and compile-only assertions project into program-index rows."
       ],
-      "notes": "Phase 4 architecture migration generated the package contract files; final package path rename remains open.",
+      "notes": "Phase 7 removed the active generated-contract tests; final declaration helper rename remains open.",
       "sourceBomShard": "framework/architecture/src/generated/source-bom/attune-architecture.json"
     },
     {
