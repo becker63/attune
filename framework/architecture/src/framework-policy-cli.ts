@@ -81,6 +81,7 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "old-ontology-active-doc"
   | "package-declaration-too-large"
   | "package-local-attune-companion"
+  | "package-local-attune-companion-import"
 
 export interface FrameworkFinalRatchetDiagnostic {
   readonly ruleId: FrameworkFinalRatchetRuleId
@@ -146,6 +147,8 @@ const packageLocalAttuneCompanionNames = [
   "src/attune.package.typecheck.ts",
   "attune.source-bom.json",
 ] as const
+const packageLocalAttuneCompanionImportPattern =
+  /\b(?:from\s+|import\s*\(\s*|require\s*\(\s*|import\s+(?:type\s+)?)(?<quote>["'])(?<source>\.{1,2}\/[^"']*attune\.(?:contract\.generated|generated|package\.typecheck)(?:\.[cm]?[jt]sx?)?)\k<quote>/gu
 const oneFileSurfaceCompletedRoots = new Set([
   "framework/architecture",
   "packages/attune-nx",
@@ -544,6 +547,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     diagnostics.push(...checkFinalCleanupFile(file))
     diagnostics.push(...checkMechanicalProgramOntologyFile(file))
     diagnostics.push(...checkActiveOperatingDocFile(file))
+    diagnostics.push(...checkPackageLocalAttuneCompanionImports(file, filesByPath))
   }
 
   return diagnostics
@@ -675,6 +679,71 @@ function sourceOwnershipProjectionExists(
       filesByPath.has(shard)
     )
   })
+}
+
+function checkPackageLocalAttuneCompanionImports(
+  file: WorkspaceFile,
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): readonly FrameworkFinalRatchetDiagnostic[] {
+  if (file.path.startsWith("framework/architecture/src/generated/")) return []
+
+  const packageRoot = packageRootForSourceFile(file.path)
+  if (packageRoot === undefined) return []
+
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+  packageLocalAttuneCompanionImportPattern.lastIndex = 0
+
+  for (const match of file.content.matchAll(packageLocalAttuneCompanionImportPattern)) {
+    const importSource = match.groups?.source
+    if (importSource === undefined) continue
+
+    const companionPath = packageLocalGeneratedCompanionPath(file.path, importSource, packageRoot)
+    if (companionPath === undefined) continue
+
+    const projectName = projectNameForRoot(packageRoot, filesByPath)
+    const hasReplacement = packageLocalCompanionReplacementExists(packageRoot, projectName, companionPath, filesByPath)
+    const replacementLabel = packageLocalCompanionReplacementLabel(projectName, companionPath)
+    const severity = oneFileSurfaceCompletedRoots.has(packageRoot) && hasReplacement
+      ? "error"
+      : "warning"
+    const replacementText = hasReplacement
+      ? `Use ${replacementLabel} or the program-index repair target instead.`
+      : `Replacement path is not complete yet: ${replacementLabel}.`
+
+    diagnostics.push(finalRatchetDiagnostic(
+      "package-local-attune-companion-import",
+      file.path,
+      [
+        `Package source ${file.path} imports package-local generated companion ${companionPath}.`,
+        "Migrated package source must depend on authored source and framework-owned generated/projection paths, not project-local generated companions.",
+        replacementText,
+        `Run nx run ${projectName}:attune-repair or workspace:attune-repair when the repair target supports this root.`,
+      ].join(" "),
+      severity,
+    ))
+  }
+
+  return diagnostics
+}
+
+function packageLocalGeneratedCompanionPath(
+  filePath: string,
+  importSource: string,
+  packageRoot: string,
+): string | undefined {
+  const resolvedImport = normalizePath(path.posix.normalize(path.posix.join(path.posix.dirname(filePath), importSource)))
+  const companionPath = /\.[cm]?[jt]sx?$/u.test(resolvedImport)
+    ? resolvedImport.replace(/\.[cm]?[jt]sx?$/u, ".ts")
+    : `${resolvedImport}.ts`
+  return packageLocalAttuneCompanionNames
+    .map((name) => `${packageRoot}/${name}`)
+    .find((candidatePath) => candidatePath === companionPath)
+}
+
+function packageRootForSourceFile(filePath: string): string | undefined {
+  const normalizedPath = normalizePath(filePath)
+  const match = /^(?<root>packages\/[^/]+|framework\/(?:architecture|oxlint-policy))\/src\//u.exec(normalizedPath)
+  return match?.groups?.root
 }
 
 function checkPackageDeclarationSize(
@@ -1809,6 +1878,10 @@ function parseJsonRecord(content: string): Record<string, unknown> | undefined {
   } catch {
     return undefined
   }
+}
+
+function normalizePath(value: string): string {
+  return value.replaceAll("\\", "/")
 }
 
 function escapeRegExp(value: string): string {

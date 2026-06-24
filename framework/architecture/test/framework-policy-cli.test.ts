@@ -364,6 +364,41 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("errors when completed package source imports a package-local generated companion after replacement parity", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/platform-alchemy-k8s/package.json": JSON.stringify({ name: "@attune/platform-alchemy-k8s" }),
+      "packages/platform-alchemy-k8s/src/attune.package.ts": [
+        "export const PackageDeclaration = defineAttunePackage({",
+        "  id: \"platform-alchemy-k8s\",",
+        "  kind: \"platform-resource-provider\",",
+        "  operations: [] as const,",
+        "  views: [] as const,",
+        "} as const)",
+      ].join("\n"),
+      "packages/platform-alchemy-k8s/src/local-contract.ts": "export { PackageContract } from \"./attune.contract.generated.js\"",
+      "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.ts": packageContractSource({
+        packageId: "platform-alchemy-k8s",
+        viewsBody: [
+          "  reactivityKeys: [\"platform.changed\"],",
+          "  atoms: [\"platformAtom\"],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["final-ratchet"] })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "package-local-attune-companion-import",
+        filePath: "packages/platform-alchemy-k8s/src/local-contract.ts",
+        severity: "error",
+      }),
+    ]))
+  })
+
   it("rejects mutating package operations that do not touch Reactivity keys or atoms", () => {
     const workspaceRoot = makeWorkspace({
       "packages/no-operation-touch/package.json": JSON.stringify({ name: "@attune/no-operation-touch" }),
@@ -1094,6 +1129,10 @@ describe("framework policy CLI", () => {
       line.startsWith("WARNING attune/package-local-surface/one-attune-file package-local-attune-companion ")
     )).toBe(true)
     expect(result.ratchetDiagnostics.every((diagnostic) => diagnostic.severity === "warning")).toBe(true)
+    expect(result.ratchetDiagnostics).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "package-local-attune-companion" }),
+      expect.objectContaining({ code: "package-local-attune-companion-import" }),
+    ]))
   }, 120_000)
 })
 

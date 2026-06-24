@@ -60,13 +60,13 @@
 
 ## 5. Source And Generated Artifact Ownership
 
-- [ ] 5.1 Ensure generated companion imports resolve from framework-owned generated paths when packages no longer carry local generated companions.
-- [ ] 5.2 Remove dependencies on project-local `src/attune.generated.ts` or `src/attune.contract.generated.ts` for projects whose ring has parity.
-- [ ] 5.3 Keep project-local `src/attune.package.ts` as the authored source boundary for migrated rings.
-- [ ] 5.4 Move Source BOM ownership toward framework/cache projections while keeping the root Source BOM index accurate.
-- [ ] 5.5 Ensure touched-source-bom hooks accept staged package/framework source covered by framework-owned or cache-owned projections.
+- [x] 5.1 Ensure generated companion imports resolve from framework-owned generated paths when packages no longer carry local generated companions.
+- [x] 5.2 Remove dependencies on project-local `src/attune.generated.ts` or `src/attune.contract.generated.ts` for projects whose ring has parity.
+- [x] 5.3 Keep project-local `src/attune.package.ts` as the authored source boundary for migrated rings.
+- [x] 5.4 Move Source BOM ownership toward framework/cache projections while keeping the root Source BOM index accurate.
+- [x] 5.5 Ensure touched-source-bom hooks accept staged package/framework source covered by framework-owned or cache-owned projections.
 - [x] 5.6 Add warning-first policy diagnostics for project-local generated companions when parity exists.
-- [ ] 5.7 Preserve `.attune/cache/**` as ignored framework-owned cache while keeping checked-in protocol report artifacts forbidden.
+- [x] 5.7 Preserve `.attune/cache/**` as ignored framework-owned cache while keeping checked-in protocol report artifacts forbidden.
 - [ ] 5.8 Remove or quarantine project-local generated companions for rings whose framework-owned artifact lookup and program-index freshness checks pass.
 - [ ] 5.9 Remove old generated/source ownership terminology from active project-ring docs after mechanical replacements are validated.
 - [ ] 5.10 Validate Phase 5 with `nx run attune-architecture:test --skipNxCache`, `nx run workspace:package-contracts-check --skipNxCache`, `nx run workspace:source-bom-check --skipNxCache`, and `bash -n nix/policy-hooks/touched-source-bom-ownership.sh`.
