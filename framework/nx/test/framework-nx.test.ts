@@ -22,13 +22,13 @@ import {
   schemaObservationsAction,
   type FrameworkNxGeneratedArtifactKind,
 } from "../src/index.js"
-import type { AttuneProtocolDescriptor } from "@attune/framework-protocol"
+import type { ProgramSchemaDescriptor } from "@attune/framework-protocol"
 import { createInMemoryProgramIndex } from "@attune/framework-sqlite"
 import type { ProjectGraph } from "nx/src/devkit-exports"
 
-const descriptor: AttuneProtocolDescriptor = {
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+const descriptor: ProgramSchemaDescriptor = {
+  schemaDescriptorId: "attune/package/demo",
+  projectId: "demo",
   packageKind: "core-discovery-runtime",
   descriptorHash: "descriptor-123",
   sourcePath: "packages/demo/src/attune.package.ts",
@@ -58,7 +58,7 @@ describe("@attune/framework-nx", () => {
 
     expect(plan.generatorOrTarget).toBe("@attune/framework-nx:protocol-materialize")
     expect(plan.validationTarget).toBe("demo:check-generated")
-    expect(Schema.decodeUnknownSync(FrameworkNxActionPlanSchema)(plan).packageId).toBe("demo")
+    expect(Schema.decodeUnknownSync(FrameworkNxActionPlanSchema)(plan).projectId).toBe("demo")
   })
 
   it("plans the deterministic code actions the language service can offer", () => {
@@ -140,8 +140,8 @@ describe("@attune/framework-nx", () => {
 
     expect(createDescriptorHashRecord(descriptor)).toEqual({
       recordId: "attune/package/demo:descriptor-hash",
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+      schemaDescriptorId: "attune/package/demo",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
       descriptorHash: "descriptor-123",
       status: "current",
@@ -166,7 +166,7 @@ describe("@attune/framework-nx", () => {
       "attune.program.atom-projection-edge",
       "attune.program.schema-observations",
     ])
-    expect(plan.generatedArtifacts.map((artifact) => artifact.kind satisfies FrameworkNxGeneratedArtifactKind)).toEqual([
+    expect(plan.artifacts.map((artifact) => artifact.kind satisfies FrameworkNxGeneratedArtifactKind)).toEqual([
       "program-harness",
       "symbol-registry",
       "observation-scaffold",
@@ -186,14 +186,14 @@ describe("@attune/framework-nx", () => {
   it("rejects checked-in report outputs but allows gitignored cache output", () => {
     const findings = detectCheckedInReportOutputs([
       "packages/demo/protocol-delta-report.json",
-      "packages/demo/evidence-summary.md",
+      "packages/demo/observations-summary.md",
       ".attune/cache/protocol-delta-report.json",
       "packages/demo/src/generated/attune-symbol-registry.ts",
     ])
 
     expect(findings.map((finding) => finding.path)).toEqual([
       "packages/demo/protocol-delta-report.json",
-      "packages/demo/evidence-summary.md",
+      "packages/demo/observations-summary.md",
     ])
     expect(findings[0]?.suggestedTarget).toBe("workspace:attune-check")
   })
@@ -202,7 +202,7 @@ describe("@attune/framework-nx", () => {
     const repair = repairPlanForDiagnostic({
       diagnosticId: "D123",
       code: "attune/program-index/missing-symbol-registry",
-      packageId: "demo",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
       explanation: "Symbol registry artifact is missing.",
     })

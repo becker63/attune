@@ -11,19 +11,19 @@ import {
 } from "../project-facts/index.js"
 import { Schema } from "effect"
 
-import { obligationId, type AttuneProtocolObligation } from "../diagnostic-obligations/index.js"
+import { diagnosticRequirementId, type ProgramDiagnosticRequirement } from "../diagnostic-obligations/index.js"
 import { AttuneProtocolWaiverSchema, decodeProtocolWaivers } from "../waivers/index.js"
 
-export const AttuneCoverageExpectationSchema = Schema.Struct({
+export const ProgramCoverageExpectationSchema = Schema.Struct({
   id: Schema.String,
-  operationId: Schema.optional(Schema.String),
+  symbolId: Schema.optional(Schema.String),
   tier: Schema.Literals(["commit", "push", "proof-pressure", "nightly", "debug"] as const),
   required: Schema.Boolean,
   evidenceKinds: Schema.Array(Schema.String),
 })
-export type AttuneCoverageExpectation = typeof AttuneCoverageExpectationSchema.Type
+export type ProgramCoverageExpectation = typeof ProgramCoverageExpectationSchema.Type
 
-export const AttuneProtocolOperationDescriptorSchema = Schema.Struct({
+export const ProgramSymbolDescriptorSchema = Schema.Struct({
   id: Schema.String,
   kind: OperationKindSchema,
   views: Schema.optional(TouchedViewsSchema),
@@ -33,30 +33,30 @@ export const AttuneProtocolOperationDescriptorSchema = Schema.Struct({
   errorSchema: Schema.optional(Schema.String),
 })
 
-export const AttuneProtocolDescriptorSchema = Schema.Struct({
-  protocolId: Schema.String,
-  packageId: Schema.String,
+export const ProgramSchemaDescriptorSchema = Schema.Struct({
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
   packageKind: PackageKindSchema,
   descriptorHash: Schema.String,
   sourcePath: Schema.String,
   views: PackageViewsSchema,
   services: Schema.Array(Schema.String),
-  operations: Schema.Array(AttuneProtocolOperationDescriptorSchema),
+  operations: Schema.Array(ProgramSymbolDescriptorSchema),
   provenance: Schema.optional(Schema.Unknown),
   waivers: Schema.Array(AttuneProtocolWaiverSchema),
-  coverageExpectations: Schema.Array(AttuneCoverageExpectationSchema),
+  coverageExpectations: Schema.Array(ProgramCoverageExpectationSchema),
 })
 
-export type AttuneProtocolOperationDescriptor = typeof AttuneProtocolOperationDescriptorSchema.Type
-export type AttuneProtocolDescriptor = typeof AttuneProtocolDescriptorSchema.Type
+export type ProgramSymbolDescriptor = typeof ProgramSymbolDescriptorSchema.Type
+export type ProgramSchemaDescriptor = typeof ProgramSchemaDescriptorSchema.Type
 
-export interface AttuneProtocolSource<Contract extends AttunePackageContract = AttunePackageContract> {
+export interface ProgramSchemaDescriptorSource<Contract extends AttunePackageContract = AttunePackageContract> {
   readonly sourcePath: string
   readonly contract: Contract
 }
 
-export const protocolIdForPackage = (packageId: string): string =>
-  `attune/package/${packageId}`
+export const schemaDescriptorIdForProject = (projectId: string): string =>
+  `attune/project/${projectId}`
 
 const schemaLabel = (schema: unknown): string => {
   if (typeof schema === "string") return schema
@@ -82,7 +82,7 @@ const sortJson = (value: unknown): unknown => {
   )
 }
 
-export const hashProtocolValue = (value: unknown): string =>
+export const hashProgramValue = (value: unknown): string =>
   stableHash(stableJson(value))
 
 const stableHash = (input: string): string => {
@@ -103,10 +103,11 @@ const stableHash = (input: string): string => {
   ].join("")
 }
 
-export const descriptorFromPackageContract = (
-  source: AttuneProtocolSource,
-): AttuneProtocolDescriptor => {
+export const schemaDescriptorFromProjectFacts = (
+  source: ProgramSchemaDescriptorSource,
+): ProgramSchemaDescriptor => {
   const decoded: DecodedPackageContract = Schema.decodeUnknownSync(PackageContractSchema)(source.contract)
+  const projectId = decoded.packageId
   const operations = decoded.operations.map((operation) => ({
     id: operation.id,
     kind: operation.kind,
@@ -118,8 +119,8 @@ export const descriptorFromPackageContract = (
   }))
 
   const withoutHash = {
-    protocolId: protocolIdForPackage(decoded.packageId),
-    packageId: decoded.packageId,
+    schemaDescriptorId: schemaDescriptorIdForProject(projectId),
+    projectId,
     packageKind: decoded.packageKind,
     sourcePath: source.sourcePath,
     views: decoded.views,
@@ -132,45 +133,45 @@ export const descriptorFromPackageContract = (
 
   return {
     ...withoutHash,
-    descriptorHash: hashProtocolValue(withoutHash),
+    descriptorHash: hashProgramValue(withoutHash),
   }
 }
 
-export const decodePackageContract = (
+export const decodeProjectFactsCompatibility = (
   contract: unknown,
 ): DecodedPackageContract =>
   Schema.decodeUnknownSync(PackageContractSchema)(contract)
 
-export const deriveProtocolObligations = (
-  descriptor: AttuneProtocolDescriptor,
-): readonly AttuneProtocolObligation[] => {
+export const deriveDiagnosticRequirements = (
+  descriptor: ProgramSchemaDescriptor,
+): readonly ProgramDiagnosticRequirement[] => {
   const operationObligations = descriptor.operations.flatMap((operation) => {
-    const base: AttuneProtocolObligation[] = [
+    const base: ProgramDiagnosticRequirement[] = [
       {
-        obligationId: obligationId(descriptor.packageId, "handler", operation.id),
-        protocolId: descriptor.protocolId,
-        packageId: descriptor.packageId,
-        operationId: operation.id,
+        diagnosticRequirementId: diagnosticRequirementId(descriptor.projectId, "handler", operation.id),
+        schemaDescriptorId: descriptor.schemaDescriptorId,
+        projectId: descriptor.projectId,
+        symbolId: operation.id,
         kind: "handler",
-        reason: `Operation ${operation.id} must have a public package-boundary handler or registry entry.`,
+      reason: `Symbol ${operation.id} must have a public project-boundary handler or registry entry.`,
       },
       {
-        obligationId: obligationId(descriptor.packageId, "property", operation.id),
-        protocolId: descriptor.protocolId,
-        packageId: descriptor.packageId,
-        operationId: operation.id,
+        diagnosticRequirementId: diagnosticRequirementId(descriptor.projectId, "property", operation.id),
+        schemaDescriptorId: descriptor.schemaDescriptorId,
+        projectId: descriptor.projectId,
+        symbolId: operation.id,
         kind: "property",
-        reason: `Operation ${operation.id} requires generated property evidence for ${operation.kind}.`,
+      reason: `Symbol ${operation.id} requires generated property observations for ${operation.kind}.`,
       },
     ]
 
     const lawObligations = (operation.laws ?? []).map((law) => ({
-      obligationId: `${descriptor.packageId}:${operation.id}:law:${law}`,
-      protocolId: descriptor.protocolId,
-      packageId: descriptor.packageId,
-      operationId: operation.id,
+      diagnosticRequirementId: `${descriptor.projectId}:${operation.id}:law:${law}`,
+      schemaDescriptorId: descriptor.schemaDescriptorId,
+      projectId: descriptor.projectId,
+      symbolId: operation.id,
       kind: "law" as const,
-      reason: `Operation ${operation.id} must observe law ${law}.`,
+      reason: `Symbol ${operation.id} must satisfy diagnostic rule ${law}.`,
     }))
 
     const hasTouchedViews =
@@ -178,12 +179,12 @@ export const deriveProtocolObligations = (
       (operation.views?.atoms?.length ?? 0) > 0
     const viewObligations = hasTouchedViews
       ? [{
-        obligationId: obligationId(descriptor.packageId, "view-movement", operation.id),
-        protocolId: descriptor.protocolId,
-        packageId: descriptor.packageId,
-        operationId: operation.id,
+        diagnosticRequirementId: diagnosticRequirementId(descriptor.projectId, "view-movement", operation.id),
+        schemaDescriptorId: descriptor.schemaDescriptorId,
+        projectId: descriptor.projectId,
+        symbolId: operation.id,
         kind: "view-movement" as const,
-        reason: `Operation ${operation.id} touches package views and must record atom/Reactivity movement evidence.`,
+        reason: `Symbol ${operation.id} touches runtime roots and must record atom/Reactivity movement observations.`,
       }]
       : []
 
@@ -193,18 +194,18 @@ export const deriveProtocolObligations = (
   return [
     ...operationObligations,
     {
-      obligationId: obligationId(descriptor.packageId, "type-guidance"),
-      protocolId: descriptor.protocolId,
-      packageId: descriptor.packageId,
+      diagnosticRequirementId: diagnosticRequirementId(descriptor.projectId, "type-guidance"),
+      schemaDescriptorId: descriptor.schemaDescriptorId,
+      projectId: descriptor.projectId,
       kind: "type-guidance",
-      reason: `Package ${descriptor.packageId} must keep PackageTypeGuidance aligned with its protocol descriptor.`,
+      reason: `Project ${descriptor.projectId} must keep schema observations aligned with its schema descriptor.`,
     },
     {
-      obligationId: obligationId(descriptor.packageId, "generated-artifact"),
-      protocolId: descriptor.protocolId,
-      packageId: descriptor.packageId,
+      diagnosticRequirementId: diagnosticRequirementId(descriptor.projectId, "generated-artifact"),
+      schemaDescriptorId: descriptor.schemaDescriptorId,
+      projectId: descriptor.projectId,
       kind: "generated-artifact",
-      reason: `Package ${descriptor.packageId} must keep generated protocol artifacts fresh for descriptor ${descriptor.descriptorHash}.`,
+      reason: `Project ${descriptor.projectId} must keep generated artifacts fresh for schema descriptor ${descriptor.descriptorHash}.`,
     },
   ]
 }

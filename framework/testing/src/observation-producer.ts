@@ -1,9 +1,9 @@
 import type {
-  AttuneProtocolEvidenceEvent,
+  ProgramObservation,
 } from "@attune/framework-protocol"
 import {
-  AttuneProtocolEvidenceEventSchema,
-  type ProtocolEvidenceKind,
+  ProgramObservationSchema,
+  type ProgramObservationKind,
 } from "@attune/framework-protocol"
 import { Schema } from "effect"
 
@@ -11,8 +11,8 @@ import { defineExactSymbolMap } from "./symbol-map.js"
 import type { PropertyTier, ReplayMetadata } from "./replay-metadata.js"
 
 export type ObservationContext = Readonly<{
-  readonly protocolId: string
-  readonly packageId: string
+  readonly schemaDescriptorId: string
+  readonly projectId: string
   readonly runId: string
   readonly observedAt: string
   readonly tier?: PropertyTier
@@ -21,16 +21,16 @@ export type ObservationContext = Readonly<{
 }>
 
 export type ObservationInput = Readonly<{
-  readonly operationId?: string
-  readonly kind: ProtocolEvidenceKind
+  readonly symbolId?: string
+  readonly kind: ProgramObservationKind
   readonly payload?: unknown
   readonly sequence?: number | string
 }>
 
 export type ObservationProducer = Readonly<{
   readonly id: string
-  readonly operationId?: string
-  readonly produce: (context: ObservationContext) => readonly AttuneProtocolEvidenceEvent[]
+  readonly symbolId?: string
+  readonly produce: (context: ObservationContext) => readonly ProgramObservation[]
 }>
 
 export type ObservationProducerMap<SymbolId extends string = string> =
@@ -41,8 +41,8 @@ export const observationEventId = (
   input: ObservationInput,
 ): string =>
   [
-    context.packageId,
-    input.operationId ?? "package",
+    context.projectId,
+    input.symbolId ?? "package",
     input.kind,
     context.runId,
     context.propertyId ?? "property",
@@ -51,28 +51,28 @@ export const observationEventId = (
 
 export const observationEvent = (
   context: ObservationContext,
-  operationIdOrInput: string | undefined | ObservationInput,
-  kind?: ProtocolEvidenceKind,
+  symbolIdOrInput: string | undefined | ObservationInput,
+  kind?: ProgramObservationKind,
   payload?: unknown,
-): AttuneProtocolEvidenceEvent => {
-  const input = typeof operationIdOrInput === "object"
-    ? operationIdOrInput
+): ProgramObservation => {
+  const input = typeof symbolIdOrInput === "object"
+    ? symbolIdOrInput
     : {
-      kind: kind as ProtocolEvidenceKind,
+      kind: kind as ProgramObservationKind,
       payload,
-      ...(operationIdOrInput === undefined ? {} : { operationId: operationIdOrInput }),
+      ...(symbolIdOrInput === undefined ? {} : { symbolId: symbolIdOrInput }),
     }
 
-  return Schema.decodeUnknownSync(AttuneProtocolEvidenceEventSchema)({
+  return Schema.decodeUnknownSync(ProgramObservationSchema)({
     eventId: observationEventId(context, input),
     runId: context.runId,
-    protocolId: context.protocolId,
-    packageId: context.packageId,
-    ...(input.operationId === undefined ? {} : { operationId: input.operationId }),
+    schemaDescriptorId: context.schemaDescriptorId,
+    projectId: context.projectId,
+    ...(input.symbolId === undefined ? {} : { symbolId: input.symbolId }),
     kind: input.kind,
     observedAt: context.observedAt,
     ...(input.payload === undefined ? {} : { payload: input.payload }),
-  }) as AttuneProtocolEvidenceEvent
+  }) as ProgramObservation
 }
 
 export const defineObservationProducer = (
@@ -82,7 +82,7 @@ export const defineObservationProducer = (
 export const collectObservations = (
   context: ObservationContext,
   producers: readonly ObservationProducer[],
-): readonly AttuneProtocolEvidenceEvent[] =>
+): readonly ProgramObservation[] =>
   producers.flatMap((producer) => producer.produce(context))
 
 export const defineObservationProducerMap = <
@@ -105,17 +105,17 @@ export const defineObservationProducerMap = <
 export const collectObservationsFromMap = (
   context: ObservationContext,
   producers: ObservationProducerMap,
-): readonly AttuneProtocolEvidenceEvent[] =>
+): readonly ProgramObservation[] =>
   collectObservations(context, Object.values(producers))
 
 export const propertyRunObservation = (
   context: ObservationContext,
-  operationId: string,
+  symbolId: string,
   payload?: unknown,
-): AttuneProtocolEvidenceEvent =>
+): ProgramObservation =>
   observationEvent(context, {
     kind: "property-run",
-    operationId,
+    symbolId,
     payload: {
       replay: context.replay,
       tier: context.tier,
@@ -131,7 +131,7 @@ export type TypeGuidancePartitionEvidenceStatus =
 
 export const schemaPartitionObservation = (
   context: ObservationContext,
-  operationId: string,
+  symbolId: string,
   input: Readonly<{
     readonly partitionId: string
     readonly status: TypeGuidancePartitionEvidenceStatus
@@ -141,10 +141,10 @@ export const schemaPartitionObservation = (
     readonly reason?: string
     readonly source?: string
   }>,
-): AttuneProtocolEvidenceEvent =>
+): ProgramObservation =>
   observationEvent(context, {
     kind: "type-guidance",
-    operationId,
+    symbolId,
     payload: {
       corpusSeedId: input.corpusSeedId,
       filterId: input.filterId,
@@ -167,13 +167,13 @@ export const schemaPartitionObservation = (
 
 export const diagnosticRuleObservation = (
   context: ObservationContext,
-  operationId: string,
+  symbolId: string,
   lawId: string,
   payload?: unknown,
-): AttuneProtocolEvidenceEvent =>
+): ProgramObservation =>
   observationEvent(context, {
     kind: "law-observed",
-    operationId,
+    symbolId,
     payload: {
       lawId,
       replay: context.replay,
@@ -184,12 +184,12 @@ export const diagnosticRuleObservation = (
 
 export const counterexampleObservation = (
   context: ObservationContext,
-  operationId: string,
+  symbolId: string,
   payload: unknown,
-): AttuneProtocolEvidenceEvent =>
+): ProgramObservation =>
   observationEvent(context, {
     kind: "counterexample",
-    operationId,
+    symbolId,
     payload: {
       replay: context.replay,
       ...(
@@ -202,12 +202,12 @@ export const counterexampleObservation = (
 
 export const coveragePointObservation = (
   context: ObservationContext,
-  operationId: string,
+  symbolId: string,
   payload: unknown,
-): AttuneProtocolEvidenceEvent =>
+): ProgramObservation =>
   observationEvent(context, {
     kind: "coverage-point",
-    operationId,
+    symbolId,
     payload: {
       replay: context.replay,
       ...(
@@ -220,12 +220,12 @@ export const coveragePointObservation = (
 
 export const weakOracleObservation = (
   context: ObservationContext,
-  operationId: string,
+  symbolId: string,
   payload: unknown,
-): AttuneProtocolEvidenceEvent =>
+): ProgramObservation =>
   observationEvent(context, {
     kind: "weak-oracle",
-    operationId,
+    symbolId,
     payload: {
       replay: context.replay,
       ...(

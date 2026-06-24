@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs"
 
 import {
   extractProtocolSourceSummary,
-  hashProtocolValue,
+  hashProgramValue,
   type ProgramRepairAction,
   type ProgramDiagnostic,
   type ProtocolSourceDeclaration,
@@ -204,7 +204,7 @@ export const programSourceIndexRows = (
   const now = input.now ?? new Date().toISOString()
   const summary = extractProtocolSourceSummary({
     sourceFiles: input.sourceFiles,
-    packageId: input.packageId ?? input.projectId,
+    projectId: input.packageId ?? input.projectId,
     ...(input.protocolFactoryNames === undefined ? {} : {
       protocolFactoryNames: input.protocolFactoryNames,
     }),
@@ -232,7 +232,7 @@ export const programSourceIndexRows = (
       ...(declaration.declaration.range === undefined ? {} : {
         rangeJson: programIndexJson(declaration.declaration.range),
       }),
-      hash: hashProtocolValue({
+      hash: hashProgramValue({
         id: declaration.id,
         typeText: declaration.typeText,
         initializerText: declaration.initializerText,
@@ -249,7 +249,7 @@ export const programSourceIndexRows = (
       id: `schema:${symbol.id}`,
       symbolId: symbol.id,
       role: "boundary",
-      astHash: hashProtocolValue(declaration.initializerText ?? declaration.typeText ?? declaration.id),
+      astHash: hashProgramValue(declaration.initializerText ?? declaration.typeText ?? declaration.id),
       descriptorVersion: 1,
       shapeJson: programIndexJson({
         id: declaration.id,
@@ -270,7 +270,7 @@ export const programSourceIndexRows = (
     const from = symbolByExport.get(declaration.declaration.exportName)
     if (from === undefined) return []
     return declaration.imports.map((sourceImport) => ({
-      id: hashProtocolValue({
+      id: hashProgramValue({
         source: "typescript-import",
         from: from.id,
         moduleSpecifier: sourceImport.moduleSpecifier,
@@ -289,7 +289,7 @@ export const programSourceIndexRows = (
     return declaration.referencedIdentifiers
       .filter((identifier) => identifier !== declaration.declaration.exportName)
       .map((identifier) => ({
-        id: hashProtocolValue({
+        id: hashProgramValue({
           source: "typescript-reference",
           from: from.id,
           identifier,
@@ -374,7 +374,7 @@ export const compatibilityRowsFromCurrentPackageContracts = (
       projectId: input.projectId,
       path,
       kind: compatibilityArtifactKind(path),
-      builtFromHash: hashProtocolValue({ projectId: input.projectId, root: input.root }),
+      builtFromHash: hashProgramValue({ projectId: input.projectId, root: input.root }),
       ...(currentHash === undefined ? {} : { currentHash }),
       status,
     } satisfies ProgramIndexArtifact
@@ -553,7 +553,7 @@ const compatibilityMechanicalRowsFromArtifacts = ({
     exportName: operation.operationId,
     localName: operation.exportName,
     kind: "compatibility-operation-id",
-    hash: hashProtocolValue({
+    hash: hashProgramValue({
       compatibilitySource: "package-contract-compat",
       projectId: input.projectId,
       operationId: operation.operationId,
@@ -593,7 +593,7 @@ const compatibilityMechanicalRowsFromArtifacts = ({
         id: descriptorId,
         symbolId: schemaSymbol.id,
         role,
-        astHash: hashProtocolValue({
+        astHash: hashProgramValue({
           compatibilitySource: "package-contract-compat",
           operationId: operation.operationId,
           role,
@@ -704,7 +704,7 @@ const compatibilityTsProjectionFromArtifact = (
       id: `compat-schema:${symbol.id}:boundary`,
       symbolId: symbol.id,
       role: "boundary",
-      astHash: hashProtocolValue({
+      astHash: hashProgramValue({
         compatibilitySource: source,
         exportName: symbol.exportName,
         initializerText,
@@ -854,7 +854,7 @@ const compatibilitySymbolFromDeclaration = (
     localName: declaration.declaration.symbolName,
     kind,
     rangeJson: programIndexJson(declaration.declaration.range),
-    hash: hashProtocolValue({
+    hash: hashProgramValue({
       compatibilitySource: compatibilitySourceMetadata(path),
       exportName,
       kind,
@@ -1326,7 +1326,7 @@ const compatibilityVirtualSymbol = (
   exportName: name,
   localName: name,
   kind: `compatibility-${kind}`,
-  hash: hashProtocolValue({
+  hash: hashProgramValue({
     compatibilitySource: "package-contract-compat",
     kind,
     name,
@@ -1337,7 +1337,7 @@ const compatibilityEdgeId = (
   kind: string,
   fromSymbolId: string,
   toSymbolId: string,
-): string => hashProtocolValue({
+): string => hashProgramValue({
   source: "compatibility",
   kind,
   fromSymbolId,
@@ -1367,14 +1367,14 @@ export const programIndexDiagnosticsForFile = (
       ])
     }
     return diagnosticRows.map((row) =>
-      programIndexDiagnosticRowToProtocolDiagnostic(
+      programIndexDiagnosticRowToProgramDiagnostic(
         row,
         repairsByDiagnosticId.get(stringValue(row, "diagnostic_id")) ?? [],
       )
     )
   })
 
-export const programIndexDiagnosticRowToProtocolDiagnostic = (
+export const programIndexDiagnosticRowToProgramDiagnostic = (
   row: ProgramIndexViewRow,
   repairRows: readonly ProgramIndexViewRow[] = [],
 ): ProgramDiagnostic => {
@@ -1383,13 +1383,13 @@ export const programIndexDiagnosticRowToProtocolDiagnostic = (
   return {
     code: stringValue(row, "code"),
     severity: diagnosticSeverity(row.severity ?? null),
-    packageId: stringValue(row, "project_id", "workspace"),
+    projectId: stringValue(row, "project_id", "workspace"),
     sourcePath: stringValue(row, "path", "workspace"),
     explanation: stringValue(row, "message"),
     ...(range === undefined ? {} : { range }),
     ...(cause === undefined ? {} : { cause }),
-    suggestedActions: repairRows.map(programIndexRepairRowToProtocolAction),
-    relatedEvidence: cause === undefined ? [] : ["program-index:cause"],
+    suggestedActions: repairRows.map(programIndexRepairRowToProgramAction),
+    relatedObservations: cause === undefined ? [] : ["program-index:cause"],
   }
 }
 
@@ -1434,7 +1434,7 @@ const compatibilityArtifactKind = (path: string): string => {
     return "framework-generated-artifact-freshness"
   }
   if (/src\/attune\.contract\.generated\.ts$/u.test(path)) return "generated-contract-companion"
-  if (/src\/attune\.generated\.ts$/u.test(path)) return "generated-protocol-companion"
+  if (/src\/attune\.generated\.ts$/u.test(path)) return "generated-program-companion"
   if (/attune\.artifact-ownership\.json$/u.test(path) || /framework\/architecture\/src\/generated\/artifact-ownership\/[^/]+\.json$/u.test(path)) {
     return "artifact-ownership-compatibility"
   }
@@ -1673,7 +1673,7 @@ const sourceRangeFromRow = (
   return undefined
 }
 
-const programIndexRepairRowToProtocolAction = (
+const programIndexRepairRowToProgramAction = (
   row: ProgramIndexViewRow,
 ): ProgramRepairAction => {
   const nxTarget = stringValue(row, "nx_target")

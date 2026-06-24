@@ -1,10 +1,10 @@
 import {
-  AttuneProtocolEvidenceEventSchema,
+  ProgramObservationSchema,
   ProgramObservationRpcControlIds,
   controlRpcDescriptorById,
   defineProgramObservationRpcGroup,
   operationRpcDescriptorById,
-  type AttuneProtocolEvidenceEvent,
+  type ProgramObservation,
   type ControlRpcDescriptor,
   type SymbolIds,
   type SymbolById,
@@ -50,9 +50,9 @@ import type { WorkerEvidenceMetadata } from "./worker-metadata.js"
 export type ProgramHarnessContract = Parameters<typeof defineProgramObservationRpcGroup>[0]
 
 export const ProgramHarnessInvocationSchema = Schema.Struct({
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.String,
   rpcId: Schema.optionalKey(Schema.String),
   payload: Schema.Unknown,
   replay: Schema.optionalKey(ReplayMetadataSchema),
@@ -61,16 +61,16 @@ export const ProgramHarnessInvocationSchema = Schema.Struct({
 export type ProgramHarnessInvocation = typeof ProgramHarnessInvocationSchema.Type
 
 export const ProgramHarnessExitSchema = Schema.Struct({
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.String,
   rpcId: Schema.optionalKey(Schema.String),
   status: Schema.Literals(["success", "typed-error", "defect"] as const),
   success: Schema.optionalKey(Schema.Unknown),
   encodedSuccess: Schema.optionalKey(Schema.Unknown),
   error: Schema.optionalKey(Schema.Unknown),
   encodedError: Schema.optionalKey(Schema.Unknown),
-  evidence: Schema.Array(AttuneProtocolEvidenceEventSchema),
+  observations: Schema.Array(ProgramObservationSchema),
   replay: Schema.optionalKey(ReplayMetadataSchema),
 })
 export type ProgramHarnessExit = typeof ProgramHarnessExitSchema.Type
@@ -95,8 +95,8 @@ export type ProgramHarnessTypeGuidanceObservation = Readonly<{
 }>
 
 export type ProgramHarnessRecordEvidence = (
-  input: Omit<ObservationInput, "operationId"> & Readonly<{
-    readonly operationId?: string
+  input: Omit<ObservationInput, "symbolId"> & Readonly<{
+    readonly symbolId?: string
   }>,
 ) => void
 
@@ -137,7 +137,7 @@ export interface ProgramHarnessOperationEntry<
   Contract extends ProgramHarnessContract,
   SymbolId extends SymbolIds<Contract>,
 > {
-  readonly operationId: SymbolId
+  readonly symbolId: SymbolId
   readonly rpc: OperationRpcDescriptor<Contract, SymbolId>
   readonly invoke: (
     payload: unknown,
@@ -146,16 +146,16 @@ export interface ProgramHarnessOperationEntry<
 }
 
 export interface ProgramHarnessControlEntry<
-  PackageId extends string,
+  ProjectId extends string,
   ControlId extends ProgramObservationRpcControlId,
 > {
   readonly controlId: ControlId
-  readonly rpc: ControlRpcDescriptor<PackageId, ControlId>
+  readonly rpc: ControlRpcDescriptor<ProjectId, ControlId>
 }
 
-export type ProgramHarnessControlEntries<PackageId extends string> = {
+export type ProgramHarnessControlEntries<ProjectId extends string> = {
   readonly [ControlId in ProgramObservationRpcControlId]: ProgramHarnessControlEntry<
-    PackageId,
+    ProjectId,
     ControlId
   >
 }
@@ -181,7 +181,7 @@ export interface ProgramHarnessClient<
   readonly registry: SymbolHandlerRegistry<Handlers>
   readonly operations: ProgramHarnessOperationEntries<Contract>
   readonly invoke: <SymbolId extends SymbolIds<Contract>>(
-    operationId: SymbolId,
+    symbolId: SymbolId,
     payload: unknown,
     options?: ProgramHarnessInvokeOptions,
   ) => Promise<ProgramHarnessExit>
@@ -189,15 +189,19 @@ export interface ProgramHarnessClient<
 
 export class ProgramHarnessMissingAccessorError extends Error {
   constructor(
-    readonly packageId: string,
-    readonly operationId: string,
+    readonly projectId: string,
+    readonly symbolId: string,
   ) {
     super(
-      `Package ${packageId} programTestLayer does not expose a public accessor for operation ${operationId}.`,
+      `Package ${projectId} programTestLayer does not expose a public accessor for operation ${symbolId}.`,
     )
     this.name = "ProgramHarnessMissingAccessorError"
   }
 }
+
+const projectIdForContract = (
+  contract: { readonly packageId: string },
+): string => contract.packageId
 
 export const defineProgramHarnessHandlers = <
   const Contract extends ProgramHarnessContract,
@@ -208,7 +212,7 @@ export const defineProgramHarnessHandlers = <
   handlers: Handlers,
 ): Handlers => {
   defineSymbolHandlerRegistry({
-    projectId: contract.packageId,
+    projectId: projectIdForContract(contract),
     symbolIds: symbolIdsFromTuple(contract.operations),
     handlers,
   })
@@ -223,7 +227,7 @@ export const defineProjectObservationProducerMap = <
   producers: Producers,
 ): Producers =>
   defineObservationProducerMap({
-    projectId: contract.packageId,
+    projectId: projectIdForContract(contract),
     symbolIds: symbolIdsFromTuple(contract.operations),
     producers,
   })
@@ -233,17 +237,17 @@ export const publicAccessorHandler = <
   const programTestLayer,
   const SymbolId extends SymbolIds<Contract>,
 >(
-  operationId: SymbolId,
+  symbolId: SymbolId,
 ): ProgramHarnessHandler<Contract, SymbolId, programTestLayer> =>
   async (payload, context) => {
     const accessor = findprogramTestLayerAccessor(
       context.programTestLayer,
-      operationId,
+      symbolId,
     )
     if (accessor === undefined) {
       throw new ProgramHarnessMissingAccessorError(
-        context.contract.packageId,
-        operationId,
+        projectIdForContract(context.contract),
+        symbolId,
       )
     }
     return await accessor(payload, context) as OutputOf<Contract, SymbolId>
@@ -267,13 +271,13 @@ export const createProgramHarnessClient = <
   const symbolIds = symbolIdsFromTuple(input.contract.operations)
   const handlers = input.handlers
   const registry = defineSymbolHandlerRegistry({
-    projectId: input.contract.packageId,
+    projectId: projectIdForContract(input.contract),
     symbolIds,
     handlers,
   })
 
   const invoke = <SymbolId extends SymbolIds<Contract>>(
-    operationId: SymbolId,
+    symbolId: SymbolId,
     payload: unknown,
     options: ProgramHarnessInvokeOptions = {},
   ) =>
@@ -281,7 +285,7 @@ export const createProgramHarnessClient = <
       contract: input.contract,
       group,
       handlers,
-      operationId,
+      symbolId,
       programTestLayer: input.programTestLayer,
       payload,
       options,
@@ -290,15 +294,15 @@ export const createProgramHarnessClient = <
     })
 
   const operations = Object.fromEntries(
-    symbolIds.map((operationId) => [
-      operationId,
+    symbolIds.map((symbolId) => [
+      symbolId,
       {
-        operationId,
-        rpc: operationRpcDescriptorById(group, operationId),
+        symbolId,
+        rpc: operationRpcDescriptorById(group, symbolId),
         invoke: (
           payload: unknown,
           options?: ProgramHarnessInvokeOptions,
-        ) => invoke(operationId, payload, options),
+        ) => invoke(symbolId, payload, options),
       },
     ]),
   ) as ProgramHarnessOperationEntries<Contract>
@@ -332,10 +336,10 @@ export type ProgramHarnessPropertyInput<
   SymbolId extends SymbolIds<Contract>,
 > = Omit<
   FastCheckPropertyInput<InputOf<Contract, SymbolId>, OutputOf<Contract, SymbolId>>,
-  "lawIds" | "operation" | "operationId" | "packageId" | "protocolId"
+  "lawIds" | "operation" | "symbolId" | "projectId" | "schemaDescriptorId"
 > & Readonly<{
   readonly client: ProgramHarnessClient<Contract, programTestLayer, Handlers>
-  readonly operationId: SymbolId
+  readonly symbolId: SymbolId
   readonly lawIds?: readonly string[]
   readonly validateHarnessExit?: PropertyValidationHook<
     ProgramHarnessExit,
@@ -351,29 +355,29 @@ export const checkProgramHarnessProperty = async <
 >(
   input: ProgramHarnessPropertyInput<Contract, programTestLayer, Handlers, SymbolId>,
 ): Promise<FastCheckPropertyEvidence> => {
-  const symbol = symbolById(input.client.contract, input.operationId)
-  const harnessEvents: AttuneProtocolEvidenceEvent[] = []
+  const symbol = symbolById(input.client.contract, input.symbolId)
+  const harnessEvents: ProgramObservation[] = []
 
   const result = await checkFastCheckProperty({
     ...input,
     lawIds: input.lawIds ?? symbol.laws ?? [],
-    operationId: input.operationId,
-    packageId: input.client.contract.packageId,
-    protocolId: `attune/package/${input.client.contract.packageId}`,
+    symbolId: input.symbolId,
+    projectId: projectIdForContract(input.client.contract),
+    schemaDescriptorId: `attune/project/${projectIdForContract(input.client.contract)}`,
     operation: async (payload, context) => {
       const exit = await input.client.invoke(
-        input.operationId,
+        input.symbolId,
         payload,
         propertyInvokeOptions(input, context.caseIndex),
       )
-      harnessEvents.push(...exit.evidence as readonly AttuneProtocolEvidenceEvent[])
+      harnessEvents.push(...exit.observations as readonly ProgramObservation[])
       if (await runHarnessExitHook(input.validateHarnessExit, exit, context)) {
         return exit.success as OutputOf<Contract, SymbolId>
       }
       if (exit.status === "success") {
         return exit.success as OutputOf<Contract, SymbolId>
       }
-      throw exit.error ?? new Error(`Package harness ${exit.status} for ${input.operationId}`)
+      throw exit.error ?? new Error(`Package harness ${exit.status} for ${input.symbolId}`)
     },
   })
 
@@ -423,31 +427,31 @@ const invokeProgramHarnessOperation = async <
     readonly observationProducers?: ObservationProducerMap<SymbolIds<Contract>>
     readonly group: ProgramObservationRpcGroup<Contract>
     readonly handlers: Handlers
-    readonly operationId: SymbolId
+    readonly symbolId: SymbolId
     readonly programTestLayer: programTestLayer
     readonly payload: unknown
     readonly options: ProgramHarnessInvokeOptions
   }>,
 ): Promise<ProgramHarnessExit> => {
-  const symbol = symbolById(input.contract, input.operationId)
-  const rpc = operationRpcDescriptorById(input.group, input.operationId)
+  const symbol = symbolById(input.contract, input.symbolId)
+  const rpc = operationRpcDescriptorById(input.group, input.symbolId)
   const evidenceContext = evidenceContextFor(
-    input.contract.packageId,
-    input.operationId,
+    projectIdForContract(input.contract),
+    input.symbolId,
     input.options,
   )
-  const evidence: AttuneProtocolEvidenceEvent[] = []
+  const observations: ProgramObservation[] = []
   const recordObservation: ProgramHarnessRecordEvidence = (eventInput) => {
-    evidence.push(observationEvent(evidenceContext, {
+    observations.push(observationEvent(evidenceContext, {
       ...eventInput,
-      operationId: eventInput.operationId ?? input.operationId,
+      symbolId: eventInput.symbolId ?? input.symbolId,
     }))
   }
 
   const invocation = decodeHarnessInvocation({
-    protocolId: evidenceContext.protocolId,
-    packageId: input.contract.packageId,
-    operationId: input.operationId,
+    schemaDescriptorId: evidenceContext.schemaDescriptorId,
+    projectId: projectIdForContract(input.contract),
+    symbolId: input.symbolId,
     rpcId: rpc.rpcId,
     payload: input.payload,
     ...(input.options.replay === undefined ? {} : { replay: input.options.replay }),
@@ -471,13 +475,13 @@ const invokeProgramHarnessOperation = async <
     )
     recordSchemaEvidence(recordObservation, "payload", rpc, decodedInput)
     recordTypeGuidanceEvidence(
-      evidence,
+      observations,
       evidenceContext,
-      input.operationId,
+      input.symbolId,
       input.options.typeGuidance ?? [],
     )
 
-    const handler = input.handlers[input.operationId] as unknown as ProgramHarnessHandler<
+    const handler = input.handlers[input.symbolId] as unknown as ProgramHarnessHandler<
       Contract,
       SymbolId,
       programTestLayer
@@ -498,31 +502,31 @@ const invokeProgramHarnessOperation = async <
     recordSchemaEvidence(recordObservation, "success", rpc, encodedSuccess)
 
     if (input.atomGraphObserver !== undefined) {
-      const observations = input.atomGraphObserver.observe({
-          packageId: input.contract.packageId,
-          operationId: input.operationId,
+      const atomGraphObservations = input.atomGraphObserver.observe({
+          projectId: projectIdForContract(input.contract),
+          symbolId: input.symbolId,
           ...optionalReplay(evidenceContext.replay),
         })
       recordObservation({
         kind: "property-run",
         payload: {
           controlId: "observe",
-          observationCount: observations.length,
+          observationCount: atomGraphObservations.length,
           rpcId: controlRpcDescriptorById(input.group, "observe").rpcId,
         },
         sequence: "control:observe",
       })
-      evidence.push(...atomMovementEvidence(
+      observations.push(...atomMovementEvidence(
         evidenceContext,
-        input.operationId,
-        observations,
+        input.symbolId,
+        atomGraphObservations,
       ))
     }
 
     if (input.observationProducers !== undefined) {
-      const producer = input.observationProducers[input.operationId]
+      const producer = input.observationProducers[input.symbolId]
       if (producer !== undefined) {
-        evidence.push(...producer.produce(evidenceContext))
+        observations.push(...producer.produce(evidenceContext))
       }
     }
 
@@ -536,24 +540,24 @@ const invokeProgramHarnessOperation = async <
     })
 
     return decodeHarnessExit({
-      protocolId: evidenceContext.protocolId,
-      packageId: input.contract.packageId,
-      operationId: input.operationId,
+      schemaDescriptorId: evidenceContext.schemaDescriptorId,
+      projectId: projectIdForContract(input.contract),
+      symbolId: input.symbolId,
       rpcId: rpc.rpcId,
       status: "success",
       success: decodedOutput,
       encodedSuccess,
-      evidence,
+      observations,
       ...optionalReplay(evidenceContext.replay),
     })
   } catch (error) {
     return harnessErrorExit({
       contract: input.contract,
       error,
-      evidence,
+      observations,
       evidenceContext,
       symbol,
-      operationId: input.operationId,
+      symbolId: input.symbolId,
       recordObservation,
       rpc,
     })
@@ -561,13 +565,13 @@ const invokeProgramHarnessOperation = async <
 }
 
 const recordTypeGuidanceEvidence = (
-  evidence: AttuneProtocolEvidenceEvent[],
+  output: ProgramObservation[],
   context: ObservationContext,
-  operationId: string,
-  observations: readonly ProgramHarnessTypeGuidanceObservation[],
+  symbolId: string,
+  typeGuidanceObservations: readonly ProgramHarnessTypeGuidanceObservation[],
 ): void => {
-  for (const observation of observations) {
-    evidence.push(schemaPartitionObservation(context, operationId, observation))
+  for (const observation of typeGuidanceObservations) {
+    output.push(schemaPartitionObservation(context, symbolId, observation))
   }
 }
 
@@ -578,10 +582,10 @@ const harnessErrorExit = <
   input: Readonly<{
     readonly contract: Contract
     readonly error: unknown
-    readonly evidence: AttuneProtocolEvidenceEvent[]
+    readonly observations: ProgramObservation[]
     readonly evidenceContext: ObservationContext
     readonly symbol: SymbolById<Contract, SymbolId>
-    readonly operationId: SymbolId
+    readonly symbolId: SymbolId
     readonly recordObservation: ProgramHarnessRecordEvidence
     readonly rpc: OperationRpcDescriptor<Contract, SymbolId>
   }>,
@@ -593,14 +597,14 @@ const harnessErrorExit = <
       const encodedError = encodeOperationValue(errorSchema, decodedError)
       recordSchemaEvidence(input.recordObservation, "error", input.rpc, encodedError)
       return decodeHarnessExit({
-        protocolId: input.evidenceContext.protocolId,
-        packageId: input.contract.packageId,
-        operationId: input.operationId,
+        schemaDescriptorId: input.evidenceContext.schemaDescriptorId,
+        projectId: projectIdForContract(input.contract),
+        symbolId: input.symbolId,
         rpcId: input.rpc.rpcId,
         status: "typed-error",
         error: decodedError,
         encodedError,
-        evidence: input.evidence,
+        observations: input.observations,
         ...optionalReplay(input.evidenceContext.replay),
       })
     } catch {
@@ -619,27 +623,27 @@ const harnessErrorExit = <
   })
 
   return decodeHarnessExit({
-    protocolId: input.evidenceContext.protocolId,
-    packageId: input.contract.packageId,
-    operationId: input.operationId,
+    schemaDescriptorId: input.evidenceContext.schemaDescriptorId,
+    projectId: projectIdForContract(input.contract),
+    symbolId: input.symbolId,
     rpcId: input.rpc.rpcId,
     status: "defect",
     error: summarizeError(input.error),
-    evidence: input.evidence,
+    observations: input.observations,
     ...optionalReplay(input.evidenceContext.replay),
   })
 }
 
 const evidenceContextFor = (
-  packageId: string,
-  operationId: string,
+  projectId: string,
+  symbolId: string,
   options: ProgramHarnessInvokeOptions,
 ): ObservationContext => ({
   observedAt: options.observedAt ?? new Date().toISOString(),
-  packageId,
-  propertyId: options.propertyId ?? `${packageId}.${operationId}.harness`,
-  protocolId: `attune/package/${packageId}`,
-  runId: options.runId ?? `${packageId}:${operationId}:harness:${options.replay?.seed ?? "manual"}`,
+  projectId,
+  propertyId: options.propertyId ?? `${projectId}.${symbolId}.harness`,
+  schemaDescriptorId: `attune/project/${projectId}`,
+  runId: options.runId ?? `${projectId}:${symbolId}:harness:${options.replay?.seed ?? "manual"}`,
   tier: options.worker?.resourceTier ?? "commit",
   ...optionalReplay(options.replay),
 })
@@ -654,11 +658,11 @@ const symbolById = <
   const SymbolId extends SymbolIds<Contract>,
 >(
   contract: Contract,
-  operationId: SymbolId,
+  symbolId: SymbolId,
 ): SymbolById<Contract, SymbolId> => {
-  const operation = contract.operations.find((candidate) => candidate.id === operationId)
+  const operation = contract.operations.find((candidate) => candidate.id === symbolId)
   if (operation === undefined) {
-    throw new Error(`Unknown operation ${operationId} for package ${contract.packageId}`)
+    throw new Error(`Unknown operation ${symbolId} for package ${projectIdForContract(contract)}`)
   }
   return operation as SymbolById<Contract, SymbolId>
 }
@@ -711,20 +715,20 @@ const recordSchemaEvidence = <
 
 const findprogramTestLayerAccessor = (
   programTestLayer: unknown,
-  operationId: string,
+  symbolId: string,
 ): ((payload: unknown, context: unknown) => unknown | Promise<unknown>) | undefined => {
-  const direct = lookupAccessor(programTestLayer, operationId)
+  const direct = lookupAccessor(programTestLayer, symbolId)
   if (direct !== undefined) return direct
 
   if (!isRecord(programTestLayer)) return undefined
 
   for (const key of ["publicAccessors", "accessors", "handlers", "operations", "services"] as const) {
-    const accessor = lookupAccessor(programTestLayer[key], operationId)
+    const accessor = lookupAccessor(programTestLayer[key], symbolId)
     if (accessor !== undefined) return accessor
   }
 
   for (const nested of Object.values(programTestLayer)) {
-    const accessor = lookupAccessor(nested, operationId)
+    const accessor = lookupAccessor(nested, symbolId)
     if (accessor !== undefined) return accessor
   }
 
@@ -733,10 +737,10 @@ const findprogramTestLayerAccessor = (
 
 const lookupAccessor = (
   container: unknown,
-  operationId: string,
+  symbolId: string,
 ): ((payload: unknown, context: unknown) => unknown | Promise<unknown>) | undefined => {
   if (!isRecord(container)) return undefined
-  const candidate = container[operationId]
+  const candidate = container[symbolId]
   return typeof candidate === "function"
     ? candidate as (payload: unknown, context: unknown) => unknown | Promise<unknown>
     : undefined
@@ -762,4 +766,4 @@ export const programHarnessControlIds: readonly ProgramObservationRpcControlId[]
   ProgramObservationRpcControlIds
 
 export type ProgramHarnessProtocolId<Contract extends ProgramHarnessContract> =
-  `attune/package/${ProjectIdOf<Contract>}`
+  `attune/project/${ProjectIdOf<Contract>}`

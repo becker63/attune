@@ -5,7 +5,7 @@ import {
   type ProjectGraphDependency,
   type ProjectGraphProjectNode,
 } from "nx/src/devkit-exports"
-import { hashProtocolValue } from "@attune/framework-protocol"
+import { hashProgramValue } from "@attune/framework-protocol"
 import {
   programIndexJson,
   type ProgramIndexApi,
@@ -96,7 +96,7 @@ const projectRow = (
     root: data.root,
     ...(data.sourceRoot === undefined ? {} : { sourceRoot: data.sourceRoot }),
     ...(data.projectType === undefined ? {} : { projectType: data.projectType }),
-    hash: hashProtocolValue({
+    hash: hashProgramValue({
       projectId,
       root: data.root,
       sourceRoot: data.sourceRoot,
@@ -122,7 +122,7 @@ const targetRows = (
 const projectDependencyEdge = (
   dependency: ProjectGraphDependency,
 ): ProgramIndexEdge => ({
-  id: hashProtocolValue({
+  id: hashProgramValue({
     source: "nx-project-graph",
     from: dependency.source,
     to: dependency.target,

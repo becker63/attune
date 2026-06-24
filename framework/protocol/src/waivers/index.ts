@@ -27,19 +27,19 @@ export const AttuneProtocolWaiverSchema = Schema.Struct({
   reason: Schema.String,
   review: Schema.optional(Schema.String),
   expiresOn: Schema.optional(Schema.String),
-  operationId: Schema.optional(Schema.String),
+  symbolId: Schema.optional(Schema.String),
   sourcePath: Schema.optional(Schema.String),
 })
 export type AttuneProtocolWaiver = typeof AttuneProtocolWaiverSchema.Type
 
 export const AttuneProtocolWaiverFindingSchema = Schema.Struct({
   code: Schema.Literals([
-    "attune/protocol/waiver/missing-review",
-    "attune/protocol/waiver/expired-temporary",
-    "attune/protocol/waiver/temporary-without-expiry",
+    "attune/program-facts/waiver/missing-review",
+    "attune/program-facts/waiver/expired-temporary",
+    "attune/program-facts/waiver/temporary-without-expiry",
   ] as const),
   severity: Schema.Literals(["error", "warning", "info"] as const),
-  packageId: Schema.String,
+  projectId: Schema.String,
   waiverId: Schema.String,
   category: ProtocolWaiverCategorySchema,
   sourcePath: Schema.String,
@@ -48,7 +48,7 @@ export const AttuneProtocolWaiverFindingSchema = Schema.Struct({
 export type AttuneProtocolWaiverFinding = typeof AttuneProtocolWaiverFindingSchema.Type
 
 export interface DiagnoseProtocolWaiversInput {
-  readonly packageId: string
+  readonly projectId: string
   readonly sourcePath: string
   readonly waivers: readonly AttuneProtocolWaiver[]
   readonly today?: string
@@ -67,9 +67,9 @@ export const diagnoseProtocolWaivers = (
 
     if (waiver.review === undefined && waiver.expiresOn === undefined) {
       findings.push({
-        code: "attune/protocol/waiver/missing-review",
+        code: "attune/program-facts/waiver/missing-review",
         severity: "warning",
-        packageId: input.packageId,
+        projectId: input.projectId,
         waiverId: waiver.id,
         category: waiver.category,
         sourcePath,
@@ -79,9 +79,9 @@ export const diagnoseProtocolWaivers = (
 
     if (isTemporaryWaiver(waiver) && waiver.expiresOn === undefined) {
       findings.push({
-        code: "attune/protocol/waiver/temporary-without-expiry",
+        code: "attune/program-facts/waiver/temporary-without-expiry",
         severity: "warning",
-        packageId: input.packageId,
+        projectId: input.projectId,
         waiverId: waiver.id,
         category: waiver.category,
         sourcePath,
@@ -91,9 +91,9 @@ export const diagnoseProtocolWaivers = (
 
     if (waiver.expiresOn !== undefined && waiver.expiresOn < today) {
       findings.push({
-        code: "attune/protocol/waiver/expired-temporary",
+        code: "attune/program-facts/waiver/expired-temporary",
         severity: "error",
-        packageId: input.packageId,
+        projectId: input.projectId,
         waiverId: waiver.id,
         category: waiver.category,
         sourcePath,
@@ -106,13 +106,13 @@ export const diagnoseProtocolWaivers = (
 }
 
 export const waiverDeltasFromFindings = (input: {
-  readonly protocolId: string
+  readonly schemaDescriptorId: string
   readonly findings: readonly AttuneProtocolWaiverFinding[]
 }): readonly ProgramRepairFinding[] =>
   input.findings.map((finding) => ({
-    findingId: `${input.protocolId}:${finding.waiverId}:${finding.code}`,
-    protocolId: input.protocolId,
-    packageId: finding.packageId,
+    findingId: `${input.schemaDescriptorId}:${finding.waiverId}:${finding.code}`,
+    schemaDescriptorId: input.schemaDescriptorId,
+    projectId: finding.projectId,
     kind: "waiver-issue",
     sourcePath: finding.sourcePath,
     explanation: finding.message,

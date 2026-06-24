@@ -62,12 +62,12 @@ export type NormalizedWorkerMetadata = Readonly<{
 }>
 
 export type WorkerEvidenceMetadata = Readonly<{
-  readonly packageId: string
+  readonly projectId: string
   readonly propertyId: string
   readonly target: string
   readonly workerId: string
   readonly moduleUrl?: string
-  readonly operationId?: string
+  readonly symbolId?: string
   readonly rpcId?: string
 }> & Omit<NormalizedWorkerMetadata, "shard" | "timeout"> & Readonly<{
   readonly seedEnd: number
@@ -184,17 +184,17 @@ export const normalizeWorkerMetadata = (input: WorkerBudgetInput = {}): Normaliz
 }
 
 export const workerIdFor = (
-  target: Pick<WorkerEvidenceMetadata, "packageId" | "propertyId">,
+  target: Pick<WorkerEvidenceMetadata, "projectId" | "propertyId">,
   shard: Pick<WorkerShardMetadata, "shardId">,
-): string => `${target.packageId}:${target.propertyId}:${shard.shardId}`
+): string => `${target.projectId}:${target.propertyId}:${shard.shardId}`
 
 export const workerEvidenceMetadata = (
   target: Readonly<{
-    readonly packageId: string
+    readonly projectId: string
     readonly propertyId: string
     readonly target: string
     readonly moduleUrl?: URL | string
-    readonly operationId?: string
+    readonly symbolId?: string
     readonly rpcId?: string
   }>,
   budget: NormalizedWorkerMetadata,
@@ -202,7 +202,7 @@ export const workerEvidenceMetadata = (
 ): WorkerEvidenceMetadata => ({
   isolationLevel: budget.isolationLevel,
   numRuns: budget.numRuns,
-  packageId: target.packageId,
+  projectId: target.projectId,
   preservesShrinking: budget.preservesShrinking,
   propertyId: target.propertyId,
   randomSource: budget.randomSource,
@@ -219,7 +219,7 @@ export const workerEvidenceMetadata = (
   workerCount: budget.workerCount,
   workerId,
   ...(target.moduleUrl === undefined ? {} : { moduleUrl: target.moduleUrl.toString() }),
-  ...(target.operationId === undefined ? {} : { operationId: target.operationId }),
+  ...(target.symbolId === undefined ? {} : { symbolId: target.symbolId }),
   ...(target.rpcId === undefined ? {} : { rpcId: target.rpcId }),
   ...(budget.shrinkLimitation === undefined ? {} : { shrinkLimitation: budget.shrinkLimitation }),
 })
@@ -242,7 +242,7 @@ export const mergeWorkerEvidenceRecords = (
 ): readonly WorkerEvidenceRecord[] =>
   [...records].sort((left, right) =>
     [
-      left.packageId.localeCompare(right.packageId),
+      left.projectId.localeCompare(right.projectId),
       left.propertyId.localeCompare(right.propertyId),
       left.target.localeCompare(right.target),
       left.shardIndex - right.shardIndex,

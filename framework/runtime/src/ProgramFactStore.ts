@@ -1,19 +1,19 @@
 import { Context, Data, Effect, Layer, Schema } from "effect"
 import {
-  AttuneGeneratedArtifactRecordSchema,
+  ProgramArtifactRecordSchema,
   ProgramRepairFindingSchema,
-  AttuneProtocolDescriptorSchema,
+  ProgramSchemaDescriptorSchema,
   ProgramDiagnosticSchema,
-  AttuneProtocolEvidenceEventSchema,
-  AttuneProtocolEvidenceRunSchema,
-  AttuneProtocolObligationSchema,
-  type AttuneGeneratedArtifactRecord,
+  ProgramObservationSchema,
+  ProgramObservationRunSchema,
+  ProgramDiagnosticRequirementSchema,
+  type ProgramArtifactRecord,
   type ProgramRepairFinding,
-  type AttuneProtocolDescriptor,
+  type ProgramSchemaDescriptor,
   type ProgramDiagnostic,
-  type AttuneProtocolEvidenceEvent,
-  type AttuneProtocolEvidenceRun,
-  type AttuneProtocolObligation,
+  type ProgramObservation,
+  type ProgramObservationRun,
+  type ProgramDiagnosticRequirement,
 } from "@attune/framework-protocol"
 
 import type { ProgramFactRuntimeSnapshot } from "./ProgramFactProjection.js"
@@ -21,9 +21,9 @@ import type { ProgramFactRuntimeSnapshot } from "./ProgramFactProjection.js"
 export const ReplayObservationMetadataSchema = Schema.Struct({
   replayId: Schema.String,
   runId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.optional(Schema.String),
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.optional(Schema.String),
   propertyId: Schema.optional(Schema.String),
   seed: Schema.Number,
   shrinkPath: Schema.optional(Schema.String),
@@ -39,12 +39,12 @@ export type ReplayObservationMetadata = typeof ReplayObservationMetadataSchema.T
 
 export const DiagnosticWaiverStateSchema = Schema.Struct({
   waiverId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
   category: Schema.String,
   status: Schema.Literals(["active", "expired", "invalid"] as const),
-  targetObligationId: Schema.optional(Schema.String),
-  operationId: Schema.optional(Schema.String),
+  targetDiagnosticRequirementId: Schema.optional(Schema.String),
+  symbolId: Schema.optional(Schema.String),
   targetId: Schema.optional(Schema.String),
   owner: Schema.optional(Schema.String),
   reason: Schema.String,
@@ -58,9 +58,9 @@ export type DiagnosticWaiverState = typeof DiagnosticWaiverStateSchema.Type
 
 export const CoverageObservationFeedbackSchema = Schema.Struct({
   coverageId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.optional(Schema.String),
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.optional(Schema.String),
   kind: Schema.Literals([
     "type-partition",
     "atom-graph",
@@ -89,11 +89,11 @@ export const CoverageObservationFeedbackSchema = Schema.Struct({
 export type CoverageObservationFeedback = typeof CoverageObservationFeedbackSchema.Type
 
 export interface ProgramFactStoreSnapshot {
-  readonly descriptors: readonly unknown[]
-  readonly obligations: readonly unknown[]
-  readonly evidenceRuns: readonly unknown[]
-  readonly evidence: readonly unknown[]
-  readonly generatedArtifacts: readonly unknown[]
+  readonly schemaDescriptors: readonly unknown[]
+  readonly diagnosticRequirements: readonly unknown[]
+  readonly observationRuns: readonly unknown[]
+  readonly observations: readonly unknown[]
+  readonly artifacts: readonly unknown[]
   readonly replayMetadata: readonly unknown[]
   readonly waiverState: readonly unknown[]
   readonly coverageFeedback: readonly unknown[]
@@ -102,19 +102,19 @@ export interface ProgramFactStoreSnapshot {
 
 export interface ProgramFactStoreApi {
   readonly putSchemaDescriptor: (
-    descriptor: AttuneProtocolDescriptor,
+    descriptor: ProgramSchemaDescriptor,
   ) => Effect.Effect<void, ProgramFactStoreError>
-  readonly putDiagnosticRules: (
-    batch: readonly AttuneProtocolObligation[],
+  readonly putDiagnosticRequirements: (
+    batch: readonly ProgramDiagnosticRequirement[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly recordObservationRun: (
-    run: AttuneProtocolEvidenceRun,
+    run: ProgramObservationRun,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly recordArtifact: (
-    record: AttuneGeneratedArtifactRecord,
+    record: ProgramArtifactRecord,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly recordObservation: (
-    event: AttuneProtocolEvidenceEvent,
+    event: ProgramObservation,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly recordReplayObservation: (
     metadata: ReplayObservationMetadata,
@@ -129,7 +129,7 @@ export interface ProgramFactStoreApi {
     repairFindings: readonly ProgramRepairFinding[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly replaceRepairFindings: (
-    packageId: string,
+    projectId: string,
     repairFindings: readonly ProgramRepairFinding[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly snapshot: () => Effect.Effect<ProgramFactStoreSnapshot, ProgramFactStoreError>
@@ -144,7 +144,7 @@ export class ProgramFactStoreError extends Data.TaggedError("ProgramFactStoreErr
 export class ProgramFactQueryError extends Data.TaggedError("ProgramFactQueryError")<{
   readonly message: string
   readonly operation: string
-  readonly packageId?: string
+  readonly projectId?: string
   readonly sourcePath?: string
   readonly payload?: unknown
   readonly cause?: unknown
@@ -162,11 +162,11 @@ export class ProgramFactStore extends Context.Service<
 export const makeInMemoryProgramFactStore = (
   initial: Partial<ProgramFactStoreSnapshot> = {},
 ): ProgramFactStoreApi => {
-  let descriptors: readonly unknown[] = initial.descriptors ?? []
-  let obligations: readonly unknown[] = initial.obligations ?? []
-  let evidenceRuns: readonly unknown[] = initial.evidenceRuns ?? []
-  let evidence: readonly unknown[] = initial.evidence ?? []
-  let generatedArtifacts: readonly unknown[] = initial.generatedArtifacts ?? []
+  let schemaDescriptors: readonly unknown[] = initial.schemaDescriptors ?? []
+  let diagnosticRequirements: readonly unknown[] = initial.diagnosticRequirements ?? []
+  let observationRuns: readonly unknown[] = initial.observationRuns ?? []
+  let observations: readonly unknown[] = initial.observations ?? []
+  let artifacts: readonly unknown[] = initial.artifacts ?? []
   let replayMetadata: readonly unknown[] = initial.replayMetadata ?? []
   let waiverState: readonly unknown[] = initial.waiverState ?? []
   let coverageFeedback: readonly unknown[] = initial.coverageFeedback ?? []
@@ -175,27 +175,27 @@ export const makeInMemoryProgramFactStore = (
   return {
     putSchemaDescriptor: (descriptor) =>
       Effect.sync(() => {
-        descriptors = [
-          ...descriptors.filter((candidate) =>
-            !isSchemaDescriptorFor(candidate, descriptor.protocolId)
+        schemaDescriptors = [
+          ...schemaDescriptors.filter((candidate) =>
+            !isSchemaDescriptorFor(candidate, descriptor.schemaDescriptorId)
           ),
           descriptor,
         ]
       }),
-    putDiagnosticRules: (batch) =>
+    putDiagnosticRequirements: (batch) =>
       Effect.sync(() => {
-        const packageIds = new Set(batch.map((obligation) => obligation.packageId))
-        obligations = [
-          ...obligations.filter((candidate) =>
-            !isDiagnosticRuleFor(candidate, packageIds)
+        const projectIds = new Set(batch.map((obligation) => obligation.projectId))
+        diagnosticRequirements = [
+          ...diagnosticRequirements.filter((candidate) =>
+            !isDiagnosticRuleFor(candidate, projectIds)
           ),
           ...batch,
         ]
       }),
     recordObservationRun: (run) =>
       Effect.sync(() => {
-        evidenceRuns = [
-          ...evidenceRuns.filter((candidate) =>
+        observationRuns = [
+          ...observationRuns.filter((candidate) =>
             !hasStringProperty(candidate, "runId", run.runId)
           ),
           run,
@@ -203,8 +203,8 @@ export const makeInMemoryProgramFactStore = (
       }),
     recordArtifact: (record) =>
       Effect.sync(() => {
-        generatedArtifacts = [
-          ...generatedArtifacts.filter((candidate) =>
+        artifacts = [
+          ...artifacts.filter((candidate) =>
             !isGeneratedArtifactFor(candidate, record.artifactId)
           ),
           record,
@@ -212,8 +212,8 @@ export const makeInMemoryProgramFactStore = (
       }),
     recordObservation: (event) =>
       Effect.sync(() => {
-        evidence = [
-          ...evidence.filter((candidate) =>
+        observations = [
+          ...observations.filter((candidate) =>
             !hasStringProperty(candidate, "eventId", event.eventId)
           ),
           event,
@@ -248,26 +248,26 @@ export const makeInMemoryProgramFactStore = (
       }),
     putRepairFindings: (nextFindings) =>
       Effect.sync(() => {
-        const packageIds = new Set(nextFindings.map((finding) => finding.packageId))
+        const projectIds = new Set(nextFindings.map((finding) => finding.projectId))
         repairFindings = [
-          ...repairFindings.filter((candidate) => !isRepairFindingFor(candidate, packageIds)),
+          ...repairFindings.filter((candidate) => !isRepairFindingFor(candidate, projectIds)),
           ...nextFindings,
         ]
       }),
-    replaceRepairFindings: (packageId, nextFindings) =>
+    replaceRepairFindings: (projectId, nextFindings) =>
       Effect.sync(() => {
         repairFindings = [
-          ...repairFindings.filter((candidate) => !isRepairFindingFor(candidate, new Set([packageId]))),
+          ...repairFindings.filter((candidate) => !isRepairFindingFor(candidate, new Set([projectId]))),
           ...nextFindings,
         ]
       }),
     snapshot: () =>
       Effect.succeed({
-        descriptors,
-        obligations,
-        evidenceRuns,
-        evidence,
-        generatedArtifacts,
+        schemaDescriptors,
+        diagnosticRequirements,
+        observationRuns,
+        observations,
+        artifacts,
         replayMetadata,
         waiverState,
         coverageFeedback,
@@ -280,21 +280,21 @@ export const InMemoryProgramFactStoreLive = (
   initial?: Partial<ProgramFactStoreSnapshot>,
 ): Layer.Layer<ProgramFactStore> => ProgramFactStore.fromApi(makeInMemoryProgramFactStore(initial))
 
-const isSchemaDescriptorFor = (value: unknown, protocolId: string): boolean =>
+const isSchemaDescriptorFor = (value: unknown, schemaDescriptorId: string): boolean =>
   typeof value === "object" &&
   value !== null &&
-  "protocolId" in value &&
-  value.protocolId === protocolId
+  "schemaDescriptorId" in value &&
+  value.schemaDescriptorId === schemaDescriptorId
 
 const isDiagnosticRuleFor = (
   value: unknown,
-  packageIds: ReadonlySet<string>,
+  projectIds: ReadonlySet<string>,
 ): boolean =>
   typeof value === "object" &&
   value !== null &&
-  "packageId" in value &&
-  typeof value.packageId === "string" &&
-  packageIds.has(value.packageId)
+  "projectId" in value &&
+  typeof value.projectId === "string" &&
+  projectIds.has(value.projectId)
 
 const isGeneratedArtifactFor = (value: unknown, artifactId: string): boolean =>
   typeof value === "object" &&
@@ -304,13 +304,13 @@ const isGeneratedArtifactFor = (value: unknown, artifactId: string): boolean =>
 
 const isRepairFindingFor = (
   value: unknown,
-  packageIds: ReadonlySet<string>,
+  projectIds: ReadonlySet<string>,
 ): boolean =>
   typeof value === "object" &&
   value !== null &&
-  "packageId" in value &&
-  typeof value.packageId === "string" &&
-  packageIds.has(value.packageId)
+  "projectId" in value &&
+  typeof value.projectId === "string" &&
+  projectIds.has(value.projectId)
 
 const hasStringProperty = (
   value: unknown,
@@ -345,30 +345,30 @@ export const decodeProgramFactStoreSnapshot = (
   snapshot: ProgramFactStoreSnapshot,
 ): Effect.Effect<ProgramFactRuntimeSnapshot, ProgramFactQueryError> =>
   Effect.gen(function* decodeProgramFactStoreSnapshotEffect() {
-    const descriptors = yield* decodeBatch<AttuneProtocolDescriptor>(
-      AttuneProtocolDescriptorSchema,
-      snapshot.descriptors,
-      "descriptors",
+    const schemaDescriptors = yield* decodeBatch<ProgramSchemaDescriptor>(
+      ProgramSchemaDescriptorSchema,
+      snapshot.schemaDescriptors,
+      "schemaDescriptors",
     )
-    const obligations = yield* decodeBatch<AttuneProtocolObligation>(
-      AttuneProtocolObligationSchema,
-      snapshot.obligations,
-      "obligations",
+    const diagnosticRequirements = yield* decodeBatch<ProgramDiagnosticRequirement>(
+      ProgramDiagnosticRequirementSchema,
+      snapshot.diagnosticRequirements,
+      "diagnosticRequirements",
     )
-    const evidenceRuns = yield* decodeBatch<AttuneProtocolEvidenceRun>(
-      AttuneProtocolEvidenceRunSchema,
-      snapshot.evidenceRuns,
-      "evidenceRuns",
+    const observationRuns = yield* decodeBatch<ProgramObservationRun>(
+      ProgramObservationRunSchema,
+      snapshot.observationRuns,
+      "observationRuns",
     )
-    const evidence = yield* decodeBatch<AttuneProtocolEvidenceEvent>(
-      AttuneProtocolEvidenceEventSchema,
-      snapshot.evidence,
-      "evidence",
+    const observations = yield* decodeBatch<ProgramObservation>(
+      ProgramObservationSchema,
+      snapshot.observations,
+      "observations",
     )
-    const generatedArtifacts = yield* decodeBatch<AttuneGeneratedArtifactRecord>(
-      AttuneGeneratedArtifactRecordSchema,
-      snapshot.generatedArtifacts,
-      "generatedArtifacts",
+    const artifacts = yield* decodeBatch<ProgramArtifactRecord>(
+      ProgramArtifactRecordSchema,
+      snapshot.artifacts,
+      "artifacts",
     )
     const replayMetadata = yield* decodeBatch<ReplayObservationMetadata>(
       ReplayObservationMetadataSchema,
@@ -392,11 +392,11 @@ export const decodeProgramFactStoreSnapshot = (
     )
 
     return {
-      descriptors,
-      obligations,
-      evidenceRuns,
-      evidence,
-      generatedArtifacts,
+      schemaDescriptors,
+      diagnosticRequirements,
+      observationRuns,
+      observations,
+      artifacts,
       replayMetadata,
       waiverState,
       coverageFeedback,
@@ -407,15 +407,15 @@ export const decodeProgramFactStoreSnapshot = (
 export const diagnosticFromQueryError = (
   error: ProgramFactQueryError,
   fallback: {
-    readonly packageId: string
+    readonly projectId: string
     readonly sourcePath: string
-    readonly protocolId?: string
+    readonly schemaDescriptorId?: string
   },
 ): ProgramDiagnostic => {
   const diagnostic = {
-    code: "attune/protocol/invalid-store-payload",
+    code: "attune/program-facts/invalid-store-payload",
     severity: "error",
-    packageId: error.packageId ?? fallback.packageId,
+    projectId: error.projectId ?? fallback.projectId,
     sourcePath: error.sourcePath ?? fallback.sourcePath,
     explanation: error.message,
     suggestedActions: [{
@@ -423,10 +423,10 @@ export const diagnosticFromQueryError = (
       title: "Refresh artifact materialization",
       kind: "nx-check",
       target: "workspace:attune-check",
-      options: { packageId: error.packageId ?? fallback.packageId },
+      options: { projectId: error.projectId ?? fallback.projectId },
     }],
-    relatedEvidence: [],
-    ...(fallback.protocolId === undefined ? {} : { protocolId: fallback.protocolId }),
+    relatedObservations: [],
+    ...(fallback.schemaDescriptorId === undefined ? {} : { schemaDescriptorId: fallback.schemaDescriptorId }),
   } satisfies ProgramDiagnostic
 
   return Schema.decodeUnknownSync(ProgramDiagnosticSchema)(diagnostic) as ProgramDiagnostic

@@ -1,19 +1,19 @@
 export * from "./builders/index.js"
 export {
-  AttuneCoverageExpectationSchema,
-  AttuneProtocolDescriptorSchema,
-  AttuneProtocolOperationDescriptorSchema,
-  deriveProtocolObligations,
-  descriptorFromPackageContract,
-  decodePackageContract as decodeProtocolPackageContract,
-  hashProtocolValue,
-  protocolIdForPackage,
+  ProgramCoverageExpectationSchema,
+  ProgramSchemaDescriptorSchema,
+  ProgramSymbolDescriptorSchema,
+  deriveDiagnosticRequirements,
+  schemaDescriptorFromProjectFacts,
+  decodeProjectFactsCompatibility,
+  hashProgramValue,
+  schemaDescriptorIdForProject,
 } from "./schema-descriptors/index.js"
 export type {
-  AttuneCoverageExpectation,
-  AttuneProtocolDescriptor,
-  AttuneProtocolOperationDescriptor,
-  AttuneProtocolSource,
+  ProgramCoverageExpectation,
+  ProgramSchemaDescriptor,
+  ProgramSymbolDescriptor,
+  ProgramSchemaDescriptorSource,
 } from "./schema-descriptors/index.js"
 export * from "./diagnostics/index.js"
 export * from "./observations/index.js"

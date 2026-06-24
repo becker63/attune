@@ -24,12 +24,12 @@ import {
   type DiagnosticWaiverState,
 } from "../src/index.js"
 import type {
-  AttuneGeneratedArtifactRecord,
+  ProgramArtifactRecord,
   ProgramRepairFinding,
-  AttuneProtocolDescriptor,
-  AttuneProtocolEvidenceEvent,
-  AttuneProtocolEvidenceRun,
-  AttuneProtocolObligation,
+  ProgramSchemaDescriptor,
+  ProgramObservation,
+  ProgramObservationRun,
+  ProgramDiagnosticRequirement,
 } from "@attune/framework-protocol"
 
 describe("@attune/framework-sqlite", () => {
@@ -59,7 +59,7 @@ describe("@attune/framework-sqlite", () => {
         const store = yield* ProgramFactStore
         const descriptor = demoDescriptor()
         const receipt = yield* store.putSchemaDescriptor(descriptor)
-        yield* store.putDiagnosticRules([demoObligation])
+        yield* store.putDiagnosticRequirements([demoObligation])
         const snapshot = yield* store.snapshot()
 
         return {
@@ -69,8 +69,8 @@ describe("@attune/framework-sqlite", () => {
       }).pipe(Effect.provide(ProgramFactStoreTest())),
     )
 
-    expect(result.receipt.descriptorHash).toBe(result.snapshot.descriptors[0]?.descriptorHash)
-    expect(result.snapshot.obligations).toHaveLength(1)
+    expect(result.receipt.descriptorHash).toBe(result.snapshot.schemaDescriptors[0]?.descriptorHash)
+    expect(result.snapshot.diagnosticRequirements).toHaveLength(1)
   })
 
   it("hides program-index state behind an Effect service API", () => {
@@ -101,10 +101,10 @@ describe("@attune/framework-sqlite", () => {
     expect(health.migrationVersion).toBe(2)
 
     Effect.runSync(store.putSchemaDescriptor(demoDescriptor()))
-    expect(Effect.runSync(store.health()).rowCounts.descriptors).toBe(1)
+    expect(Effect.runSync(store.health()).rowCounts.schemaDescriptors).toBe(1)
 
     Effect.runSync(store.reset())
-    expect(Effect.runSync(store.health()).rowCounts.descriptors).toBe(0)
+    expect(Effect.runSync(store.health()).rowCounts.schemaDescriptors).toBe(0)
 
     const reinitialized = Effect.runSync(store.reinitialize())
     expect(reinitialized.ok).toBe(true)
@@ -132,19 +132,19 @@ describe("@attune/framework-sqlite", () => {
     Effect.runSync(index.close())
   })
 
-  it("roundtrips descriptor, obligation, artifact, evidence, and finding rows through SQLite", () => {
+  it("roundtrips descriptor, obligation, artifact, observations, and finding rows through SQLite", () => {
     const store = createSqliteProgramFactStore({ path: ":memory:" })
     roundtripProgramFactState(store)
 
     const snapshot = Effect.runSync(store.snapshot())
-    expect(snapshot.descriptors[0]).toMatchObject({
-      protocolId: "attune/package/demo",
+    expect(snapshot.schemaDescriptors[0]).toMatchObject({
+      schemaDescriptorId: "attune/project/demo",
       descriptorHash: demoDescriptor().descriptorHash,
     })
-    expect(snapshot.obligations).toEqual([demoObligation])
-    expect(snapshot.evidenceRuns).toEqual([demoEvidenceRun])
-    expect(snapshot.evidence).toEqual([demoEvidenceEvent])
-    expect(snapshot.generatedArtifacts).toEqual([demoGeneratedArtifact])
+    expect(snapshot.diagnosticRequirements).toEqual([demoObligation])
+    expect(snapshot.observationRuns).toEqual([demoEvidenceRun])
+    expect(snapshot.observations).toEqual([demoEvidenceEvent])
+    expect(snapshot.artifacts).toEqual([demoGeneratedArtifact])
     expect(snapshot.replayMetadata).toEqual([demoReplayMetadata])
     expect(snapshot.waiverState).toEqual([demoWaiverState])
     expect(snapshot.coverageFeedback).toEqual([demoCoverageFeedback])
@@ -155,21 +155,21 @@ describe("@attune/framework-sqlite", () => {
       waiverState: 1,
       coverageFeedback: 1,
     })
-    expect(Effect.runSync(store.listReplayObservations({ packageId: "demo" }))).toEqual([
+    expect(Effect.runSync(store.listReplayObservations({ projectId: "demo" }))).toEqual([
       demoReplayMetadata,
     ])
-    expect(Effect.runSync(store.listDiagnosticWaivers({ packageId: "demo" }))).toEqual([
+    expect(Effect.runSync(store.listDiagnosticWaivers({ projectId: "demo" }))).toEqual([
       demoWaiverState,
     ])
-    expect(Effect.runSync(store.listCoverageObservations({ packageId: "demo" }))).toEqual([
+    expect(Effect.runSync(store.listCoverageObservations({ projectId: "demo" }))).toEqual([
       demoCoverageFeedback,
     ])
 
-    const filteredDeltas = Effect.runSync(store.listRepairFindings({ packageId: "demo" }))
+    const filteredDeltas = Effect.runSync(store.listRepairFindings({ projectId: "demo" }))
     expect(filteredDeltas).toEqual([demoRepairFinding])
 
     Effect.runSync(store.replaceRepairFindings("demo", []))
-    expect(Effect.runSync(store.listRepairFindings({ packageId: "demo" }))).toEqual([])
+    expect(Effect.runSync(store.listRepairFindings({ projectId: "demo" }))).toEqual([])
     Effect.runSync(store.close())
   })
 
@@ -273,11 +273,11 @@ describe("@attune/framework-sqlite", () => {
     roundtripProgramFactState(store)
 
     const snapshot = Effect.runSync(store.snapshot())
-    expect(snapshot.descriptors).toHaveLength(1)
-    expect(snapshot.obligations).toHaveLength(1)
-    expect(snapshot.evidenceRuns).toHaveLength(1)
-    expect(snapshot.evidence).toHaveLength(1)
-    expect(snapshot.generatedArtifacts).toHaveLength(1)
+    expect(snapshot.schemaDescriptors).toHaveLength(1)
+    expect(snapshot.diagnosticRequirements).toHaveLength(1)
+    expect(snapshot.observationRuns).toHaveLength(1)
+    expect(snapshot.observations).toHaveLength(1)
+    expect(snapshot.artifacts).toHaveLength(1)
     expect(snapshot.replayMetadata).toHaveLength(1)
     expect(snapshot.waiverState).toHaveLength(1)
     expect(snapshot.coverageFeedback).toHaveLength(1)
@@ -303,7 +303,7 @@ describe("@attune/framework-sqlite", () => {
     const invalid = {
       ...demoDescriptor(),
       packageKind: "not-a-package-kind",
-    } as unknown as AttuneProtocolDescriptor
+    } as unknown as ProgramSchemaDescriptor
 
     expect(() => Effect.runSync(store.putSchemaDescriptor(invalid))).toThrow(
       /not-a-package-kind/u,
@@ -368,7 +368,7 @@ const seedProgramIndex = (index: ProgramIndexApi): Effect.Effect<void, unknown> 
       id: "demo:attune.generated",
       projectId: "demo",
       path: "packages/demo/src/attune.generated.ts",
-      kind: "generated-protocol-companion",
+      kind: "generated-program-companion",
       builtFromHash: "source-hash",
       currentHash: "stale-hash",
       status: "stale",
@@ -406,7 +406,7 @@ const seedProgramIndex = (index: ProgramIndexApi): Effect.Effect<void, unknown> 
 
 const roundtripProgramFactState = (store: ProgramFactStoreApi): void => {
   Effect.runSync(store.putSchemaDescriptor(demoDescriptor()))
-  Effect.runSync(store.putDiagnosticRules([demoObligation]))
+  Effect.runSync(store.putDiagnosticRequirements([demoObligation]))
   Effect.runSync(store.recordObservationRun(demoEvidenceRun))
   Effect.runSync(store.recordObservation(demoEvidenceEvent))
   Effect.runSync(store.recordArtifact(demoGeneratedArtifact))
@@ -416,10 +416,10 @@ const roundtripProgramFactState = (store: ProgramFactStoreApi): void => {
   Effect.runSync(store.putRepairFindings([demoRepairFinding]))
 }
 
-const demoDescriptor = (): AttuneProtocolDescriptor =>
+const demoDescriptor = (): ProgramSchemaDescriptor =>
   withDescriptorHash({
-    protocolId: "attune/package/demo",
-    packageId: "demo",
+    schemaDescriptorId: "attune/project/demo",
+    projectId: "demo",
     packageKind: "core-discovery-runtime",
     sourcePath: "packages/demo/src/attune.package.ts",
     views: {
@@ -442,31 +442,31 @@ const demoDescriptor = (): AttuneProtocolDescriptor =>
     coverageExpectations: [],
   })
 
-const demoObligation: AttuneProtocolObligation = {
-  obligationId: "demo:operation:property",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "operation",
+const demoObligation: ProgramDiagnosticRequirement = {
+  diagnosticRequirementId: "demo:operation:property",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "operation",
   kind: "property",
-  reason: "property evidence required",
+  reason: "property observations required",
 }
 
-const demoEvidenceRun: AttuneProtocolEvidenceRun = {
+const demoEvidenceRun: ProgramObservationRun = {
   runId: "run-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
   tier: "commit",
   status: "passed",
   startedAt: "2026-06-22T00:00:00.000Z",
   completedAt: "2026-06-22T00:00:02.000Z",
 }
 
-const demoEvidenceEvent: AttuneProtocolEvidenceEvent = {
+const demoEvidenceEvent: ProgramObservation = {
   eventId: "event-1",
   runId: "run-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "operation",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "operation",
   kind: "property-run",
   observedAt: "2026-06-22T00:00:01.000Z",
   payload: {
@@ -474,10 +474,10 @@ const demoEvidenceEvent: AttuneProtocolEvidenceEvent = {
   },
 }
 
-const demoGeneratedArtifact: AttuneGeneratedArtifactRecord = {
+const demoGeneratedArtifact: ProgramArtifactRecord = {
   artifactId: "artifact-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
   path: "packages/demo/src/generated/symbol-registry.ts",
   generatorId: "@attune/framework-nx:symbol-registry",
   expectedHash: generatedArtifactContentHash("expected artifact\n"),
@@ -488,9 +488,9 @@ const demoGeneratedArtifact: AttuneGeneratedArtifactRecord = {
 const demoReplayMetadata: ReplayObservationMetadata = {
   replayId: "replay-1",
   runId: "run-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "operation",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "operation",
   propertyId: "demo.operation.property",
   seed: 42,
   shrinkPath: "0:1",
@@ -501,12 +501,12 @@ const demoReplayMetadata: ReplayObservationMetadata = {
 
 const demoWaiverState: DiagnosticWaiverState = {
   waiverId: "waiver-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
   category: "property",
   status: "active",
-  targetObligationId: "demo:operation:property",
-  operationId: "operation",
+  targetDiagnosticRequirementId: "demo:operation:property",
+  symbolId: "operation",
   owner: "framework",
   reason: "temporary property harness migration",
   reviewAt: "2026-07-22",
@@ -515,9 +515,9 @@ const demoWaiverState: DiagnosticWaiverState = {
 
 const demoCoverageFeedback: CoverageObservationFeedback = {
   coverageId: "coverage-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "operation",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "operation",
   kind: "atom-graph",
   status: "hit",
   coveragePoint: "demo.changed->demo.view",
@@ -529,8 +529,8 @@ const demoCoverageFeedback: CoverageObservationFeedback = {
 
 const demoRepairFinding: ProgramRepairFinding = {
   findingId: "finding:artifact-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
   kind: "stale-generated-source",
   sourcePath: "packages/demo/src/generated/symbol-registry.ts",
   explanation: "Generated artifact is stale.",
@@ -540,7 +540,7 @@ const demoRepairFinding: ProgramRepairFinding = {
     kind: "nx-generator",
     target: "@attune/framework-nx:artifact-materialize",
     options: {
-      packageId: "demo",
+      projectId: "demo",
     },
   }],
 }

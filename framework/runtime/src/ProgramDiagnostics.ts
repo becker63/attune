@@ -10,8 +10,8 @@ export interface ProgramDiagnosticsApi {
   readonly diagnosticsForFile: (
     sourcePath: string,
     fallback?: {
-      readonly packageId?: string
-      readonly protocolId?: string
+      readonly projectId?: string
+      readonly schemaDescriptorId?: string
     },
   ) => Effect.Effect<readonly ProgramDiagnostic[], never>
 }
@@ -25,9 +25,9 @@ export const makeProgramDiagnostics = (
       Effect.catch((error: ProgramFactQueryError) =>
         Effect.succeed([
           diagnosticFromQueryError(error, {
-            packageId: fallback.packageId ?? error.packageId ?? "unknown",
+            projectId: fallback.projectId ?? error.projectId ?? "unknown",
             sourcePath,
-            ...(fallback.protocolId === undefined ? {} : { protocolId: fallback.protocolId }),
+            ...(fallback.schemaDescriptorId === undefined ? {} : { schemaDescriptorId: fallback.schemaDescriptorId }),
           }),
         ]),
       ),

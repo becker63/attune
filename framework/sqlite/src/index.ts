@@ -4,19 +4,19 @@ import { dirname } from "node:path"
 import { DatabaseSync } from "node:sqlite"
 
 import {
-  AttuneGeneratedArtifactRecordSchema,
+  ProgramArtifactRecordSchema,
   ProgramRepairFindingSchema,
-  AttuneProtocolDescriptorSchema,
-  AttuneProtocolEvidenceEventSchema,
-  AttuneProtocolEvidenceRunSchema,
-  AttuneProtocolObligationSchema,
-  hashProtocolValue,
-  type AttuneGeneratedArtifactRecord,
+  ProgramSchemaDescriptorSchema,
+  ProgramObservationSchema,
+  ProgramObservationRunSchema,
+  ProgramDiagnosticRequirementSchema,
+  hashProgramValue,
+  type ProgramArtifactRecord,
   type ProgramRepairFinding,
-  type AttuneProtocolDescriptor,
-  type AttuneProtocolEvidenceEvent,
-  type AttuneProtocolEvidenceRun,
-  type AttuneProtocolObligation,
+  type ProgramSchemaDescriptor,
+  type ProgramObservation,
+  type ProgramObservationRun,
+  type ProgramDiagnosticRequirement,
 } from "@attune/framework-protocol"
 import { Context, Data, Effect, Layer, Schema } from "effect"
 
@@ -33,8 +33,8 @@ export class ProgramFactStoreError extends Data.TaggedError("ProgramFactStoreErr
 }> {}
 
 export interface SchemaDescriptorReceipt {
-  readonly protocolId: string
-  readonly packageId: string
+  readonly schemaDescriptorId: string
+  readonly projectId: string
   readonly sourcePath: string
   readonly descriptorHash: string
   readonly recordedAt: string
@@ -50,11 +50,11 @@ export interface ProgramFactStoreHealth {
 }
 
 export interface ProgramFactStoreRowCounts {
-  readonly descriptors: number
-  readonly obligations: number
-  readonly evidenceRuns: number
-  readonly evidence: number
-  readonly generatedArtifacts: number
+  readonly schemaDescriptors: number
+  readonly diagnosticRequirements: number
+  readonly observationRuns: number
+  readonly observations: number
+  readonly artifacts: number
   readonly replayMetadata: number
   readonly waiverState: number
   readonly coverageFeedback: number
@@ -64,9 +64,9 @@ export interface ProgramFactStoreRowCounts {
 export const ReplayObservationMetadataSchema = Schema.Struct({
   replayId: Schema.String,
   runId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.optional(Schema.String),
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.optional(Schema.String),
   propertyId: Schema.optional(Schema.String),
   seed: Schema.Number,
   shrinkPath: Schema.optional(Schema.String),
@@ -82,12 +82,12 @@ export type ReplayObservationMetadata = typeof ReplayObservationMetadataSchema.T
 
 export const DiagnosticWaiverStateSchema = Schema.Struct({
   waiverId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
   category: Schema.String,
   status: Schema.Literals(["active", "expired", "invalid"] as const),
-  targetObligationId: Schema.optional(Schema.String),
-  operationId: Schema.optional(Schema.String),
+  targetDiagnosticRequirementId: Schema.optional(Schema.String),
+  symbolId: Schema.optional(Schema.String),
   targetId: Schema.optional(Schema.String),
   owner: Schema.optional(Schema.String),
   reason: Schema.String,
@@ -101,9 +101,9 @@ export type DiagnosticWaiverState = typeof DiagnosticWaiverStateSchema.Type
 
 export const CoverageObservationFeedbackSchema = Schema.Struct({
   coverageId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.optional(Schema.String),
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.optional(Schema.String),
   kind: Schema.Literals([
     "type-partition",
     "atom-graph",
@@ -132,11 +132,11 @@ export const CoverageObservationFeedbackSchema = Schema.Struct({
 export type CoverageObservationFeedback = typeof CoverageObservationFeedbackSchema.Type
 
 export interface ProgramFactStoreSnapshot {
-  readonly descriptors: readonly AttuneProtocolDescriptor[]
-  readonly obligations: readonly AttuneProtocolObligation[]
-  readonly evidenceRuns: readonly AttuneProtocolEvidenceRun[]
-  readonly evidence: readonly AttuneProtocolEvidenceEvent[]
-  readonly generatedArtifacts: readonly AttuneGeneratedArtifactRecord[]
+  readonly schemaDescriptors: readonly ProgramSchemaDescriptor[]
+  readonly diagnosticRequirements: readonly ProgramDiagnosticRequirement[]
+  readonly observationRuns: readonly ProgramObservationRun[]
+  readonly observations: readonly ProgramObservation[]
+  readonly artifacts: readonly ProgramArtifactRecord[]
   readonly replayMetadata: readonly ReplayObservationMetadata[]
   readonly waiverState: readonly DiagnosticWaiverState[]
   readonly coverageFeedback: readonly CoverageObservationFeedback[]
@@ -144,8 +144,8 @@ export interface ProgramFactStoreSnapshot {
 }
 
 export interface ProgramFactStoreFilter {
-  readonly protocolId?: string
-  readonly packageId?: string
+  readonly schemaDescriptorId?: string
+  readonly projectId?: string
 }
 
 export interface ProgramFactStoreApi {
@@ -154,13 +154,13 @@ export interface ProgramFactStoreApi {
   readonly reinitialize: () => Effect.Effect<ProgramFactStoreHealth, ProgramFactStoreError>
   readonly health: () => Effect.Effect<ProgramFactStoreHealth, ProgramFactStoreError>
   readonly putSchemaDescriptor: (
-    descriptor: AttuneProtocolDescriptor,
+    descriptor: ProgramSchemaDescriptor,
   ) => Effect.Effect<SchemaDescriptorReceipt, ProgramFactStoreError>
-  readonly putDiagnosticRules: (
-    batch: readonly AttuneProtocolObligation[],
+  readonly putDiagnosticRequirements: (
+    batch: readonly ProgramDiagnosticRequirement[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly recordObservationRun: (
-    run: AttuneProtocolEvidenceRun,
+    run: ProgramObservationRun,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly recordReplayObservation: (
     metadata: ReplayObservationMetadata,
@@ -172,30 +172,30 @@ export interface ProgramFactStoreApi {
     feedback: CoverageObservationFeedback,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly recordArtifact: (
-    record: AttuneGeneratedArtifactRecord,
+    record: ProgramArtifactRecord,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly recordObservation: (
-    event: AttuneProtocolEvidenceEvent,
+    event: ProgramObservation,
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly putRepairFindings: (
     repairFindings: readonly ProgramRepairFinding[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly replaceRepairFindings: (
-    packageId: string,
+    projectId: string,
     repairFindings: readonly ProgramRepairFinding[],
   ) => Effect.Effect<void, ProgramFactStoreError>
   readonly getSchemaDescriptor: (
-    protocolId: string,
-  ) => Effect.Effect<AttuneProtocolDescriptor | undefined, ProgramFactStoreError>
+    schemaDescriptorId: string,
+  ) => Effect.Effect<ProgramSchemaDescriptor | undefined, ProgramFactStoreError>
   readonly listSchemaDescriptors: (
     filter?: ProgramFactStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolDescriptor[], ProgramFactStoreError>
-  readonly listDiagnosticRules: (
+  ) => Effect.Effect<readonly ProgramSchemaDescriptor[], ProgramFactStoreError>
+  readonly listDiagnosticRequirements: (
     filter?: ProgramFactStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolObligation[], ProgramFactStoreError>
+  ) => Effect.Effect<readonly ProgramDiagnosticRequirement[], ProgramFactStoreError>
   readonly listObservationRuns: (
     filter?: ProgramFactStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolEvidenceRun[], ProgramFactStoreError>
+  ) => Effect.Effect<readonly ProgramObservationRun[], ProgramFactStoreError>
   readonly listReplayObservations: (
     filter?: ProgramFactStoreFilter,
   ) => Effect.Effect<readonly ReplayObservationMetadata[], ProgramFactStoreError>
@@ -207,10 +207,10 @@ export interface ProgramFactStoreApi {
   ) => Effect.Effect<readonly CoverageObservationFeedback[], ProgramFactStoreError>
   readonly listObservations: (
     filter?: ProgramFactStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolEvidenceEvent[], ProgramFactStoreError>
+  ) => Effect.Effect<readonly ProgramObservation[], ProgramFactStoreError>
   readonly listArtifacts: (
     filter?: ProgramFactStoreFilter,
-  ) => Effect.Effect<readonly AttuneGeneratedArtifactRecord[], ProgramFactStoreError>
+  ) => Effect.Effect<readonly ProgramArtifactRecord[], ProgramFactStoreError>
   readonly listRepairFindings: (
     filter?: ProgramFactStoreFilter,
   ) => Effect.Effect<readonly ProgramRepairFinding[], ProgramFactStoreError>
@@ -223,12 +223,12 @@ export interface SqliteProgramFactStoreOptions {
 }
 
 export const descriptorHashForStorage = (
-  descriptor: AttuneProtocolDescriptor | Omit<AttuneProtocolDescriptor, "descriptorHash">,
+  descriptor: ProgramSchemaDescriptor | Omit<ProgramSchemaDescriptor, "descriptorHash">,
 ): string => {
-  const candidate = descriptor as AttuneProtocolDescriptor
+  const candidate = descriptor as ProgramSchemaDescriptor
   const withoutHash = {
-    protocolId: candidate.protocolId,
-    packageId: candidate.packageId,
+    schemaDescriptorId: candidate.schemaDescriptorId,
+    projectId: candidate.projectId,
     packageKind: candidate.packageKind,
     sourcePath: candidate.sourcePath,
     views: candidate.views,
@@ -239,12 +239,12 @@ export const descriptorHashForStorage = (
     coverageExpectations: candidate.coverageExpectations,
   }
 
-  return hashProtocolValue(withoutHash)
+  return hashProgramValue(withoutHash)
 }
 
 export const withDescriptorHash = (
-  descriptor: Omit<AttuneProtocolDescriptor, "descriptorHash">,
-): AttuneProtocolDescriptor => ({
+  descriptor: Omit<ProgramSchemaDescriptor, "descriptorHash">,
+): ProgramSchemaDescriptor => ({
   ...descriptor,
   descriptorHash: descriptorHashForStorage(descriptor),
 })
@@ -253,22 +253,22 @@ export const generatedArtifactContentHash = (content: string | Uint8Array): stri
   createHash("sha256").update(content).digest("hex")
 
 export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
-  let descriptors: readonly AttuneProtocolDescriptor[] = []
-  let obligations: readonly AttuneProtocolObligation[] = []
-  let evidenceRuns: readonly AttuneProtocolEvidenceRun[] = []
-  let evidence: readonly AttuneProtocolEvidenceEvent[] = []
-  let generatedArtifacts: readonly AttuneGeneratedArtifactRecord[] = []
+  let schemaDescriptors: readonly ProgramSchemaDescriptor[] = []
+  let diagnosticRequirements: readonly ProgramDiagnosticRequirement[] = []
+  let observationRuns: readonly ProgramObservationRun[] = []
+  let observations: readonly ProgramObservation[] = []
+  let artifacts: readonly ProgramArtifactRecord[] = []
   let replayMetadata: readonly ReplayObservationMetadata[] = []
   let waiverState: readonly DiagnosticWaiverState[] = []
   let coverageFeedback: readonly CoverageObservationFeedback[] = []
   let repairFindings: readonly ProgramRepairFinding[] = []
 
   const rowCounts = (): ProgramFactStoreRowCounts => ({
-    descriptors: descriptors.length,
-    obligations: obligations.length,
-    evidenceRuns: evidenceRuns.length,
-    evidence: evidence.length,
-    generatedArtifacts: generatedArtifacts.length,
+    schemaDescriptors: schemaDescriptors.length,
+    diagnosticRequirements: diagnosticRequirements.length,
+    observationRuns: observationRuns.length,
+    observations: observations.length,
+    artifacts: artifacts.length,
     replayMetadata: replayMetadata.length,
     waiverState: waiverState.length,
     coverageFeedback: coverageFeedback.length,
@@ -288,11 +288,11 @@ export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
     initialize: () => Effect.succeed(health()),
     reset: () =>
       Effect.sync(() => {
-        descriptors = []
-        obligations = []
-        evidenceRuns = []
-        evidence = []
-        generatedArtifacts = []
+        schemaDescriptors = []
+        diagnosticRequirements = []
+        observationRuns = []
+        observations = []
+        artifacts = []
         replayMetadata = []
         waiverState = []
         coverageFeedback = []
@@ -300,11 +300,11 @@ export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
       }),
     reinitialize: () =>
       Effect.sync(() => {
-        descriptors = []
-        obligations = []
-        evidenceRuns = []
-        evidence = []
-        generatedArtifacts = []
+        schemaDescriptors = []
+        diagnosticRequirements = []
+        observationRuns = []
+        observations = []
+        artifacts = []
         replayMetadata = []
         waiverState = []
         coverageFeedback = []
@@ -314,30 +314,32 @@ export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
     health: () => Effect.succeed(health()),
     putSchemaDescriptor: (descriptor) =>
       Effect.sync(() => {
-        const decoded = decodePayload<AttuneProtocolDescriptor>(AttuneProtocolDescriptorSchema, descriptor)
+        const decoded = decodePayload<ProgramSchemaDescriptor>(ProgramSchemaDescriptorSchema, descriptor)
         assertDescriptorHash(decoded)
-        descriptors = [
-          ...descriptors.filter((candidate) => candidate.protocolId !== decoded.protocolId),
+        schemaDescriptors = [
+          ...schemaDescriptors.filter((candidate) => candidate.schemaDescriptorId !== decoded.schemaDescriptorId),
           decoded,
         ]
         return descriptorReceipt(decoded)
       }),
-    putDiagnosticRules: (batch) =>
+    putDiagnosticRequirements: (batch) =>
       Effect.sync(() => {
         const decoded = batch.map((candidate) =>
-          decodePayload<AttuneProtocolObligation>(AttuneProtocolObligationSchema, candidate),
+          decodePayload<ProgramDiagnosticRequirement>(ProgramDiagnosticRequirementSchema, candidate),
         )
-        const incoming = new Set(decoded.map((obligation) => obligation.obligationId))
-        obligations = [
-          ...obligations.filter((candidate) => !incoming.has(candidate.obligationId)),
+        const incoming = new Set(decoded.map((diagnosticRequirement) =>
+          diagnosticRequirement.diagnosticRequirementId
+        ))
+        diagnosticRequirements = [
+          ...diagnosticRequirements.filter((candidate) => !incoming.has(candidate.diagnosticRequirementId)),
           ...decoded,
         ]
       }),
     recordObservationRun: (run) =>
       Effect.sync(() => {
-        const decoded = decodePayload<AttuneProtocolEvidenceRun>(AttuneProtocolEvidenceRunSchema, run)
-        evidenceRuns = [
-          ...evidenceRuns.filter((candidate) => candidate.runId !== decoded.runId),
+        const decoded = decodePayload<ProgramObservationRun>(ProgramObservationRunSchema, run)
+        observationRuns = [
+          ...observationRuns.filter((candidate) => candidate.runId !== decoded.runId),
           decoded,
         ]
       }),
@@ -367,17 +369,17 @@ export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
       }),
     recordArtifact: (record) =>
       Effect.sync(() => {
-        const decoded = decodePayload<AttuneGeneratedArtifactRecord>(AttuneGeneratedArtifactRecordSchema, record)
-        generatedArtifacts = [
-          ...generatedArtifacts.filter((artifact) => artifact.artifactId !== decoded.artifactId),
+        const decoded = decodePayload<ProgramArtifactRecord>(ProgramArtifactRecordSchema, record)
+        artifacts = [
+          ...artifacts.filter((artifact) => artifact.artifactId !== decoded.artifactId),
           decoded,
         ]
       }),
     recordObservation: (event) =>
       Effect.sync(() => {
-        const decoded = decodePayload<AttuneProtocolEvidenceEvent>(AttuneProtocolEvidenceEventSchema, event)
-        evidence = [
-          ...evidence.filter((candidate) => candidate.eventId !== decoded.eventId),
+        const decoded = decodePayload<ProgramObservation>(ProgramObservationSchema, event)
+        observations = [
+          ...observations.filter((candidate) => candidate.eventId !== decoded.eventId),
           decoded,
         ]
       }),
@@ -392,24 +394,24 @@ export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
           ...decoded,
         ]
       }),
-    replaceRepairFindings: (packageId, nextFindings) =>
+    replaceRepairFindings: (projectId, nextFindings) =>
       Effect.sync(() => {
         const decoded = nextFindings.map((candidate) =>
           decodePayload<ProgramRepairFinding>(ProgramRepairFindingSchema, candidate),
         )
         repairFindings = [
-          ...repairFindings.filter((candidate) => candidate.packageId !== packageId),
+          ...repairFindings.filter((candidate) => candidate.projectId !== projectId),
           ...decoded,
         ]
       }),
-    getSchemaDescriptor: (protocolId) =>
-      Effect.succeed(descriptors.find((candidate) => candidate.protocolId === protocolId)),
+    getSchemaDescriptor: (schemaDescriptorId) =>
+      Effect.succeed(schemaDescriptors.find((candidate) => candidate.schemaDescriptorId === schemaDescriptorId)),
     listSchemaDescriptors: (filter = {}) =>
-      Effect.succeed(descriptors.filter((candidate) => matchesFilter(candidate, filter))),
-    listDiagnosticRules: (filter = {}) =>
-      Effect.succeed(obligations.filter((candidate) => matchesFilter(candidate, filter))),
+      Effect.succeed(schemaDescriptors.filter((candidate) => matchesFilter(candidate, filter))),
+    listDiagnosticRequirements: (filter = {}) =>
+      Effect.succeed(diagnosticRequirements.filter((candidate) => matchesFilter(candidate, filter))),
     listObservationRuns: (filter = {}) =>
-      Effect.succeed(evidenceRuns.filter((candidate) => matchesFilter(candidate, filter))),
+      Effect.succeed(observationRuns.filter((candidate) => matchesFilter(candidate, filter))),
     listReplayObservations: (filter = {}) =>
       Effect.succeed(replayMetadata.filter((candidate) => matchesFilter(candidate, filter))),
     listDiagnosticWaivers: (filter = {}) =>
@@ -417,18 +419,18 @@ export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
     listCoverageObservations: (filter = {}) =>
       Effect.succeed(coverageFeedback.filter((candidate) => matchesFilter(candidate, filter))),
     listObservations: (filter = {}) =>
-      Effect.succeed(evidence.filter((candidate) => matchesFilter(candidate, filter))),
+      Effect.succeed(observations.filter((candidate) => matchesFilter(candidate, filter))),
     listArtifacts: (filter = {}) =>
-      Effect.succeed(generatedArtifacts.filter((candidate) => matchesFilter(candidate, filter))),
+      Effect.succeed(artifacts.filter((candidate) => matchesFilter(candidate, filter))),
     listRepairFindings: (filter = {}) =>
       Effect.succeed(repairFindings.filter((candidate) => matchesFilter(candidate, filter))),
     snapshot: () =>
       Effect.succeed({
-        descriptors,
-        obligations,
-        evidenceRuns,
-        evidence,
-        generatedArtifacts,
+        schemaDescriptors,
+        diagnosticRequirements,
+        observationRuns,
+        observations,
+        artifacts,
         replayMetadata,
         waiverState,
         coverageFeedback,
@@ -449,52 +451,52 @@ export const createSqliteProgramFactStore = ({
   migrate(database)
 
   const putSchemaDescriptorStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_descriptors
-      (protocol_id, package_id, descriptor_hash, descriptor_json, source_path, generated_at)
+    INSERT OR REPLACE INTO schema_descriptors
+      (schema_descriptor_id, project_id, descriptor_hash, descriptor_json, source_path, generated_at)
     VALUES (?, ?, ?, ?, ?, ?)
   `)
-  const putObligationStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_obligations
-      (obligation_id, protocol_id, package_id, operation_id, kind, payload_json, descriptor_hash)
+  const putDiagnosticRequirementStatement = database.prepare(`
+    INSERT OR REPLACE INTO diagnostic_requirements
+      (diagnostic_requirement_id, schema_descriptor_id, project_id, symbol_id, kind, payload_json, descriptor_hash)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `)
   const putArtifactStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_generated_artifacts
-      (artifact_id, protocol_id, package_id, path, generator_id, expected_hash, actual_hash, status, payload_json)
+    INSERT OR REPLACE INTO program_artifacts
+      (artifact_id, schema_descriptor_id, project_id, path, generator_id, expected_hash, actual_hash, status, payload_json)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
-  const putEvidenceRunStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_evidence_runs
-      (run_id, protocol_id, package_id, tier, status, started_at, completed_at, payload_json)
+  const putObservationRunStatement = database.prepare(`
+    INSERT OR REPLACE INTO observation_runs
+      (run_id, schema_descriptor_id, project_id, tier, status, started_at, completed_at, payload_json)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
   const putReplayMetadataStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_replay_metadata
-      (replay_id, run_id, protocol_id, package_id, operation_id, status, seed, payload_json)
+    INSERT OR REPLACE INTO replay_observations
+      (replay_id, run_id, schema_descriptor_id, project_id, symbol_id, status, seed, payload_json)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
   const putWaiverStateStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_waiver_state
-      (waiver_id, protocol_id, package_id, operation_id, category, status, payload_json)
+    INSERT OR REPLACE INTO diagnostic_waiver_state
+      (waiver_id, schema_descriptor_id, project_id, symbol_id, category, status, payload_json)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `)
   const putCoverageFeedbackStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_coverage_feedback
-      (coverage_id, protocol_id, package_id, operation_id, kind, status, coverage_point, payload_json)
+    INSERT OR REPLACE INTO coverage_observations
+      (coverage_id, schema_descriptor_id, project_id, symbol_id, kind, status, coverage_point, payload_json)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
-  const putEvidenceEventStatement = database.prepare(`
-    INSERT OR REPLACE INTO protocol_evidence_events
-      (event_id, run_id, protocol_id, package_id, operation_id, kind, payload_json)
+  const putObservationStatement = database.prepare(`
+    INSERT OR REPLACE INTO observations
+      (event_id, run_id, schema_descriptor_id, project_id, symbol_id, kind, payload_json)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `)
   const putRepairFindingStatement = database.prepare(`
     INSERT OR REPLACE INTO program_repair_findings
-      (finding_id, protocol_id, package_id, descriptor_hash, kind, payload_json, status)
+      (finding_id, schema_descriptor_id, project_id, descriptor_hash, kind, payload_json, status)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `)
-  const deletePackageRepairFindingsStatement = database.prepare(`
-    DELETE FROM program_repair_findings WHERE package_id = ?
+  const deleteProjectRepairFindingsStatement = database.prepare(`
+    DELETE FROM program_repair_findings WHERE project_id = ?
   `)
 
   const storeEffect = <A>(
@@ -529,47 +531,47 @@ export const createSqliteProgramFactStore = ({
     health: () => storeEffect("health", readHealth),
     putSchemaDescriptor: (descriptor) =>
       storeEffect("putSchemaDescriptor", () => {
-        const decoded = decodePayload<AttuneProtocolDescriptor>(AttuneProtocolDescriptorSchema, descriptor)
+        const decoded = decodePayload<ProgramSchemaDescriptor>(ProgramSchemaDescriptorSchema, descriptor)
         assertDescriptorHash(decoded)
         const receipt = descriptorReceipt(decoded)
         putSchemaDescriptorStatement.run(
-          decoded.protocolId,
-          decoded.packageId,
+          decoded.schemaDescriptorId,
+          decoded.projectId,
           decoded.descriptorHash,
-          encodePayload(AttuneProtocolDescriptorSchema, decoded),
+          encodePayload(ProgramSchemaDescriptorSchema, decoded),
           decoded.sourcePath,
           receipt.recordedAt,
         )
         return receipt
       }),
-    putDiagnosticRules: (batch) =>
-      storeEffect("putDiagnosticRules", () => {
-        for (const obligation of batch.map((candidate) =>
-          decodePayload<AttuneProtocolObligation>(AttuneProtocolObligationSchema, candidate)
+    putDiagnosticRequirements: (batch) =>
+      storeEffect("putDiagnosticRequirements", () => {
+        for (const diagnosticRequirement of batch.map((candidate) =>
+          decodePayload<ProgramDiagnosticRequirement>(ProgramDiagnosticRequirementSchema, candidate)
         )) {
-          putObligationStatement.run(
-            obligation.obligationId,
-            obligation.protocolId,
-            obligation.packageId,
-            obligation.operationId ?? null,
-            obligation.kind,
-            encodePayload(AttuneProtocolObligationSchema, obligation),
-            descriptorHashForProgramFactStore(database, obligation.protocolId),
+          putDiagnosticRequirementStatement.run(
+            diagnosticRequirement.diagnosticRequirementId,
+            diagnosticRequirement.schemaDescriptorId,
+            diagnosticRequirement.projectId,
+            diagnosticRequirement.symbolId ?? null,
+            diagnosticRequirement.kind,
+            encodePayload(ProgramDiagnosticRequirementSchema, diagnosticRequirement),
+            descriptorHashForProgramFactStore(database, diagnosticRequirement.schemaDescriptorId),
           )
         }
       }),
     recordObservationRun: (run) =>
       storeEffect("recordObservationRun", () => {
-        const decoded = decodePayload<AttuneProtocolEvidenceRun>(AttuneProtocolEvidenceRunSchema, run)
-        putEvidenceRunStatement.run(
+        const decoded = decodePayload<ProgramObservationRun>(ProgramObservationRunSchema, run)
+        putObservationRunStatement.run(
           decoded.runId,
-          decoded.protocolId,
-          decoded.packageId,
+          decoded.schemaDescriptorId,
+          decoded.projectId,
           decoded.tier,
           decoded.status,
           decoded.startedAt,
           decoded.completedAt ?? null,
-          encodePayload(AttuneProtocolEvidenceRunSchema, decoded),
+          encodePayload(ProgramObservationRunSchema, decoded),
         )
       }),
     recordReplayObservation: (metadata) =>
@@ -578,9 +580,9 @@ export const createSqliteProgramFactStore = ({
         putReplayMetadataStatement.run(
           decoded.replayId,
           decoded.runId,
-          decoded.protocolId,
-          decoded.packageId,
-          decoded.operationId ?? null,
+          decoded.schemaDescriptorId,
+          decoded.projectId,
+          decoded.symbolId ?? null,
           decoded.status,
           decoded.seed,
           encodePayload(ReplayObservationMetadataSchema, decoded),
@@ -591,9 +593,9 @@ export const createSqliteProgramFactStore = ({
         const decoded = decodePayload<DiagnosticWaiverState>(DiagnosticWaiverStateSchema, waiver)
         putWaiverStateStatement.run(
           decoded.waiverId,
-          decoded.protocolId,
-          decoded.packageId,
-          decoded.operationId ?? null,
+          decoded.schemaDescriptorId,
+          decoded.projectId,
+          decoded.symbolId ?? null,
           decoded.category,
           decoded.status,
           encodePayload(DiagnosticWaiverStateSchema, decoded),
@@ -604,9 +606,9 @@ export const createSqliteProgramFactStore = ({
         const decoded = decodePayload<CoverageObservationFeedback>(CoverageObservationFeedbackSchema, feedback)
         putCoverageFeedbackStatement.run(
           decoded.coverageId,
-          decoded.protocolId,
-          decoded.packageId,
-          decoded.operationId ?? null,
+          decoded.schemaDescriptorId,
+          decoded.projectId,
+          decoded.symbolId ?? null,
           decoded.kind,
           decoded.status,
           decoded.coveragePoint,
@@ -615,30 +617,30 @@ export const createSqliteProgramFactStore = ({
       }),
     recordArtifact: (record) =>
       storeEffect("recordArtifact", () => {
-        const decoded = decodePayload<AttuneGeneratedArtifactRecord>(AttuneGeneratedArtifactRecordSchema, record)
+        const decoded = decodePayload<ProgramArtifactRecord>(ProgramArtifactRecordSchema, record)
         putArtifactStatement.run(
           decoded.artifactId,
-          decoded.protocolId,
-          decoded.packageId,
+          decoded.schemaDescriptorId,
+          decoded.projectId,
           decoded.path,
           decoded.generatorId,
           decoded.expectedHash,
           decoded.actualHash ?? null,
           decoded.status,
-          encodePayload(AttuneGeneratedArtifactRecordSchema, decoded),
+          encodePayload(ProgramArtifactRecordSchema, decoded),
         )
       }),
     recordObservation: (event) =>
       storeEffect("recordObservation", () => {
-        const decoded = decodePayload<AttuneProtocolEvidenceEvent>(AttuneProtocolEvidenceEventSchema, event)
-        putEvidenceEventStatement.run(
+        const decoded = decodePayload<ProgramObservation>(ProgramObservationSchema, event)
+        putObservationStatement.run(
           decoded.eventId,
           decoded.runId,
-          decoded.protocolId,
-          decoded.packageId,
-          decoded.operationId ?? null,
+          decoded.schemaDescriptorId,
+          decoded.projectId,
+          decoded.symbolId ?? null,
           decoded.kind,
-          encodePayload(AttuneProtocolEvidenceEventSchema, decoded),
+          encodePayload(ProgramObservationSchema, decoded),
         )
       }),
     putRepairFindings: (nextFindings) =>
@@ -648,16 +650,16 @@ export const createSqliteProgramFactStore = ({
         )) {
           putRepairFindingStatement.run(
             finding.findingId,
-            finding.protocolId,
-            finding.packageId,
-            descriptorHashForProgramFactStore(database, finding.protocolId),
+            finding.schemaDescriptorId,
+            finding.projectId,
+            descriptorHashForProgramFactStore(database, finding.schemaDescriptorId),
             finding.kind,
             encodePayload(ProgramRepairFindingSchema, finding),
             "open",
           )
         }
       }),
-    replaceRepairFindings: (packageId, nextFindings) =>
+    replaceRepairFindings: (projectId, nextFindings) =>
       storeEffect("replaceRepairFindings", () => {
         const decoded = nextFindings.map((candidate) =>
           decodePayload<ProgramRepairFinding>(ProgramRepairFindingSchema, candidate)
@@ -665,13 +667,13 @@ export const createSqliteProgramFactStore = ({
 
         database.exec("BEGIN IMMEDIATE")
         try {
-          deletePackageRepairFindingsStatement.run(packageId)
+          deleteProjectRepairFindingsStatement.run(projectId)
           for (const finding of decoded) {
             putRepairFindingStatement.run(
               finding.findingId,
-              finding.protocolId,
-              finding.packageId,
-              descriptorHashForProgramFactStore(database, finding.protocolId),
+              finding.schemaDescriptorId,
+              finding.projectId,
+              descriptorHashForProgramFactStore(database, finding.schemaDescriptorId),
               finding.kind,
               encodePayload(ProgramRepairFindingSchema, finding),
               "open",
@@ -683,39 +685,39 @@ export const createSqliteProgramFactStore = ({
           throw error
         }
       }),
-    getSchemaDescriptor: (protocolId) =>
+    getSchemaDescriptor: (schemaDescriptorId) =>
       storeEffect("getSchemaDescriptor", () =>
-        readPayloads<AttuneProtocolDescriptor>(
+        readPayloads<ProgramSchemaDescriptor>(
           database,
-          protocolDescriptorTable,
-          AttuneProtocolDescriptorSchema,
-          { protocolId },
+          schemaDescriptorTable,
+          ProgramSchemaDescriptorSchema,
+          { schemaDescriptorId },
         )[0]
       ),
     listSchemaDescriptors: (filter = {}) =>
       storeEffect("listSchemaDescriptors", () =>
-        readPayloads<AttuneProtocolDescriptor>(
+        readPayloads<ProgramSchemaDescriptor>(
           database,
-          protocolDescriptorTable,
-          AttuneProtocolDescriptorSchema,
+          schemaDescriptorTable,
+          ProgramSchemaDescriptorSchema,
           filter,
         )
       ),
-    listDiagnosticRules: (filter = {}) =>
-      storeEffect("listDiagnosticRules", () =>
-        readPayloads<AttuneProtocolObligation>(
+    listDiagnosticRequirements: (filter = {}) =>
+      storeEffect("listDiagnosticRequirements", () =>
+        readPayloads<ProgramDiagnosticRequirement>(
           database,
-          protocolObligationTable,
-          AttuneProtocolObligationSchema,
+          diagnosticRequirementTable,
+          ProgramDiagnosticRequirementSchema,
           filter,
         )
       ),
     listObservationRuns: (filter = {}) =>
       storeEffect("listObservationRuns", () =>
-        readPayloads<AttuneProtocolEvidenceRun>(
+        readPayloads<ProgramObservationRun>(
           database,
-          protocolEvidenceRunTable,
-          AttuneProtocolEvidenceRunSchema,
+          observationRunTable,
+          ProgramObservationRunSchema,
           filter,
         )
       ),
@@ -723,7 +725,7 @@ export const createSqliteProgramFactStore = ({
       storeEffect("listReplayObservations", () =>
         readPayloads<ReplayObservationMetadata>(
           database,
-          protocolReplayMetadataTable,
+          replayObservationTable,
           ReplayObservationMetadataSchema,
           filter,
         )
@@ -732,7 +734,7 @@ export const createSqliteProgramFactStore = ({
       storeEffect("listDiagnosticWaivers", () =>
         readPayloads<DiagnosticWaiverState>(
           database,
-          protocolWaiverStateTable,
+          diagnosticWaiverStateTable,
           DiagnosticWaiverStateSchema,
           filter,
         )
@@ -741,26 +743,26 @@ export const createSqliteProgramFactStore = ({
       storeEffect("listCoverageObservations", () =>
         readPayloads<CoverageObservationFeedback>(
           database,
-          protocolCoverageFeedbackTable,
+          coverageObservationTable,
           CoverageObservationFeedbackSchema,
           filter,
         )
       ),
     listObservations: (filter = {}) =>
       storeEffect("listObservations", () =>
-        readPayloads<AttuneProtocolEvidenceEvent>(
+        readPayloads<ProgramObservation>(
           database,
-          protocolEvidenceEventTable,
-          AttuneProtocolEvidenceEventSchema,
+          observationTable,
+          ProgramObservationSchema,
           filter,
         )
       ),
     listArtifacts: (filter = {}) =>
       storeEffect("listArtifacts", () =>
-        readPayloads<AttuneGeneratedArtifactRecord>(
+        readPayloads<ProgramArtifactRecord>(
           database,
-          protocolGeneratedArtifactTable,
-          AttuneGeneratedArtifactRecordSchema,
+          programArtifactTable,
+          ProgramArtifactRecordSchema,
           filter,
         )
       ),
@@ -775,45 +777,45 @@ export const createSqliteProgramFactStore = ({
       ),
     snapshot: () =>
       storeEffect("snapshot", () => ({
-        descriptors: readPayloads<AttuneProtocolDescriptor>(
+        schemaDescriptors: readPayloads<ProgramSchemaDescriptor>(
           database,
-          protocolDescriptorTable,
-          AttuneProtocolDescriptorSchema,
+          schemaDescriptorTable,
+          ProgramSchemaDescriptorSchema,
         ),
-        obligations: readPayloads<AttuneProtocolObligation>(
+        diagnosticRequirements: readPayloads<ProgramDiagnosticRequirement>(
           database,
-          protocolObligationTable,
-          AttuneProtocolObligationSchema,
+          diagnosticRequirementTable,
+          ProgramDiagnosticRequirementSchema,
         ),
-        evidenceRuns: readPayloads<AttuneProtocolEvidenceRun>(
+        observationRuns: readPayloads<ProgramObservationRun>(
           database,
-          protocolEvidenceRunTable,
-          AttuneProtocolEvidenceRunSchema,
+          observationRunTable,
+          ProgramObservationRunSchema,
         ),
         replayMetadata: readPayloads<ReplayObservationMetadata>(
           database,
-          protocolReplayMetadataTable,
+          replayObservationTable,
           ReplayObservationMetadataSchema,
         ),
         waiverState: readPayloads<DiagnosticWaiverState>(
           database,
-          protocolWaiverStateTable,
+          diagnosticWaiverStateTable,
           DiagnosticWaiverStateSchema,
         ),
         coverageFeedback: readPayloads<CoverageObservationFeedback>(
           database,
-          protocolCoverageFeedbackTable,
+          coverageObservationTable,
           CoverageObservationFeedbackSchema,
         ),
-        evidence: readPayloads<AttuneProtocolEvidenceEvent>(
+        observations: readPayloads<ProgramObservation>(
           database,
-          protocolEvidenceEventTable,
-          AttuneProtocolEvidenceEventSchema,
+          observationTable,
+          ProgramObservationSchema,
         ),
-        generatedArtifacts: readPayloads<AttuneGeneratedArtifactRecord>(
+        artifacts: readPayloads<ProgramArtifactRecord>(
           database,
-          protocolGeneratedArtifactTable,
-          AttuneGeneratedArtifactRecordSchema,
+          programArtifactTable,
+          ProgramArtifactRecordSchema,
         ),
         repairFindings: readPayloads<ProgramRepairFinding>(
           database,
@@ -848,14 +850,14 @@ export const ProgramFactStoreLive = ProgramFactStore.sqlite()
 export const ProgramFactStoreTest = (): Layer.Layer<ProgramFactStore> =>
   ProgramFactStore.fromService(createInMemoryProgramFactStore())
 
-const protocolDescriptorTable = {
-  name: "protocol_descriptors",
-  primaryKey: "protocol_id",
+const schemaDescriptorTable = {
+  name: "schema_descriptors",
+  primaryKey: "schema_descriptor_id",
   payloadColumn: "descriptor_json",
-  orderBy: "protocol_id",
+  orderBy: "schema_descriptor_id",
   rowSchema: Schema.Struct({
-    protocol_id: Schema.String,
-    package_id: Schema.String,
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
     descriptor_hash: Schema.String,
     descriptor_json: Schema.String,
     source_path: Schema.String,
@@ -863,31 +865,31 @@ const protocolDescriptorTable = {
   }),
 } as const
 
-const protocolObligationTable = {
-  name: "protocol_obligations",
-  primaryKey: "obligation_id",
+const diagnosticRequirementTable = {
+  name: "diagnostic_requirements",
+  primaryKey: "diagnostic_requirement_id",
   payloadColumn: "payload_json",
-  orderBy: "obligation_id",
+  orderBy: "diagnostic_requirement_id",
   rowSchema: Schema.Struct({
-    obligation_id: Schema.String,
-    protocol_id: Schema.String,
-    package_id: Schema.String,
-    operation_id: Schema.NullOr(Schema.String),
+    diagnostic_requirement_id: Schema.String,
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
+    symbol_id: Schema.NullOr(Schema.String),
     kind: Schema.String,
     payload_json: Schema.String,
     descriptor_hash: Schema.NullOr(Schema.String),
   }),
 } as const
 
-const protocolGeneratedArtifactTable = {
-  name: "protocol_generated_artifacts",
+const programArtifactTable = {
+  name: "program_artifacts",
   primaryKey: "artifact_id",
   payloadColumn: "payload_json",
   orderBy: "artifact_id",
   rowSchema: Schema.Struct({
     artifact_id: Schema.String,
-    protocol_id: Schema.String,
-    package_id: Schema.String,
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
     path: Schema.String,
     generator_id: Schema.String,
     expected_hash: Schema.String,
@@ -897,15 +899,15 @@ const protocolGeneratedArtifactTable = {
   }),
 } as const
 
-const protocolEvidenceRunTable = {
-  name: "protocol_evidence_runs",
+const observationRunTable = {
+  name: "observation_runs",
   primaryKey: "run_id",
   payloadColumn: "payload_json",
   orderBy: "run_id",
   rowSchema: Schema.Struct({
     run_id: Schema.String,
-    protocol_id: Schema.String,
-    package_id: Schema.String,
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
     tier: Schema.String,
     status: Schema.String,
     started_at: Schema.String,
@@ -914,49 +916,49 @@ const protocolEvidenceRunTable = {
   }),
 } as const
 
-const protocolReplayMetadataTable = {
-  name: "protocol_replay_metadata",
+const replayObservationTable = {
+  name: "replay_observations",
   primaryKey: "replay_id",
   payloadColumn: "payload_json",
   orderBy: "replay_id",
   rowSchema: Schema.Struct({
     replay_id: Schema.String,
     run_id: Schema.String,
-    protocol_id: Schema.String,
-    package_id: Schema.String,
-    operation_id: Schema.NullOr(Schema.String),
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
+    symbol_id: Schema.NullOr(Schema.String),
     status: Schema.String,
     seed: Schema.Number,
     payload_json: Schema.String,
   }),
 } as const
 
-const protocolWaiverStateTable = {
-  name: "protocol_waiver_state",
+const diagnosticWaiverStateTable = {
+  name: "diagnostic_waiver_state",
   primaryKey: "waiver_id",
   payloadColumn: "payload_json",
   orderBy: "waiver_id",
   rowSchema: Schema.Struct({
     waiver_id: Schema.String,
-    protocol_id: Schema.String,
-    package_id: Schema.String,
-    operation_id: Schema.NullOr(Schema.String),
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
+    symbol_id: Schema.NullOr(Schema.String),
     category: Schema.String,
     status: Schema.String,
     payload_json: Schema.String,
   }),
 } as const
 
-const protocolCoverageFeedbackTable = {
-  name: "protocol_coverage_feedback",
+const coverageObservationTable = {
+  name: "coverage_observations",
   primaryKey: "coverage_id",
   payloadColumn: "payload_json",
   orderBy: "coverage_id",
   rowSchema: Schema.Struct({
     coverage_id: Schema.String,
-    protocol_id: Schema.String,
-    package_id: Schema.String,
-    operation_id: Schema.NullOr(Schema.String),
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
+    symbol_id: Schema.NullOr(Schema.String),
     kind: Schema.String,
     status: Schema.String,
     coverage_point: Schema.String,
@@ -964,17 +966,17 @@ const protocolCoverageFeedbackTable = {
   }),
 } as const
 
-const protocolEvidenceEventTable = {
-  name: "protocol_evidence_events",
+const observationTable = {
+  name: "observations",
   primaryKey: "event_id",
   payloadColumn: "payload_json",
   orderBy: "event_id",
   rowSchema: Schema.Struct({
     event_id: Schema.String,
     run_id: Schema.String,
-    protocol_id: Schema.String,
-    package_id: Schema.String,
-    operation_id: Schema.NullOr(Schema.String),
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
+    symbol_id: Schema.NullOr(Schema.String),
     kind: Schema.String,
     payload_json: Schema.String,
   }),
@@ -987,8 +989,8 @@ const programRepairFindingTable = {
   orderBy: "finding_id",
   rowSchema: Schema.Struct({
     finding_id: Schema.String,
-    protocol_id: Schema.String,
-    package_id: Schema.String,
+    schema_descriptor_id: Schema.String,
+    project_id: Schema.String,
     descriptor_hash: Schema.NullOr(Schema.String),
     kind: Schema.String,
     payload_json: Schema.String,
@@ -997,41 +999,41 @@ const programRepairFindingTable = {
 } as const
 
 const programFactTables = [
-  protocolDescriptorTable,
-  protocolObligationTable,
-  protocolGeneratedArtifactTable,
-  protocolEvidenceRunTable,
-  protocolReplayMetadataTable,
-  protocolWaiverStateTable,
-  protocolCoverageFeedbackTable,
-  protocolEvidenceEventTable,
+  schemaDescriptorTable,
+  diagnosticRequirementTable,
+  programArtifactTable,
+  observationRunTable,
+  replayObservationTable,
+  diagnosticWaiverStateTable,
+  coverageObservationTable,
+  observationTable,
   programRepairFindingTable,
 ] as const
 
 const initialMigrationSql = `
-CREATE TABLE IF NOT EXISTS protocol_descriptors (
-  protocol_id TEXT PRIMARY KEY,
-  package_id TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS schema_descriptors (
+  schema_descriptor_id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
   descriptor_hash TEXT NOT NULL,
   descriptor_json TEXT NOT NULL,
   source_path TEXT NOT NULL,
   generated_at TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_obligations (
-  obligation_id TEXT PRIMARY KEY,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
-  operation_id TEXT,
+CREATE TABLE IF NOT EXISTS diagnostic_requirements (
+  diagnostic_requirement_id TEXT PRIMARY KEY,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  symbol_id TEXT,
   kind TEXT NOT NULL,
   payload_json TEXT NOT NULL,
   descriptor_hash TEXT
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_generated_artifacts (
+CREATE TABLE IF NOT EXISTS program_artifacts (
   artifact_id TEXT PRIMARY KEY,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
   path TEXT NOT NULL,
   generator_id TEXT NOT NULL,
   expected_hash TEXT NOT NULL,
@@ -1040,10 +1042,10 @@ CREATE TABLE IF NOT EXISTS protocol_generated_artifacts (
   payload_json TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_evidence_runs (
+CREATE TABLE IF NOT EXISTS observation_runs (
   run_id TEXT PRIMARY KEY,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
   tier TEXT NOT NULL,
   status TEXT NOT NULL,
   started_at TEXT NOT NULL,
@@ -1051,52 +1053,52 @@ CREATE TABLE IF NOT EXISTS protocol_evidence_runs (
   payload_json TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_replay_metadata (
+CREATE TABLE IF NOT EXISTS replay_observations (
   replay_id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
-  operation_id TEXT,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  symbol_id TEXT,
   status TEXT NOT NULL,
   seed REAL NOT NULL,
   payload_json TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_waiver_state (
+CREATE TABLE IF NOT EXISTS diagnostic_waiver_state (
   waiver_id TEXT PRIMARY KEY,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
-  operation_id TEXT,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  symbol_id TEXT,
   category TEXT NOT NULL,
   status TEXT NOT NULL,
   payload_json TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_coverage_feedback (
+CREATE TABLE IF NOT EXISTS coverage_observations (
   coverage_id TEXT PRIMARY KEY,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
-  operation_id TEXT,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  symbol_id TEXT,
   kind TEXT NOT NULL,
   status TEXT NOT NULL,
   coverage_point TEXT NOT NULL,
   payload_json TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_evidence_events (
+CREATE TABLE IF NOT EXISTS observations (
   event_id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
-  operation_id TEXT,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  symbol_id TEXT,
   kind TEXT NOT NULL,
   payload_json TEXT NOT NULL
 ) STRICT;
 
 CREATE TABLE IF NOT EXISTS program_repair_findings (
   finding_id TEXT PRIMARY KEY,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
   descriptor_hash TEXT,
   kind TEXT NOT NULL,
   payload_json TEXT NOT NULL,
@@ -1104,33 +1106,33 @@ CREATE TABLE IF NOT EXISTS program_repair_findings (
 ) STRICT;
 `
 
-const runtimeEvidenceCacheMigrationSql = `
-CREATE TABLE IF NOT EXISTS protocol_replay_metadata (
+const runtimeObservationCacheMigrationSql = `
+CREATE TABLE IF NOT EXISTS replay_observations (
   replay_id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
-  operation_id TEXT,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  symbol_id TEXT,
   status TEXT NOT NULL,
   seed REAL NOT NULL,
   payload_json TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_waiver_state (
+CREATE TABLE IF NOT EXISTS diagnostic_waiver_state (
   waiver_id TEXT PRIMARY KEY,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
-  operation_id TEXT,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  symbol_id TEXT,
   category TEXT NOT NULL,
   status TEXT NOT NULL,
   payload_json TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS protocol_coverage_feedback (
+CREATE TABLE IF NOT EXISTS coverage_observations (
   coverage_id TEXT PRIMARY KEY,
-  protocol_id TEXT NOT NULL,
-  package_id TEXT NOT NULL,
-  operation_id TEXT,
+  schema_descriptor_id TEXT NOT NULL,
+  project_id TEXT NOT NULL,
+  symbol_id TEXT,
   kind TEXT NOT NULL,
   status TEXT NOT NULL,
   coverage_point TEXT NOT NULL,
@@ -1141,13 +1143,13 @@ CREATE TABLE IF NOT EXISTS protocol_coverage_feedback (
 const migrations = [
   {
     version: 1,
-    name: "init-protocol-store",
+    name: "init-program-fact-store",
     sql: initialMigrationSql,
   },
   {
     version: 2,
-    name: "add-property-evidence-cache-state",
-    sql: runtimeEvidenceCacheMigrationSql,
+    name: "add-property-observations-cache-state",
+    sql: runtimeObservationCacheMigrationSql,
   },
 ] as const
 
@@ -1155,7 +1157,7 @@ const latestMigrationVersion = migrations.at(-1)?.version ?? 0
 
 const migrate = (database: DatabaseSync): void => {
   database.exec(`
-    CREATE TABLE IF NOT EXISTS protocol_store_migrations (
+    CREATE TABLE IF NOT EXISTS program_fact_store_migrations (
       version INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
       applied_at TEXT NOT NULL
@@ -1164,7 +1166,7 @@ const migrate = (database: DatabaseSync): void => {
 
   for (const migration of migrations) {
     const existing = database
-      .prepare("SELECT version FROM protocol_store_migrations WHERE version = ?")
+      .prepare("SELECT version FROM program_fact_store_migrations WHERE version = ?")
       .get(migration.version)
     if (existing !== undefined) continue
 
@@ -1172,7 +1174,7 @@ const migrate = (database: DatabaseSync): void => {
     try {
       database.exec(migration.sql)
       database
-        .prepare("INSERT INTO protocol_store_migrations (version, name, applied_at) VALUES (?, ?, ?)")
+        .prepare("INSERT INTO program_fact_store_migrations (version, name, applied_at) VALUES (?, ?, ?)")
         .run(migration.version, migration.name, new Date().toISOString())
       database.exec("COMMIT")
     } catch (error) {
@@ -1196,14 +1198,14 @@ const resetRows = (database: DatabaseSync): void => {
 }
 
 const sqliteRowCounts = (database: DatabaseSync): ProgramFactStoreRowCounts => ({
-  descriptors: tableCount(database, protocolDescriptorTable.name),
-  obligations: tableCount(database, protocolObligationTable.name),
-  evidenceRuns: tableCount(database, protocolEvidenceRunTable.name),
-  evidence: tableCount(database, protocolEvidenceEventTable.name),
-  generatedArtifacts: tableCount(database, protocolGeneratedArtifactTable.name),
-  replayMetadata: tableCount(database, protocolReplayMetadataTable.name),
-  waiverState: tableCount(database, protocolWaiverStateTable.name),
-  coverageFeedback: tableCount(database, protocolCoverageFeedbackTable.name),
+  schemaDescriptors: tableCount(database, schemaDescriptorTable.name),
+  diagnosticRequirements: tableCount(database, diagnosticRequirementTable.name),
+  observationRuns: tableCount(database, observationRunTable.name),
+  observations: tableCount(database, observationTable.name),
+  artifacts: tableCount(database, programArtifactTable.name),
+  replayMetadata: tableCount(database, replayObservationTable.name),
+  waiverState: tableCount(database, diagnosticWaiverStateTable.name),
+  coverageFeedback: tableCount(database, coverageObservationTable.name),
   repairFindings: tableCount(database, programRepairFindingTable.name),
 })
 
@@ -1218,7 +1220,7 @@ const tableCount = (database: DatabaseSync, table: string): number => {
 
 const migrationVersion = (database: DatabaseSync): number => {
   const row = database
-    .prepare("SELECT MAX(version) AS version FROM protocol_store_migrations")
+    .prepare("SELECT MAX(version) AS version FROM program_fact_store_migrations")
     .get()
   const version = row?.version
   return typeof version === "number" ? version : 0
@@ -1226,37 +1228,37 @@ const migrationVersion = (database: DatabaseSync): number => {
 
 const descriptorHashForProgramFactStore = (
   database: DatabaseSync,
-  protocolId: string,
+  schemaDescriptorId: string,
 ): string | null => {
   const row = database
-    .prepare("SELECT descriptor_hash FROM protocol_descriptors WHERE protocol_id = ?")
-    .get(protocolId)
+    .prepare("SELECT descriptor_hash FROM schema_descriptors WHERE schema_descriptor_id = ?")
+    .get(schemaDescriptorId)
   return typeof row?.descriptor_hash === "string" ? row.descriptor_hash : null
 }
 
-const descriptorReceipt = (descriptor: AttuneProtocolDescriptor): SchemaDescriptorReceipt => ({
-  protocolId: descriptor.protocolId,
-  packageId: descriptor.packageId,
+const descriptorReceipt = (descriptor: ProgramSchemaDescriptor): SchemaDescriptorReceipt => ({
+  schemaDescriptorId: descriptor.schemaDescriptorId,
+  projectId: descriptor.projectId,
   sourcePath: descriptor.sourcePath,
   descriptorHash: descriptor.descriptorHash,
   recordedAt: new Date().toISOString(),
 })
 
-const assertDescriptorHash = (descriptor: AttuneProtocolDescriptor): void => {
+const assertDescriptorHash = (descriptor: ProgramSchemaDescriptor): void => {
   const expected = descriptorHashForStorage(descriptor)
   if (descriptor.descriptorHash !== expected) {
     throw new Error(
-      `Descriptor ${descriptor.protocolId} has non-deterministic descriptorHash ${descriptor.descriptorHash}; expected ${expected}.`,
+      `Descriptor ${descriptor.schemaDescriptorId} has non-deterministic descriptorHash ${descriptor.descriptorHash}; expected ${expected}.`,
     )
   }
 }
 
 const matchesFilter = (
-  row: { readonly protocolId: string; readonly packageId: string },
+  row: { readonly schemaDescriptorId: string; readonly projectId: string },
   filter: ProgramFactStoreFilter,
 ): boolean =>
-  (filter.protocolId === undefined || row.protocolId === filter.protocolId) &&
-  (filter.packageId === undefined || row.packageId === filter.packageId)
+  (filter.schemaDescriptorId === undefined || row.schemaDescriptorId === filter.schemaDescriptorId) &&
+  (filter.projectId === undefined || row.projectId === filter.projectId)
 
 const readPayloads = <A>(
   database: DatabaseSync,
@@ -1288,13 +1290,13 @@ const filterWhere = (
   const clauses: string[] = []
   const parameters: string[] = []
 
-  if (filter.protocolId !== undefined) {
-    clauses.push("protocol_id = ?")
-    parameters.push(filter.protocolId)
+  if (filter.schemaDescriptorId !== undefined) {
+    clauses.push("schema_descriptor_id = ?")
+    parameters.push(filter.schemaDescriptorId)
   }
-  if (filter.packageId !== undefined) {
-    clauses.push("package_id = ?")
-    parameters.push(filter.packageId)
+  if (filter.projectId !== undefined) {
+    clauses.push("project_id = ?")
+    parameters.push(filter.projectId)
   }
 
   return {

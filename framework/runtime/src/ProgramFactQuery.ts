@@ -1,6 +1,6 @@
 import { Context, Effect, Layer } from "effect"
 import {
-  requiredEvidenceKindsFor,
+  requiredObservationKindsFor,
   type ProgramRepairFinding,
   type ProgramDiagnostic,
 } from "@attune/framework-protocol"
@@ -27,7 +27,7 @@ export interface ProjectFactSummary {
   readonly schemaDescriptorId: string
   readonly descriptorHash?: string
   readonly symbolCount: number
-  readonly diagnosticRuleCount: number
+  readonly diagnosticRequirementCount: number
   readonly observationRunCount: number
   readonly observationCount: number
   readonly replayObservationCount: number
@@ -39,16 +39,16 @@ export interface ProjectFactSummary {
 
 export interface ProjectObservationState {
   readonly projectId: string
-  readonly observationRuns: ProgramFactRuntimeSnapshot["evidenceRuns"]
-  readonly observations: ProgramFactRuntimeSnapshot["evidence"]
+  readonly observationRuns: ProgramFactRuntimeSnapshot["observationRuns"]
+  readonly observations: ProgramFactRuntimeSnapshot["observations"]
   readonly replayObservations: ProgramFactRuntimeSnapshot["replayMetadata"]
-  readonly artifacts: ProgramFactRuntimeSnapshot["generatedArtifacts"]
+  readonly artifacts: ProgramFactRuntimeSnapshot["artifacts"]
   readonly diagnosticWaivers: ProgramFactRuntimeSnapshot["waiverState"]
   readonly coverageObservations: ProgramFactRuntimeSnapshot["coverageFeedback"]
 }
 
-export interface DiagnosticRuleExplanation {
-  readonly diagnosticRuleId: string
+export interface DiagnosticRequirementExplanation {
+  readonly diagnosticRequirementId: string
   readonly projectId: string
   readonly symbolId?: string
   readonly reason: string
@@ -74,9 +74,9 @@ export interface ProgramFactQueryApi {
   readonly getDiagnosticsForFile: (
     sourcePath: string,
   ) => Effect.Effect<readonly ProgramDiagnostic[], ProgramFactQueryError>
-  readonly explainDiagnosticRule: (
-    diagnosticRuleId: string,
-  ) => Effect.Effect<DiagnosticRuleExplanation | undefined, ProgramFactQueryError>
+  readonly explainDiagnosticRequirement: (
+    diagnosticRequirementId: string,
+  ) => Effect.Effect<DiagnosticRequirementExplanation | undefined, ProgramFactQueryError>
   readonly getRepairPlan: (
     repairFindingId: string,
   ) => Effect.Effect<RepairPlan | undefined, ProgramFactQueryError>
@@ -86,29 +86,31 @@ export const getProjectSummary = (
   input: ProgramFactProjectionInput,
 ): ProjectFactSummary => {
   const snapshot = projectionSnapshot(input)
-  const descriptor = snapshot.descriptors.find((candidate) => candidate.packageId === input.packageId)
+  const descriptor = snapshot.schemaDescriptors.find((candidate) => candidate.projectId === input.projectId)
   return {
-    projectId: input.packageId,
-    schemaDescriptorId: input.protocolId,
+    projectId: input.projectId,
+    schemaDescriptorId: input.schemaDescriptorId,
     ...(descriptor === undefined ? {} : { descriptorHash: descriptor.descriptorHash }),
     symbolCount: descriptor?.operations.length ?? 0,
-    diagnosticRuleCount: snapshot.obligations.filter((obligation) => obligation.packageId === input.packageId).length,
-    observationRunCount: snapshot.evidenceRuns.filter((run) => run.packageId === input.packageId).length,
-    observationCount: snapshot.evidence.filter((event) => event.packageId === input.packageId).length,
+    diagnosticRequirementCount: snapshot.diagnosticRequirements.filter((diagnosticRequirement) =>
+      diagnosticRequirement.projectId === input.projectId
+    ).length,
+    observationRunCount: snapshot.observationRuns.filter((run) => run.projectId === input.projectId).length,
+    observationCount: snapshot.observations.filter((event) => event.projectId === input.projectId).length,
     replayObservationCount: snapshot.replayMetadata.filter((metadata) =>
-      metadata.packageId === input.packageId
+      metadata.projectId === input.projectId
     ).length,
     coverageObservationCount: snapshot.coverageFeedback.filter((feedback) =>
-      feedback.packageId === input.packageId
+      feedback.projectId === input.projectId
     ).length,
     activeDiagnosticWaiverCount: snapshot.waiverState.filter((waiver) =>
-      waiver.packageId === input.packageId && waiver.status === "active"
+      waiver.projectId === input.projectId && waiver.status === "active"
     ).length,
     diagnosticWaiverIssueCount: snapshot.waiverState.filter((waiver) =>
-      waiver.packageId === input.packageId && waiver.status !== "active"
+      waiver.projectId === input.projectId && waiver.status !== "active"
     ).length,
-    staleArtifactCount: snapshot.generatedArtifacts.filter((artifact) =>
-      artifact.packageId === input.packageId &&
+    staleArtifactCount: snapshot.artifacts.filter((artifact) =>
+      artifact.projectId === input.projectId &&
       (
         artifact.status !== "current" ||
         (artifact.actualHash !== undefined && artifact.actualHash !== artifact.expectedHash)
@@ -117,21 +119,21 @@ export const getProjectSummary = (
   }
 }
 
-export const explainDiagnosticRule = (
+export const explainDiagnosticRequirement = (
   input: ProgramFactProjectionInput,
-  targetObligationId: string,
-): DiagnosticRuleExplanation | undefined => {
-  const obligation = (input.obligations ?? []).find(
-    (candidate) => candidate.obligationId === targetObligationId,
+  targetDiagnosticRequirementId: string,
+): DiagnosticRequirementExplanation | undefined => {
+  const diagnosticRequirement = (input.diagnosticRequirements ?? []).find(
+    (candidate) => candidate.diagnosticRequirementId === targetDiagnosticRequirementId,
   )
-  if (obligation === undefined) return undefined
+  if (diagnosticRequirement === undefined) return undefined
 
   return {
-    diagnosticRuleId: obligation.obligationId,
-    projectId: obligation.packageId,
-    ...(obligation.operationId === undefined ? {} : { symbolId: obligation.operationId }),
-    reason: obligation.reason,
-    expectedObservationKinds: requiredEvidenceKindsFor(obligation.kind),
+    diagnosticRequirementId: diagnosticRequirement.diagnosticRequirementId,
+    projectId: diagnosticRequirement.projectId,
+    ...(diagnosticRequirement.symbolId === undefined ? {} : { symbolId: diagnosticRequirement.symbolId }),
+    reason: diagnosticRequirement.reason,
+    expectedObservationKinds: requiredObservationKindsFor(diagnosticRequirement.kind),
   }
 }
 
@@ -144,7 +146,7 @@ export const getRepairPlan = (
 
   return {
     repairFindingId: finding.findingId,
-    projectId: finding.packageId,
+    projectId: finding.projectId,
     actions: finding.repairActions,
   }
 }
@@ -163,22 +165,24 @@ export const makeProgramFactQuery = (
     snapshot: ProgramFactRuntimeSnapshot,
     projectId: string,
   ): ProgramFactProjectionInput => {
-    const descriptor = snapshot.descriptors.find((candidate) => candidate.packageId === projectId)
+    const descriptor = snapshot.schemaDescriptors.find((candidate) => candidate.projectId === projectId)
     const input: ProgramFactProjectionInput = {
-      protocolId: descriptor?.protocolId ?? `attune/package/${projectId}`,
-      packageId: projectId,
+      schemaDescriptorId: descriptor?.schemaDescriptorId ?? `attune/project/${projectId}`,
+      projectId: projectId,
       sourcePath: descriptor?.sourcePath ?? "unknown",
-      descriptors: snapshot.descriptors.filter((candidate) => candidate.packageId === projectId),
-      obligations: snapshot.obligations.filter((obligation) => obligation.packageId === projectId),
-      evidence: snapshot.evidence.filter((event) => event.packageId === projectId),
-      generatedArtifacts: snapshot.generatedArtifacts.filter((artifact) => artifact.packageId === projectId),
-      evidenceRuns: snapshot.evidenceRuns.filter((run) => run.packageId === projectId),
-      replayMetadata: snapshot.replayMetadata.filter((metadata) => metadata.packageId === projectId),
-      waiverState: snapshot.waiverState.filter((waiver) => waiver.packageId === projectId),
-      coverageFeedback: snapshot.coverageFeedback.filter((feedback) => feedback.packageId === projectId),
+      schemaDescriptors: snapshot.schemaDescriptors.filter((candidate) => candidate.projectId === projectId),
+      diagnosticRequirements: snapshot.diagnosticRequirements.filter((diagnosticRequirement) =>
+        diagnosticRequirement.projectId === projectId
+      ),
+      observations: snapshot.observations.filter((event) => event.projectId === projectId),
+      artifacts: snapshot.artifacts.filter((artifact) => artifact.projectId === projectId),
+      observationRuns: snapshot.observationRuns.filter((run) => run.projectId === projectId),
+      replayMetadata: snapshot.replayMetadata.filter((metadata) => metadata.projectId === projectId),
+      waiverState: snapshot.waiverState.filter((waiver) => waiver.projectId === projectId),
+      coverageFeedback: snapshot.coverageFeedback.filter((feedback) => feedback.projectId === projectId),
     }
 
-    const repairFindings = snapshot.repairFindings?.filter((finding) => finding.packageId === projectId)
+    const repairFindings = snapshot.repairFindings?.filter((finding) => finding.projectId === projectId)
     return repairFindings === undefined ? input : { ...input, repairFindings }
   }
 
@@ -186,7 +190,7 @@ export const makeProgramFactQuery = (
     snapshot: ProgramFactRuntimeSnapshot,
     projectId: string,
   ): readonly ProgramRepairFinding[] => {
-    const storedRepairFindings = snapshot.repairFindings?.filter((finding) => finding.packageId === projectId) ?? []
+    const storedRepairFindings = snapshot.repairFindings?.filter((finding) => finding.projectId === projectId) ?? []
     if (storedRepairFindings.length > 0) return storedRepairFindings
 
     return projection.computeRepairFindings(projectInput(snapshot, projectId))
@@ -205,39 +209,41 @@ export const makeProgramFactQuery = (
       typedSnapshot().pipe(
         Effect.map((snapshot) => ({
           projectId,
-          observationRuns: snapshot.evidenceRuns.filter((run) => run.packageId === projectId),
-          observations: snapshot.evidence.filter((event) => event.packageId === projectId),
-          replayObservations: snapshot.replayMetadata.filter((metadata) => metadata.packageId === projectId),
-          artifacts: snapshot.generatedArtifacts.filter((artifact) => artifact.packageId === projectId),
-          diagnosticWaivers: snapshot.waiverState.filter((waiver) => waiver.packageId === projectId),
-          coverageObservations: snapshot.coverageFeedback.filter((feedback) => feedback.packageId === projectId),
+          observationRuns: snapshot.observationRuns.filter((run) => run.projectId === projectId),
+          observations: snapshot.observations.filter((event) => event.projectId === projectId),
+          replayObservations: snapshot.replayMetadata.filter((metadata) => metadata.projectId === projectId),
+          artifacts: snapshot.artifacts.filter((artifact) => artifact.projectId === projectId),
+          diagnosticWaivers: snapshot.waiverState.filter((waiver) => waiver.projectId === projectId),
+          coverageObservations: snapshot.coverageFeedback.filter((feedback) => feedback.projectId === projectId),
         })),
       ),
     getDiagnosticsForFile: (sourcePath) =>
       typedSnapshot().pipe(
         Effect.map((snapshot) =>
-          snapshot.descriptors
+          snapshot.schemaDescriptors
             .filter((descriptor) => descriptor.sourcePath === sourcePath)
             .flatMap((descriptor) =>
               diagnosticsForProgramFacts({
-                ...projectInput(snapshot, descriptor.packageId),
+                ...projectInput(snapshot, descriptor.projectId),
                 sourcePath,
               })
             )
         ),
       ),
-    explainDiagnosticRule: (diagnosticRuleId) =>
+    explainDiagnosticRequirement: (diagnosticRequirementId) =>
       typedSnapshot().pipe(
         Effect.map((snapshot) => {
-          const obligation = snapshot.obligations.find((candidate) => candidate.obligationId === diagnosticRuleId)
-          if (obligation === undefined) return undefined
+          const diagnosticRequirement = snapshot.diagnosticRequirements.find((candidate) =>
+            candidate.diagnosticRequirementId === diagnosticRequirementId
+          )
+          if (diagnosticRequirement === undefined) return undefined
 
           return {
-            diagnosticRuleId: obligation.obligationId,
-            projectId: obligation.packageId,
-            ...(obligation.operationId === undefined ? {} : { symbolId: obligation.operationId }),
-            reason: obligation.reason,
-            expectedObservationKinds: requiredEvidenceKindsFor(obligation.kind),
+            diagnosticRequirementId: diagnosticRequirement.diagnosticRequirementId,
+            projectId: diagnosticRequirement.projectId,
+            ...(diagnosticRequirement.symbolId === undefined ? {} : { symbolId: diagnosticRequirement.symbolId }),
+            reason: diagnosticRequirement.reason,
+            expectedObservationKinds: requiredObservationKindsFor(diagnosticRequirement.kind),
           }
         }),
       ),
@@ -245,14 +251,14 @@ export const makeProgramFactQuery = (
       typedSnapshot().pipe(
         Effect.map((snapshot) => {
           const finding = snapshot.repairFindings?.find((candidate) => candidate.findingId === repairFindingId) ??
-            snapshot.descriptors
-              .flatMap((descriptor) => repairFindingsForProject(snapshot, descriptor.packageId))
+            snapshot.schemaDescriptors
+              .flatMap((descriptor) => repairFindingsForProject(snapshot, descriptor.projectId))
               .find((candidate) => candidate.findingId === repairFindingId)
           if (finding === undefined) return undefined
 
           return {
             repairFindingId: finding.findingId,
-            projectId: finding.packageId,
+            projectId: finding.projectId,
             actions: finding.repairActions,
           }
         }),

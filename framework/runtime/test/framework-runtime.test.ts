@@ -5,11 +5,11 @@ import { tmpdir } from "node:os"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 import {
-  hashProtocolValue,
-  type AttuneProtocolDescriptor,
-  type AttuneProtocolEvidenceEvent,
-  type AttuneProtocolEvidenceRun,
-  type AttuneGeneratedArtifactRecord,
+  hashProgramValue,
+  type ProgramSchemaDescriptor,
+  type ProgramObservation,
+  type ProgramObservationRun,
+  type ProgramArtifactRecord,
 } from "@attune/framework-protocol"
 import {
   InMemoryProgramFactStoreLive,
@@ -38,7 +38,7 @@ import {
   workspaceHealthAtom,
   computeProgramFactFindings,
   diagnosticsForProgramFacts,
-  explainDiagnosticRule,
+  explainDiagnosticRequirement,
   getProjectSummary,
   getRepairPlan,
   type CoverageObservationFeedback,
@@ -51,8 +51,8 @@ import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..")
 
 const demoDescriptor = {
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
   packageKind: "policy-plugin",
   descriptorHash: "demo-hash",
   sourcePath: "packages/demo/src/attune.package.ts",
@@ -76,22 +76,22 @@ const demoDescriptor = {
   coverageExpectations: [],
 } as const
 
-const demoEvidenceRun: AttuneProtocolEvidenceRun = {
+const demoEvidenceRun: ProgramObservationRun = {
   runId: "run-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
   tier: "commit",
   status: "failed",
   startedAt: "2026-06-22T00:00:00.000Z",
   completedAt: "2026-06-22T00:00:02.000Z",
 }
 
-const demoPropertyEvidence: AttuneProtocolEvidenceEvent = {
+const demoPropertyEvidence: ProgramObservation = {
   eventId: "demo:project:property-run",
   runId: "run-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "project",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
   kind: "property-run",
   observedAt: "2026-06-22T00:00:01.000Z",
 }
@@ -99,9 +99,9 @@ const demoPropertyEvidence: AttuneProtocolEvidenceEvent = {
 const demoReplayMetadata: ReplayObservationMetadata = {
   replayId: "demo:project:replay",
   runId: "run-1",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "project",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
   propertyId: "demo.project.property",
   seed: 42,
   shrinkPath: "0:1",
@@ -112,12 +112,12 @@ const demoReplayMetadata: ReplayObservationMetadata = {
 
 const demoActiveWaiver: DiagnosticWaiverState = {
   waiverId: "demo:project:law-waiver",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
   category: "law",
   status: "active",
-  targetObligationId: "demo:project:law:projection.deterministic-replay",
-  operationId: "project",
+  targetDiagnosticRequirementId: "demo:project:law:projection.deterministic-replay",
+  symbolId: "project",
   owner: "framework",
   reason: "projection replay law is temporarily migrated",
   reviewAt: "2026-07-22",
@@ -134,9 +134,9 @@ const demoExpiredWaiver: DiagnosticWaiverState = {
 
 const demoAtomCoverage: CoverageObservationFeedback = {
   coverageId: "demo:project:atom-coverage",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "project",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
   kind: "atom-graph",
   status: "hit",
   coveragePoint: "demo.changed->demoView",
@@ -148,8 +148,8 @@ const demoAtomCoverage: CoverageObservationFeedback = {
 
 const demoTypeCoverage: CoverageObservationFeedback = {
   coverageId: "demo:type-guidance:coverage",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
   kind: "type-partition",
   status: "hit",
   coveragePoint: "ProjectInput.variant.default",
@@ -159,9 +159,9 @@ const demoTypeCoverage: CoverageObservationFeedback = {
 
 const demoFilterFeedback: CoverageObservationFeedback = {
   coverageId: "demo:project:high-rejection-filter",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "project",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
   kind: "filter",
   status: "filtered",
   coveragePoint: "ProjectInput.valid-event",
@@ -173,9 +173,9 @@ const demoFilterFeedback: CoverageObservationFeedback = {
 
 const demoWeakOracleFeedback: CoverageObservationFeedback = {
   coverageId: "demo:project:weak-oracle",
-  protocolId: "attune/package/demo",
-  packageId: "demo",
-  operationId: "project",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
   kind: "implementation",
   status: "hit",
   coveragePoint: "packages/demo/src/project.ts:17",
@@ -246,24 +246,24 @@ const provideProgramIndexDiagnosticsRuntime = <A, E>(
   ) as Effect.Effect<A, E, never>
 
 describe("@attune/framework-runtime", () => {
-  it("turns missing evidence and stale generated source into private repairFindings", () => {
+  it("turns missing observations and stale generated source into private repairFindings", () => {
     const repairFindings = computeProgramFactFindings({
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
-      evidence: [],
-      obligations: [{
-        obligationId: "demo:project:property",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
-        operationId: "project",
+      observations: [],
+      diagnosticRequirements: [{
+        diagnosticRequirementId: "demo:project:property",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
         kind: "property",
-        reason: "projection operation requires property evidence",
+        reason: "projection operation requires property observations",
       }],
-      generatedArtifacts: [{
+      artifacts: [{
         artifactId: "demo:registry",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
         path: "packages/demo/src/generated/symbol-registry.ts",
         generatorId: "@attune/framework-nx:symbol-registry",
         expectedHash: "expected",
@@ -273,7 +273,7 @@ describe("@attune/framework-runtime", () => {
     })
 
     expect(repairFindings.map((finding) => finding.kind)).toEqual([
-      "missing-obligation",
+      "missing-observation",
       "stale-generated-source",
     ])
   })
@@ -399,7 +399,7 @@ describe("@attune/framework-runtime", () => {
       })
       expect(Effect.runSync(programIndexDiagnosticsForFile(index, fixturePath))[0]).toMatchObject({
         code: "attune/program-index/schema-non-serializable",
-        packageId: "demo",
+        projectId: "demo",
         sourcePath: fixturePath,
       })
 
@@ -471,11 +471,11 @@ describe("@attune/framework-runtime", () => {
           const diagnostics = yield* ProgramDiagnostics
           return yield* diagnostics.diagnosticsForFile(
             demoDescriptor.sourcePath,
-            { packageId: "demo", protocolId: demoDescriptor.protocolId },
+            { projectId: "demo", schemaDescriptorId: demoDescriptor.schemaDescriptorId },
           )
         }),
         index,
-        { descriptors: [demoDescriptor] },
+        { schemaDescriptors: [demoDescriptor] },
       ),
     )
 
@@ -483,7 +483,7 @@ describe("@attune/framework-runtime", () => {
     expect(projected[0]).toMatchObject({
       code: "attune/program-index/schema-non-serializable",
       severity: "warning",
-      packageId: "demo",
+      projectId: "demo",
       sourcePath: demoDescriptor.sourcePath,
       range: { start: 10, end: 24 },
       explanation: "schema_descriptor fact is partial for demo:Snapshot.",
@@ -508,7 +508,7 @@ describe("@attune/framework-runtime", () => {
           ],
         }),
       }],
-      relatedEvidence: ["program-index:cause"],
+      relatedObservations: ["program-index:cause"],
     })
   })
 
@@ -521,7 +521,7 @@ describe("@attune/framework-runtime", () => {
           yield* runtime.materializeSchemaDescriptor(demoDescriptor)
           return yield* diagnostics.diagnosticsForFile(
             demoDescriptor.sourcePath,
-            { packageId: "demo", protocolId: demoDescriptor.protocolId },
+            { projectId: "demo", schemaDescriptorId: demoDescriptor.schemaDescriptorId },
           )
         }),
         createInMemoryProgramIndex(),
@@ -529,7 +529,7 @@ describe("@attune/framework-runtime", () => {
     )
 
     expect(projected.map((diagnostic) => diagnostic.code)).toContain(
-      "attune/protocol/missing-obligation",
+      "attune/program-facts/missing-observation",
     )
   })
 
@@ -555,7 +555,7 @@ describe("@attune/framework-runtime", () => {
     expect(rows.artifacts.map((artifact) => artifact.kind)).toEqual([
       "attune-package-source",
       "generated-contract-companion",
-      "generated-protocol-companion",
+      "generated-program-companion",
       "artifact-ownership-compatibility",
     ])
     expect(rows.sourceFiles.map((sourceFile) => sourceFile.path)).toEqual([
@@ -600,12 +600,12 @@ describe("@attune/framework-runtime", () => {
       paths: [
         "packages/demo/src/attune.package.ts",
         "packages/demo/src/attune.generated.ts",
-        "packages/demo/src/artifacts/evidence-matrix.ts",
+        "packages/demo/src/artifacts/observations-matrix.ts",
         "reports/protocol-finding-report.json",
       ],
       contentByPath: {
         "packages/demo/src/attune.package.ts": "source",
-        "packages/demo/src/artifacts/evidence-matrix.ts": "export const sourceArtifactHelper = true\n",
+        "packages/demo/src/artifacts/observations-matrix.ts": "export const sourceArtifactHelper = true\n",
         "reports/protocol-finding-report.json": "{}",
       },
     })
@@ -613,7 +613,7 @@ describe("@attune/framework-runtime", () => {
     expect(rows.artifacts.map((artifact) => [artifact.path, artifact.status])).toEqual([
       ["packages/demo/src/attune.package.ts", "current"],
       ["packages/demo/src/attune.generated.ts", "missing"],
-      ["packages/demo/src/artifacts/evidence-matrix.ts", "current"],
+      ["packages/demo/src/artifacts/observations-matrix.ts", "current"],
       ["reports/protocol-finding-report.json", "current"],
     ])
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
@@ -759,58 +759,58 @@ describe("@attune/framework-runtime", () => {
 
   it("projects repairFindings as framework diagnostics", () => {
     const diagnostics = diagnosticsForProgramFacts({
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
-      evidence: [],
-      obligations: [{
-        obligationId: "demo:project:law",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
-        operationId: "project",
+      observations: [],
+      diagnosticRequirements: [{
+        diagnosticRequirementId: "demo:project:law",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
         kind: "law",
-        reason: "law evidence missing",
+        reason: "law observations missing",
       }],
-      generatedArtifacts: [],
+      artifacts: [],
     })
 
-    expect(diagnostics[0]?.code).toBe("attune/protocol/missing-obligation")
+    expect(diagnostics[0]?.code).toBe("attune/program-facts/missing-observation")
   })
 
-  it("computes repairFindings from evidence, waiver state, coverage feedback, and replay metadata", () => {
+  it("computes repairFindings from observations, waiver state, coverage feedback, and replay metadata", () => {
     const repairFindings = computeProgramFactFindings({
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
-      obligations: [{
-        obligationId: "demo:project:property",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
-        operationId: "project",
+      diagnosticRequirements: [{
+        diagnosticRequirementId: "demo:project:property",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
         kind: "property",
-        reason: "property evidence required",
+        reason: "property observations required",
       }, {
-        obligationId: "demo:project:view-movement",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
-        operationId: "project",
+        diagnosticRequirementId: "demo:project:view-movement",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
         kind: "view-movement",
-        reason: "atom graph evidence required",
+        reason: "atom graph observations required",
       }, {
-        obligationId: "demo:type-guidance",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
+        diagnosticRequirementId: "demo:type-guidance",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
         kind: "type-guidance",
         reason: "type guidance coverage required",
       }, {
-        obligationId: "demo:project:law:projection.deterministic-replay",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
-        operationId: "project",
+        diagnosticRequirementId: "demo:project:law:projection.deterministic-replay",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
         kind: "law",
-        reason: "law evidence required",
+        reason: "law observations required",
       }],
-      evidence: [demoPropertyEvidence],
+      observations: [demoPropertyEvidence],
       waiverState: [demoActiveWaiver, demoExpiredWaiver],
       coverageFeedback: [
         demoAtomCoverage,
@@ -819,10 +819,10 @@ describe("@attune/framework-runtime", () => {
         demoWeakOracleFeedback,
       ],
       replayMetadata: [demoReplayMetadata],
-      generatedArtifacts: [{
+      artifacts: [{
         artifactId: "demo:registry",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
         path: "packages/demo/src/generated/symbol-registry.ts",
         generatorId: "@attune/framework-nx:symbol-registry",
         expectedHash: "expected",
@@ -834,12 +834,12 @@ describe("@attune/framework-runtime", () => {
     expect(repairFindings.map((finding) => finding.kind)).toEqual(expect.arrayContaining([
       "stale-generated-source",
       "waiver-issue",
-      "blocked-obligation",
+      "blocked-observation",
       "high-rejection-filter",
       "weak-oracle",
     ]))
-    expect(repairFindings.some((finding) => finding.kind === "missing-obligation")).toBe(false)
-    expect(repairFindings.find((finding) => finding.kind === "blocked-obligation")?.repairActions[0]).toMatchObject({
+    expect(repairFindings.some((finding) => finding.kind === "missing-observation")).toBe(false)
+    expect(repairFindings.find((finding) => finding.kind === "blocked-observation")?.repairActions[0]).toMatchObject({
       id: "replay-counterexample",
       options: expect.objectContaining({ seed: 42, shrinkPath: "0:1" }),
     })
@@ -855,8 +855,8 @@ describe("@attune/framework-runtime", () => {
         const receipt = yield* runtime.materializeSchemaDescriptor(demoDescriptor)
         yield* runtime.recordArtifact({
           artifactId: "demo:registry",
-          protocolId: "attune/package/demo",
-          packageId: "demo",
+          schemaDescriptorId: "attune/project/demo",
+          projectId: "demo",
           path: "packages/demo/src/generated/symbol-registry.ts",
           generatorId: "@attune/framework-nx:symbol-registry",
           expectedHash: "expected",
@@ -868,7 +868,7 @@ describe("@attune/framework-runtime", () => {
         const repairFindings = yield* query.listRepairFindings("demo")
         const projected = yield* diagnostics.diagnosticsForFile(
           "packages/demo/src/attune.package.ts",
-          { packageId: "demo", protocolId: "attune/package/demo" },
+          { projectId: "demo", schemaDescriptorId: "attune/project/demo" },
         )
 
         return { receipt, summary, repairFindings, projected }
@@ -876,24 +876,24 @@ describe("@attune/framework-runtime", () => {
     )
 
     expect(result.receipt).toMatchObject({
-      packageId: "demo",
+      projectId: "demo",
       descriptorHash: "demo-hash",
     })
     expect(result.summary).toMatchObject({
       projectId: "demo",
       symbolCount: 1,
-      diagnosticRuleCount: 6,
+      diagnosticRequirementCount: 6,
       staleArtifactCount: 1,
     })
     expect(result.repairFindings.map((finding) => finding.kind)).toEqual(
-      expect.arrayContaining(["missing-obligation", "stale-generated-source"]),
+      expect.arrayContaining(["missing-observation", "stale-generated-source"]),
     )
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
-      "attune/protocol/missing-obligation",
+      "attune/program-facts/missing-observation",
     )
   })
 
-  it("records and reads property evidence cache state through runtime/query services", async () => {
+  it("records and reads property observations cache state through runtime/query services", async () => {
     const result = await Effect.runPromise(
       provideRuntime(Effect.gen(function* propertyEvidenceRuntimeState() {
         const runtime = yield* ProgramFactRuntime
@@ -914,7 +914,7 @@ describe("@attune/framework-runtime", () => {
         const repairFindings = yield* query.listRepairFindings("demo")
         const projected = yield* diagnostics.diagnosticsForFile(
           "packages/demo/src/attune.package.ts",
-          { packageId: "demo", protocolId: "attune/package/demo" },
+          { projectId: "demo", schemaDescriptorId: "attune/project/demo" },
         )
 
         return { summary, state, repairFindings, projected }
@@ -941,18 +941,18 @@ describe("@attune/framework-runtime", () => {
       "demo:project:high-rejection-filter",
     ])
     expect(result.repairFindings.map((finding) => finding.kind)).toEqual(expect.arrayContaining([
-      "blocked-obligation",
+      "blocked-observation",
       "high-rejection-filter",
     ]))
     expect(result.repairFindings.some((finding) =>
-      finding.obligationId === "demo:project:law:projection.deterministic-replay"
+      finding.diagnosticRequirementId === "demo:project:law:projection.deterministic-replay"
     )).toBe(false)
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
-      "attune/protocol/high-rejection-filter",
+      "attune/program-facts/high-rejection-filter",
     )
   })
 
-  it("keeps evidence cache output out of checked-in report artifacts", async () => {
+  it("keeps observations cache output out of checked-in report artifacts", async () => {
     const result = await Effect.runPromise(
       provideRuntime(Effect.gen(function* noReportOutputForEvidenceState() {
         const runtime = yield* ProgramFactRuntime
@@ -988,7 +988,7 @@ describe("@attune/framework-runtime", () => {
     )
   })
 
-  it("explains obligations and repair plans without exposing store rows", async () => {
+  it("explains diagnosticRequirements and repair plans without exposing store rows", async () => {
     const result = await Effect.runPromise(
       provideRuntime(Effect.gen(function* protocolQueryExplanations() {
         const runtime = yield* ProgramFactRuntime
@@ -996,7 +996,7 @@ describe("@attune/framework-runtime", () => {
 
         yield* runtime.materializeSchemaDescriptor(demoDescriptor)
 
-        const explanation = yield* query.explainDiagnosticRule("demo:project:view-movement")
+        const explanation = yield* query.explainDiagnosticRequirement("demo:project:view-movement")
         const repairPlan = yield* query.getRepairPlan("finding:demo:project:view-movement")
 
         return { explanation, repairPlan }
@@ -1014,27 +1014,27 @@ describe("@attune/framework-runtime", () => {
 
   it("keeps pure query helpers available for focused projections", () => {
     const input = {
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
-      evidence: [],
-      obligations: [{
-        obligationId: "demo:project:view-movement",
-        protocolId: "attune/package/demo",
-        packageId: "demo",
-        operationId: "project",
+      observations: [],
+      diagnosticRequirements: [{
+        diagnosticRequirementId: "demo:project:view-movement",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
         kind: "view-movement" as const,
-        reason: "view movement evidence missing",
+        reason: "view movement observations missing",
       }],
-      generatedArtifacts: [],
+      artifacts: [],
     }
 
     expect(getProjectSummary(input)).toMatchObject({
       projectId: "demo",
-      diagnosticRuleCount: 1,
+      diagnosticRequirementCount: 1,
       observationCount: 0,
     })
-    expect(explainDiagnosticRule(input, "demo:project:view-movement")?.expectedObservationKinds).toContain(
+    expect(explainDiagnosticRequirement(input, "demo:project:view-movement")?.expectedObservationKinds).toContain(
       "atom-movement",
     )
     expect(getRepairPlan(input, "finding:demo:project:view-movement")?.actions[0]).toMatchObject({
@@ -1051,12 +1051,12 @@ describe("@attune/framework-runtime", () => {
         const service = yield* ProgramDiagnostics
         return yield* service.diagnosticsForFile(
           "packages/demo/src/attune.package.ts",
-          { packageId: "demo", protocolId: "attune/package/demo" },
+          { projectId: "demo", schemaDescriptorId: "attune/project/demo" },
         )
       }), {
-          descriptors: [{
-            protocolId: "attune/package/demo",
-            packageId: "demo",
+          schemaDescriptors: [{
+            schemaDescriptorId: "attune/project/demo",
+            projectId: "demo",
             sourcePath: "packages/demo/src/attune.package.ts",
             descriptorHash: "bad",
           }],
@@ -1064,16 +1064,16 @@ describe("@attune/framework-runtime", () => {
     )
 
     expect(diagnostics[0]).toMatchObject({
-      code: "attune/protocol/invalid-store-payload",
-      packageId: "demo",
+      code: "attune/program-facts/invalid-store-payload",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
     })
   })
 
   it("adapts sqlite ProgramFactStoreApi into runtime materialization and diagnostics", async () => {
     const descriptor = descriptorWithHash({
-      protocolId: "attune/package/sqlite-demo",
-      packageId: "sqlite-demo",
+      schemaDescriptorId: "attune/project/sqlite-demo",
+      projectId: "sqlite-demo",
       packageKind: "core-discovery-runtime",
       sourcePath: "packages/sqlite-demo/src/attune.package.ts",
       views: {
@@ -1095,22 +1095,22 @@ describe("@attune/framework-runtime", () => {
       waivers: [],
       coverageExpectations: [],
     })
-    const staleArtifact: AttuneGeneratedArtifactRecord = {
+    const staleArtifact: ProgramArtifactRecord = {
       artifactId: "sqlite-demo:registry",
-      protocolId: descriptor.protocolId,
-      packageId: descriptor.packageId,
+      schemaDescriptorId: descriptor.schemaDescriptorId,
+      projectId: descriptor.projectId,
       path: "packages/sqlite-demo/src/generated/symbol-registry.ts",
       generatorId: "@attune/framework-nx:symbol-registry",
       expectedHash: "expected",
       actualHash: "actual",
       status: "stale",
     }
-    const propertyEvidence: AttuneProtocolEvidenceEvent = {
+    const propertyEvidence: ProgramObservation = {
       eventId: "sqlite-demo:operation:property-run",
       runId: "run-1",
-      protocolId: descriptor.protocolId,
-      packageId: descriptor.packageId,
-      operationId: "operation",
+      schemaDescriptorId: descriptor.schemaDescriptorId,
+      projectId: descriptor.projectId,
+      symbolId: "operation",
       kind: "property-run",
       observedAt: "2026-06-22T00:00:00.000Z",
     }
@@ -1125,8 +1125,8 @@ describe("@attune/framework-runtime", () => {
         yield* runtime.recordArtifact(staleArtifact)
         yield* runtime.recordObservationRun({
           runId: "run-1",
-          protocolId: descriptor.protocolId,
-          packageId: descriptor.packageId,
+          schemaDescriptorId: descriptor.schemaDescriptorId,
+          projectId: descriptor.projectId,
           tier: "commit",
           status: "passed",
           startedAt: "2026-06-22T00:00:00.000Z",
@@ -1135,22 +1135,22 @@ describe("@attune/framework-runtime", () => {
         yield* runtime.recordObservation(propertyEvidence)
         yield* runtime.recordCoverageObservation({
           coverageId: "sqlite-demo:operation:atom-coverage",
-          protocolId: descriptor.protocolId,
-          packageId: descriptor.packageId,
-          operationId: "operation",
+          schemaDescriptorId: descriptor.schemaDescriptorId,
+          projectId: descriptor.projectId,
+          symbolId: "operation",
           kind: "atom-graph",
           status: "hit",
           coveragePoint: "sqlite-demo.changed->sqlite-demo.view",
           recordedAt: "2026-06-22T00:00:01.000Z",
         })
-        yield* runtime.refreshRepairFindings(descriptor.packageId)
+        yield* runtime.refreshRepairFindings(descriptor.projectId)
 
-        const summary = yield* query.getProjectSummary(descriptor.packageId)
-        const evidenceState = yield* query.getProjectObservationState(descriptor.packageId)
-        const repairFindings = yield* query.listRepairFindings(descriptor.packageId)
+        const summary = yield* query.getProjectSummary(descriptor.projectId)
+        const evidenceState = yield* query.getProjectObservationState(descriptor.projectId)
+        const repairFindings = yield* query.listRepairFindings(descriptor.projectId)
         const projected = yield* diagnostics.diagnosticsForFile(
           descriptor.sourcePath,
-          { packageId: descriptor.packageId, protocolId: descriptor.protocolId },
+          { projectId: descriptor.projectId, schemaDescriptorId: descriptor.schemaDescriptorId },
         )
 
         return { receipt, summary, evidenceState, repairFindings, projected }
@@ -1158,13 +1158,13 @@ describe("@attune/framework-runtime", () => {
     )
 
     expect(result.receipt).toMatchObject({
-      packageId: "sqlite-demo",
+      projectId: "sqlite-demo",
       descriptorHash: descriptor.descriptorHash,
-      diagnosticRuleCount: 6,
+      diagnosticRequirementCount: 6,
     })
     expect(result.summary).toMatchObject({
       symbolCount: 1,
-      diagnosticRuleCount: 6,
+      diagnosticRequirementCount: 6,
       observationRunCount: 1,
       observationCount: 1,
       coverageObservationCount: 1,
@@ -1173,22 +1173,22 @@ describe("@attune/framework-runtime", () => {
     expect(result.evidenceState.observationRuns).toHaveLength(1)
     expect(result.evidenceState.coverageObservations).toHaveLength(1)
     expect(result.repairFindings.map((finding) => finding.kind)).toEqual(
-      expect.arrayContaining(["missing-obligation", "stale-generated-source"]),
+      expect.arrayContaining(["missing-observation", "stale-generated-source"]),
     )
     expect(result.repairFindings.some((finding) =>
-      finding.obligationId === "sqlite-demo:operation:property"
+      finding.diagnosticRequirementId === "sqlite-demo:operation:property"
     )).toBe(false)
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
-      "attune/protocol/stale-generated-source",
+      "attune/program-facts/stale-generated-source",
     )
   })
 })
 
 const descriptorWithHash = (
-  descriptor: Omit<AttuneProtocolDescriptor, "descriptorHash">,
-): AttuneProtocolDescriptor => ({
+  descriptor: Omit<ProgramSchemaDescriptor, "descriptorHash">,
+): ProgramSchemaDescriptor => ({
   ...descriptor,
-  descriptorHash: hashProtocolValue(descriptor),
+  descriptorHash: hashProgramValue(descriptor),
 })
 
 const classifyDiagnosticParity = (input: {

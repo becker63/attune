@@ -47,8 +47,8 @@ import {
 const coverageCase = (
   input: Partial<CoverageSearchIdentity> = {},
 ): CoverageSearchIdentity => ({
-  operationId: input.operationId ?? "increment",
-  packageId: input.packageId ?? "demo",
+  symbolId: input.symbolId ?? "increment",
+  projectId: input.projectId ?? "demo",
   seed: input.seed ?? 101,
   shardId: input.shardId ?? "shard-a",
   ...(input.corpusSeedId === undefined ? {} : { corpusSeedId: input.corpusSeedId }),
@@ -100,13 +100,13 @@ describe("@attune/framework-testing", () => {
     })
     const handler = symbolHandler(registry, "operation")
     const producer = defineObservationProducer({
-      id: "demo-evidence",
-      operationId: "operation",
+      id: "demo-observations",
+      symbolId: "operation",
       produce: (context) => [propertyRunObservation(context, "operation")],
     })
     const context = {
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
       runId: "run-1",
       observedAt: "2026-06-22T00:00:00.000Z",
     } as const
@@ -138,13 +138,13 @@ describe("@attune/framework-testing", () => {
       symbolIds: ["read", "write"] as const,
       producers: {
         read: defineObservationProducer({
-          id: "read-evidence",
-          operationId: "read",
+          id: "read-observations",
+          symbolId: "read",
           produce: () => [],
         }),
         write: defineObservationProducer({
-          id: "write-evidence",
-          operationId: "write",
+          id: "write-observations",
+          symbolId: "write",
           produce: () => [],
         }),
       },
@@ -163,10 +163,10 @@ describe("@attune/framework-testing", () => {
     ).toThrow("Extra: stale")
   })
 
-  it("turns property and atom observations into protocol evidence events", () => {
+  it("turns property and atom observations into protocol observations events", () => {
     const context = {
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
       runId: "run-1",
       observedAt: "2026-06-22T00:00:00.000Z",
       replay: { seed: 123 },
@@ -197,10 +197,10 @@ describe("@attune/framework-testing", () => {
       workerCount: 3,
     })
     const worker = workerEvidenceMetadata({
-      packageId: "demo",
+      projectId: "demo",
       propertyId: "demo.operation.property",
       target: "framework-testing:test",
-      operationId: "operation",
+      symbolId: "operation",
     }, budget)
 
     expect(worker.randomSource).toBe("worker")
@@ -220,10 +220,10 @@ describe("@attune/framework-testing", () => {
       generatedValueSummary: "{\"input\":1}",
       lawIds: ["schema.output"],
       observedAt: "2026-06-22T00:00:00.000Z",
-      operationId: "operation",
-      packageId: "demo",
+      symbolId: "operation",
+      projectId: "demo",
       propertyId: "demo.operation.property",
-      protocolId: "attune/package/demo",
+      schemaDescriptorId: "attune/project/demo",
       replay: { seed: 123, path: "0:1" },
       runId: "run-1",
       transformIds: [],
@@ -234,14 +234,14 @@ describe("@attune/framework-testing", () => {
     )
   })
 
-  it("runs package-boundary FastCheck wrappers and emits protocol evidence", async () => {
+  it("runs package-boundary FastCheck wrappers and emits protocol observations", async () => {
     const result = await checkFastCheckProperty({
       arbitrary: schemaArbitrarySlot(Schema.Number, { schemaId: "Number" }),
       lawIds: ["schema.output"],
       numRuns: 3,
       operation: (input) => input + 1,
-      operationId: "increment",
-      packageId: "demo",
+      symbolId: "increment",
+      projectId: "demo",
       seed: 99,
       validateOutput: (output) => {
         expect(typeof output).toBe("number")
@@ -262,8 +262,8 @@ describe("@attune/framework-testing", () => {
       lawIds: [],
       numRuns: 1,
       operation: (input) => input,
-      operationId: "fixture",
-      packageId: "demo",
+      symbolId: "fixture",
+      projectId: "demo",
       seed: 1,
     })
 
@@ -316,7 +316,7 @@ describe("@attune/framework-testing", () => {
     const observationProducers = defineProjectObservationProducerMap(PackageContract, {
       increment: defineObservationProducer({
         id: "increment-law",
-        operationId: "increment",
+        symbolId: "increment",
         produce: (context) => [
           propertyRunObservation(context, "increment", {
             source: "generated-observation-producer-map",
@@ -361,7 +361,7 @@ describe("@attune/framework-testing", () => {
     expect(exit.success).toEqual({ value: 42 })
     expect(exit.encodedSuccess).toEqual({ value: 42 })
     expect(client.controls.observe.rpc.rpcId).toBe("demo.control.observe")
-    expect(exit.evidence.map((event) => event.kind)).toEqual([
+    expect(exit.observations.map((event) => event.kind)).toEqual([
       "property-run",
       "schema-decode",
       "type-guidance",
@@ -373,7 +373,7 @@ describe("@attune/framework-testing", () => {
     ])
   })
 
-  it("runs worker-compatible property evidence through the package harness client", async () => {
+  it("runs worker-compatible property observations through the package harness client", async () => {
     const PackageViews = definePackageViews({
       reactivityKeys: ["demo.changed"],
       atoms: ["demoAtom"],
@@ -408,10 +408,10 @@ describe("@attune/framework-testing", () => {
       increment: publicAccessorHandler("increment"),
     })
     const worker = workerEvidenceMetadata({
-      packageId: "demo",
+      projectId: "demo",
       propertyId: "demo.increment.property",
       target: "framework-testing:test",
-      operationId: "increment",
+      symbolId: "increment",
     }, normalizeWorkerMetadata({
       generatedValuesSerializable: true,
       resourceTier: "debug",
@@ -428,7 +428,7 @@ describe("@attune/framework-testing", () => {
       arbitrary: schemaArbitrarySlot(IncrementInput, { schemaId: "IncrementInput" }),
       client,
       numRuns: 2,
-      operationId: "increment",
+      symbolId: "increment",
       seed: 7,
       worker,
       validateOutput: (output) => {
@@ -467,8 +467,8 @@ describe("@attune/framework-testing", () => {
 
     const movements = atomGraphMovementRecordsFromObservations({
       observations,
-      operationId: "increment",
-      packageId: "demo",
+      symbolId: "increment",
+      projectId: "demo",
       replay: {
         path: "0:1",
         seed: 55,
@@ -478,8 +478,8 @@ describe("@attune/framework-testing", () => {
     })
     const conformance = coverageConformanceRecordsFromAtomGraph({
       observations,
-      operationId: "increment",
-      packageId: "demo",
+      symbolId: "increment",
+      projectId: "demo",
       replay: { seed: 55, shardId: "shard-2" },
     })
 
@@ -531,16 +531,16 @@ describe("@attune/framework-testing", () => {
       requiredCoverage: [
         {
           kind: "schema-variant",
-          operationId: "increment",
-          packageId: "demo",
+          symbolId: "increment",
+          projectId: "demo",
           requirementId: "input.negative",
           schemaVariantId: "negative",
         },
         {
           errorPathId: "out-of-range",
           kind: "expected-error-path",
-          operationId: "increment",
-          packageId: "demo",
+          symbolId: "increment",
+          projectId: "demo",
           requirementId: "error.out-of-range",
         },
       ],
@@ -603,8 +603,8 @@ describe("@attune/framework-testing", () => {
       requiredAtomGraphEdges: [
         {
           edgeId: "increment->demoViewAtom",
-          operationId: "increment",
-          packageId: "demo",
+          symbolId: "increment",
+          projectId: "demo",
           reactivityKey: "demo.changed",
           viewAtomId: "demoViewAtom",
         },
@@ -612,8 +612,8 @@ describe("@attune/framework-testing", () => {
       requiredLaws: [
         {
           lawIds: ["view.package-view-moves"],
-          operationId: "increment",
-          packageId: "demo",
+          symbolId: "increment",
+          projectId: "demo",
         },
       ],
       typeGuidancePartitions: [
@@ -645,7 +645,7 @@ describe("@attune/framework-testing", () => {
     })
   })
 
-  it("merges V8/Istanbul evidence across worker shards and detects dead harnesses", () => {
+  it("merges V8/Istanbul observations across worker shards and detects dead harnesses", () => {
     const merged = mergeCoverageWorkerShards([
       {
         shardId: "shard-1",
@@ -674,7 +674,7 @@ describe("@attune/framework-testing", () => {
         coverage: {
           typeGuidancePartitions: [
             partition({
-              operationId: "dry-harness",
+              symbolId: "dry-harness",
               partitionId: "input.fixture",
               seed: 8,
               shardId: "shard-0",
@@ -696,7 +696,7 @@ describe("@attune/framework-testing", () => {
     ])
     expect(merged.findings).toContainEqual(expect.objectContaining({
       kind: "dead-harness",
-      operationId: "dry-harness",
+      symbolId: "dry-harness",
       semanticCaseCount: 1,
     }))
   })
@@ -714,16 +714,16 @@ describe("@attune/framework-testing", () => {
         {
           errorPathId: "negative-input",
           kind: "expected-error-path",
-          operationId: "increment",
-          packageId: "demo",
+          symbolId: "increment",
+          projectId: "demo",
           requirementId: "error.negative-input",
         },
       ],
       requiredLaws: [
         {
           lawIds: ["schema.decode", "view.package-view-moves"],
-          operationId: "increment",
-          packageId: "demo",
+          symbolId: "increment",
+          projectId: "demo",
         },
       ],
     })
@@ -771,10 +771,10 @@ describe("@attune/framework-testing", () => {
     }))
   })
 
-  it("emits coverage-point and weak-oracle protocol evidence helpers", () => {
+  it("emits coverage-point and weak-oracle protocol observations helpers", () => {
     const context = {
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
       runId: "run-coverage",
       observedAt: "2026-06-22T00:00:00.000Z",
       replay: { seed: 909, path: "1:0" },

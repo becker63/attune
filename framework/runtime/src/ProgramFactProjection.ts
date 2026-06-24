@@ -1,15 +1,15 @@
 import { Context, Layer } from "effect"
 import {
-  deriveProtocolObligations,
+  deriveDiagnosticRequirements,
   diagnosticFromRepairFinding,
-  requiredEvidenceKindsFor,
-  type AttuneGeneratedArtifactRecord,
+  requiredObservationKindsFor,
+  type ProgramArtifactRecord,
   type ProgramRepairFinding,
-  type AttuneProtocolDescriptor,
+  type ProgramSchemaDescriptor,
   type ProgramDiagnostic,
-  type AttuneProtocolEvidenceEvent,
-  type AttuneProtocolEvidenceRun,
-  type AttuneProtocolObligation,
+  type ProgramObservation,
+  type ProgramObservationRun,
+  type ProgramDiagnosticRequirement,
 } from "@attune/framework-protocol"
 import type {
   CoverageObservationFeedback,
@@ -18,11 +18,11 @@ import type {
 } from "./ProgramFactStore.js"
 
 export interface ProgramFactRuntimeSnapshot {
-  readonly descriptors: readonly AttuneProtocolDescriptor[]
-  readonly obligations: readonly AttuneProtocolObligation[]
-  readonly evidenceRuns: readonly AttuneProtocolEvidenceRun[]
-  readonly evidence: readonly AttuneProtocolEvidenceEvent[]
-  readonly generatedArtifacts: readonly AttuneGeneratedArtifactRecord[]
+  readonly schemaDescriptors: readonly ProgramSchemaDescriptor[]
+  readonly diagnosticRequirements: readonly ProgramDiagnosticRequirement[]
+  readonly observationRuns: readonly ProgramObservationRun[]
+  readonly observations: readonly ProgramObservation[]
+  readonly artifacts: readonly ProgramArtifactRecord[]
   readonly replayMetadata: readonly ReplayObservationMetadata[]
   readonly waiverState: readonly DiagnosticWaiverState[]
   readonly coverageFeedback: readonly CoverageObservationFeedback[]
@@ -30,29 +30,29 @@ export interface ProgramFactRuntimeSnapshot {
 }
 
 export interface ProgramFactProjectionInput extends Partial<ProgramFactRuntimeSnapshot> {
-  readonly protocolId: string
-  readonly packageId: string
+  readonly schemaDescriptorId: string
+  readonly projectId: string
   readonly sourcePath: string
 }
 
 export interface ProgramFactProjectionApi {
-  readonly deriveObligations: (
-    descriptor: AttuneProtocolDescriptor,
-  ) => readonly AttuneProtocolObligation[]
+  readonly deriveDiagnosticRequirements: (
+    descriptor: ProgramSchemaDescriptor,
+  ) => readonly ProgramDiagnosticRequirement[]
   readonly computeRepairFindings: (input: ProgramFactProjectionInput) => readonly ProgramRepairFinding[]
 }
 
-const evidenceKey = (event: AttuneProtocolEvidenceEvent): string =>
-  `${event.packageId}:${event.operationId ?? "package"}:${event.kind}`
+const observationKey = (event: ProgramObservation): string =>
+  `${event.projectId}:${event.symbolId ?? "package"}:${event.kind}`
 
-const coverageEvidenceKeys = (
+const coverageObservationKeys = (
   feedback: CoverageObservationFeedback,
 ): readonly string[] => {
   if (feedback.status !== "hit" && feedback.status !== "retained") return []
 
-  const operationId = feedback.operationId ?? "package"
+  const symbolId = feedback.symbolId ?? "package"
   const keyFor = (kind: string): string =>
-    `${feedback.packageId}:${operationId}:${kind}`
+    `${feedback.projectId}:${symbolId}:${kind}`
 
   switch (feedback.kind) {
     case "atom-graph":
@@ -73,13 +73,13 @@ const coverageEvidenceKeys = (
 export const projectionSnapshot = (
   input: ProgramFactProjectionInput,
 ): ProgramFactRuntimeSnapshot => {
-  const descriptors = input.descriptors ?? []
+  const schemaDescriptors = input.schemaDescriptors ?? []
   return {
-    descriptors,
-    obligations: input.obligations ?? descriptors.flatMap(deriveProtocolObligations),
-    evidenceRuns: input.evidenceRuns ?? [],
-    evidence: input.evidence ?? [],
-    generatedArtifacts: input.generatedArtifacts ?? [],
+    schemaDescriptors,
+    diagnosticRequirements: input.diagnosticRequirements ?? schemaDescriptors.flatMap(deriveDiagnosticRequirements),
+    observationRuns: input.observationRuns ?? [],
+    observations: input.observations ?? [],
+    artifacts: input.artifacts ?? [],
     replayMetadata: input.replayMetadata ?? [],
     waiverState: input.waiverState ?? [],
     coverageFeedback: input.coverageFeedback ?? [],
@@ -92,62 +92,62 @@ export const computeProgramFactFindings = (
 ): readonly ProgramRepairFinding[] => {
   const snapshot = projectionSnapshot(input)
   const observed = new Set([
-    ...snapshot.evidence.map(evidenceKey),
-    ...snapshot.coverageFeedback.flatMap(coverageEvidenceKeys),
+    ...snapshot.observations.map(observationKey),
+    ...snapshot.coverageFeedback.flatMap(coverageObservationKeys),
   ])
-  const missingEvidence = snapshot.obligations.filter((obligation) => {
-    if (isWaivedObligation(obligation, snapshot.waiverState)) {
+  const missingObservations = snapshot.diagnosticRequirements.filter((diagnosticRequirement) => {
+    if (isWaivedDiagnosticRequirement(diagnosticRequirement, snapshot.waiverState)) {
       return false
     }
-    const expectedKinds = requiredEvidenceKindsFor(obligation.kind)
+    const expectedKinds = requiredObservationKindsFor(diagnosticRequirement.kind)
     if (expectedKinds.length === 0) {
       return false
     }
-    const operationId = obligation.operationId ?? "package"
+    const symbolId = diagnosticRequirement.symbolId ?? "package"
     return !expectedKinds.some((kind) =>
-      observed.has(`${obligation.packageId}:${operationId}:${kind}`),
+      observed.has(`${diagnosticRequirement.projectId}:${symbolId}:${kind}`),
     )
   })
 
-  const staleArtifacts = snapshot.generatedArtifacts.filter((artifact) => !isCurrentArtifact(artifact))
+  const staleArtifacts = snapshot.artifacts.filter((artifact) => !isCurrentArtifact(artifact))
   const waiverIssues = snapshot.waiverState.filter((waiver) => waiver.status !== "active")
   const replayFailures = snapshot.replayMetadata.filter((metadata) => metadata.status === "failed")
   const highRejectionFilters = snapshot.coverageFeedback.filter(isHighRejectionFilter)
   const weakOracleFindings = snapshot.coverageFeedback.filter(isWeakOracleCoverage)
 
   return [
-    ...missingEvidence.map((obligation) => {
+    ...missingObservations.map((diagnosticRequirement) => {
       const finding: ProgramRepairFinding = {
-        findingId: `finding:${obligation.obligationId}`,
-        protocolId: input.protocolId,
-        packageId: input.packageId,
-        kind: "missing-obligation",
+        findingId: `finding:${diagnosticRequirement.diagnosticRequirementId}`,
+        schemaDescriptorId: input.schemaDescriptorId,
+        projectId: input.projectId,
+        kind: "missing-observation",
         sourcePath: input.sourcePath,
-        obligationId: obligation.obligationId,
-        explanation: obligation.reason,
-      repairActions: [{
-        id: repairActionIdForObligation(obligation),
-        title: repairActionTitleForObligation(obligation),
-        kind: "nx-generator",
-        target: `${input.packageId}:attune-repair`,
-        options: {
-          packageId: input.packageId,
-          repairKind: repairActionKindForObligation(obligation),
-          internalGenerator: repairActionTargetForObligation(obligation),
-          ...(obligation.operationId === undefined ? {} : { operationId: obligation.operationId }),
-        },
-      }],
+        diagnosticRequirementId: diagnosticRequirement.diagnosticRequirementId,
+        explanation: diagnosticRequirement.reason,
+        repairActions: [{
+          id: repairActionIdForDiagnosticRequirement(diagnosticRequirement),
+          title: repairActionTitleForDiagnosticRequirement(diagnosticRequirement),
+          kind: "nx-generator",
+          target: `${input.projectId}:attune-repair`,
+          options: {
+            projectId: input.projectId,
+            repairKind: repairActionKindForDiagnosticRequirement(diagnosticRequirement),
+            internalGenerator: repairActionTargetForDiagnosticRequirement(diagnosticRequirement),
+            ...(diagnosticRequirement.symbolId === undefined ? {} : { symbolId: diagnosticRequirement.symbolId }),
+          },
+        }],
       }
 
       return {
         ...finding,
-        ...(obligation.operationId === undefined ? {} : { operationId: obligation.operationId }),
+        ...(diagnosticRequirement.symbolId === undefined ? {} : { symbolId: diagnosticRequirement.symbolId }),
       }
     }),
     ...staleArtifacts.map((artifact) => ({
       findingId: `finding:${artifact.artifactId}`,
-      protocolId: input.protocolId,
-      packageId: input.packageId,
+      schemaDescriptorId: input.schemaDescriptorId,
+      projectId: input.projectId,
       kind: "stale-generated-source" as const,
       sourcePath: artifact.path,
       explanation: generatedArtifactExplanation(artifact),
@@ -155,9 +155,9 @@ export const computeProgramFactFindings = (
         id: "refresh-artifact-materialization",
         title: "Refresh artifact materialization",
         kind: "nx-generator" as const,
-        target: `${input.packageId}:attune-repair`,
+        target: `${input.projectId}:attune-repair`,
         options: {
-          packageId: input.packageId,
+          projectId: input.projectId,
           repairKind: "artifact-materialize",
           internalGenerator: "@attune/framework-nx:artifact-materialize",
         },
@@ -165,12 +165,12 @@ export const computeProgramFactFindings = (
     })),
     ...waiverIssues.map((waiver) => ({
       findingId: `finding:${waiver.waiverId}`,
-      protocolId: input.protocolId,
-      packageId: input.packageId,
+      schemaDescriptorId: input.schemaDescriptorId,
+      projectId: input.projectId,
       kind: "waiver-issue" as const,
       sourcePath: input.sourcePath,
-      ...(waiver.operationId === undefined ? {} : { operationId: waiver.operationId }),
-      ...(waiver.targetObligationId === undefined ? {} : { obligationId: waiver.targetObligationId }),
+      ...(waiver.symbolId === undefined ? {} : { symbolId: waiver.symbolId }),
+      ...(waiver.targetDiagnosticRequirementId === undefined ? {} : { diagnosticRequirementId: waiver.targetDiagnosticRequirementId }),
       explanation: `Waiver ${waiver.waiverId} is ${waiver.status}: ${waiver.reason}`,
       repairActions: [{
         id: "refresh-waiver-state",
@@ -178,18 +178,18 @@ export const computeProgramFactFindings = (
         kind: "nx-check" as const,
         target: "workspace:attune-check",
         options: {
-          packageId: input.packageId,
+          projectId: input.projectId,
           waiverId: waiver.waiverId,
         },
       }],
     })),
     ...replayFailures.map((metadata) => ({
       findingId: `finding:${metadata.replayId}`,
-      protocolId: input.protocolId,
-      packageId: input.packageId,
-      kind: "blocked-obligation" as const,
+      schemaDescriptorId: input.schemaDescriptorId,
+      projectId: input.projectId,
+      kind: "blocked-observation" as const,
       sourcePath: input.sourcePath,
-      ...(metadata.operationId === undefined ? {} : { operationId: metadata.operationId }),
+      ...(metadata.symbolId === undefined ? {} : { symbolId: metadata.symbolId }),
       explanation: replayFailureExplanation(metadata),
       repairActions: [{
         id: "replay-counterexample",
@@ -197,8 +197,8 @@ export const computeProgramFactFindings = (
         kind: "nx-check" as const,
         target: "workspace:attune-check",
         options: {
-          packageId: input.packageId,
-          internalTarget: "workspace:property-evidence",
+          projectId: input.projectId,
+          internalTarget: "workspace:property-observations",
           replayId: metadata.replayId,
           runId: metadata.runId,
           seed: metadata.seed,
@@ -208,11 +208,11 @@ export const computeProgramFactFindings = (
     })),
     ...highRejectionFilters.map((feedback) => ({
       findingId: `finding:${feedback.coverageId}`,
-      protocolId: input.protocolId,
-      packageId: input.packageId,
+      schemaDescriptorId: input.schemaDescriptorId,
+      projectId: input.projectId,
       kind: "high-rejection-filter" as const,
       sourcePath: feedback.sourcePath ?? input.sourcePath,
-      ...(feedback.operationId === undefined ? {} : { operationId: feedback.operationId }),
+      ...(feedback.symbolId === undefined ? {} : { symbolId: feedback.symbolId }),
       explanation: highRejectionExplanation(feedback),
       repairActions: [{
         id: "repair-generator-filter",
@@ -220,7 +220,7 @@ export const computeProgramFactFindings = (
         kind: "nx-check" as const,
         target: "workspace:attune-check",
         options: {
-          packageId: input.packageId,
+          projectId: input.projectId,
           internalTarget: "workspace:coverage-conformance",
           coverageId: feedback.coverageId,
           coveragePoint: feedback.coveragePoint,
@@ -229,11 +229,11 @@ export const computeProgramFactFindings = (
     })),
     ...weakOracleFindings.map((feedback) => ({
       findingId: `finding:${feedback.coverageId}`,
-      protocolId: input.protocolId,
-      packageId: input.packageId,
+      schemaDescriptorId: input.schemaDescriptorId,
+      projectId: input.projectId,
       kind: "weak-oracle" as const,
       sourcePath: feedback.sourcePath ?? input.sourcePath,
-      ...(feedback.operationId === undefined ? {} : { operationId: feedback.operationId }),
+      ...(feedback.symbolId === undefined ? {} : { symbolId: feedback.symbolId }),
       explanation: `Implementation coverage reached ${feedback.coveragePoint}, but expected semantic graph movement or law observation was not recorded.`,
       repairActions: [{
         id: "strengthen-property-oracle",
@@ -241,8 +241,8 @@ export const computeProgramFactFindings = (
         kind: "nx-check" as const,
         target: "workspace:attune-check",
         options: {
-          packageId: input.packageId,
-          internalTarget: "workspace:property-evidence",
+          projectId: input.projectId,
+          internalTarget: "workspace:property-observations",
           coverageId: feedback.coverageId,
           coveragePoint: feedback.coveragePoint,
         },
@@ -251,29 +251,29 @@ export const computeProgramFactFindings = (
   ]
 }
 
-const isWaivedObligation = (
-  obligation: AttuneProtocolObligation,
+const isWaivedDiagnosticRequirement = (
+  diagnosticRequirement: ProgramDiagnosticRequirement,
   waivers: readonly DiagnosticWaiverState[],
 ): boolean =>
   waivers.some((waiver) =>
     waiver.status === "active" &&
-    waiver.packageId === obligation.packageId &&
+    waiver.projectId === diagnosticRequirement.projectId &&
     (
-      waiver.targetObligationId === obligation.obligationId ||
+      waiver.targetDiagnosticRequirementId === diagnosticRequirement.diagnosticRequirementId ||
       (
-        waiver.targetObligationId === undefined &&
-        waiver.operationId === obligation.operationId &&
-        waiver.category === obligation.kind
+        waiver.targetDiagnosticRequirementId === undefined &&
+        waiver.symbolId === diagnosticRequirement.symbolId &&
+        waiver.category === diagnosticRequirement.kind
       )
     )
   )
 
-const isCurrentArtifact = (artifact: AttuneGeneratedArtifactRecord): boolean =>
+const isCurrentArtifact = (artifact: ProgramArtifactRecord): boolean =>
   artifact.status === "current" &&
   (artifact.actualHash === undefined || artifact.actualHash === artifact.expectedHash)
 
 const generatedArtifactExplanation = (
-  artifact: AttuneGeneratedArtifactRecord,
+  artifact: ProgramArtifactRecord,
 ): string => {
   if (artifact.status === "missing") {
     return `Generated artifact ${artifact.path} is missing.`
@@ -325,8 +325,8 @@ const isWeakOracleCoverage = (
   feedback.status === "hit" &&
   isWeakOraclePayload(feedback.payload)
 
-const repairActionIdForObligation = (obligation: AttuneProtocolObligation): string => {
-  switch (obligation.kind) {
+const repairActionIdForDiagnosticRequirement = (diagnosticRequirement: ProgramDiagnosticRequirement): string => {
+  switch (diagnosticRequirement.kind) {
     case "type-guidance":
       return "refresh-schema-observations"
     case "view-movement":
@@ -336,8 +336,8 @@ const repairActionIdForObligation = (obligation: AttuneProtocolObligation): stri
   }
 }
 
-const repairActionTitleForObligation = (obligation: AttuneProtocolObligation): string => {
-  switch (obligation.kind) {
+const repairActionTitleForDiagnosticRequirement = (diagnosticRequirement: ProgramDiagnosticRequirement): string => {
+  switch (diagnosticRequirement.kind) {
     case "type-guidance":
       return "Refresh schema observations"
     case "view-movement":
@@ -347,8 +347,8 @@ const repairActionTitleForObligation = (obligation: AttuneProtocolObligation): s
   }
 }
 
-const repairActionKindForObligation = (obligation: AttuneProtocolObligation): string => {
-  switch (obligation.kind) {
+const repairActionKindForDiagnosticRequirement = (diagnosticRequirement: ProgramDiagnosticRequirement): string => {
+  switch (diagnosticRequirement.kind) {
     case "type-guidance":
       return "schema-observations"
     case "view-movement":
@@ -358,8 +358,8 @@ const repairActionKindForObligation = (obligation: AttuneProtocolObligation): st
   }
 }
 
-const repairActionTargetForObligation = (obligation: AttuneProtocolObligation): string => {
-  switch (obligation.kind) {
+const repairActionTargetForDiagnosticRequirement = (diagnosticRequirement: ProgramDiagnosticRequirement): string => {
+  switch (diagnosticRequirement.kind) {
     case "type-guidance":
       return "@attune/framework-nx:schema-observations"
     case "view-movement":
@@ -375,7 +375,7 @@ export const diagnosticsForProgramFacts = (
   computeProgramFactFindings(input).map(diagnosticFromRepairFinding)
 
 export const ProgramFactProjectionLiveValue: ProgramFactProjectionApi = {
-  deriveObligations: deriveProtocolObligations,
+  deriveDiagnosticRequirements: deriveDiagnosticRequirements,
   computeRepairFindings: computeProgramFactFindings,
 }
 

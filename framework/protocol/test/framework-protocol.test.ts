@@ -18,19 +18,19 @@ import {
   assertTypeGuidanceComplete,
   baseAtom,
   definePackageViewGraph,
-  deriveProtocolObligations,
-  deriveOperationRegistry,
-  deriveOperationToViewEdges,
+  deriveDiagnosticRequirements,
+  deriveSymbolProjectionEdges,
+  deriveSymbolRegistry,
   diagnoseAvoidableStringReferences,
   defineAttunePackage,
   derivedAtom,
-  descriptorFromPackageContract,
+  schemaDescriptorFromProjectFacts,
   diagnosticFromRepairFinding,
   extractProtocolSourceSummary,
-  hashProtocolValue,
+  hashProgramValue,
   packageViewAtom,
   projection,
-  protocolIdForPackage,
+  schemaDescriptorIdForProject,
   reactivityKey,
   roundtripSourceReference,
   touchedViewsFromReferences,
@@ -40,7 +40,7 @@ import {
   waiverDeltasFromFindings,
   views,
   type InputOf,
-  type OperationIds,
+  type SymbolIds,
   type OutputOf,
 } from "../src/index.js"
 
@@ -66,7 +66,7 @@ describe("@attune/framework-protocol", () => {
 
     expect(contract.packageId).toBe("demo")
     expect(contract.operations[0]?.kind).toBe("projection")
-    expect(protocolIdForPackage(contract.packageId)).toBe("attune/package/demo")
+    expect(schemaDescriptorIdForProject(contract.packageId)).toBe("attune/project/demo")
   })
 
   it("exposes compile-only contract conformance helpers through the public framework facade", () => {
@@ -109,7 +109,7 @@ describe("@attune/framework-protocol", () => {
     expect(assertExactHandlers(contract, handlers)).toBe(true)
     expect(assertPropertyHarnesses(contract, properties)).toBe(true)
     expect(assertTypeGuidanceComplete(contract, typeGuidance)).toBe(true)
-    expectTypeOf<OperationIds<typeof contract>>().toEqualTypeOf<"lookup">()
+    expectTypeOf<SymbolIds<typeof contract>>().toEqualTypeOf<"lookup">()
     expectTypeOf<InputOf<typeof contract, "lookup">>().toEqualTypeOf<{ readonly id: string }>()
     expectTypeOf<OutputOf<typeof contract, "lookup">>().toEqualTypeOf<{ readonly value: string }>()
   })
@@ -203,24 +203,24 @@ describe("@attune/framework-protocol", () => {
   it("projects protocol deltas into framework diagnostics", () => {
     const diagnostic = diagnosticFromRepairFinding({
       findingId: "finding-1",
-      protocolId: "attune/package/demo",
-      packageId: "demo",
-      kind: "missing-obligation",
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
+      kind: "missing-observation",
       sourcePath: "packages/demo/src/attune.package.ts",
-      explanation: "missing generated evidence",
+      explanation: "missing generated observations",
       repairActions: [{
-        id: "generate-evidence",
-        title: "Generate property evidence scaffold",
+        id: "generate-observations",
+        title: "Generate property observations scaffold",
         kind: "nx-generator",
-        target: "@attune/framework-nx:protocol-evidence",
+        target: "@attune/framework-nx:protocol-observations",
       }],
     })
 
-    expect(diagnostic.code).toBe("attune/protocol/missing-obligation")
-    expect(diagnostic.suggestedActions[0]?.title).toContain("evidence")
+    expect(diagnostic.code).toBe("attune/program-facts/missing-observation")
+    expect(diagnostic.suggestedActions[0]?.title).toContain("observations")
   })
 
-  it("derives stable descriptor hashes and obligations from project factss", () => {
+  it("derives stable descriptor hashes and diagnosticRequirements from project factss", () => {
     const PackageViews = views({
       reactivityKeys: ["demo.changed"],
       atoms: ["demoAtom"],
@@ -240,13 +240,13 @@ describe("@attune/framework-protocol", () => {
       ],
     } as const)
 
-    const descriptor = descriptorFromPackageContract({
+    const descriptor = schemaDescriptorFromProjectFacts({
       sourcePath: "packages/demo/src/attune.package.ts",
       contract,
     })
-    expect(descriptor.descriptorHash).toBe(hashProtocolValue({
-      protocolId: "attune/package/demo",
-      packageId: "demo",
+    expect(descriptor.descriptorHash).toBe(hashProgramValue({
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
       packageKind: "core-discovery-runtime",
       sourcePath: "packages/demo/src/attune.package.ts",
       views: PackageViews,
@@ -262,7 +262,7 @@ describe("@attune/framework-protocol", () => {
       waivers: [],
       coverageExpectations: [],
     }))
-    expect(deriveProtocolObligations(descriptor).map((obligation) => obligation.kind)).toEqual([
+    expect(deriveDiagnosticRequirements(descriptor).map((obligation) => obligation.kind)).toEqual([
       "handler",
       "property",
       "law",
@@ -282,23 +282,23 @@ describe("@attune/framework-protocol", () => {
     })
 
     const findings = diagnoseProtocolWaivers({
-      packageId: "demo",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
       today: "2026-06-22",
       waivers: [waiver],
     })
     expect(findings).toEqual([expect.objectContaining({
-      code: "attune/protocol/waiver/expired-temporary",
+      code: "attune/program-facts/waiver/expired-temporary",
       severity: "error",
       waiverId: "demo/temporary-generator-bridge",
     })])
 
     expect(waiverDeltasFromFindings({
-      protocolId: "attune/package/demo",
+      schemaDescriptorId: "attune/project/demo",
       findings,
     })).toEqual([expect.objectContaining({
       kind: "waiver-issue",
-      packageId: "demo",
+      projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
     })])
   })
@@ -307,13 +307,13 @@ describe("@attune/framework-protocol", () => {
     const changed = reactivityKey({
       sourcePath: "packages/demo/src/attune.package.ts",
       symbolName: "projectionChanged",
-    }, { packageId: "demo" })
+    }, { projectId: "demo" })
     const overridden = packageViewAtom({
       sourcePath: "packages/demo/src/attune.package.ts",
       exportName: "WorkbenchSnapshot",
       symbolName: "workbenchSnapshotAtom",
     }, {
-      packageId: "demo",
+      projectId: "demo",
       explicitId: "demo.view.workbench-snapshot",
     })
 
@@ -326,19 +326,19 @@ describe("@attune/framework-protocol", () => {
     const changed = reactivityKey({
       sourcePath: "packages/demo/src/attune.package.ts",
       symbolName: "projectionChanged",
-    }, { packageId: "demo" })
+    }, { projectId: "demo" })
     const readModel = baseAtom({
       sourcePath: "packages/demo/src/attune.package.ts",
       symbolName: "discoveryReadModel",
-    }, { packageId: "demo" })
+    }, { projectId: "demo" })
     const packet = derivedAtom({
       sourcePath: "packages/demo/src/attune.package.ts",
       symbolName: "decisionPacket",
-    }, { packageId: "demo" })
+    }, { projectId: "demo" })
     const snapshot = packageViewAtom({
       sourcePath: "packages/demo/src/attune.package.ts",
       symbolName: "workbenchSnapshot",
-    }, { packageId: "demo" })
+    }, { projectId: "demo" })
 
     const operation = projection({
       id: "event-replay-projection",
@@ -356,8 +356,8 @@ describe("@attune/framework-protocol", () => {
       packageViewAtoms: [{ id: snapshot.id, reads: [packet.id] }],
     } as const)
 
-    expect(deriveOperationToViewEdges(operation, graph)).toEqual([{
-      operationId: "event-replay-projection",
+    expect(deriveSymbolProjectionEdges(operation, graph)).toEqual([{
+      symbolId: "event-replay-projection",
       reactivityKey: changed.id,
       baseAtom: readModel.id,
       derivedAtoms: [packet.id],
@@ -365,16 +365,16 @@ describe("@attune/framework-protocol", () => {
     }])
   })
 
-  it("derives exact operation registries and rejects duplicate ids", () => {
-    const operation = projection({
+  it("derives exact symbol registries and rejects duplicate ids", () => {
+    const symbol = projection({
       id: "demo-projection",
       input: "demo-input-schema" as never,
       output: "demo-output-schema" as never,
     })
 
-    expect(deriveOperationRegistry([operation] as const)["demo-projection"]).toBe(operation)
-    expect(() => deriveOperationRegistry([operation, operation] as const)).toThrow(
-      /Duplicate Attune operation ids/,
+    expect(deriveSymbolRegistry([symbol] as const)["demo-projection"]).toBe(symbol)
+    expect(() => deriveSymbolRegistry([symbol, symbol] as const)).toThrow(
+      /Duplicate Attune symbol ids/,
     )
   })
 
@@ -382,13 +382,13 @@ describe("@attune/framework-protocol", () => {
     const changed = reactivityKey({
       sourcePath: "packages/demo/src/attune.package.ts",
       symbolName: "projectionChanged",
-    }, { packageId: "demo" })
+    }, { projectId: "demo" })
 
     expect(diagnoseAvoidableStringReferences([
       changed.id,
       "demo.raw-string",
     ], [changed])).toEqual([{
-      code: "attune/protocol/avoidable-string-reference",
+      code: "attune/program-facts/avoidable-string-reference",
       reference: "demo.raw-string",
       message: "Reference demo.raw-string is not backed by a source declaration.",
       suggestedAction: "Replace the raw string with a framework source reference or add an explicit id override.",
@@ -423,7 +423,7 @@ describe("@attune/framework-protocol", () => {
     try {
       const summary = extractProtocolSourceSummary({
         sourceFiles: [fixturePath],
-        packageId: "demo",
+        projectId: "demo",
       })
 
       expect(summary.sourceFiles).toEqual([fixturePath])
@@ -464,7 +464,7 @@ describe("@attune/framework-protocol", () => {
         sourceImport.localName
       )).toEqual(expect.arrayContaining(["projection"]))
       expect(summary.diagnostics).toEqual(expect.arrayContaining([{
-        code: "attune/protocol/avoidable-string-reference",
+        code: "attune/program-facts/avoidable-string-reference",
         reference: "demo.view.workbench-snapshot",
         message: "Reference demo.view.workbench-snapshot has a source declaration and should use its source reference.",
         suggestedAction: "Replace the raw string with the exported framework source reference.",

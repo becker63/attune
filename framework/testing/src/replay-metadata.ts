@@ -29,9 +29,9 @@ export const ReplayMetadataSchema = Schema.Struct({
 
 export type CounterexampleCacheEntry = Readonly<{
   readonly cacheKey: string
-  readonly protocolId: string
-  readonly packageId: string
-  readonly operationId: string
+  readonly schemaDescriptorId: string
+  readonly projectId: string
+  readonly symbolId: string
   readonly propertyId: string
   readonly runId: string
   readonly replay: ReplayMetadata
@@ -45,9 +45,9 @@ export type CounterexampleCacheEntry = Readonly<{
 
 export const CounterexampleCacheEntrySchema = Schema.Struct({
   cacheKey: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.String,
   propertyId: Schema.String,
   runId: Schema.String,
   replay: ReplayMetadataSchema,
@@ -105,11 +105,11 @@ const summarize = (value: unknown): string => {
 export const summarizeEvidenceValue = summarize
 
 export const counterexampleCacheKey = (
-  input: Pick<CounterexampleCacheEntry, "packageId" | "operationId" | "propertyId" | "replay">,
+  input: Pick<CounterexampleCacheEntry, "projectId" | "symbolId" | "propertyId" | "replay">,
 ): string =>
   [
-    input.packageId,
-    input.operationId,
+    input.projectId,
+    input.symbolId,
     input.propertyId,
     input.replay.seed,
     input.replay.path ?? "no-path",

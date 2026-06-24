@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 
-export type ProtocolObligationKind =
+export type ProgramDiagnosticRequirementKind =
   | "handler"
   | "property"
   | "type-guidance"
@@ -11,7 +11,7 @@ export type ProtocolObligationKind =
   | "stale-output"
   | "waiver"
 
-export const ProtocolObligationKindSchema = Schema.Literals([
+export const ProgramDiagnosticRequirementKindSchema = Schema.Literals([
   "handler",
   "property",
   "type-guidance",
@@ -23,32 +23,32 @@ export const ProtocolObligationKindSchema = Schema.Literals([
   "waiver",
 ] as const)
 
-export interface AttuneProtocolObligation {
-  readonly obligationId: string
-  readonly protocolId: string
-  readonly packageId: string
-  readonly operationId?: string
-  readonly kind: ProtocolObligationKind
+export interface ProgramDiagnosticRequirement {
+  readonly diagnosticRequirementId: string
+  readonly schemaDescriptorId: string
+  readonly projectId: string
+  readonly symbolId?: string
+  readonly kind: ProgramDiagnosticRequirementKind
   readonly reason: string
 }
 
-export const AttuneProtocolObligationSchema = Schema.Struct({
-  obligationId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.optional(Schema.String),
-  kind: ProtocolObligationKindSchema,
+export const ProgramDiagnosticRequirementSchema = Schema.Struct({
+  diagnosticRequirementId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.optional(Schema.String),
+  kind: ProgramDiagnosticRequirementKindSchema,
   reason: Schema.String,
 })
 
-export const obligationId = (
-  packageId: string,
-  kind: ProtocolObligationKind,
-  operationId = "package",
-): string => `${packageId}:${operationId}:${kind}`
+export const diagnosticRequirementId = (
+  projectId: string,
+  kind: ProgramDiagnosticRequirementKind,
+  symbolId = "package",
+): string => `${projectId}:${symbolId}:${kind}`
 
-export const requiredEvidenceKindsFor = (
-  kind: ProtocolObligationKind,
+export const requiredObservationKindsFor = (
+  kind: ProgramDiagnosticRequirementKind,
 ): readonly string[] => {
   switch (kind) {
     case "property":

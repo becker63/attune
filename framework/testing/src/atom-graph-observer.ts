@@ -1,4 +1,4 @@
-import type { AttuneProtocolEvidenceEvent } from "@attune/framework-protocol"
+import type { ProgramObservation } from "@attune/framework-protocol"
 
 import { observationEvent, type ObservationContext } from "./observation-producer.js"
 
@@ -22,8 +22,8 @@ export type AtomGraphObservation = Readonly<{
 }>
 
 export type AtomGraphObserverInput = Readonly<{
-  readonly packageId: string
-  readonly operationId?: string
+  readonly projectId: string
+  readonly symbolId?: string
   readonly replay?: ObservationContext["replay"]
 }>
 
@@ -68,15 +68,15 @@ export const mergeAtomGraphObservations = (
 
 export const atomMovementEvidence = (
   context: ObservationContext,
-  operationId: string,
+  symbolId: string,
   observations: readonly AtomGraphObservation[],
-): readonly AttuneProtocolEvidenceEvent[] =>
+): readonly ProgramObservation[] =>
   mergeAtomGraphObservations(observations)
     .filter(observedMovement)
     .map((observation, index) =>
       observationEvent(context, {
         kind: observation.reactivityKey === undefined ? "atom-movement" : "reactivity-key",
-        operationId,
+        symbolId,
         payload: {
           observation,
           replay: context.replay,

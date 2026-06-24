@@ -43,7 +43,7 @@ export interface SymbolLikeDeclaration {
 }
 
 export interface IdDerivationOptions {
-  readonly packageId?: string
+  readonly projectId?: string
   readonly explicitId?: string
   readonly namespace?: string
 }
@@ -75,7 +75,7 @@ export const stableIdFromDeclaration = (
   if (options.explicitId !== undefined) return options.explicitId
 
   const segments = [
-    options.packageId,
+    options.projectId,
     options.namespace,
     kebabCase(declaration.exportName || declaration.symbolName),
   ].filter((segment): segment is string => segment !== undefined && segment.length > 0)
@@ -189,8 +189,8 @@ export interface PackageViewGraph {
   readonly packageViewAtoms: readonly PackageViewAtomNode[]
 }
 
-export interface OperationViewEdge {
-  readonly operationId: string
+export interface SymbolProjectionEdge {
+  readonly symbolId: string
   readonly reactivityKey: string
   readonly baseAtom: string
   readonly derivedAtoms: readonly string[]
@@ -222,18 +222,18 @@ const reachableAtoms = (
   return [...reachable].sort()
 }
 
-export const deriveOperationToViewEdges = (
-  operation: Pick<AttuneOperationContract, "id" | "views">,
+export const deriveSymbolProjectionEdges = (
+  symbol: Pick<AttuneOperationContract, "id" | "views">,
   graph: PackageViewGraph,
-): readonly OperationViewEdge[] => {
-  const touchedKeys = operation.views?.reactivityKeys ?? []
+): readonly SymbolProjectionEdge[] => {
+  const touchedKeys = symbol.views?.reactivityKeys ?? []
   return touchedKeys.flatMap((reactivityKeyId) =>
     graph.baseAtoms
       .filter((atom) => atom.refreshesOn.includes(reactivityKeyId))
       .map((atom) => {
         const derivedAtoms = reachableAtoms(atom.id, graph.derivedAtoms)
         return {
-          operationId: operation.id,
+          symbolId: symbol.id,
           reactivityKey: reactivityKeyId,
           baseAtom: atom.id,
           derivedAtoms,
@@ -261,41 +261,41 @@ export const touchedViewsFromReferences = (
   }),
 })
 
-export type OperationRegistry<
-  Operations extends readonly AttuneOperationContract[],
+export type SymbolRegistry<
+  Symbols extends readonly AttuneOperationContract[],
 > = {
-  readonly [Operation in Operations[number] as Operation["id"]]: Operation
+  readonly [Symbol in Symbols[number] as Symbol["id"]]: Symbol
 }
 
-export const deriveOperationRegistry = <
-  const Operations extends readonly AttuneOperationContract[],
+export const deriveSymbolRegistry = <
+  const Symbols extends readonly AttuneOperationContract[],
 >(
-  operations: Operations,
-): OperationRegistry<Operations> => {
+  symbols: Symbols,
+): SymbolRegistry<Symbols> => {
   const entries = new Map<string, AttuneOperationContract>()
   const duplicates = new Set<string>()
 
-  for (const operation of operations) {
-    if (entries.has(operation.id)) duplicates.add(operation.id)
-    entries.set(operation.id, operation)
+  for (const symbol of symbols) {
+    if (entries.has(symbol.id)) duplicates.add(symbol.id)
+    entries.set(symbol.id, symbol)
   }
 
   if (duplicates.size > 0) {
-    throw new Error(`Duplicate Attune operation ids: ${[...duplicates].sort().join(", ")}`)
+    throw new Error(`Duplicate Attune symbol ids: ${[...duplicates].sort().join(", ")}`)
   }
 
-  return Object.fromEntries(entries) as OperationRegistry<Operations>
+  return Object.fromEntries(entries) as SymbolRegistry<Symbols>
 }
 
 export interface StringReferenceDiagnostic {
-  readonly code: "attune/protocol/avoidable-string-reference"
+  readonly code: "attune/program-facts/avoidable-string-reference"
   readonly message: string
   readonly reference: string
   readonly suggestedAction: string
 }
 
 const StringReferenceDiagnosticSchema = Schema.Struct({
-  code: Schema.Literal("attune/protocol/avoidable-string-reference"),
+  code: Schema.Literal("attune/program-facts/avoidable-string-reference"),
   message: Schema.String,
   reference: Schema.String,
   suggestedAction: Schema.String,
@@ -309,7 +309,7 @@ export const diagnoseAvoidableStringReferences = (
   return values
     .filter((value) => !knownIds.has(value))
     .map((reference) => ({
-      code: "attune/protocol/avoidable-string-reference" as const,
+      code: "attune/program-facts/avoidable-string-reference" as const,
       reference,
       message: `Reference ${reference} is not backed by a source declaration.`,
       suggestedAction: "Replace the raw string with a framework source reference or add an explicit id override.",
@@ -349,7 +349,7 @@ export type ProtocolSourceExtractionSummary =
 
 export interface ExtractProtocolSourceSummaryOptions {
   readonly sourceFiles: readonly string[]
-  readonly packageId?: string
+  readonly projectId?: string
   readonly compilerOptions?: ts.CompilerOptions
   readonly protocolFactoryNames?: readonly string[]
 }
@@ -589,7 +589,7 @@ const diagnoseRawStringsWithSourceReferences = (
   return values
     .filter((value) => knownIds.has(value) && !allowed.has(value))
     .map((reference) => ({
-      code: "attune/protocol/avoidable-string-reference" as const,
+      code: "attune/program-facts/avoidable-string-reference" as const,
       reference,
       message: `Reference ${reference} has a source declaration and should use its source reference.`,
       suggestedAction: "Replace the raw string with the exported framework source reference.",
@@ -617,12 +617,12 @@ const declarationSymbolName = (
 
 const idDerivationOptions = (
   options: {
-    readonly packageId: string | undefined
+    readonly projectId: string | undefined
     readonly namespace: string | undefined
     readonly explicitId: string | undefined
   },
 ): IdDerivationOptions => ({
-  ...(options.packageId === undefined ? {} : { packageId: options.packageId }),
+  ...(options.projectId === undefined ? {} : { projectId: options.projectId }),
   ...(options.namespace === undefined ? {} : { namespace: options.namespace }),
   ...(options.explicitId === undefined ? {} : { explicitId: options.explicitId }),
 })
@@ -689,7 +689,7 @@ export const extractProtocolSourceSummary = (
           .map((identifier) => importByFileAndLocalName.get(`${sourceFile.fileName}:${identifier}`))
           .filter((sourceImport): sourceImport is ProtocolSourceImport => sourceImport !== undefined)
         const id = stableIdFromDeclaration(declaration, idDerivationOptions({
-          packageId: options.packageId,
+          projectId: options.projectId,
           namespace: "symbol",
           explicitId: undefined,
         }))
@@ -718,7 +718,7 @@ export const extractProtocolSourceSummary = (
       const factoryInfo = factoryName === undefined ? undefined : protocolFactoryKinds.get(factoryName)
       const explicitId = explicitIdFromCall(call)
       const idOptions = idDerivationOptions({
-        packageId: options.packageId,
+        projectId: options.projectId,
         namespace: factoryInfo?.namespace,
         explicitId,
       })

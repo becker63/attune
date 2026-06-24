@@ -1,9 +1,9 @@
 import { Context, Effect, Layer } from "effect"
 import type {
-  AttuneGeneratedArtifactRecord,
-  AttuneProtocolDescriptor,
-  AttuneProtocolEvidenceEvent,
-  AttuneProtocolEvidenceRun,
+  ProgramArtifactRecord,
+  ProgramSchemaDescriptor,
+  ProgramObservation,
+  ProgramObservationRun,
 } from "@attune/framework-protocol"
 
 import { ProgramFactProjection, type ProgramFactProjectionApi } from "./ProgramFactProjection.js"
@@ -19,24 +19,24 @@ import {
 } from "./ProgramFactStore.js"
 
 export interface SchemaDescriptorReceipt {
-  readonly protocolId: string
-  readonly packageId: string
+  readonly schemaDescriptorId: string
+  readonly projectId: string
   readonly descriptorHash: string
-  readonly diagnosticRuleCount: number
+  readonly diagnosticRequirementCount: number
 }
 
 export interface ProgramFactRuntimeApi {
   readonly materializeSchemaDescriptor: (
-    descriptor: AttuneProtocolDescriptor,
+    descriptor: ProgramSchemaDescriptor,
   ) => Effect.Effect<SchemaDescriptorReceipt, ProgramFactQueryError>
   readonly recordArtifact: (
-    record: AttuneGeneratedArtifactRecord,
+    record: ProgramArtifactRecord,
   ) => Effect.Effect<void, ProgramFactQueryError>
   readonly recordObservationRun: (
-    run: AttuneProtocolEvidenceRun,
+    run: ProgramObservationRun,
   ) => Effect.Effect<void, ProgramFactQueryError>
   readonly recordObservation: (
-    event: AttuneProtocolEvidenceEvent,
+    event: ProgramObservation,
   ) => Effect.Effect<void, ProgramFactQueryError>
   readonly recordReplayObservation: (
     metadata: ReplayObservationMetadata,
@@ -48,7 +48,7 @@ export interface ProgramFactRuntimeApi {
     feedback: CoverageObservationFeedback,
   ) => Effect.Effect<void, ProgramFactQueryError>
   readonly refreshRepairFindings: (
-    packageId: string,
+    projectId: string,
   ) => Effect.Effect<void, ProgramFactQueryError>
 }
 
@@ -56,27 +56,29 @@ export const makeProgramFactRuntime = (
   store: ProgramFactStoreApi,
   projection: ProgramFactProjectionApi,
 ): ProgramFactRuntimeApi => {
-  const refreshRepairFindings = (packageId: string): Effect.Effect<void, ProgramFactQueryError> =>
+  const refreshRepairFindings = (projectId: string): Effect.Effect<void, ProgramFactQueryError> =>
     store.snapshot().pipe(
       Effect.catch((error) => Effect.fail(mapStoreError(error, "snapshot"))),
       Effect.flatMap(decodeProgramFactStoreSnapshot),
       Effect.flatMap((snapshot) => {
-        const descriptor = snapshot.descriptors.find((candidate) => candidate.packageId === packageId)
+        const descriptor = snapshot.schemaDescriptors.find((candidate) => candidate.projectId === projectId)
         const repairFindings = projection.computeRepairFindings({
-          protocolId: descriptor?.protocolId ?? `attune/package/${packageId}`,
-          packageId,
+          schemaDescriptorId: descriptor?.schemaDescriptorId ?? `attune/project/${projectId}`,
+          projectId,
           sourcePath: descriptor?.sourcePath ?? "unknown",
-          descriptors: snapshot.descriptors.filter((candidate) => candidate.packageId === packageId),
-          obligations: snapshot.obligations.filter((obligation) => obligation.packageId === packageId),
-          evidenceRuns: snapshot.evidenceRuns.filter((run) => run.packageId === packageId),
-          evidence: snapshot.evidence.filter((event) => event.packageId === packageId),
-          generatedArtifacts: snapshot.generatedArtifacts.filter((artifact) => artifact.packageId === packageId),
-          replayMetadata: snapshot.replayMetadata.filter((metadata) => metadata.packageId === packageId),
-          waiverState: snapshot.waiverState.filter((waiver) => waiver.packageId === packageId),
-          coverageFeedback: snapshot.coverageFeedback.filter((feedback) => feedback.packageId === packageId),
+          schemaDescriptors: snapshot.schemaDescriptors.filter((candidate) => candidate.projectId === projectId),
+          diagnosticRequirements: snapshot.diagnosticRequirements.filter((diagnosticRequirement) =>
+            diagnosticRequirement.projectId === projectId
+          ),
+          observationRuns: snapshot.observationRuns.filter((run) => run.projectId === projectId),
+          observations: snapshot.observations.filter((event) => event.projectId === projectId),
+          artifacts: snapshot.artifacts.filter((artifact) => artifact.projectId === projectId),
+          replayMetadata: snapshot.replayMetadata.filter((metadata) => metadata.projectId === projectId),
+          waiverState: snapshot.waiverState.filter((waiver) => waiver.projectId === projectId),
+          coverageFeedback: snapshot.coverageFeedback.filter((feedback) => feedback.projectId === projectId),
         })
 
-        return store.replaceRepairFindings(packageId, repairFindings).pipe(
+        return store.replaceRepairFindings(projectId, repairFindings).pipe(
           Effect.catch((error) => Effect.fail(mapStoreError(error, "replaceRepairFindings"))),
         )
       }),
@@ -84,52 +86,52 @@ export const makeProgramFactRuntime = (
 
   return {
     materializeSchemaDescriptor: (descriptor) => {
-      const obligations = projection.deriveObligations(descriptor)
+      const diagnosticRequirements = projection.deriveDiagnosticRequirements(descriptor)
       return store.putSchemaDescriptor(descriptor).pipe(
         Effect.catch((error) => Effect.fail(mapStoreError(error, "putSchemaDescriptor"))),
         Effect.flatMap(() =>
-          store.putDiagnosticRules(obligations).pipe(
-            Effect.catch((error) => Effect.fail(mapStoreError(error, "putDiagnosticRules"))),
+          store.putDiagnosticRequirements(diagnosticRequirements).pipe(
+            Effect.catch((error) => Effect.fail(mapStoreError(error, "putDiagnosticRequirements"))),
           )
         ),
-        Effect.flatMap(() => refreshRepairFindings(descriptor.packageId)),
+        Effect.flatMap(() => refreshRepairFindings(descriptor.projectId)),
         Effect.as({
-          protocolId: descriptor.protocolId,
-          packageId: descriptor.packageId,
+          schemaDescriptorId: descriptor.schemaDescriptorId,
+          projectId: descriptor.projectId,
           descriptorHash: descriptor.descriptorHash,
-          diagnosticRuleCount: obligations.length,
+          diagnosticRequirementCount: diagnosticRequirements.length,
         }),
       )
     },
     recordArtifact: (record) =>
       store.recordArtifact(record).pipe(
         Effect.catch((error) => Effect.fail(mapStoreError(error, "recordArtifact"))),
-        Effect.flatMap(() => refreshRepairFindings(record.packageId)),
+        Effect.flatMap(() => refreshRepairFindings(record.projectId)),
       ),
     recordObservationRun: (run) =>
       store.recordObservationRun(run).pipe(
         Effect.catch((error) => Effect.fail(mapStoreError(error, "recordObservationRun"))),
-        Effect.flatMap(() => refreshRepairFindings(run.packageId)),
+        Effect.flatMap(() => refreshRepairFindings(run.projectId)),
       ),
     recordObservation: (event) =>
       store.recordObservation(event).pipe(
         Effect.catch((error) => Effect.fail(mapStoreError(error, "recordObservation"))),
-        Effect.flatMap(() => refreshRepairFindings(event.packageId)),
+        Effect.flatMap(() => refreshRepairFindings(event.projectId)),
       ),
     recordReplayObservation: (metadata) =>
       store.recordReplayObservation(metadata).pipe(
         Effect.catch((error) => Effect.fail(mapStoreError(error, "recordReplayObservation"))),
-        Effect.flatMap(() => refreshRepairFindings(metadata.packageId)),
+        Effect.flatMap(() => refreshRepairFindings(metadata.projectId)),
       ),
     recordDiagnosticWaiver: (waiver) =>
       store.recordDiagnosticWaiver(waiver).pipe(
         Effect.catch((error) => Effect.fail(mapStoreError(error, "recordDiagnosticWaiver"))),
-        Effect.flatMap(() => refreshRepairFindings(waiver.packageId)),
+        Effect.flatMap(() => refreshRepairFindings(waiver.projectId)),
       ),
     recordCoverageObservation: (feedback) =>
       store.recordCoverageObservation(feedback).pipe(
         Effect.catch((error) => Effect.fail(mapStoreError(error, "recordCoverageObservation"))),
-        Effect.flatMap(() => refreshRepairFindings(feedback.packageId)),
+        Effect.flatMap(() => refreshRepairFindings(feedback.projectId)),
       ),
     refreshRepairFindings,
   }

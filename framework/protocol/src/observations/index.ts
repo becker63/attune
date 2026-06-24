@@ -1,6 +1,6 @@
 import { Schema } from "effect"
 
-export type ProtocolEvidenceKind =
+export type ProgramObservationKind =
   | "schema-decode"
   | "law-observed"
   | "property-run"
@@ -11,7 +11,7 @@ export type ProtocolEvidenceKind =
   | "counterexample"
   | "weak-oracle"
 
-export const ProtocolEvidenceKindSchema = Schema.Literals([
+export const ProgramObservationKindSchema = Schema.Literals([
   "schema-decode",
   "law-observed",
   "property-run",
@@ -23,52 +23,52 @@ export const ProtocolEvidenceKindSchema = Schema.Literals([
   "weak-oracle",
 ] as const)
 
-export interface AttuneProtocolEvidenceEvent {
+export interface ProgramObservation {
   readonly eventId: string
   readonly runId: string
-  readonly protocolId: string
-  readonly packageId: string
-  readonly operationId?: string
-  readonly kind: ProtocolEvidenceKind
+  readonly schemaDescriptorId: string
+  readonly projectId: string
+  readonly symbolId?: string
+  readonly kind: ProgramObservationKind
   readonly observedAt: string
   readonly payload?: unknown
 }
 
-export const AttuneProtocolEvidenceEventSchema = Schema.Struct({
+export const ProgramObservationSchema = Schema.Struct({
   eventId: Schema.String,
   runId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
-  operationId: Schema.optional(Schema.String),
-  kind: ProtocolEvidenceKindSchema,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  symbolId: Schema.optional(Schema.String),
+  kind: ProgramObservationKindSchema,
   observedAt: Schema.String,
   payload: Schema.optional(Schema.Unknown),
 })
 
-export interface AttuneProtocolEvidenceRun {
+export interface ProgramObservationRun {
   readonly runId: string
-  readonly protocolId: string
-  readonly packageId: string
+  readonly schemaDescriptorId: string
+  readonly projectId: string
   readonly tier: "commit" | "push" | "proof-pressure" | "nightly" | "debug"
   readonly status: "running" | "passed" | "failed" | "blocked"
   readonly startedAt: string
   readonly completedAt?: string
 }
 
-export const AttuneProtocolEvidenceRunSchema = Schema.Struct({
+export const ProgramObservationRunSchema = Schema.Struct({
   runId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
   tier: Schema.Literals(["commit", "push", "proof-pressure", "nightly", "debug"] as const),
   status: Schema.Literals(["running", "passed", "failed", "blocked"] as const),
   startedAt: Schema.String,
   completedAt: Schema.optional(Schema.String),
 })
 
-export interface AttuneGeneratedArtifactRecord {
+export interface ProgramArtifactRecord {
   readonly artifactId: string
-  readonly protocolId: string
-  readonly packageId: string
+  readonly schemaDescriptorId: string
+  readonly projectId: string
   readonly path: string
   readonly generatorId: string
   readonly expectedHash: string
@@ -76,10 +76,10 @@ export interface AttuneGeneratedArtifactRecord {
   readonly status: "current" | "stale" | "missing"
 }
 
-export const AttuneGeneratedArtifactRecordSchema = Schema.Struct({
+export const ProgramArtifactRecordSchema = Schema.Struct({
   artifactId: Schema.String,
-  protocolId: Schema.String,
-  packageId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
   path: Schema.String,
   generatorId: Schema.String,
   expectedHash: Schema.String,

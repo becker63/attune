@@ -20,9 +20,9 @@ export const runtimeProgramFactStoreFromSqlite = (
       Effect.asVoid,
       Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "putSchemaDescriptor"))),
     ),
-  putDiagnosticRules: (batch) =>
-    sqliteStore.putDiagnosticRules(batch).pipe(
-      Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "putDiagnosticRules"))),
+  putDiagnosticRequirements: (batch) =>
+    sqliteStore.putDiagnosticRequirements(batch).pipe(
+      Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "putDiagnosticRequirements"))),
     ),
   recordObservationRun: (run) =>
     sqliteStore.recordObservationRun(run).pipe(
@@ -52,18 +52,18 @@ export const runtimeProgramFactStoreFromSqlite = (
     sqliteStore.putRepairFindings(repairFindings).pipe(
       Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "putRepairFindings"))),
     ),
-  replaceRepairFindings: (packageId, repairFindings) =>
-    sqliteStore.replaceRepairFindings(packageId, repairFindings).pipe(
+  replaceRepairFindings: (projectId, repairFindings) =>
+    sqliteStore.replaceRepairFindings(projectId, repairFindings).pipe(
       Effect.catch((error) => Effect.fail(toRuntimeStoreError(error, "replaceRepairFindings"))),
     ),
   snapshot: () =>
     sqliteStore.snapshot().pipe(
       Effect.map((snapshot) => ({
-        descriptors: snapshot.descriptors,
-        obligations: snapshot.obligations,
-        evidenceRuns: snapshot.evidenceRuns,
-        evidence: snapshot.evidence,
-        generatedArtifacts: snapshot.generatedArtifacts,
+        schemaDescriptors: snapshot.schemaDescriptors,
+        diagnosticRequirements: snapshot.diagnosticRequirements,
+        observationRuns: snapshot.observationRuns,
+        observations: snapshot.observations,
+        artifacts: snapshot.artifacts,
         replayMetadata: snapshot.replayMetadata,
         waiverState: snapshot.waiverState,
         coverageFeedback: snapshot.coverageFeedback,

@@ -25,12 +25,12 @@ import {
 import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
 const sourcePath = "packages/demo/src/attune.package.ts"
-const generatedPath = "packages/demo/src/generated/operation-registry.ts"
-const protocolId = "attune/package/demo"
+const generatedPath = "packages/demo/src/generated/symbol-registry.ts"
+const schemaDescriptorId = "attune/project/demo"
 
 const demoDescriptor = {
-  protocolId,
-  packageId: "demo",
+  schemaDescriptorId,
+  projectId: "demo",
   packageKind: "policy-plugin",
   descriptorHash: "demo-hash",
   sourcePath,
@@ -107,10 +107,10 @@ const runtimeView = (
       yield* runtime.materializeSchemaDescriptor(demoDescriptor)
       yield* runtime.recordArtifact({
         artifactId: "demo:registry",
-        protocolId,
-        packageId: "demo",
+        schemaDescriptorId,
+        projectId: "demo",
         path: generatedPath,
-        generatorId: "@attune/framework-nx:operation-registry",
+        generatorId: "@attune/framework-nx:symbol-registry",
         expectedHash: "expected",
         actualHash: "actual",
         status: "stale",
@@ -121,14 +121,14 @@ const runtimeView = (
         {
           sourcePath,
           projectId: "demo",
-          schemaDescriptorId: protocolId,
+          schemaDescriptorId: schemaDescriptorId,
           sourceRanges: sourceRangeIndexFromFixtures(
             [{
               sourcePath,
               text: [
-                "export const PackageContract = defineAttunePackage({",
-                "  packageId: \"demo\",",
-                "  operations: [projectOperation],",
+                "export const ProjectFacts = defineAttuneProjectFacts({",
+                "  id: \"demo\",",
+                "  symbols: [projectSymbol],",
                 "})",
               ].join("\n"),
             }],
@@ -137,8 +137,8 @@ const runtimeView = (
                 sourcePath,
                 projectId: "demo",
                 symbolId: "project",
-                diagnosticRuleId: "demo:project:property",
-                code: "attune/protocol/missing-obligation",
+                diagnosticRequirementId: "demo:project:property",
+                code: "attune/program-facts/missing-observation",
               }),
               sourcePath,
               declarationRange: {
@@ -155,21 +155,21 @@ const runtimeView = (
 describe("@attune/framework-language-service", () => {
   it("turns runtime diagnostics into editor actions without mutating files", () => {
     const diagnostic = {
-      code: "attune/protocol/missing-obligation",
+      code: "attune/program-facts/missing-observation",
       severity: "error" as const,
-      packageId: "demo",
+      projectId: "demo",
       sourcePath,
-      explanation: "missing evidence",
+      explanation: "missing observations",
       suggestedActions: [{
         id: "generate",
-        title: "Generate property evidence scaffold",
+        title: "Generate property observations scaffold",
         kind: "nx-generator" as const,
         target: "demo:attune-repair",
         options: {
-          internalGenerator: "@attune/framework-nx:protocol-evidence",
+          internalGenerator: "@attune/framework-nx:observation-scaffold",
         },
       }],
-      relatedEvidence: [],
+      relatedObservations: [],
     }
 
     expect(codeActionsForDiagnostic(diagnostic)[0]?.action.kind).toBe("nx-generator")
@@ -179,10 +179,10 @@ describe("@attune/framework-language-service", () => {
   it("maps source declaration fixtures to diagnostic ranges", async () => {
     const view = await runtimeView()
     const propertyDiagnostic = view.diagnostics.find((diagnostic) =>
-      diagnostic.obligationId === "demo:project:property"
+      diagnostic.diagnosticRequirementId === "demo:project:property"
     )
 
-    expect(propertyDiagnostic?.range).toEqual({ start: 89, end: 105 })
+    expect(propertyDiagnostic?.range).toEqual({ start: 84, end: 100 })
   })
 
   it("projects invalid runtime store payloads into displayable diagnostics", async () => {
@@ -192,12 +192,12 @@ describe("@attune/framework-language-service", () => {
         const diagnostics = yield* ProgramDiagnostics
         return yield* projectLanguageServiceViewFromRuntime(
           { diagnostics, query },
-          { sourcePath, projectId: "demo", schemaDescriptorId: protocolId },
+          { sourcePath, projectId: "demo", schemaDescriptorId: schemaDescriptorId },
         )
       }), {
-        descriptors: [{
-          protocolId,
-          packageId: "demo",
+        schemaDescriptors: [{
+          schemaDescriptorId,
+          projectId: "demo",
           sourcePath,
           descriptorHash: "bad",
         }],
@@ -205,7 +205,7 @@ describe("@attune/framework-language-service", () => {
     )
 
     expect(view.diagnostics[0]).toMatchObject({
-      code: "attune/protocol/invalid-store-payload",
+      code: "attune/program-facts/invalid-store-payload",
       displayMessage: expect.stringContaining("Invalid program fact store payload"),
     })
     expect(view.quickInfo[0]?.text).toContain("invalid-store-payload")
@@ -331,7 +331,7 @@ describe("@attune/framework-language-service", () => {
           const query = yield* ProgramFactQuery
           return yield* projectLanguageServiceViewFromRuntime(
             { diagnostics, query },
-            { sourcePath, projectId: "demo", schemaDescriptorId: protocolId },
+            { sourcePath, projectId: "demo", schemaDescriptorId: schemaDescriptorId },
           )
         }),
         index,
@@ -360,7 +360,7 @@ describe("@attune/framework-language-service", () => {
   it("surfaces stale artifacts as an Nx repair instead of a file edit", async () => {
     const view = await runtimeView()
     const stale = view.diagnostics.find((diagnostic) =>
-      diagnostic.code === "attune/protocol/stale-generated-source"
+      diagnostic.code === "attune/program-facts/stale-generated-source"
     )
 
     expect(stale?.sourcePath).toBe(generatedPath)
@@ -432,8 +432,8 @@ describe("@attune/framework-language-service", () => {
         yield* runtime.materializeSchemaDescriptor(demoDescriptor)
         yield* runtime.recordObservationRun({
           runId: "run-1",
-          protocolId,
-          packageId: "demo",
+          schemaDescriptorId,
+          projectId: "demo",
           tier: "commit",
           status: "failed",
           startedAt: "2026-06-22T00:00:00.000Z",
@@ -442,9 +442,9 @@ describe("@attune/framework-language-service", () => {
         yield* runtime.recordReplayObservation({
           replayId: "demo:project:replay",
           runId: "run-1",
-          protocolId,
-          packageId: "demo",
-          operationId: "project",
+          schemaDescriptorId,
+          projectId: "demo",
+          symbolId: "project",
           propertyId: "demo.project.property",
           seed: 42,
           shrinkPath: "0:1",
@@ -454,11 +454,11 @@ describe("@attune/framework-language-service", () => {
         })
         yield* runtime.recordDiagnosticWaiver({
           waiverId: "demo:expired-waiver",
-          protocolId,
-          packageId: "demo",
+          schemaDescriptorId,
+          projectId: "demo",
           category: "property",
           status: "expired",
-          operationId: "project",
+          symbolId: "project",
           owner: "framework",
           reason: "temporary waiver expired",
           expiresAt: "2026-06-01",
@@ -466,9 +466,9 @@ describe("@attune/framework-language-service", () => {
         })
         yield* runtime.recordCoverageObservation({
           coverageId: "demo:project:filter",
-          protocolId,
-          packageId: "demo",
-          operationId: "project",
+          schemaDescriptorId,
+          projectId: "demo",
+          symbolId: "project",
           kind: "filter",
           status: "filtered",
           coveragePoint: "ProjectInput.valid-event",
@@ -479,9 +479,9 @@ describe("@attune/framework-language-service", () => {
         })
         yield* runtime.recordCoverageObservation({
           coverageId: "demo:project:weak-oracle",
-          protocolId,
-          packageId: "demo",
-          operationId: "project",
+          schemaDescriptorId,
+          projectId: "demo",
+          symbolId: "project",
           kind: "implementation",
           status: "hit",
           coveragePoint: "packages/demo/src/project.ts:17",
@@ -494,16 +494,16 @@ describe("@attune/framework-language-service", () => {
 
         return yield* projectLanguageServiceViewFromRuntime(
           { diagnostics, query },
-          { sourcePath, projectId: "demo", schemaDescriptorId: protocolId },
+          { sourcePath, projectId: "demo", schemaDescriptorId: schemaDescriptorId },
         )
       })),
     )
 
     expect(view.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(expect.arrayContaining([
-      "attune/protocol/blocked-obligation",
-      "attune/protocol/waiver-issue",
-      "attune/protocol/high-rejection-filter",
-      "attune/protocol/weak-oracle",
+      "attune/program-facts/blocked-observation",
+      "attune/program-facts/waiver-issue",
+      "attune/program-facts/high-rejection-filter",
+      "attune/program-facts/weak-oracle",
     ]))
     expect(view.quickInfo.some((info) =>
       info.text.includes("replay observations: 1") &&
@@ -519,9 +519,9 @@ describe("@attune/framework-language-service", () => {
 
   it("filters direct generated-file source edits from code actions", () => {
     const diagnostic = {
-      code: "attune/protocol/stale-generated-source",
+      code: "attune/program-facts/stale-generated-source",
       severity: "error" as const,
-      packageId: "demo",
+      projectId: "demo",
       sourcePath: generatedPath,
       explanation: "generated output is stale",
       suggestedActions: [{
@@ -530,7 +530,7 @@ describe("@attune/framework-language-service", () => {
         kind: "source-edit" as const,
         target: generatedPath,
       }],
-      relatedEvidence: [],
+      relatedObservations: [],
     }
 
     expect(isDirectGeneratedFileWriteAction(diagnostic, diagnostic.suggestedActions[0]!)).toBe(true)

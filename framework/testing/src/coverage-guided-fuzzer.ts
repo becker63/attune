@@ -22,8 +22,8 @@ export type CoveragePointKind = "line" | "branch" | "function" | "range"
 export type CoverageTool = "v8" | "istanbul"
 
 export type CoverageSearchIdentity = Readonly<{
-  readonly packageId: string
-  readonly operationId: string
+  readonly projectId: string
+  readonly symbolId: string
   readonly seed: number
   readonly shardId: string
   readonly corpusSeedId?: string
@@ -52,8 +52,8 @@ export type CoverageConformanceStatus =
 
 export type CoverageConformanceRequirement = Readonly<{
   readonly kind: CoverageConformanceRequirementKind
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly requirementId: string
   readonly atomId?: string
   readonly atomKind?: "base-atom" | "derived-atom"
@@ -107,8 +107,8 @@ export type RequiredAtomGraphEdge = Readonly<{
   readonly baseAtomId?: string
   readonly derivedAtomId?: string
   readonly edgeId: string
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly reactivityKey?: string
   readonly viewAtomId?: string
 }>
@@ -171,16 +171,16 @@ export type MutationSurvivalRecord = CoverageSearchIdentity & Readonly<{
 
 export type RequiredLawSet = Readonly<{
   readonly lawIds: readonly string[]
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
 }>
 
 export type PartitionCoverageSummary = Readonly<{
   readonly filteredCount: number
   readonly hitCount: number
   readonly missCount: number
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly partitionId: string
   readonly partitionKind: CoverageSearchPartitionKind
   readonly replay: readonly CoverageReplayRef[]
@@ -195,8 +195,8 @@ export type AtomGraphMovementSummary = Readonly<{
   readonly diffSummaries: readonly string[]
   readonly edgeId: string
   readonly moved: boolean
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly reactivityKeys: readonly string[]
   readonly replay: readonly CoverageReplayRef[]
   readonly viewAtomIds: readonly string[]
@@ -205,8 +205,8 @@ export type AtomGraphMovementSummary = Readonly<{
 export type CoveragePointSummary = Readonly<{
   readonly coverageTool: CoverageTool
   readonly delta: number
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly pointId: string
   readonly pointKind: CoveragePointKind
   readonly replay: readonly CoverageReplayRef[]
@@ -215,8 +215,8 @@ export type CoveragePointSummary = Readonly<{
 
 export type TransformSummary = Readonly<{
   readonly appliedCount: number
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly replay: readonly CoverageReplayRef[]
   readonly sources: readonly CoverageSearchTransformRecord["source"][]
   readonly targetPartitionIds: readonly string[]
@@ -228,8 +228,8 @@ export type MeasuredFilterSummary = Readonly<{
   readonly accepted: number
   readonly acceptanceRate: number
   readonly filterId: string
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly reasons: readonly string[]
   readonly rejected: number
   readonly replay: readonly CoverageReplayRef[]
@@ -240,8 +240,8 @@ export type LawObservationSummary = Readonly<{
   readonly hitCount: number
   readonly lawId: string
   readonly missCount: number
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly replay: readonly CoverageReplayRef[]
 }>
 
@@ -249,8 +249,8 @@ export type MutationSurvivalSummary = Readonly<{
   readonly atomGraphEdgeIds: readonly string[]
   readonly killedCount: number
   readonly mutationId: string
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly pointIds: readonly string[]
   readonly pointKinds: readonly CoveragePointKind[]
   readonly replay: readonly CoverageReplayRef[]
@@ -264,8 +264,8 @@ export type CoverageSearchFinding =
     readonly filterId: string
     readonly kind: "high-rejection-filter"
     readonly message: string
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly replay: readonly CoverageReplayRef[]
     readonly severity: "warning"
   }>
@@ -273,16 +273,16 @@ export type CoverageSearchFinding =
     readonly edgeId: string
     readonly kind: "missing-atom-graph-movement"
     readonly message: string
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly replay: readonly CoverageReplayRef[]
     readonly severity: "error"
   }>
   | Readonly<{
     readonly kind: "missing-coverage-requirement"
     readonly message: string
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly replay: readonly CoverageReplayRef[]
     readonly requirementId: string
     readonly requirementKind: CoverageConformanceRequirementKind
@@ -291,8 +291,8 @@ export type CoverageSearchFinding =
   | Readonly<{
     readonly kind: "dead-harness"
     readonly message: string
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly replay: readonly CoverageReplayRef[]
     readonly semanticCaseCount: number
     readonly severity: "error"
@@ -309,16 +309,16 @@ export type CoverageSearchFinding =
     readonly missingAtomGraphEdges: readonly string[]
     readonly missingLawIds: readonly string[]
     readonly missingRequirementIds: readonly string[]
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly replay: readonly CoverageReplayRef[]
     readonly severity: "warning"
     readonly survivedMutationIds: readonly string[]
   }>
 
 export type RetainedCorpusSeed = Readonly<{
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly reasons: readonly string[]
   readonly score: number
   readonly seed: number
@@ -365,8 +365,8 @@ export type CoverageBiasTargetKind =
   | "mutation"
 
 export type CoverageBiasTarget = Readonly<{
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly reason: string
   readonly replay: readonly CoverageReplayRef[]
   readonly targetId: string
@@ -374,8 +374,8 @@ export type CoverageBiasTarget = Readonly<{
 }>
 
 export type CoverageBiasSeed = Readonly<{
-  readonly operationId: string
-  readonly packageId: string
+  readonly symbolId: string
+  readonly projectId: string
   readonly priority: number
   readonly replay: CoverageReplayRef
   readonly reasons: readonly string[]
@@ -392,8 +392,8 @@ export type CoverageWorkerShardEvidence = Readonly<{
   readonly shardId: string
   readonly status?: "passed" | "failed" | "timed-out" | "skipped"
   readonly coverage: CoverageSearchMergeInput
-  readonly operationId?: string
-  readonly packageId?: string
+  readonly symbolId?: string
+  readonly projectId?: string
   readonly seedEnd?: number
   readonly seedStart?: number
   readonly tier?: PropertyTier
@@ -408,8 +408,8 @@ export type CoverageWorkerShardSummary = Readonly<{
   readonly coverageDeltaCount: number
   readonly filterRecordCount: number
   readonly mutationRecordCount: number
-  readonly operationId?: string
-  readonly packageId?: string
+  readonly symbolId?: string
+  readonly projectId?: string
   readonly seedEnd?: number
   readonly seedStart?: number
   readonly tier?: PropertyTier
@@ -427,17 +427,17 @@ const keyOf = (...parts: readonly unknown[]): string => JSON.stringify(parts)
 const findingKey = (finding: CoverageSearchFinding): string => {
   switch (finding.kind) {
     case "dead-harness":
-      return keyOf(finding.packageId, finding.operationId, finding.kind)
+      return keyOf(finding.projectId, finding.symbolId, finding.kind)
     case "high-rejection-filter":
-      return keyOf(finding.packageId, finding.operationId, finding.kind, finding.filterId)
+      return keyOf(finding.projectId, finding.symbolId, finding.kind, finding.filterId)
     case "missing-atom-graph-movement":
-      return keyOf(finding.packageId, finding.operationId, finding.kind, finding.edgeId)
+      return keyOf(finding.projectId, finding.symbolId, finding.kind, finding.edgeId)
     case "missing-coverage-requirement":
-      return keyOf(finding.packageId, finding.operationId, finding.kind, finding.requirementKind, finding.requirementId)
+      return keyOf(finding.projectId, finding.symbolId, finding.kind, finding.requirementKind, finding.requirementId)
     case "weak-oracle":
       return keyOf(
-        finding.packageId,
-        finding.operationId,
+        finding.projectId,
+        finding.symbolId,
         finding.kind,
         finding.coveragePoint.sourceFile,
         finding.coveragePoint.pointKind,
@@ -459,8 +459,8 @@ const uniqueSortedNumbers = (values: readonly number[]): readonly number[] =>
   [...new Set(values)].toSorted((left, right) => left - right)
 
 export const coverageReplayRef = (record: CoverageSearchIdentity): CoverageReplayRef => ({
-  packageId: record.packageId,
-  operationId: record.operationId,
+  projectId: record.projectId,
+  symbolId: record.symbolId,
   seed: record.seed,
   shardId: record.shardId,
   ...(record.corpusSeedId === undefined ? {} : { corpusSeedId: record.corpusSeedId }),
@@ -471,8 +471,8 @@ export const coverageReplayRef = (record: CoverageSearchIdentity): CoverageRepla
 
 export const coverageIdentityFromReplay = (
   input: Readonly<{
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly corpusSeedId?: string
     readonly generatedValueSummary?: string
     readonly replay?: ReplayMetadata
@@ -482,8 +482,8 @@ export const coverageIdentityFromReplay = (
     readonly workerId?: string
   }>,
 ): CoverageSearchIdentity => ({
-  packageId: input.packageId,
-  operationId: input.operationId,
+  projectId: input.projectId,
+  symbolId: input.symbolId,
   seed: input.replay?.seed ?? input.seed ?? 1_337,
   shardId: input.replay?.shardId ?? input.shardId ?? "local",
   ...(input.corpusSeedId === undefined ? {} : { corpusSeedId: input.corpusSeedId }),
@@ -497,7 +497,7 @@ export const coverageIdentityFromReplay = (
 })
 
 const replayKey = (record: CoverageReplayRef): string =>
-  keyOf(record.packageId, record.operationId, record.seed, record.shardId, record.workerId, record.shrinkPath)
+  keyOf(record.projectId, record.symbolId, record.seed, record.shardId, record.workerId, record.shrinkPath)
 
 const uniqueReplay = (
   records: readonly CoverageSearchIdentity[],
@@ -507,33 +507,33 @@ const uniqueReplay = (
     return [replayKey(replay), replay] as const
   })).values()].toSorted(compareByKey(replayKey))
 
-export const coverageSearchCaseKey = (record: Pick<CoverageSearchIdentity, "operationId" | "packageId" | "seed" | "shardId">): string =>
-  keyOf(record.packageId, record.operationId, record.seed, record.shardId)
+export const coverageSearchCaseKey = (record: Pick<CoverageSearchIdentity, "symbolId" | "projectId" | "seed" | "shardId">): string =>
+  keyOf(record.projectId, record.symbolId, record.seed, record.shardId)
 
-const operationKey = (packageId: string, operationId: string): string =>
-  keyOf(packageId, operationId)
+const operationKey = (projectId: string, symbolId: string): string =>
+  keyOf(projectId, symbolId)
 
 const requirementKey = (
-  record: Pick<CoverageConformanceRequirement, "kind" | "operationId" | "packageId" | "requirementId">,
+  record: Pick<CoverageConformanceRequirement, "kind" | "symbolId" | "projectId" | "requirementId">,
 ): string =>
-  keyOf(record.packageId, record.operationId, record.kind, record.requirementId)
+  keyOf(record.projectId, record.symbolId, record.kind, record.requirementId)
 
 const partitionKey = (
-  record: Pick<TypeGuidancePartitionRecord, "operationId" | "packageId" | "partitionId" | "partitionKind">,
+  record: Pick<TypeGuidancePartitionRecord, "symbolId" | "projectId" | "partitionId" | "partitionKind">,
 ): string =>
-  keyOf(record.packageId, record.operationId, record.partitionKind, record.partitionId)
+  keyOf(record.projectId, record.symbolId, record.partitionKind, record.partitionId)
 
 const atomEdgeKey = (
-  record: Pick<AtomGraphMovementRecord | RequiredAtomGraphEdge | AtomGraphMovementSummary, "edgeId" | "operationId" | "packageId">,
+  record: Pick<AtomGraphMovementRecord | RequiredAtomGraphEdge | AtomGraphMovementSummary, "edgeId" | "symbolId" | "projectId">,
 ): string =>
-  keyOf(record.packageId, record.operationId, record.edgeId)
+  keyOf(record.projectId, record.symbolId, record.edgeId)
 
 const coveragePointKey = (
-  record: Pick<ImplementationCoveragePointDelta | CoveragePointSummary, "coverageTool" | "operationId" | "packageId" | "pointId" | "pointKind" | "sourceFile">,
+  record: Pick<ImplementationCoveragePointDelta | CoveragePointSummary, "coverageTool" | "symbolId" | "projectId" | "pointId" | "pointKind" | "sourceFile">,
 ): string =>
   keyOf(
-    record.packageId,
-    record.operationId,
+    record.projectId,
+    record.symbolId,
     record.coverageTool,
     record.sourceFile,
     record.pointKind,
@@ -541,24 +541,24 @@ const coveragePointKey = (
   )
 
 const transformKey = (
-  record: Pick<CoverageSearchTransformRecord, "operationId" | "packageId" | "transformId">,
+  record: Pick<CoverageSearchTransformRecord, "symbolId" | "projectId" | "transformId">,
 ): string =>
-  keyOf(record.packageId, record.operationId, record.transformId)
+  keyOf(record.projectId, record.symbolId, record.transformId)
 
 const filterKey = (
-  record: Pick<MeasuredFilterRecord, "filterId" | "operationId" | "packageId">,
+  record: Pick<MeasuredFilterRecord, "filterId" | "symbolId" | "projectId">,
 ): string =>
-  keyOf(record.packageId, record.operationId, record.filterId)
+  keyOf(record.projectId, record.symbolId, record.filterId)
 
 const lawKey = (
-  record: Pick<LawObservationRecord, "lawId" | "operationId" | "packageId">,
+  record: Pick<LawObservationRecord, "lawId" | "symbolId" | "projectId">,
 ): string =>
-  keyOf(record.packageId, record.operationId, record.lawId)
+  keyOf(record.projectId, record.symbolId, record.lawId)
 
 const mutationKey = (
-  record: Pick<MutationSurvivalRecord | MutationSurvivalSummary, "mutationId" | "operationId" | "packageId" | "sourceFile">,
+  record: Pick<MutationSurvivalRecord | MutationSurvivalSummary, "mutationId" | "symbolId" | "projectId" | "sourceFile">,
 ): string =>
-  keyOf(record.packageId, record.operationId, record.sourceFile, record.mutationId)
+  keyOf(record.projectId, record.symbolId, record.sourceFile, record.mutationId)
 
 const recordsBy = <T>(
   records: readonly T[],
@@ -584,23 +584,23 @@ const summarizeValue = (value: unknown): string | undefined => {
 }
 
 const atomGraphEdgeId = (
-  operationId: string,
+  symbolId: string,
   observation: AtomGraphObservation,
 ): string =>
   observation.viewEdgeId ?? ([
-    operationId,
+    symbolId,
     observation.reactivityKey,
     observation.baseAtom,
     observation.derivedAtom,
     observation.packageViewAtom,
   ].filter((part): part is string => part !== undefined && part.length > 0).join("->") ||
-    `${operationId}:atom-graph`)
+    `${symbolId}:atom-graph`)
 
 export const atomGraphMovementRecordFromObservation = (
   input: Readonly<{
     readonly observation: AtomGraphObservation
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly corpusSeedId?: string
     readonly generatedValueSummary?: string
     readonly replay?: ReplayMetadata
@@ -615,7 +615,7 @@ export const atomGraphMovementRecordFromObservation = (
 
   return {
     ...identity,
-    edgeId: atomGraphEdgeId(input.operationId, input.observation),
+    edgeId: atomGraphEdgeId(input.symbolId, input.observation),
     moved: input.observation.changed,
     ...(input.observation.baseAtom === undefined ? {} : { baseAtomId: input.observation.baseAtom }),
     ...(input.observation.derivedAtom === undefined ? {} : { derivedAtomId: input.observation.derivedAtom }),
@@ -628,8 +628,8 @@ export const atomGraphMovementRecordFromObservation = (
 export const atomGraphMovementRecordsFromObservations = (
   input: Readonly<{
     readonly observations: readonly AtomGraphObservation[]
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly corpusSeedId?: string
     readonly generatedValueSummary?: string
     readonly replay?: ReplayMetadata
@@ -648,8 +648,8 @@ export const atomGraphMovementRecordsFromObservations = (
 export const coverageConformanceRecordsFromAtomGraph = (
   input: Readonly<{
     readonly observations: readonly AtomGraphObservation[]
-    readonly operationId: string
-    readonly packageId: string
+    readonly symbolId: string
+    readonly projectId: string
     readonly corpusSeedId?: string
     readonly generatedValueSummary?: string
     readonly replay?: ReplayMetadata
@@ -666,8 +666,8 @@ export const coverageConformanceRecordsFromAtomGraph = (
       records.push({
         ...identity,
         kind: "reactivity-key",
-        operationId: input.operationId,
-        packageId: input.packageId,
+        symbolId: input.symbolId,
+        projectId: input.projectId,
         reactivityKey: observation.reactivityKey,
         requirementId: `reactivity:${observation.reactivityKey}`,
         status,
@@ -679,8 +679,8 @@ export const coverageConformanceRecordsFromAtomGraph = (
         atomId: observation.baseAtom,
         atomKind: "base-atom",
         kind: "atom-refresh",
-        operationId: input.operationId,
-        packageId: input.packageId,
+        symbolId: input.symbolId,
+        projectId: input.projectId,
         requirementId: `base-atom:${observation.baseAtom}`,
         status,
       })
@@ -691,8 +691,8 @@ export const coverageConformanceRecordsFromAtomGraph = (
         atomId: observation.derivedAtom,
         atomKind: "derived-atom",
         kind: "atom-refresh",
-        operationId: input.operationId,
-        packageId: input.packageId,
+        symbolId: input.symbolId,
+        projectId: input.projectId,
         requirementId: `derived-atom:${observation.derivedAtom}`,
         status,
       })
@@ -701,8 +701,8 @@ export const coverageConformanceRecordsFromAtomGraph = (
       records.push({
         ...identity,
         kind: "package-view-atom-change",
-        operationId: input.operationId,
-        packageId: input.packageId,
+        symbolId: input.symbolId,
+        projectId: input.projectId,
         requirementId: `package-view:${observation.packageViewAtom}`,
         status,
         viewAtomId: observation.packageViewAtom,
@@ -733,8 +733,8 @@ export const mergeCoverageConformance = (
             : "missing"
     return {
       kind: first.kind,
-      operationId: first.operationId,
-      packageId: first.packageId,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       requirementId: first.requirementId,
       ...(first.atomId === undefined ? {} : { atomId: first.atomId }),
       ...(first.atomKind === undefined ? {} : { atomKind: first.atomKind }),
@@ -779,8 +779,8 @@ export const mergeTypeGuidancePartitions = (
       filteredCount,
       hitCount,
       missCount,
-      operationId: first.operationId,
-      packageId: first.packageId,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       partitionId: first.partitionId,
       partitionKind: first.partitionKind,
       replay: uniqueReplay(group),
@@ -790,8 +790,8 @@ export const mergeTypeGuidancePartitions = (
     }
   }).toSorted(compareByKey((record) =>
     partitionKey({
-      operationId: record.operationId,
-      packageId: record.packageId,
+      symbolId: record.symbolId,
+      projectId: record.projectId,
       partitionId: record.partitionId,
       partitionKind: record.partitionKind,
     })
@@ -811,8 +811,8 @@ export const mergeAtomGraphMovements = (
       diffSummaries: uniqueSorted(group.flatMap((record) => optionalString(record.diffSummary))),
       edgeId: first.edgeId,
       moved: group.some((record) => record.moved),
-      operationId: first.operationId,
-      packageId: first.packageId,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       reactivityKeys: uniqueSorted(group.flatMap((record) => optionalString(record.reactivityKey))),
       replay: uniqueReplay(group),
       viewAtomIds: uniqueSorted(group.flatMap((record) => optionalString(record.viewAtomId))),
@@ -830,8 +830,8 @@ export const mergeCoverageDeltas = (
     return {
       coverageTool: first.coverageTool,
       delta: group.reduce((total, record) => total + Math.max(0, record.afterCount - record.beforeCount), 0),
-      operationId: first.operationId,
-      packageId: first.packageId,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       pointId: first.pointId,
       pointKind: first.pointKind,
       replay: uniqueReplay(group),
@@ -850,8 +850,8 @@ export const mergeTransforms = (
     }
     return {
       appliedCount: group.filter((record) => record.applied).length,
-      operationId: first.operationId,
-      packageId: first.packageId,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       replay: uniqueReplay(group),
       sources: uniqueSorted(group.map((record) => record.source)) as readonly CoverageSearchTransformRecord["source"][],
       targetPartitionIds: uniqueSorted(group.flatMap((record) => [...record.targetPartitionIds])),
@@ -879,8 +879,8 @@ export const mergeMeasuredFilters = (
       accepted,
       acceptanceRate: acceptanceRate({ accepted, rejected }),
       filterId: first.filterId,
-      operationId: first.operationId,
-      packageId: first.packageId,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       reasons: uniqueSorted(group.map((record) => record.reason)),
       rejected,
       replay: uniqueReplay(group),
@@ -900,8 +900,8 @@ export const mergeLawObservations = (
       hitCount: group.filter((record) => record.observed).length,
       lawId: first.lawId,
       missCount: group.filter((record) => !record.observed).length,
-      operationId: first.operationId,
-      packageId: first.packageId,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       replay: uniqueReplay(group),
     }
   }).toSorted(compareByKey((record) => lawKey(record)))
@@ -918,8 +918,8 @@ export const mergeMutationSurvivals = (
       atomGraphEdgeIds: uniqueSorted(group.flatMap((record) => optionalString(record.atomGraphEdgeId))),
       killedCount: group.filter((record) => !record.survived).length,
       mutationId: first.mutationId,
-      operationId: first.operationId,
-      packageId: first.packageId,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       pointIds: uniqueSorted(group.flatMap((record) => optionalString(record.pointId))),
       pointKinds: uniqueSorted(group.flatMap((record) => optionalString(record.pointKind))) as readonly CoveragePointKind[],
       replay: uniqueReplay(group),
@@ -939,8 +939,8 @@ export const findHighRejectionFilters = (
       filterId: filter.filterId,
       kind: "high-rejection-filter",
       message: `Filter ${filter.filterId} accepted ${(filter.acceptanceRate * 100).toFixed(1)}% of generated cases`,
-      operationId: filter.operationId,
-      packageId: filter.packageId,
+      symbolId: filter.symbolId,
+      projectId: filter.projectId,
       replay: filter.replay,
       severity: "warning",
     }))
@@ -958,9 +958,9 @@ export const findMissingCoverageRequirements = (
     }
     return [{
       kind: "missing-coverage-requirement",
-      message: `Operation ${required.operationId} did not hit required ${required.kind} coverage ${required.requirementId}`,
-      operationId: required.operationId,
-      packageId: required.packageId,
+      message: `Operation ${required.symbolId} did not hit required ${required.kind} coverage ${required.requirementId}`,
+      symbolId: required.symbolId,
+      projectId: required.projectId,
       replay: observed?.replay ?? [],
       requirementId: required.requirementId,
       requirementKind: required.kind,
@@ -982,9 +982,9 @@ export const findMissingAtomGraphMovement = (
     return [{
       edgeId: edge.edgeId,
       kind: "missing-atom-graph-movement",
-      message: `Operation ${edge.operationId} did not move required atom graph edge ${edge.edgeId}`,
-      operationId: edge.operationId,
-      packageId: edge.packageId,
+      message: `Operation ${edge.symbolId} did not move required atom graph edge ${edge.edgeId}`,
+      symbolId: edge.symbolId,
+      projectId: edge.projectId,
       replay: movement?.replay ?? [],
       severity: "error",
     }]
@@ -995,22 +995,22 @@ export const findDeadHarnesses = (
   partitions: readonly PartitionCoverageSummary[],
   coverageDeltas: readonly CoveragePointSummary[],
 ): readonly CoverageSearchFinding[] => {
-  const coveredOperations = new Set(coverageDeltas.map((delta) => operationKey(delta.packageId, delta.operationId)))
+  const coveredOperations = new Set(coverageDeltas.map((delta) => operationKey(delta.projectId, delta.symbolId)))
   const partitionsByOperation = recordsBy(
     partitions.filter((partition) => partition.hitCount > 0),
-    (partition) => operationKey(partition.packageId, partition.operationId),
+    (partition) => operationKey(partition.projectId, partition.symbolId),
   )
   return [...partitionsByOperation.entries()].flatMap(([, group]): readonly CoverageSearchFinding[] => {
     const first = group[0]
-    if (first === undefined || coveredOperations.has(operationKey(first.packageId, first.operationId))) {
+    if (first === undefined || coveredOperations.has(operationKey(first.projectId, first.symbolId))) {
       return []
     }
     const semanticCaseCount = group.reduce((total, partition) => total + partition.hitCount, 0)
     return [{
       kind: "dead-harness",
-      message: `Operation ${first.operationId} produced semantic evidence without implementation coverage`,
-      operationId: first.operationId,
-      packageId: first.packageId,
+      message: `Operation ${first.symbolId} produced semantic evidence without implementation coverage`,
+      symbolId: first.symbolId,
+      projectId: first.projectId,
       replay: [...new Map(group.flatMap((partition) => partition.replay).map((replay) => [replayKey(replay), replay] as const)).values()]
         .toSorted(compareByKey(replayKey)),
       semanticCaseCount,
@@ -1033,17 +1033,17 @@ export const findWeakOracleCoverage = (
   const observedLawIdsByOperation = new Map(
     [...recordsBy(
       input.lawObservations.filter((law) => law.hitCount > 0),
-      (law) => operationKey(law.packageId, law.operationId),
+      (law) => operationKey(law.projectId, law.symbolId),
     ).entries()]
       .map(([key, laws]) => [key, new Set(laws.map((law) => law.lawId))] as const),
   )
   const movementByEdge = new Map(input.movements.map((movement) => [atomEdgeKey(movement), movement]))
   const edgesByOperation = recordsBy(input.requiredAtomGraphEdges, (edge) =>
-    operationKey(edge.packageId, edge.operationId)
+    operationKey(edge.projectId, edge.symbolId)
   )
   const requiredLawIdsByOperation = new Map(
     (input.requiredLaws ?? []).map((lawSet) => [
-      operationKey(lawSet.packageId, lawSet.operationId),
+      operationKey(lawSet.projectId, lawSet.symbolId),
       lawSet.lawIds,
     ] as const),
   )
@@ -1051,11 +1051,11 @@ export const findWeakOracleCoverage = (
     (input.conformance ?? []).map((summary) => [requirementKey(summary), summary] as const),
   )
   const requiredCoverageByOperation = recordsBy(input.requiredCoverage ?? [], (required) =>
-    operationKey(required.packageId, required.operationId)
+    operationKey(required.projectId, required.symbolId)
   )
 
   return input.coverageDeltas.flatMap((coverage): readonly CoverageSearchFinding[] => {
-    const opKey = operationKey(coverage.packageId, coverage.operationId)
+    const opKey = operationKey(coverage.projectId, coverage.symbolId)
     const requiredLawIds = requiredLawIdsByOperation.get(opKey) ?? []
     const observedLawIds = observedLawIdsByOperation.get(opKey) ?? new Set<string>()
     const missingLawIds = requiredLawIds.filter((lawId) => !observedLawIds.has(lawId))
@@ -1080,12 +1080,12 @@ export const findWeakOracleCoverage = (
         sourceFile: coverage.sourceFile,
       },
       kind: "weak-oracle",
-      message: `Operation ${coverage.operationId} covered ${coverage.sourceFile}:${coverage.pointId} without required law, atom graph, or conformance evidence`,
+      message: `Operation ${coverage.symbolId} covered ${coverage.sourceFile}:${coverage.pointId} without required law, atom graph, or conformance evidence`,
       missingAtomGraphEdges,
       missingLawIds,
       missingRequirementIds,
-      operationId: coverage.operationId,
-      packageId: coverage.packageId,
+      symbolId: coverage.symbolId,
+      projectId: coverage.projectId,
       replay: coverage.replay,
       severity: "warning",
       survivedMutationIds: [],
@@ -1112,8 +1112,8 @@ export const findWeakOracleMutations = (
     const coveredEdgeIds = mutation.atomGraphEdgeIds.filter((edgeId) =>
       movedEdges.has(atomEdgeKey({
         edgeId,
-        operationId: mutation.operationId,
-        packageId: mutation.packageId,
+        symbolId: mutation.symbolId,
+        projectId: mutation.projectId,
       }))
     )
     if (coveredEdgeIds.length === 0) {
@@ -1128,12 +1128,12 @@ export const findWeakOracleMutations = (
         sourceFile: mutation.sourceFile,
       },
       kind: "weak-oracle",
-      message: `Mutation ${mutation.mutationId} survived on atom-covered operation ${mutation.operationId}`,
+      message: `Mutation ${mutation.mutationId} survived on atom-covered operation ${mutation.symbolId}`,
       missingAtomGraphEdges: [],
       missingLawIds: [],
       missingRequirementIds: [],
-      operationId: mutation.operationId,
-      packageId: mutation.packageId,
+      symbolId: mutation.symbolId,
+      projectId: mutation.projectId,
       replay: mutation.replay,
       severity: "warning",
       survivedMutationIds: [mutation.mutationId],
@@ -1237,8 +1237,8 @@ export const rankCorpusSeedRetention = (
 
   return [...reasonsByReplay.values()]
     .map(({ replay, reasons, score }): RetainedCorpusSeed => ({
-      operationId: replay.operationId,
-      packageId: replay.packageId,
+      symbolId: replay.symbolId,
+      projectId: replay.projectId,
       reasons: [...reasons].toSorted(),
       score,
       seed: replay.seed,
@@ -1261,8 +1261,8 @@ export const coverageBiasTargetsFromFindings = (
     switch (finding.kind) {
       case "dead-harness":
         return [{
-          operationId: finding.operationId,
-          packageId: finding.packageId,
+          symbolId: finding.symbolId,
+          projectId: finding.projectId,
           reason: finding.message,
           replay: finding.replay,
           targetId: "implementation-coverage",
@@ -1270,8 +1270,8 @@ export const coverageBiasTargetsFromFindings = (
         }]
       case "high-rejection-filter":
         return [{
-          operationId: finding.operationId,
-          packageId: finding.packageId,
+          symbolId: finding.symbolId,
+          projectId: finding.projectId,
           reason: finding.message,
           replay: finding.replay,
           targetId: finding.filterId,
@@ -1279,8 +1279,8 @@ export const coverageBiasTargetsFromFindings = (
         }]
       case "missing-atom-graph-movement":
         return [{
-          operationId: finding.operationId,
-          packageId: finding.packageId,
+          symbolId: finding.symbolId,
+          projectId: finding.projectId,
           reason: finding.message,
           replay: finding.replay,
           targetId: finding.edgeId,
@@ -1288,8 +1288,8 @@ export const coverageBiasTargetsFromFindings = (
         }]
       case "missing-coverage-requirement":
         return [{
-          operationId: finding.operationId,
-          packageId: finding.packageId,
+          symbolId: finding.symbolId,
+          projectId: finding.projectId,
           reason: finding.message,
           replay: finding.replay,
           targetId: finding.requirementId,
@@ -1298,32 +1298,32 @@ export const coverageBiasTargetsFromFindings = (
       case "weak-oracle":
         return [
           ...finding.missingLawIds.map((lawId): CoverageBiasTarget => ({
-            operationId: finding.operationId,
-            packageId: finding.packageId,
+            symbolId: finding.symbolId,
+            projectId: finding.projectId,
             reason: finding.message,
             replay: finding.replay,
             targetId: lawId,
             targetKind: "law",
           })),
           ...finding.missingAtomGraphEdges.map((edgeId): CoverageBiasTarget => ({
-            operationId: finding.operationId,
-            packageId: finding.packageId,
+            symbolId: finding.symbolId,
+            projectId: finding.projectId,
             reason: finding.message,
             replay: finding.replay,
             targetId: edgeId,
             targetKind: "atom-graph-edge",
           })),
           ...finding.missingRequirementIds.map((requirementId): CoverageBiasTarget => ({
-            operationId: finding.operationId,
-            packageId: finding.packageId,
+            symbolId: finding.symbolId,
+            projectId: finding.projectId,
             reason: finding.message,
             replay: finding.replay,
             targetId: requirementId,
             targetKind: "expected-error-path",
           })),
           ...finding.survivedMutationIds.map((mutationId): CoverageBiasTarget => ({
-            operationId: finding.operationId,
-            packageId: finding.packageId,
+            symbolId: finding.symbolId,
+            projectId: finding.projectId,
             reason: finding.message,
             replay: finding.replay,
             targetId: mutationId,
@@ -1332,12 +1332,12 @@ export const coverageBiasTargetsFromFindings = (
         ]
     }
   }).toSorted(compareByKey((target) =>
-    keyOf(target.packageId, target.operationId, target.targetKind, target.targetId)
+    keyOf(target.projectId, target.symbolId, target.targetKind, target.targetId)
   ))
 
 type BiasSeedDraft = {
-  operationId: string
-  packageId: string
+  symbolId: string
+  projectId: string
   priority: number
   replay: CoverageReplayRef
   reasons: Set<string>
@@ -1357,8 +1357,8 @@ const rememberBiasSeed = (
 ): void => {
   const key = replayKey(replay)
   const current = seeds.get(key) ?? {
-    operationId: replay.operationId,
-    packageId: replay.packageId,
+    symbolId: replay.symbolId,
+    projectId: replay.projectId,
     priority: 0,
     replay,
     reasons: new Set<string>(),
@@ -1373,8 +1373,8 @@ const rememberBiasSeed = (
 }
 
 const retainedSeedReplay = (seed: RetainedCorpusSeed): CoverageReplayRef => ({
-  operationId: seed.operationId,
-  packageId: seed.packageId,
+  symbolId: seed.symbolId,
+  projectId: seed.projectId,
   seed: seed.seed,
   shardId: seed.shardId,
   ...(seed.corpusSeedId === undefined ? {} : { corpusSeedId: seed.corpusSeedId }),
@@ -1432,8 +1432,8 @@ export const planTargetedCoverageRerun = (
 
   const planned = [...seeds.values()]
     .map((seed): CoverageBiasSeed => ({
-      operationId: seed.operationId,
-      packageId: seed.packageId,
+      symbolId: seed.symbolId,
+      projectId: seed.projectId,
       priority: seed.priority,
       replay: seed.replay,
       reasons: [...seed.reasons].toSorted(),
@@ -1520,11 +1520,11 @@ export const mergeCoverageSearchEvidence = (
 export const coverageWorkerShardKey = (
   shard: Pick<CoverageWorkerShardEvidence | CoverageWorkerShardSummary, "shardId"> & Readonly<{
     readonly workerId?: string
-    readonly packageId?: string
-    readonly operationId?: string
+    readonly projectId?: string
+    readonly symbolId?: string
   }>,
 ): string =>
-  keyOf(shard.packageId ?? "", shard.operationId ?? "", shard.shardId, shard.workerId ?? "")
+  keyOf(shard.projectId ?? "", shard.symbolId ?? "", shard.shardId, shard.workerId ?? "")
 
 const shardSummary = (shard: CoverageWorkerShardEvidence): CoverageWorkerShardSummary => ({
   atomGraphRecordCount: shard.coverage.atomGraphMovements?.length ?? 0,
@@ -1535,8 +1535,8 @@ const shardSummary = (shard: CoverageWorkerShardEvidence): CoverageWorkerShardSu
   shardId: shard.shardId,
   transformRecordCount: shard.coverage.transforms?.length ?? 0,
   typeGuidanceRecordCount: shard.coverage.typeGuidancePartitions?.length ?? 0,
-  ...(shard.operationId === undefined ? {} : { operationId: shard.operationId }),
-  ...(shard.packageId === undefined ? {} : { packageId: shard.packageId }),
+  ...(shard.symbolId === undefined ? {} : { symbolId: shard.symbolId }),
+  ...(shard.projectId === undefined ? {} : { projectId: shard.projectId }),
   ...(shard.seedEnd === undefined ? {} : { seedEnd: shard.seedEnd }),
   ...(shard.seedStart === undefined ? {} : { seedStart: shard.seedStart }),
   ...(shard.status === undefined ? {} : { status: shard.status }),
