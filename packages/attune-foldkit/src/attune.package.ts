@@ -1,8 +1,6 @@
-import { defineAttunePackageDeclaration } from "@attune/framework-protocol"
+import { defineAttuneProjectFacts } from "@attune/framework-protocol"
 
-export { PackageContractSchema } from "@attune/framework-protocol"
-
-export const PackageViewRoots = {
+export const ProjectRuntimeRoots = {
   reactivityKeys: [
     "attune-foldkit.current-route.changed",
     "attune-foldkit.selected-hypothesis.changed",
@@ -27,10 +25,10 @@ export const PackageViewRoots = {
   ],
 } as const
 
-export const PackageDeclaration = defineAttunePackageDeclaration({
+export const ProjectFacts = defineAttuneProjectFacts({
   id: "attune-foldkit",
   kind: "foldkit-ui",
-  operations: [
+  symbols: [
     {
       id: "model-codec",
       kind: "codec",
@@ -92,12 +90,12 @@ export const PackageDeclaration = defineAttunePackageDeclaration({
       name: "Export packet atom",
     },
   ],
-  views: [
-    ...PackageViewRoots.reactivityKeys.map((id) => ({
+  edges: [
+    ...ProjectRuntimeRoots.reactivityKeys.map((id) => ({
       id,
       kind: "reactivity-key" as const,
     })),
-    ...PackageViewRoots.atoms.map((id) => ({
+    ...ProjectRuntimeRoots.atoms.map((id) => ({
       id,
       kind: "atom" as const,
     })),

@@ -110,3 +110,12 @@
 - [x] 8.10 Run touched package tests for any package roots edited during this change.
 - [x] 8.11 Write `agent-handoffs/final-validation.md` with validations, residual blockers, archive readiness, and follow-up split recommendations.
 - [x] 8.12 Confirm heavy proof-pressure, container fuzzing, provider, Kubernetes, and destructive actions were not run unless explicitly authorized.
+
+## 9. Compatibility API And Helper Removal
+
+- [x] 9.1 Migrate authored `src/attune.package.ts` declarations from `PackageDeclaration`, `PackageViewRoots`, `defineAttunePackageDeclaration`, and `PackageContractSchema` re-exports to mechanical `ProjectFacts`, `ProjectRuntimeRoots`, and `defineAttuneProjectFacts`.
+- [x] 9.2 Add policy/tests that reject old authored declaration names in active package surfaces.
+- [ ] 9.3 Replace checked-in generated package-contract output consumers with program-index facts and delete or quarantine `framework/architecture/src/generated/package-contracts/**` plus `framework/architecture/src/generated/package-contracts.typecheck.generated.ts`.
+- [ ] 9.4 Remove or mechanically rename `framework/protocol/src/package-contract/**`, `framework/protocol/src/descriptors/**`, `framework/protocol/src/laws/**`, `framework/protocol/src/obligations/**`, `framework/protocol/src/evidence/**`, `framework/testing/src/package-harness.ts`, and `framework/testing/src/evidence-producer.ts` once consumers use program-index query APIs.
+- [ ] 9.5 Rename old internal repair route and generated artifact names to mechanical repair/artifact names behind the public Nx `attune-repair` targets.
+- [ ] 9.6 Validate compatibility removal with focused tests for touched framework/package areas plus `openspec validate promote-program-index-runtime-substrate --type change`, `git diff --check`, `nx run workspace:attune-check --skipNxCache`, and `nx run workspace:attune-repair --dryRun --skipNxCache`.

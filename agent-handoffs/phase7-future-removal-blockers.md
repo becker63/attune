@@ -51,21 +51,24 @@ is considered fully finished.
   - source ownership and generated artifact freshness checks pass without
     checked-in compatibility outputs
 
-### Authored declaration helper names
+### Authored project facts API
 
-- Current surface:
-  - package `src/attune.package.ts` exports named `PackageDeclaration` and
-    `PackageViewRoots`
-  - `defineAttunePackageDeclaration`
-  - `PackageContractSchema` re-exports in authored declarations
-- Replacement path:
-  - mechanical names for authored project facts, Reactivity roots,
-    schema_descriptor rows, edges, observations, diagnostics, and repairs
-- Gate:
-  - the package declaration reader accepts mechanical names
-  - the Nx generator emits mechanical names or stops emitting checked-in
-    compatibility declarations
-  - all migrated package `typecheck`, `test`, and `attune-check` targets pass
+- Status:
+  - Phase 9 migrated active authored `src/attune.package.ts` files to
+    `ProjectFacts`, `ProjectRuntimeRoots`, `defineAttuneProjectFacts`,
+    `symbols`, and `edges`.
+  - A framework policy ratchet now rejects `PackageDeclaration`,
+    `PackageViewRoots`, `defineAttunePackageDeclaration`, and
+    `PackageContractSchema` re-exports in active authored package files.
+- Remaining surface:
+  - generated compatibility modules still export `PackageContract`,
+    `PackageFuzzHandlers`, `PackageProperties`, and `PackageTypeGuidance`
+  - package graph discovery still reads those generated compatibility modules
+- Remaining gate:
+  - generated compatibility output consumers use program-index facts
+  - checked-in generated compatibility outputs are deleted or quarantined
+  - migrated package `attune-check`, `attune-repair --dryRun`, `typecheck`, and
+    touched tests pass
 
 ### Internal repair route names
 

@@ -13,9 +13,9 @@
       ],
       "editableRegions": [
         {
-          "description": "Semantic recall authored source boundary; add exported symbols in the package file and validate through program-index-backed check.",
+          "description": "Semantic recall authored source boundary; add exported symbols in the project facts file and validate through program-index-backed check.",
           "file": "src/attune.package.ts",
-          "marker": "definePackageContract"
+          "marker": "defineAttuneProjectFacts"
         }
       ],
       "generatorName": "@attune/nx:package-contract",

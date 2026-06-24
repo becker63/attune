@@ -80,7 +80,8 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "old-ontology-runtime-object"
   | "old-ontology-diagnostic-copy"
   | "old-ontology-active-doc"
-  | "package-declaration-too-large"
+  | "old-authored-project-api"
+  | "project-facts-too-large"
   | "package-local-attune-companion"
   | "package-local-attune-companion-import"
 
@@ -136,6 +137,8 @@ const oldOntologyRuntimeTablePattern =
 const oldOntologyActiveDocNounPattern =
   /\b(?<term>package[- ]contracts?|protocol(?:store|delta)?|operations?|package[- ]views?|view roots?|view graph|operation-to-view|laws?|obligations?|evidence|deltas?|source[- ]bom|generator[- ]shapes?|type[- ]guidance|fuzz handlers?|property maps?|rpc groups?|generated companions?)\b/iu
 const diagnosticMessageLinePattern = /\bmessage\s*:/u
+const oldAuthoredDeclarationApiPattern =
+  /\b(?<name>PackageDeclaration|PackageViewRoots|defineAttunePackageDeclaration|PackageContractSchema)\b/gu
 const activeOperatingDocPaths = new Set([
   "AGENTS.md",
   "docs/attuned/Attune Framework Operating Surface.md",
@@ -441,6 +444,8 @@ const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode
   "old-ontology-runtime-object",
   "old-ontology-diagnostic-copy",
   "old-ontology-active-doc",
+  "old-authored-project-api",
+  "project-facts-too-large",
   "package-local-attune-companion",
 ])
 
@@ -536,7 +541,8 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
 
     diagnostics.push(...checkPackageContractResidualPolicy(packageRoot, semanticContractFile))
     diagnostics.push(...checkPackageLocalAttuneSurface(packageRoot, filesByPath))
-    diagnostics.push(...checkPackageDeclarationSize(packageRoot, contractFile))
+    diagnostics.push(...checkAuthoredProjectFactsSurface(packageRoot, contractFile))
+    diagnostics.push(...checkProjectFactsSize(packageRoot, contractFile))
     diagnostics.push(...checkAtomReactivityConformance(packageRoot, semanticContractFile))
     diagnostics.push(...findExpiredMigrationWaivers(semanticContractFile))
   }
@@ -754,7 +760,7 @@ function packageRootForSourceFile(filePath: string): string | undefined {
   return match?.groups?.root
 }
 
-function checkPackageDeclarationSize(
+function checkProjectFactsSize(
   packageRoot: string,
   contractFile: WorkspaceFile,
 ): readonly FrameworkFinalRatchetDiagnostic[] {
@@ -768,15 +774,37 @@ function checkPackageDeclarationSize(
       : packageDeclarationWarningLineThreshold
 
   return [finalRatchetDiagnostic(
-    "package-declaration-too-large",
+    "project-facts-too-large",
     contractFile.path,
     [
-      `Package declaration ${packageRoot}/src/attune.package.ts has ${lineCount} lines and exceeds the staged ${threshold} line threshold.`,
-      "Move derived handlers, properties, type guidance, RPC descriptors, evidence maps, coverage search plans, and generated artifact metadata into generated files or ProtocolStore projections.",
+      `Project facts ${packageRoot}/src/attune.package.ts has ${lineCount} lines and exceeds the staged ${threshold} line threshold.`,
+      "Move derived handlers, observation partition data, repair descriptors, coverage search plans, and artifact freshness metadata into generated/cache materialization or program-index projections.",
       `Run nx run ${projectNameFromPackageRoot(packageRoot)}:attune-repair or workspace:attune-repair when available.`,
     ].join(" "),
     severity,
   )]
+}
+
+function checkAuthoredProjectFactsSurface(
+  packageRoot: string,
+  contractFile: WorkspaceFile,
+): readonly FrameworkFinalRatchetDiagnostic[] {
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+  oldAuthoredDeclarationApiPattern.lastIndex = 0
+
+  for (const match of contractFile.content.matchAll(oldAuthoredDeclarationApiPattern)) {
+    const name = match.groups?.name ?? match[0]
+    diagnostics.push(finalRatchetDiagnostic(
+      "old-authored-project-api",
+      contractFile.path,
+      [
+        `Authored project facts for ${packageRoot} still expose old declaration API ${name}.`,
+        "Use ProjectFacts, ProjectRuntimeRoots, defineAttuneProjectFacts, symbols, and edges as the active package source vocabulary.",
+      ].join(" "),
+    ))
+  }
+
+  return diagnostics
 }
 
 function checkPackageContractResidualPolicy(

@@ -15,7 +15,7 @@
         {
           "description": "Agent-extension authored declaration; update exported symbols and schema/edge metadata here.",
           "file": "src/attune.package.ts",
-          "marker": "definePackageContract"
+          "marker": "defineAttuneProjectFacts"
         }
       ],
       "generatorName": "@attune/nx:package-contract",

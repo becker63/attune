@@ -1,8 +1,6 @@
-import { defineAttunePackageDeclaration } from "@attune/framework-protocol"
+import { defineAttuneProjectFacts } from "@attune/framework-protocol"
 
-export { PackageContractSchema } from "@attune/framework-protocol"
-
-export const PackageViewRoots = {
+export const ProjectRuntimeRoots = {
   reactivityKeys: [
     "cocoindex.index-freshness.changed",
     "cocoindex.search-request.changed",
@@ -25,10 +23,10 @@ export const PackageViewRoots = {
   ],
 } as const
 
-export const PackageDeclaration = defineAttunePackageDeclaration({
+export const ProjectFacts = defineAttuneProjectFacts({
   id: "cocoindex-effect",
   kind: "semantic-recall-service",
-  operations: [
+  symbols: [
     {
       id: "ensure-indexed",
       kind: "command",
@@ -100,12 +98,12 @@ export const PackageDeclaration = defineAttunePackageDeclaration({
       name: "Sync CocoIndex MCP tool registry",
     },
   ],
-  views: [
-    ...PackageViewRoots.reactivityKeys.map((id) => ({
+  edges: [
+    ...ProjectRuntimeRoots.reactivityKeys.map((id) => ({
       id,
       kind: "reactivity-key" as const,
     })),
-    ...PackageViewRoots.atoms.map((id) => ({
+    ...ProjectRuntimeRoots.atoms.map((id) => ({
       id,
       kind: "atom" as const,
     })),

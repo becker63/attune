@@ -1,8 +1,6 @@
-import { defineAttunePackageDeclaration } from "@attune/framework-protocol"
+import { defineAttuneProjectFacts } from "@attune/framework-protocol"
 
-export { PackageContractSchema } from "@attune/framework-protocol"
-
-export const PackageViewRoots = {
+export const ProjectRuntimeRoots = {
   reactivityKeys: [
     "joern-effect-properties.property-run.changed",
     "joern-effect-properties.fuzz-run.changed",
@@ -27,10 +25,10 @@ export const PackageViewRoots = {
   ],
 } as const
 
-export const PackageDeclaration = defineAttunePackageDeclaration({
+export const ProjectFacts = defineAttuneProjectFacts({
   id: "joern-effect-properties",
   kind: "property-proof-runtime",
-  operations: [
+  symbols: [
     {
       id: "property-harness-runtime",
       kind: "command",
@@ -87,12 +85,12 @@ export const PackageDeclaration = defineAttunePackageDeclaration({
       name: "Property proof runtime package view atoms",
     },
   ],
-  views: [
-    ...PackageViewRoots.reactivityKeys.map((id) => ({
+  edges: [
+    ...ProjectRuntimeRoots.reactivityKeys.map((id) => ({
       id,
       kind: "reactivity-key" as const,
     })),
-    ...PackageViewRoots.atoms.map((id) => ({
+    ...ProjectRuntimeRoots.atoms.map((id) => ({
       id,
       kind: "atom" as const,
     })),

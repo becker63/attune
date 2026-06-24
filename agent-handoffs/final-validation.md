@@ -69,8 +69,9 @@
   scaffolding. They are not acceptable as permanent archive-ready surfaces.
 - The repair dry-run still exposes safe schema_descriptor refresh rows as
   blocked because the automatic refresh materializer route is not implemented.
-- Framework-owned generated compatibility outputs remain checked in until the
-  package declaration helper rename and generated-output deletion gates land.
+- Framework-owned generated compatibility outputs remain checked in. The active
+  authored project facts API has been mechanically renamed, but generated-output
+  deletion gates have not landed yet.
 
 ## Archive Readiness
 
@@ -81,8 +82,6 @@ surfaces rather than preserving them indefinitely.
 
 ## Follow-up Splits
 
-- Remove or mechanically rename the authored declaration helper API and package
-  `src/attune.package.ts` export names.
 - Delete or quarantine `framework/architecture/src/generated/package-contracts/**`
   and the generated typecheck aggregate after program-index consumers replace
   package-contract graph discovery.

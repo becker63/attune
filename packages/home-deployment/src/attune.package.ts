@@ -1,8 +1,6 @@
-import { defineAttunePackageDeclaration } from "@attune/framework-protocol"
+import { defineAttuneProjectFacts } from "@attune/framework-protocol"
 
-export { PackageContractSchema } from "@attune/framework-protocol"
-
-export const PackageViewRoots = {
+export const ProjectRuntimeRoots = {
   reactivityKeys: [
     "home-deployment.config.changed",
     "home-deployment.deployment-plan.changed",
@@ -33,10 +31,10 @@ export const PackageViewRoots = {
   ],
 } as const
 
-export const PackageDeclaration = defineAttunePackageDeclaration({
+export const ProjectFacts = defineAttuneProjectFacts({
   id: "home-deployment",
   kind: "day0-resource-runbook",
-  operations: [
+  symbols: [
     {
       id: "deployment-config-codec",
       kind: "codec",
@@ -88,12 +86,12 @@ export const PackageDeclaration = defineAttunePackageDeclaration({
       name: "Home deployment package view atoms",
     },
   ],
-  views: [
-    ...PackageViewRoots.reactivityKeys.map((id) => ({
+  edges: [
+    ...ProjectRuntimeRoots.reactivityKeys.map((id) => ({
       id,
       kind: "reactivity-key" as const,
     })),
-    ...PackageViewRoots.atoms.map((id) => ({
+    ...ProjectRuntimeRoots.atoms.map((id) => ({
       id,
       kind: "atom" as const,
     })),

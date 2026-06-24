@@ -1,8 +1,6 @@
-import { defineAttunePackageDeclaration } from "@attune/framework-protocol"
+import { defineAttuneProjectFacts } from "@attune/framework-protocol"
 
-export { PackageContractSchema } from "@attune/framework-protocol"
-
-export const PackageViewRoots = {
+export const ProjectRuntimeRoots = {
   reactivityKeys: [
     "attune-nx.generator-plan.changed",
     "attune-nx.generated-diff.changed",
@@ -20,10 +18,10 @@ export const PackageViewRoots = {
   ],
 } as const
 
-export const PackageDeclaration = defineAttunePackageDeclaration({
+export const ProjectFacts = defineAttuneProjectFacts({
   id: "attune-nx",
   kind: "generator-tooling",
-  operations: [
+  symbols: [
     {
       id: "generate-effect-service",
       kind: "generator",
@@ -60,12 +58,12 @@ export const PackageDeclaration = defineAttunePackageDeclaration({
       name: "Normalize Executor Intent",
     },
   ],
-  views: [
-    ...PackageViewRoots.reactivityKeys.map((id) => ({
+  edges: [
+    ...ProjectRuntimeRoots.reactivityKeys.map((id) => ({
       id,
       kind: "reactivity-key" as const,
     })),
-    ...PackageViewRoots.atoms.map((id) => ({
+    ...ProjectRuntimeRoots.atoms.map((id) => ({
       id,
       kind: "atom" as const,
     })),

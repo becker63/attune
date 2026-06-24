@@ -32,6 +32,9 @@ export const PackageKinds = [
 
 export const PackageKindSchema = Schema.Literals(PackageKinds)
 export type PackageKind = typeof PackageKindSchema.Type
+export const ProjectKinds = PackageKinds
+export const ProjectKindSchema = PackageKindSchema
+export type ProjectKind = PackageKind
 
 export const PackageViewsSchema = Schema.Struct({
   reactivityKeys: Schema.Array(Schema.String),
@@ -116,23 +119,59 @@ export interface AttuneOperationDeclaration<
   readonly explicitStableId?: string
 }
 
-export interface AttunePackageDeclaration<
+export type ProjectSymbolKind = OperationKind
+
+export interface AttuneProjectSymbolFact<
+  Id extends string = string,
+  Kind extends ProjectSymbolKind = ProjectSymbolKind,
+  Input extends AnySchema | undefined = AnySchema | undefined,
+  Output extends AnySchema | undefined = AnySchema | undefined,
+  Error extends AnySchema | undefined = AnySchema | undefined,
+> {
+  readonly id?: Id
+  readonly name?: string
+  readonly kind: Kind
+  readonly input?: Input
+  readonly output?: Output
+  readonly error?: Error
+  readonly service?: AttuneServiceReference
+  readonly writes?: readonly AttuneViewReference[]
+  readonly observes?: readonly AttuneViewReference[]
+  readonly invariants?: readonly AttuneLawDescriptor[]
+  readonly explicitStableId?: string
+}
+
+export interface AttuneProjectEdgeFact {
+  readonly id: string
+  readonly kind: "reactivity-key" | "atom" | "schema" | "artifact" | "service" | string
+}
+
+export interface AttuneProjectFacts<
   Id extends string = string,
   Kind extends string = string,
-  Operations extends readonly AttuneOperationDeclaration[] = readonly AttuneOperationDeclaration[],
+  Symbols extends readonly AttuneProjectSymbolFact[] = readonly AttuneProjectSymbolFact[],
+  Edges extends readonly AttuneProjectEdgeFact[] = readonly AttuneProjectEdgeFact[],
 > {
   readonly id: Id
   readonly kind: Kind
-  readonly operations: Operations
-  readonly views?: readonly AttuneViewReference[]
+  readonly symbols: Symbols
+  readonly edges?: Edges
   readonly services?: readonly AttuneServiceReference[]
   readonly waivers?: readonly AttuneWaiverDeclaration[]
-  readonly customLaws?: readonly AttuneLawDescriptor[]
+  readonly invariants?: readonly AttuneLawDescriptor[]
 }
 
-export const defineAttunePackageDeclaration = <const Declaration extends AttunePackageDeclaration>(
-  declaration: Declaration,
-): Declaration => declaration
+export const defineAttuneProjectFacts = <const Facts extends AttuneProjectFacts>(
+  facts: Facts,
+): Facts => facts
+
+export interface ProjectRuntimeRoots<
+  ReactivityKeys extends readonly string[] = readonly string[],
+  Atoms extends readonly string[] = readonly string[],
+> {
+  readonly reactivityKeys: ReactivityKeys
+  readonly atoms: Atoms
+}
 
 export interface PackageViews<
   ReactivityKeys extends readonly string[] = readonly string[],

@@ -171,14 +171,10 @@ describe("framework policy CLI", () => {
   it("accepts framework-owned generated contract materialization as the semantic companion", () => {
     const workspaceRoot = makeWorkspace({
       "packages/centralized-contract/package.json": JSON.stringify({ name: "@attune/centralized-contract" }),
-      "packages/centralized-contract/src/attune.package.ts": [
-        "export const PackageDeclaration = defineAttunePackage({",
-        "  id: \"centralized-contract\",",
-        "  kind: \"core-discovery-runtime\",",
-        "  operations: [] as const,",
-        "  views: [] as const,",
-        "} as const)",
-      ].join("\n"),
+      "packages/centralized-contract/src/attune.package.ts": authoredProjectFactsSource({
+        projectId: "centralized-contract",
+        projectKind: "core-discovery-runtime",
+      }),
       "framework/architecture/src/generated/package-contracts/centralized-contract/attune.contract.generated.ts": packageContractSource({
         packageId: "centralized-contract",
         viewsBody: [
@@ -209,7 +205,51 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("warns when package declarations grow past the staged slim-file threshold", () => {
+  it("rejects old authored declaration API names in active package surfaces", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/legacy-authoring/package.json": JSON.stringify({ name: "@attune/legacy-authoring" }),
+      "packages/legacy-authoring/src/attune.package.ts": [
+        "import { defineAttunePackageDeclaration } from \"@attune/framework-protocol\"",
+        "export { PackageContractSchema } from \"@attune/framework-protocol\"",
+        "export const PackageViewRoots = { reactivityKeys: [] as const, atoms: [] as const }",
+        "export const PackageDeclaration = defineAttunePackageDeclaration({",
+        "  id: \"legacy-authoring\",",
+        "  kind: \"core-discovery-runtime\",",
+        "  symbols: [] as const,",
+        "  edges: [] as const,",
+        "} as const)",
+      ].join("\n"),
+      "framework/architecture/src/generated/package-contracts/legacy-authoring/attune.contract.generated.ts": packageContractSource({
+        packageId: "legacy-authoring",
+        viewsBody: [
+          "  reactivityKeys: [\"legacy.changed\"],",
+          "  atoms: [\"legacyAtom\"],",
+        ],
+        operationsBody: [],
+        operationIds: [],
+      }),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
+
+    expect(result.exitCode).toBe(1)
+    for (const oldName of [
+      "defineAttunePackageDeclaration",
+      "PackageContractSchema",
+      "PackageViewRoots",
+      "PackageDeclaration",
+    ]) {
+      expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          code: "old-authored-project-api",
+          filePath: "packages/legacy-authoring/src/attune.package.ts",
+          message: expect.stringContaining(oldName),
+        }),
+      ]))
+    }
+  })
+
+  it("warns when project facts grow past the staged slim-file threshold", () => {
     const workspaceRoot = makeWorkspace({
       "packages/large-contract/package.json": JSON.stringify({ name: "@attune/large-contract" }),
       "packages/large-contract/src/attune.package.ts": [
@@ -231,7 +271,7 @@ describe("framework policy CLI", () => {
     expect(result.exitCode).toBe(0)
     expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        code: "package-declaration-too-large",
+        code: "project-facts-too-large",
         filePath: "packages/large-contract/src/attune.package.ts",
         severity: "warning",
       }),
@@ -282,14 +322,10 @@ describe("framework policy CLI", () => {
   it("warns when a completed one-file root lacks replacement parity for package-local Attune companions", () => {
     const workspaceRoot = makeWorkspace({
       "packages/platform-alchemy-k8s/package.json": JSON.stringify({ name: "@attune/platform-alchemy-k8s" }),
-      "packages/platform-alchemy-k8s/src/attune.package.ts": [
-        "export const PackageDeclaration = defineAttunePackage({",
-        "  id: \"platform-alchemy-k8s\",",
-        "  kind: \"platform-resource-provider\",",
-        "  operations: [] as const,",
-        "  views: [] as const,",
-        "} as const)",
-      ].join("\n"),
+      "packages/platform-alchemy-k8s/src/attune.package.ts": authoredProjectFactsSource({
+        projectId: "platform-alchemy-k8s",
+        projectKind: "platform-resource-provider",
+      }),
       "packages/platform-alchemy-k8s/attune.source-bom.json": JSON.stringify({ project: "platform-alchemy-k8s" }),
       "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.ts": packageContractSource({
         packageId: "platform-alchemy-k8s",
@@ -325,14 +361,10 @@ describe("framework policy CLI", () => {
         }],
       }),
       "packages/attune-foldkit/package.json": JSON.stringify({ name: "@attune/attune-foldkit" }),
-      "packages/attune-foldkit/src/attune.package.ts": [
-        "export const PackageDeclaration = defineAttunePackage({",
-        "  id: \"attune-foldkit\",",
-        "  kind: \"product-ui\",",
-        "  operations: [] as const,",
-        "  views: [] as const,",
-        "} as const)",
-      ].join("\n"),
+      "packages/attune-foldkit/src/attune.package.ts": authoredProjectFactsSource({
+        projectId: "attune-foldkit",
+        projectKind: "foldkit-ui",
+      }),
       "packages/attune-foldkit/attune.source-bom.json": JSON.stringify({ project: "attune-foldkit" }),
       "framework/architecture/src/generated/source-bom/attune-foldkit.json": JSON.stringify({
         schemaVersion: 1,
@@ -367,14 +399,10 @@ describe("framework policy CLI", () => {
   it("errors when completed package source imports a package-local generated companion after replacement parity", () => {
     const workspaceRoot = makeWorkspace({
       "packages/platform-alchemy-k8s/package.json": JSON.stringify({ name: "@attune/platform-alchemy-k8s" }),
-      "packages/platform-alchemy-k8s/src/attune.package.ts": [
-        "export const PackageDeclaration = defineAttunePackage({",
-        "  id: \"platform-alchemy-k8s\",",
-        "  kind: \"platform-resource-provider\",",
-        "  operations: [] as const,",
-        "  views: [] as const,",
-        "} as const)",
-      ].join("\n"),
+      "packages/platform-alchemy-k8s/src/attune.package.ts": authoredProjectFactsSource({
+        projectId: "platform-alchemy-k8s",
+        projectKind: "platform-resource-provider",
+      }),
       "packages/platform-alchemy-k8s/src/local-contract.ts": "export { PackageContract } from \"./attune.contract.generated.js\"",
       "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.ts": packageContractSource({
         packageId: "platform-alchemy-k8s",
@@ -1158,7 +1186,7 @@ describe("framework policy CLI", () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.outputLines.every((line) =>
-      line.startsWith("WARNING attune/framework-final-ratchet package-declaration-too-large ") ||
+      line.startsWith("WARNING attune/framework-final-ratchet project-facts-too-large ") ||
       line.startsWith("WARNING attune/package-local-surface/one-attune-file package-local-attune-companion ")
     )).toBe(true)
     expect(result.ratchetDiagnostics.every((diagnostic) => diagnostic.severity === "warning")).toBe(true)
@@ -1184,6 +1212,25 @@ function makeWorkspace(files: Record<string, string>): string {
 
 function importFrom(imports: string, source: string): string {
   return ["import ", imports, " from ", JSON.stringify(source)].join("")
+}
+
+function authoredProjectFactsSource(input: {
+  readonly projectId: string
+  readonly projectKind: string
+}): string {
+  return [
+    "const defineAttuneProjectFacts = (facts) => facts",
+    "export const ProjectRuntimeRoots = {",
+    "  reactivityKeys: [] as const,",
+    "  atoms: [] as const,",
+    "} as const",
+    "export const ProjectFacts = defineAttuneProjectFacts({",
+    `  id: "${input.projectId}",`,
+    `  kind: "${input.projectKind}",`,
+    "  symbols: [] as const,",
+    "  edges: [] as const,",
+    "} as const)",
+  ].join("\n")
 }
 
 function packageContractSource(input: {

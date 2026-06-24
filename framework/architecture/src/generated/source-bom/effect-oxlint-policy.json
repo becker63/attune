@@ -13,9 +13,9 @@
       ],
       "editableRegions": [
         {
-          "description": "Policy-plugin authored source boundary; add policy rule symbols in the package file and validate through program-index-backed check.",
+          "description": "Policy-plugin authored source boundary; add policy rule symbols in the project facts file and validate through program-index-backed check.",
           "file": "src/attune.package.ts",
-          "marker": "definePackageContract"
+          "marker": "defineAttuneProjectFacts"
         }
       ],
       "generatorName": "@attune/nx:package-contract",
