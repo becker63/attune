@@ -16,9 +16,9 @@ import {
   type AttuneProtocolObligation,
 } from "@attune/framework-protocol"
 
-import type { ProtocolRuntimeSnapshot } from "./ProtocolProjection.js"
+import type { ProgramFactRuntimeSnapshot } from "./ProgramFactProjection.js"
 
-export const ProtocolReplayMetadataSchema = Schema.Struct({
+export const ReplayObservationMetadataSchema = Schema.Struct({
   replayId: Schema.String,
   runId: Schema.String,
   protocolId: Schema.String,
@@ -35,9 +35,9 @@ export const ProtocolReplayMetadataSchema = Schema.Struct({
   payload: Schema.optional(Schema.Unknown),
 })
 
-export type ProtocolReplayMetadata = typeof ProtocolReplayMetadataSchema.Type
+export type ReplayObservationMetadata = typeof ReplayObservationMetadataSchema.Type
 
-export const ProtocolWaiverStateSchema = Schema.Struct({
+export const DiagnosticWaiverStateSchema = Schema.Struct({
   waiverId: Schema.String,
   protocolId: Schema.String,
   packageId: Schema.String,
@@ -54,9 +54,9 @@ export const ProtocolWaiverStateSchema = Schema.Struct({
   payload: Schema.optional(Schema.Unknown),
 })
 
-export type ProtocolWaiverState = typeof ProtocolWaiverStateSchema.Type
+export type DiagnosticWaiverState = typeof DiagnosticWaiverStateSchema.Type
 
-export const ProtocolCoverageFeedbackSchema = Schema.Struct({
+export const CoverageObservationFeedbackSchema = Schema.Struct({
   coverageId: Schema.String,
   protocolId: Schema.String,
   packageId: Schema.String,
@@ -86,9 +86,9 @@ export const ProtocolCoverageFeedbackSchema = Schema.Struct({
   payload: Schema.optional(Schema.Unknown),
 })
 
-export type ProtocolCoverageFeedback = typeof ProtocolCoverageFeedbackSchema.Type
+export type CoverageObservationFeedback = typeof CoverageObservationFeedbackSchema.Type
 
-export interface ProtocolStoreSnapshot {
+export interface ProgramFactStoreSnapshot {
   readonly descriptors: readonly unknown[]
   readonly obligations: readonly unknown[]
   readonly evidenceRuns: readonly unknown[]
@@ -97,51 +97,51 @@ export interface ProtocolStoreSnapshot {
   readonly replayMetadata: readonly unknown[]
   readonly waiverState: readonly unknown[]
   readonly coverageFeedback: readonly unknown[]
-  readonly deltas: readonly unknown[]
+  readonly repairFindings: readonly unknown[]
 }
 
-export interface ProtocolStoreApi {
-  readonly putDescriptor: (
+export interface ProgramFactStoreApi {
+  readonly putSchemaDescriptor: (
     descriptor: AttuneProtocolDescriptor,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly putObligations: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly putDiagnosticRules: (
     batch: readonly AttuneProtocolObligation[],
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordEvidenceRun: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordObservationRun: (
     run: AttuneProtocolEvidenceRun,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordGeneratedArtifact: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordArtifact: (
     record: AttuneGeneratedArtifactRecord,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordEvidence: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordObservation: (
     event: AttuneProtocolEvidenceEvent,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordReplayMetadata: (
-    metadata: ProtocolReplayMetadata,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordWaiverState: (
-    waiver: ProtocolWaiverState,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordCoverageFeedback: (
-    feedback: ProtocolCoverageFeedback,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly putDeltas: (
-    deltas: readonly AttuneProtocolDelta[],
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly replaceDeltas: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordReplayObservation: (
+    metadata: ReplayObservationMetadata,
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordDiagnosticWaiver: (
+    waiver: DiagnosticWaiverState,
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordCoverageObservation: (
+    feedback: CoverageObservationFeedback,
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly putRepairFindings: (
+    repairFindings: readonly AttuneProtocolDelta[],
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly replaceRepairFindings: (
     packageId: string,
-    deltas: readonly AttuneProtocolDelta[],
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly snapshot: () => Effect.Effect<ProtocolStoreSnapshot, ProtocolStoreError>
+    repairFindings: readonly AttuneProtocolDelta[],
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly snapshot: () => Effect.Effect<ProgramFactStoreSnapshot, ProgramFactStoreError>
 }
 
-export class ProtocolStoreError extends Data.TaggedError("ProtocolStoreError")<{
+export class ProgramFactStoreError extends Data.TaggedError("ProgramFactStoreError")<{
   readonly message: string
   readonly operation: string
   readonly cause?: unknown
 }> {}
 
-export class ProtocolQueryError extends Data.TaggedError("ProtocolQueryError")<{
+export class ProgramFactQueryError extends Data.TaggedError("ProgramFactQueryError")<{
   readonly message: string
   readonly operation: string
   readonly packageId?: string
@@ -150,18 +150,18 @@ export class ProtocolQueryError extends Data.TaggedError("ProtocolQueryError")<{
   readonly cause?: unknown
 }> {}
 
-export class ProtocolStore extends Context.Service<
-  ProtocolStore,
-  ProtocolStoreApi
->()("@attune/framework-runtime/ProtocolStore") {
-  static fromApi(api: ProtocolStoreApi): Layer.Layer<ProtocolStore> {
-    return Layer.succeed(ProtocolStore, api)
+export class ProgramFactStore extends Context.Service<
+  ProgramFactStore,
+  ProgramFactStoreApi
+>()("@attune/framework-runtime/ProgramFactStore") {
+  static fromApi(api: ProgramFactStoreApi): Layer.Layer<ProgramFactStore> {
+    return Layer.succeed(ProgramFactStore, api)
   }
 }
 
-export const makeInMemoryProtocolStore = (
-  initial: Partial<ProtocolStoreSnapshot> = {},
-): ProtocolStoreApi => {
+export const makeInMemoryProgramFactStore = (
+  initial: Partial<ProgramFactStoreSnapshot> = {},
+): ProgramFactStoreApi => {
   let descriptors: readonly unknown[] = initial.descriptors ?? []
   let obligations: readonly unknown[] = initial.obligations ?? []
   let evidenceRuns: readonly unknown[] = initial.evidenceRuns ?? []
@@ -170,29 +170,29 @@ export const makeInMemoryProtocolStore = (
   let replayMetadata: readonly unknown[] = initial.replayMetadata ?? []
   let waiverState: readonly unknown[] = initial.waiverState ?? []
   let coverageFeedback: readonly unknown[] = initial.coverageFeedback ?? []
-  let deltas: readonly unknown[] = initial.deltas ?? []
+  let repairFindings: readonly unknown[] = initial.repairFindings ?? []
 
   return {
-    putDescriptor: (descriptor) =>
+    putSchemaDescriptor: (descriptor) =>
       Effect.sync(() => {
         descriptors = [
           ...descriptors.filter((candidate) =>
-            !isProtocolDescriptorFor(candidate, descriptor.protocolId)
+            !isSchemaDescriptorFor(candidate, descriptor.protocolId)
           ),
           descriptor,
         ]
       }),
-    putObligations: (batch) =>
+    putDiagnosticRules: (batch) =>
       Effect.sync(() => {
         const packageIds = new Set(batch.map((obligation) => obligation.packageId))
         obligations = [
           ...obligations.filter((candidate) =>
-            !isProtocolObligationFor(candidate, packageIds)
+            !isDiagnosticRuleFor(candidate, packageIds)
           ),
           ...batch,
         ]
       }),
-    recordEvidenceRun: (run) =>
+    recordObservationRun: (run) =>
       Effect.sync(() => {
         evidenceRuns = [
           ...evidenceRuns.filter((candidate) =>
@@ -201,7 +201,7 @@ export const makeInMemoryProtocolStore = (
           run,
         ]
       }),
-    recordGeneratedArtifact: (record) =>
+    recordArtifact: (record) =>
       Effect.sync(() => {
         generatedArtifacts = [
           ...generatedArtifacts.filter((candidate) =>
@@ -210,7 +210,7 @@ export const makeInMemoryProtocolStore = (
           record,
         ]
       }),
-    recordEvidence: (event) =>
+    recordObservation: (event) =>
       Effect.sync(() => {
         evidence = [
           ...evidence.filter((candidate) =>
@@ -219,7 +219,7 @@ export const makeInMemoryProtocolStore = (
           event,
         ]
       }),
-    recordReplayMetadata: (metadata) =>
+    recordReplayObservation: (metadata) =>
       Effect.sync(() => {
         replayMetadata = [
           ...replayMetadata.filter((candidate) =>
@@ -228,7 +228,7 @@ export const makeInMemoryProtocolStore = (
           metadata,
         ]
       }),
-    recordWaiverState: (waiver) =>
+    recordDiagnosticWaiver: (waiver) =>
       Effect.sync(() => {
         waiverState = [
           ...waiverState.filter((candidate) =>
@@ -237,7 +237,7 @@ export const makeInMemoryProtocolStore = (
           waiver,
         ]
       }),
-    recordCoverageFeedback: (feedback) =>
+    recordCoverageObservation: (feedback) =>
       Effect.sync(() => {
         coverageFeedback = [
           ...coverageFeedback.filter((candidate) =>
@@ -246,18 +246,18 @@ export const makeInMemoryProtocolStore = (
           feedback,
         ]
       }),
-    putDeltas: (nextDeltas) =>
+    putRepairFindings: (nextDeltas) =>
       Effect.sync(() => {
         const packageIds = new Set(nextDeltas.map((delta) => delta.packageId))
-        deltas = [
-          ...deltas.filter((candidate) => !isProtocolDeltaFor(candidate, packageIds)),
+        repairFindings = [
+          ...repairFindings.filter((candidate) => !isRepairFindingFor(candidate, packageIds)),
           ...nextDeltas,
         ]
       }),
-    replaceDeltas: (packageId, nextDeltas) =>
+    replaceRepairFindings: (packageId, nextDeltas) =>
       Effect.sync(() => {
-        deltas = [
-          ...deltas.filter((candidate) => !isProtocolDeltaFor(candidate, new Set([packageId]))),
+        repairFindings = [
+          ...repairFindings.filter((candidate) => !isRepairFindingFor(candidate, new Set([packageId]))),
           ...nextDeltas,
         ]
       }),
@@ -271,22 +271,22 @@ export const makeInMemoryProtocolStore = (
         replayMetadata,
         waiverState,
         coverageFeedback,
-        deltas,
+        repairFindings,
       }),
   }
 }
 
-export const InMemoryProtocolStoreLive = (
-  initial?: Partial<ProtocolStoreSnapshot>,
-): Layer.Layer<ProtocolStore> => ProtocolStore.fromApi(makeInMemoryProtocolStore(initial))
+export const InMemoryProgramFactStoreLive = (
+  initial?: Partial<ProgramFactStoreSnapshot>,
+): Layer.Layer<ProgramFactStore> => ProgramFactStore.fromApi(makeInMemoryProgramFactStore(initial))
 
-const isProtocolDescriptorFor = (value: unknown, protocolId: string): boolean =>
+const isSchemaDescriptorFor = (value: unknown, protocolId: string): boolean =>
   typeof value === "object" &&
   value !== null &&
   "protocolId" in value &&
   value.protocolId === protocolId
 
-const isProtocolObligationFor = (
+const isDiagnosticRuleFor = (
   value: unknown,
   packageIds: ReadonlySet<string>,
 ): boolean =>
@@ -302,7 +302,7 @@ const isGeneratedArtifactFor = (value: unknown, artifactId: string): boolean =>
   "artifactId" in value &&
   value.artifactId === artifactId
 
-const isProtocolDeltaFor = (
+const isRepairFindingFor = (
   value: unknown,
   packageIds: ReadonlySet<string>,
 ): boolean =>
@@ -326,25 +326,25 @@ const decodeBatch = <A>(
   schema: unknown,
   values: readonly unknown[],
   operation: string,
-): Effect.Effect<readonly A[], ProtocolQueryError> =>
+): Effect.Effect<readonly A[], ProgramFactQueryError> =>
   Effect.try({
     try: () =>
       values.map((value) =>
         Schema.decodeUnknownSync(schema as never)(value) as A
       ),
     catch: (cause) =>
-      new ProtocolQueryError({
-        message: `Protocol store returned an invalid ${operation} payload.`,
+      new ProgramFactQueryError({
+        message: `program fact store returned an invalid ${operation} payload.`,
         operation,
         payload: values,
         cause,
       }),
   })
 
-export const decodeProtocolStoreSnapshot = (
-  snapshot: ProtocolStoreSnapshot,
-): Effect.Effect<ProtocolRuntimeSnapshot, ProtocolQueryError> =>
-  Effect.gen(function* decodeProtocolStoreSnapshotEffect() {
+export const decodeProgramFactStoreSnapshot = (
+  snapshot: ProgramFactStoreSnapshot,
+): Effect.Effect<ProgramFactRuntimeSnapshot, ProgramFactQueryError> =>
+  Effect.gen(function* decodeProgramFactStoreSnapshotEffect() {
     const descriptors = yield* decodeBatch<AttuneProtocolDescriptor>(
       AttuneProtocolDescriptorSchema,
       snapshot.descriptors,
@@ -370,25 +370,25 @@ export const decodeProtocolStoreSnapshot = (
       snapshot.generatedArtifacts,
       "generatedArtifacts",
     )
-    const replayMetadata = yield* decodeBatch<ProtocolReplayMetadata>(
-      ProtocolReplayMetadataSchema,
+    const replayMetadata = yield* decodeBatch<ReplayObservationMetadata>(
+      ReplayObservationMetadataSchema,
       snapshot.replayMetadata,
       "replayMetadata",
     )
-    const waiverState = yield* decodeBatch<ProtocolWaiverState>(
-      ProtocolWaiverStateSchema,
+    const waiverState = yield* decodeBatch<DiagnosticWaiverState>(
+      DiagnosticWaiverStateSchema,
       snapshot.waiverState,
       "waiverState",
     )
-    const coverageFeedback = yield* decodeBatch<ProtocolCoverageFeedback>(
-      ProtocolCoverageFeedbackSchema,
+    const coverageFeedback = yield* decodeBatch<CoverageObservationFeedback>(
+      CoverageObservationFeedbackSchema,
       snapshot.coverageFeedback,
       "coverageFeedback",
     )
-    const deltas = yield* decodeBatch<AttuneProtocolDelta>(
+    const repairFindings = yield* decodeBatch<AttuneProtocolDelta>(
       AttuneProtocolDeltaSchema,
-      snapshot.deltas,
-      "deltas",
+      snapshot.repairFindings,
+      "repairFindings",
     )
 
     return {
@@ -400,12 +400,12 @@ export const decodeProtocolStoreSnapshot = (
       replayMetadata,
       waiverState,
       coverageFeedback,
-      deltas,
+      repairFindings,
     }
   })
 
 export const diagnosticFromQueryError = (
-  error: ProtocolQueryError,
+  error: ProgramFactQueryError,
   fallback: {
     readonly packageId: string
     readonly sourcePath: string
@@ -419,8 +419,8 @@ export const diagnosticFromQueryError = (
     sourcePath: error.sourcePath ?? fallback.sourcePath,
     explanation: error.message,
     suggestedActions: [{
-      id: "refresh-protocol-materialization",
-      title: "Refresh protocol materialization",
+      id: "refresh-artifact-materialization",
+      title: "Refresh artifact materialization",
       kind: "nx-check",
       target: "workspace:attune-check",
       options: { packageId: error.packageId ?? fallback.packageId },
@@ -433,10 +433,10 @@ export const diagnosticFromQueryError = (
 }
 
 export const mapStoreError = (
-  error: ProtocolStoreError,
+  error: ProgramFactStoreError,
   operation: string,
-): ProtocolQueryError =>
-  new ProtocolQueryError({
+): ProgramFactQueryError =>
+  new ProgramFactQueryError({
     message: error.message,
     operation,
     cause: error,

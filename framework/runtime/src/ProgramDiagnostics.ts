@@ -2,11 +2,11 @@ import { Context, Effect, Layer } from "effect"
 import type { AttuneProtocolDiagnostic } from "@attune/framework-protocol"
 import { ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
-import { ProtocolQuery, type ProtocolQueryApi } from "./ProtocolQuery.js"
-import { diagnosticFromQueryError, type ProtocolQueryError } from "./ProtocolStore.js"
+import { ProgramFactQuery, type ProgramFactQueryApi } from "./ProgramFactQuery.js"
+import { diagnosticFromQueryError, type ProgramFactQueryError } from "./ProgramFactStore.js"
 import { programIndexDiagnosticsForFile } from "./ProgramIndexProjection.js"
 
-export interface ProtocolDiagnosticsApi {
+export interface ProgramDiagnosticsApi {
   readonly diagnosticsForFile: (
     sourcePath: string,
     fallback?: {
@@ -16,13 +16,13 @@ export interface ProtocolDiagnosticsApi {
   ) => Effect.Effect<readonly AttuneProtocolDiagnostic[], never>
 }
 
-export const makeProtocolDiagnostics = (
-  query: ProtocolQueryApi,
+export const makeProgramDiagnostics = (
+  query: ProgramFactQueryApi,
   programIndex?: ProgramIndexApi,
-): ProtocolDiagnosticsApi => ({
+): ProgramDiagnosticsApi => ({
   diagnosticsForFile: (sourcePath, fallback = {}) => {
     const compatibilityDiagnostics = query.getDiagnosticsForFile(sourcePath).pipe(
-      Effect.catch((error: ProtocolQueryError) =>
+      Effect.catch((error: ProgramFactQueryError) =>
         Effect.succeed([
           diagnosticFromQueryError(error, {
             packageId: fallback.packageId ?? error.packageId ?? "unknown",
@@ -44,32 +44,32 @@ export const makeProtocolDiagnostics = (
   },
 })
 
-export class ProtocolDiagnostics extends Context.Service<
-  ProtocolDiagnostics,
-  ProtocolDiagnosticsApi
->()("@attune/framework-runtime/ProtocolDiagnostics") {}
+export class ProgramDiagnostics extends Context.Service<
+  ProgramDiagnostics,
+  ProgramDiagnosticsApi
+>()("@attune/framework-runtime/ProgramDiagnostics") {}
 
-export const ProtocolDiagnosticsLive: Layer.Layer<
-  ProtocolDiagnostics,
+export const ProgramDiagnosticsLive: Layer.Layer<
+  ProgramDiagnostics,
   never,
-  ProtocolQuery
+  ProgramFactQuery
 > = Layer.effect(
-  ProtocolDiagnostics,
-  Effect.gen(function* makeProtocolDiagnosticsLayer() {
-    const query = yield* ProtocolQuery
-    return makeProtocolDiagnostics(query)
+  ProgramDiagnostics,
+  Effect.gen(function* makeProgramDiagnosticsLayer() {
+    const query = yield* ProgramFactQuery
+    return makeProgramDiagnostics(query)
   }),
 )
 
 export const ProgramIndexDiagnosticsLive: Layer.Layer<
-  ProtocolDiagnostics,
+  ProgramDiagnostics,
   never,
-  ProtocolQuery | ProgramIndex
+  ProgramFactQuery | ProgramIndex
 > = Layer.effect(
-  ProtocolDiagnostics,
+  ProgramDiagnostics,
   Effect.gen(function* makeProgramIndexDiagnosticsLayer() {
-    const query = yield* ProtocolQuery
+    const query = yield* ProgramFactQuery
     const programIndex = yield* ProgramIndex
-    return makeProtocolDiagnostics(query, programIndex)
+    return makeProgramDiagnostics(query, programIndex)
   }),
 )

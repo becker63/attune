@@ -8,20 +8,20 @@ Changed:
   remain warning-first while parity is incomplete.
 - Framework-owned generated contract materialization remains allowed to import
   adjacent compatibility helper files under
-  `framework/architecture/src/generated/package-contracts/**`.
+  `framework/architecture/src/generated/project-facts/**`.
 - The actual repository scan now asserts that no package-local generated
   companion files or imports are present in the active package source surface.
 
 Ownership Proof:
 - `attune.source-bom.index.json` points all 11 registered projects at
   `framework/architecture/src/generated/source-bom/<project>.json`.
-- `rg --files | rg '(^|/)src/attune\.(generated|contract\.generated|package\.typecheck)\.ts$|(^|/)attune\.source-bom\.json$'`
+- `rg --files | rg '(^|/)src/attune\.(generated|contract\.generated|package\.typecheck)\.ts$|(^|/)attune\.source-ownership\.json$'`
   returns no project-local generated companion or package-root source ownership
   files in the active workspace.
 - `.attune/cache/` remains gitignored, and no-report policy tests continue to
   reject checked-in report artifacts while allowing local cache artifacts.
-- `nix/policy-hooks/touched-source-bom-ownership.sh` accepts staged
-  package/framework source when the root Source BOM index points at either the
+- `nix/policy-hooks/touched-source-ownership-ownership.sh` accepts staged
+  package/framework source when the root source ownership artifact index points at either the
   framework-owned or cache-owned projection.
 - No active ring-specific handoff existed before Phase 6. The Phase 6 ring
   handoffs must describe replacements as project, source_file, symbol,
@@ -32,9 +32,9 @@ Ownership Proof:
 Validated:
 - `pnpm exec nx run attune-architecture:test --skipNxCache`
 - `pnpm exec nx run attune-architecture:build --skipNxCache`
-- `pnpm exec nx run workspace:package-contracts-check --skipNxCache`
+- `pnpm exec nx run workspace:attune-check --skipNxCache`
 - `pnpm exec nx run workspace:source-bom-check --skipNxCache`
-- `bash -n nix/policy-hooks/touched-source-bom-ownership.sh`
+- `bash -n nix/policy-hooks/touched-source-ownership-ownership.sh`
 - `pnpm exec nx run workspace:policy-commit --timeoutSeconds=600`
 
 Not run:

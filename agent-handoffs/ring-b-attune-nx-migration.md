@@ -1,6 +1,6 @@
 Changed:
 - Removed the package-local compatibility test
-  `packages/attune-nx/test/attune-package-contract.test.ts`.
+  `packages/attune-nx/test/attune-project-facts.test.ts`.
 - Updated `attune.generator-shapes.json` so the `attune-nx` compatibility
   shape entry describes mechanical indexed facts instead of old generated
   object-shape assertions.
@@ -26,20 +26,20 @@ Removed surfaces:
   and public Nx check/typecheck/repair dry-run targets.
 
 Retained compatibility-only surfaces:
-- `packages/attune-nx/src/generators/package-contract/**`
-- `packages/attune-nx/src/package-contract-graph.ts`
-- `packages/attune-nx/test/package-contract-generator.test.ts`
-- `packages/attune-nx/test/package-contract-graph.test.ts`
+- `packages/attune-nx/src/generators/project-facts/**`
+- `packages/attune-nx/src/project-facts-graph.ts`
+- `packages/attune-nx/test/project-facts-generator.test.ts`
+- `packages/attune-nx/test/project-facts-graph.test.ts`
 - `packages/attune-nx/test/tooling-contract-discovery.test.ts`
 - `packages/attune-nx/test/product-contract-discovery.test.ts`
-- `framework/architecture/src/generated/package-contracts/attune-nx/attune.generated.ts`
-- `framework/architecture/src/generated/package-contracts/attune-nx/attune.contract.generated.ts`
+- `framework/architecture/src/generated/project-facts/attune-nx/attune.generated.ts`
+- `framework/architecture/src/generated/project-facts/attune-nx/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/attune-nx.json`
 - `.attune/cache/generated/attune-nx/artifact-freshness.json`
 
 These retained files are compatibility generator/helper surfaces or
 framework-owned compatibility inputs. Phase 9.5 renamed the old internal
-repair routes; the package-contract generator, graph helpers, and generated
+repair routes; the project-facts generator, graph helpers, and generated
 aggregate still need deletion, quarantine, or mechanical replacement without
 losing the public check/repair workflow.
 
@@ -55,11 +55,11 @@ Not run:
   proof-pressure actions were not applicable and were not run.
 
 Risks:
-- `attune-nx` still owns the old package-contract generator and graph helper
+- `attune-nx` still owns the old project-facts generator and graph helper
   APIs, so this slice cannot delete every compatibility helper without a
   broader replacement for generator tests and discovery tests.
 - The public project repair target now routes through mechanical internal
-  repair kinds; remaining package-contract generator and graph APIs should not
+  repair kinds; remaining project-facts generator and graph APIs should not
   survive archive readiness as permanent compatibility APIs.
 
 Follow-ups:

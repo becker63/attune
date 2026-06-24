@@ -68,7 +68,7 @@ describe("attune-nx executors", () => {
       checks: ["test", "contract", "test"],
       inputs: ["src/attune.package.ts", "src/attune.package.ts"],
       outputs: ["coverage"],
-      evidenceOutputs: ["dist/evidence/package-contract.json"],
+      evidenceOutputs: ["dist/evidence/project-facts.json"],
       configDependencies: ["tsconfig.json"],
       resourceTier: "standard",
       workerBudget: {
@@ -92,13 +92,13 @@ describe("attune-nx executors", () => {
     expect(
       createPackageCheckIntent(normalized, {
         projectName: "attuned-discovery",
-        targetName: "package-contracts-check",
+        targetName: "attune-check",
       }),
     ).toMatchObject({
       executor: "attune:package-check",
       executionMode: "dry-run",
       project: "attuned-discovery",
-      target: "package-contracts-check",
+      target: "attune-check",
       action: {
         kind: "package-check",
         checks: ["contract", "test"],
@@ -218,7 +218,7 @@ describe("attune-nx executors", () => {
     expect(summaries).toEqual([result.summary])
   })
 
-  it("routes package contract checks through workspace attune-check", async () => {
+  it("routes project facts checks through workspace attune-check", async () => {
     const calls: ExecutorProcessPlan[] = []
     const result = await packageCheckExecutor(
       {
@@ -802,7 +802,7 @@ describe("attune-nx executors", () => {
           targetProject: "attune-nx",
           checks: ["typecheck"],
           dryRun: false,
-          evidenceOutputs: ["dist/evidence/package-contract.json"],
+          evidenceOutputs: ["dist/evidence/project-facts.json"],
         },
         createExecutorContext(),
       ),

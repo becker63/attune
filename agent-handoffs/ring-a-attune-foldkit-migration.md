@@ -1,6 +1,6 @@
 Changed:
 - Removed the package-local compatibility test
-  `packages/attune-foldkit/test/attune-package-contract.test.ts`.
+  `packages/attune-foldkit/test/attune-project-facts.test.ts`.
 - Updated `attune.generator-shapes.json` so the `attune-foldkit`
   compatibility shape entry no longer expects the deleted package-local
   compatibility test.
@@ -31,8 +31,8 @@ Removed surfaces:
   output.
 
 Retained compatibility-only surfaces:
-- `framework/architecture/src/generated/package-contracts/attune-foldkit/attune.generated.ts`
-- `framework/architecture/src/generated/package-contracts/attune-foldkit/attune.contract.generated.ts`
+- `framework/architecture/src/generated/project-facts/attune-foldkit/attune.generated.ts`
+- `framework/architecture/src/generated/project-facts/attune-foldkit/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/attune-foldkit.json`
 - `.attune/cache/generated/attune-foldkit/attune-symbol-registry.ts`
 - `.attune/cache/generated/attune-foldkit/attune-property-observations.ts`

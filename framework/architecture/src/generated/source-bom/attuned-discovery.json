@@ -8,7 +8,7 @@
         },
         {
           "project": "workspace",
-          "target": "package-contracts-check"
+          "target": "attune-check"
         }
       ],
       "editableRegions": [
@@ -18,10 +18,10 @@
           "marker": "defineAttuneProjectFacts"
         }
       ],
-      "generatorName": "@attune/nx:package-contract",
-      "openspecChangeId": "standardize-effect-package-contracts",
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
       "options": {
-        "operationIds": [
+        "symbolIds": [
           "discovery-events-facade",
           "discovery-event-log-append",
           "event-replay-projection",
@@ -31,8 +31,8 @@
           "derived-workbench-atom-family",
           "domain-event-codecs"
         ],
-        "packageId": "attuned-discovery",
-        "packageKind": "core-discovery-runtime",
+        "projectId": "attuned-discovery",
+        "projectKind": "core-discovery-runtime",
         "project": "attuned-discovery",
         "sourceRoot": "packages/attuned-discovery/src"
       },
@@ -42,18 +42,18 @@
       ],
       "owningProject": "attuned-discovery",
       "projectRoot": "packages/attuned-discovery",
-      "sourceShapeKind": "package-contract",
+      "sourceShapeKind": "project-facts",
       "syncTargets": [
         {
           "project": "attuned-discovery",
-          "target": "sync-package-contract"
+          "target": "sync-project-facts"
         }
       ]
     }
   ],
-  "contractShards": [
+  "projectFactShards": [
     {
-      "generator": "@attune/nx:package-contract",
+      "generator": "@attune/nx:project-facts",
       "outputs": [
         "src/attune.package.ts"
       ],
@@ -63,7 +63,7 @@
         "test/**"
       ],
       "status": "generated",
-      "target": "sync-package-contract"
+      "target": "sync-project-facts"
     }
   ],
   "generatedOutputs": [],

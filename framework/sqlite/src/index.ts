@@ -22,17 +22,17 @@ import { Context, Data, Effect, Layer, Schema } from "effect"
 
 export * from "./ProgramIndex.js"
 
-export const defaultProtocolCachePath = ".attune/cache/protocol.sqlite"
+export const defaultProgramFactStorePath = ".attune/cache/program-facts.sqlite"
 
 export const sqliteBackendName = "node:sqlite"
 
-export class ProtocolStoreError extends Data.TaggedError("ProtocolStoreError")<{
+export class ProgramFactStoreError extends Data.TaggedError("ProgramFactStoreError")<{
   readonly operation: string
   readonly message: string
   readonly cause?: unknown
 }> {}
 
-export interface ProtocolDescriptorReceipt {
+export interface SchemaDescriptorReceipt {
   readonly protocolId: string
   readonly packageId: string
   readonly sourcePath: string
@@ -40,16 +40,16 @@ export interface ProtocolDescriptorReceipt {
   readonly recordedAt: string
 }
 
-export interface ProtocolStoreHealth {
+export interface ProgramFactStoreHealth {
   readonly ok: boolean
   readonly backend: "memory" | typeof sqliteBackendName
   readonly path: string
   readonly migrationVersion: number
-  readonly rowCounts: ProtocolStoreRowCounts
+  readonly rowCounts: ProgramFactStoreRowCounts
   readonly detail: string
 }
 
-export interface ProtocolStoreRowCounts {
+export interface ProgramFactStoreRowCounts {
   readonly descriptors: number
   readonly obligations: number
   readonly evidenceRuns: number
@@ -58,10 +58,10 @@ export interface ProtocolStoreRowCounts {
   readonly replayMetadata: number
   readonly waiverState: number
   readonly coverageFeedback: number
-  readonly deltas: number
+  readonly repairFindings: number
 }
 
-export const ProtocolReplayMetadataSchema = Schema.Struct({
+export const ReplayObservationMetadataSchema = Schema.Struct({
   replayId: Schema.String,
   runId: Schema.String,
   protocolId: Schema.String,
@@ -78,9 +78,9 @@ export const ProtocolReplayMetadataSchema = Schema.Struct({
   payload: Schema.optional(Schema.Unknown),
 })
 
-export type ProtocolReplayMetadata = typeof ProtocolReplayMetadataSchema.Type
+export type ReplayObservationMetadata = typeof ReplayObservationMetadataSchema.Type
 
-export const ProtocolWaiverStateSchema = Schema.Struct({
+export const DiagnosticWaiverStateSchema = Schema.Struct({
   waiverId: Schema.String,
   protocolId: Schema.String,
   packageId: Schema.String,
@@ -97,9 +97,9 @@ export const ProtocolWaiverStateSchema = Schema.Struct({
   payload: Schema.optional(Schema.Unknown),
 })
 
-export type ProtocolWaiverState = typeof ProtocolWaiverStateSchema.Type
+export type DiagnosticWaiverState = typeof DiagnosticWaiverStateSchema.Type
 
-export const ProtocolCoverageFeedbackSchema = Schema.Struct({
+export const CoverageObservationFeedbackSchema = Schema.Struct({
   coverageId: Schema.String,
   protocolId: Schema.String,
   packageId: Schema.String,
@@ -129,96 +129,96 @@ export const ProtocolCoverageFeedbackSchema = Schema.Struct({
   payload: Schema.optional(Schema.Unknown),
 })
 
-export type ProtocolCoverageFeedback = typeof ProtocolCoverageFeedbackSchema.Type
+export type CoverageObservationFeedback = typeof CoverageObservationFeedbackSchema.Type
 
-export interface ProtocolStoreSnapshot {
+export interface ProgramFactStoreSnapshot {
   readonly descriptors: readonly AttuneProtocolDescriptor[]
   readonly obligations: readonly AttuneProtocolObligation[]
   readonly evidenceRuns: readonly AttuneProtocolEvidenceRun[]
   readonly evidence: readonly AttuneProtocolEvidenceEvent[]
   readonly generatedArtifacts: readonly AttuneGeneratedArtifactRecord[]
-  readonly replayMetadata: readonly ProtocolReplayMetadata[]
-  readonly waiverState: readonly ProtocolWaiverState[]
-  readonly coverageFeedback: readonly ProtocolCoverageFeedback[]
-  readonly deltas: readonly AttuneProtocolDelta[]
+  readonly replayMetadata: readonly ReplayObservationMetadata[]
+  readonly waiverState: readonly DiagnosticWaiverState[]
+  readonly coverageFeedback: readonly CoverageObservationFeedback[]
+  readonly repairFindings: readonly AttuneProtocolDelta[]
 }
 
-export interface ProtocolStoreFilter {
+export interface ProgramFactStoreFilter {
   readonly protocolId?: string
   readonly packageId?: string
 }
 
-export interface ProtocolStoreApi {
-  readonly initialize: () => Effect.Effect<ProtocolStoreHealth, ProtocolStoreError>
-  readonly reset: () => Effect.Effect<void, ProtocolStoreError>
-  readonly reinitialize: () => Effect.Effect<ProtocolStoreHealth, ProtocolStoreError>
-  readonly health: () => Effect.Effect<ProtocolStoreHealth, ProtocolStoreError>
-  readonly putDescriptor: (
+export interface ProgramFactStoreApi {
+  readonly initialize: () => Effect.Effect<ProgramFactStoreHealth, ProgramFactStoreError>
+  readonly reset: () => Effect.Effect<void, ProgramFactStoreError>
+  readonly reinitialize: () => Effect.Effect<ProgramFactStoreHealth, ProgramFactStoreError>
+  readonly health: () => Effect.Effect<ProgramFactStoreHealth, ProgramFactStoreError>
+  readonly putSchemaDescriptor: (
     descriptor: AttuneProtocolDescriptor,
-  ) => Effect.Effect<ProtocolDescriptorReceipt, ProtocolStoreError>
-  readonly putObligations: (
+  ) => Effect.Effect<SchemaDescriptorReceipt, ProgramFactStoreError>
+  readonly putDiagnosticRules: (
     batch: readonly AttuneProtocolObligation[],
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordEvidenceRun: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordObservationRun: (
     run: AttuneProtocolEvidenceRun,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordReplayMetadata: (
-    metadata: ProtocolReplayMetadata,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordWaiverState: (
-    waiver: ProtocolWaiverState,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordCoverageFeedback: (
-    feedback: ProtocolCoverageFeedback,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordGeneratedArtifact: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordReplayObservation: (
+    metadata: ReplayObservationMetadata,
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordDiagnosticWaiver: (
+    waiver: DiagnosticWaiverState,
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordCoverageObservation: (
+    feedback: CoverageObservationFeedback,
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordArtifact: (
     record: AttuneGeneratedArtifactRecord,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly recordEvidence: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly recordObservation: (
     event: AttuneProtocolEvidenceEvent,
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly putDeltas: (
-    deltas: readonly AttuneProtocolDelta[],
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly replaceDeltas: (
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly putRepairFindings: (
+    repairFindings: readonly AttuneProtocolDelta[],
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly replaceRepairFindings: (
     packageId: string,
-    deltas: readonly AttuneProtocolDelta[],
-  ) => Effect.Effect<void, ProtocolStoreError>
-  readonly getDescriptor: (
+    repairFindings: readonly AttuneProtocolDelta[],
+  ) => Effect.Effect<void, ProgramFactStoreError>
+  readonly getSchemaDescriptor: (
     protocolId: string,
-  ) => Effect.Effect<AttuneProtocolDescriptor | undefined, ProtocolStoreError>
-  readonly listDescriptors: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolDescriptor[], ProtocolStoreError>
-  readonly listObligations: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolObligation[], ProtocolStoreError>
-  readonly listEvidenceRuns: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolEvidenceRun[], ProtocolStoreError>
-  readonly listReplayMetadata: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly ProtocolReplayMetadata[], ProtocolStoreError>
-  readonly listWaiverState: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly ProtocolWaiverState[], ProtocolStoreError>
-  readonly listCoverageFeedback: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly ProtocolCoverageFeedback[], ProtocolStoreError>
-  readonly listEvidence: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolEvidenceEvent[], ProtocolStoreError>
-  readonly listGeneratedArtifacts: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly AttuneGeneratedArtifactRecord[], ProtocolStoreError>
-  readonly listDeltas: (
-    filter?: ProtocolStoreFilter,
-  ) => Effect.Effect<readonly AttuneProtocolDelta[], ProtocolStoreError>
-  readonly snapshot: () => Effect.Effect<ProtocolStoreSnapshot, ProtocolStoreError>
-  readonly close: () => Effect.Effect<void, ProtocolStoreError>
+  ) => Effect.Effect<AttuneProtocolDescriptor | undefined, ProgramFactStoreError>
+  readonly listSchemaDescriptors: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly AttuneProtocolDescriptor[], ProgramFactStoreError>
+  readonly listDiagnosticRules: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly AttuneProtocolObligation[], ProgramFactStoreError>
+  readonly listObservationRuns: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly AttuneProtocolEvidenceRun[], ProgramFactStoreError>
+  readonly listReplayObservations: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly ReplayObservationMetadata[], ProgramFactStoreError>
+  readonly listDiagnosticWaivers: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly DiagnosticWaiverState[], ProgramFactStoreError>
+  readonly listCoverageObservations: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly CoverageObservationFeedback[], ProgramFactStoreError>
+  readonly listObservations: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly AttuneProtocolEvidenceEvent[], ProgramFactStoreError>
+  readonly listArtifacts: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly AttuneGeneratedArtifactRecord[], ProgramFactStoreError>
+  readonly listRepairFindings: (
+    filter?: ProgramFactStoreFilter,
+  ) => Effect.Effect<readonly AttuneProtocolDelta[], ProgramFactStoreError>
+  readonly snapshot: () => Effect.Effect<ProgramFactStoreSnapshot, ProgramFactStoreError>
+  readonly close: () => Effect.Effect<void, ProgramFactStoreError>
 }
 
-export interface SqliteProtocolStoreOptions {
+export interface SqliteProgramFactStoreOptions {
   readonly path?: string
 }
 
@@ -252,18 +252,18 @@ export const withDescriptorHash = (
 export const generatedArtifactContentHash = (content: string | Uint8Array): string =>
   createHash("sha256").update(content).digest("hex")
 
-export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
+export const createInMemoryProgramFactStore = (): ProgramFactStoreApi => {
   let descriptors: readonly AttuneProtocolDescriptor[] = []
   let obligations: readonly AttuneProtocolObligation[] = []
   let evidenceRuns: readonly AttuneProtocolEvidenceRun[] = []
   let evidence: readonly AttuneProtocolEvidenceEvent[] = []
   let generatedArtifacts: readonly AttuneGeneratedArtifactRecord[] = []
-  let replayMetadata: readonly ProtocolReplayMetadata[] = []
-  let waiverState: readonly ProtocolWaiverState[] = []
-  let coverageFeedback: readonly ProtocolCoverageFeedback[] = []
-  let deltas: readonly AttuneProtocolDelta[] = []
+  let replayMetadata: readonly ReplayObservationMetadata[] = []
+  let waiverState: readonly DiagnosticWaiverState[] = []
+  let coverageFeedback: readonly CoverageObservationFeedback[] = []
+  let repairFindings: readonly AttuneProtocolDelta[] = []
 
-  const rowCounts = (): ProtocolStoreRowCounts => ({
+  const rowCounts = (): ProgramFactStoreRowCounts => ({
     descriptors: descriptors.length,
     obligations: obligations.length,
     evidenceRuns: evidenceRuns.length,
@@ -272,16 +272,16 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
     replayMetadata: replayMetadata.length,
     waiverState: waiverState.length,
     coverageFeedback: coverageFeedback.length,
-    deltas: deltas.length,
+    repairFindings: repairFindings.length,
   })
 
-  const health = (): ProtocolStoreHealth => ({
+  const health = (): ProgramFactStoreHealth => ({
     ok: true,
     backend: "memory",
     path: ":memory:",
     migrationVersion: latestMigrationVersion,
     rowCounts: rowCounts(),
-    detail: "In-memory protocol store is initialized.",
+    detail: "In-memory program fact store is initialized.",
   })
 
   return {
@@ -296,7 +296,7 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
         replayMetadata = []
         waiverState = []
         coverageFeedback = []
-        deltas = []
+        repairFindings = []
       }),
     reinitialize: () =>
       Effect.sync(() => {
@@ -308,11 +308,11 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
         replayMetadata = []
         waiverState = []
         coverageFeedback = []
-        deltas = []
+        repairFindings = []
         return health()
       }),
     health: () => Effect.succeed(health()),
-    putDescriptor: (descriptor) =>
+    putSchemaDescriptor: (descriptor) =>
       Effect.sync(() => {
         const decoded = decodePayload<AttuneProtocolDescriptor>(AttuneProtocolDescriptorSchema, descriptor)
         assertDescriptorHash(decoded)
@@ -322,7 +322,7 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
         ]
         return descriptorReceipt(decoded)
       }),
-    putObligations: (batch) =>
+    putDiagnosticRules: (batch) =>
       Effect.sync(() => {
         const decoded = batch.map((candidate) =>
           decodePayload<AttuneProtocolObligation>(AttuneProtocolObligationSchema, candidate),
@@ -333,7 +333,7 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
           ...decoded,
         ]
       }),
-    recordEvidenceRun: (run) =>
+    recordObservationRun: (run) =>
       Effect.sync(() => {
         const decoded = decodePayload<AttuneProtocolEvidenceRun>(AttuneProtocolEvidenceRunSchema, run)
         evidenceRuns = [
@@ -341,31 +341,31 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
           decoded,
         ]
       }),
-    recordReplayMetadata: (metadata) =>
+    recordReplayObservation: (metadata) =>
       Effect.sync(() => {
-        const decoded = decodePayload<ProtocolReplayMetadata>(ProtocolReplayMetadataSchema, metadata)
+        const decoded = decodePayload<ReplayObservationMetadata>(ReplayObservationMetadataSchema, metadata)
         replayMetadata = [
           ...replayMetadata.filter((candidate) => candidate.replayId !== decoded.replayId),
           decoded,
         ]
       }),
-    recordWaiverState: (waiver) =>
+    recordDiagnosticWaiver: (waiver) =>
       Effect.sync(() => {
-        const decoded = decodePayload<ProtocolWaiverState>(ProtocolWaiverStateSchema, waiver)
+        const decoded = decodePayload<DiagnosticWaiverState>(DiagnosticWaiverStateSchema, waiver)
         waiverState = [
           ...waiverState.filter((candidate) => candidate.waiverId !== decoded.waiverId),
           decoded,
         ]
       }),
-    recordCoverageFeedback: (feedback) =>
+    recordCoverageObservation: (feedback) =>
       Effect.sync(() => {
-        const decoded = decodePayload<ProtocolCoverageFeedback>(ProtocolCoverageFeedbackSchema, feedback)
+        const decoded = decodePayload<CoverageObservationFeedback>(CoverageObservationFeedbackSchema, feedback)
         coverageFeedback = [
           ...coverageFeedback.filter((candidate) => candidate.coverageId !== decoded.coverageId),
           decoded,
         ]
       }),
-    recordGeneratedArtifact: (record) =>
+    recordArtifact: (record) =>
       Effect.sync(() => {
         const decoded = decodePayload<AttuneGeneratedArtifactRecord>(AttuneGeneratedArtifactRecordSchema, record)
         generatedArtifacts = [
@@ -373,7 +373,7 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
           decoded,
         ]
       }),
-    recordEvidence: (event) =>
+    recordObservation: (event) =>
       Effect.sync(() => {
         const decoded = decodePayload<AttuneProtocolEvidenceEvent>(AttuneProtocolEvidenceEventSchema, event)
         evidence = [
@@ -381,47 +381,47 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
           decoded,
         ]
       }),
-    putDeltas: (nextDeltas) =>
+    putRepairFindings: (nextDeltas) =>
       Effect.sync(() => {
         const decoded = nextDeltas.map((candidate) =>
           decodePayload<AttuneProtocolDelta>(AttuneProtocolDeltaSchema, candidate),
         )
         const incoming = new Set(decoded.map((delta) => delta.deltaId))
-        deltas = [
-          ...deltas.filter((candidate) => !incoming.has(candidate.deltaId)),
+        repairFindings = [
+          ...repairFindings.filter((candidate) => !incoming.has(candidate.deltaId)),
           ...decoded,
         ]
       }),
-    replaceDeltas: (packageId, nextDeltas) =>
+    replaceRepairFindings: (packageId, nextDeltas) =>
       Effect.sync(() => {
         const decoded = nextDeltas.map((candidate) =>
           decodePayload<AttuneProtocolDelta>(AttuneProtocolDeltaSchema, candidate),
         )
-        deltas = [
-          ...deltas.filter((candidate) => candidate.packageId !== packageId),
+        repairFindings = [
+          ...repairFindings.filter((candidate) => candidate.packageId !== packageId),
           ...decoded,
         ]
       }),
-    getDescriptor: (protocolId) =>
+    getSchemaDescriptor: (protocolId) =>
       Effect.succeed(descriptors.find((candidate) => candidate.protocolId === protocolId)),
-    listDescriptors: (filter = {}) =>
+    listSchemaDescriptors: (filter = {}) =>
       Effect.succeed(descriptors.filter((candidate) => matchesFilter(candidate, filter))),
-    listObligations: (filter = {}) =>
+    listDiagnosticRules: (filter = {}) =>
       Effect.succeed(obligations.filter((candidate) => matchesFilter(candidate, filter))),
-    listEvidenceRuns: (filter = {}) =>
+    listObservationRuns: (filter = {}) =>
       Effect.succeed(evidenceRuns.filter((candidate) => matchesFilter(candidate, filter))),
-    listReplayMetadata: (filter = {}) =>
+    listReplayObservations: (filter = {}) =>
       Effect.succeed(replayMetadata.filter((candidate) => matchesFilter(candidate, filter))),
-    listWaiverState: (filter = {}) =>
+    listDiagnosticWaivers: (filter = {}) =>
       Effect.succeed(waiverState.filter((candidate) => matchesFilter(candidate, filter))),
-    listCoverageFeedback: (filter = {}) =>
+    listCoverageObservations: (filter = {}) =>
       Effect.succeed(coverageFeedback.filter((candidate) => matchesFilter(candidate, filter))),
-    listEvidence: (filter = {}) =>
+    listObservations: (filter = {}) =>
       Effect.succeed(evidence.filter((candidate) => matchesFilter(candidate, filter))),
-    listGeneratedArtifacts: (filter = {}) =>
+    listArtifacts: (filter = {}) =>
       Effect.succeed(generatedArtifacts.filter((candidate) => matchesFilter(candidate, filter))),
-    listDeltas: (filter = {}) =>
-      Effect.succeed(deltas.filter((candidate) => matchesFilter(candidate, filter))),
+    listRepairFindings: (filter = {}) =>
+      Effect.succeed(repairFindings.filter((candidate) => matchesFilter(candidate, filter))),
     snapshot: () =>
       Effect.succeed({
         descriptors,
@@ -432,15 +432,15 @@ export const createInMemoryProtocolStore = (): ProtocolStoreApi => {
         replayMetadata,
         waiverState,
         coverageFeedback,
-        deltas,
+        repairFindings,
       }),
     close: () => Effect.void,
   }
 }
 
-export const createSqliteProtocolStore = ({
-  path = defaultProtocolCachePath,
-}: SqliteProtocolStoreOptions = {}): ProtocolStoreApi => {
+export const createSqliteProgramFactStore = ({
+  path = defaultProgramFactStorePath,
+}: SqliteProgramFactStoreOptions = {}): ProgramFactStoreApi => {
   if (path !== ":memory:") {
     mkdirSync(dirname(path), { recursive: true })
   }
@@ -448,7 +448,7 @@ export const createSqliteProtocolStore = ({
   const database = new DatabaseSync(path)
   migrate(database)
 
-  const putDescriptorStatement = database.prepare(`
+  const putSchemaDescriptorStatement = database.prepare(`
     INSERT OR REPLACE INTO protocol_descriptors
       (protocol_id, package_id, descriptor_hash, descriptor_json, source_path, generated_at)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -500,19 +500,19 @@ export const createSqliteProtocolStore = ({
   const storeEffect = <A>(
     operation: string,
     run: () => A,
-  ): Effect.Effect<A, ProtocolStoreError> =>
+  ): Effect.Effect<A, ProgramFactStoreError> =>
     Effect.try({
       catch: (cause) => toStoreError(operation, cause),
       try: run,
     })
 
-  const readHealth = (): ProtocolStoreHealth => ({
+  const readHealth = (): ProgramFactStoreHealth => ({
     ok: true,
     backend: sqliteBackendName,
     path,
     migrationVersion: migrationVersion(database),
     rowCounts: sqliteRowCounts(database),
-    detail: "SQLite protocol store is initialized.",
+    detail: "SQLite program fact store is initialized.",
   })
 
   return {
@@ -527,12 +527,12 @@ export const createSqliteProtocolStore = ({
       return readHealth()
     }),
     health: () => storeEffect("health", readHealth),
-    putDescriptor: (descriptor) =>
-      storeEffect("putDescriptor", () => {
+    putSchemaDescriptor: (descriptor) =>
+      storeEffect("putSchemaDescriptor", () => {
         const decoded = decodePayload<AttuneProtocolDescriptor>(AttuneProtocolDescriptorSchema, descriptor)
         assertDescriptorHash(decoded)
         const receipt = descriptorReceipt(decoded)
-        putDescriptorStatement.run(
+        putSchemaDescriptorStatement.run(
           decoded.protocolId,
           decoded.packageId,
           decoded.descriptorHash,
@@ -542,8 +542,8 @@ export const createSqliteProtocolStore = ({
         )
         return receipt
       }),
-    putObligations: (batch) =>
-      storeEffect("putObligations", () => {
+    putDiagnosticRules: (batch) =>
+      storeEffect("putDiagnosticRules", () => {
         for (const obligation of batch.map((candidate) =>
           decodePayload<AttuneProtocolObligation>(AttuneProtocolObligationSchema, candidate)
         )) {
@@ -554,12 +554,12 @@ export const createSqliteProtocolStore = ({
             obligation.operationId ?? null,
             obligation.kind,
             encodePayload(AttuneProtocolObligationSchema, obligation),
-            descriptorHashForProtocol(database, obligation.protocolId),
+            descriptorHashForProgramFactStore(database, obligation.protocolId),
           )
         }
       }),
-    recordEvidenceRun: (run) =>
-      storeEffect("recordEvidenceRun", () => {
+    recordObservationRun: (run) =>
+      storeEffect("recordObservationRun", () => {
         const decoded = decodePayload<AttuneProtocolEvidenceRun>(AttuneProtocolEvidenceRunSchema, run)
         putEvidenceRunStatement.run(
           decoded.runId,
@@ -572,9 +572,9 @@ export const createSqliteProtocolStore = ({
           encodePayload(AttuneProtocolEvidenceRunSchema, decoded),
         )
       }),
-    recordReplayMetadata: (metadata) =>
-      storeEffect("recordReplayMetadata", () => {
-        const decoded = decodePayload<ProtocolReplayMetadata>(ProtocolReplayMetadataSchema, metadata)
+    recordReplayObservation: (metadata) =>
+      storeEffect("recordReplayObservation", () => {
+        const decoded = decodePayload<ReplayObservationMetadata>(ReplayObservationMetadataSchema, metadata)
         putReplayMetadataStatement.run(
           decoded.replayId,
           decoded.runId,
@@ -583,12 +583,12 @@ export const createSqliteProtocolStore = ({
           decoded.operationId ?? null,
           decoded.status,
           decoded.seed,
-          encodePayload(ProtocolReplayMetadataSchema, decoded),
+          encodePayload(ReplayObservationMetadataSchema, decoded),
         )
       }),
-    recordWaiverState: (waiver) =>
-      storeEffect("recordWaiverState", () => {
-        const decoded = decodePayload<ProtocolWaiverState>(ProtocolWaiverStateSchema, waiver)
+    recordDiagnosticWaiver: (waiver) =>
+      storeEffect("recordDiagnosticWaiver", () => {
+        const decoded = decodePayload<DiagnosticWaiverState>(DiagnosticWaiverStateSchema, waiver)
         putWaiverStateStatement.run(
           decoded.waiverId,
           decoded.protocolId,
@@ -596,12 +596,12 @@ export const createSqliteProtocolStore = ({
           decoded.operationId ?? null,
           decoded.category,
           decoded.status,
-          encodePayload(ProtocolWaiverStateSchema, decoded),
+          encodePayload(DiagnosticWaiverStateSchema, decoded),
         )
       }),
-    recordCoverageFeedback: (feedback) =>
-      storeEffect("recordCoverageFeedback", () => {
-        const decoded = decodePayload<ProtocolCoverageFeedback>(ProtocolCoverageFeedbackSchema, feedback)
+    recordCoverageObservation: (feedback) =>
+      storeEffect("recordCoverageObservation", () => {
+        const decoded = decodePayload<CoverageObservationFeedback>(CoverageObservationFeedbackSchema, feedback)
         putCoverageFeedbackStatement.run(
           decoded.coverageId,
           decoded.protocolId,
@@ -610,11 +610,11 @@ export const createSqliteProtocolStore = ({
           decoded.kind,
           decoded.status,
           decoded.coveragePoint,
-          encodePayload(ProtocolCoverageFeedbackSchema, decoded),
+          encodePayload(CoverageObservationFeedbackSchema, decoded),
         )
       }),
-    recordGeneratedArtifact: (record) =>
-      storeEffect("recordGeneratedArtifact", () => {
+    recordArtifact: (record) =>
+      storeEffect("recordArtifact", () => {
         const decoded = decodePayload<AttuneGeneratedArtifactRecord>(AttuneGeneratedArtifactRecordSchema, record)
         putArtifactStatement.run(
           decoded.artifactId,
@@ -628,8 +628,8 @@ export const createSqliteProtocolStore = ({
           encodePayload(AttuneGeneratedArtifactRecordSchema, decoded),
         )
       }),
-    recordEvidence: (event) =>
-      storeEffect("recordEvidence", () => {
+    recordObservation: (event) =>
+      storeEffect("recordObservation", () => {
         const decoded = decodePayload<AttuneProtocolEvidenceEvent>(AttuneProtocolEvidenceEventSchema, event)
         putEvidenceEventStatement.run(
           decoded.eventId,
@@ -641,8 +641,8 @@ export const createSqliteProtocolStore = ({
           encodePayload(AttuneProtocolEvidenceEventSchema, decoded),
         )
       }),
-    putDeltas: (nextDeltas) =>
-      storeEffect("putDeltas", () => {
+    putRepairFindings: (nextDeltas) =>
+      storeEffect("putRepairFindings", () => {
         for (const delta of nextDeltas.map((candidate) =>
           decodePayload<AttuneProtocolDelta>(AttuneProtocolDeltaSchema, candidate)
         )) {
@@ -650,15 +650,15 @@ export const createSqliteProtocolStore = ({
             delta.deltaId,
             delta.protocolId,
             delta.packageId,
-            descriptorHashForProtocol(database, delta.protocolId),
+            descriptorHashForProgramFactStore(database, delta.protocolId),
             delta.kind,
             encodePayload(AttuneProtocolDeltaSchema, delta),
             "open",
           )
         }
       }),
-    replaceDeltas: (packageId, nextDeltas) =>
-      storeEffect("replaceDeltas", () => {
+    replaceRepairFindings: (packageId, nextDeltas) =>
+      storeEffect("replaceRepairFindings", () => {
         const decoded = nextDeltas.map((candidate) =>
           decodePayload<AttuneProtocolDelta>(AttuneProtocolDeltaSchema, candidate)
         )
@@ -671,7 +671,7 @@ export const createSqliteProtocolStore = ({
               delta.deltaId,
               delta.protocolId,
               delta.packageId,
-              descriptorHashForProtocol(database, delta.protocolId),
+              descriptorHashForProgramFactStore(database, delta.protocolId),
               delta.kind,
               encodePayload(AttuneProtocolDeltaSchema, delta),
               "open",
@@ -683,8 +683,8 @@ export const createSqliteProtocolStore = ({
           throw error
         }
       }),
-    getDescriptor: (protocolId) =>
-      storeEffect("getDescriptor", () =>
+    getSchemaDescriptor: (protocolId) =>
+      storeEffect("getSchemaDescriptor", () =>
         readPayloads<AttuneProtocolDescriptor>(
           database,
           protocolDescriptorTable,
@@ -692,8 +692,8 @@ export const createSqliteProtocolStore = ({
           { protocolId },
         )[0]
       ),
-    listDescriptors: (filter = {}) =>
-      storeEffect("listDescriptors", () =>
+    listSchemaDescriptors: (filter = {}) =>
+      storeEffect("listSchemaDescriptors", () =>
         readPayloads<AttuneProtocolDescriptor>(
           database,
           protocolDescriptorTable,
@@ -701,8 +701,8 @@ export const createSqliteProtocolStore = ({
           filter,
         )
       ),
-    listObligations: (filter = {}) =>
-      storeEffect("listObligations", () =>
+    listDiagnosticRules: (filter = {}) =>
+      storeEffect("listDiagnosticRules", () =>
         readPayloads<AttuneProtocolObligation>(
           database,
           protocolObligationTable,
@@ -710,8 +710,8 @@ export const createSqliteProtocolStore = ({
           filter,
         )
       ),
-    listEvidenceRuns: (filter = {}) =>
-      storeEffect("listEvidenceRuns", () =>
+    listObservationRuns: (filter = {}) =>
+      storeEffect("listObservationRuns", () =>
         readPayloads<AttuneProtocolEvidenceRun>(
           database,
           protocolEvidenceRunTable,
@@ -719,35 +719,35 @@ export const createSqliteProtocolStore = ({
           filter,
         )
       ),
-    listReplayMetadata: (filter = {}) =>
-      storeEffect("listReplayMetadata", () =>
-        readPayloads<ProtocolReplayMetadata>(
+    listReplayObservations: (filter = {}) =>
+      storeEffect("listReplayObservations", () =>
+        readPayloads<ReplayObservationMetadata>(
           database,
           protocolReplayMetadataTable,
-          ProtocolReplayMetadataSchema,
+          ReplayObservationMetadataSchema,
           filter,
         )
       ),
-    listWaiverState: (filter = {}) =>
-      storeEffect("listWaiverState", () =>
-        readPayloads<ProtocolWaiverState>(
+    listDiagnosticWaivers: (filter = {}) =>
+      storeEffect("listDiagnosticWaivers", () =>
+        readPayloads<DiagnosticWaiverState>(
           database,
           protocolWaiverStateTable,
-          ProtocolWaiverStateSchema,
+          DiagnosticWaiverStateSchema,
           filter,
         )
       ),
-    listCoverageFeedback: (filter = {}) =>
-      storeEffect("listCoverageFeedback", () =>
-        readPayloads<ProtocolCoverageFeedback>(
+    listCoverageObservations: (filter = {}) =>
+      storeEffect("listCoverageObservations", () =>
+        readPayloads<CoverageObservationFeedback>(
           database,
           protocolCoverageFeedbackTable,
-          ProtocolCoverageFeedbackSchema,
+          CoverageObservationFeedbackSchema,
           filter,
         )
       ),
-    listEvidence: (filter = {}) =>
-      storeEffect("listEvidence", () =>
+    listObservations: (filter = {}) =>
+      storeEffect("listObservations", () =>
         readPayloads<AttuneProtocolEvidenceEvent>(
           database,
           protocolEvidenceEventTable,
@@ -755,8 +755,8 @@ export const createSqliteProtocolStore = ({
           filter,
         )
       ),
-    listGeneratedArtifacts: (filter = {}) =>
-      storeEffect("listGeneratedArtifacts", () =>
+    listArtifacts: (filter = {}) =>
+      storeEffect("listArtifacts", () =>
         readPayloads<AttuneGeneratedArtifactRecord>(
           database,
           protocolGeneratedArtifactTable,
@@ -764,8 +764,8 @@ export const createSqliteProtocolStore = ({
           filter,
         )
       ),
-    listDeltas: (filter = {}) =>
-      storeEffect("listDeltas", () =>
+    listRepairFindings: (filter = {}) =>
+      storeEffect("listRepairFindings", () =>
         readPayloads<AttuneProtocolDelta>(
           database,
           protocolDeltaTable,
@@ -790,20 +790,20 @@ export const createSqliteProtocolStore = ({
           protocolEvidenceRunTable,
           AttuneProtocolEvidenceRunSchema,
         ),
-        replayMetadata: readPayloads<ProtocolReplayMetadata>(
+        replayMetadata: readPayloads<ReplayObservationMetadata>(
           database,
           protocolReplayMetadataTable,
-          ProtocolReplayMetadataSchema,
+          ReplayObservationMetadataSchema,
         ),
-        waiverState: readPayloads<ProtocolWaiverState>(
+        waiverState: readPayloads<DiagnosticWaiverState>(
           database,
           protocolWaiverStateTable,
-          ProtocolWaiverStateSchema,
+          DiagnosticWaiverStateSchema,
         ),
-        coverageFeedback: readPayloads<ProtocolCoverageFeedback>(
+        coverageFeedback: readPayloads<CoverageObservationFeedback>(
           database,
           protocolCoverageFeedbackTable,
-          ProtocolCoverageFeedbackSchema,
+          CoverageObservationFeedbackSchema,
         ),
         evidence: readPayloads<AttuneProtocolEvidenceEvent>(
           database,
@@ -815,7 +815,7 @@ export const createSqliteProtocolStore = ({
           protocolGeneratedArtifactTable,
           AttuneGeneratedArtifactRecordSchema,
         ),
-        deltas: readPayloads<AttuneProtocolDelta>(
+        repairFindings: readPayloads<AttuneProtocolDelta>(
           database,
           protocolDeltaTable,
           AttuneProtocolDeltaSchema,
@@ -825,28 +825,28 @@ export const createSqliteProtocolStore = ({
   }
 }
 
-export const makeProtocolStore = createSqliteProtocolStore
+export const makeProgramFactStore = createSqliteProgramFactStore
 
-export class ProtocolStore extends Context.Service<
-  ProtocolStore,
-  ProtocolStoreApi
->()("@attune/framework-sqlite/ProtocolStore") {
-  static fromService(service: ProtocolStoreApi): Layer.Layer<ProtocolStore> {
-    return Layer.succeed(ProtocolStore, service)
+export class ProgramFactStore extends Context.Service<
+  ProgramFactStore,
+  ProgramFactStoreApi
+>()("@attune/framework-sqlite/ProgramFactStore") {
+  static fromService(service: ProgramFactStoreApi): Layer.Layer<ProgramFactStore> {
+    return Layer.succeed(ProgramFactStore, service)
   }
 
-  static sqlite(options: SqliteProtocolStoreOptions = {}): Layer.Layer<ProtocolStore> {
+  static sqlite(options: SqliteProgramFactStoreOptions = {}): Layer.Layer<ProgramFactStore> {
     return Layer.effect(
-      ProtocolStore,
-      Effect.sync(() => createSqliteProtocolStore(options)),
+      ProgramFactStore,
+      Effect.sync(() => createSqliteProgramFactStore(options)),
     )
   }
 }
 
-export const ProtocolStoreLive = ProtocolStore.sqlite()
+export const ProgramFactStoreLive = ProgramFactStore.sqlite()
 
-export const ProtocolStoreTest = (): Layer.Layer<ProtocolStore> =>
-  ProtocolStore.fromService(createInMemoryProtocolStore())
+export const ProgramFactStoreTest = (): Layer.Layer<ProgramFactStore> =>
+  ProgramFactStore.fromService(createInMemoryProgramFactStore())
 
 const protocolDescriptorTable = {
   name: "protocol_descriptors",
@@ -996,7 +996,7 @@ const protocolDeltaTable = {
   }),
 } as const
 
-const protocolTables = [
+const programFactTables = [
   protocolDescriptorTable,
   protocolObligationTable,
   protocolGeneratedArtifactTable,
@@ -1185,7 +1185,7 @@ const migrate = (database: DatabaseSync): void => {
 const resetRows = (database: DatabaseSync): void => {
   database.exec("BEGIN IMMEDIATE")
   try {
-    for (const table of protocolTables) {
+    for (const table of programFactTables) {
       database.exec(`DELETE FROM ${table.name}`)
     }
     database.exec("COMMIT")
@@ -1195,7 +1195,7 @@ const resetRows = (database: DatabaseSync): void => {
   }
 }
 
-const sqliteRowCounts = (database: DatabaseSync): ProtocolStoreRowCounts => ({
+const sqliteRowCounts = (database: DatabaseSync): ProgramFactStoreRowCounts => ({
   descriptors: tableCount(database, protocolDescriptorTable.name),
   obligations: tableCount(database, protocolObligationTable.name),
   evidenceRuns: tableCount(database, protocolEvidenceRunTable.name),
@@ -1204,14 +1204,14 @@ const sqliteRowCounts = (database: DatabaseSync): ProtocolStoreRowCounts => ({
   replayMetadata: tableCount(database, protocolReplayMetadataTable.name),
   waiverState: tableCount(database, protocolWaiverStateTable.name),
   coverageFeedback: tableCount(database, protocolCoverageFeedbackTable.name),
-  deltas: tableCount(database, protocolDeltaTable.name),
+  repairFindings: tableCount(database, protocolDeltaTable.name),
 })
 
 const tableCount = (database: DatabaseSync, table: string): number => {
   const row = database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get()
   const count = row?.count
   if (typeof count !== "number") {
-    throw new Error(`Protocol store count failed for ${table}.`)
+    throw new Error(`program fact store count failed for ${table}.`)
   }
   return count
 }
@@ -1224,7 +1224,7 @@ const migrationVersion = (database: DatabaseSync): number => {
   return typeof version === "number" ? version : 0
 }
 
-const descriptorHashForProtocol = (
+const descriptorHashForProgramFactStore = (
   database: DatabaseSync,
   protocolId: string,
 ): string | null => {
@@ -1234,7 +1234,7 @@ const descriptorHashForProtocol = (
   return typeof row?.descriptor_hash === "string" ? row.descriptor_hash : null
 }
 
-const descriptorReceipt = (descriptor: AttuneProtocolDescriptor): ProtocolDescriptorReceipt => ({
+const descriptorReceipt = (descriptor: AttuneProtocolDescriptor): SchemaDescriptorReceipt => ({
   protocolId: descriptor.protocolId,
   packageId: descriptor.packageId,
   sourcePath: descriptor.sourcePath,
@@ -1253,16 +1253,16 @@ const assertDescriptorHash = (descriptor: AttuneProtocolDescriptor): void => {
 
 const matchesFilter = (
   row: { readonly protocolId: string; readonly packageId: string },
-  filter: ProtocolStoreFilter,
+  filter: ProgramFactStoreFilter,
 ): boolean =>
   (filter.protocolId === undefined || row.protocolId === filter.protocolId) &&
   (filter.packageId === undefined || row.packageId === filter.packageId)
 
 const readPayloads = <A>(
   database: DatabaseSync,
-  table: ProtocolTable,
+  table: ProgramFactTable,
   schema: unknown,
-  filter: ProtocolStoreFilter = {},
+  filter: ProgramFactStoreFilter = {},
 ): readonly A[] => {
   const where = filterWhere(filter)
   const rows = database
@@ -1274,7 +1274,7 @@ const readPayloads = <A>(
     const payload = decodedRow[table.payloadColumn]
     if (typeof payload !== "string") {
       throw new Error(
-        `Invalid protocol store row in ${table.name}: ${table.payloadColumn} must be text.`,
+        `Invalid program fact store row in ${table.name}: ${table.payloadColumn} must be text.`,
       )
     }
 
@@ -1283,7 +1283,7 @@ const readPayloads = <A>(
 }
 
 const filterWhere = (
-  filter: ProtocolStoreFilter,
+  filter: ProgramFactStoreFilter,
 ): { readonly sql: string; readonly parameters: readonly string[] } => {
   const clauses: string[] = []
   const parameters: string[] = []
@@ -1314,20 +1314,20 @@ const encodePayload = (
 ): string =>
   JSON.stringify(Schema.encodeSync(schema as never)(decodePayload<never>(schema, value)))
 
-const toStoreError = (operation: string, cause: unknown): ProtocolStoreError =>
-  new ProtocolStoreError({
+const toStoreError = (operation: string, cause: unknown): ProgramFactStoreError =>
+  new ProgramFactStoreError({
     operation,
     message: cause instanceof Error ? cause.message : String(cause),
     cause,
   })
 
-type ProtocolTable = (typeof protocolTables)[number]
+type ProgramFactTable = (typeof programFactTables)[number]
 
-export const removeSqliteProtocolStoreFile = (
-  path = defaultProtocolCachePath,
-): Effect.Effect<void, ProtocolStoreError> =>
+export const removeSqliteProgramFactStoreFile = (
+  path = defaultProgramFactStorePath,
+): Effect.Effect<void, ProgramFactStoreError> =>
   Effect.try({
-    catch: (cause) => toStoreError("removeSqliteProtocolStoreFile", cause),
+    catch: (cause) => toStoreError("removeSqliteProgramFactStoreFile", cause),
     try: () => {
       if (path !== ":memory:" && existsSync(path)) {
         rmSync(path)

@@ -61,7 +61,7 @@ describe("framework import boundary", () => {
       files: [{
         path: "packages/attune-foldkit/src/attune.package.ts",
         content: [
-          "import { ProtocolStoreLive } from \"@attune/framework-sqlite/ProtocolStoreLive\"",
+          "import { ProgramFactStoreLive } from \"@attune/framework-sqlite/ProgramFactStoreLive\"",
           "import { materialize } from \"@attune/framework-runtime/internal/materialize\"",
           "import { registerProjectGraph } from \"@attune/framework-nx/internal/project-graph\"",
           "import { codeLenses } from \"@attune/framework-language-service\"",
@@ -74,7 +74,7 @@ describe("framework import boundary", () => {
       expect.objectContaining({
         ruleId: FrameworkImportBoundaryRuleId,
         code: "protocol-store-internal-import",
-        importSource: "@attune/framework-sqlite/ProtocolStoreLive",
+        importSource: "@attune/framework-sqlite/ProgramFactStoreLive",
       }),
       expect.objectContaining({
         ruleId: FrameworkImportBoundaryRuleId,
@@ -110,11 +110,11 @@ describe("framework import boundary", () => {
     }))
   })
 
-  it("rejects ProtocolStore internals from relative product imports", () => {
+  it("rejects ProgramFactStore internals from relative product imports", () => {
     const result = checkFrameworkImportBoundary({
       files: [{
         path: "packages/attune-pi-agent/src/protocol.ts",
-        content: "export { ProtocolStore } from \"../../../framework/sqlite/src/ProtocolStore\"",
+        content: "export { ProgramFactStore } from \"../../../framework/sqlite/src/ProgramFactStore\"",
       }],
     })
 
@@ -122,7 +122,7 @@ describe("framework import boundary", () => {
     expect(result.diagnostics).toContainEqual(expect.objectContaining({
       ruleId: FrameworkImportBoundaryRuleId,
       code: "protocol-store-internal-import",
-      importSource: "../../../framework/sqlite/src/ProtocolStore",
+      importSource: "../../../framework/sqlite/src/ProgramFactStore",
     }))
   })
 
@@ -131,7 +131,7 @@ describe("framework import boundary", () => {
       files: [{
         path: "framework/runtime/src/internal/materialize.ts",
         content: [
-          "import { ProtocolStoreLive } from \"@attune/framework-sqlite/ProtocolStoreLive\"",
+          "import { ProgramFactStoreLive } from \"@attune/framework-sqlite/ProgramFactStoreLive\"",
           "import { defineAttunePackage } from \"@attune/framework-protocol\"",
         ].join("\n"),
       }],

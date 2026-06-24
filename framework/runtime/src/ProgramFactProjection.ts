@@ -12,41 +12,41 @@ import {
   type AttuneProtocolObligation,
 } from "@attune/framework-protocol"
 import type {
-  ProtocolCoverageFeedback,
-  ProtocolReplayMetadata,
-  ProtocolWaiverState,
-} from "./ProtocolStore.js"
+  CoverageObservationFeedback,
+  ReplayObservationMetadata,
+  DiagnosticWaiverState,
+} from "./ProgramFactStore.js"
 
-export interface ProtocolRuntimeSnapshot {
+export interface ProgramFactRuntimeSnapshot {
   readonly descriptors: readonly AttuneProtocolDescriptor[]
   readonly obligations: readonly AttuneProtocolObligation[]
   readonly evidenceRuns: readonly AttuneProtocolEvidenceRun[]
   readonly evidence: readonly AttuneProtocolEvidenceEvent[]
   readonly generatedArtifacts: readonly AttuneGeneratedArtifactRecord[]
-  readonly replayMetadata: readonly ProtocolReplayMetadata[]
-  readonly waiverState: readonly ProtocolWaiverState[]
-  readonly coverageFeedback: readonly ProtocolCoverageFeedback[]
-  readonly deltas?: readonly AttuneProtocolDelta[]
+  readonly replayMetadata: readonly ReplayObservationMetadata[]
+  readonly waiverState: readonly DiagnosticWaiverState[]
+  readonly coverageFeedback: readonly CoverageObservationFeedback[]
+  readonly repairFindings?: readonly AttuneProtocolDelta[]
 }
 
-export interface ProtocolProjectionInput extends Partial<ProtocolRuntimeSnapshot> {
+export interface ProgramFactProjectionInput extends Partial<ProgramFactRuntimeSnapshot> {
   readonly protocolId: string
   readonly packageId: string
   readonly sourcePath: string
 }
 
-export interface ProtocolProjectionApi {
+export interface ProgramFactProjectionApi {
   readonly deriveObligations: (
     descriptor: AttuneProtocolDescriptor,
   ) => readonly AttuneProtocolObligation[]
-  readonly computeDeltas: (input: ProtocolProjectionInput) => readonly AttuneProtocolDelta[]
+  readonly computeRepairFindings: (input: ProgramFactProjectionInput) => readonly AttuneProtocolDelta[]
 }
 
 const evidenceKey = (event: AttuneProtocolEvidenceEvent): string =>
   `${event.packageId}:${event.operationId ?? "package"}:${event.kind}`
 
 const coverageEvidenceKeys = (
-  feedback: ProtocolCoverageFeedback,
+  feedback: CoverageObservationFeedback,
 ): readonly string[] => {
   if (feedback.status !== "hit" && feedback.status !== "retained") return []
 
@@ -71,8 +71,8 @@ const coverageEvidenceKeys = (
 }
 
 export const projectionSnapshot = (
-  input: ProtocolProjectionInput,
-): ProtocolRuntimeSnapshot => {
+  input: ProgramFactProjectionInput,
+): ProgramFactRuntimeSnapshot => {
   const descriptors = input.descriptors ?? []
   return {
     descriptors,
@@ -83,12 +83,12 @@ export const projectionSnapshot = (
     replayMetadata: input.replayMetadata ?? [],
     waiverState: input.waiverState ?? [],
     coverageFeedback: input.coverageFeedback ?? [],
-    ...(input.deltas === undefined ? {} : { deltas: input.deltas }),
+    ...(input.repairFindings === undefined ? {} : { repairFindings: input.repairFindings }),
   }
 }
 
-export const computeProtocolDeltas = (
-  input: ProtocolProjectionInput,
+export const computeProgramFactFindings = (
+  input: ProgramFactProjectionInput,
 ): readonly AttuneProtocolDelta[] => {
   const snapshot = projectionSnapshot(input)
   const observed = new Set([
@@ -152,14 +152,14 @@ export const computeProtocolDeltas = (
       sourcePath: artifact.path,
       explanation: generatedArtifactExplanation(artifact),
       repairActions: [{
-        id: "refresh-protocol-materialization",
-        title: "Refresh protocol materialization",
+        id: "refresh-artifact-materialization",
+        title: "Refresh artifact materialization",
         kind: "nx-generator" as const,
         target: `${input.packageId}:attune-repair`,
         options: {
           packageId: input.packageId,
-          repairKind: "protocol-materialize",
-          internalGenerator: "@attune/framework-nx:protocol-materialize",
+          repairKind: "artifact-materialize",
+          internalGenerator: "@attune/framework-nx:artifact-materialize",
         },
       }],
     })),
@@ -253,7 +253,7 @@ export const computeProtocolDeltas = (
 
 const isWaivedObligation = (
   obligation: AttuneProtocolObligation,
-  waivers: readonly ProtocolWaiverState[],
+  waivers: readonly DiagnosticWaiverState[],
 ): boolean =>
   waivers.some((waiver) =>
     waiver.status === "active" &&
@@ -285,7 +285,7 @@ const generatedArtifactExplanation = (
 }
 
 const replayFailureExplanation = (
-  metadata: ProtocolReplayMetadata,
+  metadata: ReplayObservationMetadata,
 ): string => [
   `Replay metadata ${metadata.replayId} records a failed property case with seed ${metadata.seed}.`,
   ...(metadata.shrinkPath === undefined ? [] : [`shrink path ${metadata.shrinkPath}.`]),
@@ -293,7 +293,7 @@ const replayFailureExplanation = (
 ].join(" ")
 
 const isHighRejectionFilter = (
-  feedback: ProtocolCoverageFeedback,
+  feedback: CoverageObservationFeedback,
 ): boolean =>
   feedback.kind === "filter" &&
   (
@@ -303,7 +303,7 @@ const isHighRejectionFilter = (
   )
 
 const highRejectionExplanation = (
-  feedback: ProtocolCoverageFeedback,
+  feedback: CoverageObservationFeedback,
 ): string => [
   `Generated filter ${feedback.filterId ?? feedback.coveragePoint} is distorting coverage search.`,
   ...(feedback.acceptanceRate === undefined ? [] : [`acceptance rate ${feedback.acceptanceRate}.`]),
@@ -319,7 +319,7 @@ const isWeakOraclePayload = (payload: unknown): boolean =>
   (payload as { readonly observedGraphMovement?: unknown }).observedGraphMovement === false
 
 const isWeakOracleCoverage = (
-  feedback: ProtocolCoverageFeedback,
+  feedback: CoverageObservationFeedback,
 ): boolean =>
   feedback.kind === "implementation" &&
   feedback.status === "hit" &&
@@ -369,22 +369,22 @@ const repairActionTargetForObligation = (obligation: AttuneProtocolObligation): 
   }
 }
 
-export const diagnosticsForProtocol = (
-  input: ProtocolProjectionInput,
+export const diagnosticsForProgramFacts = (
+  input: ProgramFactProjectionInput,
 ): readonly AttuneProtocolDiagnostic[] =>
-  computeProtocolDeltas(input).map(diagnosticFromDelta)
+  computeProgramFactFindings(input).map(diagnosticFromDelta)
 
-export const ProtocolProjectionLiveValue: ProtocolProjectionApi = {
+export const ProgramFactProjectionLiveValue: ProgramFactProjectionApi = {
   deriveObligations: deriveProtocolObligations,
-  computeDeltas: computeProtocolDeltas,
+  computeRepairFindings: computeProgramFactFindings,
 }
 
-export class ProtocolProjection extends Context.Service<
-  ProtocolProjection,
-  ProtocolProjectionApi
->()("@attune/framework-runtime/ProtocolProjection") {}
+export class ProgramFactProjection extends Context.Service<
+  ProgramFactProjection,
+  ProgramFactProjectionApi
+>()("@attune/framework-runtime/ProgramFactProjection") {}
 
-export const ProtocolProjectionLive: Layer.Layer<ProtocolProjection> = Layer.succeed(
-  ProtocolProjection,
-  ProtocolProjectionLiveValue,
+export const ProgramFactProjectionLive: Layer.Layer<ProgramFactProjection> = Layer.succeed(
+  ProgramFactProjection,
+  ProgramFactProjectionLiveValue,
 )

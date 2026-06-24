@@ -72,16 +72,16 @@ describe("generator shape conformance", () => {
     })
   })
 
-  it("tracks planned package-contract shards without requiring the generated files to exist yet", () => {
+  it("tracks planned project-facts shards without requiring the generated files to exist yet", () => {
     withWorkspace({
       "attune.generator-shapes.json": JSON.stringify({
         schemaVersion: 1,
         shapes: [{
-          id: "example.package-contract",
+          id: "example.project-facts",
           project: "example",
           projectRoot: "packages/example",
-          kind: "package-contract",
-          generator: "@attune/nx:package-contract",
+          kind: "project-facts",
+          generator: "@attune/nx:project-facts",
           status: "migrate",
           paths: ["attune.source-bom.json"],
           plannedPaths: ["src/attune.package.ts", "src/attune.package.typecheck.ts"],
@@ -99,9 +99,9 @@ describe("generator shape conformance", () => {
       }),
       "packages/attune-nx/generators.json": JSON.stringify({
         generators: {
-          "package-contract": {
-            implementation: "./src/generators/package-contract/generator.ts",
-            schema: "./src/generators/package-contract/schema.json",
+          "project-facts": {
+            implementation: "./src/generators/project-facts/generator.ts",
+            schema: "./src/generators/project-facts/schema.json",
           },
         },
       }),
@@ -110,9 +110,9 @@ describe("generator shape conformance", () => {
         project: "example",
         projectRoot: "packages/example",
         generatedOutputs: [],
-        contractShards: [{
-          generator: "@attune/nx:package-contract",
-          target: "sync-package-contract",
+        projectFactShards: [{
+          generator: "@attune/nx:project-facts",
+          target: "sync-project-facts",
           status: "planned",
           sources: ["src/**", "project.json"],
           outputs: ["src/attune.package.ts", "src/attune.package.typecheck.ts"],
@@ -132,11 +132,11 @@ describe("generator shape conformance", () => {
       "attune.generator-shapes.json": JSON.stringify({
         schemaVersion: 1,
         shapes: [{
-          id: "example.package-contract",
+          id: "example.project-facts",
           project: "example",
           projectRoot: "packages/example",
-          kind: "package-contract",
-          generator: "@attune/nx:package-contract",
+          kind: "project-facts",
+          generator: "@attune/nx:project-facts",
           status: "generated",
           paths: ["src/attune.package.ts"],
           plannedPaths: ["src/attune.package.typecheck.ts"],
@@ -154,9 +154,9 @@ describe("generator shape conformance", () => {
       }),
       "packages/attune-nx/generators.json": JSON.stringify({
         generators: {
-          "package-contract": {
-            implementation: "./src/generators/package-contract/generator.ts",
-            schema: "./src/generators/package-contract/schema.json",
+          "project-facts": {
+            implementation: "./src/generators/project-facts/generator.ts",
+            schema: "./src/generators/project-facts/schema.json",
           },
         },
       }),
@@ -165,9 +165,9 @@ describe("generator shape conformance", () => {
         project: "example",
         projectRoot: "packages/example",
         generatedOutputs: [],
-        contractShards: [{
-          generator: "@attune/nx:package-contract",
-          target: "sync-package-contract",
+        projectFactShards: [{
+          generator: "@attune/nx:project-facts",
+          target: "sync-project-facts",
           status: "generated",
           sources: ["src/**", "project.json"],
           outputs: ["src/attune.package.ts", "src/attune.package.typecheck.ts"],
@@ -175,7 +175,7 @@ describe("generator shape conformance", () => {
         historicalHandAuthoredShapes: [],
         ownedFiles: ["src/**"],
       }),
-      "packages/example/src/attune.package.ts": "export const PackageContract = {}\n",
+      "packages/example/src/attune.package.ts": "export const ProjectFacts = {}\n",
       "packages/example/src/attune.package.typecheck.ts": "export {}\n",
     }, (workspaceRoot, trackedFiles) => {
       const result = checkGeneratorShapeConformance({ workspaceRoot, trackedFiles })
@@ -186,16 +186,16 @@ describe("generator shape conformance", () => {
     })
   })
 
-  it("rejects generated package-contract shapes without generated Source BOM contract shards", () => {
+  it("rejects generated project-facts shapes without generated project facts shards", () => {
     withWorkspace({
       "attune.generator-shapes.json": JSON.stringify({
         schemaVersion: 1,
         shapes: [{
-          id: "example.package-contract",
+          id: "example.project-facts",
           project: "example",
           projectRoot: "packages/example",
-          kind: "package-contract",
-          generator: "@attune/nx:package-contract",
+          kind: "project-facts",
+          generator: "@attune/nx:project-facts",
           status: "generated",
           paths: ["src/attune.package.ts", "src/attune.package.typecheck.ts"],
           sourceBomShard: "packages/example/attune.source-bom.json",
@@ -212,9 +212,9 @@ describe("generator shape conformance", () => {
       }),
       "packages/attune-nx/generators.json": JSON.stringify({
         generators: {
-          "package-contract": {
-            implementation: "./src/generators/package-contract/generator.ts",
-            schema: "./src/generators/package-contract/schema.json",
+          "project-facts": {
+            implementation: "./src/generators/project-facts/generator.ts",
+            schema: "./src/generators/project-facts/schema.json",
           },
         },
       }),
@@ -223,17 +223,17 @@ describe("generator shape conformance", () => {
         project: "example",
         projectRoot: "packages/example",
         generatedOutputs: [],
-        contractShards: [],
+        projectFactShards: [],
         historicalHandAuthoredShapes: [],
         ownedFiles: ["src/**"],
       }),
-      "packages/example/src/attune.package.ts": "export const PackageContract = {}\n",
+      "packages/example/src/attune.package.ts": "export const ProjectFacts = {}\n",
       "packages/example/src/attune.package.typecheck.ts": "export {}\n",
     }, (workspaceRoot, trackedFiles) => {
       const result = checkGeneratorShapeConformance({ workspaceRoot, trackedFiles })
       expect(result.exitCode).toBe(1)
       expect(result.diagnostics).toContainEqual(expect.objectContaining({
-        message: expect.stringContaining("missing a generated Source BOM contract shard"),
+        message: expect.stringContaining("missing a generated project facts shard"),
       }))
     })
   })

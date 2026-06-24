@@ -12,18 +12,18 @@ import {
   type AttuneGeneratedArtifactRecord,
 } from "@attune/framework-protocol"
 import {
-  InMemoryProtocolStoreLive,
+  InMemoryProgramFactStoreLive,
   compatibilityRowsFromCurrentPackageContracts,
   consumeProgramIndexInvalidations,
-  ProtocolDiagnostics,
-  ProtocolDiagnosticsLive,
+  ProgramDiagnostics,
+  ProgramDiagnosticsLive,
   ProgramIndexDiagnosticsLive,
-  ProtocolProjectionLive,
-  ProtocolQuery,
-  ProtocolQueryLive,
-  ProtocolRuntime,
-  ProtocolRuntimeLive,
-  ProtocolStore,
+  ProgramFactProjectionLive,
+  ProgramFactQuery,
+  ProgramFactQueryLive,
+  ProgramFactRuntime,
+  ProgramFactRuntimeLive,
+  ProgramFactStore,
   diagnosticsForFileAtom,
   materializeCompatibilityRows,
   materializeProgramSourceIndex,
@@ -32,19 +32,19 @@ import {
   projectIndexAtom,
   reactivityEventsFromInvalidations,
   repairPlansAtom,
-  SqliteRuntimeProtocolStoreLive,
+  SqliteProgramFactStoreLive,
   sourceFileSymbolsAtom,
   staleArtifactsAtom,
   workspaceHealthAtom,
-  computeProtocolDeltas,
-  diagnosticsForProtocol,
-  explainObligation,
-  getPackageSummary,
+  computeProgramFactFindings,
+  diagnosticsForProgramFacts,
+  explainDiagnosticRule,
+  getProjectSummary,
   getRepairPlan,
-  type ProtocolCoverageFeedback,
-  type ProtocolReplayMetadata,
-  type ProtocolStoreSnapshot,
-  type ProtocolWaiverState,
+  type CoverageObservationFeedback,
+  type ReplayObservationMetadata,
+  type ProgramFactStoreSnapshot,
+  type DiagnosticWaiverState,
 } from "../src/index.js"
 import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
@@ -96,7 +96,7 @@ const demoPropertyEvidence: AttuneProtocolEvidenceEvent = {
   observedAt: "2026-06-22T00:00:01.000Z",
 }
 
-const demoReplayMetadata: ProtocolReplayMetadata = {
+const demoReplayMetadata: ReplayObservationMetadata = {
   replayId: "demo:project:replay",
   runId: "run-1",
   protocolId: "attune/package/demo",
@@ -110,7 +110,7 @@ const demoReplayMetadata: ProtocolReplayMetadata = {
   recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
-const demoActiveWaiver: ProtocolWaiverState = {
+const demoActiveWaiver: DiagnosticWaiverState = {
   waiverId: "demo:project:law-waiver",
   protocolId: "attune/package/demo",
   packageId: "demo",
@@ -124,7 +124,7 @@ const demoActiveWaiver: ProtocolWaiverState = {
   recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
-const demoExpiredWaiver: ProtocolWaiverState = {
+const demoExpiredWaiver: DiagnosticWaiverState = {
   ...demoActiveWaiver,
   waiverId: "demo:project:expired-waiver",
   status: "expired",
@@ -132,7 +132,7 @@ const demoExpiredWaiver: ProtocolWaiverState = {
   expiresAt: "2026-06-01",
 }
 
-const demoAtomCoverage: ProtocolCoverageFeedback = {
+const demoAtomCoverage: CoverageObservationFeedback = {
   coverageId: "demo:project:atom-coverage",
   protocolId: "attune/package/demo",
   packageId: "demo",
@@ -146,7 +146,7 @@ const demoAtomCoverage: ProtocolCoverageFeedback = {
   recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
-const demoTypeCoverage: ProtocolCoverageFeedback = {
+const demoTypeCoverage: CoverageObservationFeedback = {
   coverageId: "demo:type-guidance:coverage",
   protocolId: "attune/package/demo",
   packageId: "demo",
@@ -157,7 +157,7 @@ const demoTypeCoverage: ProtocolCoverageFeedback = {
   recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
-const demoFilterFeedback: ProtocolCoverageFeedback = {
+const demoFilterFeedback: CoverageObservationFeedback = {
   coverageId: "demo:project:high-rejection-filter",
   protocolId: "attune/package/demo",
   packageId: "demo",
@@ -171,7 +171,7 @@ const demoFilterFeedback: ProtocolCoverageFeedback = {
   recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
-const demoWeakOracleFeedback: ProtocolCoverageFeedback = {
+const demoWeakOracleFeedback: CoverageObservationFeedback = {
   coverageId: "demo:project:weak-oracle",
   protocolId: "attune/package/demo",
   packageId: "demo",
@@ -190,64 +190,64 @@ const provideRuntime = <A, E>(
   effect: Effect.Effect<
     A,
     E,
-    | ProtocolRuntime
-    | ProtocolQuery
-    | ProtocolDiagnostics
-    | ProtocolStore
+    | ProgramFactRuntime
+    | ProgramFactQuery
+    | ProgramDiagnostics
+    | ProgramFactStore
   >,
-  initial?: Partial<ProtocolStoreSnapshot>,
+  initial?: Partial<ProgramFactStoreSnapshot>,
 ): Effect.Effect<A, E, never> =>
   effect.pipe(
-    Effect.provide(ProtocolDiagnosticsLive),
-    Effect.provide(ProtocolQueryLive),
-    Effect.provide(ProtocolRuntimeLive),
-    Effect.provide(ProtocolProjectionLive),
-    Effect.provide(InMemoryProtocolStoreLive(initial)),
+    Effect.provide(ProgramDiagnosticsLive),
+    Effect.provide(ProgramFactQueryLive),
+    Effect.provide(ProgramFactRuntimeLive),
+    Effect.provide(ProgramFactProjectionLive),
+    Effect.provide(InMemoryProgramFactStoreLive(initial)),
   ) as Effect.Effect<A, E, never>
 
 const provideSqliteRuntime = <A, E>(
   effect: Effect.Effect<
     A,
     E,
-    | ProtocolRuntime
-    | ProtocolQuery
-    | ProtocolDiagnostics
-    | ProtocolStore
+    | ProgramFactRuntime
+    | ProgramFactQuery
+    | ProgramDiagnostics
+    | ProgramFactStore
   >,
 ): Effect.Effect<A, E, never> =>
   effect.pipe(
-    Effect.provide(ProtocolDiagnosticsLive),
-    Effect.provide(ProtocolQueryLive),
-    Effect.provide(ProtocolRuntimeLive),
-    Effect.provide(ProtocolProjectionLive),
-    Effect.provide(SqliteRuntimeProtocolStoreLive({ path: ":memory:" })),
+    Effect.provide(ProgramDiagnosticsLive),
+    Effect.provide(ProgramFactQueryLive),
+    Effect.provide(ProgramFactRuntimeLive),
+    Effect.provide(ProgramFactProjectionLive),
+    Effect.provide(SqliteProgramFactStoreLive({ path: ":memory:" })),
   ) as Effect.Effect<A, E, never>
 
 const provideProgramIndexDiagnosticsRuntime = <A, E>(
   effect: Effect.Effect<
     A,
     E,
-    | ProtocolRuntime
-    | ProtocolQuery
-    | ProtocolDiagnostics
-    | ProtocolStore
+    | ProgramFactRuntime
+    | ProgramFactQuery
+    | ProgramDiagnostics
+    | ProgramFactStore
     | ProgramIndex
   >,
   programIndex: ProgramIndexApi,
-  initial?: Partial<ProtocolStoreSnapshot>,
+  initial?: Partial<ProgramFactStoreSnapshot>,
 ): Effect.Effect<A, E, never> =>
   effect.pipe(
     Effect.provide(ProgramIndexDiagnosticsLive),
     Effect.provide(ProgramIndex.fromService(programIndex)),
-    Effect.provide(ProtocolQueryLive),
-    Effect.provide(ProtocolRuntimeLive),
-    Effect.provide(ProtocolProjectionLive),
-    Effect.provide(InMemoryProtocolStoreLive(initial)),
+    Effect.provide(ProgramFactQueryLive),
+    Effect.provide(ProgramFactRuntimeLive),
+    Effect.provide(ProgramFactProjectionLive),
+    Effect.provide(InMemoryProgramFactStoreLive(initial)),
   ) as Effect.Effect<A, E, never>
 
 describe("@attune/framework-runtime", () => {
-  it("turns missing evidence and stale generated source into private deltas", () => {
-    const deltas = computeProtocolDeltas({
+  it("turns missing evidence and stale generated source into private repairFindings", () => {
+    const repairFindings = computeProgramFactFindings({
       protocolId: "attune/package/demo",
       packageId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
@@ -272,7 +272,7 @@ describe("@attune/framework-runtime", () => {
       }],
     })
 
-    expect(deltas.map((delta) => delta.kind)).toEqual([
+    expect(repairFindings.map((delta) => delta.kind)).toEqual([
       "missing-obligation",
       "stale-generated-source",
     ])
@@ -467,8 +467,8 @@ describe("@attune/framework-runtime", () => {
 
     const projected = await Effect.runPromise(
       provideProgramIndexDiagnosticsRuntime(
-        Effect.gen(function* indexedProtocolDiagnostics() {
-          const diagnostics = yield* ProtocolDiagnostics
+        Effect.gen(function* indexedProgramDiagnostics() {
+          const diagnostics = yield* ProgramDiagnostics
           return yield* diagnostics.diagnosticsForFile(
             demoDescriptor.sourcePath,
             { packageId: "demo", protocolId: demoDescriptor.protocolId },
@@ -516,9 +516,9 @@ describe("@attune/framework-runtime", () => {
     const projected = await Effect.runPromise(
       provideProgramIndexDiagnosticsRuntime(
         Effect.gen(function* indexedDiagnosticsFallback() {
-          const runtime = yield* ProtocolRuntime
-          const diagnostics = yield* ProtocolDiagnostics
-          yield* runtime.materializeDescriptor(demoDescriptor)
+          const runtime = yield* ProgramFactRuntime
+          const diagnostics = yield* ProgramDiagnostics
+          yield* runtime.materializeSchemaDescriptor(demoDescriptor)
           return yield* diagnostics.diagnosticsForFile(
             demoDescriptor.sourcePath,
             { packageId: "demo", protocolId: demoDescriptor.protocolId },
@@ -757,8 +757,8 @@ describe("@attune/framework-runtime", () => {
     expect(rows.diagnostics).toEqual([])
   })
 
-  it("projects deltas as framework diagnostics", () => {
-    const diagnostics = diagnosticsForProtocol({
+  it("projects repairFindings as framework diagnostics", () => {
+    const diagnostics = diagnosticsForProgramFacts({
       protocolId: "attune/package/demo",
       packageId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
@@ -777,8 +777,8 @@ describe("@attune/framework-runtime", () => {
     expect(diagnostics[0]?.code).toBe("attune/protocol/missing-obligation")
   })
 
-  it("computes deltas from evidence, waiver state, coverage feedback, and replay metadata", () => {
-    const deltas = computeProtocolDeltas({
+  it("computes repairFindings from evidence, waiver state, coverage feedback, and replay metadata", () => {
+    const repairFindings = computeProgramFactFindings({
       protocolId: "attune/package/demo",
       packageId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
@@ -831,29 +831,29 @@ describe("@attune/framework-runtime", () => {
       }],
     })
 
-    expect(deltas.map((delta) => delta.kind)).toEqual(expect.arrayContaining([
+    expect(repairFindings.map((delta) => delta.kind)).toEqual(expect.arrayContaining([
       "stale-generated-source",
       "waiver-issue",
       "blocked-obligation",
       "high-rejection-filter",
       "weak-oracle",
     ]))
-    expect(deltas.some((delta) => delta.kind === "missing-obligation")).toBe(false)
-    expect(deltas.find((delta) => delta.kind === "blocked-obligation")?.repairActions[0]).toMatchObject({
+    expect(repairFindings.some((delta) => delta.kind === "missing-obligation")).toBe(false)
+    expect(repairFindings.find((delta) => delta.kind === "blocked-obligation")?.repairActions[0]).toMatchObject({
       id: "replay-counterexample",
       options: expect.objectContaining({ seed: 42, shrinkPath: "0:1" }),
     })
   })
 
-  it("provisions ProtocolRuntime/Query/Diagnostics through Effect layers", async () => {
+  it("provisions ProgramFactRuntime/Query/Diagnostics through Effect layers", async () => {
     const result = await Effect.runPromise(
       provideRuntime(Effect.gen(function* protocolRuntimeProvisioning() {
-        const runtime = yield* ProtocolRuntime
-        const query = yield* ProtocolQuery
-        const diagnostics = yield* ProtocolDiagnostics
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+        const diagnostics = yield* ProgramDiagnostics
 
-        const receipt = yield* runtime.materializeDescriptor(demoDescriptor)
-        yield* runtime.recordGeneratedArtifact({
+        const receipt = yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+        yield* runtime.recordArtifact({
           artifactId: "demo:registry",
           protocolId: "attune/package/demo",
           packageId: "demo",
@@ -864,14 +864,14 @@ describe("@attune/framework-runtime", () => {
           status: "stale",
         })
 
-        const summary = yield* query.getPackageSummary("demo")
-        const deltas = yield* query.listDeltas("demo")
+        const summary = yield* query.getProjectSummary("demo")
+        const repairFindings = yield* query.listRepairFindings("demo")
         const projected = yield* diagnostics.diagnosticsForFile(
           "packages/demo/src/attune.package.ts",
           { packageId: "demo", protocolId: "attune/package/demo" },
         )
 
-        return { receipt, summary, deltas, projected }
+        return { receipt, summary, repairFindings, projected }
       })),
     )
 
@@ -880,12 +880,12 @@ describe("@attune/framework-runtime", () => {
       descriptorHash: "demo-hash",
     })
     expect(result.summary).toMatchObject({
-      packageId: "demo",
-      operationCount: 1,
-      obligationCount: 6,
-      staleGeneratedArtifactCount: 1,
+      projectId: "demo",
+      symbolCount: 1,
+      diagnosticRuleCount: 6,
+      staleArtifactCount: 1,
     })
-    expect(result.deltas.map((delta) => delta.kind)).toEqual(
+    expect(result.repairFindings.map((delta) => delta.kind)).toEqual(
       expect.arrayContaining(["missing-obligation", "stale-generated-source"]),
     )
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
@@ -896,55 +896,55 @@ describe("@attune/framework-runtime", () => {
   it("records and reads property evidence cache state through runtime/query services", async () => {
     const result = await Effect.runPromise(
       provideRuntime(Effect.gen(function* propertyEvidenceRuntimeState() {
-        const runtime = yield* ProtocolRuntime
-        const query = yield* ProtocolQuery
-        const diagnostics = yield* ProtocolDiagnostics
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+        const diagnostics = yield* ProgramDiagnostics
 
-        yield* runtime.materializeDescriptor(demoDescriptor)
-        yield* runtime.recordEvidenceRun(demoEvidenceRun)
-        yield* runtime.recordEvidence(demoPropertyEvidence)
-        yield* runtime.recordReplayMetadata(demoReplayMetadata)
-        yield* runtime.recordWaiverState(demoActiveWaiver)
-        yield* runtime.recordCoverageFeedback(demoAtomCoverage)
-        yield* runtime.recordCoverageFeedback(demoTypeCoverage)
-        yield* runtime.recordCoverageFeedback(demoFilterFeedback)
+        yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+        yield* runtime.recordObservationRun(demoEvidenceRun)
+        yield* runtime.recordObservation(demoPropertyEvidence)
+        yield* runtime.recordReplayObservation(demoReplayMetadata)
+        yield* runtime.recordDiagnosticWaiver(demoActiveWaiver)
+        yield* runtime.recordCoverageObservation(demoAtomCoverage)
+        yield* runtime.recordCoverageObservation(demoTypeCoverage)
+        yield* runtime.recordCoverageObservation(demoFilterFeedback)
 
-        const summary = yield* query.getPackageSummary("demo")
-        const state = yield* query.getPackageEvidenceState("demo")
-        const deltas = yield* query.listDeltas("demo")
+        const summary = yield* query.getProjectSummary("demo")
+        const state = yield* query.getProjectObservationState("demo")
+        const repairFindings = yield* query.listRepairFindings("demo")
         const projected = yield* diagnostics.diagnosticsForFile(
           "packages/demo/src/attune.package.ts",
           { packageId: "demo", protocolId: "attune/package/demo" },
         )
 
-        return { summary, state, deltas, projected }
+        return { summary, state, repairFindings, projected }
       })),
     )
 
     expect(result.summary).toMatchObject({
-      evidenceRunCount: 1,
-      evidenceCount: 1,
-      replayMetadataCount: 1,
-      coverageFeedbackCount: 3,
-      activeWaiverCount: 1,
-      waiverIssueCount: 0,
+      observationRunCount: 1,
+      observationCount: 1,
+      replayObservationCount: 1,
+      coverageObservationCount: 3,
+      activeDiagnosticWaiverCount: 1,
+      diagnosticWaiverIssueCount: 0,
     })
     expect(result.state).toMatchObject({
-      evidenceRuns: [demoEvidenceRun],
-      evidence: [demoPropertyEvidence],
-      replayMetadata: [demoReplayMetadata],
-      waiverState: [demoActiveWaiver],
+      observationRuns: [demoEvidenceRun],
+      observations: [demoPropertyEvidence],
+      replayObservations: [demoReplayMetadata],
+      diagnosticWaivers: [demoActiveWaiver],
     })
-    expect(result.state.coverageFeedback.map((feedback) => feedback.coverageId)).toEqual([
+    expect(result.state.coverageObservations.map((feedback) => feedback.coverageId)).toEqual([
       "demo:project:atom-coverage",
       "demo:type-guidance:coverage",
       "demo:project:high-rejection-filter",
     ])
-    expect(result.deltas.map((delta) => delta.kind)).toEqual(expect.arrayContaining([
+    expect(result.repairFindings.map((delta) => delta.kind)).toEqual(expect.arrayContaining([
       "blocked-obligation",
       "high-rejection-filter",
     ]))
-    expect(result.deltas.some((delta) =>
+    expect(result.repairFindings.some((delta) =>
       delta.obligationId === "demo:project:law:projection.deterministic-replay"
     )).toBe(false)
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
@@ -955,33 +955,33 @@ describe("@attune/framework-runtime", () => {
   it("keeps evidence cache output out of checked-in report artifacts", async () => {
     const result = await Effect.runPromise(
       provideRuntime(Effect.gen(function* noReportOutputForEvidenceState() {
-        const runtime = yield* ProtocolRuntime
-        const query = yield* ProtocolQuery
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
 
-        yield* runtime.materializeDescriptor(demoDescriptor)
-        yield* runtime.recordEvidenceRun(demoEvidenceRun)
-        yield* runtime.recordEvidence(demoPropertyEvidence)
-        yield* runtime.recordReplayMetadata(demoReplayMetadata)
-        yield* runtime.recordCoverageFeedback(demoFilterFeedback)
+        yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+        yield* runtime.recordObservationRun(demoEvidenceRun)
+        yield* runtime.recordObservation(demoPropertyEvidence)
+        yield* runtime.recordReplayObservation(demoReplayMetadata)
+        yield* runtime.recordCoverageObservation(demoFilterFeedback)
 
-        const state = yield* query.getPackageEvidenceState("demo")
-        const deltas = yield* query.listDeltas("demo")
+        const state = yield* query.getProjectObservationState("demo")
+        const repairFindings = yield* query.listRepairFindings("demo")
 
-        return { state, deltas }
+        return { state, repairFindings }
       })),
     )
 
-    expect(result.state.generatedArtifacts).toEqual([])
-    expect(result.state.replayMetadata).toEqual([demoReplayMetadata])
-    expect(result.state.coverageFeedback).toEqual([demoFilterFeedback])
-    expect(result.deltas.flatMap((delta) => delta.repairActions)).not.toEqual(
+    expect(result.state.artifacts).toEqual([])
+    expect(result.state.replayObservations).toEqual([demoReplayMetadata])
+    expect(result.state.coverageObservations).toEqual([demoFilterFeedback])
+    expect(result.repairFindings.flatMap((delta) => delta.repairActions)).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           kind: "source-edit",
         }),
       ]),
     )
-    expect(result.deltas.map((delta) => delta.sourcePath)).not.toEqual(
+    expect(result.repairFindings.map((delta) => delta.sourcePath)).not.toEqual(
       expect.arrayContaining([
         expect.stringMatching(/report|summary/u),
       ]),
@@ -991,19 +991,19 @@ describe("@attune/framework-runtime", () => {
   it("explains obligations and repair plans without exposing store rows", async () => {
     const result = await Effect.runPromise(
       provideRuntime(Effect.gen(function* protocolQueryExplanations() {
-        const runtime = yield* ProtocolRuntime
-        const query = yield* ProtocolQuery
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
 
-        yield* runtime.materializeDescriptor(demoDescriptor)
+        yield* runtime.materializeSchemaDescriptor(demoDescriptor)
 
-        const explanation = yield* query.explainObligation("demo:project:view-movement")
+        const explanation = yield* query.explainDiagnosticRule("demo:project:view-movement")
         const repairPlan = yield* query.getRepairPlan("delta:demo:project:view-movement")
 
         return { explanation, repairPlan }
       })),
     )
 
-    expect(result.explanation?.expectedEvidenceKinds).toContain("atom-movement")
+    expect(result.explanation?.expectedObservationKinds).toContain("atom-movement")
     expect(result.repairPlan?.actions[0]).toMatchObject({
       target: "demo:attune-repair",
       options: expect.objectContaining({
@@ -1029,12 +1029,12 @@ describe("@attune/framework-runtime", () => {
       generatedArtifacts: [],
     }
 
-    expect(getPackageSummary(input)).toMatchObject({
-      packageId: "demo",
-      obligationCount: 1,
-      evidenceCount: 0,
+    expect(getProjectSummary(input)).toMatchObject({
+      projectId: "demo",
+      diagnosticRuleCount: 1,
+      observationCount: 0,
     })
-    expect(explainObligation(input, "demo:project:view-movement")?.expectedEvidenceKinds).toContain(
+    expect(explainDiagnosticRule(input, "demo:project:view-movement")?.expectedObservationKinds).toContain(
       "atom-movement",
     )
     expect(getRepairPlan(input, "delta:demo:project:view-movement")?.actions[0]).toMatchObject({
@@ -1048,7 +1048,7 @@ describe("@attune/framework-runtime", () => {
   it("projects invalid stored payloads as diagnostics", async () => {
     const diagnostics = await Effect.runPromise(
       provideRuntime(Effect.gen(function* invalidPayloadDiagnostics() {
-        const service = yield* ProtocolDiagnostics
+        const service = yield* ProgramDiagnostics
         return yield* service.diagnosticsForFile(
           "packages/demo/src/attune.package.ts",
           { packageId: "demo", protocolId: "attune/package/demo" },
@@ -1070,7 +1070,7 @@ describe("@attune/framework-runtime", () => {
     })
   })
 
-  it("adapts sqlite ProtocolStoreApi into runtime materialization and diagnostics", async () => {
+  it("adapts sqlite ProgramFactStoreApi into runtime materialization and diagnostics", async () => {
     const descriptor = descriptorWithHash({
       protocolId: "attune/package/sqlite-demo",
       packageId: "sqlite-demo",
@@ -1117,13 +1117,13 @@ describe("@attune/framework-runtime", () => {
 
     const result = await Effect.runPromise(
       provideSqliteRuntime(Effect.gen(function* sqliteRuntimeAdapter() {
-        const runtime = yield* ProtocolRuntime
-        const query = yield* ProtocolQuery
-        const diagnostics = yield* ProtocolDiagnostics
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+        const diagnostics = yield* ProgramDiagnostics
 
-        const receipt = yield* runtime.materializeDescriptor(descriptor)
-        yield* runtime.recordGeneratedArtifact(staleArtifact)
-        yield* runtime.recordEvidenceRun({
+        const receipt = yield* runtime.materializeSchemaDescriptor(descriptor)
+        yield* runtime.recordArtifact(staleArtifact)
+        yield* runtime.recordObservationRun({
           runId: "run-1",
           protocolId: descriptor.protocolId,
           packageId: descriptor.packageId,
@@ -1132,8 +1132,8 @@ describe("@attune/framework-runtime", () => {
           startedAt: "2026-06-22T00:00:00.000Z",
           completedAt: "2026-06-22T00:00:02.000Z",
         })
-        yield* runtime.recordEvidence(propertyEvidence)
-        yield* runtime.recordCoverageFeedback({
+        yield* runtime.recordObservation(propertyEvidence)
+        yield* runtime.recordCoverageObservation({
           coverageId: "sqlite-demo:operation:atom-coverage",
           protocolId: descriptor.protocolId,
           packageId: descriptor.packageId,
@@ -1143,39 +1143,39 @@ describe("@attune/framework-runtime", () => {
           coveragePoint: "sqlite-demo.changed->sqlite-demo.view",
           recordedAt: "2026-06-22T00:00:01.000Z",
         })
-        yield* runtime.refreshDeltas(descriptor.packageId)
+        yield* runtime.refreshRepairFindings(descriptor.packageId)
 
-        const summary = yield* query.getPackageSummary(descriptor.packageId)
-        const evidenceState = yield* query.getPackageEvidenceState(descriptor.packageId)
-        const deltas = yield* query.listDeltas(descriptor.packageId)
+        const summary = yield* query.getProjectSummary(descriptor.packageId)
+        const evidenceState = yield* query.getProjectObservationState(descriptor.packageId)
+        const repairFindings = yield* query.listRepairFindings(descriptor.packageId)
         const projected = yield* diagnostics.diagnosticsForFile(
           descriptor.sourcePath,
           { packageId: descriptor.packageId, protocolId: descriptor.protocolId },
         )
 
-        return { receipt, summary, evidenceState, deltas, projected }
+        return { receipt, summary, evidenceState, repairFindings, projected }
       })),
     )
 
     expect(result.receipt).toMatchObject({
       packageId: "sqlite-demo",
       descriptorHash: descriptor.descriptorHash,
-      obligationCount: 6,
+      diagnosticRuleCount: 6,
     })
     expect(result.summary).toMatchObject({
-      operationCount: 1,
-      obligationCount: 6,
-      evidenceRunCount: 1,
-      evidenceCount: 1,
-      coverageFeedbackCount: 1,
-      staleGeneratedArtifactCount: 1,
+      symbolCount: 1,
+      diagnosticRuleCount: 6,
+      observationRunCount: 1,
+      observationCount: 1,
+      coverageObservationCount: 1,
+      staleArtifactCount: 1,
     })
-    expect(result.evidenceState.evidenceRuns).toHaveLength(1)
-    expect(result.evidenceState.coverageFeedback).toHaveLength(1)
-    expect(result.deltas.map((delta) => delta.kind)).toEqual(
+    expect(result.evidenceState.observationRuns).toHaveLength(1)
+    expect(result.evidenceState.coverageObservations).toHaveLength(1)
+    expect(result.repairFindings.map((delta) => delta.kind)).toEqual(
       expect.arrayContaining(["missing-obligation", "stale-generated-source"]),
     )
-    expect(result.deltas.some((delta) =>
+    expect(result.repairFindings.some((delta) =>
       delta.obligationId === "sqlite-demo:operation:property"
     )).toBe(false)
     expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(

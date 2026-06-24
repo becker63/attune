@@ -1,6 +1,6 @@
 Changed:
 - Removed the package-local compatibility test
-  `packages/attuned-discovery/test/attune-package-contract.test.ts`.
+  `packages/attuned-discovery/test/attune-project-facts.test.ts`.
 - Updated `attune.generator-shapes.json` so the Ring A
   `attuned-discovery` and `effect-oxlint-policy` compatibility shape entries
   no longer expect deleted package-local compatibility tests.
@@ -31,8 +31,8 @@ Removed surfaces:
   output.
 
 Retained compatibility-only surfaces:
-- `framework/architecture/src/generated/package-contracts/attuned-discovery/attune.generated.ts`
-- `framework/architecture/src/generated/package-contracts/attuned-discovery/attune.contract.generated.ts`
+- `framework/architecture/src/generated/project-facts/attuned-discovery/attune.generated.ts`
+- `framework/architecture/src/generated/project-facts/attuned-discovery/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/attuned-discovery.json`
 - `.attune/cache/generated/attuned-discovery/attune-symbol-registry.ts`
 - `.attune/cache/generated/attuned-discovery/attune-property-observations.ts`

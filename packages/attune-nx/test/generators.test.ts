@@ -83,7 +83,7 @@ describe("attune-nx generators", () => {
     }
   })
 
-  it("records the Phase 2 generator gaps for package-contract migration", () => {
+  it("records the generator gaps for project-facts migration", () => {
     expect(phase2GeneratorGapMap.map((entry) => entry.capability)).toEqual(
       requiredPhase2GeneratorCapabilities,
     )
@@ -96,10 +96,10 @@ describe("attune-nx generators", () => {
           owner: "effect-service-generator-agent",
         }),
         expect.objectContaining({
-          capability: "package-contract",
-          currentHome: "@attune/nx:package-contract",
-          targetHome: "@attune/nx:package-contract",
-          owner: "package-contract-generator-agent",
+          capability: "project-facts",
+          currentHome: "@attune/nx:project-facts",
+          targetHome: "@attune/nx:project-facts",
+          owner: "project-facts-generator-agent",
         }),
         expect.objectContaining({
           capability: "atom-view",
@@ -108,39 +108,27 @@ describe("attune-nx generators", () => {
           owner: "atom-view-generator-agent",
         }),
         expect.objectContaining({
-          capability: "compile-only-assertion",
-          currentHome: "@attune/nx:package-contract",
-          targetHome: "@attune/nx:package-contract",
-          owner: "package-contract-generator-agent",
+          capability: "symbol-registry",
+          currentHome: "@attune/nx:project-facts",
+          targetHome: "@attune/nx:project-facts",
+          owner: "project-facts-generator-agent",
         }),
         expect.objectContaining({
-          capability: "type-guidance",
-          currentHome: "@attune/nx:package-contract",
-          targetHome: "@attune/nx:package-contract",
-          owner: "type-guidance-agent",
+          capability: "observation-plan",
+          currentHome: "@attune/nx:project-facts",
+          targetHome: "@attune/nx:project-facts",
+          owner: "program-observation-agent",
         }),
         expect.objectContaining({
-          capability: "operation-registry",
-          currentHome: "@attune/nx:package-contract",
-          targetHome: "@attune/nx:package-contract",
-          owner: "attune-nx-framework-generator-integration-agent",
-        }),
-        expect.objectContaining({
-          capability: "property-evidence-plan",
-          currentHome: "@attune/nx:package-contract",
-          targetHome: "@attune/nx:package-contract",
-          owner: "attune-nx-framework-generator-integration-agent",
-        }),
-        expect.objectContaining({
-          capability: "worker-property-module",
-          currentHome: "@attune/nx:package-contract",
-          targetHome: "@attune/nx:package-contract",
+          capability: "worker-observation-module",
+          currentHome: "@attune/nx:project-facts",
+          targetHome: "@attune/nx:project-facts",
           owner: "attune-nx-framework-generator-integration-agent",
         }),
         expect.objectContaining({
           capability: "no-checked-in-report-policy",
-          currentHome: "@attune/nx:package-contract",
-          targetHome: "@attune/nx:package-contract",
+          currentHome: "@attune/nx:project-facts",
+          targetHome: "@attune/nx:project-facts",
           owner: "attune-nx-framework-generator-integration-agent",
         }),
       ]),
@@ -177,7 +165,7 @@ describe("attune-nx generators", () => {
     )
   })
 
-  it("generates Effect service boundary ownership comments and Source BOM provenance", () => {
+  it("generates Effect service boundary ownership comments and artifact provenance", () => {
     const tree = new MemoryTree()
 
     effectServiceGenerator(tree, {
@@ -217,8 +205,8 @@ describe("attune-nx generators", () => {
         directory: "packages/decision-core/src/effect/services",
         export: true,
         name: "Decision Runner",
-        operationId: "decision-runner.run",
-        operationKind: "command",
+        symbolId: "decision-runner.run",
+        symbolKind: "command",
         tag: "@attune/service/DecisionRunner",
       },
       ownedFiles: [
@@ -243,7 +231,7 @@ describe("attune-nx generators", () => {
     ])
   })
 
-  it("upserts Source BOM shards deterministically", () => {
+  it("upserts artifact provenance shards deterministically", () => {
     const tree = new MemoryTree()
     const input = {
       generatorName: "@attune/nx:test-shape",
@@ -285,7 +273,7 @@ describe("attune-nx generators", () => {
     ])
   })
 
-  it("exposes framework-owned Source BOM cache shard paths", () => {
+  it("exposes framework-owned artifact provenance cache shard paths", () => {
     expect(sourceBomCacheShardPath("attuned-discovery")).toBe(
       ".attune/cache/source-bom/attuned-discovery.json",
     )

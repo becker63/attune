@@ -8,7 +8,7 @@
         },
         {
           "project": "workspace",
-          "target": "package-contracts-check"
+          "target": "attune-check"
         }
       ],
       "editableRegions": [
@@ -18,10 +18,10 @@
           "marker": "defineAttuneProjectFacts"
         }
       ],
-      "generatorName": "@attune/nx:package-contract",
-      "openspecChangeId": "standardize-effect-package-contracts",
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
       "options": {
-        "operationIds": [
+        "symbolIds": [
           "decide-permission",
           "run-spec-interview",
           "advance-spec-conversation",
@@ -34,8 +34,8 @@
           "generate-test-obligation-artifact",
           "generate-taskplane-task-artifact"
         ],
-        "packageId": "attune-pi-agent",
-        "packageKind": "agent-extension",
+        "projectId": "attune-pi-agent",
+        "projectKind": "agent-extension",
         "project": "attune-pi-agent",
         "sourceRoot": "packages/attune-pi-agent"
       },
@@ -45,18 +45,18 @@
       ],
       "owningProject": "attune-pi-agent",
       "projectRoot": "packages/attune-pi-agent",
-      "sourceShapeKind": "package-contract",
+      "sourceShapeKind": "project-facts",
       "syncTargets": [
         {
           "project": "attune-pi-agent",
-          "target": "sync-package-contract"
+          "target": "sync-project-facts"
         }
       ]
     }
   ],
-  "contractShards": [
+  "projectFactShards": [
     {
-      "generator": "@attune/nx:package-contract",
+      "generator": "@attune/nx:project-facts",
       "outputs": [
         "src/attune.package.ts"
       ],
@@ -67,7 +67,7 @@
         "test/**"
       ],
       "status": "generated",
-      "target": "sync-package-contract"
+      "target": "sync-project-facts"
     }
   ],
   "generatedOutputs": [

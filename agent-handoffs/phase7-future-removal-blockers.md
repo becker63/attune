@@ -11,16 +11,21 @@ The remaining compatibility APIs and helpers are not archive-ready permanent
 surfaces. They must be removed, renamed, or quarantined before this migration
 is considered fully finished.
 
-Task 9.3 removed the checked-in framework-owned generated package-contract
+Task 9.3 removed the checked-in framework-owned generated project-facts
 outputs. See `agent-handoffs/phase9-generated-output-deletion.md` for the
 validated deletion slice and replacement path.
+
+The 2026-06-24 compatibility API slice also removed the public
+`package-contract` generator surface, deleted the package-contract graph
+helper, renamed primary runtime APIs to `ProgramFact*`, and moved active
+generator options to project/symbol vocabulary.
 
 ## Future Removal Gates
 
 ### Framework compatibility API/helpers
 
 - Current surface:
-  - `framework/protocol/src/package-contract/**`
+  - `framework/protocol/src/project-facts/**`
   - `framework/protocol/src/descriptors/**`
   - `framework/protocol/src/laws/**`
   - `framework/protocol/src/obligations/**`
@@ -39,12 +44,30 @@ validated deletion slice and replacement path.
   - `framework-runtime:test`, `framework-language-service:test`,
     `framework-protocol:test`, and `framework-testing:test` pass
 
+### Internal source ownership target names
+
+- Current surface:
+  - `workspace:package-contracts-check`
+  - `workspace:source-bom-check`
+  - `attune.source-bom.index.json`
+  - framework-owned `source-bom` projection shard paths
+- Replacement path:
+  - keep public workflow on `workspace:attune-check` and
+    `workspace:attune-repair`
+  - rename or quarantine the remaining implementation targets and filenames as
+    artifact/source ownership projections
+- Gate:
+  - `workspace:attune-check` and `workspace:attune-repair --dryRun` pass after
+    the internal target/file rename
+  - source ownership compatibility paths are no longer taught as active agent
+    workflow
+
 ### Framework-owned generated compatibility outputs
 
 - Status:
   - Deleted in Phase 9.
   - `workspace:attune-check` and `workspace:attune-repair --dryRun` validate
-    without `framework/architecture/src/generated/package-contracts/**` or the
+    without `framework/architecture/src/generated/project-facts/**` or the
     generated typecheck aggregate.
 - Replacement path:
   - program-index rows, SQL projections, invalidations, diagnostics, repair
@@ -85,6 +108,22 @@ validated deletion slice and replacement path.
   - `workspace:attune-repair --dryRun` and project repair dry-runs report
     mechanical repair kinds
   - no project `project.json` exposes the old internal route names
+
+### Public generator compatibility API
+
+- Status:
+  - Removed in the 2026-06-24 slice.
+  - `@attune/nx:package-contract` was replaced by
+    `@attune/nx:project-facts`.
+  - Project-facts, effect-service, and atom-view generator options now use
+    project/symbol names.
+  - Generated project-facts output now emits program symbol, observation,
+    runtime graph, generated artifact, and report policy facts.
+- Validation:
+  - `nx run attune-nx:test --skipNxCache`
+  - `nx run attune-architecture:test --skipNxCache`
+  - `nx run workspace:attune-check --skipNxCache`
+  - `nx run workspace:attune-repair --dryRun --skipNxCache`
 
 ### Product proof terminology split
 

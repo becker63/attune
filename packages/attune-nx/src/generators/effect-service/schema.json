@@ -22,13 +22,13 @@
       "type": "string",
       "description": "Effect.Service identifier."
     },
-    "operationId": {
+    "symbolId": {
       "type": "string",
-      "description": "Auditable operation id recorded in the generated package-contract placeholder."
+      "description": "Auditable symbol id recorded in the generated project-facts placeholder."
     },
-    "operationKind": {
+    "symbolKind": {
       "type": "string",
-      "description": "Canonical Attune operation kind recorded in the generated package-contract placeholder.",
+      "description": "Canonical symbol kind recorded in the generated project-facts placeholder.",
       "default": "command",
       "enum": [
         "codec",
@@ -45,19 +45,19 @@
     },
     "project": {
       "type": "string",
-      "description": "Owning Nx project recorded in Source BOM provenance."
+      "description": "Owning Nx project recorded in artifact provenance."
     },
     "generatorVersion": {
       "type": "string",
-      "description": "Generator package version recorded in Source BOM provenance."
+      "description": "Generator package version recorded in artifact provenance."
     },
     "generatorRevision": {
       "type": "string",
-      "description": "Generator source revision recorded in Source BOM provenance."
+      "description": "Generator source revision recorded in artifact provenance."
     },
     "openspecChangeId": {
       "type": "string",
-      "description": "OpenSpec change id recorded in Source BOM provenance."
+      "description": "OpenSpec change id recorded in artifact provenance."
     }
   },
   "required": ["name"],

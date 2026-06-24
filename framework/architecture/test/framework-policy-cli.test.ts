@@ -21,11 +21,11 @@ describe("framework policy CLI", () => {
 
   it("rejects product imports of private framework runtime and store internals", () => {
     const workspaceRoot = makeWorkspace({
-      "packages/product/src/sqlite.ts": importFrom("{ createProtocolStore }", "@attune/framework-sqlite"),
+      "packages/product/src/sqlite.ts": importFrom("{ createProgramFactStore }", "@attune/framework-sqlite"),
       "packages/product/src/runtime.ts": importFrom("{ materialize }", "@attune/framework-runtime/internal"),
       "packages/product/src/language.ts": importFrom("{ diagnostics }", "@attune/framework-language-service"),
       "packages/product/src/drizzle.ts": importFrom("{ pgTable }", "drizzle-orm/pg-core"),
-      "packages/product/src/store.ts": importFrom("{ ProtocolStore }", "../../../framework/sqlite/src/ProtocolStore"),
+      "packages/product/src/store.ts": importFrom("{ ProgramFactStore }", "../../../framework/sqlite/src/ProgramFactStore"),
     })
 
     const result = checkFrameworkPolicyWorkspace(workspaceRoot)
@@ -360,7 +360,7 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("errors when completed package source imports a package-local generated companion after replacement parity", () => {
+  it("errors when completed project source imports a project-local generated compatibility artifact after replacement parity", () => {
     const workspaceRoot = makeWorkspace({
       "packages/platform-alchemy-k8s/package.json": JSON.stringify({ name: "@attune/platform-alchemy-k8s" }),
       "packages/platform-alchemy-k8s/src/attune.package.ts": authoredProjectFactsSource({

@@ -739,7 +739,7 @@ function checkPackageLocalAttuneCompanionImports(
       "package-local-attune-companion-import",
       file.path,
       [
-        `Package source ${file.path} imports package-local generated companion ${companionPath}.`,
+        `Package source ${file.path} imports project-local generated compatibility artifact ${companionPath}.`,
         "Migrated package source must depend on authored source and framework-owned generated/projection paths, not project-local generated companions.",
         replacementText,
         `Run nx run ${projectName}:attune-repair or workspace:attune-repair when the repair target supports this root.`,

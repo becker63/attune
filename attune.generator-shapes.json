@@ -31,11 +31,11 @@
       "notes": "This is the policy nucleus that later Nx generators should update."
     },
     {
-      "id": "attune-architecture.package-contract",
+      "id": "attune-architecture.project-facts",
       "project": "attune-architecture",
       "projectRoot": "framework/architecture",
-      "kind": "package-contract",
-      "generator": "@attune/nx:package-contract",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
       "status": "generated",
       "paths": [
         "src/attune.package.ts"
@@ -97,11 +97,11 @@
       ]
     },
     {
-      "id": "attune-foldkit.package-contract",
+      "id": "attune-foldkit.project-facts",
       "project": "attune-foldkit",
       "projectRoot": "packages/attune-foldkit",
-      "kind": "package-contract",
-      "generator": "@attune/nx:package-contract",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
       "status": "generated",
       "paths": [
         "src/attune.package.ts"
@@ -130,11 +130,11 @@
       ]
     },
     {
-      "id": "attune-nx.package-contract",
+      "id": "attune-nx.project-facts",
       "project": "attune-nx",
       "projectRoot": "packages/attune-nx",
-      "kind": "package-contract",
-      "generator": "@attune/nx:package-contract",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
       "status": "generated",
       "paths": [
         "src/attune.package.ts"
@@ -158,7 +158,7 @@
         "test/generators.test.ts"
       ],
       "invariants": [
-        "Sync generators discover source modules, render deterministic registries, and upsert Source BOM entries."
+        "Sync generators discover source modules, render deterministic registries, and upsert source ownership artifact entries."
       ]
     },
     {
@@ -233,11 +233,11 @@
       ]
     },
     {
-      "id": "attune-pi-agent.package-contract",
+      "id": "attune-pi-agent.project-facts",
       "project": "attune-pi-agent",
       "projectRoot": "packages/attune-pi-agent",
-      "kind": "package-contract",
-      "generator": "@attune/nx:package-contract",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
       "status": "generated",
       "paths": [
         "src/attune.package.ts"
@@ -340,11 +340,11 @@
       ]
     },
     {
-      "id": "attuned-discovery.package-contract",
+      "id": "attuned-discovery.project-facts",
       "project": "attuned-discovery",
       "projectRoot": "packages/attuned-discovery",
-      "kind": "package-contract",
-      "generator": "@attune/nx:package-contract",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
       "status": "generated",
       "paths": [
         "src/attune.package.ts"
@@ -425,11 +425,11 @@
       ]
     },
     {
-      "id": "cocoindex-effect.package-contract",
+      "id": "cocoindex-effect.project-facts",
       "project": "cocoindex-effect",
       "projectRoot": "packages/cocoindex-effect",
-      "kind": "package-contract",
-      "generator": "@attune/nx:package-contract",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
       "status": "generated",
       "paths": [
         "src/attune.package.ts"
@@ -456,11 +456,11 @@
       ]
     },
     {
-      "id": "effect-oxlint-policy.package-contract",
+      "id": "effect-oxlint-policy.project-facts",
       "project": "effect-oxlint-policy",
       "projectRoot": "framework/oxlint-policy",
-      "kind": "package-contract",
-      "generator": "@attune/nx:package-contract",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
       "status": "generated",
       "paths": [
         "src/attune.package.ts"

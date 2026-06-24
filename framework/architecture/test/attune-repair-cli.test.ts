@@ -64,7 +64,7 @@ describe("attune repair CLI", () => {
     )).toContain("\"projection\": \"artifact-freshness\"")
   })
 
-  it("removes package-local generated companions without writing framework outputs", () => {
+  it("removes project-local generated compatibility artifacts without writing framework outputs", () => {
     const workspaceRoot = makeRepairWorkspace({
       "packages/attune-foldkit/attune.source-bom.json": JSON.stringify({
         schemaVersion: 1,

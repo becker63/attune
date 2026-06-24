@@ -72,7 +72,7 @@
         "examples/**",
         "test/**"
       ],
-      "reason": "Runtime, query builder, CPG program, examples, and tests are hand-authored Joern integration surfaces that predate Source BOM automation."
+      "reason": "Runtime, query builder, CPG program, examples, and tests are hand-authored Joern integration surfaces that predate source ownership artifact automation."
     }
   ],
   "ownedFiles": [
@@ -93,7 +93,7 @@
   "projectRoot": "packages/joern-effect",
   "queryCheckTargetNotes": [
     {
-      "note": "check-generated verifies generated Joern bindings, README, and schema snapshots; add Source BOM-native query/check annotations once helper support lands.",
+      "note": "check-generated verifies generated Joern bindings, README, and schema snapshots; add source ownership artifact-native query/check annotations once helper support lands.",
       "target": "check-generated"
     }
   ],
@@ -158,8 +158,8 @@
         "directory": "packages/joern-effect/src/joern",
         "export": true,
         "name": "JoernTemplateExecutor",
-        "operationId": "joern-template-executor",
-        "operationKind": "query",
+        "symbolId": "joern-template-executor",
+        "symbolKind": "query",
         "tag": "joern-effect/JoernTemplateExecutor"
       },
       "optionsHash": "fnv1a32:d2b58fbe",

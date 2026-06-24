@@ -43,7 +43,7 @@
         "src/provider/**",
         "src/resources/**"
       ],
-      "reason": "Alchemy provider, local-cluster inventory, and Kubernetes resource builders were hand-authored before Source BOM automation."
+      "reason": "Alchemy provider, local-cluster inventory, and Kubernetes resource builders were hand-authored before source ownership artifact automation."
     }
   ],
   "ownedFiles": [
@@ -60,7 +60,7 @@
   "projectRoot": "packages/platform-alchemy-k8s",
   "queryCheckTargetNotes": [
     {
-      "note": "check-generated verifies CRD and resource registry snapshots; add Source BOM-native policy query annotations once helper support lands.",
+      "note": "check-generated verifies CRD and resource registry snapshots; add source ownership artifact-native policy query annotations once helper support lands.",
       "target": "check-generated"
     }
   ],

@@ -1,6 +1,6 @@
 Changed:
 - Removed the package-local compatibility test
-  `packages/home-deployment/test/attune-package-contract.test.ts`.
+  `packages/home-deployment/test/attune-project-facts.test.ts`.
 
 Program-index proof:
 - `home-deployment:attune-check` passed through the public Nx target and
@@ -8,10 +8,10 @@ Program-index proof:
 - The materialized index included mechanical project, target, source_file,
   symbol, schema_descriptor, edge, artifact, observation, diagnostic, and
   repair rows for the workspace.
-- Source BOM, shape-conformance, and framework policy checks passed through the
+- source ownership artifact, shape-conformance, and framework policy checks passed through the
   nested public workspace check.
 - The package has no project-local Attune generated companions and no
-  project-local Source BOM shard.
+  project-local source ownership artifact shard.
 
 Removed surfaces:
 - The deleted test asserted authored package declaration object shape,

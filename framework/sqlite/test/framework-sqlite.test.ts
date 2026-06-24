@@ -2,15 +2,15 @@ import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 
 import {
-  ProtocolStore,
-  ProtocolStoreTest,
+  ProgramFactStore,
+  ProgramFactStoreTest,
   ProgramIndex,
   ProgramIndexTest,
-  createInMemoryProtocolStore,
+  createInMemoryProgramFactStore,
   createInMemoryProgramIndex,
-  createSqliteProtocolStore,
+  createSqliteProgramFactStore,
   createSqliteProgramIndex,
-  defaultProtocolCachePath,
+  defaultProgramFactStorePath,
   defaultProgramIndexPath,
   descriptorHashForStorage,
   generatedArtifactContentHash,
@@ -18,10 +18,10 @@ import {
   sqliteBackendName,
   withDescriptorHash,
   type ProgramIndexApi,
-  type ProtocolCoverageFeedback,
-  type ProtocolReplayMetadata,
-  type ProtocolStoreApi,
-  type ProtocolWaiverState,
+  type CoverageObservationFeedback,
+  type ReplayObservationMetadata,
+  type ProgramFactStoreApi,
+  type DiagnosticWaiverState,
 } from "../src/index.js"
 import type {
   AttuneGeneratedArtifactRecord,
@@ -33,8 +33,8 @@ import type {
 } from "@attune/framework-protocol"
 
 describe("@attune/framework-sqlite", () => {
-  it("keeps the protocol cache path under the gitignored framework cache", () => {
-    expect(defaultProtocolCachePath).toBe(".attune/cache/protocol.sqlite")
+  it("keeps the program fact store path under the gitignored framework cache", () => {
+    expect(defaultProgramFactStorePath).toBe(".attune/cache/program-facts.sqlite")
   })
 
   it("keeps the program index path under the gitignored framework cache", () => {
@@ -53,20 +53,20 @@ describe("@attune/framework-sqlite", () => {
     expect(programIndexContentHash("export const indexed = true\n")).toMatch(/^[a-f0-9]{64}$/u)
   })
 
-  it("hides protocol state behind an Effect service API", () => {
+  it("hides program fact state behind an Effect service API", () => {
     const result = Effect.runSync(
       Effect.gen(function* testStoreService() {
-        const store = yield* ProtocolStore
+        const store = yield* ProgramFactStore
         const descriptor = demoDescriptor()
-        const receipt = yield* store.putDescriptor(descriptor)
-        yield* store.putObligations([demoObligation])
+        const receipt = yield* store.putSchemaDescriptor(descriptor)
+        yield* store.putDiagnosticRules([demoObligation])
         const snapshot = yield* store.snapshot()
 
         return {
           receipt,
           snapshot,
         }
-      }).pipe(Effect.provide(ProtocolStoreTest())),
+      }).pipe(Effect.provide(ProgramFactStoreTest())),
     )
 
     expect(result.receipt.descriptorHash).toBe(result.snapshot.descriptors[0]?.descriptorHash)
@@ -94,13 +94,13 @@ describe("@attune/framework-sqlite", () => {
   })
 
   it("initializes, reports health, resets, and reinitializes SQLite state", () => {
-    const store = createSqliteProtocolStore({ path: ":memory:" })
+    const store = createSqliteProgramFactStore({ path: ":memory:" })
     const health = Effect.runSync(store.health())
     expect(health.ok).toBe(true)
     expect(health.backend).toBe(sqliteBackendName)
     expect(health.migrationVersion).toBe(2)
 
-    Effect.runSync(store.putDescriptor(demoDescriptor()))
+    Effect.runSync(store.putSchemaDescriptor(demoDescriptor()))
     expect(Effect.runSync(store.health()).rowCounts.descriptors).toBe(1)
 
     Effect.runSync(store.reset())
@@ -133,8 +133,8 @@ describe("@attune/framework-sqlite", () => {
   })
 
   it("roundtrips descriptor, obligation, artifact, evidence, and delta rows through SQLite", () => {
-    const store = createSqliteProtocolStore({ path: ":memory:" })
-    roundtripProtocolState(store)
+    const store = createSqliteProgramFactStore({ path: ":memory:" })
+    roundtripProgramFactState(store)
 
     const snapshot = Effect.runSync(store.snapshot())
     expect(snapshot.descriptors[0]).toMatchObject({
@@ -148,28 +148,28 @@ describe("@attune/framework-sqlite", () => {
     expect(snapshot.replayMetadata).toEqual([demoReplayMetadata])
     expect(snapshot.waiverState).toEqual([demoWaiverState])
     expect(snapshot.coverageFeedback).toEqual([demoCoverageFeedback])
-    expect(snapshot.deltas).toEqual([demoDelta])
+    expect(snapshot.repairFindings).toEqual([demoDelta])
 
     expect(Effect.runSync(store.health()).rowCounts).toMatchObject({
       replayMetadata: 1,
       waiverState: 1,
       coverageFeedback: 1,
     })
-    expect(Effect.runSync(store.listReplayMetadata({ packageId: "demo" }))).toEqual([
+    expect(Effect.runSync(store.listReplayObservations({ packageId: "demo" }))).toEqual([
       demoReplayMetadata,
     ])
-    expect(Effect.runSync(store.listWaiverState({ packageId: "demo" }))).toEqual([
+    expect(Effect.runSync(store.listDiagnosticWaivers({ packageId: "demo" }))).toEqual([
       demoWaiverState,
     ])
-    expect(Effect.runSync(store.listCoverageFeedback({ packageId: "demo" }))).toEqual([
+    expect(Effect.runSync(store.listCoverageObservations({ packageId: "demo" }))).toEqual([
       demoCoverageFeedback,
     ])
 
-    const filteredDeltas = Effect.runSync(store.listDeltas({ packageId: "demo" }))
+    const filteredDeltas = Effect.runSync(store.listRepairFindings({ packageId: "demo" }))
     expect(filteredDeltas).toEqual([demoDelta])
 
-    Effect.runSync(store.replaceDeltas("demo", []))
-    expect(Effect.runSync(store.listDeltas({ packageId: "demo" }))).toEqual([])
+    Effect.runSync(store.replaceRepairFindings("demo", []))
+    expect(Effect.runSync(store.listRepairFindings({ packageId: "demo" }))).toEqual([])
     Effect.runSync(store.close())
   })
 
@@ -269,8 +269,8 @@ describe("@attune/framework-sqlite", () => {
   })
 
   it("roundtrips the same row shapes through the in-memory test store", () => {
-    const store = createInMemoryProtocolStore()
-    roundtripProtocolState(store)
+    const store = createInMemoryProgramFactStore()
+    roundtripProgramFactState(store)
 
     const snapshot = Effect.runSync(store.snapshot())
     expect(snapshot.descriptors).toHaveLength(1)
@@ -281,7 +281,7 @@ describe("@attune/framework-sqlite", () => {
     expect(snapshot.replayMetadata).toHaveLength(1)
     expect(snapshot.waiverState).toHaveLength(1)
     expect(snapshot.coverageFeedback).toHaveLength(1)
-    expect(snapshot.deltas).toHaveLength(1)
+    expect(snapshot.repairFindings).toHaveLength(1)
   })
 
   it("roundtrips program facts through the in-memory test index", () => {
@@ -299,13 +299,13 @@ describe("@attune/framework-sqlite", () => {
   })
 
   it("rejects invalid stored payloads through Schema-coded row decoding", () => {
-    const store = createSqliteProtocolStore({ path: ":memory:" })
+    const store = createSqliteProgramFactStore({ path: ":memory:" })
     const invalid = {
       ...demoDescriptor(),
       packageKind: "not-a-package-kind",
     } as unknown as AttuneProtocolDescriptor
 
-    expect(() => Effect.runSync(store.putDescriptor(invalid))).toThrow(
+    expect(() => Effect.runSync(store.putSchemaDescriptor(invalid))).toThrow(
       /not-a-package-kind/u,
     )
     Effect.runSync(store.close())
@@ -404,16 +404,16 @@ const seedProgramIndex = (index: ProgramIndexApi): Effect.Effect<void, unknown> 
     }])
   })
 
-const roundtripProtocolState = (store: ProtocolStoreApi): void => {
-  Effect.runSync(store.putDescriptor(demoDescriptor()))
-  Effect.runSync(store.putObligations([demoObligation]))
-  Effect.runSync(store.recordEvidenceRun(demoEvidenceRun))
-  Effect.runSync(store.recordEvidence(demoEvidenceEvent))
-  Effect.runSync(store.recordGeneratedArtifact(demoGeneratedArtifact))
-  Effect.runSync(store.recordReplayMetadata(demoReplayMetadata))
-  Effect.runSync(store.recordWaiverState(demoWaiverState))
-  Effect.runSync(store.recordCoverageFeedback(demoCoverageFeedback))
-  Effect.runSync(store.putDeltas([demoDelta]))
+const roundtripProgramFactState = (store: ProgramFactStoreApi): void => {
+  Effect.runSync(store.putSchemaDescriptor(demoDescriptor()))
+  Effect.runSync(store.putDiagnosticRules([demoObligation]))
+  Effect.runSync(store.recordObservationRun(demoEvidenceRun))
+  Effect.runSync(store.recordObservation(demoEvidenceEvent))
+  Effect.runSync(store.recordArtifact(demoGeneratedArtifact))
+  Effect.runSync(store.recordReplayObservation(demoReplayMetadata))
+  Effect.runSync(store.recordDiagnosticWaiver(demoWaiverState))
+  Effect.runSync(store.recordCoverageObservation(demoCoverageFeedback))
+  Effect.runSync(store.putRepairFindings([demoDelta]))
 }
 
 const demoDescriptor = (): AttuneProtocolDescriptor =>
@@ -485,7 +485,7 @@ const demoGeneratedArtifact: AttuneGeneratedArtifactRecord = {
   status: "stale",
 }
 
-const demoReplayMetadata: ProtocolReplayMetadata = {
+const demoReplayMetadata: ReplayObservationMetadata = {
   replayId: "replay-1",
   runId: "run-1",
   protocolId: "attune/package/demo",
@@ -499,7 +499,7 @@ const demoReplayMetadata: ProtocolReplayMetadata = {
   recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
-const demoWaiverState: ProtocolWaiverState = {
+const demoWaiverState: DiagnosticWaiverState = {
   waiverId: "waiver-1",
   protocolId: "attune/package/demo",
   packageId: "demo",
@@ -513,7 +513,7 @@ const demoWaiverState: ProtocolWaiverState = {
   recordedAt: "2026-06-22T00:00:01.500Z",
 }
 
-const demoCoverageFeedback: ProtocolCoverageFeedback = {
+const demoCoverageFeedback: CoverageObservationFeedback = {
   coverageId: "coverage-1",
   protocolId: "attune/package/demo",
   packageId: "demo",
@@ -535,10 +535,10 @@ const demoDelta: AttuneProtocolDelta = {
   sourcePath: "packages/demo/src/generated/symbol-registry.ts",
   explanation: "Generated artifact is stale.",
   repairActions: [{
-    id: "refresh-protocol-materialization",
-    title: "Refresh protocol materialization",
+    id: "refresh-artifact-materialization",
+    title: "Refresh artifact materialization",
     kind: "nx-generator",
-    target: "@attune/framework-nx:protocol-materialize",
+    target: "@attune/framework-nx:artifact-materialize",
     options: {
       packageId: "demo",
     },

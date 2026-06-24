@@ -4,7 +4,7 @@
     "package-check": {
       "implementation": "./dist/executors/package-check/executor.js",
       "schema": "./src/executors/package-check/schema.json",
-      "description": "Normalize package contract, conformance, property, coverage, typecheck, test, and lint check intent for an Attune package."
+      "description": "Normalize project facts, conformance, property, coverage, typecheck, test, and lint check intent for an Attune package."
     },
     "generated": {
       "implementation": "./dist/executors/generated/executor.js",

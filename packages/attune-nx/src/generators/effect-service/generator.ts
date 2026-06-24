@@ -16,15 +16,15 @@ export interface EffectServiceGeneratorSchema {
   readonly directory?: string
   readonly export?: boolean
   readonly tag?: string
-  readonly operationId?: string
-  readonly operationKind?: EffectServiceOperationKind
+  readonly symbolId?: string
+  readonly symbolKind?: EffectServiceSymbolKind
   readonly project?: string
   readonly generatorVersion?: string
   readonly generatorRevision?: string
   readonly openspecChangeId?: string
 }
 
-export type EffectServiceOperationKind =
+export type EffectServiceSymbolKind =
   | "codec"
   | "query"
   | "command"
@@ -36,27 +36,27 @@ export type EffectServiceOperationKind =
   | "policy-rule"
   | "joern-template"
 
-const operationBuilderNames: Record<EffectServiceOperationKind, string> = {
-  "atom-family": "atomFamilyOperation",
-  codec: "codecOperation",
-  command: "commandOperation",
-  "event-facade": "eventFacadeOperation",
-  generator: "generatorOperation",
-  "joern-template": "joernTemplateOperation",
-  "policy-rule": "policyRuleOperation",
-  projection: "projectionOperation",
-  query: "queryOperation",
-  "resource-provider": "resourceProviderOperation",
+const symbolBuilderNames: Record<EffectServiceSymbolKind, string> = {
+  "atom-family": "atomFamilySymbol",
+  codec: "codecSymbol",
+  command: "commandSymbol",
+  "event-facade": "eventFacadeSymbol",
+  generator: "generatorSymbol",
+  "joern-template": "joernTemplateSymbol",
+  "policy-rule": "policyRuleSymbol",
+  projection: "projectionSymbol",
+  query: "querySymbol",
+  "resource-provider": "resourceProviderSymbol",
 }
 
 interface EffectServiceTemplateSchema
   extends Required<
     Pick<
       EffectServiceGeneratorSchema,
-      "operationId" | "operationKind" | "tag"
+      "symbolId" | "symbolKind" | "tag"
     >
   > {
-  readonly operationBuilderName: string
+  readonly symbolBuilderName: string
 }
 
 const serviceTemplate = (
@@ -90,20 +90,20 @@ export class ${names.className} extends Effect.Service<${names.className}>()(
 export const ${names.className}RunInput = Schema.Void
 export const ${names.className}RunOutput = Schema.Void
 
-export const ${names.className}RunOperation = {
-  id: "${schema.operationId}",
-  kind: "${schema.operationKind}",
+export const ${names.className}RunSymbol = {
+  id: "${schema.symbolId}",
+  kind: "${schema.symbolKind}",
   input: ${names.className}RunInput,
   output: ${names.className}RunOutput,
   inferredDiagnosticRules: "inferDiagnosticRules()",
   diagnosticRuleExtensions: [],
   registration:
-    "${schema.operationBuilderName}({ id, input, output, diagnosticRules: inferDiagnosticRules(), edges: touches(...) })",
+    "${schema.symbolBuilderName}({ id, input, output, diagnosticRules: inferDiagnosticRules(), edges: touches(...) })",
 } as const
 
 export const ${names.className}Live = ${names.className}.Default
-export const PackageLayer = ${names.className}Live
-export const PackageTestLayer = ${names.className}Live
+export const ProjectLayer = ${names.className}Live
+export const ProjectTestLayer = ${names.className}Live
 `
 
 export default function effectServiceGenerator(
@@ -114,17 +114,17 @@ export default function effectServiceGenerator(
   const directory = schema.directory ?? "src/effect/services"
   const filePath = joinPath(directory, `${names.fileName}.ts`)
   const tag = schema.tag ?? `@attune/service/${names.className}`
-  const operationId = schema.operationId ?? `${names.fileName}.run`
-  const operationKind = schema.operationKind ?? "command"
+  const symbolId = schema.symbolId ?? `${names.fileName}.run`
+  const symbolKind = schema.symbolKind ?? "command"
 
   writeTextIfChanged(
     tree,
     filePath,
     serviceTemplate(
       {
-        operationBuilderName: operationBuilderNames[operationKind],
-        operationId,
-        operationKind,
+        symbolBuilderName: symbolBuilderNames[symbolKind],
+        symbolId,
+        symbolKind,
         tag,
       },
       names,
@@ -155,8 +155,8 @@ export default function effectServiceGenerator(
       directory,
       export: shouldExport,
       name: schema.name,
-      operationId,
-      operationKind,
+      symbolId,
+      symbolKind,
       tag,
     },
     ownedFiles: shouldExport

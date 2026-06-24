@@ -1,6 +1,6 @@
 Changed:
 - Removed the package-local generated-contract compatibility test
-  `packages/joern-effect/test/attune-package-contract.test.ts`.
+  `packages/joern-effect/test/attune-project-facts.test.ts`.
 - Updated active Joern shape invariants in `attune.generator-shapes.json` to
   describe source, schema descriptors, observations, diagnostics, and focused
   tests instead of old generated-contract/evidence wording.
@@ -24,8 +24,8 @@ Removed surfaces:
   unit tests, and public Nx check/typecheck targets.
 
 Retained compatibility-only surfaces:
-- `framework/architecture/src/generated/package-contracts/joern-effect/attune.generated.ts`
-- `framework/architecture/src/generated/package-contracts/joern-effect/attune.contract.generated.ts`
+- `framework/architecture/src/generated/project-facts/joern-effect/attune.generated.ts`
+- `framework/architecture/src/generated/project-facts/joern-effect/attune.contract.generated.ts`
 - `.attune/cache/generated/joern-effect/attune-symbol-registry.ts`
 - `.attune/cache/generated/joern-effect/attune-property-observations.ts`
 - `.attune/cache/generated/joern-effect/attune-schema-observations.ts`

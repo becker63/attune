@@ -8,7 +8,7 @@
         },
         {
           "project": "workspace",
-          "target": "package-contracts-check"
+          "target": "attune-check"
         }
       ],
       "editableRegions": [
@@ -18,18 +18,18 @@
           "marker": "defineAttuneProjectFacts"
         }
       ],
-      "generatorName": "@attune/nx:package-contract",
-      "openspecChangeId": "standardize-effect-package-contracts",
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
       "options": {
-        "operationIds": [
+        "symbolIds": [
           "no-raw-process-env",
           "no-raw-node-apis",
           "no-arbitrary-package-manager-surfaces",
           "no-hand-authored-architecture-shapes"
         ],
-        "operationKind": "policy-rule",
-        "packageId": "effect-oxlint-policy",
-        "packageKind": "policy-plugin",
+        "symbolKind": "policy-rule",
+        "projectId": "effect-oxlint-policy",
+        "projectKind": "policy-plugin",
         "project": "effect-oxlint-policy",
         "sourceRoot": "framework/oxlint-policy"
       },
@@ -39,18 +39,18 @@
       ],
       "owningProject": "effect-oxlint-policy",
       "projectRoot": "framework/oxlint-policy",
-      "sourceShapeKind": "package-contract",
+      "sourceShapeKind": "project-facts",
       "syncTargets": [
         {
           "project": "effect-oxlint-policy",
-          "target": "sync-package-contract"
+          "target": "sync-project-facts"
         }
       ]
     }
   ],
-  "contractShards": [
+  "projectFactShards": [
     {
-      "generator": "@attune/nx:package-contract",
+      "generator": "@attune/nx:project-facts",
       "outputs": [
         "src/attune.package.ts"
       ],
@@ -60,7 +60,7 @@
         "test/**"
       ],
       "status": "generated",
-      "target": "sync-package-contract"
+      "target": "sync-project-facts"
     }
   ],
   "generatedOutputs": [],

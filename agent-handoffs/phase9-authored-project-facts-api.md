@@ -11,10 +11,10 @@
 - Added a framework policy ratchet for old authored project API names in active
   package surfaces.
 - Renamed the slim-file policy diagnostic to `project-facts-too-large`.
-- Updated the package-contract generator so new generated source no longer
-  re-exports `PackageContractSchema` and frames package-contract output as
+- Updated the project-facts generator so new generated source no longer
+  re-exports `PackageContractSchema` and frames project-facts output as
   compatibility materialization feeding the mechanical program index.
-- Updated framework-owned Source BOM projections whose editable marker pointed
+- Updated framework-owned source ownership artifact projections whose editable marker pointed
   at `definePackageContract`.
 
 ## Validated
@@ -51,16 +51,16 @@
   - 201 observations
   - 21 diagnostics
   - 21 repairs
-- Source BOM check passed with 11 registered shards.
+- source ownership artifact check passed with 11 registered shards.
 - Generator shape conformance passed with 53 shapes across 11 projects.
 - Framework policy check passed with the new authored project API ratchet.
 - Repair dry-run reported the existing 21 blocked `schema_descriptor` refresh
-  rows and no safe generated/package-surface relocation actions.
+  rows and no safe artifact or project-surface relocation actions.
 
 ## Not Done
 
 - The checked-in generated compatibility outputs under
-  `framework/architecture/src/generated/package-contracts/**` were deleted in
+  `framework/architecture/src/generated/project-facts/**` were deleted in
   the follow-up Phase 9 generated-output slice.
 - Protocol and testing compatibility helper modules remain active until their
   consumers move to program-index query APIs.

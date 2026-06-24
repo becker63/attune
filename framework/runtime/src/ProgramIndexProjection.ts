@@ -1179,14 +1179,14 @@ const sourceBomCompatibilityRows = (
 
   const sourceInputs = stringArrayField(parsed, "sourceInputs")
   const ownedFiles = stringArrayField(parsed, "ownedFiles")
-  const contractOutputPaths = arrayObjectStringValues(parsed, "contractShards", "outputs")
-  const contractSourcePaths = arrayObjectStringValues(parsed, "contractShards", "sources")
+  const projectFactOutputPaths = arrayObjectStringValues(parsed, "projectFactShards", "outputs")
+  const projectFactSourcePaths = arrayObjectStringValues(parsed, "projectFactShards", "sources")
   const generatedOutputPaths = arrayObjectStringValues(parsed, "generatedOutputs", "outputs")
   const paths = [
     ...sourceInputs.map((path) => ({ path, kind: "source-input-pattern" })),
     ...ownedFiles.map((path) => ({ path, kind: "source-ownership-pattern" })),
-    ...contractOutputPaths.map((path) => ({ path, kind: "generated-artifact-output" })),
-    ...contractSourcePaths.map((path) => ({ path, kind: "generated-artifact-input" })),
+    ...projectFactOutputPaths.map((path) => ({ path, kind: "generated-artifact-output" })),
+    ...projectFactSourcePaths.map((path) => ({ path, kind: "generated-artifact-input" })),
     ...generatedOutputPaths.map((path) => ({ path, kind: "generated-artifact-output" })),
   ] as const
   const artifacts = paths.map(({ path, kind }) => {
@@ -1216,8 +1216,8 @@ const sourceBomCompatibilityRows = (
         projectRoot: stringField(parsed, "projectRoot"),
         sourceInputs,
         ownedFiles,
-        contractOutputPaths,
-        contractSourcePaths,
+        projectFactOutputPaths,
+        projectFactSourcePaths,
         generatedOutputPaths,
       },
       now: input.now,

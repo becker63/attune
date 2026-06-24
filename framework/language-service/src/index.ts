@@ -6,14 +6,14 @@ import type {
 } from "@attune/framework-protocol"
 import { Effect } from "effect"
 import {
-  diagnosticsForProtocol,
+  diagnosticsForProgramFacts,
   programIndexDiagnosticsForFile,
-  type ObligationExplanation,
-  type PackageProtocolSummary,
-  type ProtocolDiagnosticsApi,
+  type DiagnosticRuleExplanation,
+  type ProjectFactSummary,
+  type ProgramDiagnosticsApi,
   type ProgramIndexApi,
-  type ProtocolProjectionInput,
-  type ProtocolQueryApi,
+  type ProgramFactProjectionInput,
+  type ProgramFactQueryApi,
 } from "@attune/framework-runtime"
 
 type RuntimeDiagnostic = AttuneProtocolDiagnostic & {
@@ -39,9 +39,9 @@ export interface LanguageServiceCodeLens {
 
 export interface LanguageServiceQuickInfo {
   readonly sourcePath: string
-  readonly packageId: string
-  readonly operationId?: string
-  readonly obligationId?: string
+  readonly projectId: string
+  readonly symbolId?: string
+  readonly diagnosticRuleId?: string
   readonly text: string
 }
 
@@ -67,8 +67,8 @@ export type LanguageServiceSourceRangeIndex = Readonly<Record<string, SourceRang
 
 export interface LanguageServiceProjectionRequest {
   readonly sourcePath: string
-  readonly packageId?: string
-  readonly protocolId?: string
+  readonly projectId?: string
+  readonly schemaDescriptorId?: string
   readonly sourceRanges?: LanguageServiceSourceRangeIndex
 }
 
@@ -110,15 +110,15 @@ export const sourceRangeIndexFromFixtures = (
 
 export const sourceRangeKey = (input: {
   readonly sourcePath: string
-  readonly packageId?: string | undefined
-  readonly operationId?: string | undefined
-  readonly obligationId?: string | undefined
+  readonly projectId?: string | undefined
+  readonly symbolId?: string | undefined
+  readonly diagnosticRuleId?: string | undefined
   readonly code?: string | undefined
 }): string => [
   input.sourcePath,
-  input.packageId ?? "package",
-  input.operationId ?? "package",
-  input.obligationId ?? "obligation",
+  input.projectId ?? "project",
+  input.symbolId ?? "symbol",
+  input.diagnosticRuleId ?? "diagnostic-rule",
   input.code ?? "diagnostic",
 ].join("#")
 
@@ -131,30 +131,30 @@ const rangeForDiagnostic = (
   const candidates = [
     sourceRangeKey({
       sourcePath: diagnostic.sourcePath,
-      packageId: diagnostic.packageId,
-      operationId: diagnostic.operationId,
-      obligationId: diagnostic.obligationId,
+      projectId: diagnostic.packageId,
+      symbolId: diagnostic.operationId,
+      diagnosticRuleId: diagnostic.obligationId,
       code: diagnostic.code,
     }),
     sourceRangeKey({
       sourcePath: diagnostic.sourcePath,
-      packageId: diagnostic.packageId,
-      operationId: diagnostic.operationId,
-      obligationId: diagnostic.obligationId,
+      projectId: diagnostic.packageId,
+      symbolId: diagnostic.operationId,
+      diagnosticRuleId: diagnostic.obligationId,
     }),
     sourceRangeKey({
       sourcePath: diagnostic.sourcePath,
-      packageId: diagnostic.packageId,
-      operationId: diagnostic.operationId,
+      projectId: diagnostic.packageId,
+      symbolId: diagnostic.operationId,
     }),
     sourceRangeKey({
       sourcePath: diagnostic.sourcePath,
-      packageId: diagnostic.packageId,
+      projectId: diagnostic.packageId,
       code: diagnostic.code,
     }),
     sourceRangeKey({
       sourcePath: diagnostic.sourcePath,
-      packageId: diagnostic.packageId,
+      projectId: diagnostic.packageId,
     }),
   ]
 
@@ -167,7 +167,7 @@ const diagnosticDisplayMessage = (
   diagnostic: AttuneProtocolDiagnostic,
 ): string => {
   if (diagnostic.code === "attune/protocol/invalid-store-payload") {
-    return `Invalid protocol store payload for ${diagnostic.packageId}: ${diagnostic.explanation}`
+    return `Invalid program fact store payload for ${diagnostic.packageId}: ${diagnostic.explanation}`
   }
   return `${diagnostic.code}: ${diagnostic.explanation}`
 }
@@ -210,9 +210,9 @@ export const diagnosticCodeLens = (
 ): LanguageServiceCodeLens => {
   const action = diagnostic.suggestedActions[0]
   const missing = diagnostic.code.includes("missing-obligation")
-    ? "missing obligations"
+    ? "missing observations"
     : diagnostic.code.includes("stale-generated-source")
-      ? "stale generated source"
+      ? "stale artifact"
       : "framework diagnostics"
 
   return {
@@ -236,38 +236,38 @@ export const codeActionsForDiagnostic = (
 export const quickInfoForDiagnostic = (
   diagnostic: AttuneProtocolDiagnostic,
   context: {
-    readonly summary?: PackageProtocolSummary
-    readonly obligation?: ObligationExplanation
+    readonly summary?: ProjectFactSummary
+    readonly diagnosticRule?: DiagnosticRuleExplanation
   } = {},
 ): LanguageServiceQuickInfo => {
   const observed = context.summary === undefined
     ? undefined
-    : `${context.summary.evidenceCount}/${context.summary.obligationCount}`
+    : `${context.summary.observationCount}/${context.summary.diagnosticRuleCount}`
   const runtimeState = context.summary === undefined
     ? []
     : [
-      `evidence runs: ${context.summary.evidenceRunCount}`,
-      `coverage feedback: ${context.summary.coverageFeedbackCount}`,
-      `waivers: ${context.summary.activeWaiverCount} active, ${context.summary.waiverIssueCount} issues`,
-      ...(context.summary.replayMetadataCount === 0
+      `observation runs: ${context.summary.observationRunCount}`,
+      `coverage observations: ${context.summary.coverageObservationCount}`,
+      `diagnostic waivers: ${context.summary.activeDiagnosticWaiverCount} active, ${context.summary.diagnosticWaiverIssueCount} issues`,
+      ...(context.summary.replayObservationCount === 0
         ? []
-        : [`replay metadata: ${context.summary.replayMetadataCount}`]),
+        : [`replay observations: ${context.summary.replayObservationCount}`]),
     ]
   return {
     sourcePath: diagnostic.sourcePath,
-    packageId: diagnostic.packageId,
-    ...(diagnostic.operationId === undefined ? {} : { operationId: diagnostic.operationId }),
-    ...(diagnostic.obligationId === undefined ? {} : { obligationId: diagnostic.obligationId }),
+    projectId: diagnostic.packageId,
+    ...(diagnostic.operationId === undefined ? {} : { symbolId: diagnostic.operationId }),
+    ...(diagnostic.obligationId === undefined ? {} : { diagnosticRuleId: diagnostic.obligationId }),
     text: [
       `diagnostic: ${diagnostic.code}`,
-      `package: ${diagnostic.packageId}`,
-      ...(diagnostic.operationId === undefined ? [] : [`operation: ${diagnostic.operationId}`]),
-      ...(diagnostic.obligationId === undefined ? [] : [`obligation: ${diagnostic.obligationId}`]),
-      ...(context.obligation === undefined ? [] : [
-        `obligation reason: ${context.obligation.reason}`,
-        `expected evidence: ${context.obligation.expectedEvidenceKinds.join(", ") || "none"}`,
+      `project: ${diagnostic.packageId}`,
+      ...(diagnostic.operationId === undefined ? [] : [`symbol: ${diagnostic.operationId}`]),
+      ...(diagnostic.obligationId === undefined ? [] : [`diagnostic rule: ${diagnostic.obligationId}`]),
+      ...(context.diagnosticRule === undefined ? [] : [
+        `diagnostic rule reason: ${context.diagnosticRule.reason}`,
+        `expected observations: ${context.diagnosticRule.expectedObservationKinds.join(", ") || "none"}`,
       ]),
-      ...(observed === undefined ? [] : [`evidence: ${observed} obligations observed`]),
+      ...(observed === undefined ? [] : [`observations: ${observed} diagnostic rules observed`]),
       ...runtimeState,
       diagnostic.explanation,
     ].join("\n"),
@@ -278,8 +278,8 @@ const diagnosticKey = (diagnostic: AttuneProtocolDiagnostic): string =>
   [
     diagnostic.sourcePath,
     diagnostic.code,
-    diagnostic.operationId ?? "package",
-    diagnostic.obligationId ?? "obligation",
+    diagnostic.operationId ?? "symbol",
+    diagnostic.obligationId ?? "diagnostic-rule",
   ].join("#")
 
 const groupCodeActions = (
@@ -293,14 +293,14 @@ const groupCodeActions = (
   )
 
 const summaryCodeLens = (
-  summary: PackageProtocolSummary,
+  summary: ProjectFactSummary,
   sourcePath: string,
 ): LanguageServiceCodeLens => ({
-  title: `evidence: ${summary.evidenceCount}/${summary.obligationCount} obligations observed`,
+  title: `observations: ${summary.observationCount}/${summary.diagnosticRuleCount} diagnostic rules observed`,
   sourcePath,
 })
 
-const missingObligationCodeLens = (
+const missingObservationCodeLens = (
   diagnostics: readonly AttuneProtocolDiagnostic[],
   sourcePath: string,
 ): LanguageServiceCodeLens | undefined => {
@@ -309,12 +309,12 @@ const missingObligationCodeLens = (
   ).length
   if (count === 0) return undefined
   return {
-    title: `${count} missing obligations`,
+    title: `${count} missing observations`,
     sourcePath,
   }
 }
 
-const collectPackageIds = (
+const collectProjectIds = (
   diagnostics: readonly AttuneProtocolDiagnostic[],
   fallback?: string,
 ): readonly string[] =>
@@ -324,42 +324,42 @@ const collectPackageIds = (
   ])]
 
 const collectSummaries = (
-  query: ProtocolQueryApi,
-  packageIds: readonly string[],
-): Effect.Effect<ReadonlyMap<string, PackageProtocolSummary>, never> => {
+  query: ProgramFactQueryApi,
+  projectIds: readonly string[],
+): Effect.Effect<ReadonlyMap<string, ProjectFactSummary>, never> => {
   const effects: readonly Effect.Effect<
-    readonly [string, PackageProtocolSummary] | undefined,
+    readonly [string, ProjectFactSummary] | undefined,
     never
-  >[] = packageIds.map((packageId) =>
-    query.getPackageSummary(packageId).pipe(
-      Effect.map((summary) => [packageId, summary] as const),
+  >[] = projectIds.map((projectId) =>
+    query.getProjectSummary(projectId).pipe(
+      Effect.map((summary) => [projectId, summary] as const),
       Effect.catch(() => Effect.succeed(undefined)),
     )
   )
 
   return Effect.all(effects).pipe(
     Effect.map((entries) =>
-      new Map(entries.filter((entry): entry is readonly [string, PackageProtocolSummary] =>
+      new Map(entries.filter((entry): entry is readonly [string, ProjectFactSummary] =>
         entry !== undefined
       )),
     ),
   )
 }
 
-const collectObligationExplanations = (
-  query: ProtocolQueryApi,
+const collectDiagnosticRuleExplanations = (
+  query: ProgramFactQueryApi,
   diagnostics: readonly AttuneProtocolDiagnostic[],
-): Effect.Effect<ReadonlyMap<string, ObligationExplanation>, never> => {
+): Effect.Effect<ReadonlyMap<string, DiagnosticRuleExplanation>, never> => {
   const obligationIds = [
     ...new Set(diagnostics.flatMap((diagnostic) =>
       diagnostic.obligationId === undefined ? [] : [diagnostic.obligationId]
     )),
   ]
   const effects: readonly Effect.Effect<
-    readonly [string, ObligationExplanation] | undefined,
+    readonly [string, DiagnosticRuleExplanation] | undefined,
     never
   >[] = obligationIds.map((obligationId) =>
-    query.explainObligation(obligationId).pipe(
+    query.explainDiagnosticRule(obligationId).pipe(
       Effect.map((explanation) =>
         explanation === undefined ? undefined : [obligationId, explanation] as const
       ),
@@ -369,25 +369,25 @@ const collectObligationExplanations = (
 
   return Effect.all(effects).pipe(
     Effect.map((entries) =>
-      new Map(entries.filter((entry): entry is readonly [string, ObligationExplanation] =>
+      new Map(entries.filter((entry): entry is readonly [string, DiagnosticRuleExplanation] =>
         entry !== undefined
       )),
     ),
   )
 }
 
-const collectDeltaLenses = (
-  query: ProtocolQueryApi,
-  packageIds: readonly string[],
+const collectRepairFindingLenses = (
+  query: ProgramFactQueryApi,
+  projectIds: readonly string[],
 ): Effect.Effect<readonly LanguageServiceCodeLens[], never> =>
   Effect.all(
-    packageIds.map((packageId) =>
-      query.listDeltas(packageId).pipe(
-        Effect.map((deltas) =>
-          deltas
+    projectIds.map((projectId) =>
+      query.listRepairFindings(projectId).pipe(
+        Effect.map((repairFindings) =>
+          repairFindings
             .filter((delta) => delta.kind === "stale-generated-source")
             .map((delta) => ({
-              title: "stale generated source",
+              title: "stale artifact",
               sourcePath: delta.sourcePath,
               ...(delta.repairActions[0] === undefined ? {} : { action: delta.repairActions[0] }),
             } satisfies LanguageServiceCodeLens))
@@ -402,9 +402,9 @@ const viewFromDiagnostics = (
   options: {
     readonly sourcePath: string
     readonly sourceRanges?: LanguageServiceSourceRangeIndex
-    readonly summaries?: ReadonlyMap<string, PackageProtocolSummary>
-    readonly obligations?: ReadonlyMap<string, ObligationExplanation>
-    readonly deltaLenses?: readonly LanguageServiceCodeLens[]
+    readonly summaries?: ReadonlyMap<string, ProjectFactSummary>
+    readonly diagnosticRules?: ReadonlyMap<string, DiagnosticRuleExplanation>
+    readonly repairFindingLenses?: readonly LanguageServiceCodeLens[]
   },
 ): LanguageServiceView => {
   const projectedDiagnostics = diagnostics.map((diagnostic) =>
@@ -412,16 +412,16 @@ const viewFromDiagnostics = (
   )
   const quickInfo = projectedDiagnostics.map((diagnostic) => {
     const summary = options.summaries?.get(diagnostic.packageId)
-    const obligation = diagnostic.obligationId === undefined
+    const diagnosticRule = diagnostic.obligationId === undefined
       ? undefined
-      : options.obligations?.get(diagnostic.obligationId)
+      : options.diagnosticRules?.get(diagnostic.obligationId)
 
     return quickInfoForDiagnostic(diagnostic, {
       ...(summary === undefined ? {} : { summary }),
-      ...(obligation === undefined ? {} : { obligation }),
+      ...(diagnosticRule === undefined ? {} : { diagnosticRule }),
     })
   })
-  const missingLens = missingObligationCodeLens(projectedDiagnostics, options.sourcePath)
+  const missingLens = missingObservationCodeLens(projectedDiagnostics, options.sourcePath)
   const summaryLenses = [...(options.summaries?.values() ?? [])].map((summary) =>
     summaryCodeLens(summary, options.sourcePath)
   )
@@ -434,18 +434,18 @@ const viewFromDiagnostics = (
       ...projectedDiagnostics.map(diagnosticCodeLens),
       ...(missingLens === undefined ? [] : [missingLens]),
       ...summaryLenses,
-      ...(options.deltaLenses ?? []),
+      ...(options.repairFindingLenses ?? []),
     ],
   }
 }
 
 export const projectLanguageServiceView = (
-  input: ProtocolProjectionInput,
+  input: ProgramFactProjectionInput,
   options: {
     readonly sourceRanges?: LanguageServiceSourceRangeIndex
   } = {},
 ): LanguageServiceView => {
-  const diagnostics = diagnosticsForProtocol(input)
+  const diagnostics = diagnosticsForProgramFacts(input)
   return viewFromDiagnostics(diagnostics, {
     sourcePath: input.sourcePath,
     ...(options.sourceRanges === undefined ? {} : { sourceRanges: options.sourceRanges }),
@@ -454,8 +454,8 @@ export const projectLanguageServiceView = (
 
 export const projectLanguageServiceViewFromRuntime = (
   services: {
-    readonly diagnostics: Pick<ProtocolDiagnosticsApi, "diagnosticsForFile">
-    readonly query: ProtocolQueryApi
+    readonly diagnostics: Pick<ProgramDiagnosticsApi, "diagnosticsForFile">
+    readonly query: ProgramFactQueryApi
   },
   request: LanguageServiceProjectionRequest,
 ): Effect.Effect<LanguageServiceView, never> =>
@@ -463,21 +463,21 @@ export const projectLanguageServiceViewFromRuntime = (
     const diagnostics = yield* services.diagnostics.diagnosticsForFile(
       request.sourcePath,
       {
-        ...(request.packageId === undefined ? {} : { packageId: request.packageId }),
-        ...(request.protocolId === undefined ? {} : { protocolId: request.protocolId }),
+        ...(request.projectId === undefined ? {} : { packageId: request.projectId }),
+        ...(request.schemaDescriptorId === undefined ? {} : { protocolId: request.schemaDescriptorId }),
       },
     )
-    const packageIds = collectPackageIds(diagnostics, request.packageId)
-    const summaries = yield* collectSummaries(services.query, packageIds)
-    const obligations = yield* collectObligationExplanations(services.query, diagnostics)
-    const deltaLenses = yield* collectDeltaLenses(services.query, packageIds)
+    const projectIds = collectProjectIds(diagnostics, request.projectId)
+    const summaries = yield* collectSummaries(services.query, projectIds)
+    const diagnosticRules = yield* collectDiagnosticRuleExplanations(services.query, diagnostics)
+    const repairFindingLenses = yield* collectRepairFindingLenses(services.query, projectIds)
 
     return viewFromDiagnostics(diagnostics, {
       sourcePath: request.sourcePath,
       ...(request.sourceRanges === undefined ? {} : { sourceRanges: request.sourceRanges }),
       summaries,
-      obligations,
-      deltaLenses,
+      diagnosticRules,
+      repairFindingLenses,
     })
   })
 

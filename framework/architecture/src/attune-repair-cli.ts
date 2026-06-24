@@ -81,7 +81,7 @@ if (indexedRepairPlans.length > 0) printIndexedRepairSummary(indexedRepairPlans)
 const actions = selectedProjects.flatMap((project) => repairProject(project, indexedRepairPlans))
 
 if (actions.length === 0) {
-  console.log("Attune repair: no safe generated/package-surface relocation actions were needed.")
+  console.log("Attune repair: no safe artifact or project-surface relocation actions were needed.")
 } else {
   console.log(`Attune repair: ${dryRun ? "planned" : "applied"} ${actions.length} safe relocation action(s).`)
   for (const action of actions) {
@@ -103,8 +103,8 @@ function repairProject(
   if (!safeRelocationProjectIds.has(project.project)) return []
 
   return [
-    ...removePackageLocalGeneratedExport(project),
-    ...removePackageLocalGeneratedCompanions(project),
+    ...removeProjectLocalGeneratedExport(project),
+    ...removeProjectLocalGeneratedCompanions(project),
     ...relocateSourceBom(project),
   ]
 }
@@ -270,8 +270,8 @@ function materializeRepairKind(
         ),
         ...(safeRelocationProjectIds.has(project.project)
           ? [
-            ...removePackageLocalGeneratedExport(project),
-            ...removePackageLocalGeneratedCompanions(project),
+            ...removeProjectLocalGeneratedExport(project),
+            ...removeProjectLocalGeneratedCompanions(project),
             ...relocateSourceBom(project),
           ]
           : []),
@@ -279,7 +279,7 @@ function materializeRepairKind(
   }
 }
 
-function removePackageLocalGeneratedExport(project: RepairProject): readonly RepairAction[] {
+function removeProjectLocalGeneratedExport(project: RepairProject): readonly RepairAction[] {
   const packageDeclarationPath = `${project.projectRoot}/src/attune.package.ts`
   const content = readText(packageDeclarationPath)
   if (content === null) return []
@@ -291,11 +291,11 @@ function removePackageLocalGeneratedExport(project: RepairProject): readonly Rep
   return [{
     kind: "update",
     path: packageDeclarationPath,
-    message: "removed package-local generated contract re-export",
+    message: "removed project-local generated contract re-export",
   }]
 }
 
-function removePackageLocalGeneratedCompanions(project: RepairProject): readonly RepairAction[] {
+function removeProjectLocalGeneratedCompanions(project: RepairProject): readonly RepairAction[] {
   return [
     deleteFileIfPresent(`${project.projectRoot}/src/attune.generated.ts`),
     deleteFileIfPresent(`${project.projectRoot}/src/attune.contract.generated.ts`),
@@ -363,7 +363,7 @@ function deleteFileIfPresent(relativePath: string): readonly RepairAction[] {
   return [{
     kind: "delete",
     path: relativePath,
-    message: "removed package-local generated compatibility companion",
+    message: "removed project-local generated compatibility artifact",
   }]
 }
 

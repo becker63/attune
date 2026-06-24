@@ -79,10 +79,10 @@ export const classifyFrameworkImportBoundary = (
   const importSource = normalizePath(usage.importSource)
   const importedNames = usage.importedNames ?? []
 
-  if (importsProtocolStoreInternal(importSource, importedNames)) {
+  if (importsProgramFactStoreInternal(importSource, importedNames)) {
     return {
       code: "protocol-store-internal-import",
-      reason: "ProtocolStore internals are private framework runtime/store state.",
+      reason: "ProgramFactStore internals are private framework runtime/store state.",
     }
   }
 
@@ -218,13 +218,13 @@ const isTestOrGeneratedEvidenceFile = (filePath: string): boolean => {
   )
 }
 
-const importsProtocolStoreInternal = (
+const importsProgramFactStoreInternal = (
   importSource: string,
   importedNames: readonly string[],
 ): boolean =>
-  /(^|[/_-])ProtocolStore(?:Live|Test)?(?:$|[./_-])/u.test(importSource) ||
+  /(^|[/_-])ProgramFactStore(?:Live|Test)?(?:$|[./_-])/u.test(importSource) ||
   /(^|[/_-])protocol-store(?:$|[./_-])/iu.test(importSource) ||
-  importedNames.some((name) => /^ProtocolStore/u.test(name))
+  importedNames.some((name) => /^ProgramFactStore/u.test(name))
 
 const isFrameworkSqliteImport = (importSource: string): boolean =>
   importSource === "@attune/framework-sqlite" ||

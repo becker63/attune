@@ -9,12 +9,12 @@
     "effect-service": {
       "factory": "./dist/generators/effect-service/generator",
       "schema": "./src/generators/effect-service/schema.json",
-      "description": "Create a canonical Effect.Service boundary with operation metadata, PackageLayer, PackageTestLayer, and Source BOM provenance."
+      "description": "Create a canonical Effect.Service boundary with symbol metadata, service layers, and artifact provenance."
     },
-    "package-contract": {
-      "factory": "./dist/generators/package-contract/generator",
-      "schema": "./src/generators/package-contract/schema.json",
-      "description": "Create an Effect Schema-backed Attune package contract with compile-only assertions and type guidance."
+    "project-facts": {
+      "factory": "./dist/generators/project-facts/generator",
+      "schema": "./src/generators/project-facts/schema.json",
+      "description": "Create Effect Schema-backed project facts, symbol registry, observation plan, and artifact metadata."
     },
     "atom-view": {
       "factory": "./dist/generators/atom-view/generator",

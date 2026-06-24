@@ -1,17 +1,17 @@
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
 import {
-  InMemoryProtocolStoreLive,
-  ProtocolDiagnostics,
-  ProtocolDiagnosticsLive,
+  InMemoryProgramFactStoreLive,
+  ProgramDiagnostics,
+  ProgramDiagnosticsLive,
   ProgramIndexDiagnosticsLive,
-  ProtocolProjectionLive,
-  ProtocolQuery,
-  ProtocolQueryLive,
-  ProtocolRuntime,
-  ProtocolRuntimeLive,
-  ProtocolStore,
-  type ProtocolStoreSnapshot,
+  ProgramFactProjectionLive,
+  ProgramFactQuery,
+  ProgramFactQueryLive,
+  ProgramFactRuntime,
+  ProgramFactRuntimeLive,
+  ProgramFactStore,
+  type ProgramFactStoreSnapshot,
 } from "@attune/framework-runtime"
 import {
   codeActionsForDiagnostic,
@@ -58,54 +58,54 @@ const provideRuntime = <A, E>(
   effect: Effect.Effect<
     A,
     E,
-    | ProtocolRuntime
-    | ProtocolQuery
-    | ProtocolDiagnostics
-    | ProtocolStore
+    | ProgramFactRuntime
+    | ProgramFactQuery
+    | ProgramDiagnostics
+    | ProgramFactStore
   >,
-  initial?: Partial<ProtocolStoreSnapshot>,
+  initial?: Partial<ProgramFactStoreSnapshot>,
 ): Effect.Effect<A, E, never> =>
   effect.pipe(
-    Effect.provide(ProtocolDiagnosticsLive),
-    Effect.provide(ProtocolQueryLive),
-    Effect.provide(ProtocolRuntimeLive),
-    Effect.provide(ProtocolProjectionLive),
-    Effect.provide(InMemoryProtocolStoreLive(initial)),
+    Effect.provide(ProgramDiagnosticsLive),
+    Effect.provide(ProgramFactQueryLive),
+    Effect.provide(ProgramFactRuntimeLive),
+    Effect.provide(ProgramFactProjectionLive),
+    Effect.provide(InMemoryProgramFactStoreLive(initial)),
   ) as Effect.Effect<A, E, never>
 
 const provideProgramIndexRuntime = <A, E>(
   effect: Effect.Effect<
     A,
     E,
-    | ProtocolRuntime
-    | ProtocolQuery
-    | ProtocolDiagnostics
-    | ProtocolStore
+    | ProgramFactRuntime
+    | ProgramFactQuery
+    | ProgramDiagnostics
+    | ProgramFactStore
     | ProgramIndex
   >,
   programIndex: ProgramIndexApi,
-  initial?: Partial<ProtocolStoreSnapshot>,
+  initial?: Partial<ProgramFactStoreSnapshot>,
 ): Effect.Effect<A, E, never> =>
   effect.pipe(
     Effect.provide(ProgramIndexDiagnosticsLive),
     Effect.provide(ProgramIndex.fromService(programIndex)),
-    Effect.provide(ProtocolQueryLive),
-    Effect.provide(ProtocolRuntimeLive),
-    Effect.provide(ProtocolProjectionLive),
-    Effect.provide(InMemoryProtocolStoreLive(initial)),
+    Effect.provide(ProgramFactQueryLive),
+    Effect.provide(ProgramFactRuntimeLive),
+    Effect.provide(ProgramFactProjectionLive),
+    Effect.provide(InMemoryProgramFactStoreLive(initial)),
   ) as Effect.Effect<A, E, never>
 
 const runtimeView = (
-  initial?: Partial<ProtocolStoreSnapshot>,
+  initial?: Partial<ProgramFactStoreSnapshot>,
 ) =>
   Effect.runPromise(
     provideRuntime(Effect.gen(function* languageServiceFixture() {
-      const runtime = yield* ProtocolRuntime
-      const query = yield* ProtocolQuery
-      const diagnostics = yield* ProtocolDiagnostics
+      const runtime = yield* ProgramFactRuntime
+      const query = yield* ProgramFactQuery
+      const diagnostics = yield* ProgramDiagnostics
 
-      yield* runtime.materializeDescriptor(demoDescriptor)
-      yield* runtime.recordGeneratedArtifact({
+      yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+      yield* runtime.recordArtifact({
         artifactId: "demo:registry",
         protocolId,
         packageId: "demo",
@@ -120,8 +120,8 @@ const runtimeView = (
         { diagnostics, query },
         {
           sourcePath,
-          packageId: "demo",
-          protocolId,
+          projectId: "demo",
+          schemaDescriptorId: protocolId,
           sourceRanges: sourceRangeIndexFromFixtures(
             [{
               sourcePath,
@@ -135,9 +135,9 @@ const runtimeView = (
             [{
               key: sourceRangeKey({
                 sourcePath,
-                packageId: "demo",
-                operationId: "project",
-                obligationId: "demo:project:property",
+                projectId: "demo",
+                symbolId: "project",
+                diagnosticRuleId: "demo:project:property",
                 code: "attune/protocol/missing-obligation",
               }),
               sourcePath,
@@ -173,7 +173,7 @@ describe("@attune/framework-language-service", () => {
     }
 
     expect(codeActionsForDiagnostic(diagnostic)[0]?.action.kind).toBe("nx-generator")
-    expect(diagnosticCodeLens(diagnostic).title).toBe("1 suggested actions for missing obligations")
+    expect(diagnosticCodeLens(diagnostic).title).toBe("1 suggested actions for missing observations")
   })
 
   it("maps source declaration fixtures to diagnostic ranges", async () => {
@@ -188,11 +188,11 @@ describe("@attune/framework-language-service", () => {
   it("projects invalid runtime store payloads into displayable diagnostics", async () => {
     const view = await Effect.runPromise(
       provideRuntime(Effect.gen(function* invalidPayloadFixture() {
-        const query = yield* ProtocolQuery
-        const diagnostics = yield* ProtocolDiagnostics
+        const query = yield* ProgramFactQuery
+        const diagnostics = yield* ProgramDiagnostics
         return yield* projectLanguageServiceViewFromRuntime(
           { diagnostics, query },
-          { sourcePath, packageId: "demo", protocolId },
+          { sourcePath, projectId: "demo", schemaDescriptorId: protocolId },
         )
       }), {
         descriptors: [{
@@ -206,7 +206,7 @@ describe("@attune/framework-language-service", () => {
 
     expect(view.diagnostics[0]).toMatchObject({
       code: "attune/protocol/invalid-store-payload",
-      displayMessage: expect.stringContaining("Invalid protocol store payload"),
+      displayMessage: expect.stringContaining("Invalid program fact store payload"),
     })
     expect(view.quickInfo[0]?.text).toContain("invalid-store-payload")
     expect(view.codeActions[Object.keys(view.codeActions)[0] ?? ""]?.[0]?.action).toMatchObject({
@@ -273,7 +273,7 @@ describe("@attune/framework-language-service", () => {
         status: "partial",
       },
     })
-    expect(view.quickInfo[0]?.text).toContain("package: demo")
+    expect(view.quickInfo[0]?.text).toContain("project: demo")
     expect(Object.values(view.codeActions).flat()[0]?.action).toMatchObject({
       kind: "nx-generator",
       target: "demo:attune-repair",
@@ -327,11 +327,11 @@ describe("@attune/framework-language-service", () => {
     const view = await Effect.runPromise(
       provideProgramIndexRuntime(
         Effect.gen(function* runtimeProgramIndexLanguageService() {
-          const diagnostics = yield* ProtocolDiagnostics
-          const query = yield* ProtocolQuery
+          const diagnostics = yield* ProgramDiagnostics
+          const query = yield* ProgramFactQuery
           return yield* projectLanguageServiceViewFromRuntime(
             { diagnostics, query },
-            { sourcePath, packageId: "demo", protocolId },
+            { sourcePath, projectId: "demo", schemaDescriptorId: protocolId },
           )
         }),
         index,
@@ -357,7 +357,7 @@ describe("@attune/framework-language-service", () => {
     })
   })
 
-  it("surfaces stale generated source as an Nx repair instead of a file edit", async () => {
+  it("surfaces stale artifacts as an Nx repair instead of a file edit", async () => {
     const view = await runtimeView()
     const stale = view.diagnostics.find((diagnostic) =>
       diagnostic.code === "attune/protocol/stale-generated-source"
@@ -365,43 +365,43 @@ describe("@attune/framework-language-service", () => {
 
     expect(stale?.sourcePath).toBe(generatedPath)
     expect(stale?.suggestedActions[0]).toMatchObject({
-      id: "refresh-protocol-materialization",
+      id: "refresh-artifact-materialization",
       kind: "nx-generator",
       target: "demo:attune-repair",
       options: {
-        internalGenerator: "@attune/framework-nx:protocol-materialize",
+        internalGenerator: "@attune/framework-nx:artifact-materialize",
       },
     })
     expect(
       Object.values(view.codeActions).flat().some((action) => action.action.kind === "source-edit"),
     ).toBe(false)
-    expect(view.codeLenses.map((lens) => lens.title)).toContain("stale generated source")
+    expect(view.codeLenses.map((lens) => lens.title)).toContain("stale artifact")
   })
 
-  it("includes missing evidence, atom graph edge, and type-guidance repair actions", async () => {
+  it("includes missing observations, atom graph edge, and schema observation repair actions", async () => {
     const view = await runtimeView()
     const actions = Object.values(view.codeActions).flat().map((entry) => entry.action)
 
     expect(actions).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        id: "generate-protocol-evidence",
+        id: "generate-observation-scaffold",
         target: "demo:attune-repair",
         options: expect.objectContaining({
-          internalGenerator: "@attune/framework-nx:protocol-evidence",
+          internalGenerator: "@attune/framework-nx:observation-scaffold",
         }),
       }),
       expect.objectContaining({
-        id: "generate-atom-view-edge",
+        id: "generate-atom-projection-edge",
         target: "demo:attune-repair",
         options: expect.objectContaining({
-          internalGenerator: "@attune/framework-nx:atom-view-edge",
+          internalGenerator: "@attune/framework-nx:atom-projection-edge",
         }),
       }),
       expect.objectContaining({
-        id: "refresh-type-guidance",
+        id: "refresh-schema-observations",
         target: "demo:attune-repair",
         options: expect.objectContaining({
-          internalGenerator: "@attune/framework-nx:type-guidance",
+          internalGenerator: "@attune/framework-nx:schema-observations",
         }),
       }),
     ]))
@@ -411,26 +411,26 @@ describe("@attune/framework-language-service", () => {
     const view = await runtimeView()
 
     expect(view.quickInfo.some((info) =>
-      info.text.includes("expected evidence: property-run") &&
-      info.text.includes("evidence: 0/6 obligations observed") &&
-      info.text.includes("coverage feedback: 0") &&
-      info.text.includes("waivers: 0 active, 0 issues")
+      info.text.includes("expected observations: property-run") &&
+      info.text.includes("observations: 0/6 diagnostic rules observed") &&
+      info.text.includes("coverage observations: 0") &&
+      info.text.includes("diagnostic waivers: 0 active, 0 issues")
     )).toBe(true)
     expect(view.codeLenses.map((lens) => lens.title)).toEqual(expect.arrayContaining([
-      "4 missing obligations",
-      "evidence: 0/6 obligations observed",
+      "4 missing observations",
+      "observations: 0/6 diagnostic rules observed",
     ]))
   })
 
-  it("projects replay, waiver, coverage, and weak-oracle findings from runtime deltas", async () => {
+  it("projects replay, waiver, coverage, and weak-oracle findings from runtime repairFindings", async () => {
     const view = await Effect.runPromise(
       provideRuntime(Effect.gen(function* propertyEvidenceProjectionFixture() {
-        const runtime = yield* ProtocolRuntime
-        const query = yield* ProtocolQuery
-        const diagnostics = yield* ProtocolDiagnostics
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+        const diagnostics = yield* ProgramDiagnostics
 
-        yield* runtime.materializeDescriptor(demoDescriptor)
-        yield* runtime.recordEvidenceRun({
+        yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+        yield* runtime.recordObservationRun({
           runId: "run-1",
           protocolId,
           packageId: "demo",
@@ -439,7 +439,7 @@ describe("@attune/framework-language-service", () => {
           startedAt: "2026-06-22T00:00:00.000Z",
           completedAt: "2026-06-22T00:00:02.000Z",
         })
-        yield* runtime.recordReplayMetadata({
+        yield* runtime.recordReplayObservation({
           replayId: "demo:project:replay",
           runId: "run-1",
           protocolId,
@@ -452,7 +452,7 @@ describe("@attune/framework-language-service", () => {
           status: "failed",
           recordedAt: "2026-06-22T00:00:01.500Z",
         })
-        yield* runtime.recordWaiverState({
+        yield* runtime.recordDiagnosticWaiver({
           waiverId: "demo:expired-waiver",
           protocolId,
           packageId: "demo",
@@ -464,7 +464,7 @@ describe("@attune/framework-language-service", () => {
           expiresAt: "2026-06-01",
           recordedAt: "2026-06-22T00:00:01.500Z",
         })
-        yield* runtime.recordCoverageFeedback({
+        yield* runtime.recordCoverageObservation({
           coverageId: "demo:project:filter",
           protocolId,
           packageId: "demo",
@@ -477,7 +477,7 @@ describe("@attune/framework-language-service", () => {
           acceptanceRate: 0.05,
           recordedAt: "2026-06-22T00:00:01.500Z",
         })
-        yield* runtime.recordCoverageFeedback({
+        yield* runtime.recordCoverageObservation({
           coverageId: "demo:project:weak-oracle",
           protocolId,
           packageId: "demo",
@@ -494,7 +494,7 @@ describe("@attune/framework-language-service", () => {
 
         return yield* projectLanguageServiceViewFromRuntime(
           { diagnostics, query },
-          { sourcePath, packageId: "demo", protocolId },
+          { sourcePath, projectId: "demo", schemaDescriptorId: protocolId },
         )
       })),
     )
@@ -506,9 +506,9 @@ describe("@attune/framework-language-service", () => {
       "attune/protocol/weak-oracle",
     ]))
     expect(view.quickInfo.some((info) =>
-      info.text.includes("replay metadata: 1") &&
-      info.text.includes("coverage feedback: 2") &&
-      info.text.includes("waivers: 0 active, 1 issues")
+      info.text.includes("replay observations: 1") &&
+      info.text.includes("coverage observations: 2") &&
+      info.text.includes("diagnostic waivers: 0 active, 1 issues")
     )).toBe(true)
     expect(Object.values(view.codeActions).flat().map((entry) => entry.action.target)).toEqual(
       expect.arrayContaining([

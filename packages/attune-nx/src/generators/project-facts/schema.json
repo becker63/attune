@@ -1,16 +1,16 @@
 {
   "$schema": "http://json-schema.org/schema",
-  "$id": "PackageContractGeneratorSchema",
-  "title": "Attune Package Contract",
+  "$id": "ProjectFactsGeneratorSchema",
+  "title": "Attune Project Facts",
   "type": "object",
   "properties": {
-    "packageId": {
+    "projectId": {
       "type": "string",
-      "description": "Stable Attune package id, for example attune-nx."
+      "description": "Stable program-index project id, for example attune-nx."
     },
-    "packageKind": {
+    "projectKind": {
       "type": "string",
-      "description": "Attune package archetype.",
+      "description": "Mechanical project category.",
       "enum": [
         "generator-tooling",
         "architecture-policy",
@@ -27,23 +27,23 @@
     },
     "sourceRoot": {
       "type": "string",
-      "description": "Package root recorded in the generated contract, for example packages/attune-nx."
+      "description": "Project root recorded in artifact provenance, for example packages/attune-nx."
     },
     "directory": {
       "type": "string",
       "description": "Source directory where attune.package.ts files should be written. Defaults to <sourceRoot>/src when sourceRoot is provided, otherwise src."
     },
-    "project": {
+    "owningProject": {
       "type": "string",
-      "description": "Owning Nx project id for generated provenance."
+      "description": "Owning Nx project id for generated artifact provenance."
     },
-    "operationId": {
+    "symbolId": {
       "type": "string",
-      "description": "Optional seed operation id. Defaults to <packageId>-boundary."
+      "description": "Optional seed symbol id. Defaults to <projectId>-boundary."
     },
-    "operationKind": {
+    "symbolKind": {
       "type": "string",
-      "description": "Optional seed operation kind.",
+      "description": "Optional seed symbol kind.",
       "enum": [
         "codec",
         "query",
@@ -58,23 +58,23 @@
       ],
       "default": "query"
     },
-    "operationName": {
+    "symbolName": {
       "type": "string",
-      "description": "Optional human-readable operation name used for generated schema identifiers."
+      "description": "Optional human-readable symbol name used for generated schema identifiers."
     },
     "generatorVersion": {
       "type": "string",
-      "description": "Generator version recorded in Source BOM provenance."
+      "description": "Generator version recorded in artifact provenance."
     },
     "generatorRevision": {
       "type": "string",
-      "description": "Generator revision recorded in Source BOM provenance."
+      "description": "Generator revision recorded in artifact provenance."
     },
     "openspecChangeId": {
       "type": "string",
-      "description": "OpenSpec change id recorded in Source BOM provenance."
+      "description": "OpenSpec change id recorded in artifact provenance."
     }
   },
-  "required": ["packageId", "packageKind"],
+  "required": ["projectId", "projectKind"],
   "additionalProperties": false
 }

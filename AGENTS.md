@@ -164,7 +164,7 @@ The new consolidation direction is that Attune indexes the TypeScript/Effect/Nx
 program first. Nx project graph facts, TypeScript exported symbols, Effect
 Schema descriptor rows, generated artifact freshness, observations,
 diagnostics, repairs, and invalidation events belong in the local SQLite
-program index under `.attune/cache`. Legacy package-contract/generated-companion
+program index under `.attune/cache`. Legacy project-facts/generated-companion
 compatibility inputs are transitional scaffolding, not a second public ontology
 agents should memorize.
 

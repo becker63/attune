@@ -1,14 +1,12 @@
 export type GeneratorMigrationCapability =
   | "effect-service"
-  | "package-contract"
+  | "project-facts"
   | "atom-view"
-  | "compile-only-assertion"
-  | "type-guidance"
-  | "operation-registry"
-  | "property-evidence-plan"
-  | "worker-property-module"
+  | "symbol-registry"
+  | "observation-plan"
+  | "worker-observation-module"
   | "no-checked-in-report-policy"
-  | "source-bom-provenance"
+  | "artifact-provenance"
   | "sync-registry"
 
 export type GeneratorMigrationStatus =
@@ -33,13 +31,11 @@ export interface Phase2GeneratorGap {
   readonly capability: Extract<
     GeneratorMigrationCapability,
     | "effect-service"
-    | "package-contract"
+    | "project-facts"
     | "atom-view"
-    | "compile-only-assertion"
-    | "type-guidance"
-    | "operation-registry"
-    | "property-evidence-plan"
-    | "worker-property-module"
+    | "symbol-registry"
+    | "observation-plan"
+    | "worker-observation-module"
     | "no-checked-in-report-policy"
   >
   readonly currentHome: `@attune/nx:${string}` | null
@@ -50,13 +46,11 @@ export interface Phase2GeneratorGap {
 
 export const requiredPhase2GeneratorCapabilities = [
   "effect-service",
-  "package-contract",
+  "project-facts",
   "atom-view",
-  "compile-only-assertion",
-  "type-guidance",
-  "operation-registry",
-  "property-evidence-plan",
-  "worker-property-module",
+  "symbol-registry",
+  "observation-plan",
+  "worker-observation-module",
   "no-checked-in-report-policy",
 ] as const satisfies readonly Phase2GeneratorGap["capability"][]
 
@@ -68,22 +62,22 @@ export const phase2GeneratorGapMap = [
     owner: "effect-service-generator-agent",
     requiredOutput: [
       "canonical Effect.Service class with accessors",
-      "operation schema slots",
-      "operation-kind metadata",
-      "PackageLayer and PackageTestLayer registration",
-      "Source BOM provenance for generated service files",
+      "symbol schema slots",
+      "symbol-kind metadata",
+      "service layer registration",
+      "artifact provenance for generated service files",
     ],
   },
   {
-    capability: "package-contract",
-    currentHome: "@attune/nx:package-contract",
-    targetHome: "@attune/nx:package-contract",
-    owner: "package-contract-generator-agent",
+    capability: "project-facts",
+    currentHome: "@attune/nx:project-facts",
+    targetHome: "@attune/nx:project-facts",
+    owner: "project-facts-generator-agent",
     requiredOutput: [
       "src/attune.package.ts",
-      "Effect Schema-backed PackageContract",
-      "package operation builders",
-      "generated package contract provenance",
+      "Effect Schema-backed ProjectFacts",
+      "program symbol scaffold",
+      "generated artifact provenance",
     ],
   },
   {
@@ -95,74 +89,49 @@ export const phase2GeneratorGapMap = [
       "Reactivity key declarations",
       "base atom shells",
       "derived atom shells",
-      "package view atom graph registration",
+      "runtime edge registration",
     ],
   },
   {
-    capability: "compile-only-assertion",
-    currentHome: "@attune/nx:package-contract",
-    targetHome: "@attune/nx:package-contract",
-    owner: "package-contract-generator-agent",
+    capability: "symbol-registry",
+    currentHome: "@attune/nx:project-facts",
+    targetHome: "@attune/nx:project-facts",
+    owner: "project-facts-generator-agent",
     requiredOutput: [
-      "framework-owned package-contract typecheck aggregate",
-      "AssertPackageContract usage",
-      "AssertExactHandlers usage",
-      "AssertLayerSatisfiesRequiredServices usage",
+      "attune.project-facts.generated.ts",
+      "ProgramSymbolRegistry",
+      "schema descriptor references",
     ],
   },
   {
-    capability: "type-guidance",
-    currentHome: "@attune/nx:package-contract",
-    targetHome: "@attune/nx:package-contract",
-    owner: "type-guidance-agent",
+    capability: "observation-plan",
+    currentHome: "@attune/nx:project-facts",
+    targetHome: "@attune/nx:project-facts",
+    owner: "program-observation-agent",
     requiredOutput: [
-      "PackageTypeGuidance artifact",
-      "Schema-backed type partition metadata",
-      "AssertTypeGuidanceComplete usage",
-      "property evidence partition names",
+      "ProgramObservationPlan",
+      "diagnostic rule ids",
+      "gitignored observation root",
     ],
   },
   {
-    capability: "operation-registry",
-    currentHome: "@attune/nx:package-contract",
-    targetHome: "@attune/nx:package-contract",
+    capability: "worker-observation-module",
+    currentHome: "@attune/nx:project-facts",
+    targetHome: "@attune/nx:project-facts",
     owner: "attune-nx-framework-generator-integration-agent",
     requiredOutput: [
-      "attune.package.generated.ts",
-      "PackageOperationRegistry",
-      "PackageFuzzHandlers",
-      "PackageProperties",
-    ],
-  },
-  {
-    capability: "property-evidence-plan",
-    currentHome: "@attune/nx:package-contract",
-    targetHome: "@attune/nx:package-contract",
-    owner: "attune-nx-framework-generator-integration-agent",
-    requiredOutput: [
-      "PackagePropertyEvidencePlan",
-      "gitignored evidence root",
-      "no checked-in protocol reports flag",
-    ],
-  },
-  {
-    capability: "worker-property-module",
-    currentHome: "@attune/nx:package-contract",
-    targetHome: "@attune/nx:package-contract",
-    owner: "attune-nx-framework-generator-integration-agent",
-    requiredOutput: [
-      "attune.package.property.ts",
+      "attune.project-observations.ts",
       "propertyFor(new URL(import.meta.url))",
       "worker isolation/random-source metadata",
     ],
   },
   {
     capability: "no-checked-in-report-policy",
-    currentHome: "@attune/nx:package-contract",
-    targetHome: "@attune/nx:package-contract",
+    currentHome: "@attune/nx:project-facts",
+    targetHome: "@attune/nx:project-facts",
     owner: "attune-nx-framework-generator-integration-agent",
     requiredOutput: [
-      "PackageProtocolReportPolicy",
+      "ProgramReportPolicy",
       "allowed ephemeral cache roots",
       "forbidden checked-in reports",
     ],
@@ -185,10 +154,10 @@ export const attuneNxGeneratorInventory = [
     ],
     migrationCapabilities: {
       "atom-view": "needs-extension",
-      "package-contract": "missing",
-      "source-bom-provenance": "missing",
+      "project-facts": "missing",
+      "artifact-provenance": "missing",
     },
-    phase2Owner: ["atom-view-generator-agent", "package-contract-generator-agent"],
+    phase2Owner: ["atom-view-generator-agent", "project-facts-generator-agent"],
   },
   {
     id: "effect-service",
@@ -198,51 +167,48 @@ export const attuneNxGeneratorInventory = [
     schema: "src/generators/effect-service/schema.json",
     currentOutput: [
       "canonical Effect.Service service boundary",
-      "operation schema slots and operation metadata",
-      "PackageLayer and PackageTestLayer exports",
+      "symbol schema slots and symbol metadata",
+      "ProjectLayer and ProjectTestLayer exports",
       "barrel export",
-      "Source BOM provenance",
+      "artifact provenance",
     ],
     migrationCapabilities: {
       "effect-service": "present",
-      "package-contract": "needs-extension",
-      "compile-only-assertion": "missing",
-      "type-guidance": "missing",
-      "source-bom-provenance": "present",
+      "project-facts": "needs-extension",
+      "symbol-registry": "missing",
+      "observation-plan": "missing",
+      "artifact-provenance": "present",
     },
     phase2Owner: ["effect-service-generator-agent"],
   },
   {
-    id: "package-contract",
-    publicName: "@attune/nx:package-contract",
+    id: "project-facts",
+    publicName: "@attune/nx:project-facts",
     kind: "scaffold",
-    implementation: "src/generators/package-contract/generator.ts",
-    schema: "src/generators/package-contract/schema.json",
+    implementation: "src/generators/project-facts/generator.ts",
+    schema: "src/generators/project-facts/schema.json",
     currentOutput: [
       "src/attune.package.ts",
-      "src/attune.package.generated.ts",
-      "src/attune.package.property.ts",
-      "Effect Schema-backed PackageContract",
-      "PackageOperationRegistry",
-      "PackagePropertyEvidencePlan",
-      "worker-compatible property module",
-      "PackageTypeGuidance artifact",
-      "no checked-in protocol report policy",
-      "Source BOM provenance",
+      "src/attune.project-facts.generated.ts",
+      "src/attune.project-observations.ts",
+      "Effect Schema-backed ProjectFacts",
+      "ProgramSymbolRegistry",
+      "ProgramObservationPlan",
+      "worker-compatible observation module",
+      "no checked-in report policy",
+      "artifact provenance",
     ],
     migrationCapabilities: {
-      "package-contract": "present",
-      "compile-only-assertion": "present",
-      "type-guidance": "present",
-      "operation-registry": "present",
-      "property-evidence-plan": "present",
-      "worker-property-module": "present",
+      "project-facts": "present",
+      "symbol-registry": "present",
+      "observation-plan": "present",
+      "worker-observation-module": "present",
       "no-checked-in-report-policy": "present",
-      "source-bom-provenance": "present",
+      "artifact-provenance": "present",
       "atom-view": "needs-extension",
     },
     phase2Owner: [
-      "package-contract-generator-agent",
+      "project-facts-generator-agent",
       "attune-nx-framework-generator-integration-agent",
     ],
   },
@@ -256,14 +222,14 @@ export const attuneNxGeneratorInventory = [
       "Reactivity key declarations",
       "base atom shell",
       "derived atom shell",
-      "package view atom shell",
-      "package atom graph registration",
-      "Source BOM provenance",
+      "project atom shell",
+      "runtime edge registration",
+      "artifact provenance",
     ],
     migrationCapabilities: {
       "atom-view": "present",
-      "source-bom-provenance": "present",
-      "package-contract": "needs-extension",
+      "artifact-provenance": "present",
+      "project-facts": "needs-extension",
     },
     phase2Owner: ["atom-view-generator-agent"],
   },
@@ -279,11 +245,11 @@ export const attuneNxGeneratorInventory = [
       "known proof-template renderer",
     ],
     migrationCapabilities: {
-      "package-contract": "missing",
-      "type-guidance": "missing",
-      "source-bom-provenance": "missing",
+      "project-facts": "missing",
+      "observation-plan": "missing",
+      "artifact-provenance": "missing",
     },
-    phase2Owner: ["package-contract-generator-agent"],
+    phase2Owner: ["project-facts-generator-agent"],
   },
   {
     id: "cocoindex-mcp-tool",
@@ -297,11 +263,11 @@ export const attuneNxGeneratorInventory = [
       "CocoIndex MCP tool shell",
     ],
     migrationCapabilities: {
-      "package-contract": "missing",
-      "type-guidance": "missing",
-      "source-bom-provenance": "missing",
+      "project-facts": "missing",
+      "observation-plan": "missing",
+      "artifact-provenance": "missing",
     },
-    phase2Owner: ["package-contract-generator-agent"],
+    phase2Owner: ["project-facts-generator-agent"],
   },
   {
     id: "k8s-resource",
@@ -311,11 +277,11 @@ export const attuneNxGeneratorInventory = [
     schema: "src/generators/k8s-resource/schema.json",
     currentOutput: ["Effect Alchemy Kubernetes resource shell"],
     migrationCapabilities: {
-      "package-contract": "missing",
+      "project-facts": "missing",
       "atom-view": "missing",
-      "source-bom-provenance": "missing",
+      "artifact-provenance": "missing",
     },
-    phase2Owner: ["package-contract-generator-agent", "atom-view-generator-agent"],
+    phase2Owner: ["project-facts-generator-agent", "atom-view-generator-agent"],
   },
   {
     id: "sync-effect-layers",

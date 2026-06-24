@@ -6,7 +6,7 @@ Changed:
   future-change blocker.
 
 Inventory:
-- `framework/architecture/test/attune-package-contract.test.ts`: delete now.
+- `framework/architecture/test/attune-project-facts.test.ts`: delete now.
   This is the last active package-local contract test after ring migration.
   Replacement: program-index materialization, `attune-architecture:test`, and
   `workspace:attune-check`.
@@ -17,20 +17,20 @@ Inventory:
   schema_descriptor, edge, observation, diagnostic, and repair rows plus focused
   package tests.
 - `attune.generator-shapes.json` entry
-  `attune-architecture.package-contract` and
+  `attune-architecture.project-facts` and
   `framework/architecture/src/generated/source-bom/attune-architecture.json`
-  package-contract test ownership: delete now. Replacement: authored
+  project-facts test ownership: delete now. Replacement: authored
   `src/attune.package.ts` symbol facts and program-index checks.
 - Authored `src/attune.package.ts` exports named
   `PackageDeclaration`, `PackageViewRoots`, and `PackageContractSchema`:
   rename mechanically. Replacement names should describe project facts,
   Reactivity roots, schema descriptors, edges, observations, diagnostics, and
-  repairs without teaching package-contract vocabulary.
+  repairs without teaching project-facts vocabulary.
 - `defineAttunePackageDeclaration` from `@attune/framework-protocol`: rename
   mechanically for authored declarations, then delete the old helper export
   after generated compatibility output no longer imports it.
-- `framework/architecture/src/generated/package-contracts/**` and
-  `framework/architecture/src/generated/package-contracts.typecheck.generated.ts`:
+- `framework/architecture/src/generated/project-facts/**` and
+  `framework/architecture/src/generated/project-facts.typecheck.generated.ts`:
   deleted in Phase 9 after program-index rows, SQL views, invalidations,
   diagnostics, repair rows, and cache-owned generated artifacts replaced the
   active check/repair consumers. These files must stay out of checked-in
@@ -45,7 +45,7 @@ Inventory:
   `attune-observation-scaffold.ts`, and `.attune/cache/observations/**`:
   cache-only outputs. They are not checked in, and their producing repair kinds now
   use mechanical names behind the public `attune-repair` targets.
-- `framework/protocol/src/package-contract/**`,
+- `framework/protocol/src/project-facts/**`,
   `framework/protocol/src/descriptors/**`, `framework/protocol/src/laws/**`,
   `framework/protocol/src/obligations/**`, `framework/protocol/src/evidence/**`,
   `framework/testing/src/package-harness.ts`, and
@@ -56,7 +56,7 @@ Inventory:
 - Active docs `AGENTS.md`, `docs/attuned/Attune Framework Operating Surface.md`,
   `docs/attuned/Attune Framework Core Primitives.md`, and
   `docs/codex-migration-goal.md`: rename or rewrite mechanically. They still
-  mention generated companions, Source BOM, package contracts, or generated
+  mention generated companions, source ownership artifact, project facts, or generated
   contract outputs as operating concepts.
 - Old OpenSpec changes, archived handoffs, and migration handoffs: historical
   only. They may retain old terms as dated context.
@@ -66,7 +66,7 @@ Future-change blockers:
   `platform-alchemy-k8s`, and `joern-effect-properties` are not automatically
   framework ontology. They need a follow-up semantic split so provider proof,
   safety evidence, and graph evidence can remain domain language while old
-  package-contract evidence helpers disappear.
+  project-facts evidence helpers disappear.
 - `joern-effect-properties/src/coverageSearch.ts` still uses
   type-guidance/law names as product proof-pressure vocabulary. Mechanical
   replacement should be observation and coverage rows, but deleting it in this
@@ -80,7 +80,7 @@ Future-change blockers:
 
 Completed classification:
 - Delete now: remaining active generated-contract tests and stale architecture
-  package-contract test metadata.
+  project-facts test metadata.
 - Rename now or in the next Phase 7 slice: authored declaration helper names
   and public docs that teach old nouns.
 - Compatibility-only demolition target: framework-owned generated contract

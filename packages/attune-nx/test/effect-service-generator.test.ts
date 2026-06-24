@@ -64,8 +64,8 @@ describe("@attune/nx:effect-service", () => {
     effectServiceGenerator(tree, {
       name: "Decision Runner",
       directory: "packages/decision-core/src/effect/services",
-      operationId: "decision.runner.execute",
-      operationKind: "resource-provider",
+      symbolId: "decision.runner.execute",
+      symbolKind: "resource-provider",
       project: "decision-core",
     })
 
@@ -74,17 +74,17 @@ describe("@attune/nx:effect-service", () => {
     expect(source).toContain(
       "export const DecisionRunnerRunOutput = Schema.Void",
     )
-    expect(source).toContain("export const DecisionRunnerRunOperation = {")
+    expect(source).toContain("export const DecisionRunnerRunSymbol = {")
     expect(source).toContain('  id: "decision.runner.execute",')
     expect(source).toContain('  kind: "resource-provider",')
     expect(source).toContain('  inferredDiagnosticRules: "inferDiagnosticRules()",')
     expect(source).toContain("  diagnosticRuleExtensions: [],")
     expect(source).toContain(
-      '    "resourceProviderOperation({ id, input, output, diagnosticRules: inferDiagnosticRules(), edges: touches(...) })",',
+      '    "resourceProviderSymbol({ id, input, output, diagnosticRules: inferDiagnosticRules(), edges: touches(...) })",',
     )
   })
 
-  it("exports PackageLayer and PackageTestLayer from the service default layer", () => {
+  it("exports ProjectLayer and ProjectTestLayer from the service default layer", () => {
     const tree = new MemoryTree()
 
     effectServiceGenerator(tree, {
@@ -97,21 +97,21 @@ describe("@attune/nx:effect-service", () => {
     expect(source).toContain(
       "export const DecisionRunnerLive = DecisionRunner.Default",
     )
-    expect(source).toContain("export const PackageLayer = DecisionRunnerLive")
+    expect(source).toContain("export const ProjectLayer = DecisionRunnerLive")
     expect(source).toContain(
-      "export const PackageTestLayer = DecisionRunnerLive",
+      "export const ProjectTestLayer = DecisionRunnerLive",
     )
   })
 
-  it("records operation metadata in Source BOM provenance", () => {
+  it("records symbol metadata in artifact provenance", () => {
     const tree = new MemoryTree()
 
     effectServiceGenerator(tree, {
       name: "Decision Runner",
       directory: "packages/decision-core/src/effect/services",
       generatorVersion: "0.0.0-test",
-      operationId: "decision.runner.execute",
-      operationKind: "generator",
+      symbolId: "decision.runner.execute",
+      symbolKind: "generator",
       project: "decision-core",
     })
 
@@ -126,8 +126,8 @@ describe("@attune/nx:effect-service", () => {
         directory: "packages/decision-core/src/effect/services",
         export: true,
         name: "Decision Runner",
-        operationId: "decision.runner.execute",
-        operationKind: "generator",
+        symbolId: "decision.runner.execute",
+        symbolKind: "generator",
         tag: "@attune/service/DecisionRunner",
       },
       ownedFiles: [
@@ -144,8 +144,8 @@ describe("@attune/nx:effect-service", () => {
     const options = {
       name: "Decision Runner",
       directory: "packages/decision-core/src/effect/services",
-      operationId: "decision.runner.execute",
-      operationKind: "generator" as const,
+      symbolId: "decision.runner.execute",
+      symbolKind: "generator" as const,
       project: "decision-core",
     }
 

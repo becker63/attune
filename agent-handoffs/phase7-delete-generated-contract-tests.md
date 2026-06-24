@@ -3,12 +3,12 @@
 ## Changed
 
 - Removed the remaining active architecture generated-contract tests:
-  - `framework/architecture/test/attune-package-contract.test.ts`
+  - `framework/architecture/test/attune-project-facts.test.ts`
   - `framework/architecture/test/attune-foldkit-generated-contract.test.ts`
   - `framework/architecture/test/attuned-discovery-generated-contract.test.ts`
   - `framework/architecture/test/platform-alchemy-generated-contract.test.ts`
-- Removed `test/attune-package-contract.test.ts` from the
-  `attune-architecture` Source BOM compatibility shard and generator-shape
+- Removed `test/attune-project-facts.test.ts` from the
+  `attune-architecture` source ownership artifact compatibility shard and generator-shape
   ownership metadata.
 
 ## Mechanical Replacement
@@ -31,5 +31,5 @@
 
 - Restore the deleted tests from git only if a regression proves program-index
   rows cannot answer the same architecture policy questions.
-- Do not recreate package-local generated companions or package-contract tests
+- Do not recreate package-local generated companions or project-facts tests
   as new workflow truth.

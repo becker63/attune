@@ -5,10 +5,10 @@ Changed:
   but the framework-owned or cache-owned replacement path is incomplete.
 - Completed roots escalate to an error only when every remaining project-local
   companion has a concrete replacement path:
-  `framework/architecture/src/generated/package-contracts/<project>/attune.contract.generated.ts`,
-  `framework/architecture/src/generated/package-contracts/<project>/attune.generated.ts`,
-  `framework/architecture/src/generated/package-contracts.typecheck.generated.ts`,
-  or a root Source BOM index entry pointing at an existing framework/cache
+  `framework/architecture/src/generated/project-facts/<project>/attune.contract.generated.ts`,
+  `framework/architecture/src/generated/project-facts/<project>/attune.generated.ts`,
+  `framework/architecture/src/generated/project-facts.typecheck.generated.ts`,
+  or a root source ownership artifact index entry pointing at an existing framework/cache
   source ownership projection.
 - Policy diagnostics now explain which replacement paths are missing, or state
   that program-index replacement paths exist for the remaining companion files.

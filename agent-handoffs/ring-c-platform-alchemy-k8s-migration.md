@@ -1,6 +1,6 @@
 Changed:
 - Removed the package-local compatibility test
-  `packages/platform-alchemy-k8s/test/attune-package-contract.test.ts`.
+  `packages/platform-alchemy-k8s/test/attune-project-facts.test.ts`.
 
 Program-index proof:
 - `platform-alchemy-k8s:attune-check` passed through the public Nx target and
@@ -8,12 +8,12 @@ Program-index proof:
 - The materialized index included mechanical project, target, source_file,
   symbol, schema_descriptor, edge, artifact, observation, diagnostic, and
   repair rows for the workspace.
-- Source BOM, shape-conformance, and framework policy checks passed through the
+- source ownership artifact, shape-conformance, and framework policy checks passed through the
   nested public workspace check.
 - `platform-alchemy-k8s:check-generated` regenerated local CRD/resource
   snapshots and confirmed no generated snapshot drift.
 - The package has no project-local Attune generated companions and no
-  project-local Source BOM shard.
+  project-local source ownership artifact shard.
 
 Removed surfaces:
 - The deleted test asserted authored package declaration object shape,

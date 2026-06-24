@@ -8,7 +8,7 @@
         },
         {
           "project": "workspace",
-          "target": "package-contracts-check"
+          "target": "attune-check"
         }
       ],
       "editableRegions": [
@@ -18,21 +18,21 @@
           "marker": "Generated-shape contract customized for @attune/nx itself."
         }
       ],
-      "generatorName": "@attune/nx:package-contract",
-      "openspecChangeId": "standardize-effect-package-contracts",
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
       "options": {
         "directory": "packages/attune-nx/src",
-        "operationIds": [
+        "symbolIds": [
           "generate-effect-service",
-          "generate-package-contract",
+          "generate-project-facts",
           "generate-atom-view",
           "query-generator-inventory",
-          "infer-package-contract-graph",
-          "upsert-source-bom-provenance",
+          "query-project-facts-graph",
+          "upsert-artifact-provenance",
           "normalize-executor-intent"
         ],
-        "packageId": "attune-nx",
-        "packageKind": "generator-tooling",
+        "projectId": "attune-nx",
+        "projectKind": "generator-tooling",
         "project": "attune-nx",
         "sourceRoot": "packages/attune-nx"
       },
@@ -42,11 +42,11 @@
       ],
       "owningProject": "attune-nx",
       "projectRoot": "packages/attune-nx",
-      "sourceShapeKind": "package-contract",
+      "sourceShapeKind": "project-facts",
       "syncTargets": [
         {
           "project": "attune-nx",
-          "target": "sync-package-contract"
+          "target": "sync-project-facts"
         }
       ]
     }
@@ -65,9 +65,9 @@
       "target": "build"
     }
   ],
-  "contractShards": [
+  "projectFactShards": [
     {
-      "generator": "@attune/nx:package-contract",
+      "generator": "@attune/nx:project-facts",
       "outputs": [
         "src/attune.package.ts"
       ],
@@ -78,7 +78,7 @@
         "test/**"
       ],
       "status": "generated",
-      "target": "sync-package-contract"
+      "target": "sync-project-facts"
     }
   ],
   "historicalHandAuthoredShapes": [
@@ -107,7 +107,7 @@
   "projectRoot": "packages/attune-nx",
   "queryCheckTargetNotes": [
     {
-      "note": "Generator tests verify deterministic Source BOM upserts and sync registry behavior.",
+      "note": "Generator tests verify deterministic source ownership artifact upserts and sync registry behavior.",
       "target": "test"
     }
   ],

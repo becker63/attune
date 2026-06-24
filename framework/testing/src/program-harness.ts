@@ -110,7 +110,7 @@ export interface ProgramHarnessHandlerContext<
   readonly programTestLayer: programTestLayer
   readonly rpc: OperationRpcDescriptor<Contract, OperationId>
   readonly evidenceContext: ObservationContext
-  readonly recordEvidence: ProgramHarnessRecordEvidence
+  readonly recordObservation: ProgramHarnessRecordEvidence
 }
 
 export type ProgramHarnessHandler<
@@ -439,7 +439,7 @@ const invokeProgramHarnessOperation = async <
     input.options,
   )
   const evidence: AttuneProtocolEvidenceEvent[] = []
-  const recordEvidence: ProgramHarnessRecordEvidence = (eventInput) => {
+  const recordObservation: ProgramHarnessRecordEvidence = (eventInput) => {
     evidence.push(observationEvent(evidenceContext, {
       ...eventInput,
       operationId: eventInput.operationId ?? input.operationId,
@@ -456,7 +456,7 @@ const invokeProgramHarnessOperation = async <
     ...(input.options.worker === undefined ? {} : { worker: input.options.worker }),
   })
 
-  recordEvidence({
+  recordObservation({
     kind: "property-run",
     payload: {
       phase: "harness-started",
@@ -471,7 +471,7 @@ const invokeProgramHarnessOperation = async <
       operation.input,
       invocation.payload,
     )
-    recordSchemaEvidence(recordEvidence, "payload", rpc, decodedInput)
+    recordSchemaEvidence(recordObservation, "payload", rpc, decodedInput)
     recordTypeGuidanceEvidence(
       evidence,
       evidenceContext,
@@ -489,7 +489,7 @@ const invokeProgramHarnessOperation = async <
       evidenceContext,
       operation,
       programTestLayer: input.programTestLayer,
-      recordEvidence,
+      recordObservation,
       rpc,
     })
     const decodedOutput = decodeOperationValue<OutputOf<Contract, OperationId>>(
@@ -497,7 +497,7 @@ const invokeProgramHarnessOperation = async <
       output,
     )
     const encodedSuccess = encodeOperationValue(operation.output, decodedOutput)
-    recordSchemaEvidence(recordEvidence, "success", rpc, encodedSuccess)
+    recordSchemaEvidence(recordObservation, "success", rpc, encodedSuccess)
 
     if (input.atomGraphObserver !== undefined) {
       const observations = input.atomGraphObserver.observe({
@@ -505,7 +505,7 @@ const invokeProgramHarnessOperation = async <
           operationId: input.operationId,
           ...optionalReplay(evidenceContext.replay),
         })
-      recordEvidence({
+      recordObservation({
         kind: "property-run",
         payload: {
           controlId: "observe",
@@ -528,7 +528,7 @@ const invokeProgramHarnessOperation = async <
       }
     }
 
-    recordEvidence({
+    recordObservation({
       kind: "property-run",
       payload: {
         phase: "harness-completed",
@@ -556,7 +556,7 @@ const invokeProgramHarnessOperation = async <
       evidenceContext,
       operation,
       operationId: input.operationId,
-      recordEvidence,
+      recordObservation,
       rpc,
     })
   }
@@ -584,7 +584,7 @@ const harnessErrorExit = <
     readonly evidenceContext: ObservationContext
     readonly operation: OperationById<Contract, OperationId>
     readonly operationId: OperationId
-    readonly recordEvidence: ProgramHarnessRecordEvidence
+    readonly recordObservation: ProgramHarnessRecordEvidence
     readonly rpc: OperationRpcDescriptor<Contract, OperationId>
   }>,
 ): ProgramHarnessExit => {
@@ -593,7 +593,7 @@ const harnessErrorExit = <
     try {
       const decodedError = decodeOperationValue(errorSchema, input.error)
       const encodedError = encodeOperationValue(errorSchema, decodedError)
-      recordSchemaEvidence(input.recordEvidence, "error", input.rpc, encodedError)
+      recordSchemaEvidence(input.recordObservation, "error", input.rpc, encodedError)
       return decodeHarnessExit({
         protocolId: input.evidenceContext.protocolId,
         packageId: input.contract.packageId,
@@ -610,7 +610,7 @@ const harnessErrorExit = <
     }
   }
 
-  input.recordEvidence({
+  input.recordObservation({
     kind: "counterexample",
     payload: {
       phase: "harness-defect",
@@ -691,12 +691,12 @@ const recordSchemaEvidence = <
   const Contract extends ProgramHarnessContract,
   const OperationId extends OperationIds<Contract>,
 >(
-  recordEvidence: ProgramHarnessRecordEvidence,
+  recordObservation: ProgramHarnessRecordEvidence,
   role: "payload" | "success" | "error",
   rpc: OperationRpcDescriptor<Contract, OperationId>,
   value: unknown,
 ): void =>
-  recordEvidence({
+  recordObservation({
     kind: "schema-decode",
     payload: {
       role,

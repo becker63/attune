@@ -6,15 +6,15 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Semantic package view name, for example Host Readiness."
+      "description": "Semantic project atom name, for example Host Readiness."
     },
-    "packageId": {
+    "projectId": {
       "type": "string",
-      "description": "Package contract id that owns this atom view."
+      "description": "Program-index project id that owns this atom view."
     },
-    "operationId": {
+    "symbolId": {
       "type": "string",
-      "description": "Public auditable operation id connected to the view graph."
+      "description": "Public auditable symbol id connected to the atom graph."
     },
     "directory": {
       "type": "string",
@@ -28,7 +28,7 @@
     },
     "reactivityKey": {
       "type": "string",
-      "description": "Reactivity key refreshed by the operation."
+      "description": "Reactivity key refreshed by the symbol."
     },
     "baseAtomId": {
       "type": "string",
@@ -38,25 +38,25 @@
       "type": "string",
       "description": "Stable id for the generated derived atom shell."
     },
-    "packageViewAtomId": {
+    "projectAtomId": {
       "type": "string",
-      "description": "Stable id for the generated package view atom shell."
+      "description": "Stable id for the generated project atom shell."
     },
     "project": {
       "type": "string",
-      "description": "Owning Nx project recorded in Source BOM provenance."
+      "description": "Owning Nx project recorded in artifact provenance."
     },
     "generatorVersion": {
       "type": "string",
-      "description": "Generator package version recorded in Source BOM provenance."
+      "description": "Generator package version recorded in artifact provenance."
     },
     "generatorRevision": {
       "type": "string",
-      "description": "Generator source revision recorded in Source BOM provenance."
+      "description": "Generator source revision recorded in artifact provenance."
     },
     "openspecChangeId": {
       "type": "string",
-      "description": "OpenSpec change id recorded in Source BOM provenance."
+      "description": "OpenSpec change id recorded in artifact provenance."
     }
   },
   "required": ["name"],

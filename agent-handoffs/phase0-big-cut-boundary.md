@@ -42,12 +42,12 @@ parity is proven. They are not source truth for new runtime design.
 - `packages/*/src/attune.package.ts`: authored package declaration input that
   should project to project, source_file, symbol, schema_descriptor, edge,
   artifact, observation, diagnostic, and repair facts.
-- `framework/architecture/src/generated/package-contracts/*`: legacy generated
+- `framework/architecture/src/generated/project-facts/*`: legacy generated
   contract data that should ingest as compatibility artifact, symbol, schema,
   edge, observation, diagnostic, and repair rows.
 - `framework/architecture/src/generated/source-bom/*` and
   `attune.source-bom.index.json`: legacy source ownership data that should
-  ingest as artifact/source ownership rows marked `source-bom-compat`.
+  ingest as artifact/source ownership rows marked `source-ownership-compat`.
 - Type-guidance, package property, package fuzz, and RPC compatibility outputs:
   transitional observation, edge, artifact, diagnostic, or repair rows.
 - Package-local generated companions such as `src/attune.generated.ts`,
@@ -62,7 +62,7 @@ Compatibility diagnostics may remain only as marked fallback or parity data.
 
 These old nouns are temporary legacy labels, not primary runtime concepts:
 
-- package contract
+- project facts
 - protocol
 - operation
 - view
@@ -71,7 +71,7 @@ These old nouns are temporary legacy labels, not primary runtime concepts:
 - evidence
 - delta
 - type guidance
-- Source BOM
+- source ownership artifact
 - generator shape
 - fuzz handler
 - property map
@@ -94,7 +94,7 @@ use mechanical names.
 | Obligation | diagnostic row, repair row, or validation target |
 | Evidence | observation row |
 | Delta | diagnostic and repair rows |
-| Source BOM | artifact and source ownership rows |
+| source ownership artifact | artifact and source ownership rows |
 | Generator shape | artifact provenance and repair routing rows |
 | Type guidance | schema_descriptor annotation, edge fact, or observation row |
 | Fuzz handler | observation, artifact, diagnostic, or repair fact |

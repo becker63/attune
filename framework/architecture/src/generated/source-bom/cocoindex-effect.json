@@ -8,7 +8,7 @@
         },
         {
           "project": "workspace",
-          "target": "package-contracts-check"
+          "target": "attune-check"
         }
       ],
       "editableRegions": [
@@ -18,10 +18,10 @@
           "marker": "defineAttuneProjectFacts"
         }
       ],
-      "generatorName": "@attune/nx:package-contract",
-      "openspecChangeId": "standardize-effect-package-contracts",
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
       "options": {
-        "operationIds": [
+        "symbolIds": [
           "ensure-indexed",
           "search-anchors",
           "search-similar-anchors",
@@ -37,8 +37,8 @@
           "emit-mcp-schema",
           "sync-mcp-tool-registry"
         ],
-        "packageId": "cocoindex-effect",
-        "packageKind": "semantic-recall-service",
+        "projectId": "cocoindex-effect",
+        "projectKind": "semantic-recall-service",
         "project": "cocoindex-effect",
         "sourceRoot": "packages/cocoindex-effect/src"
       },
@@ -48,18 +48,18 @@
       ],
       "owningProject": "cocoindex-effect",
       "projectRoot": "packages/cocoindex-effect",
-      "sourceShapeKind": "package-contract",
+      "sourceShapeKind": "project-facts",
       "syncTargets": [
         {
           "project": "cocoindex-effect",
-          "target": "sync-package-contract"
+          "target": "sync-project-facts"
         }
       ]
     }
   ],
-  "contractShards": [
+  "projectFactShards": [
     {
-      "generator": "@attune/nx:package-contract",
+      "generator": "@attune/nx:project-facts",
       "outputs": [
         "src/attune.package.ts"
       ],
@@ -69,7 +69,7 @@
         "test/**"
       ],
       "status": "generated",
-      "target": "sync-package-contract"
+      "target": "sync-project-facts"
     }
   ],
   "generatedOutputs": [
@@ -108,7 +108,7 @@
         "src/mcp/stdio.ts",
         "src/model.ts"
       ],
-      "reason": "Effect service boundary, fixtures, MCP stdio entrypoint, and repository intelligence model predate Source BOM automation."
+      "reason": "Effect service boundary, fixtures, MCP stdio entrypoint, and repository intelligence model predate source ownership artifact automation."
     }
   ],
   "ownedFiles": [
@@ -125,7 +125,7 @@
   "projectRoot": "packages/cocoindex-effect",
   "queryCheckTargetNotes": [
     {
-      "note": "Generated MCP schema and tool registry freshness is covered by check-generated; add dedicated Source BOM query/check target metadata when @attune/nx exposes it.",
+      "note": "Generated MCP schema and tool registry freshness is covered by check-generated; add dedicated source ownership artifact query/check target metadata when @attune/nx exposes it.",
       "target": "check-generated"
     }
   ],
@@ -151,7 +151,7 @@
       "paths": [
         "src/generated/cocoindex-code-mcp.ts"
       ],
-      "reason": "Inspection depends on the local CocoIndex MCP surface; keep checked-in snapshot as provenance until Source BOM query targets can assert the toolchain version."
+      "reason": "Inspection depends on the local CocoIndex MCP surface; keep checked-in snapshot as provenance until source ownership artifact query targets can assert the toolchain version."
     }
   ]
 }

@@ -1,6 +1,6 @@
 Changed:
 - Removed the package-local generated-contract compatibility test
-  `packages/cocoindex-effect/test/attune-package-contract.test.ts`.
+  `packages/cocoindex-effect/test/attune-project-facts.test.ts`.
 - Updated `attune.generator-shapes.json` so the `cocoindex-effect`
   compatibility shape entry no longer expects the deleted package-local
   compatibility test and describes mechanical indexed facts.
@@ -26,8 +26,8 @@ Removed surfaces:
   Nx check/typecheck targets.
 
 Retained compatibility-only surfaces:
-- `framework/architecture/src/generated/package-contracts/cocoindex-effect/attune.generated.ts`
-- `framework/architecture/src/generated/package-contracts/cocoindex-effect/attune.contract.generated.ts`
+- `framework/architecture/src/generated/project-facts/cocoindex-effect/attune.generated.ts`
+- `framework/architecture/src/generated/project-facts/cocoindex-effect/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/cocoindex-effect.json`
 - `.attune/cache/generated/cocoindex-effect/attune-symbol-registry.ts`
 - `.attune/cache/generated/cocoindex-effect/attune-property-observations.ts`

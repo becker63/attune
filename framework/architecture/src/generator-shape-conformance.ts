@@ -46,7 +46,7 @@ const SourceBomGeneratedOutput = Schema.Struct({
   outputs: Schema.Array(Schema.String),
 })
 
-const SourceBomContractShard = Schema.Struct({
+const SourceBomProjectFactShard = Schema.Struct({
   generator: Schema.String,
   target: Schema.String,
   status: Schema.Literals(["planned", "generated"] as const),
@@ -64,7 +64,7 @@ const SourceBomShard = Schema.Struct({
   project: Schema.String,
   projectRoot: Schema.String,
   generatedOutputs: Schema.Array(SourceBomGeneratedOutput),
-  contractShards: Schema.optional(Schema.Array(SourceBomContractShard)),
+  projectFactShards: Schema.optional(Schema.Array(SourceBomProjectFactShard)),
   historicalHandAuthoredShapes: Schema.Array(SourceBomHistoricalShape),
   ownedFiles: Schema.Array(Schema.String),
 })
@@ -323,28 +323,28 @@ const validateSourceBomShapeCoverage = (
       diagnostics.push(error(manifestPath, `Generated output "${output.generator}" for project "${sourceBomEntry.project}" is missing a generated shape entry.`))
     }
   }
-  for (const contractShard of shard.contractShards ?? []) {
+  for (const projectFactShard of shard.projectFactShards ?? []) {
     const matchingShape = projectShapes.find((shape) =>
-      shape.kind === "package-contract"
-      && shape.generator === contractShard.generator
-      && contractShard.outputs.every((output) => shape.paths.includes(output) || (shape.plannedPaths ?? []).includes(output))
+      shape.kind === "project-facts"
+      && shape.generator === projectFactShard.generator
+      && projectFactShard.outputs.every((output) => shape.paths.includes(output) || (shape.plannedPaths ?? []).includes(output))
     )
     if (!matchingShape) {
-      diagnostics.push(error(manifestPath, `Contract shard "${contractShard.generator}" for project "${sourceBomEntry.project}" is missing a package-contract shape entry covering ${contractShard.outputs.join(", ")}.`))
+      diagnostics.push(error(manifestPath, `Project-facts shard "${projectFactShard.generator}" for project "${sourceBomEntry.project}" is missing a project-facts shape entry covering ${projectFactShard.outputs.join(", ")}.`))
       continue
     }
-    if (contractShard.status === "generated" && matchingShape.status !== "generated") {
-      diagnostics.push(error(manifestPath, `Generated contract shard "${contractShard.generator}" for project "${sourceBomEntry.project}" is backed by shape "${matchingShape.id}" with status "${matchingShape.status}".`))
+    if (projectFactShard.status === "generated" && matchingShape.status !== "generated") {
+      diagnostics.push(error(manifestPath, `Generated project-facts shard "${projectFactShard.generator}" for project "${sourceBomEntry.project}" is backed by shape "${matchingShape.id}" with status "${matchingShape.status}".`))
     }
   }
-  for (const shape of projectShapes.filter((candidate) => candidate.kind === "package-contract" && candidate.status === "generated")) {
-    const matchingGeneratedShard = (shard.contractShards ?? []).find((contractShard) =>
-      contractShard.status === "generated"
-      && contractShard.generator === shape.generator
-      && shape.paths.every((shapePath) => contractShard.outputs.includes(shapePath))
+  for (const shape of projectShapes.filter((candidate) => candidate.kind === "project-facts" && candidate.status === "generated")) {
+    const matchingGeneratedShard = (shard.projectFactShards ?? []).find((projectFactShard) =>
+      projectFactShard.status === "generated"
+      && projectFactShard.generator === shape.generator
+      && shape.paths.every((shapePath) => projectFactShard.outputs.includes(shapePath))
     )
     if (!matchingGeneratedShard) {
-      diagnostics.push(error(manifestPath, `Generated package-contract shape "${shape.id}" is missing a generated Source BOM contract shard covering ${shape.paths.join(", ")}.`))
+      diagnostics.push(error(manifestPath, `Generated project-facts shape "${shape.id}" is missing a generated project facts shard covering ${shape.paths.join(", ")}.`))
     }
   }
 }

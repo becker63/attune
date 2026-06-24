@@ -1,6 +1,6 @@
 Changed:
 - Removed the package-local compatibility test
-  `framework/oxlint-policy/test/attune-package-contract.test.ts`.
+  `framework/oxlint-policy/test/attune-project-facts.test.ts`.
 - Kept the authored Ring A source boundary at
   `framework/oxlint-policy/src/attune.package.ts` and the package behavior
   tests under `framework/oxlint-policy/test/policy-rules.test.ts`.
@@ -31,8 +31,8 @@ Removed surfaces:
   public Nx check/typecheck targets.
 
 Retained compatibility-only surfaces:
-- `framework/architecture/src/generated/package-contracts/effect-oxlint-policy/attune.generated.ts`
-- `framework/architecture/src/generated/package-contracts/effect-oxlint-policy/attune.contract.generated.ts`
+- `framework/architecture/src/generated/project-facts/effect-oxlint-policy/attune.generated.ts`
+- `framework/architecture/src/generated/project-facts/effect-oxlint-policy/attune.contract.generated.ts`
 - `framework/architecture/src/generated/source-bom/effect-oxlint-policy.json`
 - `.attune/cache/generated/effect-oxlint-policy/artifact-freshness.json`
 

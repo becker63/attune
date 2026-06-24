@@ -5,14 +5,14 @@ export const ProjectRuntimeRoots = {
     "attune-nx.generator-plan.changed",
     "attune-nx.generated-diff.changed",
     "attune-nx.provenance.changed",
-    "attune-nx.contract-graph.changed",
+    "attune-nx.project-facts.changed",
     "attune-nx.executor-intent.changed",
   ],
   atoms: [
     "generatorPlanAtom",
     "generatedDiffAtom",
     "provenanceAtom",
-    "contractGraphAtom",
+    "projectFactsAtom",
     "generatorInventoryAtom",
     "executorIntentAtom",
   ],
@@ -28,9 +28,9 @@ export const ProjectFacts = defineAttuneProjectFacts({
       name: "Generate Effect Service",
     },
     {
-      id: "generate-package-contract",
+      id: "generate-project-facts",
       kind: "generator",
-      name: "Generate Package Contract",
+      name: "Generate Project Facts",
     },
     {
       id: "generate-atom-view",
@@ -43,14 +43,14 @@ export const ProjectFacts = defineAttuneProjectFacts({
       name: "Query Generator Inventory",
     },
     {
-      id: "infer-package-contract-graph",
+      id: "query-project-facts-graph",
       kind: "query",
-      name: "Infer Package Contract Graph",
+      name: "Query Project Facts Graph",
     },
     {
-      id: "upsert-source-bom-provenance",
+      id: "upsert-artifact-provenance",
       kind: "command",
-      name: "Upsert Source BOM Provenance",
+      name: "Upsert Artifact Provenance",
     },
     {
       id: "normalize-executor-intent",

@@ -15,10 +15,10 @@ Date: 2026-06-24
   diagnostics service and expose repair hints from indexed repair rows.
 - Compatibility artifact ingestion now emits source_file, artifact,
   observation, diagnostic, and repair rows for missing/stale artifacts,
-  package-local generated companions, source-bom compatibility inputs, and
+  package-local generated companions, source-ownership compatibility inputs, and
   checked-in report artifacts.
 - `workspace:attune-check` now reaches `workspace:program-index-materialize`
-  first through `workspace:package-contracts-check`, materializing Nx project
+  first through `workspace:attune-check`, materializing Nx project
   graph, TypeScript source, schema_descriptor, edge, artifact, observation,
   diagnostic, and repair facts into `.attune/cache/program-index.sqlite` before
   compatibility checks run.

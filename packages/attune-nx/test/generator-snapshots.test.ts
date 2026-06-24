@@ -64,7 +64,7 @@ const runEffectServiceSnapshot = (): MemoryTree => {
     project: "decision-core",
     generatorVersion: "0.0.0-snapshot",
     generatorRevision: "snapshot-revision",
-    openspecChangeId: "standardize-effect-package-contracts",
+    openspecChangeId: "promote-program-index-runtime-substrate",
   })
 
   return tree
@@ -107,34 +107,34 @@ const sourceBomInput = (
   ],
   syncTargets: [{ project: "decision-core", target: "sync-effect-layers" }],
   checkTargets: [{ project: "decision-core", target: "typecheck" }],
-  openspecChangeId: "standardize-effect-package-contracts",
+  openspecChangeId: "promote-program-index-runtime-substrate",
 })
 
 const phase2SnapshotSurfaces = [
   {
-    generator: "@attune/nx:package-contract",
-    assertion: "snapshots src/attune.package.ts, contract registration, and compile-only assertions",
+    generator: "@attune/nx:project-facts",
+    assertion: "snapshots src/attune.package.ts, program fact registration, and symbol registry checks",
   },
   {
     generator: "@attune/nx:atom-view",
-    assertion: "snapshots Reactivity keys, base atoms, derived atoms, and package view graph registration",
+    assertion: "snapshots Reactivity keys, base atoms, derived atoms, and runtime edge registration",
   },
   {
-    generator: "@attune/nx:package-contract",
-    assertion: "snapshots generated Schema-coded package harness, operation registry, and property evidence plan",
+    generator: "@attune/nx:project-facts",
+    assertion: "snapshots generated Schema-coded program harness, symbol registry, and observation plan",
   },
   {
-    generator: "@attune/nx:package-contract",
-    assertion: "snapshots worker-compatible FastCheck property modules and type guidance artifacts",
+    generator: "@attune/nx:project-facts",
+    assertion: "snapshots worker-compatible FastCheck observation modules and diagnostic rule metadata",
   },
   {
-    generator: "@attune/nx:sync-package-ledgers",
-    assertion: "snapshots generated ledger/provenance replacement outputs once the sync generator exists",
+    generator: "@attune/nx:sync-project-artifacts",
+    assertion: "snapshots generated artifact provenance replacement outputs once the sync generator exists",
   },
 ] as const
 
 describe("attune-nx generator snapshots", () => {
-  it("captures deterministic effect-service output and Source BOM provenance", () => {
+  it("captures deterministic effect-service output and artifact provenance", () => {
     const first = runEffectServiceSnapshot()
     const second = runEffectServiceSnapshot()
 
@@ -151,13 +151,13 @@ describe("attune-nx generator snapshots", () => {
           "firstLine": "{",
           "lineCount": 48,
           "path": "packages/decision-core/attune.source-bom.json",
-          "sha256": "1def71d064bd3a8eb3bb94dc6f9e24f8d7fe41379a3ce5cc01f6feaa874e6366",
+          "sha256": "82a641084fe3aa30aa88cbb20a4be5626d12f7e3aec71b078cd07188706d9111",
         },
         {
           "firstLine": "import { Effect, Schema } from "effect"",
           "lineCount": 42,
           "path": "packages/decision-core/src/effect/services/decision-runner.ts",
-          "sha256": "6b4a1ddc0fd3d4f5f43da8bd1ee77aa263341c4ae0a1344bf2899355bb1ad056",
+          "sha256": "ac299f13d6f12f861aed07605fedc2e94ce303c159b6dd3809fd4dd95cd28d33",
         },
         {
           "firstLine": "export * from "./decision-runner.js"",
@@ -188,16 +188,16 @@ describe("attune-nx generator snapshots", () => {
               "generatorName": "@attune/nx:effect-service",
               "generatorRevision": "snapshot-revision",
               "generatorVersion": "0.0.0-snapshot",
-              "openspecChangeId": "standardize-effect-package-contracts",
+              "openspecChangeId": "promote-program-index-runtime-substrate",
               "options": {
                 "directory": "packages/decision-core/src/effect/services",
                 "export": true,
                 "name": "Decision Runner",
-                "operationId": "decision-runner.run",
-                "operationKind": "command",
+                "symbolId": "decision-runner.run",
+                "symbolKind": "command",
                 "tag": "@attune/service/DecisionRunner",
               },
-              "optionsHash": "fnv1a32:0100e57d",
+              "optionsHash": "fnv1a32:670e2eb3",
               "ownedFiles": [
                 "packages/decision-core/src/effect/services/decision-runner.ts",
                 "packages/decision-core/src/effect/services/index.ts",
@@ -308,7 +308,7 @@ describe("attune-nx generator snapshots", () => {
       `)
   })
 
-  it("keeps Source BOM upserts deterministic across option order and repeated generation", () => {
+  it("keeps artifact provenance upserts deterministic across option order and repeated generation", () => {
     const tree = new MemoryTree()
     const input = sourceBomInput({
       z: true,
@@ -358,7 +358,7 @@ describe("attune-nx generator snapshots", () => {
             "generatorName": "@attune/nx:effect-service",
             "generatorRevision": "snapshot-revision",
             "generatorVersion": "0.0.0-snapshot",
-            "openspecChangeId": "standardize-effect-package-contracts",
+            "openspecChangeId": "promote-program-index-runtime-substrate",
             "options": {
               "nested": {
                 "a": 1,
@@ -395,24 +395,24 @@ describe("attune-nx generator snapshots", () => {
     expect(phase2SnapshotSurfaces).toMatchInlineSnapshot(`
       [
         {
-          "assertion": "snapshots src/attune.package.ts, contract registration, and compile-only assertions",
-          "generator": "@attune/nx:package-contract",
+          "assertion": "snapshots src/attune.package.ts, program fact registration, and symbol registry checks",
+          "generator": "@attune/nx:project-facts",
         },
         {
-          "assertion": "snapshots Reactivity keys, base atoms, derived atoms, and package view graph registration",
+          "assertion": "snapshots Reactivity keys, base atoms, derived atoms, and runtime edge registration",
           "generator": "@attune/nx:atom-view",
         },
         {
-          "assertion": "snapshots generated Schema-coded package harness, operation registry, and property evidence plan",
-          "generator": "@attune/nx:package-contract",
+          "assertion": "snapshots generated Schema-coded program harness, symbol registry, and observation plan",
+          "generator": "@attune/nx:project-facts",
         },
         {
-          "assertion": "snapshots worker-compatible FastCheck property modules and type guidance artifacts",
-          "generator": "@attune/nx:package-contract",
+          "assertion": "snapshots worker-compatible FastCheck observation modules and diagnostic rule metadata",
+          "generator": "@attune/nx:project-facts",
         },
         {
-          "assertion": "snapshots generated ledger/provenance replacement outputs once the sync generator exists",
-          "generator": "@attune/nx:sync-package-ledgers",
+          "assertion": "snapshots generated artifact provenance replacement outputs once the sync generator exists",
+          "generator": "@attune/nx:sync-project-artifacts",
         },
       ]
     `)

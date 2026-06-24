@@ -1,7 +1,7 @@
 {
-  "contractShards": [
+  "projectFactShards": [
     {
-      "generator": "@attune/nx:package-contract",
+      "generator": "@attune/nx:project-facts",
       "outputs": [
         "src/attune.package.ts"
       ],
@@ -11,7 +11,7 @@
         "test/**"
       ],
       "status": "generated",
-      "target": "sync-package-contract"
+      "target": "sync-project-facts"
     }
   ],
   "generatedOutputs": [],
@@ -21,7 +21,7 @@
         "src/**",
         "test/**"
       ],
-      "reason": "Architecture policy scanner and tests are policy source for the Source BOM ratchet itself."
+      "reason": "Architecture policy scanner and tests are policy source for the source ownership artifact ratchet itself."
     }
   ],
   "ownedFiles": [
