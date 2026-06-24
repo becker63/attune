@@ -574,7 +574,7 @@
         "test/**"
       ],
       "invariants": [
-        "Template program, evidence shape, example, and tests should be generated together."
+        "Template source, schema descriptors, observations, examples, diagnostics, and focused tests should move together."
       ]
     },
     {
@@ -589,7 +589,7 @@
         "src/joern/templates/index.ts"
       ],
       "invariants": [
-        "Known template source, binding schema, evidence schema, renderer shell, and barrel export are generated together."
+        "Known template source, binding schema descriptors, output observations, renderer shell, and barrel export are generated together."
       ]
     },
     {
@@ -634,7 +634,7 @@
         "test/**"
       ],
       "invariants": [
-        "Runtime service tags and live layers should be generated with contract tests."
+        "Runtime service tags, live layers, diagnostics, and focused tests should move together."
       ]
     },
     {
