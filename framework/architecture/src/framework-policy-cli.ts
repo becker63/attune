@@ -78,6 +78,7 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "stale-generated-file"
   | "manual-derived-truth"
   | "old-ontology-runtime-object"
+  | "old-ontology-diagnostic-copy"
   | "old-ontology-active-doc"
   | "package-declaration-too-large"
   | "package-local-attune-companion"
@@ -134,9 +135,12 @@ const oldOntologyRuntimeTablePattern =
   /\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?<name>package_contract|protocol_descriptor|protocol|operation|package_view|view|law|obligation|evidence|delta|type_guidance|source_bom|generator_shape|fuzz_handler|property_map|rpc_group)\b/iu
 const oldOntologyActiveDocNounPattern =
   /\b(?<term>package[- ]contracts?|protocol(?:store|delta)?|operations?|package[- ]views?|view roots?|view graph|operation-to-view|laws?|obligations?|evidence|deltas?|source[- ]bom|generator[- ]shapes?|type[- ]guidance|fuzz handlers?|property maps?|rpc groups?|generated companions?)\b/iu
+const diagnosticMessageLinePattern = /\bmessage\s*:/u
 const activeOperatingDocPaths = new Set([
   "AGENTS.md",
   "docs/attuned/Attune Framework Operating Surface.md",
+  "docs/attuned/Attune Framework Core Primitives.md",
+  "docs/codex-migration-goal.md",
   "docs/platform/codex-cloud-environment.md",
 ])
 const packageDeclarationWarningLineThreshold = 180
@@ -153,6 +157,9 @@ const oneFileSurfaceCompletedRoots = new Set([
   "framework/architecture",
   "packages/attune-nx",
   "packages/attune-pi-agent",
+  "packages/attune-foldkit",
+  "packages/attuned-discovery",
+  "packages/cocoindex-effect",
   "packages/home-deployment",
   "packages/joern-effect",
   "packages/joern-effect-properties",
@@ -432,6 +439,7 @@ const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode
   "stale-generated-file",
   "manual-derived-truth",
   "old-ontology-runtime-object",
+  "old-ontology-diagnostic-copy",
   "old-ontology-active-doc",
   "package-local-attune-companion",
 ])
@@ -1563,6 +1571,19 @@ function checkMechanicalProgramOntologyFile(file: WorkspaceFile): readonly Frame
         tableMatch.groups?.name ?? "old ontology table",
       ))
     }
+
+    const diagnosticCopyMatch = oldOntologyActiveDocNounPattern.exec(line)
+    if (
+      diagnosticMessageLinePattern.test(line) &&
+      diagnosticCopyMatch !== null &&
+      !isOldOntologyActiveDocContextAllowed(line, "", "")
+    ) {
+      diagnostics.push(oldOntologyDiagnosticCopyDiagnostic(
+        file.path,
+        lineIndex + 1,
+        diagnosticCopyMatch.groups?.term ?? "old ontology noun",
+      ))
+    }
   }
 
   return diagnostics
@@ -1588,6 +1609,22 @@ function oldOntologyRuntimeObjectDiagnostic(
       `Line ${line} adds ${name} as a program-index runtime object.`,
       "Use mechanical facts instead: project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, or invalidation.",
       "Old ontology terms may appear only as compatibility source metadata, legacy-adapter labels, historical context, or future-delete plans.",
+    ].join(" "),
+  )
+}
+
+function oldOntologyDiagnosticCopyDiagnostic(
+  filePath: string,
+  line: number,
+  term: string,
+): FrameworkFinalRatchetDiagnostic {
+  return finalRatchetDiagnostic(
+    "old-ontology-diagnostic-copy",
+    filePath,
+    [
+      `Line ${line} uses ${term} in primary program-index diagnostic copy.`,
+      "Diagnostics must name the mechanical fact first: project, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, or invalidation.",
+      "Old labels are allowed only when the same diagnostic frames them as legacy compatibility, historical context, or deletion/quarantine work.",
     ].join(" "),
   )
 }

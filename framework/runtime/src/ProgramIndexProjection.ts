@@ -1500,7 +1500,7 @@ const compatibilityDiagnosticsFromArtifact = (
       ...sourceFileFields,
       code: "attune/program-index/package-local-companion",
       severity: "warning",
-      message: `artifact fact is package-local generated companion ${artifact.path}; framework-owned artifact projection should replace it.`,
+      message: `artifact fact records legacy package-local generated companion compatibility input ${artifact.path}; framework-owned artifact projection should replace it.`,
       causeJson: programIndexJson(cause),
     })
   }

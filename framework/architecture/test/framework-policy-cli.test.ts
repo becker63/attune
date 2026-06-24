@@ -314,38 +314,38 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("errors when a completed one-file root regains package-local companions after replacement parity", () => {
+  it("errors when a completed Ring A one-file root regains package-local companions after replacement parity", () => {
     const workspaceRoot = makeWorkspace({
       "attune.source-bom.index.json": JSON.stringify({
         schemaVersion: 1,
         shards: [{
-          project: "platform-alchemy-k8s",
-          projectRoot: "packages/platform-alchemy-k8s",
-          shard: "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json",
+          project: "attune-foldkit",
+          projectRoot: "packages/attune-foldkit",
+          shard: "framework/architecture/src/generated/source-bom/attune-foldkit.json",
         }],
       }),
-      "packages/platform-alchemy-k8s/package.json": JSON.stringify({ name: "@attune/platform-alchemy-k8s" }),
-      "packages/platform-alchemy-k8s/src/attune.package.ts": [
+      "packages/attune-foldkit/package.json": JSON.stringify({ name: "@attune/attune-foldkit" }),
+      "packages/attune-foldkit/src/attune.package.ts": [
         "export const PackageDeclaration = defineAttunePackage({",
-        "  id: \"platform-alchemy-k8s\",",
-        "  kind: \"platform-resource-provider\",",
+        "  id: \"attune-foldkit\",",
+        "  kind: \"product-ui\",",
         "  operations: [] as const,",
         "  views: [] as const,",
         "} as const)",
       ].join("\n"),
-      "packages/platform-alchemy-k8s/attune.source-bom.json": JSON.stringify({ project: "platform-alchemy-k8s" }),
-      "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json": JSON.stringify({
+      "packages/attune-foldkit/attune.source-bom.json": JSON.stringify({ project: "attune-foldkit" }),
+      "framework/architecture/src/generated/source-bom/attune-foldkit.json": JSON.stringify({
         schemaVersion: 1,
-        project: "platform-alchemy-k8s",
-        projectRoot: "packages/platform-alchemy-k8s",
+        project: "attune-foldkit",
+        projectRoot: "packages/attune-foldkit",
         ownedFiles: ["src/attune.package.ts"],
         generatedOutputs: [],
       }),
-      "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.ts": packageContractSource({
-        packageId: "platform-alchemy-k8s",
+      "framework/architecture/src/generated/package-contracts/attune-foldkit/attune.contract.generated.ts": packageContractSource({
+        packageId: "attune-foldkit",
         viewsBody: [
-          "  reactivityKeys: [\"platform.changed\"],",
-          "  atoms: [\"platformAtom\"],",
+          "  reactivityKeys: [\"foldkit.changed\"],",
+          "  atoms: [\"foldkitAtom\"],",
         ],
         operationsBody: [],
         operationIds: [],
@@ -358,7 +358,7 @@ describe("framework policy CLI", () => {
     expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({
         code: "package-local-attune-companion",
-        filePath: "packages/platform-alchemy-k8s/src/attune.package.ts",
+        filePath: "packages/attune-foldkit/src/attune.package.ts",
         severity: "error",
       }),
     ]))
@@ -925,12 +925,40 @@ describe("framework policy CLI", () => {
     expect(result.ratchetDiagnostics).toEqual([])
   })
 
+  it("rejects old ontology nouns in primary program-index diagnostic copy", () => {
+    const workspaceRoot = makeWorkspace({
+      "framework/runtime/src/ProgramIndexProjection.ts": [
+        "export const diagnostic = {",
+        "  message: \"operation is missing required evidence\",",
+        "}",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "old-ontology-diagnostic-copy",
+        filePath: "framework/runtime/src/ProgramIndexProjection.ts",
+        message: expect.stringContaining("operation"),
+      }),
+    ]))
+  })
+
   it("rejects old ontology nouns in active public operating docs", () => {
     const workspaceRoot = makeWorkspace({
-      "docs/attuned/Attune Framework Operating Surface.md": [
-        "# Attune Framework Operating Surface",
+      "docs/attuned/Attune Framework Core Primitives.md": [
+        "# Attune Framework Core Primitives",
         "",
         "Agents should edit package contracts, protocol operations, laws, and evidence first.",
+      ].join("\n"),
+      "docs/codex-migration-goal.md": [
+        "# Codex Migration Goal",
+        "",
+        "## Workflow",
+        "",
+        "Normal workflow starts by choosing package views and operation laws.",
       ].join("\n"),
       "docs/reference/historical-protocol-note.md": [
         "# Historical Protocol Note",
@@ -945,8 +973,13 @@ describe("framework policy CLI", () => {
     expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({
         code: "old-ontology-active-doc",
-        filePath: "docs/attuned/Attune Framework Operating Surface.md",
+        filePath: "docs/attuned/Attune Framework Core Primitives.md",
         message: expect.stringContaining("package contracts"),
+      }),
+      expect.objectContaining({
+        code: "old-ontology-active-doc",
+        filePath: "docs/codex-migration-goal.md",
+        message: expect.stringContaining("package views"),
       }),
     ]))
     expect(result.ratchetDiagnostics).not.toEqual(expect.arrayContaining([

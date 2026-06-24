@@ -89,12 +89,12 @@
 
 - [x] 7.1 Inventory remaining package-contract laws, type guidance, RPC descriptors, `PackageFuzzHandlers`, `PackageProperties`, Source BOM shards, generated companion surfaces, and active docs/API names that still expose old ontology language.
 - [x] 7.2 Classify each old surface as still required, compatibility-only, safe-to-delete, or unsafe-to-delete.
-- [ ] 7.3 Delete, rename, quarantine, or archive every safe-to-delete old surface and record the exact mechanical replacement.
-- [ ] 7.4 Mark high-risk deletions as future OpenSpec changes rather than current implementation tasks.
-- [ ] 7.5 Update docs so the only normal mental model is mechanical program facts, SQL projections, Reactivity/atoms, diagnostics, and repairs.
-- [ ] 7.6 Ratchet migrated rings to prevent project-local generated companion resurrection only where parity is proven.
-- [ ] 7.7 Add final drift checks that reject old ontology terms in migrated-ring public docs, primary runtime tables, and normal diagnostics.
-- [ ] 7.8 Validate Phase 7 with `nx run attune-architecture:test --skipNxCache`, `nx run workspace:attune-check --skipNxCache`, and `openspec validate promote-program-index-runtime-substrate --type change`.
+- [x] 7.3 Delete, rename, quarantine, or archive every safe-to-delete old surface and record the exact mechanical replacement.
+- [x] 7.4 Mark high-risk deletions as future OpenSpec changes rather than current implementation tasks.
+- [x] 7.5 Update docs so the only normal mental model is mechanical program facts, SQL projections, Reactivity/atoms, diagnostics, and repairs.
+- [x] 7.6 Ratchet migrated rings to prevent project-local generated companion resurrection only where parity is proven.
+- [x] 7.7 Add final drift checks that reject old ontology terms in migrated-ring public docs, primary runtime tables, and normal diagnostics.
+- [x] 7.8 Validate Phase 7 with `nx run attune-architecture:test --skipNxCache`, `nx run workspace:attune-check --skipNxCache`, and `openspec validate promote-program-index-runtime-substrate --type change`.
 
 ## 8. Final Validation And Archive Readiness
 
