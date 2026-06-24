@@ -4,7 +4,7 @@ import ts from "typescript"
 import type {
   AttuneOperationContract,
   TouchedViews,
-} from "../builders/index.js"
+} from "../project-facts/index.js"
 
 export const SourceDeclarationPositionSchema = Schema.Struct({
   line: Schema.Number,

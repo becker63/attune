@@ -22,23 +22,22 @@ import {
   deriveSymbolProjectionEdges,
   deriveSymbolRegistry,
   diagnoseAvoidableStringReferences,
-  defineAttunePackage,
+  defineOperation,
+  definePackageContract,
+  definePackageViews,
   derivedAtom,
   schemaDescriptorFromProjectFacts,
   diagnosticFromRepairFinding,
   extractProtocolSourceSummary,
   hashProgramValue,
   packageViewAtom,
-  projection,
   schemaDescriptorIdForProject,
   reactivityKey,
   roundtripSourceReference,
   touchedViewsFromReferences,
   diagnoseProtocolWaivers,
   defineTypeGuidance,
-  query,
   waiverDeltasFromFindings,
-  views,
   type InputOf,
   type SymbolIds,
   type OutputOf,
@@ -46,18 +45,19 @@ import {
 
 describe("@attune/framework-protocol", () => {
   it("keeps package authoring on the public framework facade", () => {
-    const PackageViews = views({
+    const PackageViews = definePackageViews({
       reactivityKeys: ["demo.changed"],
       atoms: ["demoAtom"],
     } as const)
 
-    const contract = defineAttunePackage({
+    const contract = definePackageContract({
       packageId: "demo",
       packageKind: "core-discovery-runtime",
       views: PackageViews,
       operations: [
-        projection({
+        defineOperation({
           id: "demo-projection",
+          kind: "projection",
           input: "demo-input-schema" as never,
           output: "demo-output-schema" as never,
         }),
@@ -72,17 +72,18 @@ describe("@attune/framework-protocol", () => {
   it("exposes compile-only contract conformance helpers through the public framework facade", () => {
     const LookupInput = Schema.Struct({ id: Schema.String })
     const LookupOutput = Schema.Struct({ value: Schema.String })
-    const PackageViews = views({
+    const PackageViews = definePackageViews({
       reactivityKeys: ["demo.changed"],
       atoms: ["demoAtom"],
     } as const)
-    const contract = defineAttunePackage({
+    const contract = definePackageContract({
       packageId: "demo",
       packageKind: "core-discovery-runtime",
       views: PackageViews,
       operations: [
-        query({
+        defineOperation({
           id: "lookup",
+          kind: "query",
           input: LookupInput,
           output: LookupOutput,
           views: { reactivityKeys: ["demo.changed"], atoms: ["demoAtom"] },
@@ -221,17 +222,18 @@ describe("@attune/framework-protocol", () => {
   })
 
   it("derives stable descriptor hashes and diagnosticRequirements from project factss", () => {
-    const PackageViews = views({
+    const PackageViews = definePackageViews({
       reactivityKeys: ["demo.changed"],
       atoms: ["demoAtom"],
     } as const)
-    const contract = defineAttunePackage({
+    const contract = definePackageContract({
       packageId: "demo",
       packageKind: "core-discovery-runtime",
       views: PackageViews,
       operations: [
-        projection({
+        defineOperation({
           id: "demo-projection",
+          kind: "projection",
           input: "demo-input-schema" as never,
           output: "demo-output-schema" as never,
           laws: ["projection.deterministic-replay"],
@@ -340,8 +342,9 @@ describe("@attune/framework-protocol", () => {
       symbolName: "workbenchSnapshot",
     }, { projectId: "demo" })
 
-    const operation = projection({
+    const operation = defineOperation({
       id: "event-replay-projection",
+      kind: "projection",
       input: "events" as never,
       output: "snapshot" as never,
       views: touchedViewsFromReferences({
@@ -366,8 +369,9 @@ describe("@attune/framework-protocol", () => {
   })
 
   it("derives exact symbol registries and rejects duplicate ids", () => {
-    const symbol = projection({
+    const symbol = defineOperation({
       id: "demo-projection",
+      kind: "projection",
       input: "demo-input-schema" as never,
       output: "demo-output-schema" as never,
     })

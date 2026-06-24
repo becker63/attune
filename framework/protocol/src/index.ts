@@ -1,4 +1,4 @@
-export * from "./builders/index.js"
+export * from "./project-facts/index.js"
 export {
   ProgramCoverageExpectationSchema,
   ProgramSchemaDescriptorSchema,
