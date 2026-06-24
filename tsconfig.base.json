@@ -18,8 +18,6 @@
       "@attune/framework-language-service": ["./framework/language-service/src/index.ts"],
       "@attune/framework-nx": ["./framework/nx/src/index.ts"],
       "@attune/framework-protocol": ["./framework/protocol/src/index.ts"],
-      "@attune/framework-protocol/laws": ["./framework/protocol/src/laws/index.ts"],
-      "@attune/framework-protocol/package-contract": ["./framework/protocol/src/package-contract/index.ts"],
       "@attune/framework-runtime": ["./framework/runtime/src/index.ts"],
       "@attune/framework-sqlite": ["./framework/sqlite/src/index.ts"],
       "@attune/framework-testing": ["./framework/testing/src/index.ts"],

@@ -2,7 +2,6 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import { Schema } from "effect"
 
-export * from "../../protocol/src/project-facts/index.js"
 export * from "./command-surface-conformance.js"
 export * from "./framework-atom-implementation-policy.js"
 export * from "./framework-import-boundary.js"

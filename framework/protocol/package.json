@@ -12,10 +12,6 @@
       "types": "./src/diagnostic-rules/index.ts",
       "import": "./src/diagnostic-rules/index.ts"
     },
-    "./project-facts": {
-      "types": "./src/project-facts/index.ts",
-      "import": "./src/project-facts/index.ts"
-    },
     "./package.json": "./package.json"
   },
   "dependencies": {
