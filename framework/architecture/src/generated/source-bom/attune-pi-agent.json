@@ -13,7 +13,7 @@
       ],
       "editableRegions": [
         {
-          "description": "Agent-extension package contract; update public auditable operations and views here.",
+          "description": "Agent-extension authored declaration; update exported symbols and schema/edge metadata here.",
           "file": "src/attune.package.ts",
           "marker": "definePackageContract"
         }
@@ -41,8 +41,7 @@
       },
       "optionsHash": "fnv1a32:attune-pi-agent-contract",
       "ownedFiles": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "owningProject": "attune-pi-agent",
       "projectRoot": "packages/attune-pi-agent",
@@ -59,8 +58,7 @@
     {
       "generator": "@attune/nx:package-contract",
       "outputs": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "sources": [
         "generators.json",

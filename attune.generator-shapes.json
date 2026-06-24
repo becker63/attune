@@ -241,13 +241,12 @@
       "generator": "@attune/nx:package-contract",
       "status": "generated",
       "paths": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "invariants": [
-        "Pi permission, spec interview, evidence matrix, run artifact, extension boundary, generator, package layer, fuzz handler, property, and type guidance metadata stay in one generated contract shard."
+        "Pi permission, spec interview, artifact, extension-boundary, generator, package-layer, and schema/edge metadata project into program-index rows."
       ],
-      "notes": "Phase 5 product migration generated the package contract files; final command-surface cleanup remains open.",
+      "notes": "Ring C validation removed the package-local compatibility test; final command-surface cleanup remains open.",
       "sourceBomShard": "framework/architecture/src/generated/source-bom/attune-pi-agent.json"
     },
     {
