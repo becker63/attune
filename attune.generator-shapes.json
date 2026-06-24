@@ -141,9 +141,9 @@
         "src/attune.package.ts"
       ],
       "invariants": [
-        "Generator registry operations, generated file diff views, provenance views, package layers, fuzz handlers, properties, and type guidance stay in one generated contract shard."
+        "Generator tooling source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Phase 4 tooling migration generated the package contract files; final command-surface cleanup remains open.",
+      "notes": "Ring B program-index parity removes package-local old-shape assertions; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
       "sourceBomShard": "framework/architecture/src/generated/source-bom/attune-nx.json"
     },
     {

@@ -13,7 +13,7 @@
       ],
       "editableRegions": [
         {
-          "description": "Customized generator-tooling package contract; preserve generated module exports and assertion shape.",
+          "description": "Customized generator-tooling authored source boundary; validate exported symbols through program-index-backed check.",
           "file": "packages/attune-nx/src/attune.package.ts",
           "marker": "Generated-shape contract customized for @attune/nx itself."
         }
