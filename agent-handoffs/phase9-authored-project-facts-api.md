@@ -59,9 +59,9 @@
 
 ## Not Done
 
-- Generated compatibility outputs under
-  `framework/architecture/src/generated/package-contracts/**` still exist.
-- Package graph discovery still reads generated `PackageContract` modules.
+- The checked-in generated compatibility outputs under
+  `framework/architecture/src/generated/package-contracts/**` were deleted in
+  the follow-up Phase 9 generated-output slice.
 - Protocol and testing compatibility helper modules remain active until their
   consumers move to program-index query APIs.
 - Internal repair route and generated artifact names still need mechanical

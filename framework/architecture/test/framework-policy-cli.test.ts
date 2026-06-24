@@ -168,21 +168,12 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("accepts framework-owned generated contract materialization as the semantic companion", () => {
+  it("accepts authored project facts without a generated semantic companion", () => {
     const workspaceRoot = makeWorkspace({
       "packages/centralized-contract/package.json": JSON.stringify({ name: "@attune/centralized-contract" }),
       "packages/centralized-contract/src/attune.package.ts": authoredProjectFactsSource({
         projectId: "centralized-contract",
         projectKind: "core-discovery-runtime",
-      }),
-      "framework/architecture/src/generated/package-contracts/centralized-contract/attune.contract.generated.ts": packageContractSource({
-        packageId: "centralized-contract",
-        viewsBody: [
-          "  reactivityKeys: [\"centralized.changed\"],",
-          "  atoms: [\"centralizedAtom\"],",
-        ],
-        operationsBody: [],
-        operationIds: [],
       }),
     })
 
@@ -219,15 +210,6 @@ describe("framework policy CLI", () => {
         "  edges: [] as const,",
         "} as const)",
       ].join("\n"),
-      "framework/architecture/src/generated/package-contracts/legacy-authoring/attune.contract.generated.ts": packageContractSource({
-        packageId: "legacy-authoring",
-        viewsBody: [
-          "  reactivityKeys: [\"legacy.changed\"],",
-          "  atoms: [\"legacyAtom\"],",
-        ],
-        operationsBody: [],
-        operationIds: [],
-      }),
     })
 
     const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
@@ -327,15 +309,6 @@ describe("framework policy CLI", () => {
         projectKind: "platform-resource-provider",
       }),
       "packages/platform-alchemy-k8s/attune.source-bom.json": JSON.stringify({ project: "platform-alchemy-k8s" }),
-      "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.ts": packageContractSource({
-        packageId: "platform-alchemy-k8s",
-        viewsBody: [
-          "  reactivityKeys: [\"platform.changed\"],",
-          "  atoms: [\"platformAtom\"],",
-        ],
-        operationsBody: [],
-        operationIds: [],
-      }),
     })
 
     const result = checkFrameworkPolicyWorkspace(workspaceRoot)
@@ -373,15 +346,6 @@ describe("framework policy CLI", () => {
         ownedFiles: ["src/attune.package.ts"],
         generatedOutputs: [],
       }),
-      "framework/architecture/src/generated/package-contracts/attune-foldkit/attune.contract.generated.ts": packageContractSource({
-        packageId: "attune-foldkit",
-        viewsBody: [
-          "  reactivityKeys: [\"foldkit.changed\"],",
-          "  atoms: [\"foldkitAtom\"],",
-        ],
-        operationsBody: [],
-        operationIds: [],
-      }),
     })
 
     const result = checkFrameworkPolicyWorkspace(workspaceRoot)
@@ -404,15 +368,6 @@ describe("framework policy CLI", () => {
         projectKind: "platform-resource-provider",
       }),
       "packages/platform-alchemy-k8s/src/local-contract.ts": "export { PackageContract } from \"./attune.contract.generated.js\"",
-      "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.contract.generated.ts": packageContractSource({
-        packageId: "platform-alchemy-k8s",
-        viewsBody: [
-          "  reactivityKeys: [\"platform.changed\"],",
-          "  atoms: [\"platformAtom\"],",
-        ],
-        operationsBody: [],
-        operationIds: [],
-      }),
     })
 
     const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["final-ratchet"] })

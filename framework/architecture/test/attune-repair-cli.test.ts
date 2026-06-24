@@ -64,19 +64,7 @@ describe("attune repair CLI", () => {
     )).toContain("\"projection\": \"generated-freshness\"")
   })
 
-  it("refuses to overwrite divergent framework-owned generated materialization", () => {
-    const workspaceRoot = makeRepairWorkspace({
-      "packages/platform-alchemy-k8s/src/attune.generated.ts": "export const local = true\n",
-      "framework/architecture/src/generated/package-contracts/platform-alchemy-k8s/attune.generated.ts": "export const central = true\n",
-    })
-
-    const result = runRepair(workspaceRoot)
-
-    expect(result.status).toBe(1)
-    expect(result.stderr).toContain("Refusing to overwrite existing framework-owned materialization")
-  })
-
-  it("rewrites package-local relative imports when centralizing generated contracts", () => {
+  it("removes package-local generated companions without writing framework outputs", () => {
     const workspaceRoot = makeRepairWorkspace({
       "packages/attune-foldkit/attune.source-bom.json": JSON.stringify({
         schemaVersion: 1,
@@ -98,13 +86,9 @@ describe("attune repair CLI", () => {
     const result = runRepair(workspaceRoot, "--project", "attune-foldkit")
 
     expect(result.status).toBe(0)
-    const centralized = fs.readFileSync(
-      path.join(workspaceRoot, "framework/architecture/src/generated/package-contracts/attune-foldkit/attune.contract.generated.ts"),
-      "utf8",
-    )
-    expect(centralized).toContain("from \"../../../../../../packages/attune-foldkit/src/model.js\"")
-    expect(centralized).toContain("from \"../../../../../../packages/attune-foldkit/src/fixtures/example.js\"")
-    expect(centralized).toContain("from \"./attune.generated.js\"")
+    expect(result.stdout).toContain("DELETE packages/attune-foldkit/src/attune.generated.ts")
+    expect(result.stdout).toContain("DELETE packages/attune-foldkit/src/attune.contract.generated.ts")
+    expect(fs.existsSync(path.join(workspaceRoot, "packages/attune-foldkit/src/attune.generated.ts"))).toBe(false)
     expect(fs.existsSync(path.join(workspaceRoot, "packages/attune-foldkit/src/attune.contract.generated.ts"))).toBe(false)
   })
 

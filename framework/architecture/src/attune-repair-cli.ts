@@ -103,9 +103,8 @@ function repairProject(
   if (!safeRelocationProjectIds.has(project.project)) return []
 
   return [
-    ...relocateGeneratedCompanions(project),
     ...removePackageLocalGeneratedExport(project),
-    ...updateTypecheckAggregate(project),
+    ...removePackageLocalGeneratedCompanions(project),
     ...relocateSourceBom(project),
   ]
 }
@@ -269,29 +268,13 @@ function materializeRepairKind(
         ),
         ...(safeRelocationProjectIds.has(project.project)
           ? [
-            ...relocateGeneratedCompanions(project),
             ...removePackageLocalGeneratedExport(project),
-            ...updateTypecheckAggregate(project),
+            ...removePackageLocalGeneratedCompanions(project),
             ...relocateSourceBom(project),
           ]
           : []),
       ]
   }
-}
-
-function relocateGeneratedCompanions(project: RepairProject): readonly RepairAction[] {
-  const centralRoot = frameworkPackageContractRoot(project.project)
-  return [
-    moveFileIfPresent(
-      `${project.projectRoot}/src/attune.generated.ts`,
-      `${centralRoot}/attune.generated.ts`,
-    ),
-    moveFileIfPresent(
-      `${project.projectRoot}/src/attune.contract.generated.ts`,
-      `${centralRoot}/attune.contract.generated.ts`,
-      (content) => rewritePackageLocalGeneratedContractImports(content, project),
-    ),
-  ].flat()
 }
 
 function removePackageLocalGeneratedExport(project: RepairProject): readonly RepairAction[] {
@@ -310,22 +293,12 @@ function removePackageLocalGeneratedExport(project: RepairProject): readonly Rep
   }]
 }
 
-function updateTypecheckAggregate(project: RepairProject): readonly RepairAction[] {
-  const aggregatePath = "framework/architecture/src/generated/package-contracts.typecheck.generated.ts"
-  const content = readText(aggregatePath)
-  if (content === null) return []
-
-  const localImportPath = `../../../../${project.projectRoot}/src/attune.package.js`
-  const centralImportPath = `./package-contracts/${project.project}/attune.contract.generated.js`
-  if (!content.includes(localImportPath)) return []
-
-  const next = content.replaceAll(localImportPath, centralImportPath)
-  writeText(aggregatePath, next)
-  return [{
-    kind: "update",
-    path: aggregatePath,
-    message: `uses framework-owned generated contract for ${project.project}`,
-  }]
+function removePackageLocalGeneratedCompanions(project: RepairProject): readonly RepairAction[] {
+  return [
+    deleteFileIfPresent(`${project.projectRoot}/src/attune.generated.ts`),
+    deleteFileIfPresent(`${project.projectRoot}/src/attune.contract.generated.ts`),
+    deleteFileIfPresent(`${project.projectRoot}/src/attune.package.typecheck.ts`),
+  ].flat()
 }
 
 function relocateSourceBom(project: RepairProject): readonly RepairAction[] {
@@ -380,6 +353,18 @@ function moveFileIfPresent(
   }]
 }
 
+function deleteFileIfPresent(relativePath: string): readonly RepairAction[] {
+  const filePath = absolute(relativePath)
+  if (!fs.existsSync(filePath)) return []
+
+  if (!dryRun) fs.rmSync(filePath)
+  return [{
+    kind: "delete",
+    path: relativePath,
+    message: "removed package-local generated compatibility companion",
+  }]
+}
+
 function rewriteJsonFile(
   relativePath: string,
   rewrite: (value: unknown) => unknown,
@@ -420,9 +405,9 @@ function generatedRegistryContent(project: RepairProject): string {
     `export const packageId = ${JSON.stringify(project.project)} as const`,
     `export const packageRoot = ${JSON.stringify(project.projectRoot)} as const`,
     "export const sourceDeclaration = \"src/attune.package.ts\" as const",
-    `export const generatedContract = ${JSON.stringify(generatedContractPath(project))} as const`,
+    `export const projectFactsSource = ${JSON.stringify(projectFactsPath(project))} as const`,
     `export const operationRegistryProjection = ${JSON.stringify({
-      generatedFrom: generatedContractPath(project),
+      generatedFrom: projectFactsPath(project),
       packageId: project.project,
       projection: "operation-registry",
     }, null, 2)} as const`,
@@ -433,7 +418,7 @@ function generatedPropertyRegistryContent(project: RepairProject): string {
   return generatedTs(project, "property-registry", [
     `export const packageId = ${JSON.stringify(project.project)} as const`,
     `export const propertyRegistryProjection = ${JSON.stringify({
-      generatedFrom: generatedContractPath(project),
+      generatedFrom: projectFactsPath(project),
       packageId: project.project,
       projection: "property-registry",
     }, null, 2)} as const`,
@@ -444,7 +429,7 @@ function generatedTypeGuidanceContent(project: RepairProject): string {
   return generatedTs(project, "type-guidance", [
     `export const packageId = ${JSON.stringify(project.project)} as const`,
     `export const typeGuidanceProjection = ${JSON.stringify({
-      generatedFrom: generatedContractPath(project),
+      generatedFrom: projectFactsPath(project),
       packageId: project.project,
       projection: "type-guidance",
     }, null, 2)} as const`,
@@ -456,7 +441,7 @@ function generatedEvidenceScaffoldContent(project: RepairProject): string {
     `export const packageId = ${JSON.stringify(project.project)} as const`,
     `export const PropertyEvidenceScaffold = ${JSON.stringify({
       expectedEvents: ["property-run", "law-observed", "atom-movement"],
-      generatedFrom: generatedContractPath(project),
+      generatedFrom: projectFactsPath(project),
       packageId: project.project,
       packageRoot: project.projectRoot,
       projection: "property-evidence",
@@ -467,7 +452,7 @@ function generatedEvidenceScaffoldContent(project: RepairProject): string {
 function generatedEvidenceScaffoldJson(project: RepairProject): string {
   return `${JSON.stringify({
     generatedBy: "attune-repair",
-    generatedFrom: generatedContractPath(project),
+    generatedFrom: projectFactsPath(project),
     packageId: project.project,
     packageRoot: project.projectRoot,
     projection: "evidence-scaffold",
@@ -476,8 +461,7 @@ function generatedEvidenceScaffoldJson(project: RepairProject): string {
 
 function generatedFreshnessContent(project: RepairProject): string {
   const artifacts = [
-    generatedContractPath(project),
-    `${frameworkPackageContractRoot(project.project)}/attune.generated.ts`,
+    projectFactsPath(project),
     `framework/architecture/src/generated/source-bom/${project.project}.json`,
     `${project.projectRoot}/src/attune.contract.generated.ts`,
     `${project.projectRoot}/src/attune.generated.ts`,
@@ -562,27 +546,8 @@ function readRepairKind(): RepairKind | null {
   process.exit(1)
 }
 
-function frameworkPackageContractRoot(project: string): string {
-  return `framework/architecture/src/generated/package-contracts/${project}`
-}
-
-function rewritePackageLocalGeneratedContractImports(
-  content: string,
-  project: RepairProject,
-): string {
-  const sourcePrefix = path.posix.relative(
-    frameworkPackageContractRoot(project.project),
-    `${project.projectRoot}/src`,
-  )
-
-  return content.replace(
-    /from "\.\/(?!attune\.generated\.js)([^"]+)"/gu,
-    (_match, importedPath: string) => `from "${sourcePrefix}/${importedPath}"`,
-  )
-}
-
-function generatedContractPath(project: RepairProject): string {
-  return `${frameworkPackageContractRoot(project.project)}/attune.contract.generated.ts`
+function projectFactsPath(project: RepairProject): string {
+  return `${project.projectRoot}/src/attune.package.ts`
 }
 
 function readText(relativePath: string): string | null {

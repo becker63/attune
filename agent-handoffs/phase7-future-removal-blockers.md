@@ -11,6 +11,10 @@ The remaining compatibility APIs and helpers are not archive-ready permanent
 surfaces. They must be removed, renamed, or quarantined before this migration
 is considered fully finished.
 
+Task 9.3 removed the checked-in framework-owned generated package-contract
+outputs. See `agent-handoffs/phase9-generated-output-deletion.md` for the
+validated deletion slice and replacement path.
+
 ## Future Removal Gates
 
 ### Framework compatibility API/helpers
@@ -37,19 +41,17 @@ is considered fully finished.
 
 ### Framework-owned generated compatibility outputs
 
-- Current surface:
-  - `framework/architecture/src/generated/package-contracts/**`
-  - `framework/architecture/src/generated/package-contracts.typecheck.generated.ts`
+- Status:
+  - Deleted in Phase 9.
+  - `workspace:attune-check` and `workspace:attune-repair --dryRun` validate
+    without `framework/architecture/src/generated/package-contracts/**` or the
+    generated typecheck aggregate.
 - Replacement path:
   - program-index rows, SQL projections, invalidations, diagnostics, repair
     rows, and cache-owned generated artifacts
-- Gate:
-  - `workspace:attune-check` and `workspace:attune-repair --dryRun` do not read
-    generated compatibility object shapes as primary data
-  - package graph discovery tests either read program-index facts or are
-    deleted as compatibility tests
-  - source ownership and generated artifact freshness checks pass without
-    checked-in compatibility outputs
+- Follow-up:
+  - Keep the generated tree deleted while removing the remaining old
+    protocol/testing helper APIs.
 
 ### Authored project facts API
 
@@ -61,13 +63,12 @@ is considered fully finished.
     `PackageViewRoots`, `defineAttunePackageDeclaration`, and
     `PackageContractSchema` re-exports in active authored package files.
 - Remaining surface:
-  - generated compatibility modules still export `PackageContract`,
-    `PackageFuzzHandlers`, `PackageProperties`, and `PackageTypeGuidance`
-  - package graph discovery still reads those generated compatibility modules
+  - framework protocol/testing compatibility helpers still carry old object and
+    helper names until task 9.4 removes or mechanically renames them
 - Remaining gate:
-  - generated compatibility output consumers use program-index facts
-  - checked-in generated compatibility outputs are deleted or quarantined
-  - migrated package `attune-check`, `attune-repair --dryRun`, `typecheck`, and
+  - runtime, language-service, framework-testing, and package tests consume
+    program-index query APIs instead of old compatibility helper modules
+  - migrated package `attune-check`, `attune-repair --dryRun`, typechecks, and
     touched tests pass
 
 ### Internal repair route names
@@ -104,6 +105,11 @@ is considered fully finished.
 ## Validation Already Run
 
 - `nx run attune-architecture:test --skipNxCache`
+- `nx run framework-runtime:test --skipNxCache`
+- `nx run attune-nx:test --skipNxCache`
+- `nx run attune-architecture:typecheck --skipNxCache`
+- `nx run workspace:attune-check --skipNxCache`
+- `nx run workspace:attune-repair --dryRun --skipNxCache`
 
 ## Rule
 

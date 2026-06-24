@@ -139,6 +139,8 @@ const oldOntologyActiveDocNounPattern =
 const diagnosticMessageLinePattern = /\bmessage\s*:/u
 const oldAuthoredDeclarationApiPattern =
   /\b(?<name>PackageDeclaration|PackageViewRoots|defineAttunePackageDeclaration|PackageContractSchema)\b/gu
+const authoredProjectFactsPattern =
+  /\b(?:ProjectFacts|defineAttuneProjectFacts)\b/u
 const activeOperatingDocPaths = new Set([
   "AGENTS.md",
   "docs/attuned/Attune Framework Operating Surface.md",
@@ -506,45 +508,48 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
 
     const semanticContractFile = findSemanticPackageContractFile(packageRoot, contractFile, filesByPath)
 
-    if (
-      !packageViewGraphPattern.test(semanticContractFile.content) ||
-      !packageContractViewsRegistrationPattern.test(semanticContractFile.content)
-    ) {
-      diagnostics.push(finalRatchetDiagnostic(
-        "missing-package-view-graph",
-        contractPath,
-        "Package contract must declare PackageViews and register them through views: PackageViews.",
-      ))
+    if (!isAuthoredProjectFactsFile(contractFile)) {
+      if (
+        !packageViewGraphPattern.test(semanticContractFile.content) ||
+        !packageContractViewsRegistrationPattern.test(semanticContractFile.content)
+      ) {
+        diagnostics.push(finalRatchetDiagnostic(
+          "missing-package-view-graph",
+          contractPath,
+          "Legacy package contract must declare PackageViews and register them through views: PackageViews while it remains compatibility input.",
+        ))
+      }
+
+      if (
+        !propertyEvidenceHarnessPattern.test(semanticContractFile.content) &&
+        !explicitWaiverPattern.test(semanticContractFile.content)
+      ) {
+        diagnostics.push(finalRatchetDiagnostic(
+          "missing-property-evidence-harness",
+          contractPath,
+          "Legacy package contract must expose generated property/evidence harness metadata or an explicit local waiver while it remains compatibility input.",
+        ))
+      }
+
+      if (
+        !coverageConformancePattern.test(semanticContractFile.content) &&
+        !explicitWaiverPattern.test(semanticContractFile.content)
+      ) {
+        diagnostics.push(finalRatchetDiagnostic(
+          "missing-coverage-conformance",
+          contractPath,
+          "Legacy package contract must expose PackageTypeGuidance, coverageSearch, or coverage expectations while it remains compatibility input.",
+        ))
+      }
+
+      diagnostics.push(...checkPackageContractResidualPolicy(packageRoot, semanticContractFile))
+      diagnostics.push(...checkAtomReactivityConformance(packageRoot, semanticContractFile))
     }
 
-    if (
-      !propertyEvidenceHarnessPattern.test(semanticContractFile.content) &&
-      !explicitWaiverPattern.test(semanticContractFile.content)
-    ) {
-      diagnostics.push(finalRatchetDiagnostic(
-        "missing-property-evidence-harness",
-        contractPath,
-        "Package contract must expose generated property/evidence harness metadata or an explicit local waiver.",
-      ))
-    }
-
-    if (
-      !coverageConformancePattern.test(semanticContractFile.content) &&
-      !explicitWaiverPattern.test(semanticContractFile.content)
-    ) {
-      diagnostics.push(finalRatchetDiagnostic(
-        "missing-coverage-conformance",
-        contractPath,
-        "Package contract must expose PackageTypeGuidance, coverageSearch, or coverage expectations for cheap coverage conformance.",
-      ))
-    }
-
-    diagnostics.push(...checkPackageContractResidualPolicy(packageRoot, semanticContractFile))
     diagnostics.push(...checkPackageLocalAttuneSurface(packageRoot, filesByPath))
     diagnostics.push(...checkAuthoredProjectFactsSurface(packageRoot, contractFile))
     diagnostics.push(...checkProjectFactsSize(packageRoot, contractFile))
-    diagnostics.push(...checkAtomReactivityConformance(packageRoot, semanticContractFile))
-    diagnostics.push(...findExpiredMigrationWaivers(semanticContractFile))
+    diagnostics.push(...findExpiredMigrationWaivers(contractFile))
   }
 
   for (const packageRoot of findAuthoredAttuneRoots(files)) {
@@ -575,13 +580,11 @@ function findSemanticPackageContractFile(
   const packageLocalGeneratedContract = filesByPath.get(`${packageRoot}/src/attune.contract.generated.ts`)
   if (packageLocalGeneratedContract !== undefined) return packageLocalGeneratedContract
 
-  const projectName = projectNameForRoot(packageRoot, filesByPath)
-  const frameworkGeneratedContract = filesByPath.get(
-    `framework/architecture/src/generated/package-contracts/${projectName}/attune.contract.generated.ts`,
-  )
-  if (frameworkGeneratedContract !== undefined) return frameworkGeneratedContract
-
   return contractFile
+}
+
+function isAuthoredProjectFactsFile(file: WorkspaceFile): boolean {
+  return authoredProjectFactsPattern.test(file.content)
 }
 
 function checkPackageLocalAttuneSurface(
@@ -639,13 +642,13 @@ function packageLocalCompanionReplacementExists(
   filesByPath: ReadonlyMap<string, WorkspaceFile>,
 ): boolean {
   if (companionPath.endsWith("/src/attune.contract.generated.ts")) {
-    return filesByPath.has(`framework/architecture/src/generated/package-contracts/${projectName}/attune.contract.generated.ts`)
+    return projectFactsReplacementExists(packageRoot, filesByPath)
   }
   if (companionPath.endsWith("/src/attune.generated.ts")) {
-    return filesByPath.has(`framework/architecture/src/generated/package-contracts/${projectName}/attune.generated.ts`)
+    return projectFactsReplacementExists(packageRoot, filesByPath)
   }
   if (companionPath.endsWith("/src/attune.package.typecheck.ts")) {
-    return filesByPath.has("framework/architecture/src/generated/package-contracts.typecheck.generated.ts")
+    return projectFactsReplacementExists(packageRoot, filesByPath)
   }
   if (companionPath.endsWith("/attune.source-bom.json")) {
     return sourceOwnershipProjectionExists(packageRoot, projectName, filesByPath)
@@ -658,18 +661,26 @@ function packageLocalCompanionReplacementLabel(
   companionPath: string,
 ): string {
   if (companionPath.endsWith("/src/attune.contract.generated.ts")) {
-    return `framework generated contract for ${projectName}`
+    return `program-index project facts for ${projectName}`
   }
   if (companionPath.endsWith("/src/attune.generated.ts")) {
-    return `framework generated companion for ${projectName}`
+    return `program-index artifact and observation facts for ${projectName}`
   }
   if (companionPath.endsWith("/src/attune.package.typecheck.ts")) {
-    return "framework package-contract typecheck aggregate"
+    return `program-index symbol/schema/edge facts for ${projectName}`
   }
   if (companionPath.endsWith("/attune.source-bom.json")) {
     return `framework/cache source ownership projection for ${projectName}`
   }
   return `mechanical replacement for ${companionPath}`
+}
+
+function projectFactsReplacementExists(
+  packageRoot: string,
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): boolean {
+  const projectFactsFile = filesByPath.get(`${packageRoot}/src/attune.package.ts`)
+  return projectFactsFile !== undefined && isAuthoredProjectFactsFile(projectFactsFile)
 }
 
 function sourceOwnershipProjectionExists(

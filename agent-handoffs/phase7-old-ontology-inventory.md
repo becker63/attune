@@ -31,9 +31,9 @@ Inventory:
   after generated compatibility output no longer imports it.
 - `framework/architecture/src/generated/package-contracts/**` and
   `framework/architecture/src/generated/package-contracts.typecheck.generated.ts`:
-  compatibility-only demolition targets. Replacement: program-index rows,
-  SQL views, invalidations, diagnostics, repair rows, and cache-owned generated
-  artifacts. These files should not survive the finished migration as checked-in
+  deleted in Phase 9 after program-index rows, SQL views, invalidations,
+  diagnostics, repair rows, and cache-owned generated artifacts replaced the
+  active check/repair consumers. These files must stay out of checked-in
   workflow truth.
 - Internal repair target names `attune:repair-registry`,
   `attune:repair-properties`, `attune:repair-type-guidance`, and

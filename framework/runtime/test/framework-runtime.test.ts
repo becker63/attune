@@ -543,14 +543,12 @@ describe("@attune/framework-runtime", () => {
         "packages/demo/src/attune.contract.generated.ts",
         "packages/demo/src/attune.generated.ts",
         "packages/demo/attune.source-bom.json",
-        "framework/architecture/src/generated/package-contracts.typecheck.generated.ts",
       ],
       contentByPath: {
         "packages/demo/src/attune.package.ts": "source",
         "packages/demo/src/attune.contract.generated.ts": "contract",
         "packages/demo/src/attune.generated.ts": "generated",
         "packages/demo/attune.source-bom.json": "{}",
-        "framework/architecture/src/generated/package-contracts.typecheck.generated.ts": "types",
       },
     })
 
@@ -559,23 +557,20 @@ describe("@attune/framework-runtime", () => {
       "generated-contract-companion",
       "generated-protocol-companion",
       "source-ownership-compatibility",
-      "package-contract-typecheck-aggregate",
     ])
     expect(rows.sourceFiles.map((sourceFile) => sourceFile.path)).toEqual([
       "packages/demo/src/attune.package.ts",
       "packages/demo/src/attune.contract.generated.ts",
       "packages/demo/src/attune.generated.ts",
       "packages/demo/attune.source-bom.json",
-      "framework/architecture/src/generated/package-contracts.typecheck.generated.ts",
     ])
-    expect(rows.observations).toHaveLength(5)
+    expect(rows.observations).toHaveLength(4)
     expect(rows.observations.map((observation) =>
       JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
     )).toEqual([
       "generated-companion-compat",
       "generated-companion-compat",
       "source-bom-compat",
-      "package-contract-compat",
       "source-bom-compat",
     ])
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
@@ -672,9 +667,6 @@ describe("@attune/framework-runtime", () => {
     const artifactPaths = [
       "framework/oxlint-policy/src/attune.package.ts",
       "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json",
-      "framework/architecture/src/generated/package-contracts/effect-oxlint-policy/attune.generated.ts",
-      "framework/architecture/src/generated/package-contracts/effect-oxlint-policy/attune.contract.generated.ts",
-      "framework/architecture/src/generated/package-contracts.typecheck.generated.ts",
     ] as const
     const missingFixturePaths = artifactPaths.filter((artifactPath) =>
       !existsSync(resolve(repositoryRoot, artifactPath))
@@ -702,51 +694,16 @@ describe("@attune/framework-runtime", () => {
     expect(rows.artifacts.map((artifact) => [artifact.path, artifact.status])).toEqual(
       expect.arrayContaining(artifactPaths.map((artifactPath) => [artifactPath, "current"])),
     )
-    expect(rows.symbols).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        exportName: "no-raw-process-env",
-        kind: "compatibility-operation-id",
-      }),
-      expect.objectContaining({
-        exportName: "UnsafeEnvProcessAccessInput",
-        kind: "compatibility-schema-symbol",
-      }),
-      expect.objectContaining({
-        exportName: "PackageContract",
-        kind: "compatibility-contract-symbol",
-      }),
-    ]))
-    expect(rows.schemaDescriptors).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        role: "input",
-        serializationStatus: "serializable",
-      }),
-      expect.objectContaining({
-        role: "output",
-        serializationStatus: "serializable",
-      }),
-      expect.objectContaining({
-        role: "error",
-        serializationStatus: "serializable",
-      }),
-    ]))
-    expect(rows.edges.map((edge) => edge.kind)).toEqual(expect.arrayContaining([
-      "declares-symbol",
-      "input-schema",
-      "output-schema",
-      "error-schema",
-      "symbol-alias",
-      "touches-atom",
-      "touches-reactivity-key",
+    expect(rows.symbols.map((symbol) => symbol.exportName)).toEqual(expect.arrayContaining([
+      "ProjectFacts",
+      "ProjectRuntimeRoots",
     ]))
     expect(rows.observations.map((observation) =>
       JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
-    )).toEqual(expect.arrayContaining([
-      "package-contract-compat",
-      "generated-companion-compat",
+    )).toEqual([
       "source-bom-compat",
-      "type-guidance-compat",
-    ]))
+      "source-bom-compat",
+    ])
     expect(rows.artifacts.some((artifact) =>
       artifact.kind === "source-ownership-pattern" &&
       artifact.path === "framework/oxlint-policy/src/**"
@@ -760,12 +717,10 @@ describe("@attune/framework-runtime", () => {
     })
   })
 
-  it("projects Ring A attuned-discovery operation ids as symbols and schema edges", () => {
+  it("projects Ring A attuned-discovery source ownership without generated compatibility outputs", () => {
     const artifactPaths = [
       "packages/attuned-discovery/src/attune.package.ts",
       "framework/architecture/src/generated/source-bom/attuned-discovery.json",
-      "framework/architecture/src/generated/package-contracts/attuned-discovery/attune.generated.ts",
-      "framework/architecture/src/generated/package-contracts/attuned-discovery/attune.contract.generated.ts",
     ] as const
     const missingFixturePaths = artifactPaths.filter((artifactPath) =>
       !existsSync(resolve(repositoryRoot, artifactPath))
@@ -785,33 +740,20 @@ describe("@attune/framework-runtime", () => {
         ]),
       ),
     })
-    const operationSymbols = rows.symbols.filter((symbol) =>
-      symbol.kind === "compatibility-operation-id"
-    )
-
-    expect(operationSymbols.map((symbol) => symbol.exportName)).toEqual(expect.arrayContaining([
-      "discovery-events-facade",
-      "discovery-event-log-append",
-      "event-replay-projection",
-      "read-model-query",
-      "reactivity-key-map",
-      "base-atom-family",
-      "derived-workbench-atom-family",
-      "domain-event-codecs",
+    expect(rows.symbols.map((symbol) => symbol.exportName)).toEqual(expect.arrayContaining([
+      "ProjectFacts",
+      "ProjectRuntimeRoots",
     ]))
-    expect(rows.edges.map((edge) => edge.kind)).toEqual(expect.arrayContaining([
-      "declares-symbol",
-      "input-schema",
-      "output-schema",
-      "error-schema",
-    ]))
+    expect(rows.artifacts.some((artifact) =>
+      artifact.kind === "source-ownership-pattern" &&
+      artifact.path === "packages/attuned-discovery/src/**"
+    )).toBe(true)
     expect(rows.observations.map((observation) =>
       JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
-    )).toEqual(expect.arrayContaining([
+    )).toEqual([
       "source-bom-compat",
-      "type-guidance-compat",
-      "generated-companion-compat",
-    ]))
+      "source-bom-compat",
+    ])
     expect(rows.diagnostics).toEqual([])
   })
 

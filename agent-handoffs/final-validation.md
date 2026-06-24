@@ -2,6 +2,15 @@
 
 ## Changed In Final Slice
 
+- Deleted the checked-in generated package-contract output tree and generated
+  typecheck aggregate after the program-index materialization path proved
+  parity for active check/repair workflows.
+- Replaced active consumers of those checked-in outputs with authored
+  `ProjectFacts` and program-index-backed source, artifact, observation,
+  diagnostic, and repair rows.
+- Updated repair behavior so package-local generated companions are removed
+  from safe roots instead of centralized into a checked-in framework-generated
+  package-contract tree.
 - Removed the tracked historical Joern fuzzer run report from active docs.
 - Updated `docs/README.md` so docs no longer advertise checked-in run reports
   as retained workflow material.
@@ -22,20 +31,23 @@
 - `nx run framework-nx:test --skipNxCache`
 - `nx run framework-language-service:test --skipNxCache`
 - `nx run attune-architecture:test --skipNxCache`
+- `nx run attune-nx:test --skipNxCache`
+- `nx run attune-architecture:typecheck --skipNxCache`
 - `nx run workspace:attune-check --skipNxCache`
 - `nx run workspace:attune-repair --dryRun --skipNxCache`
 
 ## Final Program Index State
 
-- Fresh `workspace:attune-check` materialization:
+- Fresh `workspace:attune-check` materialization after generated-output
+  deletion:
   - 18 projects
   - 227 targets
-  - 146 source_files
-  - 1216 symbols
-  - 525 schema_descriptors
-  - 9002 edges
-  - 250 artifacts
-  - 201 observations
+  - 113 source_files
+  - 553 symbols
+  - 88 schema_descriptors
+  - 8177 edges
+  - 217 artifacts
+  - 37 observations
   - 21 diagnostics
   - 21 repairs
 - `workspace:attune-repair --dryRun`:
@@ -69,9 +81,9 @@
   scaffolding. They are not acceptable as permanent archive-ready surfaces.
 - The repair dry-run still exposes safe schema_descriptor refresh rows as
   blocked because the automatic refresh materializer route is not implemented.
-- Framework-owned generated compatibility outputs remain checked in. The active
-  authored project facts API has been mechanically renamed, but generated-output
-  deletion gates have not landed yet.
+- Framework-owned generated package-contract compatibility outputs have been
+  deleted. Remaining demolition scaffolding is concentrated in protocol/testing
+  helper modules and old internal repair/artifact route names.
 
 ## Archive Readiness
 
@@ -82,9 +94,6 @@ surfaces rather than preserving them indefinitely.
 
 ## Follow-up Splits
 
-- Delete or quarantine `framework/architecture/src/generated/package-contracts/**`
-  and the generated typecheck aggregate after program-index consumers replace
-  package-contract graph discovery.
 - Remove framework protocol/testing compatibility helper modules once runtime,
   language-service, framework-testing, and package tests consume mechanical
   program-index APIs.
