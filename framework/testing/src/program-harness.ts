@@ -6,12 +6,12 @@ import {
   operationRpcDescriptorById,
   type AttuneProtocolEvidenceEvent,
   type ControlRpcDescriptor,
-  type OperationById,
-  type OperationIds,
+  type SymbolIds,
+  type SymbolById,
   type OperationRpcDescriptor,
   type ProgramObservationRpcControlId,
   type ProgramObservationRpcGroup,
-  type PackageIdOf,
+  type ProjectIdOf,
   type InputOf,
   type OutputOf,
 } from "@attune/framework-protocol"
@@ -37,10 +37,10 @@ import {
   type PropertyValidationHook,
 } from "./fastcheck.js"
 import {
-  defineOperationRegistry,
-  operationIdsFromTuple,
-  type OperationRegistry,
-} from "./operation-registry.js"
+  defineSymbolHandlerRegistry,
+  symbolIdsFromTuple,
+  type SymbolHandlerRegistry,
+} from "./symbol-map.js"
 import {
   ReplayMetadataSchema,
   type ReplayMetadata,
@@ -102,43 +102,43 @@ export type ProgramHarnessRecordEvidence = (
 
 export interface ProgramHarnessHandlerContext<
   Contract extends ProgramHarnessContract,
-  OperationId extends OperationIds<Contract>,
+  SymbolId extends SymbolIds<Contract>,
   programTestLayer,
 > {
   readonly contract: Contract
-  readonly operation: OperationById<Contract, OperationId>
+  readonly symbol: SymbolById<Contract, SymbolId>
   readonly programTestLayer: programTestLayer
-  readonly rpc: OperationRpcDescriptor<Contract, OperationId>
+  readonly rpc: OperationRpcDescriptor<Contract, SymbolId>
   readonly evidenceContext: ObservationContext
   readonly recordObservation: ProgramHarnessRecordEvidence
 }
 
 export type ProgramHarnessHandler<
   Contract extends ProgramHarnessContract,
-  OperationId extends OperationIds<Contract>,
+  SymbolId extends SymbolIds<Contract>,
   programTestLayer = unknown,
 > = (
-  payload: InputOf<Contract, OperationId>,
-  context: ProgramHarnessHandlerContext<Contract, OperationId, programTestLayer>,
-) => OutputOf<Contract, OperationId> | Promise<OutputOf<Contract, OperationId>>
+  payload: InputOf<Contract, SymbolId>,
+  context: ProgramHarnessHandlerContext<Contract, SymbolId, programTestLayer>,
+) => OutputOf<Contract, SymbolId> | Promise<OutputOf<Contract, SymbolId>>
 
 export type ProgramHarnessHandlerMap<
   Contract extends ProgramHarnessContract,
   programTestLayer = unknown,
 > = {
-  readonly [OperationId in OperationIds<Contract>]: ProgramHarnessHandler<
+  readonly [SymbolId in SymbolIds<Contract>]: ProgramHarnessHandler<
     Contract,
-    OperationId,
+    SymbolId,
     programTestLayer
   >
 }
 
 export interface ProgramHarnessOperationEntry<
   Contract extends ProgramHarnessContract,
-  OperationId extends OperationIds<Contract>,
+  SymbolId extends SymbolIds<Contract>,
 > {
-  readonly operationId: OperationId
-  readonly rpc: OperationRpcDescriptor<Contract, OperationId>
+  readonly operationId: SymbolId
+  readonly rpc: OperationRpcDescriptor<Contract, SymbolId>
   readonly invoke: (
     payload: unknown,
     options?: ProgramHarnessInvokeOptions,
@@ -161,9 +161,9 @@ export type ProgramHarnessControlEntries<PackageId extends string> = {
 }
 
 export type ProgramHarnessOperationEntries<Contract extends ProgramHarnessContract> = {
-  readonly [OperationId in OperationIds<Contract>]: ProgramHarnessOperationEntry<
+  readonly [SymbolId in SymbolIds<Contract>]: ProgramHarnessOperationEntry<
     Contract,
-    OperationId
+    SymbolId
   >
 }
 
@@ -173,15 +173,15 @@ export interface ProgramHarnessClient<
   Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
 > {
   readonly contract: Contract
-  readonly controls: ProgramHarnessControlEntries<PackageIdOf<Contract>>
+  readonly controls: ProgramHarnessControlEntries<ProjectIdOf<Contract>>
   readonly programTestLayer: programTestLayer
   readonly group: ProgramObservationRpcGroup<Contract>
-  readonly operationIds: readonly OperationIds<Contract>[]
+  readonly symbolIds: readonly SymbolIds<Contract>[]
   readonly handlers: Handlers
-  readonly registry: OperationRegistry<Handlers>
+  readonly registry: SymbolHandlerRegistry<Handlers>
   readonly operations: ProgramHarnessOperationEntries<Contract>
-  readonly invoke: <OperationId extends OperationIds<Contract>>(
-    operationId: OperationId,
+  readonly invoke: <SymbolId extends SymbolIds<Contract>>(
+    operationId: SymbolId,
     payload: unknown,
     options?: ProgramHarnessInvokeOptions,
   ) => Promise<ProgramHarnessExit>
@@ -207,10 +207,9 @@ export const defineProgramHarnessHandlers = <
   contract: Contract,
   handlers: Handlers,
 ): Handlers => {
-  defineOperationRegistry({
-    packageId: contract.packageId,
-    protocolId: `attune/package/${contract.packageId}`,
-    operationIds: operationIdsFromTuple(contract.operations),
+  defineSymbolHandlerRegistry({
+    projectId: contract.packageId,
+    symbolIds: symbolIdsFromTuple(contract.operations),
     handlers,
   })
   return handlers
@@ -218,24 +217,24 @@ export const defineProgramHarnessHandlers = <
 
 export const defineProjectObservationProducerMap = <
   const Contract extends ProgramHarnessContract,
-  const Producers extends ObservationProducerMap<OperationIds<Contract>>,
+  const Producers extends ObservationProducerMap<SymbolIds<Contract>>,
 >(
   contract: Contract,
   producers: Producers,
 ): Producers =>
   defineObservationProducerMap({
-    packageId: contract.packageId,
-    operationIds: operationIdsFromTuple(contract.operations),
+    projectId: contract.packageId,
+    symbolIds: symbolIdsFromTuple(contract.operations),
     producers,
   })
 
 export const publicAccessorHandler = <
   const Contract extends ProgramHarnessContract,
   const programTestLayer,
-  const OperationId extends OperationIds<Contract>,
+  const SymbolId extends SymbolIds<Contract>,
 >(
-  operationId: OperationId,
-): ProgramHarnessHandler<Contract, OperationId, programTestLayer> =>
+  operationId: SymbolId,
+): ProgramHarnessHandler<Contract, SymbolId, programTestLayer> =>
   async (payload, context) => {
     const accessor = findprogramTestLayerAccessor(
       context.programTestLayer,
@@ -247,7 +246,7 @@ export const publicAccessorHandler = <
         operationId,
       )
     }
-    return await accessor(payload, context) as OutputOf<Contract, OperationId>
+    return await accessor(payload, context) as OutputOf<Contract, SymbolId>
   }
 
 export const createProgramHarnessClient = <
@@ -259,23 +258,22 @@ export const createProgramHarnessClient = <
     readonly contract: Contract
     readonly programTestLayer: programTestLayer
     readonly handlers: Handlers
-    readonly observationProducers?: ObservationProducerMap<OperationIds<Contract>>
+    readonly observationProducers?: ObservationProducerMap<SymbolIds<Contract>>
     readonly atomGraphObserver?: AtomGraphObserver
     readonly group?: ProgramObservationRpcGroup<Contract>
   }>,
 ): ProgramHarnessClient<Contract, programTestLayer, Handlers> => {
   const group = input.group ?? defineProgramObservationRpcGroup(input.contract)
-  const operationIds = operationIdsFromTuple(input.contract.operations)
+  const symbolIds = symbolIdsFromTuple(input.contract.operations)
   const handlers = input.handlers
-  const registry = defineOperationRegistry({
-    packageId: input.contract.packageId,
-    protocolId: group.groupId,
-    operationIds,
+  const registry = defineSymbolHandlerRegistry({
+    projectId: input.contract.packageId,
+    symbolIds,
     handlers,
   })
 
-  const invoke = <OperationId extends OperationIds<Contract>>(
-    operationId: OperationId,
+  const invoke = <SymbolId extends SymbolIds<Contract>>(
+    operationId: SymbolId,
     payload: unknown,
     options: ProgramHarnessInvokeOptions = {},
   ) =>
@@ -292,7 +290,7 @@ export const createProgramHarnessClient = <
     })
 
   const operations = Object.fromEntries(
-    operationIds.map((operationId) => [
+    symbolIds.map((operationId) => [
       operationId,
       {
         operationId,
@@ -312,7 +310,7 @@ export const createProgramHarnessClient = <
         rpc: controlRpcDescriptorById(group, controlId),
       },
     ]),
-  ) as ProgramHarnessControlEntries<PackageIdOf<Contract>>
+  ) as ProgramHarnessControlEntries<ProjectIdOf<Contract>>
 
   return {
     contract: input.contract,
@@ -320,10 +318,10 @@ export const createProgramHarnessClient = <
     group,
     handlers,
     invoke,
-    operationIds,
     operations,
     programTestLayer: input.programTestLayer,
     registry,
+    symbolIds,
   }
 }
 
@@ -331,17 +329,17 @@ export type ProgramHarnessPropertyInput<
   Contract extends ProgramHarnessContract,
   programTestLayer,
   Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
-  OperationId extends OperationIds<Contract>,
+  SymbolId extends SymbolIds<Contract>,
 > = Omit<
-  FastCheckPropertyInput<InputOf<Contract, OperationId>, OutputOf<Contract, OperationId>>,
+  FastCheckPropertyInput<InputOf<Contract, SymbolId>, OutputOf<Contract, SymbolId>>,
   "lawIds" | "operation" | "operationId" | "packageId" | "protocolId"
 > & Readonly<{
   readonly client: ProgramHarnessClient<Contract, programTestLayer, Handlers>
-  readonly operationId: OperationId
+  readonly operationId: SymbolId
   readonly lawIds?: readonly string[]
   readonly validateHarnessExit?: PropertyValidationHook<
     ProgramHarnessExit,
-    InputOf<Contract, OperationId>
+    InputOf<Contract, SymbolId>
   >
 }>
 
@@ -349,16 +347,16 @@ export const checkProgramHarnessProperty = async <
   const Contract extends ProgramHarnessContract,
   const programTestLayer,
   const Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
-  const OperationId extends OperationIds<Contract>,
+  const SymbolId extends SymbolIds<Contract>,
 >(
-  input: ProgramHarnessPropertyInput<Contract, programTestLayer, Handlers, OperationId>,
+  input: ProgramHarnessPropertyInput<Contract, programTestLayer, Handlers, SymbolId>,
 ): Promise<FastCheckPropertyEvidence> => {
-  const operation = operationById(input.client.contract, input.operationId)
+  const symbol = symbolById(input.client.contract, input.operationId)
   const harnessEvents: AttuneProtocolEvidenceEvent[] = []
 
   const result = await checkFastCheckProperty({
     ...input,
-    lawIds: input.lawIds ?? operation.laws ?? [],
+    lawIds: input.lawIds ?? symbol.laws ?? [],
     operationId: input.operationId,
     packageId: input.client.contract.packageId,
     protocolId: `attune/package/${input.client.contract.packageId}`,
@@ -370,10 +368,10 @@ export const checkProgramHarnessProperty = async <
       )
       harnessEvents.push(...exit.evidence as readonly AttuneProtocolEvidenceEvent[])
       if (await runHarnessExitHook(input.validateHarnessExit, exit, context)) {
-        return exit.success as OutputOf<Contract, OperationId>
+        return exit.success as OutputOf<Contract, SymbolId>
       }
       if (exit.status === "success") {
-        return exit.success as OutputOf<Contract, OperationId>
+        return exit.success as OutputOf<Contract, SymbolId>
       }
       throw exit.error ?? new Error(`Package harness ${exit.status} for ${input.operationId}`)
     },
@@ -417,21 +415,21 @@ const invokeProgramHarnessOperation = async <
   const Contract extends ProgramHarnessContract,
   const programTestLayer,
   const Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
-  const OperationId extends OperationIds<Contract>,
+  const SymbolId extends SymbolIds<Contract>,
 >(
   input: Readonly<{
     readonly atomGraphObserver?: AtomGraphObserver
     readonly contract: Contract
-    readonly observationProducers?: ObservationProducerMap<OperationIds<Contract>>
+    readonly observationProducers?: ObservationProducerMap<SymbolIds<Contract>>
     readonly group: ProgramObservationRpcGroup<Contract>
     readonly handlers: Handlers
-    readonly operationId: OperationId
+    readonly operationId: SymbolId
     readonly programTestLayer: programTestLayer
     readonly payload: unknown
     readonly options: ProgramHarnessInvokeOptions
   }>,
 ): Promise<ProgramHarnessExit> => {
-  const operation = operationById(input.contract, input.operationId)
+  const symbol = symbolById(input.contract, input.operationId)
   const rpc = operationRpcDescriptorById(input.group, input.operationId)
   const evidenceContext = evidenceContextFor(
     input.contract.packageId,
@@ -467,8 +465,8 @@ const invokeProgramHarnessOperation = async <
   })
 
   try {
-    const decodedInput = decodeOperationValue<InputOf<Contract, OperationId>>(
-      operation.input,
+    const decodedInput = decodeOperationValue<InputOf<Contract, SymbolId>>(
+      symbol.input,
       invocation.payload,
     )
     recordSchemaEvidence(recordObservation, "payload", rpc, decodedInput)
@@ -481,22 +479,22 @@ const invokeProgramHarnessOperation = async <
 
     const handler = input.handlers[input.operationId] as unknown as ProgramHarnessHandler<
       Contract,
-      OperationId,
+      SymbolId,
       programTestLayer
     >
     const output = await handler(decodedInput, {
       contract: input.contract,
       evidenceContext,
-      operation,
+      symbol,
       programTestLayer: input.programTestLayer,
       recordObservation,
       rpc,
     })
-    const decodedOutput = decodeOperationValue<OutputOf<Contract, OperationId>>(
-      operation.output,
+    const decodedOutput = decodeOperationValue<OutputOf<Contract, SymbolId>>(
+      symbol.output,
       output,
     )
-    const encodedSuccess = encodeOperationValue(operation.output, decodedOutput)
+    const encodedSuccess = encodeOperationValue(symbol.output, decodedOutput)
     recordSchemaEvidence(recordObservation, "success", rpc, encodedSuccess)
 
     if (input.atomGraphObserver !== undefined) {
@@ -554,7 +552,7 @@ const invokeProgramHarnessOperation = async <
       error,
       evidence,
       evidenceContext,
-      operation,
+      symbol,
       operationId: input.operationId,
       recordObservation,
       rpc,
@@ -575,20 +573,20 @@ const recordTypeGuidanceEvidence = (
 
 const harnessErrorExit = <
   const Contract extends ProgramHarnessContract,
-  const OperationId extends OperationIds<Contract>,
+  const SymbolId extends SymbolIds<Contract>,
 >(
   input: Readonly<{
     readonly contract: Contract
     readonly error: unknown
     readonly evidence: AttuneProtocolEvidenceEvent[]
     readonly evidenceContext: ObservationContext
-    readonly operation: OperationById<Contract, OperationId>
-    readonly operationId: OperationId
+    readonly symbol: SymbolById<Contract, SymbolId>
+    readonly operationId: SymbolId
     readonly recordObservation: ProgramHarnessRecordEvidence
-    readonly rpc: OperationRpcDescriptor<Contract, OperationId>
+    readonly rpc: OperationRpcDescriptor<Contract, SymbolId>
   }>,
 ): ProgramHarnessExit => {
-  const errorSchema = (input.operation as { readonly error?: unknown }).error
+  const errorSchema = (input.symbol as { readonly error?: unknown }).error
   if (errorSchema !== undefined) {
     try {
       const decodedError = decodeOperationValue(errorSchema, input.error)
@@ -651,18 +649,18 @@ const optionalReplay = (
 ): Readonly<{ readonly replay?: ReplayMetadata }> =>
   replay === undefined ? {} : { replay }
 
-const operationById = <
+const symbolById = <
   const Contract extends ProgramHarnessContract,
-  const OperationId extends OperationIds<Contract>,
+  const SymbolId extends SymbolIds<Contract>,
 >(
   contract: Contract,
-  operationId: OperationId,
-): OperationById<Contract, OperationId> => {
+  operationId: SymbolId,
+): SymbolById<Contract, SymbolId> => {
   const operation = contract.operations.find((candidate) => candidate.id === operationId)
   if (operation === undefined) {
     throw new Error(`Unknown operation ${operationId} for package ${contract.packageId}`)
   }
-  return operation as OperationById<Contract, OperationId>
+  return operation as SymbolById<Contract, SymbolId>
 }
 
 const decodeHarnessInvocation = (
@@ -689,11 +687,11 @@ const encodeOperationValue = (
 
 const recordSchemaEvidence = <
   const Contract extends ProgramHarnessContract,
-  const OperationId extends OperationIds<Contract>,
+  const SymbolId extends SymbolIds<Contract>,
 >(
   recordObservation: ProgramHarnessRecordEvidence,
   role: "payload" | "success" | "error",
-  rpc: OperationRpcDescriptor<Contract, OperationId>,
+  rpc: OperationRpcDescriptor<Contract, SymbolId>,
   value: unknown,
 ): void =>
   recordObservation({
@@ -764,4 +762,4 @@ export const programHarnessControlIds: readonly ProgramObservationRpcControlId[]
   ProgramObservationRpcControlIds
 
 export type ProgramHarnessProtocolId<Contract extends ProgramHarnessContract> =
-  `attune/package/${PackageIdOf<Contract>}`
+  `attune/package/${ProjectIdOf<Contract>}`

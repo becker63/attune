@@ -7,7 +7,7 @@ import {
 } from "@attune/framework-protocol"
 import { Schema } from "effect"
 
-import { defineExactOperationMap } from "./operation-registry.js"
+import { defineExactSymbolMap } from "./symbol-map.js"
 import type { PropertyTier, ReplayMetadata } from "./replay-metadata.js"
 
 export type ObservationContext = Readonly<{
@@ -33,8 +33,8 @@ export type ObservationProducer = Readonly<{
   readonly produce: (context: ObservationContext) => readonly AttuneProtocolEvidenceEvent[]
 }>
 
-export type ObservationProducerMap<OperationId extends string = string> =
-  Readonly<Record<OperationId, ObservationProducer>>
+export type ObservationProducerMap<SymbolId extends string = string> =
+  Readonly<Record<SymbolId, ObservationProducer>>
 
 export const observationEventId = (
   context: ObservationContext,
@@ -86,19 +86,19 @@ export const collectObservations = (
   producers.flatMap((producer) => producer.produce(context))
 
 export const defineObservationProducerMap = <
-  const OperationIds extends readonly string[],
-  const Producers extends ObservationProducerMap<OperationIds[number]>,
+  const SymbolIds extends readonly string[],
+  const Producers extends ObservationProducerMap<SymbolIds[number]>,
 >(
   input: Readonly<{
-    readonly packageId: string
-    readonly operationIds: OperationIds
+    readonly projectId: string
+    readonly symbolIds: SymbolIds
     readonly producers: Producers
   }>,
 ): Producers =>
-  defineExactOperationMap({
-    packageId: input.packageId,
-    mapKind: "evidence-producer-map",
-    operationIds: input.operationIds,
+  defineExactSymbolMap({
+    projectId: input.projectId,
+    mapKind: "observation-producer-map",
+    symbolIds: input.symbolIds,
     map: input.producers,
   })
 

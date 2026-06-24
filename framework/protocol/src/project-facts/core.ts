@@ -258,6 +258,8 @@ export const definePackageContract = <const Contract extends AttunePackageContra
 
 export type PackageIdOf<Contract extends { readonly packageId: string }> = Contract["packageId"]
 
+export type ProjectIdOf<Contract extends { readonly packageId: string }> = Contract["packageId"]
+
 export type PackageKindOf<Contract extends { readonly packageKind: PackageKind }> = Contract["packageKind"]
 
 export type OperationsOf<Contract extends { readonly operations: readonly AttuneOperationContract[] }> =
@@ -266,9 +268,17 @@ export type OperationsOf<Contract extends { readonly operations: readonly Attune
 export type OperationIds<Contract extends { readonly operations: readonly AttuneOperationContract[] }> =
   OperationsOf<Contract>[number]["id"]
 
+export type SymbolIds<Contract extends { readonly operations: readonly AttuneOperationContract[] }> =
+  OperationIds<Contract>
+
 export type OperationById<
   Contract extends { readonly operations: readonly AttuneOperationContract[] },
   Id extends OperationIds<Contract>,
+> = Extract<OperationsOf<Contract>[number], { readonly id: Id }>
+
+export type SymbolById<
+  Contract extends { readonly operations: readonly AttuneOperationContract[] },
+  Id extends SymbolIds<Contract>,
 > = Extract<OperationsOf<Contract>[number], { readonly id: Id }>
 
 export type InputSchemaOf<

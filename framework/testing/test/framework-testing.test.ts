@@ -3,7 +3,7 @@ import { Schema } from "effect"
 import fc from "fast-check"
 import {
   CounterexampleCacheEntrySchema,
-  assertExactOperationMapCoverage,
+  assertExactSymbolMapCoverage,
   atomGraphMovementRecordsFromObservations,
   atomMovementEvidence,
   checkFastCheckProperty,
@@ -16,14 +16,14 @@ import {
   defineProjectObservationProducerMap,
   defineProgramHarnessHandlers,
   createProgramHarnessClient,
-  defineOperationRegistry,
-  exactOperationMapCoverage,
+  defineSymbolHandlerRegistry,
+  exactSymbolMapCoverage,
   mergeCoverageSearchEvidence,
   mergeCoverageWorkerShards,
   mergeAtomGraphObservations,
   normalizeWorkerMetadata,
   observedMovement,
-  operationHandler,
+  symbolHandler,
   planTargetedCoverageRerun,
   publicAccessorHandler,
   propertyRunObservation,
@@ -91,14 +91,14 @@ const coverage = (
 })
 
 describe("@attune/framework-testing", () => {
-  it("defines operation registries and evidence producers for generated harnesses", () => {
-    const registry = defineOperationRegistry({
-      packageId: "demo",
+  it("defines symbol handler registries and observation producers for generated harnesses", () => {
+    const registry = defineSymbolHandlerRegistry({
+      projectId: "demo",
       handlers: {
         operation: () => "ok",
       },
     })
-    const handler = operationHandler(registry, "operation")
+    const handler = symbolHandler(registry, "operation")
     const producer = defineObservationProducer({
       id: "demo-evidence",
       operationId: "operation",
@@ -116,8 +116,8 @@ describe("@attune/framework-testing", () => {
     expect(observedMovement({ packageViewAtom: "demoAtom", changed: true })).toBe(true)
   })
 
-  it("reports exact operation-map coverage for generated maps", () => {
-    expect(exactOperationMapCoverage(["read", "write"], {
+  it("reports exact symbol-map coverage for generated maps", () => {
+    expect(exactSymbolMapCoverage(["read", "write"], {
       read: true,
       stale: true,
     })).toEqual({
@@ -128,14 +128,14 @@ describe("@attune/framework-testing", () => {
       ok: false,
     })
     expect(() =>
-      assertExactOperationMapCoverage("demo", "property-map", ["read"], { read: true, stale: true }),
+      assertExactSymbolMapCoverage("demo", "property-map", ["read"], { read: true, stale: true }),
     ).toThrow("Extra: stale")
   })
 
-  it("checks exact evidence producer maps", () => {
+  it("checks exact observation producer maps", () => {
     const producers = defineObservationProducerMap({
-      packageId: "demo",
-      operationIds: ["read", "write"] as const,
+      projectId: "demo",
+      symbolIds: ["read", "write"] as const,
       producers: {
         read: defineObservationProducer({
           id: "read-evidence",
@@ -153,8 +153,8 @@ describe("@attune/framework-testing", () => {
     expect(Object.keys(producers)).toEqual(["read", "write"])
     expect(() =>
       defineObservationProducerMap({
-        packageId: "demo",
-        operationIds: ["read"] as const,
+        projectId: "demo",
+        symbolIds: ["read"] as const,
         producers: {
           read: defineObservationProducer({ id: "read", produce: () => [] }),
           stale: defineObservationProducer({ id: "stale", produce: () => [] }),
@@ -319,7 +319,7 @@ describe("@attune/framework-testing", () => {
         operationId: "increment",
         produce: (context) => [
           propertyRunObservation(context, "increment", {
-            source: "generated-evidence-producer-map",
+            source: "generated-observation-producer-map",
           }),
         ],
       }),
