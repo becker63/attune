@@ -13,7 +13,7 @@
       ],
       "editableRegions": [
         {
-          "description": "FoldKit UI package boundary; add public model/update/view, fixture, and atom-view operations through package-contract sync/generation.",
+          "description": "FoldKit UI authored source boundary; add exported symbols in the package file and validate through program-index-backed check.",
           "file": "src/attune.package.ts",
           "marker": "definePackageContract"
         }
@@ -42,8 +42,7 @@
       },
       "optionsHash": "fnv1a32:attune-foldkit-contract",
       "ownedFiles": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "owningProject": "attune-foldkit",
       "projectRoot": "packages/attune-foldkit",
@@ -60,8 +59,7 @@
     {
       "generator": "@attune/nx:package-contract",
       "outputs": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "sources": [
         "project.json",
