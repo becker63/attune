@@ -558,7 +558,7 @@ describe("@attune/framework-runtime", () => {
       "attune-package-source",
       "generated-contract-companion",
       "generated-protocol-companion",
-      "source-bom",
+      "source-ownership-compatibility",
       "package-contract-typecheck-aggregate",
     ])
     expect(rows.sourceFiles.map((sourceFile) => sourceFile.path)).toEqual([
@@ -568,7 +568,7 @@ describe("@attune/framework-runtime", () => {
       "packages/demo/attune.source-bom.json",
       "framework/architecture/src/generated/package-contracts.typecheck.generated.ts",
     ])
-    expect(rows.observations).toHaveLength(4)
+    expect(rows.observations).toHaveLength(5)
     expect(rows.observations.map((observation) =>
       JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
     )).toEqual([
@@ -576,6 +576,7 @@ describe("@attune/framework-runtime", () => {
       "generated-companion-compat",
       "source-bom-compat",
       "package-contract-compat",
+      "source-bom-compat",
     ])
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
       "attune/program-index/package-local-companion",
@@ -634,6 +635,36 @@ describe("@attune/framework-runtime", () => {
     ])
   })
 
+  it("classifies missing Source BOM compatibility as review-gated source ownership repair", () => {
+    const rows = compatibilityRowsFromCurrentPackageContracts({
+      projectId: "demo",
+      root: "packages/demo",
+      now: "2026-06-23T00:00:00.000Z",
+      paths: [
+        "packages/demo/attune.source-bom.json",
+      ],
+      contentByPath: {},
+    })
+
+    expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "attune/program-index/artifact-missing",
+      "attune/program-index/package-local-companion",
+      "attune/program-index/source-bom-compatibility-missing",
+      "attune/program-index/source-bom-compatibility",
+    ])
+    expect(rows.repairs.map((repair) => [
+      repair.safety,
+      repair.repairKind,
+      repair.nxTarget,
+      repair.route,
+    ])).toEqual([
+      ["safe", "artifact-refresh", "demo:attune-repair", "attune-repair-cli:generated"],
+      ["needs-review", "generated-companion-relocation", "demo:attune-repair", "attune-repair-cli:generated"],
+      ["needs-review", "source-ownership-projection", "workspace:attune-repair", "attune-repair-cli:generated"],
+      ["needs-review", "source-ownership-projection", "workspace:attune-repair", "attune-repair-cli:generated"],
+    ])
+  })
+
   it("classifies Ring A effect-oxlint-policy diagnostic parity", () => {
     const artifactPaths = [
       "framework/oxlint-policy/src/attune.package.ts",
@@ -666,8 +697,57 @@ describe("@attune/framework-runtime", () => {
     })
 
     expect(rows.artifacts.map((artifact) => [artifact.path, artifact.status])).toEqual(
-      artifactPaths.map((artifactPath) => [artifactPath, "current"]),
+      expect.arrayContaining(artifactPaths.map((artifactPath) => [artifactPath, "current"])),
     )
+    expect(rows.symbols).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        exportName: "no-raw-process-env",
+        kind: "compatibility-operation-id",
+      }),
+      expect.objectContaining({
+        exportName: "UnsafeEnvProcessAccessInput",
+        kind: "compatibility-schema-symbol",
+      }),
+      expect.objectContaining({
+        exportName: "PackageContract",
+        kind: "compatibility-contract-symbol",
+      }),
+    ]))
+    expect(rows.schemaDescriptors).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        role: "input",
+        serializationStatus: "serializable",
+      }),
+      expect.objectContaining({
+        role: "output",
+        serializationStatus: "serializable",
+      }),
+      expect.objectContaining({
+        role: "error",
+        serializationStatus: "serializable",
+      }),
+    ]))
+    expect(rows.edges.map((edge) => edge.kind)).toEqual(expect.arrayContaining([
+      "declares-symbol",
+      "input-schema",
+      "output-schema",
+      "error-schema",
+      "symbol-alias",
+      "touches-atom",
+      "touches-reactivity-key",
+    ]))
+    expect(rows.observations.map((observation) =>
+      JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
+    )).toEqual(expect.arrayContaining([
+      "package-contract-compat",
+      "generated-companion-compat",
+      "source-bom-compat",
+      "type-guidance-compat",
+    ]))
+    expect(rows.artifacts.some((artifact) =>
+      artifact.kind === "source-ownership-pattern" &&
+      artifact.path === "framework/oxlint-policy/src/**"
+    )).toBe(true)
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([])
     expect(parity).toEqual({
       parityCodes: [],
@@ -675,6 +755,61 @@ describe("@attune/framework-runtime", () => {
       compatibilityOnlyCodes: [],
       mismatches: [],
     })
+  })
+
+  it("projects Ring A attuned-discovery operation ids as symbols and schema edges", () => {
+    const artifactPaths = [
+      "packages/attuned-discovery/src/attune.package.ts",
+      "framework/architecture/src/generated/source-bom/attuned-discovery.json",
+      "framework/architecture/src/generated/package-contracts/attuned-discovery/attune.generated.ts",
+      "framework/architecture/src/generated/package-contracts/attuned-discovery/attune.contract.generated.ts",
+    ] as const
+    const missingFixturePaths = artifactPaths.filter((artifactPath) =>
+      !existsSync(resolve(repositoryRoot, artifactPath))
+    )
+
+    expect(missingFixturePaths).toEqual([])
+
+    const rows = compatibilityRowsFromCurrentPackageContracts({
+      projectId: "attuned-discovery",
+      root: "packages/attuned-discovery",
+      now: "2026-06-24T00:00:00.000Z",
+      paths: artifactPaths,
+      contentByPath: Object.fromEntries(
+        artifactPaths.map((artifactPath) => [
+          artifactPath,
+          readFileSync(resolve(repositoryRoot, artifactPath), "utf8"),
+        ]),
+      ),
+    })
+    const operationSymbols = rows.symbols.filter((symbol) =>
+      symbol.kind === "compatibility-operation-id"
+    )
+
+    expect(operationSymbols.map((symbol) => symbol.exportName)).toEqual(expect.arrayContaining([
+      "discovery-events-facade",
+      "discovery-event-log-append",
+      "event-replay-projection",
+      "read-model-query",
+      "reactivity-key-map",
+      "base-atom-family",
+      "derived-workbench-atom-family",
+      "domain-event-codecs",
+    ]))
+    expect(rows.edges.map((edge) => edge.kind)).toEqual(expect.arrayContaining([
+      "declares-symbol",
+      "input-schema",
+      "output-schema",
+      "error-schema",
+    ]))
+    expect(rows.observations.map((observation) =>
+      JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
+    )).toEqual(expect.arrayContaining([
+      "source-bom-compat",
+      "type-guidance-compat",
+      "generated-companion-compat",
+    ]))
+    expect(rows.diagnostics).toEqual([])
   })
 
   it("projects deltas as framework diagnostics", () => {

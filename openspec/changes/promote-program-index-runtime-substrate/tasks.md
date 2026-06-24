@@ -46,17 +46,17 @@
 
 ## 4. Compatibility Adapters
 
-- [ ] 4.1 Project current package-contract exports into program-index symbol, schema, edge, artifact, observation, diagnostic, or repair rows marked `package-contract-compat`.
-- [ ] 4.2 Represent old operation ids as symbol and edge facts instead of creating new persisted Package, Operation, or Law tables.
-- [ ] 4.3 Add compatibility tests using `attuned-discovery` and `effect-oxlint-policy` fixtures.
-- [ ] 4.4 Project Source BOM shards into artifact/source ownership rows marked `source-bom-compat`.
-- [ ] 4.5 Add diagnostics and repair classifications for missing or stale Source BOM compatibility projections.
-- [ ] 4.6 Project existing type-guidance and generated property/fuzz data as transitional observations marked with compatibility source metadata.
-- [ ] 4.7 Index framework-owned generated companions as generated artifacts with freshness state.
-- [ ] 4.8 Emit staged diagnostics for project-local generated companions only after the relevant lookup path has program-index parity.
-- [ ] 4.9 Delete, quarantine, or archive any compatibility output whose mechanical replacement has no unresolved parity mismatch.
-- [ ] 4.10 Write a parity checkpoint handoff listing old diagnostics answered by program-index diagnostics, mismatches, deletion candidates, and surfaces already removed.
-- [ ] 4.11 Validate Phase 4 with `nx run framework-runtime:test --skipNxCache`, `nx run framework-protocol:test --skipNxCache`, `nx run attune-architecture:test --skipNxCache`, and `nx run workspace:source-bom-check --skipNxCache`.
+- [x] 4.1 Project current package-contract exports into program-index symbol, schema, edge, artifact, observation, diagnostic, or repair rows marked `package-contract-compat`.
+- [x] 4.2 Represent old operation ids as symbol and edge facts instead of creating new persisted Package, Operation, or Law tables.
+- [x] 4.3 Add compatibility tests using `attuned-discovery` and `effect-oxlint-policy` fixtures.
+- [x] 4.4 Project Source BOM shards into artifact/source ownership rows marked `source-bom-compat`.
+- [x] 4.5 Add diagnostics and repair classifications for missing or stale Source BOM compatibility projections.
+- [x] 4.6 Project existing type-guidance and generated property/fuzz data as transitional observations marked with compatibility source metadata.
+- [x] 4.7 Index framework-owned generated companions as generated artifacts with freshness state.
+- [x] 4.8 Emit staged diagnostics for project-local generated companions only after the relevant lookup path has program-index parity.
+- [x] 4.9 Delete, quarantine, or archive any compatibility output whose mechanical replacement has no unresolved parity mismatch.
+- [x] 4.10 Write a parity checkpoint handoff listing old diagnostics answered by program-index diagnostics, mismatches, deletion candidates, and surfaces already removed.
+- [x] 4.11 Validate Phase 4 with `nx run framework-runtime:test --skipNxCache`, `nx run framework-protocol:test --skipNxCache`, `nx run attune-architecture:test --skipNxCache`, and `nx run workspace:source-bom-check --skipNxCache`.
 
 ## 5. Source And Generated Artifact Ownership
 

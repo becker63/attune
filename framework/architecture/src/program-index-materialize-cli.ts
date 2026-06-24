@@ -232,6 +232,11 @@ const existingCompatibilityArtifactPaths = (
     `framework/architecture/src/generated/source-bom/${projectId}.json`,
     `framework/architecture/src/generated/package-contracts/${projectId}/attune.generated.ts`,
     `framework/architecture/src/generated/package-contracts/${projectId}/attune.contract.generated.ts`,
+    `.attune/cache/generated/${projectId}/attune-operation-registry.ts`,
+    `.attune/cache/generated/${projectId}/attune-property-registry.ts`,
+    `.attune/cache/generated/${projectId}/attune-type-guidance.ts`,
+    `.attune/cache/generated/${projectId}/attune-property-evidence.ts`,
+    `.attune/cache/generated/${projectId}/generated-freshness.json`,
     "framework/architecture/src/generated/package-contracts.typecheck.generated.ts",
   ]
 
