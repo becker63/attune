@@ -6,12 +6,12 @@ import {
   type OperationKind,
 } from "./core.js"
 import {
-  CanonicalLawIds,
-  isLawAllowedForOperation,
-  type LawId,
-  type OperationLawInput,
-  type ViewLawMetadata,
-} from "./laws.js"
+  CanonicalDiagnosticRuleIds,
+  isDiagnosticRuleAllowedForSymbol,
+  type DiagnosticRuleId,
+  type OperationDiagnosticRuleInput,
+  type ViewDiagnosticRuleMetadata,
+} from "./diagnostic-rules.js"
 
 export type PackageContractEnforcementBoundary =
   | "typescript-contract-builder"
@@ -74,7 +74,7 @@ export interface PackageContractValidationResult {
   readonly diagnostics: readonly PackageContractValidationDiagnostic[]
 }
 
-const canonicalLawIds = new Set<string>(CanonicalLawIds)
+const canonicalDiagnosticRuleIds = new Set<string>(CanonicalDiagnosticRuleIds)
 
 export const decodePackageContract = (input: unknown): PackageContractValidationResult => {
   try {
@@ -102,7 +102,7 @@ export const validatePackageContract = (input: unknown): PackageContractValidati
     contract: decoded.contract,
     diagnostics: [
       ...findDuplicateOperationIds(decoded.contract),
-      ...findInvalidLawIds(decoded.contract),
+      ...findInvalidDiagnosticRuleIds(decoded.contract),
       ...findInvalidViewReferences(decoded.contract),
       ...findMissingKindMetadata(input, decoded.contract),
       ...findMissingLayerMetadata(input, decoded.contract),
@@ -124,19 +124,19 @@ function findDuplicateOperationIds(
 
   return [...duplicates].map((operationId) => ({
     code: "duplicate-operation-id",
-    message: `Operation id ${operationId} appears more than once in the decoded package contract.`,
+    message: `Operation id ${operationId} appears more than once in the decoded project facts.`,
     path: ["operations", operationId],
   }))
 }
 
-function findInvalidLawIds(
+function findInvalidDiagnosticRuleIds(
   contract: DecodedPackageContract,
 ): readonly PackageContractValidationDiagnostic[] {
   const diagnostics: PackageContractValidationDiagnostic[] = []
 
   for (const operation of contract.operations) {
     for (const lawId of operation.laws ?? []) {
-      if (!canonicalLawIds.has(lawId)) {
+      if (!canonicalDiagnosticRuleIds.has(lawId)) {
         diagnostics.push({
           code: "invalid-law-id",
           message: `Operation ${operation.id} declares unknown law id ${lawId}.`,
@@ -145,12 +145,12 @@ function findInvalidLawIds(
         continue
       }
 
-      const views = compactViewLawMetadata(operation.views)
-      const lawInput: OperationLawInput = views === undefined
+      const views = compactViewDiagnosticRuleMetadata(operation.views)
+      const lawInput: OperationDiagnosticRuleInput = views === undefined
         ? { id: operation.id, kind: operation.kind }
         : { id: operation.id, kind: operation.kind, views }
 
-      if (!isLawAllowedForOperation(lawId as LawId, lawInput)) {
+      if (!isDiagnosticRuleAllowedForSymbol(lawId as DiagnosticRuleId, lawInput)) {
         diagnostics.push({
           code: "invalid-law-id",
           message: `Operation ${operation.id} declares law ${lawId}, which is not allowed for ${operation.kind} metadata.`,
@@ -163,12 +163,12 @@ function findInvalidLawIds(
   return diagnostics
 }
 
-function compactViewLawMetadata(
+function compactViewDiagnosticRuleMetadata(
   views: {
     readonly reactivityKeys?: readonly string[] | undefined
     readonly atoms?: readonly string[] | undefined
   } | undefined,
-): ViewLawMetadata | undefined {
+): ViewDiagnosticRuleMetadata | undefined {
   if (views === undefined) return undefined
 
   const compacted: {
@@ -265,12 +265,12 @@ function findMissingLayerMetadata(
 ): readonly PackageContractValidationDiagnostic[] {
   if (contract.operations.length === 0) return []
   if (hasLayerMetadata(input, "packageLayer") && hasLayerMetadata(input, "testLayer")) return []
-  if (hasLayerMetadata(input, "PackageLayer") && hasLayerMetadata(input, "PackageTestLayer")) return []
+  if (hasLayerMetadata(input, "PackageLayer") && hasLayerMetadata(input, "programTestLayer")) return []
   if (hasLayerMetadata(input, "layers")) return []
 
   return [{
     code: "missing-layer-metadata",
-    message: "Package contracts with operations must expose PackageLayer and PackageTestLayer metadata or a generated layers record.",
+    message: "Package contracts with operations must expose PackageLayer and programTestLayer metadata or a generated layers record.",
     path: ["layers"],
   }]
 }

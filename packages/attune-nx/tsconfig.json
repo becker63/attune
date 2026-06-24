@@ -6,7 +6,7 @@
     "rootDir": "../..",
     "paths": {
       "@attune/architecture": [
-        "../../framework/protocol/src/package-contract/index.ts"
+        "../../framework/protocol/src/project-facts/index.ts"
       ],
       "@attune/framework-protocol": [
         "../../framework/protocol/src/index.ts"

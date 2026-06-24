@@ -325,7 +325,7 @@ export type AssertLayerSatisfiesRequiredServices<C, LayerLike> =
   MissingServices<RequiredServicesOf<C>, LayerProvidedServices<LayerLike>> extends infer Missing extends string
     ? [Missing] extends [never]
       ? true
-      : Diagnostic<"attune/package-contract/test-layer-missing-service", ["PackageTestLayer missing service", Missing]>
+      : Diagnostic<"attune/package-contract/test-layer-missing-service", ["programTestLayer missing service", Missing]>
     : true
 
 type GuidanceOperations<Guidance> =

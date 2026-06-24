@@ -81,13 +81,13 @@ const stringArray = (values: readonly string[]): string =>
 const generatedFrameworkTestingImport = (): string => [
   ["im", "port"].join(""),
   "{",
-  "  createPackageHarnessClient,",
-  "  defineEvidenceProducer,",
-  "  definePackageEvidenceProducerMap,",
-  "  definePackageHarnessHandlers,",
-  "  propertyRunEvidence,",
+  "  createProgramHarnessClient,",
+  "  defineObservationProducer,",
+  "  defineProjectObservationProducerMap,",
+  "  defineProgramHarnessHandlers,",
+  "  propertyRunObservation,",
   "  publicAccessorHandler,",
-  "  typeGuidancePartitionEvidence,",
+  "  schemaPartitionObservation,",
   "}",
   ["fr", "om"].join(""),
   literal("@attune/framework-testing"),
@@ -418,20 +418,20 @@ export type PackageContract = typeof PackageContract
 export const PackageLayer = Layer.empty
 export type PackageLayer = typeof PackageLayer
 
-export const PackageHarnessAccessors = {
+export const ProgramHarnessAccessors = {
   ${literal(model.operationId)}: (_input: ${className}Input): ${className}Output => ({
     ok: true,
   }),
 } as const
-export type PackageHarnessAccessors = typeof PackageHarnessAccessors
+export type ProgramHarnessAccessors = typeof ProgramHarnessAccessors
 
-export const PackageTestLayer = {
+export const programTestLayer = {
   layer: Layer.empty,
   provides: [] as const,
   requires: [] as const,
-  publicAccessors: PackageHarnessAccessors,
+  publicAccessors: ProgramHarnessAccessors,
 } as const
-export type PackageTestLayer = typeof PackageTestLayer
+export type programTestLayer = typeof programTestLayer
 
 export const PackageTypeGuidance = defineTypeGuidance(PackageContract, {
   sourceLabels: [
@@ -581,7 +581,7 @@ const generatedSource = (model: PackageContractGeneratorModel): string => {
   return `${generatedFrameworkTestingImport()}
 import {
   PackageContract,
-  PackageTestLayer,
+  programTestLayer,
   PackageTypeGuidance,
   PackageViews,
   ${operationProperty}Operation,
@@ -604,28 +604,28 @@ export const PackageOperationRegistry = {
 } as const
 export type PackageOperationRegistry = typeof PackageOperationRegistry
 
-export const PackageHarnessHandlers = definePackageHarnessHandlers(PackageContract, {
+export const ProgramHarnessHandlers = defineProgramHarnessHandlers(PackageContract, {
   ${literal(model.operationId)}: publicAccessorHandler(${literal(model.operationId)}),
 } as const)
-export type PackageHarnessHandlers = typeof PackageHarnessHandlers
+export type ProgramHarnessHandlers = typeof ProgramHarnessHandlers
 
-export const PackageHarnessEvidenceProducers = definePackageEvidenceProducerMap(PackageContract, {
-  ${literal(model.operationId)}: defineEvidenceProducer({
+export const ProgramHarnessObservationProducers = defineProjectObservationProducerMap(PackageContract, {
+  ${literal(model.operationId)}: defineObservationProducer({
     id: ${literal(`${model.operationId}.property-evidence`)},
     operationId: ${literal(model.operationId)},
     produce: (context) => [
-      propertyRunEvidence(context, ${literal(model.operationId)}, {
-        harness: "schema-coded-package-harness",
+      propertyRunObservation(context, ${literal(model.operationId)}, {
+        harness: "schema-coded-program-harness",
         rpcId: ${literal(`${model.packageId}.operation.${model.operationId}`)},
         laws: ${stringArray(model.laws)},
       }),
-      typeGuidancePartitionEvidence(context, ${literal(model.operationId)}, {
+      schemaPartitionObservation(context, ${literal(model.operationId)}, {
         partitionId: ${literal(`${model.operationId}.input`)},
         partitionKind: "schema-boundary",
         source: "generated-type-guidance",
         status: "miss",
       }),
-      typeGuidancePartitionEvidence(context, ${literal(model.operationId)}, {
+      schemaPartitionObservation(context, ${literal(model.operationId)}, {
         partitionId: ${literal(`${model.reactivityKey}.moves`)},
         partitionKind: "reactivity-key",
         source: "generated-type-guidance",
@@ -634,20 +634,20 @@ export const PackageHarnessEvidenceProducers = definePackageEvidenceProducerMap(
     ],
   }),
 } as const
-export type PackageHarnessEvidenceProducers = typeof PackageHarnessEvidenceProducers
+export type ProgramHarnessObservationProducers = typeof ProgramHarnessObservationProducers
 
-export const PackageHarnessClient = createPackageHarnessClient({
+export const ProgramHarnessClient = createProgramHarnessClient({
   contract: PackageContract,
-  packageTestLayer: PackageTestLayer,
-  handlers: PackageHarnessHandlers,
-  evidenceProducers: PackageHarnessEvidenceProducers,
+  programTestLayer: programTestLayer,
+  handlers: ProgramHarnessHandlers,
+  observationProducers: ProgramHarnessObservationProducers,
 })
-export type PackageHarnessClient = typeof PackageHarnessClient
+export type ProgramHarnessClient = typeof ProgramHarnessClient
 
-export const PackageHarnessControls = PackageHarnessClient.controls
-export type PackageHarnessControls = typeof PackageHarnessControls
+export const ProgramHarnessControls = ProgramHarnessClient.controls
+export type ProgramHarnessControls = typeof ProgramHarnessControls
 
-export const PackageFuzzHandlers = PackageHarnessHandlers
+export const PackageFuzzHandlers = ProgramHarnessHandlers
 export type PackageFuzzHandlers = typeof PackageFuzzHandlers
 
 const propertyFor = <const Operation extends { readonly id: string; readonly laws: readonly string[] }>(
@@ -678,10 +678,10 @@ export const PackagePropertyEvidencePlan = {
   packageId: PackageContract.packageId,
   operationIds: [${literal(model.operationId)}],
   registry: "PackageOperationRegistry",
-  harness: "PackageHarnessClient",
-  handlerMap: "PackageHarnessHandlers",
+  harness: "ProgramHarnessClient",
+  handlerMap: "ProgramHarnessHandlers",
   propertyMap: "PackageProperties",
-  evidenceProducerMap: "PackageHarnessEvidenceProducers",
+  observationProducerMap: "ProgramHarnessObservationProducers",
   workerModule: "./attune.package.property.js",
   evidenceRoot: ".attune/cache/property-evidence",
   checkedInProtocolReports: false,
@@ -708,7 +708,7 @@ export const PackageGeneratedArtifacts = [
   },
   {
     path: "./attune.package.generated.ts",
-    kind: "package-harness",
+    kind: "program-harness",
     owner: "@attune/nx:package-contract",
   },
   {

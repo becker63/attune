@@ -14,7 +14,7 @@ import {
   type AssertTrue,
   type AssertTypeGuidanceComplete,
   type RequiredServicesOf,
-} from "../src/package-contract/assertions.js"
+} from "../src/project-facts/assertions.js"
 
 const PackageContract = {
   packageId: "example",
@@ -93,7 +93,7 @@ const PackageLayer = {
   provides: ["ExampleService"],
 } as const
 
-const PackageTestLayer = {
+const programTestLayer = {
   provides: ["Clock", "Tree"],
 } as const
 
@@ -170,17 +170,17 @@ type _irrelevantMetadataGeneratorContract = AssertTrue<AssertPackageContract<typ
 type _handlers = AssertTrue<AssertExactHandlers<Contract, typeof PackageFuzzHandlers>>
 type _properties = AssertTrue<AssertPropertyHarnesses<Contract, typeof PackageProperties>>
 type _packageLayer = AssertTrue<AssertLayerProvidesPackageServices<Contract, typeof PackageLayer>>
-type _testLayer = AssertTrue<AssertLayerSatisfiesRequiredServices<Contract, typeof PackageTestLayer>>
+type _testLayer = AssertTrue<AssertLayerSatisfiesRequiredServices<Contract, typeof programTestLayer>>
 type _typeGuidance = AssertTrue<AssertTypeGuidanceComplete<Contract, typeof PackageTypeGuidance>>
 type _requiredServices = AssertTrue<RequiredServicesOf<Contract> extends "Clock" | "Tree" ? true : false>
 
-describe("package contract assertion helpers", () => {
+describe("project facts assertion helpers", () => {
   it("returns true from no-op runtime helpers for valid compile-time shapes", () => {
     expect(assertPackageContract(PackageContract)).toBe(true)
     expect(assertExactHandlers(PackageContract, PackageFuzzHandlers)).toBe(true)
     expect(assertPropertyHarnesses(PackageContract, PackageProperties)).toBe(true)
     expect(assertLayerProvidesPackageServices(PackageContract, PackageLayer)).toBe(true)
-    expect(assertLayerSatisfiesRequiredServices(PackageContract, PackageTestLayer)).toBe(true)
+    expect(assertLayerSatisfiesRequiredServices(PackageContract, programTestLayer)).toBe(true)
     expect(assertTypeGuidanceComplete(PackageContract, PackageTypeGuidance)).toBe(true)
   })
 })

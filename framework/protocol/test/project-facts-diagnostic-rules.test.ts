@@ -1,16 +1,16 @@
 import { describe, expect, expectTypeOf, it } from "vitest"
 import {
-  type AllowedLawIdForOperation,
-  allowedLawIdsForKind,
-  inferLawIds,
-  inferLaws,
-  isLawAllowedForOperation,
-  missingMetadataForOperation,
-} from "../src/package-contract/laws.js"
+  type AllowedDiagnosticRuleIdForOperation,
+  allowedDiagnosticRuleIdsForKind,
+  inferDiagnosticRuleIds,
+  inferDiagnosticRules,
+  isDiagnosticRuleAllowedForSymbol,
+  missingMetadataForSymbol,
+} from "../src/project-facts/diagnostic-rules.js"
 
 const ids = (laws: readonly { readonly id: string }[]): readonly string[] => laws.map((law) => law.id)
 
-describe("package contract law inference", () => {
+describe("project facts law inference", () => {
   it("infers schema, determinism, read-only, and view movement laws for queries", () => {
     const operation = {
       id: "semantic-recall",
@@ -25,7 +25,7 @@ describe("package contract law inference", () => {
       },
     } as const
 
-    expect(ids(inferLaws(operation))).toEqual([
+    expect(ids(inferDiagnosticRules(operation))).toEqual([
       "schema.decode",
       "schema.encode",
       "determinism.same-input-same-output",
@@ -33,7 +33,7 @@ describe("package contract law inference", () => {
       "view.reactivity-key-moves",
       "view.atom-moves",
     ])
-    expect(inferLaws(operation).find((law) => law.id === "view.atom-moves")?.metadata).toMatchObject({
+    expect(inferDiagnosticRules(operation).find((law) => law.id === "view.atom-moves")?.metadata).toMatchObject({
       operationId: "semantic-recall",
       atoms: ["recallResultsAtom"],
     })
@@ -58,7 +58,7 @@ describe("package contract law inference", () => {
       },
     } as const
 
-    expect(inferLawIds(operation)).toEqual([
+    expect(inferDiagnosticRuleIds(operation)).toEqual([
       "schema.decode",
       "schema.encode",
       "determinism.same-input-same-output",
@@ -85,14 +85,14 @@ describe("package contract law inference", () => {
       },
     } as const
 
-    expect(inferLawIds(readOnlyResource)).toEqual([
+    expect(inferDiagnosticRuleIds(readOnlyResource)).toEqual([
       "schema.decode",
       "schema.encode",
       "side-effect.declared-boundary",
       "resource.observe-before-apply",
       "resource.observed-idempotence",
     ])
-    expect(isLawAllowedForOperation("resource.destructive-approval", readOnlyResource)).toBe(false)
+    expect(isDiagnosticRuleAllowedForSymbol("resource.destructive-approval", readOnlyResource)).toBe(false)
 
     const destructiveResource = {
       id: "nixos-anywhere-install",
@@ -116,7 +116,7 @@ describe("package contract law inference", () => {
       },
     } as const
 
-    expect(inferLawIds(destructiveResource)).toEqual([
+    expect(inferDiagnosticRuleIds(destructiveResource)).toEqual([
       "schema.decode",
       "schema.encode",
       "schema.error-decode",
@@ -129,9 +129,9 @@ describe("package contract law inference", () => {
       "resource.destructive-approval",
       "resource.no-repeat-destructive",
     ])
-    expect(missingMetadataForOperation(destructiveResource)).toEqual([])
+    expect(missingMetadataForSymbol(destructiveResource)).toEqual([])
 
-    type DestructiveAllowed = AllowedLawIdForOperation<typeof destructiveResource>
+    type DestructiveAllowed = AllowedDiagnosticRuleIdForOperation<typeof destructiveResource>
     expectTypeOf<DestructiveAllowed>().toEqualTypeOf<
       | "schema.decode"
       | "schema.encode"
@@ -156,7 +156,7 @@ describe("package contract law inference", () => {
       },
     } as const
 
-    expect(missingMetadataForOperation(operation)).toEqual([
+    expect(missingMetadataForSymbol(operation)).toEqual([
       "resource.observationSchema",
       "resource.currentProofSchema",
       "resource.approvalSchema",
@@ -182,7 +182,7 @@ describe("package contract law inference", () => {
       },
     } as const
 
-    expect(inferLawIds(operation)).toEqual([
+    expect(inferDiagnosticRuleIds(operation)).toEqual([
       "schema.decode",
       "schema.encode",
       "side-effect.declared-boundary",
@@ -207,7 +207,7 @@ describe("package contract law inference", () => {
       },
     } as const
 
-    expect(inferLawIds(operation)).toEqual([
+    expect(inferDiagnosticRuleIds(operation)).toEqual([
       "schema.decode",
       "schema.encode",
       "determinism.same-input-same-output",
@@ -233,7 +233,7 @@ describe("package contract law inference", () => {
       },
     } as const
 
-    expect(inferLawIds(operation)).toEqual([
+    expect(inferDiagnosticRuleIds(operation)).toEqual([
       "schema.decode",
       "schema.encode",
       "determinism.same-input-same-output",
@@ -246,7 +246,7 @@ describe("package contract law inference", () => {
   })
 
   it("exposes canonical operation-kind allow lists", () => {
-    expect(allowedLawIdsForKind("generator")).toEqual([
+    expect(allowedDiagnosticRuleIdsForKind("generator")).toEqual([
       "schema.decode",
       "schema.encode",
       "determinism.same-input-same-output",

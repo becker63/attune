@@ -84,7 +84,7 @@ export interface AttuneViewReference {
   readonly kind?: "reactivity-key" | "atom" | "package-view-atom"
 }
 
-export type AttuneLawDescriptor =
+export type AttuneDiagnosticRuleDescriptor =
   | string
   | {
     readonly id: string
@@ -115,7 +115,7 @@ export interface AttuneOperationDeclaration<
   readonly service?: AttuneServiceReference
   readonly writes?: readonly AttuneViewReference[]
   readonly observes?: readonly AttuneViewReference[]
-  readonly laws?: "infer" | readonly AttuneLawDescriptor[]
+  readonly diagnosticRules?: "infer" | readonly AttuneDiagnosticRuleDescriptor[]
   readonly explicitStableId?: string
 }
 
@@ -137,7 +137,7 @@ export interface AttuneProjectSymbolFact<
   readonly service?: AttuneServiceReference
   readonly writes?: readonly AttuneViewReference[]
   readonly observes?: readonly AttuneViewReference[]
-  readonly invariants?: readonly AttuneLawDescriptor[]
+  readonly invariants?: readonly AttuneDiagnosticRuleDescriptor[]
   readonly explicitStableId?: string
 }
 
@@ -158,7 +158,7 @@ export interface AttuneProjectFacts<
   readonly edges?: Edges
   readonly services?: readonly AttuneServiceReference[]
   readonly waivers?: readonly AttuneWaiverDeclaration[]
-  readonly invariants?: readonly AttuneLawDescriptor[]
+  readonly invariants?: readonly AttuneDiagnosticRuleDescriptor[]
 }
 
 export const defineAttuneProjectFacts = <const Facts extends AttuneProjectFacts>(

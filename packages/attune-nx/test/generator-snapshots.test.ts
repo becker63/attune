@@ -157,7 +157,7 @@ describe("attune-nx generator snapshots", () => {
           "firstLine": "import { Effect, Schema } from "effect"",
           "lineCount": 42,
           "path": "packages/decision-core/src/effect/services/decision-runner.ts",
-          "sha256": "32ef6b35a45a5e4b5a6e1d2940b7a00a894145f0c299ca73603abfe3160a5e6c",
+          "sha256": "6b4a1ddc0fd3d4f5f43da8bd1ee77aa263341c4ae0a1344bf2899355bb1ad056",
         },
         {
           "firstLine": "export * from "./decision-runner.js"",

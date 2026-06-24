@@ -10,7 +10,7 @@ import type {
   PackageIdOf,
 } from "./core.js"
 
-export const PackageFuzzRpcControlIds = [
+export const ProgramObservationRpcControlIds = [
   "reset",
   "snapshot",
   "observe",
@@ -20,8 +20,8 @@ export const PackageFuzzRpcControlIds = [
   "get-atom-graph",
 ] as const
 
-export const PackageFuzzRpcControlIdSchema = Schema.Literals(PackageFuzzRpcControlIds)
-export type PackageFuzzRpcControlId = typeof PackageFuzzRpcControlIdSchema.Type
+export const ProgramObservationRpcControlIdSchema = Schema.Literals(ProgramObservationRpcControlIds)
+export type ProgramObservationRpcControlId = typeof ProgramObservationRpcControlIdSchema.Type
 
 export const RpcDescriptorKindSchema = Schema.Literals(["operation", "control"] as const)
 export type RpcDescriptorKind = typeof RpcDescriptorKindSchema.Type
@@ -40,7 +40,7 @@ export const RpcSchemaDescriptorSchema = Schema.Struct({
   schemaId: Schema.String,
   source: Schema.String,
   operationId: Schema.optional(Schema.String),
-  controlId: Schema.optional(PackageFuzzRpcControlIdSchema),
+  controlId: Schema.optional(ProgramObservationRpcControlIdSchema),
 })
 export type RpcSchemaDescriptor = typeof RpcSchemaDescriptorSchema.Type
 
@@ -64,7 +64,7 @@ export const RpcDescriptorSchema = Schema.Struct({
   kind: RpcDescriptorKindSchema,
   packageId: Schema.String,
   operationId: Schema.optional(Schema.String),
-  controlId: Schema.optional(PackageFuzzRpcControlIdSchema),
+  controlId: Schema.optional(ProgramObservationRpcControlIdSchema),
   payload: RpcSchemaDescriptorSchema,
   success: RpcSchemaDescriptorSchema,
   error: Schema.optional(RpcSchemaDescriptorSchema),
@@ -73,19 +73,19 @@ export const RpcDescriptorSchema = Schema.Struct({
 })
 export type RpcDescriptor = typeof RpcDescriptorSchema.Type
 
-export const PackageFuzzRpcGroupDescriptorSchema = Schema.Struct({
+export const ProgramObservationRpcGroupDescriptorSchema = Schema.Struct({
   packageId: Schema.String,
   groupId: Schema.String,
   adapterCompatibility: EffectRpcAdapterCompatibilitySchema,
   controls: Schema.Array(RpcDescriptorSchema),
   operations: Schema.Array(RpcDescriptorSchema),
 })
-export type PackageFuzzRpcGroupDescriptor = typeof PackageFuzzRpcGroupDescriptorSchema.Type
+export type ProgramObservationRpcGroupDescriptor = typeof ProgramObservationRpcGroupDescriptorSchema.Type
 
-export type PackageFuzzRpcGroupId<PackageId extends string> = `${PackageId}.PackageFuzzRpc`
+export type ProgramObservationRpcGroupId<PackageId extends string> = `${PackageId}.ProgramObservationRpc`
 export type OperationRpcId<PackageId extends string, OperationId extends string> =
   `${PackageId}.operation.${OperationId}`
-export type ControlRpcId<PackageId extends string, ControlId extends PackageFuzzRpcControlId> =
+export type ControlRpcId<PackageId extends string, ControlId extends ProgramObservationRpcControlId> =
   `${PackageId}.control.${ControlId}`
 
 export type OperationRpcDescriptor<
@@ -100,7 +100,7 @@ export type OperationRpcDescriptor<
 
 export type ControlRpcDescriptor<
   PackageId extends string,
-  ControlId extends PackageFuzzRpcControlId = PackageFuzzRpcControlId,
+  ControlId extends ProgramObservationRpcControlId = ProgramObservationRpcControlId,
 > = Omit<RpcDescriptor, "kind" | "packageId" | "operationId" | "controlId" | "rpcId"> & {
   readonly kind: "control"
   readonly packageId: PackageId
@@ -113,12 +113,12 @@ export type OperationRpcDescriptors<Contract extends AttunePackageContract> = {
 }[OperationIds<Contract>]
 
 export type ControlRpcDescriptors<PackageId extends string> = {
-  readonly [ControlId in PackageFuzzRpcControlId]: ControlRpcDescriptor<PackageId, ControlId>
-}[PackageFuzzRpcControlId]
+  readonly [ControlId in ProgramObservationRpcControlId]: ControlRpcDescriptor<PackageId, ControlId>
+}[ProgramObservationRpcControlId]
 
-export interface PackageFuzzRpcGroup<Contract extends AttunePackageContract> {
+export interface ProgramObservationRpcGroup<Contract extends AttunePackageContract> {
   readonly packageId: PackageIdOf<Contract>
-  readonly groupId: PackageFuzzRpcGroupId<PackageIdOf<Contract>>
+  readonly groupId: ProgramObservationRpcGroupId<PackageIdOf<Contract>>
   readonly adapterCompatibility: EffectRpcAdapterCompatibility
   readonly controls: readonly ControlRpcDescriptors<PackageIdOf<Contract>>[]
   readonly operations: readonly OperationRpcDescriptors<Contract>[]
@@ -129,68 +129,68 @@ export type OperationRpcDescriptorRegistry<Contract extends AttunePackageContrac
 }
 
 export type ControlRpcDescriptorRegistry<PackageId extends string> = {
-  readonly [ControlId in PackageFuzzRpcControlId]: ControlRpcDescriptor<PackageId, ControlId>
+  readonly [ControlId in ProgramObservationRpcControlId]: ControlRpcDescriptor<PackageId, ControlId>
 }
 
 export interface OperationRpcHandlerContext<
   Contract extends AttunePackageContract,
   OperationId extends OperationIds<Contract>,
-  PackageTestLayer,
+  programTestLayer,
 > {
   readonly contract: Contract
   readonly operation: OperationById<Contract, OperationId>
   readonly rpc: OperationRpcDescriptor<Contract, OperationId>
-  readonly packageTestLayer: PackageTestLayer
+  readonly programTestLayer: programTestLayer
 }
 
 export type OperationRpcHandler<
   Contract extends AttunePackageContract,
   OperationId extends OperationIds<Contract>,
-  PackageTestLayer = unknown,
+  programTestLayer = unknown,
 > = (
   payload: InputOf<Contract, OperationId>,
-  context: OperationRpcHandlerContext<Contract, OperationId, PackageTestLayer>,
+  context: OperationRpcHandlerContext<Contract, OperationId, programTestLayer>,
 ) => OutputOf<Contract, OperationId> | Promise<OutputOf<Contract, OperationId>>
 
 export type OperationRpcHandlerMap<
   Contract extends AttunePackageContract,
-  PackageTestLayer = unknown,
+  programTestLayer = unknown,
 > = {
-  readonly [OperationId in OperationIds<Contract>]: OperationRpcHandler<Contract, OperationId, PackageTestLayer>
+  readonly [OperationId in OperationIds<Contract>]: OperationRpcHandler<Contract, OperationId, programTestLayer>
 }
 
-export interface PackageFuzzRpcHandlerRegistry<
+export interface ProgramObservationRpcHandlerRegistry<
   Contract extends AttunePackageContract,
-  PackageTestLayer,
-  Handlers extends OperationRpcHandlerMap<Contract, PackageTestLayer> = OperationRpcHandlerMap<
+  programTestLayer,
+  Handlers extends OperationRpcHandlerMap<Contract, programTestLayer> = OperationRpcHandlerMap<
     Contract,
-    PackageTestLayer
+    programTestLayer
   >,
 > {
   readonly packageId: PackageIdOf<Contract>
-  readonly group: PackageFuzzRpcGroup<Contract>
-  readonly packageTestLayer: PackageTestLayer
+  readonly group: ProgramObservationRpcGroup<Contract>
+  readonly programTestLayer: programTestLayer
   readonly operationIds: readonly OperationIds<Contract>[]
   readonly handlers: Handlers
 }
 
-export const definePackageFuzzRpcGroup = <const Contract extends AttunePackageContract>(
+export const defineProgramObservationRpcGroup = <const Contract extends AttunePackageContract>(
   contract: Contract,
-): PackageFuzzRpcGroup<Contract> => {
+): ProgramObservationRpcGroup<Contract> => {
   const group = {
     packageId: contract.packageId,
-    groupId: `${contract.packageId}.PackageFuzzRpc`,
+    groupId: `${contract.packageId}.ProgramObservationRpc`,
     adapterCompatibility: EffectRpcAdapterCompatibility,
-    controls: PackageFuzzRpcControlIds.map((controlId) => controlRpcDescriptor(contract.packageId, controlId)),
+    controls: ProgramObservationRpcControlIds.map((controlId) => controlRpcDescriptor(contract.packageId, controlId)),
     operations: contract.operations.map((operation) => operationRpcDescriptor(contract.packageId, operation)),
   }
 
-  Schema.decodeUnknownSync(PackageFuzzRpcGroupDescriptorSchema)(group)
-  return group as PackageFuzzRpcGroup<Contract>
+  Schema.decodeUnknownSync(ProgramObservationRpcGroupDescriptorSchema)(group)
+  return group as ProgramObservationRpcGroup<Contract>
 }
 
 export const operationRpcRegistry = <const Contract extends AttunePackageContract>(
-  group: PackageFuzzRpcGroup<Contract>,
+  group: ProgramObservationRpcGroup<Contract>,
 ): OperationRpcDescriptorRegistry<Contract> =>
   Object.fromEntries(group.operations.map((descriptor) => [descriptor.operationId, descriptor])) as
     OperationRpcDescriptorRegistry<Contract>
@@ -205,42 +205,42 @@ export const operationRpcDescriptorById = <
   const Contract extends AttunePackageContract,
   const OperationId extends OperationIds<Contract>,
 >(
-  group: PackageFuzzRpcGroup<Contract>,
+  group: ProgramObservationRpcGroup<Contract>,
   operationId: OperationId,
 ): OperationRpcDescriptor<Contract, OperationId> => {
   const descriptor = operationRpcRegistry(group)[operationId]
   if (!descriptor) {
-    throw new Error(`Missing package fuzz RPC descriptor for operation "${operationId}"`)
+    throw new Error(`Missing program observation RPC descriptor for operation "${operationId}"`)
   }
   return descriptor
 }
 
 export const controlRpcDescriptorById = <
   const PackageId extends string,
-  const ControlId extends PackageFuzzRpcControlId,
+  const ControlId extends ProgramObservationRpcControlId,
 >(
   group: { readonly controls: readonly ControlRpcDescriptors<PackageId>[] },
   controlId: ControlId,
 ): ControlRpcDescriptor<PackageId, ControlId> => {
   const descriptor = controlRpcRegistry(group)[controlId]
   if (!descriptor) {
-    throw new Error(`Missing package fuzz control RPC descriptor for control "${controlId}"`)
+    throw new Error(`Missing program observation control RPC descriptor for control "${controlId}"`)
   }
   return descriptor
 }
 
-export const definePackageFuzzRpcHandlerRegistry = <
+export const defineProgramObservationRpcHandlerRegistry = <
   const Contract extends AttunePackageContract,
-  const PackageTestLayer,
-  const Handlers extends OperationRpcHandlerMap<Contract, PackageTestLayer>,
+  const programTestLayer,
+  const Handlers extends OperationRpcHandlerMap<Contract, programTestLayer>,
 >(
   contract: Contract,
-  packageTestLayer: PackageTestLayer,
+  programTestLayer: programTestLayer,
   handlers: Handlers,
-): PackageFuzzRpcHandlerRegistry<Contract, PackageTestLayer, Handlers> => ({
+): ProgramObservationRpcHandlerRegistry<Contract, programTestLayer, Handlers> => ({
   packageId: contract.packageId,
-  group: definePackageFuzzRpcGroup(contract),
-  packageTestLayer,
+  group: defineProgramObservationRpcGroup(contract),
+  programTestLayer,
   operationIds: contract.operations.map((operation) => operation.id) as readonly OperationIds<Contract>[],
   handlers,
 })
@@ -249,7 +249,7 @@ const schemaDescriptor = (
   role: RpcSchemaDescriptorRole,
   schemaId: string,
   source: string,
-  options: { readonly operationId?: string; readonly controlId?: PackageFuzzRpcControlId } = {},
+  options: { readonly operationId?: string; readonly controlId?: ProgramObservationRpcControlId } = {},
 ): RpcSchemaDescriptor => {
   const descriptor = {
     role,
@@ -297,7 +297,7 @@ const operationRpcDescriptor = (
 
 const controlRpcDescriptor = (
   packageId: string,
-  controlId: PackageFuzzRpcControlId,
+  controlId: ProgramObservationRpcControlId,
 ): RpcDescriptor => {
   const descriptor = {
     rpcId: `${packageId}.control.${controlId}`,

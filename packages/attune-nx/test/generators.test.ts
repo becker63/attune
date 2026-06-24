@@ -227,7 +227,7 @@ describe("attune-nx generators", () => {
       ],
       syncTargets: [{ project: "decision-core", target: "sync-effect-layers" }],
       checkTargets: [{ project: "decision-core", target: "typecheck" }],
-      openspecChangeId: "standardize-effect-package-contracts",
+      openspecChangeId: "promote-program-index-runtime-substrate",
     })
     expect(shard.entries[0].optionsHash).toMatch(/^fnv1a32:/)
 

@@ -10,7 +10,7 @@ import { Schema } from "effect"
 import { defineExactOperationMap } from "./operation-registry.js"
 import type { PropertyTier, ReplayMetadata } from "./replay-metadata.js"
 
-export type EvidenceProducerContext = Readonly<{
+export type ObservationContext = Readonly<{
   readonly protocolId: string
   readonly packageId: string
   readonly runId: string
@@ -20,25 +20,25 @@ export type EvidenceProducerContext = Readonly<{
   readonly replay?: ReplayMetadata
 }>
 
-export type EvidenceEventInput = Readonly<{
+export type ObservationInput = Readonly<{
   readonly operationId?: string
   readonly kind: ProtocolEvidenceKind
   readonly payload?: unknown
   readonly sequence?: number | string
 }>
 
-export type EvidenceProducer = Readonly<{
+export type ObservationProducer = Readonly<{
   readonly id: string
   readonly operationId?: string
-  readonly produce: (context: EvidenceProducerContext) => readonly AttuneProtocolEvidenceEvent[]
+  readonly produce: (context: ObservationContext) => readonly AttuneProtocolEvidenceEvent[]
 }>
 
-export type EvidenceProducerMap<OperationId extends string = string> =
-  Readonly<Record<OperationId, EvidenceProducer>>
+export type ObservationProducerMap<OperationId extends string = string> =
+  Readonly<Record<OperationId, ObservationProducer>>
 
-export const evidenceEventId = (
-  context: EvidenceProducerContext,
-  input: EvidenceEventInput,
+export const observationEventId = (
+  context: ObservationContext,
+  input: ObservationInput,
 ): string =>
   [
     context.packageId,
@@ -49,9 +49,9 @@ export const evidenceEventId = (
     input.sequence ?? "0",
   ].join(":")
 
-export const evidenceEvent = (
-  context: EvidenceProducerContext,
-  operationIdOrInput: string | undefined | EvidenceEventInput,
+export const observationEvent = (
+  context: ObservationContext,
+  operationIdOrInput: string | undefined | ObservationInput,
   kind?: ProtocolEvidenceKind,
   payload?: unknown,
 ): AttuneProtocolEvidenceEvent => {
@@ -64,7 +64,7 @@ export const evidenceEvent = (
     }
 
   return Schema.decodeUnknownSync(AttuneProtocolEvidenceEventSchema)({
-    eventId: evidenceEventId(context, input),
+    eventId: observationEventId(context, input),
     runId: context.runId,
     protocolId: context.protocolId,
     packageId: context.packageId,
@@ -75,19 +75,19 @@ export const evidenceEvent = (
   }) as AttuneProtocolEvidenceEvent
 }
 
-export const defineEvidenceProducer = (
-  producer: EvidenceProducer,
-): EvidenceProducer => producer
+export const defineObservationProducer = (
+  producer: ObservationProducer,
+): ObservationProducer => producer
 
-export const collectEvidence = (
-  context: EvidenceProducerContext,
-  producers: readonly EvidenceProducer[],
+export const collectObservations = (
+  context: ObservationContext,
+  producers: readonly ObservationProducer[],
 ): readonly AttuneProtocolEvidenceEvent[] =>
   producers.flatMap((producer) => producer.produce(context))
 
-export const defineEvidenceProducerMap = <
+export const defineObservationProducerMap = <
   const OperationIds extends readonly string[],
-  const Producers extends EvidenceProducerMap<OperationIds[number]>,
+  const Producers extends ObservationProducerMap<OperationIds[number]>,
 >(
   input: Readonly<{
     readonly packageId: string
@@ -102,18 +102,18 @@ export const defineEvidenceProducerMap = <
     map: input.producers,
   })
 
-export const collectEvidenceFromMap = (
-  context: EvidenceProducerContext,
-  producers: EvidenceProducerMap,
+export const collectObservationsFromMap = (
+  context: ObservationContext,
+  producers: ObservationProducerMap,
 ): readonly AttuneProtocolEvidenceEvent[] =>
-  collectEvidence(context, Object.values(producers))
+  collectObservations(context, Object.values(producers))
 
-export const propertyRunEvidence = (
-  context: EvidenceProducerContext,
+export const propertyRunObservation = (
+  context: ObservationContext,
   operationId: string,
   payload?: unknown,
 ): AttuneProtocolEvidenceEvent =>
-  evidenceEvent(context, {
+  observationEvent(context, {
     kind: "property-run",
     operationId,
     payload: {
@@ -129,8 +129,8 @@ export type TypeGuidancePartitionEvidenceStatus =
   | "filtered"
   | "unreachable"
 
-export const typeGuidancePartitionEvidence = (
-  context: EvidenceProducerContext,
+export const schemaPartitionObservation = (
+  context: ObservationContext,
   operationId: string,
   input: Readonly<{
     readonly partitionId: string
@@ -142,7 +142,7 @@ export const typeGuidancePartitionEvidence = (
     readonly source?: string
   }>,
 ): AttuneProtocolEvidenceEvent =>
-  evidenceEvent(context, {
+  observationEvent(context, {
     kind: "type-guidance",
     operationId,
     payload: {
@@ -165,13 +165,13 @@ export const typeGuidancePartitionEvidence = (
     ].join(":"),
   })
 
-export const lawObservedEvidence = (
-  context: EvidenceProducerContext,
+export const diagnosticRuleObservation = (
+  context: ObservationContext,
   operationId: string,
   lawId: string,
   payload?: unknown,
 ): AttuneProtocolEvidenceEvent =>
-  evidenceEvent(context, {
+  observationEvent(context, {
     kind: "law-observed",
     operationId,
     payload: {
@@ -182,12 +182,12 @@ export const lawObservedEvidence = (
     sequence: lawId,
   })
 
-export const counterexampleEvidence = (
-  context: EvidenceProducerContext,
+export const counterexampleObservation = (
+  context: ObservationContext,
   operationId: string,
   payload: unknown,
 ): AttuneProtocolEvidenceEvent =>
-  evidenceEvent(context, {
+  observationEvent(context, {
     kind: "counterexample",
     operationId,
     payload: {
@@ -200,12 +200,12 @@ export const counterexampleEvidence = (
     },
   })
 
-export const coveragePointEvidence = (
-  context: EvidenceProducerContext,
+export const coveragePointObservation = (
+  context: ObservationContext,
   operationId: string,
   payload: unknown,
 ): AttuneProtocolEvidenceEvent =>
-  evidenceEvent(context, {
+  observationEvent(context, {
     kind: "coverage-point",
     operationId,
     payload: {
@@ -218,12 +218,12 @@ export const coveragePointEvidence = (
     },
   })
 
-export const weakOracleEvidence = (
-  context: EvidenceProducerContext,
+export const weakOracleObservation = (
+  context: ObservationContext,
   operationId: string,
   payload: unknown,
 ): AttuneProtocolEvidenceEvent =>
-  evidenceEvent(context, {
+  observationEvent(context, {
     kind: "weak-oracle",
     operationId,
     payload: {

@@ -14,7 +14,7 @@ import {
   ingestNxProjectGraphRows,
   nxProjectGraphToProgramIndexRows,
   operationRegistryAction,
-  packageHarnessAction,
+  programHarnessAction,
   propertyEvidenceAction,
   protocolMaterializeAction,
   repairPlanForDiagnostic,
@@ -65,8 +65,8 @@ describe("@attune/framework-nx", () => {
     expect(operationRegistryAction("demo", "packages/demo/src/attune.package.ts", "op").generatorOrTarget).toBe(
       "@attune/framework-nx:operation-registry",
     )
-    expect(packageHarnessAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
-      "@attune/framework-nx:package-harness",
+    expect(programHarnessAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
+      "@attune/framework-nx:program-harness",
     )
     expect(propertyEvidenceAction("demo", "packages/demo/src/attune.package.ts").generatorOrTarget).toBe(
       "@attune/framework-nx:protocol-evidence",
@@ -82,14 +82,14 @@ describe("@attune/framework-nx", () => {
   })
 
   it("generates Schema-coded package harness content", () => {
-    const artifact = createGeneratedArtifact(descriptor, "package-harness")
+    const artifact = createGeneratedArtifact(descriptor, "program-harness")
 
-    expect(artifact.path).toBe(".attune/cache/generated/demo/attune-package-harness.ts")
-    expect(artifact.generatorId).toBe("@attune/framework-nx:package-harness")
-    expect(artifact.content).toContain("createPackageHarnessClient")
-    expect(artifact.content).toContain("definePackageHarnessHandlers")
+    expect(artifact.path).toBe(".attune/cache/generated/demo/attune-program-harness.ts")
+    expect(artifact.generatorId).toBe("@attune/framework-nx:program-harness")
+    expect(artifact.content).toContain("createProgramHarnessClient")
+    expect(artifact.content).toContain("defineProgramHarnessHandlers")
     expect(artifact.content).toContain("publicAccessorHandler(\"project\")")
-    expect(artifact.content).toContain("PackageHarnessEvidenceProducers")
+    expect(artifact.content).toContain("ProgramHarnessObservationProducers")
     expect(artifact.content).toContain('"rpcId": "demo.operation.project"')
     expect(artifact.content).toContain('"status": "optional"')
   })
@@ -160,14 +160,14 @@ describe("@attune/framework-nx", () => {
     expect(plan.actions.map((action) => action.actionId)).toEqual([
       "attune.protocol.materialize",
       "attune.protocol.framework-diagnostics",
-      "attune.protocol.package-harness",
+      "attune.protocol.program-harness",
       "attune.protocol.operation-registry",
       "attune.protocol.property-evidence",
       "attune.protocol.atom-view-edge",
       "attune.protocol.type-guidance",
     ])
     expect(plan.generatedArtifacts.map((artifact) => artifact.kind satisfies FrameworkNxGeneratedArtifactKind)).toEqual([
-      "package-harness",
+      "program-harness",
       "operation-registry",
       "property-evidence",
       "atom-view-edges",

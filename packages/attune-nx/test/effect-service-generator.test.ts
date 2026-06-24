@@ -58,7 +58,7 @@ describe("@attune/nx:effect-service", () => {
     expect(source).not.toContain("Context.Tag")
   })
 
-  it("emits operation schema and package-contract registration placeholders", () => {
+  it("emits symbol schema and project-facts registration placeholders", () => {
     const tree = new MemoryTree()
 
     effectServiceGenerator(tree, {
@@ -77,10 +77,10 @@ describe("@attune/nx:effect-service", () => {
     expect(source).toContain("export const DecisionRunnerRunOperation = {")
     expect(source).toContain('  id: "decision.runner.execute",')
     expect(source).toContain('  kind: "resource-provider",')
-    expect(source).toContain('  inferredLaws: "inferLaws()",')
-    expect(source).toContain("  lawExtensions: [],")
+    expect(source).toContain('  inferredDiagnosticRules: "inferDiagnosticRules()",')
+    expect(source).toContain("  diagnosticRuleExtensions: [],")
     expect(source).toContain(
-      '    "resourceProviderOperation({ id, input, output, laws: inferLaws(), views: touches(...) })",',
+      '    "resourceProviderOperation({ id, input, output, diagnosticRules: inferDiagnosticRules(), edges: touches(...) })",',
     )
   })
 
@@ -134,7 +134,7 @@ describe("@attune/nx:effect-service", () => {
         "packages/decision-core/src/effect/services/decision-runner.ts",
         "packages/decision-core/src/effect/services/index.ts",
       ],
-      openspecChangeId: "standardize-effect-package-contracts",
+      openspecChangeId: "promote-program-index-runtime-substrate",
     })
   })
 

@@ -6,23 +6,23 @@ import {
   definePackageContract,
   definePackageViews,
   touches,
-} from "../src/package-contract/core.js"
+} from "../src/project-facts/core.js"
 import {
   type ControlRpcId,
   EffectRpcAdapterCompatibility,
   EffectRpcAdapterCompatibilitySchema,
   type OperationRpcHandlerMap,
   type OperationRpcId,
-  PackageFuzzRpcControlIds,
-  PackageFuzzRpcGroupDescriptorSchema,
+  ProgramObservationRpcControlIds,
+  ProgramObservationRpcGroupDescriptorSchema,
   RpcDescriptorSchema,
   controlRpcDescriptorById,
   controlRpcRegistry,
-  definePackageFuzzRpcGroup,
-  definePackageFuzzRpcHandlerRegistry,
+  defineProgramObservationRpcGroup,
+  defineProgramObservationRpcHandlerRegistry,
   operationRpcDescriptorById,
   operationRpcRegistry,
-} from "../src/package-contract/rpc.js"
+} from "../src/project-facts/rpc.js"
 
 const ReadinessInput = Schema.Struct({
   host: Schema.String,
@@ -80,12 +80,12 @@ const PackageContract = definePackageContract({
   views: PackageViews,
 })
 
-describe("package fuzz RPC descriptors", () => {
+describe("program observation RPC descriptors", () => {
   it("derives stable operation and control RPC ids without importing the runtime adapter", () => {
-    const group = definePackageFuzzRpcGroup(PackageContract)
+    const group = defineProgramObservationRpcGroup(PackageContract)
 
     expect(group.packageId).toBe("home-deployment")
-    expect(group.groupId).toBe("home-deployment.PackageFuzzRpc")
+    expect(group.groupId).toBe("home-deployment.ProgramObservationRpc")
     expect(group.adapterCompatibility).toEqual(EffectRpcAdapterCompatibility)
     expect(group.adapterCompatibility.status).toBe("blocked")
     expect(group.adapterCompatibility.reason).toContain("Effect 4")
@@ -93,7 +93,7 @@ describe("package fuzz RPC descriptors", () => {
       "home-deployment.operation.tailscale-readiness",
       "home-deployment.operation.nixos-anywhere-install",
     ])
-    expect(group.controls.map((descriptor) => descriptor.controlId)).toEqual([...PackageFuzzRpcControlIds])
+    expect(group.controls.map((descriptor) => descriptor.controlId)).toEqual([...ProgramObservationRpcControlIds])
 
     expectTypeOf<OperationRpcId<"home-deployment", "nixos-anywhere-install">>().toEqualTypeOf<
       "home-deployment.operation.nixos-anywhere-install"
@@ -102,7 +102,7 @@ describe("package fuzz RPC descriptors", () => {
   })
 
   it("records Schema descriptor roles for operation payloads, results, errors, evidence, and replay", () => {
-    const group = definePackageFuzzRpcGroup(PackageContract)
+    const group = defineProgramObservationRpcGroup(PackageContract)
     const install = operationRpcDescriptorById(group, "nixos-anywhere-install")
     const readiness = operationRpcDescriptorById(group, "tailscale-readiness")
 
@@ -130,7 +130,7 @@ describe("package fuzz RPC descriptors", () => {
   })
 
   it("builds exact descriptor registries for operations and controls", () => {
-    const group = definePackageFuzzRpcGroup(PackageContract)
+    const group = defineProgramObservationRpcGroup(PackageContract)
 
     expect(Object.keys(operationRpcRegistry(group))).toEqual([
       "tailscale-readiness",
@@ -142,13 +142,13 @@ describe("package fuzz RPC descriptors", () => {
       source: "control.snapshot.payload",
     })
     expect(() => operationRpcDescriptorById(group, "missing" as never)).toThrow(
-      'Missing package fuzz RPC descriptor for operation "missing"',
+      'Missing program observation RPC descriptor for operation "missing"',
     )
   })
 
   it("decodes RPC descriptor data and adapter diagnostics through Effect Schema", () => {
-    const group = definePackageFuzzRpcGroup(PackageContract)
-    const decodedGroup = Schema.decodeUnknownSync(PackageFuzzRpcGroupDescriptorSchema)(group)
+    const group = defineProgramObservationRpcGroup(PackageContract)
+    const decodedGroup = Schema.decodeUnknownSync(ProgramObservationRpcGroupDescriptorSchema)(group)
     const decodedOperation = Schema.decodeUnknownSync(RpcDescriptorSchema)(
       operationRpcDescriptorById(group, "nixos-anywhere-install"),
     )
@@ -167,8 +167,8 @@ describe("package fuzz RPC descriptors", () => {
     })
   })
 
-  it("preserves typed handler maps backed by PackageTestLayer", () => {
-    const PackageTestLayer = {
+  it("preserves typed handler maps backed by programTestLayer", () => {
+    const programTestLayer = {
       provides: ["HomeDeploymentService"],
     } as const
     const handlers = {
@@ -178,12 +178,12 @@ describe("package fuzz RPC descriptors", () => {
       "tailscale-readiness": (payload) => ({
         ready: payload.host.length > 0,
       }),
-    } satisfies OperationRpcHandlerMap<typeof PackageContract, typeof PackageTestLayer>
+    } satisfies OperationRpcHandlerMap<typeof PackageContract, typeof programTestLayer>
 
-    const registry = definePackageFuzzRpcHandlerRegistry(PackageContract, PackageTestLayer, handlers)
+    const registry = defineProgramObservationRpcHandlerRegistry(PackageContract, programTestLayer, handlers)
 
     expect(registry.operationIds).toEqual(["tailscale-readiness", "nixos-anywhere-install"])
-    expect(registry.packageTestLayer).toBe(PackageTestLayer)
+    expect(registry.programTestLayer).toBe(programTestLayer)
     expect(Object.keys(registry.handlers)).toEqual([
       "nixos-anywhere-install",
       "tailscale-readiness",

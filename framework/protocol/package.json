@@ -8,13 +8,13 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
-    "./laws": {
-      "types": "./src/laws/index.ts",
-      "import": "./src/laws/index.ts"
+    "./diagnostic-rules": {
+      "types": "./src/diagnostic-rules/index.ts",
+      "import": "./src/diagnostic-rules/index.ts"
     },
-    "./package-contract": {
-      "types": "./src/package-contract/index.ts",
-      "import": "./src/package-contract/index.ts"
+    "./project-facts": {
+      "types": "./src/project-facts/index.ts",
+      "import": "./src/project-facts/index.ts"
     },
     "./package.json": "./package.json"
   },

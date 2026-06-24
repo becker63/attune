@@ -7,7 +7,7 @@ import {
   packagePartitionIds,
   type TypeGuidanceOperationIds,
   type TypeGuidancePartitionIds,
-} from "../src/package-contract/type-guidance.js"
+} from "../src/project-facts/type-guidance.js"
 
 const InstallInput = Schema.Struct({
   host: Schema.String,
@@ -55,7 +55,7 @@ const PackageTypeGuidanceSpec = {
   sources: [
     {
       id: "contract:home-deployment",
-      label: "home-deployment package contract",
+      label: "home-deployment project facts",
       kind: "contract-operation",
     },
   ],
@@ -187,7 +187,7 @@ const PackageTypeGuidanceSpec = {
 const PackageTypeGuidanceValue = defineTypeGuidance(PackageContract, PackageTypeGuidanceSpec)
 
 describe("PackageTypeGuidance", () => {
-  it("preserves operation ids from the package contract", () => {
+  it("preserves operation ids from the project facts", () => {
     expect(Object.keys(PackageTypeGuidanceValue.operations)).toEqual([
       "nixos-anywhere-install",
       "lan-discovery-scan",

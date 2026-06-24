@@ -1,4 +1,4 @@
-export * from "../package-contract/index.js"
+export * from "../project-facts/index.js"
 
 export type OperationKind =
   | "codec"

@@ -150,7 +150,7 @@ describe("framework policy CLI", () => {
     expect(result.exitCode).toBe(1)
     expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        code: "missing-package-contract",
+        code: "missing-project-facts",
         filePath: "packages/no-contract/package.json",
       }),
       expect.objectContaining({

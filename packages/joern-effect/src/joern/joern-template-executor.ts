@@ -131,9 +131,9 @@ export const JoernTemplateExecutorRunOperation = {
   kind: "query",
   input: JoernTemplateExecutorRunInput,
   output: JoernTemplateExecutorRunOutput,
-  inferredLaws: "inferLaws()",
-  lawExtensions: [],
-  registration: `queryOperation({ id, input, output, laws: inferLaws(), views: touches(...) })`,
+  inferredDiagnosticRules: "inferDiagnosticRules()",
+  diagnosticRuleExtensions: [],
+  registration: `queryOperation({ id, input, output, diagnosticRules: inferDiagnosticRules(), edges: touches(...) })`,
 } as const
 
 export const JoernTemplateExecutorLive = JoernTemplateExecutor.Default

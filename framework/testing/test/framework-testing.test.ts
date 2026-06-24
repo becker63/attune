@@ -7,15 +7,15 @@ import {
   atomGraphMovementRecordsFromObservations,
   atomMovementEvidence,
   checkFastCheckProperty,
-  checkPackageHarnessProperty,
+  checkProgramHarnessProperty,
   counterexampleCacheEntry,
   coverageConformanceRecordsFromAtomGraph,
-  coveragePointEvidence,
-  defineEvidenceProducerMap,
-  defineEvidenceProducer,
-  definePackageEvidenceProducerMap,
-  definePackageHarnessHandlers,
-  createPackageHarnessClient,
+  coveragePointObservation,
+  defineObservationProducerMap,
+  defineObservationProducer,
+  defineProjectObservationProducerMap,
+  defineProgramHarnessHandlers,
+  createProgramHarnessClient,
   defineOperationRegistry,
   exactOperationMapCoverage,
   mergeCoverageSearchEvidence,
@@ -26,10 +26,10 @@ import {
   operationHandler,
   planTargetedCoverageRerun,
   publicAccessorHandler,
-  propertyRunEvidence,
+  propertyRunObservation,
   schemaArbitrarySlot,
-  typeGuidancePartitionEvidence,
-  weakOracleEvidence,
+  schemaPartitionObservation,
+  weakOracleObservation,
   workerEvidenceMetadata,
   workerReplayMetadata,
   type CoverageSearchIdentity,
@@ -99,10 +99,10 @@ describe("@attune/framework-testing", () => {
       },
     })
     const handler = operationHandler(registry, "operation")
-    const producer = defineEvidenceProducer({
+    const producer = defineObservationProducer({
       id: "demo-evidence",
       operationId: "operation",
-      produce: (context) => [propertyRunEvidence(context, "operation")],
+      produce: (context) => [propertyRunObservation(context, "operation")],
     })
     const context = {
       protocolId: "attune/package/demo",
@@ -133,16 +133,16 @@ describe("@attune/framework-testing", () => {
   })
 
   it("checks exact evidence producer maps", () => {
-    const producers = defineEvidenceProducerMap({
+    const producers = defineObservationProducerMap({
       packageId: "demo",
       operationIds: ["read", "write"] as const,
       producers: {
-        read: defineEvidenceProducer({
+        read: defineObservationProducer({
           id: "read-evidence",
           operationId: "read",
           produce: () => [],
         }),
-        write: defineEvidenceProducer({
+        write: defineObservationProducer({
           id: "write-evidence",
           operationId: "write",
           produce: () => [],
@@ -152,12 +152,12 @@ describe("@attune/framework-testing", () => {
 
     expect(Object.keys(producers)).toEqual(["read", "write"])
     expect(() =>
-      defineEvidenceProducerMap({
+      defineObservationProducerMap({
         packageId: "demo",
         operationIds: ["read"] as const,
         producers: {
-          read: defineEvidenceProducer({ id: "read", produce: () => [] }),
-          stale: defineEvidenceProducer({ id: "stale", produce: () => [] }),
+          read: defineObservationProducer({ id: "read", produce: () => [] }),
+          stale: defineObservationProducer({ id: "stale", produce: () => [] }),
         },
       }),
     ).toThrow("Extra: stale")
@@ -172,7 +172,7 @@ describe("@attune/framework-testing", () => {
       replay: { seed: 123 },
     } as const
 
-    expect(propertyRunEvidence(context, "operation").kind).toBe("property-run")
+    expect(propertyRunObservation(context, "operation").kind).toBe("property-run")
     expect(atomMovementEvidence(context, "operation", [
       { packageViewAtom: "demoAtom", changed: true },
       { packageViewAtom: "idleAtom", changed: false },
@@ -277,7 +277,7 @@ describe("@attune/framework-testing", () => {
     })
   })
 
-  it("invokes Schema-coded package harness entries through PackageTestLayer accessors", async () => {
+  it("invokes Schema-coded package harness entries through programTestLayer accessors", async () => {
     const PackageViews = definePackageViews({
       reactivityKeys: ["demo.changed"],
       atoms: ["demoAtom"],
@@ -303,28 +303,28 @@ describe("@attune/framework-testing", () => {
       views: PackageViews,
       operations: [incrementOperation] as const,
     } as const)
-    const PackageTestLayer = {
+    const programTestLayer = {
       publicAccessors: {
         increment: (input: { readonly value: number }) => ({
           value: input.value + 1,
         }),
       },
     } as const
-    const handlers = definePackageHarnessHandlers(PackageContract, {
+    const handlers = defineProgramHarnessHandlers(PackageContract, {
       increment: publicAccessorHandler("increment"),
     })
-    const evidenceProducers = definePackageEvidenceProducerMap(PackageContract, {
-      increment: defineEvidenceProducer({
+    const observationProducers = defineProjectObservationProducerMap(PackageContract, {
+      increment: defineObservationProducer({
         id: "increment-law",
         operationId: "increment",
         produce: (context) => [
-          propertyRunEvidence(context, "increment", {
+          propertyRunObservation(context, "increment", {
             source: "generated-evidence-producer-map",
           }),
         ],
       }),
     })
-    const client = createPackageHarnessClient({
+    const client = createProgramHarnessClient({
       atomGraphObserver: {
         observe: () => [
           {
@@ -335,9 +335,9 @@ describe("@attune/framework-testing", () => {
         ],
       },
       contract: PackageContract,
-      evidenceProducers,
+      observationProducers,
       handlers,
-      packageTestLayer: PackageTestLayer,
+      programTestLayer: programTestLayer,
     })
 
     const exit = await client.operations.increment.invoke(
@@ -397,14 +397,14 @@ describe("@attune/framework-testing", () => {
       views: PackageViews,
       operations: [incrementOperation] as const,
     } as const)
-    const PackageTestLayer = {
+    const programTestLayer = {
       publicAccessors: {
         increment: (input: { readonly value: number }) => ({
           value: input.value + 1,
         }),
       },
     } as const
-    const handlers = definePackageHarnessHandlers(PackageContract, {
+    const handlers = defineProgramHarnessHandlers(PackageContract, {
       increment: publicAccessorHandler("increment"),
     })
     const worker = workerEvidenceMetadata({
@@ -418,13 +418,13 @@ describe("@attune/framework-testing", () => {
       seed: 7,
       workerCount: 1,
     }))
-    const client = createPackageHarnessClient({
+    const client = createProgramHarnessClient({
       contract: PackageContract,
       handlers,
-      packageTestLayer: PackageTestLayer,
+      programTestLayer: programTestLayer,
     })
 
-    const result = await checkPackageHarnessProperty({
+    const result = await checkProgramHarnessProperty({
       arbitrary: schemaArbitrarySlot(IncrementInput, { schemaId: "IncrementInput" }),
       client,
       numRuns: 2,
@@ -780,7 +780,7 @@ describe("@attune/framework-testing", () => {
       replay: { seed: 909, path: "1:0" },
     } as const
 
-    expect(coveragePointEvidence(context, "increment", {
+    expect(coveragePointObservation(context, "increment", {
       pointId: "line:10",
       sourceFile: "src/increment.ts",
     })).toMatchObject({
@@ -790,7 +790,7 @@ describe("@attune/framework-testing", () => {
         replay: { seed: 909, path: "1:0" },
       },
     })
-    expect(weakOracleEvidence(context, "increment", {
+    expect(weakOracleObservation(context, "increment", {
       missingLawIds: ["schema.decode"],
     })).toMatchObject({
       kind: "weak-oracle",
@@ -799,7 +799,7 @@ describe("@attune/framework-testing", () => {
         replay: { seed: 909, path: "1:0" },
       },
     })
-    expect(typeGuidancePartitionEvidence(context, "increment", {
+    expect(schemaPartitionObservation(context, "increment", {
       filterId: "positive-input",
       partitionId: "increment.input.positive",
       partitionKind: "schema-boundary",

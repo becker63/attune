@@ -3,9 +3,9 @@ import {
   PackageContractInvariantClassifications,
   decodePackageContract,
   validatePackageContract,
-} from "../src/package-contract/validation.js"
+} from "../src/project-facts/validation.js"
 
-describe("package contract validation", () => {
+describe("project facts validation", () => {
   it("classifies invariants by their enforcement boundary", () => {
     expect(PackageContractInvariantClassifications).toEqual(expect.arrayContaining([
       expect.objectContaining({ boundary: "typescript-contract-builder" }),

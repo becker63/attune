@@ -1,16 +1,16 @@
 import {
   AttuneProtocolEvidenceEventSchema,
-  PackageFuzzRpcControlIds,
+  ProgramObservationRpcControlIds,
   controlRpcDescriptorById,
-  definePackageFuzzRpcGroup,
+  defineProgramObservationRpcGroup,
   operationRpcDescriptorById,
   type AttuneProtocolEvidenceEvent,
   type ControlRpcDescriptor,
   type OperationById,
   type OperationIds,
   type OperationRpcDescriptor,
-  type PackageFuzzRpcControlId,
-  type PackageFuzzRpcGroup,
+  type ProgramObservationRpcControlId,
+  type ProgramObservationRpcGroup,
   type PackageIdOf,
   type InputOf,
   type OutputOf,
@@ -22,14 +22,14 @@ import {
   type AtomGraphObserver,
 } from "./atom-graph-observer.js"
 import {
-  defineEvidenceProducerMap,
-  evidenceEvent,
-  type EvidenceEventInput,
-  type EvidenceProducerMap,
-  type EvidenceProducerContext,
+  defineObservationProducerMap,
+  observationEvent,
+  type ObservationInput,
+  type ObservationProducerMap,
+  type ObservationContext,
   type TypeGuidancePartitionEvidenceStatus,
-  typeGuidancePartitionEvidence,
-} from "./evidence-producer.js"
+  schemaPartitionObservation,
+} from "./observation-producer.js"
 import {
   checkFastCheckProperty,
   type FastCheckPropertyEvidence,
@@ -47,9 +47,9 @@ import {
 } from "./replay-metadata.js"
 import type { WorkerEvidenceMetadata } from "./worker-metadata.js"
 
-export type PackageHarnessContract = Parameters<typeof definePackageFuzzRpcGroup>[0]
+export type ProgramHarnessContract = Parameters<typeof defineProgramObservationRpcGroup>[0]
 
-export const PackageHarnessInvocationSchema = Schema.Struct({
+export const ProgramHarnessInvocationSchema = Schema.Struct({
   protocolId: Schema.String,
   packageId: Schema.String,
   operationId: Schema.String,
@@ -58,9 +58,9 @@ export const PackageHarnessInvocationSchema = Schema.Struct({
   replay: Schema.optionalKey(ReplayMetadataSchema),
   worker: Schema.optionalKey(Schema.Unknown),
 })
-export type PackageHarnessInvocation = typeof PackageHarnessInvocationSchema.Type
+export type ProgramHarnessInvocation = typeof ProgramHarnessInvocationSchema.Type
 
-export const PackageHarnessExitSchema = Schema.Struct({
+export const ProgramHarnessExitSchema = Schema.Struct({
   protocolId: Schema.String,
   packageId: Schema.String,
   operationId: Schema.String,
@@ -73,18 +73,18 @@ export const PackageHarnessExitSchema = Schema.Struct({
   evidence: Schema.Array(AttuneProtocolEvidenceEventSchema),
   replay: Schema.optionalKey(ReplayMetadataSchema),
 })
-export type PackageHarnessExit = typeof PackageHarnessExitSchema.Type
+export type ProgramHarnessExit = typeof ProgramHarnessExitSchema.Type
 
-export type PackageHarnessInvokeOptions = Readonly<{
+export type ProgramHarnessInvokeOptions = Readonly<{
   readonly observedAt?: string
   readonly propertyId?: string
   readonly replay?: ReplayMetadata
   readonly runId?: string
-  readonly typeGuidance?: readonly PackageHarnessTypeGuidanceObservation[]
+  readonly typeGuidance?: readonly ProgramHarnessTypeGuidanceObservation[]
   readonly worker?: WorkerEvidenceMetadata
 }>
 
-export type PackageHarnessTypeGuidanceObservation = Readonly<{
+export type ProgramHarnessTypeGuidanceObservation = Readonly<{
   readonly partitionId: string
   readonly status: TypeGuidancePartitionEvidenceStatus
   readonly corpusSeedId?: string
@@ -94,115 +94,115 @@ export type PackageHarnessTypeGuidanceObservation = Readonly<{
   readonly source?: string
 }>
 
-export type PackageHarnessRecordEvidence = (
-  input: Omit<EvidenceEventInput, "operationId"> & Readonly<{
+export type ProgramHarnessRecordEvidence = (
+  input: Omit<ObservationInput, "operationId"> & Readonly<{
     readonly operationId?: string
   }>,
 ) => void
 
-export interface PackageHarnessHandlerContext<
-  Contract extends PackageHarnessContract,
+export interface ProgramHarnessHandlerContext<
+  Contract extends ProgramHarnessContract,
   OperationId extends OperationIds<Contract>,
-  PackageTestLayer,
+  programTestLayer,
 > {
   readonly contract: Contract
   readonly operation: OperationById<Contract, OperationId>
-  readonly packageTestLayer: PackageTestLayer
+  readonly programTestLayer: programTestLayer
   readonly rpc: OperationRpcDescriptor<Contract, OperationId>
-  readonly evidenceContext: EvidenceProducerContext
-  readonly recordEvidence: PackageHarnessRecordEvidence
+  readonly evidenceContext: ObservationContext
+  readonly recordEvidence: ProgramHarnessRecordEvidence
 }
 
-export type PackageHarnessHandler<
-  Contract extends PackageHarnessContract,
+export type ProgramHarnessHandler<
+  Contract extends ProgramHarnessContract,
   OperationId extends OperationIds<Contract>,
-  PackageTestLayer = unknown,
+  programTestLayer = unknown,
 > = (
   payload: InputOf<Contract, OperationId>,
-  context: PackageHarnessHandlerContext<Contract, OperationId, PackageTestLayer>,
+  context: ProgramHarnessHandlerContext<Contract, OperationId, programTestLayer>,
 ) => OutputOf<Contract, OperationId> | Promise<OutputOf<Contract, OperationId>>
 
-export type PackageHarnessHandlerMap<
-  Contract extends PackageHarnessContract,
-  PackageTestLayer = unknown,
+export type ProgramHarnessHandlerMap<
+  Contract extends ProgramHarnessContract,
+  programTestLayer = unknown,
 > = {
-  readonly [OperationId in OperationIds<Contract>]: PackageHarnessHandler<
+  readonly [OperationId in OperationIds<Contract>]: ProgramHarnessHandler<
     Contract,
     OperationId,
-    PackageTestLayer
+    programTestLayer
   >
 }
 
-export interface PackageHarnessOperationEntry<
-  Contract extends PackageHarnessContract,
+export interface ProgramHarnessOperationEntry<
+  Contract extends ProgramHarnessContract,
   OperationId extends OperationIds<Contract>,
 > {
   readonly operationId: OperationId
   readonly rpc: OperationRpcDescriptor<Contract, OperationId>
   readonly invoke: (
     payload: unknown,
-    options?: PackageHarnessInvokeOptions,
-  ) => Promise<PackageHarnessExit>
+    options?: ProgramHarnessInvokeOptions,
+  ) => Promise<ProgramHarnessExit>
 }
 
-export interface PackageHarnessControlEntry<
+export interface ProgramHarnessControlEntry<
   PackageId extends string,
-  ControlId extends PackageFuzzRpcControlId,
+  ControlId extends ProgramObservationRpcControlId,
 > {
   readonly controlId: ControlId
   readonly rpc: ControlRpcDescriptor<PackageId, ControlId>
 }
 
-export type PackageHarnessControlEntries<PackageId extends string> = {
-  readonly [ControlId in PackageFuzzRpcControlId]: PackageHarnessControlEntry<
+export type ProgramHarnessControlEntries<PackageId extends string> = {
+  readonly [ControlId in ProgramObservationRpcControlId]: ProgramHarnessControlEntry<
     PackageId,
     ControlId
   >
 }
 
-export type PackageHarnessOperationEntries<Contract extends PackageHarnessContract> = {
-  readonly [OperationId in OperationIds<Contract>]: PackageHarnessOperationEntry<
+export type ProgramHarnessOperationEntries<Contract extends ProgramHarnessContract> = {
+  readonly [OperationId in OperationIds<Contract>]: ProgramHarnessOperationEntry<
     Contract,
     OperationId
   >
 }
 
-export interface PackageHarnessClient<
-  Contract extends PackageHarnessContract,
-  PackageTestLayer,
-  Handlers extends PackageHarnessHandlerMap<Contract, PackageTestLayer>,
+export interface ProgramHarnessClient<
+  Contract extends ProgramHarnessContract,
+  programTestLayer,
+  Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
 > {
   readonly contract: Contract
-  readonly controls: PackageHarnessControlEntries<PackageIdOf<Contract>>
-  readonly packageTestLayer: PackageTestLayer
-  readonly group: PackageFuzzRpcGroup<Contract>
+  readonly controls: ProgramHarnessControlEntries<PackageIdOf<Contract>>
+  readonly programTestLayer: programTestLayer
+  readonly group: ProgramObservationRpcGroup<Contract>
   readonly operationIds: readonly OperationIds<Contract>[]
   readonly handlers: Handlers
   readonly registry: OperationRegistry<Handlers>
-  readonly operations: PackageHarnessOperationEntries<Contract>
+  readonly operations: ProgramHarnessOperationEntries<Contract>
   readonly invoke: <OperationId extends OperationIds<Contract>>(
     operationId: OperationId,
     payload: unknown,
-    options?: PackageHarnessInvokeOptions,
-  ) => Promise<PackageHarnessExit>
+    options?: ProgramHarnessInvokeOptions,
+  ) => Promise<ProgramHarnessExit>
 }
 
-export class PackageHarnessMissingAccessorError extends Error {
+export class ProgramHarnessMissingAccessorError extends Error {
   constructor(
     readonly packageId: string,
     readonly operationId: string,
   ) {
     super(
-      `Package ${packageId} PackageTestLayer does not expose a public accessor for operation ${operationId}.`,
+      `Package ${packageId} programTestLayer does not expose a public accessor for operation ${operationId}.`,
     )
-    this.name = "PackageHarnessMissingAccessorError"
+    this.name = "ProgramHarnessMissingAccessorError"
   }
 }
 
-export const definePackageHarnessHandlers = <
-  const Contract extends PackageHarnessContract,
-  const PackageTestLayer,
-  const Handlers extends PackageHarnessHandlerMap<Contract, PackageTestLayer>,
+export const defineProgramHarnessHandlers = <
+  const Contract extends ProgramHarnessContract,
+  const programTestLayer,
+  const Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
 >(
   contract: Contract,
   handlers: Handlers,
@@ -216,33 +216,33 @@ export const definePackageHarnessHandlers = <
   return handlers
 }
 
-export const definePackageEvidenceProducerMap = <
-  const Contract extends PackageHarnessContract,
-  const Producers extends EvidenceProducerMap<OperationIds<Contract>>,
+export const defineProjectObservationProducerMap = <
+  const Contract extends ProgramHarnessContract,
+  const Producers extends ObservationProducerMap<OperationIds<Contract>>,
 >(
   contract: Contract,
   producers: Producers,
 ): Producers =>
-  defineEvidenceProducerMap({
+  defineObservationProducerMap({
     packageId: contract.packageId,
     operationIds: operationIdsFromTuple(contract.operations),
     producers,
   })
 
 export const publicAccessorHandler = <
-  const Contract extends PackageHarnessContract,
-  const PackageTestLayer,
+  const Contract extends ProgramHarnessContract,
+  const programTestLayer,
   const OperationId extends OperationIds<Contract>,
 >(
   operationId: OperationId,
-): PackageHarnessHandler<Contract, OperationId, PackageTestLayer> =>
+): ProgramHarnessHandler<Contract, OperationId, programTestLayer> =>
   async (payload, context) => {
-    const accessor = findPackageTestLayerAccessor(
-      context.packageTestLayer,
+    const accessor = findprogramTestLayerAccessor(
+      context.programTestLayer,
       operationId,
     )
     if (accessor === undefined) {
-      throw new PackageHarnessMissingAccessorError(
+      throw new ProgramHarnessMissingAccessorError(
         context.contract.packageId,
         operationId,
       )
@@ -250,21 +250,21 @@ export const publicAccessorHandler = <
     return await accessor(payload, context) as OutputOf<Contract, OperationId>
   }
 
-export const createPackageHarnessClient = <
-  const Contract extends PackageHarnessContract,
-  const PackageTestLayer,
-  const Handlers extends PackageHarnessHandlerMap<Contract, PackageTestLayer>,
+export const createProgramHarnessClient = <
+  const Contract extends ProgramHarnessContract,
+  const programTestLayer,
+  const Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
 >(
   input: Readonly<{
     readonly contract: Contract
-    readonly packageTestLayer: PackageTestLayer
+    readonly programTestLayer: programTestLayer
     readonly handlers: Handlers
-    readonly evidenceProducers?: EvidenceProducerMap<OperationIds<Contract>>
+    readonly observationProducers?: ObservationProducerMap<OperationIds<Contract>>
     readonly atomGraphObserver?: AtomGraphObserver
-    readonly group?: PackageFuzzRpcGroup<Contract>
+    readonly group?: ProgramObservationRpcGroup<Contract>
   }>,
-): PackageHarnessClient<Contract, PackageTestLayer, Handlers> => {
-  const group = input.group ?? definePackageFuzzRpcGroup(input.contract)
+): ProgramHarnessClient<Contract, programTestLayer, Handlers> => {
+  const group = input.group ?? defineProgramObservationRpcGroup(input.contract)
   const operationIds = operationIdsFromTuple(input.contract.operations)
   const handlers = input.handlers
   const registry = defineOperationRegistry({
@@ -277,18 +277,18 @@ export const createPackageHarnessClient = <
   const invoke = <OperationId extends OperationIds<Contract>>(
     operationId: OperationId,
     payload: unknown,
-    options: PackageHarnessInvokeOptions = {},
+    options: ProgramHarnessInvokeOptions = {},
   ) =>
-    invokePackageHarnessOperation({
+    invokeProgramHarnessOperation({
       contract: input.contract,
       group,
       handlers,
       operationId,
-      packageTestLayer: input.packageTestLayer,
+      programTestLayer: input.programTestLayer,
       payload,
       options,
       ...(input.atomGraphObserver === undefined ? {} : { atomGraphObserver: input.atomGraphObserver }),
-      ...(input.evidenceProducers === undefined ? {} : { evidenceProducers: input.evidenceProducers }),
+      ...(input.observationProducers === undefined ? {} : { observationProducers: input.observationProducers }),
     })
 
   const operations = Object.fromEntries(
@@ -299,20 +299,20 @@ export const createPackageHarnessClient = <
         rpc: operationRpcDescriptorById(group, operationId),
         invoke: (
           payload: unknown,
-          options?: PackageHarnessInvokeOptions,
+          options?: ProgramHarnessInvokeOptions,
         ) => invoke(operationId, payload, options),
       },
     ]),
-  ) as PackageHarnessOperationEntries<Contract>
+  ) as ProgramHarnessOperationEntries<Contract>
   const controls = Object.fromEntries(
-    PackageFuzzRpcControlIds.map((controlId) => [
+    ProgramObservationRpcControlIds.map((controlId) => [
       controlId,
       {
         controlId,
         rpc: controlRpcDescriptorById(group, controlId),
       },
     ]),
-  ) as PackageHarnessControlEntries<PackageIdOf<Contract>>
+  ) as ProgramHarnessControlEntries<PackageIdOf<Contract>>
 
   return {
     contract: input.contract,
@@ -322,36 +322,36 @@ export const createPackageHarnessClient = <
     invoke,
     operationIds,
     operations,
-    packageTestLayer: input.packageTestLayer,
+    programTestLayer: input.programTestLayer,
     registry,
   }
 }
 
-export type PackageHarnessPropertyInput<
-  Contract extends PackageHarnessContract,
-  PackageTestLayer,
-  Handlers extends PackageHarnessHandlerMap<Contract, PackageTestLayer>,
+export type ProgramHarnessPropertyInput<
+  Contract extends ProgramHarnessContract,
+  programTestLayer,
+  Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
   OperationId extends OperationIds<Contract>,
 > = Omit<
   FastCheckPropertyInput<InputOf<Contract, OperationId>, OutputOf<Contract, OperationId>>,
   "lawIds" | "operation" | "operationId" | "packageId" | "protocolId"
 > & Readonly<{
-  readonly client: PackageHarnessClient<Contract, PackageTestLayer, Handlers>
+  readonly client: ProgramHarnessClient<Contract, programTestLayer, Handlers>
   readonly operationId: OperationId
   readonly lawIds?: readonly string[]
   readonly validateHarnessExit?: PropertyValidationHook<
-    PackageHarnessExit,
+    ProgramHarnessExit,
     InputOf<Contract, OperationId>
   >
 }>
 
-export const checkPackageHarnessProperty = async <
-  const Contract extends PackageHarnessContract,
-  const PackageTestLayer,
-  const Handlers extends PackageHarnessHandlerMap<Contract, PackageTestLayer>,
+export const checkProgramHarnessProperty = async <
+  const Contract extends ProgramHarnessContract,
+  const programTestLayer,
+  const Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
   const OperationId extends OperationIds<Contract>,
 >(
-  input: PackageHarnessPropertyInput<Contract, PackageTestLayer, Handlers, OperationId>,
+  input: ProgramHarnessPropertyInput<Contract, programTestLayer, Handlers, OperationId>,
 ): Promise<FastCheckPropertyEvidence> => {
   const operation = operationById(input.client.contract, input.operationId)
   const harnessEvents: AttuneProtocolEvidenceEvent[] = []
@@ -395,7 +395,7 @@ const propertyInvokeOptions = (
     readonly worker?: WorkerEvidenceMetadata
   }>,
   caseIndex: number,
-): PackageHarnessInvokeOptions => ({
+): ProgramHarnessInvokeOptions => ({
   replay: {
     seed: input.seed ?? 1_337,
     caseIndex,
@@ -413,24 +413,24 @@ const propertyInvokeOptions = (
   ...(input.worker === undefined ? {} : { worker: input.worker }),
 })
 
-const invokePackageHarnessOperation = async <
-  const Contract extends PackageHarnessContract,
-  const PackageTestLayer,
-  const Handlers extends PackageHarnessHandlerMap<Contract, PackageTestLayer>,
+const invokeProgramHarnessOperation = async <
+  const Contract extends ProgramHarnessContract,
+  const programTestLayer,
+  const Handlers extends ProgramHarnessHandlerMap<Contract, programTestLayer>,
   const OperationId extends OperationIds<Contract>,
 >(
   input: Readonly<{
     readonly atomGraphObserver?: AtomGraphObserver
     readonly contract: Contract
-    readonly evidenceProducers?: EvidenceProducerMap<OperationIds<Contract>>
-    readonly group: PackageFuzzRpcGroup<Contract>
+    readonly observationProducers?: ObservationProducerMap<OperationIds<Contract>>
+    readonly group: ProgramObservationRpcGroup<Contract>
     readonly handlers: Handlers
     readonly operationId: OperationId
-    readonly packageTestLayer: PackageTestLayer
+    readonly programTestLayer: programTestLayer
     readonly payload: unknown
-    readonly options: PackageHarnessInvokeOptions
+    readonly options: ProgramHarnessInvokeOptions
   }>,
-): Promise<PackageHarnessExit> => {
+): Promise<ProgramHarnessExit> => {
   const operation = operationById(input.contract, input.operationId)
   const rpc = operationRpcDescriptorById(input.group, input.operationId)
   const evidenceContext = evidenceContextFor(
@@ -439,8 +439,8 @@ const invokePackageHarnessOperation = async <
     input.options,
   )
   const evidence: AttuneProtocolEvidenceEvent[] = []
-  const recordEvidence: PackageHarnessRecordEvidence = (eventInput) => {
-    evidence.push(evidenceEvent(evidenceContext, {
+  const recordEvidence: ProgramHarnessRecordEvidence = (eventInput) => {
+    evidence.push(observationEvent(evidenceContext, {
       ...eventInput,
       operationId: eventInput.operationId ?? input.operationId,
     }))
@@ -479,16 +479,16 @@ const invokePackageHarnessOperation = async <
       input.options.typeGuidance ?? [],
     )
 
-    const handler = input.handlers[input.operationId] as unknown as PackageHarnessHandler<
+    const handler = input.handlers[input.operationId] as unknown as ProgramHarnessHandler<
       Contract,
       OperationId,
-      PackageTestLayer
+      programTestLayer
     >
     const output = await handler(decodedInput, {
       contract: input.contract,
       evidenceContext,
       operation,
-      packageTestLayer: input.packageTestLayer,
+      programTestLayer: input.programTestLayer,
       recordEvidence,
       rpc,
     })
@@ -521,8 +521,8 @@ const invokePackageHarnessOperation = async <
       ))
     }
 
-    if (input.evidenceProducers !== undefined) {
-      const producer = input.evidenceProducers[input.operationId]
+    if (input.observationProducers !== undefined) {
+      const producer = input.observationProducers[input.operationId]
       if (producer !== undefined) {
         evidence.push(...producer.produce(evidenceContext))
       }
@@ -564,30 +564,30 @@ const invokePackageHarnessOperation = async <
 
 const recordTypeGuidanceEvidence = (
   evidence: AttuneProtocolEvidenceEvent[],
-  context: EvidenceProducerContext,
+  context: ObservationContext,
   operationId: string,
-  observations: readonly PackageHarnessTypeGuidanceObservation[],
+  observations: readonly ProgramHarnessTypeGuidanceObservation[],
 ): void => {
   for (const observation of observations) {
-    evidence.push(typeGuidancePartitionEvidence(context, operationId, observation))
+    evidence.push(schemaPartitionObservation(context, operationId, observation))
   }
 }
 
 const harnessErrorExit = <
-  const Contract extends PackageHarnessContract,
+  const Contract extends ProgramHarnessContract,
   const OperationId extends OperationIds<Contract>,
 >(
   input: Readonly<{
     readonly contract: Contract
     readonly error: unknown
     readonly evidence: AttuneProtocolEvidenceEvent[]
-    readonly evidenceContext: EvidenceProducerContext
+    readonly evidenceContext: ObservationContext
     readonly operation: OperationById<Contract, OperationId>
     readonly operationId: OperationId
-    readonly recordEvidence: PackageHarnessRecordEvidence
+    readonly recordEvidence: ProgramHarnessRecordEvidence
     readonly rpc: OperationRpcDescriptor<Contract, OperationId>
   }>,
-): PackageHarnessExit => {
+): ProgramHarnessExit => {
   const errorSchema = (input.operation as { readonly error?: unknown }).error
   if (errorSchema !== undefined) {
     try {
@@ -635,8 +635,8 @@ const harnessErrorExit = <
 const evidenceContextFor = (
   packageId: string,
   operationId: string,
-  options: PackageHarnessInvokeOptions,
-): EvidenceProducerContext => ({
+  options: ProgramHarnessInvokeOptions,
+): ObservationContext => ({
   observedAt: options.observedAt ?? new Date().toISOString(),
   packageId,
   propertyId: options.propertyId ?? `${packageId}.${operationId}.harness`,
@@ -652,7 +652,7 @@ const optionalReplay = (
   replay === undefined ? {} : { replay }
 
 const operationById = <
-  const Contract extends PackageHarnessContract,
+  const Contract extends ProgramHarnessContract,
   const OperationId extends OperationIds<Contract>,
 >(
   contract: Contract,
@@ -666,14 +666,14 @@ const operationById = <
 }
 
 const decodeHarnessInvocation = (
-  value: PackageHarnessInvocation,
-): PackageHarnessInvocation =>
-  Schema.decodeUnknownSync(PackageHarnessInvocationSchema)(value)
+  value: ProgramHarnessInvocation,
+): ProgramHarnessInvocation =>
+  Schema.decodeUnknownSync(ProgramHarnessInvocationSchema)(value)
 
 const decodeHarnessExit = (
-  value: PackageHarnessExit,
-): PackageHarnessExit =>
-  Schema.decodeUnknownSync(PackageHarnessExitSchema)(value)
+  value: ProgramHarnessExit,
+): ProgramHarnessExit =>
+  Schema.decodeUnknownSync(ProgramHarnessExitSchema)(value)
 
 const decodeOperationValue = <Value>(
   schema: unknown,
@@ -688,10 +688,10 @@ const encodeOperationValue = (
   Schema.encodeSync(schema as never)(value as never)
 
 const recordSchemaEvidence = <
-  const Contract extends PackageHarnessContract,
+  const Contract extends ProgramHarnessContract,
   const OperationId extends OperationIds<Contract>,
 >(
-  recordEvidence: PackageHarnessRecordEvidence,
+  recordEvidence: ProgramHarnessRecordEvidence,
   role: "payload" | "success" | "error",
   rpc: OperationRpcDescriptor<Contract, OperationId>,
   value: unknown,
@@ -711,21 +711,21 @@ const recordSchemaEvidence = <
     sequence: `schema:${role}`,
   })
 
-const findPackageTestLayerAccessor = (
-  packageTestLayer: unknown,
+const findprogramTestLayerAccessor = (
+  programTestLayer: unknown,
   operationId: string,
 ): ((payload: unknown, context: unknown) => unknown | Promise<unknown>) | undefined => {
-  const direct = lookupAccessor(packageTestLayer, operationId)
+  const direct = lookupAccessor(programTestLayer, operationId)
   if (direct !== undefined) return direct
 
-  if (!isRecord(packageTestLayer)) return undefined
+  if (!isRecord(programTestLayer)) return undefined
 
   for (const key of ["publicAccessors", "accessors", "handlers", "operations", "services"] as const) {
-    const accessor = lookupAccessor(packageTestLayer[key], operationId)
+    const accessor = lookupAccessor(programTestLayer[key], operationId)
     if (accessor !== undefined) return accessor
   }
 
-  for (const nested of Object.values(packageTestLayer)) {
+  for (const nested of Object.values(programTestLayer)) {
     const accessor = lookupAccessor(nested, operationId)
     if (accessor !== undefined) return accessor
   }
@@ -751,17 +751,17 @@ const summarizeError = (error: unknown): string =>
   error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
 const runHarnessExitHook = async <Input>(
-  hook: PropertyValidationHook<PackageHarnessExit, Input> | undefined,
-  exit: PackageHarnessExit,
-  context: Parameters<PropertyValidationHook<PackageHarnessExit, Input>>[1],
+  hook: PropertyValidationHook<ProgramHarnessExit, Input> | undefined,
+  exit: ProgramHarnessExit,
+  context: Parameters<PropertyValidationHook<ProgramHarnessExit, Input>>[1],
 ): Promise<boolean> => {
   if (hook === undefined) return false
   const result = await hook(exit, context)
   return result !== false
 }
 
-export const packageHarnessControlIds: readonly PackageFuzzRpcControlId[] =
-  PackageFuzzRpcControlIds
+export const programHarnessControlIds: readonly ProgramObservationRpcControlId[] =
+  ProgramObservationRpcControlIds
 
-export type PackageHarnessProtocolId<Contract extends PackageHarnessContract> =
+export type ProgramHarnessProtocolId<Contract extends ProgramHarnessContract> =
   `attune/package/${PackageIdOf<Contract>}`

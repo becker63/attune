@@ -1,6 +1,6 @@
 import type {
   AttunePackageContract,
-} from "../package-contract/index.js"
+} from "../project-facts/index.js"
 import {
   OperationKindSchema,
   PackageContractSchema,
@@ -8,10 +8,10 @@ import {
   PackageViewsSchema,
   TouchedViewsSchema,
   type DecodedPackageContract,
-} from "../package-contract/index.js"
+} from "../project-facts/index.js"
 import { Schema } from "effect"
 
-import { obligationId, type AttuneProtocolObligation } from "../obligations/index.js"
+import { obligationId, type AttuneProtocolObligation } from "../diagnostic-obligations/index.js"
 import { AttuneProtocolWaiverSchema, decodeProtocolWaivers } from "../waivers/index.js"
 
 export const AttuneCoverageExpectationSchema = Schema.Struct({

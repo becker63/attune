@@ -13,8 +13,8 @@ export default defineConfig({
         replacement: fileURLToPath(new URL("../nx/src/index.ts", import.meta.url)),
       },
       {
-        find: "@attune/framework-protocol/package-contract",
-        replacement: fileURLToPath(new URL("../protocol/src/package-contract/index.ts", import.meta.url)),
+        find: "@attune/framework-protocol/project-facts",
+        replacement: fileURLToPath(new URL("../protocol/src/project-facts/index.ts", import.meta.url)),
       },
       {
         find: "@attune/framework-protocol",

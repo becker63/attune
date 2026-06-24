@@ -18,7 +18,7 @@ import {
   type FrameworkNoReportDiagnostic,
   type FrameworkNoReportFile,
 } from "./framework-no-report-policy.js"
-import { CanonicalLawIds, isLawAllowedForOperation, type LawId } from "../../protocol/src/package-contract/index.js"
+import { CanonicalDiagnosticRuleIds, isDiagnosticRuleAllowedForSymbol, type DiagnosticRuleId } from "../../protocol/src/project-facts/index.js"
 
 interface WorkspaceFile {
   readonly path: string
@@ -56,7 +56,7 @@ export type FrameworkFinalRatchetRuleId =
   | typeof PackageLocalAttuneSurfaceRuleId
 
 export type FrameworkFinalRatchetDiagnosticCode =
-  | "missing-package-contract"
+  | "missing-project-facts"
   | "missing-package-view-graph"
   | "missing-property-evidence-harness"
   | "operation-missing-reactivity-touch"
@@ -184,7 +184,7 @@ const historicalArchitectureLintReferencePaths = [
 // TODO(atom-reactivity migration debt): these contracts already expose package
 // view atoms, but their current source metadata does not yet model every
 // Reactivity key through rich base-atom subscription nodes. Remove entries as
-// package-contract sync emits baseAtoms/derivedAtoms/packageViewAtoms metadata.
+// project-facts sync emits baseAtoms/derivedAtoms/packageViewAtoms metadata.
 const temporaryAtomReactivityDebt = [
   {
     packageRoot: "packages/attuned-discovery",
@@ -411,7 +411,7 @@ function isRatchetDiagnosticEnabled(
 }
 
 const atomGraphDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
-  "missing-package-contract",
+  "missing-project-facts",
   "missing-package-view-graph",
   "operation-missing-reactivity-touch",
   "dead-reactivity-key",
@@ -420,13 +420,13 @@ const atomGraphDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
 ])
 
 const propertyEvidenceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
-  "missing-package-contract",
+  "missing-project-facts",
   "missing-property-evidence-harness",
   "worker-target-metadata",
 ])
 
 const coverageConformanceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
-  "missing-package-contract",
+  "missing-project-facts",
   "missing-coverage-conformance",
 ])
 
@@ -499,9 +499,9 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
 
     if (contractFile === undefined) {
       diagnostics.push(finalRatchetDiagnostic(
-        "missing-package-contract",
+        "missing-project-facts",
         `${packageRoot}/package.json`,
-        `Active package ${packageRoot} must expose src/attune.package.ts after the package-contract migration.`,
+        `Active package ${packageRoot} must expose src/attune.package.ts after the project-facts migration.`,
       ))
       continue
     }
@@ -516,7 +516,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-package-view-graph",
           contractPath,
-          "Legacy package contract must declare PackageViews and register them through views: PackageViews while it remains compatibility input.",
+          "Legacy project facts must declare PackageViews and register them through views: PackageViews while it remains compatibility input.",
         ))
       }
 
@@ -527,7 +527,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-property-evidence-harness",
           contractPath,
-          "Legacy package contract must expose generated property/evidence harness metadata or an explicit local waiver while it remains compatibility input.",
+          "Legacy project facts must expose generated property/evidence harness metadata or an explicit local waiver while it remains compatibility input.",
         ))
       }
 
@@ -538,7 +538,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-coverage-conformance",
           contractPath,
-          "Legacy package contract must expose PackageTypeGuidance, coverageSearch, or coverage expectations while it remains compatibility input.",
+          "Legacy project facts must expose PackageTypeGuidance, coverageSearch, or coverage expectations while it remains compatibility input.",
         ))
       }
 
@@ -827,7 +827,7 @@ function checkPackageContractResidualPolicy(
   const graph = extractPackageAtomGraph(contractFile.content)
 
   diagnostics.push(...findDuplicateSourceOperationIds(contractFile.path, operations))
-  diagnostics.push(...findInvalidSourceLawIds(contractFile.path, operations))
+  diagnostics.push(...findInvalidSourceDiagnosticRuleIds(contractFile.path, operations))
   diagnostics.push(...findInvalidSourceViewReferences(contractFile.path, operations, graph))
 
   if (hiddenConfigurationPattern.test(contractFile.content) && !hiddenConfigurationWaiverPattern.test(contractFile.content)) {
@@ -894,16 +894,16 @@ function findDuplicateSourceOperationIds(
   ))
 }
 
-function findInvalidSourceLawIds(
+function findInvalidSourceDiagnosticRuleIds(
   filePath: string,
   operations: readonly SourceOperationPolicyMetadata[],
 ): readonly FrameworkFinalRatchetDiagnostic[] {
-  const canonicalLawIds = new Set<string>(CanonicalLawIds)
+  const canonicalDiagnosticRuleIds = new Set<string>(CanonicalDiagnosticRuleIds)
   const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
 
   for (const operation of operations) {
     for (const lawId of operation.laws) {
-      if (!canonicalLawIds.has(lawId)) {
+      if (!canonicalDiagnosticRuleIds.has(lawId)) {
         diagnostics.push(finalRatchetDiagnostic(
           "invalid-law-id",
           filePath,
@@ -912,14 +912,14 @@ function findInvalidSourceLawIds(
         continue
       }
 
-      if (!isLawAllowedForOperation(lawId as LawId, {
+      if (!isDiagnosticRuleAllowedForSymbol(lawId as DiagnosticRuleId, {
         id: operation.id,
         kind: operation.kind,
         views: {
           reactivityKeys: operation.reactivityKeys,
           atoms: operation.atoms,
         },
-      } as Parameters<typeof isLawAllowedForOperation>[1])) {
+      } as Parameters<typeof isDiagnosticRuleAllowedForSymbol>[1])) {
         diagnostics.push(finalRatchetDiagnostic(
           "invalid-law-id",
           filePath,

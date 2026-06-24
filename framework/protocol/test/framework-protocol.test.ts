@@ -4,12 +4,12 @@ import { join } from "node:path"
 import { Schema } from "effect"
 import { describe, expect, expectTypeOf, it } from "vitest"
 import {
-  ProtocolLawDescriptorSchema,
-  inferLawIds,
-  inferLaws,
-  isLawAllowedForOperation,
-  missingMetadataForOperation,
-} from "../src/laws/index.js"
+  DiagnosticRuleDescriptorSchema,
+  inferDiagnosticRuleIds,
+  inferDiagnosticRules,
+  isDiagnosticRuleAllowedForSymbol,
+  missingMetadataForSymbol,
+} from "../src/diagnostic-rules/index.js"
 import {
   AttuneProtocolWaiverSchema,
   assertExactHandlers,
@@ -114,7 +114,7 @@ describe("@attune/framework-protocol", () => {
     expectTypeOf<OutputOf<typeof contract, "lookup">>().toEqualTypeOf<{ readonly value: string }>()
   })
 
-  it("infers framework-owned protocol laws from operation kind and metadata", () => {
+  it("infers framework-owned diagnostic rules from operation kind and metadata", () => {
     const operation = {
       id: "nixos-anywhere-install",
       kind: "resource-provider",
@@ -137,7 +137,7 @@ describe("@attune/framework-protocol", () => {
       },
     } as const
 
-    expect(inferLawIds(operation)).toEqual([
+    expect(inferDiagnosticRuleIds(operation)).toEqual([
       "schema.decode",
       "schema.encode",
       "schema.error-decode",
@@ -150,15 +150,15 @@ describe("@attune/framework-protocol", () => {
       "resource.destructive-approval",
       "resource.no-repeat-destructive",
     ])
-    expect(missingMetadataForOperation(operation)).toEqual([])
-    expect(isLawAllowedForOperation("resource.destructive-approval", operation)).toBe(true)
-    expect(Schema.decodeUnknownSync(ProtocolLawDescriptorSchema)(inferLaws(operation)[0])).toMatchObject({
+    expect(missingMetadataForSymbol(operation)).toEqual([])
+    expect(isDiagnosticRuleAllowedForSymbol("resource.destructive-approval", operation)).toBe(true)
+    expect(Schema.decodeUnknownSync(DiagnosticRuleDescriptorSchema)(inferDiagnosticRules(operation)[0])).toMatchObject({
       id: "schema.decode",
       source: "shared-kernel",
     })
   })
 
-  it("keeps package-specific protocol law extensions explicit", () => {
+  it("keeps project-specific diagnostic rule extensions explicit", () => {
     const operation = {
       id: "effect-service-generator",
       kind: "generator",
@@ -171,18 +171,18 @@ describe("@attune/framework-protocol", () => {
       views: {
         packageViews: ["generatedFileDiffAtom"],
       },
-      customLaws: [{
+      customDiagnosticRules: [{
         id: "generator.provenance-recorded",
         family: "generator-provenance",
         severity: "required",
         operationKinds: ["generator"],
-        description: "Generated file provenance is recorded in the package-specific ledger.",
+        description: "Generated file provenance is recorded in the project-specific ledger.",
         source: "custom-extension",
         metadata: { owner: "@attune/nx:effect-service" },
       }],
     } as const
 
-    expect(inferLawIds(operation)).toEqual([
+    expect(inferDiagnosticRuleIds(operation)).toEqual([
       "schema.decode",
       "schema.encode",
       "determinism.same-input-same-output",
@@ -194,7 +194,7 @@ describe("@attune/framework-protocol", () => {
       "view.package-view-moves",
       "generator.provenance-recorded",
     ])
-    expect(inferLaws(operation).at(-1)).toMatchObject({
+    expect(inferDiagnosticRules(operation).at(-1)).toMatchObject({
       source: "custom-extension",
       metadata: { owner: "@attune/nx:effect-service" },
     })
@@ -220,7 +220,7 @@ describe("@attune/framework-protocol", () => {
     expect(diagnostic.suggestedActions[0]?.title).toContain("evidence")
   })
 
-  it("derives stable descriptor hashes and obligations from package contracts", () => {
+  it("derives stable descriptor hashes and obligations from project factss", () => {
     const PackageViews = views({
       reactivityKeys: ["demo.changed"],
       atoms: ["demoAtom"],

@@ -69,7 +69,7 @@ const serviceTemplate = (
  * Ownership: world-changing effects live in Effect services, not atoms.
  * Add fake/test layers here for closed-loop validation; keep durable writes behind
  * service boundaries instead of UI or derived-view code.
- * Package contracts lift the operation registration below into src/attune.package.ts.
+ * Project facts lift the symbol registration below into src/attune.package.ts.
  */
 export interface ${names.className}Service {
   readonly run: () => Effect.Effect<void>
@@ -95,10 +95,10 @@ export const ${names.className}RunOperation = {
   kind: "${schema.operationKind}",
   input: ${names.className}RunInput,
   output: ${names.className}RunOutput,
-  inferredLaws: "inferLaws()",
-  lawExtensions: [],
+  inferredDiagnosticRules: "inferDiagnosticRules()",
+  diagnosticRuleExtensions: [],
   registration:
-    "${schema.operationBuilderName}({ id, input, output, laws: inferLaws(), views: touches(...) })",
+    "${schema.operationBuilderName}({ id, input, output, diagnosticRules: inferDiagnosticRules(), edges: touches(...) })",
 } as const
 
 export const ${names.className}Live = ${names.className}.Default
@@ -173,6 +173,6 @@ export default function effectServiceGenerator(
     syncTargets: [{ project: owningProject, target: "sync-effect-layers" }],
     checkTargets: [{ project: owningProject, target: "typecheck" }],
     openspecChangeId:
-      schema.openspecChangeId ?? "standardize-effect-package-contracts",
+      schema.openspecChangeId ?? "promote-program-index-runtime-substrate",
   })
 }

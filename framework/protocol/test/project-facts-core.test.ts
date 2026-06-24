@@ -22,7 +22,7 @@ import {
   definePackageContract,
   definePackageViews,
   touches,
-} from "../src/package-contract/core.js"
+} from "../src/project-facts/core.js"
 
 const InstallInput = Schema.Struct({
   host: Schema.String,
@@ -63,7 +63,7 @@ const PackageContract = definePackageContract({
   operations: [InstallOperation] as const,
 })
 
-describe("package contract core", () => {
+describe("project facts core", () => {
   it("preserves literal package ids, operation ids, operation kinds, and package views", () => {
     expect(PackageContract.packageId).toBe("home-deployment")
     expect(PackageContract.packageKind).toBe("day0-resource-runbook")

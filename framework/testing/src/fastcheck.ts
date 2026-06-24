@@ -2,12 +2,12 @@ import { Schema } from "effect"
 import fc from "fast-check"
 
 import {
-  counterexampleEvidence,
-  evidenceEvent,
-  lawObservedEvidence,
-  propertyRunEvidence,
-  type EvidenceProducerContext,
-} from "./evidence-producer.js"
+  counterexampleObservation,
+  observationEvent,
+  diagnosticRuleObservation,
+  propertyRunObservation,
+  type ObservationContext,
+} from "./observation-producer.js"
 import {
   counterexampleCacheEntry,
   replayFromFastCheckRun,
@@ -94,7 +94,7 @@ export type FastCheckPropertyInput<Input, Output = unknown> = Readonly<{
 
 export type FastCheckPropertyEvidence = Readonly<{
   readonly counterexample?: CounterexampleCacheEntry
-  readonly events: readonly ReturnType<typeof evidenceEvent>[]
+  readonly events: readonly ReturnType<typeof observationEvent>[]
   readonly run: Readonly<{
     readonly completedRuns: number
     readonly interrupted: boolean
@@ -190,7 +190,7 @@ export const checkFastCheckProperty = async <Input, Output = unknown>(
   const observedAt = input.observedAt ?? new Date().toISOString()
   const propertyId = input.propertyId ?? `${input.packageId}.${input.operationId}.property`
   const seed = input.seed ?? 1_337
-  const contextBase: EvidenceProducerContext = {
+  const contextBase: ObservationContext = {
     observedAt,
     packageId: input.packageId,
     propertyId,
@@ -210,7 +210,7 @@ export const checkFastCheckProperty = async <Input, Output = unknown>(
     },
   }
   const events = [
-    propertyRunEvidence(contextBase, input.operationId, {
+    propertyRunObservation(contextBase, input.operationId, {
       arbitrarySource: input.arbitrary.source,
       filters: input.filters ?? [],
       phase: "started",
@@ -264,7 +264,7 @@ export const checkFastCheckProperty = async <Input, Output = unknown>(
   }
 
   for (const lawId of input.lawIds) {
-    events.push(lawObservedEvidence(context, input.operationId, lawId, {
+    events.push(diagnosticRuleObservation(context, input.operationId, lawId, {
       completedRuns: details.numRuns,
       status: details.failed ? "failed" : "passed",
     }))
@@ -287,7 +287,7 @@ export const checkFastCheckProperty = async <Input, Output = unknown>(
     })
     : undefined
 
-  events.push(propertyRunEvidence(context, input.operationId, {
+  events.push(propertyRunObservation(context, input.operationId, {
     completedRuns: details.numRuns,
     interrupted: details.interrupted,
     phase: details.failed ? "failed" : "completed",
@@ -296,7 +296,7 @@ export const checkFastCheckProperty = async <Input, Output = unknown>(
   }))
 
   if (counterexample !== undefined) {
-    events.push(counterexampleEvidence(context, input.operationId, counterexample))
+    events.push(counterexampleObservation(context, input.operationId, counterexample))
   }
 
   return {

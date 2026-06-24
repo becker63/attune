@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 
-const architectureContract = fileURLToPath(
-  new URL("../../framework/protocol/src/package-contract/index.ts", import.meta.url),
+const architectureProjectFacts = fileURLToPath(
+  new URL("../../framework/protocol/src/project-facts/index.ts", import.meta.url),
 )
 const frameworkProtocol = fileURLToPath(
   new URL("../../framework/protocol/src/index.ts", import.meta.url),
@@ -24,8 +24,8 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: "@attune/framework-protocol/package-contract",
-        replacement: architectureContract,
+        find: "@attune/framework-protocol/project-facts",
+        replacement: architectureProjectFacts,
       },
       {
         find: "@attune/framework-protocol",
@@ -33,7 +33,7 @@ export default defineConfig({
       },
       {
         find: "@attune/architecture",
-        replacement: architectureContract,
+        replacement: architectureProjectFacts,
       },
       {
         find: "@attune/attuned-discovery",
