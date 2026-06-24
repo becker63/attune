@@ -14,7 +14,7 @@ export const RuleId = Schema.Literals([
   "attune/effect-service-boundary",
   "attune/generator-catalog-coverage",
   "attune/no-undeclared-workflow-surface",
-  "attune/source-bom-ownership",
+  "attune/artifact-ownership",
 ] as const)
 export type RuleId = typeof RuleId.Type
 
@@ -52,7 +52,7 @@ const PolicyManifest = Schema.Struct({
 })
 export type PolicyManifest = typeof PolicyManifest.Type
 
-const SourceBomShape = Schema.Struct({
+const ArtifactOwnershipShape = Schema.Struct({
   id: Schema.String,
   owner: Schema.String,
   generator: Schema.optional(Schema.String),
@@ -60,13 +60,13 @@ const SourceBomShape = Schema.Struct({
   mode: Schema.optional(Schema.Literals(["inventory", "warning", "error"] as const)),
 })
 
-const SourceBomShard = Schema.Struct({
-  sourceBom: Schema.Struct({
+const ArtifactOwnershipShard = Schema.Struct({
+  artifactOwnership: Schema.Struct({
     version: Schema.String,
-    shapes: Schema.Array(SourceBomShape),
+    shapes: Schema.Array(ArtifactOwnershipShape),
   }),
 })
-export type SourceBomShard = typeof SourceBomShard.Type
+export type ArtifactOwnershipShard = typeof ArtifactOwnershipShard.Type
 
 export interface ScanOptions {
   readonly workspaceRoot: string
@@ -93,7 +93,7 @@ export const scanWorkspace = ({ workspaceRoot }: ScanOptions): PolicyResult => {
 
   for (const file of files) {
     diagnostics.push(...checkUndeclaredWorkflowSurface(file, declaredCommands, waivers))
-    diagnostics.push(...checkSourceBomOwnership(file, waivers))
+    diagnostics.push(...checkArtifactOwnership(file, waivers))
   }
 
   return {
@@ -165,28 +165,28 @@ const checkUndeclaredWorkflowSurface = (
   })
 }
 
-const checkSourceBomOwnership = (
+const checkArtifactOwnership = (
   file: ScannedFile,
   waivers: readonly PolicyWaiver[],
 ): readonly PolicyDiagnostic[] => {
-  if (!file.relativePath.endsWith("source-bom.json")) return []
+  if (!file.relativePath.endsWith("artifact-ownership.json")) return []
   try {
-    const shard = Schema.decodeUnknownSync(SourceBomShard)(JSON.parse(file.content))
-    return shard.sourceBom.shapes.flatMap((shape) => {
-      if (hasWaiver(waivers, "attune/source-bom-ownership", file.relativePath)) return []
+    const shard = Schema.decodeUnknownSync(ArtifactOwnershipShard)(JSON.parse(file.content))
+    return shard.artifactOwnership.shapes.flatMap((shape) => {
+      if (hasWaiver(waivers, "attune/artifact-ownership", file.relativePath)) return []
       const missingPaths = shape.paths.filter((shapePath) => shapePath.trim().length === 0)
       const severity: Severity = shape.mode === "error" ? "error" : "warning"
       if (missingPaths.length > 0) {
-        return [{ ruleId: "attune/source-bom-ownership" as const, severity, filePath: file.relativePath, message: `Source BOM shape "${shape.id}" includes empty path ownership entries.` }]
+        return [{ ruleId: "attune/artifact-ownership" as const, severity, filePath: file.relativePath, message: `Artifact ownership shape "${shape.id}" includes empty path ownership entries.` }]
       }
-      return [{ ruleId: "attune/source-bom-ownership" as const, severity: "warning" as const, filePath: file.relativePath, message: `Inventory: Source BOM shape "${shape.id}" is owned by "${shape.owner}"${shape.generator ? ` through ${shape.generator}` : ""}.` }]
+      return [{ ruleId: "attune/artifact-ownership" as const, severity: "warning" as const, filePath: file.relativePath, message: `Inventory: Artifact ownership shape "${shape.id}" is owned by "${shape.owner}"${shape.generator ? ` through ${shape.generator}` : ""}.` }]
     })
   } catch (error) {
     return [{
-      ruleId: "attune/source-bom-ownership",
+      ruleId: "attune/artifact-ownership",
       severity: "error",
       filePath: file.relativePath,
-      message: `Invalid Source BOM shard: ${String(error)}`,
+      message: `Invalid Artifact ownership shard: ${String(error)}`,
     }]
   }
 }

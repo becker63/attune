@@ -37,7 +37,7 @@ Deleted surfaces:
   authored project facts and source-ownership compatibility rows, not generated
   PackageContract observations.
 - Attune Nx target semantics describe the repair path as authored project
-  facts plus cache-owned compatibility projections and source ownership rows.
+  facts plus cache-owned compatibility projections and artifact ownership rows.
 
 ## Validation
 
@@ -61,5 +61,5 @@ blocked schema_descriptor refresh repairs.
   query APIs.
 - Task 9.5 repair route and generated artifact naming was completed in the
   2026-06-24 compatibility API slice. Remaining old-noun debt is concentrated
-  in framework protocol/testing helpers and internal source ownership target
+  in framework protocol/testing helpers and internal artifact ownership target
   names.

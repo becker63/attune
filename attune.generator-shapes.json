@@ -44,7 +44,7 @@
         "Architecture policy exported symbols, schema/edge metadata, diagnostics, repairs, waivers, and compile-only assertions project into program-index rows."
       ],
       "notes": "Phase 7 removed the active generated-contract tests; final declaration helper rename remains open.",
-      "sourceBomShard": "framework/architecture/src/generated/source-bom/attune-architecture.json"
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-architecture.json"
     },
     {
       "id": "attune-foldkit.scene-atom",
@@ -110,7 +110,7 @@
         "FoldKit source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
       "notes": "Ring A program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
-      "sourceBomShard": "framework/architecture/src/generated/source-bom/attune-foldkit.json"
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-foldkit.json"
     },
     {
       "id": "attune-nx.generator-implementation",
@@ -143,7 +143,7 @@
         "Generator tooling source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
       "notes": "Ring B program-index parity removes package-local old-shape assertions; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
-      "sourceBomShard": "framework/architecture/src/generated/source-bom/attune-nx.json"
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-nx.json"
     },
     {
       "id": "attune-nx.sync-generator-registry",
@@ -158,7 +158,7 @@
         "test/generators.test.ts"
       ],
       "invariants": [
-        "Sync generators discover source modules, render deterministic registries, and upsert source ownership artifact entries."
+        "Sync generators discover source modules, render deterministic registries, and upsert artifact ownership entries."
       ]
     },
     {
@@ -246,7 +246,7 @@
         "Pi permission, spec interview, artifact, extension-boundary, generator, package-layer, and schema/edge metadata project into program-index rows."
       ],
       "notes": "Ring C validation removed the package-local compatibility test; final command-surface cleanup remains open.",
-      "sourceBomShard": "framework/architecture/src/generated/source-bom/attune-pi-agent.json"
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-pi-agent.json"
     },
     {
       "id": "attuned-discovery.schema-family",
@@ -353,7 +353,7 @@
         "Discovery source intent, Reactivity keys, atoms, schema descriptors, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
       "notes": "Ring A program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
-      "sourceBomShard": "framework/architecture/src/generated/source-bom/attuned-discovery.json"
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attuned-discovery.json"
     },
     {
       "id": "cocoindex-effect.effect-service-boundary",
@@ -438,7 +438,7 @@
         "CocoIndex source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
       "notes": "Ring B program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
-      "sourceBomShard": "framework/architecture/src/generated/source-bom/cocoindex-effect.json"
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/cocoindex-effect.json"
     },
     {
       "id": "effect-oxlint-policy.rule-module",
@@ -469,7 +469,7 @@
         "Oxlint policy source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
       "notes": "Ring A program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
-      "sourceBomShard": "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json"
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/effect-oxlint-policy.json"
     },
     {
       "id": "home-deployment.day0-provider",

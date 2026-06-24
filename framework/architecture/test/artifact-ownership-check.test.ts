@@ -9,13 +9,13 @@ const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../../..",
 )
-const sourceBomCheckScript = path.join(
+const artifactOwnershipCheckScript = path.join(
   repositoryRoot,
-  "scripts/architecture/source-bom-check.mjs",
+  "scripts/architecture/artifact-ownership-check.mjs",
 )
 
 const withWorkspace = (files: Record<string, string>, run: (workspace: string) => void): void => {
-  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "attune-source-bom-"))
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "attune-artifact-ownership-"))
   try {
     for (const [relativePath, content] of Object.entries(files)) {
       const target = path.join(workspace, relativePath)
@@ -28,18 +28,18 @@ const withWorkspace = (files: Record<string, string>, run: (workspace: string) =
   }
 }
 
-describe("Source BOM check", () => {
-  it("accepts framework-owned cache Source BOM shards", () => {
+describe("Artifact ownership check", () => {
+  it("accepts framework-owned cache Artifact ownership shards", () => {
     withWorkspace({
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shards: [{
           project: "example",
           projectRoot: "packages/example",
-          shard: ".attune/cache/source-bom/example.json",
+          shard: ".attune/cache/artifact-ownership/example.json",
         }],
       }),
-      ".attune/cache/source-bom/example.json": JSON.stringify({
+      ".attune/cache/artifact-ownership/example.json": JSON.stringify({
         schemaVersion: 1,
         project: "example",
         projectRoot: "packages/example",
@@ -47,26 +47,26 @@ describe("Source BOM check", () => {
         generatedOutputs: [],
       }),
     }, (workspace) => {
-      const output = execFileSync(process.execPath, [sourceBomCheckScript], {
+      const output = execFileSync(process.execPath, [artifactOwnershipCheckScript], {
         cwd: workspace,
         encoding: "utf8",
       })
 
-      expect(output).toContain("Source BOM check passed")
+      expect(output).toContain("Artifact ownership check passed")
     })
   })
 
-  it("accepts checked-in framework-owned Source BOM projection shards", () => {
+  it("accepts checked-in framework-owned Artifact ownership projection shards", () => {
     withWorkspace({
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shards: [{
           project: "example",
           projectRoot: "packages/example",
-          shard: "framework/architecture/src/generated/source-bom/example.json",
+          shard: "framework/architecture/src/generated/artifact-ownership/example.json",
         }],
       }),
-      "framework/architecture/src/generated/source-bom/example.json": JSON.stringify({
+      "framework/architecture/src/generated/artifact-ownership/example.json": JSON.stringify({
         schemaVersion: 1,
         project: "example",
         projectRoot: "packages/example",
@@ -74,18 +74,18 @@ describe("Source BOM check", () => {
         generatedOutputs: [],
       }),
     }, (workspace) => {
-      const output = execFileSync(process.execPath, [sourceBomCheckScript], {
+      const output = execFileSync(process.execPath, [artifactOwnershipCheckScript], {
         cwd: workspace,
         encoding: "utf8",
       })
 
-      expect(output).toContain("Source BOM check passed")
+      expect(output).toContain("Artifact ownership check passed")
     })
   })
 
-  it("rejects unexpected Source BOM shard locations", () => {
+  it("rejects unexpected Artifact ownership shard locations", () => {
     withWorkspace({
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shards: [{
           project: "example",
@@ -102,12 +102,12 @@ describe("Source BOM check", () => {
       }),
     }, (workspace) => {
       expect(() =>
-        execFileSync(process.execPath, [sourceBomCheckScript], {
+        execFileSync(process.execPath, [artifactOwnershipCheckScript], {
           cwd: workspace,
           encoding: "utf8",
           stdio: "pipe",
         }),
-      ).toThrow(/shard must be packages\/example\/attune\.source-bom\.json, \.attune\/cache\/source-bom\/example\.json, or framework\/architecture\/src\/generated\/source-bom\/example\.json/)
+      ).toThrow(/shard must be packages\/example\/attune\.artifact-ownership\.json, \.attune\/cache\/artifact-ownership\/example\.json, or framework\/architecture\/src\/generated\/artifact-ownership\/example\.json/)
     })
   })
 })

@@ -157,7 +157,7 @@ describe("@attune/nx project-facts generator", () => {
       ""
     const shard = JSON.parse(
       tree.files.get(
-        "framework/oxlint-policy/attune.source-bom.json",
+        "framework/oxlint-policy/attune.artifact-ownership.json",
       ) ?? "{}",
     )
 
@@ -228,8 +228,8 @@ describe("@attune/nx project-facts generator", () => {
     projectFactsGenerator(second, options)
 
     expect([...second.files.keys()].sort()).toEqual([
-      "attune.source-bom.index.json",
-      "packages/home-deployment/attune.source-bom.json",
+      "attune.artifact-ownership.index.json",
+      "packages/home-deployment/attune.artifact-ownership.json",
       "packages/home-deployment/src/attune.package.ts",
       "packages/home-deployment/src/attune.project-facts.generated.ts",
       "packages/home-deployment/src/attune.project-observations.ts",

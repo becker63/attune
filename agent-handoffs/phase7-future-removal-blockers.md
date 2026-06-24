@@ -44,22 +44,22 @@ generator options to project/symbol vocabulary.
   - `framework-runtime:test`, `framework-language-service:test`,
     `framework-protocol:test`, and `framework-testing:test` pass
 
-### Internal source ownership target names
+### Internal artifact ownership target names
 
 - Current surface:
-  - `workspace:package-contracts-check`
-  - `workspace:source-bom-check`
-  - `attune.source-bom.index.json`
-  - framework-owned `source-bom` projection shard paths
+  - `workspace:program-facts-check`
+  - `workspace:artifact-ownership-check`
+  - `attune.artifact-ownership.index.json`
+  - framework-owned `artifact-ownership` projection shard paths
 - Replacement path:
   - keep public workflow on `workspace:attune-check` and
     `workspace:attune-repair`
   - rename or quarantine the remaining implementation targets and filenames as
-    artifact/source ownership projections
+    artifact/artifact ownership projections
 - Gate:
   - `workspace:attune-check` and `workspace:attune-repair --dryRun` pass after
     the internal target/file rename
-  - source ownership compatibility paths are no longer taught as active agent
+  - artifact ownership compatibility paths are no longer taught as active agent
     workflow
 
 ### Framework-owned generated compatibility outputs

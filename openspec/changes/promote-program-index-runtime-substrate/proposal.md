@@ -40,7 +40,7 @@ training scaffold comes down.
 - Remove old Attune ontology nouns from public docs, primary runtime APIs,
   generated surfaces, diagnostics, and normal agent workflow:
   package contract, protocol, operation, view, law, obligation, evidence,
-  delta, type guidance, Source BOM, generator shape, fuzz handler, property
+  delta, type guidance, Artifact ownership, generator shape, fuzz handler, property
   map, and RPC group.
 - Allow those old nouns only in explicitly marked legacy adapters,
   historical docs, archived handoffs, or deletion plans while parity is being
@@ -121,11 +121,11 @@ rails before the mechanical path proves parity:
 - `reactive-program-projections`: Defines SQL/Reactivity/atom projections over
   indexed facts, including read-only atom constraints and invalidation flow.
 - `program-index-compatibility-adapters`: Defines temporary legacy adapters
-  that ingest package contracts, Source BOM shards, type guidance, generated
+  that ingest package contracts, Artifact ownership shards, type guidance, generated
   companions, and current generated package-contract outputs as mechanical
   facts before those old outputs are deleted or quarantined.
 - `program-index-project-surface-ratchet`: Defines project-ring validation,
-  generated/source ownership cleanup, one-file source surface ratchets, and
+  generated/artifact ownership cleanup, one-file source surface ratchets, and
   deletion preconditions.
 
 ### Modified Capabilities
@@ -174,7 +174,7 @@ The intended vocabulary change is explicit:
 | Obligation | Diagnostic row, repair row, or validation target | Remove from primary runtime naming |
 | Evidence | Observation row | Remove from primary runtime naming |
 | ProtocolDelta | Diagnostic and repair rows | Delete from workflow and docs |
-| Source BOM | Artifact/source ownership rows | Delete or quarantine after parity |
+| Artifact ownership | Artifact/artifact ownership rows | Delete or quarantine after parity |
 | Generator shape | Artifact provenance and repair rows | Delete or quarantine after parity |
 | Type guidance | Observation rows or schema descriptor annotations | Delete or quarantine after parity |
 | Fuzz handlers/properties/RPC groups | Observation, artifact, and repair rows | Delete or quarantine after parity |

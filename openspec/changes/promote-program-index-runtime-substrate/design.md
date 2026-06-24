@@ -13,10 +13,10 @@ It also still has transitional compatibility surfaces:
 
 ```txt
 framework/architecture/src/generated/package-contracts/*
-framework/architecture/src/generated/source-bom/*
+framework/architecture/src/generated/artifact-ownership/*
 packages/*/src/attune.package.ts
 packages/*/test/attune-package-contract.test.ts
-attune.source-bom.index.json
+attune.artifact-ownership.index.json
 attune.generator-shapes.json
 ```
 
@@ -38,7 +38,7 @@ Law
 Obligation
 Evidence
 Delta
-Source BOM
+Artifact ownership
 Generator Shape
 Type Guidance
 Fuzz Handler
@@ -93,7 +93,7 @@ Drizzle, ProtocolStore internals, or generated cache paths.
   workspace health.
 - Replace rich package-contract/protocol terminology in primary runtime code
   with mechanical program terms.
-- Treat package-contract generated outputs, Source BOM shards, type guidance,
+- Treat package-contract generated outputs, Artifact ownership shards, type guidance,
   law partitions, package fuzz handlers, and generated property maps as
   temporary compatibility inputs during parity work.
 - Remove, quarantine, or archive the existing package-contract/generated
@@ -163,7 +163,7 @@ Mapping rules:
 | Obligation | diagnostic/repair row or validation target |
 | Evidence | observation row |
 | Delta | diagnostic and repair rows |
-| Source BOM | artifact/source ownership rows |
+| Artifact ownership | artifact ownership rows |
 | Type guidance | schema annotations or observation rows |
 | Fuzz/property/RPC maps | observation, artifact, and repair rows |
 
@@ -184,7 +184,7 @@ Attune will route check, repair, language-service diagnostics, source indexing,
 schema descriptor projection, generated artifact freshness, and workspace
 health through the SQLite program index as the primary runtime substrate.
 
-Package-contract generated companions, Source BOM shards, type-guidance
+Package-contract generated companions, Artifact ownership shards, type-guidance
 outputs, law partitions, package fuzz handlers, and generated property maps
 remain available only as temporary compatibility inputs during parity work.
 They do not receive new conceptual expansion unless required to preserve
@@ -193,7 +193,7 @@ removed, quarantined as historical artifacts, or replaced by mechanical rows,
 views, diagnostics, and repair plans.
 
 Alternative considered: delete generated companions first. Rejected because the
-repo still uses compatibility outputs for contract validation, source ownership
+repo still uses compatibility outputs for contract validation, artifact ownership
 checks, and project-ring confidence.
 
 ### Decision: Check reads program-index diagnostics first
@@ -239,13 +239,13 @@ metadata:
 
 ```txt
 package-contract-compat
-source-bom-compat
+artifact-ownership-compat
 type-guidance-compat
 generated-companion-compat
 ```
 
-Old operations become symbols with schema and edge metadata. Source BOM shards
-become artifact/source ownership rows. Type guidance becomes transitional
+Old operations become symbols with schema and edge metadata. Artifact ownership shards
+become artifact ownership rows. Type guidance becomes transitional
 observation data. Generated companions become generated artifact rows.
 
 The program index must not create new first-class Package/Operation/Law tables
@@ -321,14 +321,14 @@ quarantined in this change rather than carried forward.
 2. Inventory primary runtime APIs/docs and identify places that still present
    package-contract/protocol nouns as source truth.
 3. Route runtime and language-service diagnostics through program-index-backed
-   `ProtocolDiagnostics`/`ProtocolQuery`.
+   `ProgramDiagnostics`/`ProgramFactQuery`.
 4. Route `attune-check` internals through program-index materialization while
    preserving compatibility fallback.
 5. Add repair rows and make `attune-repair --dryRun` summarize program-index
    repair plans.
-6. Add compatibility adapters for package contracts, Source BOM, type guidance,
+6. Add compatibility adapters for package contracts, Artifact ownership, type guidance,
    and generated companions.
-7. Move generated/source ownership toward framework-owned generated/cache/index
+7. Move generated/artifact ownership toward framework-owned generated/cache/index
    locations after lookup parity exists.
 8. Validate project rings and ratchet one-file project source surface policy
    warning-first.

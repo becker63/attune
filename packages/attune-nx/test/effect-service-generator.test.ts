@@ -116,7 +116,7 @@ describe("@attune/nx:effect-service", () => {
     })
 
     const shard = JSON.parse(
-      tree.files.get("packages/decision-core/attune.source-bom.json") ?? "{}",
+      tree.files.get("packages/decision-core/attune.artifact-ownership.json") ?? "{}",
     )
 
     expect(shard.entries[0]).toMatchObject({

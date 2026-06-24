@@ -1,21 +1,21 @@
 import { joinPath } from "./paths.js"
 import { readText, writeTextIfChanged, type GeneratorTree } from "./tree.js"
 
-export const sourceBomIndexPath = "attune.source-bom.index.json" as const
-export const sourceBomShardFileName = "attune.source-bom.json" as const
+export const artifactOwnershipIndexPath = "attune.artifact-ownership.index.json" as const
+export const artifactOwnershipShardFileName = "attune.artifact-ownership.json" as const
 
-export interface SourceBomEditableRegion {
+export interface ArtifactOwnershipEditableRegion {
   readonly file: string
   readonly marker: string
   readonly description?: string
 }
 
-export interface SourceBomTarget {
+export interface ArtifactOwnershipTarget {
   readonly project: string
   readonly target: string
 }
 
-export interface SourceBomUpsertInput {
+export interface ArtifactOwnershipUpsertInput {
   readonly generatorName: string
   readonly generatorVersion?: string | undefined
   readonly generatorRevision?: string | undefined
@@ -24,21 +24,21 @@ export interface SourceBomUpsertInput {
   readonly sourceShapeKind: string
   readonly options: Record<string, unknown>
   readonly ownedFiles: readonly string[]
-  readonly editableRegions?: readonly SourceBomEditableRegion[]
-  readonly syncTargets?: readonly SourceBomTarget[]
-  readonly checkTargets?: readonly SourceBomTarget[]
+  readonly editableRegions?: readonly ArtifactOwnershipEditableRegion[]
+  readonly syncTargets?: readonly ArtifactOwnershipTarget[]
+  readonly checkTargets?: readonly ArtifactOwnershipTarget[]
   readonly openspecChangeId?: string | undefined
 }
 
-export interface SourceBomEntry extends SourceBomUpsertInput {
+export interface ArtifactOwnershipEntry extends ArtifactOwnershipUpsertInput {
   readonly optionsHash: string
 }
 
-export interface SourceBomShard {
+export interface ArtifactOwnershipShard {
   readonly schemaVersion: 1
   readonly project: string
   readonly projectRoot: string
-  readonly entries?: readonly SourceBomEntry[]
+  readonly entries?: readonly ArtifactOwnershipEntry[]
   readonly ownedFiles?: readonly string[]
   readonly generatedOutputs?: readonly unknown[]
   readonly sourceInputs?: readonly string[]
@@ -48,15 +48,15 @@ export interface SourceBomShard {
   readonly waivers?: readonly unknown[]
 }
 
-export interface SourceBomIndexEntry {
+export interface ArtifactOwnershipIndexEntry {
   readonly project: string
   readonly projectRoot: string
   readonly shard: string
 }
 
-export interface SourceBomIndex {
+export interface ArtifactOwnershipIndex {
   readonly schemaVersion: 1
-  readonly shards: readonly SourceBomIndexEntry[]
+  readonly shards: readonly ArtifactOwnershipIndexEntry[]
 }
 
 const compare = (left: string, right: string): number =>
@@ -79,17 +79,17 @@ const sortObject = (value: unknown): unknown => {
   return value
 }
 
-export const normalizeSourceBomOptions = (
+export const normalizeArtifactOwnershipOptions = (
   options: Record<string, unknown>,
 ): Record<string, unknown> => sortObject(options) as Record<string, unknown>
 
-export const stableSourceBomJson = (value: unknown): string =>
+export const stableArtifactOwnershipJson = (value: unknown): string =>
   `${JSON.stringify(sortObject(value), null, 2)}\n`
 
-export const hashSourceBomOptions = (
+export const hashArtifactOwnershipOptions = (
   options: Record<string, unknown>,
 ): string => {
-  const input = stableSourceBomJson(options)
+  const input = stableArtifactOwnershipJson(options)
   let hash = 0x811c9dc5
   for (let index = 0; index < input.length; index += 1) {
     hash ^= input.charCodeAt(index)
@@ -106,16 +106,16 @@ const readJson = <T>(tree: GeneratorTree, path: string, fallback: T): T => {
   return JSON.parse(content) as T
 }
 
-export const sourceBomShardPath = (projectRoot: string): string =>
+export const artifactOwnershipShardPath = (projectRoot: string): string =>
   projectRoot === "." || projectRoot === ""
-    ? sourceBomShardFileName
-    : joinPath(projectRoot, sourceBomShardFileName)
+    ? artifactOwnershipShardFileName
+    : joinPath(projectRoot, artifactOwnershipShardFileName)
 
-export const sourceBomCacheShardPath = (project: string): string =>
-  joinPath(".attune/cache/source-bom", `${project}.json`)
+export const artifactOwnershipCacheShardPath = (project: string): string =>
+  joinPath(".attune/cache/artifact-ownership", `${project}.json`)
 
-export const sourceBomFrameworkShardPath = (project: string): string =>
-  joinPath("framework/architecture/src/generated/source-bom", `${project}.json`)
+export const artifactOwnershipFrameworkShardPath = (project: string): string =>
+  joinPath("framework/architecture/src/generated/artifact-ownership", `${project}.json`)
 
 export const inferProjectRootFromDirectory = (directory: string): string => {
   const segments = directory.split("/").filter(Boolean)
@@ -130,8 +130,8 @@ const normalizeStringArray = (values: readonly string[]): readonly string[] =>
   [...new Set(values)].sort(compare)
 
 const normalizeTargets = (
-  targets: readonly SourceBomTarget[] = [],
-): readonly SourceBomTarget[] =>
+  targets: readonly ArtifactOwnershipTarget[] = [],
+): readonly ArtifactOwnershipTarget[] =>
   [...targets].sort((left, right) =>
     compare(
       `${left.project}:${left.target}`,
@@ -140,21 +140,21 @@ const normalizeTargets = (
   )
 
 const normalizeEditableRegions = (
-  regions: readonly SourceBomEditableRegion[] = [],
-): readonly SourceBomEditableRegion[] =>
+  regions: readonly ArtifactOwnershipEditableRegion[] = [],
+): readonly ArtifactOwnershipEditableRegion[] =>
   [...regions].sort((left, right) =>
     compare(`${left.file}:${left.marker}`, `${right.file}:${right.marker}`),
   )
 
-export const normalizeSourceBomEntry = (
-  input: SourceBomUpsertInput,
-): SourceBomEntry => {
-  const normalizedOptions = normalizeSourceBomOptions(input.options)
+export const normalizeArtifactOwnershipEntry = (
+  input: ArtifactOwnershipUpsertInput,
+): ArtifactOwnershipEntry => {
+  const normalizedOptions = normalizeArtifactOwnershipOptions(input.options)
   return {
     ...input,
     projectRoot: input.projectRoot || ".",
     options: normalizedOptions,
-    optionsHash: hashSourceBomOptions(normalizedOptions),
+    optionsHash: hashArtifactOwnershipOptions(normalizedOptions),
     ownedFiles: normalizeStringArray(input.ownedFiles),
     editableRegions: normalizeEditableRegions(input.editableRegions),
     syncTargets: normalizeTargets(input.syncTargets),
@@ -164,19 +164,19 @@ export const normalizeSourceBomEntry = (
 
 const entryKey = (
   entry: Pick<
-    SourceBomEntry,
+    ArtifactOwnershipEntry,
     "generatorName" | "owningProject" | "sourceShapeKind" | "optionsHash"
   >,
 ): string =>
   `${entry.owningProject}:${entry.sourceShapeKind}:${entry.generatorName}:${entry.optionsHash}`
 
-export const upsertSourceBomShard = (
+export const upsertArtifactOwnershipShard = (
   tree: GeneratorTree,
-  input: SourceBomUpsertInput,
-): SourceBomEntry => {
-  const entry = normalizeSourceBomEntry(input)
-  const shardPath = sourceBomShardPath(entry.projectRoot)
-  const shard = readJson<SourceBomShard>(tree, shardPath, {
+  input: ArtifactOwnershipUpsertInput,
+): ArtifactOwnershipEntry => {
+  const entry = normalizeArtifactOwnershipEntry(input)
+  const shardPath = artifactOwnershipShardPath(entry.projectRoot)
+  const shard = readJson<ArtifactOwnershipShard>(tree, shardPath, {
     schemaVersion: 1,
     project: entry.owningProject,
     projectRoot: entry.projectRoot,
@@ -191,7 +191,7 @@ export const upsertSourceBomShard = (
   writeTextIfChanged(
     tree,
     shardPath,
-    stableSourceBomJson({
+    stableArtifactOwnershipJson({
       ...shard,
       project: entry.owningProject,
       projectRoot: entry.projectRoot,
@@ -201,16 +201,16 @@ export const upsertSourceBomShard = (
   return entry
 }
 
-export const upsertSourceBomIndex = (
+export const upsertArtifactOwnershipIndex = (
   tree: GeneratorTree,
-  input: Pick<SourceBomUpsertInput, "owningProject" | "projectRoot">,
+  input: Pick<ArtifactOwnershipUpsertInput, "owningProject" | "projectRoot">,
 ): void => {
-  const nextEntry: SourceBomIndexEntry = {
+  const nextEntry: ArtifactOwnershipIndexEntry = {
     project: input.owningProject,
     projectRoot: input.projectRoot || ".",
-    shard: sourceBomShardPath(input.projectRoot || "."),
+    shard: artifactOwnershipShardPath(input.projectRoot || "."),
   }
-  const index = readJson<SourceBomIndex>(tree, sourceBomIndexPath, {
+  const index = readJson<ArtifactOwnershipIndex>(tree, artifactOwnershipIndexPath, {
     schemaVersion: 1,
     shards: [],
   })
@@ -227,16 +227,16 @@ export const upsertSourceBomIndex = (
   )
   writeTextIfChanged(
     tree,
-    sourceBomIndexPath,
-    stableSourceBomJson({ schemaVersion: 1, shards }),
+    artifactOwnershipIndexPath,
+    stableArtifactOwnershipJson({ schemaVersion: 1, shards }),
   )
 }
 
-export const upsertSourceBom = (
+export const upsertArtifactOwnership = (
   tree: GeneratorTree,
-  input: SourceBomUpsertInput,
-): SourceBomEntry => {
-  const entry = upsertSourceBomShard(tree, input)
-  upsertSourceBomIndex(tree, input)
+  input: ArtifactOwnershipUpsertInput,
+): ArtifactOwnershipEntry => {
+  const entry = upsertArtifactOwnershipShard(tree, input)
+  upsertArtifactOwnershipIndex(tree, input)
   return entry
 }

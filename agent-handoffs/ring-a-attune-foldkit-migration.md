@@ -4,7 +4,7 @@ Changed:
 - Updated `attune.generator-shapes.json` so the `attune-foldkit`
   compatibility shape entry no longer expects the deleted package-local
   compatibility test.
-- Updated the framework-owned source ownership shard for `attune-foldkit` so
+- Updated the framework-owned artifact ownership shard for `attune-foldkit` so
   its transitional contract shard output names only the authored
   `src/attune.package.ts` source boundary.
 
@@ -15,7 +15,7 @@ Program-index proof:
   symbol, schema_descriptor, edge, artifact, observation, diagnostic, and
   repair rows for the workspace. Source ownership and shape conformance also
   passed after stale compatibility-test paths were removed.
-- No project-local generated companions or package-root source ownership shards
+- No project-local generated companions or package-root artifact ownership shards
   exist under `packages/attune-foldkit`.
 - The Ring A workspace checkpoint passed with `workspace:attune-check` after
   `effect-oxlint-policy`, `attuned-discovery`, and `attune-foldkit` were all
@@ -26,14 +26,14 @@ Removed surfaces:
   an active package-local old-shape surface. Its useful workflow questions are
   now answered by program-index materialization, focused FoldKit tests, and
   public Nx check/typecheck targets.
-- The FoldKit shape manifest and framework-owned source ownership shard no
+- The FoldKit shape manifest and framework-owned artifact ownership shard no
   longer resurrect the deleted package-local compatibility test as an expected
   output.
 
 Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/project-facts/attune-foldkit/attune.generated.ts`
 - `framework/architecture/src/generated/project-facts/attune-foldkit/attune.contract.generated.ts`
-- `framework/architecture/src/generated/source-bom/attune-foldkit.json`
+- `framework/architecture/src/generated/artifact-ownership/attune-foldkit.json`
 - `.attune/cache/generated/attune-foldkit/attune-symbol-registry.ts`
 - `.attune/cache/generated/attune-foldkit/attune-property-observations.ts`
 - `.attune/cache/generated/attune-foldkit/attune-schema-observations.ts`

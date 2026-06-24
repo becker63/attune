@@ -24,8 +24,8 @@ Primary mechanical runtime paths inspected:
 - `framework/runtime/src/ProgramIndexProjection.ts`
 - `framework/nx/src/ProgramGraphIndex.ts`
 - `framework/language-service/src/index.ts`
-- `framework/runtime/src/ProtocolDiagnostics.ts`
-- `framework/runtime/src/ProtocolQuery.ts`
+- `framework/runtime/src/ProgramDiagnostics.ts`
+- `framework/runtime/src/ProgramFactQuery.ts`
 - `packages/attune-nx/src/project-facts-graph.ts`
 - `AGENTS.md`
 - `docs/attuned/Attune Framework Operating Surface.md`
@@ -52,9 +52,9 @@ The old ontology remains in three places:
 | `ProgramIndexViewRow` | keep | SQL view result row. This uses "view" in the SQL sense, not the legacy package-view object. |
 | `ProjectIndexProjection`, `ProgramSourceIndexRows`, `ProgramCompatibilityRows` | keep, rename later only if needed | Mechanical projection and compatibility row bundles. |
 | `compatibilityRowsFromCurrentPackageContracts` | legacy-adapter-only, must be deleted or quarantined before completion | Project legacy declarations and generated companions into artifact and observation rows marked with compatibility source metadata. |
-| `ProtocolQuery`, `ProtocolDiagnostics`, `PackageProtocolSummary`, `PackageEvidenceState`, `ObligationExplanation`, `RepairPlan` | legacy-adapter-only, blocks completion until removed or mechanically renamed | Keep only as compatibility fallback until diagnostics and repair reads prefer program-index facts. Phase 2/3 must replace normal reads with program-index diagnostic and repair rows, then delete or quarantine these names. |
+| `ProgramFactQuery`, `ProgramDiagnostics`, `PackageProtocolSummary`, `PackageEvidenceState`, `ObligationExplanation`, `RepairPlan` | legacy-adapter-only, blocks completion until removed or mechanically renamed | Keep only as compatibility fallback until diagnostics and repair reads prefer program-index facts. Phase 2/3 must replace normal reads with program-index diagnostic and repair rows, then delete or quarantine these names. |
 | `packages/attune-nx/src/project-facts-graph.ts` exports such as `PackageContractGraphNodeMetadata`, `PackageContractRuntimeFacts`, and `AttuneProtocolDescriptor` bridges | legacy-adapter-only, blocks completion until removed or quarantined | Use as parity/demolition scaffolding for project rings, then replace public reads with program-index rows and repair plans. |
-| Generated project-facts and source ownership artifact files under `framework/architecture/src/generated/**` | compatibility-only | Ingest as artifact, observation, diagnostic, and repair facts; delete or quarantine after ring parity. |
+| Generated project-facts and artifact ownership files under `framework/architecture/src/generated/**` | compatibility-only | Ingest as artifact, observation, diagnostic, and repair facts; delete or quarantine after ring parity. |
 | Old package-local generated companions | delete when parity proves safe | Keep `src/attune.package.ts` as authored source; move generated/cache facts to framework-owned paths or `.attune/cache`. |
 
 ## Usage Classification
@@ -63,8 +63,8 @@ The old ontology remains in three places:
 | --- | --- | --- |
 | Program-index SQL tables and interfaces | keep | Guard added to reject new old-ontology table/object names in primary program-index files. |
 | Program-index schema diagnostic copy | rename mechanically | Updated to name `schema_descriptor`, `symbol`, and `source_file` facts. |
-| Compatibility artifact labels such as project-facts, generated companion, source ownership artifact, and type guidance | legacy adapter only | Observations now include `compatibilitySource` metadata such as `project-facts-compat`, `source-ownership-compat`, `type-guidance-compat`, and `generated-companion-compat`. |
-| `ProtocolQuery` and `ProtocolDiagnostics` old-noun APIs | completion blocker | Phase 2 must make program-index diagnostic rows primary before renaming, deleting, or quarantining fallback APIs. They cannot remain the normal runtime surface when this change finishes. |
+| Compatibility artifact labels such as project-facts, generated companion, artifact ownership, and type guidance | legacy adapter only | Observations now include `compatibilitySource` metadata such as `project-facts-compat`, `source-ownership-compat`, `type-guidance-compat`, and `generated-companion-compat`. |
+| `ProgramFactQuery` and `ProgramDiagnostics` old-noun APIs | completion blocker | Phase 2 must make program-index diagnostic rows primary before renaming, deleting, or quarantining fallback APIs. They cannot remain the normal runtime surface when this change finishes. |
 | `project-facts-graph.ts` | completion blocker | Phase 4 must prove parity and classify which graph exports can be deleted, renamed, or kept behind explicitly named legacy adapter modules. They cannot remain the normal runtime surface when this change finishes. |
 | `AGENTS.md`, `docs/attuned/Attune Framework Operating Surface.md`, and `docs/platform/codex-cloud-environment.md` | rename mechanically | Rewrite active operating guidance after the first runtime guard lands; retain old terms only in compatibility sections. |
 | Archived OpenSpec changes and historical handoffs | historical/archive only | Leave untouched unless they are copied into active guidance. |

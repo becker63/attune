@@ -107,7 +107,7 @@
   "projectRoot": "packages/attune-nx",
   "queryCheckTargetNotes": [
     {
-      "note": "Generator tests verify deterministic source ownership artifact upserts and sync registry behavior.",
+      "note": "Generator tests verify deterministic artifact ownership upserts and sync registry behavior.",
       "target": "test"
     }
   ],

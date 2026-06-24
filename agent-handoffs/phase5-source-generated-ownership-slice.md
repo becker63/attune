@@ -13,27 +13,27 @@ Changed:
   companion files or imports are present in the active package source surface.
 
 Ownership Proof:
-- `attune.source-bom.index.json` points all 11 registered projects at
-  `framework/architecture/src/generated/source-bom/<project>.json`.
+- `attune.artifact-ownership.index.json` points all 11 registered projects at
+  `framework/architecture/src/generated/artifact-ownership/<project>.json`.
 - `rg --files | rg '(^|/)src/attune\.(generated|contract\.generated|package\.typecheck)\.ts$|(^|/)attune\.source-ownership\.json$'`
-  returns no project-local generated companion or package-root source ownership
+  returns no project-local generated companion or package-root artifact ownership
   files in the active workspace.
 - `.attune/cache/` remains gitignored, and no-report policy tests continue to
   reject checked-in report artifacts while allowing local cache artifacts.
 - `nix/policy-hooks/touched-source-ownership-ownership.sh` accepts staged
-  package/framework source when the root source ownership artifact index points at either the
+  package/framework source when the root artifact ownership index points at either the
   framework-owned or cache-owned projection.
 - No active ring-specific handoff existed before Phase 6. The Phase 6 ring
   handoffs must describe replacements as project, source_file, symbol,
   schema_descriptor, edge, artifact, observation, diagnostic, repair, and
-  invalidation facts; old generated/source ownership terms are retained only as
+  invalidation facts; old generated/artifact ownership terms are retained only as
   compatibility labels or deletion blockers.
 
 Validated:
 - `pnpm exec nx run attune-architecture:test --skipNxCache`
 - `pnpm exec nx run attune-architecture:build --skipNxCache`
 - `pnpm exec nx run workspace:attune-check --skipNxCache`
-- `pnpm exec nx run workspace:source-bom-check --skipNxCache`
+- `pnpm exec nx run workspace:artifact-ownership-check --skipNxCache`
 - `bash -n nix/policy-hooks/touched-source-ownership-ownership.sh`
 - `pnpm exec nx run workspace:policy-commit --timeoutSeconds=600`
 

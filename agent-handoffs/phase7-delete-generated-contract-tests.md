@@ -8,7 +8,7 @@
   - `framework/architecture/test/attuned-discovery-generated-contract.test.ts`
   - `framework/architecture/test/platform-alchemy-generated-contract.test.ts`
 - Removed `test/attune-project-facts.test.ts` from the
-  `attune-architecture` source ownership artifact compatibility shard and generator-shape
+  `attune-architecture` artifact ownership compatibility shard and generator-shape
   ownership metadata.
 
 ## Mechanical Replacement

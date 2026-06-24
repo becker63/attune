@@ -410,8 +410,8 @@ function createArchitectureCheckPlan(
         "packages",
         "--quiet",
       ], context.workspaceRoot)]
-    case "source-bom":
-      return [nodeScriptPlan("toolchain:architecture:source-bom", "scripts/architecture/source-bom-check.mjs", context)]
+    case "artifact-ownership":
+      return [nodeScriptPlan("toolchain:architecture:artifact-ownership", "scripts/architecture/artifact-ownership-check.mjs", context)]
     case "tool-versions":
       return [nodeScriptPlan("toolchain:architecture:tool-versions", "scripts/architecture/tool-versions.mjs", context)]
     case "shape-conformance":

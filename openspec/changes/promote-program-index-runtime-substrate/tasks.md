@@ -6,7 +6,7 @@
 - [x] 0.4 Record the subagent ownership table for Phase 1 through Phase 7 in the phase0 handoff.
 - [x] 0.5 Document that package-contract generated outputs are compatibility inputs and program-index diagnostics/repairs are the target runtime path.
 - [x] 0.6 Document the mechanical vocabulary boundary: `project`, `target`, `source_file`, `symbol`, `schema_descriptor`, `edge`, `artifact`, `observation`, `diagnostic`, `repair`, and `invalidation`.
-- [x] 0.7 Document old Attune nouns as temporary legacy labels only: package contract, protocol, operation, view, law, obligation, evidence, delta, type guidance, Source BOM, generator shape, fuzz handler, property map, and RPC group.
+- [x] 0.7 Document old Attune nouns as temporary legacy labels only: package contract, protocol, operation, view, law, obligation, evidence, delta, type guidance, Artifact ownership, generator shape, fuzz handler, property map, and RPC group.
 - [x] 0.8 Add stop conditions for any implementation that expands old ontology concepts instead of mapping them to mechanical facts.
 
 ## 1. Mechanical Ontology Cut
@@ -22,10 +22,10 @@
 
 ## 2. Program-Index Primary Diagnostics
 
-- [x] 2.1 Extend `ProgramIndexProjection` so it can materialize diagnostic rows for stale or missing artifacts, package-local generated companions, schema descriptor serialization issues, Source BOM compatibility rows, checked-in report artifacts, and repairable diagnostics.
-- [x] 2.2 Make `ProtocolDiagnostics` prefer program-index diagnostic rows or views while preserving compatibility fallback when the index is empty or unavailable.
+- [x] 2.1 Extend `ProgramIndexProjection` so it can materialize diagnostic rows for stale or missing artifacts, package-local generated companions, schema descriptor serialization issues, Artifact ownership compatibility rows, checked-in report artifacts, and repairable diagnostics.
+- [x] 2.2 Make `ProgramDiagnostics` prefer program-index diagnostic rows or views while preserving compatibility fallback when the index is empty or unavailable.
 - [x] 2.3 Add runtime tests proving a fixture program index produces diagnostics with source path, range, code, severity, message, and cause payload.
-- [x] 2.4 Make language-service diagnostic lookup read through `ProtocolDiagnostics` or `ProtocolQuery` backed by program-index projections.
+- [x] 2.4 Make language-service diagnostic lookup read through `ProgramDiagnostics` or `ProgramFactQuery` backed by program-index projections.
 - [x] 2.5 Add language-service tests for diagnostics by file path and repair hints from indexed repair rows.
 - [x] 2.6 Route package/workspace check executor internals through program-index materialization before reporting diagnostics.
 - [x] 2.7 Preserve old package-contract check output as compatibility fallback and mark whether check diagnostics came from program-index, compatibility, or both.
@@ -49,27 +49,27 @@
 - [x] 4.1 Project current package-contract exports into program-index symbol, schema, edge, artifact, observation, diagnostic, or repair rows marked `package-contract-compat`.
 - [x] 4.2 Represent old operation ids as symbol and edge facts instead of creating new persisted Package, Operation, or Law tables.
 - [x] 4.3 Add compatibility tests using `attuned-discovery` and `effect-oxlint-policy` fixtures.
-- [x] 4.4 Project Source BOM shards into artifact/source ownership rows marked `source-bom-compat`.
-- [x] 4.5 Add diagnostics and repair classifications for missing or stale Source BOM compatibility projections.
+- [x] 4.4 Project Artifact ownership shards into artifact ownership rows marked `artifact-ownership-compat`.
+- [x] 4.5 Add diagnostics and repair classifications for missing or stale Artifact ownership compatibility projections.
 - [x] 4.6 Project existing type-guidance and generated property/fuzz data as transitional observations marked with compatibility source metadata.
 - [x] 4.7 Index framework-owned generated companions as generated artifacts with freshness state.
 - [x] 4.8 Emit staged diagnostics for project-local generated companions only after the relevant lookup path has program-index parity.
 - [x] 4.9 Delete, quarantine, or archive any compatibility output whose mechanical replacement has no unresolved parity mismatch.
 - [x] 4.10 Write a parity checkpoint handoff listing old diagnostics answered by program-index diagnostics, mismatches, deletion candidates, and surfaces already removed.
-- [x] 4.11 Validate Phase 4 with `nx run framework-runtime:test --skipNxCache`, `nx run framework-protocol:test --skipNxCache`, `nx run attune-architecture:test --skipNxCache`, and `nx run workspace:source-bom-check --skipNxCache`.
+- [x] 4.11 Validate Phase 4 with `nx run framework-runtime:test --skipNxCache`, `nx run framework-protocol:test --skipNxCache`, `nx run attune-architecture:test --skipNxCache`, and `nx run workspace:artifact-ownership-check --skipNxCache`.
 
 ## 5. Source And Generated Artifact Ownership
 
 - [x] 5.1 Ensure generated companion imports resolve from framework-owned generated paths when packages no longer carry local generated companions.
 - [x] 5.2 Remove dependencies on project-local `src/attune.generated.ts` or `src/attune.contract.generated.ts` for projects whose ring has parity.
 - [x] 5.3 Keep project-local `src/attune.package.ts` as the authored source boundary for migrated rings.
-- [x] 5.4 Move Source BOM ownership toward framework/cache projections while keeping the root Source BOM index accurate.
-- [x] 5.5 Ensure touched-source-bom hooks accept staged package/framework source covered by framework-owned or cache-owned projections.
+- [x] 5.4 Move Artifact ownership toward framework/cache projections while keeping the root Artifact ownership index accurate.
+- [x] 5.5 Ensure touched-artifact-ownership hooks accept staged package/framework source covered by framework-owned or cache-owned projections.
 - [x] 5.6 Add warning-first policy diagnostics for project-local generated companions when parity exists.
 - [x] 5.7 Preserve `.attune/cache/**` as ignored framework-owned cache while keeping checked-in protocol report artifacts forbidden.
 - [x] 5.8 Remove or quarantine project-local generated companions for rings whose framework-owned artifact lookup and program-index freshness checks pass.
-- [x] 5.9 Remove old generated/source ownership terminology from active project-ring docs after mechanical replacements are validated.
-- [x] 5.10 Validate Phase 5 with `nx run attune-architecture:test --skipNxCache`, `nx run workspace:package-contracts-check --skipNxCache`, `nx run workspace:source-bom-check --skipNxCache`, and `bash -n nix/policy-hooks/touched-source-bom-ownership.sh`.
+- [x] 5.9 Remove old generated/artifact ownership terminology from active project-ring docs after mechanical replacements are validated.
+- [x] 5.10 Validate Phase 5 with `nx run attune-architecture:test --skipNxCache`, `nx run workspace:program-facts-check --skipNxCache`, `nx run workspace:artifact-ownership-check --skipNxCache`, and `bash -n nix/policy-hooks/touched-artifact-ownership.sh`.
 
 ## 6. Project Rings
 
@@ -87,7 +87,7 @@
 
 ## 7. Old Ontology Demotion
 
-- [x] 7.1 Inventory remaining package-contract laws, type guidance, RPC descriptors, `PackageFuzzHandlers`, `PackageProperties`, Source BOM shards, generated companion surfaces, and active docs/API names that still expose old ontology language.
+- [x] 7.1 Inventory remaining package-contract laws, type guidance, RPC descriptors, `PackageFuzzHandlers`, `PackageProperties`, Artifact ownership shards, generated companion surfaces, and active docs/API names that still expose old ontology language.
 - [x] 7.2 Classify each old surface as still required, compatibility-only, safe-to-delete, or unsafe-to-delete.
 - [x] 7.3 Delete, rename, quarantine, or archive every safe-to-delete old surface and record the exact mechanical replacement.
 - [x] 7.4 Mark high-risk deletions as future OpenSpec changes rather than current implementation tasks.

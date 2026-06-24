@@ -108,7 +108,7 @@
         "src/mcp/stdio.ts",
         "src/model.ts"
       ],
-      "reason": "Effect service boundary, fixtures, MCP stdio entrypoint, and repository intelligence model predate source ownership artifact automation."
+      "reason": "Effect service boundary, fixtures, MCP stdio entrypoint, and repository intelligence model predate artifact ownership automation."
     }
   ],
   "ownedFiles": [
@@ -125,7 +125,7 @@
   "projectRoot": "packages/cocoindex-effect",
   "queryCheckTargetNotes": [
     {
-      "note": "Generated MCP schema and tool registry freshness is covered by check-generated; add dedicated source ownership artifact query/check target metadata when @attune/nx exposes it.",
+      "note": "Generated MCP schema and tool registry freshness is covered by check-generated; add dedicated artifact ownership query/check target metadata when @attune/nx exposes it.",
       "target": "check-generated"
     }
   ],
@@ -151,7 +151,7 @@
       "paths": [
         "src/generated/cocoindex-code-mcp.ts"
       ],
-      "reason": "Inspection depends on the local CocoIndex MCP surface; keep checked-in snapshot as provenance until source ownership artifact query targets can assert the toolchain version."
+      "reason": "Inspection depends on the local CocoIndex MCP surface; keep checked-in snapshot as provenance until artifact ownership query targets can assert the toolchain version."
     }
   ]
 }

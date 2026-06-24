@@ -2,9 +2,9 @@ Changed:
 - Removed the package-local generated-contract compatibility test
   `packages/attune-pi-agent/test/attune-project-facts.test.ts`.
 - Trimmed `attune.generator-shapes.json` and
-  `framework/architecture/src/generated/source-bom/attune-pi-agent.json` so
+  `framework/architecture/src/generated/artifact-ownership/attune-pi-agent.json` so
   the deleted test is no longer advertised as active generated/source truth.
-- Reworded the remaining generated/source ownership note toward exported
+- Reworded the remaining generated/artifact ownership note toward exported
   symbols, schema/edge metadata, and program-index rows.
 
 Program-index proof:
@@ -13,9 +13,9 @@ Program-index proof:
 - The materialized index included mechanical project, target, source_file,
   symbol, schema_descriptor, edge, artifact, observation, diagnostic, and
   repair rows for the workspace.
-- The source ownership artifact and shape-conformance checks passed after the package-local
-  compatibility test was removed from generated/source ownership metadata.
-- No project-local Attune generated companions or package-root source ownership artifact shard
+- The artifact ownership and shape-conformance checks passed after the package-local
+  compatibility test was removed from generated/artifact ownership metadata.
+- No project-local Attune generated companions or package-root artifact ownership shard
   files exist under `packages/attune-pi-agent`.
 
 Removed surfaces:

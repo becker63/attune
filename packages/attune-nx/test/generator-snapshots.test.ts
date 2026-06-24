@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 
 import discoveryEventGenerator from "../src/generators/discovery-event/generator.js"
 import effectServiceGenerator from "../src/generators/effect-service/generator.js"
-import { upsertSourceBom, type SourceBomUpsertInput } from "../src/internal/source-bom.js"
+import { upsertArtifactOwnership, type ArtifactOwnershipUpsertInput } from "../src/internal/artifact-ownership.js"
 import type { GeneratorTree } from "../src/internal/tree.js"
 
 class MemoryTree implements GeneratorTree {
@@ -83,9 +83,9 @@ const runDiscoveryEventSnapshot = (): MemoryTree => {
   return tree
 }
 
-const sourceBomInput = (
+const artifactOwnershipInput = (
   options: Record<string, unknown>,
-): SourceBomUpsertInput => ({
+): ArtifactOwnershipUpsertInput => ({
   generatorName: "@attune/nx:effect-service",
   generatorVersion: "0.0.0-snapshot",
   generatorRevision: "snapshot-revision",
@@ -144,13 +144,13 @@ describe("attune-nx generator snapshots", () => {
         {
           "firstLine": "{",
           "lineCount": 10,
-          "path": "attune.source-bom.index.json",
-          "sha256": "c08a2eaa68fabe4070a179e38436f17163ac3e135bfa5f3bb62c6601e748667f",
+          "path": "attune.artifact-ownership.index.json",
+          "sha256": "79b039765989f212d1165667bd3f8c3fda8b4bec2b554985d7583ca086de7809",
         },
         {
           "firstLine": "{",
           "lineCount": 48,
-          "path": "packages/decision-core/attune.source-bom.json",
+          "path": "packages/decision-core/attune.artifact-ownership.json",
           "sha256": "82a641084fe3aa30aa88cbb20a4be5626d12f7e3aec71b078cd07188706d9111",
         },
         {
@@ -167,7 +167,7 @@ describe("attune-nx generator snapshots", () => {
         },
       ]
     `)
-    expect(JSON.parse(first.files.get("packages/decision-core/attune.source-bom.json") ?? "{}"))
+    expect(JSON.parse(first.files.get("packages/decision-core/attune.artifact-ownership.json") ?? "{}"))
       .toMatchInlineSnapshot(`
         {
           "entries": [
@@ -218,14 +218,14 @@ describe("attune-nx generator snapshots", () => {
           "schemaVersion": 1,
         }
       `)
-    expect(JSON.parse(first.files.get("attune.source-bom.index.json") ?? "{}")).toMatchInlineSnapshot(`
+    expect(JSON.parse(first.files.get("attune.artifact-ownership.index.json") ?? "{}")).toMatchInlineSnapshot(`
       {
         "schemaVersion": 1,
         "shards": [
           {
             "project": "decision-core",
             "projectRoot": "packages/decision-core",
-            "shard": "packages/decision-core/attune.source-bom.json",
+            "shard": "packages/decision-core/attune.artifact-ownership.json",
           },
         ],
       }
@@ -310,16 +310,16 @@ describe("attune-nx generator snapshots", () => {
 
   it("keeps artifact provenance upserts deterministic across option order and repeated generation", () => {
     const tree = new MemoryTree()
-    const input = sourceBomInput({
+    const input = artifactOwnershipInput({
       z: true,
       nested: { b: 2, a: 1 },
     })
 
-    upsertSourceBom(tree, input)
+    upsertArtifactOwnership(tree, input)
     const firstSnapshot = snapshotFiles(tree)
-    upsertSourceBom(
+    upsertArtifactOwnership(
       tree,
-      sourceBomInput({
+      artifactOwnershipInput({
         nested: { a: 1, b: 2 },
         z: true,
       }),
@@ -328,18 +328,18 @@ describe("attune-nx generator snapshots", () => {
     expect(snapshotFiles(tree)).toEqual(firstSnapshot)
     expect(snapshotFiles(tree)).toMatchInlineSnapshot(`
       {
-        "attune.source-bom.index.json": "{
+        "attune.artifact-ownership.index.json": "{
         "schemaVersion": 1,
         "shards": [
           {
             "project": "decision-core",
             "projectRoot": "packages/decision-core",
-            "shard": "packages/decision-core/attune.source-bom.json"
+            "shard": "packages/decision-core/attune.artifact-ownership.json"
           }
         ]
       }
       ",
-        "packages/decision-core/attune.source-bom.json": "{
+        "packages/decision-core/attune.artifact-ownership.json": "{
         "entries": [
           {
             "checkTargets": [

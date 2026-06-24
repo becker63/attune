@@ -7,8 +7,8 @@ import {
 } from "../../internal/tree.js"
 import {
   inferProjectRootFromDirectory,
-  upsertSourceBom,
-} from "../../internal/source-bom.js"
+  upsertArtifactOwnership,
+} from "../../internal/artifact-ownership.js"
 import { toNames } from "../../internal/names.js"
 
 export interface EffectServiceGeneratorSchema {
@@ -144,7 +144,7 @@ export default function effectServiceGenerator(
     (projectRoot === "."
       ? "workspace"
       : (projectRoot.split("/").at(-1) ?? projectRoot))
-  upsertSourceBom(tree, {
+  upsertArtifactOwnership(tree, {
     generatorName: "@attune/nx:effect-service",
     generatorVersion: schema.generatorVersion,
     generatorRevision: schema.generatorRevision,

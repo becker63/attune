@@ -37,7 +37,7 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "workspace:package-contracts-check"
+            "workspace:program-facts-check"
           ]
         },
         "timeoutSeconds": 240,
@@ -59,12 +59,12 @@
         "dryRun": false
       }
     },
-    "source-bom-check": {
+    "artifact-ownership-check": {
       "executor": "@attune/nx:toolchain",
       "options": {
         "tool": "architecture",
         "action": "check",
-        "toolId": "source-bom",
+        "toolId": "artifact-ownership",
         "parameters": {},
         "dryRun": false
       }
@@ -112,7 +112,7 @@
     "shape-conformance": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Effect Schema-backed generator shape inventory and Source BOM conformance check."
+        "description": "Effect Schema-backed generator shape inventory and Artifact ownership conformance check."
       },
       "options": {
         "tool": "architecture",
@@ -122,22 +122,22 @@
         "dryRun": false
       }
     },
-    "package-contracts-check": {
+    "program-facts-check": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Focused diagnostic target for package contract/source ownership and generator shape conformance during the Effect package-contract migration.",
+        "description": "Focused diagnostic target for program facts, artifact ownership, generator shape conformance, and framework policy.",
         "attune": {
           "runtimeChecks": [
             "descriptor-decode",
             "descriptor-hash",
             "generated-artifact-hash",
-            "internal-protocol-delta-diagnostics",
+            "program-index-diagnostics",
             "waiver-state",
             "import-boundary",
             "local-cache",
             "no-checked-in-report"
           ],
-          "readModel": "ProtocolQuery"
+          "readModel": "ProgramFactQuery"
         }
       },
       "options": {
@@ -147,7 +147,7 @@
         "parameters": {
           "targets": [
             "workspace:program-index-materialize",
-            "workspace:source-bom-check",
+            "workspace:artifact-ownership-check",
             "workspace:shape-conformance",
             "workspace:framework-policy-check"
           ]
@@ -264,7 +264,7 @@
     "arch:scan": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:package-contracts-check."
+        "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:program-facts-check."
       },
       "options": {
         "tool": "architecture",
@@ -374,7 +374,7 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "workspace:package-contracts-check",
+            "workspace:program-facts-check",
             "workspace:atom-graph-conformance",
             "workspace:property-evidence",
             "workspace:coverage-conformance",
@@ -409,7 +409,7 @@
         "parameters": {
           "targets": [
             "attune-nx:test",
-            "workspace:package-contracts-check",
+            "workspace:program-facts-check",
             "workspace:atom-graph-conformance",
             "workspace:property-evidence",
             "workspace:coverage-conformance",

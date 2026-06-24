@@ -18,7 +18,7 @@ vocabulary for the program-index path.
 
 #### Scenario: New diagnostic domain is added
 - **WHEN** implementation adds diagnostics for package declarations,
-  generated artifacts, schema descriptors, source ownership, observations, or
+  generated artifacts, schema descriptors, artifact ownership, observations, or
   repairs
 - **THEN** the diagnostic SHALL identify the mechanical fact that is missing,
   stale, invalid, observed, or repairable
@@ -34,7 +34,7 @@ parity.
 
 #### Scenario: Compatibility input is read
 - **WHEN** Attune reads a package contract, protocol descriptor, operation,
-  view, law, obligation, evidence map, delta-like report, Source BOM shard,
+  view, law, obligation, evidence map, delta-like report, Artifact ownership shard,
   generator shape, type guidance, property map, fuzz handler, or RPC group
 - **THEN** it SHALL project that input into mechanical rows
 - **AND** it SHALL mark the source as compatibility metadata rather than
@@ -80,7 +80,7 @@ parallel explanation.
 #### Scenario: Active docs mention old ontology after parity
 - **WHEN** active docs for a migrated ring still present package contracts,
   protocols, operations, views, laws, obligations, evidence, deltas, type
-  guidance, Source BOM, generator shapes, fuzz handlers, property maps, or RPC
+  guidance, Artifact ownership, generator shapes, fuzz handlers, property maps, or RPC
   groups as normal workflow concepts
 - **THEN** documentation policy SHALL report drift
 - **AND** the docs SHALL be rewritten to mechanical language or moved to

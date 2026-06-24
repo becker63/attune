@@ -4,7 +4,7 @@ Changed:
 - Updated `attune.generator-shapes.json` so the Ring A
   `attuned-discovery` and `effect-oxlint-policy` compatibility shape entries
   no longer expect deleted package-local compatibility tests.
-- Updated the framework-owned source ownership shards for
+- Updated the framework-owned artifact ownership shards for
   `attuned-discovery` and `effect-oxlint-policy` so their transitional contract
   shard outputs name only the authored `src/attune.package.ts` source boundary.
 
@@ -15,7 +15,7 @@ Program-index proof:
   symbol, schema_descriptor, edge, artifact, observation, diagnostic, and
   repair rows for the workspace. Source ownership and shape conformance also
   passed after stale compatibility-test paths were removed.
-- No project-local generated companions or package-root source ownership shards
+- No project-local generated companions or package-root artifact ownership shards
   exist under `packages/attuned-discovery`.
 - Runtime parity coverage for this Ring A package remains in the framework
   program-index fixture while framework-owned compatibility inputs are still
@@ -26,14 +26,14 @@ Removed surfaces:
   an active package-local old-shape surface. Its useful workflow questions are
   now answered by program-index materialization, focused product/runtime tests,
   and public Nx check/typecheck targets.
-- The Ring A shape manifest and framework-owned source ownership shards no
+- The Ring A shape manifest and framework-owned artifact ownership shards no
   longer resurrect the deleted package-local compatibility test as an expected
   output.
 
 Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/project-facts/attuned-discovery/attune.generated.ts`
 - `framework/architecture/src/generated/project-facts/attuned-discovery/attune.contract.generated.ts`
-- `framework/architecture/src/generated/source-bom/attuned-discovery.json`
+- `framework/architecture/src/generated/artifact-ownership/attuned-discovery.json`
 - `.attune/cache/generated/attuned-discovery/attune-symbol-registry.ts`
 - `.attune/cache/generated/attuned-discovery/attune-property-observations.ts`
 - `.attune/cache/generated/attuned-discovery/attune-schema-observations.ts`

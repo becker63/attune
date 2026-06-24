@@ -4,7 +4,7 @@ Changed:
 - Updated `attune.generator-shapes.json` so the `cocoindex-effect`
   compatibility shape entry no longer expects the deleted package-local
   compatibility test and describes mechanical indexed facts.
-- Updated the framework-owned source ownership shard for `cocoindex-effect` so
+- Updated the framework-owned artifact ownership shard for `cocoindex-effect` so
   its transitional contract shard output names only the authored
   `src/attune.package.ts` source boundary.
 
@@ -15,7 +15,7 @@ Program-index proof:
   symbol, schema_descriptor, edge, artifact, observation, diagnostic, and
   repair rows for the workspace. Source ownership and shape conformance also
   passed after stale compatibility-test paths were removed.
-- No project-local Attune generated companions or package-root source ownership
+- No project-local Attune generated companions or package-root artifact ownership
   shards exist under `packages/cocoindex-effect`.
 
 Removed surfaces:
@@ -28,7 +28,7 @@ Removed surfaces:
 Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/project-facts/cocoindex-effect/attune.generated.ts`
 - `framework/architecture/src/generated/project-facts/cocoindex-effect/attune.contract.generated.ts`
-- `framework/architecture/src/generated/source-bom/cocoindex-effect.json`
+- `framework/architecture/src/generated/artifact-ownership/cocoindex-effect.json`
 - `.attune/cache/generated/cocoindex-effect/attune-symbol-registry.ts`
 - `.attune/cache/generated/cocoindex-effect/attune-property-observations.ts`
 - `.attune/cache/generated/cocoindex-effect/attune-schema-observations.ts`

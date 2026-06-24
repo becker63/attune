@@ -2,7 +2,7 @@ Changed:
 - Completed Ring A package validation handoffs for `effect-oxlint-policy`,
   `attuned-discovery`, and `attune-foldkit`.
 - Removed the package-local compatibility tests for all three Ring A packages.
-- Trimmed Ring A shape/source ownership metadata so deleted compatibility tests
+- Trimmed Ring A shape/artifact ownership metadata so deleted compatibility tests
   are no longer expected outputs.
 
 Validated:

@@ -4,11 +4,11 @@ import { dirname, relative } from "node:path"
 
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"))
 const fail = (message) => {
-  console.error(`Source BOM check failed: ${message}`)
+  console.error(`Artifact ownership check failed: ${message}`)
   process.exitCode = 1
 }
 
-const indexPath = "attune.source-bom.index.json"
+const indexPath = "attune.artifact-ownership.index.json"
 if (!existsSync(indexPath)) {
   fail(`missing root index ${indexPath}`)
   process.exit()
@@ -33,9 +33,9 @@ for (const [position, entry] of index.shards.entries()) {
   seenProjects.add(entry.project)
   seenRoots.add(entry.projectRoot)
 
-  const legacyShard = `${entry.projectRoot}/attune.source-bom.json`
-  const cacheShard = `.attune/cache/source-bom/${entry.project}.json`
-  const frameworkShard = `framework/architecture/src/generated/source-bom/${entry.project}.json`
+  const legacyShard = `${entry.projectRoot}/attune.artifact-ownership.json`
+  const cacheShard = `.attune/cache/artifact-ownership/${entry.project}.json`
+  const frameworkShard = `framework/architecture/src/generated/artifact-ownership/${entry.project}.json`
   const usesLegacyShard = entry.shard === legacyShard
   const usesCacheShard = entry.shard === cacheShard
   const usesFrameworkShard = entry.shard === frameworkShard
@@ -66,14 +66,14 @@ for (const [position, entry] of index.shards.entries()) {
   if (usesLegacyShard && relative(entry.projectRoot, actualRoot) !== "") {
     fail(`${entry.shard} must live directly under projectRoot ${entry.projectRoot}`)
   }
-  if (usesCacheShard && actualRoot !== ".attune/cache/source-bom") {
-    fail(`${entry.shard} cache shard must live under .attune/cache/source-bom`)
+  if (usesCacheShard && actualRoot !== ".attune/cache/artifact-ownership") {
+    fail(`${entry.shard} cache shard must live under .attune/cache/artifact-ownership`)
   }
-  if (usesFrameworkShard && actualRoot !== "framework/architecture/src/generated/source-bom") {
-    fail(`${entry.shard} framework shard must live under framework/architecture/src/generated/source-bom`)
+  if (usesFrameworkShard && actualRoot !== "framework/architecture/src/generated/artifact-ownership") {
+    fail(`${entry.shard} framework shard must live under framework/architecture/src/generated/artifact-ownership`)
   }
 }
 
 if (!process.exitCode) {
-  console.log(`Source BOM check passed: ${index.shards.length} shard(s) registered in ${indexPath}.`)
+  console.log(`Artifact ownership check passed: ${index.shards.length} shard(s) registered in ${indexPath}.`)
 }

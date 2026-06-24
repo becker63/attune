@@ -14,7 +14,7 @@
 - Updated the project-facts generator so new generated source no longer
   re-exports `PackageContractSchema` and frames project-facts output as
   compatibility materialization feeding the mechanical program index.
-- Updated framework-owned source ownership artifact projections whose editable marker pointed
+- Updated framework-owned artifact ownership projections whose editable marker pointed
   at `definePackageContract`.
 
 ## Validated
@@ -51,7 +51,7 @@
   - 201 observations
   - 21 diagnostics
   - 21 repairs
-- source ownership artifact check passed with 11 registered shards.
+- artifact ownership check passed with 11 registered shards.
 - Generator shape conformance passed with 53 shapes across 11 projects.
 - Framework policy check passed with the new authored project API ratchet.
 - Repair dry-run reported the existing 21 blocked `schema_descriptor` refresh

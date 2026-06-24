@@ -27,29 +27,29 @@ proven for the relevant project ring.
 - **AND** remaining package-contract code SHALL be legacy adapter, historical,
   or future-delete code only
 
-### Requirement: Source BOM shards ingest as temporary legacy facts
+### Requirement: Artifact ownership shards ingest as temporary legacy facts
 
-Current Source BOM shards SHALL be ingestible as artifact and source ownership
-facts until artifact/source ownership rows prove parity.
+Current Artifact ownership shards SHALL be ingestible as artifact and artifact ownership
+facts until artifact ownership rows prove parity.
 
-#### Scenario: Source BOM shard is indexed
-- **WHEN** a Source BOM shard is available
-- **THEN** Attune SHALL project the shard into artifact/source ownership rows
-- **AND** the rows SHALL be marked with `source-bom-compat` metadata
+#### Scenario: Artifact ownership shard is indexed
+- **WHEN** a Artifact ownership shard is available
+- **THEN** Attune SHALL project the shard into artifact ownership rows
+- **AND** the rows SHALL be marked with `artifact-ownership-compat` metadata
 
-#### Scenario: Source BOM shard is missing
-- **WHEN** a required Source BOM compatibility shard is missing before a ring is
+#### Scenario: Artifact ownership shard is missing
+- **WHEN** a required Artifact ownership compatibility shard is missing before a ring is
   migrated
 - **THEN** Attune SHALL emit a diagnostic and repair classification
-- **AND** it SHALL NOT treat package-local Source BOM shards as final source
+- **AND** it SHALL NOT treat package-local Artifact ownership shards as final source
   truth
 
 #### Scenario: Source ownership parity is proven
-- **WHEN** artifact/source ownership rows answer the Source BOM ownership
+- **WHEN** artifact ownership rows answer the Artifact ownership
   checks for a project ring
-- **THEN** Source BOM shards for that ring SHALL be deleted, quarantined, or
+- **THEN** Artifact ownership shards for that ring SHALL be deleted, quarantined, or
   moved to historical/generated compatibility paths
-- **AND** active docs SHALL stop describing Source BOM as normal workflow
+- **AND** active docs SHALL stop describing Artifact ownership as normal workflow
 
 ### Requirement: Type guidance and evidence maps ingest as observations
 

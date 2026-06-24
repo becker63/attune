@@ -21,7 +21,7 @@
         "src/**",
         "test/**"
       ],
-      "reason": "Architecture policy scanner and tests are policy source for the source ownership artifact ratchet itself."
+      "reason": "Architecture policy scanner and tests are policy source for the artifact ownership ratchet itself."
     }
   ],
   "ownedFiles": [

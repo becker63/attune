@@ -152,10 +152,10 @@ Do not create package-local Attune compiler output as the normal path:
 src/attune.generated.ts
 src/attune.contract.generated.ts
 src/attune.package.typecheck.ts
-attune.source-bom.json
+attune.artifact-ownership.json
 ```
 
-Existing legacy generated companions and source ownership shards are migration
+Existing legacy generated companions and artifact ownership shards are migration
 scaffolding until Nx repair and the program-index projection fully own their
 materialization. Compile-only package assertions live in the framework-owned
 aggregate, not package-local typecheck files.
@@ -301,7 +301,7 @@ Run the smallest validation that proves the slice:
 - Generator typecheck/tests when changing `@attune/nx`.
 - `workspace:policy-fast` for normal policy coverage.
 - `workspace:framework-policy-check` when the slice touches generated ledgers,
-  generator provenance, or legacy source ownership scaffolding.
+  generator provenance, or legacy artifact ownership scaffolding.
 - `workspace:policy-proof-pressure` when the slice touches proof pressure,
   workerized fuzzing, mutation, Joern, container, or provider/resource
   observations.

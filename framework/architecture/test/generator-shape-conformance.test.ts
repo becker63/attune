@@ -19,7 +19,7 @@ const withWorkspace = (files: Record<string, string>, run: (workspace: string, t
 }
 
 describe("generator shape conformance", () => {
-  it("accepts generated shapes backed by Source BOM generated outputs", () => {
+  it("accepts generated shapes backed by Artifact ownership generated outputs", () => {
     withWorkspace({
       "attune.generator-shapes.json": JSON.stringify({
         schemaVersion: 1,
@@ -31,16 +31,16 @@ describe("generator shape conformance", () => {
           generator: "@attune/nx:sync-example",
           status: "generated",
           paths: ["src/Registry.generated.ts"],
-          sourceBomShard: "packages/example/attune.source-bom.json",
+          artifactOwnershipShard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shapeManifest: "attune.generator-shapes.json",
         shards: [{
           project: "example",
           projectRoot: "packages/example",
-          shard: "packages/example/attune.source-bom.json",
+          shard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
       "packages/attune-nx/generators.json": JSON.stringify({
@@ -51,7 +51,7 @@ describe("generator shape conformance", () => {
           },
         },
       }),
-      "packages/example/attune.source-bom.json": JSON.stringify({
+      "packages/example/attune.artifact-ownership.json": JSON.stringify({
         schemaVersion: 1,
         project: "example",
         projectRoot: "packages/example",
@@ -83,18 +83,18 @@ describe("generator shape conformance", () => {
           kind: "project-facts",
           generator: "@attune/nx:project-facts",
           status: "migrate",
-          paths: ["attune.source-bom.json"],
+          paths: ["attune.artifact-ownership.json"],
           plannedPaths: ["src/attune.package.ts", "src/attune.package.typecheck.ts"],
-          sourceBomShard: "packages/example/attune.source-bom.json",
+          artifactOwnershipShard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shapeManifest: "attune.generator-shapes.json",
         shards: [{
           project: "example",
           projectRoot: "packages/example",
-          shard: "packages/example/attune.source-bom.json",
+          shard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
       "packages/attune-nx/generators.json": JSON.stringify({
@@ -105,7 +105,7 @@ describe("generator shape conformance", () => {
           },
         },
       }),
-      "packages/example/attune.source-bom.json": JSON.stringify({
+      "packages/example/attune.artifact-ownership.json": JSON.stringify({
         schemaVersion: 1,
         project: "example",
         projectRoot: "packages/example",
@@ -140,16 +140,16 @@ describe("generator shape conformance", () => {
           status: "generated",
           paths: ["src/attune.package.ts"],
           plannedPaths: ["src/attune.package.typecheck.ts"],
-          sourceBomShard: "packages/example/attune.source-bom.json",
+          artifactOwnershipShard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shapeManifest: "attune.generator-shapes.json",
         shards: [{
           project: "example",
           projectRoot: "packages/example",
-          shard: "packages/example/attune.source-bom.json",
+          shard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
       "packages/attune-nx/generators.json": JSON.stringify({
@@ -160,7 +160,7 @@ describe("generator shape conformance", () => {
           },
         },
       }),
-      "packages/example/attune.source-bom.json": JSON.stringify({
+      "packages/example/attune.artifact-ownership.json": JSON.stringify({
         schemaVersion: 1,
         project: "example",
         projectRoot: "packages/example",
@@ -198,16 +198,16 @@ describe("generator shape conformance", () => {
           generator: "@attune/nx:project-facts",
           status: "generated",
           paths: ["src/attune.package.ts", "src/attune.package.typecheck.ts"],
-          sourceBomShard: "packages/example/attune.source-bom.json",
+          artifactOwnershipShard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shapeManifest: "attune.generator-shapes.json",
         shards: [{
           project: "example",
           projectRoot: "packages/example",
-          shard: "packages/example/attune.source-bom.json",
+          shard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
       "packages/attune-nx/generators.json": JSON.stringify({
@@ -218,7 +218,7 @@ describe("generator shape conformance", () => {
           },
         },
       }),
-      "packages/example/attune.source-bom.json": JSON.stringify({
+      "packages/example/attune.artifact-ownership.json": JSON.stringify({
         schemaVersion: 1,
         project: "example",
         projectRoot: "packages/example",
@@ -252,16 +252,16 @@ describe("generator shape conformance", () => {
           paths: ["src/future.ts"],
         }],
       }),
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shards: [{
           project: "example",
           projectRoot: "packages/example",
-          shard: "packages/example/attune.source-bom.json",
+          shard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
       "packages/attune-nx/generators.json": JSON.stringify({ generators: {} }),
-      "packages/example/attune.source-bom.json": JSON.stringify({
+      "packages/example/attune.artifact-ownership.json": JSON.stringify({
         schemaVersion: 1,
         project: "example",
         projectRoot: "packages/example",
@@ -294,16 +294,16 @@ describe("generator shape conformance", () => {
           paths: ["src/Broken.generated.ts"],
         }],
       }),
-      "attune.source-bom.index.json": JSON.stringify({
+      "attune.artifact-ownership.index.json": JSON.stringify({
         schemaVersion: 1,
         shards: [{
           project: "example",
           projectRoot: "packages/example",
-          shard: "packages/example/attune.source-bom.json",
+          shard: "packages/example/attune.artifact-ownership.json",
         }],
       }),
       "packages/attune-nx/generators.json": JSON.stringify({ generators: {} }),
-      "packages/example/attune.source-bom.json": JSON.stringify({
+      "packages/example/attune.artifact-ownership.json": JSON.stringify({
         schemaVersion: 1,
         project: "example",
         projectRoot: "packages/example",

@@ -4,7 +4,7 @@ Changed:
 - Updated `attune.generator-shapes.json` so the `attune-nx` compatibility
   shape entry describes mechanical indexed facts instead of old generated
   object-shape assertions.
-- Updated the framework-owned source ownership shard for `attune-nx` so its
+- Updated the framework-owned artifact ownership shard for `attune-nx` so its
   editable region describes the authored source boundary and
   program-index-backed check path.
 
@@ -16,7 +16,7 @@ Program-index proof:
   repair rows for the workspace.
 - `attune-nx:attune-repair --dryRun` reported the public repair surface in
   dry-run mode and skipped the internal repair routes without writing files.
-- No project-local generated companions or package-root source ownership shards
+- No project-local generated companions or package-root artifact ownership shards
   exist under `packages/attune-nx`.
 
 Removed surfaces:
@@ -34,7 +34,7 @@ Retained compatibility-only surfaces:
 - `packages/attune-nx/test/product-contract-discovery.test.ts`
 - `framework/architecture/src/generated/project-facts/attune-nx/attune.generated.ts`
 - `framework/architecture/src/generated/project-facts/attune-nx/attune.contract.generated.ts`
-- `framework/architecture/src/generated/source-bom/attune-nx.json`
+- `framework/architecture/src/generated/artifact-ownership/attune-nx.json`
 - `.attune/cache/generated/attune-nx/artifact-freshness.json`
 
 These retained files are compatibility generator/helper surfaces or

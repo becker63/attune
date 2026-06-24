@@ -19,31 +19,31 @@ describe("attune repair CLI", () => {
     }
   })
 
-  it("dry-runs safe Source BOM relocation without writing files", () => {
+  it("dry-runs safe Artifact ownership relocation without writing files", () => {
     const workspaceRoot = makeRepairWorkspace()
 
     const result = runRepair(workspaceRoot, "--dry-run")
 
     expect(result.status).toBe(0)
     expect(result.stdout).toContain("planned")
-    expect(fs.existsSync(path.join(workspaceRoot, "packages/platform-alchemy-k8s/attune.source-bom.json"))).toBe(true)
-    expect(fs.existsSync(path.join(workspaceRoot, "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json"))).toBe(false)
+    expect(fs.existsSync(path.join(workspaceRoot, "packages/platform-alchemy-k8s/attune.artifact-ownership.json"))).toBe(true)
+    expect(fs.existsSync(path.join(workspaceRoot, "framework/architecture/src/generated/artifact-ownership/platform-alchemy-k8s.json"))).toBe(false)
   })
 
-  it("applies safe Source BOM relocation and updates the root index", () => {
+  it("applies safe Artifact ownership relocation and updates the root index", () => {
     const workspaceRoot = makeRepairWorkspace()
 
     const result = runRepair(workspaceRoot)
 
     expect(result.status).toBe(0)
     expect(result.stdout).toContain("applied")
-    expect(fs.existsSync(path.join(workspaceRoot, "packages/platform-alchemy-k8s/attune.source-bom.json"))).toBe(false)
-    expect(fs.existsSync(path.join(workspaceRoot, "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json"))).toBe(true)
+    expect(fs.existsSync(path.join(workspaceRoot, "packages/platform-alchemy-k8s/attune.artifact-ownership.json"))).toBe(false)
+    expect(fs.existsSync(path.join(workspaceRoot, "framework/architecture/src/generated/artifact-ownership/platform-alchemy-k8s.json"))).toBe(true)
 
-    const index = JSON.parse(fs.readFileSync(path.join(workspaceRoot, "attune.source-bom.index.json"), "utf8")) as {
+    const index = JSON.parse(fs.readFileSync(path.join(workspaceRoot, "attune.artifact-ownership.index.json"), "utf8")) as {
       readonly shards: readonly { readonly shard: string }[]
     }
-    expect(index.shards[0]?.shard).toBe("framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json")
+    expect(index.shards[0]?.shard).toBe("framework/architecture/src/generated/artifact-ownership/platform-alchemy-k8s.json")
   })
 
   it("materializes deterministic repair-kind cache artifacts", () => {
@@ -66,7 +66,7 @@ describe("attune repair CLI", () => {
 
   it("removes project-local generated compatibility artifacts without writing framework outputs", () => {
     const workspaceRoot = makeRepairWorkspace({
-      "packages/attune-foldkit/attune.source-bom.json": JSON.stringify({
+      "packages/attune-foldkit/attune.artifact-ownership.json": JSON.stringify({
         schemaVersion: 1,
         project: "attune-foldkit",
         projectRoot: "packages/attune-foldkit",
@@ -120,8 +120,8 @@ describe("attune repair CLI", () => {
       workspaceRoot,
       ".attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts",
     ))).toBe(true)
-    expect(fs.existsSync(path.join(workspaceRoot, "packages/platform-alchemy-k8s/attune.source-bom.json"))).toBe(true)
-    expect(fs.existsSync(path.join(workspaceRoot, "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json"))).toBe(false)
+    expect(fs.existsSync(path.join(workspaceRoot, "packages/platform-alchemy-k8s/attune.artifact-ownership.json"))).toBe(true)
+    expect(fs.existsSync(path.join(workspaceRoot, "framework/architecture/src/generated/artifact-ownership/platform-alchemy-k8s.json"))).toBe(false)
   })
 })
 
@@ -129,19 +129,19 @@ function makeRepairWorkspace(extraFiles: Record<string, string> = {}): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "attune-repair-cli-"))
   tempRoots.push(root)
 
-  writeFile(root, "packages/platform-alchemy-k8s/attune.source-bom.json", JSON.stringify({
+  writeFile(root, "packages/platform-alchemy-k8s/attune.artifact-ownership.json", JSON.stringify({
     schemaVersion: 1,
     project: "platform-alchemy-k8s",
     projectRoot: "packages/platform-alchemy-k8s",
     ownedFiles: ["src/attune.package.ts"],
     generatedOutputs: [],
   }, null, 2))
-  writeFile(root, "attune.source-bom.index.json", JSON.stringify({
+  writeFile(root, "attune.artifact-ownership.index.json", JSON.stringify({
     schemaVersion: 1,
     shards: [{
       project: "platform-alchemy-k8s",
       projectRoot: "packages/platform-alchemy-k8s",
-      shard: "packages/platform-alchemy-k8s/attune.source-bom.json",
+      shard: "packages/platform-alchemy-k8s/attune.artifact-ownership.json",
     }],
   }, null, 2))
   writeFile(root, "attune.generator-shapes.json", JSON.stringify({
@@ -150,7 +150,7 @@ function makeRepairWorkspace(extraFiles: Record<string, string> = {}): string {
       id: "platform-alchemy-k8s.package-contract",
       project: "platform-alchemy-k8s",
       projectRoot: "packages/platform-alchemy-k8s",
-      sourceBomShard: "packages/platform-alchemy-k8s/attune.source-bom.json",
+      artifactOwnershipShard: "packages/platform-alchemy-k8s/attune.artifact-ownership.json",
     }],
   }, null, 2))
 

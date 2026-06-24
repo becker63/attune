@@ -18,7 +18,7 @@ Inventory:
   package tests.
 - `attune.generator-shapes.json` entry
   `attune-architecture.project-facts` and
-  `framework/architecture/src/generated/source-bom/attune-architecture.json`
+  `framework/architecture/src/generated/artifact-ownership/attune-architecture.json`
   project-facts test ownership: delete now. Replacement: authored
   `src/attune.package.ts` symbol facts and program-index checks.
 - Authored `src/attune.package.ts` exports named
@@ -56,7 +56,7 @@ Inventory:
 - Active docs `AGENTS.md`, `docs/attuned/Attune Framework Operating Surface.md`,
   `docs/attuned/Attune Framework Core Primitives.md`, and
   `docs/codex-migration-goal.md`: rename or rewrite mechanically. They still
-  mention generated companions, source ownership artifact, project facts, or generated
+  mention generated companions, artifact ownership, project facts, or generated
   contract outputs as operating concepts.
 - Old OpenSpec changes, archived handoffs, and migration handoffs: historical
   only. They may retain old terms as dated context.

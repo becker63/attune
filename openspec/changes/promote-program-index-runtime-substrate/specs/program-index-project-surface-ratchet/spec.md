@@ -49,7 +49,7 @@ documented.
 
 #### Scenario: Surface is inventoried
 - **WHEN** an old package-contract law, type-guidance, RPC descriptor,
-  PackageFuzzHandlers, PackageProperties, Source BOM shard, or generated
+  PackageFuzzHandlers, PackageProperties, Artifact ownership shard, or generated
   companion surface is inventoried
 - **THEN** it SHALL be classified as still required, compatibility-only,
   safe-to-delete, or unsafe-to-delete
@@ -86,7 +86,7 @@ normal instructions for migrated rings.
   files as the default workflow
 
 #### Scenario: Advanced compatibility docs are needed
-- **WHEN** docs mention package contracts, Source BOM shards, type guidance,
+- **WHEN** docs mention package contracts, Artifact ownership shards, type guidance,
   laws, generated companions, or package fuzz maps for migrated rings
 - **THEN** those terms SHALL be removed from normal instructions or moved to
   historical/legacy-adapter sections

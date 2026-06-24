@@ -13,10 +13,10 @@
   `ProgramSymbolRegistry`, `ProgramObservationPlan`,
   `ProgramRuntimeGraph`, `ProgramGeneratedArtifacts`, and
   `ProgramReportPolicy`.
-- Renamed framework-owned source ownership projection records from
+- Renamed framework-owned artifact ownership projection records from
   `contractShards` to `projectFactShards` and routed generated check metadata
   to `workspace:attune-check`.
-- Removed the internal source ownership helper export from the public
+- Removed the internal artifact ownership helper export from the public
   `@attune/nx` barrel.
 
 ## Validated
@@ -71,8 +71,8 @@ Fresh `workspace:attune-check` materialization:
   vocabulary internally. They must be deleted, renamed mechanically, or
   quarantined before archive readiness.
 - Internal compatibility target/file names such as
-  `workspace:package-contracts-check`, `workspace:source-bom-check`, and
-  `attune.source-bom*.json` still appear as implementation scaffolding behind
+  `workspace:program-facts-check`, `workspace:artifact-ownership-check`, and
+  `attune.artifact-ownership*.json` still appear as implementation scaffolding behind
   the public `attune-check` workflow.
 - The repair dry-run still exposes safe schema_descriptor refresh rows as
   blocked because the automatic refresh materializer route is not implemented.

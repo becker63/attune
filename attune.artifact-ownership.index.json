@@ -4,57 +4,57 @@
     {
       "project": "attune-architecture",
       "projectRoot": "framework/architecture",
-      "shard": "framework/architecture/src/generated/source-bom/attune-architecture.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/attune-architecture.json"
     },
     {
       "project": "effect-oxlint-policy",
       "projectRoot": "framework/oxlint-policy",
-      "shard": "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/effect-oxlint-policy.json"
     },
     {
       "project": "attune-foldkit",
       "projectRoot": "packages/attune-foldkit",
-      "shard": "framework/architecture/src/generated/source-bom/attune-foldkit.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/attune-foldkit.json"
     },
     {
       "project": "attune-nx",
       "projectRoot": "packages/attune-nx",
-      "shard": "framework/architecture/src/generated/source-bom/attune-nx.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/attune-nx.json"
     },
     {
       "project": "attune-pi-agent",
       "projectRoot": "packages/attune-pi-agent",
-      "shard": "framework/architecture/src/generated/source-bom/attune-pi-agent.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/attune-pi-agent.json"
     },
     {
       "project": "attuned-discovery",
       "projectRoot": "packages/attuned-discovery",
-      "shard": "framework/architecture/src/generated/source-bom/attuned-discovery.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/attuned-discovery.json"
     },
     {
       "project": "cocoindex-effect",
       "projectRoot": "packages/cocoindex-effect",
-      "shard": "framework/architecture/src/generated/source-bom/cocoindex-effect.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/cocoindex-effect.json"
     },
     {
       "project": "home-deployment",
       "projectRoot": "packages/home-deployment",
-      "shard": "framework/architecture/src/generated/source-bom/home-deployment.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/home-deployment.json"
     },
     {
       "project": "joern-effect-properties",
       "projectRoot": "packages/joern-effect-properties",
-      "shard": "framework/architecture/src/generated/source-bom/joern-effect-properties.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/joern-effect-properties.json"
     },
     {
       "project": "joern-effect",
       "projectRoot": "packages/joern-effect",
-      "shard": "framework/architecture/src/generated/source-bom/joern-effect.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/joern-effect.json"
     },
     {
       "project": "platform-alchemy-k8s",
       "projectRoot": "packages/platform-alchemy-k8s",
-      "shard": "framework/architecture/src/generated/source-bom/platform-alchemy-k8s.json"
+      "shard": "framework/architecture/src/generated/artifact-ownership/platform-alchemy-k8s.json"
     }
   ]
 }

@@ -45,9 +45,9 @@ parity is proven. They are not source truth for new runtime design.
 - `framework/architecture/src/generated/project-facts/*`: legacy generated
   contract data that should ingest as compatibility artifact, symbol, schema,
   edge, observation, diagnostic, and repair rows.
-- `framework/architecture/src/generated/source-bom/*` and
-  `attune.source-bom.index.json`: legacy source ownership data that should
-  ingest as artifact/source ownership rows marked `source-ownership-compat`.
+- `framework/architecture/src/generated/artifact-ownership/*` and
+  `attune.artifact-ownership.index.json`: legacy artifact ownership data that should
+  ingest as artifact/artifact ownership rows marked `source-ownership-compat`.
 - Type-guidance, package property, package fuzz, and RPC compatibility outputs:
   transitional observation, edge, artifact, diagnostic, or repair rows.
 - Package-local generated companions such as `src/attune.generated.ts`,
@@ -71,7 +71,7 @@ These old nouns are temporary legacy labels, not primary runtime concepts:
 - evidence
 - delta
 - type guidance
-- source ownership artifact
+- artifact ownership
 - generator shape
 - fuzz handler
 - property map
@@ -94,7 +94,7 @@ use mechanical names.
 | Obligation | diagnostic row, repair row, or validation target |
 | Evidence | observation row |
 | Delta | diagnostic and repair rows |
-| source ownership artifact | artifact and source ownership rows |
+| artifact ownership | artifact and artifact ownership rows |
 | Generator shape | artifact provenance and repair routing rows |
 | Type guidance | schema_descriptor annotation, edge fact, or observation row |
 | Fuzz handler | observation, artifact, diagnostic, or repair fact |
@@ -110,10 +110,10 @@ need to expose the old object shapes.
 | Phase | Primary owner | Scope | Validation signal |
 | --- | --- | --- | --- |
 | 1. Mechanical Ontology Cut | Framework/runtime agent | Runtime names, diagnostic copy, doc/policy drift checks, export inventory | OpenSpec validation plus focused policy/runtime tests |
-| 2. Program-Index Primary Diagnostics | Runtime and language-service agent | ProgramIndexProjection diagnostics, ProtocolDiagnostics preference, check output source labels | `framework-runtime`, `framework-language-service`, `framework-nx`, `attune-nx`, and workspace check targets |
+| 2. Program-Index Primary Diagnostics | Runtime and language-service agent | ProgramIndexProjection diagnostics, ProgramDiagnostics preference, check output source labels | `framework-runtime`, `framework-language-service`, `framework-nx`, `attune-nx`, and workspace check targets |
 | 3. Program-Index Repair Routing | Nx/framework agent | repair rows, safety classes, dry-run summaries, Nx route mapping | `framework-sqlite`, `framework-runtime`, `framework-nx`, `attune-nx`, and workspace repair dry-run targets |
-| 4. Compatibility Adapters | Runtime/protocol agent | Ingest legacy declaration, generated, source ownership, type-guidance, property, fuzz, and RPC outputs as mechanical rows | runtime, protocol, architecture, and source ownership checks |
-| 5. Source And Generated Artifact Ownership | Architecture/policy agent | Framework-owned generated/cache lookup, package-local generated companion ratchets, source ownership hooks | architecture, package-check, source ownership, and hook syntax checks |
+| 4. Compatibility Adapters | Runtime/protocol agent | Ingest legacy declaration, generated, artifact ownership, type-guidance, property, fuzz, and RPC outputs as mechanical rows | runtime, protocol, architecture, and artifact ownership checks |
+| 5. Source And Generated Artifact Ownership | Architecture/policy agent | Framework-owned generated/cache lookup, package-local generated companion ratchets, artifact ownership hooks | architecture, package-check, artifact ownership, and hook syntax checks |
 | 6. Project Rings | Ring migration agents | Ring A, Ring B, and Ring C check/repair validation and handoffs | Public Nx project and workspace targets only |
 | 7. Old Ontology Demotion | Framework/docs/policy agent | Delete, rename, quarantine, archive, or future-block old surfaces after parity | architecture, workspace check, OpenSpec validation, and drift checks |
 

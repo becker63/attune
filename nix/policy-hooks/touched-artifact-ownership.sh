@@ -21,14 +21,14 @@ const normalize = (value) =>
 
 const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, "utf8"))
 const failures = []
-const fail = (message) => failures.push(`Source BOM ownership missing: ${message}`)
+const fail = (message) => failures.push(`Artifact ownership missing: ${message}`)
 
 const sourcePaths = (process.env.STAGED_SOURCES ?? "")
   .split(/\n/u)
   .map((sourcePath) => normalize(sourcePath.trim()))
   .filter(Boolean)
 
-const indexPath = "attune.source-bom.index.json"
+const indexPath = "attune.artifact-ownership.index.json"
 if (!fs.existsSync(indexPath)) {
   fail(`root index ${indexPath} is required for staged package/framework source files.`)
 } else {
@@ -76,9 +76,9 @@ if (!fs.existsSync(indexPath)) {
       continue
     }
 
-    const legacyShard = `${entry.projectRoot}/attune.source-bom.json`
-    const cacheShard = `.attune/cache/source-bom/${entry.project}.json`
-    const frameworkShard = `framework/architecture/src/generated/source-bom/${entry.project}.json`
+    const legacyShard = `${entry.projectRoot}/attune.artifact-ownership.json`
+    const cacheShard = `.attune/cache/artifact-ownership/${entry.project}.json`
+    const frameworkShard = `framework/architecture/src/generated/artifact-ownership/${entry.project}.json`
     if (entry.shard !== legacyShard && entry.shard !== cacheShard && entry.shard !== frameworkShard) {
       fail(`${sourcePath} maps to ${entry.project}, but ${indexPath} points to ${entry.shard}; expected ${legacyShard}, ${cacheShard}, or ${frameworkShard}.`)
       continue

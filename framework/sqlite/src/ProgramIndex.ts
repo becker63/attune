@@ -1026,7 +1026,7 @@ const projectHealthRows = (
   })
 
 const isPackageLocalAttuneCompanion = (path: string): boolean =>
-  /(^|\/)attune\.source-bom\.json$/u.test(path) ||
+  /(^|\/)attune\.artifact-ownership\.json$/u.test(path) ||
   /(^|\/)src\/attune\.(generated|contract\.generated|package\.typecheck)\.ts$/u.test(path)
 
 const programIndexInitialMigrationSql = `
@@ -1235,7 +1235,7 @@ WHERE schema_descriptor.serialization_status != 'serializable';
 CREATE VIEW IF NOT EXISTS package_local_attune_companions AS
 SELECT *
 FROM artifact
-WHERE path LIKE '%/attune.source-bom.json'
+WHERE path LIKE '%/attune.artifact-ownership.json'
    OR path LIKE '%/src/attune.generated.ts'
    OR path LIKE '%/src/attune.contract.generated.ts'
    OR path LIKE '%/src/attune.package.typecheck.ts';

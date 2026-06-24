@@ -196,7 +196,7 @@ describe("project facts law inference", () => {
 
   it("infers finding schema and deterministic diagnostic laws for policy rules", () => {
     const operation = {
-      id: "source-bom-ownership",
+      id: "artifact-ownership",
       kind: "policy-rule",
       schemas: {
         input: "WorkspaceFacts",

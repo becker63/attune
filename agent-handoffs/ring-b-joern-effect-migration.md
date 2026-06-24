@@ -13,7 +13,7 @@ Program-index proof:
   repair rows for the workspace.
 - The Ring B workspace checkpoint passed with `workspace:attune-check` after
   `attune-nx`, `cocoindex-effect`, and `joern-effect` were all validated.
-- No project-local Attune generated companions or package-root source ownership
+- No project-local Attune generated companions or package-root artifact ownership
   shards exist under `packages/joern-effect`.
 
 Removed surfaces:

@@ -2,7 +2,7 @@ Changed:
 - Completed Ring B package validation handoffs for `attune-nx`,
   `cocoindex-effect`, and `joern-effect`.
 - Removed the package-local compatibility tests for all three Ring B packages.
-- Trimmed Ring B shape/source ownership metadata where stale compatibility
+- Trimmed Ring B shape/artifact ownership metadata where stale compatibility
   tests were still expected outputs.
 
 Validated:

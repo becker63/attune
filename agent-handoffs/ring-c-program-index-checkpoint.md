@@ -2,7 +2,7 @@ Changed:
 - Completed Ring C package validation handoffs for `attune-pi-agent`,
   `joern-effect-properties`, `home-deployment`, and `platform-alchemy-k8s`.
 - Removed package-local compatibility tests for all four Ring C packages.
-- Trimmed `attune-pi-agent` shape/source ownership metadata where stale
+- Trimmed `attune-pi-agent` shape/artifact ownership metadata where stale
   compatibility tests were still expected outputs.
 
 Validated:

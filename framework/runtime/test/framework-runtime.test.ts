@@ -370,12 +370,12 @@ describe("@attune/framework-runtime", () => {
         paths: [
           "packages/demo/src/attune.package.ts",
           "packages/demo/src/attune.generated.ts",
-          "packages/demo/attune.source-bom.json",
+          "packages/demo/attune.artifact-ownership.json",
         ],
         contentByPath: {
           "packages/demo/src/attune.package.ts": "source",
           "packages/demo/src/attune.generated.ts": "generated",
-          "packages/demo/attune.source-bom.json": "{}",
+          "packages/demo/attune.artifact-ownership.json": "{}",
         },
       }))
 
@@ -533,7 +533,7 @@ describe("@attune/framework-runtime", () => {
     )
   })
 
-  it("adapts generated companions and Source BOM files as compatibility input rows", () => {
+  it("adapts generated companions and artifact ownership files as compatibility input rows", () => {
     const rows = compatibilityRowsFromCurrentPackageContracts({
       projectId: "demo",
       root: "packages/demo",
@@ -542,13 +542,13 @@ describe("@attune/framework-runtime", () => {
         "packages/demo/src/attune.package.ts",
         "packages/demo/src/attune.contract.generated.ts",
         "packages/demo/src/attune.generated.ts",
-        "packages/demo/attune.source-bom.json",
+        "packages/demo/attune.artifact-ownership.json",
       ],
       contentByPath: {
         "packages/demo/src/attune.package.ts": "source",
         "packages/demo/src/attune.contract.generated.ts": "contract",
         "packages/demo/src/attune.generated.ts": "generated",
-        "packages/demo/attune.source-bom.json": "{}",
+        "packages/demo/attune.artifact-ownership.json": "{}",
       },
     })
 
@@ -556,13 +556,13 @@ describe("@attune/framework-runtime", () => {
       "attune-package-source",
       "generated-contract-companion",
       "generated-protocol-companion",
-      "source-ownership-compatibility",
+      "artifact-ownership-compatibility",
     ])
     expect(rows.sourceFiles.map((sourceFile) => sourceFile.path)).toEqual([
       "packages/demo/src/attune.package.ts",
       "packages/demo/src/attune.contract.generated.ts",
       "packages/demo/src/attune.generated.ts",
-      "packages/demo/attune.source-bom.json",
+      "packages/demo/attune.artifact-ownership.json",
     ])
     expect(rows.observations).toHaveLength(4)
     expect(rows.observations.map((observation) =>
@@ -570,14 +570,14 @@ describe("@attune/framework-runtime", () => {
     )).toEqual([
       "generated-companion-compat",
       "generated-companion-compat",
-      "source-bom-compat",
-      "source-bom-compat",
+      "artifact-ownership-compat",
+      "artifact-ownership-compat",
     ])
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
       "attune/program-index/package-local-companion",
       "attune/program-index/package-local-companion",
       "attune/program-index/package-local-companion",
-      "attune/program-index/source-bom-compatibility",
+      "attune/program-index/artifact-ownership-compatibility",
     ])
     expect(rows.repairs.map((repair) => [
       repair.safety,
@@ -588,7 +588,7 @@ describe("@attune/framework-runtime", () => {
       ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
       ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
       ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
-      ["needs-review", "source-ownership-projection", "attune-repair-cli:artifact-freshness", "[\"workspace:attune-check\"]"],
+      ["needs-review", "artifact-ownership-projection", "attune-repair-cli:artifact-freshness", "[\"workspace:attune-check\"]"],
     ])
   })
 
@@ -633,13 +633,13 @@ describe("@attune/framework-runtime", () => {
     ])
   })
 
-  it("classifies missing Source BOM compatibility as review-gated source ownership repair", () => {
+  it("classifies missing artifact ownership compatibility as review-gated artifact ownership repair", () => {
     const rows = compatibilityRowsFromCurrentPackageContracts({
       projectId: "demo",
       root: "packages/demo",
       now: "2026-06-23T00:00:00.000Z",
       paths: [
-        "packages/demo/attune.source-bom.json",
+        "packages/demo/attune.artifact-ownership.json",
       ],
       contentByPath: {},
     })
@@ -647,8 +647,8 @@ describe("@attune/framework-runtime", () => {
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
       "attune/program-index/artifact-missing",
       "attune/program-index/package-local-companion",
-      "attune/program-index/source-bom-compatibility-missing",
-      "attune/program-index/source-bom-compatibility",
+      "attune/program-index/artifact-ownership-compatibility-missing",
+      "attune/program-index/artifact-ownership-compatibility",
     ])
     expect(rows.repairs.map((repair) => [
       repair.safety,
@@ -658,15 +658,15 @@ describe("@attune/framework-runtime", () => {
     ])).toEqual([
       ["safe", "artifact-freshness", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
       ["needs-review", "artifact-relocation", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
-      ["needs-review", "source-ownership-projection", "workspace:attune-repair", "attune-repair-cli:artifact-freshness"],
-      ["needs-review", "source-ownership-projection", "workspace:attune-repair", "attune-repair-cli:artifact-freshness"],
+      ["needs-review", "artifact-ownership-projection", "workspace:attune-repair", "attune-repair-cli:artifact-freshness"],
+      ["needs-review", "artifact-ownership-projection", "workspace:attune-repair", "attune-repair-cli:artifact-freshness"],
     ])
   })
 
   it("classifies Ring A effect-oxlint-policy diagnostic parity", () => {
     const artifactPaths = [
       "framework/oxlint-policy/src/attune.package.ts",
-      "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json",
+      "framework/architecture/src/generated/artifact-ownership/effect-oxlint-policy.json",
     ] as const
     const missingFixturePaths = artifactPaths.filter((artifactPath) =>
       !existsSync(resolve(repositoryRoot, artifactPath))
@@ -701,11 +701,11 @@ describe("@attune/framework-runtime", () => {
     expect(rows.observations.map((observation) =>
       JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
     )).toEqual([
-      "source-bom-compat",
-      "source-bom-compat",
+      "artifact-ownership-compat",
+      "artifact-ownership-compat",
     ])
     expect(rows.artifacts.some((artifact) =>
-      artifact.kind === "source-ownership-pattern" &&
+      artifact.kind === "artifact-ownership-pattern" &&
       artifact.path === "framework/oxlint-policy/src/**"
     )).toBe(true)
     expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([])
@@ -717,10 +717,10 @@ describe("@attune/framework-runtime", () => {
     })
   })
 
-  it("projects Ring A attuned-discovery source ownership without generated compatibility outputs", () => {
+  it("projects Ring A attuned-discovery artifact ownership without generated compatibility outputs", () => {
     const artifactPaths = [
       "packages/attuned-discovery/src/attune.package.ts",
-      "framework/architecture/src/generated/source-bom/attuned-discovery.json",
+      "framework/architecture/src/generated/artifact-ownership/attuned-discovery.json",
     ] as const
     const missingFixturePaths = artifactPaths.filter((artifactPath) =>
       !existsSync(resolve(repositoryRoot, artifactPath))
@@ -745,14 +745,14 @@ describe("@attune/framework-runtime", () => {
       "ProjectRuntimeRoots",
     ]))
     expect(rows.artifacts.some((artifact) =>
-      artifact.kind === "source-ownership-pattern" &&
+      artifact.kind === "artifact-ownership-pattern" &&
       artifact.path === "packages/attuned-discovery/src/**"
     )).toBe(true)
     expect(rows.observations.map((observation) =>
       JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
     )).toEqual([
-      "source-bom-compat",
-      "source-bom-compat",
+      "artifact-ownership-compat",
+      "artifact-ownership-compat",
     ])
     expect(rows.diagnostics).toEqual([])
   })

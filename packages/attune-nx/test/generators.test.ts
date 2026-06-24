@@ -8,10 +8,10 @@ import {
   requiredPhase2GeneratorCapabilities,
 } from "../src/generator-inventory.js"
 import {
-  sourceBomCacheShardPath,
-  sourceBomFrameworkShardPath,
-  upsertSourceBom,
-} from "../src/internal/source-bom.js"
+  artifactOwnershipCacheShardPath,
+  artifactOwnershipFrameworkShardPath,
+  upsertArtifactOwnership,
+} from "../src/internal/artifact-ownership.js"
 import type { GeneratorTree } from "../src/internal/tree.js"
 
 interface GeneratorsJson {
@@ -188,7 +188,7 @@ describe("attune-nx generators", () => {
     expect(source).toContain("    accessors: true,")
 
     const shard = JSON.parse(
-      tree.files.get("packages/decision-core/attune.source-bom.json") ?? "{}",
+      tree.files.get("packages/decision-core/attune.artifact-ownership.json") ?? "{}",
     )
     expect(shard).toMatchObject({
       schemaVersion: 1,
@@ -220,13 +220,13 @@ describe("attune-nx generators", () => {
     expect(shard.entries[0].optionsHash).toMatch(/^fnv1a32:/)
 
     const index = JSON.parse(
-      tree.files.get("attune.source-bom.index.json") ?? "{}",
+      tree.files.get("attune.artifact-ownership.index.json") ?? "{}",
     )
     expect(index.shards).toEqual([
       {
         project: "decision-core",
         projectRoot: "packages/decision-core",
-        shard: "packages/decision-core/attune.source-bom.json",
+        shard: "packages/decision-core/attune.artifact-ownership.json",
       },
     ])
   })
@@ -255,18 +255,18 @@ describe("attune-nx generators", () => {
       checkTargets: [{ project: "example", target: "typecheck" }],
     }
 
-    upsertSourceBom(tree, input)
-    const firstShard = tree.files.get("packages/example/attune.source-bom.json")
-    const firstIndex = tree.files.get("attune.source-bom.index.json")
-    upsertSourceBom(tree, {
+    upsertArtifactOwnership(tree, input)
+    const firstShard = tree.files.get("packages/example/attune.artifact-ownership.json")
+    const firstIndex = tree.files.get("attune.artifact-ownership.index.json")
+    upsertArtifactOwnership(tree, {
       ...input,
       options: { nested: { a: 1, b: 2 }, z: true },
     })
 
-    expect(tree.files.get("packages/example/attune.source-bom.json")).toEqual(
+    expect(tree.files.get("packages/example/attune.artifact-ownership.json")).toEqual(
       firstShard,
     )
-    expect(tree.files.get("attune.source-bom.index.json")).toEqual(firstIndex)
+    expect(tree.files.get("attune.artifact-ownership.index.json")).toEqual(firstIndex)
     expect(JSON.parse(firstShard ?? "{}").entries[0].ownedFiles).toEqual([
       "packages/example/src/a.ts",
       "packages/example/src/b.ts",
@@ -274,11 +274,11 @@ describe("attune-nx generators", () => {
   })
 
   it("exposes framework-owned artifact provenance cache shard paths", () => {
-    expect(sourceBomCacheShardPath("attuned-discovery")).toBe(
-      ".attune/cache/source-bom/attuned-discovery.json",
+    expect(artifactOwnershipCacheShardPath("attuned-discovery")).toBe(
+      ".attune/cache/artifact-ownership/attuned-discovery.json",
     )
-    expect(sourceBomFrameworkShardPath("attuned-discovery")).toBe(
-      "framework/architecture/src/generated/source-bom/attuned-discovery.json",
+    expect(artifactOwnershipFrameworkShardPath("attuned-discovery")).toBe(
+      "framework/architecture/src/generated/artifact-ownership/attuned-discovery.json",
     )
   })
 })

@@ -2,8 +2,8 @@ import { upsertExport } from "../../internal/barrel.js"
 import { joinPath, relativeModulePath } from "../../internal/paths.js"
 import {
   inferProjectRootFromDirectory,
-  upsertSourceBom,
-} from "../../internal/source-bom.js"
+  upsertArtifactOwnership,
+} from "../../internal/artifact-ownership.js"
 import {
   type GeneratorTask,
   type GeneratorTree,
@@ -275,7 +275,7 @@ export default function atomViewGenerator(
       ? "workspace"
       : (projectRoot.split("/").at(-1) ?? projectRoot))
 
-  upsertSourceBom(tree, {
+  upsertArtifactOwnership(tree, {
     generatorName: "@attune/nx:atom-view",
     generatorVersion: schema.generatorVersion,
     generatorRevision: schema.generatorRevision,

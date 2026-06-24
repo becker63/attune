@@ -28,7 +28,7 @@ and SHALL remain migration scaffolding rather than permanent primary ontology.
 - **WHEN** Attune indexes data from package-contract generated output, Source
   BOM shards, type guidance, generated companions, or package-contract tests
 - **THEN** the resulting rows SHALL include source metadata such as
-  `package-contract-compat`, `source-bom-compat`,
+  `package-contract-compat`, `artifact-ownership-compat`,
   `type-guidance-compat`, or `generated-companion-compat`
 - **AND** those rows SHALL NOT be treated as authored source truth
 

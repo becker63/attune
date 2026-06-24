@@ -249,7 +249,7 @@ Goal:
 Continue the SQLite program index + reactive protocol projections migration from the current implementation. Prefer the next safe integration slice:
 - reconcile program-index implementation with current package-contract/compress-surface migration state,
 - route existing check/repair internals toward the program index when safe,
-- preserve compatibility adapters for attune.package.ts, generated companions, Source BOM shards, typecheck aggregates, and generated contract shards,
+- preserve compatibility adapters for attune.package.ts, generated companions, Artifact ownership shards, typecheck aggregates, and generated contract shards,
 - run the smallest Nx-owned validation that proves the slice.
 
 Safety:

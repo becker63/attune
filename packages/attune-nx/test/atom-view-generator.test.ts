@@ -134,7 +134,7 @@ describe("atom-view generator", () => {
   it("records artifact provenance for atom-view ownership", () => {
     const tree = runGenerator()
     const shard = JSON.parse(
-      tree.files.get("packages/home-deployment/attune.source-bom.json") ?? "{}",
+      tree.files.get("packages/home-deployment/attune.artifact-ownership.json") ?? "{}",
     )
 
     expect(shard).toMatchObject({

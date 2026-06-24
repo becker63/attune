@@ -105,7 +105,7 @@ function repairProject(
   return [
     ...removeProjectLocalGeneratedExport(project),
     ...removeProjectLocalGeneratedCompanions(project),
-    ...relocateSourceBom(project),
+    ...relocateArtifactOwnership(project),
   ]
 }
 
@@ -272,7 +272,7 @@ function materializeRepairKind(
           ? [
             ...removeProjectLocalGeneratedExport(project),
             ...removeProjectLocalGeneratedCompanions(project),
-            ...relocateSourceBom(project),
+            ...relocateArtifactOwnership(project),
           ]
           : []),
       ]
@@ -303,17 +303,17 @@ function removeProjectLocalGeneratedCompanions(project: RepairProject): readonly
   ].flat()
 }
 
-function relocateSourceBom(project: RepairProject): readonly RepairAction[] {
-  const legacyShard = `${project.projectRoot}/attune.source-bom.json`
-  const frameworkShard = `framework/architecture/src/generated/source-bom/${project.project}.json`
+function relocateArtifactOwnership(project: RepairProject): readonly RepairAction[] {
+  const legacyShard = `${project.projectRoot}/attune.artifact-ownership.json`
+  const frameworkShard = `framework/architecture/src/generated/artifact-ownership/${project.project}.json`
   const actions: RepairAction[] = []
 
   actions.push(...moveFileIfPresent(legacyShard, frameworkShard))
-  actions.push(...rewriteJsonFile("attune.source-bom.index.json", (value) =>
-    replaceSourceBomShard(value, legacyShard, frameworkShard)
+  actions.push(...rewriteJsonFile("attune.artifact-ownership.index.json", (value) =>
+    replaceArtifactOwnershipShard(value, legacyShard, frameworkShard)
   ))
   actions.push(...rewriteJsonFile("attune.generator-shapes.json", (value) =>
-    replaceSourceBomShard(value, legacyShard, frameworkShard)
+    replaceArtifactOwnershipShard(value, legacyShard, frameworkShard)
   ))
 
   return actions
@@ -464,10 +464,10 @@ function generatedObservationScaffoldJson(project: RepairProject): string {
 function generatedFreshnessContent(project: RepairProject): string {
   const artifacts = [
     projectFactsPath(project),
-    `framework/architecture/src/generated/source-bom/${project.project}.json`,
+    `framework/architecture/src/generated/artifact-ownership/${project.project}.json`,
     `${project.projectRoot}/src/attune.contract.generated.ts`,
     `${project.projectRoot}/src/attune.generated.ts`,
-    `${project.projectRoot}/attune.source-bom.json`,
+    `${project.projectRoot}/attune.artifact-ownership.json`,
   ]
     .map((artifactPath) => {
       const content = readText(artifactPath)
@@ -499,13 +499,13 @@ function generatedTs(
   ].join("\n")
 }
 
-function replaceSourceBomShard(
+function replaceArtifactOwnershipShard(
   value: unknown,
   legacyShard: string,
   frameworkShard: string,
 ): unknown {
   if (Array.isArray(value)) {
-    return value.map((entry) => replaceSourceBomShard(entry, legacyShard, frameworkShard))
+    return value.map((entry) => replaceArtifactOwnershipShard(entry, legacyShard, frameworkShard))
   }
 
   if (value === null || typeof value !== "object") return value
@@ -515,12 +515,12 @@ function replaceSourceBomShard(
       if (
         typeof entry === "string" &&
         entry === legacyShard &&
-        (key === "shard" || key === "sourceBomShard")
+        (key === "shard" || key === "artifactOwnershipShard")
       ) {
         return [key, frameworkShard]
       }
 
-      return [key, replaceSourceBomShard(entry, legacyShard, frameworkShard)]
+      return [key, replaceArtifactOwnershipShard(entry, legacyShard, frameworkShard)]
     }),
   )
 }

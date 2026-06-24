@@ -533,16 +533,16 @@ const compatibilityMechanicalRowsFromArtifacts = ({
       putOperationFacts(projection.operationFacts)
     }
 
-    if (compatibilitySourceMetadata(artifact.path) === "source-bom-compat") {
-      const sourceBom = sourceBomCompatibilityRows({
+    if (compatibilitySourceMetadata(artifact.path) === "artifact-ownership-compat") {
+      const artifactOwnership = artifactOwnershipCompatibilityRows({
         projectId: input.projectId,
         root: input.root,
         artifact,
         content,
         now,
       })
-      putArtifacts(sourceBom.artifacts)
-      putObservations(sourceBom.observations)
+      putArtifacts(artifactOwnership.artifacts)
+      putObservations(artifactOwnership.observations)
     }
   }
 
@@ -1150,7 +1150,7 @@ const matchingBraceIndex = (
   return -1
 }
 
-const sourceBomCompatibilityRows = (
+const artifactOwnershipCompatibilityRows = (
   input: {
     readonly projectId: string
     readonly root: string
@@ -1164,11 +1164,11 @@ const sourceBomCompatibilityRows = (
     return {
       artifacts: [],
       observations: [compatibilityObservation({
-        id: `observation:${input.artifact.id}:source-ownership-invalid`,
+        id: `observation:${input.artifact.id}:artifact-ownership-invalid`,
         projectId: input.projectId,
-        kind: "compatibility-source-ownership",
-        compatibilitySource: "source-bom-compat",
-        oldLabel: "source-bom",
+        kind: "compatibility-artifact-ownership",
+        compatibilitySource: "artifact-ownership-compat",
+        oldLabel: "artifact-ownership",
         path: input.artifact.path,
         status: "invalid",
         payload: { fact: "artifact", path: input.artifact.path },
@@ -1184,16 +1184,16 @@ const sourceBomCompatibilityRows = (
   const generatedOutputPaths = arrayObjectStringValues(parsed, "generatedOutputs", "outputs")
   const paths = [
     ...sourceInputs.map((path) => ({ path, kind: "source-input-pattern" })),
-    ...ownedFiles.map((path) => ({ path, kind: "source-ownership-pattern" })),
+    ...ownedFiles.map((path) => ({ path, kind: "artifact-ownership-pattern" })),
     ...projectFactOutputPaths.map((path) => ({ path, kind: "generated-artifact-output" })),
     ...projectFactSourcePaths.map((path) => ({ path, kind: "generated-artifact-input" })),
     ...generatedOutputPaths.map((path) => ({ path, kind: "generated-artifact-output" })),
   ] as const
   const artifacts = paths.map(({ path, kind }) => {
-    const normalizedPath = normalizeSourceBomPath(input.root, path)
+    const normalizedPath = normalizeArtifactOwnershipPath(input.root, path)
     const builtFromHash = input.artifact.currentHash ?? input.artifact.builtFromHash
     return {
-      id: `compat:${input.projectId}:source-ownership:${programIndexContentHash(`${kind}:${normalizedPath}`).slice(0, 16)}`,
+      id: `compat:${input.projectId}:artifact-ownership:${programIndexContentHash(`${kind}:${normalizedPath}`).slice(0, 16)}`,
       projectId: input.projectId,
       path: normalizedPath,
       kind,
@@ -1205,11 +1205,11 @@ const sourceBomCompatibilityRows = (
   return {
     artifacts,
     observations: [compatibilityObservation({
-      id: `observation:${input.artifact.id}:source-ownership`,
+      id: `observation:${input.artifact.id}:artifact-ownership`,
       projectId: input.projectId,
-      kind: "compatibility-source-ownership",
-      compatibilitySource: "source-bom-compat",
-      oldLabel: "source-bom",
+      kind: "compatibility-artifact-ownership",
+      compatibilitySource: "artifact-ownership-compat",
+      oldLabel: "artifact-ownership",
       path: input.artifact.path,
       payload: {
         fact: "artifact",
@@ -1267,7 +1267,7 @@ const arrayObjectStringValues = (
   })
 }
 
-const normalizeSourceBomPath = (
+const normalizeArtifactOwnershipPath = (
   root: string,
   path: string,
 ): string => {
@@ -1435,8 +1435,8 @@ const compatibilityArtifactKind = (path: string): string => {
   }
   if (/src\/attune\.contract\.generated\.ts$/u.test(path)) return "generated-contract-companion"
   if (/src\/attune\.generated\.ts$/u.test(path)) return "generated-protocol-companion"
-  if (/attune\.source-bom\.json$/u.test(path) || /framework\/architecture\/src\/generated\/source-bom\/[^/]+\.json$/u.test(path)) {
-    return "source-ownership-compatibility"
+  if (/attune\.artifact-ownership\.json$/u.test(path) || /framework\/architecture\/src\/generated\/artifact-ownership\/[^/]+\.json$/u.test(path)) {
+    return "artifact-ownership-compatibility"
   }
   if (/package-contracts\.typecheck\.generated\.ts$/u.test(path)) return "package-contract-typecheck-aggregate"
   if (/type-guidance/u.test(path)) return "type-guidance-compatibility"
@@ -1444,8 +1444,8 @@ const compatibilityArtifactKind = (path: string): string => {
 }
 
 const compatibilitySourceMetadata = (path: string): string => {
-  if (/attune\.source-bom\.json$/u.test(path) || /framework\/architecture\/src\/generated\/source-bom\/[^/]+\.json$/u.test(path)) {
-    return "source-bom-compat"
+  if (/attune\.artifact-ownership\.json$/u.test(path) || /framework\/architecture\/src\/generated\/artifact-ownership\/[^/]+\.json$/u.test(path)) {
+    return "artifact-ownership-compat"
   }
   if (/type-guidance/u.test(path)) return "type-guidance-compat"
   if (
@@ -1505,26 +1505,26 @@ const compatibilityDiagnosticsFromArtifact = (
     })
   }
 
-  if (compatibilitySourceMetadata(artifact.path) === "source-bom-compat") {
+  if (compatibilitySourceMetadata(artifact.path) === "artifact-ownership-compat") {
     if (artifact.status === "missing" || artifact.status === "stale") {
       rows.push({
-        id: `diagnostic:${artifact.id}:source-bom-compat:${artifact.status}`,
+        id: `diagnostic:${artifact.id}:artifact-ownership-compat:${artifact.status}`,
         projectId,
         ...sourceFileFields,
-        code: `attune/program-index/source-bom-compatibility-${artifact.status}`,
+        code: `attune/program-index/artifact-ownership-compatibility-${artifact.status}`,
         severity: artifact.status === "missing" ? "warning" : "info",
-        message: `artifact fact is ${artifact.status} for source ownership compatibility input ${artifact.path}; source ownership should derive from program-index facts.`,
+        message: `artifact fact is ${artifact.status} for artifact ownership compatibility input ${artifact.path}; artifact ownership should derive from program-index facts.`,
         causeJson: programIndexJson({ ...cause, fact: "artifact" }),
       })
     }
-    if (!isPackageLocalSourceBomCompatibilityPath(artifact.path)) return rows
+    if (!isPackageLocalArtifactOwnershipCompatibilityPath(artifact.path)) return rows
     rows.push({
-      id: `diagnostic:${artifact.id}:source-bom-compat`,
+      id: `diagnostic:${artifact.id}:artifact-ownership-compat`,
       projectId,
       ...sourceFileFields,
-      code: "attune/program-index/source-bom-compatibility",
+      code: "attune/program-index/artifact-ownership-compatibility",
       severity: "info",
-      message: `observation fact records source-bom compatibility input ${artifact.path}; source ownership should derive from program-index facts.`,
+      message: `observation fact records artifact-ownership compatibility input ${artifact.path}; artifact ownership should derive from program-index facts.`,
       causeJson: programIndexJson({ ...cause, fact: "observation" }),
     })
   }
@@ -1600,12 +1600,12 @@ const compatibilityRepairMetadata = (
           `${projectId}:typecheck`,
         ],
       }
-    case "attune/program-index/source-bom-compatibility":
-    case "attune/program-index/source-bom-compatibility-missing":
-    case "attune/program-index/source-bom-compatibility-stale":
+    case "attune/program-index/artifact-ownership-compatibility":
+    case "attune/program-index/artifact-ownership-compatibility-missing":
+    case "attune/program-index/artifact-ownership-compatibility-stale":
       return {
         safety: "needs-review",
-        repairKind: "source-ownership-projection",
+        repairKind: "artifact-ownership-projection",
         nxTarget: () => "workspace:attune-repair",
         route: () => "attune-repair-cli:artifact-freshness",
         validationAfterTargets: () => ["workspace:attune-check"],
@@ -1630,11 +1630,11 @@ const compatibilityRepairMetadata = (
 }
 
 const isPackageLocalAttuneCompanionPath = (path: string): boolean =>
-  /(^|\/)attune\.source-bom\.json$/u.test(path) ||
+  /(^|\/)attune\.artifact-ownership\.json$/u.test(path) ||
   /(^|\/)src\/attune\.(generated|contract\.generated|package\.typecheck)\.ts$/u.test(path)
 
-const isPackageLocalSourceBomCompatibilityPath = (path: string): boolean =>
-  /(^|\/)attune\.source-bom\.json$/u.test(path)
+const isPackageLocalArtifactOwnershipCompatibilityPath = (path: string): boolean =>
+  /(^|\/)attune\.artifact-ownership\.json$/u.test(path)
 
 const isCheckedInReportArtifactPath = (path: string): boolean => {
   if (/(^|\/)src\/artifacts\/.*\.[cm]?[jt]sx?$/u.test(path)) return false

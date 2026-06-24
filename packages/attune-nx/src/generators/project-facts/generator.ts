@@ -7,8 +7,8 @@ import {
 import { toNames } from "../../internal/names.js"
 import {
   inferProjectRootFromDirectory,
-  upsertSourceBom,
-} from "../../internal/source-bom.js"
+  upsertArtifactOwnership,
+} from "../../internal/artifact-ownership.js"
 
 const symbolKinds = [
   "codec",
@@ -455,7 +455,7 @@ export default function projectFactsGenerator(
     workerObservationSource(model),
   )
 
-  upsertSourceBom(tree, {
+  upsertArtifactOwnership(tree, {
     generatorName: "@attune/nx:project-facts",
     generatorVersion: schema.generatorVersion,
     generatorRevision: schema.generatorRevision,

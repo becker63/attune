@@ -119,7 +119,7 @@ describe("attune-nx executors", () => {
         owner: "attune-nx",
       },
       inputs: ["src/generators/effect-service/generator.ts"],
-      outputs: ["attune.source-bom.json"],
+      outputs: ["attune.artifact-ownership.json"],
     })
 
     expect(createGeneratedIntent(normalized)).toMatchObject({

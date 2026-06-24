@@ -235,9 +235,9 @@
             focused-architecture-lint =
               nxPolicyHook "focused-architecture-lint"
                 ./nix/policy-hooks/focused-architecture-lint.sh;
-            touched-source-bom-ownership =
-              nxPolicyHook "touched-source-bom-ownership"
-                ./nix/policy-hooks/touched-source-bom-ownership.sh;
+            touched-artifact-ownership =
+              nxPolicyHook "touched-artifact-ownership"
+                ./nix/policy-hooks/touched-artifact-ownership.sh;
             openspec-feasible-validation =
               nxPolicyHook "openspec-feasible-validation"
                 ./nix/policy-hooks/openspec-feasible-validation.sh;

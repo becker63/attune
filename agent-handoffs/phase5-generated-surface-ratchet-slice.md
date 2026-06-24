@@ -8,8 +8,8 @@ Changed:
   `framework/architecture/src/generated/project-facts/<project>/attune.contract.generated.ts`,
   `framework/architecture/src/generated/project-facts/<project>/attune.generated.ts`,
   `framework/architecture/src/generated/project-facts.typecheck.generated.ts`,
-  or a root source ownership artifact index entry pointing at an existing framework/cache
-  source ownership projection.
+  or a root artifact ownership index entry pointing at an existing framework/cache
+  artifact ownership projection.
 - Policy diagnostics now explain which replacement paths are missing, or state
   that program-index replacement paths exist for the remaining companion files.
 
@@ -18,7 +18,7 @@ Validated:
 - `pnpm exec nx run attune-architecture:build --skipNxCache`
 
 Not run:
-- Full Phase 5 validation remains pending until the remaining source ownership,
+- Full Phase 5 validation remains pending until the remaining artifact ownership,
   import lookup, cache/report, and generated companion removal tasks are done.
 
 Risks:
@@ -32,7 +32,7 @@ Risks:
 Follow-ups:
 - Complete generated companion import lookup cleanup for packages whose local
   companions are removed.
-- Validate and, if needed, tighten the touched source ownership hook against
+- Validate and, if needed, tighten the touched artifact ownership hook against
   framework-owned and cache-owned projections.
 - Remove or quarantine package-local generated companions ring by ring once
   program-index freshness and check/repair parity pass.

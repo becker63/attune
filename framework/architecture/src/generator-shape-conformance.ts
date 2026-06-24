@@ -16,7 +16,7 @@ export const GeneratorShape = Schema.Struct({
   plannedPaths: Schema.optional(Schema.Array(Schema.String)),
   invariants: Schema.optional(Schema.Array(Schema.String)),
   notes: Schema.optional(Schema.String),
-  sourceBomShard: Schema.optional(Schema.String),
+  artifactOwnershipShard: Schema.optional(Schema.String),
 })
 export type GeneratorShape = typeof GeneratorShape.Type
 
@@ -26,27 +26,27 @@ export const GeneratorShapeManifest = Schema.Struct({
 })
 export type GeneratorShapeManifest = typeof GeneratorShapeManifest.Type
 
-const SourceBomIndexEntry = Schema.Struct({
+const ArtifactOwnershipIndexEntry = Schema.Struct({
   project: Schema.String,
   projectRoot: Schema.String,
   shard: Schema.String,
 })
 
-const SourceBomIndex = Schema.Struct({
+const ArtifactOwnershipIndex = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   shapeManifest: Schema.optional(Schema.String),
-  shards: Schema.Array(SourceBomIndexEntry),
+  shards: Schema.Array(ArtifactOwnershipIndexEntry),
 })
-type SourceBomIndex = typeof SourceBomIndex.Type
+type ArtifactOwnershipIndex = typeof ArtifactOwnershipIndex.Type
 
-const SourceBomGeneratedOutput = Schema.Struct({
+const ArtifactOwnershipGeneratedOutput = Schema.Struct({
   generator: Schema.String,
   target: Schema.String,
   sources: Schema.Array(Schema.String),
   outputs: Schema.Array(Schema.String),
 })
 
-const SourceBomProjectFactShard = Schema.Struct({
+const ArtifactOwnershipProjectFactShard = Schema.Struct({
   generator: Schema.String,
   target: Schema.String,
   status: Schema.Literals(["planned", "generated"] as const),
@@ -54,21 +54,21 @@ const SourceBomProjectFactShard = Schema.Struct({
   outputs: Schema.Array(Schema.String),
 })
 
-const SourceBomHistoricalShape = Schema.Struct({
+const ArtifactOwnershipHistoricalShape = Schema.Struct({
   paths: Schema.Array(Schema.String),
   reason: Schema.String,
 })
 
-const SourceBomShard = Schema.Struct({
+const ArtifactOwnershipShard = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   project: Schema.String,
   projectRoot: Schema.String,
-  generatedOutputs: Schema.Array(SourceBomGeneratedOutput),
-  projectFactShards: Schema.optional(Schema.Array(SourceBomProjectFactShard)),
-  historicalHandAuthoredShapes: Schema.Array(SourceBomHistoricalShape),
+  generatedOutputs: Schema.Array(ArtifactOwnershipGeneratedOutput),
+  projectFactShards: Schema.optional(Schema.Array(ArtifactOwnershipProjectFactShard)),
+  historicalHandAuthoredShapes: Schema.Array(ArtifactOwnershipHistoricalShape),
   ownedFiles: Schema.Array(Schema.String),
 })
-type SourceBomShard = typeof SourceBomShard.Type
+type ArtifactOwnershipShard = typeof ArtifactOwnershipShard.Type
 
 const GeneratorCatalog = Schema.Struct({
   generators: Schema.Record(Schema.String, Schema.Unknown),
@@ -97,7 +97,7 @@ export interface GeneratorShapeConformanceResult {
 export interface GeneratorShapeConformanceOptions {
   readonly workspaceRoot: string
   readonly manifestPath?: string
-  readonly sourceBomIndexPath?: string
+  readonly artifactOwnershipIndexPath?: string
   readonly generatorCatalogPath?: string
   readonly trackedFiles?: readonly string[]
 }
@@ -105,7 +105,7 @@ export interface GeneratorShapeConformanceOptions {
 export const checkGeneratorShapeConformance = ({
   workspaceRoot,
   manifestPath = "attune.generator-shapes.json",
-  sourceBomIndexPath = "attune.source-bom.index.json",
+  artifactOwnershipIndexPath = "attune.artifact-ownership.index.json",
   generatorCatalogPath = "packages/attune-nx/generators.json",
   trackedFiles,
 }: GeneratorShapeConformanceOptions): GeneratorShapeConformanceResult => {
@@ -114,10 +114,10 @@ export const checkGeneratorShapeConformance = ({
   const files = trackedFiles ?? collectWorkspaceFiles(root)
 
   const manifest = decodeJsonFile(GeneratorShapeManifest, root, manifestPath, diagnostics)
-  const sourceBomIndex = decodeJsonFile(SourceBomIndex, root, sourceBomIndexPath, diagnostics)
+  const artifactOwnershipIndex = decodeJsonFile(ArtifactOwnershipIndex, root, artifactOwnershipIndexPath, diagnostics)
   const generatorCatalog = decodeJsonFile(GeneratorCatalog, root, generatorCatalogPath, diagnostics)
 
-  if (!manifest || !sourceBomIndex || !generatorCatalog) {
+  if (!manifest || !artifactOwnershipIndex || !generatorCatalog) {
     return finish(diagnostics, emptySummary)
   }
 
@@ -128,16 +128,16 @@ export const checkGeneratorShapeConformance = ({
     files,
     manifest,
     manifestPath,
-    sourceBomIndex,
-    sourceBomIndexPath,
+    artifactOwnershipIndex,
+    artifactOwnershipIndexPath,
   })
 
-  validateSourceBomShards({
+  validateArtifactOwnershipShards({
     diagnostics,
     manifest,
     manifestPath,
     root,
-    sourceBomIndex,
+    artifactOwnershipIndex,
   })
 
   return finish(diagnostics, summarizeManifest(manifest, futureGenerators))
@@ -171,8 +171,8 @@ interface ManifestShapeValidationOptions {
   readonly files: readonly string[]
   readonly manifest: GeneratorShapeManifest
   readonly manifestPath: string
-  readonly sourceBomIndex: SourceBomIndex
-  readonly sourceBomIndexPath: string
+  readonly artifactOwnershipIndex: ArtifactOwnershipIndex
+  readonly artifactOwnershipIndexPath: string
 }
 
 const validateManifestShapes = ({
@@ -181,18 +181,18 @@ const validateManifestShapes = ({
   files,
   manifest,
   manifestPath,
-  sourceBomIndex,
-  sourceBomIndexPath,
+  artifactOwnershipIndex,
+  artifactOwnershipIndexPath,
 }: ManifestShapeValidationOptions): ReadonlySet<string> => {
-  const sourceBomByProject = new Map(sourceBomIndex.shards.map((entry) => [entry.project, entry]))
+  const artifactOwnershipByProject = new Map(artifactOwnershipIndex.shards.map((entry) => [entry.project, entry]))
   const seenIds = new Set<string>()
   const futureGenerators = new Set<string>()
 
-  validateManifestPointer(sourceBomIndex, sourceBomIndexPath, manifestPath, diagnostics)
+  validateManifestPointer(artifactOwnershipIndex, artifactOwnershipIndexPath, manifestPath, diagnostics)
   for (const shape of manifest.shapes) {
     validateShapeBasics(shape, diagnostics, manifestPath)
     validateShapeId(shape, seenIds, diagnostics, manifestPath)
-    validateShapeBomBinding(shape, sourceBomByProject, diagnostics, manifestPath)
+    validateShapeArtifactOwnershipBinding(shape, artifactOwnershipByProject, diagnostics, manifestPath)
     validateShapePaths(shape, files, diagnostics, manifestPath)
     validateShapeGenerator(shape, catalogedGenerators, futureGenerators, diagnostics, manifestPath)
   }
@@ -201,13 +201,13 @@ const validateManifestShapes = ({
 }
 
 const validateManifestPointer = (
-  sourceBomIndex: SourceBomIndex,
-  sourceBomIndexPath: string,
+  artifactOwnershipIndex: ArtifactOwnershipIndex,
+  artifactOwnershipIndexPath: string,
   manifestPath: string,
   diagnostics: GeneratorShapeDiagnostic[],
 ): void => {
-  if (sourceBomIndex.shapeManifest && sourceBomIndex.shapeManifest !== manifestPath) {
-    diagnostics.push(error(sourceBomIndexPath, `Source BOM index points to shape manifest "${sourceBomIndex.shapeManifest}", but this check loaded "${manifestPath}".`))
+  if (artifactOwnershipIndex.shapeManifest && artifactOwnershipIndex.shapeManifest !== manifestPath) {
+    diagnostics.push(error(artifactOwnershipIndexPath, `Artifact ownership index points to shape manifest "${artifactOwnershipIndex.shapeManifest}", but this check loaded "${manifestPath}".`))
   }
 }
 
@@ -221,22 +221,22 @@ const validateShapeId = (
   seenIds.add(shape.id)
 }
 
-const validateShapeBomBinding = (
+const validateShapeArtifactOwnershipBinding = (
   shape: GeneratorShape,
-  sourceBomByProject: ReadonlyMap<string, typeof SourceBomIndexEntry.Type>,
+  artifactOwnershipByProject: ReadonlyMap<string, typeof ArtifactOwnershipIndexEntry.Type>,
   diagnostics: GeneratorShapeDiagnostic[],
   manifestPath: string,
 ): void => {
-  const sourceBomEntry = sourceBomByProject.get(shape.project)
-  if (!sourceBomEntry) {
-    diagnostics.push(error(manifestPath, `Shape "${shape.id}" references project "${shape.project}" without a Source BOM shard.`))
+  const artifactOwnershipEntry = artifactOwnershipByProject.get(shape.project)
+  if (!artifactOwnershipEntry) {
+    diagnostics.push(error(manifestPath, `Shape "${shape.id}" references project "${shape.project}" without an artifact ownership shard.`))
     return
   }
-  if (shape.projectRoot !== sourceBomEntry.projectRoot) {
-    diagnostics.push(error(manifestPath, `Shape "${shape.id}" has projectRoot "${shape.projectRoot}" but Source BOM declares "${sourceBomEntry.projectRoot}".`))
+  if (shape.projectRoot !== artifactOwnershipEntry.projectRoot) {
+    diagnostics.push(error(manifestPath, `Shape "${shape.id}" has projectRoot "${shape.projectRoot}" but artifact ownership declares "${artifactOwnershipEntry.projectRoot}".`))
   }
-  if (shape.sourceBomShard && shape.sourceBomShard !== sourceBomEntry.shard) {
-    diagnostics.push(error(manifestPath, `Shape "${shape.id}" points at Source BOM shard "${shape.sourceBomShard}" but index declares "${sourceBomEntry.shard}".`))
+  if (shape.artifactOwnershipShard && shape.artifactOwnershipShard !== artifactOwnershipEntry.shard) {
+    diagnostics.push(error(manifestPath, `Shape "${shape.id}" points at artifact ownership shard "${shape.artifactOwnershipShard}" but index declares "${artifactOwnershipEntry.shard}".`))
   }
 }
 
@@ -271,56 +271,56 @@ const validateShapeGenerator = (
   futureGenerators.add(shape.generator)
 }
 
-interface SourceBomValidationOptions {
+interface ArtifactOwnershipValidationOptions {
   readonly diagnostics: GeneratorShapeDiagnostic[]
   readonly manifest: GeneratorShapeManifest
   readonly manifestPath: string
   readonly root: string
-  readonly sourceBomIndex: SourceBomIndex
+  readonly artifactOwnershipIndex: ArtifactOwnershipIndex
 }
 
-const validateSourceBomShards = ({
+const validateArtifactOwnershipShards = ({
   diagnostics,
   manifest,
   manifestPath,
   root,
-  sourceBomIndex,
-}: SourceBomValidationOptions): void => {
-  for (const sourceBomEntry of sourceBomIndex.shards) {
-    const shard = decodeJsonFile(SourceBomShard, root, sourceBomEntry.shard, diagnostics)
+  artifactOwnershipIndex,
+}: ArtifactOwnershipValidationOptions): void => {
+  for (const artifactOwnershipEntry of artifactOwnershipIndex.shards) {
+    const shard = decodeJsonFile(ArtifactOwnershipShard, root, artifactOwnershipEntry.shard, diagnostics)
     if (!shard) continue
-    validateSourceBomShardIdentity(shard, sourceBomEntry, diagnostics)
-    validateSourceBomShapeCoverage(shard, sourceBomEntry, manifest, manifestPath, diagnostics)
+    validateArtifactOwnershipShardIdentity(shard, artifactOwnershipEntry, diagnostics)
+    validateArtifactOwnershipShapeCoverage(shard, artifactOwnershipEntry, manifest, manifestPath, diagnostics)
   }
 }
 
-const validateSourceBomShardIdentity = (
-  shard: SourceBomShard,
-  sourceBomEntry: typeof SourceBomIndexEntry.Type,
+const validateArtifactOwnershipShardIdentity = (
+  shard: ArtifactOwnershipShard,
+  artifactOwnershipEntry: typeof ArtifactOwnershipIndexEntry.Type,
   diagnostics: GeneratorShapeDiagnostic[],
 ): void => {
-  if (shard.project !== sourceBomEntry.project || shard.projectRoot !== sourceBomEntry.projectRoot) {
-    diagnostics.push(error(sourceBomEntry.shard, `Shard identity does not match Source BOM index entry for "${sourceBomEntry.project}".`))
+  if (shard.project !== artifactOwnershipEntry.project || shard.projectRoot !== artifactOwnershipEntry.projectRoot) {
+    diagnostics.push(error(artifactOwnershipEntry.shard, `Shard identity does not match Artifact ownership index entry for "${artifactOwnershipEntry.project}".`))
   }
 }
 
-const validateSourceBomShapeCoverage = (
-  shard: SourceBomShard,
-  sourceBomEntry: typeof SourceBomIndexEntry.Type,
+const validateArtifactOwnershipShapeCoverage = (
+  shard: ArtifactOwnershipShard,
+  artifactOwnershipEntry: typeof ArtifactOwnershipIndexEntry.Type,
   manifest: GeneratorShapeManifest,
   manifestPath: string,
   diagnostics: GeneratorShapeDiagnostic[],
 ): void => {
-  const projectShapes = manifest.shapes.filter((shape) => shape.project === sourceBomEntry.project)
+  const projectShapes = manifest.shapes.filter((shape) => shape.project === artifactOwnershipEntry.project)
   if (projectShapes.length === 0) {
-    diagnostics.push(error(manifestPath, `Source BOM project "${sourceBomEntry.project}" has no generator shape inventory.`))
+    diagnostics.push(error(manifestPath, `Artifact ownership project "${artifactOwnershipEntry.project}" has no generator shape inventory.`))
   }
   if (shard.historicalHandAuthoredShapes.length > 0 && !projectShapes.some((shape) => shape.status === "migrate" || shape.status === "manual")) {
-    diagnostics.push(error(manifestPath, `Source BOM project "${sourceBomEntry.project}" records historical hand-authored shapes, but no shape is marked migrate/manual.`))
+    diagnostics.push(error(manifestPath, `Artifact ownership project "${artifactOwnershipEntry.project}" records historical hand-authored shapes, but no shape is marked migrate/manual.`))
   }
   for (const output of shard.generatedOutputs) {
     if (!projectShapes.some((shape) => shape.status === "generated" && shape.generator === output.generator)) {
-      diagnostics.push(error(manifestPath, `Generated output "${output.generator}" for project "${sourceBomEntry.project}" is missing a generated shape entry.`))
+      diagnostics.push(error(manifestPath, `Generated output "${output.generator}" for project "${artifactOwnershipEntry.project}" is missing a generated shape entry.`))
     }
   }
   for (const projectFactShard of shard.projectFactShards ?? []) {
@@ -330,11 +330,11 @@ const validateSourceBomShapeCoverage = (
       && projectFactShard.outputs.every((output) => shape.paths.includes(output) || (shape.plannedPaths ?? []).includes(output))
     )
     if (!matchingShape) {
-      diagnostics.push(error(manifestPath, `Project-facts shard "${projectFactShard.generator}" for project "${sourceBomEntry.project}" is missing a project-facts shape entry covering ${projectFactShard.outputs.join(", ")}.`))
+      diagnostics.push(error(manifestPath, `Project-facts shard "${projectFactShard.generator}" for project "${artifactOwnershipEntry.project}" is missing a project-facts shape entry covering ${projectFactShard.outputs.join(", ")}.`))
       continue
     }
     if (projectFactShard.status === "generated" && matchingShape.status !== "generated") {
-      diagnostics.push(error(manifestPath, `Generated project-facts shard "${projectFactShard.generator}" for project "${sourceBomEntry.project}" is backed by shape "${matchingShape.id}" with status "${matchingShape.status}".`))
+      diagnostics.push(error(manifestPath, `Generated project-facts shard "${projectFactShard.generator}" for project "${artifactOwnershipEntry.project}" is backed by shape "${matchingShape.id}" with status "${matchingShape.status}".`))
     }
   }
   for (const shape of projectShapes.filter((candidate) => candidate.kind === "project-facts" && candidate.status === "generated")) {

@@ -40,7 +40,7 @@ vocabulary.
 - Coverage-search arrays.
 - Validation producer maps and worker/fuzzer metadata.
 - Generated artifact ledgers.
-- Legacy source ownership or generator-shape migration metadata.
+- Legacy artifact ownership or generator-shape migration metadata.
 - Replay or counterexample manifests.
 
 Those belong in framework-owned generated/cache materialization, focused
@@ -61,10 +61,10 @@ Do not add these files as normal package source:
 src/attune.generated.ts
 src/attune.contract.generated.ts
 src/attune.package.typecheck.ts
-attune.source-bom.json
+attune.artifact-ownership.json
 ```
 
-Existing legacy generated companions and source ownership shards with those
+Existing legacy generated companions and artifact ownership shards with those
 names are staged migration debt. Compile-only assertions now live in the
 framework-owned aggregate. New generated material should target framework-owned
 locations such as:
@@ -99,7 +99,7 @@ Nx graph + TS symbols + Effect Schema
   -> diagnostics/repairs
 ```
 
-Current package-contract generated companion files and legacy source ownership
+Current package-contract generated companion files and legacy artifact ownership
 shards are compatibility inputs to this index while the migration is active,
 not long-term package-local source truth.
 

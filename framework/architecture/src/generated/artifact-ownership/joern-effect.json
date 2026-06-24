@@ -72,7 +72,7 @@
         "examples/**",
         "test/**"
       ],
-      "reason": "Runtime, query builder, CPG program, examples, and tests are hand-authored Joern integration surfaces that predate source ownership artifact automation."
+      "reason": "Runtime, query builder, CPG program, examples, and tests are hand-authored Joern integration surfaces that predate artifact ownership automation."
     }
   ],
   "ownedFiles": [
@@ -93,7 +93,7 @@
   "projectRoot": "packages/joern-effect",
   "queryCheckTargetNotes": [
     {
-      "note": "check-generated verifies generated Joern bindings, README, and schema snapshots; add source ownership artifact-native query/check annotations once helper support lands.",
+      "note": "check-generated verifies generated Joern bindings, README, and schema snapshots; add artifact ownership-native query/check annotations once helper support lands.",
       "target": "check-generated"
     }
   ],

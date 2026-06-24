@@ -4,10 +4,10 @@ Changed:
 - Kept the authored Ring A source boundary at
   `framework/oxlint-policy/src/attune.package.ts` and the package behavior
   tests under `framework/oxlint-policy/test/policy-rules.test.ts`.
-- A later Ring A check exposed stale manifest/source ownership references to
+- A later Ring A check exposed stale manifest/artifact ownership references to
   the deleted compatibility test; those references were removed from
   `attune.generator-shapes.json` and
-  `framework/architecture/src/generated/source-bom/effect-oxlint-policy.json`.
+  `framework/architecture/src/generated/artifact-ownership/effect-oxlint-policy.json`.
 
 Program-index proof:
 - `effect-oxlint-policy:attune-check` passed through the public Nx target and
@@ -16,7 +16,7 @@ Program-index proof:
   symbol, schema_descriptor, edge, artifact, observation, diagnostic, and
   repair rows for the workspace. The check reported zero package-local source
   surface blockers for `effect-oxlint-policy`.
-- No project-local generated companions or package-root source ownership shards
+- No project-local generated companions or package-root artifact ownership shards
   exist under `framework/oxlint-policy`.
 - Shape conformance now treats the authored package file as the only remaining
   local compatibility source path for this Ring A entry.
@@ -33,7 +33,7 @@ Removed surfaces:
 Retained compatibility-only surfaces:
 - `framework/architecture/src/generated/project-facts/effect-oxlint-policy/attune.generated.ts`
 - `framework/architecture/src/generated/project-facts/effect-oxlint-policy/attune.contract.generated.ts`
-- `framework/architecture/src/generated/source-bom/effect-oxlint-policy.json`
+- `framework/architecture/src/generated/artifact-ownership/effect-oxlint-policy.json`
 - `.attune/cache/generated/effect-oxlint-policy/artifact-freshness.json`
 
 These retained files are framework-owned compatibility inputs or local cache
@@ -48,7 +48,7 @@ Validated:
 
 Not run:
 - `effect-oxlint-policy:attune-repair`; no repairable package-local companion
-  or source ownership diagnostic remained for this package after the check.
+  or artifact ownership diagnostic remained for this package after the check.
 - Live provider, Kubernetes, Alchemy, destructive, container fuzzing, and heavy
   proof-pressure actions were not applicable and were not run.
 

@@ -43,7 +43,7 @@ diagnostics and repair hints through framework runtime services.
 
 #### Scenario: File diagnostics are requested
 - **WHEN** the language service requests diagnostics for a file
-- **THEN** it SHALL query ProtocolDiagnostics, ProtocolQuery, or equivalent
+- **THEN** it SHALL query ProgramDiagnostics, ProgramFactQuery, or equivalent
   runtime projection services
 - **AND** it SHALL NOT read raw SQLite tables directly
 

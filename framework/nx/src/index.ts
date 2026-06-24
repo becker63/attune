@@ -483,7 +483,7 @@ export const repairPlanForDiagnostic = (
       "src/attune.generated.ts",
       "src/attune.contract.generated.ts",
       "framework-owned package-contract typecheck aggregate",
-      "attune.source-bom.json",
+      "attune.artifact-ownership.json",
     ],
     validateAfter: [
       frameworkRepairTargets.projectCheck(diagnostic.packageId),

@@ -131,7 +131,7 @@ const staleGeneratedMarkerPattern =
 const manualDerivedTruthMarkerPattern =
   /\b(?:attune-manual-derived-truth|manualProtocolTruth|manualDerivedTruth|derivedTruth\s*:\s*["']manual["'])\b/u
 const oldOntologyRuntimeObjectPattern =
-  /\b(?:export\s+)?(?:interface|type|class|const)\s+ProgramIndex(?<name>PackageContract|ProtocolDescriptor|Protocol|Operation|PackageView|Law|Obligation|Evidence|Delta|TypeGuidance|SourceBOM|SourceBom|GeneratorShape|FuzzHandler|PropertyMap|RpcGroup)\b/u
+  /\b(?:export\s+)?(?:interface|type|class|const)\s+ProgramIndex(?<name>PackageContract|ProtocolDescriptor|Protocol|Operation|PackageView|Law|Obligation|Evidence|Delta|TypeGuidance|SourceBOM|ArtifactOwnership|GeneratorShape|FuzzHandler|PropertyMap|RpcGroup)\b/u
 const oldOntologyRuntimeTablePattern =
   /\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?<name>package_contract|protocol_descriptor|protocol|operation|package_view|view|law|obligation|evidence|delta|type_guidance|source_bom|generator_shape|fuzz_handler|property_map|rpc_group)\b/iu
 const oldOntologyActiveDocNounPattern =
@@ -154,7 +154,7 @@ const packageLocalAttuneCompanionNames = [
   "src/attune.contract.generated.ts",
   "src/attune.generated.ts",
   "src/attune.package.typecheck.ts",
-  "attune.source-bom.json",
+  "attune.artifact-ownership.json",
 ] as const
 const packageLocalAttuneCompanionImportPattern =
   /\b(?:from\s+|import\s*\(\s*|require\s*\(\s*|import\s+(?:type\s+)?)(?<quote>["'])(?<source>\.{1,2}\/[^"']*attune\.(?:contract\.generated|generated|package\.typecheck)(?:\.[cm]?[jt]sx?)?)\k<quote>/gu
@@ -608,7 +608,7 @@ function checkPackageLocalAttuneSurface(
     [
       `Package ${packageRoot} still has package-local Attune companion files: ${companionPaths.join(", ")}.`,
       "The final package-local Attune surface is src/attune.package.ts only.",
-      "Move generated contract companions, generated registries, typecheck assertions, and Source BOM shards to framework-owned cache/projection state.",
+      "Move generated contract companions, generated registries, typecheck assertions, and Artifact ownership shards to framework-owned cache/projection state.",
       parity.complete
         ? "Program-index replacement paths exist for the remaining companion files."
         : `Replacement paths are not complete yet: ${parity.missingReplacements.join(", ")}.`,
@@ -650,7 +650,7 @@ function packageLocalCompanionReplacementExists(
   if (companionPath.endsWith("/src/attune.package.typecheck.ts")) {
     return projectFactsReplacementExists(packageRoot, filesByPath)
   }
-  if (companionPath.endsWith("/attune.source-bom.json")) {
+  if (companionPath.endsWith("/attune.artifact-ownership.json")) {
     return sourceOwnershipProjectionExists(packageRoot, projectName, filesByPath)
   }
   return false
@@ -669,8 +669,8 @@ function packageLocalCompanionReplacementLabel(
   if (companionPath.endsWith("/src/attune.package.typecheck.ts")) {
     return `program-index symbol/schema/edge facts for ${projectName}`
   }
-  if (companionPath.endsWith("/attune.source-bom.json")) {
-    return `framework/cache source ownership projection for ${projectName}`
+  if (companionPath.endsWith("/attune.artifact-ownership.json")) {
+    return `framework/cache artifact ownership projection for ${projectName}`
   }
   return `mechanical replacement for ${companionPath}`
 }
@@ -688,7 +688,7 @@ function sourceOwnershipProjectionExists(
   projectName: string,
   filesByPath: ReadonlyMap<string, WorkspaceFile>,
 ): boolean {
-  const indexFile = filesByPath.get("attune.source-bom.index.json")
+  const indexFile = filesByPath.get("attune.artifact-ownership.index.json")
   if (indexFile === undefined) return false
   const index = parseJsonRecord(indexFile.content)
   const shards = Array.isArray(index?.shards) ? index.shards : []
@@ -698,8 +698,8 @@ function sourceOwnershipProjectionExists(
     const shard = typeof entry.shard === "string" ? entry.shard : ""
     return (
       (
-        shard === `.attune/cache/source-bom/${projectName}.json` ||
-        shard === `framework/architecture/src/generated/source-bom/${projectName}.json`
+        shard === `.attune/cache/artifact-ownership/${projectName}.json` ||
+        shard === `framework/architecture/src/generated/artifact-ownership/${projectName}.json`
       ) &&
       filesByPath.has(shard)
     )
@@ -1579,7 +1579,7 @@ function checkFinalCleanupFile(file: WorkspaceFile): readonly FrameworkFinalRatc
     diagnostics.push(finalRatchetDiagnostic(
       "manual-derived-truth",
       file.path,
-      "Source BOM, generator-shape, waiver, coverage, and protocol summary facts must be generated or projected, not maintained as manual derived truth.",
+      "Artifact ownership, generator-shape, waiver, coverage, and protocol summary facts must be generated or projected, not maintained as manual derived truth.",
     ))
   }
 
@@ -1740,8 +1740,8 @@ function isGeneratedArtifactPath(filePath: string): boolean {
 function isDerivedTruthFilePath(filePath: string): boolean {
   return (
     filePath === "attune.generator-shapes.json" ||
-    filePath === "attune.source-bom.index.json" ||
-    /(^|\/)attune\.source-bom\.json$/u.test(filePath) ||
+    filePath === "attune.artifact-ownership.index.json" ||
+    /(^|\/)attune\.artifact-ownership\.json$/u.test(filePath) ||
     /(^|\/)(reports?|artifacts?|protocol-output)(\/|$)/u.test(filePath)
   )
 }

@@ -49,23 +49,23 @@ describe("attune architecture policy", () => {
     })
   })
 
-  it("reports Source BOM inventory as warning-only", () => {
+  it("reports Artifact ownership inventory as warning-only", () => {
     withWorkspace({
-      "packages/example/source-bom.json": JSON.stringify({ sourceBom: { version: "1", shapes: [{ id: "effect-service", owner: "@attune/nx", generator: "@attune/nx:effect-service", paths: ["src/service.ts"] }] } }),
+      "packages/example/artifact-ownership.json": JSON.stringify({ artifactOwnership: { version: "1", shapes: [{ id: "effect-service", owner: "@attune/nx", generator: "@attune/nx:effect-service", paths: ["src/service.ts"] }] } }),
     }, (workspaceRoot) => {
       const result = scanWorkspace({ workspaceRoot })
       expect(result.exitCode).toBe(0)
-      expect(result.diagnostics).toContainEqual(expect.objectContaining({ ruleId: "attune/source-bom-ownership", severity: "warning" }))
+      expect(result.diagnostics).toContainEqual(expect.objectContaining({ ruleId: "attune/artifact-ownership", severity: "warning" }))
     })
   })
 
-  it("ratchets Source BOM ownership to errors only when shard opts in", () => {
+  it("ratchets Artifact ownership to errors only when shard opts in", () => {
     withWorkspace({
-      "source-bom.json": JSON.stringify({ sourceBom: { version: "1", shapes: [{ id: "broken", owner: "platform", mode: "error", paths: [""] }] } }),
+      "artifact-ownership.json": JSON.stringify({ artifactOwnership: { version: "1", shapes: [{ id: "broken", owner: "platform", mode: "error", paths: [""] }] } }),
     }, (workspaceRoot) => {
       const result = scanWorkspace({ workspaceRoot })
       expect(result.exitCode).toBe(1)
-      expect(result.diagnostics).toContainEqual(expect.objectContaining({ ruleId: "attune/source-bom-ownership", severity: "error" }))
+      expect(result.diagnostics).toContainEqual(expect.objectContaining({ ruleId: "attune/artifact-ownership", severity: "error" }))
     })
   })
 })
