@@ -1,7 +1,8 @@
 import { Effect } from "effect"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { dirname, join, resolve } from "node:path"
 import { tmpdir } from "node:os"
+import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 import {
   hashProtocolValue,
@@ -46,6 +47,8 @@ import {
   type ProtocolWaiverState,
 } from "../src/index.js"
 import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
+
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..")
 
 const demoDescriptor = {
   protocolId: "attune/package/demo",
@@ -609,6 +612,49 @@ describe("@attune/framework-runtime", () => {
     ])
   })
 
+  it("classifies Ring A effect-oxlint-policy diagnostic parity", () => {
+    const artifactPaths = [
+      "framework/oxlint-policy/src/attune.package.ts",
+      "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json",
+      "framework/architecture/src/generated/package-contracts/effect-oxlint-policy/attune.generated.ts",
+      "framework/architecture/src/generated/package-contracts/effect-oxlint-policy/attune.contract.generated.ts",
+      "framework/architecture/src/generated/package-contracts.typecheck.generated.ts",
+    ] as const
+    const missingFixturePaths = artifactPaths.filter((artifactPath) =>
+      !existsSync(resolve(repositoryRoot, artifactPath))
+    )
+
+    expect(missingFixturePaths).toEqual([])
+
+    const rows = compatibilityRowsFromCurrentPackageContracts({
+      projectId: "effect-oxlint-policy",
+      root: "framework/oxlint-policy",
+      now: "2026-06-24T00:00:00.000Z",
+      paths: artifactPaths,
+      contentByPath: Object.fromEntries(
+        artifactPaths.map((artifactPath) => [
+          artifactPath,
+          readFileSync(resolve(repositoryRoot, artifactPath), "utf8"),
+        ]),
+      ),
+    })
+    const parity = classifyDiagnosticParity({
+      programIndexCodes: rows.diagnostics.map((diagnostic) => diagnostic.code),
+      compatibilityCodes: [],
+    })
+
+    expect(rows.artifacts.map((artifact) => [artifact.path, artifact.status])).toEqual(
+      artifactPaths.map((artifactPath) => [artifactPath, "current"]),
+    )
+    expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([])
+    expect(parity).toEqual({
+      parityCodes: [],
+      programIndexOnlyCodes: [],
+      compatibilityOnlyCodes: [],
+      mismatches: [],
+    })
+  })
+
   it("projects deltas as framework diagnostics", () => {
     const diagnostics = diagnosticsForProtocol({
       protocolId: "attune/package/demo",
@@ -1042,3 +1088,36 @@ const descriptorWithHash = (
   ...descriptor,
   descriptorHash: hashProtocolValue(descriptor),
 })
+
+const classifyDiagnosticParity = (input: {
+  readonly programIndexCodes: readonly string[]
+  readonly compatibilityCodes: readonly string[]
+  readonly allowedProgramIndexOnlyCodes?: readonly string[]
+}): {
+  readonly parityCodes: readonly string[]
+  readonly programIndexOnlyCodes: readonly string[]
+  readonly compatibilityOnlyCodes: readonly string[]
+  readonly mismatches: readonly string[]
+} => {
+  const programIndexCodes = uniqueSorted(input.programIndexCodes)
+  const compatibilityCodes = uniqueSorted(input.compatibilityCodes)
+  const allowedProgramIndexOnlyCodes = new Set(input.allowedProgramIndexOnlyCodes ?? [])
+  const compatibilityCodeSet = new Set(compatibilityCodes)
+  const programIndexCodeSet = new Set(programIndexCodes)
+  const parityCodes = programIndexCodes.filter((code) => compatibilityCodeSet.has(code))
+  const programIndexOnlyCodes = programIndexCodes.filter((code) => !compatibilityCodeSet.has(code))
+  const compatibilityOnlyCodes = compatibilityCodes.filter((code) => !programIndexCodeSet.has(code))
+
+  return {
+    parityCodes,
+    programIndexOnlyCodes,
+    compatibilityOnlyCodes,
+    mismatches: [
+      ...programIndexOnlyCodes.filter((code) => !allowedProgramIndexOnlyCodes.has(code)),
+      ...compatibilityOnlyCodes,
+    ],
+  }
+}
+
+const uniqueSorted = (values: readonly string[]): readonly string[] =>
+  [...new Set(values)].sort()

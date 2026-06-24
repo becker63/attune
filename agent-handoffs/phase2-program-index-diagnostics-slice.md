@@ -25,6 +25,9 @@ Date: 2026-06-24
 - Direct `package-check` contract checks now route to the public
   `workspace:attune-check` path, and the runtime read model records diagnostic
   origins as `program-index`, `compatibility`, or `both`.
+- Ring A parity fixture added for `effect-oxlint-policy`: observed
+  framework-owned artifacts are current, program-index diagnostics are empty,
+  compatibility diagnostics are empty, and classified mismatches are empty.
 
 ## Validation
 
@@ -39,7 +42,14 @@ Date: 2026-06-24
 - `nx run attune-architecture:build --skipNxCache`
 - `nx run workspace:program-index-materialize --skipNxCache`
 - `nx run workspace:attune-check --skipNxCache`
+- `nx run framework-runtime:test --skipNxCache` after the Ring A parity fixture
+- `nx run framework-language-service:test --skipNxCache`
+- `nx run framework-nx:test --skipNxCache`
+- `nx run attune-nx:test --skipNxCache`
+- `nx run workspace:attune-check --skipNxCache` after the Ring A parity fixture
 
 ## Still Open
 
-- Add Ring A diagnostic parity fixtures before deleting old diagnostic helpers.
+- Continue to program-index repair routing. Compatibility APIs/helpers remain
+  demolition scaffolding and must be removed, renamed, quarantined, or archived
+  before this OpenSpec change can finish.
