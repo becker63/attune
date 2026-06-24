@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs"
 import {
   extractProtocolSourceSummary,
   hashProtocolValue,
+  type AttuneProtocolAction,
   type AttuneProtocolDiagnostic,
+  type SourceRange,
 } from "@attune/framework-protocol"
 import {
   programIndexContentHash,
@@ -398,21 +400,46 @@ export const programIndexDiagnosticsForFile = (
   index: ProgramIndexApi,
   filePath: string,
 ): Effect.Effect<readonly AttuneProtocolDiagnostic[], unknown> =>
-  index.listDiagnosticsByFile(filePath).pipe(
-    Effect.map((rows) => rows.map(programIndexDiagnosticRowToProtocolDiagnostic)),
-  )
+  Effect.gen(function* readProgramIndexDiagnosticsForFile() {
+    const [diagnosticRows, repairRows] = yield* Effect.all([
+      index.listDiagnosticsByFile(filePath),
+      index.listRepairableDiagnostics(),
+    ])
+    const repairsByDiagnosticId = new Map<string, ProgramIndexViewRow[]>()
+    for (const repairRow of repairRows) {
+      const diagnosticId = stringValue(repairRow, "diagnostic_id")
+      if (diagnosticId.length === 0) continue
+      repairsByDiagnosticId.set(diagnosticId, [
+        ...(repairsByDiagnosticId.get(diagnosticId) ?? []),
+        repairRow,
+      ])
+    }
+    return diagnosticRows.map((row) =>
+      programIndexDiagnosticRowToProtocolDiagnostic(
+        row,
+        repairsByDiagnosticId.get(stringValue(row, "diagnostic_id")) ?? [],
+      )
+    )
+  })
 
 export const programIndexDiagnosticRowToProtocolDiagnostic = (
   row: ProgramIndexViewRow,
-): AttuneProtocolDiagnostic => ({
-  code: stringValue(row, "code"),
-  severity: diagnosticSeverity(row.severity ?? null),
-  packageId: stringValue(row, "project_id", "workspace"),
-  sourcePath: stringValue(row, "path", "workspace"),
-  explanation: stringValue(row, "message"),
-  suggestedActions: [],
-  relatedEvidence: [],
-})
+  repairRows: readonly ProgramIndexViewRow[] = [],
+): AttuneProtocolDiagnostic => {
+  const range = sourceRangeFromRow(row)
+  const cause = jsonValueFromRow(row, "cause_json")
+  return {
+    code: stringValue(row, "code"),
+    severity: diagnosticSeverity(row.severity ?? null),
+    packageId: stringValue(row, "project_id", "workspace"),
+    sourcePath: stringValue(row, "path", "workspace"),
+    explanation: stringValue(row, "message"),
+    ...(range === undefined ? {} : { range }),
+    ...(cause === undefined ? {} : { cause }),
+    suggestedActions: repairRows.map(programIndexRepairRowToProtocolAction),
+    relatedEvidence: cause === undefined ? [] : ["program-index:cause"],
+  }
+}
 
 const sourceFileId = (projectId: string, path: string): string =>
   `file:${projectId}:${programIndexContentHash(path).slice(0, 16)}`
@@ -461,3 +488,57 @@ const diagnosticSeverity = (
   value: ProgramIndexViewRow[string],
 ): AttuneProtocolDiagnostic["severity"] =>
   value === "error" || value === "warning" || value === "info" ? value : "info"
+
+const sourceRangeFromRow = (
+  row: ProgramIndexViewRow,
+): SourceRange | undefined => {
+  const value = jsonValueFromRow(row, "range_json")
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "start" in value &&
+    "end" in value &&
+    typeof value.start === "number" &&
+    typeof value.end === "number"
+  ) {
+    return { start: value.start, end: value.end }
+  }
+  return undefined
+}
+
+const programIndexRepairRowToProtocolAction = (
+  row: ProgramIndexViewRow,
+): AttuneProtocolAction => {
+  const nxTarget = stringValue(row, "nx_target")
+  const repairKind = stringValue(row, "repair_kind")
+  const safety = stringValue(row, "safety")
+  const payload = jsonValueFromRow(row, "payload_json")
+  return {
+    id: stringValue(row, "repair_id", stringValue(row, "diagnostic_id", "program-index-repair")),
+    title: repairKind.length === 0
+      ? "Review program-index repair"
+      : `Run ${repairKind} repair`,
+    kind: nxTarget.length === 0 ? "debug" : "nx-generator",
+    ...(nxTarget.length === 0 ? {} : { target: nxTarget }),
+    options: {
+      source: "program-index",
+      diagnosticId: stringValue(row, "diagnostic_id"),
+      safety,
+      ...(repairKind.length === 0 ? {} : { repairKind }),
+      ...(payload === undefined ? {} : { payload }),
+    },
+  }
+}
+
+const jsonValueFromRow = (
+  row: ProgramIndexViewRow,
+  key: string,
+): unknown | undefined => {
+  const value = row[key]
+  if (typeof value !== "string" || value.length === 0) return undefined
+  try {
+    return JSON.parse(value) as unknown
+  } catch {
+    return value
+  }
+}

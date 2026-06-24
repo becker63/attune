@@ -4,6 +4,7 @@ import {
   InMemoryProtocolStoreLive,
   ProtocolDiagnostics,
   ProtocolDiagnosticsLive,
+  ProgramIndexDiagnosticsLive,
   ProtocolProjectionLive,
   ProtocolQuery,
   ProtocolQueryLive,
@@ -21,7 +22,7 @@ import {
   sourceRangeIndexFromFixtures,
   sourceRangeKey,
 } from "../src/index.js"
-import { createInMemoryProgramIndex } from "@attune/framework-sqlite"
+import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
 const sourcePath = "packages/demo/src/attune.package.ts"
 const generatedPath = "packages/demo/src/generated/operation-registry.ts"
@@ -66,6 +67,28 @@ const provideRuntime = <A, E>(
 ): Effect.Effect<A, E, never> =>
   effect.pipe(
     Effect.provide(ProtocolDiagnosticsLive),
+    Effect.provide(ProtocolQueryLive),
+    Effect.provide(ProtocolRuntimeLive),
+    Effect.provide(ProtocolProjectionLive),
+    Effect.provide(InMemoryProtocolStoreLive(initial)),
+  ) as Effect.Effect<A, E, never>
+
+const provideProgramIndexRuntime = <A, E>(
+  effect: Effect.Effect<
+    A,
+    E,
+    | ProtocolRuntime
+    | ProtocolQuery
+    | ProtocolDiagnostics
+    | ProtocolStore
+    | ProgramIndex
+  >,
+  programIndex: ProgramIndexApi,
+  initial?: Partial<ProtocolStoreSnapshot>,
+): Effect.Effect<A, E, never> =>
+  effect.pipe(
+    Effect.provide(ProgramIndexDiagnosticsLive),
+    Effect.provide(ProgramIndex.fromService(programIndex)),
     Effect.provide(ProtocolQueryLive),
     Effect.provide(ProtocolRuntimeLive),
     Effect.provide(ProtocolProjectionLive),
@@ -214,9 +237,26 @@ describe("@attune/framework-language-service", () => {
         id: "diagnostic:demo:schema",
         projectId: "demo",
         sourceFileId: "file:demo",
+        rangeJson: JSON.stringify({ start: 5, end: 17 }),
         code: "attune/program-index/schema-non-serializable",
         severity: "warning",
         message: "Schema contains executable Effect behavior.",
+        causeJson: JSON.stringify({
+          fact: "schema_descriptor",
+          status: "partial",
+        }),
+      }])
+      yield* index.putRepairs([{
+        id: "repair:diagnostic:demo:schema",
+        diagnosticId: "diagnostic:demo:schema",
+        safety: "safe",
+        nxTarget: "demo:attune-repair",
+        repairKind: "schema-descriptor-refresh",
+        payloadJson: JSON.stringify({
+          artifact: "schema_descriptor",
+          sourceFile: sourcePath,
+        }),
+        createdAt: "2026-06-23T00:00:00.000Z",
       }])
     }))
 
@@ -227,8 +267,94 @@ describe("@attune/framework-language-service", () => {
     expect(view.diagnostics[0]).toMatchObject({
       code: "attune/program-index/schema-non-serializable",
       displayMessage: expect.stringContaining("Schema contains executable Effect behavior."),
+      range: { start: 5, end: 17 },
+      cause: {
+        fact: "schema_descriptor",
+        status: "partial",
+      },
     })
     expect(view.quickInfo[0]?.text).toContain("package: demo")
+    expect(Object.values(view.codeActions).flat()[0]?.action).toMatchObject({
+      kind: "nx-generator",
+      target: "demo:attune-repair",
+      options: expect.objectContaining({
+        source: "program-index",
+        repairKind: "schema-descriptor-refresh",
+      }),
+    })
+  })
+
+  it("reads program-index-backed diagnostics through the runtime language-service path", async () => {
+    const index = createInMemoryProgramIndex()
+    await Effect.runPromise(Effect.gen(function* seedProgramIndexDiagnostic() {
+      yield* index.putProjects([{
+        id: "demo",
+        root: "packages/demo",
+        sourceRoot: "packages/demo/src",
+        projectType: "library",
+        hash: "demo",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }])
+      yield* index.putSourceFiles([{
+        id: "file:demo",
+        projectId: "demo",
+        path: sourcePath,
+        hash: "source",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }])
+      yield* index.putDiagnostics([{
+        id: "diagnostic:demo:artifact",
+        projectId: "demo",
+        sourceFileId: "file:demo",
+        code: "attune/program-index/artifact-stale",
+        severity: "error",
+        message: "artifact fact is stale for generated registry.",
+        causeJson: JSON.stringify({
+          fact: "artifact",
+          status: "stale",
+        }),
+      }])
+      yield* index.putRepairs([{
+        id: "repair:diagnostic:demo:artifact",
+        diagnosticId: "diagnostic:demo:artifact",
+        safety: "safe",
+        nxTarget: "demo:attune-repair",
+        repairKind: "artifact-refresh",
+        createdAt: "2026-06-23T00:00:00.000Z",
+      }])
+    }))
+
+    const view = await Effect.runPromise(
+      provideProgramIndexRuntime(
+        Effect.gen(function* runtimeProgramIndexLanguageService() {
+          const diagnostics = yield* ProtocolDiagnostics
+          const query = yield* ProtocolQuery
+          return yield* projectLanguageServiceViewFromRuntime(
+            { diagnostics, query },
+            { sourcePath, packageId: "demo", protocolId },
+          )
+        }),
+        index,
+      ),
+    )
+
+    expect(view.diagnostics[0]).toMatchObject({
+      code: "attune/program-index/artifact-stale",
+      severity: "error",
+      displayMessage: expect.stringContaining("artifact fact is stale"),
+      cause: {
+        fact: "artifact",
+        status: "stale",
+      },
+    })
+    expect(Object.values(view.codeActions).flat()[0]?.action).toMatchObject({
+      kind: "nx-generator",
+      target: "demo:attune-repair",
+      options: expect.objectContaining({
+        source: "program-index",
+        repairKind: "artifact-refresh",
+      }),
+    })
   })
 
   it("surfaces stale generated source as an Nx repair instead of a file edit", async () => {

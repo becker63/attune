@@ -16,7 +16,9 @@ export interface AttuneProtocolDiagnostic {
   readonly operationId?: string
   readonly obligationId?: string
   readonly sourcePath: string
+  readonly range?: SourceRange
   readonly explanation: string
+  readonly cause?: unknown
   readonly suggestedActions: readonly AttuneProtocolAction[]
   readonly relatedEvidence: readonly string[]
 }
@@ -44,6 +46,7 @@ export const AttuneProtocolDiagnosticSchema = Schema.Struct({
   sourcePath: Schema.String,
   range: Schema.optional(SourceRangeSchema),
   explanation: Schema.String,
+  cause: Schema.optional(Schema.Unknown),
   suggestedActions: Schema.Array(AttuneProtocolActionSchema),
   relatedEvidence: Schema.Array(Schema.String),
 })

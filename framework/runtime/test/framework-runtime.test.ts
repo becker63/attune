@@ -16,6 +16,7 @@ import {
   consumeProgramIndexInvalidations,
   ProtocolDiagnostics,
   ProtocolDiagnosticsLive,
+  ProgramIndexDiagnosticsLive,
   ProtocolProjectionLive,
   ProtocolQuery,
   ProtocolQueryLive,
@@ -44,7 +45,7 @@ import {
   type ProtocolStoreSnapshot,
   type ProtocolWaiverState,
 } from "../src/index.js"
-import { createInMemoryProgramIndex } from "@attune/framework-sqlite"
+import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
 const demoDescriptor = {
   protocolId: "attune/package/demo",
@@ -219,6 +220,28 @@ const provideSqliteRuntime = <A, E>(
     Effect.provide(SqliteRuntimeProtocolStoreLive({ path: ":memory:" })),
   ) as Effect.Effect<A, E, never>
 
+const provideProgramIndexDiagnosticsRuntime = <A, E>(
+  effect: Effect.Effect<
+    A,
+    E,
+    | ProtocolRuntime
+    | ProtocolQuery
+    | ProtocolDiagnostics
+    | ProtocolStore
+    | ProgramIndex
+  >,
+  programIndex: ProgramIndexApi,
+  initial?: Partial<ProtocolStoreSnapshot>,
+): Effect.Effect<A, E, never> =>
+  effect.pipe(
+    Effect.provide(ProgramIndexDiagnosticsLive),
+    Effect.provide(ProgramIndex.fromService(programIndex)),
+    Effect.provide(ProtocolQueryLive),
+    Effect.provide(ProtocolRuntimeLive),
+    Effect.provide(ProtocolProjectionLive),
+    Effect.provide(InMemoryProtocolStoreLive(initial)),
+  ) as Effect.Effect<A, E, never>
+
 describe("@attune/framework-runtime", () => {
   it("turns missing evidence and stale generated source into private deltas", () => {
     const deltas = computeProtocolDeltas({
@@ -384,6 +407,115 @@ describe("@attune/framework-runtime", () => {
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true })
     }
+  })
+
+  it("prefers program-index diagnostics and repair rows when indexed facts exist", async () => {
+    const index = createInMemoryProgramIndex()
+    await Effect.runPromise(Effect.gen(function* seedIndexedDiagnostic() {
+      yield* index.putProjects([{
+        id: "demo",
+        root: "packages/demo",
+        sourceRoot: "packages/demo/src",
+        projectType: "library",
+        hash: "demo",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }])
+      yield* index.putSourceFiles([{
+        id: "file:demo",
+        projectId: "demo",
+        path: demoDescriptor.sourcePath,
+        hash: "source",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }])
+      yield* index.putDiagnostics([{
+        id: "diagnostic:demo:schema",
+        projectId: "demo",
+        sourceFileId: "file:demo",
+        rangeJson: JSON.stringify({ start: 10, end: 24 }),
+        code: "attune/program-index/schema-non-serializable",
+        severity: "warning",
+        message: "schema_descriptor fact is partial for demo:Snapshot.",
+        causeJson: JSON.stringify({
+          fact: "schema_descriptor",
+          symbolId: "demo:Snapshot",
+          status: "partial",
+        }),
+      }])
+      yield* index.putRepairs([{
+        id: "repair:diagnostic:demo:schema",
+        diagnosticId: "diagnostic:demo:schema",
+        safety: "safe",
+        nxTarget: "demo:attune-repair",
+        repairKind: "schema-descriptor-refresh",
+        payloadJson: JSON.stringify({
+          artifact: "schema_descriptor",
+          sourceFile: demoDescriptor.sourcePath,
+        }),
+        createdAt: "2026-06-23T00:00:00.000Z",
+      }])
+    }))
+
+    const projected = await Effect.runPromise(
+      provideProgramIndexDiagnosticsRuntime(
+        Effect.gen(function* indexedProtocolDiagnostics() {
+          const diagnostics = yield* ProtocolDiagnostics
+          return yield* diagnostics.diagnosticsForFile(
+            demoDescriptor.sourcePath,
+            { packageId: "demo", protocolId: demoDescriptor.protocolId },
+          )
+        }),
+        index,
+        { descriptors: [demoDescriptor] },
+      ),
+    )
+
+    expect(projected).toHaveLength(1)
+    expect(projected[0]).toMatchObject({
+      code: "attune/program-index/schema-non-serializable",
+      severity: "warning",
+      packageId: "demo",
+      sourcePath: demoDescriptor.sourcePath,
+      range: { start: 10, end: 24 },
+      explanation: "schema_descriptor fact is partial for demo:Snapshot.",
+      cause: {
+        fact: "schema_descriptor",
+        symbolId: "demo:Snapshot",
+        status: "partial",
+      },
+      suggestedActions: [{
+        id: "repair:diagnostic:demo:schema",
+        kind: "nx-generator",
+        target: "demo:attune-repair",
+        options: expect.objectContaining({
+          source: "program-index",
+          diagnosticId: "diagnostic:demo:schema",
+          safety: "safe",
+          repairKind: "schema-descriptor-refresh",
+        }),
+      }],
+      relatedEvidence: ["program-index:cause"],
+    })
+  })
+
+  it("falls back to compatibility diagnostics when the program index has no file rows", async () => {
+    const projected = await Effect.runPromise(
+      provideProgramIndexDiagnosticsRuntime(
+        Effect.gen(function* indexedDiagnosticsFallback() {
+          const runtime = yield* ProtocolRuntime
+          const diagnostics = yield* ProtocolDiagnostics
+          yield* runtime.materializeDescriptor(demoDescriptor)
+          return yield* diagnostics.diagnosticsForFile(
+            demoDescriptor.sourcePath,
+            { packageId: "demo", protocolId: demoDescriptor.protocolId },
+          )
+        }),
+        createInMemoryProgramIndex(),
+      ),
+    )
+
+    expect(projected.map((diagnostic) => diagnostic.code)).toContain(
+      "attune/protocol/missing-obligation",
+    )
   })
 
   it("adapts generated companions and Source BOM files as compatibility input rows", () => {

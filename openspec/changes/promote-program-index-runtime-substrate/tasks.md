@@ -23,10 +23,10 @@
 ## 2. Program-Index Primary Diagnostics
 
 - [ ] 2.1 Extend `ProgramIndexProjection` so it can materialize diagnostic rows for stale or missing artifacts, package-local generated companions, schema descriptor serialization issues, Source BOM compatibility rows, checked-in report artifacts, and repairable diagnostics.
-- [ ] 2.2 Make `ProtocolDiagnostics` prefer program-index diagnostic rows or views while preserving compatibility fallback when the index is empty or unavailable.
-- [ ] 2.3 Add runtime tests proving a fixture program index produces diagnostics with source path, range, code, severity, message, and cause payload.
-- [ ] 2.4 Make language-service diagnostic lookup read through `ProtocolDiagnostics` or `ProtocolQuery` backed by program-index projections.
-- [ ] 2.5 Add language-service tests for diagnostics by file path and repair hints from indexed repair rows.
+- [x] 2.2 Make `ProtocolDiagnostics` prefer program-index diagnostic rows or views while preserving compatibility fallback when the index is empty or unavailable.
+- [x] 2.3 Add runtime tests proving a fixture program index produces diagnostics with source path, range, code, severity, message, and cause payload.
+- [x] 2.4 Make language-service diagnostic lookup read through `ProtocolDiagnostics` or `ProtocolQuery` backed by program-index projections.
+- [x] 2.5 Add language-service tests for diagnostics by file path and repair hints from indexed repair rows.
 - [ ] 2.6 Route package/workspace check executor internals through program-index materialization before reporting diagnostics.
 - [ ] 2.7 Preserve old package-contract check output as compatibility fallback and mark whether check diagnostics came from program-index, compatibility, or both.
 - [ ] 2.8 Add diagnostic parity fixtures for at least one low-risk package from Ring A and classify mismatches.
