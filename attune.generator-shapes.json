@@ -350,13 +350,12 @@
       "generator": "@attune/nx:package-contract",
       "status": "generated",
       "paths": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "invariants": [
-        "Discovery events, EventLog, projections, read-model queries, Reactivity keys, atom families, package layers, fuzz handlers, properties, and type guidance stay in one generated contract shard."
+        "Discovery source intent, Reactivity keys, atoms, schema descriptors, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Phase 5 product migration generated the package contract files; final command-surface cleanup remains open.",
+      "notes": "Ring A program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
       "sourceBomShard": "framework/architecture/src/generated/source-bom/attuned-discovery.json"
     },
     {
@@ -468,13 +467,12 @@
       "generator": "@attune/nx:package-contract",
       "status": "generated",
       "paths": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "invariants": [
-        "Oxlint rule registry operations, policy result views, adapter allowlist metadata, package layers, fuzz handlers, properties, and type guidance stay in one generated contract shard."
+        "Oxlint policy source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Phase 4 tooling migration generated the package contract files; final command-surface cleanup remains open.",
+      "notes": "Ring A program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
       "sourceBomShard": "framework/architecture/src/generated/source-bom/effect-oxlint-policy.json"
     },
     {

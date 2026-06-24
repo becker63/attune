@@ -13,7 +13,7 @@
       ],
       "editableRegions": [
         {
-          "description": "Core discovery runtime package boundary; add event, projection, query, atom, and codec operations through package-contract sync/generation.",
+          "description": "Core discovery runtime authored source boundary; add exported symbols in the package file and validate through program-index-backed check.",
           "file": "src/attune.package.ts",
           "marker": "definePackageContract"
         }
@@ -38,8 +38,7 @@
       },
       "optionsHash": "fnv1a32:9b71c50a",
       "ownedFiles": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "owningProject": "attuned-discovery",
       "projectRoot": "packages/attuned-discovery",
@@ -56,8 +55,7 @@
     {
       "generator": "@attune/nx:package-contract",
       "outputs": [
-        "src/attune.package.ts",
-        "test/attune-package-contract.test.ts"
+        "src/attune.package.ts"
       ],
       "sources": [
         "project.json",
@@ -85,7 +83,6 @@
     "project.json",
     "src/attune.package.ts",
     "src/**",
-    "test/attune-package-contract.test.ts",
     "test/**",
     "tsconfig.json",
     "vitest.config.ts"

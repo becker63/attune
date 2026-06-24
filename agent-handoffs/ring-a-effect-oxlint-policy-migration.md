@@ -4,6 +4,10 @@ Changed:
 - Kept the authored Ring A source boundary at
   `framework/oxlint-policy/src/attune.package.ts` and the package behavior
   tests under `framework/oxlint-policy/test/policy-rules.test.ts`.
+- A later Ring A check exposed stale manifest/source ownership references to
+  the deleted compatibility test; those references were removed from
+  `attune.generator-shapes.json` and
+  `framework/architecture/src/generated/source-bom/effect-oxlint-policy.json`.
 
 Program-index proof:
 - `effect-oxlint-policy:attune-check` passed through the public Nx target and
@@ -14,6 +18,8 @@ Program-index proof:
   surface blockers for `effect-oxlint-policy`.
 - No project-local generated companions or package-root source ownership shards
   exist under `framework/oxlint-policy`.
+- Shape conformance now treats the authored package file as the only remaining
+  local compatibility source path for this Ring A entry.
 - Runtime parity coverage for this Ring A package remains in the framework
   program-index fixture while framework-owned compatibility inputs are still
   being removed in later phases.
