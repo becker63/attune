@@ -87,8 +87,8 @@
 
 ## 7. Old Ontology Demotion
 
-- [ ] 7.1 Inventory remaining package-contract laws, type guidance, RPC descriptors, `PackageFuzzHandlers`, `PackageProperties`, Source BOM shards, generated companion surfaces, and active docs/API names that still expose old ontology language.
-- [ ] 7.2 Classify each old surface as still required, compatibility-only, safe-to-delete, or unsafe-to-delete.
+- [x] 7.1 Inventory remaining package-contract laws, type guidance, RPC descriptors, `PackageFuzzHandlers`, `PackageProperties`, Source BOM shards, generated companion surfaces, and active docs/API names that still expose old ontology language.
+- [x] 7.2 Classify each old surface as still required, compatibility-only, safe-to-delete, or unsafe-to-delete.
 - [ ] 7.3 Delete, rename, quarantine, or archive every safe-to-delete old surface and record the exact mechanical replacement.
 - [ ] 7.4 Mark high-risk deletions as future OpenSpec changes rather than current implementation tasks.
 - [ ] 7.5 Update docs so the only normal mental model is mechanical program facts, SQL projections, Reactivity/atoms, diagnostics, and repairs.
