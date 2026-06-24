@@ -73,7 +73,7 @@
 
 ## 6. Project Rings
 
-- [ ] 6.1 Validate Ring A package `effect-oxlint-policy` under program-index-backed check flow, remove active old-noun/generated-companion surfaces where parity is proven, and write `agent-handoffs/ring-a-effect-oxlint-policy-migration.md`.
+- [x] 6.1 Validate Ring A package `effect-oxlint-policy` under program-index-backed check flow, remove active old-noun/generated-companion surfaces where parity is proven, and write `agent-handoffs/ring-a-effect-oxlint-policy-migration.md`.
 - [ ] 6.2 Validate Ring A package `attuned-discovery` under program-index-backed check flow, remove active old-noun/generated-companion surfaces where parity is proven, and write `agent-handoffs/ring-a-attuned-discovery-migration.md`.
 - [ ] 6.3 Validate Ring A package `attune-foldkit` under program-index-backed check flow, remove active old-noun/generated-companion surfaces where parity is proven, and write `agent-handoffs/ring-a-attune-foldkit-migration.md`.
 - [ ] 6.4 Validate Ring B package `attune-nx` under program-index-backed check/repair dry-run flow, remove active old-noun/generated-companion surfaces where parity is proven, and write `agent-handoffs/ring-b-attune-nx-migration.md`.
