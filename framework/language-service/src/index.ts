@@ -1,6 +1,14 @@
+import {
+  LspDiagnostic,
+  NxTarget,
+} from "@attune/framework-protocol"
 import type {
   ProgramRepairAction,
   ProgramDiagnostic,
+  RecipeDefinition,
+  RecipeDiagnostic,
+  RecipeReceipt,
+  RecipeRepair,
   SourceDeclarationRange,
   SourceRange,
 } from "@attune/framework-protocol"
@@ -450,6 +458,51 @@ export const projectLanguageServiceView = (
     sourcePath: input.sourcePath,
     ...(options.sourceRanges === undefined ? {} : { sourceRanges: options.sourceRanges }),
   })
+}
+
+export const projectLanguageServiceViewFromRecipe = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  input: {
+    readonly diagnostics?: readonly RecipeDiagnostic[]
+    readonly receipts?: readonly RecipeReceipt[]
+    readonly repairs?: readonly RecipeRepair[]
+    readonly sourceRanges?: LanguageServiceSourceRangeIndex
+  } = {},
+): LanguageServiceView => {
+  const diagnostics = (input.diagnostics ?? []).map((diagnostic) =>
+    LspDiagnostic.fromRecipe(recipe, diagnostic)
+  )
+  const sourcePath = recipe.sourcePath ?? diagnostics[0]?.sourcePath ?? recipe.id
+  const latestReceipt = input.receipts?.at(-1)
+  const recipeLens: LanguageServiceCodeLens = {
+    title: latestReceipt === undefined
+      ? `recipe ${recipe.id}: no receipt`
+      : `recipe ${recipe.id}: ${latestReceipt.status}`,
+    sourcePath,
+    action: {
+      id: `recipe:${recipe.id}:run`,
+      title: `Run ${NxTarget.fromRecipe(recipe)}`,
+      kind: "nx-check",
+      target: NxTarget.fromRecipe(recipe),
+      options: {
+        recipeId: recipe.id,
+        repairIds: (input.repairs ?? []).map((repair) => repair.repairId),
+      },
+    },
+  }
+
+  const view = viewFromDiagnostics(diagnostics, {
+    sourcePath,
+    ...(input.sourceRanges === undefined ? {} : { sourceRanges: input.sourceRanges }),
+  })
+
+  return {
+    ...view,
+    codeLenses: [
+      ...view.codeLenses,
+      recipeLens,
+    ],
+  }
 }
 
 export const projectLanguageServiceViewFromRuntime = (

@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { Effect, Schema } from "effect"
 import { describe, expect, it } from "vitest"
 import {
   InMemoryProgramFactStoreLive,
@@ -14,9 +14,18 @@ import {
   type ProgramFactStoreSnapshot,
 } from "@attune/framework-runtime"
 import {
+  defineRecipe,
+  type RecipeDiagnostic,
+  type RecipeReceipt,
+  type RecipeRepair,
+  RecipeRepairPlan,
+  NxTarget,
+} from "@attune/framework-protocol"
+import {
   codeActionsForDiagnostic,
   diagnosticCodeLens,
   isDirectGeneratedFileWriteAction,
+  projectLanguageServiceViewFromRecipe,
   projectLanguageServiceViewFromProgramIndex,
   projectLanguageServiceViewFromRuntime,
   sourceRangeIndexFromFixtures,
@@ -281,6 +290,69 @@ describe("@attune/framework-language-service", () => {
         source: "program-index",
         repairKind: "schema-descriptor-refresh",
       }),
+    })
+  })
+
+  it("projects recipe diagnostics through the language-service view", () => {
+    const recipe = defineRecipe({
+      id: "workspace.policy-fast",
+      projectId: "workspace",
+      inputSchema: Schema.Struct({}),
+      outputSchema: Schema.Struct({ ok: Schema.Boolean }),
+      nxTarget: "workspace:policy-fast",
+      sourcePath: "framework/language-service/src/index.ts",
+      allowedFiles: ["framework/language-service/**"],
+      validationEvidence: ["workspace:policy-fast"],
+    })
+    const receipt: RecipeReceipt = {
+      receiptId: "recipe-receipt:workspace.policy-fast:1",
+      recipeId: recipe.id,
+      runId: "recipe-run:workspace.policy-fast:1",
+      status: "failed",
+      startedAt: "2026-06-27T00:00:00.000Z",
+      completedAt: "2026-06-27T00:00:01.000Z",
+      command: NxTarget.fromRecipe(recipe),
+    }
+    const diagnostic: RecipeDiagnostic = {
+      diagnosticId: "recipe-diagnostic:workspace.policy-fast:failed",
+      recipeId: recipe.id,
+      code: "attune/recipe/run-failed",
+      severity: "error",
+      message: "Recipe failed.",
+      sourcePath: "framework/language-service/src/index.ts",
+      receiptId: receipt.receiptId,
+    }
+    const repairs: readonly RecipeRepair[] = RecipeRepairPlan.fromRecipe(recipe, [diagnostic])
+    const view = projectLanguageServiceViewFromRecipe(recipe, {
+      diagnostics: [diagnostic],
+      receipts: [receipt],
+      repairs,
+    })
+
+    expect(view.diagnostics[0]).toMatchObject({
+      code: "attune/recipe/run-failed",
+      projectId: "workspace",
+      sourcePath: "framework/language-service/src/index.ts",
+      displayMessage: "attune/recipe/run-failed: Recipe failed.",
+    })
+    expect(view.quickInfo[0]?.text).toContain("diagnostic: attune/recipe/run-failed")
+    expect(Object.values(view.codeActions).flat()[0]?.action).toMatchObject({
+      kind: "nx-check",
+      target: "workspace:policy-fast",
+      options: expect.objectContaining({
+        recipeId: recipe.id,
+        diagnosticId: diagnostic.diagnosticId,
+      }),
+    })
+    expect(view.codeLenses.at(-1)).toMatchObject({
+      title: "recipe workspace.policy-fast: failed",
+      action: {
+        target: "workspace:policy-fast",
+        options: {
+          recipeId: recipe.id,
+          repairIds: repairs.map((repair) => repair.repairId),
+        },
+      },
     })
   })
 

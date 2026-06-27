@@ -10,6 +10,7 @@ import {
   createGeneratedArtifactRecord,
   detectCheckedInReportOutputs,
   frameworkDiagnosticsAction,
+  frameworkNxActionPlanFromRecipe,
   hashGeneratedArtifactContent,
   ingestNxProjectGraphRows,
   nxProjectGraphToProgramIndexRows,
@@ -19,10 +20,17 @@ import {
   protocolMaterializeAction,
   repairPlanForDiagnostic,
   repairPlanFromProgramIndexRow,
+  repairPlanFromRecipeRepair,
+  repairPlansFromRecipeDiagnostic,
   schemaObservationsAction,
   type FrameworkNxGeneratedArtifactKind,
 } from "../src/index.js"
-import type { ProgramSchemaDescriptor } from "@attune/framework-protocol"
+import {
+  defineRecipe,
+  type ProgramSchemaDescriptor,
+  type RecipeDiagnostic,
+  type RecipeRepair,
+} from "@attune/framework-protocol"
 import { createInMemoryProgramIndex } from "@attune/framework-sqlite"
 import type { ProjectGraph } from "nx/src/devkit-exports"
 
@@ -216,6 +224,85 @@ describe("@attune/framework-nx", () => {
       generated: true,
     })
     expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).repairKind).toBe("symbol-registry")
+  })
+
+  it("projects Recipes into public Nx action and repair plans", () => {
+    const recipe = defineRecipe({
+      id: "workspace.policy-fast",
+      projectId: "workspace",
+      title: "Workspace policy",
+      inputSchema: Schema.Struct({}),
+      outputSchema: Schema.Struct({ ok: Schema.Boolean }),
+      nxTarget: "workspace:policy-fast",
+      sourcePath: "framework/nx/src/index.ts",
+      allowedFiles: ["framework/nx/**"],
+      validationEvidence: ["workspace:policy-fast"],
+    })
+    const action = frameworkNxActionPlanFromRecipe(recipe)
+    const repair: RecipeRepair = {
+      repairId: "recipe-repair:workspace.policy-fast:planned",
+      recipeId: recipe.id,
+      title: "Run policy repair",
+      kind: "nx-target",
+      nxTarget: "workspace:policy-fast",
+      allowedFiles: ["framework/nx/**"],
+      risk: "safe",
+      evidenceRequirements: ["workspace:policy-fast"],
+    }
+
+    expect(Schema.decodeUnknownSync(FrameworkNxActionPlanSchema)(action)).toMatchObject({
+      actionId: "attune.recipe.workspace.policy-fast",
+      projectId: "workspace",
+      generatorOrTarget: "workspace:policy-fast",
+      validationTarget: "workspace:policy-fast",
+    })
+    expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(
+      repairPlanFromRecipeRepair(recipe, repair),
+    )).toMatchObject({
+      diagnosticId: "recipe-repair:workspace.policy-fast:planned",
+      target: "workspace:policy-fast",
+      command: "nx run workspace:policy-fast",
+      route: "recipe:workspace.policy-fast",
+      repairKind: "nx-target",
+      changes: [{
+        path: "framework/nx/**",
+        kind: "update",
+        generated: false,
+      }],
+      validateAfter: ["workspace:policy-fast"],
+    })
+  })
+
+  it("projects recipe diagnostics into recipe-backed repair plans", () => {
+    const recipe = defineRecipe({
+      id: "attune-nx.generator-shapes",
+      projectId: "attune-nx",
+      inputSchema: Schema.Struct({}),
+      outputSchema: Schema.Struct({ ok: Schema.Boolean }),
+      nxTarget: "attune-nx:attune-repair",
+      sourcePath: "packages/attune-nx/src/attune.package.ts",
+      allowedFiles: ["packages/attune-nx/src/**"],
+      validationEvidence: ["attune-nx:attune-check", "attune-nx:typecheck"],
+    })
+    const diagnostic: RecipeDiagnostic = {
+      diagnosticId: "diagnostic:attune-nx:recipe-stale",
+      recipeId: recipe.id,
+      code: "attune/recipe/stale",
+      severity: "warning",
+      message: "Recipe output is stale.",
+      sourcePath: "packages/attune-nx/src/attune.package.ts",
+    }
+
+    expect(repairPlansFromRecipeDiagnostic(recipe, diagnostic)).toEqual([
+      expect.objectContaining({
+        diagnosticId: diagnostic.diagnosticId,
+        safety: "safe",
+        target: "attune-nx:attune-repair",
+        route: "recipe:attune-nx.generator-shapes",
+        repairKind: "nx-target",
+        validateAfter: ["attune-nx:attune-check", "attune-nx:typecheck"],
+      }),
+    ])
   })
 
   it("routes safe program-index repair rows to public Nx targets", () => {

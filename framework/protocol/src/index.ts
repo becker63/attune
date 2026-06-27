@@ -44,6 +44,7 @@ export type {
 } from "./schema-descriptors/index.js"
 export * from "./diagnostics/index.js"
 export * from "./observations/index.js"
+export * from "./recipes/index.js"
 export * from "./diagnostic-obligations/index.js"
 export * from "./source/index.js"
 export * from "./waivers/index.js"

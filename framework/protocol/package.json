@@ -12,6 +12,10 @@
       "types": "./src/diagnostic-rules/index.ts",
       "import": "./src/diagnostic-rules/index.ts"
     },
+    "./recipes": {
+      "types": "./src/recipes/index.ts",
+      "import": "./src/recipes/index.ts"
+    },
     "./package.json": "./package.json"
   },
   "dependencies": {

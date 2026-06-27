@@ -1,7 +1,12 @@
 import {
   hashProgramValue,
+  NxTarget,
+  RecipeRepairPlan,
   type ProgramArtifactRecord,
   type ProgramDiagnostic,
+  type RecipeDefinition,
+  type RecipeDiagnostic,
+  type RecipeRepair,
   type ProgramSchemaDescriptor,
   type ProgramSymbolDescriptor,
 } from "@attune/framework-protocol"
@@ -341,6 +346,64 @@ export const frameworkDiagnosticsAction = (
     validationTarget: generatorTargets.frameworkDiagnostics,
   })
 
+export const frameworkNxActionPlanFromRecipe = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+): FrameworkNxActionPlan => {
+  const target = NxTarget.fromRecipe(recipe)
+  const projectId = recipe.projectId ?? projectNameFromRecipeId(recipe.id)
+
+  return createFrameworkNxActionPlan({
+    actionId: `attune.recipe.${recipe.id}`,
+    title: recipe.title ?? `Run recipe ${recipe.id}`,
+    sourcePath: recipe.sourcePath ?? recipe.id,
+    projectId,
+    generatorOrTarget: target,
+    options: {
+      projectId,
+      recipeId: recipe.id,
+    },
+    validationTarget: target,
+  })
+}
+
+export const repairPlanFromRecipeRepair = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  repair: RecipeRepair,
+): AttuneRepairPlan => {
+  const target = repair.nxTarget ?? NxTarget.fromRecipe(recipe)
+  const changePaths = repair.allowedFiles.length === 0
+    ? [recipe.sourcePath ?? recipe.id]
+    : repair.allowedFiles
+
+  return {
+    diagnosticId: repair.diagnosticId ?? repair.repairId,
+    safety: repair.risk,
+    target,
+    command: `nx run ${target}`,
+    route: `recipe:${recipe.id}`,
+    repairKind: repair.kind,
+    changes: changePaths.map((path) => ({
+      path,
+      kind: repair.kind === "managed-lifecycle" ? "regenerate" : "update",
+      generated: isGeneratedRepairPath(path),
+    })),
+    doNotEdit: [
+      ".attune/cache/program-index.sqlite",
+      "framework-owned generated artifacts unless the recipe repair route writes them",
+    ],
+    validateAfter: repair.evidenceRequirements.length === 0 ? [target] : repair.evidenceRequirements,
+    explanation: repair.title,
+  }
+}
+
+export const repairPlansFromRecipeDiagnostic = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  diagnostic: RecipeDiagnostic,
+): readonly AttuneRepairPlan[] =>
+  RecipeRepairPlan.fromRecipe(recipe, [diagnostic]).map((repair) =>
+    repairPlanFromRecipeRepair(recipe, repair)
+  )
+
 export const generatedArtifactPath = (
   sourcePath: string,
   kind: FrameworkNxGeneratedArtifactKind,
@@ -454,6 +517,11 @@ const projectNameFromSourcePath = (sourcePath: string): string => {
   const normalized = sourcePath.replaceAll("\\", "/")
   const match = /^(?:packages|framework)\/(?<project>[^/]+)\//u.exec(normalized)
   return match?.groups?.project ?? "workspace"
+}
+
+const projectNameFromRecipeId = (recipeId: string): string => {
+  const [projectId] = recipeId.split(/[.:/]/u)
+  return projectId === undefined || projectId.length === 0 ? "workspace" : projectId
 }
 
 export const repairPlanForDiagnostic = (
