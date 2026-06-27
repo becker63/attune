@@ -1,7 +1,13 @@
+import { readFileSync } from "node:fs"
 import { Effect, Schema } from "effect"
 import { describe, expect, it } from "vitest"
 import {
+  ManagedRecipeAlchemy as RuntimeManagedRecipeAlchemy,
+  managedRecipeAlchemyDiff,
+} from "../src/alchemy.js"
+import {
   AlchemyResourceDescriptor,
+  createInMemoryRecipeReceiptStore,
   defineManagedExecutableRecipe,
   defineExecutableRecipe,
   HealthView,
@@ -11,6 +17,7 @@ import {
   makeRecipeRunner,
   managedRecipeAlchemyBindings,
   managedRecipeAlchemyOutput,
+  ManagedRecipeAlchemyType,
   NxTarget,
   RecipeRepairPlan,
   type RecipeDiagnostic,
@@ -119,6 +126,56 @@ describe("RecipeKernel", () => {
     })
   })
 
+  it("persists plans, receipts, diagnostics, repairs, and health in the recipe receipt store", async () => {
+    const store = createInMemoryRecipeReceiptStore()
+    const recipe = defineExecutableRecipe({
+      id: "workspace.policy-fast",
+      projectId: "workspace",
+      title: "Workspace policy fast",
+      inputSchema: RecipeInput,
+      outputSchema: RecipeOutput,
+      nxTarget: "workspace:policy-fast",
+      sourcePath: "framework/runtime/src/RecipeKernel.ts",
+      allowedFiles: ["framework/runtime/**"],
+      validationEvidence: ["nx run workspace:policy-fast"],
+      dependencies: [{ recipeId: "workspace.graph", reason: "needs project graph" }],
+      execute: (input) => Effect.succeed({ checked: input.projectId.length > 0 }),
+    })
+
+    const planner = makeRecipePlanner(store)
+    const planned = await Effect.runPromise(planner.plan(recipe, { projectId: "workspace" }))
+    expect(planned.health.status).toBe("unknown")
+
+    const runner = makeRecipeRunner(store)
+    const result = await Effect.runPromise(runner.run(recipe, { projectId: "workspace" }))
+    const latestReceipt = await Effect.runPromise(store.latestReceipt(recipe.id))
+    const health = await Effect.runPromise(store.healthForRecipe(recipe.id))
+    const replanned = await Effect.runPromise(planner.plan(recipe, { projectId: "workspace" }))
+    const snapshot = await Effect.runPromise(store.snapshot())
+
+    expect(latestReceipt).toEqual(result.receipt)
+    expect(health).toMatchObject({ recipeId: recipe.id, status: "clean" })
+    expect(replanned.health.status).toBe("clean")
+    expect(snapshot.recipes).toContainEqual({
+      recipeId: "workspace.policy-fast",
+      kind: "recipe",
+      projectId: "workspace",
+      title: "Workspace policy fast",
+      nxTarget: "workspace:policy-fast",
+      sourcePath: "framework/runtime/src/RecipeKernel.ts",
+      humanReviewRequired: false,
+    })
+    expect(snapshot.edges).toContainEqual({
+      recipeId: "workspace.policy-fast",
+      dependsOnRecipeId: "workspace.graph",
+      reason: "needs project graph",
+    })
+    expect(snapshot.io.map((item) => item.role)).toEqual(["input", "output"])
+    expect(snapshot.runs).toContainEqual(result.run)
+    expect(snapshot.receipts).toContainEqual(result.receipt)
+    expect(snapshot.health).toContainEqual(result.health)
+  })
+
   it("models lifecycle/stateful outputs as ManagedRecipes with Alchemy resource projection", async () => {
     const driftRepair: RecipeRepair = {
       repairId: "recipe-repair:local-timescaledb:drift",
@@ -190,6 +247,11 @@ describe("RecipeKernel", () => {
       },
       bindings,
     })
+    expect(RuntimeManagedRecipeAlchemy.Type).toBe(ManagedRecipeAlchemyType)
+    const alchemyOutput = managedRecipeAlchemyOutput(managedRecipe, result, bindings)
+    expect(managedRecipeAlchemyDiff(undefined)).toEqual({ action: "update" })
+    expect(managedRecipeAlchemyDiff(alchemyOutput, "check")).toEqual({ action: "noop" })
+    expect(managedRecipeAlchemyDiff(alchemyOutput, "apply")).toEqual({ action: "update" })
 
     const provider = makeManagedRecipeAlchemyProvider()
     const reconciled = await Effect.runPromise(provider.reconcile({
@@ -210,5 +272,24 @@ describe("RecipeKernel", () => {
       id: "local-timescaledb",
       health: { status: "clean" },
     })
+  })
+
+  it("keeps the framework recipe receipt SQL spine explicit", () => {
+    const sql = readFileSync(
+      new URL("../sql/0001_framework_recipe_receipt_spine.sql", import.meta.url),
+      "utf8",
+    )
+
+    expect(sql).toContain("framework_core.recipe")
+    expect(sql).toContain("framework_core.recipe_edge")
+    expect(sql).toContain("framework_core.recipe_io")
+    expect(sql).toContain("framework_event.recipe_run")
+    expect(sql).toContain("framework_event.recipe_receipt")
+    expect(sql).toContain("framework_event.recipe_diagnostic")
+    expect(sql).toContain("framework_event.recipe_repair")
+    expect(sql).toContain("framework_view.recipe_health")
+    expect(sql).toContain("framework_view.repair_plan")
+    expect(sql).not.toContain("drizzle")
+    expect(sql).not.toContain("sqlite")
   })
 })

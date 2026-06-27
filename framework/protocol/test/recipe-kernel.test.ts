@@ -7,8 +7,11 @@ import {
   HealthView,
   LspDiagnostic,
   NxTarget,
+  RecipeEdgeRecordView,
   RecipeHealthSchema,
   RecipeReceiptSchema,
+  RecipeReceiptStoreSnapshotSchema,
+  RecipeRecordView,
   RecipeRepairPlan,
   type RecipeDiagnostic,
   type RecipeRepair,
@@ -81,6 +84,29 @@ describe("recipe protocol", () => {
         target: "workspace:recipe-check",
       }],
     })
+
+    expect(RecipeRecordView.fromRecipe(recipe)).toEqual({
+      recipeId: "workspace.recipe-check",
+      kind: "recipe",
+      projectId: "workspace",
+      nxTarget: "workspace:recipe-check",
+      sourcePath: "framework/protocol/src/recipes/index.ts",
+      humanReviewRequired: false,
+    })
+    expect(Schema.decodeUnknownSync(RecipeReceiptStoreSnapshotSchema)({
+      recipes: [RecipeRecordView.fromRecipe(recipe)],
+      edges: RecipeEdgeRecordView.fromRecipe(recipe),
+      io: [],
+      runs: [],
+      receipts: [receipt],
+      diagnostics: [diagnostic],
+      repairs,
+      health: [health],
+    })).toMatchObject({
+      recipes: [{ recipeId: "workspace.recipe-check" }],
+      receipts: [{ receiptId: "receipt-1" }],
+      health: [{ recipeId: "workspace.recipe-check" }],
+    })
   })
 
   it("describes ManagedRecipe lifecycle/state for Effect Alchemy projection", () => {
@@ -112,6 +138,12 @@ describe("recipe protocol", () => {
       lifecycle: ["plan", "apply", "check", "destroy", "prune"],
       requiresHumanReview: true,
       observedState: { ready: false },
+    })
+    expect(RecipeRecordView.fromRecipe(recipe)).toMatchObject({
+      recipeId: "canopy.deploy",
+      kind: "managed-recipe",
+      resourceKind: "kubernetes-object-set",
+      humanReviewRequired: true,
     })
   })
 })

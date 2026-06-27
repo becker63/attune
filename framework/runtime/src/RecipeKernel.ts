@@ -22,6 +22,7 @@ import {
   type RecipeRepair,
   type RecipeRun,
 } from "@attune/framework-protocol"
+import type { RecipeReceiptStoreApi } from "./RecipeReceiptStore.js"
 
 export * from "@attune/framework-protocol"
 
@@ -47,6 +48,7 @@ export interface RecipeRunResult<Output = unknown> {
   readonly output: Output
   readonly health: RecipeHealth
   readonly diagnostics: readonly RecipeDiagnostic[]
+  readonly repairs: readonly RecipeRepair[]
 }
 
 export interface RecipePlannerApi {
@@ -87,6 +89,7 @@ export interface ManagedRecipeAlchemyOutput<Output = unknown> {
   readonly health: RecipeHealth
   readonly output: Output
   readonly diagnostics: readonly RecipeDiagnostic[]
+  readonly repairs: readonly RecipeRepair[]
   readonly bindings?: readonly ManagedRecipeAlchemyResourceBinding[]
 }
 
@@ -131,13 +134,19 @@ export const defineManagedExecutableRecipe = <Input, Output>(
   recipe: ManagedExecutableRecipeDefinition<Input, Output>,
 ): ManagedExecutableRecipeDefinition<Input, Output> => recipe
 
-export const makeRecipePlanner = (): RecipePlannerApi => {
-  const plan = <Input, Output>(
+export const makeRecipePlanner = (
+  store?: RecipeReceiptStoreApi,
+): RecipePlannerApi => {
+  const basePlan = <Input, Output>(
     recipe: RecipeDefinition<Input, Output>,
-  ): Effect.Effect<RecipePlan, never> => {
-    const repairs = recipe.allowedFiles === undefined ? [] : [plannedRepair(recipe)]
+    extraRepairs: readonly RecipeRepair[] = [],
+  ): RecipePlan => {
+    const repairs = [
+      ...(recipe.allowedFiles === undefined ? [] : [plannedRepair(recipe)]),
+      ...extraRepairs,
+    ]
 
-    return Effect.succeed({
+    return {
       recipeId: recipe.id,
       nxTarget: NxTarget.fromRecipe(recipe),
       dependencies: [...(recipe.dependencies ?? [])],
@@ -145,25 +154,23 @@ export const makeRecipePlanner = (): RecipePlannerApi => {
       expectedOutputs: [recipeIo(recipe.id, "output", "output")],
       repairs,
       health: HealthView.fromRecipe(recipe, { repairs }),
-    })
+    }
   }
 
   return {
-    plan,
+    plan: (recipe) => persistPlan(store, recipe, basePlan(recipe)),
     planManaged: <Input, Output>(recipe: ManagedRecipeDefinition<Input, Output>) =>
-      plan(recipe).pipe(
-        Effect.map((basePlan) => ({
-          ...basePlan,
-          repairs: [
-            ...basePlan.repairs,
-            ...(recipe.driftRepair === undefined ? [] : [recipe.driftRepair]),
-          ],
-        })),
+      persistPlan(
+        store,
+        recipe,
+        basePlan(recipe, recipe.driftRepair === undefined ? [] : [recipe.driftRepair]),
       ),
   }
 }
 
-export const makeRecipeRunner = (): RecipeRunnerApi => {
+export const makeRecipeRunner = (
+  store?: RecipeReceiptStoreApi,
+): RecipeRunnerApi => {
   const run = <Input, Output>(
     recipe: ExecutableRecipeDefinition<Input, Output>,
     input: Input,
@@ -186,6 +193,7 @@ export const makeRecipeRunner = (): RecipeRunnerApi => {
         onFailure: (error) => failedRecipeResult(recipe, runId, startedAt, error, action),
         onSuccess: (output) => passedRecipeResult(recipe, runId, startedAt, output, action),
       }),
+      Effect.flatMap((result) => persistRunResult(store, recipe, result)),
     )
   }
 
@@ -205,21 +213,23 @@ export const managedRecipeAlchemyOutput = <Input, Output>(
   descriptor: AlchemyResourceDescriptor.fromManagedRecipe(recipe),
   run: result.run,
   receipt: result.receipt,
-  health: result.health,
-  output: result.output,
-  diagnostics: result.diagnostics,
-  bindings,
+    health: result.health,
+    output: result.output,
+    diagnostics: result.diagnostics,
+    repairs: result.repairs,
+    bindings,
 })
 
 export const managedRecipeAlchemyBindings = <Input, Output>(
   recipe: ManagedRecipeDefinition<Input, Output>,
-  result: Pick<RecipeRunResult<Output>, "receipt" | "health" | "diagnostics">,
+  result: Pick<RecipeRunResult<Output>, "receipt" | "health" | "diagnostics" | "repairs">,
 ): readonly ManagedRecipeAlchemyResourceBinding[] => [
   binding("recipe", recipe.id, recipe.id),
   ...recipe.lifecycle.map((action) => binding("lifecycle", recipe.id, action)),
   binding("receipt", recipe.id, result.receipt.receiptId),
   binding("health", recipe.id, result.health.status),
   ...result.diagnostics.map((diagnostic) => binding("diagnostic", recipe.id, diagnostic.diagnosticId)),
+  ...result.repairs.map((repair) => binding("repair", recipe.id, repair.repairId)),
   ...(recipe.driftRepair === undefined ? [] : [binding("repair", recipe.id, recipe.driftRepair.repairId)]),
   ...(recipe.humanReviewRequired === true ? [binding("human-review", recipe.id, "required")] : []),
 ]
@@ -313,6 +323,7 @@ const passedRecipeResult = <Input, Output>(
     receipt,
     output,
     diagnostics: [],
+    repairs: [],
     health: HealthView.fromRecipe(recipe, { receipts: [receipt], checkedAt: completedAt }),
   }
 }
@@ -361,6 +372,7 @@ const failedRecipeResult = <Input, Output>(
     receipt,
     output: undefined as Output,
     diagnostics: [diagnostic],
+    repairs,
     health: HealthView.fromRecipe(recipe, {
       receipts: [receipt],
       diagnostics: [diagnostic],
@@ -403,4 +415,33 @@ const mergeAlchemyBindings = (
   const bySid = new Map<string, ManagedRecipeAlchemyResourceBinding>()
   for (const item of [...left, ...right]) bySid.set(item.sid, item)
   return [...bySid.values()].sort((a, b) => a.sid.localeCompare(b.sid))
+}
+
+const persistPlan = <Input, Output>(
+  store: RecipeReceiptStoreApi | undefined,
+  recipe: RecipeDefinition<Input, Output>,
+  plan: RecipePlan,
+): Effect.Effect<RecipePlan, never> => {
+  if (store === undefined) return Effect.succeed(plan)
+
+  return store.registerRecipe(recipe).pipe(
+    Effect.flatMap(() => store.healthForRecipe(recipe.id)),
+    Effect.flatMap((storedHealth) => {
+      const projectedPlan = storedHealth === undefined ? plan : { ...plan, health: storedHealth }
+      return store.recordPlan(projectedPlan).pipe(Effect.as(projectedPlan))
+    }),
+  )
+}
+
+const persistRunResult = <Input, Output>(
+  store: RecipeReceiptStoreApi | undefined,
+  recipe: RecipeDefinition<Input, Output>,
+  result: RecipeRunResult<Output>,
+): Effect.Effect<RecipeRunResult<Output>, never> => {
+  if (store === undefined) return Effect.succeed(result)
+
+  return store.registerRecipe(recipe).pipe(
+    Effect.flatMap(() => store.recordRunResult(result)),
+    Effect.as(result),
+  )
 }

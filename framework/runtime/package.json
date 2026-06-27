@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./alchemy": {
+      "types": "./src/alchemy.ts",
+      "import": "./src/alchemy.ts"
+    },
     "./package.json": "./package.json"
   },
   "dependencies": {

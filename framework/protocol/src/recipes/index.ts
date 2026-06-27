@@ -36,6 +36,9 @@ export const ManagedRecipeLifecycleActionSchema = Schema.Literals([
 ] as const)
 export type ManagedRecipeLifecycleAction = typeof ManagedRecipeLifecycleActionSchema.Type
 
+export const RecipeKindSchema = Schema.Literals(["recipe", "managed-recipe"] as const)
+export type RecipeKind = typeof RecipeKindSchema.Type
+
 export const RecipeDependencySchema = Schema.Struct({
   recipeId: Schema.String,
   reason: Schema.optional(Schema.String),
@@ -134,6 +137,37 @@ export const RecipePlanSchema = Schema.Struct({
   health: RecipeHealthSchema,
 })
 export type RecipePlan = typeof RecipePlanSchema.Type
+
+export const RecipeRecordSchema = Schema.Struct({
+  recipeId: Schema.String,
+  kind: RecipeKindSchema,
+  projectId: Schema.optional(Schema.String),
+  title: Schema.optional(Schema.String),
+  nxTarget: Schema.optional(Schema.String),
+  sourcePath: Schema.optional(Schema.String),
+  resourceKind: Schema.optional(Schema.String),
+  humanReviewRequired: Schema.Boolean,
+})
+export type RecipeRecord = typeof RecipeRecordSchema.Type
+
+export const RecipeEdgeRecordSchema = Schema.Struct({
+  recipeId: Schema.String,
+  dependsOnRecipeId: Schema.String,
+  reason: Schema.optional(Schema.String),
+})
+export type RecipeEdgeRecord = typeof RecipeEdgeRecordSchema.Type
+
+export const RecipeReceiptStoreSnapshotSchema = Schema.Struct({
+  recipes: Schema.Array(RecipeRecordSchema),
+  edges: Schema.Array(RecipeEdgeRecordSchema),
+  io: Schema.Array(RecipeIoSchema),
+  runs: Schema.Array(RecipeRunSchema),
+  receipts: Schema.Array(RecipeReceiptSchema),
+  diagnostics: Schema.Array(RecipeDiagnosticSchema),
+  repairs: Schema.Array(RecipeRepairSchema),
+  health: Schema.Array(RecipeHealthSchema),
+})
+export type RecipeReceiptStoreSnapshot = typeof RecipeReceiptStoreSnapshotSchema.Type
 
 export interface RecipeDefinition<Input = unknown, Output = unknown> {
   readonly id: string
@@ -240,6 +274,32 @@ export const AlchemyResourceDescriptor = {
   }),
 }
 
+export const RecipeRecordView = {
+  fromRecipe: <Input, Output>(recipe: RecipeDefinition<Input, Output>): RecipeRecord => ({
+    recipeId: recipe.id,
+    kind: isManagedRecipeDefinition(recipe) ? "managed-recipe" : "recipe",
+    ...(recipe.projectId === undefined ? {} : { projectId: recipe.projectId }),
+    ...(recipe.title === undefined ? {} : { title: recipe.title }),
+    ...(recipe.nxTarget === undefined ? {} : { nxTarget: recipe.nxTarget }),
+    ...(recipe.sourcePath === undefined ? {} : { sourcePath: recipe.sourcePath }),
+    ...(isManagedRecipeDefinition(recipe) ? { resourceKind: recipe.resourceKind } : {}),
+    humanReviewRequired: isManagedRecipeDefinition(recipe)
+      ? recipe.humanReviewRequired ?? false
+      : false,
+  }),
+}
+
+export const RecipeEdgeRecordView = {
+  fromRecipe: <Input, Output>(
+    recipe: RecipeDefinition<Input, Output>,
+  ): readonly RecipeEdgeRecord[] =>
+    [...(recipe.dependencies ?? [])].map((dependency) => ({
+      recipeId: recipe.id,
+      dependsOnRecipeId: dependency.recipeId,
+      ...(dependency.reason === undefined ? {} : { reason: dependency.reason }),
+    })),
+}
+
 export const recipeIo = (
   recipeId: string,
   role: RecipeIoRole,
@@ -250,6 +310,11 @@ export const recipeIo = (
   role,
   name,
 })
+
+const isManagedRecipeDefinition = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+): recipe is ManagedRecipeDefinition<Input, Output> =>
+  "resourceKind" in recipe
 
 const healthStatusFrom = (
   latestReceipt: RecipeReceipt | undefined,
