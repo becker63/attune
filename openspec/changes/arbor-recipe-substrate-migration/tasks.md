@@ -116,7 +116,7 @@
 
 - Status: completed
 - Linear: ATT-35, ATT-38; projected through Linear project `Arbor - Recipe Substrate Migration` and document `ARS Task Projection Map`.
-- Source changes migrated: `bootstrap-home-compute-cluster`, `bootstrap-thinkcentre-network`, `effect-alchemy-platform-lifecycle`, `harden-day0-provider-idempotence`, `document-local-compute-control-plane`.
+- Source changes migrated: `bootstrap-home-compute-cluster`, `bootstrap-home-compute-cluster/attune-cp-gated-bare-metal-provisioning`, `bootstrap-thinkcentre-network`, `effect-alchemy-platform-lifecycle`, `harden-day0-provider-idempotence`, `document-local-compute-control-plane`.
 - Allowed files: final OpenSpec artifacts, Canopy/platform planning docs, future provider specs under explicit implementation tasks.
 - Forbidden files: live Kubernetes resources, NixOS deployment changes, secret material, provider implementation during bootstrap.
 - Goal: model Canopy/home compute/platform lifecycle as ManagedRecipe desired-state, render, policy, deploy plan, observed state, drift diagnostic, and repair plan.

@@ -269,6 +269,10 @@ desired state
 
 Effect Alchemy is the lifecycle substrate for ManagedRecipe. Kubernetes object sets, home compute resources, ThinkCentre networking, provider idempotence, manual gates, and typed platform deployment are all modeled as ManagedRecipe plans and receipts before implementation touches infrastructure.
 
+The `attune-cp-1`, `attune-cp-2`, and `attune-cp-3` bare-metal control-plane bootstrap remains part of this Canopy lane. Inventory, disk identity, installer readiness, destructive wipe/install approval, host activation, and token/auth readiness are native Effect Alchemy gate resources projected through ManagedRecipe receipts. Unknown host facts stay unknown, evidence-required, or blocked until local probe evidence exists. DryRun and Test modes may plan or simulate; Live mode must validate typed gate proof immediately before any irreversible host, disk, identity, Tailscale, K3s, Kubernetes, or local secret-state mutation.
+
+`packages/home-deployment` owns the future inventory, lifecycle resources, provider gates, CLI next-step output, local non-secret state schema, and safety tests. `nix/hosts` owns the `attune-cp-*` NixOS host flake and shared whole-disk UEFI GPT Disko module. Docs and gitignore rules must keep operator flow, local evidence, Alchemy state, host keys, SSH private keys, kubeconfigs, and host-local secret material separated from committed source truth.
+
 ## Joern, Fuzzer, And Proof
 
 Joern/fuzzer/proof work becomes recipe evidence production:
@@ -321,6 +325,7 @@ The active changes discovered for this consolidation map as follows:
 | `add-joern-proof-router-dsl` | ARS-090 |
 | `add-semantic-ts-morph-fuzzer` | ARS-090 |
 | `bootstrap-home-compute-cluster` | ARS-080 |
+| `bootstrap-home-compute-cluster/attune-cp-gated-bare-metal-provisioning` | ARS-080 |
 | `bootstrap-thinkcentre-network` | ARS-080 |
 | `compress-attune-package-surface` | ARS-010, ARS-030, ARS-050 |
 | `consolidate-attune-program-index-megaspec` | ARS-010, ARS-020, ARS-110, ARS-120 |

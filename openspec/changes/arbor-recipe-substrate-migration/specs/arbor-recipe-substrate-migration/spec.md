@@ -130,6 +130,41 @@ Canopy and platform lifecycle work SHALL use ManagedRecipe for stateful infrastr
 - **WHEN** Rego, Nix, Kubernetes, scheduler/admission, worker safety, budget/lease, or app-server exposure work is planned
 - **THEN** the ManagedRecipe includes a human review gate unless explicitly downgraded.
 
+### Requirement: Attune control-plane bare-metal provisioning is gated ManagedRecipe lifecycle
+
+Attune SHALL model bare-metal NixOS provisioning for the existing `attune-cp-1`, `attune-cp-2`, and `attune-cp-3` hosts as gated ManagedRecipe lifecycle work.
+
+#### Scenario: Control-plane inventory is rendered
+- **WHEN** the home provisioning inventory is rendered
+- **THEN** it enumerates exactly `attune-cp-1`, `attune-cp-2`, and `attune-cp-3`
+- **AND** it records host, hardware, network, disk, SSH, Tailscale, K3s, token, and host-key facts as unknown, evidence-required, or blocked until local evidence exists
+- **AND** it does not add hosts, infer hosts, fabricate facts, or commit secret material.
+
+#### Scenario: Disk identity gate is evaluated
+- **WHEN** a wipe, Disko partition, NixOS-anywhere install, or activation action is planned
+- **THEN** the ManagedRecipe depends on operator-approved local disk probe evidence for the exact host and disk identity
+- **AND** placeholder targets such as `hardware-placeholder.nix` or `/dev/disk/by-id/REPLACE_ME_*` keep the action blocked
+- **AND** stale, changed, or wrong-host disk evidence emits a deterministic blocker and no destructive command is approved.
+
+#### Scenario: Native Alchemy gate proof is required
+- **WHEN** inventory confirmation, installer readiness, disk identity approval, destructive wipe/install approval, identity-affecting changes, or non-secret token/auth readiness is required
+- **THEN** the Effect Alchemy lifecycle graph exposes a typed native gate resource with machine-readable requirements
+- **AND** Live providers refuse external or irreversible mutation without typed gate proof even when a destructive CLI flag is present
+- **AND** legacy confirmation state is only a wrapper or projection of native gate proof.
+
+#### Scenario: Provider mode is selected
+- **WHEN** DryRun, Test, or Live mode evaluates provisioning
+- **THEN** DryRun emits safe probes, blockers, and planned commands only
+- **AND** Test simulates evidence, blockers, proof checks, and successful gated planning in memory
+- **AND** Live validates native typed approval proof immediately before mutation and normalizes command identity, output, exit code, and evidence references into typed lifecycle output.
+
+#### Scenario: Provisioning source surfaces are aligned
+- **WHEN** control-plane provisioning implementation proceeds
+- **THEN** `packages/home-deployment` owns inventory, lifecycle resources, provider gates, next-step output, local non-secret state schema, and tests
+- **AND** `nix/hosts` owns the `attune-cp-*` NixOS host flake and shared whole-disk UEFI GPT Disko module
+- **AND** docs describe the operator flow without asserting uncollected facts
+- **AND** git ignore rules protect local deployment state, evidence artifacts, Alchemy state, host keys, SSH private keys, kubeconfigs, and host-local secret material.
+
 ### Requirement: Joern, fuzzer, and proof work produce recipe evidence
 
 Joern proof routing, corpus fuzzing, semantic mutation, and query reuse SHALL be bounded recipe evidence pipelines.
