@@ -78,6 +78,7 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "stale-generated-file"
   | "manual-derived-truth"
   | "old-ontology-runtime-object"
+  | "compatibility-metadata"
   | "old-ontology-diagnostic-copy"
   | "old-ontology-active-doc"
   | "old-authored-project-api"
@@ -128,6 +129,8 @@ const migrationOnlyAliasPattern =
   /\b(?:migrationOnlyAlias|migrationAlias|compatibilityExport|diagnosticsOnlyException|reportOnlyException)\s*:\s*true\b/u
 const staleGeneratedMarkerPattern =
   /\b(?:attune-stale-generated|staleGenerated|generatedArtifactStale|needs-regeneration)\b/u
+const compatibilityMetadataPattern =
+  /\b(?:compatibilitySource|compatibilitySources|compatibility-input|package-contract-compat|artifact-ownership-compat|type-guidance-compat|generated-companion-compat|compat-symbol:|compat:)\b/u
 const manualDerivedTruthMarkerPattern =
   /\b(?:attune-manual-derived-truth|manualProtocolTruth|manualDerivedTruth|derivedTruth\s*:\s*["']manual["'])\b/u
 const oldOntologyRuntimeObjectPattern =
@@ -444,6 +447,7 @@ const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode
   "stale-generated-file",
   "manual-derived-truth",
   "old-ontology-runtime-object",
+  "compatibility-metadata",
   "old-ontology-diagnostic-copy",
   "old-ontology-active-doc",
   "old-authored-project-api",
@@ -516,7 +520,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-package-view-graph",
           contractPath,
-          "Legacy project facts must declare PackageViews and register them through views: PackageViews while it remains compatibility input.",
+          "Project facts must declare PackageViews and register them through views: PackageViews until the recipe projection replaces this source shape.",
         ))
       }
 
@@ -527,7 +531,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-property-evidence-harness",
           contractPath,
-          "Legacy project facts must expose generated property/evidence harness metadata or an explicit local waiver while it remains compatibility input.",
+          "Project facts must expose generated property/evidence harness metadata or an explicit local waiver until the recipe projection replaces this source shape.",
         ))
       }
 
@@ -538,7 +542,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-coverage-conformance",
           contractPath,
-          "Legacy project facts must expose PackageTypeGuidance, coverageSearch, or coverage expectations while it remains compatibility input.",
+          "Project facts must expose PackageTypeGuidance, coverageSearch, or coverage expectations until the recipe projection replaces this source shape.",
         ))
       }
 
@@ -739,7 +743,7 @@ function checkPackageLocalAttuneCompanionImports(
       "package-local-attune-companion-import",
       file.path,
       [
-        `Package source ${file.path} imports project-local generated compatibility artifact ${companionPath}.`,
+        `Package source ${file.path} imports project-local generated artifact ${companionPath}.`,
         "Migrated package source must depend on authored source and framework-owned generated/projection paths, not project-local generated companions.",
         replacementText,
         `Run nx run ${projectName}:attune-repair or workspace:attune-repair when the repair target supports this root.`,
@@ -1534,7 +1538,7 @@ function checkPolicyArchitectureGuidance(file: WorkspaceFile): readonly Framewor
 }
 
 function isInternalPolicyArchitectureGuidance(line: string): boolean {
-  return /\b(internal|compatibility|do not promote|must not promote|stale|historical|MUST NOT|SHALL NOT)\b/u.test(line)
+  return /\b(internal|do not promote|must not promote|stale|historical|MUST NOT|SHALL NOT)\b/u.test(line)
 }
 
 function checkWorkerTargetMetadata(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
@@ -1571,7 +1575,7 @@ function checkFinalCleanupFile(file: WorkspaceFile): readonly FrameworkFinalRatc
     diagnostics.push(finalRatchetDiagnostic(
       "stale-generated-file",
       file.path,
-      "Generated source or generated compatibility views must be refreshed before the final ratchet; stale generated markers are not allowed as checked-in truth.",
+      "Generated source or generated views must be refreshed before the final ratchet; stale generated markers are not allowed as checked-in truth.",
     ))
   }
 
@@ -1623,6 +1627,14 @@ function checkMechanicalProgramOntologyFile(file: WorkspaceFile): readonly Frame
         diagnosticCopyMatch.groups?.term ?? "old ontology noun",
       ))
     }
+
+    if (compatibilityMetadataPattern.test(line)) {
+      diagnostics.push(finalRatchetDiagnostic(
+        "compatibility-metadata",
+        file.path,
+        `Line ${lineIndex + 1} keeps compatibility metadata in a primary program-index path; recipe projection must not maintain compatibility rows or labels.`,
+      ))
+    }
   }
 
   return diagnostics
@@ -1647,7 +1659,7 @@ function oldOntologyRuntimeObjectDiagnostic(
     [
       `Line ${line} adds ${name} as a program-index runtime object.`,
       "Use mechanical facts instead: project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, or invalidation.",
-      "Old ontology terms may appear only as compatibility source metadata, legacy-adapter labels, historical context, or future-delete plans.",
+      "Old ontology terms may appear only as historical context or deletion/quarantine plans.",
     ].join(" "),
   )
 }
@@ -1663,7 +1675,7 @@ function oldOntologyDiagnosticCopyDiagnostic(
     [
       `Line ${line} uses ${term} in primary program-index diagnostic copy.`,
       "Diagnostics must name the mechanical fact first: project, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, or invalidation.",
-      "Old labels are allowed only when the same diagnostic frames them as legacy compatibility, historical context, or deletion/quarantine work.",
+      "Old labels are allowed only when the same diagnostic frames them as historical context or deletion/quarantine work.",
     ].join(" "),
   )
 }
@@ -1710,7 +1722,7 @@ function isOldOntologyActiveDocContextAllowed(
   fenceIntroLine: string,
 ): boolean {
   const context = `${line} ${previousNonEmptyLine} ${fenceIntroLine}`.toLowerCase()
-  return /\b(?:compatibility|legacy|migration|migrat(?:e|ion)|temporary|transitional|scaffolding|archive|historical|delete|deletion|quarantine|do not|must not|not source truth|not final|negative list)\b/u.test(context)
+  return /\b(?:migration|migrat(?:e|ion)|temporary|transitional|scaffolding|archive|historical|delete|deletion|quarantine|do not|must not|not source truth|not final|negative list)\b/u.test(context)
 }
 
 function oldOntologyActiveDocDiagnostic(
@@ -1724,7 +1736,7 @@ function oldOntologyActiveDocDiagnostic(
     [
       `Line ${line} teaches ${term} in an active operating doc.`,
       "Use mechanical program facts as the primary vocabulary: project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, and invalidation.",
-      "Old ontology nouns in active docs must be explicitly framed as legacy compatibility, historical/archive context, or deletion/quarantine work.",
+      "Old ontology nouns in active docs must be explicitly framed as historical/archive context or deletion/quarantine work.",
     ].join(" "),
   )
 }

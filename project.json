@@ -80,7 +80,7 @@
         }
       ],
       "metadata": {
-        "description": "Materialize mechanical project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, and repair facts into the SQLite program index before compatibility checks report diagnostics."
+        "description": "Materialize mechanical project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, and repair facts into the SQLite program index before recipe/program-index diagnostics run."
       },
       "options": {
         "tool": "architecture",

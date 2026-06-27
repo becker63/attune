@@ -1,17 +1,18 @@
 # Codex Migration Goal
 
-Complete `promote-program-index-runtime-substrate` with **TimescaleDB-backed** program-index and Tend control substrate as the active runtime direction.
+Complete `arbor-recipe-substrate-migration` with **Recipe/ManagedRecipe** as the active framework substrate and TimescaleDB/Postgres receipts as the durable direction.
 
 ## Current Goal
 
-- Finish the remaining Phase 7 demotion tasks.
-- Run the Phase 8 validation sweep.
+- Finish the ARS no-compat implementation and validation sweep.
 - Keep each slice targeted, validated, committed, and pushed.
 - Do not mark an OpenSpec task complete until implementation and validation prove it.
 
 ## Primary Model
 
-Attune now teaches plain mechanical facts as the normal runtime language:
+Attune now teaches Recipe/ManagedRecipe as the top-level framework language.
+Mechanical program facts remain source-facing recipe inputs, outputs,
+observations, diagnostics, repairs, health views, and projections:
 
 - `project`
 - `target`
@@ -25,26 +26,25 @@ Attune now teaches plain mechanical facts as the normal runtime language:
 - `repair`
 - `invalidation`
 
-Checks, repairs, language-service hints, Reactivity, atoms, generated artifact freshness, and workspace health derive from those facts.
+Checks, repairs, language-service hints, Reactivity, atoms, generated artifact freshness, and workspace health derive from recipe-backed facts and receipts.
 
 ## Historical Context
 
 - SQLite and sqlite-like migration notes in this document are historical only.
-- `timescaledb.md` is the active DB-substrate authority and `mega.md` remains top-level routing authority.
+- `openspec/changes/arbor-recipe-substrate-migration/` is the active planning authority.
 - Neon durability work remains in other domain lanes where explicitly scoped.
 
-## Remaining Phase 7 Work
+## Remaining ARS Work
 
-- Delete, rename, quarantine, or archive every parity-proven legacy compatibility surface.
+- Delete, rename, quarantine, archive, or replace every superseded generated-companion, artifact-ownership, old program-index, and SQLite/Drizzle/PgTyped surface.
 - Record high-risk removals as future OpenSpec work with owner, blocker, replacement path, and validation gate.
 - Rewrite active docs so the normal mental model is mechanical program facts, SQL projections, Reactivity/atoms, diagnostics, and repairs.
-- Ratchet migrated rings so legacy package-local generated Attune companion files cannot return once replacement paths exist.
+- Ratchet migrated rings so package-local generated Attune companion files cannot return once replacement paths exist.
 - Add final drift checks that reject old ontology terms in active public docs, primary runtime paths, and normal diagnostics.
 
-## Compatibility Rule
+## No Compatibility Lane
 
-Legacy compatibility inputs may remain only while they are needed for parity or rollback. They must ingest as mechanical rows with compatibility metadata.
-After replacement paths and validations exist, remove or quarantine those inputs rather than preserving them as permanent APIs or helpers.
+Do not maintain compatibility inputs, compatibility metadata, compatibility rows, or compatibility adapters for superseded surfaces. Old surfaces may be deleted, quarantined, archived, or replaced by framework-owned recipe/program-index projections.
 
 ## Public Workflow
 
@@ -66,7 +66,7 @@ Use Nix only as the reproducible substrate behind those targets.
 - Do not hand-edit raw database cache state.
 - Do not add checked-in report-ledger workflow truth.
 - Do not add package-private scripts.
-- Do not preserve legacy compatibility APIs as permanent public workflow.
+- Do not add or keep old-surface APIs, adapters, metadata, or rows as public or private workflow.
 - Do not run live provider, Kubernetes, destructive, container, or heavy proof-pressure actions unless explicitly authorized.
 
 ## Validation
@@ -74,7 +74,7 @@ Use Nix only as the reproducible substrate behind those targets.
 Always run:
 
 ```bash
-openspec validate promote-program-index-runtime-substrate --type change
+openspec validate --changes --strict
 git diff --check
 ```
 

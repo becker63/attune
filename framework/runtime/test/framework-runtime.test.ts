@@ -1,8 +1,7 @@
 import { Effect } from "effect"
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
-import { dirname, join, resolve } from "node:path"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 import {
   hashProgramValue,
@@ -13,7 +12,6 @@ import {
 } from "@attune/framework-protocol"
 import {
   InMemoryProgramFactStoreLive,
-  compatibilityRowsFromCurrentPackageContracts,
   consumeProgramIndexInvalidations,
   ProgramDiagnostics,
   ProgramDiagnosticsLive,
@@ -25,7 +23,6 @@ import {
   ProgramFactRuntimeLive,
   ProgramFactStore,
   diagnosticsForFileAtom,
-  materializeCompatibilityRows,
   materializeProgramSourceIndex,
   programIndexDiagnosticsForFile,
   programSourceIndexRows,
@@ -47,8 +44,6 @@ import {
   type DiagnosticWaiverState,
 } from "../src/index.js"
 import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
-
-const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..")
 
 const demoDescriptor = {
   schemaDescriptorId: "attune/project/demo",
@@ -363,21 +358,6 @@ describe("@attune/framework-runtime", () => {
         sourceFiles: [fixturePath],
         now: "2026-06-23T00:00:00.000Z",
       }))
-      Effect.runSync(materializeCompatibilityRows(index, {
-        projectId: "demo",
-        root: "packages/demo",
-        now: "2026-06-23T00:00:00.000Z",
-        paths: [
-          "packages/demo/src/attune.package.ts",
-          "packages/demo/src/attune.generated.ts",
-          "packages/demo/attune.artifact-ownership.json",
-        ],
-        contentByPath: {
-          "packages/demo/src/attune.package.ts": "source",
-          "packages/demo/src/attune.generated.ts": "generated",
-          "packages/demo/attune.artifact-ownership.json": "{}",
-        },
-      }))
 
       const symbols = Effect.runSync(sourceFileSymbolsAtom(fixturePath).read(index))
       expect(symbols[0]).toMatchObject({ symbol_id: "demo:Snapshot", kind: "schema" })
@@ -394,7 +374,7 @@ describe("@attune/framework-runtime", () => {
       expect(Effect.runSync(workspaceHealthAtom().read(index))[0]).toMatchObject({
         projectId: "demo",
         symbolCount: 1,
-        diagnosticCount: 4,
+        diagnosticCount: 1,
         safeRepairCount: 1,
       })
       expect(Effect.runSync(programIndexDiagnosticsForFile(index, fixturePath))[0]).toMatchObject({
@@ -512,7 +492,7 @@ describe("@attune/framework-runtime", () => {
     })
   })
 
-  it("falls back to compatibility diagnostics when the program index has no file rows", async () => {
+  it("falls back to query diagnostics when the program index has no file rows", async () => {
     const projected = await Effect.runPromise(
       provideProgramIndexDiagnosticsRuntime(
         Effect.gen(function* indexedDiagnosticsFallback() {
@@ -531,230 +511,6 @@ describe("@attune/framework-runtime", () => {
     expect(projected.map((diagnostic) => diagnostic.code)).toContain(
       "attune/program-facts/missing-observation",
     )
-  })
-
-  it("adapts generated companions and artifact ownership files as compatibility input rows", () => {
-    const rows = compatibilityRowsFromCurrentPackageContracts({
-      projectId: "demo",
-      root: "packages/demo",
-      now: "2026-06-23T00:00:00.000Z",
-      paths: [
-        "packages/demo/src/attune.package.ts",
-        "packages/demo/src/attune.contract.generated.ts",
-        "packages/demo/src/attune.generated.ts",
-        "packages/demo/attune.artifact-ownership.json",
-      ],
-      contentByPath: {
-        "packages/demo/src/attune.package.ts": "source",
-        "packages/demo/src/attune.contract.generated.ts": "contract",
-        "packages/demo/src/attune.generated.ts": "generated",
-        "packages/demo/attune.artifact-ownership.json": "{}",
-      },
-    })
-
-    expect(rows.artifacts.map((artifact) => artifact.kind)).toEqual([
-      "attune-package-source",
-      "generated-contract-companion",
-      "generated-program-companion",
-      "artifact-ownership-compatibility",
-    ])
-    expect(rows.sourceFiles.map((sourceFile) => sourceFile.path)).toEqual([
-      "packages/demo/src/attune.package.ts",
-      "packages/demo/src/attune.contract.generated.ts",
-      "packages/demo/src/attune.generated.ts",
-      "packages/demo/attune.artifact-ownership.json",
-    ])
-    expect(rows.observations).toHaveLength(4)
-    expect(rows.observations.map((observation) =>
-      JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
-    )).toEqual([
-      "generated-companion-compat",
-      "generated-companion-compat",
-      "artifact-ownership-compat",
-      "artifact-ownership-compat",
-    ])
-    expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
-      "attune/program-index/package-local-companion",
-      "attune/program-index/package-local-companion",
-      "attune/program-index/package-local-companion",
-      "attune/program-index/artifact-ownership-compatibility",
-    ])
-    expect(rows.repairs.map((repair) => [
-      repair.safety,
-      repair.repairKind,
-      repair.route,
-      repair.validationAfterTargetsJson,
-    ])).toEqual([
-      ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
-      ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
-      ["needs-review", "artifact-relocation", "attune-repair-cli:artifact-freshness", "[\"demo:attune-check\",\"demo:typecheck\"]"],
-      ["needs-review", "artifact-ownership-projection", "attune-repair-cli:artifact-freshness", "[\"workspace:attune-check\"]"],
-    ])
-  })
-
-  it("materializes missing and checked-in report artifacts as mechanical diagnostics", () => {
-    const rows = compatibilityRowsFromCurrentPackageContracts({
-      projectId: "demo",
-      root: "packages/demo",
-      now: "2026-06-23T00:00:00.000Z",
-      paths: [
-        "packages/demo/src/attune.package.ts",
-        "packages/demo/src/attune.generated.ts",
-        "packages/demo/src/artifacts/observations-matrix.ts",
-        "reports/protocol-finding-report.json",
-      ],
-      contentByPath: {
-        "packages/demo/src/attune.package.ts": "source",
-        "packages/demo/src/artifacts/observations-matrix.ts": "export const sourceArtifactHelper = true\n",
-        "reports/protocol-finding-report.json": "{}",
-      },
-    })
-
-    expect(rows.artifacts.map((artifact) => [artifact.path, artifact.status])).toEqual([
-      ["packages/demo/src/attune.package.ts", "current"],
-      ["packages/demo/src/attune.generated.ts", "missing"],
-      ["packages/demo/src/artifacts/observations-matrix.ts", "current"],
-      ["reports/protocol-finding-report.json", "current"],
-    ])
-    expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
-      "attune/program-index/artifact-missing",
-      "attune/program-index/package-local-companion",
-      "attune/program-index/checked-in-report-artifact",
-    ])
-    expect(rows.repairs.map((repair) => [
-      repair.safety,
-      repair.repairKind,
-      repair.nxTarget,
-      repair.route,
-    ])).toEqual([
-      ["safe", "artifact-freshness", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
-      ["needs-review", "artifact-relocation", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
-      ["manual-only", "checked-in-report-removal", "workspace:attune-repair", "manual:remove-checked-in-report"],
-    ])
-  })
-
-  it("classifies missing artifact ownership compatibility as review-gated artifact ownership repair", () => {
-    const rows = compatibilityRowsFromCurrentPackageContracts({
-      projectId: "demo",
-      root: "packages/demo",
-      now: "2026-06-23T00:00:00.000Z",
-      paths: [
-        "packages/demo/attune.artifact-ownership.json",
-      ],
-      contentByPath: {},
-    })
-
-    expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
-      "attune/program-index/artifact-missing",
-      "attune/program-index/package-local-companion",
-      "attune/program-index/artifact-ownership-compatibility-missing",
-      "attune/program-index/artifact-ownership-compatibility",
-    ])
-    expect(rows.repairs.map((repair) => [
-      repair.safety,
-      repair.repairKind,
-      repair.nxTarget,
-      repair.route,
-    ])).toEqual([
-      ["safe", "artifact-freshness", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
-      ["needs-review", "artifact-relocation", "demo:attune-repair", "attune-repair-cli:artifact-freshness"],
-      ["needs-review", "artifact-ownership-projection", "workspace:attune-repair", "attune-repair-cli:artifact-freshness"],
-      ["needs-review", "artifact-ownership-projection", "workspace:attune-repair", "attune-repair-cli:artifact-freshness"],
-    ])
-  })
-
-  it("classifies Ring A effect-oxlint-policy diagnostic parity", () => {
-    const artifactPaths = [
-      "framework/oxlint-policy/src/attune.package.ts",
-      "framework/architecture/src/generated/artifact-ownership/effect-oxlint-policy.json",
-    ] as const
-    const missingFixturePaths = artifactPaths.filter((artifactPath) =>
-      !existsSync(resolve(repositoryRoot, artifactPath))
-    )
-
-    expect(missingFixturePaths).toEqual([])
-
-    const rows = compatibilityRowsFromCurrentPackageContracts({
-      projectId: "effect-oxlint-policy",
-      root: "framework/oxlint-policy",
-      now: "2026-06-24T00:00:00.000Z",
-      paths: artifactPaths,
-      contentByPath: Object.fromEntries(
-        artifactPaths.map((artifactPath) => [
-          artifactPath,
-          readFileSync(resolve(repositoryRoot, artifactPath), "utf8"),
-        ]),
-      ),
-    })
-    const parity = classifyDiagnosticParity({
-      programIndexCodes: rows.diagnostics.map((diagnostic) => diagnostic.code),
-      compatibilityCodes: [],
-    })
-
-    expect(rows.artifacts.map((artifact) => [artifact.path, artifact.status])).toEqual(
-      expect.arrayContaining(artifactPaths.map((artifactPath) => [artifactPath, "current"])),
-    )
-    expect(rows.symbols.map((symbol) => symbol.exportName)).toEqual(expect.arrayContaining([
-      "ProjectFacts",
-      "ProjectRuntimeRoots",
-    ]))
-    expect(rows.observations.map((observation) =>
-      JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
-    )).toEqual([
-      "artifact-ownership-compat",
-      "artifact-ownership-compat",
-    ])
-    expect(rows.artifacts.some((artifact) =>
-      artifact.kind === "artifact-ownership-pattern" &&
-      artifact.path === "framework/oxlint-policy/src/**"
-    )).toBe(true)
-    expect(rows.diagnostics.map((diagnostic) => diagnostic.code)).toEqual([])
-    expect(parity).toEqual({
-      parityCodes: [],
-      programIndexOnlyCodes: [],
-      compatibilityOnlyCodes: [],
-      mismatches: [],
-    })
-  })
-
-  it("projects Ring A attuned-discovery artifact ownership without generated compatibility outputs", () => {
-    const artifactPaths = [
-      "packages/attuned-discovery/src/attune.package.ts",
-      "framework/architecture/src/generated/artifact-ownership/attuned-discovery.json",
-    ] as const
-    const missingFixturePaths = artifactPaths.filter((artifactPath) =>
-      !existsSync(resolve(repositoryRoot, artifactPath))
-    )
-
-    expect(missingFixturePaths).toEqual([])
-
-    const rows = compatibilityRowsFromCurrentPackageContracts({
-      projectId: "attuned-discovery",
-      root: "packages/attuned-discovery",
-      now: "2026-06-24T00:00:00.000Z",
-      paths: artifactPaths,
-      contentByPath: Object.fromEntries(
-        artifactPaths.map((artifactPath) => [
-          artifactPath,
-          readFileSync(resolve(repositoryRoot, artifactPath), "utf8"),
-        ]),
-      ),
-    })
-    expect(rows.symbols.map((symbol) => symbol.exportName)).toEqual(expect.arrayContaining([
-      "ProjectFacts",
-      "ProjectRuntimeRoots",
-    ]))
-    expect(rows.artifacts.some((artifact) =>
-      artifact.kind === "artifact-ownership-pattern" &&
-      artifact.path === "packages/attuned-discovery/src/**"
-    )).toBe(true)
-    expect(rows.observations.map((observation) =>
-      JSON.parse(observation.payloadJson ?? "{}").compatibilitySource
-    )).toEqual([
-      "artifact-ownership-compat",
-      "artifact-ownership-compat",
-    ])
-    expect(rows.diagnostics).toEqual([])
   })
 
   it("projects repairFindings as framework diagnostics", () => {
@@ -1190,36 +946,3 @@ const descriptorWithHash = (
   ...descriptor,
   descriptorHash: hashProgramValue(descriptor),
 })
-
-const classifyDiagnosticParity = (input: {
-  readonly programIndexCodes: readonly string[]
-  readonly compatibilityCodes: readonly string[]
-  readonly allowedProgramIndexOnlyCodes?: readonly string[]
-}): {
-  readonly parityCodes: readonly string[]
-  readonly programIndexOnlyCodes: readonly string[]
-  readonly compatibilityOnlyCodes: readonly string[]
-  readonly mismatches: readonly string[]
-} => {
-  const programIndexCodes = uniqueSorted(input.programIndexCodes)
-  const compatibilityCodes = uniqueSorted(input.compatibilityCodes)
-  const allowedProgramIndexOnlyCodes = new Set(input.allowedProgramIndexOnlyCodes ?? [])
-  const compatibilityCodeSet = new Set(compatibilityCodes)
-  const programIndexCodeSet = new Set(programIndexCodes)
-  const parityCodes = programIndexCodes.filter((code) => compatibilityCodeSet.has(code))
-  const programIndexOnlyCodes = programIndexCodes.filter((code) => !compatibilityCodeSet.has(code))
-  const compatibilityOnlyCodes = compatibilityCodes.filter((code) => !programIndexCodeSet.has(code))
-
-  return {
-    parityCodes,
-    programIndexOnlyCodes,
-    compatibilityOnlyCodes,
-    mismatches: [
-      ...programIndexOnlyCodes.filter((code) => !allowedProgramIndexOnlyCodes.has(code)),
-      ...compatibilityOnlyCodes,
-    ],
-  }
-}
-
-const uniqueSorted = (values: readonly string[]): readonly string[] =>
-  [...new Set(values)].sort()

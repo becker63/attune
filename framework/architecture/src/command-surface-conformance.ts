@@ -257,7 +257,7 @@ const isPublicSurface = (file: CommandSurfaceFile): boolean =>
 const isInternalGuidance = (file: CommandSurfaceFile, line: string): boolean =>
   file.classification === "internal" ||
   file.classification === "bootstrap" ||
-  /\b(internal|compatibility|implementation detail|inside (the )?dev shell|bootstrap|do not promote|must not promote|stale)\b/iu.test(line)
+  /\b(internal|implementation detail|inside (the )?dev shell|bootstrap|do not promote|must not promote|stale)\b/iu.test(line)
 
 const error = (
   filePath: string,

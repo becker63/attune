@@ -64,7 +64,7 @@ src/attune.package.typecheck.ts
 attune.artifact-ownership.json
 ```
 
-Existing legacy generated companions and artifact ownership shards with those
+Existing historical generated companions and artifact ownership shards with those
 names are staged migration debt. Compile-only assertions now live in the
 framework-owned aggregate. New generated material should target framework-owned
 locations such as:
@@ -99,9 +99,10 @@ Nx graph + TS symbols + Effect Schema
   -> diagnostics/repairs
 ```
 
-Current package-contract generated companion files and legacy artifact ownership
-shards are compatibility inputs to this index while the migration is active,
-not long-term package-local source truth.
+Historical generated companion files and artifact ownership shards are migration
+debt. They should be deleted, quarantined, archived, or replaced by
+framework-owned recipe/program-index projections, not adapted as a live input
+lane.
 
 ## What Nx Repairs Do
 

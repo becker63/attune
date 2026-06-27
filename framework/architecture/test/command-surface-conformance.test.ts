@@ -59,7 +59,7 @@ describe("command surface conformance", () => {
     )
   })
 
-  it("allows run-command internals only when explicitly marked internal compatibility", () => {
+  it("allows run-command internals only when explicitly marked internal", () => {
     const result = checkCommandSurfaceConformance({
       files: [{
         path: "project.json",
@@ -71,7 +71,7 @@ describe("command surface conformance", () => {
                 command: "pnpm exec nx run attune-architecture:test",
               },
               metadata: {
-                description: "Internal compatibility aggregate retained during migration.",
+                description: "Internal aggregate retained during migration.",
               },
             },
           },

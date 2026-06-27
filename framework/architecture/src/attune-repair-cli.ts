@@ -363,7 +363,7 @@ function deleteFileIfPresent(relativePath: string): readonly RepairAction[] {
   return [{
     kind: "delete",
     path: relativePath,
-    message: "removed project-local generated compatibility artifact",
+    message: "removed project-local generated artifact",
   }]
 }
 

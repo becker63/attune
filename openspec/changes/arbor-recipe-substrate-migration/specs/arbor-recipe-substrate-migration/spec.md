@@ -54,7 +54,17 @@ The first durable DB implementation SHALL start with a generic recipe receipt sp
 #### Scenario: SQL typing route is active
 - **WHEN** SQL implementation work is planned
 - **THEN** the route is SQL migrations to TimescaleDB/Postgres to Kanel schema type generation to Kysely typed query services to SafeQL raw SQL validation to Effect service exports
-- **AND** SQLite, Drizzle, and PgTyped are treated only as historical or compatibility context.
+- **AND** SQLite, Drizzle, and PgTyped are treated only as historical context
+- **AND** no compatibility adapter is maintained for those superseded substrate paths.
+
+### Requirement: Superseded surfaces have no compatibility lane
+
+The migration SHALL delete, quarantine, archive, or replace superseded surfaces instead of maintaining them as live compatibility inputs.
+
+#### Scenario: Old generated or ontology surface is encountered
+- **WHEN** package-local generated companions, artifact ownership shards, old program-index-first labels, or old source metadata labels are encountered
+- **THEN** they are handled as deletion, quarantine, archive, or framework-owned recipe/projection replacement work
+- **AND** no runtime materializer, diagnostic path, policy allowance, or test treats them as compatibility rows, compatibility metadata, or compatibility adapter inputs.
 
 ### Requirement: Nx and Nix project Recipes into executable workflows
 

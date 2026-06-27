@@ -9,10 +9,7 @@ import {
   defaultProgramIndexPath,
   type ProgramIndexApi,
 } from "@attune/framework-sqlite"
-import {
-  materializeCompatibilityRows,
-  materializeProgramSourceIndex,
-} from "@attune/framework-runtime"
+import { materializeProgramSourceIndex } from "@attune/framework-runtime"
 import { Effect } from "effect"
 
 export interface ProgramIndexMaterializeOptions {
@@ -80,29 +77,6 @@ export const materializeWorkspaceProgramIndex = async (
         )
       }
 
-      const compatibilityPaths = existingCompatibilityArtifactPaths(
-        workspaceRoot,
-        project.id,
-        project.root,
-      )
-      if (compatibilityPaths.length > 0) {
-        await materializeCompatibilityArtifacts(index, {
-          projectId: project.id,
-          root: project.root,
-          paths: compatibilityPaths,
-          now,
-        })
-      }
-    }
-
-    const reportArtifacts = checkedInReportArtifactPaths(workspaceRoot)
-    if (reportArtifacts.length > 0) {
-      await materializeCompatibilityArtifacts(index, {
-        projectId: "workspace",
-        root: ".",
-        paths: reportArtifacts,
-        now,
-      })
     }
 
     const health = await Effect.runPromise(index.health())
@@ -218,93 +192,6 @@ const collectTypeScriptSourceFiles = (
 
   visit(absoluteSourceRoot)
   return out.sort()
-}
-
-const existingCompatibilityArtifactPaths = (
-  workspaceRoot: string,
-  projectId: string,
-  projectRoot: string,
-): readonly string[] => {
-  const candidates = [
-    `${projectRoot}/src/attune.package.ts`,
-    `${projectRoot}/src/attune.contract.generated.ts`,
-    `${projectRoot}/src/attune.generated.ts`,
-    `${projectRoot}/src/attune.package.typecheck.ts`,
-    `${projectRoot}/attune.artifact-ownership.json`,
-    `.attune/cache/artifact-ownership/${projectId}.json`,
-    `framework/architecture/src/generated/artifact-ownership/${projectId}.json`,
-    `.attune/cache/generated/${projectId}/attune-symbol-registry.ts`,
-    `.attune/cache/generated/${projectId}/attune-property-observations.ts`,
-    `.attune/cache/generated/${projectId}/attune-schema-observations.ts`,
-    `.attune/cache/generated/${projectId}/attune-observation-scaffold.ts`,
-    `.attune/cache/generated/${projectId}/artifact-freshness.json`,
-  ]
-
-  return candidates
-    .filter((candidate) => fs.existsSync(path.join(workspaceRoot, candidate)))
-    .sort()
-}
-
-const checkedInReportArtifactPaths = (workspaceRoot: string): readonly string[] => {
-  const out: string[] = []
-  const visit = (directory: string): void => {
-    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-      if (ignoredReportDirectories.has(entry.name)) continue
-      const absolutePath = path.join(directory, entry.name)
-      if (entry.isDirectory()) {
-        visit(absolutePath)
-        continue
-      }
-      if (!entry.isFile()) continue
-      const relativePath = path.relative(workspaceRoot, absolutePath).replaceAll(path.sep, "/")
-      if (isCheckedInReportArtifactPath(relativePath)) out.push(relativePath)
-    }
-  }
-
-  visit(workspaceRoot)
-  return out.sort()
-}
-
-const ignoredReportDirectories = new Set([
-  ".git",
-  ".nx",
-  "coverage",
-  "dist",
-  "node_modules",
-  "tmp",
-  "temp",
-])
-
-const isCheckedInReportArtifactPath = (path: string): boolean => {
-  if (/(^|\/)src\/artifacts\/.*\.[cm]?[jt]sx?$/u.test(path)) return false
-
-  return /(^|\/)(reports?|artifacts?|agent-output|protocol-output)(\/|$)|\b(protocol[-_. ]?delta|obligation[-_. ]?(report|summary|status)|evidence[-_. ]?(summary|report|status)|architecture[-_. ]?(summary|report|status)|cloud[-_. ]?agent[-_. ]?(summary|report|status)|(fuzz|fuzzer|property|proof|run)[-_. ]?(report|summary|status)|(report|summary|status)[-_. ]?(fuzz|fuzzer|property|proof|run))\b/iu.test(path)
-}
-
-const materializeCompatibilityArtifacts = async (
-  index: ProgramIndexApi,
-  input: {
-    readonly projectId: string
-    readonly root: string
-    readonly paths: readonly string[]
-    readonly now: string
-  },
-): Promise<void> => {
-  const contentByPath = Object.fromEntries(
-    input.paths.map((artifactPath) => [
-      artifactPath,
-      fs.readFileSync(artifactPath, "utf8"),
-    ]),
-  )
-  await Effect.runPromise(
-    materializeCompatibilityRows(index, {
-      projectId: input.projectId,
-      root: input.root,
-      paths: input.paths,
-      contentByPath,
-      now: input.now,
-    }),
-  )
 }
 
 const isDirectRun = (): boolean => {

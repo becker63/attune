@@ -19,7 +19,7 @@ language-service diagnostic or Nx check output
 
 Agents should repair diagnostics and program-index facts, not raw framework
 runtime internals. Descriptor hashes, observations, repair rows, invalidation
-rows, and compatibility adapter projections are private framework
+rows, and recipe/program-index projections are private framework
 materialization. Public surfaces are TypeScript language-service diagnostics,
 quick info, code actions, code lenses, and Nx check output.
 
@@ -66,7 +66,7 @@ references explicitly.
 For package changes, prefer this repair path:
 
 1. Read language-service diagnostics or Nx diagnostic output.
-2. Open the referenced source file or generated compatibility boundary.
+2. Open the referenced source file or generated/cache boundary.
 3. Run `nx run workspace:attune-repair` or the suggested project repair target
    to refresh repeated shapes.
 4. Implement behavior inside generated `Effect.Service` classes and update
@@ -81,16 +81,17 @@ Do not edit raw descriptor JSON, SQLite rows, Drizzle tables, private store
 internals, diagnostic dumps, observation summaries, or architecture summary
 reports as the source of truth.
 
-## Compatibility Source And Generator Expectations
+## Source And Generator Expectations
 
 Before editing repeated, generated, or template-like source shapes, agents must
 run the relevant `attune-check` target and use the repair it suggests. Do not
 hand-edit repeated shapes when a repair owns the shape. If ownership is missing
 or ambiguous, document the blocker and create a follow-up rather than inventing
 ownership. Legacy source ownership and generator-shape manifests are migration
-scaffolding or temporary compatibility data; final semantic workflow surfaces
-are source declarations, generated source required by build/typecheck,
-framework runtime/cache state, language-service diagnostics, and Nx output.
+scaffolding slated for deletion or framework-owned projection; final semantic
+workflow surfaces are source declarations, generated source required by
+build/typecheck, framework runtime/cache state, language-service diagnostics,
+and Nx output.
 
 ## Ordinary validation commands
 

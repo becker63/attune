@@ -164,9 +164,9 @@ The new consolidation direction is that Attune indexes the TypeScript/Effect/Nx
 program first. Nx project graph facts, TypeScript exported symbols, Effect
 Schema descriptor rows, generated artifact freshness, observations,
 diagnostics, repairs, and invalidation events belong in the local SQLite
-program index under `.attune/cache`. Legacy project-facts/generated-companion
-compatibility inputs are transitional scaffolding, not a second public ontology
-agents should memorize.
+program index under `.attune/cache`. Historical project-facts/generated
+companions are deletion or replacement scaffolding, not compatibility inputs
+and not a second public ontology agents should memorize.
 
 Do not manually expand `attune.package.ts` with derived handler maps, property
 tables, type partitions, RPC descriptors, coverage-search plans, validation
@@ -265,8 +265,9 @@ Before editing repeated or generated shapes, run `attune-check` and use the
 repair action it suggests. Generators remain important, but they are normal
 repair implementations rather than default agent memory. If a diagnostic has no
 safe repair, report the follow-up instead of guessing. Treat legacy source
-ownership shards and generator-shape manifests as migration scaffolding or
-temporary compatibility data, not final semantic workflow surfaces.
+ownership shards and generator-shape manifests as migration scaffolding slated
+for deletion, quarantine, archive, or framework-owned projection, not final
+semantic workflow surfaces.
 
 ## Safety Rules
 

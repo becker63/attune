@@ -73,9 +73,8 @@ checked-in file.
 ## Observation
 
 An observation is something Attune measured or decoded: a test result, coverage
-fact, provider observation, Joern result, replay metadata, generated artifact
-hash, or compatibility input. Observations are facts; they are not checked-in
-report ledgers.
+fact, provider observation, Joern result, replay metadata, or generated artifact
+hash. Observations are facts; they are not checked-in report ledgers.
 
 ## Diagnostic
 
@@ -152,17 +151,14 @@ Use the cheapest boundary that can prove the fact:
 
 Do not duplicate a stronger or cheaper invariant in a weaker layer.
 
-## Legacy Compatibility Labels
+## Historical Labels
 
-Earlier migrations introduced richer named layers. Those names are legacy
-compatibility labels now. They may appear in old adapters, generated
-compatibility files, archived OpenSpec context, or deletion plans, but they
-must not be the normal mental model for new runtime code, docs, diagnostics,
-or repairs.
-
-When a legacy compatibility input remains, project it into mechanical rows,
-mark the compatibility source metadata, prove parity through Nx targets, and
-then delete, quarantine, or archive the old surface.
+Earlier migrations introduced richer named layers. Those names may appear in
+archived OpenSpec context, historical notes, or deletion plans, but they are not
+a runtime compatibility lane. Do not project old generated companions, artifact
+ownership shards, or old ontology labels into live rows as compatibility input.
+Delete, quarantine, archive, or replace the old surface with framework-owned
+recipe/program-index projections.
 
 ## Do Not
 

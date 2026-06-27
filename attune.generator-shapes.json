@@ -109,7 +109,7 @@
       "invariants": [
         "FoldKit source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Ring A program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
+      "notes": "Ring A program-index parity removed the package-local generated test; old framework-owned generated files remain only as deletion/replacement scaffolding.",
       "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-foldkit.json"
     },
     {
@@ -142,7 +142,7 @@
       "invariants": [
         "Generator tooling source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Ring B program-index parity removes package-local old-shape assertions; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
+      "notes": "Ring B program-index parity removes package-local old-shape assertions; old framework-owned generated files remain only as deletion/replacement scaffolding.",
       "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-nx.json"
     },
     {
@@ -245,7 +245,7 @@
       "invariants": [
         "Pi permission, spec interview, artifact, extension-boundary, generator, package-layer, and schema/edge metadata project into program-index rows."
       ],
-      "notes": "Ring C validation removed the package-local compatibility test; final command-surface cleanup remains open.",
+      "notes": "Ring C validation removed the package-local generated test; final command-surface cleanup remains open.",
       "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-pi-agent.json"
     },
     {
@@ -352,7 +352,7 @@
       "invariants": [
         "Discovery source intent, Reactivity keys, atoms, schema descriptors, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Ring A program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
+      "notes": "Ring A program-index parity removed the package-local generated test; old framework-owned generated files remain only as deletion/replacement scaffolding.",
       "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attuned-discovery.json"
     },
     {
@@ -437,7 +437,7 @@
       "invariants": [
         "CocoIndex source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Ring B program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
+      "notes": "Ring B program-index parity removed the package-local generated test; old framework-owned generated files remain only as deletion/replacement scaffolding.",
       "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/cocoindex-effect.json"
     },
     {
@@ -468,7 +468,7 @@
       "invariants": [
         "Oxlint policy source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
       ],
-      "notes": "Ring A program-index parity removed the package-local compatibility test; framework-owned generated compatibility files remain only as deletion-scaffold inputs.",
+      "notes": "Ring A program-index parity removed the package-local generated test; old framework-owned generated files remain only as deletion/replacement scaffolding.",
       "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/effect-oxlint-policy.json"
     },
     {

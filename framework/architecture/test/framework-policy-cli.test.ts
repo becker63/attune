@@ -360,7 +360,7 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("errors when completed project source imports a project-local generated compatibility artifact after replacement parity", () => {
+  it("errors when completed project source imports a project-local generated artifact after replacement parity", () => {
     const workspaceRoot = makeWorkspace({
       "packages/platform-alchemy-k8s/package.json": JSON.stringify({ name: "@attune/platform-alchemy-k8s" }),
       "packages/platform-alchemy-k8s/src/attune.package.ts": authoredProjectFactsSource({
@@ -889,7 +889,7 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("allows compatibility source metadata labels in program-index adapters", () => {
+  it("rejects compatibility source metadata labels in primary program-index paths", () => {
     const workspaceRoot = makeWorkspace({
       "framework/runtime/src/ProgramIndexProjection.ts": [
         "export type ProgramIndexViewRow = Readonly<Record<string, string>>",
@@ -904,8 +904,13 @@ describe("framework policy CLI", () => {
 
     const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
 
-    expect(result.exitCode).toBe(0)
-    expect(result.ratchetDiagnostics).toEqual([])
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "compatibility-metadata",
+        filePath: "framework/runtime/src/ProgramIndexProjection.ts",
+      }),
+    ]))
   })
 
   it("rejects old ontology nouns in primary program-index diagnostic copy", () => {
@@ -972,14 +977,14 @@ describe("framework policy CLI", () => {
     ]))
   })
 
-  it("allows old ontology nouns in active docs when framed as compatibility deletion work", () => {
+  it("allows old ontology nouns in active docs when framed as historical deletion work", () => {
     const workspaceRoot = makeWorkspace({
       "AGENTS.md": [
         "# Attune Codex Agent Guide",
         "",
-        "Legacy package-contract and generated companion inputs are compatibility scaffolding that must be deleted before archive readiness.",
+        "Historical package-contract and generated companion inputs are deletion scaffolding that must be removed before archive readiness.",
         "",
-        "Do not add these compatibility filenames as normal package source:",
+        "Do not add these filenames as normal package source:",
         "",
         "```text",
         "attune.artifact-ownership.json",

@@ -21,7 +21,7 @@ export const makeProgramDiagnostics = (
   programIndex?: ProgramIndexApi,
 ): ProgramDiagnosticsApi => ({
   diagnosticsForFile: (sourcePath, fallback = {}) => {
-    const compatibilityDiagnostics = query.getDiagnosticsForFile(sourcePath).pipe(
+    const queryDiagnostics = query.getDiagnosticsForFile(sourcePath).pipe(
       Effect.catch((error: ProgramFactQueryError) =>
         Effect.succeed([
           diagnosticFromQueryError(error, {
@@ -33,13 +33,13 @@ export const makeProgramDiagnostics = (
       ),
     )
 
-    if (programIndex === undefined) return compatibilityDiagnostics
+    if (programIndex === undefined) return queryDiagnostics
 
     return programIndexDiagnosticsForFile(programIndex, sourcePath).pipe(
       Effect.flatMap((diagnostics) =>
-        diagnostics.length === 0 ? compatibilityDiagnostics : Effect.succeed(diagnostics)
+        diagnostics.length === 0 ? queryDiagnostics : Effect.succeed(diagnostics)
       ),
-      Effect.catch(() => compatibilityDiagnostics),
+      Effect.catch(() => queryDiagnostics),
     )
   },
 })

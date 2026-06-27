@@ -43,10 +43,12 @@ In scope:
 - Preserve old task and issue intent in this change's `tasks.md`.
 - Migrate existing Linear references into final ARS task references without treating Linear as runtime truth.
 - Delete superseded active OpenSpec change folders after their content is represented here.
+- Remove compatibility-maintenance lanes for old program-index/generated-companion/artifact-ownership surfaces; old surfaces may be deleted, quarantined, archived, or replaced, but not adapted as live inputs.
 
 Out of scope:
 
 - Package implementation source changes.
+- Compatibility adapters for superseded program-index-first, SQLite/Drizzle/PgTyped, generated companion, or artifact ownership surfaces.
 - Physical package moves.
 - DB migration SQL implementation.
 - Tend runtime implementation.
@@ -84,6 +86,7 @@ Linear remains an external human projection target. It may mirror tasks, comment
 - Effect Alchemy is defined as the lifecycle/state substrate for ManagedRecipe.
 - Nx, Nix/Arion, TimescaleDB/Postgres, Kanel, Kysely, SafeQL, and Effect services are placed around Recipe.
 - The old program-index-first ontology is replaced by recipe-backed program facts and recipe projections.
+- No compatibility row/materializer/adapter lane is maintained for superseded generated companions, artifact ownership shards, SQLite/Drizzle/PgTyped paths, or program-index-first ontology.
 - Existing Linear issue references are represented in final ARS task blocks and projected externally where connector access permits.
 - No package implementation source is changed by the bootstrap consolidation.
 - Superseded old OpenSpec change folders and the bootstrap artifact are deleted after validation.

@@ -160,7 +160,25 @@ SQL migrations
   -> Effect service exports
 ```
 
-SQLite, Drizzle, and PgTyped remain historical or compatibility context only. The first durable implementation should start with the generic framework recipe receipt spine before domain-specific table families.
+SQLite, Drizzle, and PgTyped remain historical context only. The migration does not maintain a compatibility adapter for them. The first durable implementation should start with the generic framework recipe receipt spine before domain-specific table families.
+
+## No Compatibility Lane
+
+Superseded surfaces are removed, quarantined, archived, or replaced by
+recipe-backed projections. They are not maintained as live compatibility input.
+
+No framework service, materializer, policy rule, test, or documentation should
+preserve a compatibility row/materializer/adapter path for:
+
+- program-index-first ontology as the active top-level model,
+- package-local generated companions,
+- artifact ownership shards,
+- SQLite/Drizzle/PgTyped substrate paths,
+- old source metadata labels such as generated companion, type-guidance, or package-contract compatibility sources.
+
+Historical references may exist only as archive/deletion context. Active runtime
+and policy surfaces must project authored source facts, recipe facts, receipts,
+diagnostics, repairs, and health directly.
 
 ## Nx, Nix, And Execution
 
@@ -325,11 +343,12 @@ Custom ledgers absorbed:
 - `consolidate-attune-program-index-megaspec/linear-issue-map.md` -> ARS-110.
 - `consolidate-attune-program-index-megaspec/spec-inventory.md` -> this appendix and ARS-120.
 - `consolidate-attune-program-index-megaspec/supersession-plan.md` -> ARS-120.
-- `mega.md`, `timescaledb.md`, and `migration-spec.md` -> source rationale for the Recipe/ManagedRecipe, SQL, and supersession direction.
+- Deleted root bootstrap artifacts `mega.md`, `timescaledb.md`, and `migration-spec.md` -> absorbed source rationale for the Recipe/ManagedRecipe, SQL, and supersession direction.
 
 Contradictions resolved:
 
-- SQLite-first and Drizzle-first language is historical/compatibility context; TimescaleDB/Postgres with Kanel/Kysely/SafeQL/Effect services is active.
-- Program-index-first ontology is historical/compatibility context; Recipe is active.
+- SQLite-first and Drizzle-first language is historical context only; TimescaleDB/Postgres with Kanel/Kysely/SafeQL/Effect services is active.
+- Program-index-first ontology is historical context only; Recipe is active.
+- Compatibility adapters are not maintained; superseded generated companions, artifact ownership shards, old source metadata labels, and DB substrate paths are deletion/archive/replacement work.
 - Linear and artifact schema families are not active DB domains.
 - Trellis is not merely static skill generation; it is the recipe-aware companion surface.
