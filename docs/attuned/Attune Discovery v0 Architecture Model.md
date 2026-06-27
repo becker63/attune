@@ -16,7 +16,7 @@ Pi proposes.
 Effect validates.
 Joern proves.
 EventLog remembers.
-Drizzle materializes.
+SQL projections materialize.
 Reactivity invalidates.
 Atoms reason.
 Workflow advances.
@@ -82,7 +82,7 @@ The semantic loop above becomes an Effect application loop.
 ```mermaid
 flowchart TD
   subgraph View["View of the run"]
-    A["Drizzle projections<br/>[D] durable read model"] --> B["Base atoms<br/>[D/R] Drizzle reads + reactive keys"]
+    A["SQL projection layer<br/>[D] durable read model"] --> B["Base atoms<br/>[D/R] SQL projection reads + reactive keys"]
     B --> C["Derived atom graph<br/>[D] reasoning view"]
     C --> D["DecisionPacket<br/>[D] current state for Pi"]
   end
@@ -101,7 +101,7 @@ flowchart TD
   subgraph Memory["Memory + freshness"]
     I --> J["DiscoveryEvents<br/>[D] semantic events"]
     J --> K["EventLog / SQL journal<br/>[D] durable history"]
-    K --> L["projections<br/>[D] write Drizzle"]
+    K --> L["projections<br/>[D] write SQL projections"]
     L --> M["Reactivity.mutation(ViewKeys)<br/>[R] invalidate changed keys"]
   end
 
@@ -189,7 +189,7 @@ This keeps Joern as a proof worker, not an agent scratchpad.
 
 ## 6. Memory and freshness loop
 
-Events are the durable facts. Drizzle tables are read models. Reactivity is the in-process freshness bus. Atoms are derived views.
+Events are the durable facts. SQL projections tables are read models. Reactivity is the in-process freshness bus. Atoms are derived views.
 
 ```mermaid
 flowchart TD
@@ -198,7 +198,7 @@ flowchart TD
   C --> D["SQL journal<br/>durable history"]
   D --> E["EventLog.group<br/>projection handler"]
   E --> F["Reactivity.mutation(ViewKeys)<br/>[R] wraps projection write"]
-  F --> G["Drizzle read model<br/>queryable state"]
+  F --> G["SQL projection read model<br/>queryable state"]
   F --> H["invalidate changed keys<br/>[R]"]
   H --> I["Base atoms refresh<br/>Atom.withReactivity(ViewKeys)"]
   I --> J["Derived atoms recompute"]
@@ -220,14 +220,14 @@ The durable read side stays boring:
 
 ```txt
 EventLog.group projection
-  → Reactivity.mutation(keys)(Drizzle write)
-  → Drizzle read model
+  → Reactivity.mutation(keys)(SQL projections write)
+  → SQL projection read model
 ```
 
 The reasoning read side becomes useful:
 
 ```txt
-Drizzle projections
+SQL projection layer
   → reactive base atoms
   → derived atom graph
   → decision packet
@@ -238,7 +238,7 @@ Drizzle projections
 The key ordering rule:
 
 ```txt
-Write Drizzle first.
+Write SQL projections first.
 Then invalidate Reactivity keys.
 Then atoms refresh from durable state.
 ```
@@ -255,7 +255,7 @@ Reactivity connects projection writes to atom refreshes without making projectio
 flowchart TD
   A["projection changes durable facts"] --> B["ViewKeys<br/>run-scoped domain keys"]
   B --> C["Reactivity.mutation(keys)(write)"]
-  C --> D["Drizzle write succeeds"]
+  C --> D["SQL projections write succeeds"]
   D --> E["keys invalidated"]
   E --> F["base atoms with Atom.withReactivity(keys) refresh"]
   F --> G["derived atoms recompute by dependency"]
@@ -531,7 +531,7 @@ flowchart TD
 
   subgraph Memory["Memory"]
     F["EventLog<br/>record facts"]
-    G["Drizzle<br/>materialize state"]
+    G["SQL projections<br/>materialize state"]
     R["Reactivity<br/>invalidate changed keys"]
   end
 
@@ -562,7 +562,7 @@ Pi: judgment
 Effect: legality and execution
 Joern: proof
 EventLog: history
-Drizzle: materialized read state
+SQL projections: materialized read state
 Reactivity: freshness signals after durable mutations
 Atoms: current reasoning view
 Workflow: long-running control
@@ -605,7 +605,7 @@ The runtime safety story is:
 ```txt
 Event sourcing makes state transitions auditable.
 Effect makes execution bounded and typed.
-Drizzle makes durable read state queryable.
+SQL projections makes durable read state queryable.
 Reactivity makes freshness ordered and explicit.
 Atoms make derived reasoning declarative.
 Workflow makes long runs resumable.
@@ -618,10 +618,10 @@ The two key failure modes this prevents are:
 2. Derived state becoming invisible, stale, and manually invalidated.
 ```
 
-The model emits bounded commands. The event log records facts. Drizzle materializes facts. Reactivity announces changed fact keys. Atoms derive current reasoning state. Workflow advances from that state.
+The model emits bounded commands. The event log records facts. SQL projections materialize facts. Reactivity announces changed fact keys. Atoms derive current reasoning state. Workflow advances from that state.
 
 ---
 
 ## 15. Final architecture sentence
 
-Attune Discovery is a durable Effect app that repeatedly builds a typed, reactively fresh view of the codebase, asks a bounded agent for one next move, validates that move, proves important hypotheses with Joern, records the outcome as events, projects durable read state through Drizzle, invalidates changed view keys through Reactivity, and rebuilds the next atom-derived view until the run plateaus or needs human judgment.
+Attune Discovery is a durable Effect app that repeatedly builds a typed, reactively fresh view of the codebase, asks a bounded agent for one next move, validates that move, proves important hypotheses with Joern, records the outcome as events, projects durable read state through SQL projections, invalidates changed view keys through Reactivity, and rebuilds the next atom-derived view until the run plateaus or needs human judgment.

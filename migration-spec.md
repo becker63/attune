@@ -1,5 +1,18 @@
 # OpenSpec Migration Spec
 
+> **Superseded planning note**
+>
+> This document is preserved as historical planning context.
+>
+> The active top-level authority is now `mega.md`, followed by
+> `openspec/changes/consolidate-attune-program-index-megaspec/`.
+>
+> Any instructions here about Arbor/Tend/Trellis root reshaping, Tend runtime work,
+> OpenCode runtime work, package moves, or implementation sequencing are deferred
+> unless explicitly re-enabled by `mega.md` or a later human-approved OpenSpec change.
+>
+> Do not execute this document directly.
+
 ## Change
 
 - Change ID: `reshape-arbor-monorepo-and-tend-opencode-runtime`

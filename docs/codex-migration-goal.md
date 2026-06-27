@@ -1,15 +1,13 @@
 # Codex Migration Goal
 
-Complete `promote-program-index-runtime-substrate` with the SQLite program
-index as the primary runtime substrate.
+Complete `promote-program-index-runtime-substrate` with **TimescaleDB-backed** program-index and Tend control substrate as the active runtime direction.
 
 ## Current Goal
 
 - Finish the remaining Phase 7 demotion tasks.
 - Run the Phase 8 validation sweep.
 - Keep each slice targeted, validated, committed, and pushed.
-- Do not mark an OpenSpec task complete until implementation and validation
-  prove it.
+- Do not mark an OpenSpec task complete until implementation and validation prove it.
 
 ## Primary Model
 
@@ -27,28 +25,26 @@ Attune now teaches plain mechanical facts as the normal runtime language:
 - `repair`
 - `invalidation`
 
-Checks, repairs, language-service hints, Reactivity, atoms, generated artifact
-freshness, and workspace health derive from those facts.
+Checks, repairs, language-service hints, Reactivity, atoms, generated artifact freshness, and workspace health derive from those facts.
+
+## Historical Context
+
+- SQLite and sqlite-like migration notes in this document are historical only.
+- `timescaledb.md` is the active DB-substrate authority and `mega.md` remains top-level routing authority.
+- Neon durability work remains in other domain lanes where explicitly scoped.
 
 ## Remaining Phase 7 Work
 
-- Delete, rename, quarantine, or archive every parity-proven legacy
-  compatibility surface.
-- Record high-risk removals as future OpenSpec work with owner, blocker,
-  replacement path, and validation gate.
-- Rewrite active docs so the normal mental model is mechanical program facts,
-  SQL projections, Reactivity/atoms, diagnostics, and repairs.
-- Ratchet migrated rings so legacy package-local generated Attune companion
-  compatibility files cannot return once replacement paths exist.
-- Add final drift checks that reject old ontology terms in active public docs,
-  primary program-index runtime paths, and normal diagnostics.
+- Delete, rename, quarantine, or archive every parity-proven legacy compatibility surface.
+- Record high-risk removals as future OpenSpec work with owner, blocker, replacement path, and validation gate.
+- Rewrite active docs so the normal mental model is mechanical program facts, SQL projections, Reactivity/atoms, diagnostics, and repairs.
+- Ratchet migrated rings so legacy package-local generated Attune companion files cannot return once replacement paths exist.
+- Add final drift checks that reject old ontology terms in active public docs, primary runtime paths, and normal diagnostics.
 
 ## Compatibility Rule
 
-Legacy compatibility inputs may remain only while they are needed for parity or
-rollback. They must ingest as mechanical rows with compatibility metadata.
-After replacement paths and validations exist, remove or quarantine those
-inputs rather than preserving them as permanent APIs or helpers.
+Legacy compatibility inputs may remain only while they are needed for parity or rollback. They must ingest as mechanical rows with compatibility metadata.
+After replacement paths and validations exist, remove or quarantine those inputs rather than preserving them as permanent APIs or helpers.
 
 ## Public Workflow
 
@@ -67,12 +63,11 @@ Use Nix only as the reproducible substrate behind those targets.
 
 ## Safety
 
-- Do not hand-edit raw SQLite or cache state.
+- Do not hand-edit raw database cache state.
 - Do not add checked-in report-ledger workflow truth.
 - Do not add package-private scripts.
 - Do not preserve legacy compatibility APIs as permanent public workflow.
-- Do not run live provider, Kubernetes, Alchemy, destructive, container, or
-  heavy proof-pressure actions unless explicitly authorized.
+- Do not run live provider, Kubernetes, destructive, container, or heavy proof-pressure actions unless explicitly authorized.
 
 ## Validation
 
