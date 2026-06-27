@@ -4,75 +4,338 @@
   "sourceRoot": "packages/home-deployment/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsup src/index.ts src/alchemy.ts src/cli.ts --format esm,cjs --dts --sourcemap --clean"
+        "targetProject": "home-deployment",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts",
+            "src/alchemy.ts"
+          ],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsgo --noEmit"
+        "targetProject": "home-deployment",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsc --noEmit"
+        "targetProject": "home-deployment",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/vitest run"
+        "targetProject": "home-deployment",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
       }
     },
-    "plan": {
-      "executor": "nx:run-commands",
+    "alchemy:plan": {
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts plan"
+        "targetProject": "home-deployment",
+        "tool": "alchemy",
+        "action": "plan",
+        "toolId": "home-deployment-day0-stack",
+        "outputs": [
+          ".attune/cache/home-deployment/alchemy-plan"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/home-deployment/provider-evidence"
+        ],
+        "resourceTier": "external",
+        "resourceProviderGate": {
+          "required": true,
+          "provider": "alchemy",
+          "operation": "plan",
+          "evidence": "home-deployment/day0-plan-dry-run"
+        },
+        "dryRun": true
       }
     },
-    "status": {
-      "executor": "nx:run-commands",
+    "alchemy:deploy": {
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts status"
+        "targetProject": "home-deployment",
+        "tool": "alchemy",
+        "action": "deploy",
+        "toolId": "home-deployment-day0-stack",
+        "outputs": [
+          ".attune/cache/home-deployment/alchemy-deploy"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/home-deployment/provider-evidence"
+        ],
+        "resourceTier": "destructive",
+        "destructiveGate": {
+          "required": true,
+          "proof": "home-deployment/current-observation-proof",
+          "approval": "home-deployment/destructive-approval",
+          "observation": "home-deployment/desired-state-observed"
+        },
+        "resourceProviderGate": {
+          "required": true,
+          "provider": "alchemy",
+          "operation": "deploy",
+          "evidence": "home-deployment/day0-deploy-dry-run"
+        },
+        "dryRun": true
       }
     },
-    "next-step": {
-      "executor": "nx:run-commands",
+    "safety-simulation": {
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts next-step --json"
+        "targetProject": "home-deployment",
+        "tool": "alchemy",
+        "action": "smoke",
+        "toolId": "home-deployment-provider-safety-simulation",
+        "outputs": [
+          ".attune/cache/home-deployment/safety-simulation"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/home-deployment/provider-evidence"
+        ],
+        "resourceTier": "standard",
+        "resourceProviderGate": {
+          "required": true,
+          "provider": "home-deployment",
+          "operation": "safety-simulation",
+          "evidence": "home-deployment/provider-safety-simulation"
+        },
+        "dryRun": true
       }
     },
-    "deploy": {
-      "executor": "nx:run-commands",
+    "attune-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable attune-check verb.",
+        "attune": {
+          "tier": "public",
+          "surface": "check"
+        }
+      },
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts deploy"
+        "targetProject": "home-deployment",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:attune-check"
+          ]
+        },
+        "dryRun": false
       }
     },
-    "destroy:smoke:dry-run": {
-      "executor": "nx:run-commands",
+    "attune-repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable attune-repair verb when available.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true
+        }
+      },
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts destroy --target smoke --dry-run"
+        "targetProject": "home-deployment",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "home-deployment:attune:repair-symbol-registry",
+            "home-deployment:attune:repair-property-observations",
+            "home-deployment:attune:repair-schema-observations",
+            "home-deployment:attune:repair-observations",
+            "home-deployment:attune:repair-artifact-freshness"
+          ]
+        },
+        "dryRun": false
       }
     },
-    "reconcile": {
-      "executor": "nx:run-commands",
+    "attune:repair-symbol-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer home-deployment:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "symbol-registry",
+          "safeOnly": true
+        }
+      },
       "options": {
-        "cwd": "packages/home-deployment",
-        "command": "../../node_modules/.bin/tsx src/cli.ts reconcile"
-      }
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "symbol-registry"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/attune-symbol-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/attune-symbol-registry.ts"
+      ]
+    },
+    "attune:repair-property-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer home-deployment:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "property-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "property-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/attune-property-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/attune-property-observations.ts"
+      ]
+    },
+    "attune:repair-schema-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer home-deployment:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "schema-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "schema-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/attune-schema-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/attune-schema-observations.ts"
+      ]
+    },
+    "attune:repair-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer home-deployment:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/attune-observation-scaffold.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/observations/home-deployment/observation-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/home-deployment/observation-scaffold.json"
+      ]
+    },
+    "attune:repair-artifact-freshness": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer home-deployment:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "artifact-freshness",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "artifact-freshness"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/artifact-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/artifact-freshness.json"
+      ]
     }
   }
 }

@@ -81,6 +81,16 @@ describe("platform-alchemy-k8s", () => {
     expect(second.diff.every((entry) => entry.operation === "unchanged")).toBe(true)
   })
 
+  it("confines Test provider mutations to its in-memory world", () => {
+    const firstProvider = createKubernetesProviderTest()
+    const secondProvider = createKubernetesProviderTest()
+    const graph = WorkerPool.thinkcentreCpu("registry.local/attune-worker:test")
+
+    expect(firstProvider.apply(graph).mutated).toBe(true)
+    expect(firstProvider.diff(graph).diff.every((entry) => entry.operation === "unchanged")).toBe(true)
+    expect(secondProvider.diff(graph).diff.some((entry) => entry.operation === "create")).toBe(true)
+  })
+
   it("keeps Kubernetes DryRun apply non-mutating", () => {
     const provider = createKubernetesProviderDryRun()
     const graph = WorkerPool.thinkcentreCpu("registry.local/attune-worker:test")
@@ -96,6 +106,11 @@ describe("platform-alchemy-k8s", () => {
     const plan = makeLocalClusterPlan({ driver: "k3d", name: "attune-test", agents: 2 })
 
     expect(renderCommand(plan.create)).toContain("'k3d' 'cluster' 'create' 'attune-test'")
-    expect(plan.smoke).toEqual(["kubectl", "cluster-info", "--context", "k3d-attune-test"])
+    expect(plan.create).toMatchObject({
+      intentId: "local-cluster:k3d:attune-test:create",
+      action: "create",
+      executionBoundary: "rendered-only",
+    })
+    expect(plan.smoke.argv).toEqual(["kubectl", "cluster-info", "--context", "k3d-attune-test"])
   })
 })

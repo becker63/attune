@@ -1,0 +1,797 @@
+{
+  "schemaVersion": 1,
+  "shapes": [
+    {
+      "id": "attune-architecture.policy-rule",
+      "project": "attune-architecture",
+      "projectRoot": "framework/architecture",
+      "kind": "architecture-policy-rule",
+      "generator": "@attune/nx:architecture-policy-rule",
+      "status": "migrate",
+      "paths": [
+        "src/index.ts",
+        "test/*.test.ts"
+      ],
+      "invariants": [
+        "Policy rules expose typed diagnostics and targeted tests."
+      ]
+    },
+    {
+      "id": "attune-architecture.shape-conformance-policy",
+      "project": "attune-architecture",
+      "projectRoot": "framework/architecture",
+      "kind": "generator-shape-conformance",
+      "generator": "@attune/nx:shape-conformance-policy",
+      "status": "manual",
+      "paths": [
+        "src/generator-shape-conformance.ts",
+        "src/shape-conformance-cli.ts",
+        "test/generator-shape-conformance.test.ts"
+      ],
+      "notes": "This is the policy nucleus that later Nx generators should update."
+    },
+    {
+      "id": "attune-architecture.project-facts",
+      "project": "attune-architecture",
+      "projectRoot": "framework/architecture",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
+      "status": "generated",
+      "paths": [
+        "src/attune.package.ts"
+      ],
+      "invariants": [
+        "Architecture policy exported symbols, schema/edge metadata, diagnostics, repairs, waivers, and compile-only assertions project into program-index rows."
+      ],
+      "notes": "Phase 7 removed the active generated-contract tests; final declaration helper rename remains open.",
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-architecture.json"
+    },
+    {
+      "id": "attune-foldkit.scene-atom",
+      "project": "attune-foldkit",
+      "projectRoot": "packages/attune-foldkit",
+      "kind": "foldkit-scene-atom",
+      "generator": "@attune/nx:foldkit-scene-atom",
+      "status": "migrate",
+      "paths": [
+        "src/model.ts",
+        "src/message.ts",
+        "src/update.ts",
+        "src/view.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Scene model, messages, update, view, and tests move together."
+      ]
+    },
+    {
+      "id": "attune-foldkit.workbench-atom-fixture",
+      "project": "attune-foldkit",
+      "projectRoot": "packages/attune-foldkit",
+      "kind": "foldkit-workbench-atom-fixture",
+      "generator": "@attune/nx:foldkit-atom-fixture",
+      "status": "migrate",
+      "paths": [
+        "src/fixture-route.ts",
+        "src/fixture-types.ts",
+        "src/fixtures/workbench-atom-fixture.ts"
+      ],
+      "invariants": [
+        "Workbench fixtures should carry route, fixture type, and snapshot wiring together."
+      ]
+    },
+    {
+      "id": "attune-foldkit.mdx-fixture",
+      "project": "attune-foldkit",
+      "projectRoot": "packages/attune-foldkit",
+      "kind": "foldkit-mdx-fixture",
+      "generator": "@attune/nx:foldkit-mdx-fixture",
+      "status": "migrate",
+      "paths": [
+        "src/fixture-route.ts",
+        "src/fixtures/*mdx*fixture.ts",
+        "src/fixtures/app-site-fixture.ts"
+      ],
+      "invariants": [
+        "MDX fixture route registration and fixture implementation should stay paired."
+      ]
+    },
+    {
+      "id": "attune-foldkit.project-facts",
+      "project": "attune-foldkit",
+      "projectRoot": "packages/attune-foldkit",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
+      "status": "generated",
+      "paths": [
+        "src/attune.package.ts"
+      ],
+      "invariants": [
+        "FoldKit source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
+      ],
+      "notes": "Ring A program-index parity removed the package-local generated test; old framework-owned generated files remain only as deletion/replacement scaffolding.",
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-foldkit.json"
+    },
+    {
+      "id": "attune-nx.generator-implementation",
+      "project": "attune-nx",
+      "projectRoot": "packages/attune-nx",
+      "kind": "nx-generator-implementation",
+      "generator": "@attune/nx:nx-generator",
+      "status": "migrate",
+      "paths": [
+        "generators.json",
+        "src/generators/*/generator.ts",
+        "src/generators/*/schema.json",
+        "test/generators.test.ts"
+      ],
+      "invariants": [
+        "A generator owns implementation, schema, catalog entry, tests, and BOM upsert behavior."
+      ]
+    },
+    {
+      "id": "attune-nx.project-facts",
+      "project": "attune-nx",
+      "projectRoot": "packages/attune-nx",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
+      "status": "generated",
+      "paths": [
+        "src/attune.package.ts"
+      ],
+      "invariants": [
+        "Generator tooling source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
+      ],
+      "notes": "Ring B program-index parity removes package-local old-shape assertions; old framework-owned generated files remain only as deletion/replacement scaffolding.",
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-nx.json"
+    },
+    {
+      "id": "attune-nx.sync-generator-registry",
+      "project": "attune-nx",
+      "projectRoot": "packages/attune-nx",
+      "kind": "sync-generator-registry",
+      "generator": "@attune/nx:sync-registry",
+      "status": "migrate",
+      "paths": [
+        "src/internal/sync-registry.ts",
+        "src/generators/sync-*/generator.ts",
+        "test/generators.test.ts"
+      ],
+      "invariants": [
+        "Sync generators discover source modules, render deterministic registries, and upsert artifact ownership entries."
+      ]
+    },
+    {
+      "id": "attune-nx.generated-cjs-wrappers",
+      "project": "attune-nx",
+      "projectRoot": "packages/attune-nx",
+      "kind": "generated-generator-runtime-wrapper",
+      "generator": "scripts/write-generator-cjs-wrappers.mjs",
+      "status": "generated",
+      "paths": [
+        "scripts/write-generator-cjs-wrappers.mjs",
+        "src/generators/*/generator.ts"
+      ]
+    },
+    {
+      "id": "attune-pi-agent.schema-family",
+      "project": "attune-pi-agent",
+      "projectRoot": "packages/attune-pi-agent",
+      "kind": "pi-effect-schema-family",
+      "generator": "@attune/nx:pi-schema",
+      "status": "migrate",
+      "paths": [
+        "src/schema/*.ts"
+      ],
+      "invariants": [
+        "Schema modules expose Effect Schema models and matching types."
+      ]
+    },
+    {
+      "id": "attune-pi-agent.generator-catalog",
+      "project": "attune-pi-agent",
+      "projectRoot": "packages/attune-pi-agent",
+      "kind": "pi-generator-catalog",
+      "generator": "@attune/pi-agent generators",
+      "status": "generated",
+      "paths": [
+        "generators.json",
+        "src/generators/*/generator.ts",
+        "src/generators/*/schema.json"
+      ]
+    },
+    {
+      "id": "attune-pi-agent.nx-generator-wrapper",
+      "project": "attune-pi-agent",
+      "projectRoot": "packages/attune-pi-agent",
+      "kind": "pi-generator-wrapper",
+      "generator": "@attune/nx:pi-generator",
+      "status": "migrate",
+      "paths": [
+        "src/generators/index.ts",
+        "src/generators/internal/*.ts",
+        "src/generators/renderers.ts"
+      ],
+      "invariants": [
+        "Pi generator renderers and tree helpers should become reusable @attune/nx grammar."
+      ]
+    },
+    {
+      "id": "attune-pi-agent.command-surface",
+      "project": "attune-pi-agent",
+      "projectRoot": "packages/attune-pi-agent",
+      "kind": "pi-command-surface",
+      "generator": "@attune/nx:pi-command",
+      "status": "migrate",
+      "paths": [
+        "src/commands/*.ts",
+        "src/pi/**",
+        "test/**"
+      ],
+      "invariants": [
+        "Command surfaces should bind schema input, Pi flow, and tests together."
+      ]
+    },
+    {
+      "id": "attune-pi-agent.project-facts",
+      "project": "attune-pi-agent",
+      "projectRoot": "packages/attune-pi-agent",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
+      "status": "generated",
+      "paths": [
+        "src/attune.package.ts"
+      ],
+      "invariants": [
+        "Pi permission, spec interview, artifact, extension-boundary, generator, package-layer, and schema/edge metadata project into program-index rows."
+      ],
+      "notes": "Ring C validation removed the package-local generated test; final command-surface cleanup remains open.",
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attune-pi-agent.json"
+    },
+    {
+      "id": "attuned-discovery.schema-family",
+      "project": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "kind": "discovery-effect-schema-family",
+      "generator": "@attune/nx:effect-schema-model",
+      "status": "migrate",
+      "paths": [
+        "src/index.ts",
+        "src/memory/schema.ts"
+      ],
+      "invariants": [
+        "Schema, literal unions, and exported types should be generated as one family."
+      ]
+    },
+    {
+      "id": "attuned-discovery.event-facade",
+      "project": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "kind": "discovery-event-facade",
+      "generator": "@attune/nx:discovery-event",
+      "status": "migrate",
+      "paths": [
+        "src/index.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Event constructors, DiscoveryEvents service methods, and tests must stay in lockstep."
+      ]
+    },
+    {
+      "id": "attuned-discovery.projection-handler",
+      "project": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "kind": "discovery-projection-handler",
+      "generator": "@attune/nx:projection-handler",
+      "status": "migrate",
+      "paths": [
+        "src/index.ts",
+        "src/projection/read-model-projection.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Every event kind needs projection handling and replay coverage."
+      ]
+    },
+    {
+      "id": "attuned-discovery.reactivity-key",
+      "project": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "kind": "reactivity-view-key",
+      "generator": "@attune/nx:reactivity-key",
+      "status": "migrate",
+      "paths": [
+        "src/index.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "View key declarations and invalidation tests should be generated with the projection they observe."
+      ]
+    },
+    {
+      "id": "attuned-discovery.atom-family",
+      "project": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "kind": "effect-atom-family",
+      "generator": "@attune/nx:atom-family",
+      "status": "migrate",
+      "paths": [
+        "src/index.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Base atom families bind read-model selectors to Reactivity subscriptions."
+      ]
+    },
+    {
+      "id": "attuned-discovery.derived-atom",
+      "project": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "kind": "derived-atom",
+      "generator": "@attune/nx:derived-atom",
+      "status": "migrate",
+      "paths": [
+        "src/index.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Derived atoms compose base atoms and must not manually invalidate durable state."
+      ]
+    },
+    {
+      "id": "attuned-discovery.project-facts",
+      "project": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
+      "status": "generated",
+      "paths": [
+        "src/attune.package.ts"
+      ],
+      "invariants": [
+        "Discovery source intent, Reactivity keys, atoms, schema descriptors, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
+      ],
+      "notes": "Ring A program-index parity removed the package-local generated test; old framework-owned generated files remain only as deletion/replacement scaffolding.",
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/attuned-discovery.json"
+    },
+    {
+      "id": "cocoindex-effect.effect-service-boundary",
+      "project": "cocoindex-effect",
+      "projectRoot": "packages/cocoindex-effect",
+      "kind": "effect-service-boundary",
+      "generator": "@attune/nx:effect-service",
+      "status": "migrate",
+      "paths": [
+        "src/CocoIndexClient.ts",
+        "src/CocoIndexClientLive.ts",
+        "src/RepositoryIntelligence.ts",
+        "src/errors.ts"
+      ],
+      "invariants": [
+        "Service tag, live layer, fixture layer, and typed errors should be scaffolded together."
+      ]
+    },
+    {
+      "id": "cocoindex-effect.model-schema-family",
+      "project": "cocoindex-effect",
+      "projectRoot": "packages/cocoindex-effect",
+      "kind": "cocoindex-effect-schema-family",
+      "generator": "@attune/nx:effect-schema-model",
+      "status": "migrate",
+      "paths": [
+        "src/model.ts",
+        "src/RepositoryIntelligence.ts"
+      ]
+    },
+    {
+      "id": "cocoindex-effect.mcp-tool",
+      "project": "cocoindex-effect",
+      "projectRoot": "packages/cocoindex-effect",
+      "kind": "cocoindex-mcp-tool",
+      "generator": "@attune/nx:cocoindex-mcp-tool",
+      "status": "migrate",
+      "paths": [
+        "src/cocoindex/tools/index.ts",
+        "src/cocoindex/tools/search.ts"
+      ],
+      "invariants": [
+        "Tool definition, schema, handler, and registry source should be generated together."
+      ]
+    },
+    {
+      "id": "cocoindex-effect.generated-mcp-schema",
+      "project": "cocoindex-effect",
+      "projectRoot": "packages/cocoindex-effect",
+      "kind": "generated-cocoindex-mcp-schema",
+      "generator": "scripts/generationStage.ts emit-mcp-schema",
+      "status": "generated",
+      "paths": [
+        "scripts/generate-cocoindex-mcp-types.ts",
+        "scripts/generationStage.ts",
+        "src/generated/cocoindex-code-mcp.ts"
+      ]
+    },
+    {
+      "id": "cocoindex-effect.generated-mcp-tool-registry",
+      "project": "cocoindex-effect",
+      "projectRoot": "packages/cocoindex-effect",
+      "kind": "generated-cocoindex-mcp-tool-registry",
+      "generator": "@attune/nx:sync-cocoindex-mcp-tools",
+      "status": "generated",
+      "paths": [
+        "src/cocoindex/tools/*.ts",
+        "src/cocoindex/tools/ToolRegistry.generated.ts"
+      ]
+    },
+    {
+      "id": "cocoindex-effect.project-facts",
+      "project": "cocoindex-effect",
+      "projectRoot": "packages/cocoindex-effect",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
+      "status": "generated",
+      "paths": [
+        "src/attune.package.ts"
+      ],
+      "invariants": [
+        "CocoIndex source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
+      ],
+      "notes": "Ring B program-index parity removed the package-local generated test; old framework-owned generated files remain only as deletion/replacement scaffolding.",
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/cocoindex-effect.json"
+    },
+    {
+      "id": "effect-oxlint-policy.rule-module",
+      "project": "effect-oxlint-policy",
+      "projectRoot": "framework/oxlint-policy",
+      "kind": "effect-oxlint-rule-module",
+      "generator": "@attune/nx:effect-oxlint-rule",
+      "status": "migrate",
+      "paths": [
+        "src/**",
+        "test/**"
+      ],
+      "invariants": [
+        "Rule metadata, rule implementation, and policy fixtures should be generated as a package-local unit."
+      ]
+    },
+    {
+      "id": "effect-oxlint-policy.project-facts",
+      "project": "effect-oxlint-policy",
+      "projectRoot": "framework/oxlint-policy",
+      "kind": "project-facts",
+      "generator": "@attune/nx:project-facts",
+      "status": "generated",
+      "paths": [
+        "src/attune.package.ts"
+      ],
+      "invariants": [
+        "Oxlint policy source intent, symbols, schema descriptors, edges, artifacts, observations, diagnostics, and repair facts are indexed from the authored package file and workspace source."
+      ],
+      "notes": "Ring A program-index parity removed the package-local generated test; old framework-owned generated files remain only as deletion/replacement scaffolding.",
+      "artifactOwnershipShard": "framework/architecture/src/generated/artifact-ownership/effect-oxlint-policy.json"
+    },
+    {
+      "id": "home-deployment.day0-provider",
+      "project": "home-deployment",
+      "projectRoot": "packages/home-deployment",
+      "kind": "day0-effect-provider",
+      "generator": "@attune/nx:day0-provider",
+      "status": "migrate",
+      "paths": [
+        "src/providers.ts",
+        "src/lifecycle.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Provider interface, dry-run/live implementation, transition evidence, and idempotence tests move together."
+      ]
+    },
+    {
+      "id": "home-deployment.day0-runbook-resource",
+      "project": "home-deployment",
+      "projectRoot": "packages/home-deployment",
+      "kind": "day0-runbook-resource",
+      "generator": "@attune/nx:day0-runbook-resource",
+      "status": "migrate",
+      "paths": [
+        "src/model.ts",
+        "src/state.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Runbook resource model, persisted state, blockers, and manual actions should be generated from the same typed definition."
+      ]
+    },
+    {
+      "id": "home-deployment.alchemy-resource-wrapper",
+      "project": "home-deployment",
+      "projectRoot": "packages/home-deployment",
+      "kind": "alchemy-effect-resource-wrapper",
+      "generator": "@attune/nx:alchemy-effect-resource",
+      "status": "migrate",
+      "paths": [
+        "alchemy.run.ts",
+        "src/alchemy.ts",
+        "src/index.ts"
+      ],
+      "invariants": [
+        "Alchemy provider bindings should project provider evidence without bypassing typed runbook state."
+      ]
+    },
+    {
+      "id": "joern-effect.generated-bindings",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "generated-joern-bindings",
+      "generator": "scripts/generationStage.ts emit-generated",
+      "status": "generated",
+      "paths": [
+        "schema/joern-cpg-schema.1.7.70.json",
+        "scripts/generationStage.ts",
+        "src/pure/generated/*.ts"
+      ]
+    },
+    {
+      "id": "joern-effect.generated-fast-check-arbitraries",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "generated-joern-fast-check-arbitraries",
+      "generator": "scripts/generationStage.ts emit-fast-check-arbitraries",
+      "status": "generated",
+      "paths": [
+        "schema/joern-cpg-schema.1.7.70.json",
+        "scripts/generationStage.ts",
+        "src/pure/codegen/**",
+        "src/internal/generated/fast-check-arbitraries.ts"
+      ]
+    },
+    {
+      "id": "joern-effect.generated-readme",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "generated-joern-readme",
+      "generator": "scripts/renderReadme.ts",
+      "status": "generated",
+      "paths": [
+        "README.md",
+        "scripts/README.template.md",
+        "scripts/renderReadme.ts"
+      ]
+    },
+    {
+      "id": "joern-effect.template",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "joern-template",
+      "generator": "@attune/nx:joern-template",
+      "status": "migrate",
+      "paths": [
+        "src/pure/program/**",
+        "examples/*.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Template source, schema descriptors, observations, examples, diagnostics, and focused tests should move together."
+      ]
+    },
+    {
+      "id": "joern-effect.generated-dangerous-call-template",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "generated-joern-template",
+      "generator": "@attune/nx:joern-template",
+      "status": "generated",
+      "paths": [
+        "src/joern/templates/dangerous-call.ts",
+        "src/joern/templates/index.ts"
+      ],
+      "invariants": [
+        "Known template source, binding schema descriptors, output observations, renderer shell, and barrel export are generated together."
+      ]
+    },
+    {
+      "id": "joern-effect.generated-template-registry",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "generated-joern-template-registry",
+      "generator": "@attune/nx:sync-joern-templates",
+      "status": "generated",
+      "paths": [
+        "src/joern/templates/*.ts",
+        "src/joern/templates/TemplateRegistry.generated.ts"
+      ],
+      "invariants": [
+        "Known Joern templates participate in the generated registry and template barrel."
+      ]
+    },
+    {
+      "id": "joern-effect.query-builder",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "joern-query-builder",
+      "generator": "@attune/nx:joern-query-builder",
+      "status": "migrate",
+      "paths": [
+        "src/pure/builder/**",
+        "test/query-builder.test.ts"
+      ],
+      "invariants": [
+        "Query builder nodes, raw escape hatches, and proof tests stay paired."
+      ]
+    },
+    {
+      "id": "joern-effect.runtime-service",
+      "project": "joern-effect",
+      "projectRoot": "packages/joern-effect",
+      "kind": "joern-effect-service",
+      "generator": "@attune/nx:effect-service",
+      "status": "migrate",
+      "paths": [
+        "src/edge/runtime/**",
+        "test/**"
+      ],
+      "invariants": [
+        "Runtime service tags, live layers, diagnostics, and focused tests should move together."
+      ]
+    },
+    {
+      "id": "joern-effect-properties.effect-service-boundaries",
+      "project": "joern-effect-properties",
+      "projectRoot": "packages/joern-effect-properties",
+      "kind": "property-effect-service-boundary",
+      "generator": "@attune/nx:effect-service",
+      "status": "migrate",
+      "paths": [
+        "src/fuzz/services/*.ts",
+        "src/fuzz/config/runtime.ts",
+        "src/fuzz/pipeline/runner.ts"
+      ],
+      "invariants": [
+        "Fuzz services should each own a typed tag, layer, and targeted service test."
+      ]
+    },
+    {
+      "id": "joern-effect-properties.schema-family",
+      "project": "joern-effect-properties",
+      "projectRoot": "packages/joern-effect-properties",
+      "kind": "property-effect-schema-family",
+      "generator": "@attune/nx:effect-schema-model",
+      "status": "migrate",
+      "paths": [
+        "src/SourceSinkPipeline.ts",
+        "src/fuzz/domain/*.ts",
+        "src/events.ts"
+      ]
+    },
+    {
+      "id": "joern-effect-properties.property-campaign",
+      "project": "joern-effect-properties",
+      "projectRoot": "packages/joern-effect-properties",
+      "kind": "joern-property-campaign",
+      "generator": "@attune/nx:property-campaign",
+      "status": "migrate",
+      "paths": [
+        "src/attuneProperty.ts",
+        "src/fuzz/pipeline/**",
+        "test/**"
+      ],
+      "invariants": [
+        "Property campaign, scheduler, fixtures, and counterexample handling should be generated as a proof workbench."
+      ]
+    },
+    {
+      "id": "joern-effect-properties.semantic-mutator",
+      "project": "joern-effect-properties",
+      "projectRoot": "packages/joern-effect-properties",
+      "kind": "semantic-mutator",
+      "generator": "@attune/nx:semantic-mutator",
+      "status": "migrate",
+      "paths": [
+        "src/fuzz/services/mutator.ts",
+        "src/fuzz/templates/mutations.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Mutator service, mutation templates, and shrinking expectations should be generated together."
+      ]
+    },
+    {
+      "id": "joern-effect-properties.semantic-corpus",
+      "project": "joern-effect-properties",
+      "projectRoot": "packages/joern-effect-properties",
+      "kind": "semantic-corpus",
+      "generator": "@attune/nx:semantic-corpus",
+      "status": "migrate",
+      "paths": [
+        "src/fuzz/services/corpus.ts",
+        "src/fuzz/templates/projects.ts",
+        "src/fuzz/templates/workloads.ts"
+      ]
+    },
+    {
+      "id": "platform-alchemy-k8s.crd-definition",
+      "project": "platform-alchemy-k8s",
+      "projectRoot": "packages/platform-alchemy-k8s",
+      "kind": "k8s-crd-definition",
+      "generator": "@attune/nx:k8s-crd-definition",
+      "status": "migrate",
+      "paths": [
+        "src/crds/definitions.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "CRD schema, generated manifests, and generated types should originate from one typed definition."
+      ]
+    },
+    {
+      "id": "platform-alchemy-k8s.generated-crd-manifests",
+      "project": "platform-alchemy-k8s",
+      "projectRoot": "packages/platform-alchemy-k8s",
+      "kind": "generated-k8s-crd-manifests",
+      "generator": "scripts/generationStage.ts emit-crd-manifests",
+      "status": "generated",
+      "paths": [
+        "scripts/generationStage.ts",
+        "src/crds/definitions.ts",
+        "src/generated/crds/*.crd.json"
+      ]
+    },
+    {
+      "id": "platform-alchemy-k8s.generated-crd-types",
+      "project": "platform-alchemy-k8s",
+      "projectRoot": "packages/platform-alchemy-k8s",
+      "kind": "generated-k8s-crd-types",
+      "generator": "scripts/generationStage.ts emit-crd-types",
+      "status": "generated",
+      "paths": [
+        "scripts/generate-crd-types.ts",
+        "scripts/generationStage.ts",
+        "src/generated/crds.ts"
+      ]
+    },
+    {
+      "id": "platform-alchemy-k8s.k8s-resource-module",
+      "project": "platform-alchemy-k8s",
+      "projectRoot": "packages/platform-alchemy-k8s",
+      "kind": "k8s-resource-module",
+      "generator": "@attune/nx:k8s-resource",
+      "status": "migrate",
+      "paths": [
+        "src/resources/*.ts",
+        "test/**"
+      ],
+      "invariants": [
+        "Resource builder, props, common labels, and registry participation should be generated together."
+      ]
+    },
+    {
+      "id": "platform-alchemy-k8s.generated-resource-registry",
+      "project": "platform-alchemy-k8s",
+      "projectRoot": "packages/platform-alchemy-k8s",
+      "kind": "generated-k8s-resource-registry",
+      "generator": "scripts/generationStage.ts sync-k8s-resources",
+      "status": "generated",
+      "paths": [
+        "scripts/generationStage.ts",
+        "src/resources/*.ts",
+        "src/resources/ResourceRegistry.generated.ts"
+      ]
+    },
+    {
+      "id": "platform-alchemy-k8s.alchemy-provider",
+      "project": "platform-alchemy-k8s",
+      "projectRoot": "packages/platform-alchemy-k8s",
+      "kind": "alchemy-k8s-provider",
+      "generator": "@attune/nx:alchemy-k8s-provider",
+      "status": "migrate",
+      "paths": [
+        "src/provider/**",
+        "src/cluster/local-cluster.ts"
+      ],
+      "invariants": [
+        "Provider object-set encoding, Effect client, and Alchemy resource wrapper should share one generator grammar."
+      ]
+    }
+  ]
+}

@@ -48,7 +48,7 @@ describe("Attune Pi permission decisions", () => {
       expect(checkCommandPermission(command).decision).toBe("deny")
     }
 
-    expect(checkCommandPermission("corepack pnpm run deploy:preview").decision).toBe("ask")
+    expect(checkCommandPermission("pnpm run deploy:preview").decision).toBe("ask")
   })
 
   it("keeps deny stronger than ask and allow", () => {

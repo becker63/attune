@@ -1,0 +1,14 @@
+{
+  "name": "@attune/framework-oxlint-policy",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "@attune/framework-protocol": "workspace:*",
+    "effect": "4.0.0-beta.78",
+    "effect-oxlint": "^0.3.2"
+  }
+}

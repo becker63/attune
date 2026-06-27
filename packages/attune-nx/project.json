@@ -4,39 +4,262 @@
   "sourceRoot": "packages/attune-nx/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/attune-nx",
-        "command": "../../node_modules/.bin/tsc -p tsconfig.build.json && node scripts/write-generator-cjs-wrappers.mjs"
+        "targetProject": "attune-nx",
+        "tool": "typescript",
+        "action": "build",
+        "toolId": "tsc",
+        "parameters": {
+          "tsconfig": "tsconfig.build.json",
+          "postBuild": "attune-nx-generator-cjs-wrappers"
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attune-nx",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsgo --noEmit"
+        "dryRun": false,
+        "checks": [
+          "typecheck"
+        ]
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attune-nx",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsc --noEmit"
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true
+        }
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json packages/attune-nx --quiet"
+        "dryRun": false,
+        "checks": [
+          "lint"
+        ]
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attune-nx",
-        "command": "../../node_modules/.bin/vitest run"
+        "dryRun": false,
+        "checks": [
+          "test"
+        ]
       }
+    },
+    "attune-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable attune-check verb.",
+        "attune": {
+          "tier": "public",
+          "surface": "check"
+        }
+      },
+      "options": {
+        "targetProject": "attune-nx",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:attune-check"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune-repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable attune-repair verb when available.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-nx",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "attune-nx:attune:repair-symbol-registry",
+            "attune-nx:attune:repair-property-observations",
+            "attune-nx:attune:repair-schema-observations",
+            "attune-nx:attune:repair-observations",
+            "attune-nx:attune:repair-artifact-freshness"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune:repair-symbol-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer attune-nx:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "symbol-registry",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-nx",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-nx",
+          "kind": "symbol-registry"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-nx/attune-symbol-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-nx/attune-symbol-registry.ts"
+      ]
+    },
+    "attune:repair-property-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer attune-nx:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "property-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-nx",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-nx",
+          "kind": "property-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-nx/attune-property-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-nx/attune-property-observations.ts"
+      ]
+    },
+    "attune:repair-schema-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer attune-nx:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "schema-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-nx",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-nx",
+          "kind": "schema-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-nx/attune-schema-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-nx/attune-schema-observations.ts"
+      ]
+    },
+    "attune:repair-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer attune-nx:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-nx",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-nx",
+          "kind": "observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-nx/attune-observation-scaffold.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/observations/attune-nx/observation-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-nx/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/attune-nx/observation-scaffold.json"
+      ]
+    },
+    "attune:repair-artifact-freshness": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer attune-nx:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "artifact-freshness",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attune-nx",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attune-nx",
+          "kind": "artifact-freshness"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attune-nx/artifact-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attune-nx/artifact-freshness.json"
+      ]
     }
   }
 }

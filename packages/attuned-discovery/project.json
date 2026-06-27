@@ -4,39 +4,272 @@
   "sourceRoot": "packages/attuned-discovery/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "cwd": "packages/attuned-discovery",
-        "command": "../../node_modules/.bin/tsup src/index.ts --format esm,cjs --dts --sourcemap --clean"
+        "targetProject": "attuned-discovery",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts"
+          ],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attuned-discovery",
-        "command": "../../node_modules/.bin/tsgo --noEmit"
+        "targetProject": "attuned-discovery",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/attuned-discovery",
-        "command": "../../node_modules/.bin/tsc --noEmit"
+        "targetProject": "attuned-discovery",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "node_modules/.bin/oxlint --config root-oxlintrc.json packages/attuned-discovery --quiet"
+        "targetProject": "attuned-discovery",
+        "checks": [
+          "lint"
+        ],
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/attuned-discovery",
-        "command": "../../node_modules/.bin/vitest run"
+        "targetProject": "attuned-discovery",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
       }
+    },
+    "attune-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable attune-check verb.",
+        "attune": {
+          "tier": "public",
+          "surface": "check"
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:attune-check"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune-repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable attune-repair verb when available.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "attuned-discovery:attune:repair-symbol-registry",
+            "attuned-discovery:attune:repair-property-observations",
+            "attuned-discovery:attune:repair-schema-observations",
+            "attuned-discovery:attune:repair-observations",
+            "attuned-discovery:attune:repair-artifact-freshness"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune:repair-symbol-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer attuned-discovery:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "symbol-registry",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attuned-discovery",
+          "kind": "symbol-registry"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attuned-discovery/attune-symbol-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attuned-discovery/attune-symbol-registry.ts"
+      ]
+    },
+    "attune:repair-property-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer attuned-discovery:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "property-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attuned-discovery",
+          "kind": "property-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attuned-discovery/attune-property-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attuned-discovery/attune-property-observations.ts"
+      ]
+    },
+    "attune:repair-schema-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer attuned-discovery:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "schema-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attuned-discovery",
+          "kind": "schema-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attuned-discovery/attune-schema-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attuned-discovery/attune-schema-observations.ts"
+      ]
+    },
+    "attune:repair-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer attuned-discovery:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attuned-discovery",
+          "kind": "observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attuned-discovery/attune-observation-scaffold.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/observations/attuned-discovery/observation-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attuned-discovery/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/attuned-discovery/observation-scaffold.json"
+      ]
+    },
+    "attune:repair-artifact-freshness": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer attuned-discovery:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "artifact-freshness",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "attuned-discovery",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "attuned-discovery",
+          "kind": "artifact-freshness"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/attuned-discovery/artifact-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/attuned-discovery/artifact-freshness.json"
+      ]
     }
   }
 }

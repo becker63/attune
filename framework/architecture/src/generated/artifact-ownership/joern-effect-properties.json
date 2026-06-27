@@ -1,0 +1,41 @@
+{
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/**",
+        "test/**"
+      ],
+      "reason": "Property, fuzzer, Axiom, and Joern-backed validation workbench are proof-pressure infrastructure."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "joern-effect-properties",
+  "projectRoot": "packages/joern-effect-properties",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Property and Joern-backed targets provide semantic proof pressure for Joern Effect.",
+      "target": "property"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "property",
+    "property-joern",
+    "test",
+    "typecheck"
+  ],
+  "waivers": []
+}

@@ -4,6 +4,8 @@
     "noEmit": true,
     "types": ["node", "vitest/globals"],
     "paths": {
+      "@attune/framework-protocol": ["../../framework/protocol/src/index.ts"],
+      "@attune/framework-testing": ["../../framework/testing/src/index.ts"],
       "joern-effect": ["../joern-effect/src/index.ts"]
     }
   },

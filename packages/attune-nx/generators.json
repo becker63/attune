@@ -9,7 +9,17 @@
     "effect-service": {
       "factory": "./dist/generators/effect-service/generator",
       "schema": "./src/generators/effect-service/schema.json",
-      "description": "Create an Effect service boundary with a Context.Tag, live Layer shell, and export boundary."
+      "description": "Create a canonical Effect.Service boundary with symbol metadata, service layers, and artifact provenance."
+    },
+    "project-facts": {
+      "factory": "./dist/generators/project-facts/generator",
+      "schema": "./src/generators/project-facts/schema.json",
+      "description": "Create Effect Schema-backed project facts, symbol registry, observation plan, and artifact metadata."
+    },
+    "atom-view": {
+      "factory": "./dist/generators/atom-view/generator",
+      "schema": "./src/generators/atom-view/schema.json",
+      "description": "Create package-level Reactivity keys, atom shells, and atom graph registration."
     },
     "joern-template": {
       "factory": "./dist/generators/joern-template/generator",

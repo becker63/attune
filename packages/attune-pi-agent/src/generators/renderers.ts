@@ -83,7 +83,7 @@ export const renderTestObligationArtifact = (name: string): string => {
     claim: `${names.title} behavior is covered by deterministic tests.`,
     kind: "unit",
     target: "packages/<package>",
-    commands: ["NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run <project>:test"],
+    commands: ["NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec nx run <project>:test"],
     requiredEvidence: ["passing test output"],
     failureClassification: "implementation-bug",
   })

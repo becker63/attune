@@ -42,7 +42,9 @@ const readCodePropertyGraphSchema = (
       ),
   })
 
-export const extractSchema = (): Effect.Effect<RawSchema, JoernSchemaExtractionError> => {
+export const extractSchema = (
+  defaultSchemaPath?: string,
+): Effect.Effect<RawSchema, JoernSchemaExtractionError> => {
   const schemaPath = readEnv(EnvVars.JoernCpgSchemaJson)
   if (schemaPath) {
     return readSchemaFile(schemaPath)
@@ -51,6 +53,10 @@ export const extractSchema = (): Effect.Effect<RawSchema, JoernSchemaExtractionE
   const cpgDir = readEnv(EnvVars.CodePropertyGraphDir)
   if (cpgDir) {
     return readCodePropertyGraphSchema(cpgDir)
+  }
+
+  if (defaultSchemaPath) {
+    return readSchemaFile(defaultSchemaPath)
   }
 
   return Effect.fail(

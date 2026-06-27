@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "AtomViewGeneratorSchema",
+  "title": "Atom View",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Semantic project atom name, for example Host Readiness."
+    },
+    "projectId": {
+      "type": "string",
+      "description": "Program-index project id that owns this atom view."
+    },
+    "symbolId": {
+      "type": "string",
+      "description": "Public auditable symbol id connected to the atom graph."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Directory where atom view modules should be written.",
+      "default": "src/atoms"
+    },
+    "export": {
+      "type": "boolean",
+      "description": "Update an index.ts barrel in the atom view directory.",
+      "default": true
+    },
+    "reactivityKey": {
+      "type": "string",
+      "description": "Reactivity key refreshed by the symbol."
+    },
+    "baseAtomId": {
+      "type": "string",
+      "description": "Stable id for the generated base atom shell."
+    },
+    "derivedAtomId": {
+      "type": "string",
+      "description": "Stable id for the generated derived atom shell."
+    },
+    "projectAtomId": {
+      "type": "string",
+      "description": "Stable id for the generated project atom shell."
+    },
+    "project": {
+      "type": "string",
+      "description": "Owning Nx project recorded in artifact provenance."
+    },
+    "generatorVersion": {
+      "type": "string",
+      "description": "Generator package version recorded in artifact provenance."
+    },
+    "generatorRevision": {
+      "type": "string",
+      "description": "Generator source revision recorded in artifact provenance."
+    },
+    "openspecChangeId": {
+      "type": "string",
+      "description": "OpenSpec change id recorded in artifact provenance."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

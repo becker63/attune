@@ -1,0 +1,55 @@
+{
+  "projectFactShards": [
+    {
+      "generator": "@attune/nx:project-facts",
+      "outputs": [
+        "src/attune.package.ts"
+      ],
+      "sources": [
+        "project.json",
+        "src/**",
+        "test/**"
+      ],
+      "status": "generated",
+      "target": "sync-project-facts"
+    }
+  ],
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/**",
+        "test/**"
+      ],
+      "reason": "Architecture policy scanner and tests are policy source for the artifact ownership ratchet itself."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "src/attune.package.ts",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "attune-architecture",
+  "projectRoot": "framework/architecture",
+  "queryCheckTargetNotes": [
+    {
+      "note": "The package owns repo architecture policy; extend this shard as checks graduate from inventory to blocking rules.",
+      "target": "test"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "test",
+    "typecheck"
+  ],
+  "waivers": []
+}

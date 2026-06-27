@@ -53,19 +53,21 @@ leave the issue In Progress or blocked and comment with the PR URL plus the
 failure summary. Docs/spec-only work still needs a PR unless the issue
 explicitly says no PR is required and a human acknowledges that exception.
 
-Before marking Done, run the repository gate with the completion commit and,
-when available, the Linear issue and PR URL:
+Before marking Done, run the Nx-owned repository gate with the completion commit
+and, when available, the Linear issue and PR URL:
 
 ```bash
 CODEX_COMPLETION_COMMIT=<sha> \
 LINEAR_ISSUE_ID=<ATT-123> \
 GITHUB_PR_URL=https://github.com/becker63/attune/pull/<number> \
-corepack pnpm run codex:check
+nx run workspace:policy-fast
 ```
 
-The gate verifies that GitHub has a PR targeting `main` for the commit and that
-the PR names the Linear issue when `LINEAR_ISSUE_ID` is supplied. If the gate
-fails, automation must not treat the Codex run as complete.
+`workspace:policy-fast` is the public gate target. When the completion
+environment variables are supplied, it must verify that GitHub has a PR
+targeting `main` for the commit and that the PR names the Linear issue when
+`LINEAR_ISSUE_ID` is supplied. If the gate fails, automation must not treat the
+Codex run as complete.
 
 ## ATT-26 Missing PR Audit
 

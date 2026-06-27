@@ -1,0 +1,127 @@
+{
+  "entries": [
+    {
+      "checkTargets": [
+        {
+          "project": "attune-nx",
+          "target": "typecheck"
+        },
+        {
+          "project": "workspace",
+          "target": "attune-check"
+        }
+      ],
+      "editableRegions": [
+        {
+          "description": "Customized generator-tooling authored source boundary; validate exported symbols through program-index-backed check.",
+          "file": "packages/attune-nx/src/attune.package.ts",
+          "marker": "Generated-shape contract customized for @attune/nx itself."
+        }
+      ],
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
+      "options": {
+        "directory": "packages/attune-nx/src",
+        "symbolIds": [
+          "generate-effect-service",
+          "generate-project-facts",
+          "generate-atom-view",
+          "query-generator-inventory",
+          "query-project-facts-graph",
+          "upsert-artifact-provenance",
+          "normalize-executor-intent"
+        ],
+        "projectId": "attune-nx",
+        "projectKind": "generator-tooling",
+        "project": "attune-nx",
+        "sourceRoot": "packages/attune-nx"
+      },
+      "optionsHash": "fnv1a32:7c940244",
+      "ownedFiles": [
+        "packages/attune-nx/src/attune.package.ts"
+      ],
+      "owningProject": "attune-nx",
+      "projectRoot": "packages/attune-nx",
+      "sourceShapeKind": "project-facts",
+      "syncTargets": [
+        {
+          "project": "attune-nx",
+          "target": "sync-project-facts"
+        }
+      ]
+    }
+  ],
+  "generatedOutputs": [
+    {
+      "generator": "scripts/write-generator-cjs-wrappers.mjs",
+      "outputs": [
+        "dist/**"
+      ],
+      "sources": [
+        "src/generators/**",
+        "src/internal/**",
+        "generators.json"
+      ],
+      "target": "build"
+    }
+  ],
+  "projectFactShards": [
+    {
+      "generator": "@attune/nx:project-facts",
+      "outputs": [
+        "src/attune.package.ts"
+      ],
+      "sources": [
+        "generators.json",
+        "project.json",
+        "src/**",
+        "test/**"
+      ],
+      "status": "generated",
+      "target": "sync-project-facts"
+    }
+  ],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/generators/**",
+        "src/internal/**",
+        "test/**"
+      ],
+      "reason": "@attune/nx is the generator grammar package; its generator source is intentionally hand-authored."
+    }
+  ],
+  "ownedFiles": [
+    "README.md",
+    "generators.json",
+    "package.json",
+    "project.json",
+    "scripts/**",
+    "src/**",
+    "test/**",
+    "tsconfig.build.json",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "attune-nx",
+  "projectRoot": "packages/attune-nx",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Generator tests verify deterministic artifact ownership upserts and sync registry behavior.",
+      "target": "test"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/generators/**",
+    "src/internal/**",
+    "test/**",
+    "generators.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "typecheck"
+  ],
+  "waivers": []
+}

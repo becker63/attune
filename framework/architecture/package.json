@@ -1,0 +1,28 @@
+{
+  "name": "@attune/architecture",
+  "version": "0.0.0",
+  "description": "Typed architecture policy checks for Attune workspace conventions.",
+  "type": "module",
+  "bin": {
+    "attune-architecture": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@attune/framework-nx": "workspace:*",
+    "@attune/framework-protocol": "workspace:*",
+    "@attune/framework-runtime": "workspace:*",
+    "@attune/framework-sqlite": "workspace:*",
+    "effect": "4.0.0-beta.78"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  }
+}

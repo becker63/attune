@@ -1,0 +1,103 @@
+{
+  "entries": [
+    {
+      "checkTargets": [
+        {
+          "project": "effect-oxlint-policy",
+          "target": "typecheck"
+        },
+        {
+          "project": "workspace",
+          "target": "attune-check"
+        }
+      ],
+      "editableRegions": [
+        {
+          "description": "Policy-plugin authored source boundary; add policy rule symbols in the project facts file and validate through program-index-backed check.",
+          "file": "src/attune.package.ts",
+          "marker": "defineAttuneProjectFacts"
+        }
+      ],
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
+      "options": {
+        "symbolIds": [
+          "no-raw-process-env",
+          "no-raw-node-apis",
+          "no-arbitrary-package-manager-surfaces",
+          "no-hand-authored-architecture-shapes"
+        ],
+        "symbolKind": "policy-rule",
+        "projectId": "effect-oxlint-policy",
+        "projectKind": "policy-plugin",
+        "project": "effect-oxlint-policy",
+        "sourceRoot": "framework/oxlint-policy"
+      },
+      "optionsHash": "fnv1a32:d153d74e",
+      "ownedFiles": [
+        "src/attune.package.ts"
+      ],
+      "owningProject": "effect-oxlint-policy",
+      "projectRoot": "framework/oxlint-policy",
+      "sourceShapeKind": "project-facts",
+      "syncTargets": [
+        {
+          "project": "effect-oxlint-policy",
+          "target": "sync-project-facts"
+        }
+      ]
+    }
+  ],
+  "projectFactShards": [
+    {
+      "generator": "@attune/nx:project-facts",
+      "outputs": [
+        "src/attune.package.ts"
+      ],
+      "sources": [
+        "project.json",
+        "src/**",
+        "test/**"
+      ],
+      "status": "generated",
+      "target": "sync-project-facts"
+    }
+  ],
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/**",
+        "test/**"
+      ],
+      "reason": "Effect oxlint rules are policy source for enforcing Effect Platform and generator usage."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "src/**",
+    "test/**",
+    "tsconfig.json"
+  ],
+  "project": "effect-oxlint-policy",
+  "projectRoot": "framework/oxlint-policy",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Build output is consumed by the root oxlint Effect policy config.",
+      "target": "build"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "typecheck"
+  ],
+  "waivers": []
+}

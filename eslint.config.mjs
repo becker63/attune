@@ -12,6 +12,7 @@ export default [
       "imports/**",
       "node_modules/**",
       "dist/**",
+      "packages/**/dist/**",
       ".nx/**",
       "repomix-output.xml",
       "packages/**/src/generated/**",

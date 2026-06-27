@@ -44,21 +44,28 @@ See `IMPORTS.md` for import provenance.
 Common commands:
 
 ```bash
-node scripts/codex/pnpm.mjs exec nx run joern-effect:generate
-node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:typecheck
-node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:lint
-node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:test
-node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:smoke
-node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:workbench
+nx run workspace:attune-check
+nx run workspace:attune-repair
+nx run workspace:policy-fast
+nx run <project>:typecheck
+nx run <project>:test
 ```
 
-Container-backed fuzzing is exposed through Nx targets backed by the Nix/Arion
-runtime:
+Nx is the public workflow surface. Nix supplies the reproducible tools behind
+those targets. A normal package's Attune surface should be
+`src/attune.package.ts`; generated framework consequences belong to Nx repair,
+framework services, ProtocolStore projections, or gitignored cache. See
+`docs/attuned/Attune Framework Operating Surface.md` and
+`docs/platform/nx-nix-workflow.md`.
+
+Container-backed fuzzing and proof pressure are exposed through Nx targets
+backed by the Nix/Arion runtime:
 
 ```bash
-node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:container
-node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:nightly:container
-node scripts/codex/pnpm.mjs exec nx run joern-effect-properties:fuzz:dsl-four-hour:container
+nx run workspace:policy-proof-pressure
+nx run joern-effect-properties:fuzz:container
+nx run joern-effect-properties:fuzz:nightly:container
+nx run joern-effect-properties:fuzz:dsl-four-hour:container
 ```
 
 Runtime traces should go to OpenTelemetry/Axiom or container logs. Local

@@ -61,7 +61,7 @@ describe("attuned discovery", () => {
         runId: fixtureRun.runId,
         version: "not-a-number",
       }),
-    ).toThrow()
+    ).toThrow(/version/)
   })
 
   it("announces run-scoped ViewKeys after representative projection writes", () => {
@@ -625,6 +625,55 @@ describe("attuned discovery", () => {
     expect(workspace.inspect()).toContainEqual({
       label: `anchors:${fixtureRun.runId}`,
       key: ViewKeys.anchors(fixtureRun.runId),
+      version: 1,
+    })
+  })
+
+  it("refreshes atom-derived WorkbenchSnapshot through read-model Reactivity", () => {
+    let projection = replayDiscoveryEvents(fixtureDiscoveryEvents)
+    const projectionReactivity = makeReactivityRuntime()
+    const atomReactivity = makeInMemoryReactivity()
+    const workspace = makeDiscoveryAtomWorkspaceService({
+      readModel: readModelFromProjection(() => projection),
+      reactivity: atomReactivity,
+    }).registryFor(fixtureRun.runId)
+    const before = workspace.getWorkbenchSnapshot(1)
+    const scored = evidenceScored({
+      ...fixtureEvidence,
+      evidenceId: "evidence-read-model-snapshot-refresh",
+      templateId: "read-model-refresh",
+      createdAt: "2026-06-19T05:04:30.000Z",
+    })
+
+    const write = appendProjectedDiscoveryEvent(
+      projection,
+      scored,
+      projectionReactivity,
+    )
+    projection = write.projection
+    atomReactivity.mutation(
+      viewKeysForDiscoveryEvent(scored).map((key) => [key]),
+      () => undefined,
+    )
+
+    const after = workspace.getWorkbenchSnapshot(2)
+
+    expect(write.announcedKeys).toEqual(
+      expect.arrayContaining([
+        ...ViewKeys.evidence(fixtureRun.runId),
+        ...ViewKeys.runMetrics(fixtureRun.runId),
+      ]),
+    )
+    expect(after.version).toBe(before.version + 1)
+    expect(after.decisionPacket.evidence).toHaveLength(
+      before.decisionPacket.evidence.length + 1,
+    )
+    expect(after.scene.nodes.at(-1)?.id).toBe(
+      "evidence-read-model-snapshot-refresh",
+    )
+    expect(workspace.inspect()).toContainEqual({
+      label: `recentEvidence:${fixtureRun.runId}`,
+      key: ViewKeys.evidence(fixtureRun.runId),
       version: 1,
     })
   })

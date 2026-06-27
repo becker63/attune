@@ -4,7 +4,7 @@ import { emitSelect, emitTraversal } from "../../edge/runtime/emitCpgql.js"
 import { CpgProgramBuilder } from "../program/CpgProgramBuilder.js"
 import type { Finding, GraphFact, ProtocolDeviation } from "../program/Evidence.js"
 import type { BoundLike, FlowFilterAst, GraphIncludeAst, VariableId } from "../program/model.js"
-import type { FilterValue, RepeatModifier, TraversalSegment } from "./traversalAst.js"
+import type { FilterValue, TraversalSegment } from "./traversalAst.js"
 import { selectionSchema } from './select.js';
 import type { Selection, SelectionResult } from './select.js';
 import type { Property } from "./property.js"
@@ -21,7 +21,6 @@ const stepNames = [
   "astParent",
 ] as const
 
-type StepName = (typeof stepNames)[number]
 type ProgramEffect<A> = Effect.Effect<A, never, CpgProgramBuilder>
 
 export type FindingEvidenceBuilderShape = {

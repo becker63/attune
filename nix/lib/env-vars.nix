@@ -1,8 +1,6 @@
 {
   ci = "CI";
   codePropertyGraphDir = "CODEPROPERTYGRAPH_DIR";
-  corepackEnableDownloadPrompt = "COREPACK_ENABLE_DOWNLOAD_PROMPT";
-  corepackEnableProjectSpec = "COREPACK_ENABLE_PROJECT_SPEC";
   home = "HOME";
   javaHome = "JAVA_HOME";
   joernBinary = "JOERN_BINARY";

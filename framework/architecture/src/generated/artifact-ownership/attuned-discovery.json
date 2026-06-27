@@ -1,0 +1,118 @@
+{
+  "entries": [
+    {
+      "checkTargets": [
+        {
+          "project": "attuned-discovery",
+          "target": "typecheck"
+        },
+        {
+          "project": "workspace",
+          "target": "attune-check"
+        }
+      ],
+      "editableRegions": [
+        {
+          "description": "Core discovery runtime authored source boundary; add exported symbols in the project facts file and validate through program-index-backed check.",
+          "file": "src/attune.package.ts",
+          "marker": "defineAttuneProjectFacts"
+        }
+      ],
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
+      "options": {
+        "symbolIds": [
+          "discovery-events-facade",
+          "discovery-event-log-append",
+          "event-replay-projection",
+          "read-model-query",
+          "reactivity-key-map",
+          "base-atom-family",
+          "derived-workbench-atom-family",
+          "domain-event-codecs"
+        ],
+        "projectId": "attuned-discovery",
+        "projectKind": "core-discovery-runtime",
+        "project": "attuned-discovery",
+        "sourceRoot": "packages/attuned-discovery/src"
+      },
+      "optionsHash": "fnv1a32:9b71c50a",
+      "ownedFiles": [
+        "src/attune.package.ts"
+      ],
+      "owningProject": "attuned-discovery",
+      "projectRoot": "packages/attuned-discovery",
+      "sourceShapeKind": "project-facts",
+      "syncTargets": [
+        {
+          "project": "attuned-discovery",
+          "target": "sync-project-facts"
+        }
+      ]
+    }
+  ],
+  "projectFactShards": [
+    {
+      "generator": "@attune/nx:project-facts",
+      "outputs": [
+        "src/attune.package.ts"
+      ],
+      "sources": [
+        "project.json",
+        "src/**",
+        "test/**"
+      ],
+      "status": "generated",
+      "target": "sync-project-facts"
+    }
+  ],
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/index.ts",
+        "src/memory/**",
+        "src/projection/**",
+        "test/**"
+      ],
+      "reason": "Discovery schema, EventLog facade, read model, Reactivity, and atom view slices predate dedicated event/projection/atom-family generators."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "src/attune.package.ts",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "attuned-discovery",
+  "projectRoot": "packages/attuned-discovery",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Backfill @attune/nx discovery-event, projection, atom-family, and derived-atom generators before expanding repeated discovery shapes.",
+      "target": "test"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "typecheck"
+  ],
+  "waivers": [
+    {
+      "expires": null,
+      "paths": [
+        "src/index.ts"
+      ],
+      "reason": "Current discovery facade is intentionally consolidated until the generator split lands."
+    }
+  ]
+}

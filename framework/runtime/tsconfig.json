@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "outDir": "../../dist/out-tsc/framework/runtime",
+    "tsBuildInfoFile": "../../dist/out-tsc/framework/runtime/tsconfig.tsbuildinfo",
+    "types": ["node", "vitest"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]
+}

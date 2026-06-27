@@ -1,0 +1,31 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "framework-protocol",
+  "projectType": "library",
+  "root": "framework/protocol",
+  "sourceRoot": "framework/protocol/src",
+  "targets": {
+    "typecheck": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true,
+          "tsconfig": "tsconfig.json"
+        }
+      }
+    },
+    "test": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "dryRun": false,
+        "checks": [
+          "test"
+        ]
+      }
+    }
+  },
+  "tags": ["scope:framework", "attune:framework"]
+}

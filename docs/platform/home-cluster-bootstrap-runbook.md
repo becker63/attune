@@ -1,209 +1,115 @@
-# Attune Home Cluster Bootstrap
+# Attune ThinkCentre Day-0 Bootstrap
 
-This runbook is the operator path for the Effect/Alchemy-focused bootstrap. The
-source of truth is the typed Alchemy deployment surface exposed by
+This runbook mirrors the native Effect/Alchemy deployment model. It is not an
+alternate CLI workflow and it must not grow phase runners, wrapper commands, or
+local state machines. The source of truth is the Alchemy stack exported by
 `packages/home-deployment`.
 
-## 1. Prepare local SSH access
+## Operator Experience
 
-Create an ignored local key file before building the installer ISO:
+Tell the agent to use Effect Alchemy to step through
+`ThinkCentreDay0Deployment`.
 
-```bash
-mkdir -p nix/hosts/local
-printf '[ "%s" ]\n' "$(cat ~/.ssh/id_ed25519.pub)" > nix/hosts/local/bootstrap-ssh-keys.nix
-```
+The Alchemy graph owns:
 
-The installer grants these keys to `root`. Installed hosts grant them to the
-`attune` wheel user.
+- Asahi laptop observation and Tailscale readiness.
+- Laptop-local `x86_64-linux` Nix builder readiness.
+- SOPS recipient and encrypted Tailscale secret readiness.
+- ThinkCentre machine inventory for exactly `attune-cp-1`, `attune-cp-2`, and
+  `attune-cp-3`.
+- Installer ISO artifact readiness.
+- USB boot and destructive disk approval gates.
+- `nixos-anywhere` host activation.
+- Host-level Tailscale readiness.
+- comin steady-state convergence.
+- Final SSH, Tailscale, and comin network smoke checks.
 
-## 2. Inspect the deployment plan
+Agents should use Alchemy plan, preview/diff, apply, state, blockers, and manual
+gate semantics directly. Safe observations can advance automatically. External
+or irreversible resources such as laptop configuration, USB writes, and disk
+installs require Alchemy approval evidence.
 
-```bash
-node scripts/codex/pnpm.mjs exec nx run home-deployment:plan
-node scripts/codex/pnpm.mjs exec nx run home-deployment:status
-node scripts/codex/pnpm.mjs exec nx run home-deployment:reconcile
-```
+## Native Alchemy Entry
 
-`reconcile` is a dry-run by default. It selects runnable Alchemy resources,
-prints the underlying commands, and does not mutate state unless `--apply` is
-passed.
-
-Useful direct CLI forms:
-
-```bash
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts phases
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts status --json
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts reconcile --phase artifacts
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts state --json
-```
-
-The Alchemy plan covers:
-
-- installer ISO build
-- Tailscale auth readiness
-- K3s token readiness
-- per-node USB boot and destructive disk confirmation gates
-- `nixos-anywhere` install commands
-- Tailscale readiness checks
-- K3s init/join/readiness
-- kubeconfig fetch
-- typed Kubernetes graph apply
-- Windows desktop guard artifact and install
-
-## 3. Build the installer ISO
-
-Requires a machine with Nix available:
+Preview the native Alchemy stack from the repo root before any apply:
 
 ```bash
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts reconcile --phase artifacts --apply
+nix develop -c alchemy plan packages/home-deployment/alchemy.run.ts
 ```
 
-This runs the Alchemy `NixBuild` resources, including the installer ISO and
-Windows guard artifact. Write the resulting ISO to a USB stick with your
-preferred imaging tool.
-
-## 4. Prepare secrets outside git
-
-Create a K3s shared token and keep it outside the repository:
+Apply the accepted plan with the same stack:
 
 ```bash
-openssl rand -hex 32 > /path/to/k3s-server-token
+nix develop -c alchemy deploy packages/home-deployment/alchemy.run.ts --yes
 ```
 
-Prepare a Tailscale auth plan. The current Nix module enables Tailscale but does
-not commit auth keys; use an auth key, interactive login, or a local secret path.
-The typed plan treats this as a hard install gate so a host install cannot move
-to `planned` until the gate is confirmed.
+The dev shell provides Node, pnpm, OpenSpec, Alchemy on `PATH`, and disables
+Alchemy telemetry. The Day-0 entrypoint defaults to Live provider mode and local
+evidence state at `.attune/day0/state.json`. Alchemy v2 stores its own stack
+state under `.alchemy/state/thinkcentre-day0/<stage>/`; older ignored
+`.alchemy/thinkcentre-day0/<stage>/` files are pre-v2 validation artifacts and
+do not make the v2 stack deployed.
 
-Confirm those gates in the local plan state when ready:
+If OAuth is unavailable, the Tailscale auth material resource prompts for the
+manual auth-key path and records only redacted SOPS evidence. The provider writes
+encrypted material to `nix/hosts/local/thinkcentre-secrets.yaml`.
 
-```bash
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts confirm tailscale-auth-ready
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts confirm k3s-token-ready
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts status
+## Day-0 Prompts
+
+The graph exposes manual actions as resource metadata:
+
+- Tailscale OAuth setup opens `https://tailscale.com/docs/features/oauth-clients`
+  when `TAILSCALE_OAUTH_CLIENT_ID` and `TAILSCALE_OAUTH_CLIENT_SECRET` are not
+  available.
+- Manual Tailscale auth fallback opens
+  `https://login.tailscale.com/admin/settings/keys` and records only a redacted
+  SOPS secret reference.
+- x86 builder setup uses the local Asahi NixOS config at
+  `/home/becker/nixos-from-scratch`; if the live laptop is not ready, the
+  Alchemy resource reports this activation command:
+  `sudo nixos-rebuild switch --flake /home/becker/nixos-from-scratch#nixos-btw --option builders ""`.
+- x86 builder evidence records live `extra-platforms`, live `x86_64-linux`
+  binfmt registration, a tiny local x86 derivation build, and the
+  ThinkCentre host closure dry-run before any ISO or host closure build is
+  eligible.
+- USB media selection and USB write approval are separate Alchemy gates.
+- Per-host LAN binding, installer SSH, disk identity, Disko layout validation,
+  and destructive install approval are separate resources for each ThinkCentre.
+
+## Non-Goals For Day 0
+
+K3s, Kubernetes object application, kubeconfig routing, desktop GPU workers, and
+public ingress are deferred until the network-bootstrap smoke check passes.
+
+## Local Secrets
+
+Plaintext Tailscale keys, SOPS private age keys, SSH private keys, host keys,
+and local deployment evidence stay outside git. Only encrypted SOPS files,
+public recipient metadata, schemas, and source code belong in the repository.
+
+Live local inputs are expected under ignored paths:
+
+```text
+nix/hosts/local/bootstrap-ssh-keys.nix
+nix/hosts/local/bootstrap-age-key.txt
+nix/hosts/local/bootstrap-age-recipient.txt
+nix/hosts/local/thinkcentre-secrets.yaml
+nix/hosts/local/disks.nix
+.attune/day0/
 ```
 
-## 5. Install each ThinkCentre
+`nix/hosts/local/disks.nix` maps each host to the stable by-id disk path that
+Disko may wipe. The Alchemy Disko and host-closure commands generate this file
+from the approved `ATTUNE_CP_*_DISK` inputs before evaluating the host flake.
 
-For each node:
+## Physical Gates
 
-1. Boot the ThinkCentre from the Attune installer USB.
-2. Wait until SSH is reachable.
-3. Run the printed installer SSH probe, then confirm the USB boot gate.
-4. Run the printed `lsblk` disk probe, then confirm the destructive disk gate
-   only after verifying the target disk.
-5. Run the printed `nixos-anywhere` command.
-6. Copy the K3s token to the installed host outside git.
-7. Run the printed Tailscale and K3s readiness probes.
+The operator still has to perform physical actions:
 
-Example for `attune-cp-1`:
+- Select and approve the USB device before any write.
+- Boot each ThinkCentre from the installer USB.
+- Bind the discovered installer target to the intended host.
+- Approve the probed disk identity before destructive Disko or
+  `nixos-anywhere` operations.
 
-```bash
-ssh -o BatchMode=yes -o ConnectTimeout=5 root@attune-installer-cp-1.local true
-ssh -o BatchMode=yes -o ConnectTimeout=5 root@attune-installer-cp-1.local \
-  "test -e '/dev/disk/by-id/REPLACE_ME_ATTUNE_CP_1' && lsblk -o NAME,SIZE,MODEL,SERIAL,TYPE,MOUNTPOINTS '/dev/disk/by-id/REPLACE_ME_ATTUNE_CP_1'"
-
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts confirm attune-cp-1:usb-booted
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts confirm attune-cp-1:disk-wipe-confirmed
-
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts reconcile \
-  --resource attune-cp-1:nixos-anywhere-install \
-  --apply \
-  --allow-destructive
-
-ssh -o BatchMode=yes -o ConnectTimeout=5 attune@attune-cp-1 \
-  "sudo install -d -m 0700 /var/lib/attune/secrets"
-scp /path/to/k3s-server-token attune@attune-cp-1:/tmp/attune-k3s-server-token
-ssh -o BatchMode=yes -o ConnectTimeout=5 attune@attune-cp-1 \
-  "sudo install -m 0600 /tmp/attune-k3s-server-token '/var/lib/attune/secrets/k3s-server-token' && sudo rm -f /tmp/attune-k3s-server-token"
-```
-
-Repeat with `attune-cp-2` and `attune-cp-3`.
-
-The legacy helper prints the same command shape, but it is not the primary
-orchestration surface:
-
-```bash
-scripts/infra/attune-nixos-bootstrap attune-cp-1 root@attune-installer-cp-1.local
-```
-
-## 6. Verify K3s and fetch kubeconfig
-
-After `attune-cp-1` returns:
-
-```bash
-ssh -o BatchMode=yes -o ConnectTimeout=5 attune@attune-cp-1 \
-  "systemctl is-active --quiet tailscaled && tailscale status --json >/dev/null"
-ssh -o BatchMode=yes -o ConnectTimeout=5 attune@attune-cp-1 \
-  "sudo systemctl is-active --quiet attune-k3s-server"
-ssh -o BatchMode=yes -o ConnectTimeout=5 attune@attune-cp-1 \
-  "sudo k3s kubectl get node 'attune-cp-1' -o wide"
-ssh attune@attune-cp-1 sudo cat /etc/rancher/k3s/k3s.yaml
-```
-
-Or let Alchemy run the readiness probes as they become unblocked:
-
-```bash
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts reconcile --phase tailscale --apply
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts reconcile --phase k3s --apply
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts reconcile --phase kubeconfig --apply
-```
-
-After all three nodes are installed:
-
-```bash
-kubectl get nodes -o wide
-```
-
-## 7. Build and install the Windows desktop guard
-
-Build the generated Windows guard artifact:
-
-```bash
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts reconcile --phase desktop
-```
-
-The desktop phase is blocked until the platform graph and guard artifact are
-ready. Once unblocked, use `--apply` from the Windows-capable operator context.
-The generated command is:
-
-```powershell
-powershell.exe -ExecutionPolicy Bypass -File .\windows\Install-AttuneDesktopGuardTask.ps1 -Force
-```
-
-The generated config points at the `attune-runs/desktop-gpu` worker pool and has
-`interactive` and `vacation-capacity` profiles.
-
-## Current limitations
-
-- Hardware disk layouts are still placeholders until real ThinkCentre inventory
-  is captured.
-- This Codex environment could not run `nix build` or `nix eval`; validate those
-  on a Nix-capable machine before wiping disks.
-- Tailscale auth and K3s token material are intentionally out of repo and must be
-  provided locally.
-
-## 8. ATT-38 lifecycle and agent stepper surface
-
-ATT-38 makes Alchemy the lifecycle owner and keeps the CLI thin. Prefer the new
-agent-facing commands when stepping through the deployment with Taylor:
-
-```bash
-node scripts/codex/pnpm.mjs exec nx run home-deployment:next-step
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts plan --json
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts status --json
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts confirm <gate-id> --evidence <json-or-file>
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts deploy --target home --dry-run
-node scripts/codex/pnpm.mjs --dir packages/home-deployment exec tsx src/cli.ts destroy --target smoke --dry-run
-```
-
-`next-step --json` returns one deterministic step with one of these variants:
-
-- `SafeProbe`: an agent may run the probe automatically because it is non-mutating.
-- `ManualGate`: Taylor must provide typed evidence before dependent resources proceed.
-- `Apply`: a single transition is ready, but external or irreversible transitions require explicit approval.
-- `Blocked`: nothing can proceed; the output lists blockers and required operator action.
-
-Do not free-run `Apply` steps for host activation, Kubernetes mutation, desktop
-registration, or any irreversible/external operation. Re-run `plan`, `status`, or
-`next-step` after each confirmation or applied transition.
+Those are Alchemy gates, not runbook-only checklist items.

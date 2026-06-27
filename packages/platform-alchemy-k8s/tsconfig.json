@@ -4,6 +4,7 @@
     "noEmit": true,
     "types": ["node", "vitest/globals"],
     "paths": {
+      "@attune/framework-protocol": ["../../framework/protocol/src/index.ts"],
       "@attune/platform-alchemy-k8s": ["./src/index.ts"],
       "kubernetes-types/*": ["../../node_modules/.pnpm/node_modules/kubernetes-types/*"]
     }

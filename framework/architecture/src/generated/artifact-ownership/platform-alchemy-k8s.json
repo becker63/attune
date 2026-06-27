@@ -1,0 +1,94 @@
+{
+  "generatedOutputs": [
+    {
+      "generator": "scripts/generationStage.ts emit-crd-manifests",
+      "outputs": [
+        "src/generated/crds/*.crd.json"
+      ],
+      "sources": [
+        "src/crds/definitions.ts",
+        "scripts/generate-crd-types.ts",
+        "scripts/generationStage.ts"
+      ],
+      "target": "emit-crd-manifests"
+    },
+    {
+      "generator": "scripts/generationStage.ts emit-crd-types",
+      "outputs": [
+        "src/generated/crds.ts"
+      ],
+      "sources": [
+        "src/crds/definitions.ts",
+        "scripts/generate-crd-types.ts",
+        "scripts/generationStage.ts"
+      ],
+      "target": "emit-crd-types"
+    },
+    {
+      "generator": "scripts/generationStage.ts sync-k8s-resources",
+      "outputs": [
+        "src/resources/ResourceRegistry.generated.ts"
+      ],
+      "sources": [
+        "src/resources/*.ts",
+        "scripts/generationStage.ts"
+      ],
+      "target": "sync-k8s-resources"
+    }
+  ],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/cluster/local-cluster.ts",
+        "src/provider/**",
+        "src/resources/**"
+      ],
+      "reason": "Alchemy provider, local-cluster inventory, and Kubernetes resource builders were hand-authored before artifact ownership automation."
+    }
+  ],
+  "ownedFiles": [
+    "package.json",
+    "project.json",
+    "scripts/generate-crd-types.ts",
+    "scripts/generationStage.ts",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vitest.config.ts"
+  ],
+  "project": "platform-alchemy-k8s",
+  "projectRoot": "packages/platform-alchemy-k8s",
+  "queryCheckTargetNotes": [
+    {
+      "note": "check-generated verifies CRD and resource registry snapshots; add artifact ownership-native policy query annotations once helper support lands.",
+      "target": "check-generated"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/crds/definitions.ts",
+    "src/resources/*.ts",
+    "scripts/generate-crd-types.ts",
+    "scripts/generationStage.ts",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "generate-crd-types",
+    "emit-crd-manifests",
+    "emit-crd-types",
+    "emit-generated",
+    "sync-k8s-resources",
+    "generate",
+    "check-generated"
+  ],
+  "waivers": [
+    {
+      "expires": null,
+      "paths": [
+        "src/cluster/local-cluster.ts",
+        "src/resources/local-compute-stack.ts"
+      ],
+      "reason": "Home/local deployment shapes are retained in inventory mode only for the initial shard; destructive apply semantics require human review before policy promotion."
+    }
+  ]
+}

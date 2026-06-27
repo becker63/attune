@@ -10,13 +10,25 @@ Start with `attuned/`. Those documents are the current guiding light for the pro
 - Joern proves through known templates.
 - The model proposes bounded decisions; the runtime validates and records them.
 
+Core framework vocabulary:
+
+- `attuned/Attune Framework Core Primitives.md` - package, service, operation,
+  projection, atom/view, Reactivity, provider, generator, policy, evidence,
+  diagnostic, repair action, and mostly deduced ID authoring rules.
+- `attuned/Attune Framework Operating Surface.md` - the short agent-facing loop
+  for small package declarations, Nx repairs, private SQLite projection state,
+  generated companions, and what not to hand-edit.
+- `platform/nx-nix-workflow.md` - the Nx-first/Nix-backed workflow contract,
+  active Nix directory layout, Buck2 guard, and Joern property target modes.
+
 The raw imported repositories remain under `imports/` on disk during migration, but `docs/` is the tracked documentation home.
 
-## Current Reports
+## Historical Migration Notes
 
-- `joern-effect-fuzzer-run-report.md` - status and findings for the semantic
-  fuzzer, DSL-heavy Joern runs, expectation-bearing counterexamples, and the
-  Axiom/OTLP workbench.
+These files are retained as migration context. They are not source truth or the
+normal place for new run reports; future run records belong in framework
+diagnostics, Nx output, CI artifacts, stdout, or gitignored local cache.
+
 - `joern-effect-expectation-fuzzer-classification.md` - classification pass over
   the first expectation-bearing counterexamples, plus representative row and
   Graphology query shapes.

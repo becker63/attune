@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "outDir": "../../dist/out-tsc/framework/sqlite",
+    "tsBuildInfoFile": "../../dist/out-tsc/framework/sqlite/tsconfig.tsbuildinfo",
+    "types": ["node", "vitest"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]
+}

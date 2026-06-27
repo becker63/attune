@@ -18,15 +18,12 @@
       "require": "./dist/provider/alchemy-resource.cjs"
     }
   },
-  "scripts": {
-    "build": "tsup src/index.ts src/provider/alchemy-resource.ts --format esm,cjs --dts --sourcemap --clean",
-    "generate": "tsx scripts/generate-crd-types.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
   "dependencies": {
-    "alchemy": "^0.93.12",
-    "effect": "4.0.0-beta.78",
+    "@attune/framework-protocol": "workspace:*",
+    "@effect/platform-bun": "4.0.0-beta.85",
+    "@effect/platform-node": "4.0.0-beta.85",
+    "alchemy": "2.0.0-beta.57",
+    "effect": "4.0.0-beta.85",
     "kubernetes-types": "^1.30.0"
   },
   "devDependencies": {

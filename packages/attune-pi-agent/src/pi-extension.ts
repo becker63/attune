@@ -9,7 +9,6 @@ import type {
 
 export const ATTUNE_SPEC_COMMAND = "attune-spec"
 
-const widgetKey = "attune-spec"
 const orientationWidgetKey = "attune-orientation"
 const attuneGuideSentinel = "Attune Codex Agent Guide"
 const requiredOrientationDocs = [
@@ -145,7 +144,7 @@ export const formatAttuneOrientationPrompt = (
     "- Do not claim a document was read unless you actually read it.",
     "- Inspect `openspec/changes/` before material product changes and identify the active change when one applies.",
     "- Treat `AGENTS.md` as the controlling project contract.",
-    "- Use `NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx ...` for targeted JS/Nx validation.",
+    "- Use `NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec nx ...` for targeted JS/Nx validation.",
     "- Do not deploy, SSH, mutate secrets, touch `.env*`, push to main, or hide generated artifacts.",
     "",
     "When orientation is complete, reply with:",

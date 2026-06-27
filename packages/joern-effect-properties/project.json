@@ -4,134 +4,832 @@
   "sourceRoot": "packages/joern-effect-properties/src",
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "outputs": [
         "{projectRoot}/dist"
       ],
       "options": {
-        "cwd": "packages/joern-effect-properties",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsup src/index.ts --format esm,cjs --dts --sourcemap --clean --external joern-effect"
+        "targetProject": "joern-effect-properties",
+        "tool": "bundler",
+        "action": "build",
+        "toolId": "tsup",
+        "parameters": {
+          "entryPoints": [
+            "src/index.ts"
+          ],
+          "format": "esm,cjs",
+          "dts": true,
+          "sourcemap": true,
+          "clean": true,
+          "external": [
+            "joern-effect"
+          ]
+        },
+        "dryRun": false
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "cwd": "packages/joern-effect-properties",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsgo --noEmit"
+        "targetProject": "joern-effect-properties",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
       }
     },
     "typecheck:classic": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "cwd": "packages/joern-effect-properties",
-        "command": "node ../../scripts/codex/pnpm.mjs exec tsc --noEmit"
+        "targetProject": "joern-effect-properties",
+        "tool": "typescript",
+        "action": "check",
+        "toolId": "tsc",
+        "parameters": {
+          "classic": true
+        },
+        "dryRun": false
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:package-check",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json packages/joern-effect-properties --quiet"
+        "targetProject": "joern-effect-properties",
+        "checks": [
+          "lint"
+        ],
+        "dryRun": false
       }
     },
     "test": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "nix develop --command pnpm --dir packages/joern-effect-properties exec tsx scripts/runPropertyVitest.ts"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "test",
+        "toolId": "property-vitest",
+        "parameters": {
+          "nixDevShell": true
+        },
+        "resourceTier": "standard",
+        "timeoutSeconds": 240,
+        "workerBudget": {
+          "maxWorkers": 1,
+          "shardCount": 1,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1,
+            "end": 1000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "main-thread"
+          }
+        }
       }
     },
     "property": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "nix develop --command pnpm --dir packages/joern-effect-properties exec tsx scripts/runPropertyVitest.ts"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "test",
+        "toolId": "property-vitest",
+        "parameters": {
+          "nixDevShell": true
+        },
+        "resourceTier": "standard",
+        "timeoutSeconds": 240,
+        "workerBudget": {
+          "maxWorkers": 1,
+          "shardCount": 1,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1,
+            "end": 1000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "main-thread"
+          }
+        }
       }
     },
     "property-joern": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "nix develop --command pnpm --dir packages/joern-effect-properties exec tsx scripts/runPropertyVitest.ts"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "test",
+        "toolId": "property-vitest",
+        "parameters": {
+          "nixDevShell": true
+        },
+        "resourceTier": "standard",
+        "timeoutSeconds": 240,
+        "workerBudget": {
+          "maxWorkers": 1,
+          "shardCount": 1,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1,
+            "end": 1000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "main-thread"
+          }
+        }
+      }
+    },
+    "property-joern:container-direct": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "test",
+        "toolId": "property-vitest",
+        "parameters": {
+          "nixDevShell": false
+        },
+        "resourceTier": "standard",
+        "timeoutSeconds": 240,
+        "workerBudget": {
+          "maxWorkers": 1,
+          "shardCount": 1,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1,
+            "end": 1000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "main-thread"
+          }
+        }
+      }
+    },
+    "property-joern:container-image": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "nix",
+        "action": "build",
+        "toolId": "joern-effect-property-image",
+        "parameters": {
+          "attr": ".#joern-effect-property-image"
+        },
+        "dryRun": false
       }
     },
     "property-joern:container": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        "property-joern:container-image"
+      ],
       "options": {
-        "commands": [
-          "nix build .#joern-effect-property-image",
-          "JOERN_EFFECT_PROPERTY_TMPFS_SIZE=${JOERN_EFFECT_PROPERTY_TMPFS_SIZE:-10g} JOERN_EFFECT_PROPERTY_WORKERS=${JOERN_EFFECT_PROPERTY_WORKERS:-2} JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=${JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER:-2} JOERN_EFFECT_PROPERTY_CPUS=${JOERN_EFFECT_PROPERTY_CPUS:-4} arion -f nix/compose/joern-effect-property.arion.nix up --abort-on-container-exit"
+        "targetProject": "joern-effect-properties",
+        "tool": "arion",
+        "action": "deploy",
+        "toolId": "joern-effect-property-container",
+        "parameters": {
+          "composeFile": "nix/compose/joern-effect-property.arion.nix",
+          "tmpfsSize": "10g",
+          "workers": 2,
+          "cpusPerWorker": 2,
+          "cpus": 4,
+          "nxTarget": "joern-effect-properties:property-joern:container-direct"
+        },
+        "resourceTier": "external",
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/container.json"
         ],
-        "parallel": false
+        "dryRun": false
       }
     },
     "fuzz:smoke": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "nix develop --command pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset smoke"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "fuzz",
+        "toolId": "fuzzer:smoke",
+        "parameters": {
+          "preset": "smoke",
+          "nixDevShell": true
+        },
+        "resourceTier": "standard",
+        "timeoutSeconds": 120,
+        "workerBudget": {
+          "maxWorkers": 1,
+          "shardCount": 1,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1,
+            "end": 1000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/fuzz-smoke.json"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "main-thread"
+          }
+        }
       }
     },
     "fuzz:workbench": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "nix develop --command pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset workbench"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "fuzz",
+        "toolId": "fuzzer:workbench",
+        "parameters": {
+          "preset": "workbench",
+          "nixDevShell": true
+        },
+        "resourceTier": "heavy",
+        "timeoutSeconds": 900,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1001,
+            "end": 11000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/fuzz-workbench.json"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "worker"
+          }
+        }
       }
     },
     "fuzz:nightly": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "nix develop --command pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset nightly"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "fuzz",
+        "toolId": "fuzzer:nightly",
+        "parameters": {
+          "preset": "nightly",
+          "nixDevShell": true
+        },
+        "resourceTier": "heavy",
+        "timeoutSeconds": 3600,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 11001,
+            "end": 51000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/fuzz-nightly.json"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "worker"
+          }
+        }
       }
     },
     "fuzz:campaign": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "nix develop --command pnpm --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset campaign"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "fuzz",
+        "toolId": "fuzzer:campaign",
+        "parameters": {
+          "preset": "campaign",
+          "nixDevShell": true
+        },
+        "resourceTier": "heavy",
+        "timeoutSeconds": 14400,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 51001,
+            "end": 151000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/fuzz-campaign.json"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "worker"
+          }
+        }
       }
     },
     "fuzz:container": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        "property-joern:container-image"
+      ],
       "options": {
-        "commands": [
-          "nix build .#joern-effect-property-image",
-          "JOERN_EFFECT_PROPERTY_TMPFS_SIZE=${JOERN_EFFECT_PROPERTY_TMPFS_SIZE:-10g} JOERN_EFFECT_PROPERTY_WORKERS=${JOERN_EFFECT_PROPERTY_WORKERS:-2} JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=${JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER:-2} JOERN_EFFECT_PROPERTY_CPUS=${JOERN_EFFECT_PROPERTY_CPUS:-4} JOERN_EFFECT_PROPERTY_NX_TARGET=joern-effect-properties:fuzz:workbench:direct arion -f nix/compose/joern-effect-property.arion.nix up --abort-on-container-exit"
+        "targetProject": "joern-effect-properties",
+        "tool": "arion",
+        "action": "deploy",
+        "toolId": "joern-effect-property-container",
+        "parameters": {
+          "composeFile": "nix/compose/joern-effect-property.arion.nix",
+          "tmpfsSize": "10g",
+          "workers": 2,
+          "cpusPerWorker": 2,
+          "cpus": 4,
+          "nxTarget": "joern-effect-properties:fuzz:workbench:direct"
+        },
+        "resourceTier": "external",
+        "timeoutSeconds": 900,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1001,
+            "end": 11000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/container.json"
         ],
-        "parallel": false
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "process",
+            "randomSource": "worker"
+          }
+        }
       }
     },
     "fuzz:nightly:container": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        "property-joern:container-image"
+      ],
       "options": {
-        "commands": [
-          "nix build .#joern-effect-property-image",
-          "JOERN_EFFECT_PROPERTY_TMPFS_SIZE=${JOERN_EFFECT_PROPERTY_TMPFS_SIZE:-10g} JOERN_EFFECT_PROPERTY_WORKERS=${JOERN_EFFECT_PROPERTY_WORKERS:-2} JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=${JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER:-2} JOERN_EFFECT_PROPERTY_CPUS=${JOERN_EFFECT_PROPERTY_CPUS:-4} JOERN_EFFECT_PROPERTY_NX_TARGET=joern-effect-properties:fuzz:nightly:direct arion -f nix/compose/joern-effect-property.arion.nix up --abort-on-container-exit"
+        "targetProject": "joern-effect-properties",
+        "tool": "arion",
+        "action": "deploy",
+        "toolId": "joern-effect-property-container",
+        "parameters": {
+          "composeFile": "nix/compose/joern-effect-property.arion.nix",
+          "tmpfsSize": "10g",
+          "workers": 2,
+          "cpusPerWorker": 2,
+          "cpus": 4,
+          "nxTarget": "joern-effect-properties:fuzz:nightly:direct"
+        },
+        "resourceTier": "heavy",
+        "timeoutSeconds": 3600,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 11001,
+            "end": 51000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/container.json"
         ],
-        "parallel": false
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "process",
+            "randomSource": "worker"
+          }
+        }
       }
     },
     "fuzz:dsl-four-hour:container": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        "property-joern:container-image"
+      ],
       "options": {
-        "commands": [
-          "nix build .#joern-effect-property-image",
-          "JOERN_EFFECT_PROPERTY_TMPFS_SIZE=${JOERN_EFFECT_PROPERTY_TMPFS_SIZE:-8g} JOERN_EFFECT_PROPERTY_WORKERS=${JOERN_EFFECT_PROPERTY_WORKERS:-2} JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=${JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER:-2} JOERN_EFFECT_PROPERTY_CPUS=${JOERN_EFFECT_PROPERTY_CPUS:-4} JOERN_EFFECT_PROPERTY_NX_TARGET=joern-effect-properties:fuzz:dsl-four-hour:direct timeout 4h arion -f nix/compose/joern-effect-property.arion.nix up --abort-on-container-exit"
+        "targetProject": "joern-effect-properties",
+        "tool": "arion",
+        "action": "deploy",
+        "toolId": "joern-effect-property-container",
+        "parameters": {
+          "composeFile": "nix/compose/joern-effect-property.arion.nix",
+          "tmpfsSize": "8g",
+          "workers": 2,
+          "cpusPerWorker": 2,
+          "cpus": 4,
+          "nxTarget": "joern-effect-properties:fuzz:dsl-four-hour:direct"
+        },
+        "resourceTier": "heavy",
+        "timeoutSeconds": 14400,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 51001,
+            "end": 151000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/container.json"
         ],
-        "parallel": false
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "process",
+            "randomSource": "worker"
+          }
+        }
       }
     },
     "fuzz:workbench:direct": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset workbench"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "fuzz",
+        "toolId": "fuzzer:workbench",
+        "parameters": {
+          "preset": "workbench",
+          "nixDevShell": false
+        },
+        "resourceTier": "heavy",
+        "timeoutSeconds": 900,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 1001,
+            "end": 11000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/fuzz-workbench.json"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "worker"
+          }
+        }
       }
     },
     "fuzz:nightly:direct": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset nightly"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "fuzz",
+        "toolId": "fuzzer:nightly",
+        "parameters": {
+          "preset": "nightly",
+          "nixDevShell": false
+        },
+        "resourceTier": "heavy",
+        "timeoutSeconds": 3600,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 11001,
+            "end": 51000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/fuzz-nightly.json"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "worker"
+          }
+        }
       }
     },
     "fuzz:dsl-four-hour:direct": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "timeout 4h node scripts/codex/pnpm.mjs --dir packages/joern-effect-properties exec tsx scripts/runFuzzer.ts --preset campaign --batches 24 --cases 12 --joern-shard-size 12 --max-mutators 4 --query-budget 120 --query-feedback true --workers 2 --run-id joern-effect-dsl-4h-$(date -u +%Y%m%dT%H%M%SZ)"
+        "targetProject": "joern-effect-properties",
+        "tool": "worker-fuzz",
+        "action": "fuzz",
+        "toolId": "fuzzer:campaign",
+        "parameters": {
+          "preset": "campaign",
+          "nixDevShell": false,
+          "batches": 24,
+          "cases": 12,
+          "joernShardSize": 12,
+          "maxMutators": 4,
+          "queryBudget": 120,
+          "queryFeedback": true,
+          "workers": 2,
+          "runId": "joern-effect-dsl-four-hour"
+        },
+        "resourceTier": "heavy",
+        "timeoutSeconds": 14400,
+        "workerBudget": {
+          "maxWorkers": 2,
+          "shardCount": 2,
+          "shardIndex": 0,
+          "seedRange": {
+            "start": 51001,
+            "end": 151000
+          }
+        },
+        "evidenceOutputs": [
+          ".attune/cache/property-evidence/joern-effect-properties/fuzz-campaign.json"
+        ],
+        "dryRun": false
+      },
+      "metadata": {
+        "attune": {
+          "worker": {
+            "isolationLevel": "file",
+            "randomSource": "worker"
+          }
+        }
       }
+    },
+    "attune-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable attune-check verb.",
+        "attune": {
+          "tier": "public",
+          "surface": "check"
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:attune-check"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune-repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable attune-repair verb when available.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "joern-effect-properties:attune:repair-symbol-registry",
+            "joern-effect-properties:attune:repair-property-observations",
+            "joern-effect-properties:attune:repair-schema-observations",
+            "joern-effect-properties:attune:repair-observations",
+            "joern-effect-properties:attune:repair-artifact-freshness"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune:repair-symbol-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer joern-effect-properties:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "symbol-registry",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect-properties",
+          "kind": "symbol-registry"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect-properties/attune-symbol-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/attune-symbol-registry.ts"
+      ]
+    },
+    "attune:repair-property-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer joern-effect-properties:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "property-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect-properties",
+          "kind": "property-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect-properties/attune-property-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/attune-property-observations.ts"
+      ]
+    },
+    "attune:repair-schema-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer joern-effect-properties:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "schema-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect-properties",
+          "kind": "schema-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect-properties/attune-schema-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/attune-schema-observations.ts"
+      ]
+    },
+    "attune:repair-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer joern-effect-properties:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect-properties",
+          "kind": "observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect-properties/attune-observation-scaffold.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/observations/joern-effect-properties/observation-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/joern-effect-properties/observation-scaffold.json"
+      ]
+    },
+    "attune:repair-artifact-freshness": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer joern-effect-properties:attune-repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "artifact-freshness",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect-properties",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect-properties",
+          "kind": "artifact-freshness"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect-properties/artifact-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/artifact-freshness.json"
+      ]
     }
   }
 }

@@ -20,7 +20,44 @@
     },
     "tag": {
       "type": "string",
-      "description": "Effect Context.Tag identifier."
+      "description": "Effect.Service identifier."
+    },
+    "symbolId": {
+      "type": "string",
+      "description": "Auditable symbol id recorded in the generated project-facts placeholder."
+    },
+    "symbolKind": {
+      "type": "string",
+      "description": "Canonical symbol kind recorded in the generated project-facts placeholder.",
+      "default": "command",
+      "enum": [
+        "codec",
+        "query",
+        "command",
+        "projection",
+        "event-facade",
+        "atom-family",
+        "resource-provider",
+        "generator",
+        "policy-rule",
+        "joern-template"
+      ]
+    },
+    "project": {
+      "type": "string",
+      "description": "Owning Nx project recorded in artifact provenance."
+    },
+    "generatorVersion": {
+      "type": "string",
+      "description": "Generator package version recorded in artifact provenance."
+    },
+    "generatorRevision": {
+      "type": "string",
+      "description": "Generator source revision recorded in artifact provenance."
+    },
+    "openspecChangeId": {
+      "type": "string",
+      "description": "OpenSpec change id recorded in artifact provenance."
     }
   },
   "required": ["name"],

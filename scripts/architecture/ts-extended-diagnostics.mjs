@@ -14,9 +14,9 @@ for (const tsconfig of packageTsconfigs) {
   console.log(`\n== ${packageDir} ==`);
   try {
     const output = execFileSync(
-      "corepack",
-      ["pnpm", "exec", "tsc", "--noEmit", "--extendedDiagnostics", "--project", tsconfig],
-      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+      "pnpm",
+      ["exec", "tsc", "--noEmit", "--extendedDiagnostics", "--project", "tsconfig.json"],
+      { cwd: packageDir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
     );
     console.log(output.trim());
   } catch (error) {

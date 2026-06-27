@@ -16,7 +16,7 @@ The state philosophy is:
 ```txt
 Effect services run the machine.
 EventLog records what happened.
-Drizzle materializes durable facts.
+SQL projections materialize durable facts.
 Reactivity announces which facts changed.
 Atoms understand the current state.
 Workflow advances from that state.
@@ -98,7 +98,7 @@ flowchart TD
 
   subgraph DurableRead["Durable read side: facts become queryable"]
     E --> F["Projection handler"]
-    F --> G["Drizzle read model"]
+    F --> G["SQL projection read model"]
   end
 
   subgraph Freshness["Freshness side: changed facts are announced"]
@@ -120,7 +120,7 @@ flowchart TD
 This document focuses on the bottom half:
 
 ```txt
-Drizzle read model
+SQL projection read model
   → Reactivity keys
   → base atoms
   → derived atoms
@@ -164,7 +164,7 @@ Projection handlers never invent domain facts.
 Durable read state is queryable projection.
 
 ```txt
-Drizzle / Postgres tables
+SQL projections / Postgres tables
 ```
 
 It answers:
@@ -180,8 +180,8 @@ What review items are open?
 Rules:
 
 ```txt
-Projection handlers update Drizzle.
-Read-model services query Drizzle.
+Projection handlers update SQL projections.
+Read-model services query SQL projections.
 Atoms read through read-model services.
 Do not import table definitions everywhere.
 ```
@@ -256,7 +256,7 @@ flowchart TD
 
   subgraph DurableMemory["Durable memory owns facts"]
     G["EventLog"]
-    H["Drizzle projections"]
+    H["SQL projection layer"]
   end
 
   subgraph ReactivityLayer["Reactivity owns freshness signals"]
@@ -420,7 +420,7 @@ Conceptual shape:
 ```txt
 EventLog event
   → projection handler
-  → Drizzle write
+  → SQL projections write
   → Reactivity invalidates changed keys
   → base atoms refresh later
 ```
@@ -468,7 +468,7 @@ They are not business logic buckets.
 flowchart TD
   A["Reactivity key: evidence(runId)"] --> B["recentEvidenceAtom"]
   C["MotifReadModel"] --> B
-  D["Drizzle"] --> C
+  D["SQL projections"] --> C
   B --> E["Evidence[]"]
 ```
 
@@ -573,7 +573,7 @@ It should not include:
 
 ```txt
 raw EventLog history
-full Drizzle tables
+full durable projection tables
 full codebase content
 internal atom graph mechanics
 worker pool implementation details
@@ -688,7 +688,7 @@ The ownership model:
 RepoSnapshot owns expensive materialization.
 DiscoveryRun owns temporary reasoning state.
 EventLog owns history.
-Drizzle owns durable projections.
+SQL projections owns durable projections.
 Atoms own disposable derived views.
 ```
 
@@ -712,7 +712,7 @@ flowchart TD
 
   subgraph Durable["Durable memory"]
     I["EventLog"]
-    J["Drizzle projections"]
+    J["SQL projection layer"]
   end
 
   Snapshot --> Run
@@ -798,7 +798,7 @@ Bad atom responsibilities:
 start Joern process
 run CocoIndex indexing
 write EventLog event
-mutate Drizzle
+mutate SQL projections
 promote rule candidate
 send model request
 own worker queue
@@ -825,7 +825,7 @@ flowchart TD
   B --> C["Effect handler"]
   C --> D["Effect service executes"]
   D --> E["DiscoveryEvents writes event"]
-  E --> F["Projection updates Drizzle"]
+  E --> F["Projection updates SQL projections"]
   F --> G["Reactivity invalidates keys"]
   G --> H["Atoms refresh"]
 ```
@@ -894,7 +894,7 @@ Then atoms should derive the same view from the replayed read model.
 
 ```mermaid
 flowchart TD
-  A["EventLog replay"] --> B["Drizzle projections rebuilt"]
+  A["EventLog replay"] --> B["SQL projection layer rebuilt"]
   B --> C["base atoms read projections"]
   C --> D["derived atoms recompute"]
   D --> E["DecisionPacket snapshot"]
@@ -922,14 +922,14 @@ Test the state model in layers.
 
 ```txt
 event in
-  → Drizzle rows changed
+  → SQL projections rows changed
   → correct Reactivity keys announced
 ```
 
 ### 20.2 Base atom tests
 
 ```txt
-Drizzle fixture
+SQL projections fixture
   → base atom value
 ```
 
@@ -1068,7 +1068,7 @@ The fallback is acceptable:
 
 ```txt
 Replace atom-derived views with an imperative DecisionPacketBuilder.
-Keep Effect services, EventLog, Drizzle, and Workflow unchanged.
+Keep Effect services, EventLog, SQL projections, and Workflow unchanged.
 ```
 
 This is a good architectural sign.
@@ -1140,7 +1140,7 @@ The workflow advances from that view.
 Final architecture sentence:
 
 ```txt
-Attune uses Effect services to execute expensive codebase operations, EventLog and Drizzle to remember their durable results, Reactivity to announce which run-scoped facts changed, and server-side atoms to derive the current reasoning view that feeds Pi, FoldKit, plateau detection, and the next workflow step.
+Attune uses Effect services to execute expensive codebase operations, EventLog and SQL projections to remember their durable results, Reactivity to announce which run-scoped facts changed, and server-side atoms to derive the current reasoning view that feeds Pi, FoldKit, plateau detection, and the next workflow step.
 ```
 
 Shortest version:
@@ -1148,7 +1148,7 @@ Shortest version:
 ```txt
 Effect runs the machine.
 EventLog remembers the machine.
-Drizzle materializes the machine.
+SQL projections materialize the machine.
 Reactivity tells us what changed.
 Atoms explain the machine.
 ```

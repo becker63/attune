@@ -1,0 +1,19 @@
+{
+  "name": "@attune/framework-language-service",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@attune/framework-protocol": "workspace:*",
+    "@attune/framework-runtime": "workspace:*",
+    "@attune/framework-sqlite": "workspace:*",
+    "effect": "4.0.0-beta.78"
+  }
+}

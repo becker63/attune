@@ -36,6 +36,16 @@ let
       configured = builtins.getEnv "JOERN_EFFECT_PROPERTY_NX_TARGET";
     in
     if configured == "" then "joern-effect-properties:property-joern" else configured;
+  debugEnabled =
+    let
+      configured = builtins.getEnv "JOERN_EFFECT_DEBUG";
+    in
+    if configured == "" then "0" else configured;
+  e2eRuns =
+    let
+      configured = builtins.getEnv "JOERN_EFFECT_E2E_RUNS";
+    in
+    if configured == "" then "3" else configured;
   fuzzCaseCount =
     let
       configured = builtins.getEnv "JOERN_EFFECT_FUZZ_CASES";
@@ -96,7 +106,6 @@ in
   ];
   services.property.image.rawConfig = {
     Env = [
-      "${envVars.corepackEnableDownloadPrompt}=0"
       "${envVars.joernBinary}=${joern}/bin/joern"
       "${envVars.joernHome}=${joern}"
       "${envVars.joernCpgVersion}=${cpgVersion}"
@@ -109,11 +118,13 @@ in
       "JOERN_EFFECT_PROPERTY_CPUS=${cpuCount}"
       "LD_LIBRARY_PATH=${astgenLibraryPath}"
       "NODE_EXTRA_CA_CERTS=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+      "JOERN_EFFECT_DEBUG=${debugEnabled}"
       "JOERN_EFFECT_FUZZ_CASES=${fuzzCaseCount}"
       "JOERN_EFFECT_FUZZ_BATCHES=${fuzzBatchCount}"
       "JOERN_EFFECT_FUZZ_JOERN_SHARD_SIZE=${fuzzJoernShardSize}"
       "JOERN_EFFECT_FUZZ_MAX_MUTATORS=${fuzzMaxMutators}"
       "JOERN_EFFECT_FUZZ_SEED=${fuzzSeed}"
+      "JOERN_EFFECT_E2E_RUNS=${e2eRuns}"
       "JOERN_EFFECT_PROPERTY_RUN_ID=${propertyRunId}"
       "JOERN_EFFECT_PROPERTY_NX_TARGET=${nxTarget}"
       "NX_DAEMON=false"
@@ -127,16 +138,16 @@ in
 
   services.property.service = {
     command = ''
-      bash -lc "rm -rf /work/attune && mkdir -p /work/attune && cd /workspace && tar --exclude='./.git' --exclude='./.nx' --exclude='./imports' --exclude='./node_modules' --exclude='./reports' --exclude='./result' --exclude='./workspace' -cf - . | tar -C /work/attune -xf - && ln -s /workspace/node_modules /work/attune/node_modules && cd /work/attune && ./node_modules/.bin/nx run ${nxTarget}"
+      bash -lc "rm -rf /work/attune && mkdir -p /work/attune && cd /workspace && tar --exclude='./.git' --exclude='./.nx' --exclude='./imports' --exclude='./node_modules' --exclude='./reports' --exclude='./result' --exclude='./workspace' -cf - . | tar -C /work/attune -xf - && ln -s /workspace/node_modules /work/attune/node_modules && cd /work/attune && pnpm exec nx run ${nxTarget}"
     '';
     environment = {
-      COREPACK_ENABLE_DOWNLOAD_PROMPT = "0";
       JAVA_TOOL_OPTIONS = "-XX:ActiveProcessorCount=${cpuCount} -Djava.io.tmpdir=/tmp";
       JOERN_EFFECT_FUZZ_CASES = fuzzCaseCount;
       JOERN_EFFECT_FUZZ_BATCHES = fuzzBatchCount;
       JOERN_EFFECT_FUZZ_JOERN_SHARD_SIZE = fuzzJoernShardSize;
       JOERN_EFFECT_FUZZ_MAX_MUTATORS = fuzzMaxMutators;
       JOERN_EFFECT_FUZZ_SEED = fuzzSeed;
+      JOERN_EFFECT_DEBUG = debugEnabled;
       JOERN_EFFECT_PROPERTY_RUN_ID = propertyRunId;
       JOERN_EFFECT_PROPERTY_CPUS = cpuCount;
       JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER = cpusPerWorker;
@@ -144,6 +155,7 @@ in
       JOERN_EFFECT_TEST_TMPDIR = "/work/property-inputs";
       JOERN_EFFECT_WORKSPACE = "/work/joern-workspace";
       JOERN_EFFECT_PROPERTY_TMPFS_SIZE = tmpfsSize;
+      JOERN_EFFECT_E2E_RUNS = e2eRuns;
       JOERN_EFFECT_PROPERTY_NX_TARGET = nxTarget;
       LD_LIBRARY_PATH = astgenLibraryPath;
       NODE_EXTRA_CA_CERTS = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";

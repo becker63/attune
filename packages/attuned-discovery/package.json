@@ -13,12 +13,8 @@
       "require": "./dist/index.cjs"
     }
   },
-  "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
   "dependencies": {
+    "@attune/framework-protocol": "workspace:*",
     "effect": "4.0.0-beta.78",
     "drizzle-orm": "^0.45.2"
   },

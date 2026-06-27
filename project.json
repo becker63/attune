@@ -3,19 +3,457 @@
   "root": ".",
   "targets": {
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "command": "node scripts/codex/pnpm.mjs exec oxlint --config root-oxlintrc.json package.json project.json nx.json tsconfig.base.json packages --quiet"
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "root-lint",
+        "parameters": {},
+        "dryRun": false
       }
     },
     "check": {
-      "executor": "nx:run-commands",
+      "executor": "@attune/nx:toolchain",
       "options": {
-        "commands": [
-          "node scripts/codex/pnpm.mjs exec nx run-many -t lint,typecheck --all",
-          "openspec validate --all --no-interactive"
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:policy-fast"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "attune-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework check surface for package declarations, generated materialization, framework diagnostics, no-report policy, and import boundaries."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:program-facts-check"
+          ]
+        },
+        "timeoutSeconds": 240,
+        "dryRun": false
+      }
+    },
+    "attune-repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework repair/materialization surface. Runs deterministic framework materialization and diagnostics without raw shell or checked-in reports."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "attune-repair",
+        "parameters": {
+          "allSafe": true
+        },
+        "dryRun": false
+      }
+    },
+    "artifact-ownership-check": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "artifact-ownership",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "program-index-materialize": {
+      "executor": "@attune/nx:toolchain",
+      "dependsOn": [
+        {
+          "projects": [
+            "attune-nx"
+          ],
+          "target": "build"
+        }
+      ],
+      "metadata": {
+        "description": "Materialize mechanical project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, and repair facts into the SQLite program index before recipe/program-index diagnostics run."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "program-index-materialize",
+        "parameters": {},
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/program-index.sqlite"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/program-index.sqlite"
+      ]
+    },
+    "tool-versions": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Print pinned Nix/Nx tool versions used by active workspace targets."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "tool-versions",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "shape-conformance": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Effect Schema-backed generator shape inventory and Artifact ownership conformance check."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "shape-conformance",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "program-facts-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Focused diagnostic target for program facts, artifact ownership, generator shape conformance, and framework policy.",
+        "attune": {
+          "runtimeChecks": [
+            "descriptor-decode",
+            "descriptor-hash",
+            "generated-artifact-hash",
+            "program-index-diagnostics",
+            "waiver-state",
+            "import-boundary",
+            "local-cache",
+            "no-checked-in-report"
+          ],
+          "readModel": "ProgramFactQuery"
+        }
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:program-index-materialize",
+            "workspace:artifact-ownership-check",
+            "workspace:shape-conformance",
+            "workspace:framework-policy-check"
+          ]
+        },
+        "timeoutSeconds": 240,
+        "dryRun": false
+      }
+    },
+    "atom-graph-conformance": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Cheap deterministic package atom/Reactivity graph conformance diagnostics."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {
+          "only": "atom-graph"
+        },
+        "dryRun": false
+      }
+    },
+    "property-evidence": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Cheap deterministic property evidence and worker target metadata diagnostics."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {
+          "only": "property-evidence"
+        },
+        "dryRun": false
+      }
+    },
+    "coverage-conformance": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Cheap deterministic package coverage guidance conformance diagnostics."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {
+          "only": "coverage-conformance"
+        },
+        "dryRun": false
+      }
+    },
+    "framework-policy-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Focused framework import-boundary and no checked-in protocol report policy check."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "policy-install-hooks": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Install the repo-owned Nix/Nx Git hooks for commit and push validation."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "install",
+        "toolId": "git-hooks",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "policy-commit": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Default pre-commit policy gate; composes through workspace:policy-fast."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:policy-fast"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "policy-push": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Default pre-push policy gate; heavy/manual push campaigns use workspace:policy-proof-pressure."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:policy-fast"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "arch:scan": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:program-facts-check."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "scan",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "arch:deps": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "deps",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "arch:cycles": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "cycles",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "arch:unused": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "unused",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "arch:complexity": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "complexity",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "arch:duplicates": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "duplicates",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "arch:types": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "types",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "arch:churn": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "churn",
+        "parameters": {},
+        "dryRun": false
+      }
+    },
+    "arch:mutation": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Explicit mutation-pressure architecture gate. Only workspace:policy-proof-pressure invokes this target."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "mutate",
+        "toolId": "stryker",
+        "parameters": {
+          "config": "stryker.conf.json"
+        },
+        "resourceTier": "heavy",
+        "evidenceOutputs": [
+          ".attune/cache/mutation/workspace-architecture"
         ],
-        "parallel": false
+        "dryRun": false
+      }
+    },
+    "policy-proof-pressure": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Heavy/manual proof-pressure surface for property, Joern, fuzz, mutation, coverage, and architecture campaigns."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:program-facts-check",
+            "workspace:atom-graph-conformance",
+            "workspace:property-evidence",
+            "workspace:coverage-conformance",
+            "attune-architecture:test",
+            "workspace:arch:scan",
+            "workspace:arch:deps",
+            "workspace:arch:cycles",
+            "workspace:arch:complexity",
+            "workspace:arch:duplicates",
+            "workspace:arch:types",
+            "workspace:arch:churn",
+            "effect-oxlint-policy:test",
+            "effect-oxlint-policy:build",
+            "joern-effect-properties:property",
+            "joern-effect-properties:property-joern",
+            "joern-effect-properties:fuzz:smoke",
+            "attune-pi-agent:property",
+            "attune-pi-agent:mutation",
+            "workspace:arch:mutation"
+          ],
+          "effectOxlintPolicy": true
+        },
+        "dryRun": false
+      }
+    },
+    "policy-fast": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "attune-nx:test",
+            "workspace:program-facts-check",
+            "workspace:atom-graph-conformance",
+            "workspace:property-evidence",
+            "workspace:coverage-conformance",
+            "attune-architecture:test",
+            "workspace:arch:scan",
+            "workspace:arch:deps",
+            "workspace:arch:cycles",
+            "workspace:arch:complexity",
+            "workspace:arch:duplicates",
+            "workspace:arch:types",
+            "workspace:arch:churn",
+            "effect-oxlint-policy:test",
+            "effect-oxlint-policy:build"
+          ],
+          "graphFile": "/tmp/attune-nx-graph.json",
+          "effectOxlintPolicy": true,
+          "verifyPrCompletion": true
+        },
+        "dryRun": false
+      }
+    },
+    "policy-all": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:policy-push",
+            "workspace:policy-proof-pressure"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "codex-audit-prs": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "codex-audit-prs",
+        "parameters": {},
+        "dryRun": false
       }
     }
   }

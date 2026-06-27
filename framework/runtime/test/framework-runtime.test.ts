@@ -1,0 +1,948 @@
+import { Effect } from "effect"
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { describe, expect, it } from "vitest"
+import {
+  hashProgramValue,
+  type ProgramSchemaDescriptor,
+  type ProgramObservation,
+  type ProgramObservationRun,
+  type ProgramArtifactRecord,
+} from "@attune/framework-protocol"
+import {
+  InMemoryProgramFactStoreLive,
+  consumeProgramIndexInvalidations,
+  ProgramDiagnostics,
+  ProgramDiagnosticsLive,
+  ProgramIndexDiagnosticsLive,
+  ProgramFactProjectionLive,
+  ProgramFactQuery,
+  ProgramFactQueryLive,
+  ProgramFactRuntime,
+  ProgramFactRuntimeLive,
+  ProgramFactStore,
+  diagnosticsForFileAtom,
+  materializeProgramSourceIndex,
+  programIndexDiagnosticsForFile,
+  programSourceIndexRows,
+  projectIndexAtom,
+  reactivityEventsFromInvalidations,
+  repairPlansAtom,
+  SqliteProgramFactStoreLive,
+  sourceFileSymbolsAtom,
+  staleArtifactsAtom,
+  workspaceHealthAtom,
+  computeProgramFactFindings,
+  diagnosticsForProgramFacts,
+  explainDiagnosticRequirement,
+  getProjectSummary,
+  getRepairPlan,
+  type CoverageObservationFeedback,
+  type ReplayObservationMetadata,
+  type ProgramFactStoreSnapshot,
+  type DiagnosticWaiverState,
+} from "../src/index.js"
+import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
+
+const demoDescriptor = {
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  packageKind: "policy-plugin",
+  descriptorHash: "demo-hash",
+  sourcePath: "packages/demo/src/attune.package.ts",
+  views: {
+    reactivityKeys: ["demo.changed"],
+    atoms: ["demoView"],
+  },
+  services: [],
+  operations: [{
+    id: "project",
+    kind: "projection",
+    views: {
+      reactivityKeys: ["demo.changed"],
+      atoms: ["demoView"],
+    },
+    laws: ["projection.deterministic-replay"],
+    inputSchema: "ProjectInput",
+    outputSchema: "ProjectOutput",
+  }],
+  waivers: [],
+  coverageExpectations: [],
+} as const
+
+const demoEvidenceRun: ProgramObservationRun = {
+  runId: "run-1",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  tier: "commit",
+  status: "failed",
+  startedAt: "2026-06-22T00:00:00.000Z",
+  completedAt: "2026-06-22T00:00:02.000Z",
+}
+
+const demoPropertyEvidence: ProgramObservation = {
+  eventId: "demo:project:property-run",
+  runId: "run-1",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
+  kind: "property-run",
+  observedAt: "2026-06-22T00:00:01.000Z",
+}
+
+const demoReplayMetadata: ReplayObservationMetadata = {
+  replayId: "demo:project:replay",
+  runId: "run-1",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
+  propertyId: "demo.project.property",
+  seed: 42,
+  shrinkPath: "0:1",
+  generatedValueSummary: "{ event: 'changed' }",
+  status: "failed",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoActiveWaiver: DiagnosticWaiverState = {
+  waiverId: "demo:project:law-waiver",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  category: "law",
+  status: "active",
+  targetDiagnosticRequirementId: "demo:project:law:projection.deterministic-replay",
+  symbolId: "project",
+  owner: "framework",
+  reason: "projection replay law is temporarily migrated",
+  reviewAt: "2026-07-22",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoExpiredWaiver: DiagnosticWaiverState = {
+  ...demoActiveWaiver,
+  waiverId: "demo:project:expired-waiver",
+  status: "expired",
+  reason: "temporary waiver review date passed",
+  expiresAt: "2026-06-01",
+}
+
+const demoAtomCoverage: CoverageObservationFeedback = {
+  coverageId: "demo:project:atom-coverage",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
+  kind: "atom-graph",
+  status: "hit",
+  coveragePoint: "demo.changed->demoView",
+  seed: 42,
+  workerId: "worker-1",
+  shardId: "shard-1",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoTypeCoverage: CoverageObservationFeedback = {
+  coverageId: "demo:type-guidance:coverage",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  kind: "type-partition",
+  status: "hit",
+  coveragePoint: "ProjectInput.variant.default",
+  seed: 42,
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoFilterFeedback: CoverageObservationFeedback = {
+  coverageId: "demo:project:high-rejection-filter",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
+  kind: "filter",
+  status: "filtered",
+  coveragePoint: "ProjectInput.valid-event",
+  filterId: "project-valid-event-filter",
+  rejectionCount: 250,
+  acceptanceRate: 0.05,
+  recordedAt: "2026-06-22T00:00:01.500Z",
+}
+
+const demoWeakOracleFeedback: CoverageObservationFeedback = {
+  coverageId: "demo:project:weak-oracle",
+  schemaDescriptorId: "attune/project/demo",
+  projectId: "demo",
+  symbolId: "project",
+  kind: "implementation",
+  status: "hit",
+  coveragePoint: "packages/demo/src/project.ts:17",
+  recordedAt: "2026-06-22T00:00:01.500Z",
+  payload: {
+    expectedGraphMovement: true,
+    observedGraphMovement: false,
+  },
+}
+
+const provideRuntime = <A, E>(
+  effect: Effect.Effect<
+    A,
+    E,
+    | ProgramFactRuntime
+    | ProgramFactQuery
+    | ProgramDiagnostics
+    | ProgramFactStore
+  >,
+  initial?: Partial<ProgramFactStoreSnapshot>,
+): Effect.Effect<A, E, never> =>
+  effect.pipe(
+    Effect.provide(ProgramDiagnosticsLive),
+    Effect.provide(ProgramFactQueryLive),
+    Effect.provide(ProgramFactRuntimeLive),
+    Effect.provide(ProgramFactProjectionLive),
+    Effect.provide(InMemoryProgramFactStoreLive(initial)),
+  ) as Effect.Effect<A, E, never>
+
+const provideSqliteRuntime = <A, E>(
+  effect: Effect.Effect<
+    A,
+    E,
+    | ProgramFactRuntime
+    | ProgramFactQuery
+    | ProgramDiagnostics
+    | ProgramFactStore
+  >,
+): Effect.Effect<A, E, never> =>
+  effect.pipe(
+    Effect.provide(ProgramDiagnosticsLive),
+    Effect.provide(ProgramFactQueryLive),
+    Effect.provide(ProgramFactRuntimeLive),
+    Effect.provide(ProgramFactProjectionLive),
+    Effect.provide(SqliteProgramFactStoreLive({ path: ":memory:" })),
+  ) as Effect.Effect<A, E, never>
+
+const provideProgramIndexDiagnosticsRuntime = <A, E>(
+  effect: Effect.Effect<
+    A,
+    E,
+    | ProgramFactRuntime
+    | ProgramFactQuery
+    | ProgramDiagnostics
+    | ProgramFactStore
+    | ProgramIndex
+  >,
+  programIndex: ProgramIndexApi,
+  initial?: Partial<ProgramFactStoreSnapshot>,
+): Effect.Effect<A, E, never> =>
+  effect.pipe(
+    Effect.provide(ProgramIndexDiagnosticsLive),
+    Effect.provide(ProgramIndex.fromService(programIndex)),
+    Effect.provide(ProgramFactQueryLive),
+    Effect.provide(ProgramFactRuntimeLive),
+    Effect.provide(ProgramFactProjectionLive),
+    Effect.provide(InMemoryProgramFactStoreLive(initial)),
+  ) as Effect.Effect<A, E, never>
+
+describe("@attune/framework-runtime", () => {
+  it("turns missing observations and stale generated source into private repairFindings", () => {
+    const repairFindings = computeProgramFactFindings({
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+      observations: [],
+      diagnosticRequirements: [{
+        diagnosticRequirementId: "demo:project:property",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
+        kind: "property",
+        reason: "projection operation requires property observations",
+      }],
+      artifacts: [{
+        artifactId: "demo:registry",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        path: "packages/demo/src/generated/symbol-registry.ts",
+        generatorId: "@attune/framework-nx:symbol-registry",
+        expectedHash: "expected",
+        actualHash: "actual",
+        status: "stale",
+      }],
+    })
+
+    expect(repairFindings.map((finding) => finding.kind)).toEqual([
+      "missing-observation",
+      "stale-generated-source",
+    ])
+  })
+
+  it("indexes TypeScript/Effect source facts into program-index rows", () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), "attune-program-index-"))
+    const fixturePath = join(fixtureDir, "attune.package.ts")
+    writeFileSync(fixturePath, [
+      "import { Schema } from \"effect\"",
+      "import { packageViewAtom, projection, reactivityKey } from \"@attune/framework-protocol\"",
+      "",
+      "export const helperValue = 42",
+      "export const Snapshot = Schema.Struct({ value: Schema.String }).pipe(Schema.filter(() => true))",
+      "export const projectionChanged = reactivityKey({",
+      "  sourcePath: \"fixture/attune.package.ts\",",
+      "  symbolName: \"projectionChanged\",",
+      "})",
+      "export const workbenchSnapshot = packageViewAtom({",
+      "  sourcePath: \"fixture/attune.package.ts\",",
+      "  symbolName: \"workbenchSnapshot\",",
+      "})",
+      "export const eventReplayProjection = projection({",
+      "  id: \"event-replay-projection\",",
+      "  input: Snapshot,",
+      "  output: Snapshot,",
+      "  views: { reactivityKeys: [projectionChanged.id], atoms: [workbenchSnapshot.id] },",
+      "})",
+    ].join("\n"))
+
+    try {
+      const rows = programSourceIndexRows({
+        projectId: "demo",
+        sourceFiles: [fixturePath],
+        now: "2026-06-23T00:00:00.000Z",
+      })
+
+      expect(rows.sourceFiles).toHaveLength(1)
+      expect(rows.symbols.map((symbol) => [symbol.exportName, symbol.kind])).toEqual(expect.arrayContaining([
+        ["helperValue", "exported-symbol"],
+        ["Snapshot", "schema"],
+        ["projectionChanged", "reactivity-key"],
+        ["workbenchSnapshot", "package-view-atom"],
+        ["eventReplayProjection", "operation"],
+      ]))
+      expect(rows.schemaDescriptors[0]).toMatchObject({
+        symbolId: "demo:Snapshot",
+        serializationStatus: "partial",
+        nonSerializableFeaturesJson: "[\"filter\"]",
+      })
+      expect(rows.diagnostics[0]).toMatchObject({
+        code: "attune/program-index/schema-non-serializable",
+        severity: "warning",
+        message: expect.stringContaining("schema_descriptor fact"),
+      })
+      expect(rows.repairs[0]).toMatchObject({
+        safety: "safe",
+        nxTarget: "demo:attune-repair",
+        route: "workspace:program-index-materialize",
+        validationAfterTargetsJson: "[\"demo:attune-check\",\"demo:typecheck\"]",
+      })
+      expect(rows.edges.map((edge) => edge.kind)).toContain("identifier-reference")
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
+  it("derives read-only program atoms and protocol diagnostics from program-index facts", () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), "attune-program-index-"))
+    const fixturePath = join(fixtureDir, "attune.package.ts")
+    writeFileSync(fixturePath, [
+      "import { Schema } from \"effect\"",
+      "export const Snapshot = Schema.Struct({ value: Schema.String }).pipe(Schema.filter(() => true))",
+    ].join("\n"))
+
+    try {
+      const index = createInMemoryProgramIndex()
+      Effect.runSync(index.putProjects([{
+        id: "demo",
+        root: "packages/demo",
+        sourceRoot: "packages/demo/src",
+        projectType: "library",
+        hash: "demo",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }]))
+      Effect.runSync(materializeProgramSourceIndex(index, {
+        projectId: "demo",
+        sourceFiles: [fixturePath],
+        now: "2026-06-23T00:00:00.000Z",
+      }))
+
+      const symbols = Effect.runSync(sourceFileSymbolsAtom(fixturePath).read(index))
+      expect(symbols[0]).toMatchObject({ symbol_id: "demo:Snapshot", kind: "schema" })
+      expect(Effect.runSync(diagnosticsForFileAtom(fixturePath).read(index))[0]).toMatchObject({
+        code: "attune/program-index/schema-non-serializable",
+      })
+      expect(Effect.runSync(repairPlansAtom("demo").read(index))[0]).toMatchObject({
+        safety: "safe",
+      })
+      expect(Effect.runSync(staleArtifactsAtom("demo").read(index))).toEqual([])
+      expect(Effect.runSync(projectIndexAtom("demo").read(index)).project).toMatchObject({
+        id: "demo",
+      })
+      expect(Effect.runSync(workspaceHealthAtom().read(index))[0]).toMatchObject({
+        projectId: "demo",
+        symbolCount: 1,
+        diagnosticCount: 1,
+        safeRepairCount: 1,
+      })
+      expect(Effect.runSync(programIndexDiagnosticsForFile(index, fixturePath))[0]).toMatchObject({
+        code: "attune/program-index/schema-non-serializable",
+        projectId: "demo",
+        sourcePath: fixturePath,
+      })
+
+      const invalidations = Effect.runSync(index.listInvalidations({ unconsumed: true }))
+      expect(reactivityEventsFromInvalidations(invalidations).map((event) => event.reactivityKey)).toEqual(
+        expect.arrayContaining(["attune.program.schema.schema:demo:Snapshot"]),
+      )
+      expect(Effect.runSync(consumeProgramIndexInvalidations(index)).length).toBeGreaterThan(0)
+      expect(Effect.runSync(index.listInvalidations({ unconsumed: true }))).toEqual([])
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true })
+    }
+  })
+
+  it("prefers program-index diagnostics and repair rows when indexed facts exist", async () => {
+    const index = createInMemoryProgramIndex()
+    await Effect.runPromise(Effect.gen(function* seedIndexedDiagnostic() {
+      yield* index.putProjects([{
+        id: "demo",
+        root: "packages/demo",
+        sourceRoot: "packages/demo/src",
+        projectType: "library",
+        hash: "demo",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }])
+      yield* index.putSourceFiles([{
+        id: "file:demo",
+        projectId: "demo",
+        path: demoDescriptor.sourcePath,
+        hash: "source",
+        updatedAt: "2026-06-23T00:00:00.000Z",
+      }])
+      yield* index.putDiagnostics([{
+        id: "diagnostic:demo:schema",
+        projectId: "demo",
+        sourceFileId: "file:demo",
+        rangeJson: JSON.stringify({ start: 10, end: 24 }),
+        code: "attune/program-index/schema-non-serializable",
+        severity: "warning",
+        message: "schema_descriptor fact is partial for demo:Snapshot.",
+        causeJson: JSON.stringify({
+          fact: "schema_descriptor",
+          symbolId: "demo:Snapshot",
+          status: "partial",
+        }),
+      }])
+      yield* index.putRepairs([{
+        id: "repair:diagnostic:demo:schema",
+        diagnosticId: "diagnostic:demo:schema",
+        safety: "safe",
+        nxTarget: "demo:attune-repair",
+        repairKind: "schema-descriptor-refresh",
+        route: "workspace:program-index-materialize",
+        payloadJson: JSON.stringify({
+          artifact: "schema_descriptor",
+          sourceFile: demoDescriptor.sourcePath,
+        }),
+        validationAfterTargetsJson: JSON.stringify([
+          "demo:attune-check",
+          "demo:typecheck",
+        ]),
+        createdAt: "2026-06-23T00:00:00.000Z",
+      }])
+    }))
+
+    const projected = await Effect.runPromise(
+      provideProgramIndexDiagnosticsRuntime(
+        Effect.gen(function* indexedProgramDiagnostics() {
+          const diagnostics = yield* ProgramDiagnostics
+          return yield* diagnostics.diagnosticsForFile(
+            demoDescriptor.sourcePath,
+            { projectId: "demo", schemaDescriptorId: demoDescriptor.schemaDescriptorId },
+          )
+        }),
+        index,
+        { schemaDescriptors: [demoDescriptor] },
+      ),
+    )
+
+    expect(projected).toHaveLength(1)
+    expect(projected[0]).toMatchObject({
+      code: "attune/program-index/schema-non-serializable",
+      severity: "warning",
+      projectId: "demo",
+      sourcePath: demoDescriptor.sourcePath,
+      range: { start: 10, end: 24 },
+      explanation: "schema_descriptor fact is partial for demo:Snapshot.",
+      cause: {
+        fact: "schema_descriptor",
+        symbolId: "demo:Snapshot",
+        status: "partial",
+      },
+      suggestedActions: [{
+        id: "repair:diagnostic:demo:schema",
+        kind: "nx-generator",
+        target: "demo:attune-repair",
+        options: expect.objectContaining({
+          source: "program-index",
+          diagnosticId: "diagnostic:demo:schema",
+          safety: "safe",
+          repairKind: "schema-descriptor-refresh",
+          route: "workspace:program-index-materialize",
+          validationAfterTargets: [
+            "demo:attune-check",
+            "demo:typecheck",
+          ],
+        }),
+      }],
+      relatedObservations: ["program-index:cause"],
+    })
+  })
+
+  it("falls back to query diagnostics when the program index has no file rows", async () => {
+    const projected = await Effect.runPromise(
+      provideProgramIndexDiagnosticsRuntime(
+        Effect.gen(function* indexedDiagnosticsFallback() {
+          const runtime = yield* ProgramFactRuntime
+          const diagnostics = yield* ProgramDiagnostics
+          yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+          return yield* diagnostics.diagnosticsForFile(
+            demoDescriptor.sourcePath,
+            { projectId: "demo", schemaDescriptorId: demoDescriptor.schemaDescriptorId },
+          )
+        }),
+        createInMemoryProgramIndex(),
+      ),
+    )
+
+    expect(projected.map((diagnostic) => diagnostic.code)).toContain(
+      "attune/program-facts/missing-observation",
+    )
+  })
+
+  it("projects repairFindings as framework diagnostics", () => {
+    const diagnostics = diagnosticsForProgramFacts({
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+      observations: [],
+      diagnosticRequirements: [{
+        diagnosticRequirementId: "demo:project:law",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
+        kind: "law",
+        reason: "law observations missing",
+      }],
+      artifacts: [],
+    })
+
+    expect(diagnostics[0]?.code).toBe("attune/program-facts/missing-observation")
+  })
+
+  it("computes repairFindings from observations, waiver state, coverage feedback, and replay metadata", () => {
+    const repairFindings = computeProgramFactFindings({
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+      diagnosticRequirements: [{
+        diagnosticRequirementId: "demo:project:property",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
+        kind: "property",
+        reason: "property observations required",
+      }, {
+        diagnosticRequirementId: "demo:project:view-movement",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
+        kind: "view-movement",
+        reason: "atom graph observations required",
+      }, {
+        diagnosticRequirementId: "demo:type-guidance",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        kind: "type-guidance",
+        reason: "type guidance coverage required",
+      }, {
+        diagnosticRequirementId: "demo:project:law:projection.deterministic-replay",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
+        kind: "law",
+        reason: "law observations required",
+      }],
+      observations: [demoPropertyEvidence],
+      waiverState: [demoActiveWaiver, demoExpiredWaiver],
+      coverageFeedback: [
+        demoAtomCoverage,
+        demoTypeCoverage,
+        demoFilterFeedback,
+        demoWeakOracleFeedback,
+      ],
+      replayMetadata: [demoReplayMetadata],
+      artifacts: [{
+        artifactId: "demo:registry",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        path: "packages/demo/src/generated/symbol-registry.ts",
+        generatorId: "@attune/framework-nx:symbol-registry",
+        expectedHash: "expected",
+        actualHash: "actual",
+        status: "current",
+      }],
+    })
+
+    expect(repairFindings.map((finding) => finding.kind)).toEqual(expect.arrayContaining([
+      "stale-generated-source",
+      "waiver-issue",
+      "blocked-observation",
+      "high-rejection-filter",
+      "weak-oracle",
+    ]))
+    expect(repairFindings.some((finding) => finding.kind === "missing-observation")).toBe(false)
+    expect(repairFindings.find((finding) => finding.kind === "blocked-observation")?.repairActions[0]).toMatchObject({
+      id: "replay-counterexample",
+      options: expect.objectContaining({ seed: 42, shrinkPath: "0:1" }),
+    })
+  })
+
+  it("provisions ProgramFactRuntime/Query/Diagnostics through Effect layers", async () => {
+    const result = await Effect.runPromise(
+      provideRuntime(Effect.gen(function* protocolRuntimeProvisioning() {
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+        const diagnostics = yield* ProgramDiagnostics
+
+        const receipt = yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+        yield* runtime.recordArtifact({
+          artifactId: "demo:registry",
+          schemaDescriptorId: "attune/project/demo",
+          projectId: "demo",
+          path: "packages/demo/src/generated/symbol-registry.ts",
+          generatorId: "@attune/framework-nx:symbol-registry",
+          expectedHash: "expected",
+          actualHash: "actual",
+          status: "stale",
+        })
+
+        const summary = yield* query.getProjectSummary("demo")
+        const repairFindings = yield* query.listRepairFindings("demo")
+        const projected = yield* diagnostics.diagnosticsForFile(
+          "packages/demo/src/attune.package.ts",
+          { projectId: "demo", schemaDescriptorId: "attune/project/demo" },
+        )
+
+        return { receipt, summary, repairFindings, projected }
+      })),
+    )
+
+    expect(result.receipt).toMatchObject({
+      projectId: "demo",
+      descriptorHash: "demo-hash",
+    })
+    expect(result.summary).toMatchObject({
+      projectId: "demo",
+      symbolCount: 1,
+      diagnosticRequirementCount: 6,
+      staleArtifactCount: 1,
+    })
+    expect(result.repairFindings.map((finding) => finding.kind)).toEqual(
+      expect.arrayContaining(["missing-observation", "stale-generated-source"]),
+    )
+    expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
+      "attune/program-facts/missing-observation",
+    )
+  })
+
+  it("records and reads property observations cache state through runtime/query services", async () => {
+    const result = await Effect.runPromise(
+      provideRuntime(Effect.gen(function* propertyEvidenceRuntimeState() {
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+        const diagnostics = yield* ProgramDiagnostics
+
+        yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+        yield* runtime.recordObservationRun(demoEvidenceRun)
+        yield* runtime.recordObservation(demoPropertyEvidence)
+        yield* runtime.recordReplayObservation(demoReplayMetadata)
+        yield* runtime.recordDiagnosticWaiver(demoActiveWaiver)
+        yield* runtime.recordCoverageObservation(demoAtomCoverage)
+        yield* runtime.recordCoverageObservation(demoTypeCoverage)
+        yield* runtime.recordCoverageObservation(demoFilterFeedback)
+
+        const summary = yield* query.getProjectSummary("demo")
+        const state = yield* query.getProjectObservationState("demo")
+        const repairFindings = yield* query.listRepairFindings("demo")
+        const projected = yield* diagnostics.diagnosticsForFile(
+          "packages/demo/src/attune.package.ts",
+          { projectId: "demo", schemaDescriptorId: "attune/project/demo" },
+        )
+
+        return { summary, state, repairFindings, projected }
+      })),
+    )
+
+    expect(result.summary).toMatchObject({
+      observationRunCount: 1,
+      observationCount: 1,
+      replayObservationCount: 1,
+      coverageObservationCount: 3,
+      activeDiagnosticWaiverCount: 1,
+      diagnosticWaiverIssueCount: 0,
+    })
+    expect(result.state).toMatchObject({
+      observationRuns: [demoEvidenceRun],
+      observations: [demoPropertyEvidence],
+      replayObservations: [demoReplayMetadata],
+      diagnosticWaivers: [demoActiveWaiver],
+    })
+    expect(result.state.coverageObservations.map((feedback) => feedback.coverageId)).toEqual([
+      "demo:project:atom-coverage",
+      "demo:type-guidance:coverage",
+      "demo:project:high-rejection-filter",
+    ])
+    expect(result.repairFindings.map((finding) => finding.kind)).toEqual(expect.arrayContaining([
+      "blocked-observation",
+      "high-rejection-filter",
+    ]))
+    expect(result.repairFindings.some((finding) =>
+      finding.diagnosticRequirementId === "demo:project:law:projection.deterministic-replay"
+    )).toBe(false)
+    expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
+      "attune/program-facts/high-rejection-filter",
+    )
+  })
+
+  it("keeps observations cache output out of checked-in report artifacts", async () => {
+    const result = await Effect.runPromise(
+      provideRuntime(Effect.gen(function* noReportOutputForEvidenceState() {
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+
+        yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+        yield* runtime.recordObservationRun(demoEvidenceRun)
+        yield* runtime.recordObservation(demoPropertyEvidence)
+        yield* runtime.recordReplayObservation(demoReplayMetadata)
+        yield* runtime.recordCoverageObservation(demoFilterFeedback)
+
+        const state = yield* query.getProjectObservationState("demo")
+        const repairFindings = yield* query.listRepairFindings("demo")
+
+        return { state, repairFindings }
+      })),
+    )
+
+    expect(result.state.artifacts).toEqual([])
+    expect(result.state.replayObservations).toEqual([demoReplayMetadata])
+    expect(result.state.coverageObservations).toEqual([demoFilterFeedback])
+    expect(result.repairFindings.flatMap((finding) => finding.repairActions)).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "source-edit",
+        }),
+      ]),
+    )
+    expect(result.repairFindings.map((finding) => finding.sourcePath)).not.toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/report|summary/u),
+      ]),
+    )
+  })
+
+  it("explains diagnosticRequirements and repair plans without exposing store rows", async () => {
+    const result = await Effect.runPromise(
+      provideRuntime(Effect.gen(function* protocolQueryExplanations() {
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+
+        yield* runtime.materializeSchemaDescriptor(demoDescriptor)
+
+        const explanation = yield* query.explainDiagnosticRequirement("demo:project:view-movement")
+        const repairPlan = yield* query.getRepairPlan("finding:demo:project:view-movement")
+
+        return { explanation, repairPlan }
+      })),
+    )
+
+    expect(result.explanation?.expectedObservationKinds).toContain("atom-movement")
+    expect(result.repairPlan?.actions[0]).toMatchObject({
+      target: "demo:attune-repair",
+      options: expect.objectContaining({
+        internalGenerator: "@attune/framework-nx:atom-projection-edge",
+      }),
+    })
+  })
+
+  it("keeps pure query helpers available for focused projections", () => {
+    const input = {
+      schemaDescriptorId: "attune/project/demo",
+      projectId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+      observations: [],
+      diagnosticRequirements: [{
+        diagnosticRequirementId: "demo:project:view-movement",
+        schemaDescriptorId: "attune/project/demo",
+        projectId: "demo",
+        symbolId: "project",
+        kind: "view-movement" as const,
+        reason: "view movement observations missing",
+      }],
+      artifacts: [],
+    }
+
+    expect(getProjectSummary(input)).toMatchObject({
+      projectId: "demo",
+      diagnosticRequirementCount: 1,
+      observationCount: 0,
+    })
+    expect(explainDiagnosticRequirement(input, "demo:project:view-movement")?.expectedObservationKinds).toContain(
+      "atom-movement",
+    )
+    expect(getRepairPlan(input, "finding:demo:project:view-movement")?.actions[0]).toMatchObject({
+      target: "demo:attune-repair",
+      options: expect.objectContaining({
+        internalGenerator: "@attune/framework-nx:atom-projection-edge",
+      }),
+    })
+  })
+
+  it("projects invalid stored payloads as diagnostics", async () => {
+    const diagnostics = await Effect.runPromise(
+      provideRuntime(Effect.gen(function* invalidPayloadDiagnostics() {
+        const service = yield* ProgramDiagnostics
+        return yield* service.diagnosticsForFile(
+          "packages/demo/src/attune.package.ts",
+          { projectId: "demo", schemaDescriptorId: "attune/project/demo" },
+        )
+      }), {
+          schemaDescriptors: [{
+            schemaDescriptorId: "attune/project/demo",
+            projectId: "demo",
+            sourcePath: "packages/demo/src/attune.package.ts",
+            descriptorHash: "bad",
+          }],
+        }),
+    )
+
+    expect(diagnostics[0]).toMatchObject({
+      code: "attune/program-facts/invalid-store-payload",
+      projectId: "demo",
+      sourcePath: "packages/demo/src/attune.package.ts",
+    })
+  })
+
+  it("adapts sqlite ProgramFactStoreApi into runtime materialization and diagnostics", async () => {
+    const descriptor = descriptorWithHash({
+      schemaDescriptorId: "attune/project/sqlite-demo",
+      projectId: "sqlite-demo",
+      packageKind: "core-discovery-runtime",
+      sourcePath: "packages/sqlite-demo/src/attune.package.ts",
+      views: {
+        reactivityKeys: ["sqlite-demo.changed"],
+        atoms: ["sqlite-demo.view"],
+      },
+      services: ["SqliteDemoService"],
+      operations: [{
+        id: "operation",
+        kind: "command",
+        views: {
+          reactivityKeys: ["sqlite-demo.changed"],
+          atoms: ["sqlite-demo.view"],
+        },
+        laws: ["command.view-movement"],
+        inputSchema: "Struct",
+        outputSchema: "Void",
+      }],
+      waivers: [],
+      coverageExpectations: [],
+    })
+    const staleArtifact: ProgramArtifactRecord = {
+      artifactId: "sqlite-demo:registry",
+      schemaDescriptorId: descriptor.schemaDescriptorId,
+      projectId: descriptor.projectId,
+      path: "packages/sqlite-demo/src/generated/symbol-registry.ts",
+      generatorId: "@attune/framework-nx:symbol-registry",
+      expectedHash: "expected",
+      actualHash: "actual",
+      status: "stale",
+    }
+    const propertyEvidence: ProgramObservation = {
+      eventId: "sqlite-demo:operation:property-run",
+      runId: "run-1",
+      schemaDescriptorId: descriptor.schemaDescriptorId,
+      projectId: descriptor.projectId,
+      symbolId: "operation",
+      kind: "property-run",
+      observedAt: "2026-06-22T00:00:00.000Z",
+    }
+
+    const result = await Effect.runPromise(
+      provideSqliteRuntime(Effect.gen(function* sqliteRuntimeAdapter() {
+        const runtime = yield* ProgramFactRuntime
+        const query = yield* ProgramFactQuery
+        const diagnostics = yield* ProgramDiagnostics
+
+        const receipt = yield* runtime.materializeSchemaDescriptor(descriptor)
+        yield* runtime.recordArtifact(staleArtifact)
+        yield* runtime.recordObservationRun({
+          runId: "run-1",
+          schemaDescriptorId: descriptor.schemaDescriptorId,
+          projectId: descriptor.projectId,
+          tier: "commit",
+          status: "passed",
+          startedAt: "2026-06-22T00:00:00.000Z",
+          completedAt: "2026-06-22T00:00:02.000Z",
+        })
+        yield* runtime.recordObservation(propertyEvidence)
+        yield* runtime.recordCoverageObservation({
+          coverageId: "sqlite-demo:operation:atom-coverage",
+          schemaDescriptorId: descriptor.schemaDescriptorId,
+          projectId: descriptor.projectId,
+          symbolId: "operation",
+          kind: "atom-graph",
+          status: "hit",
+          coveragePoint: "sqlite-demo.changed->sqlite-demo.view",
+          recordedAt: "2026-06-22T00:00:01.000Z",
+        })
+        yield* runtime.refreshRepairFindings(descriptor.projectId)
+
+        const summary = yield* query.getProjectSummary(descriptor.projectId)
+        const evidenceState = yield* query.getProjectObservationState(descriptor.projectId)
+        const repairFindings = yield* query.listRepairFindings(descriptor.projectId)
+        const projected = yield* diagnostics.diagnosticsForFile(
+          descriptor.sourcePath,
+          { projectId: descriptor.projectId, schemaDescriptorId: descriptor.schemaDescriptorId },
+        )
+
+        return { receipt, summary, evidenceState, repairFindings, projected }
+      })),
+    )
+
+    expect(result.receipt).toMatchObject({
+      projectId: "sqlite-demo",
+      descriptorHash: descriptor.descriptorHash,
+      diagnosticRequirementCount: 6,
+    })
+    expect(result.summary).toMatchObject({
+      symbolCount: 1,
+      diagnosticRequirementCount: 6,
+      observationRunCount: 1,
+      observationCount: 1,
+      coverageObservationCount: 1,
+      staleArtifactCount: 1,
+    })
+    expect(result.evidenceState.observationRuns).toHaveLength(1)
+    expect(result.evidenceState.coverageObservations).toHaveLength(1)
+    expect(result.repairFindings.map((finding) => finding.kind)).toEqual(
+      expect.arrayContaining(["missing-observation", "stale-generated-source"]),
+    )
+    expect(result.repairFindings.some((finding) =>
+      finding.diagnosticRequirementId === "sqlite-demo:operation:property"
+    )).toBe(false)
+    expect(result.projected.map((diagnostic) => diagnostic.code)).toContain(
+      "attune/program-facts/stale-generated-source",
+    )
+  })
+})
+
+const descriptorWithHash = (
+  descriptor: Omit<ProgramSchemaDescriptor, "descriptorHash">,
+): ProgramSchemaDescriptor => ({
+  ...descriptor,
+  descriptorHash: hashProgramValue(descriptor),
+})

@@ -2,11 +2,17 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": [],
-    "rootDir": "src",
+    "types": ["node"],
+    "rootDir": "../..",
     "paths": {
+      "@attune/architecture": [
+        "../../framework/protocol/src/project-facts/index.ts"
+      ],
+      "@attune/framework-protocol": [
+        "../../framework/protocol/src/index.ts"
+      ],
       "@attune/nx": ["./src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

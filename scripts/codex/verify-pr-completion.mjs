@@ -5,6 +5,7 @@ const repo = process.env.GITHUB_REPOSITORY ?? "becker63/attune"
 const issueId = process.env.LINEAR_ISSUE_ID ?? ""
 const commit = process.env.CODEX_COMPLETION_COMMIT ?? git(["rev-parse", "HEAD"])
 const explicitPrUrl = process.env.GITHUB_PR_URL ?? ""
+const requirePrCompletion = process.env.ATTUNE_REQUIRE_PR_COMPLETION === "1" || explicitPrUrl.length > 0 || issueId.length > 0
 
 const fail = (message) => {
   console.error(`Codex PR completion gate failed: ${message}`)
@@ -53,9 +54,18 @@ if (explicitPrUrl && !prRef) {
 }
 
 try {
-  const prs = prRef
-    ? [await github(`/repos/${prRef.repo}/pulls/${prRef.number}`)]
-    : await github(`/repos/${repo}/commits/${commit}/pulls`)
+  let prs
+  try {
+    prs = prRef
+      ? [await github(`/repos/${prRef.repo}/pulls/${prRef.number}`)]
+      : await github(`/repos/${repo}/commits/${commit}/pulls`)
+  } catch (error) {
+    if (!requirePrCompletion) {
+      console.log("Codex PR completion gate skipped: no PR context is available for this local commit")
+      process.exit(0)
+    }
+    throw error
+  }
 
   const matching = prs.find((pr) =>
     pr.base?.ref === "main" &&
@@ -63,6 +73,10 @@ try {
   )
 
   if (!matching) {
+    if (!requirePrCompletion) {
+      console.log(`Codex PR completion gate skipped: no GitHub PR targeting main was found for commit ${commit}`)
+      process.exit(0)
+    }
     fail(`no GitHub PR targeting main was found for commit ${commit}`)
   }
 

@@ -11,19 +11,23 @@
       "import": "./dist/index.js"
     },
     "./package.json": "./package.json",
-    "./generators.json": "./generators.json"
+    "./generators.json": "./generators.json",
+    "./executors.json": "./executors.json"
   },
   "generators": "./generators.json",
+  "executors": "./executors.json",
   "files": [
     "dist",
     "generators.json",
-    "src/generators/**/schema.json"
+    "executors.json",
+    "src/generators/**/schema.json",
+    "src/executors/**/schema.json"
   ],
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/write-generator-cjs-wrappers.mjs",
-    "typecheck": "tsc --noEmit"
-  },
   "devDependencies": {
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@attune/framework-protocol": "workspace:*",
+    "effect": "4.0.0-beta.78"
   }
 }

@@ -69,9 +69,9 @@ describe("Pi /attune-spec conversation adapter", () => {
     turn = answerAttuneSpecConversation({
       state: turn.state,
       answer: [
-        "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run attune-pi-agent:typecheck",
-        "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run attune-pi-agent:test",
-        "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp corepack pnpm exec nx run attune-pi-agent:property",
+        "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec nx run attune-pi-agent:typecheck",
+        "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec nx run attune-pi-agent:test",
+        "NX_DAEMON=false TMPDIR=/tmp TEMP=/tmp TMP=/tmp pnpm exec nx run attune-pi-agent:property",
       ],
     })
     turn = answerAttuneSpecConversation({

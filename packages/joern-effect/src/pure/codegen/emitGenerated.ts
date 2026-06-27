@@ -275,6 +275,74 @@ export const renderSchema = (schema: NormalizedSchema): string => {
   return file.getFullText()
 }
 
+export const renderFastCheckArbitraries = (schema: NormalizedSchema): string => {
+  const p = project()
+  const file = p.createSourceFile("fast-check-arbitraries.ts")
+  file.addImportDeclaration({ moduleSpecifier: "effect", namedImports: ["Arbitrary"] })
+  file.addImportDeclaration({
+    isTypeOnly: true,
+    moduleSpecifier: "fast-check",
+    namedImports: [{ name: "Arbitrary", alias: "FastCheckArbitrary" }],
+  })
+  file.addImportDeclaration({
+    moduleSpecifier: "../../pure/generated/prop.js",
+    namedImports: ["prop"],
+  })
+  file.addStatements((writer) => {
+    writer.writeLine("export const generatedPropertyArbitraryMetadata = {")
+    writer.indent(() => {
+      for (const property of schema.properties) {
+        writer.writeLine(`${property.exportName}: {`)
+        writer.indent(() => {
+          writer.writeLine(`cpgName: ${JSON.stringify(property.cpgName)},`)
+          writer.writeLine(`cpgql: ${JSON.stringify(property.cpgql)},`)
+          writer.writeLine(`valueType: ${JSON.stringify(property.valueType)},`)
+          writer.writeLine(`nullable: ${JSON.stringify(property.nullable)},`)
+          writer.writeLine(`cardinality: ${JSON.stringify(property.cardinality)},`)
+          writer.writeLine(`owners: ${JSON.stringify(property.owners)},`)
+        })
+        writer.writeLine("},")
+      }
+    })
+    writer.writeLine("} as const")
+    writer.writeLine("")
+    writer.writeLine("export type GeneratedPropertyArbitraryName = keyof typeof generatedPropertyArbitraryMetadata")
+    writer.writeLine("")
+    writer.writeLine("export const generatedPropertyArbitraries = {")
+    writer.indent(() => {
+      for (const property of schema.properties) {
+        writer.writeLine(`${property.exportName}: Arbitrary.make(prop.${property.exportName}.schema),`)
+      }
+    })
+    writer.writeLine("} satisfies { readonly [K in GeneratedPropertyArbitraryName]: FastCheckArbitrary<unknown> }")
+    writer.writeLine("")
+    writer.writeLine("export const generatedPropertyArbitraryFor = (")
+    writer.indent(() => {
+      writer.writeLine("name: GeneratedPropertyArbitraryName,")
+    })
+    writer.writeLine("): FastCheckArbitrary<unknown> => generatedPropertyArbitraries[name]")
+  })
+  return file.getFullText()
+}
+
+export const emitFastCheckArbitraries = (
+  schema: NormalizedSchema,
+  outDir = "src/internal/generated",
+): Effect.Effect<void, Error> =>
+  Effect.gen(function* emitFastCheckArbitrariesEffect() {
+    yield* Effect.tryPromise({
+      catch: (cause) => new Error(String(cause)),
+      try: () => mkdir(outDir, { recursive: true }),
+    })
+    yield* Effect.tryPromise({
+      catch: (cause) => new Error(String(cause)),
+      try: () =>
+        format(renderFastCheckArbitraries(schema), { parser: "typescript" }).then(
+          (formatted) => writeFile(join(outDir, "fast-check-arbitraries.ts"), formatted),
+        ),
+    })
+  })
+
 export const emitGenerated = (
   schema: NormalizedSchema,
   outDir = "src/pure/generated",

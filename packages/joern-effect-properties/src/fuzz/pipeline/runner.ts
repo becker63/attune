@@ -244,7 +244,7 @@ const emitGeneratedCaseEvents = (
   }>,
   config: FuzzerRunConfig,
 ): Effect.Effect<void> =>
-  Effect.gen(function* emitGeneratedCaseEvents() {
+  Effect.gen(function* emitGeneratedCaseEventsEffect() {
     const semanticCase = input.result.case
     yield* input.telemetry.emit(config, "attune.fuzz.case_generated", {
       appliedMutations: input.result.applied.map((mutation) => mutation.kind).join(","),
@@ -291,7 +291,7 @@ const admitGeneratedCase = (
   }>,
   config: FuzzerRunConfig,
 ): Effect.Effect<Readonly<{ readonly accepted: boolean; readonly fuzzCases: readonly FuzzCase[] }>> =>
-  Effect.gen(function* admitGeneratedCase() {
+  Effect.gen(function* admitGeneratedCaseEffect() {
     const admission = yield* input.admitter.admit(input.semanticCase)
     const payload = {
       batchIndex: input.batchIndex,
@@ -369,7 +369,7 @@ const runJoernShard = (
     readonly workerSpanId: string
   }>,
 ): Effect.Effect<void> =>
-  Effect.gen(function* runJoernShard() {
+  Effect.gen(function* runJoernShardEffect() {
     const oracleStartedAt = Date.now()
     yield* input.telemetry.emit(input.config, "attune.fuzz.joern_import_started", {
       batchIndex: input.batchIndex,
@@ -499,7 +499,7 @@ const runJoernShards = (
     readonly workerSpanId: string
   }>,
 ): Effect.Effect<void> =>
-  Effect.gen(function* runJoernShards() {
+  Effect.gen(function* runJoernShardsEffect() {
     if (input.joernMode === "none" || input.acceptedFuzzCases.length === 0) {return}
     const joernMode = input.joernMode === "import" ? "import" : "query"
     const joernShards = chunksBySize(input.acceptedFuzzCases, input.joernShardSize)
@@ -540,7 +540,7 @@ const runSemanticWorker = (
     readonly workerPlans: readonly SemanticCasePlan[]
   }>,
 ): Effect.Effect<WorkerSummary> =>
-  Effect.gen(function* runSemanticWorker() {
+  Effect.gen(function* runSemanticWorkerEffect() {
     const workerId = `semantic-worker-${input.workerIndex}`
     const workerTrace = makeFuzzTrace()
     yield* input.telemetry.emit(input.config, "attune.fuzz.worker_started", {

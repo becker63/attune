@@ -1,0 +1,123 @@
+{
+  "entries": [
+    {
+      "checkTargets": [
+        {
+          "project": "attune-foldkit",
+          "target": "typecheck"
+        },
+        {
+          "project": "workspace",
+          "target": "attune-check"
+        }
+      ],
+      "editableRegions": [
+        {
+          "description": "FoldKit UI authored source boundary; add exported symbols in the project facts file and validate through program-index-backed check.",
+          "file": "src/attune.package.ts",
+          "marker": "defineAttuneProjectFacts"
+        }
+      ],
+      "generatorName": "@attune/nx:project-facts",
+      "openspecChangeId": "promote-program-index-runtime-substrate",
+      "options": {
+        "symbolIds": [
+          "model-codec",
+          "message-update-command",
+          "view-model-query",
+          "fixture-route-command",
+          "fixture-route-query",
+          "activity-fixture-codec",
+          "mdx-fixture-codec",
+          "site-fixture-codec",
+          "workbench-snapshot-view-lens",
+          "foldkit-scene-atom",
+          "route-trace-atom",
+          "export-packet-atom"
+        ],
+        "projectId": "attune-foldkit",
+        "projectKind": "foldkit-ui",
+        "project": "attune-foldkit",
+        "sourceRoot": "packages/attune-foldkit"
+      },
+      "optionsHash": "fnv1a32:attune-foldkit-contract",
+      "ownedFiles": [
+        "src/attune.package.ts"
+      ],
+      "owningProject": "attune-foldkit",
+      "projectRoot": "packages/attune-foldkit",
+      "sourceShapeKind": "project-facts",
+      "syncTargets": [
+        {
+          "project": "attune-foldkit",
+          "target": "sync-project-facts"
+        }
+      ]
+    }
+  ],
+  "projectFactShards": [
+    {
+      "generator": "@attune/nx:project-facts",
+      "outputs": [
+        "src/attune.package.ts"
+      ],
+      "sources": [
+        "project.json",
+        "src/**",
+        "test/**"
+      ],
+      "status": "generated",
+      "target": "sync-project-facts"
+    }
+  ],
+  "generatedOutputs": [],
+  "historicalHandAuthoredShapes": [
+    {
+      "paths": [
+        "src/fixtures/**",
+        "src/view.ts",
+        "src/update.ts",
+        "test/**"
+      ],
+      "reason": "FoldKit fixture, model, and view surfaces were ported from the Dispatch package boundary before dedicated FoldKit scene-atom generators exist."
+    }
+  ],
+  "ownedFiles": [
+    "index.html",
+    "package.json",
+    "project.json",
+    "src/**",
+    "test/**",
+    "tsconfig.json",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ],
+  "project": "attune-foldkit",
+  "projectRoot": "packages/attune-foldkit",
+  "queryCheckTargetNotes": [
+    {
+      "note": "Backfill @attune/nx foldkit-scene-atom generator ownership before expanding repeated scene shapes.",
+      "target": "test"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceInputs": [
+    "src/**",
+    "test/**",
+    "project.json"
+  ],
+  "syncAndCheckTargets": [
+    "build",
+    "test",
+    "typecheck"
+  ],
+  "waivers": [
+    {
+      "expires": null,
+      "paths": [
+        "src/fixtures/**"
+      ],
+      "reason": "Fixture shape is intentionally hand-authored until @attune/nx:foldkit-scene-atom exists."
+    }
+  ]
+}
