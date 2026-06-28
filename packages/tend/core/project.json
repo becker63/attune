@@ -1,0 +1,70 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "tend-core",
+  "projectType": "library",
+  "root": "packages/tend/core",
+  "sourceRoot": "packages/tend/core/src",
+  "targets": {
+    "typecheck": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true,
+          "tsconfig": "tsconfig.json"
+        }
+      }
+    },
+    "test": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "dryRun": false,
+        "checks": [
+          "test"
+        ]
+      }
+    },
+    "check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Project check surface for Recipe/ManagedRecipe substrate diagnostics."
+      },
+      "options": {
+        "targetProject": "tend-core",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:recipe-substrate-check"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Project repair surface for safe Recipe/ManagedRecipe repair materialization."
+      },
+      "options": {
+        "targetProject": "tend-core",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:repair"
+          ]
+        },
+        "dryRun": false
+      }
+    }
+  },
+  "tags": [
+    "scope:tend",
+    "attune:recipe-consumer"
+  ]
+}

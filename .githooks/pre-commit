@@ -4,8 +4,21 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-if command -v nix >/dev/null 2>&1; then
-  exec nix develop -c pnpm exec nx run workspace:policy-commit
+cleanup_generated_precommit_config() {
+  rm -f .pre-commit-config.yaml
+}
+
+trap cleanup_generated_precommit_config EXIT
+
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm exec nx run workspace:policy-fast
+  exit $?
 fi
 
-exec pnpm exec nx run workspace:policy-commit
+if command -v nix >/dev/null 2>&1; then
+  nix develop -c pnpm exec nx run workspace:policy-fast
+  exit $?
+fi
+
+echo "Attune pre-commit hook requires pnpm or nix to run workspace:policy-fast." >&2
+exit 127

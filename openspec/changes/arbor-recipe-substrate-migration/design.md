@@ -75,6 +75,9 @@ the observable truth when the generic recipe spine can carry the fact.
 - Complete legacy cleanup as required migration work: remove, archive, or
   quarantine legacy substrate lanes rather than maintaining compatibility
   adapters.
+- Clean root topology into four active package ownership roots and simplify the
+  public command surface so agents see the architecture rather than old tool
+  debris.
 
 **Non-Goals:**
 
@@ -84,7 +87,7 @@ the observable truth when the generic recipe spine can carry the fact.
 - Full Joern proof catalog.
 - Long fuzzer, container, or proof campaigns.
 - Production SaaS, public reporting polish, or marketing surface.
-- Package moves unrelated to the substrate migration.
+- Product behavior changes hidden inside topology cleanup.
 
 ## Overnight Migration Architecture
 
@@ -202,6 +205,72 @@ families are bounded to `framework_*`, `attune_*`, `tend_*`, and `canopy_*`.
 Linear remains an external human projection. Generic `artifact_*` schema
 families are not an ARS database domain.
 
+## Root Topology Cleanup
+
+ARS cleanup makes package ownership visible before agents begin product work.
+The target package roots are:
+
+```text
+packages/trellis  -> Recipe/ManagedRecipe kernel, runtime, DB route, Nx,
+                     language service, testing, and Oxlint policy.
+packages/tend     -> OpenCode observation, token-control, Magic Context,
+                     RTK, long-job, wakeup, and reporting packages.
+packages/attune   -> FoldKit, discovery, CocoIndex, Joern, PI, proof/fuzzer,
+                     and domain/product-adjacent packages.
+packages/canopy   -> home deployment, platform resources, Kubernetes, and
+                     Alchemy lifecycle packages.
+```
+
+Root directories such as `framework/`, `tend/`, `scripts/`, `dist/`,
+`reports/`, checked-in result scratch, and standalone generated-shape files are
+not active ownership roots. Move useful source with `git mv`; delete local
+scratch and stale archives; use `.keep` only when a full move would create a
+validation blocker that needs a follow-up task.
+
+Retained script behavior is not a separate implementation lane. A script file
+may remain only as package-internal code behind a named Recipe or ManagedRecipe
+with typed input/output, dependencies, allowed files, validation evidence, and
+receipts. Typed executors that invoke script files must carry recipe
+provenance; arbitrary script path parameters are not public workflow surface.
+
+The root allowlist is deliberately small: `AGENTS.md`, `README.md`, `docs/`,
+`flake.lock`, `flake.nix`, `nix/`, `openspec/`, `package.json`, `packages/`,
+`pnpm-lock.yaml`, `pnpm-workspace.yaml`, `nx.json`, `project.json`,
+`tsconfig.base.json`, `.gitignore`, `.githooks/`, `.codex/`, `.nxignore`, and
+`.sops.yaml`. Other root files must be moved, deleted, or justified in the
+handoff.
+
+## Command Surface Cleanup
+
+Public commands are Nx-owned and intentionally small:
+
+```text
+workspace:check
+workspace:test
+workspace:repair
+workspace:db
+workspace:dev
+<project>:check
+<project>:test
+<project>:repair
+```
+
+Project-specific `generate`, `proof`, `fuzz`, `db`, and `dev` targets are
+allowed only when they are backed by Recipes or ManagedRecipes. Typed
+executors, package internals, and Nix toolchains are implementation substrates
+for those recipes, not independent command surfaces. Active targets should
+avoid `nx:run-commands` and direct raw tool invocation. Package-local `scripts`
+fields are removed unless the package is a real public CLI or has a documented
+external integration reason and the CLI behavior is recipe-modeled.
+
+Oxlint is retained as the one lint/policy engine. Stryker, tsup for internal
+packages, standalone ESLint policy use, dependency-cruiser, madge, jscpd, tsd,
+Corepack wrappers, package-manager indirection scripts, root generated-shape
+files, checked-in scratch reports, root `dist/`, root `result`, stale root
+`recipes.ts`, and archive folders inside active code paths are removal
+candidates unless validation demonstrates a hard blocker. The SafeQL ESLint
+plugin runtime is retained only as the SQL validation implementation detail.
+
 ## Tend Route
 
 Tend is the first real consumer of the recipe receipt substrate:
@@ -222,7 +291,7 @@ compression, resume, and wakeup facts as typed observations and receipts. It
 must not invent a parallel execution ontology when RecipeReceipt and the local
 TimescaleDB/Postgres route can carry the evidence.
 
-Tend lives under the first-class `tend/packages/*` workspace root in ARS. The
+Tend lives under the first-class `packages/tend/*` workspace root in ARS. The
 old Pi-agent Tend experiment is deleted rather than preserved as a
 compatibility lane. OpenCode is the first forcing harness: its extension must
 route session observation, tool choice, command output compression, Magic
@@ -310,6 +379,29 @@ requires a tiny slice.
 Alternative considered: keep those as ARS completion criteria. Rejected because
 it made the task ladder impossible to validate honestly.
 
+### Active follow-up changes collapse into an ARS backlog
+
+The follow-up changes for Attune product loop, Canopy live deployment, FoldKit
+surface, and Joern proof catalog are not active ARS changes. Their intent is
+retained in `docs/backlog/ars-deferred-followups.md` and the ARS deferred-work
+section; future work can promote each item into a fresh spec after root cleanup.
+
+Alternative considered: leave the follow-up folders active. Rejected because
+ARS needs a single active migration source of truth during clean-fork topology
+work.
+
+### Root calm is part of substrate migration
+
+Moving source into Attune, Canopy, Tend, and Trellis ownership roots and
+removing stale root commands is substrate work, not product behavior. The
+command surface teaches agents what the framework considers public, so stale
+scripts, mutation targets, generated-shape files, and archive directories are
+treated as active architecture risk.
+
+Alternative considered: leave root cleanup as cosmetic follow-up. Rejected
+because the old topology keeps old framework and tool ontologies visible as
+agent-facing truth.
+
 ## Migration Plan
 
 1. Rewrite and validate ARS planning artifacts with the narrowed scope.
@@ -321,7 +413,13 @@ it made the task ladder impossible to validate honestly.
 7. Build Tend/OpenCode on recipe receipts and local DB facts.
 8. Remove, archive, or quarantine active legacy substrate lanes as mandatory
    ARS completion work.
-9. Run the orchestrated validation and repair loop.
+9. Move active code into Attune, Canopy, Tend, and Trellis package roots and
+   delete root scratch/tooling debris.
+10. Convert every retained script behavior into a Recipe or ManagedRecipe and
+    require script-running executors to name that recipe provenance.
+11. Collapse the public command surface to small Nx targets and typed executor
+    boundaries.
+12. Run the orchestrated validation and repair loop.
 
 Rollback for the spec rewrite is reverting only these OpenSpec artifacts. Source
 implementation phases must keep their own validation and rollback notes in the

@@ -1,0 +1,272 @@
+{
+  "name": "cocoindex-effect",
+  "root": "packages/attune/cocoindex-effect",
+  "sourceRoot": "packages/attune/cocoindex-effect/src",
+  "targets": {
+    "build": {
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "typescript",
+        "action": "build",
+        "toolId": "tsc",
+        "parameters": {
+          "tsconfig": "tsconfig.json"
+        },
+        "dryRun": false
+      }
+    },
+    "typecheck": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
+      }
+    },
+    "test": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
+      }
+    },
+    "generate": {
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/generated/cocoindex-code-mcp.ts",
+        "{projectRoot}/src/cocoindex/tools/ToolRegistry.generated.ts"
+      ],
+      "metadata": {
+        "description": "Recipe-backed CocoIndex MCP schema and tool registry generation.",
+        "attune": {
+          "tier": "public",
+          "surface": "generate",
+          "recipeId": "cocoindex-effect.mcp-tool-generation"
+        }
+      },
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-generated",
+          "recipeId": "cocoindex-effect.mcp-tool-generation"
+        },
+        "dryRun": false
+      }
+    },
+    "attune:repair-symbol-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer cocoindex-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "symbol-registry",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "cocoindex-effect",
+          "kind": "symbol-registry"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/cocoindex-effect/attune-symbol-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/cocoindex-effect/attune-symbol-registry.ts"
+      ]
+    },
+    "attune:repair-property-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer cocoindex-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "property-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "cocoindex-effect",
+          "kind": "property-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/cocoindex-effect/attune-property-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/cocoindex-effect/attune-property-observations.ts"
+      ]
+    },
+    "attune:repair-schema-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer cocoindex-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "schema-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "cocoindex-effect",
+          "kind": "schema-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/cocoindex-effect/attune-schema-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/cocoindex-effect/attune-schema-observations.ts"
+      ]
+    },
+    "attune:repair-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer cocoindex-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "cocoindex-effect",
+          "kind": "observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/cocoindex-effect/attune-observation-scaffold.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/observations/cocoindex-effect/observation-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/cocoindex-effect/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/cocoindex-effect/observation-scaffold.json"
+      ]
+    },
+    "attune:repair-artifact-freshness": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer cocoindex-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "artifact-freshness",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "cocoindex-effect",
+          "kind": "artifact-freshness"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/cocoindex-effect/artifact-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/cocoindex-effect/artifact-freshness.json"
+      ]
+    },
+    "check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable check verb.",
+        "attune": {
+          "tier": "public",
+          "surface": "check"
+        }
+      },
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:recipe-substrate-check"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable repair verb when available.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "cocoindex-effect",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "cocoindex-effect:attune:repair-symbol-registry",
+            "cocoindex-effect:attune:repair-property-observations",
+            "cocoindex-effect:attune:repair-schema-observations",
+            "cocoindex-effect:attune:repair-observations",
+            "cocoindex-effect:attune:repair-artifact-freshness"
+          ]
+        },
+        "dryRun": false
+      }
+    }
+  }
+}

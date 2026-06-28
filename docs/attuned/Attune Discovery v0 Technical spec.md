@@ -853,7 +853,7 @@ Joern-effect uses a code generation pipeline owned by Nx.
 Generated files:
 
 ```txt
-packages/joern-effect/src/generated/
+packages/attune/joern-effect/src/generated/
   TemplateRegistry.generated.ts
   TemplateSchemas.generated.ts
   TemplateBindings.generated.ts

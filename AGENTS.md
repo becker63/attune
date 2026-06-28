@@ -100,8 +100,9 @@ task is explicit and low risk.
 
 ## Attune Framework Workflow
 
-Attune Framework lives under root `framework/` and defines the programming
-model. Packages under `packages/` expose their small authored Attune
+Attune Framework lives under `packages/trellis/` and defines the programming
+model. Packages under `packages/attune`, `packages/canopy`, `packages/tend`,
+and `packages/trellis` expose their small authored Attune
 declaration through `src/attune.package.ts`. Framework runtime, local
 TimescaleDB/Postgres recipe spine, language-service internals, and Nx internals
 are private framework implementation details.
@@ -109,10 +110,13 @@ are private framework implementation details.
 For package or framework-facing work, use the simple loop:
 
 ```bash
-nx run workspace:attune-check
-nx run workspace:attune-repair
-nx run <project>:attune-check
-nx run <project>:attune-repair
+nx run workspace:check
+nx run workspace:test
+nx run workspace:repair
+nx run workspace:db
+nx run workspace:dev
+nx run <project>:check
+nx run <project>:repair
 nx run <project>:typecheck
 nx run <project>:test
 ```
@@ -129,7 +133,7 @@ For package declarations:
 3. Keep `attune.package.ts` small: package id/kind, source-facing action
    entries, schemas, services, rendered state roots, waivers, and rare custom
    validation metadata only.
-4. Run the suggested `attune-repair` target before choosing a generator by hand.
+4. Run the suggested `repair` target before choosing a generator by hand.
 5. Implement behavior inside generated `Effect.Service` boundaries and update
    Effect Schema-backed source metadata, validation metadata, waivers, and
    provenance.
@@ -185,27 +189,27 @@ generated or derived recipe artifacts by hand.
 
 ## Repo Map
 
-- `packages/attune-nx`: local Nx generators and sync generators. Reach them
+- `packages/attune/nx`: local Nx generators and sync generators. Reach them
   through Attune check/repair diagnostics and repair plans unless debugging an
   advanced generator issue.
-- `packages/attuned-discovery`: current semantic discovery package. It contains
+- `packages/attune/discovery`: current semantic discovery package. It contains
   the first schema, fixture, event replay, projection, and WorkbenchSnapshot
   slice.
-- `packages/cocoindex-effect`: Effect service boundary and MCP-facing code for
+- `packages/attune/cocoindex-effect`: Effect service boundary and MCP-facing code for
   CocoIndex semantic recall. MCP is not a core Attune Framework path; future
   MCP work should adapt framework diagnostics/query services rather than expose
   raw internals.
-- `packages/joern-effect`: generated Joern CPGQL bindings and proof-template
+- `packages/attune/joern-effect`: generated Joern CPGQL bindings and proof-template
   DSL surface.
-- `packages/joern-effect-properties`: property, fuzzer, Axiom, and Joern-backed
+- `packages/attune/joern-effect-properties`: property, fuzzer, Axiom, and Joern-backed
   validation workbench.
 - `docs/dispatch-app-boundaries.md`: current FoldKit app boundary. Dispatch
   packages were removed from this project; product Workbench/FoldKit UI must not
   hide Dispatch as an incidental page.
-- `packages/attune-foldkit`: product FoldKit model, update, messages, render
+- `packages/attune/foldkit`: product FoldKit model, update, messages, render
   logic, constrained MDX fixtures, activity helpers, and Vite web boot
   (`attune-foldkit`, `@attune/foldkit-ui`).
-- `packages/platform-alchemy-k8s`: Kubernetes/Alchemy platform resource package.
+- `packages/canopy/platform-alchemy-k8s`: Kubernetes/Alchemy platform resource package.
   Kubernetes generation should become an `@attune/nx` generator issue before
   repeated hand-written resource shapes expand.
 
@@ -253,10 +257,10 @@ public API. Useful commands:
 
 ```bash
 nx show projects
-nx run workspace:attune-check
-nx run workspace:attune-repair
-nx run <project>:attune-check
-nx run <project>:attune-repair
+nx run workspace:check
+nx run workspace:repair
+nx run <project>:check
+nx run <project>:repair
 nx run <project>:typecheck
 nx run <project>:test
 nx run <project>:build
@@ -269,7 +273,7 @@ targets from inside it. `pnpm exec nx ...` may appear there only as an
 inside-dev-shell detail; docs and agent reports should name the Nx target or
 generator that is the stable workflow contract.
 
-Before editing repeated or generated shapes, run `attune-check` and use the
+Before editing repeated or generated shapes, run `check` and use the
 repair action it suggests. Generators remain important, but they are normal
 repair implementations rather than default agent memory. If a diagnostic has no
 safe repair, report the follow-up instead of guessing. Treat legacy source

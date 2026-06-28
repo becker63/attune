@@ -11,16 +11,16 @@
 ## Public Loop
 
 1. Edit small `src/attune.package.ts` declarations.
-2. Run `nx run workspace:attune-check`.
+2. Run `nx run workspace:check`.
 3. Read language-service or Nx diagnostics.
-4. Run `nx run workspace:attune-repair` or the suggested project repair target.
+4. Run `nx run workspace:repair` or the suggested project repair target.
 5. Re-run the focused project `typecheck` or `test`.
 
 Project-level aliases follow the same shape:
 
 ```bash
-nx run <project>:attune-check
-nx run <project>:attune-repair
+nx run <project>:check
+nx run <project>:repair
 nx run <project>:typecheck
 nx run <project>:test
 ```
@@ -127,7 +127,7 @@ include a repair plan with:
 - what happened
 - why Attune cares
 - whether the repair is safe
-- the public `attune-repair` command to run
+- the public `repair` command to run
 - the internal generator or materializer
 - artifact/cache records that may change
 - files that must not be hand-edited

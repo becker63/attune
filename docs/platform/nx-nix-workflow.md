@@ -9,11 +9,12 @@ provides the pinned tools those targets use.
 Use these commands first:
 
 ```bash
-nx run workspace:attune-check
-nx run workspace:attune-repair
+nx run workspace:check
+nx run workspace:repair
 nx run workspace:policy-fast
-nx run <project>:typecheck
+nx run <project>:check
 nx run <project>:test
+nx run <project>:repair
 ```
 
 Use `workspace:tool-versions` when a task needs to show the toolchain pins:
@@ -65,24 +66,16 @@ Nix support under the matching `nix/` directory.
 
 ## Joern Property Modes
 
-`joern-effect-properties` has three property execution modes:
+`joern-effect-properties` exposes two public proof-pressure targets:
 
 | Mode | Target | Runtime | Use |
 | --- | --- | --- | --- |
-| Cheap property | `nx run joern-effect-properties:property` | Nix-provisioned local toolchain through the typed worker-fuzz executor | Commit-tier package evidence that does not require a container boundary. |
-| Joern-gated local tmpfs | `nx run joern-effect-properties:property-joern` | Local Nix dev shell with `JOERN_EFFECT_TEST_TMPDIR` normally pointing at `/dev/shm` | Real Joern evidence when the host has Joern tools and writable tmpfs. |
-| Container tmpfs | `nx run joern-effect-properties:property-joern:container` | Arion + Nix image with `/dev/shm`, `/work`, and `/tmp` tmpfs mounts | Reproducible heavy proof pressure when Docker/Arion are available. |
+| Proof | `nx run joern-effect-properties:proof` | Nix-provisioned local toolchain through the typed worker-fuzz executor | Commit-tier package evidence that does not require a container boundary. |
+| Fuzz | `nx run joern-effect-properties:fuzz` | Recipe-backed worker-fuzz smoke preset | Local semantic fuzzer evidence. |
 
-Fuzzer container variants route through the same Arion runtime:
-
-```bash
-nx run joern-effect-properties:fuzz:container
-nx run joern-effect-properties:fuzz:nightly:container
-nx run joern-effect-properties:fuzz:dsl-four-hour:container
-```
-
-Container targets are external or heavy resource-tier checks. Run them only
+Longer campaigns and container/tmpfs execution are recipe parameters or
+CI/orchestrator concerns rather than separate public Nx aliases. Run them only
 when the task asks for proof pressure or when a human has approved the runtime
-cost. Record exact target output and leave bulky evidence under
+cost. Record exact output and leave bulky evidence under
 `.attune/cache`, CI artifacts, telemetry, or container logs rather than checked
 in reports.

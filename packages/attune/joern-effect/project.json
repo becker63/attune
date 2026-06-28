@@ -1,0 +1,274 @@
+{
+  "name": "joern-effect",
+  "root": "packages/attune/joern-effect",
+  "sourceRoot": "packages/attune/joern-effect/src",
+  "targets": {
+    "build": {
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "typescript",
+        "action": "build",
+        "toolId": "tsc",
+        "parameters": {
+          "tsconfig": "tsconfig.build.json"
+        },
+        "dryRun": false
+      }
+    },
+    "typecheck": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "targetProject": "joern-effect",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
+      }
+    },
+    "test": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "targetProject": "joern-effect",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
+      }
+    },
+    "generate": {
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/src/pure/generated",
+        "{projectRoot}/src/internal/generated",
+        "{projectRoot}/src/joern/templates/TemplateRegistry.generated.ts",
+        "{projectRoot}/README.md"
+      ],
+      "metadata": {
+        "description": "Recipe-backed Joern schema, DSL, template, arbitrary, and README generation.",
+        "attune": {
+          "tier": "public",
+          "surface": "generate",
+          "recipeId": "joern-effect.generated-bindings"
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "joern",
+        "action": "generate",
+        "toolId": "generation-stage",
+        "parameters": {
+          "stage": "emit-generated",
+          "recipeId": "joern-effect.generated-bindings"
+        },
+        "dryRun": false
+      }
+    },
+    "attune:repair-symbol-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer joern-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "symbol-registry",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect",
+          "kind": "symbol-registry"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect/attune-symbol-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect/attune-symbol-registry.ts"
+      ]
+    },
+    "attune:repair-property-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer joern-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "property-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect",
+          "kind": "property-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect/attune-property-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect/attune-property-observations.ts"
+      ]
+    },
+    "attune:repair-schema-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer joern-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "schema-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect",
+          "kind": "schema-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect/attune-schema-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect/attune-schema-observations.ts"
+      ]
+    },
+    "attune:repair-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer joern-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect",
+          "kind": "observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect/attune-observation-scaffold.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/observations/joern-effect/observation-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/joern-effect/observation-scaffold.json"
+      ]
+    },
+    "attune:repair-artifact-freshness": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer joern-effect:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "artifact-freshness",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "joern-effect",
+          "kind": "artifact-freshness"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/joern-effect/artifact-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/joern-effect/artifact-freshness.json"
+      ]
+    },
+    "check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable check verb.",
+        "attune": {
+          "tier": "public",
+          "surface": "check"
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:recipe-substrate-check"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable repair verb when available.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "joern-effect",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "joern-effect:attune:repair-symbol-registry",
+            "joern-effect:attune:repair-property-observations",
+            "joern-effect:attune:repair-schema-observations",
+            "joern-effect:attune:repair-observations",
+            "joern-effect:attune:repair-artifact-freshness"
+          ]
+        },
+        "dryRun": false
+      }
+    }
+  }
+}

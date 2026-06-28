@@ -5,13 +5,9 @@ Replace `atttune` if `AXIOM_DATASET` points at a different dataset.
 
 ## Runtime Targets
 
-- `nx run joern-effect-properties:fuzz:smoke` runs a small local admission/query pass.
-- `nx run joern-effect-properties:fuzz:workbench` runs the Joern-backed query workbench.
-- `nx run joern-effect-properties:fuzz:nightly` runs the long semantic preset.
-- `nx run joern-effect-properties:fuzz:container` runs the workbench through the tmpfs-backed Arion container.
-- `nx run joern-effect-properties:fuzz:nightly:container` runs the nightly preset through the same container runtime.
-- `nx run joern-effect-properties:fuzz:dsl-four-hour:container` runs the current DSL-heavy four-hour workbench.
-- Local container defaults are `JOERN_EFFECT_PROPERTY_WORKERS=2`, `JOERN_EFFECT_PROPERTY_CPUS_PER_WORKER=2`, and `JOERN_EFFECT_PROPERTY_CPUS=4`; this keeps two or more host cores available on the current 16 GiB workstation.
+- `nx run joern-effect-properties:fuzz` runs the recipe-backed local admission/query pass.
+- `nx run joern-effect-properties:proof` runs the recipe-backed property validation worker.
+- Longer campaigns and container pressure are recipe parameters or CI/orchestrator concerns, not separate public Nx aliases.
 
 ## Latest Fuzzer Events
 

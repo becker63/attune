@@ -35,7 +35,7 @@
                   ./pnpm-lock.yaml
                   ./pnpm-workspace.yaml
                   ./tsconfig.base.json
-                  ./packages/attune-pi-agent
+                  ./packages/attune/pi-agent
                 ];
               };
 
@@ -61,8 +61,8 @@
               installPhase = ''
                 runHook preInstall
                 mkdir -p "$out"
-                cp packages/attune-pi-agent/package.json "$out/package.json"
-                cp -r packages/attune-pi-agent/dist "$out/dist"
+                cp packages/attune/pi-agent/package.json "$out/package.json"
+                cp -r packages/attune/pi-agent/dist "$out/dist"
                 runHook postInstall
               '';
 
@@ -248,9 +248,6 @@
             focused-architecture-lint =
               nxPolicyHook "focused-architecture-lint"
                 ./nix/policy-hooks/focused-architecture-lint.sh;
-            touched-artifact-ownership =
-              nxPolicyHook "touched-artifact-ownership"
-                ./nix/policy-hooks/touched-artifact-ownership.sh;
             openspec-feasible-validation =
               nxPolicyHook "openspec-feasible-validation"
                 ./nix/policy-hooks/openspec-feasible-validation.sh;
@@ -318,11 +315,11 @@
             echo "Attune dev shell"
             echo "  pnpm install"
             echo "  pnpm exec nx show projects"
-            echo "  pnpm exec nx run workspace:policy-commit"
-            echo "  pnpm exec nx run workspace:policy-push"
+            echo "  pnpm exec nx run workspace:check"
+            echo "  pnpm exec nx run workspace:policy-fast"
             echo "  pnpm exec nx run joern-effect:generate"
             echo "  pnpm exec nx run cocoindex-effect:generate"
-            echo "  pnpm exec nx run platform-alchemy-k8s:generate-crd-types"
+            echo "  pnpm exec nx run platform-alchemy-k8s:generate"
           '';
         };
 

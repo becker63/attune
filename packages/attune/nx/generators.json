@@ -1,0 +1,60 @@
+{
+  "$schema": "../../node_modules/nx/schemas/generators-schema.json",
+  "generators": {
+    "discovery-event": {
+      "factory": "./src/generators/discovery-event/generator.cjs",
+      "schema": "./src/generators/discovery-event/schema.json",
+      "description": "Create a DiscoveryEvents facade event with projection handler, Reactivity ViewKey, and replay fixture skeleton."
+    },
+    "effect-service": {
+      "factory": "./src/generators/effect-service/generator.cjs",
+      "schema": "./src/generators/effect-service/schema.json",
+      "description": "Create a canonical Effect.Service boundary with symbol metadata, service layers, and artifact provenance."
+    },
+    "project-facts": {
+      "factory": "./src/generators/project-facts/generator.cjs",
+      "schema": "./src/generators/project-facts/schema.json",
+      "description": "Create Effect Schema-backed project facts, symbol registry, observation plan, and artifact metadata."
+    },
+    "atom-view": {
+      "factory": "./src/generators/atom-view/generator.cjs",
+      "schema": "./src/generators/atom-view/schema.json",
+      "description": "Create package-level Reactivity keys, atom shells, and atom graph registration."
+    },
+    "joern-template": {
+      "factory": "./src/generators/joern-template/generator.cjs",
+      "schema": "./src/generators/joern-template/schema.json",
+      "description": "Create a known Joern proof-template shell with binding and evidence schemas."
+    },
+    "cocoindex-mcp-tool": {
+      "factory": "./src/generators/cocoindex-mcp-tool/generator.cjs",
+      "schema": "./src/generators/cocoindex-mcp-tool/schema.json",
+      "description": "Create a CocoIndex MCP tool shell with Effect Schema input and result boundaries."
+    },
+    "k8s-resource": {
+      "factory": "./src/generators/k8s-resource/generator.cjs",
+      "schema": "./src/generators/k8s-resource/schema.json",
+      "description": "Create an Effect Alchemy Kubernetes resource module shell."
+    },
+    "sync-effect-layers": {
+      "factory": "./src/generators/sync-effect-layers/generator.cjs",
+      "schema": "./src/generators/sync-effect-layers/schema.json",
+      "description": "Synchronize Effect live layer composition from generated service modules."
+    },
+    "sync-joern-templates": {
+      "factory": "./src/generators/sync-joern-templates/generator.cjs",
+      "schema": "./src/generators/sync-joern-templates/schema.json",
+      "description": "Synchronize Joern template registry and template barrel exports."
+    },
+    "sync-cocoindex-mcp-tools": {
+      "factory": "./src/generators/sync-cocoindex-mcp-tools/generator.cjs",
+      "schema": "./src/generators/sync-cocoindex-mcp-tools/schema.json",
+      "description": "Synchronize CocoIndex MCP tool registry and tool barrel exports."
+    },
+    "sync-k8s-resources": {
+      "factory": "./src/generators/sync-k8s-resources/generator.cjs",
+      "schema": "./src/generators/sync-k8s-resources/schema.json",
+      "description": "Synchronize Effect Alchemy Kubernetes resource registry and resource barrel exports."
+    }
+  }
+}

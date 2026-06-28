@@ -3,7 +3,7 @@
 This runbook mirrors the native Effect/Alchemy deployment model. It is not an
 alternate CLI workflow and it must not grow phase runners, wrapper commands, or
 local state machines. The source of truth is the Alchemy stack exported by
-`packages/home-deployment`.
+`packages/canopy/home-deployment`.
 
 ## Operator Experience
 
@@ -34,13 +34,13 @@ installs require Alchemy approval evidence.
 Preview the native Alchemy stack from the repo root before any apply:
 
 ```bash
-nix develop -c alchemy plan packages/home-deployment/alchemy.run.ts
+nix develop -c alchemy plan packages/canopy/home-deployment/alchemy.run.ts
 ```
 
 Apply the accepted plan with the same stack:
 
 ```bash
-nix develop -c alchemy deploy packages/home-deployment/alchemy.run.ts --yes
+nix develop -c alchemy deploy packages/canopy/home-deployment/alchemy.run.ts --yes
 ```
 
 The dev shell provides Node, pnpm, OpenSpec, Alchemy on `PATH`, and disables

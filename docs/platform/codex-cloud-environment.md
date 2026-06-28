@@ -11,7 +11,7 @@ The target Attune Framework loop is diagnostics-first:
 ```text
 language-service diagnostic or Nx check output
   -> referenced Recipe, ManagedRecipe, receipt, diagnostic, repair, or DB emission fact
-  -> nx run workspace:attune-repair or nx run <project>:attune-repair
+  -> nx run workspace:repair or nx run <project>:repair
   -> generated/cache artifacts and recipe receipt projections
   -> local TimescaleDB/Postgres recipe spine and framework observations
   -> language-service and Nx diagnostics clear
@@ -68,7 +68,7 @@ For package changes, prefer this repair path:
 
 1. Read language-service diagnostics or Nx diagnostic output.
 2. Open the referenced source file or generated/cache boundary.
-3. Run `nx run workspace:attune-repair` or the suggested project repair target
+3. Run `nx run workspace:repair` or the suggested project repair target
    to refresh repeated shapes.
 4. Implement behavior inside generated `Effect.Service` classes and update
    Effect Schema-backed source metadata, validation metadata, waivers, and
@@ -87,7 +87,7 @@ flows through the generic TimescaleDB/Postgres recipe spine.
 ## Source And Generator Expectations
 
 Before editing repeated, generated, or template-like source shapes, agents must
-run the relevant `attune-check` target and use the repair it suggests. Do not
+run the relevant `check` target and use the repair it suggests. Do not
 hand-edit repeated shapes when a repair owns the shape. If ownership is missing
 or ambiguous, document the blocker and create a follow-up rather than inventing
 ownership. Legacy source ownership and generator-shape manifests are migration

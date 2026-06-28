@@ -259,6 +259,86 @@ instead of maintaining them as live compatibility inputs.
   companions, source metadata, tests, and import paths are not maintained as a
   parallel compatibility substrate.
 
+### Requirement: Root topology exposes four ownership roots
+
+ARS SHALL make the repository topology expose Attune, Canopy, Tend, and Trellis
+as the active package ownership roots.
+
+#### Scenario: Root package tree is inspected
+- **WHEN** an agent lists `packages/`
+- **THEN** the active ownership roots are `attune`, `canopy`, `tend`, and
+  `trellis`
+- **AND** legacy root `framework/` and root `tend/` are not active code roots.
+
+#### Scenario: Existing source is too risky to fully merge
+- **WHEN** moving a package into its final merged module would block validation
+- **THEN** the package is moved under the correct ownership root with `git mv`
+  or represented by a `.keep` staging placeholder
+- **AND** the remaining consolidation blocker is recorded in ARS tasks or
+  deferred backlog rather than preserved silently.
+
+#### Scenario: Root clutter is evaluated
+- **WHEN** root files or directories are outside the ARS allowlist
+- **THEN** they are deleted, moved under the owning package, or justified in
+  the handoff
+- **AND** checked-in scratch such as root `dist`, root `reports`, `result`,
+  repomix output, stale generated-shape files, stale root recipes, archive
+  trees inside active code paths, and disposable `tmp.md` are not retained.
+
+### Requirement: Public command surface is small and Nx-owned
+
+ARS SHALL simplify package and workspace commands so public workflows are small
+Nx targets backed by Recipes, ManagedRecipes, typed executors, package internals,
+or Nix toolchains.
+
+#### Scenario: Workspace command surface is inspected
+- **WHEN** root targets are listed
+- **THEN** the public vocabulary is `check`, `test`, `repair`, `db`, and `dev`
+  plus justified project-specific `generate`, `proof`, `fuzz`, `db`, or `dev`
+  targets
+- **AND** compatibility names may exist only as temporary aliases with a
+  documented removal path.
+
+#### Scenario: Package scripts are inspected
+- **WHEN** package manifests are searched for `scripts`
+- **THEN** package-local scripts are absent unless the package is a true public
+  CLI or has a documented external integration reason
+- **AND** package-manager wrappers or Corepack indirection are not active
+  workflow surfaces.
+
+#### Scenario: Tool soup is evaluated
+- **WHEN** active manifests, project targets, and policy code reference lint,
+  mutation, bundling, duplication, dependency, or type-test tools
+- **THEN** Oxlint is retained as the lint/policy engine
+- **AND** Stryker, tsup-for-internal packages, standalone ESLint policy use,
+  dependency-cruiser, madge, jscpd, tsd, direct shell wrappers, and
+  package-manager indirection are removed unless validation proves a hard
+  blocker that is recorded in ARS
+- **AND** the SafeQL ESLint plugin runtime is retained only as SQL validation
+  implementation detail.
+
+#### Scenario: Script behavior is retained
+- **WHEN** a `.ts`, `.mjs`, `.sh`, or other script-like file remains in an
+  active package
+- **THEN** the behavior is represented by a named Recipe or ManagedRecipe with
+  typed input, typed output, dependencies, allowed files, validation evidence,
+  and receipt expectations
+- **AND** the script is package-internal implementation for that recipe rather
+  than a public workflow surface.
+
+#### Scenario: Executor invokes a script file
+- **WHEN** an Nx typed executor plans a script-backed process
+- **THEN** the target options identify the Recipe or ManagedRecipe provenance
+  for that script
+- **AND** arbitrary script path execution without recipe provenance is rejected.
+
+#### Scenario: Active OpenSpec changes are inspected
+- **WHEN** `openspec/changes` is listed
+- **THEN** only `arbor-recipe-substrate-migration` remains active
+- **AND** Attune product loop, Canopy live deployment, FoldKit product surface,
+  and Joern proof catalog follow-up intent is preserved in backlog docs rather
+  than active change folders.
+
 #### Scenario: Legacy cleanup is evaluated
 - **WHEN** ARS migration status is evaluated
 - **THEN** legacy cleanup is treated as required migration work, not deferred

@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "@attune/framework-protocol": ["../../trellis/protocol/src/index.ts"],
+      "@attune/home-deployment": ["./src/index.ts"],
+      "@attune/platform-alchemy-k8s": ["../platform-alchemy-k8s/src/index.ts"]
+    }
+  },
+  "include": ["src", "test", "alchemy.run.ts", "vitest.config.ts"]
+}

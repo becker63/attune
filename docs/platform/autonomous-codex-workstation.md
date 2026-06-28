@@ -171,10 +171,9 @@ Agents must not:
 
 ## Workstation Startup
 
-The scripts in `scripts/windows/` are conservative.
-
-- `Start-AttuneCodexAppServer.ps1` starts `codex app-server` on `127.0.0.1` using a local capability token file and log directory.
-- `Install-AttuneCodexStartupTask.ps1` registers the startup script as a user-scoped Windows scheduled task.
+Historical Windows startup scripts were removed during ARS root cleanup. Any
+future workstation startup behavior must be reintroduced as a Recipe or
+ManagedRecipe-backed Nx target with a human-reviewed exposure boundary.
 
 Do not expose app-server to LAN or internet without a separate human-reviewed change.
 

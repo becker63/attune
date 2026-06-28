@@ -1,12 +1,7 @@
 # Attune
 
 Attune is the unified workspace for the current product, Joern integration, Nx
-tooling, Nix runtime, and imported migration sources.
-
-This repository is now the single tracking point for work that was previously
-spread across local directories and GitHub repos. Imported repositories are kept
-as ordinary files under `imports/` during migration. They are not submodules,
-and their nested `.git` directories are intentionally excluded.
+tooling, Nix runtime, and Recipe/ManagedRecipe substrate work.
 
 ## North Star
 
@@ -30,26 +25,32 @@ Attune's direction is:
 
 ## Workspace Layout
 
-- `packages/joern-effect` - generated Joern TypeScript/Effect SDK and DSL.
-- `packages/joern-effect-properties` - Effect-based semantic fuzzer and Joern
+- `packages/attune/` - FoldKit, discovery, CocoIndex, Joern, PI, and domain code.
+- `packages/canopy/` - home deployment, platform resources, Kubernetes, and Alchemy lifecycle code.
+- `packages/tend/` - OpenCode observation, token control, long-job, Magic Context, and reporting code.
+- `packages/trellis/` - Recipe/ManagedRecipe framework substrate, runtime, DB route, Nx, testing, and Oxlint policy.
+- `packages/attune/joern-effect` - generated Joern TypeScript/Effect SDK and DSL.
+- `packages/attune/joern-effect-properties` - Effect-based semantic fuzzer and Joern
   property workbench.
-- `packages/attune-nx` - local Nx generator/workspace tooling.
+- `packages/attune/nx` - local Nx generator/workspace tooling.
 - `nix/` - flake toolchains, Joern runtime closure, nix2container, and Arion
   runtime definitions.
 - `docs/` - active project docs and migration reports.
 - `openspec/` - OpenSpec change proposals and specs.
-- `imports/` - tracked migration snapshots from previous local and GitHub repos.
-
-See `IMPORTS.md` for import provenance.
 
 ## Tooling
 
 Common commands:
 
 ```bash
-nx run workspace:attune-check
-nx run workspace:attune-repair
+nx run workspace:check
+nx run workspace:test
+nx run workspace:repair
+nx run workspace:db
+nx run workspace:dev
 nx run workspace:policy-fast
+nx run <project>:check
+nx run <project>:repair
 nx run <project>:typecheck
 nx run <project>:test
 ```

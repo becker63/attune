@@ -138,10 +138,10 @@ as product source.
 
 Nx is the public action surface for deterministic materialization:
 
-- `nx run workspace:attune-check`
-- `nx run workspace:attune-repair`
-- `nx run <project>:attune-check`
-- `nx run <project>:attune-repair`
+- `nx run workspace:check`
+- `nx run workspace:repair`
+- `nx run <project>:check`
+- `nx run <project>:repair`
 - `nx run <project>:typecheck`
 - `nx run <project>:test`
 

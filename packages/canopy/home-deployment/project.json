@@ -1,0 +1,278 @@
+{
+  "name": "home-deployment",
+  "root": "packages/canopy/home-deployment",
+  "sourceRoot": "packages/canopy/home-deployment/src",
+  "targets": {
+    "build": {
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "typescript",
+        "action": "build",
+        "toolId": "tsc",
+        "parameters": {
+          "tsconfig": "tsconfig.json"
+        },
+        "dryRun": false
+      }
+    },
+    "typecheck": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "targetProject": "home-deployment",
+        "checks": [
+          "typecheck"
+        ],
+        "dryRun": false
+      }
+    },
+    "test": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "targetProject": "home-deployment",
+        "checks": [
+          "test"
+        ],
+        "dryRun": false
+      }
+    },
+    "attune:repair-symbol-registry": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer home-deployment:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "symbol-registry",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "symbol-registry"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/attune-symbol-registry.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/attune-symbol-registry.ts"
+      ]
+    },
+    "attune:repair-property-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for property observations. Public agents should prefer home-deployment:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "property-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "property-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/attune-property-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/attune-property-observations.ts"
+      ]
+    },
+    "attune:repair-schema-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for schema observations. Public agents should prefer home-deployment:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "schema-observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "schema-observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/attune-schema-observations.ts"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/attune-schema-observations.ts"
+      ]
+    },
+    "attune:repair-observations": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer home-deployment:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "observations",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "observations"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/attune-observation-scaffold.ts"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/observations/home-deployment/observation-scaffold.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/attune-observation-scaffold.ts",
+        "{workspaceRoot}/.attune/cache/observations/home-deployment/observation-scaffold.json"
+      ]
+    },
+    "attune:repair-artifact-freshness": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer home-deployment:repair unless a diagnostic names this target.",
+        "attune": {
+          "tier": "internal",
+          "surface": "repair",
+          "repairKind": "artifact-freshness",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true,
+          "project": "home-deployment",
+          "kind": "artifact-freshness"
+        },
+        "dryRun": false,
+        "outputs": [
+          ".attune/cache/generated/home-deployment/artifact-freshness.json"
+        ]
+      },
+      "outputs": [
+        "{workspaceRoot}/.attune/cache/generated/home-deployment/artifact-freshness.json"
+      ]
+    },
+    "check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable check verb.",
+        "attune": {
+          "tier": "public",
+          "surface": "check"
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "workspace:recipe-substrate-check"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable repair verb when available.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true
+        }
+      },
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "home-deployment:attune:repair-symbol-registry",
+            "home-deployment:attune:repair-property-observations",
+            "home-deployment:attune:repair-schema-observations",
+            "home-deployment:attune:repair-observations",
+            "home-deployment:attune:repair-artifact-freshness"
+          ]
+        },
+        "dryRun": false
+      }
+    },
+    "dev": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "targetProject": "home-deployment",
+        "tool": "alchemy",
+        "action": "plan",
+        "toolId": "home-deployment-day0-stack",
+        "outputs": [
+          ".attune/cache/home-deployment/alchemy-plan"
+        ],
+        "evidenceOutputs": [
+          ".attune/cache/home-deployment/provider-evidence"
+        ],
+        "resourceTier": "external",
+        "resourceProviderGate": {
+          "required": true,
+          "provider": "alchemy",
+          "operation": "plan",
+          "evidence": "home-deployment/day0-plan-dry-run"
+        },
+        "dryRun": true,
+        "parameters": {}
+      },
+      "metadata": {
+        "description": "Recipe-backed dry-run Canopy deployment plan surface. Live mutation remains behind human review.",
+        "attune": {
+          "tier": "public",
+          "surface": "dev",
+          "recipeId": "canopy.home-deployment"
+        }
+      }
+    }
+  }
+}

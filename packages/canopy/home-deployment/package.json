@@ -1,0 +1,36 @@
+{
+  "name": "@attune/home-deployment",
+  "version": "0.0.0",
+  "description": "Effect/Alchemy-shaped deployment graph for Attune home compute bootstrap.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./alchemy": {
+      "types": "./dist/alchemy.d.ts",
+      "import": "./dist/alchemy.js",
+      "require": "./dist/alchemy.cjs"
+    }
+  },
+  "dependencies": {
+    "@attune/framework-protocol": "workspace:*",
+    "@attune/platform-alchemy-k8s": "workspace:*",
+    "@effect/platform-bun": "4.0.0-beta.85",
+    "@effect/platform-node": "4.0.0-beta.85",
+    "alchemy": "2.0.0-beta.57",
+    "effect": "4.0.0-beta.85"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vite": "^8.0.16",
+    "vitest": "^3.2.2"
+  }
+}

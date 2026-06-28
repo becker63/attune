@@ -10,5 +10,5 @@ else
 fi
 
 if git diff --cached --name-only --diff-filter=ACMRT -- 'packages/**/*.ts' 'packages/**/*.tsx' | grep -q .; then
-  pnpm exec nx run workspace:lint
+  pnpm exec nx run workspace:policy-fast
 fi

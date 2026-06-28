@@ -25,7 +25,7 @@ nx run workspace:policy-fast
 
 ## Recovery audit command
 
-Run the recovery audit whenever a human reports that Codex cloud threads are missing PRs:
+Run the internal recovery audit whenever a human reports that Codex cloud threads are missing PRs:
 
 ```bash
 nx run workspace:codex-audit-prs

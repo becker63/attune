@@ -15,7 +15,7 @@ let
     let
       configured = builtins.getEnv "JOERN_EFFECT_PROPERTY_NX_TARGET";
     in
-    if configured == "" then "joern-effect-properties:property-joern" else configured;
+    if configured == "" then "joern-effect-properties:proof" else configured;
   cpuCount =
     let
       configured = builtins.getEnv "JOERN_EFFECT_PROPERTY_CPUS";

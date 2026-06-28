@@ -35,6 +35,11 @@ Tend/OpenCode token control the new architecture substrate for Attune.
   packets, and token audit reports.
 - Existing packages are migrated so their domain declarations are recipe-shaped
   without requiring full product implementation behind every recipe.
+- The repository topology is cleaned into four package ownership roots:
+  `packages/trellis`, `packages/tend`, `packages/attune`, and
+  `packages/canopy`.
+- The command surface is collapsed to small Nx targets and typed executors,
+  with Oxlint retained as the lint/policy engine and tool-soup targets removed.
 - Legacy program-index-first, SQLite/Drizzle/PgTyped, package-local generated
   companion, and artifact-ownership lanes are removed, archived, or explicitly
   quarantined rather than maintained as live compatibility inputs.
@@ -57,12 +62,8 @@ ARS does not complete:
 - marketing/reporting polish,
 - production rollout of every deferred product idea.
 
-Those become separate follow-up specs or tasks when needed, such as:
-
-- `attune-product-loop-followup`,
-- `canopy-live-deployment-followup`,
-- `joern-proof-catalog-followup`,
-- `foldkit-product-surface-followup`.
+Those become deferred backlog entries or future specs when needed. They must
+not remain as active OpenSpec changes during ARS root cleanup.
 
 Expressing a domain as recipes is in scope. Implementing the entire product
 behavior behind those recipes is out of scope unless a narrow substrate
@@ -95,6 +96,17 @@ A clean ARS codebase means:
 - Nx/Nix/Arion expose public execution surfaces as projections of recipes and
   ManagedRecipes,
 - old substrate lanes are removed, archived, or explicitly quarantined,
+- the root package topology exposes only Attune, Canopy, Tend, and Trellis as
+  active package ownership roots,
+- public commands are Nx-owned check, test, repair, db, dev, proof, fuzz, or
+  generate targets only where justified by a Recipe, ManagedRecipe, typed
+  executor, or Nix toolchain boundary,
+- Oxlint is the retained lint/policy surface, while Stryker, tsup-for-internal
+  packages, standalone ESLint policy use, dependency-cruiser, madge, jscpd,
+  tsd, package-manager wrappers, root scripts, generated-shape machinery,
+  scratch reports, and root build outputs are removed unless validation proves
+  a hard blocker; the SafeQL ESLint plugin runtime is retained only for the SQL
+  validation route,
 - product loop, full UI, full Canopy live deployment, full Joern proof catalog,
   and long fuzzer campaigns remain separate follow-up work.
 
@@ -106,8 +118,10 @@ It must not claim the broader Attune product is finished.
 Affected surfaces include framework protocol/runtime/testing/language-service
 recipe APIs, local DB lifecycle and SQL tooling, Nx/Nix/Arion recipe execution
 projection, package recipe declarations, Tend/OpenCode token-control modules,
+root/package topology, command-surface configuration, package-manager metadata,
 and documentation or policy that still treats legacy substrate lanes as active.
 
-No package or framework source is changed by this spec-surgery pass. Subsequent
-implementation phases must stay inside the ownership boundaries and validation
-commands recorded in `tasks.md`.
+Root-topology cleanup may move package folders and delete scratch/tooling
+surfaces without implementing product behavior. Source implementation phases
+must stay inside the ownership boundaries and validation commands recorded in
+`tasks.md`.

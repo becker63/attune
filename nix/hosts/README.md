@@ -10,7 +10,7 @@ The accepted Day 0 baseline is SSH, Tailscale, sops-nix, Disko, comin, the
 `attune` wheel user, and local repair access. K3s, Kubernetes, kubeconfig,
 desktop worker setup, and public ingress are deferred.
 
-`packages/home-deployment` owns the Day 0 lifecycle through native
+`packages/canopy/home-deployment` owns the Day 0 lifecycle through native
 Effect/Alchemy resources. This flake owns the installed host shape.
 
 ## Local Evidence

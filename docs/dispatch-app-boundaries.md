@@ -2,7 +2,7 @@
 
 The product FoldKit UI is the only FoldKit app in this workspace.
 
-Use `packages/attune-foldkit` for WorkbenchSnapshot review, motifs, evidence
+Use `packages/attune/foldkit` for WorkbenchSnapshot review, motifs, evidence
 packets, findings, codebase discovery flows, human promotion workflows, the
 constrained FoldKit MDX page grammar, and the Vite web boot.
 

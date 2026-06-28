@@ -1,4 +1,5 @@
 packages:
-  - "framework/*"
-  - "packages/*"
-  - "tend/packages/*"
+  - "packages/attune/*"
+  - "packages/canopy/*"
+  - "packages/tend/*"
+  - "packages/trellis/*"

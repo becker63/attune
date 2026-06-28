@@ -92,8 +92,8 @@ deletion is tracked in ARS-P7, not treated as Recipe kernel compatibility.
 - [x] ARS-P1.7 Validate with `nx test framework-protocol`,
   `nx test framework-runtime`, and `nx test framework-testing`.
 
-Allowed roots: `framework/protocol`, `framework/runtime`,
-`framework/testing`, `framework/language-service`.
+Allowed roots: `packages/trellis/protocol`, `packages/trellis/runtime`,
+`packages/trellis/testing`, `packages/trellis/language-service`.
 
 Validation:
 
@@ -122,7 +122,7 @@ migration, durable store, and tests exist.
   nix2container image or closure selection that are recipe evidence rather
   than a separate public lifecycle model.
 - [x] ARS-P2.4 Add readiness checks and migration application for
-  `framework/runtime/sql/0001_framework_recipe_receipt_spine.sql`.
+  `packages/trellis/runtime/sql/0001_framework_recipe_receipt_spine.sql`.
 - [x] ARS-P2.5 Add a Timescale-backed `RecipeReceiptStore` or clearly named
   `PostgresRecipeReceiptStore`.
 - [x] ARS-P2.6 Keep the in-memory receipt store as a test fixture, not durable
@@ -137,8 +137,8 @@ migration, durable store, and tests exist.
 - [x] ARS-P2.10 Validate with `nx test framework-runtime` and targeted `rg`
   checks for Timescale/Postgres/receipt symbols.
 
-Allowed roots: `framework/runtime`, `framework/db` if created, `nix`,
-`scripts`, and package/project config only if needed for Nx targets.
+Allowed roots: `packages/trellis/runtime`, `nix`, and package/project config
+only if needed for Nx targets.
 
 Validation:
 
@@ -181,8 +181,8 @@ Status: Complete.
   claim P2 complete without the live ManagedRecipe service lifecycle evidence
   or an explicit environment blocker.
 
-Allowed roots: `framework/runtime`, `framework/db` if created,
-`packages/attune-nx`, `nix/toolchains`, `scripts`.
+Allowed roots: `packages/trellis/runtime`, `packages/attune/nx`,
+`nix/toolchains`, and package/project config.
 
 Validation:
 
@@ -218,7 +218,7 @@ Status: Complete.
 - [x] ARS-P4.6 Validate with `nx test framework-nx` and
   `nx test framework-runtime`.
 
-Allowed roots: `framework/nx`, `framework/runtime`, `packages/attune-nx`,
+Allowed roots: `packages/trellis/nx`, `packages/trellis/runtime`, `packages/attune/nx`,
 `nix`.
 
 Validation:
@@ -254,30 +254,30 @@ reason before this phase is complete.
 - [x] ARS-P5.8 Add a package DB emission contract so every active package can
   emit recipe declarations, dependency edges, expected IO, runs, receipts,
   diagnostics, repairs, and health into the generic TimescaleDB/Postgres spine.
-- [x] ARS-P5.9 Archive, quarantine, or remove `framework/sqlite` from active
+- [x] ARS-P5.9 Archive, quarantine, or remove legacy framework SQLite from active
   substrate policy if it is no longer needed.
 - [x] ARS-P5.10 Validate with targeted recipe symbol searches and package tests
   for every touched package.
 
-Packages to cover: `framework/architecture`, `framework/language-service`,
-`framework/nx`, `framework/oxlint-policy`, `framework/protocol`,
-`framework/runtime`, `framework/testing`,
-`packages/attune-foldkit`, `packages/attune-nx`,
-`packages/attune-pi-agent`, `packages/attuned-discovery`,
-`packages/cocoindex-effect`, `packages/home-deployment`,
-`packages/joern-effect`, `packages/joern-effect-properties`,
-`packages/platform-alchemy-k8s`.
+Packages to cover: `packages/trellis/architecture`, `packages/trellis/language-service`,
+`packages/trellis/nx`, `packages/trellis/oxlint-policy`, `packages/trellis/protocol`,
+`packages/trellis/runtime`, `packages/trellis/testing`,
+`packages/attune/foldkit`, `packages/attune/nx`,
+`packages/attune/pi-agent`, `packages/attune/discovery`,
+`packages/attune/cocoindex-effect`, `packages/canopy/home-deployment`,
+`packages/attune/joern-effect`, `packages/attune/joern-effect-properties`,
+`packages/canopy/platform-alchemy-k8s`.
 
 Validation:
 
 ```bash
-find framework packages tend -path '*/src/recipes.ts' -print | sort
+find packages -path '*/src/recipes.ts' -print | sort
 NX_DAEMON=false nx run-many -t test -p attune-architecture,framework-language-service,framework-nx,effect-oxlint-policy,framework-protocol,framework-runtime,framework-sqlite,framework-testing,attune-foldkit,attune-nx,attune-pi-agent,attuned-discovery,cocoindex-effect,home-deployment,joern-effect,joern-effect-properties,platform-alchemy-k8s,tend-core,tend-db,tend-long-job,tend-opencode,tend-policies,tend-reporting,tend-token-audit
 NX_DAEMON=false nx run-many -t typecheck -p framework-protocol,framework-runtime,attune-architecture
 ```
 
 Result: passed on 2026-06-27. Revalidated on 2026-06-28 after
-`framework/sqlite` was moved to `framework/archive/legacy-sqlite`,
+legacy framework SQLite was removed from the active tree,
 `@attune/framework-sqlite` was removed from `tsconfig.base.json`, the pnpm
 lockfile reported 24 active workspace projects, and `nx show projects` no
 longer listed `framework-sqlite`.
@@ -286,10 +286,10 @@ longer listed `framework-sqlite`.
 
 Status: Complete.
 
-Tend now starts as a first-class `tend/packages/*` workspace root. The old
+Tend now starts as a first-class `packages/tend/*` workspace root. The old
 Pi-agent Tend experiment is deleted rather than kept as a compatibility lane.
 
-- [x] ARS-P6.1 Create first-class `tend/packages/*` projects and remove the
+- [x] ARS-P6.1 Create first-class `packages/tend/*` projects and remove the
   Pi-agent Tend surface instead of preserving compatibility exports.
 - [x] ARS-P6.2 Define Tend schemas for session, OpenCode observation, tool
   call, command observation, validation observation, token usage, command
@@ -314,10 +314,10 @@ Pi-agent Tend experiment is deleted rather than kept as a compatibility lane.
 - [x] ARS-P6.10 Validate with the created Tend package tests and document exact
   project names.
 
-Preferred shape: `tend/packages/core`, `tend/packages/db`,
-`tend/packages/opencode`, `tend/packages/policies`,
-`tend/packages/long-job`, `tend/packages/token-audit`,
-`tend/packages/reporting` for reports. Existing package paths are not an ARS Tend
+Preferred shape: `packages/tend/core`, `packages/tend/db`,
+`packages/tend/opencode`, `packages/tend/policies`,
+`packages/tend/long-job`, `packages/tend/token-audit`,
+`packages/tend/reporting` for reports. Existing package paths are not an ARS Tend
 compatibility surface.
 
 Validation:
@@ -353,14 +353,14 @@ Validation:
 
 ```bash
 rg -n "program-index|ProgramIndex|framework-sqlite|SQLite|sqlite|Drizzle|drizzle|PgTyped|pgtyped|artifact-ownership|attune\\.generated|attune\\.contract\\.generated|attune\\.package\\.typecheck|generator-shape-conformance|shape-conformance" AGENTS.md README.md docs framework packages tend scripts nx.json project.json tsconfig.base.json package.json --glob '!node_modules/**' --glob '!dist/**' --glob '!tmp.md' --glob '!openspec/changes/arbor-recipe-substrate-migration/**' --glob '!**/archive/**'
-rg -n "@attune/framework-sqlite|framework-sqlite|framework/sqlite|drizzle-orm" package.json packages framework tend pnpm-lock.yaml --glob '!node_modules/**' --glob '!dist/**' --glob '!**/archive/**'
+rg -n "@attune/framework-sqlite|framework-sqlite|framework/sqlite|drizzle-orm" package.json packages pnpm-lock.yaml --glob '!node_modules/**' --glob '!dist/**' --glob '!**/archive/**'
 NX_DAEMON=false nx show projects
 ```
 
 Result: passed on 2026-06-28. Remaining old-substrate hits are historical docs,
 explicit legacy warnings in `AGENTS.md`, negative policy tests, repair cleanup
 tests that delete generated companions, runtime SQL guard tests that assert
-legacy terms are absent, and quarantine policy names. `framework/sqlite`,
+legacy terms are absent, and quarantine policy names. Legacy framework SQLite,
 runtime program-index adapters, Nx program-index materializer, architecture
 program-index materializer, artifact-ownership generated shards, and the
 attuned-discovery Drizzle schema are archived or removed from active package
@@ -368,8 +368,7 @@ and import surfaces.
 
 ## ARS-P8. Orchestrated validation and repair loop
 
-Status: Complete as a validation pass; ARS completion remains blocked by
-ARS-P7.
+Status: Complete.
 
 - [x] ARS-P8.1 Run `openspec validate arbor-recipe-substrate-migration
   --strict`.
@@ -405,10 +404,92 @@ metadata from the runtime oxlint plugin entrypoint.
 Status: Deferred to separate spec.
 
 - [x] Deferred-1 Track full Attune Discovery product behavior in
-  `attune-product-loop-followup` or an equivalent future change.
+  the ARS deferred backlog or an equivalent future change.
 - [x] Deferred-2 Track full Canopy production/live deployment in
-  `canopy-live-deployment-followup` or an equivalent future change.
+  the ARS deferred backlog or an equivalent future change.
 - [x] Deferred-3 Track the full Joern proof catalog and long proof campaigns in
-  `joern-proof-catalog-followup` or an equivalent future change.
+  the ARS deferred backlog or an equivalent future change.
 - [x] Deferred-4 Track full FoldKit workbench product/UI behavior in
-  `foldkit-product-surface-followup` or an equivalent future change.
+  the ARS deferred backlog or an equivalent future change.
+
+## ARS-P9. Root topology and command surface cleanup
+
+Status: Complete.
+
+This phase applies the disposable `tmp.md` bootstrap spec. It does not
+implement product behavior. It makes the repo topology and public workflow
+surface match ARS clean-fork ownership.
+
+- [x] ARS-P9.1 Fold the active follow-up OpenSpec changes into
+  `docs/backlog/ars-deferred-followups.md`, keep only
+  `arbor-recipe-substrate-migration` under `openspec/changes`, and validate the
+  ARS change.
+- [x] ARS-P9.2 Move active source into the four ownership roots:
+  `packages/trellis`, `packages/tend`, `packages/attune`, and
+  `packages/canopy`, using `git mv` and `.keep` placeholders only for hard
+  validation blockers.
+- [x] ARS-P9.3 Delete root scratch and obsolete topology debris, including root
+  `dist`, `reports`, `result`, `repomix-output.xml`, root Stryker config, root
+  generated-shape file, stale root `recipes.ts`, root scripts/package-manager
+  wrappers, and archive folders inside active code paths unless a blocker is
+  recorded.
+- [x] ARS-P9.4 Convert every retained script behavior to a Recipe or
+  ManagedRecipe. Script-backed typed executor targets must name recipe
+  provenance; unmodeled scripts are deleted.
+- [x] ARS-P9.5 Retain Oxlint as the lint/policy engine and remove tool soup
+  from active manifests/targets where not required: Stryker, tsup for internal
+  packages, standalone ESLint policy use, dependency-cruiser, madge, jscpd,
+  tsd, Corepack wrappers, package-manager indirection, and active
+  SQLite/Drizzle/PgTyped/generated companion/artifact ownership machinery.
+  Retain the SafeQL ESLint plugin runtime only as the SQL validation
+  implementation detail.
+- [x] ARS-P9.6 Simplify root and project command surfaces to small Nx targets:
+  `workspace:check`, `workspace:test`, `workspace:repair`, `workspace:db`,
+  `workspace:dev`, plus project `check`, `test`, and `repair`; retain
+  `generate`, `proof`, `fuzz`, `db`, or `dev` only where justified.
+- [x] ARS-P9.7 Run requested validation and grep audits:
+  `pnpm install`, `pnpm exec nx show projects`,
+  `pnpm exec openspec validate arbor-recipe-substrate-migration --strict`,
+  `pnpm exec nx affected -t test`, workspace check/test/policy-fast or renamed
+  equivalents, and searches for package scripts, `nx:run-commands`, removed
+  tools, archive dirs, and extra active OpenSpec changes.
+- [x] ARS-P9.8 Delete `tmp.md`, commit the cleanup, and report before/after
+  root tree, before/after package tree, moved/deleted paths, active OpenSpec
+  changes, final command surface, removed/retained tools, Oxlint location,
+  blockers, git status, commit hash, and confirmation that `tmp.md` deleted
+  itself.
+
+Validation:
+
+```bash
+pnpm install
+pnpm exec nx show projects
+pnpm exec openspec validate arbor-recipe-substrate-migration --strict
+pnpm exec nx affected -t test
+pnpm exec nx run workspace:check
+pnpm exec nx run workspace:test
+pnpm exec nx run workspace:policy-fast
+rg -n '"scripts"\s*:' --glob 'package.json' --glob '!node_modules/**' --glob '!dist/**' .
+rg -n 'nx:run-commands' --glob 'project.json' --glob '!node_modules/**' --glob '!dist/**' .
+rg -n 'stryker|tsup|eslint|dependency-cruiser|madge|jscpd|tsd|corepack|Drizzle|drizzle|PgTyped|pgtyped|SQLite|sqlite|artifact-ownership|generated-shape' package.json project.json nx.json pnpm-workspace.yaml packages docs openspec --glob '!node_modules/**' --glob '!dist/**'
+find openspec/changes -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort
+find packages -maxdepth 2 -mindepth 1 -printf '%P\n' | sort
+```
+
+Result: passed on 2026-06-28. `pnpm install`,
+`pnpm exec nx show projects`, `pnpm exec nx run workspace:test`,
+`pnpm exec nx affected -t test`, and `pnpm exec nx run workspace:check`
+passed after the topology and command-surface rewrite. `workspace:check`
+included `workspace:policy-fast`; local PR completion enforcement skipped live
+PR checks because no PR context was present. The OpenSpec validation command is
+rerun after this final task-ledger update before commit.
+
+Audits passed for package-local scripts, old Attune target names, active
+`nx:run-commands` targets, extra active OpenSpec changes, archive directories
+inside `packages`, `docs`, or `openspec`, and active manifest/tool-soup
+references. Remaining `nx:run-commands` hits are negative policy tests or
+policy enforcement code rather than live targets. Retained script behavior is
+covered by 8 Recipe/ManagedRecipe groups over 21 package-internal script files,
+and typed script-backed executor targets require recipe provenance. `tmp.md`,
+regenerated `.pre-commit-config.yaml`, `repomix-output.xml`, `.nx`, `.attune`,
+package `dist`, and package `workspace` scratch were deleted before commit.

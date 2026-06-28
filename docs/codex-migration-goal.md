@@ -51,10 +51,10 @@ Do not maintain compatibility inputs, compatibility metadata, compatibility rows
 Use Nx targets as the stable workflow surface:
 
 ```bash
-nx run workspace:attune-check
-nx run workspace:attune-repair
-nx run <project>:attune-check
-nx run <project>:attune-repair
+nx run workspace:check
+nx run workspace:repair
+nx run <project>:check
+nx run <project>:repair
 nx run <project>:typecheck
 nx run <project>:test
 ```
@@ -86,6 +86,6 @@ nx run framework-runtime:test --skipNxCache
 nx run framework-nx:test --skipNxCache
 nx run framework-language-service:test --skipNxCache
 nx run attune-architecture:test --skipNxCache
-nx run workspace:attune-check --skipNxCache
-nx run workspace:attune-repair --dryRun --skipNxCache
+nx run workspace:check --skipNxCache
+nx run workspace:repair --dryRun --skipNxCache
 ```

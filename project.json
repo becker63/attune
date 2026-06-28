@@ -2,16 +2,6 @@
   "name": "workspace",
   "root": ".",
   "targets": {
-    "lint": {
-      "executor": "@attune/nx:toolchain",
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "root-lint",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
     "check": {
       "executor": "@attune/nx:toolchain",
       "options": {
@@ -26,39 +16,6 @@
         "dryRun": false
       }
     },
-    "attune-check": {
-      "executor": "@attune/nx:toolchain",
-      "metadata": {
-        "description": "Public Attune Framework check surface for Recipe/ManagedRecipe declarations, DB emission readiness, framework diagnostics, no-report policy, and import boundaries."
-      },
-      "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:recipe-substrate-check"
-          ]
-        },
-        "timeoutSeconds": 240,
-        "dryRun": false
-      }
-    },
-    "attune-repair": {
-      "executor": "@attune/nx:toolchain",
-      "metadata": {
-        "description": "Public Attune Framework repair/materialization surface. Runs deterministic framework materialization and diagnostics without raw shell or checked-in reports."
-      },
-      "options": {
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "attune-repair",
-        "parameters": {
-          "allSafe": true
-        },
-        "dryRun": false
-      }
-    },
     "tool-versions": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
@@ -68,7 +25,9 @@
         "tool": "architecture",
         "action": "check",
         "toolId": "tool-versions",
-        "parameters": {},
+        "parameters": {
+          "recipeId": "attune-architecture.tool-version-audit"
+        },
         "dryRun": false
       }
     },
@@ -166,53 +125,6 @@
         "dryRun": false
       }
     },
-    "policy-install-hooks": {
-      "executor": "@attune/nx:toolchain",
-      "metadata": {
-        "description": "Install the repo-owned Nix/Nx Git hooks for commit and push validation."
-      },
-      "options": {
-        "tool": "workspace",
-        "action": "install",
-        "toolId": "git-hooks",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "policy-commit": {
-      "executor": "@attune/nx:toolchain",
-      "metadata": {
-        "description": "Default pre-commit policy gate; composes through workspace:policy-fast."
-      },
-      "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:policy-fast"
-          ]
-        },
-        "dryRun": false
-      }
-    },
-    "policy-push": {
-      "executor": "@attune/nx:toolchain",
-      "metadata": {
-        "description": "Default pre-push policy gate; heavy/manual push campaigns use workspace:policy-proof-pressure."
-      },
-      "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:policy-fast"
-          ]
-        },
-        "dryRun": false
-      }
-    },
     "arch:scan": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
@@ -222,57 +134,9 @@
         "tool": "architecture",
         "action": "check",
         "toolId": "scan",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "arch:deps": {
-      "executor": "@attune/nx:toolchain",
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "deps",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "arch:cycles": {
-      "executor": "@attune/nx:toolchain",
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "cycles",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "arch:unused": {
-      "executor": "@attune/nx:toolchain",
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "unused",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "arch:complexity": {
-      "executor": "@attune/nx:toolchain",
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "complexity",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "arch:duplicates": {
-      "executor": "@attune/nx:toolchain",
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "duplicates",
-        "parameters": {},
+        "parameters": {
+          "recipeId": "attune-architecture.workspace-scan"
+        },
         "dryRun": false
       }
     },
@@ -282,7 +146,9 @@
         "tool": "architecture",
         "action": "check",
         "toolId": "types",
-        "parameters": {},
+        "parameters": {
+          "recipeId": "attune-architecture.typescript-diagnostics"
+        },
         "dryRun": false
       }
     },
@@ -292,33 +158,16 @@
         "tool": "architecture",
         "action": "check",
         "toolId": "churn",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "arch:mutation": {
-      "executor": "@attune/nx:toolchain",
-      "metadata": {
-        "description": "Explicit mutation-pressure architecture gate. Only workspace:policy-proof-pressure invokes this target."
-      },
-      "options": {
-        "tool": "architecture",
-        "action": "mutate",
-        "toolId": "stryker",
         "parameters": {
-          "config": "stryker.conf.json"
+          "recipeId": "attune-architecture.churn-complexity"
         },
-        "resourceTier": "heavy",
-        "evidenceOutputs": [
-          ".attune/cache/mutation/workspace-architecture"
-        ],
         "dryRun": false
       }
     },
     "policy-proof-pressure": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Heavy/manual proof-pressure surface for property, Joern, fuzz, mutation, coverage, and architecture campaigns."
+        "description": "Heavy/manual proof-pressure surface for property, Joern, fuzz, coverage, and architecture campaigns."
       },
       "options": {
         "tool": "workspace",
@@ -332,22 +181,35 @@
             "workspace:coverage-conformance",
             "attune-architecture:test",
             "workspace:arch:scan",
-            "workspace:arch:deps",
-            "workspace:arch:cycles",
-            "workspace:arch:complexity",
-            "workspace:arch:duplicates",
             "workspace:arch:types",
             "workspace:arch:churn",
             "effect-oxlint-policy:test",
             "effect-oxlint-policy:build",
-            "joern-effect-properties:property",
-            "joern-effect-properties:property-joern",
-            "joern-effect-properties:fuzz:smoke",
-            "attune-pi-agent:property",
-            "attune-pi-agent:mutation",
-            "workspace:arch:mutation"
+            "joern-effect-properties:proof",
+            "joern-effect-properties:fuzz",
+            "attune-pi-agent:proof"
           ],
           "effectOxlintPolicy": true
+        },
+        "dryRun": false
+      }
+    },
+    "codex-audit-prs": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Internal Codex PR recovery audit. Public completion checks run through workspace:policy-fast.",
+        "attune": {
+          "tier": "internal",
+          "surface": "audit",
+          "recipeId": "attune-architecture.pr-recovery-audit"
+        }
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "codex-audit-prs",
+        "parameters": {
+          "recipeId": "attune-architecture.pr-recovery-audit"
         },
         "dryRun": false
       }
@@ -367,10 +229,6 @@
             "workspace:coverage-conformance",
             "attune-architecture:test",
             "workspace:arch:scan",
-            "workspace:arch:deps",
-            "workspace:arch:cycles",
-            "workspace:arch:complexity",
-            "workspace:arch:duplicates",
             "workspace:arch:types",
             "workspace:arch:churn",
             "effect-oxlint-policy:test",
@@ -378,34 +236,82 @@
           ],
           "graphFile": "/tmp/attune-nx-graph.json",
           "effectOxlintPolicy": true,
-          "verifyPrCompletion": true
+          "verifyPrCompletion": true,
+          "verifyPrCompletionRecipeId": "attune-architecture.pr-completion-audit"
         },
         "timeoutSeconds": 360,
         "dryRun": false
       }
     },
-    "policy-all": {
+    "test": {
       "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public workspace test surface for the recipe substrate and focused package checks."
+      },
       "options": {
         "tool": "workspace",
         "action": "check",
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "workspace:policy-push",
-            "workspace:policy-proof-pressure"
+            "attune-nx:test",
+            "attune-architecture:test",
+            "framework-runtime:test",
+            "workspace:recipe-substrate-check"
           ]
+        },
+        "timeoutSeconds": 360,
+        "dryRun": false
+      }
+    },
+    "repair": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public workspace repair surface for deterministic Recipe/ManagedRecipe repair materialization."
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "generate",
+        "toolId": "recipe-repair",
+        "parameters": {
+          "allSafe": true
         },
         "dryRun": false
       }
     },
-    "codex-audit-prs": {
+    "db": {
       "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public workspace database surface for the LocalTimescaleManagedRecipe health check."
+      },
       "options": {
-        "tool": "architecture",
+        "tool": "workspace",
         "action": "check",
-        "toolId": "codex-audit-prs",
-        "parameters": {},
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "framework-runtime:db:check"
+          ]
+        },
+        "timeoutSeconds": 240,
+        "dryRun": false
+      }
+    },
+    "dev": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Public workspace dev surface; currently starts the FoldKit Vite workbench package target."
+      },
+      "options": {
+        "tool": "workspace",
+        "action": "check",
+        "toolId": "nx-targets",
+        "parameters": {
+          "targets": [
+            "attune-foldkit:dev"
+          ]
+        },
+        "resourceTier": "external",
         "dryRun": false
       }
     }
