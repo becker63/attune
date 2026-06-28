@@ -398,6 +398,9 @@ importers:
       '@attune/framework-protocol':
         specifier: workspace:*
         version: link:../../trellis/protocol
+      '@attune/framework-runtime':
+        specifier: workspace:*
+        version: link:../../trellis/runtime
       '@attune/tend-core':
         specifier: workspace:*
         version: link:../core
@@ -565,6 +568,9 @@ importers:
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
+      pg:
+        specifier: 8.22.0
+        version: 8.22.0
 
   packages/trellis/testing:
     dependencies:

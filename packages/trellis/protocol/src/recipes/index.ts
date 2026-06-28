@@ -31,6 +31,9 @@ export const ManagedRecipeLifecycleActionSchema = Schema.Literals([
   "apply",
   "run",
   "check",
+  "migrate",
+  "validate-sql",
+  "stop",
   "destroy",
   "prune",
 ] as const)
@@ -48,6 +51,7 @@ export const RecipeInvocationActionSchema = Schema.Literals([
   "validate-sql",
   "migrate",
   "generate-types",
+  "stop",
 ] as const)
 export type RecipeInvocationAction = typeof RecipeInvocationActionSchema.Type
 

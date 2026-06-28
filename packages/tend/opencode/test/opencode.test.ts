@@ -15,6 +15,7 @@ import {
 import {
   commandObservationFromResult,
   createOpenCodeDelegationEnv,
+  observeCommandWithStoreEmission,
   runDoctor,
   runHarnessSelfTest,
 } from "../src/cli-core.js"
@@ -236,7 +237,7 @@ describe("@attune/tend-opencode", () => {
 
   it("observes a synthetic command with bounded redacted summaries", () => {
     const observed = commandObservationFromResult({
-      command: ["node", "-e", "console.log('safe'); console.error('TOKEN=private-value')"],
+      command: ["node", "-e", "console.log('safe'); console.error('TOKEN=private-value')", "--token", "private-value"],
       cwd: workspaceRoot,
       startedAt: "2026-06-28T00:01:00.000Z",
       completedAt: "2026-06-28T00:01:00.010Z",
@@ -248,8 +249,54 @@ describe("@attune/tend-opencode", () => {
     const decoded = Schema.decodeUnknownSync(TendOpenCodeCommandObservationOutputSchema)(observed)
 
     expect(decoded.rawOutputStored).toBe(false)
+    expect(decoded.observationKind).toBe("measurement.command.observed")
+    expect(decoded.storeEmission.status).toBe("not-attempted")
     expect(decoded.stderrSummary.text).toContain("[REDACTED]")
     expect(decoded.stderrSummary.text).not.toContain("private-value")
+    expect(decoded.commandLine).toContain("[shell-script-redacted]")
+    expect(decoded.commandLine).toContain("[REDACTED]")
+    expect(decoded.commandLine).not.toContain("private-value")
+  })
+
+  it("emits observed commands to the configured framework store", async () => {
+    const previousMode = process.env.ATTUNE_RECIPE_STORE_MODE
+    const previousSession = process.env.ATTUNE_MEASUREMENT_SESSION_ID
+    process.env.ATTUNE_RECIPE_STORE_MODE = "in-memory"
+    process.env.ATTUNE_MEASUREMENT_SESSION_ID = "measurement:test-session"
+    try {
+      const observed = await observeCommandWithStoreEmission({
+        command: [process.execPath, "-e", "console.log('ok')"],
+        cwd: workspaceRoot,
+      })
+      const decoded = Schema.decodeUnknownSync(TendOpenCodeCommandObservationOutputSchema)(observed)
+
+      expect(decoded.storeEmission.status).toBe("emitted")
+      expect(decoded.measurementSessionId).toBe("measurement:test-session")
+      expect(decoded.recipeId).toBe("tend-opencode.command-observation")
+      expect(decoded.rawOutputStored).toBe(false)
+      expect(decoded.stdoutSummary.text).toContain("ok")
+    } finally {
+      restoreEnv("ATTUNE_RECIPE_STORE_MODE", previousMode)
+      restoreEnv("ATTUNE_MEASUREMENT_SESSION_ID", previousSession)
+    }
+  })
+
+  it("links observed Nx commands to target and recipe identifiers", () => {
+    const observed = commandObservationFromResult({
+      command: ["pnpm", "exec", "nx", "run", "framework-language-service:test", "--output-style=static"],
+      cwd: workspaceRoot,
+      startedAt: "2026-06-28T00:02:00.000Z",
+      completedAt: "2026-06-28T00:02:01.000Z",
+      durationMs: 1000,
+      exitCode: 0,
+      stdout: "",
+      stderr: "",
+    })
+    const decoded = Schema.decodeUnknownSync(TendOpenCodeCommandObservationOutputSchema)(observed)
+
+    expect(decoded.knownNxTarget).toBe("framework-language-service:test")
+    expect(decoded.targetId).toBe("framework-language-service:test")
+    expect(decoded.inferredRecipeId).toBe("trellis-language-service.check-summary-projection")
   })
 
   it("runs the Attune harness self-test with a flake-provided runtime expectation", () => {
@@ -319,3 +366,11 @@ describe("@attune/tend-opencode", () => {
     )
   })
 })
+
+const restoreEnv = (name: string, value: string | undefined): void => {
+  if (value === undefined) {
+    delete process.env[name]
+  } else {
+    process.env[name] = value
+  }
+}

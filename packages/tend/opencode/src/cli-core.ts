@@ -5,8 +5,14 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { Schema } from "effect"
-import { recipeObservationId } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+import { defineRecipe, recipeObservationId } from "@attune/framework-protocol"
+import {
+  createMeasurementObservation,
+  createMeasurementObservationSink,
+  measurementStoreConfigFromEnv,
+  recordMeasurementObservation,
+} from "@attune/framework-runtime"
 
 import {
   OpenCodeSessionLogSchema,
@@ -33,6 +39,22 @@ const packageJsonPath = path.join(packageRoot, "package.json")
 const defaultSummaryLimit = 240
 const tendOpenCodeEntrypoint = "tend-opencode"
 const tendOpenCodeToolsEntrypoint = "tend-opencode-tools"
+const commandObservationRecipeId = "tend-opencode.command-observation"
+
+const TendOpenCodeCommandObservationRecipe = defineRecipe({
+  id: commandObservationRecipeId,
+  projectId: "tend-opencode",
+  title: "Emit DB-backed Tend/OpenCode measurement command observations",
+  inputSchema: Schema.Struct({
+    argv: Schema.Array(Schema.String),
+    cwd: Schema.String,
+  }),
+  outputSchema: Schema.Unknown,
+  nxTarget: "tend-opencode:test",
+  sourcePath: "packages/tend/opencode/src/cli-core.ts",
+  allowedFiles: ["packages/tend/opencode/**"],
+  validationEvidence: ["tend-opencode:test", "framework-runtime:db:validate-sql"],
+})
 
 const attuneOpenCodePluginSpecs = [
   {
@@ -190,6 +212,7 @@ export interface ObserveCommandOptions {
   readonly command: readonly string[]
   readonly cwd?: string
   readonly startedAt?: string
+  readonly measurementSessionId?: string
 }
 
 export const defaultTendOpenCodeCapabilities = (): TendOpenCodeCapabilities => ({
@@ -462,7 +485,72 @@ export const observeCommand = (
     exitCode,
     stdout: result.stdout ?? "",
     stderr,
+    ...(options.measurementSessionId === undefined ? {} : {
+      measurementSessionId: options.measurementSessionId,
+    }),
   })
+}
+
+export const observeCommandWithStoreEmission = async (
+  options: ObserveCommandOptions,
+): Promise<TendOpenCodeCommandObservationOutput> => {
+  const observed = observeCommand(options)
+  const config = measurementStoreConfigFromEnv()
+  if (config.mode === "disabled" || config.mode === "export-only") {
+    if (config.mode === "export-only") writeCommandObservationExport(observed)
+    return {
+      ...observed,
+      storeEmission: {
+        status: config.mode === "disabled" ? "disabled" : "export-only",
+        mode: config.mode,
+        observationId: observed.observationId,
+        databaseUrl: sanitizeDatabaseUrl(config.databaseUrl),
+      },
+    }
+  }
+
+  let sink: Awaited<ReturnType<typeof createMeasurementObservationSink>> | undefined
+  try {
+    sink = await createMeasurementObservationSink(config)
+    const observation = createMeasurementObservation({
+      observationId: observed.observationId,
+      kind: "measurement.command.observed",
+      recipeId: commandObservationRecipeId,
+      observedAt: observed.completedAt,
+      source: "tend-opencode",
+      ...(observed.measurementSessionId === undefined ? {} : {
+        measurementSessionId: observed.measurementSessionId,
+      }),
+      payload: commandObservationPayload(observed),
+    })
+    if (sink.store !== undefined) {
+      await Effect.runPromise(sink.store.registerRecipe(TendOpenCodeCommandObservationRecipe))
+    }
+    await Effect.runPromise(recordMeasurementObservation(sink, observation))
+    writeCommandObservationExport(observed)
+    return {
+      ...observed,
+      storeEmission: {
+        status: "emitted",
+        mode: config.mode,
+        observationId: observed.observationId,
+        databaseUrl: sanitizeDatabaseUrl(config.databaseUrl),
+      },
+    }
+  } catch (error) {
+    return {
+      ...observed,
+      storeEmission: {
+        status: "failed",
+        mode: config.mode,
+        observationId: observed.observationId,
+        databaseUrl: sanitizeDatabaseUrl(config.databaseUrl),
+        error: error instanceof Error ? error.message : String(error),
+      },
+    }
+  } finally {
+    await sink?.close()
+  }
 }
 
 export const commandObservationFromResult = (input: {
@@ -474,13 +562,17 @@ export const commandObservationFromResult = (input: {
   readonly exitCode: number
   readonly stdout: string
   readonly stderr: string
+  readonly measurementSessionId?: string
 }): TendOpenCodeCommandObservationOutput => {
-  const commandLine = shellJoin(input.command)
+  const sanitizedCommand = sanitizeCommandArgv(input.command)
+  const commandLine = shellJoin(sanitizedCommand)
   const knownNxTarget = inferNxTarget(input.command)
-  const recipeId = inferRecipeId(knownNxTarget) ?? "tend-opencode.command-observation"
+  const targetId = knownNxTarget
+  const inferredRecipeId = inferRecipeId(knownNxTarget)
+  const measurementSessionId = input.measurementSessionId ?? defaultMeasurementSessionId(input.cwd)
   const observationId = recipeObservationId(
-    recipeId,
-    `tend.command:${stableHash([commandLine, input.cwd])}`,
+    commandObservationRecipeId,
+    `measurement.command.observed:${measurementSessionId}:${stableHash([commandLine, input.cwd])}`,
     input.startedAt,
   )
 
@@ -488,8 +580,10 @@ export const commandObservationFromResult = (input: {
     schemaVersion: 1,
     command: "observe",
     observationId,
+    observationKind: "measurement.command.observed",
+    measurementSessionId,
     commandLine,
-    argv: [...input.command],
+    argv: sanitizedCommand,
     cwd: input.cwd,
     startedAt: input.startedAt,
     completedAt: input.completedAt,
@@ -499,7 +593,15 @@ export const commandObservationFromResult = (input: {
     stdoutSummary: summarizeCommandOutput(input.stdout),
     stderrSummary: summarizeCommandOutput(input.stderr),
     ...(knownNxTarget === undefined ? {} : { knownNxTarget }),
-    recipeId,
+    ...(targetId === undefined ? {} : { targetId }),
+    recipeId: commandObservationRecipeId,
+    ...(inferredRecipeId === undefined ? {} : { inferredRecipeId }),
+    storeEmission: {
+      status: "not-attempted",
+      mode: measurementStoreConfigFromEnv().mode,
+      observationId,
+      databaseUrl: sanitizeDatabaseUrl(measurementStoreConfigFromEnv().databaseUrl),
+    },
     rawOutputStored: false,
   }
 }
@@ -1590,11 +1692,114 @@ const optionalString = <Key extends string>(
 ): Record<Key, string> | Record<string, never> =>
   value === undefined || value.length === 0 ? {} : { [key]: value } as Record<Key, string>
 
+const commandObservationPayload = (
+  observed: TendOpenCodeCommandObservationOutput,
+): Record<string, unknown> => ({
+  schemaVersion: observed.schemaVersion,
+  measurementSessionId: observed.measurementSessionId,
+  command: observed.commandLine,
+  argv: observed.argv,
+  cwd: observed.cwd,
+  startedAt: observed.startedAt,
+  completedAt: observed.completedAt,
+  durationMs: observed.durationMs,
+  exitCode: observed.exitCode,
+  status: observed.status,
+  stdoutSummary: observed.stdoutSummary,
+  stderrSummary: observed.stderrSummary,
+  ...(observed.knownNxTarget === undefined ? {} : { knownNxTarget: observed.knownNxTarget }),
+  ...(observed.targetId === undefined ? {} : { targetId: observed.targetId }),
+  ...(observed.recipeId === undefined ? {} : { recipeId: observed.recipeId }),
+  ...(observed.inferredRecipeId === undefined ? {} : { inferredRecipeId: observed.inferredRecipeId }),
+  rawOutputStored: false,
+})
+
+const writeCommandObservationExport = (
+  observed: TendOpenCodeCommandObservationOutput,
+): void => {
+  const workspaceRoot = findWorkspaceRoot(observed.cwd) ?? observed.cwd
+  const exportDir = path.join(workspaceRoot, ".attune", "cache", "measurement", "commands")
+  fs.mkdirSync(exportDir, { recursive: true })
+  const exportPath = path.join(exportDir, `${stableHash([observed.observationId])}.json`)
+  fs.writeFileSync(
+    exportPath,
+    `${JSON.stringify({
+      sourceTruth: "framework_event.recipe_observation",
+      exportedAt: new Date().toISOString(),
+      observation: observed,
+    }, null, 2)}\n`,
+    "utf8",
+  )
+}
+
+const defaultMeasurementSessionId = (cwd: string): string =>
+  process.env.ATTUNE_MEASUREMENT_SESSION_ID
+  ?? `measurement:${new Date().toISOString().slice(0, 10)}:${stableHash([cwd])}`
+
 const stableHash = (parts: readonly string[]): string =>
   crypto.createHash("sha256").update(parts.join("\0")).digest("hex").slice(0, 16)
 
 const shellJoin = (argv: readonly string[]): string =>
   argv.map((part) => /^[A-Za-z0-9_./:=@+-]+$/u.test(part) ? part : JSON.stringify(part)).join(" ")
+
+const sanitizeCommandArgv = (argv: readonly string[]): readonly string[] => {
+  const sanitized: string[] = []
+  let redactNext = false
+  let redactShellProgram = false
+
+  for (const arg of argv) {
+    if (redactNext) {
+      sanitized.push("[REDACTED]")
+      redactNext = false
+      continue
+    }
+    if (redactShellProgram) {
+      sanitized.push("[shell-script-redacted]")
+      redactShellProgram = false
+      continue
+    }
+
+    const cleaned = sanitizeCommandArg(arg)
+    sanitized.push(cleaned.value)
+    if (cleaned.redactNext) redactNext = true
+    if (cleaned.redactShellProgram) redactShellProgram = true
+  }
+  return sanitized
+}
+
+const sanitizeCommandArg = (
+  value: string,
+): { readonly value: string; readonly redactNext: boolean; readonly redactShellProgram: boolean } => {
+  const lower = value.toLowerCase()
+  if (value === "-c" || value === "--command" || value === "-lc" || value === "-e" || value === "--eval" || value === "--print") {
+    return { value, redactNext: false, redactShellProgram: true }
+  }
+  if (/^(?:bearer|authorization):/iu.test(value)) {
+    return { value: "[REDACTED]", redactNext: false, redactShellProgram: false }
+  }
+  if (/^[A-Za-z_][A-Za-z0-9_]*=/u.test(value)) {
+    const [name = ""] = value.split("=", 1)
+    if (secretNamePattern.test(name)) {
+      return { value: `${name}=[REDACTED]`, redactNext: false, redactShellProgram: false }
+    }
+  }
+  if (value.startsWith("--")) {
+    const equalsIndex = value.indexOf("=")
+    const flagName = equalsIndex >= 0 ? value.slice(0, equalsIndex) : value
+    if (secretNamePattern.test(flagName)) {
+      return {
+        value: equalsIndex >= 0 ? `${flagName}=[REDACTED]` : value,
+        redactNext: equalsIndex < 0,
+        redactShellProgram: false,
+      }
+    }
+  }
+  return {
+    value: redactSecrets(redactUrlSecrets(value)),
+    redactNext: false,
+    redactShellProgram: false,
+  }
+}
 
 const inferNxTarget = (argv: readonly string[]): string | undefined => {
   const nxIndex = argv.findIndex((arg) => arg === "nx")
@@ -1620,11 +1825,40 @@ const inferRecipeId = (target: string | undefined): string | undefined => {
   if (target.startsWith("framework-language-service:")) {
     return "trellis-language-service.check-summary-projection"
   }
+  if (target.startsWith("framework-runtime:db:")) return "framework-runtime.local-timescaledb"
+  if (target === "workspace:recipe-substrate-check") return "workspace.recipe-substrate-check"
   if (target === "workspace:policy-fast") return "workspace.policy-fast"
   return undefined
 }
 
+const secretNamePattern = /(?:api[_-]?key|token|secret|password|passwd|auth|credential|cookie|bearer)/iu
+
 const redactSecrets = (value: string): string =>
   value
-    .replaceAll(/((?:api[_-]?key|token|secret|password)\s*=\s*)[^\s]+/giu, "$1[REDACTED]")
+    .replaceAll(/((?:api[_-]?key|token|secret|password|passwd|auth|credential|cookie)\s*=\s*)[^\s]+/giu, "$1[REDACTED]")
+    .replaceAll(/\b(?:authorization|bearer):\s*[^\s]+/giu, "authorization: [REDACTED]")
     .replaceAll(/\bsk-[A-Za-z0-9_-]{12,}\b/gu, "sk-[REDACTED]")
+
+const redactUrlSecrets = (value: string): string => {
+  try {
+    const url = new URL(value)
+    if (url.password.length > 0) url.password = "[REDACTED]"
+    if (url.username.length > 0 && secretNamePattern.test(url.username)) url.username = "[REDACTED]"
+    for (const key of [...url.searchParams.keys()]) {
+      if (secretNamePattern.test(key)) url.searchParams.set(key, "[REDACTED]")
+    }
+    return url.toString()
+  } catch {
+    return value
+  }
+}
+
+const sanitizeDatabaseUrl = (databaseUrl: string): string => {
+  try {
+    const url = new URL(databaseUrl)
+    if (url.password.length > 0) url.password = "[REDACTED]"
+    return url.toString()
+  } catch {
+    return databaseUrl.length === 0 ? databaseUrl : "[database-url-redacted]"
+  }
+}

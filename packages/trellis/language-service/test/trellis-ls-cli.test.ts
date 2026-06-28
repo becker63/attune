@@ -324,6 +324,27 @@ describe("trellis-ls CLI core", () => {
     expect(result.stdout).not.toContain("trellis-ls patch")
   })
 
+  it("wires the executable CLI to the configured framework observation sink", () => {
+    const fixture = makeFixture()
+    const result = childProcess.spawnSync(
+      "pnpm",
+      ["exec", "tsx", "src/cli.ts", "diagnostics", "--project", fixture.project, "--format", "json"],
+      {
+        cwd: packageRoot,
+        env: {
+          ...process.env,
+          ATTUNE_RECIPE_STORE_MODE: "in-memory",
+          ATTUNE_MEASUREMENT_SESSION_ID: "measurement:trellis-ls-cli-test",
+        },
+        encoding: "utf8",
+      },
+    )
+
+    expect(result.status).toBe(0)
+    const output = Schema.decodeUnknownSync(TrellisLsDiagnosticsOutputSchema)(JSON.parse(result.stdout))
+    expect(output.metadata.evidenceMode).toBe("in-memory")
+  })
+
   it("returns schema-decodable diagnostics JSON", () => {
     const fixture = makeFixture()
     const result = runDiagnosticsCommand({

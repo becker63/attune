@@ -1,4 +1,14 @@
 #!/usr/bin/env tsx
+import { Effect, Schema } from "effect"
+import {
+  defineRecipe,
+  recipeObservationId,
+  type RecipeObservation,
+} from "@attune/framework-protocol"
+import {
+  createMeasurementObservationSink,
+  measurementStoreConfigFromEnv,
+} from "@attune/framework-runtime"
 import {
   runApplyCommand,
   runCheckCommand,
@@ -6,20 +16,43 @@ import {
   runFixesCommand,
   type ApplyOptions,
   type CheckOptions,
+  type CommandResult,
   type DiagnosticsOptions,
   type FixesOptions,
 } from "./cli-core.js"
 import type {
+  TrellisLsApplyOutput,
   TrellisLsApplyMode,
+  TrellisLsCheckOutput,
+  TrellisLsCommand,
   TrellisLsDiagnosticSource,
+  TrellisLsDiagnosticsOutput,
+  TrellisLsEvidenceMode,
   TrellisLsFailOn,
+  TrellisLsFixesOutput,
   TrellisLsFormat,
   TrellisLsProfile,
 } from "./contracts.js"
 
 type ParsedFlags = Readonly<Record<string, string | boolean>>
+type TrellisLsCliOutput =
+  | TrellisLsDiagnosticsOutput
+  | TrellisLsFixesOutput
+  | TrellisLsApplyOutput
+  | TrellisLsCheckOutput
 
-const main = (): void => {
+const trellisLsCliObservationRecipe = defineRecipe({
+  id: "trellis-language-service.cli-observation-sink",
+  projectId: "framework-language-service",
+  title: "Emit Trellis language-service command summaries to the framework observation store",
+  inputSchema: Schema.Unknown,
+  outputSchema: Schema.Unknown,
+  sourcePath: "packages/trellis/language-service/src/cli.ts",
+  allowedFiles: ["packages/trellis/language-service/**"],
+  validationEvidence: ["framework-language-service:test"],
+})
+
+const main = async (): Promise<void> => {
   const [command, ...rest] = process.argv.slice(2)
   if (command === undefined || command === "--help" || command === "-h") {
     writeHelp()
@@ -30,26 +63,22 @@ const main = (): void => {
     switch (command) {
       case "diagnostics":
       case "diags": {
-        const result = runDiagnosticsCommand(diagnosticsOptions(parseFlags(rest)))
-        writeOutput(result.output, result.output.metadata.format)
-        process.exit(result.exitCode)
+        await writeResult(runDiagnosticsCommand(diagnosticsOptions(parseFlags(rest))))
+        return
       }
       case "fixes":
       case "codefixes": {
-        const result = runFixesCommand(fixesOptions(parseFlags(rest)))
-        writeOutput(result.output, result.output.metadata.format)
-        process.exit(result.exitCode)
+        await writeResult(runFixesCommand(fixesOptions(parseFlags(rest))))
+        return
       }
       case "apply":
       case "apply-codefix": {
-        const result = runApplyCommand(applyOptions(parseFlags(rest)))
-        writeOutput(result.output, result.output.metadata.format)
-        process.exit(result.exitCode)
+        await writeResult(runApplyCommand(applyOptions(parseFlags(rest))))
+        return
       }
       case "check": {
-        const result = runCheckCommand(checkOptions(parseFlags(rest)))
-        writeOutput(result.output, result.output.metadata.format)
-        process.exit(result.exitCode)
+        await writeResult(runCheckCommand(checkOptions(parseFlags(rest))))
+        return
       }
       default:
         throw new CliInputError(`Unknown command: ${command}`)
@@ -60,6 +89,125 @@ const main = (): void => {
     process.exit(2)
   }
 }
+
+const writeResult = async <Output extends TrellisLsCliOutput>(
+  result: CommandResult<Output>,
+): Promise<never> => {
+  const output = await emitConfiguredObservation(result.output)
+  writeOutput(output, output.metadata.format)
+  process.exit(result.exitCode)
+}
+
+const emitConfiguredObservation = async <Output extends TrellisLsCliOutput>(
+  output: Output,
+): Promise<Output> => {
+  const config = measurementStoreConfigFromEnv()
+  if (config.mode === "disabled" || config.mode === "export-only") return output
+
+  let sink: Awaited<ReturnType<typeof createMeasurementObservationSink>> | undefined
+  try {
+    sink = await createMeasurementObservationSink(config)
+    if (sink.store === undefined) return output
+    await Effect.runPromise(sink.store.registerRecipe(trellisLsCliObservationRecipe))
+    await Effect.runPromise(sink.store.recordObservation(trellisLsCliObservation(output)))
+    return withEvidenceMode(output, config.mode === "in-memory" ? "in-memory" : "durable")
+  } catch (error) {
+    if (process.env.ATTUNE_TRELLIS_LS_STORE_REQUIRED === "1") {
+      throw error
+    }
+    return output
+  } finally {
+    await sink?.close()
+  }
+}
+
+const withEvidenceMode = <Output extends TrellisLsCliOutput>(
+  output: Output,
+  evidenceMode: TrellisLsEvidenceMode,
+): Output => ({
+  ...output,
+  metadata: {
+    ...output.metadata,
+    evidenceMode,
+  },
+})
+
+const trellisLsCliObservation = (
+  output: TrellisLsCliOutput,
+): RecipeObservation => {
+  const observedAt = new Date().toISOString()
+  const observationKind = observationKindFor(output.command)
+  const measurementSessionId = process.env.ATTUNE_MEASUREMENT_SESSION_ID
+  const scope = output.project ?? output.file ?? output.workspace ?? output.workspaceRoot
+  return {
+    observationId: recipeObservationId(
+      trellisLsCliObservationRecipe.id,
+      `${observationKind}:${measurementSessionId ?? "global"}:${scope}`,
+      observedAt,
+    ),
+    recipeId: trellisLsCliObservationRecipe.id,
+    observationKind,
+    observedAt,
+    source: `trellis-ls ${output.command}`,
+    payload: {
+      schemaVersion: 1,
+      ...(measurementSessionId === undefined ? {} : { measurementSessionId }),
+      command: output.command,
+      workspaceRoot: output.workspaceRoot,
+      ...(output.project === undefined ? {} : { project: output.project }),
+      ...(output.file === undefined ? {} : { file: output.file }),
+      ...(output.workspace === undefined ? {} : { workspace: output.workspace }),
+      summary: summaryForOutput(output),
+      diagnosticCodes: diagnosticCodesForOutput(output),
+      diagnosticIds: diagnosticIdsForOutput(output),
+      fixIds: fixIdsForOutput(output),
+      affectedFileCount: "affectedFiles" in output ? output.affectedFiles.length : 0,
+      rawOutputStored: false,
+    },
+  }
+}
+
+const observationKindFor = (command: TrellisLsCommand): string => {
+  switch (command) {
+    case "diagnostics":
+      return "trellis-language-service.diagnostic-run-summary"
+    case "fixes":
+      return "trellis-language-service.fix-list-summary"
+    case "apply":
+      return "trellis-language-service.apply-result-summary"
+    case "check":
+      return "trellis-language-service.check-run-summary"
+  }
+}
+
+const summaryForOutput = (
+  output: TrellisLsCliOutput,
+): Record<string, number | boolean | string | undefined> => {
+  if ("summary" in output) return output.summary
+  if ("applied" in output) {
+    return {
+      applied: output.applied,
+      refused: output.refused,
+      affectedFileCount: output.affectedFiles.length,
+    }
+  }
+  return {}
+}
+
+const diagnosticCodesForOutput = (output: TrellisLsCliOutput): readonly string[] =>
+  "diagnostics" in output
+    ? [...new Set(output.diagnostics.map((diagnostic) => diagnostic.code))]
+    : []
+
+const diagnosticIdsForOutput = (output: TrellisLsCliOutput): readonly string[] =>
+  "diagnostics" in output
+    ? output.diagnostics.map((diagnostic) => diagnostic.id)
+    : []
+
+const fixIdsForOutput = (output: TrellisLsCliOutput): readonly string[] =>
+  "fixes" in output && Array.isArray(output.fixes)
+    ? output.fixes.map((fix) => fix.fixId)
+    : "fixId" in output ? [output.fixId] : []
 
 const parseFlags = (args: readonly string[]): ParsedFlags => {
   const flags: Record<string, string | boolean> = {}
@@ -229,4 +377,4 @@ const writeHelp = (): void => {
 
 class CliInputError extends Error {}
 
-main()
+void main()

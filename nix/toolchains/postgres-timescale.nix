@@ -1,9 +1,20 @@
 { pkgs }:
 
 let
-  postgresWithTimescale = pkgs.postgresql_16.withPackages (postgresPackages: [
+  postgresWithTimescaleBundle = pkgs.postgresql_16.withPackages (postgresPackages: [
     postgresPackages.timescaledb
   ]);
+  postgresWithTimescale = pkgs.symlinkJoin {
+    name = "attune-postgresql-and-timescaledb-${postgresWithTimescaleBundle.version}";
+    paths = [ postgresWithTimescaleBundle ];
+    nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
+    postBuild = ''
+      rm -f "$out/bin/postgres" "$out/bin/.postgres-wrapped"
+      cp "${pkgs.postgresql_16}/bin/postgres" "$out/bin/.postgres-wrapped"
+      chmod 0555 "$out/bin/.postgres-wrapped"
+      makeBinaryWrapper "$out/bin/.postgres-wrapped" "$out/bin/postgres" --argv0 postgres
+    '';
+  };
   containerEtc = pkgs.runCommand "attune-local-timescaledb-etc" { } ''
     mkdir -p "$out/etc"
     cat > "$out/etc/passwd" <<'EOF'
@@ -31,5 +42,6 @@ in
     pkgs.findutils
     pkgs.gnugrep
     pkgs.gnused
+    pkgs.util-linux
   ];
 }

@@ -81,10 +81,28 @@ export const TendOpenCodeCommandOutputSummarySchema = Schema.Struct({
 export type TendOpenCodeCommandOutputSummary =
   typeof TendOpenCodeCommandOutputSummarySchema.Type
 
+export const TendOpenCodeStoreEmissionSchema = Schema.Struct({
+  status: Schema.Literals([
+    "not-attempted",
+    "emitted",
+    "failed",
+    "disabled",
+    "export-only",
+  ] as const),
+  mode: Schema.String,
+  observationId: Schema.String,
+  databaseUrl: Schema.optional(Schema.String),
+  error: Schema.optional(Schema.String),
+})
+export type TendOpenCodeStoreEmission =
+  typeof TendOpenCodeStoreEmissionSchema.Type
+
 export const TendOpenCodeCommandObservationOutputSchema = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   command: Schema.Literal("observe"),
   observationId: Schema.String,
+  observationKind: Schema.Literal("measurement.command.observed"),
+  measurementSessionId: Schema.optional(Schema.String),
   commandLine: Schema.String,
   argv: Schema.Array(Schema.String),
   cwd: Schema.String,
@@ -96,8 +114,11 @@ export const TendOpenCodeCommandObservationOutputSchema = Schema.Struct({
   stdoutSummary: TendOpenCodeCommandOutputSummarySchema,
   stderrSummary: TendOpenCodeCommandOutputSummarySchema,
   knownNxTarget: Schema.optional(Schema.String),
+  targetId: Schema.optional(Schema.String),
   recipeId: Schema.optional(Schema.String),
-  rawOutputStored: Schema.Boolean,
+  inferredRecipeId: Schema.optional(Schema.String),
+  storeEmission: TendOpenCodeStoreEmissionSchema,
+  rawOutputStored: Schema.Literal(false),
 })
 export type TendOpenCodeCommandObservationOutput =
   typeof TendOpenCodeCommandObservationOutputSchema.Type

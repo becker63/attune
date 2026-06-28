@@ -59,11 +59,15 @@ export interface FrameworkRecipeReceiptKyselyServiceContract {
   readonly generatedTypesSource: "Kanel"
   readonly generatedTypesPath: FrameworkRecipeReceiptKanelConfig["kyselyOutputPath"]
   readonly bootstrapTypeStatus: "cache-generated-kanel-types-required"
+  readonly insertMeasurementObservation: () => FrameworkSqlStatement
   readonly latestReceipt: (recipeId: string) => FrameworkSqlStatement
   readonly receiptsByStatus: (
     status: FrameworkRecipeReceiptStatus,
   ) => FrameworkSqlStatement
   readonly observationsForRecipe: (recipeId: string) => FrameworkSqlStatement
+  readonly observationsByMeasurementSession: (sessionId: string) => FrameworkSqlStatement
+  readonly commandObservationsByNxTarget: (target: string) => FrameworkSqlStatement
+  readonly observationsByKind: (kind: string) => FrameworkSqlStatement
 }
 
 export const frameworkRecipeReceiptKanelConfig =
@@ -79,6 +83,32 @@ export const frameworkRecipeReceiptKanelConfig =
 
 export const frameworkRecipeReceiptSqlValidationStatements =
   (): readonly FrameworkSqlValidationStatement[] => [
+    {
+      name: "measurement-observation-insert",
+      sql: `
+INSERT INTO framework_event.recipe_observation (
+  observation_id,
+  recipe_id,
+  observation_kind,
+  observed_at,
+  source,
+  payload
+) VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+ON CONFLICT (observation_id) DO UPDATE SET
+  observation_kind = EXCLUDED.observation_kind,
+  observed_at = EXCLUDED.observed_at,
+  source = EXCLUDED.source,
+  payload = EXCLUDED.payload
+`.trim(),
+      parameters: [
+        "measurement-observation-1",
+        "tend-opencode.command-observation",
+        "measurement.command.observed",
+        "2026-06-28T00:00:00.000Z",
+        "tend-opencode",
+        { measurementSessionId: "measurement-session-1" },
+      ],
+    },
     {
       name: "recipe-health-by-recipe",
       sql: "SELECT * FROM framework_view.recipe_health WHERE recipe_id = $1",
@@ -99,6 +129,42 @@ export const frameworkRecipeReceiptSqlValidationStatements =
       sql: "SELECT * FROM framework_event.recipe_observation WHERE recipe_id = $1 ORDER BY observed_at DESC",
       parameters: ["framework-runtime.local-timescaledb"],
     },
+    {
+      name: "measurement-observations-by-session",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE payload->>'measurementSessionId' = $1 ORDER BY observed_at DESC",
+      parameters: ["measurement-session-1"],
+    },
+    {
+      name: "measurement-command-observations-by-recipe",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE observation_kind = $1 AND payload->>'inferredRecipeId' = $2 ORDER BY observed_at DESC",
+      parameters: ["measurement.command.observed", "framework-runtime.local-timescaledb"],
+    },
+    {
+      name: "measurement-command-observations-by-nx-target",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE observation_kind = $1 AND payload->>'knownNxTarget' = $2 ORDER BY observed_at DESC",
+      parameters: ["measurement.command.observed", "framework-runtime:test"],
+    },
+    {
+      name: "measurement-harness-proof-observations",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE observation_kind = $1 ORDER BY observed_at DESC",
+      parameters: ["measurement.harness.proof"],
+    },
+    {
+      name: "measurement-lifecycle-health-observations",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE recipe_id = $1 AND observation_kind = $2 ORDER BY observed_at DESC",
+      parameters: ["framework-runtime.local-timescaledb", "local-timescaledb.sql-validated"],
+    },
+    {
+      name: "measurement-report-projection-inputs",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE payload->>'measurementSessionId' = $1 AND observation_kind IN ($2, $3, $4, $5) ORDER BY observed_at ASC",
+      parameters: [
+        "measurement-session-1",
+        "measurement.harness.proof",
+        "measurement.command.observed",
+        "measurement.trace.inventory.summary",
+        "measurement.micro-experiment.summary",
+      ],
+    },
   ]
 
 export const frameworkRecipeReceiptSafeQlConfig =
@@ -114,8 +180,13 @@ export const frameworkRecipeReceiptKyselyServiceContract =
     databaseType: "KanelGeneratedFrameworkRecipeReceiptDatabase",
     generatedTypesSource: "Kanel",
     generatedTypesPath: frameworkRecipeReceiptKanelConfig().kyselyOutputPath,
-    bootstrapTypeStatus: "cache-generated-kanel-types-required",
-    latestReceipt: (recipeId) => ({
+  bootstrapTypeStatus: "cache-generated-kanel-types-required",
+  insertMeasurementObservation: () => ({
+    sql: frameworkRecipeReceiptSqlValidationStatements()
+      .find((statement) => statement.name === "measurement-observation-insert")?.sql ?? "",
+    parameters: [],
+  }),
+  latestReceipt: (recipeId) => ({
       sql: `
 SELECT *
 FROM framework_event.recipe_receipt
@@ -142,6 +213,34 @@ WHERE recipe_id = $1
 ORDER BY observed_at DESC, observation_id DESC
 `.trim(),
       parameters: [recipeId],
+    }),
+    observationsByMeasurementSession: (sessionId) => ({
+      sql: `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE payload->>'measurementSessionId' = $1
+ORDER BY observed_at DESC, observation_id DESC
+`.trim(),
+      parameters: [sessionId],
+    }),
+    commandObservationsByNxTarget: (target) => ({
+      sql: `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE observation_kind = 'measurement.command.observed'
+  AND payload->>'knownNxTarget' = $1
+ORDER BY observed_at DESC, observation_id DESC
+`.trim(),
+      parameters: [target],
+    }),
+    observationsByKind: (kind) => ({
+      sql: `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE observation_kind = $1
+ORDER BY observed_at DESC, observation_id DESC
+`.trim(),
+      parameters: [kind],
     }),
   })
 

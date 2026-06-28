@@ -1,219 +1,242 @@
 ## Context
 
-The completed flake-installed OpenCode harness work renamed the public harness
-entrypoint to `tend-opencode` and loads Attune plugins for Tend observation,
-Magic Context, OpenRTK, token audit, long-job observation, and Trellis LS. The
-next migration question is behavioral rather than packaging-oriented: can Codex
-use that flake-installed harness externally as a subprocess, and does doing so
-reduce repeated expensive commands, validation wall time, context waste, and
-agent confusion during Attune migrations?
+The existing measurement change proves whether Codex can use the
+flake-installed `tend-opencode` harness as an external subprocess, collect safe
+command observations, inventory historical traces, compare a baseline against a
+harnessed treatment, and derive an operating guide. Its original design treated
+local cache files as the practical measurement substrate.
 
-This change designs a deterministic measurement workflow. It prepares local
-scripts, sanitized cache artifacts, report formats, and OpenSpec requirements
-for a controlled comparison before the repository attempts the heavy
-recipe-only LS-guided migration. The measurement must avoid private trace
-leakage, global OpenCode binaries, uncontrolled nested model sessions, and
-mutation of `~/.codex`.
+Attune now has a framework/runtime recipe receipt spine and Postgres-backed
+receipt store machinery:
 
-The naming correction is part of the measurement boundary: `tend-opencode` is
-the sole public measurement entrypoint. Existing references to the retired
-`attune-opencode` name are historical debt from the previous harness change and
-must be replaced in new measurement material unless they are explicitly
-documenting prior history.
+- `packages/trellis/runtime/src/LocalTimescaleRecipe.ts`
+- `packages/trellis/runtime/src/RecipeReceiptStore.ts`
+- `packages/trellis/runtime/src/PostgresRecipeReceiptStore.ts`
+- `packages/trellis/runtime/src/SqlRoute.ts`
+- `packages/trellis/runtime/sql/0001_framework_recipe_receipt_spine.sql`
+- `framework_core`
+- `framework_event`
+- `framework_view`
+- `framework_event.recipe_observation`
+
+This design updates the measurement change so the durable measurement record is
+the framework-managed recipe observation store. Tend/OpenCode is an observation
+producer and projection client. It does not own database lifecycle.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Prove Codex can invoke `nix run .#tend-opencode -- ...` as an external
-  subprocess from this checkout.
-- Prove `tend-opencode` is flake-provided, wraps an upstream OpenCode runtime,
-  and loads the full Attune OpenCode plugin suite.
-- Route measurement preflight, debug, doctor, command observation, safe session
-  decoding, and report production through `tend-opencode`.
-- Capture bounded Tend command observations for the required validation ladder
-  and classify each command by cost and workflow role.
-- Inventory historical Codex/OpenCode metadata safely without raw prompt,
-  full conversation, secret, or raw trace dump output.
-- Compare Codex-alone migration analysis against Codex orchestrating
-  `tend-opencode` plus `trellis-ls diagnostics` for a non-destructive
-  `packages/trellis/language-service` readiness analysis.
-- Produce sanitized reports and a draft `AGENTS.proposed.md` that can guide
-  later migration agents.
+- Make full measurement DB-backed by default through the framework runtime
+  receipt/observation boundary.
+- Extend the existing framework-runtime TimescaleDB/Postgres ManagedRecipe as
+  the persistent local recipe store lifecycle surface.
+- Expose repo-local persistent devshell state and store configuration without
+  auto-starting the store.
+- Require full measurement preflight to prove harness safety, framework store
+  health, SQL route validity, and observation insert/query health before a
+  session starts.
+- Keep `fingerprint` and `run-harness-test` usable without DB.
+- Emit harness proof, command observations, trace inventory summaries,
+  micro-experiment summaries, lifecycle health, and report projection events as
+  generic `RecipeObservation` records.
+- Reuse `RecipeReceiptStore`, `PostgresRecipeReceiptStore`, typed runtime
+  store services, and `SqlRoute` validation rather than direct `pg` calls in
+  producers.
+- Generate markdown/JSON reports under
+  `reports/tend-opencode-codex-measurement/` as exports from stored
+  observations.
+- Align Tend/OpenCode, Trellis LS, Nx/toolchain validation, and future app
+  workflows on the same observation sink.
 
 **Non-Goals:**
 
-- Do not run uncontrolled nested OpenCode model sessions.
-- Do not call external LLMs as part of deterministic tests.
-- Do not read, commit, or report raw prompts or full private conversations.
-- Do not mutate or delete `~/.codex`.
-- Do not begin the recipe-only source migration or delete package
+- Do not add `tend-opencode db up`, `db down`, `db migrate`, or `db validate`.
+- Do not make Tend/OpenCode start, stop, migrate, validate, prune, destroy, or
+  administer the store.
+- Do not create a Tend-owned database lifecycle proposal or private Tend
+  measurement ledger.
+- Do not add product-specific DB tables before using
+  `framework_event.recipe_observation`.
+- Do not rename `framework_core`, `framework_event`, or `framework_view`.
+- Do not import raw `pg` or write ad hoc SQL in producer code outside the
+  framework runtime DB boundary.
+- Do not store raw prompts, full conversations, secrets, raw trace dumps, raw
+  trace rows, or full command stdout/stderr.
+- Do not require DB for basic harness proof commands.
+- Do not begin the heavy recipe-only source migration or delete package
   `attune.package.ts` files.
-- Do not implement the future framework Atom/Reactivity abstraction.
-- Do not add a second ledger or change the `framework_core`,
-  `framework_event`, or `framework_view` schema names.
+- Do not implement the future Atom/Reactivity abstraction in this change.
 
 ## Decisions
 
-### Use `tend-opencode` As The Only Public Measurement Entrypoint
+### Framework Runtime Owns The Local Recipe Store
 
-Measurement scripts, docs, specs, and reports use:
+The local recipe store lifecycle is the existing framework-runtime
+TimescaleDB/Postgres ManagedRecipe surface. Implementation extends
+`packages/trellis/runtime/src/LocalTimescaleRecipe.ts` and its existing
+`framework-runtime.local-timescaledb` recipe identity rather than introducing a
+parallel `local-recipe-store` ManagedRecipe, alias, wrapper, or Tend-owned DB
+lifecycle.
+
+Lifecycle actions belong to the existing framework-runtime TimescaleDB/Postgres
+Nx target family. The smallest shape that fits the current executor
+conventions is to extend the existing `framework-runtime:db:*` targets:
 
 ```bash
-nix run .#tend-opencode -- fingerprint --format json
-nix run .#tend-opencode -- run-harness-test --format json
-nix run .#tend-opencode -- debug info
-nix run .#tend-opencode -- doctor --format json
+pnpm exec nx run framework-runtime:db:plan --output-style=static
+pnpm exec nx run framework-runtime:db:apply --output-style=static
+pnpm exec nx run framework-runtime:db:check --output-style=static
+pnpm exec nx run framework-runtime:db:migrate --output-style=static
+pnpm exec nx run framework-runtime:db:validate-sql --output-style=static
+pnpm exec nx run framework-runtime:db:stop --output-style=static
+```
+
+Destructive `db:prune` and `db:destroy` remain framework-runtime targets with
+ManagedRecipe review semantics. The invariant is that lifecycle commands
+belong to framework-runtime, while observation producer commands belong to
+`tend-opencode`.
+
+### Devshell Configuration Is Stable But Explicit
+
+The devshell exposes stable store configuration:
+
+```text
+ATTUNE_RECIPE_STORE_URL
+ATTUNE_LOCAL_RECIPE_STORE_DATA_DIR
+ATTUNE_RECIPE_STORE_MODE
+```
+
+The durable devshell data path is repo-local and ignored, such as
+`.attune/state/local-timescaledb/`.
+`/tmp/attune-pgdata` must not be the durable default. Entering the devshell
+must not start the store automatically; lifecycle remains an explicit
+framework-runtime action.
+
+### Measurement Observations Are DB-First
+
+Full measurement uses the configured framework store as the durable source of
+truth. The observation sink records generic measurement events such as:
+
+```text
+measurement.session.started
+measurement.session.completed
+measurement.harness.proof
+measurement.command.observed
+measurement.trace.inventory.summary
+measurement.micro-experiment.summary
+measurement.report.projected
+```
+
+Tend/OpenCode command observation still runs through:
+
+```bash
 nix run .#tend-opencode -- observe --format json -- <command...>
 ```
 
-The lower-level tools CLI may remain an implementation detail, but measurement
-material must not teach agents to choose between public entrypoints. This keeps
-the harness proof, observation path, and report language aligned with the
-flake-installed OpenCode runtime that Codex is measuring.
+The command runs normally and stdout remains parseable JSON. By default, the
+JSON includes the observation identity and store emission status for the
+`RecipeObservation` inserted through the runtime boundary. Explicit
+export-only or test modes may skip Postgres writes, but DB-backed observation
+storage is the normal repo source of truth. Cache JSON is an
+export/projection, not durable truth.
 
-Alternatives considered:
+### Full Measurement Preflight Checks Store Health
 
-- Use `tend-opencode-tools` for observation and `tend-opencode` for harness
-  proof. Rejected for measurement guidance because split public surfaces make
-  agent behavior harder to compare.
-- Keep `attune-opencode` as a compatibility alias. Rejected for new
-  measurement workflow because the public entrypoint was consolidated.
+Measurement preflight order is:
 
-### Gate Measurement On Harness Proof
+1. `tend-opencode` harness proof.
+2. Framework-runtime local store health.
+3. Observation insert/query smoke check.
+4. Measurement session start.
 
-The measurement begins by running fingerprint, harness self-test, and debug
-info. A small preflight script validates the JSON fields rather than relying on
-human inspection. The gate requires `runtime.flakeProvided: true`,
-`runtime.runtimeKind: "upstream-opencode"`, all six Attune plugin packages,
-upstream OpenCode visibility, `pluginHookExercise.passed: true`, and no raw
-prompt/conversation text in the self-test output.
+Full measurement refuses to proceed without a healthy DB-backed store unless an
+explicit dry-run/export-only mode is requested. Basic harness proof commands
+continue to work without DB to preserve deterministic harness debugging.
 
-If any proof is missing, measurement stops and produces a short sanitized
-failure report instead of continuing to collect noisy or misleading data.
+### Privacy Boundary Is Enforced Before Storage
 
-### Store Raw Measurement Artifacts Only In Local Cache
+Stored observation payloads may include command names, argv, cwd, start/end
+times, duration, exit code, bounded stdout/stderr summaries, inferred Nx target,
+inferred recipe ID, measurement session ID, non-sensitive model/session IDs,
+token counts, tool-call counts, repeated command patterns, and high-level task
+labels.
 
-Local JSON observations and probe outputs live under `.attune/cache/measurement/`:
+Stored observation payloads must not include full stdout, full stderr, raw
+prompts, full conversations, secrets, raw trace dumps, raw trace rows, full
+session dumps, or ambiguous text payloads. The system should redact or reject
+before inserting into the framework store, rather than treating report export
+as the first privacy boundary.
 
-```text
-.attune/cache/measurement/opencode/
-.attune/cache/measurement/commands/
-.attune/cache/measurement/traces/
-.attune/cache/measurement/experiments/
-.attune/cache/measurement/reports/
-```
+### SQL Route Validates Measurement Queries
 
-Report files under `.attune/cache/measurement/reports/` are sanitized
-markdown. They may summarize counts, command names, durations, exit codes,
-timestamps, non-sensitive session IDs, token counts, tool-call counts, and
-high-level task labels. They must not contain raw prompts, full conversations,
-secrets, or private trace dumps.
+The existing SQL route and validation surfaces remain the path for typed access.
+SQL validation covers:
 
-### Measure A Fixed Command Ladder
+- inserting measurement observations
+- querying observations by measurement session
+- querying command observations by recipe ID, Nx target, and observation kind
+- querying harness proof observations
+- querying lifecycle health observations
+- querying report projection inputs
 
-The command ladder uses `tend-opencode observe` for every required validation
-command so command timings, exits, inferred Nx targets, inferred recipe IDs,
-and bounded output summaries share one schema. The ladder is intentionally
-representative rather than exhaustive:
+The design preserves `framework_core`, `framework_event`, and `framework_view`
+as the schema names and uses `framework_event.recipe_observation` before adding
+any product-specific DB surface.
 
-- `framework-language-service:typecheck`
-- `framework-language-service:test`
-- `tend-opencode:test`
-- `workspace:recipe-substrate-check`
-- `workspace:policy-fast`
+### Reports Are Store Projections
 
-The report classifies commands as cheap, medium, expensive, or final-gate and
-uses those categories to recommend a diagnostic-first sequence. `workspace:policy-fast`
-is measured but treated as a final confirmation, not a reflexive first move.
-
-### Inventory Historical Traces By Metadata Only
-
-The inventory scans `~/.codex` and local session artifacts for SQLite and JSONL
-containers, inspects schemas safely, and extracts only metadata. The extractor
-must avoid selecting prompt/message columns or dumping rows. When a field is
-ambiguous, it is excluded unless the extractor can prove it is metadata such as
-a command name, duration, exit code, timestamp, token count, or tool-call count.
-
-The output is a historical baseline report that highlights repeated expensive
-command patterns without exposing private conversation content.
-
-### Compare Codex-Alone And Harnessed Analysis
-
-The micro-experiment target is fixed and non-destructive:
-
-```text
-Analyze packages/trellis/language-service and report what remains before it
-can dogfood recipe-only source migration. Do not edit files.
-```
-
-Baseline mode records Codex-alone behavior without a required `tend-opencode`
-preflight or `trellis-ls` diagnostic-first loop. Treatment mode starts with
-the harness proof gate, then runs:
-
-```bash
-nix run .#tend-opencode -- observe --format json -- trellis-ls diagnostics --project packages/trellis/language-service/tsconfig.json --format json
-```
-
-Treatment mode must prefer the Trellis diagnostics/fixes/apply/check ladder
-before broad manual file inspection and must observe every expensive
-validation command through Tend. The comparison focuses on shell command
-counts, repeated commands, failed commands, expensive checks, policy-fast
-counts, time to useful diagnostic, token/context metrics when available, and
-quality of findings.
-
-### Derive Agent Guidance From Measured Behavior
-
-`AGENTS.proposed.md` is a draft report artifact, not an automatic replacement
-for root `AGENTS.md`. It teaches the measured workflow only after the reports
-show enough evidence: preflight before harnessed migrations, `trellis-ls`
-diagnostics before broad edits, fixes and diff apply before manual repair,
-`tend-opencode observe` for expensive commands, package-local checks before
-workspace checks, `workspace:policy-fast` near the end, no global OpenCode, no
-raw trace dumps, and OpenSpec/recipe routing for architecture changes.
+`reports/tend-opencode-codex-measurement/command-ladder.md`,
+`historical-baseline.md`, `codex-opencode-micro-experiment.md`,
+`tend-opencode-measurement-report.md`, and `AGENTS.proposed.md` are generated
+exports from DB-backed observations. They may be committed for human review,
+but they are not durable measurement truth and do not replace root `AGENTS.md`.
 
 ## Risks / Trade-offs
 
-- Harness output shape drifts while measurement scripts expect specific
-  fields. Mitigation: validate via schema-like guards and fail closed with a
-  sanitized proof-gap report.
-- Historical traces contain tempting raw text fields. Mitigation: default to a
-  metadata allowlist and exclude ambiguous fields rather than redacting after
-  collection.
-- Baseline and treatment runs may not be perfectly comparable because Codex
-  state is sequential. Mitigation: define fixed prompts, fixed target, fixed
-  metrics, and treat results as a decision aid rather than a formal benchmark.
-- `trellis-ls diagnostics` may be unavailable or incomplete. Mitigation:
-  record the observed failure through Tend, include it as a measurement result,
-  and do not fall back to uncontrolled migration edits.
-- `workspace:policy-fast` is intentionally expensive. Mitigation: observe it
-  once as part of the command ladder and once near final validation only if the
-  implementation slice requires it.
+- The existing runtime TimescaleDB ManagedRecipe must grow into the operational
+  store lifecycle surface without spawning a second lifecycle identity. The
+  implementation should extend the existing framework code and keep
+  Tend/OpenCode as a producer only.
+- Live DB integration may not be available in every developer environment. The
+  implementation should provide in-memory test fallback and explicit dry-run or
+  export-only modes, while full measurement fails closed when DB-backed
+  durability is required.
+- Historical traces may contain tempting text fields. The extractor must use an
+  allowlist and emit only sanitized aggregate observations.
+- SQL query coverage can drift as report projections grow. The SQL route must
+  validate the insert/query paths used by measurement reports.
+- Baseline and treatment comparison remains an operational measurement rather
+  than a formal benchmark. Store-backed observations improve auditability but
+  do not remove sequential-run bias.
 
 ## Migration Plan
 
-1. Add OpenSpec deltas for the measurement preflight, command observation,
-   trace inventory, command ladder, micro-experiment, and derived agent guide.
-2. Implement measurement scripts under the repository-owned measurement
-   surface while keeping generated JSON and markdown outputs in
-   `.attune/cache/measurement/`.
-3. Run the preflight gate and stop on incomplete plugin/runtime proof.
-4. Run command ladder observations and historical metadata inventory.
-5. Run the non-destructive baseline and treatment analyses.
-6. Produce sanitized reports and `AGENTS.proposed.md`.
-7. Validate the Tend/OpenCode, token-audit, Tend core, Trellis LS, and
-   OpenSpec surfaces. Run `workspace:policy-fast` only once near the end unless
-   measuring it explicitly.
+1. Update the OpenSpec measurement deltas to make the framework store the
+   durable source of truth and cache files exports only.
+2. Refine the existing framework-runtime TimescaleDB ManagedRecipe and
+   lifecycle targets.
+3. Add persistent devshell configuration and ignored repo-local state.
+4. Add/refine the shared observation sink and generic measurement session
+   helpers.
+5. Integrate `tend-opencode` as an observation producer without adding DB
+   lifecycle commands.
+6. Align Trellis LS and Nx/toolchain validation with the same sink.
+7. Add typed projection helpers and SQL validation statements for measurement
+   insert/query/report paths.
+8. Generate reports from DB observations and record report projection
+   observations.
+9. Validate with focused framework-runtime, framework-protocol, Tend, Trellis
+   LS, recipe-substrate, and OpenSpec checks. Do not run `workspace:policy-fast`
+   as an end-of-change validation for this spec update.
 
-Rollback is simple: remove the measurement scripts and local cache artifacts.
-No durable repository data, home-directory state, production database state, or
-recipe migration state is mutated by this change.
+Rollback is straightforward for the measurement layer: use explicit
+dry-run/export-only mode and remove generated report or cache exports.
+Framework store lifecycle changes must follow the ManagedRecipe destructive
+review semantics for prune/destroy.
 
 ## Open Questions
 
-- Should the implementation expose report generation as a dedicated
-  `tend-opencode` subcommand, an Nx target that calls `tend-opencode`, or both?
-- Which token/context metric is consistently available from Codex traces
-  without reading private message text?
-- Should a later change promote parts of `AGENTS.proposed.md` into the root
-  agent contract after humans review the measurement report?
+- Which measurement session identity helper should become the long-term
+  generic runtime API shared by Tend/OpenCode, Trellis LS, Nx, and future app
+  workflows?

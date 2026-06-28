@@ -35,7 +35,7 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "plan",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },
@@ -48,7 +48,7 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "apply",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },
@@ -61,7 +61,20 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "check",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
+        }
+      }
+    },
+    "db:stop": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "stop",
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },
@@ -74,7 +87,7 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "destroy",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },
@@ -87,7 +100,7 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "prune",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },
@@ -100,7 +113,7 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "migrate",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },
@@ -113,7 +126,7 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "generate-types",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },
@@ -126,7 +139,7 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "validate-sql",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },
@@ -139,7 +152,7 @@
         "toolId": "framework-runtime-db",
         "parameters": {
           "stage": "integration-test",
-          "recipeId": "framework-runtime.sql-route-generation"
+          "recipeId": "framework-runtime.local-timescaledb"
         }
       }
     },

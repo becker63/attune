@@ -7,7 +7,6 @@ node_modules/
 .stryker-tmp/
 dist/
 buck-out/
-reports/
 .attune/
 .attune-runs/
 .attune-tools/

@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS framework_core.recipe_io (
 CREATE TABLE IF NOT EXISTS framework_event.recipe_run (
   run_id text PRIMARY KEY,
   recipe_id text NOT NULL REFERENCES framework_core.recipe(recipe_id) ON DELETE CASCADE,
-  lifecycle_action text CHECK (lifecycle_action IN ('plan', 'apply', 'run', 'check', 'destroy', 'prune')),
+  lifecycle_action text CHECK (lifecycle_action IN ('plan', 'apply', 'run', 'check', 'migrate', 'validate-sql', 'stop', 'destroy', 'prune')),
   run_status text NOT NULL CHECK (run_status IN ('planned', 'running', 'passed', 'failed', 'blocked', 'destroyed', 'pruned')),
   started_at timestamptz NOT NULL,
   completed_at timestamptz,

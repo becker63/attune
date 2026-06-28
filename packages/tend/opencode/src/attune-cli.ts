@@ -5,14 +5,16 @@ import {
   assertJsonFormat,
   createOpenCodeDelegationEnv,
   createAttuneOpenCodeFingerprint,
+  observeCommandWithStoreEmission,
   renderJson,
   runDoctor,
   runHarnessSelfTest,
 } from "./cli-core.js"
+import { writeMeasurementReports } from "./measurement.js"
 
 type ParsedFlags = Readonly<Record<string, string | boolean>>
 
-const main = (): void => {
+const main = async (): Promise<void> => {
   const [command, ...rest] = process.argv.slice(2)
   if (command === undefined) delegateToUpstream([])
 
@@ -41,6 +43,29 @@ const main = (): void => {
         const output = runHarnessSelfTest({ harness: "tend-opencode" })
         process.stdout.write(renderJson(output))
         process.exit(output.passed ? 0 : 1)
+      }
+      case "observe": {
+        const { flags, command: observedCommand } = parseObserve(rest)
+        assertJsonFormat(stringFlag(flags, "format"))
+        const output = await observeCommandWithStoreEmission({ command: observedCommand })
+        process.stdout.write(renderJson(output))
+        process.exit(output.storeEmission.status === "failed" ? 1 : 0)
+      }
+      case "measurement-report": {
+        const flags = parseFlags(rest)
+        assertJsonFormat(stringFlag(flags, "format"))
+        const reportsDir = stringFlag(flags, "reports-dir")
+        const measurementSessionId = stringFlag(flags, "session-id")
+        const exportOnly = booleanFlag(flags, "export-only")
+        const dryRun = booleanFlag(flags, "dry-run")
+        const output = await writeMeasurementReports({
+          ...(reportsDir === undefined ? {} : { reportsDir }),
+          ...(measurementSessionId === undefined ? {} : { measurementSessionId }),
+          ...(exportOnly ? { exportOnly } : {}),
+          ...(dryRun ? { dryRun } : {}),
+        })
+        process.stdout.write(renderJson(output))
+        process.exit(output.storeEmission.status === "failed" ? 1 : 0)
       }
       default:
         delegateToUpstream(process.argv.slice(2))
@@ -88,10 +113,24 @@ const parseFlags = (args: readonly string[]): ParsedFlags => {
   return flags
 }
 
+const parseObserve = (
+  args: readonly string[],
+): { readonly flags: ParsedFlags; readonly command: readonly string[] } => {
+  const separator = args.indexOf("--")
+  if (separator < 0) throw new Error("Missing -- before observed command")
+  return {
+    flags: parseFlags(args.slice(0, separator)),
+    command: args.slice(separator + 1),
+  }
+}
+
 const stringFlag = (flags: ParsedFlags, name: string): string | undefined => {
   const value = flags[name]
   return typeof value === "string" ? value : undefined
 }
+
+const booleanFlag = (flags: ParsedFlags, name: string): boolean =>
+  flags[name] === true
 
 const writeHelp = (): void => {
   process.stdout.write([
@@ -101,6 +140,8 @@ const writeHelp = (): void => {
     "  fingerprint --format json",
     "  doctor --format json",
     "  run-harness-test --format json",
+    "  observe --format json -- <command...>",
+    "  measurement-report --format json [--reports-dir reports/tend-opencode-codex-measurement] [--export-only|--dry-run]",
     "  tend-help",
     "  attune-help",
     "",
@@ -109,4 +150,4 @@ const writeHelp = (): void => {
   ].join("\n"))
 }
 
-main()
+void main()

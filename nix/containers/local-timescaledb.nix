@@ -26,7 +26,7 @@ nix2container.packages.${system}.nix2container.buildImage {
       "-lc"
       ''
         set -eu
-        export PGDATA=/tmp/attune-pgdata
+        export PGDATA=/var/lib/postgresql/data
         if [ ! -s "$PGDATA/PG_VERSION" ]; then
           initdb -D "$PGDATA" --username=${db.user} --auth=trust
           {
@@ -41,7 +41,7 @@ nix2container.packages.${system}.nix2container.buildImage {
       ''
     ];
     Env = [
-      "PGDATA=/tmp/attune-pgdata"
+      "PGDATA=/var/lib/postgresql/data"
       "POSTGRES_USER=${db.user}"
       "POSTGRES_DB=${db.database}"
     ];

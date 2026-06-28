@@ -18,6 +18,9 @@ import {
 export const LocalTimescaleManagedRecipeInput = Schema.Struct({
   workspaceRoot: Schema.String,
   databaseUrlEnv: Schema.optional(Schema.String),
+  dataDir: Schema.optional(Schema.String),
+  port: Schema.optional(Schema.Number),
+  storeMode: Schema.optional(Schema.String),
   action: Schema.optional(ManagedRecipeLifecycleActionSchema),
   runIntegration: Schema.optional(Schema.Boolean),
 })
@@ -46,6 +49,9 @@ export const LocalTimescaleManagedRecipeOutput = Schema.Struct({
     arionComposeFile: Schema.String,
     nix2containerImage: Schema.String,
     databaseUrl: Schema.String,
+    dataDir: Schema.String,
+    port: Schema.Number,
+    storeMode: Schema.String,
   }),
   receiptStore: Schema.Struct({
     implementation: Schema.String,
@@ -60,10 +66,13 @@ export const LocalTimescaleManagedRecipeId = "framework-runtime.local-timescaled
 export const LocalTimescaleObservationKindSchema = Schema.Literals([
   "local-timescaledb.service-planned",
   "local-timescaledb.service-ready",
+  "local-timescaledb.service-stopped",
   "local-timescaledb.migration-applied",
   "local-timescaledb.sql-validated",
   "local-timescaledb.kanel-generated",
   "local-timescaledb.safeql-validated",
+  "local-timescaledb.destroyed",
+  "local-timescaledb.pruned",
 ] as const)
 export type LocalTimescaleObservationKind = typeof LocalTimescaleObservationKindSchema.Type
 
@@ -82,15 +91,15 @@ export const localTimescaleLifecycleSubstrates =
       id: "local-timescaledb.service",
       kind: "database-service",
       tool: "TimescaleDB/Postgres",
-      lifecycleActions: ["plan", "apply", "check", "destroy", "prune"],
-      nxTarget: "framework-runtime:db:migrate",
+      lifecycleActions: ["plan", "apply", "check", "migrate", "validate-sql", "stop", "destroy", "prune"],
+      nxTarget: "framework-runtime:db:apply",
       evidence: [frameworkRecipeReceiptMigrationPath],
     },
     {
       id: "local-timescaledb.image",
       kind: "container-runtime",
       tool: "nix2container",
-      lifecycleActions: ["plan", "apply", "check", "destroy"],
+      lifecycleActions: ["plan", "apply", "check", "stop", "destroy"],
       evidence: [
         "nix/toolchains/postgres-timescale.nix",
         "nix/containers/local-timescaledb.nix",
@@ -100,7 +109,7 @@ export const localTimescaleLifecycleSubstrates =
       id: "local-timescaledb.compose",
       kind: "container-runtime",
       tool: "Arion",
-      lifecycleActions: ["plan", "apply", "check", "destroy"],
+      lifecycleActions: ["plan", "apply", "check", "stop", "destroy"],
       evidence: ["nix/compose/local-timescaledb.arion.nix"],
     },
     {
@@ -122,7 +131,7 @@ export const localTimescaleLifecycleSubstrates =
       id: "framework-recipe-spine.safeql",
       kind: "sql-validation",
       tool: "SafeQL",
-      lifecycleActions: ["check"],
+      lifecycleActions: ["check", "validate-sql"],
       nxTarget: "framework-runtime:db:validate-sql",
       evidence: [frameworkRecipeReceiptMigrationPath],
     },
@@ -131,34 +140,42 @@ export const localTimescaleLifecycleSubstrates =
 export const localTimescaleLifecycleOutput = (
   input: LocalTimescaleManagedRecipeInput,
   action: ManagedRecipeLifecycleAction = input.action ?? "check",
-): LocalTimescaleManagedRecipeOutput => ({
-  serviceName: "local-timescaledb",
-  action,
-  managedBy: "Effect Alchemy ManagedRecipe",
-  readiness: {
-    check: "SELECT 1",
-    ready: input.runIntegration === true,
-    integrationGuard: "ATTUNE_RUN_DB_INTEGRATION=1",
-  },
-  migration: {
-    path: frameworkRecipeReceiptMigrationPath,
-    applied: input.runIntegration === true && (action === "apply" || action === "check"),
-  },
-  sqlRoute: {
-    kanel: frameworkRecipeReceiptKanelConfig() satisfies FrameworkRecipeReceiptKanelConfig,
-    kysely: "FrameworkRecipeReceiptKyselyServiceContract",
-    safeql: frameworkRecipeReceiptSafeQlConfig() satisfies FrameworkRecipeReceiptSafeQlConfig,
-  },
-  serviceClosure: {
-    arionComposeFile: "nix/compose/local-timescaledb.arion.nix",
-    nix2containerImage: ".#local-timescaledb-image",
-    databaseUrl: input.databaseUrlEnv ?? "DATABASE_URL",
-  },
-  receiptStore: {
-    implementation: "PostgresRecipeReceiptStore",
-    durable: true,
-  },
-})
+): LocalTimescaleManagedRecipeOutput => {
+  const port = input.port ?? 54329
+  const dataDir = input.dataDir ?? `${input.workspaceRoot}/.attune/state/local-timescaledb`
+  return {
+    serviceName: "local-timescaledb",
+    action,
+    managedBy: "Effect Alchemy ManagedRecipe",
+    readiness: {
+      check: "SELECT 1",
+      ready: input.runIntegration === true,
+      integrationGuard: "ATTUNE_RUN_DB_INTEGRATION=1",
+    },
+    migration: {
+      path: frameworkRecipeReceiptMigrationPath,
+      applied: input.runIntegration === true
+        && (action === "apply" || action === "check" || action === "migrate" || action === "validate-sql"),
+    },
+    sqlRoute: {
+      kanel: frameworkRecipeReceiptKanelConfig() satisfies FrameworkRecipeReceiptKanelConfig,
+      kysely: "FrameworkRecipeReceiptKyselyServiceContract",
+      safeql: frameworkRecipeReceiptSafeQlConfig() satisfies FrameworkRecipeReceiptSafeQlConfig,
+    },
+    serviceClosure: {
+      arionComposeFile: "nix/compose/local-timescaledb.arion.nix",
+      nix2containerImage: ".#local-timescaledb-image",
+      databaseUrl: input.databaseUrlEnv ?? "ATTUNE_RECIPE_STORE_URL",
+      dataDir,
+      port,
+      storeMode: input.storeMode ?? "local-postgres",
+    },
+    receiptStore: {
+      implementation: "PostgresRecipeReceiptStore",
+      durable: true,
+    },
+  }
+}
 
 export const localTimescaleObservationPayload = (
   output: LocalTimescaleManagedRecipeOutput,
@@ -177,6 +194,9 @@ export const localTimescaleObservationPayload = (
   service: {
     name: output.serviceName,
     databaseUrl: output.serviceClosure.databaseUrl,
+    dataDir: output.serviceClosure.dataDir,
+    port: output.serviceClosure.port,
+    storeMode: output.serviceClosure.storeMode,
     ready: output.readiness.ready,
     readinessCheck: output.readiness.check,
     integrationGuard: output.readiness.integrationGuard,
@@ -212,9 +232,10 @@ export const localTimescaleLifecycleObservationKinds = (
 ): readonly LocalTimescaleObservationKind[] => [
   ...(output.action === "plan" ? ["local-timescaledb.service-planned" as const] : []),
   ...(output.readiness.ready ? ["local-timescaledb.service-ready" as const] : []),
-  ...(output.migration.applied ? ["local-timescaledb.migration-applied" as const] : []),
+  ...(output.action === "stop" ? ["local-timescaledb.service-stopped" as const] : []),
+  ...(output.migration.applied || output.action === "migrate" ? ["local-timescaledb.migration-applied" as const] : []),
   ...(
-    output.action === "check" || output.action === "apply"
+    output.action === "check" || output.action === "apply" || output.action === "validate-sql"
       ? [
         "local-timescaledb.sql-validated" as const,
         "local-timescaledb.kanel-generated" as const,
@@ -222,6 +243,8 @@ export const localTimescaleLifecycleObservationKinds = (
       ]
       : []
   ),
+  ...(output.action === "destroy" ? ["local-timescaledb.destroyed" as const] : []),
+  ...(output.action === "prune" ? ["local-timescaledb.pruned" as const] : []),
 ]
 
 export const localTimescaleLifecycleObservations = (
@@ -252,11 +275,14 @@ export const LocalTimescaleManagedRecipe = defineManagedExecutableRecipe({
     "framework-runtime:db:integration-test",
     "framework-runtime:test",
   ],
-  lifecycle: ["plan", "apply", "check", "destroy", "prune"],
+  lifecycle: ["plan", "apply", "check", "migrate", "validate-sql", "stop", "destroy", "prune"],
   resourceKind: "timescaledb-postgres-recipe-receipts",
   lifecycleSubstrates: localTimescaleLifecycleSubstrates(),
   observedState: {
     integrationGuard: "ATTUNE_RUN_DB_INTEGRATION=1",
+    dataDirEnv: "ATTUNE_LOCAL_RECIPE_STORE_DATA_DIR",
+    databaseUrlEnv: "ATTUNE_RECIPE_STORE_URL",
+    storeModeEnv: "ATTUNE_RECIPE_STORE_MODE",
     status: "unit-contract-ready",
   },
   driftRepair: {

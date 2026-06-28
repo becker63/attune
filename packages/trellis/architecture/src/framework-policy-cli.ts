@@ -101,6 +101,7 @@ const sourceFilePattern = /\.(cjs|cts|js|jsx|mjs|mts|ts|tsx)$/u
 const reportFilePattern = /\.(json|jsonc|md|mdx|txt)$/u
 const ignoredDirs = new Set([
   ".git",
+  ".attune",
   ".nx",
   "archive",
   "coverage",

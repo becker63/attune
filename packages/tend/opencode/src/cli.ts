@@ -3,17 +3,18 @@ import {
   assertJsonFormat,
   assertOutputFormat,
   decodeOpenCodeSessionFile,
-  observeCommand,
+  observeCommandWithStoreEmission,
   renderJson,
   renderSessionSummaryMarkdown,
   runDoctor,
   summarizeOpenCodeSessionFile,
   createAttuneOpenCodeFingerprint,
 } from "./cli-core.js"
+import { writeMeasurementReports } from "./measurement.js"
 
 type ParsedFlags = Readonly<Record<string, string | boolean>>
 
-const main = (): void => {
+const main = async (): Promise<void> => {
   const [command, ...rest] = process.argv.slice(2)
   if (command === undefined || command === "--help" || command === "-h") {
     writeHelp()
@@ -50,8 +51,25 @@ const main = (): void => {
       case "observe": {
         const { flags, command: observedCommand } = parseObserve(rest)
         assertJsonFormat(stringFlag(flags, "format"))
-        process.stdout.write(renderJson(observeCommand({ command: observedCommand })))
-        process.exit(0)
+        const output = await observeCommandWithStoreEmission({ command: observedCommand })
+        process.stdout.write(renderJson(output))
+        process.exit(output.storeEmission.status === "failed" ? 1 : 0)
+      }
+      case "measurement-report": {
+        const flags = parseFlags(rest)
+        assertJsonFormat(stringFlag(flags, "format"))
+        const reportsDir = stringFlag(flags, "reports-dir")
+        const measurementSessionId = stringFlag(flags, "session-id")
+        const exportOnly = booleanFlag(flags, "export-only")
+        const dryRun = booleanFlag(flags, "dry-run")
+        const output = await writeMeasurementReports({
+          ...(reportsDir === undefined ? {} : { reportsDir }),
+          ...(measurementSessionId === undefined ? {} : { measurementSessionId }),
+          ...(exportOnly ? { exportOnly } : {}),
+          ...(dryRun ? { dryRun } : {}),
+        })
+        process.stdout.write(renderJson(output))
+        process.exit(output.storeEmission.status === "failed" ? 1 : 0)
       }
       default:
         throw new Error(`Unknown command: ${command}`)
@@ -98,6 +116,9 @@ const stringFlag = (flags: ParsedFlags, name: string): string | undefined => {
   return typeof value === "string" ? value : undefined
 }
 
+const booleanFlag = (flags: ParsedFlags, name: string): boolean =>
+  flags[name] === true
+
 const requiredFile = (flags: ParsedFlags): string => {
   const file = stringFlag(flags, "file")
   if (file === undefined || file.length === 0) throw new Error("Missing required --file")
@@ -114,8 +135,9 @@ const writeHelp = (): void => {
     "  decode --file <path> --format json",
     "  summarize --file <path> --format markdown|json",
     "  observe --format json -- <command...>",
+    "  measurement-report --format json [--reports-dir reports/tend-opencode-codex-measurement] [--export-only|--dry-run]",
     "",
   ].join("\n"))
 }
 
-main()
+void main()

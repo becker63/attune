@@ -18,7 +18,7 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
 
   if (requestedStage === undefined) {
     throw new Error(
-      "Expected db lifecycle stage: plan, apply, check, destroy, prune, migrate, generate-types, validate-sql, or integration-test.",
+      "Expected db lifecycle stage: plan, apply, check, stop, destroy, prune, migrate, generate-types, validate-sql, or integration-test.",
     )
   }
 
@@ -29,7 +29,7 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
       console.log(JSON.stringify({
         stage,
         managedRecipe: "framework-runtime.local-timescaledb",
-        lifecycle: ["plan", "apply", "check", "destroy", "prune"],
+        lifecycle: ["plan", "apply", "check", "migrate", "validate-sql", "stop", "destroy", "prune"],
         serviceClosure: localTimescale,
         genericTables: frameworkRecipeReceiptTables,
       }))
@@ -41,6 +41,10 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
     }
     case "check": {
       console.log(JSON.stringify(checkLiveDatabase()))
+      break
+    }
+    case "stop": {
+      console.log(JSON.stringify(stopLiveDatabase()))
       break
     }
     case "destroy": {
@@ -125,7 +129,7 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
         stage,
         managedRecipe: "framework-runtime.local-timescaledb",
         guard: localTimescale.integrationGuard,
-        lifecycle: ["plan", "apply", "check", "destroy", "prune"],
+        lifecycle: ["plan", "apply", "check", "migrate", "validate-sql", "stop", "destroy", "prune"],
         apply,
         check,
         generatedTypes,
@@ -143,7 +147,12 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
 const localTimescale = {
   composeFile: "nix/compose/local-timescaledb.arion.nix",
   imageAttr: ".#local-timescaledb-image",
-  databaseUrl: process.env["DATABASE_URL"] ?? "postgresql://attune@127.0.0.1:54329/postgres",
+  dataDir: process.env["ATTUNE_LOCAL_RECIPE_STORE_DATA_DIR"] ?? `${workspaceRoot()}/.attune/state/local-timescaledb`,
+  port: Number(process.env["ATTUNE_RECIPE_STORE_PORT"] ?? "54329"),
+  databaseUrl: process.env["ATTUNE_RECIPE_STORE_URL"]
+    ?? process.env["DATABASE_URL"]
+    ?? "postgresql://attune@127.0.0.1:54329/postgres",
+  storeMode: process.env["ATTUNE_RECIPE_STORE_MODE"] ?? "local-postgres",
   integrationGuard: "ATTUNE_RUN_DB_INTEGRATION=1",
 } as const
 
@@ -204,6 +213,20 @@ function destroyLiveDatabase(action: "destroy" | "prune"): Record<string, unknow
     serviceClosure: localTimescale,
     destroyed: true,
     pruned: action === "prune",
+  }
+}
+
+function stopLiveDatabase(): Record<string, unknown> {
+  if (!integrationEnabled()) return skippedLive("stop")
+
+  runNixDevelop(["arion", "-f", localTimescale.composeFile, "down"])
+  return {
+    stage,
+    managedRecipe: "framework-runtime.local-timescaledb",
+    action: "stop",
+    serviceClosure: localTimescale,
+    stopped: true,
+    pruned: false,
   }
 }
 
@@ -559,6 +582,7 @@ function sqlLiteral(value: unknown): string {
   if (typeof value === "number") return String(value)
   if (typeof value === "boolean") return value ? "TRUE" : "FALSE"
   if (value === null) return "NULL"
+  if (typeof value === "object") return `'${JSON.stringify(value).replaceAll("'", "''")}'`
   return `'${String(value).replaceAll("'", "''")}'`
 }
 
@@ -635,6 +659,9 @@ function runNixDevelop(args: readonly string[]): string {
     env: {
       ...process.env,
       DATABASE_URL: localTimescale.databaseUrl,
+      ATTUNE_RECIPE_STORE_URL: localTimescale.databaseUrl,
+      ATTUNE_LOCAL_RECIPE_STORE_DATA_DIR: localTimescale.dataDir,
+      ATTUNE_RECIPE_STORE_MODE: localTimescale.storeMode,
     },
     encoding: "utf8",
     timeout: 120_000,

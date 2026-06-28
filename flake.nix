@@ -261,6 +261,7 @@
                   ./.codex/skills/openspec-propose
                   ./.codex/skills/openspec-sync-specs
                   ./packages/trellis/protocol
+                  ./packages/trellis/runtime
                   ./packages/tend/core
                   ./packages/tend/long-job
                   ./packages/tend/opencode
@@ -274,7 +275,7 @@
                 inherit (finalAttrs) pname version src;
                 pnpm = final.pnpm_10;
                 fetcherVersion = 3;
-                hash = "sha256-eAKzJmbCZAXEpyf/qrvslWNd6jzszAv5E3tgbvNtHls=";
+                hash = "sha256-GOXt4Qu41VHpR//SH1uU9wf/QXPfKwe8rwVGUltnoCk=";
               };
 
               nativeBuildInputs = [
@@ -301,6 +302,7 @@
                 cp -R packages/tend/reporting "$workspace/packages/tend/reporting"
                 cp -R packages/tend/token-audit "$workspace/packages/tend/token-audit"
                 cp -R packages/trellis/protocol "$workspace/packages/trellis/protocol"
+                cp -R packages/trellis/runtime "$workspace/packages/trellis/runtime"
                 cp -R node_modules/.pnpm "$workspace/node_modules/.pnpm"
                 if [ -f node_modules/.modules.yaml ]; then
                   cp node_modules/.modules.yaml "$workspace/node_modules/.modules.yaml"
@@ -399,6 +401,7 @@
                     final.git
                     final.nodejs_22
                     final.pnpm_10
+                    final.sqlite
                     (final.writeShellApplication {
                       name = "openspec";
                       runtimeInputs = [
@@ -578,6 +581,7 @@
             cocoindexTools.uv
             pkgs.nodejs_22
             pkgs.pnpm
+            pkgs.sqlite
             localTimescaleTools.postgresWithTimescale
             pkgs.nixfmt
             pkgs.pre-commit
@@ -602,6 +606,10 @@
             if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
               git config core.hooksPath .githooks
             fi
+            export ATTUNE_LOCAL_RECIPE_STORE_DATA_DIR="$PWD/.attune/state/local-timescaledb"
+            export ATTUNE_RECIPE_STORE_URL="''${ATTUNE_RECIPE_STORE_URL:-postgresql://attune@127.0.0.1:54329/postgres}"
+            export ATTUNE_RECIPE_STORE_MODE="''${ATTUNE_RECIPE_STORE_MODE:-local-postgres}"
+            mkdir -p "$ATTUNE_LOCAL_RECIPE_STORE_DATA_DIR"
             echo "Attune dev shell"
             echo "  pnpm install"
             echo "  pnpm exec nx show projects"
@@ -610,6 +618,8 @@
             echo "  pnpm exec nx run joern-effect:generate"
             echo "  pnpm exec nx run cocoindex-effect:generate"
             echo "  pnpm exec nx run platform-alchemy-k8s:generate"
+            echo "  local recipe store: $ATTUNE_RECIPE_STORE_MODE at $ATTUNE_RECIPE_STORE_URL"
+            echo "  local recipe store data: $ATTUNE_LOCAL_RECIPE_STORE_DATA_DIR"
             echo "  tend-opencode fingerprint --format json"
             echo "  tend-opencode run-harness-test --format json"
           '';

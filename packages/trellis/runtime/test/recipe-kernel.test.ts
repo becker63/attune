@@ -451,20 +451,24 @@ describe("RecipeKernel", () => {
       kyselyOutputPath:
         ".attune/cache/generated/framework-runtime/db/kanel/framework-recipe-receipt.database.generated.ts",
     })
-    expect(frameworkRecipeReceiptSafeQlConfig().checkedStatements).toEqual([
+    expect(frameworkRecipeReceiptSafeQlConfig().checkedStatements).toEqual(expect.arrayContaining([
       "SELECT * FROM framework_view.recipe_health WHERE recipe_id = $1",
       "SELECT * FROM framework_event.recipe_receipt WHERE receipt_status = $1",
       "SELECT * FROM framework_event.recipe_receipt_metric WHERE recipe_id = $1",
       "SELECT * FROM framework_event.recipe_observation WHERE recipe_id = $1 ORDER BY observed_at DESC",
-    ])
+      "SELECT * FROM framework_event.recipe_observation WHERE payload->>'measurementSessionId' = $1 ORDER BY observed_at DESC",
+      "SELECT * FROM framework_event.recipe_observation WHERE observation_kind = $1 AND payload->>'knownNxTarget' = $2 ORDER BY observed_at DESC",
+    ]))
     expect(validateFrameworkRecipeReceiptStatements()).toEqual([])
     expect(frameworkRecipeReceiptSqlValidationStatements().map((statement) => statement.name))
-      .toEqual([
+      .toEqual(expect.arrayContaining([
+        "measurement-observation-insert",
         "recipe-health-by-recipe",
         "recipe-receipts-by-status",
         "recipe-receipt-metrics-by-recipe",
         "recipe-observations-by-recipe",
-      ])
+        "measurement-report-projection-inputs",
+      ]))
     expect(frameworkRecipeReceiptKyselyServiceContract().latestReceipt("recipe-1")).toMatchObject({
       parameters: ["recipe-1"],
     })
@@ -506,7 +510,7 @@ describe("RecipeKernel", () => {
       id: "framework-runtime.local-timescaledb",
       projectId: "framework-runtime",
       resourceKind: "timescaledb-postgres-recipe-receipts",
-      lifecycle: ["plan", "apply", "check", "destroy", "prune"],
+      lifecycle: ["plan", "apply", "check", "migrate", "validate-sql", "stop", "destroy", "prune"],
     })
     expect(LocalTimescaleManagedRecipe.lifecycleSubstrates?.map((substrate) => substrate.tool)).toEqual([
       "TimescaleDB/Postgres",
@@ -539,6 +543,11 @@ describe("RecipeKernel", () => {
       receiptStore: {
         implementation: "PostgresRecipeReceiptStore",
         durable: true,
+      },
+      serviceClosure: {
+        dataDir: "/workspace/.attune/state/local-timescaledb",
+        port: 54329,
+        storeMode: "local-postgres",
       },
     })
     expect(result.receipt.validationEvidence).toContain("framework-runtime:db:validate-sql")
@@ -579,6 +588,8 @@ describe("RecipeKernel", () => {
         phase: "check",
       },
       service: {
+        dataDir: "/workspace/.attune/state/local-timescaledb",
+        port: 54329,
         ready: false,
         integrationGuard: "ATTUNE_RUN_DB_INTEGRATION=1",
       },
@@ -697,6 +708,21 @@ describe("RecipeKernel", () => {
     expect(view.latestReceipt).toMatchObject({ receiptId: "receipt-1", status: "passed" })
     expect(view.observations).toMatchObject([{ observationId: "observation-1" }])
     expect(observations).toMatchObject([{ observationKind: "workspace.policy-fast.checked" }])
+  })
+
+  it("validates measurement observation SQL projection statements", () => {
+    const names = frameworkRecipeReceiptSqlValidationStatements().map((statement) => statement.name)
+
+    expect(validateFrameworkRecipeReceiptStatements()).toEqual([])
+    expect(names).toEqual(expect.arrayContaining([
+      "measurement-observation-insert",
+      "measurement-observations-by-session",
+      "measurement-command-observations-by-recipe",
+      "measurement-command-observations-by-nx-target",
+      "measurement-harness-proof-observations",
+      "measurement-lifecycle-health-observations",
+      "measurement-report-projection-inputs",
+    ]))
   })
 
   it("exports runtime package recipes including the local Timescale ManagedRecipe", () => {

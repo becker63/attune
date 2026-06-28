@@ -1,0 +1,1164 @@
+{
+  "inventory": {
+    "measurementSessionId": "measurement:2026-06-28:db-first-opencode",
+    "scannedAt": "2026-06-28T23:18:31.760Z",
+    "codexHome": "/home/becker/.codex",
+    "traceFiles": 321,
+    "sqliteFiles": 4,
+    "jsonlFiles": 317,
+    "skippedFiles": 0,
+    "sqliteSchemaFilesInspected": 4,
+    "sqliteSchemaFilesSkipped": 0,
+    "sqliteSchemas": [
+      {
+        "fileId": "sha256:c4bcd56ac056f1e0",
+        "fileKind": "sqlite",
+        "inspected": true,
+        "tableCount": 2,
+        "tables": [
+          {
+            "tableName": "_sqlx_migrations",
+            "allowlistedColumns": [],
+            "skippedColumnCount": 6
+          },
+          {
+            "tableName": "thread_goals",
+            "allowlistedColumns": [
+              "status"
+            ],
+            "skippedColumnCount": 8
+          }
+        ]
+      },
+      {
+        "fileId": "sha256:74ab6748fe6317e9",
+        "fileKind": "sqlite",
+        "inspected": true,
+        "tableCount": 2,
+        "tables": [
+          {
+            "tableName": "_sqlx_migrations",
+            "allowlistedColumns": [],
+            "skippedColumnCount": 6
+          },
+          {
+            "tableName": "logs",
+            "allowlistedColumns": [
+              "id"
+            ],
+            "skippedColumnCount": 11
+          }
+        ]
+      },
+      {
+        "fileId": "sha256:069d9f1325099f24",
+        "fileKind": "sqlite",
+        "inspected": true,
+        "tableCount": 3,
+        "tables": [
+          {
+            "tableName": "_sqlx_migrations",
+            "allowlistedColumns": [],
+            "skippedColumnCount": 6
+          },
+          {
+            "tableName": "jobs",
+            "allowlistedColumns": [
+              "status",
+              "started_at"
+            ],
+            "skippedColumnCount": 11
+          },
+          {
+            "tableName": "stage1_outputs",
+            "allowlistedColumns": [],
+            "skippedColumnCount": 10
+          }
+        ]
+      },
+      {
+        "fileId": "sha256:8fa2cb371c88fb15",
+        "fileKind": "sqlite",
+        "inspected": true,
+        "tableCount": 8,
+        "tables": [
+          {
+            "tableName": "_sqlx_migrations",
+            "allowlistedColumns": [],
+            "skippedColumnCount": 6
+          },
+          {
+            "tableName": "agent_job_items",
+            "allowlistedColumns": [
+              "status",
+              "created_at",
+              "updated_at",
+              "completed_at"
+            ],
+            "skippedColumnCount": 10
+          },
+          {
+            "tableName": "agent_jobs",
+            "allowlistedColumns": [
+              "id",
+              "status",
+              "created_at",
+              "updated_at",
+              "started_at",
+              "completed_at"
+            ],
+            "skippedColumnCount": 9
+          },
+          {
+            "tableName": "backfill_state",
+            "allowlistedColumns": [
+              "id",
+              "status",
+              "updated_at"
+            ],
+            "skippedColumnCount": 2
+          },
+          {
+            "tableName": "remote_control_enrollments",
+            "allowlistedColumns": [
+              "updated_at"
+            ],
+            "skippedColumnCount": 6
+          },
+          {
+            "tableName": "thread_dynamic_tools",
+            "allowlistedColumns": [],
+            "skippedColumnCount": 7
+          },
+          {
+            "tableName": "thread_spawn_edges",
+            "allowlistedColumns": [
+              "status"
+            ],
+            "skippedColumnCount": 2
+          },
+          {
+            "tableName": "threads",
+            "allowlistedColumns": [
+              "id",
+              "created_at",
+              "updated_at",
+              "model"
+            ],
+            "skippedColumnCount": 25
+          }
+        ]
+      }
+    ],
+    "commandFamilies": [
+      {
+        "value": "bash -c [shell-script-redacted]",
+        "count": 14472
+      },
+      {
+        "value": "unknown",
+        "count": 752
+      },
+      {
+        "value": "git status --short",
+        "count": 370
+      },
+      {
+        "value": "BUCK",
+        "count": 186
+      },
+      {
+        "value": "**'",
+        "count": 139
+      },
+      {
+        "value": "cli.py",
+        "count": 101
+      },
+      {
+        "value": "localizer.py",
+        "count": 100
+      },
+      {
+        "value": "__init__.py",
+        "count": 90
+      },
+      {
+        "value": "types.py",
+        "count": 88
+      },
+      {
+        "value": "types.go",
+        "count": 84
+      },
+      {
+        "value": "visualization-projection.json",
+        "count": 80
+      },
+      {
+        "value": "test_localization.py",
+        "count": 78
+      },
+      {
+        "value": "README.md",
+        "count": 70
+      },
+      {
+        "value": "policy.star",
+        "count": 68
+      },
+      {
+        "value": "visualization.go",
+        "count": 65
+      },
+      {
+        "value": "machine.py",
+        "count": 64
+      },
+      {
+        "value": "run_test.go",
+        "count": 64
+      },
+      {
+        "value": "models.py",
+        "count": 63
+      },
+      {
+        "value": "experiments.py",
+        "count": 62
+      },
+      {
+        "value": "server.py",
+        "count": 61
+      },
+      {
+        "value": "test_cli_guardrails.py",
+        "count": 60
+      },
+      {
+        "value": "run.go",
+        "count": 59
+      },
+      {
+        "value": "next-actions.json",
+        "count": 58
+      },
+      {
+        "value": "evaluator.go",
+        "count": 57
+      },
+      {
+        "value": "test_loop_state_machine_min.py",
+        "count": 57
+      },
+      {
+        "value": "pipeline.md",
+        "count": 56
+      },
+      {
+        "value": "npm run lint",
+        "count": 55
+      },
+      {
+        "value": "plan:plan_test",
+        "count": 55
+      },
+      {
+        "value": "test_backend_adapters.py",
+        "count": 54
+      },
+      {
+        "value": "round.pkl",
+        "count": 50
+      },
+      {
+        "value": "challenger_policy.py",
+        "count": 49
+      },
+      {
+        "value": "doc.go",
+        "count": 49
+      },
+      {
+        "value": "execute.py",
+        "count": 48
+      },
+      {
+        "value": "runner.go",
+        "count": 48
+      },
+      {
+        "value": "baselines.py",
+        "count": 47
+      },
+      {
+        "value": "writer.py",
+        "count": 45
+      },
+      {
+        "value": "round:round_test",
+        "count": 44
+      },
+      {
+        "value": "dependencies.py",
+        "count": 42
+      },
+      {
+        "value": "git diff --stat",
+        "count": 42
+      },
+      {
+        "value": "run_ledger_roles.go",
+        "count": 42
+      }
+    ],
+    "repeatedCommandPatterns": [
+      {
+        "value": "bash -c [shell-script-redacted]",
+        "count": 14472
+      },
+      {
+        "value": "unknown",
+        "count": 752
+      },
+      {
+        "value": "git status --short",
+        "count": 370
+      },
+      {
+        "value": "BUCK",
+        "count": 186
+      },
+      {
+        "value": "**'",
+        "count": 139
+      },
+      {
+        "value": "cli.py",
+        "count": 101
+      },
+      {
+        "value": "localizer.py",
+        "count": 100
+      },
+      {
+        "value": "__init__.py",
+        "count": 90
+      },
+      {
+        "value": "types.py",
+        "count": 88
+      },
+      {
+        "value": "types.go",
+        "count": 84
+      },
+      {
+        "value": "visualization-projection.json",
+        "count": 80
+      },
+      {
+        "value": "test_localization.py",
+        "count": 78
+      },
+      {
+        "value": "README.md",
+        "count": 70
+      },
+      {
+        "value": "policy.star",
+        "count": 68
+      },
+      {
+        "value": "visualization.go",
+        "count": 65
+      },
+      {
+        "value": "machine.py",
+        "count": 64
+      },
+      {
+        "value": "run_test.go",
+        "count": 64
+      },
+      {
+        "value": "models.py",
+        "count": 63
+      },
+      {
+        "value": "experiments.py",
+        "count": 62
+      },
+      {
+        "value": "server.py",
+        "count": 61
+      },
+      {
+        "value": "test_cli_guardrails.py",
+        "count": 60
+      },
+      {
+        "value": "run.go",
+        "count": 59
+      },
+      {
+        "value": "next-actions.json",
+        "count": 58
+      },
+      {
+        "value": "evaluator.go",
+        "count": 57
+      },
+      {
+        "value": "test_loop_state_machine_min.py",
+        "count": 57
+      },
+      {
+        "value": "pipeline.md",
+        "count": 56
+      },
+      {
+        "value": "npm run lint",
+        "count": 55
+      },
+      {
+        "value": "plan:plan_test",
+        "count": 55
+      },
+      {
+        "value": "test_backend_adapters.py",
+        "count": 54
+      },
+      {
+        "value": "round.pkl",
+        "count": 50
+      },
+      {
+        "value": "challenger_policy.py",
+        "count": 49
+      },
+      {
+        "value": "doc.go",
+        "count": 49
+      },
+      {
+        "value": "execute.py",
+        "count": 48
+      },
+      {
+        "value": "runner.go",
+        "count": 48
+      },
+      {
+        "value": "baselines.py",
+        "count": 47
+      },
+      {
+        "value": "writer.py",
+        "count": 45
+      },
+      {
+        "value": "round:round_test",
+        "count": 44
+      },
+      {
+        "value": "dependencies.py",
+        "count": 42
+      },
+      {
+        "value": "git diff --stat",
+        "count": 42
+      },
+      {
+        "value": "run_ledger_roles.go",
+        "count": 42
+      }
+    ],
+    "exitCodes": [
+      {
+        "value": "0",
+        "count": 13235
+      },
+      {
+        "value": "1",
+        "count": 736
+      },
+      {
+        "value": "2",
+        "count": 234
+      },
+      {
+        "value": "32",
+        "count": 63
+      },
+      {
+        "value": "3",
+        "count": 56
+      },
+      {
+        "value": "127",
+        "count": 52
+      },
+      {
+        "value": "-1",
+        "count": 41
+      },
+      {
+        "value": "5",
+        "count": 23
+      },
+      {
+        "value": "128",
+        "count": 12
+      },
+      {
+        "value": "130",
+        "count": 5
+      },
+      {
+        "value": "11",
+        "count": 4
+      },
+      {
+        "value": "4",
+        "count": 4
+      },
+      {
+        "value": "99",
+        "count": 3
+      },
+      {
+        "value": "6",
+        "count": 2
+      },
+      {
+        "value": "124",
+        "count": 1
+      },
+      {
+        "value": "255",
+        "count": 1
+      },
+      {
+        "value": "28",
+        "count": 1
+      }
+    ],
+    "toolCalls": 0,
+    "tokenTotal": 0,
+    "modelIds": [
+      {
+        "value": "gpt-5.5",
+        "count": 12286
+      },
+      {
+        "value": "gpt-5.4",
+        "count": 1744
+      },
+      {
+        "value": "gpt-5.3-codex-spark",
+        "count": 320
+      },
+      {
+        "value": "gpt-5.3-codex",
+        "count": 30
+      },
+      {
+        "value": "inkeep-rag",
+        "count": 20
+      },
+      {
+        "value": "gpt-5.4-mini",
+        "count": 12
+      },
+      {
+        "value": "gpt-5.1-codex-mini",
+        "count": 4
+      },
+      {
+        "value": "gpt-5.1-codex-max",
+        "count": 2
+      },
+      {
+        "value": "gpt-5.2-codex",
+        "count": 2
+      }
+    ],
+    "sessionIds": [
+      {
+        "value": "sha256:799c28c736a326b7",
+        "count": 142
+      },
+      {
+        "value": "sha256:1169bab2e9db403e",
+        "count": 77
+      },
+      {
+        "value": "sha256:7445dc1caaed9012",
+        "count": 52
+      },
+      {
+        "value": "sha256:27fefd5c9263034b",
+        "count": 48
+      },
+      {
+        "value": "sha256:1839cce280d0cf0b",
+        "count": 42
+      },
+      {
+        "value": "sha256:09375492185b0eb3",
+        "count": 37
+      },
+      {
+        "value": "sha256:2d40bf81ab9d6359",
+        "count": 34
+      },
+      {
+        "value": "sha256:58bcbb4b0fbbde2a",
+        "count": 33
+      },
+      {
+        "value": "sha256:fde29b785eba12cc",
+        "count": 30
+      },
+      {
+        "value": "sha256:1ec9ad5b0f6a0862",
+        "count": 28
+      },
+      {
+        "value": "sha256:9a568f8253b465d3",
+        "count": 28
+      },
+      {
+        "value": "sha256:54316ee3966946b3",
+        "count": 25
+      },
+      {
+        "value": "sha256:766cce732cce55f6",
+        "count": 25
+      },
+      {
+        "value": "sha256:a219b78dc381eed5",
+        "count": 25
+      },
+      {
+        "value": "sha256:ddbb09ff295e8e0e",
+        "count": 25
+      },
+      {
+        "value": "sha256:02dfa42bb6bac63a",
+        "count": 23
+      },
+      {
+        "value": "sha256:53a1e8f3719f41bd",
+        "count": 23
+      },
+      {
+        "value": "sha256:5a68010bccbb6a5e",
+        "count": 23
+      },
+      {
+        "value": "sha256:27d16c980d84cc64",
+        "count": 21
+      },
+      {
+        "value": "sha256:e4c78a9cb4a57a3a",
+        "count": 21
+      }
+    ],
+    "privacy": {
+      "rawPromptsStored": false,
+      "rawConversationStored": false,
+      "rawTraceRowsStored": false,
+      "fullCommandOutputStored": false
+    }
+  },
+  "projection": {
+    "measurementSessionId": "measurement:2026-06-28:db-first-opencode",
+    "projectedAt": "2026-06-28T23:18:33.224Z",
+    "observationIds": [
+      "recipe-observation:tend-opencode.command-observation:measurement.trace.inventory.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:24.447Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:24.472Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.862Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.session.started:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.875Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.micro-experiment.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.888Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.901Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.902Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.904Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.907Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.910Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.913Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.session.completed:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.914Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:92d1c8b18214689e:2026-06-28T23:09:39.880Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:a518dfb85ade7a5a:2026-06-28T23:09:40.020Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:96cb5c289221f5ca:2026-06-28T23:09:39.974Z",
+      "recipe-observation:trellis-language-service.cli-observation-sink:trellis-language-service.diagnostic-run-summary:measurement:2026-06-28:db-first-opencode:packages-trellis-language-service-tsconfig.json:2026-06-28T23:10:19.290Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:6e24ba9823f8603d:2026-06-28T23:10:15.401Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:6b96cc092f6853be:2026-06-28T23:10:15.388Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.trace.inventory.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:50.144Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:50.168Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.604Z",
+      "recipe-observation:framework-runtime.local-timescaledb:local-timescaledb.service-ready:2026-06-28T23:12:51.620Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.session.started:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.622Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.micro-experiment.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.640Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.656Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.660Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.663Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.666Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.669Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.673Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.session.completed:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.677Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.trace.inventory.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:36.324Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:36.347Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.899Z",
+      "recipe-observation:framework-runtime.local-timescaledb:local-timescaledb.service-ready:2026-06-28T23:14:37.913Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.session.started:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.918Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.micro-experiment.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.935Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.947Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.949Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.952Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.954Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.957Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.958Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.session.completed:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.961Z",
+      "recipe-observation:trellis-language-service.cli-observation-sink:trellis-language-service.fix-list-summary:measurement:2026-06-28:db-first-opencode:packages-trellis-language-service-tsconfig.json:2026-06-28T23:16:50.124Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:83a8b17e68a58aa6:2026-06-28T23:16:46.649Z",
+      "recipe-observation:trellis-language-service.cli-observation-sink:trellis-language-service.fix-list-summary:measurement:2026-06-28:db-first-opencode:packages-trellis-language-service-tsconfig.json:2026-06-28T23:18:19.668Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:83a8b17e68a58aa6:2026-06-28T23:18:15.781Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.trace.inventory.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:31.760Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:31.784Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:33.178Z",
+      "recipe-observation:framework-runtime.local-timescaledb:local-timescaledb.service-ready:2026-06-28T23:18:33.192Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.session.started:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:33.194Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.micro-experiment.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:33.210Z"
+    ],
+    "commandObservations": [
+      {
+        "observationId": "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:92d1c8b18214689e:2026-06-28T23:09:39.880Z",
+        "command": "pnpm exec nx run framework-language-service:typecheck --output-style=static",
+        "durationMs": 6858,
+        "exitCode": 0,
+        "startedAt": "2026-06-28T23:09:39.880Z",
+        "knownNxTarget": "framework-language-service:typecheck",
+        "targetId": "framework-language-service:typecheck",
+        "inferredRecipeId": "trellis-language-service.check-summary-projection",
+        "status": "succeeded",
+        "storeEmissionStatus": "emitted"
+      },
+      {
+        "observationId": "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:a518dfb85ade7a5a:2026-06-28T23:09:40.020Z",
+        "command": "pnpm exec nx run tend-opencode:test --output-style=static",
+        "durationMs": 10658,
+        "exitCode": 0,
+        "startedAt": "2026-06-28T23:09:40.020Z",
+        "knownNxTarget": "tend-opencode:test",
+        "targetId": "tend-opencode:test",
+        "inferredRecipeId": "tend-opencode.decode-session",
+        "status": "succeeded",
+        "storeEmissionStatus": "emitted"
+      },
+      {
+        "observationId": "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:96cb5c289221f5ca:2026-06-28T23:09:39.974Z",
+        "command": "pnpm exec nx run framework-language-service:test --output-style=static",
+        "durationMs": 20370,
+        "exitCode": 0,
+        "startedAt": "2026-06-28T23:09:39.974Z",
+        "knownNxTarget": "framework-language-service:test",
+        "targetId": "framework-language-service:test",
+        "inferredRecipeId": "trellis-language-service.check-summary-projection",
+        "status": "succeeded",
+        "storeEmissionStatus": "emitted"
+      },
+      {
+        "observationId": "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:6e24ba9823f8603d:2026-06-28T23:10:15.401Z",
+        "command": "pnpm exec trellis-ls diagnostics --project packages/trellis/language-service/tsconfig.json --format json",
+        "durationMs": 3941,
+        "exitCode": 0,
+        "startedAt": "2026-06-28T23:10:15.401Z",
+        "status": "succeeded",
+        "storeEmissionStatus": "emitted"
+      },
+      {
+        "observationId": "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:6b96cc092f6853be:2026-06-28T23:10:15.388Z",
+        "command": "pnpm exec nx run workspace:recipe-substrate-check --output-style=static",
+        "durationMs": 33191,
+        "exitCode": 0,
+        "startedAt": "2026-06-28T23:10:15.388Z",
+        "knownNxTarget": "workspace:recipe-substrate-check",
+        "targetId": "workspace:recipe-substrate-check",
+        "inferredRecipeId": "workspace.recipe-substrate-check",
+        "status": "succeeded",
+        "storeEmissionStatus": "emitted"
+      },
+      {
+        "observationId": "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:83a8b17e68a58aa6:2026-06-28T23:16:46.649Z",
+        "command": "pnpm exec trellis-ls fixes --project packages/trellis/language-service/tsconfig.json --format json",
+        "durationMs": 3526,
+        "exitCode": 0,
+        "startedAt": "2026-06-28T23:16:46.649Z",
+        "status": "succeeded",
+        "storeEmissionStatus": "emitted"
+      },
+      {
+        "observationId": "recipe-observation:tend-opencode.command-observation:measurement.command.observed:measurement:2026-06-28:db-first-opencode:83a8b17e68a58aa6:2026-06-28T23:18:15.781Z",
+        "command": "pnpm exec trellis-ls fixes --project packages/trellis/language-service/tsconfig.json --format json",
+        "durationMs": 3912,
+        "exitCode": 0,
+        "startedAt": "2026-06-28T23:18:15.781Z",
+        "status": "succeeded",
+        "storeEmissionStatus": "emitted"
+      }
+    ],
+    "traceInventoryObservationIds": [
+      "recipe-observation:tend-opencode.command-observation:measurement.trace.inventory.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:24.447Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.trace.inventory.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:50.144Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.trace.inventory.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:36.324Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.trace.inventory.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:31.760Z"
+    ],
+    "reportObservationIds": [
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.901Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.902Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.904Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.907Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.910Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.913Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.656Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.660Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.663Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.666Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.669Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.673Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.947Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.949Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.952Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.954Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.957Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.report.projected:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.958Z"
+    ],
+    "microExperimentObservationIds": [
+      "recipe-observation:tend-opencode.command-observation:measurement.micro-experiment.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.888Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.micro-experiment.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.640Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.micro-experiment.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.935Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.micro-experiment.summary:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:33.210Z"
+    ],
+    "microExperimentSummaries": [
+      {
+        "summarizedAt": "2026-06-28T23:09:25.890Z",
+        "task": "Analyze packages/trellis/language-service migration readiness for recipe-only source migration",
+        "baseline": {
+          "mode": "baseline",
+          "fileReads": 321,
+          "shellCommands": 18074,
+          "repeatedCommands": 18074,
+          "failedCommands": 1238,
+          "expensiveChecks": 412,
+          "workspacePolicyFastCount": 0,
+          "rawContextBytes": 0,
+          "tokenTotal": 0,
+          "toolCalls": 0,
+          "findingQuality": "candidate historical trace metadata only"
+        },
+        "treatment": {
+          "mode": "treatment",
+          "fileReads": 0,
+          "shellCommands": 0,
+          "repeatedCommands": 0,
+          "failedCommands": 0,
+          "expensiveChecks": 0,
+          "workspacePolicyFastCount": 0,
+          "rawContextBytes": 0,
+          "findingQuality": "missing trellis-ls diagnostic observation"
+        },
+        "comparison": {
+          "shellCommandDelta": -18074,
+          "repeatedCommandDelta": -18074,
+          "failedCommandDelta": -1238,
+          "expensiveCheckDelta": -412,
+          "rawContextByteDelta": 0,
+          "findingQualitySummary": "authored attune.package.ts debt: partial->not-measured; CLI-owned diagnostic/fix ontology: partial->not-measured; recipes not yet single authored declarations: partial->not-measured; missing repair coverage: partial->not-measured; trellis-ls as migration machine: miss->not-measured"
+        },
+        "findingQualityMatrix": [
+          {
+            "finding": "authored attune.package.ts debt",
+            "baseline": "partial",
+            "treatment": "not-measured",
+            "evidence": "No Trellis diagnostic observation was projected for this session."
+          },
+          {
+            "finding": "CLI-owned diagnostic/fix ontology",
+            "baseline": "partial",
+            "treatment": "not-measured",
+            "evidence": "Treatment diagnostics have not been stored yet."
+          },
+          {
+            "finding": "recipes not yet single authored declarations",
+            "baseline": "partial",
+            "treatment": "not-measured",
+            "evidence": "Recipe substrate check observation is missing."
+          },
+          {
+            "finding": "missing repair coverage",
+            "baseline": "partial",
+            "treatment": "not-measured",
+            "evidence": "Framework language-service command observations are missing."
+          },
+          {
+            "finding": "trellis-ls as migration machine",
+            "baseline": "miss",
+            "treatment": "not-measured",
+            "evidence": "No executable Trellis LS diagnostic observation was stored."
+          }
+        ],
+        "recommendation": {
+          "proceedToRecipeOnlyMigration": false,
+          "summary": "Do not start the heavy recipe-only migration until the DB-backed treatment evidence gaps are closed.",
+          "evidenceGaps": [
+            "Store a Trellis LS diagnostic observation for packages/trellis/language-service.",
+            "Observe framework-language-service:typecheck through tend-opencode observe in this measurement session.",
+            "Observe framework-language-service:test through tend-opencode observe in this measurement session.",
+            "Observe tend-opencode:test through tend-opencode observe in this measurement session.",
+            "Observe workspace:recipe-substrate-check through tend-opencode observe in this measurement session."
+          ]
+        }
+      },
+      {
+        "summarizedAt": "2026-06-28T23:12:51.643Z",
+        "task": "Analyze packages/trellis/language-service migration readiness for recipe-only source migration",
+        "baseline": {
+          "mode": "baseline",
+          "fileReads": 321,
+          "shellCommands": 18074,
+          "repeatedCommands": 18074,
+          "failedCommands": 1238,
+          "expensiveChecks": 412,
+          "workspacePolicyFastCount": 0,
+          "rawContextBytes": 0,
+          "tokenTotal": 0,
+          "toolCalls": 0,
+          "findingQuality": "candidate historical trace metadata only"
+        },
+        "treatment": {
+          "mode": "treatment",
+          "fileReads": 0,
+          "shellCommands": 5,
+          "repeatedCommands": 0,
+          "failedCommands": 0,
+          "expensiveChecks": 0,
+          "workspacePolicyFastCount": 0,
+          "rawContextBytes": 0,
+          "findingQuality": "diagnostic-observation-backed treatment"
+        },
+        "comparison": {
+          "shellCommandDelta": -18069,
+          "repeatedCommandDelta": -18074,
+          "failedCommandDelta": -1238,
+          "expensiveCheckDelta": -412,
+          "rawContextByteDelta": 0,
+          "findingQualitySummary": "authored attune.package.ts debt: partial->hit; CLI-owned diagnostic/fix ontology: partial->hit; recipes not yet single authored declarations: partial->partial; missing repair coverage: partial->partial; trellis-ls as migration machine: miss->hit"
+        },
+        "findingQualityMatrix": [
+          {
+            "finding": "authored attune.package.ts debt",
+            "baseline": "partial",
+            "treatment": "hit",
+            "evidence": "Trellis diagnostics were emitted into the framework observation store."
+          },
+          {
+            "finding": "CLI-owned diagnostic/fix ontology",
+            "baseline": "partial",
+            "treatment": "hit",
+            "evidence": "Trellis LS diagnostic summary is store-backed rather than private-ledger backed."
+          },
+          {
+            "finding": "recipes not yet single authored declarations",
+            "baseline": "partial",
+            "treatment": "partial",
+            "evidence": "Recipe substrate check command was observed in the treatment ladder."
+          },
+          {
+            "finding": "missing repair coverage",
+            "baseline": "partial",
+            "treatment": "partial",
+            "evidence": "Framework language-service checks were observed, but repair coverage still needs focused follow-up."
+          },
+          {
+            "finding": "trellis-ls as migration machine",
+            "baseline": "miss",
+            "treatment": "hit",
+            "evidence": "The executable Trellis LS path emitted a diagnostic summary into the shared sink."
+          }
+        ],
+        "recommendation": {
+          "proceedToRecipeOnlyMigration": false,
+          "summary": "Keep the heavy recipe-only migration paused until a human reviews the measured treatment result.",
+          "evidenceGaps": []
+        }
+      },
+      {
+        "summarizedAt": "2026-06-28T23:14:37.936Z",
+        "task": "Analyze packages/trellis/language-service migration readiness for recipe-only source migration",
+        "baseline": {
+          "mode": "baseline",
+          "fileReads": 321,
+          "shellCommands": 18074,
+          "repeatedCommands": 18074,
+          "failedCommands": 1238,
+          "expensiveChecks": 412,
+          "workspacePolicyFastCount": 0,
+          "rawContextBytes": 0,
+          "tokenTotal": 0,
+          "toolCalls": 0,
+          "findingQuality": "candidate historical trace metadata only"
+        },
+        "treatment": {
+          "mode": "treatment",
+          "fileReads": 0,
+          "shellCommands": 5,
+          "repeatedCommands": 0,
+          "failedCommands": 0,
+          "expensiveChecks": 0,
+          "workspacePolicyFastCount": 0,
+          "rawContextBytes": 0,
+          "findingQuality": "diagnostic-observation-backed treatment"
+        },
+        "comparison": {
+          "shellCommandDelta": -18069,
+          "repeatedCommandDelta": -18074,
+          "failedCommandDelta": -1238,
+          "expensiveCheckDelta": -412,
+          "rawContextByteDelta": 0,
+          "findingQualitySummary": "authored attune.package.ts debt: partial->hit; CLI-owned diagnostic/fix ontology: partial->hit; recipes not yet single authored declarations: partial->partial; missing repair coverage: partial->partial; trellis-ls as migration machine: miss->hit"
+        },
+        "findingQualityMatrix": [
+          {
+            "finding": "authored attune.package.ts debt",
+            "baseline": "partial",
+            "treatment": "hit",
+            "evidence": "Trellis diagnostics were emitted into the framework observation store."
+          },
+          {
+            "finding": "CLI-owned diagnostic/fix ontology",
+            "baseline": "partial",
+            "treatment": "hit",
+            "evidence": "Trellis LS diagnostic summary is store-backed rather than private-ledger backed."
+          },
+          {
+            "finding": "recipes not yet single authored declarations",
+            "baseline": "partial",
+            "treatment": "partial",
+            "evidence": "Recipe substrate check command was observed in the treatment ladder."
+          },
+          {
+            "finding": "missing repair coverage",
+            "baseline": "partial",
+            "treatment": "partial",
+            "evidence": "Framework language-service checks were observed, but repair coverage still needs focused follow-up."
+          },
+          {
+            "finding": "trellis-ls as migration machine",
+            "baseline": "miss",
+            "treatment": "hit",
+            "evidence": "The executable Trellis LS path emitted a diagnostic summary into the shared sink."
+          }
+        ],
+        "recommendation": {
+          "proceedToRecipeOnlyMigration": false,
+          "summary": "Keep the heavy recipe-only migration paused until a human reviews the measured treatment result.",
+          "evidenceGaps": []
+        }
+      },
+      {
+        "summarizedAt": "2026-06-28T23:18:33.212Z",
+        "task": "Analyze packages/trellis/language-service migration readiness for recipe-only source migration",
+        "baseline": {
+          "mode": "baseline",
+          "fileReads": 321,
+          "shellCommands": 18074,
+          "repeatedCommands": 18074,
+          "failedCommands": 1238,
+          "expensiveChecks": 412,
+          "workspacePolicyFastCount": 0,
+          "rawContextBytes": 0,
+          "tokenTotal": 0,
+          "toolCalls": 0,
+          "findingQuality": "candidate historical trace metadata only"
+        },
+        "treatment": {
+          "mode": "treatment",
+          "fileReads": 0,
+          "shellCommands": 7,
+          "repeatedCommands": 2,
+          "failedCommands": 0,
+          "expensiveChecks": 0,
+          "workspacePolicyFastCount": 0,
+          "rawContextBytes": 0,
+          "findingQuality": "diagnostic-observation-backed treatment"
+        },
+        "comparison": {
+          "shellCommandDelta": -18067,
+          "repeatedCommandDelta": -18072,
+          "failedCommandDelta": -1238,
+          "expensiveCheckDelta": -412,
+          "rawContextByteDelta": 0,
+          "findingQualitySummary": "authored attune.package.ts debt: partial->hit; CLI-owned diagnostic/fix ontology: partial->hit; recipes not yet single authored declarations: partial->partial; missing repair coverage: partial->partial; trellis-ls as migration machine: miss->hit"
+        },
+        "findingQualityMatrix": [
+          {
+            "finding": "authored attune.package.ts debt",
+            "baseline": "partial",
+            "treatment": "hit",
+            "evidence": "Trellis diagnostics were emitted into the framework observation store."
+          },
+          {
+            "finding": "CLI-owned diagnostic/fix ontology",
+            "baseline": "partial",
+            "treatment": "hit",
+            "evidence": "Trellis LS diagnostic summary is store-backed rather than private-ledger backed."
+          },
+          {
+            "finding": "recipes not yet single authored declarations",
+            "baseline": "partial",
+            "treatment": "partial",
+            "evidence": "Recipe substrate check command was observed in the treatment ladder."
+          },
+          {
+            "finding": "missing repair coverage",
+            "baseline": "partial",
+            "treatment": "partial",
+            "evidence": "Framework language-service checks were observed, but repair coverage still needs focused follow-up."
+          },
+          {
+            "finding": "trellis-ls as migration machine",
+            "baseline": "miss",
+            "treatment": "hit",
+            "evidence": "The executable Trellis LS path emitted a diagnostic summary into the shared sink."
+          }
+        ],
+        "recommendation": {
+          "proceedToRecipeOnlyMigration": false,
+          "summary": "Keep the heavy recipe-only migration paused until a human reviews the measured treatment result.",
+          "evidenceGaps": []
+        }
+      }
+    ],
+    "harnessProofObservationIds": [
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:24.472Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:09:25.862Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:50.168Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:12:51.604Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:36.347Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:14:37.899Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:31.784Z",
+      "recipe-observation:tend-opencode.command-observation:measurement.harness.proof:measurement:2026-06-28:db-first-opencode:2026-06-28T23:18:33.178Z"
+    ],
+    "lifecycleHealthObservationIds": [
+      "recipe-observation:framework-runtime.local-timescaledb:local-timescaledb.service-ready:2026-06-28T23:12:51.620Z",
+      "recipe-observation:framework-runtime.local-timescaledb:local-timescaledb.service-ready:2026-06-28T23:14:37.913Z",
+      "recipe-observation:framework-runtime.local-timescaledb:local-timescaledb.service-ready:2026-06-28T23:18:33.192Z"
+    ],
+    "trellisDiagnosticObservationIds": [
+      "recipe-observation:trellis-language-service.cli-observation-sink:trellis-language-service.diagnostic-run-summary:measurement:2026-06-28:db-first-opencode:packages-trellis-language-service-tsconfig.json:2026-06-28T23:10:19.290Z"
+    ],
+    "remainingGaps": []
+  }
+}

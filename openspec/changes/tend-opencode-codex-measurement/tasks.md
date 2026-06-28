@@ -1,75 +1,130 @@
-## 1. OpenSpec Setup And Measurement Surface
+## 1. OpenSpec Setup And DB-First Measurement Surface
 
-- [ ] 1.1 Review the `tend-opencode-codex-measurement` proposal, design, tasks, and six delta specs before implementation.
-- [ ] 1.2 Add the measurement runner, helpers, or Nx target needed to write local artifacts under `.attune/cache/measurement/`.
-- [ ] 1.3 Ensure `.attune/cache/measurement/` artifacts remain local cache output and are not treated as source truth.
-- [ ] 1.4 Implement or confirm the consolidated public measurement entrypoint supports `nix run .#tend-opencode -- observe --format json -- <command...>`.
-- [ ] 1.5 Add a compatibility/debt scan for legacy `attune-opencode` references in measurement docs, specs, scripts, and prior harness artifacts.
-- [ ] 1.6 Replace live measurement workflow references to `attune-opencode` with `tend-opencode`, preserving only explicit prior-history or removal-debt notes.
+- [x] 1.1 Review the updated `tend-opencode-codex-measurement` proposal, design, tasks, and delta specs before implementation.
+- [x] 1.2 Keep the existing change in place; do not create a separate Tend-owned DB lifecycle proposal.
+- [x] 1.3 Keep `nix run .#tend-opencode -- observe --format json -- <command...>` as the public observation producer entrypoint.
+- [x] 1.4 Treat `.attune/cache/measurement/*` as generated export/projection output only, never durable source truth.
+- [x] 1.5 Add a compatibility/debt scan for legacy `attune-opencode` references in measurement docs, specs, scripts, and prior harness artifacts.
+- [x] 1.6 Replace live measurement workflow references to `attune-opencode` with `tend-opencode`, preserving only explicit prior-history or removal-debt notes.
 
-## 2. Harness Proof Gate
+## 2. Framework Local Store
 
-- [ ] 2.1 Run `nix run .#tend-opencode -- fingerprint --format json`.
-- [ ] 2.2 Run `nix run .#tend-opencode -- run-harness-test --format json`.
-- [ ] 2.3 Run `nix run .#tend-opencode -- debug info`.
-- [ ] 2.4 Run `nix run .#tend-opencode -- doctor --format json`.
-- [ ] 2.5 Store sanitized preflight outputs under `.attune/cache/measurement/opencode/`.
-- [ ] 2.6 Fail the measurement if `runtime.flakeProvided`, `runtime.runtimeKind`, plugin suite loading, upstream plugin visibility, hook exercise, or privacy proof is incomplete.
-- [ ] 2.7 Record any preflight failure as a sanitized proof-gap report without raw prompt, conversation, or private trace text.
+- [x] 2.1 Extend the existing `framework-runtime.local-timescaledb` / `LocalTimescaleRecipe` ManagedRecipe as the framework-owned local recipe store lifecycle surface.
+- [x] 2.2 Add lifecycle actions for plan, apply/start, check, migrate, validate-sql, stop, and reviewed prune/destroy behavior.
+- [x] 2.3 Use the existing framework-runtime `db:*` Nx target family as the smallest lifecycle command shape that fits current executor conventions.
+- [x] 2.4 Route lifecycle through existing framework/runtime lifecycle substrate or the Effect Alchemy bridge shape; do not invent a new lifecycle runtime.
+- [x] 2.5 Add or refine the persistent devshell state path under `.attune/state/local-timescaledb/`.
+- [x] 2.6 Ensure `.attune/state/` is ignored.
+- [x] 2.7 Expose `ATTUNE_RECIPE_STORE_URL`, `ATTUNE_LOCAL_RECIPE_STORE_DATA_DIR`, and `ATTUNE_RECIPE_STORE_MODE` in the devshell.
+- [x] 2.8 Keep store startup explicit; entering the devshell must not start the store automatically.
+- [x] 2.9 Replace `/tmp/attune-pgdata` durable defaults with repo-local persistent state for devshell mode.
+- [x] 2.10 Add lifecycle receipts and observations for plan/apply/check/migrate/validate-sql/stop/prune outcomes.
 
-## 3. Command Ladder Benchmark
+## 3. Store Emission
 
-- [ ] 3.1 Observe `pnpm exec nx run framework-language-service:typecheck --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
-- [ ] 3.2 Observe `pnpm exec nx run framework-language-service:test --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
-- [ ] 3.3 Observe `pnpm exec nx run tend-opencode:test --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
-- [ ] 3.4 Observe `pnpm exec nx run workspace:recipe-substrate-check --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
-- [ ] 3.5 Observe `pnpm exec nx run workspace:policy-fast --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
-- [ ] 3.6 Store command observation JSON under `.attune/cache/measurement/commands/` with `rawOutputStored: false`.
-- [ ] 3.7 Produce `.attune/cache/measurement/reports/command-ladder.md`.
-- [ ] 3.8 Classify commands as cheap, medium, expensive, or final-gate and summarize repeated, failed, workspace-wide, and expensive command patterns.
+- [x] 3.1 Add or refine a framework observation sink backed by `RecipeReceiptStore` / `PostgresRecipeReceiptStore` / a typed runtime DB boundary.
+- [x] 3.2 Add measurement session identity helpers outside Tend-only code.
+- [x] 3.3 Add observation payload schemas for harness proof, command observation, trace inventory summary, micro-experiment summary, lifecycle health, and report projection.
+- [x] 3.4 Add generic observation kinds: `measurement.session.started`, `measurement.session.completed`, `measurement.harness.proof`, `measurement.command.observed`, `measurement.trace.inventory.summary`, `measurement.micro-experiment.summary`, and `measurement.report.projected`.
+- [x] 3.5 Add an in-memory fallback for tests.
+- [x] 3.6 Add the Postgres-backed implementation through the runtime DB boundary.
+- [x] 3.7 Ensure producer code does not import raw `pg` or write ad hoc SQL outside framework/runtime store services.
+- [x] 3.8 Extend SQL route validation for measurement observation insert/query paths.
 
-## 4. Historical Codex Trace Inventory
+## 4. Measurement Preflight
 
-- [ ] 4.1 Locate SQLite databases under `~/.codex` without mutating or deleting any files.
-- [ ] 4.2 Locate JSONL traces under `~/.codex` and local session artifact locations without dumping raw contents.
-- [ ] 4.3 Inspect SQLite schemas safely and identify only metadata columns that match the allowlist.
-- [ ] 4.4 Extract Attune-related command, duration, exit-code, timestamp, session/model ID, token-count, tool-call, task-label, and repeated-command metadata when available.
-- [ ] 4.5 Skip ambiguous prompt, message, content, text, secret, token-value, and raw payload fields.
-- [ ] 4.6 Produce `.attune/cache/measurement/reports/historical-baseline.md` with sanitized historical command-discipline findings.
+- [x] 4.1 Run `nix run .#tend-opencode -- fingerprint --format json`.
+- [x] 4.2 Run `nix run .#tend-opencode -- run-harness-test --format json`.
+- [x] 4.3 Confirm both basic harness proof commands work without DB.
+- [x] 4.4 For full measurement, after harness proof, check framework-runtime local store reachability, migration state, SQL route validity, and observation insert/query health.
+- [x] 4.5 Start the measurement session only after harness proof, store health, and observation smoke check pass.
+- [x] 4.6 Refuse full measurement without a healthy framework store unless dry-run/export-only mode is explicit.
+- [x] 4.7 Store sanitized preflight exports under `.attune/cache/measurement/opencode/` as projections from the framework store, with DB-backed observations as source truth by default.
+- [x] 4.8 Record preflight failures as sanitized proof-gap observations and reports without raw prompt, conversation, secret, trace, or full command output.
 
-## 5. External Harness Probe
+## 5. Tend/OpenCode Producer Integration
 
-- [ ] 5.1 From Codex, run deterministic `tend-opencode` harness commands as subprocesses from the Attune checkout.
-- [ ] 5.2 Confirm the observed subprocesses are flake-installed `tend-opencode` executions and not global OpenCode invocations.
-- [ ] 5.3 Confirm Codex can orchestrate `tend-opencode` without assuming shared internal session state.
-- [ ] 5.4 Avoid uncontrolled nested model sessions and external LLM calls during deterministic probe tasks.
-- [ ] 5.5 Record safe OpenCode debug, doctor, and probe output under `.attune/cache/measurement/opencode/`.
+- [x] 5.1 Update `tend-opencode` to emit observations to the configured framework store automatically by default.
+- [x] 5.2 Ensure `tend-opencode` does not administer the DB lifecycle.
+- [x] 5.3 Ensure no `tend-opencode db up`, `db down`, `db migrate`, or `db validate` lifecycle commands are added.
+- [x] 5.4 Ensure basic `fingerprint` and `run-harness-test` work without DB.
+- [x] 5.5 Ensure full measurement refuses to proceed without healthy framework store unless dry-run/export-only mode is explicit.
+- [x] 5.6 Ensure command observation output includes store emission status and observation ID.
+- [x] 5.7 Ensure command observation payloads include command, argv, cwd, startedAt, completedAt, durationMs, exitCode, bounded stdout summary, bounded stderr summary, inferred Nx target, inferred recipe ID when available, measurement session ID when available, and `rawOutputStored: false`.
+- [x] 5.8 Ensure command observation payloads never store full stdout, full stderr, raw prompts, full conversations, secrets, raw trace dumps, or ambiguous private text payloads.
 
-## 6. Controlled Micro-Experiment
+## 6. Trellis LS / Nx Producer Alignment
 
-- [ ] 6.1 Run the Codex-alone baseline analysis task: analyze `packages/trellis/language-service` and report what remains before it can dogfood recipe-only source migration, without editing files.
-- [ ] 6.2 Measure baseline file reads, shell commands, repeated commands, failed commands, expensive checks, wall time, `workspace:policy-fast` count, and finding quality.
-- [ ] 6.3 Run the treatment preflight with `tend-opencode` fingerprint and harness self-test before treatment analysis.
-- [ ] 6.4 Run `nix run .#tend-opencode -- observe --format json -- trellis-ls diagnostics --project packages/trellis/language-service/tsconfig.json --format json`.
-- [ ] 6.5 In treatment mode, prefer the Trellis diagnostics, fixes, `apply --mode diff`, and check ladder before broad manual file inspection.
-- [ ] 6.6 Record every expensive treatment validation command through Tend command observation.
-- [ ] 6.7 Compare baseline and treatment metrics, including total shell commands, repeated commands, failed commands, expensive checks, `workspace:policy-fast` count, time to useful diagnostic, token/context metrics when available, and raw context use.
-- [ ] 6.8 Compare finding quality against expected migration findings for authored `attune.package.ts` debt, CLI-owned diagnostic/fix ontology, recipes not yet being the single authored declaration, missing repair coverage, and `trellis-ls` becoming the migration machine.
+- [x] 6.1 Ensure `trellis-ls` can use the same observation sink when configured.
+- [x] 6.2 Ensure observed Nx commands link to inferred recipe IDs and target IDs when available.
+- [x] 6.3 Ensure Nx/toolchain validation can emit command and diagnostic observations through the shared sink.
+- [x] 6.4 Avoid LS-specific or Tend-specific durable ledgers.
 
-## 7. Reports And AGENTS Draft
+## 7. Command Ladder Benchmark
 
-- [ ] 7.1 Produce `.attune/cache/measurement/reports/codex-opencode-micro-experiment.md`.
-- [ ] 7.2 Produce `.attune/cache/measurement/reports/tend-opencode-measurement-report.md`.
-- [ ] 7.3 Produce `.attune/cache/measurement/reports/AGENTS.proposed.md`.
-- [ ] 7.4 Recommend whether to proceed to the heavy recipe-only LS-guided migration.
-- [ ] 7.5 List remaining measurement gaps and the smallest follow-up needed for each gap.
-- [ ] 7.6 Keep all reports sanitized and free of raw prompts, full conversations, secrets, raw private traces, and full command transcripts.
+- [x] 7.1 Observe `pnpm exec nx run framework-language-service:typecheck --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
+- [x] 7.2 Observe `pnpm exec nx run framework-language-service:test --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
+- [x] 7.3 Observe `pnpm exec nx run tend-opencode:test --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
+- [x] 7.4 Observe `pnpm exec nx run workspace:recipe-substrate-check --output-style=static` through `nix run .#tend-opencode -- observe --format json -- ...`.
+- [x] 7.5 Record that `workspace:policy-fast` was intentionally excluded from this measured command ladder and was not run as an end-of-change validation.
+- [x] 7.6 Store command observations in the framework store and write cache JSON under `.attune/cache/measurement/commands/` only as exports.
+- [x] 7.7 Produce `reports/tend-opencode-codex-measurement/command-ladder.md` by querying DB-backed observations for the measurement session.
+- [x] 7.8 Classify commands as cheap, medium, expensive, or final-gate and summarize repeated, failed, workspace-wide, and expensive command patterns.
 
-## 8. Validation
+## 8. Historical Codex Trace Inventory
 
-- [ ] 8.1 Run `pnpm exec nx run tend-opencode:test --output-style=static`.
-- [ ] 8.2 Run `pnpm exec nx run tend-core:test --output-style=static`.
-- [ ] 8.3 Run `pnpm exec nx run tend-token-audit:test --output-style=static`.
-- [ ] 8.4 Run `pnpm exec nx run framework-language-service:test --output-style=static`.
-- [ ] 8.5 Run `openspec validate tend-opencode-codex-measurement --strict`.
-- [ ] 8.6 Run `pnpm exec nx run workspace:policy-fast --output-style=static` once near the end unless measuring it is the explicit task.
+- [x] 8.1 Locate SQLite databases under `~/.codex` without mutating or deleting any files.
+- [x] 8.2 Locate JSONL traces under `~/.codex` and local session artifact locations without dumping raw contents.
+- [x] 8.3 Inspect SQLite schemas safely and identify only metadata columns that match the allowlist.
+- [x] 8.4 Extract Attune-related command, duration, exit-code, timestamp, non-sensitive session/model ID, token-count, tool-call, task-label, and repeated-command metadata when available.
+- [x] 8.5 Skip ambiguous prompt, message, content, text, secret, token-value, and raw payload fields.
+- [x] 8.6 Emit sanitized aggregate trace inventory observations into the framework store.
+- [x] 8.7 Produce `reports/tend-opencode-codex-measurement/historical-baseline.md` as a projection from stored observations.
+
+## 9. Controlled Micro-Experiment
+
+- [x] 9.1 Run the Codex-alone baseline analysis task: analyze `packages/trellis/language-service` and report what remains before it can dogfood recipe-only source migration, without editing files.
+- [x] 9.2 Store baseline metrics as measurement observations: file reads, shell commands, repeated commands, failed commands, expensive checks, wall time, `workspace:policy-fast` count when measured, and finding quality.
+- [x] 9.3 Run treatment only after harness proof passes, framework local store is healthy, a measurement session observation is created, a Trellis LS diagnostic observation is stored, and expensive validation command observations are stored.
+- [x] 9.4 Run `nix run .#tend-opencode -- observe --format json -- pnpm exec trellis-ls diagnostics --project packages/trellis/language-service/tsconfig.json --format json`.
+- [x] 9.5 In treatment mode, prefer the Trellis diagnostics, fixes, `apply --mode diff`, and check ladder before broad manual file inspection.
+- [x] 9.6 Record every expensive treatment validation command through Tend command observation and the shared framework observation sink.
+- [x] 9.7 Compare baseline and treatment metrics, including total shell commands, repeated commands, failed commands, expensive checks, `workspace:policy-fast` count when measured, time to useful diagnostic, token/context metrics when available, and raw context use.
+- [x] 9.8 Compare finding quality against expected migration findings for authored `attune.package.ts` debt, CLI-owned diagnostic/fix ontology, recipes not yet being the single authored declaration, missing repair coverage, and `trellis-ls` becoming the migration machine.
+
+## 10. Report Projection
+
+- [x] 10.1 Add typed query/read-model helpers for measurement report projection.
+- [x] 10.2 Generate markdown/JSON reports from DB observations.
+- [x] 10.3 Treat `.attune/cache/measurement/*` as export/cache output only.
+- [x] 10.4 Produce `reports/tend-opencode-codex-measurement/codex-opencode-micro-experiment.md`.
+- [x] 10.5 Produce `reports/tend-opencode-codex-measurement/tend-opencode-measurement-report.md`.
+- [x] 10.6 Produce `reports/tend-opencode-codex-measurement/AGENTS.proposed.md`.
+- [x] 10.7 Record report projection observations in the framework store.
+- [x] 10.8 Recommend whether to proceed to the heavy recipe-only LS-guided migration.
+- [x] 10.9 List remaining measurement gaps and the smallest follow-up needed for each gap.
+- [x] 10.10 Keep all reports sanitized and free of raw prompts, full conversations, secrets, raw private traces, and full command transcripts.
+
+## 11. Measurement Spec Rewrite
+
+- [x] 11.1 Update all six existing measurement delta specs to be DB-first.
+- [x] 11.2 Keep cache files as optional exports.
+- [x] 11.3 Add framework store health to measurement preflight.
+- [x] 11.4 Keep privacy guardrails.
+- [x] 11.5 Keep public entrypoint `tend-opencode`.
+- [x] 11.6 Remove live measurement workflow references to `attune-opencode`.
+
+## 12. Validation
+
+- [x] 12.1 Run `pnpm exec nx run framework-runtime:test --output-style=static`.
+- [x] 12.2 Run `pnpm exec nx run framework-runtime:db:validate-sql --output-style=static`.
+- [x] 12.3 Run `pnpm exec nx run framework-protocol:test --output-style=static`.
+- [x] 12.4 Run `pnpm exec nx run tend-opencode:test --output-style=static`.
+- [x] 12.5 Run `pnpm exec nx run tend-core:test --output-style=static`.
+- [x] 12.6 Run `pnpm exec nx run tend-db:test --output-style=static`.
+- [x] 12.7 Run `pnpm exec nx run tend-token-audit:test --output-style=static`.
+- [x] 12.8 Run `pnpm exec nx run framework-language-service:test --output-style=static`.
+- [x] 12.9 Run `pnpm exec nx run workspace:recipe-substrate-check --output-style=static`.
+- [x] 12.10 Run `openspec validate tend-opencode-codex-measurement --strict`.
+- [x] 12.11 If live DB validation is available, run the guarded integration path and record it; otherwise report the exact command skipped and residual risk.
+- [x] 12.12 Do not run `workspace:policy-fast` as an end-of-change validation for this change unless a later human instruction explicitly requests it.
