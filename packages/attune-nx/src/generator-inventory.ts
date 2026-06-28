@@ -6,7 +6,7 @@ export type GeneratorMigrationCapability =
   | "observation-plan"
   | "worker-observation-module"
   | "no-checked-in-report-policy"
-  | "artifact-provenance"
+  | "recipe-receipt-provenance"
   | "sync-registry"
 
 export type GeneratorMigrationStatus =
@@ -65,7 +65,7 @@ export const phase2GeneratorGapMap = [
       "symbol schema slots",
       "symbol-kind metadata",
       "service layer registration",
-      "artifact provenance for generated service files",
+      "recipe receipt provenance for generated service files",
     ],
   },
   {
@@ -77,7 +77,7 @@ export const phase2GeneratorGapMap = [
       "src/attune.package.ts",
       "Effect Schema-backed ProjectFacts",
       "program symbol scaffold",
-      "generated artifact provenance",
+      "generated recipe receipt provenance",
     ],
   },
   {
@@ -155,7 +155,7 @@ export const attuneNxGeneratorInventory = [
     migrationCapabilities: {
       "atom-view": "needs-extension",
       "project-facts": "missing",
-      "artifact-provenance": "missing",
+      "recipe-receipt-provenance": "missing",
     },
     phase2Owner: ["atom-view-generator-agent", "project-facts-generator-agent"],
   },
@@ -170,14 +170,14 @@ export const attuneNxGeneratorInventory = [
       "symbol schema slots and symbol metadata",
       "ProjectLayer and ProjectTestLayer exports",
       "barrel export",
-      "artifact provenance",
+      "recipe receipt provenance",
     ],
     migrationCapabilities: {
       "effect-service": "present",
       "project-facts": "needs-extension",
       "symbol-registry": "missing",
       "observation-plan": "missing",
-      "artifact-provenance": "present",
+      "recipe-receipt-provenance": "present",
     },
     phase2Owner: ["effect-service-generator-agent"],
   },
@@ -196,7 +196,7 @@ export const attuneNxGeneratorInventory = [
       "ProgramObservationPlan",
       "worker-compatible observation module",
       "no checked-in report policy",
-      "artifact provenance",
+      "recipe receipt provenance",
     ],
     migrationCapabilities: {
       "project-facts": "present",
@@ -204,7 +204,7 @@ export const attuneNxGeneratorInventory = [
       "observation-plan": "present",
       "worker-observation-module": "present",
       "no-checked-in-report-policy": "present",
-      "artifact-provenance": "present",
+      "recipe-receipt-provenance": "present",
       "atom-view": "needs-extension",
     },
     phase2Owner: [
@@ -224,11 +224,11 @@ export const attuneNxGeneratorInventory = [
       "derived atom shell",
       "project atom shell",
       "runtime edge registration",
-      "artifact provenance",
+      "recipe receipt provenance",
     ],
     migrationCapabilities: {
       "atom-view": "present",
-      "artifact-provenance": "present",
+      "recipe-receipt-provenance": "present",
       "project-facts": "needs-extension",
     },
     phase2Owner: ["atom-view-generator-agent"],
@@ -247,7 +247,7 @@ export const attuneNxGeneratorInventory = [
     migrationCapabilities: {
       "project-facts": "missing",
       "observation-plan": "missing",
-      "artifact-provenance": "missing",
+      "recipe-receipt-provenance": "missing",
     },
     phase2Owner: ["project-facts-generator-agent"],
   },
@@ -265,7 +265,7 @@ export const attuneNxGeneratorInventory = [
     migrationCapabilities: {
       "project-facts": "missing",
       "observation-plan": "missing",
-      "artifact-provenance": "missing",
+      "recipe-receipt-provenance": "missing",
     },
     phase2Owner: ["project-facts-generator-agent"],
   },
@@ -279,7 +279,7 @@ export const attuneNxGeneratorInventory = [
     migrationCapabilities: {
       "project-facts": "missing",
       "atom-view": "missing",
-      "artifact-provenance": "missing",
+      "recipe-receipt-provenance": "missing",
     },
     phase2Owner: ["project-facts-generator-agent", "atom-view-generator-agent"],
   },

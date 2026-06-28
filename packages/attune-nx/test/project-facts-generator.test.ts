@@ -155,11 +155,6 @@ describe("@attune/nx project-facts generator", () => {
     const facts =
       tree.files.get("framework/oxlint-policy/src/attune.package.ts") ??
       ""
-    const shard = JSON.parse(
-      tree.files.get(
-        "framework/oxlint-policy/attune.artifact-ownership.json",
-      ) ?? "{}",
-    )
 
     expect(facts).toContain('kind: "policy-plugin"')
     expect(facts).toContain('kind: "policy-rule"')
@@ -167,47 +162,8 @@ describe("@attune/nx project-facts generator", () => {
     expect(facts).toContain("ProgramSymbolAccessors")
     expect(facts).not.toContain("PackageLayer")
     expect(facts).not.toContain("definePackageContract")
-    expect(shard).toMatchObject({
-      schemaVersion: 1,
-      project: "effect-oxlint-policy",
-      projectRoot: "framework/oxlint-policy",
-    })
-    expect(shard.entries[0]).toMatchObject({
-      generatorName: "@attune/nx:project-facts",
-      owningProject: "effect-oxlint-policy",
-      sourceShapeKind: "project-facts",
-      options: {
-        directory: "framework/oxlint-policy/src",
-        owningProject: "effect-oxlint-policy",
-        projectId: "effect-oxlint-policy",
-        projectKind: "policy-plugin",
-        sourceRoot: "framework/oxlint-policy",
-        symbolId: "scan-effect-policy",
-        symbolKind: "policy-rule",
-      },
-      ownedFiles: [
-        "framework/oxlint-policy/src/attune.package.ts",
-        "framework/oxlint-policy/src/attune.project-facts.generated.ts",
-        "framework/oxlint-policy/src/attune.project-observations.ts",
-      ],
-      syncTargets: [
-        {
-          project: "effect-oxlint-policy",
-          target: "sync-project-facts",
-        },
-      ],
-      checkTargets: [
-        {
-          project: "effect-oxlint-policy",
-          target: "typecheck",
-        },
-        {
-          project: "workspace",
-          target: "attune-check",
-        },
-      ],
-      openspecChangeId: "promote-program-index-runtime-substrate",
-    })
+    expect(tree.files.has("framework/oxlint-policy/attune.artifact-ownership.json")).toBe(false)
+    expect(tree.files.has("attune.artifact-ownership.index.json")).toBe(false)
   })
 
   it("emits deterministic output for the same project facts options", () => {
@@ -228,8 +184,6 @@ describe("@attune/nx project-facts generator", () => {
     projectFactsGenerator(second, options)
 
     expect([...second.files.keys()].sort()).toEqual([
-      "attune.artifact-ownership.index.json",
-      "packages/home-deployment/attune.artifact-ownership.json",
       "packages/home-deployment/src/attune.package.ts",
       "packages/home-deployment/src/attune.project-facts.generated.ts",
       "packages/home-deployment/src/attune.project-observations.ts",

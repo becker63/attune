@@ -1,7 +1,14 @@
-**Status:** updated technical architecture spec  
+**Status:** historical v0 product architecture context; ARS clean-fork substrate migration is the active source of truth
 **Primary stack:** Effect, Effect Experimental EventLog/EventGroup, Effect Experimental Reactivity, Drizzle/Postgres, `effect-atom`, Nx, CocoIndex, Pi, Joern, FoldKit
 **Optional adapters:** FoldKit DevTools/OpenAPI/MCP adapters may inspect framework diagnostic/query projections, but they are not the core Attune Framework workflow surface.
 **Purpose:** give an implementation agent enough structure to build the first real vertical slice without rediscovering the architecture.
+
+> ARS note: Drizzle/Postgres language in this v0 product document is retained
+> as historical product-loop context. Active durable substrate work now flows
+> through Recipe/ManagedRecipe, Effect Alchemy lifecycle, local
+> TimescaleDB/Postgres, Kanel, Kysely, SafeQL, and Tend/OpenCode recipe
+> receipts as specified in
+> `openspec/changes/arbor-recipe-substrate-migration`.
 
 ---
 

@@ -2,91 +2,112 @@
 
 ## Why
 
-Attune has too many active OpenSpec planning surfaces describing overlapping parts of the same migration: program-index substrate work, package check/repair, TimescaleDB/Postgres migration, Tend/OpenCode control, Trellis agent guidance, Effect Alchemy lifecycle, Joern/fuzzer proof work, Dispatch/FoldKit product surfaces, and Linear work-ledger planning.
+The previous ARS planning surface drifted from an overnight architecture
+migration into a claim about finishing large product loops. That made the change
+too broad to execute safely and too easy to mark complete from planning prose.
 
-The durable architecture has compressed around one smaller primitive:
-
-```text
-Framework is a typed recipe graph over Effect and Alchemy, projected into Nx/Nix for execution and into TimescaleDB/Postgres for receipts, diagnostics, repair, health, and agent/editor legibility.
-```
-
-This change replaces the old program-index-first planning ontology with a Recipe/ManagedRecipe substrate. Program facts still exist, but they are recipe inputs, outputs, observations, receipts, diagnostics, repairs, health views, and projections rather than the top-level architecture.
+ARS is now scoped to one concrete migration: make Recipe/ManagedRecipe, Effect
+Alchemy lifecycle, local TimescaleDB/Postgres, Kanel/Kysely/SafeQL, and
+Tend/OpenCode token control the new architecture substrate for Attune.
 
 ## What Changes
 
-This change creates the single active migration plan for the workstream:
+- Recipe and ManagedRecipe become the framework architecture substrate for
+  derivation, lifecycle, diagnostics, repair, health, and receipts.
+- Effect Alchemy owns stateful ManagedRecipe lifecycle semantics:
+  plan, apply/run, check, destroy/prune, observed state, drift diagnostics,
+  repair plans, and receipts.
+- Local TimescaleDB/Postgres becomes the durable recipe/control substrate for
+  receipt, diagnostic, repair, health, migration, and Tend data.
+- The SQL route is explicit and implementation-bound:
 
-```text
-openspec/changes/arbor-recipe-substrate-migration/
-```
+  ```text
+  SQL migrations
+    -> TimescaleDB/Postgres
+    -> Kanel schema type generation
+    -> Kysely typed query services
+    -> SafeQL raw SQL validation
+    -> Effect service exports
+  ```
 
-The migration defines:
+- Tend/OpenCode consumes recipe receipts and observations for long-job
+  tracking, Magic Context decisions, RTK compression packets, wakeup/resume
+  packets, and token audit reports.
+- Existing packages are migrated so their domain declarations are recipe-shaped
+  without requiring full product implementation behind every recipe.
+- Legacy program-index-first, SQLite/Drizzle/PgTyped, package-local generated
+  companion, and artifact-ownership lanes are removed, archived, or explicitly
+  quarantined rather than maintained as live compatibility inputs.
 
-- `Recipe`: typed input -> Effect execution -> typed output, with dependencies, receipt, diagnostics, repair, and health.
-- `ManagedRecipe`: a Recipe with lifecycle/state semantics: plan, apply/run, check, destroy/prune, observed state, and drift repair.
-- `Receipt`: durable evidence that a recipe ran, what it saw, what it produced, and how it ended.
-- `Diagnostic`: typed health or validation finding derived from recipe facts and receipts.
-- `Repair`: a typed action proposal derived from diagnostics and planner state.
-- `Health`: the read-side explanation of clean, stale, failed, blocked, drifted, or superseded state.
-- `Planner`: effectful service that reads the world.
-- `Runner`: effectful service that changes the world.
-- `Trellis`: a recipe-aware LSP/MCP/editor-agent companion.
+**BREAKING**: ARS stops treating the legacy program-index ontology and
+SQLite/Drizzle/PgTyped route as active substrate truth. They may remain only as
+historical context, quarantine, archive, or temporary fixture code with a clear
+removal path.
 
-Effect runs recipes. Alchemy manages lifecycle recipes. Nx schedules recipes. Nix supplies tools and runtime closures. TimescaleDB/Postgres records receipts and history. Trellis exposes recipe legibility to agents/editors. Tend controls agent execution and token discipline.
+## Hard Non-Goals
 
-## Scope
+ARS does not complete:
 
-In scope:
+- the full Attune Discovery product loop,
+- the full FoldKit workbench product or UI,
+- a full Canopy production deployment or live Kubernetes apply,
+- the full Joern proof catalog,
+- long fuzzer or container proof campaigns,
+- a public SaaS/discovery product surface,
+- marketing/reporting polish,
+- production rollout of every deferred product idea.
 
-- Consolidate all active migration OpenSpec changes into this one normal change.
-- Rewrite old program-index, package-surface, Tend, Trellis, Alchemy, Joern/fuzzer, Dispatch/FoldKit, Canopy, TimescaleDB, and Linear planning through Recipe/ManagedRecipe language.
-- Preserve old task and issue intent in this change's `tasks.md`.
-- Migrate existing Linear references into final ARS task references without treating Linear as runtime truth.
-- Delete superseded active OpenSpec change folders after their content is represented here.
-- Remove compatibility-maintenance lanes for old program-index/generated-companion/artifact-ownership surfaces; old surfaces may be deleted, quarantined, archived, or replaced, but not adapted as live inputs.
+Those become separate follow-up specs or tasks when needed, such as:
 
-Out of scope:
+- `attune-product-loop-followup`,
+- `canopy-live-deployment-followup`,
+- `joern-proof-catalog-followup`,
+- `foldkit-product-surface-followup`.
 
-- Package implementation source changes.
-- Compatibility adapters for superseded program-index-first, SQLite/Drizzle/PgTyped, generated companion, or artifact ownership surfaces.
-- Physical package moves.
-- DB migration SQL implementation.
-- Tend runtime implementation.
-- Trellis LSP implementation.
-- Alchemy provider implementation.
-- Expensive fuzzer/container/proof workloads.
-- Generated artifact mutation.
+Expressing a domain as recipes is in scope. Implementing the entire product
+behavior behind those recipes is out of scope unless a narrow substrate
+validation slice requires it.
 
-## Simplicity For A Single Developer
+## Capabilities
 
-The new substrate reduces the mental model from many bespoke ontologies to one reusable loop:
+### New Capabilities
 
-```text
-declare Recipe
-project with fromRecipe
-plan against current world
-run through Effect/Nx/Nix
-write receipts
-derive diagnostics, repairs, and health
-surface through Trellis, Tend, reports, and Linear
-```
+- `arbor-recipe-substrate-migration`: Defines the narrowed ARS architecture
+  migration from legacy program-index substrate lanes to Recipe/ManagedRecipe,
+  Effect Alchemy lifecycle, local TimescaleDB/Postgres with
+  Kanel/Kysely/SafeQL, and Tend/OpenCode token-control over recipe receipts.
 
-The language service becomes feasible because it only needs to understand declaration, input/output, ownership, receipt, diagnostic, repair, and health semantics. Domain packages can stay small and source-facing while framework services own cache, receipt, and projection materialization.
+### Modified Capabilities
 
-## Supersession Intent
+- None.
 
-All old active OpenSpec changes feeding this migration are superseded by this change once validation passes. Their durable intent is preserved in this proposal, `design.md`, `tasks.md`, and the single delta spec. Their folders are deleted so the repository does not keep parallel active plans.
+## Success Shape
 
-Linear remains an external human projection target. It may mirror tasks, comments, PR links, and validation evidence, but it is not a DB domain and it is not implementation truth.
+A clean ARS codebase means:
 
-## Success Criteria
+- package domain declarations are recipe-shaped,
+- stateful resources use ManagedRecipe plus Effect Alchemy lifecycle semantics,
+- local TimescaleDB/Postgres is managed through the kernel lifecycle,
+- migrations, Kanel, Kysely, SafeQL, and Effect service exports form one SQL
+  route,
+- Tend consumes recipe receipts and observations instead of inventing a
+  parallel ontology,
+- Nx/Nix/Arion expose public execution surfaces as projections of recipes and
+  ManagedRecipes,
+- old substrate lanes are removed, archived, or explicitly quarantined,
+- product loop, full UI, full Canopy live deployment, full Joern proof catalog,
+  and long fuzzer campaigns remain separate follow-up work.
 
-- `arbor-recipe-substrate-migration` is the only active migration OpenSpec change for this workstream.
-- The final change defines Recipe, ManagedRecipe, Receipt, Diagnostic, Repair, Health, Planner, Runner, and Trellis/LSP integration.
-- Effect Alchemy is defined as the lifecycle/state substrate for ManagedRecipe.
-- Nx, Nix/Arion, TimescaleDB/Postgres, Kanel, Kysely, SafeQL, and Effect services are placed around Recipe.
-- The old program-index-first ontology is replaced by recipe-backed program facts and recipe projections.
-- No compatibility row/materializer/adapter lane is maintained for superseded generated companions, artifact ownership shards, SQLite/Drizzle/PgTyped paths, or program-index-first ontology.
-- Existing Linear issue references are represented in final ARS task blocks and projected externally where connector access permits.
-- No package implementation source is changed by the bootstrap consolidation.
-- Superseded old OpenSpec change folders and the bootstrap artifact are deleted after validation.
+ARS is successful when the architecture migration is implemented and validated.
+It must not claim the broader Attune product is finished.
+
+## Impact
+
+Affected surfaces include framework protocol/runtime/testing/language-service
+recipe APIs, local DB lifecycle and SQL tooling, Nx/Nix/Arion recipe execution
+projection, package recipe declarations, Tend/OpenCode token-control modules,
+and documentation or policy that still treats legacy substrate lanes as active.
+
+No package or framework source is changed by this spec-surgery pass. Subsequent
+implementation phases must stay inside the ownership boundaries and validation
+commands recorded in `tasks.md`.

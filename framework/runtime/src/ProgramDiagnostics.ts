@@ -1,10 +1,8 @@
 import { Context, Effect, Layer } from "effect"
 import type { ProgramDiagnostic } from "@attune/framework-protocol"
-import { ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
 import { ProgramFactQuery, type ProgramFactQueryApi } from "./ProgramFactQuery.js"
 import { diagnosticFromQueryError, type ProgramFactQueryError } from "./ProgramFactStore.js"
-import { programIndexDiagnosticsForFile } from "./ProgramIndexProjection.js"
 
 export interface ProgramDiagnosticsApi {
   readonly diagnosticsForFile: (
@@ -18,10 +16,9 @@ export interface ProgramDiagnosticsApi {
 
 export const makeProgramDiagnostics = (
   query: ProgramFactQueryApi,
-  programIndex?: ProgramIndexApi,
 ): ProgramDiagnosticsApi => ({
-  diagnosticsForFile: (sourcePath, fallback = {}) => {
-    const queryDiagnostics = query.getDiagnosticsForFile(sourcePath).pipe(
+  diagnosticsForFile: (sourcePath, fallback = {}) =>
+    query.getDiagnosticsForFile(sourcePath).pipe(
       Effect.catch((error: ProgramFactQueryError) =>
         Effect.succeed([
           diagnosticFromQueryError(error, {
@@ -31,17 +28,7 @@ export const makeProgramDiagnostics = (
           }),
         ]),
       ),
-    )
-
-    if (programIndex === undefined) return queryDiagnostics
-
-    return programIndexDiagnosticsForFile(programIndex, sourcePath).pipe(
-      Effect.flatMap((diagnostics) =>
-        diagnostics.length === 0 ? queryDiagnostics : Effect.succeed(diagnostics)
-      ),
-      Effect.catch(() => queryDiagnostics),
-    )
-  },
+    ),
 })
 
 export class ProgramDiagnostics extends Context.Service<
@@ -58,18 +45,5 @@ export const ProgramDiagnosticsLive: Layer.Layer<
   Effect.gen(function* makeProgramDiagnosticsLayer() {
     const query = yield* ProgramFactQuery
     return makeProgramDiagnostics(query)
-  }),
-)
-
-export const ProgramIndexDiagnosticsLive: Layer.Layer<
-  ProgramDiagnostics,
-  never,
-  ProgramFactQuery | ProgramIndex
-> = Layer.effect(
-  ProgramDiagnostics,
-  Effect.gen(function* makeProgramIndexDiagnosticsLayer() {
-    const query = yield* ProgramFactQuery
-    const programIndex = yield* ProgramIndex
-    return makeProgramDiagnostics(query, programIndex)
   }),
 )

@@ -1,8 +1,10 @@
-import { Effect, Schema } from "effect"
+import { Schema } from "effect"
 import { describe, expect, it } from "vitest"
 import {
   AttuneRepairPlanSchema,
   FrameworkNxActionPlanSchema,
+  FrameworkNxRecipePublicTargetSchema,
+  FrameworkNxRecipes,
   atomProjectionEdgeAction,
   createDescriptorHashRecord,
   createFrameworkMaterializationPlan,
@@ -11,15 +13,13 @@ import {
   detectCheckedInReportOutputs,
   frameworkDiagnosticsAction,
   frameworkNxActionPlanFromRecipe,
+  frameworkNxPublicTargetsFromRecipe,
   hashGeneratedArtifactContent,
-  ingestNxProjectGraphRows,
-  nxProjectGraphToProgramIndexRows,
   symbolRegistryAction,
   programHarnessAction,
   observationScaffoldAction,
   protocolMaterializeAction,
   repairPlanForDiagnostic,
-  repairPlanFromProgramIndexRow,
   repairPlanFromRecipeRepair,
   repairPlansFromRecipeDiagnostic,
   schemaObservationsAction,
@@ -29,10 +29,10 @@ import {
   defineRecipe,
   type ProgramSchemaDescriptor,
   type RecipeDiagnostic,
+  type RecipeDefinition,
+  RecipeRecordView,
   type RecipeRepair,
 } from "@attune/framework-protocol"
-import { createInMemoryProgramIndex } from "@attune/framework-sqlite"
-import type { ProjectGraph } from "nx/src/devkit-exports"
 
 const descriptor: ProgramSchemaDescriptor = {
   schemaDescriptorId: "attune/package/demo",
@@ -61,6 +61,19 @@ const descriptor: ProgramSchemaDescriptor = {
 }
 
 describe("@attune/framework-nx", () => {
+  it("declares framework Nx recipes from the package barrel", () => {
+    const records = FrameworkNxRecipes.map((recipe) =>
+      RecipeRecordView.fromRecipe(recipe as RecipeDefinition<unknown, unknown>)
+    )
+
+    expect(records.map((record) => record.recipeId)).toEqual([
+      "framework-nx.recipe-public-targets",
+      "framework-nx.recipe-repair-plan",
+      "framework-nx.materialization-plan",
+    ])
+    expect(records.every((record) => record.sourcePath === "framework/nx/src/recipes.ts")).toBe(true)
+  })
+
   it("describes deterministic Nx actions for language-service code actions", () => {
     const plan = protocolMaterializeAction("demo", "packages/demo/src/attune.package.ts")
 
@@ -209,7 +222,7 @@ describe("@attune/framework-nx", () => {
   it("routes repairable diagnostics to public attune-repair targets", () => {
     const repair = repairPlanForDiagnostic({
       diagnosticId: "D123",
-      code: "attune/program-index/missing-symbol-registry",
+      code: "attune/recipe/missing-symbol-registry",
       projectId: "demo",
       sourcePath: "packages/demo/src/attune.package.ts",
       explanation: "Symbol registry artifact is missing.",
@@ -239,6 +252,7 @@ describe("@attune/framework-nx", () => {
       validationEvidence: ["workspace:policy-fast"],
     })
     const action = frameworkNxActionPlanFromRecipe(recipe)
+    const publicTargets = frameworkNxPublicTargetsFromRecipe(recipe)
     const repair: RecipeRepair = {
       repairId: "recipe-repair:workspace.policy-fast:planned",
       recipeId: recipe.id,
@@ -255,6 +269,30 @@ describe("@attune/framework-nx", () => {
       projectId: "workspace",
       generatorOrTarget: "workspace:policy-fast",
       validationTarget: "workspace:policy-fast",
+    })
+    expect(publicTargets.map((target) => target.kind)).toEqual(["check", "repair", "proof", "report"])
+    expect(Schema.decodeUnknownSync(FrameworkNxRecipePublicTargetSchema)(publicTargets[0])).toMatchObject({
+      recipeId: "workspace.policy-fast",
+      kind: "check",
+      target: "workspace:policy-fast",
+      command: "nx run workspace:policy-fast",
+    })
+    expect(publicTargets[0]?.targetConfiguration).toMatchObject({
+      executor: "@attune/nx:toolchain",
+      metadata: {
+        attune: {
+          surface: "check",
+          recipeId: "workspace.policy-fast",
+        },
+      },
+      options: {
+        tool: "workspace",
+        action: "check",
+        toolId: "nx-targets",
+        parameters: {
+          targets: ["workspace:policy-fast"],
+        },
+      },
     })
     expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(
       repairPlanFromRecipeRepair(recipe, repair),
@@ -305,181 +343,4 @@ describe("@attune/framework-nx", () => {
     ])
   })
 
-  it("routes safe program-index repair rows to public Nx targets", () => {
-    const repair = repairPlanFromProgramIndexRow({
-      repair_id: "repair:demo:artifact",
-      diagnostic_id: "diagnostic:demo:artifact",
-      project_id: "demo",
-      path: "packages/demo/src/attune.package.ts",
-      code: "attune/program-index/artifact-missing",
-      severity: "error",
-      message: "artifact fact is missing for generated registry.",
-      safety: "safe",
-      nx_target: "demo:attune-repair",
-      repair_kind: "artifact-freshness",
-      route: "attune-repair-cli:artifact-freshness",
-      payload_json: JSON.stringify({
-        cause: {
-          path: ".attune/cache/generated/demo/attune-symbol-registry.ts",
-        },
-      }),
-      validation_after_targets_json: JSON.stringify([
-        "demo:attune-check",
-        "demo:typecheck",
-      ]),
-      created_at: "2026-06-24T00:00:00.000Z",
-    })
-
-    expect(repair).toMatchObject({
-      diagnosticId: "diagnostic:demo:artifact",
-      safety: "safe",
-      target: "demo:attune-repair",
-      command: "nx run demo:attune-repair --diagnostic diagnostic:demo:artifact",
-      route: "attune-repair-cli:artifact-freshness",
-      repairKind: "artifact-freshness",
-      changes: [{
-        path: ".attune/cache/generated/demo/attune-symbol-registry.ts",
-        kind: "regenerate",
-        generated: true,
-      }],
-      validateAfter: [
-        "demo:attune-check",
-        "demo:typecheck",
-      ],
-    })
-    expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(repair).route).toBe("attune-repair-cli:artifact-freshness")
-  })
-
-  it("keeps needs-review and manual-only indexed repairs non-safe", () => {
-    const review = repairPlanFromProgramIndexRow({
-      repair_id: "repair:demo:review",
-      diagnostic_id: "diagnostic:demo:review",
-      project_id: "demo",
-      message: "repair changes authored source_file facts.",
-      safety: "needs-review",
-      nx_target: "demo:attune-repair",
-      repair_kind: "source-file-ownership-projection",
-      route: "attune-repair-cli:artifact-freshness",
-      created_at: "2026-06-24T00:00:00.000Z",
-    })
-    const manual = repairPlanFromProgramIndexRow({
-      repair_id: "repair:workspace:manual",
-      diagnostic_id: "diagnostic:workspace:manual",
-      project_id: "workspace",
-      message: "checked-in report artifact requires human removal.",
-      safety: "manual-only",
-      nx_target: "workspace:attune-repair",
-      repair_kind: "checked-in-report-removal",
-      route: "manual:remove-checked-in-report",
-      payload_json: JSON.stringify({
-        cause: {
-          path: "reports/protocol-delta-report.json",
-        },
-      }),
-      created_at: "2026-06-24T00:00:00.000Z",
-    })
-
-    expect(review?.safety).toBe("needs-review")
-    expect(manual).toMatchObject({
-      safety: "manual-only",
-      changes: [{
-        path: "reports/protocol-delta-report.json",
-        kind: "delete",
-        generated: false,
-      }],
-    })
-  })
-
-  it("serializes Nx project graph facts into program-index rows", () => {
-    const rows = nxProjectGraphToProgramIndexRows(fixtureProjectGraph, "2026-06-23T00:00:00.000Z")
-
-    expect(rows.projects).toEqual([
-      expect.objectContaining({
-        id: "consumer",
-        root: "packages/consumer",
-        sourceRoot: "packages/consumer/src",
-      }),
-      expect.objectContaining({
-        id: "provider",
-        root: "framework/provider",
-        sourceRoot: "framework/provider/src",
-      }),
-    ])
-    expect(rows.targets).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        projectId: "consumer",
-        name: "attune-check",
-        executor: "@attune/nx:package-check",
-        optionsJson: "{\"checks\":[\"attune\"]}",
-      }),
-    ]))
-    expect(rows.edges).toEqual([
-      expect.objectContaining({
-        fromSymbolId: "project:consumer",
-        toSymbolId: "project:provider",
-        kind: "project-dependency:static",
-        source: "nx-project-graph",
-      }),
-    ])
-  })
-
-  it("ingests Nx graph rows into the program index action layer", () => {
-    const index = createInMemoryProgramIndex()
-    const rows = nxProjectGraphToProgramIndexRows(fixtureProjectGraph, "2026-06-23T00:00:00.000Z")
-
-    Effect.runSync(ingestNxProjectGraphRows(index, rows))
-
-    expect(Effect.runSync(index.listProjects()).map((project) => project.id)).toEqual([
-      "consumer",
-      "provider",
-    ])
-    expect(Effect.runSync(index.listTargets({ projectId: "consumer" }))).toEqual([
-      expect.objectContaining({
-        projectId: "consumer",
-        name: "attune-check",
-      }),
-    ])
-    expect(Effect.runSync(index.listEdges({ symbolId: "project:consumer" }))[0]).toMatchObject({
-      toSymbolId: "project:provider",
-    })
-  })
 })
-
-const fixtureProjectGraph = {
-  nodes: {
-    consumer: {
-      name: "consumer",
-      type: "lib",
-      data: {
-        root: "packages/consumer",
-        sourceRoot: "packages/consumer/src",
-        projectType: "library",
-        targets: {
-          "attune-check": {
-            executor: "@attune/nx:package-check",
-            options: { checks: ["attune"] },
-            configurations: {},
-          },
-        },
-      },
-    },
-    provider: {
-      name: "provider",
-      type: "lib",
-      data: {
-        root: "framework/provider",
-        sourceRoot: "framework/provider/src",
-        projectType: "library",
-        targets: {},
-      },
-    },
-  },
-  dependencies: {
-    consumer: [{
-      source: "consumer",
-      target: "provider",
-      type: "static",
-    }],
-    provider: [],
-  },
-} satisfies ProjectGraph

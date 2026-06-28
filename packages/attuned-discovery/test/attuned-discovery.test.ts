@@ -7,6 +7,7 @@ import {
   InMemoryDiscoveryEventLogLive,
   ViewKeys,
   WorkbenchSnapshot,
+  AttuneDiscoveryRecipes,
   anchorsRecalled,
   appendDiscoveryEvent,
   appendReportSection,
@@ -44,6 +45,24 @@ import {
 } from "../src/index.js"
 
 describe("attuned discovery", () => {
+  it("declares the discovery loop as typed recipe graph over package schemas", () => {
+    expect(AttuneDiscoveryRecipes.map((recipe) => recipe.id)).toEqual([
+      "attuned-discovery.repo-snapshot",
+      "attuned-discovery.anchor-retrieval",
+      "attuned-discovery.hypothesis",
+      "attuned-discovery.joern-proof",
+      "attuned-discovery.evidence-scoring",
+      "attuned-discovery.rule-candidate",
+      "attuned-discovery.deterministic-rule",
+      "attuned-discovery.report",
+    ])
+    expect(AttuneDiscoveryRecipes.at(-1)?.outputSchema).toBe(WorkbenchSnapshot)
+    expect(AttuneDiscoveryRecipes.at(-1)?.sourcePath).toBe("packages/attuned-discovery/src/recipes.ts")
+    expect(AttuneDiscoveryRecipes.at(-1)?.dependencies).toEqual([
+      { recipeId: "attuned-discovery.deterministic-rule" },
+    ])
+  })
+
   it("decodes fixture WorkbenchSnapshot packets", () => {
     const snapshot = buildFixtureWorkbenchSnapshot()
     const decoded = Schema.decodeUnknownSync(WorkbenchSnapshot)(snapshot)

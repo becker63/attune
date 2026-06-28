@@ -325,27 +325,12 @@ describe("framework policy CLI", () => {
 
   it("errors when a completed Ring A one-file root regains package-local companions after replacement parity", () => {
     const workspaceRoot = makeWorkspace({
-      "attune.artifact-ownership.index.json": JSON.stringify({
-        schemaVersion: 1,
-        shards: [{
-          project: "attune-foldkit",
-          projectRoot: "packages/attune-foldkit",
-          shard: "framework/architecture/src/generated/artifact-ownership/attune-foldkit.json",
-        }],
-      }),
       "packages/attune-foldkit/package.json": JSON.stringify({ name: "@attune/attune-foldkit" }),
       "packages/attune-foldkit/src/attune.package.ts": authoredProjectFactsSource({
         projectId: "attune-foldkit",
         projectKind: "foldkit-ui",
       }),
-      "packages/attune-foldkit/attune.artifact-ownership.json": JSON.stringify({ project: "attune-foldkit" }),
-      "framework/architecture/src/generated/artifact-ownership/attune-foldkit.json": JSON.stringify({
-        schemaVersion: 1,
-        project: "attune-foldkit",
-        projectRoot: "packages/attune-foldkit",
-        ownedFiles: ["src/attune.package.ts"],
-        generatedOutputs: [],
-      }),
+      "packages/attune-foldkit/src/attune.contract.generated.ts": "export const generatedContract = true\n",
     })
 
     const result = checkFrameworkPolicyWorkspace(workspaceRoot)

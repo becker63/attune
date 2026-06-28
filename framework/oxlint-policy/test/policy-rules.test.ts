@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import * as Option from "effect/Option";
 import * as Testing from "effect-oxlint/testing";
+import { RecipeRecordView } from "@attune/framework-protocol";
+import { FrameworkOxlintPolicyRecipes } from "../src/recipes.js";
 import {
   noHandAuthoredArchitectureShapes,
   noRawNodeApis,
@@ -9,6 +11,21 @@ import {
 
 const messages = (result: ReturnType<typeof Testing.runRule>) =>
   Testing.messages(result).map((message) => Option.getOrNull(message));
+
+describe("effect-oxlint-policy recipes", () => {
+  test("declares oxlint policy recipes from the package recipe module", () => {
+    const records = FrameworkOxlintPolicyRecipes.map((recipe) =>
+      RecipeRecordView.fromRecipe(recipe),
+    );
+
+    expect(records.map((record) => record.recipeId)).toEqual([
+      "effect-oxlint-policy.raw-env-rule",
+      "effect-oxlint-policy.raw-node-api-rule",
+      "effect-oxlint-policy.architecture-shape-rule",
+    ]);
+    expect(records.every((record) => record.sourcePath === "framework/oxlint-policy/src/recipes.ts")).toBe(true);
+  });
+});
 
 describe("no-raw-process-env", () => {
   test("rejects raw process.env outside adapters", () => {

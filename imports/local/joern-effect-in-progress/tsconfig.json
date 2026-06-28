@@ -1,8 +1,0 @@
-{
-  "files": [],
-  "references": [
-    { "path": "./packages/eventing" },
-    { "path": "./packages/fork" },
-    { "path": "./packages/joern-effect" }
-  ]
-}

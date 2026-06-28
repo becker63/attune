@@ -9,7 +9,7 @@ ownership, validation, and fake-client seams quickly.
 | Generator | Covered Attune shape | Use it when |
 | --- | --- | --- |
 | `@attune/nx:discovery-event` | Effect Schema event, `DiscoveryEvents` append facade helper, projection handler skeleton, durable Reactivity ViewKey, replay fixture | Adding a new EventLog fact. Raw EventLog writes remain behind `DiscoveryEvents`/facade boundaries. |
-| `@attune/nx:effect-service` | Canonical `Effect.Service`, symbol metadata, service layers, artifact provenance | Adding world-changing effects. Effects live in services, not atoms. Add fake/test layers beside this boundary. |
+| `@attune/nx:effect-service` | Canonical `Effect.Service`, symbol metadata, service layers, recipe receipt provenance | Adding world-changing effects. Effects live in services, not atoms. Add fake/test layers beside this boundary. |
 | `@attune/nx:project-facts` | `src/attune.package.ts`, `ProjectFacts`, `ProgramSymbolRegistry`, `ProgramObservationPlan`, worker observation module | Creating or repairing a project facts boundary before agents add repeated service, observation, or atom shapes. |
 | `@attune/nx:atom-view` | Reactivity key declarations, base atom shell, derived atom shell, project atom shell, runtime edge registration | Exposing project-level state movement for public auditable symbols. |
 | `@attune/nx:joern-template` | Typed binding schema, observation schema, known proof-template renderer | Adding a known Joern proof template. Agents must not expand this into arbitrary proof-router queries. |
@@ -20,14 +20,14 @@ ownership, validation, and fake-client seams quickly.
 ## Phase 0 migration inventory
 
 `src/generator-inventory.ts` is the checked inventory for the
-`promote-program-index-runtime-substrate` migration. It is intentionally
+`arbor-recipe-substrate-migration` migration. It is intentionally
 project-local and test-backed so agents can extend the generator grammar
 without hunting through prose.
 
 Phase 2 generator work now has these homes:
 
 - `@attune/nx:effect-service`: canonical `Effect.Service` output, symbol
-  schema slots, service layers, and artifact provenance.
+  schema slots, service layers, and recipe receipt provenance.
 - `@attune/nx:project-facts`: `src/attune.package.ts`, generated symbol
   registry material, observation plans, worker observation modules, and
   checked-in report policy.
@@ -50,6 +50,6 @@ unless a future issue explicitly asks for a bridge.
 The next high-value families are projection/read-model modules, atom/read-view
 families (`Atom.withReactivity(ViewKeys.*)` base atoms plus derived atoms),
 DecisionPacket field helpers, and FoldKit scene projections. They should carry
-the same ownership comments: Drizzle stays behind persistence boundaries,
-Reactivity keys name durable facts rather than UI components, and durable writes
-must not live inside atoms.
+the same ownership comments: persistence stays behind Effect service
+boundaries, Reactivity keys name durable facts rather than UI components, and
+durable writes must not live inside atoms.

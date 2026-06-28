@@ -25,6 +25,114 @@
           "test"
         ]
       }
+    },
+    "db:plan": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "plan"
+        }
+      }
+    },
+    "db:apply": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "apply"
+        }
+      }
+    },
+    "db:check": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "check"
+        }
+      }
+    },
+    "db:destroy": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "destroy"
+        }
+      }
+    },
+    "db:prune": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "prune"
+        }
+      }
+    },
+    "db:migrate": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "migrate"
+        }
+      }
+    },
+    "db:generate-types": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "generate-types"
+        }
+      }
+    },
+    "db:validate-sql": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "validate-sql"
+        }
+      }
+    },
+    "db:integration-test": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "generation-stage",
+        "action": "generate",
+        "toolId": "framework-runtime-db",
+        "parameters": {
+          "stage": "integration-test"
+        }
+      }
     }
   },
   "tags": ["scope:framework", "attune:framework"]

@@ -44,7 +44,7 @@ Checks, repairs, language-service hints, Reactivity, atoms, generated artifact f
 
 ## No Compatibility Lane
 
-Do not maintain compatibility inputs, compatibility metadata, compatibility rows, or compatibility adapters for superseded surfaces. Old surfaces may be deleted, quarantined, archived, or replaced by framework-owned recipe/program-index projections.
+Do not maintain compatibility inputs, compatibility metadata, compatibility rows, or compatibility adapters for superseded surfaces. Old surfaces may be deleted, quarantined, archived, or replaced by framework-owned recipe projections.
 
 ## Public Workflow
 
@@ -81,7 +81,7 @@ git diff --check
 For core slices, prefer:
 
 ```bash
-nx run framework-sqlite:test --skipNxCache
+nx run framework-runtime:db:integration-test --skipNxCache
 nx run framework-runtime:test --skipNxCache
 nx run framework-nx:test --skipNxCache
 nx run framework-language-service:test --skipNxCache

@@ -1,4 +1,5 @@
 import { Context, Effect, Layer, Ref, Schema as S } from "effect";
+import { createAttuneDiscoveryRecipes } from "./recipes.js";
 
 export const RunStatus = S.Literals([
   "initializing",
@@ -281,6 +282,59 @@ export const WorkbenchSnapshot = S.Struct({
   report: ReportSnapshot,
 });
 export type WorkbenchSnapshot = typeof WorkbenchSnapshot.Type;
+
+export const RepoSnapshot = S.Struct({
+  repo: S.String,
+  snapshotId: S.String,
+  commit: S.String,
+  capturedAt: S.String,
+});
+export type RepoSnapshot = typeof RepoSnapshot.Type;
+
+export const RuleCandidate = S.Struct({
+  ruleId: S.String,
+  runId: S.String,
+  hypothesisId: S.String,
+  evidenceIds: S.Array(S.String),
+  title: S.String,
+  deterministicRuleKind: S.Literals(["ast-grep", "oxlint", "codeql"]),
+  confidence: EvidenceConfidence,
+});
+export type RuleCandidate = typeof RuleCandidate.Type;
+
+export const DeterministicRule = S.Struct({
+  ruleId: S.String,
+  candidateId: S.String,
+  kind: S.Literals(["ast-grep", "oxlint", "codeql"]),
+  targetPath: S.String,
+  source: S.String,
+  generatedAt: S.String,
+});
+export type DeterministicRule = typeof DeterministicRule.Type;
+
+export const DiscoveryReportInput = S.Struct({
+  run: DiscoveryRun,
+  anchors: S.Array(AnchorCard),
+  hypotheses: S.Array(MotifHypothesis),
+  evidence: S.Array(EvidencePacket),
+  candidates: S.Array(RuleCandidate),
+  deterministicRules: S.Array(DeterministicRule),
+});
+export type DiscoveryReportInput = typeof DiscoveryReportInput.Type;
+
+export const AttuneDiscoveryRecipes = createAttuneDiscoveryRecipes({
+  RepoSnapshot,
+  DiscoveryRun,
+  AnchorCard,
+  MotifHypothesis,
+  EvidencePacket,
+  DecisionPacket,
+  RuleCandidate,
+  DeterministicRule,
+  DiscoveryReportInput,
+  WorkbenchSnapshot,
+});
+export { createAttuneDiscoveryRecipes } from "./recipes.js";
 
 export const RunSummary = S.Struct({
   runId: S.String,

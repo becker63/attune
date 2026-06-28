@@ -18,7 +18,6 @@
     "@attune/framework-nx": "workspace:*",
     "@attune/framework-protocol": "workspace:*",
     "@attune/framework-runtime": "workspace:*",
-    "@attune/framework-sqlite": "workspace:*",
     "effect": "4.0.0-beta.78"
   },
   "devDependencies": {

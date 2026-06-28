@@ -1,19 +1,21 @@
 import {
   hashProgramValue,
   NxTarget,
+  RecipePublicTargets,
   RecipeRepairPlan,
   type ProgramArtifactRecord,
   type ProgramDiagnostic,
   type RecipeDefinition,
   type RecipeDiagnostic,
+  type RecipePublicTargetKind,
   type RecipeRepair,
   type ProgramSchemaDescriptor,
   type ProgramSymbolDescriptor,
 } from "@attune/framework-protocol"
-import type { ProgramIndexViewRow } from "@attune/framework-sqlite"
 import { Schema } from "effect"
+import type { TargetConfiguration } from "nx/src/devkit-exports"
 
-export * from "./ProgramGraphIndex.js"
+export * from "./recipes.js"
 
 export interface FrameworkNxActionPlan {
   readonly actionId: string
@@ -73,6 +75,17 @@ export const AttuneRepairPlanSchema = Schema.Struct({
   explanation: Schema.String,
 })
 
+export const FrameworkNxRecipePublicTargetSchema = Schema.Struct({
+  recipeId: Schema.String,
+  projectId: Schema.String,
+  kind: Schema.Literals(["check", "repair", "proof", "report"] as const),
+  target: Schema.String,
+  command: Schema.String,
+  sourcePath: Schema.String,
+  evidenceRequirements: Schema.Array(Schema.String),
+  targetConfiguration: Schema.Unknown,
+})
+
 export const FrameworkNxGeneratedArtifactKindSchema = Schema.Literals([
   "program-harness",
   "symbol-registry",
@@ -103,6 +116,17 @@ export interface FrameworkNxReportOutputFinding {
   readonly path: string
   readonly reason: string
   readonly suggestedTarget: string
+}
+
+export interface FrameworkNxRecipePublicTarget {
+  readonly recipeId: string
+  readonly projectId: string
+  readonly kind: RecipePublicTargetKind
+  readonly target: string
+  readonly command: string
+  readonly sourcePath: string
+  readonly evidenceRequirements: readonly string[]
+  readonly targetConfiguration: TargetConfiguration
 }
 
 export interface FrameworkNxMaterializationPlan {
@@ -145,47 +169,47 @@ export const frameworkRepairTargets = {
 } as const
 
 const repairRoutes = {
-  "attune/program-index/missing-project-facts": {
+  "attune/recipe/missing-project-declaration": {
     generator: generatorTargets.packageContract,
-    repairKind: "project-facts",
+    repairKind: "recipe-declaration",
     changePath: "src/attune.package.ts",
   },
-  "attune/program-index/stale-project-facts": {
+  "attune/recipe/stale-project-declaration": {
     generator: generatorTargets.packageContract,
-    repairKind: "project-facts",
+    repairKind: "recipe-declaration",
     changePath: "src/attune.package.ts",
   },
-  "attune/program-index/missing-symbol-registry": {
+  "attune/recipe/missing-symbol-registry": {
     generator: generatorTargets.symbolRegistry,
     repairKind: "symbol-registry",
     changePath: ".attune/cache/generated/<project>/attune-symbol-registry.ts",
   },
-  "attune/program-index/missing-observation-scaffold": {
+  "attune/recipe/missing-observation-scaffold": {
     generator: generatorTargets.observationScaffold,
     repairKind: "observation-scaffold",
     changePath: ".attune/cache/generated/<project>/attune-observation-scaffold.ts",
   },
-  "attune/program-index/missing-schema-observations": {
+  "attune/recipe/missing-schema-observations": {
     generator: generatorTargets.schemaObservations,
     repairKind: "schema-observations",
     changePath: ".attune/cache/generated/<project>/attune-schema-observations.ts",
   },
-  "attune/program-index/missing-effect-service-boundary": {
+  "attune/recipe/missing-effect-service-boundary": {
     generator: generatorTargets.effectService,
     repairKind: "effect-service",
     changePath: "src/<service>.ts",
   },
-  "attune/program-index/missing-atom-projection-edge": {
+  "attune/recipe/missing-atom-projection-edge": {
     generator: generatorTargets.atomProjectionEdge,
     repairKind: "atom-projection-edge",
     changePath: ".attune/cache/generated/<project>/attune-atom-projection-edges.ts",
   },
-  "attune/program-index/missing-joern-template": {
+  "attune/recipe/missing-joern-template": {
     generator: generatorTargets.joernTemplate,
     repairKind: "joern-template",
     changePath: "src/templates/<template>.ts",
   },
-  "attune/program-index/missing-cocoindex-tool": {
+  "attune/recipe/missing-cocoindex-tool": {
     generator: generatorTargets.cocoindexMcpTool,
     repairKind: "cocoindex-tool",
     changePath: "src/tools/<tool>.ts",
@@ -366,6 +390,51 @@ export const frameworkNxActionPlanFromRecipe = <Input, Output>(
   })
 }
 
+export const frameworkNxPublicTargetsFromRecipe = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+): readonly FrameworkNxRecipePublicTarget[] => {
+  const projectId = recipe.projectId ?? projectNameFromRecipeId(recipe.id)
+
+  return RecipePublicTargets.fromRecipe(recipe).map((target) => ({
+    recipeId: recipe.id,
+    projectId,
+    kind: target.kind,
+    target: target.target,
+    command: `nx run ${target.target}`,
+    sourcePath: recipe.sourcePath ?? recipe.id,
+    evidenceRequirements: [...(target.evidenceRequirements ?? recipe.validationEvidence ?? [])],
+    targetConfiguration: recipePublicTargetConfiguration(recipe, target.kind, target.target),
+  }))
+}
+
+const recipePublicTargetConfiguration = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  kind: RecipePublicTargetKind,
+  target: string,
+): TargetConfiguration => ({
+  executor: "@attune/nx:toolchain",
+  metadata: {
+    description: `Recipe ${kind} projection for ${recipe.id}.`,
+    attune: {
+      tier: "public",
+      surface: kind,
+      recipeId: recipe.id,
+    },
+  },
+  options: {
+    targetProject: recipe.projectId ?? projectNameFromRecipeId(recipe.id),
+    tool: "workspace",
+    action: "check",
+    toolId: "nx-targets",
+    parameters: {
+      targets: [target],
+      recipeId: recipe.id,
+      recipeSurface: kind,
+    },
+    dryRun: false,
+  },
+})
+
 export const repairPlanFromRecipeRepair = <Input, Output>(
   recipe: RecipeDefinition<Input, Output>,
   repair: RecipeRepair,
@@ -388,7 +457,6 @@ export const repairPlanFromRecipeRepair = <Input, Output>(
       generated: isGeneratedRepairPath(path),
     })),
     doNotEdit: [
-      ".attune/cache/program-index.sqlite",
       "framework-owned generated artifacts unless the recipe repair route writes them",
     ],
     validateAfter: repair.evidenceRequirements.length === 0 ? [target] : repair.evidenceRequirements,
@@ -544,14 +612,14 @@ export const repairPlanForDiagnostic = (
     repairKind: route.repairKind,
     changes: [{
       path: changePath,
-      kind: route.repairKind === "project-facts" ? "update" : "regenerate",
+      kind: route.repairKind === "recipe-declaration" ? "update" : "regenerate",
       generated: changePath.includes(".attune/cache/") || changePath.includes(".generated."),
     }],
     doNotEdit: [
       "src/attune.generated.ts",
       "src/attune.contract.generated.ts",
       "framework-owned package-contract typecheck aggregate",
-      "attune.artifact-ownership.json",
+      "framework-owned recipe receipt/cache projections",
     ],
     validateAfter: [
       frameworkRepairTargets.projectCheck(diagnostic.projectId),
@@ -560,112 +628,6 @@ export const repairPlanForDiagnostic = (
     ],
     explanation: diagnostic.explanation,
   }
-}
-
-export const repairPlanFromProgramIndexRow = (
-  row: ProgramIndexViewRow,
-): AttuneRepairPlan | undefined => {
-  const diagnosticId = stringValue(row, "diagnostic_id")
-  if (diagnosticId.length === 0) return undefined
-
-  const projectId = stringValue(row, "project_id", "workspace")
-  const safety = repairSafety(row["safety"] ?? null)
-  const target = stringValue(row, "nx_target", projectId === "workspace"
-    ? frameworkRepairTargets.workspaceRepair
-    : frameworkRepairTargets.projectRepair(projectId))
-  const repairKind = stringValue(row, "repair_kind", "program-index-repair")
-  const route = stringValue(row, "route")
-  const payload = jsonValue(row, "payload_json")
-  const validationAfter = stringArrayValue(row, "validation_after_targets_json")
-  const changePath = repairChangePath(row, payload)
-
-  return {
-    diagnosticId,
-    safety,
-    target,
-    command: `nx run ${target} --diagnostic ${diagnosticId}`,
-    ...(route.length === 0 ? {} : { route }),
-    repairKind,
-    changes: [{
-      path: changePath,
-      kind: repairChangeKind(repairKind, safety),
-      generated: isGeneratedRepairPath(changePath),
-    }],
-    doNotEdit: [
-      ".attune/cache/program-index.sqlite",
-      "framework-owned generated artifacts unless the repair route writes them",
-    ],
-    validateAfter: validationAfter.length === 0 ? [target] : validationAfter,
-    explanation: stringValue(row, "message", "Program-index repair row is repairable."),
-  }
-}
-
-const stringValue = (
-  row: ProgramIndexViewRow,
-  key: string,
-  fallback = "",
-): string => {
-  const value = row[key]
-  return typeof value === "string" && value.length > 0 ? value : fallback
-}
-
-const repairSafety = (value: ProgramIndexViewRow[string]): AttuneRepairPlan["safety"] =>
-  value === "safe" || value === "needs-review" || value === "manual-only"
-    ? value
-    : "needs-review"
-
-const jsonValue = (
-  row: ProgramIndexViewRow,
-  key: string,
-): unknown | undefined => {
-  const value = row[key]
-  if (typeof value !== "string" || value.length === 0) return undefined
-  try {
-    return JSON.parse(value) as unknown
-  } catch {
-    return value
-  }
-}
-
-const stringArrayValue = (
-  row: ProgramIndexViewRow,
-  key: string,
-): readonly string[] => {
-  const value = jsonValue(row, key)
-  if (!Array.isArray(value)) return []
-  return value.filter((entry): entry is string => typeof entry === "string")
-}
-
-const repairChangePath = (
-  row: ProgramIndexViewRow,
-  payload: unknown,
-): string => {
-  const payloadPath = pathFromRepairPayload(payload)
-  if (payloadPath.length > 0) return payloadPath
-  return stringValue(row, "path", "program-index repair row")
-}
-
-const pathFromRepairPayload = (payload: unknown): string => {
-  if (typeof payload !== "object" || payload === null) return ""
-  const record = payload as Record<string, unknown>
-  if (typeof record.path === "string") return record.path
-  if (typeof record.artifactPath === "string") return record.artifactPath
-  if (typeof record.sourceFile === "string") return record.sourceFile
-  const cause = record.cause
-  if (typeof cause !== "object" || cause === null) return ""
-  const causeRecord = cause as Record<string, unknown>
-  return typeof causeRecord.path === "string" ? causeRecord.path : ""
-}
-
-const repairChangeKind = (
-  repairKind: string,
-  safety: AttuneRepairPlan["safety"],
-): AttuneRepairPlan["changes"][number]["kind"] => {
-  if (safety === "manual-only" && /removal|delete/u.test(repairKind)) return "delete"
-  if (/refresh|generated|registry|guidance|observations|observation|schema|artifact-freshness/u.test(repairKind)) {
-    return "regenerate"
-  }
-  return "update"
 }
 
 const isGeneratedRepairPath = (path: string): boolean =>

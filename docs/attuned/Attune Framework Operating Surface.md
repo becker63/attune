@@ -1,5 +1,13 @@
 # Attune Framework Operating Surface
 
+> Historical note: this document predates the aggressive ARS clean-fork
+> migration. Active substrate guidance is the OpenSpec change
+> `arbor-recipe-substrate-migration`: Recipe/ManagedRecipe declarations,
+> ManagedRecipe plus Effect Alchemy lifecycle, and the generic
+> TimescaleDB/Postgres recipe spine are the source of truth. Any historical
+> SQLite, Drizzle, program-index, generated companion, or artifact-ownership
+> language below is historical context or quarantine policy, not compatibility guidance.
+
 ## Public Loop
 
 1. Edit small `src/attune.package.ts` declarations.
@@ -44,7 +52,7 @@ vocabulary.
 - Replay or counterexample manifests.
 
 Those belong in framework-owned generated/cache materialization, focused
-validation modules, framework testing helpers, or private program-index
+validation modules, framework testing helpers, or private recipe receipt
 projections.
 
 ## One Package-Local Attune File
@@ -72,48 +80,44 @@ locations such as:
 ```text
 .attune/cache/generated/<project>/...
 .attune/cache/typecheck/<project>/...
-.attune/cache/program-index/<project>/...
+.attune/cache/recipes/<project>/...
 .attune/cache/observations/<project>/...
 ```
 
-## What SQLite Does
+## What The Recipe Spine Does
 
-SQLite is the private framework projection database and program index. It may
-store Nx projects and targets, TypeScript source files and exported symbols,
-Effect Schema descriptor rows, dependency edges, generated artifact hashes,
-observations, replay metadata, counterexample metadata, diagnostics, repair
-plans, and invalidation logs under gitignored cache paths such as
-`.attune/cache`.
+Local TimescaleDB/Postgres is the active durable framework recipe spine. It
+stores recipe declarations, dependency edges, IO descriptors, runs, receipts,
+diagnostics, repairs, health views, Tend event envelopes, token metrics, and
+outbox rows through framework services and ManagedRecipe lifecycle targets.
 
-Product packages must not import framework SQLite, raw Drizzle tables, or
-private store internals.
+Product packages must not import raw DB tables, legacy framework SQLite,
+Drizzle/PgTyped compatibility routes, or private store internals.
 
-The boring direction is:
+The active direction is:
 
 ```text
-Nx graph + TS symbols + Effect Schema
-  -> SQLite facts
-  -> SQL views/triggers
-  -> Reactivity
-  -> atoms
-  -> diagnostics/repairs
+Recipe declarations + ManagedRecipe lifecycle
+  -> generic TimescaleDB/Postgres recipe rows
+  -> Kanel/Kysely/SafeQL SQL route
+  -> receipt/diagnostic/repair/health projections
+  -> Nx/language-service/Tend/FoldKit diagnostics
 ```
 
 Historical generated companion files and artifact ownership shards are migration
 debt. They should be deleted, quarantined, archived, or replaced by
-framework-owned recipe/program-index projections, not adapted as a live input
-lane.
+framework-owned recipe projections, not adapted as a live input lane.
 
 ## What Nx Repairs Do
 
 Nx repairs are the public action surface. Repairs read package declarations,
 materialize source_file, symbol, schema_descriptor, edge, artifact,
 observation, diagnostic, repair, and invalidation facts, write deterministic
-generated/cache files, update freshness state, refresh private program-index
+generated/cache files, update freshness state, refresh private recipe
 projections, and print clear diagnostics.
 
 Agents should run the suggested Nx repair target before hand-editing generated
-or derived program-index artifacts.
+or derived recipe/cache artifacts.
 
 ## How Diagnostics Route To Generators
 
@@ -139,7 +143,7 @@ default operating loop.
 - Use framework-owned generated/cache materialization for large derived
   consequences.
 - Do not commit diagnostic dumps, observation dumps, or architecture reports.
-- Do not edit SQLite rows, generated ledgers, or report-like artifacts as source
+- Do not edit DB rows, generated ledgers, or report-like artifacts as source
   truth.
 
 ## Human-Review Boundary

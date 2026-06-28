@@ -2,6 +2,7 @@ import { Schema } from "effect"
 import { describe, expect, it } from "vitest"
 
 import {
+  AttunePiAgentRecipes,
   ImplementationSpec,
   MutationObligation,
   PropertyObligation,
@@ -92,5 +93,16 @@ describe("Attune Pi agent schemas and evidence", () => {
     expect(attuneCommandNames).toContain("/attune-evidence")
     expect(attuneCommandNames).toContain("/attune-mutants")
     expect(attuneCommandNames).toContain("/attune-properties")
+  })
+
+  it("expresses Pi agent work as framework recipes without Tend compatibility", () => {
+    expect(AttunePiAgentRecipes.map((recipe) => recipe.id)).toEqual([
+      "attune-pi-agent.implementation-spec",
+      "attune-pi-agent.permission-profile",
+      "attune-pi-agent.evidence-matrix",
+      "attune-pi-agent.generator-artifacts",
+      "attune-pi-agent.command-surface",
+    ])
+    expect(AttunePiAgentRecipes.some((recipe) => recipe.id.includes("tend"))).toBe(false)
   })
 })

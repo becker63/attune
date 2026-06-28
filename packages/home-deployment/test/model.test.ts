@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest"
 
 import {
   commandPlan,
+  CanopyManagedRecipes,
+  canopyDriftRepair,
   confirmGateInState,
   createHomeDeploymentPlan,
   createHomePlatformLifecycleGraph,
@@ -59,6 +61,26 @@ const asPlanned = (resource: PlannedResource): PlannedResource => asStatus(resou
 const asReady = (resource: PlannedResource): PlannedResource => asStatus(resource, "ready")
 
 describe("home-deployment", () => {
+  it("declares Canopy lifecycle as ManagedRecipe graph over home deployment schemas", () => {
+    const managed = CanopyManagedRecipes.find((recipe) => recipe.id === "canopy.home-deployment")
+
+    expect(CanopyManagedRecipes.map((recipe) => recipe.id)).toEqual([
+      "canopy.desired-state",
+      "canopy.home-deployment",
+      "canopy.rendered-resources",
+      "canopy.policy",
+      "canopy.deploy-plan",
+      "canopy.observed-state",
+    ])
+    expect(managed).toMatchObject({
+      id: "canopy.home-deployment",
+      lifecycle: ["plan", "apply", "check", "destroy"],
+      resourceKind: "canopy-platform-lifecycle",
+      humanReviewRequired: true,
+      driftRepair: canopyDriftRepair,
+    })
+  })
+
   it("plans the complete ThinkCentre Day 0 network workflow", () => {
     const plan = createHomeDeploymentPlan()
     const ids = plan.resources.map((resource) => resource.id)

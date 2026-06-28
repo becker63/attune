@@ -45,19 +45,19 @@
     },
     "project": {
       "type": "string",
-      "description": "Owning Nx project recorded in artifact provenance."
+      "description": "Owning Nx project recorded in recipe receipt provenance."
     },
     "generatorVersion": {
       "type": "string",
-      "description": "Generator package version recorded in artifact provenance."
+      "description": "Generator package version recorded in recipe receipt provenance."
     },
     "generatorRevision": {
       "type": "string",
-      "description": "Generator source revision recorded in artifact provenance."
+      "description": "Generator source revision recorded in recipe receipt provenance."
     },
     "openspecChangeId": {
       "type": "string",
-      "description": "OpenSpec change id recorded in artifact provenance."
+      "description": "OpenSpec change id recorded in recipe receipt provenance."
     }
   },
   "required": ["name"],

@@ -1,3 +1,11 @@
+## Historical ARS Note
+
+This Joern/CocoIndex document is retained as v0 product-loop context. Code
+generation, Joern templates, CocoIndex adapters, and proof-routing pipelines are
+active only when expressed as Recipes or ManagedRecipes with receipts,
+diagnostics, repairs, and validation evidence. Any Drizzle or old durable
+substrate wording below is historical.
+
 **Scope:** CocoIndex and `joern-effect` inside Attune Discovery.  
 **Altitude:** slightly technical architecture model, not a full implementation spec.  
 **Purpose:** explain how Attune moves from semantic code recall to structural proof without letting the agent become the source of truth.

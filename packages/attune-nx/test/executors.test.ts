@@ -119,7 +119,7 @@ describe("attune-nx executors", () => {
         owner: "attune-nx",
       },
       inputs: ["src/generators/effect-service/generator.ts"],
-      outputs: ["attune.artifact-ownership.json"],
+      outputs: [".attune/cache/recipes/effect-service.receipt.json"],
     })
 
     expect(createGeneratedIntent(normalized)).toMatchObject({
@@ -218,7 +218,7 @@ describe("attune-nx executors", () => {
     expect(summaries).toEqual([result.summary])
   })
 
-  it("routes project facts checks through workspace attune-check", async () => {
+  it("routes recipe substrate contract checks through workspace attune-check", async () => {
     const calls: ExecutorProcessPlan[] = []
     const result = await packageCheckExecutor(
       {
@@ -233,7 +233,7 @@ describe("attune-nx executors", () => {
     expect(result.summary.plans).toEqual([
       expect.objectContaining({
         kind: "process",
-        label: "package-check:program-index-diagnostics",
+        label: "package-check:recipe-substrate",
         adapter: "pnpm-exec-nx-run",
         executable: "pnpm",
         args: ["exec", "nx", "run", "workspace:attune-check"],

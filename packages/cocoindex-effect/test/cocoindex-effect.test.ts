@@ -1,8 +1,10 @@
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
+import { RecipeRecordView, type RecipeDefinition } from "@attune/framework-protocol"
 import {
   CocoIndexClient,
   CocoIndexClientFixture,
+  CocoIndexEffectRecipes,
   normalizeCocoIndexHits,
   type AnchorCard,
 } from "../src/index.js"
@@ -41,6 +43,28 @@ const fixtureAnchors: ReadonlyArray<AnchorCard> = [
 ]
 
 describe("cocoindex-effect", () => {
+  it("declares CocoIndex effect recipes from the package barrel", () => {
+    const records = CocoIndexEffectRecipes.map((recipe) =>
+      RecipeRecordView.fromRecipe(recipe as RecipeDefinition<unknown, unknown>)
+    )
+
+    expect(records.map((record) => record.recipeId)).toEqual([
+      "cocoindex-effect.emit-mcp-schema",
+      "cocoindex-effect.scaffold-mcp-tool",
+      "cocoindex-effect.sync-mcp-tools",
+      "cocoindex-effect.generated-surface-check",
+      "cocoindex-effect.ensure-indexed",
+      "cocoindex-effect.search-anchors",
+      "cocoindex-effect.search-similar-anchors",
+      "cocoindex-effect.repository-session",
+    ])
+    expect(records.at(-1)).toMatchObject({
+      kind: "managed-recipe",
+      resourceKind: "repository-intelligence-session",
+      humanReviewRequired: true,
+    })
+  })
+
   it("normalizes raw CocoIndex hits into stable AnchorCards", () => {
     const anchors = normalizeCocoIndexHits(
       [

@@ -410,12 +410,8 @@ function createArchitectureCheckPlan(
         "packages",
         "--quiet",
       ], context.workspaceRoot)]
-    case "artifact-ownership":
-      return [nodeScriptPlan("toolchain:architecture:artifact-ownership", "scripts/architecture/artifact-ownership-check.mjs", context)]
     case "tool-versions":
       return [nodeScriptPlan("toolchain:architecture:tool-versions", "scripts/architecture/tool-versions.mjs", context)]
-    case "shape-conformance":
-      return [tsxPlan("toolchain:architecture:shape-conformance", "framework/architecture/src/shape-conformance-cli.ts", [], context.workspaceRoot)]
     case "framework-policy": {
       const only = readStringParameter(options, "only")
       return [tsxPlan(
@@ -475,21 +471,6 @@ function createArchitectureCheckPlan(
         "packages",
         "--quiet",
       ], context.workspaceRoot)]
-    case "program-index-materialize": {
-      const indexPath = readStringParameter(options, "indexPath")
-      const project = readStringParameter(options, "project")
-      const preferCached = options.parameters.preferCached
-      return [tsxPlan(
-        "toolchain:architecture:program-index-materialize",
-        "framework/architecture/src/program-index-materialize-cli.ts",
-        [
-          ...(indexPath === null ? [] : ["--index-path", indexPath]),
-          ...(project === null ? [] : ["--project", project]),
-          ...(preferCached === false ? ["--prefer-cached=false"] : []),
-        ],
-        context.workspaceRoot,
-      )]
-    }
     case "verify-pr-completion":
       return [nodeScriptPlan("toolchain:architecture:verify-pr-completion", "scripts/codex/verify-pr-completion.mjs", context)]
     case "codex-audit-prs":

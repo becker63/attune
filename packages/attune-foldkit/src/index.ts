@@ -48,6 +48,7 @@ export {
   makeDiscoveryAtomWorkspace,
   workbenchAtomFixture,
 } from "./fixtures/workbench-atom-fixture.js"
+export * from "./recipes.js"
 export type {
   AppliedWorkbenchFixture,
   FoldkitMdxViewFixture,

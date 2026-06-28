@@ -10,18 +10,19 @@ The target Attune Framework loop is diagnostics-first:
 
 ```text
 language-service diagnostic or Nx check output
-  -> referenced source_file, symbol, schema_descriptor, edge, artifact, or repair fact
+  -> referenced Recipe, ManagedRecipe, receipt, diagnostic, repair, or DB emission fact
   -> nx run workspace:attune-repair or nx run <project>:attune-repair
-  -> generated/cache artifacts and program-index rows
-  -> framework runtime/cache observations
+  -> generated/cache artifacts and recipe receipt projections
+  -> local TimescaleDB/Postgres recipe spine and framework observations
   -> language-service and Nx diagnostics clear
 ```
 
-Agents should repair diagnostics and program-index facts, not raw framework
-runtime internals. Descriptor hashes, observations, repair rows, invalidation
-rows, and recipe/program-index projections are private framework
-materialization. Public surfaces are TypeScript language-service diagnostics,
-quick info, code actions, code lenses, and Nx check output.
+Agents should repair diagnostics through Recipe/ManagedRecipe declarations,
+receipts, and repair plans, not raw framework runtime internals. Descriptor
+hashes, observations, repair rows, invalidation rows, and durable recipe
+projections are private framework materialization. Public surfaces are
+TypeScript language-service diagnostics, quick info, code actions, code lenses,
+and Nx check output.
 
 ## Canonical smoke check
 
@@ -77,9 +78,11 @@ For package changes, prefer this repair path:
 6. Run the focused package check, property, atom graph, coverage, typecheck, or
    policy target that corresponds to the diagnostic.
 
-Do not edit raw descriptor JSON, SQLite rows, Drizzle tables, private store
-internals, diagnostic dumps, observation summaries, or architecture summary
-reports as the source of truth.
+Do not edit raw descriptor JSON, local DB rows, private store internals,
+diagnostic dumps, observation summaries, or architecture summary reports as the
+source of truth. Legacy SQLite/Drizzle/PgTyped surfaces are archive or
+quarantine context under the ARS clean-fork migration; active durable evidence
+flows through the generic TimescaleDB/Postgres recipe spine.
 
 ## Source And Generator Expectations
 
@@ -90,8 +93,8 @@ or ambiguous, document the blocker and create a follow-up rather than inventing
 ownership. Legacy source ownership and generator-shape manifests are migration
 scaffolding slated for deletion or framework-owned projection; final semantic
 workflow surfaces are source declarations, generated source required by
-build/typecheck, framework runtime/cache state, language-service diagnostics,
-and Nx output.
+build/typecheck, framework runtime/cache state, TimescaleDB/Postgres recipe
+receipts, language-service diagnostics, and Nx output.
 
 ## Ordinary validation commands
 

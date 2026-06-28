@@ -2,7 +2,8 @@ import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
 import { describe, expect, it } from "vitest"
-import { scanWorkspace } from "../src/index.js"
+import { RecipeRecordView, type RecipeDefinition } from "@attune/framework-protocol"
+import { AttuneArchitectureRecipes, scanWorkspace } from "../src/index.js"
 
 const withWorkspace = (files: Record<string, string>, run: (workspace: string) => void): void => {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "attune-architecture-"))
@@ -19,6 +20,19 @@ const withWorkspace = (files: Record<string, string>, run: (workspace: string) =
 }
 
 describe("attune architecture policy", () => {
+  it("declares architecture policy recipes from the package barrel", () => {
+    const records = AttuneArchitectureRecipes.map((recipe) =>
+      RecipeRecordView.fromRecipe(recipe as RecipeDefinition<unknown, unknown>)
+    )
+
+    expect(records.map((record) => record.recipeId)).toEqual([
+      "attune-architecture.workspace-policy",
+      "attune-architecture.command-surface-conformance",
+      "attune-architecture.artifact-ownership-quarantine",
+    ])
+    expect(records.every((record) => record.sourcePath === "framework/architecture/src/recipes.ts")).toBe(true)
+  })
+
   it("emits typed rule ids for undeclared workflow surfaces", () => {
     withWorkspace({
       "package.json": JSON.stringify({ scripts: { typecheck: "tsc --noEmit" } }),

@@ -89,7 +89,7 @@ export const classifyFrameworkImportBoundary = (
   if (isFrameworkSqliteImport(importSource)) {
     return {
       code: "framework-sqlite-import",
-      reason: "SQLite and Drizzle materialization belongs behind framework Effect services.",
+      reason: "Legacy SQLite materialization is archived; active persistence belongs behind framework recipe services.",
     }
   }
 
@@ -124,7 +124,7 @@ export const classifyFrameworkImportBoundary = (
   if (isRawDrizzleTableImport(importSource, importedNames)) {
     return {
       code: "raw-drizzle-table-import",
-      reason: "Raw Drizzle table/client APIs belong behind the private framework SQLite store boundary.",
+      reason: "Raw Drizzle table/client APIs are legacy substrate imports; active SQL access belongs behind framework recipe services.",
     }
   }
 

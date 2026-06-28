@@ -29,7 +29,7 @@
     "attune-check": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Public Attune Framework check surface for package declarations, generated materialization, framework diagnostics, no-report policy, and import boundaries."
+        "description": "Public Attune Framework check surface for Recipe/ManagedRecipe declarations, DB emission readiness, framework diagnostics, no-report policy, and import boundaries."
       },
       "options": {
         "tool": "workspace",
@@ -37,7 +37,7 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "workspace:program-facts-check"
+            "workspace:recipe-substrate-check"
           ]
         },
         "timeoutSeconds": 240,
@@ -59,43 +59,6 @@
         "dryRun": false
       }
     },
-    "artifact-ownership-check": {
-      "executor": "@attune/nx:toolchain",
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "artifact-ownership",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "program-index-materialize": {
-      "executor": "@attune/nx:toolchain",
-      "dependsOn": [
-        {
-          "projects": [
-            "attune-nx"
-          ],
-          "target": "build"
-        }
-      ],
-      "metadata": {
-        "description": "Materialize mechanical project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, and repair facts into the SQLite program index before recipe/program-index diagnostics run."
-      },
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "program-index-materialize",
-        "parameters": {},
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/program-index.sqlite"
-        ]
-      },
-      "outputs": [
-        "{workspaceRoot}/.attune/cache/program-index.sqlite"
-      ]
-    },
     "tool-versions": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
@@ -109,35 +72,22 @@
         "dryRun": false
       }
     },
-    "shape-conformance": {
+    "recipe-substrate-check": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Effect Schema-backed generator shape inventory and Artifact ownership conformance check."
-      },
-      "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "shape-conformance",
-        "parameters": {},
-        "dryRun": false
-      }
-    },
-    "program-facts-check": {
-      "executor": "@attune/nx:toolchain",
-      "metadata": {
-        "description": "Focused diagnostic target for program facts, artifact ownership, generator shape conformance, and framework policy.",
+        "description": "Focused diagnostic target for Recipe/ManagedRecipe declarations, package DB emission readiness, generator derivation recipes, and framework policy.",
         "attune": {
           "runtimeChecks": [
-            "descriptor-decode",
-            "descriptor-hash",
-            "generated-artifact-hash",
-            "program-index-diagnostics",
-            "waiver-state",
+            "recipe-registry",
+            "managed-recipe-lifecycle",
+            "package-db-emission",
+            "recipe-diagnostics",
+            "recipe-repairs",
             "import-boundary",
             "local-cache",
             "no-checked-in-report"
           ],
-          "readModel": "ProgramFactQuery"
+          "readModel": "RecipeDbEmissionView"
         }
       },
       "options": {
@@ -146,9 +96,11 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "workspace:program-index-materialize",
-            "workspace:artifact-ownership-check",
-            "workspace:shape-conformance",
+            "framework-protocol:test",
+            "framework-runtime:test",
+            "framework-nx:test",
+            "framework-language-service:test",
+            "attune-architecture:test",
             "workspace:framework-policy-check"
           ]
         },
@@ -264,7 +216,7 @@
     "arch:scan": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:program-facts-check."
+        "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:recipe-substrate-check."
       },
       "options": {
         "tool": "architecture",
@@ -374,7 +326,7 @@
         "toolId": "nx-targets",
         "parameters": {
           "targets": [
-            "workspace:program-facts-check",
+            "workspace:recipe-substrate-check",
             "workspace:atom-graph-conformance",
             "workspace:property-evidence",
             "workspace:coverage-conformance",
@@ -409,7 +361,7 @@
         "parameters": {
           "targets": [
             "attune-nx:test",
-            "workspace:program-facts-check",
+            "workspace:recipe-substrate-check",
             "workspace:atom-graph-conformance",
             "workspace:property-evidence",
             "workspace:coverage-conformance",
@@ -428,6 +380,7 @@
           "effectOxlintPolicy": true,
           "verifyPrCompletion": true
         },
+        "timeoutSeconds": 360,
         "dryRun": false
       }
     },

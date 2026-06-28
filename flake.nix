@@ -182,11 +182,17 @@
             };
           })
         ];
-        pkgs = import nixpkgs { inherit overlays system; };
+        pkgs = import nixpkgs {
+          inherit overlays system;
+          config.allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) [
+            "timescaledb"
+          ];
+        };
         cocoindexTools = import ./nix/toolchains/cocoindex.nix { inherit pkgs; };
         envVars = import ./nix/lib/env-vars.nix;
         joernTools = import ./nix/toolchains/joern.nix { inherit pkgs; };
         kubernetesTools = import ./nix/toolchains/kubernetes.nix { inherit pkgs; };
+        localTimescaleTools = import ./nix/toolchains/postgres-timescale.nix { inherit pkgs; };
         openSpec = import ./nix/toolchains/openspec.nix { inherit pkgs; };
         inherit (joernTools) joern cpgSchemaSources cpgVersion;
         propertyTmpfsSize = "8g";
@@ -203,6 +209,13 @@
             nix2container
             pkgs
             propertyRuntime
+            system
+            ;
+        };
+        localTimescaleImage = import ./nix/containers/local-timescaledb.nix {
+          inherit
+            nix2container
+            pkgs
             system
             ;
         };
@@ -253,6 +266,7 @@
           pi-task-extension = pkgs.pi-task-extension;
           pi = pkgs.pi;
           joern-effect-property-image = propertyImage;
+          local-timescaledb-image = localTimescaleImage;
           windows-desktop-guard = windowsDesktopGuard;
           default = joern;
         };
@@ -277,6 +291,7 @@
             cocoindexTools.uv
             pkgs.nodejs_22
             pkgs.pnpm
+            localTimescaleTools.postgresWithTimescale
             pkgs.nixfmt
             pkgs.pre-commit
             pkgs.ssh-to-age

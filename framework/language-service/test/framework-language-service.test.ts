@@ -4,7 +4,6 @@ import {
   InMemoryProgramFactStoreLive,
   ProgramDiagnostics,
   ProgramDiagnosticsLive,
-  ProgramIndexDiagnosticsLive,
   ProgramFactProjectionLive,
   ProgramFactQuery,
   ProgramFactQueryLive,
@@ -16,22 +15,26 @@ import {
 import {
   defineRecipe,
   type RecipeDiagnostic,
+  type RecipeHealth,
   type RecipeReceipt,
   type RecipeRepair,
+  type RecipeDefinition,
+  RecipeRecordView,
   RecipeRepairPlan,
   NxTarget,
 } from "@attune/framework-protocol"
 import {
   codeActionsForDiagnostic,
   diagnosticCodeLens,
+  effectLanguageServiceReference,
+  FrameworkLanguageServiceRecipes,
   isDirectGeneratedFileWriteAction,
   projectLanguageServiceViewFromRecipe,
-  projectLanguageServiceViewFromProgramIndex,
   projectLanguageServiceViewFromRuntime,
+  projectTypeScriptLanguageServiceProjectionFromRecipe,
   sourceRangeIndexFromFixtures,
   sourceRangeKey,
 } from "../src/index.js"
-import { createInMemoryProgramIndex, ProgramIndex, type ProgramIndexApi } from "@attune/framework-sqlite"
 
 const sourcePath = "packages/demo/src/attune.package.ts"
 const generatedPath = "packages/demo/src/generated/symbol-registry.ts"
@@ -76,28 +79,6 @@ const provideRuntime = <A, E>(
 ): Effect.Effect<A, E, never> =>
   effect.pipe(
     Effect.provide(ProgramDiagnosticsLive),
-    Effect.provide(ProgramFactQueryLive),
-    Effect.provide(ProgramFactRuntimeLive),
-    Effect.provide(ProgramFactProjectionLive),
-    Effect.provide(InMemoryProgramFactStoreLive(initial)),
-  ) as Effect.Effect<A, E, never>
-
-const provideProgramIndexRuntime = <A, E>(
-  effect: Effect.Effect<
-    A,
-    E,
-    | ProgramFactRuntime
-    | ProgramFactQuery
-    | ProgramDiagnostics
-    | ProgramFactStore
-    | ProgramIndex
-  >,
-  programIndex: ProgramIndexApi,
-  initial?: Partial<ProgramFactStoreSnapshot>,
-): Effect.Effect<A, E, never> =>
-  effect.pipe(
-    Effect.provide(ProgramIndexDiagnosticsLive),
-    Effect.provide(ProgramIndex.fromService(programIndex)),
     Effect.provide(ProgramFactQueryLive),
     Effect.provide(ProgramFactRuntimeLive),
     Effect.provide(ProgramFactProjectionLive),
@@ -162,6 +143,19 @@ const runtimeView = (
   )
 
 describe("@attune/framework-language-service", () => {
+  it("declares language-service recipes from the package barrel", () => {
+    const records = FrameworkLanguageServiceRecipes.map((recipe) =>
+      RecipeRecordView.fromRecipe(recipe as RecipeDefinition<unknown, unknown>)
+    )
+
+    expect(records.map((record) => record.recipeId)).toEqual([
+      "framework-language-service.program-diagnostic-view",
+      "framework-language-service.recipe-health-view",
+      "framework-language-service.typescript-projection",
+    ])
+    expect(records.every((record) => record.sourcePath === "framework/language-service/src/recipes.ts")).toBe(true)
+  })
+
   it("turns runtime diagnostics into editor actions without mutating files", () => {
     const diagnostic = {
       code: "attune/program-facts/missing-observation",
@@ -224,75 +218,6 @@ describe("@attune/framework-language-service", () => {
     })
   })
 
-  it("projects program-index diagnostics through the language-service view", async () => {
-    const index = createInMemoryProgramIndex()
-    await Effect.runPromise(Effect.gen(function* seedProgramIndexDiagnostic() {
-      yield* index.putProjects([{
-        id: "demo",
-        root: "packages/demo",
-        sourceRoot: "packages/demo/src",
-        projectType: "library",
-        hash: "demo",
-        updatedAt: "2026-06-23T00:00:00.000Z",
-      }])
-      yield* index.putSourceFiles([{
-        id: "file:demo",
-        projectId: "demo",
-        path: sourcePath,
-        hash: "source",
-        updatedAt: "2026-06-23T00:00:00.000Z",
-      }])
-      yield* index.putDiagnostics([{
-        id: "diagnostic:demo:schema",
-        projectId: "demo",
-        sourceFileId: "file:demo",
-        rangeJson: JSON.stringify({ start: 5, end: 17 }),
-        code: "attune/program-index/schema-non-serializable",
-        severity: "warning",
-        message: "Schema contains executable Effect behavior.",
-        causeJson: JSON.stringify({
-          fact: "schema_descriptor",
-          status: "partial",
-        }),
-      }])
-      yield* index.putRepairs([{
-        id: "repair:diagnostic:demo:schema",
-        diagnosticId: "diagnostic:demo:schema",
-        safety: "safe",
-        nxTarget: "demo:attune-repair",
-        repairKind: "schema-descriptor-refresh",
-        payloadJson: JSON.stringify({
-          artifact: "schema_descriptor",
-          sourceFile: sourcePath,
-        }),
-        createdAt: "2026-06-23T00:00:00.000Z",
-      }])
-    }))
-
-    const view = await Effect.runPromise(projectLanguageServiceViewFromProgramIndex(index, {
-      sourcePath,
-    }))
-
-    expect(view.diagnostics[0]).toMatchObject({
-      code: "attune/program-index/schema-non-serializable",
-      displayMessage: expect.stringContaining("Schema contains executable Effect behavior."),
-      range: { start: 5, end: 17 },
-      cause: {
-        fact: "schema_descriptor",
-        status: "partial",
-      },
-    })
-    expect(view.quickInfo[0]?.text).toContain("project: demo")
-    expect(Object.values(view.codeActions).flat()[0]?.action).toMatchObject({
-      kind: "nx-generator",
-      target: "demo:attune-repair",
-      options: expect.objectContaining({
-        source: "program-index",
-        repairKind: "schema-descriptor-refresh",
-      }),
-    })
-  })
-
   it("projects recipe diagnostics through the language-service view", () => {
     const recipe = defineRecipe({
       id: "workspace.policy-fast",
@@ -323,8 +248,17 @@ describe("@attune/framework-language-service", () => {
       receiptId: receipt.receiptId,
     }
     const repairs: readonly RecipeRepair[] = RecipeRepairPlan.fromRecipe(recipe, [diagnostic])
+    const health: RecipeHealth = {
+      recipeId: recipe.id,
+      status: "failed",
+      explanation: "Recipe failed.",
+      receiptIds: [receipt.receiptId],
+      diagnosticIds: [diagnostic.diagnosticId],
+      repairIds: repairs.map((repair) => repair.repairId),
+    }
     const view = projectLanguageServiceViewFromRecipe(recipe, {
       diagnostics: [diagnostic],
+      health,
       receipts: [receipt],
       repairs,
     })
@@ -336,6 +270,8 @@ describe("@attune/framework-language-service", () => {
       displayMessage: "attune/recipe/run-failed: Recipe failed.",
     })
     expect(view.quickInfo[0]?.text).toContain("diagnostic: attune/recipe/run-failed")
+    expect(view.quickInfo.at(-1)?.text).toContain("recipe: workspace.policy-fast")
+    expect(view.quickInfo.at(-1)?.text).toContain("health: failed")
     expect(Object.values(view.codeActions).flat()[0]?.action).toMatchObject({
       kind: "nx-check",
       target: "workspace:policy-fast",
@@ -344,6 +280,13 @@ describe("@attune/framework-language-service", () => {
         diagnosticId: diagnostic.diagnosticId,
       }),
     })
+    expect(view.codeLenses.map((lens) => lens.title)).toEqual(expect.arrayContaining([
+      "recipe owner: workspace.policy-fast",
+      "recipe health: failed",
+      `failed receipt: ${receipt.receiptId}`,
+      "repair command: nx run workspace:policy-fast",
+      "recipe workspace.policy-fast: failed",
+    ]))
     expect(view.codeLenses.at(-1)).toMatchObject({
       title: "recipe workspace.policy-fast: failed",
       action: {
@@ -354,79 +297,34 @@ describe("@attune/framework-language-service", () => {
         },
       },
     })
-  })
 
-  it("reads program-index-backed diagnostics through the runtime language-service path", async () => {
-    const index = createInMemoryProgramIndex()
-    await Effect.runPromise(Effect.gen(function* seedProgramIndexDiagnostic() {
-      yield* index.putProjects([{
-        id: "demo",
-        root: "packages/demo",
-        sourceRoot: "packages/demo/src",
-        projectType: "library",
-        hash: "demo",
-        updatedAt: "2026-06-23T00:00:00.000Z",
-      }])
-      yield* index.putSourceFiles([{
-        id: "file:demo",
-        projectId: "demo",
-        path: sourcePath,
-        hash: "source",
-        updatedAt: "2026-06-23T00:00:00.000Z",
-      }])
-      yield* index.putDiagnostics([{
-        id: "diagnostic:demo:artifact",
-        projectId: "demo",
-        sourceFileId: "file:demo",
-        code: "attune/program-index/artifact-stale",
-        severity: "error",
-        message: "artifact fact is stale for generated registry.",
-        causeJson: JSON.stringify({
-          fact: "artifact",
-          status: "stale",
-        }),
-      }])
-      yield* index.putRepairs([{
-        id: "repair:diagnostic:demo:artifact",
-        diagnosticId: "diagnostic:demo:artifact",
-        safety: "safe",
-        nxTarget: "demo:attune-repair",
-        repairKind: "artifact-refresh",
-        createdAt: "2026-06-23T00:00:00.000Z",
-      }])
-    }))
+    const typeScriptProjection = projectTypeScriptLanguageServiceProjectionFromRecipe(recipe, {
+      diagnostics: [diagnostic],
+      health,
+      receipts: [receipt],
+      repairs,
+    })
 
-    const view = await Effect.runPromise(
-      provideProgramIndexRuntime(
-        Effect.gen(function* runtimeProgramIndexLanguageService() {
-          const diagnostics = yield* ProgramDiagnostics
-          const query = yield* ProgramFactQuery
-          return yield* projectLanguageServiceViewFromRuntime(
-            { diagnostics, query },
-            { sourcePath, projectId: "demo", schemaDescriptorId: schemaDescriptorId },
-          )
-        }),
-        index,
-      ),
+    expect(effectLanguageServiceReference).toMatchObject({
+      packageName: "@effect/language-service",
+      repository: "https://github.com/Effect-TS/language-service",
+      localReferencePath: "imports/github/effect-language-service",
+    })
+    expect(typeScriptProjection.diagnostics[0]).toMatchObject({
+      category: 1,
+      code: 930001,
+      source: "attune.recipe",
+      messageText: "attune/recipe/run-failed: Recipe failed.",
+    })
+    expect(typeScriptProjection.codeFixes.map((fix) => fix.fixName)).toContain(
+      "@attune/recipe/codefix/nx-check/recipe-action:recipe-diagnostic:workspace.policy-fast:failed",
     )
-
-    expect(view.diagnostics[0]).toMatchObject({
-      code: "attune/program-index/artifact-stale",
-      severity: "error",
-      displayMessage: expect.stringContaining("artifact fact is stale"),
-      cause: {
-        fact: "artifact",
-        status: "stale",
-      },
-    })
-    expect(Object.values(view.codeActions).flat()[0]?.action).toMatchObject({
-      kind: "nx-generator",
-      target: "demo:attune-repair",
-      options: expect.objectContaining({
-        source: "program-index",
-        repairKind: "artifact-refresh",
-      }),
-    })
+    expect(typeScriptProjection.applicableRefactors[0]?.actions[0]?.kind).toContain(
+      "refactor.rewrite.attune.recipe.",
+    )
+    expect(typeScriptProjection.quickInfo?.displayParts?.[0]?.text).toContain(
+      "recipe: workspace.policy-fast",
+    )
   })
 
   it("surfaces stale artifacts as an Nx repair instead of a file edit", async () => {

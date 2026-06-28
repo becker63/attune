@@ -10,8 +10,8 @@ import {
   AlchemyResourceDescriptor,
   HealthView,
   NxTarget,
+  RecipeIoRecordView,
   RecipeRepairPlan,
-  recipeIo,
   type ManagedRecipeDefinition,
   type ManagedRecipeLifecycleAction,
   type RecipeDefinition,
@@ -74,6 +74,29 @@ export interface RecipeRunnerApi {
   ) => Effect.Effect<RecipeRunResult<Output>, RecipeExecutionError>
 }
 
+export interface ManagedRecipeLifecycleApi {
+  readonly plan: <Input, Output>(
+    recipe: ManagedRecipeDefinition<Input, Output>,
+    input?: Input,
+  ) => Effect.Effect<RecipePlan, never>
+  readonly apply: <Input, Output>(
+    recipe: ManagedExecutableRecipeDefinition<Input, Output>,
+    input: Input,
+  ) => Effect.Effect<RecipeRunResult<Output>, RecipeExecutionError>
+  readonly check: <Input, Output>(
+    recipe: ManagedExecutableRecipeDefinition<Input, Output>,
+    input: Input,
+  ) => Effect.Effect<RecipeRunResult<Output>, RecipeExecutionError>
+  readonly destroy: <Input, Output>(
+    recipe: ManagedExecutableRecipeDefinition<Input, Output>,
+    input: Input,
+  ) => Effect.Effect<RecipeRunResult<Output>, RecipeExecutionError>
+  readonly prune: <Input, Output>(
+    recipe: ManagedExecutableRecipeDefinition<Input, Output>,
+    input: Input,
+  ) => Effect.Effect<RecipeRunResult<Output>, RecipeExecutionError>
+}
+
 export interface ManagedRecipeAlchemyProps<Input = unknown, Output = unknown> {
   readonly recipe: ManagedExecutableRecipeDefinition<Input, Output>
   readonly input: Input
@@ -97,6 +120,7 @@ export interface ManagedRecipeAlchemyBinding {
   readonly kind:
     | "recipe"
     | "lifecycle"
+    | "substrate"
     | "receipt"
     | "health"
     | "diagnostic"
@@ -150,8 +174,8 @@ export const makeRecipePlanner = (
       recipeId: recipe.id,
       nxTarget: NxTarget.fromRecipe(recipe),
       dependencies: [...(recipe.dependencies ?? [])],
-      expectedInputs: [recipeIo(recipe.id, "input", "input")],
-      expectedOutputs: [recipeIo(recipe.id, "output", "output")],
+      expectedInputs: RecipeIoRecordView.fromRecipe(recipe).filter((io) => io.role === "input"),
+      expectedOutputs: RecipeIoRecordView.fromRecipe(recipe).filter((io) => io.role === "output"),
       repairs,
       health: HealthView.fromRecipe(recipe, { repairs }),
     }
@@ -203,6 +227,17 @@ export const makeRecipeRunner = (
   }
 }
 
+export const makeManagedRecipeLifecycle = (
+  planner: RecipePlannerApi = makeRecipePlanner(),
+  runner: RecipeRunnerApi = makeRecipeRunner(),
+): ManagedRecipeLifecycleApi => ({
+  plan: (recipe, input) => planner.planManaged(recipe, input),
+  apply: (recipe, input) => runner.runManaged(recipe, input, "apply"),
+  check: (recipe, input) => runner.runManaged(recipe, input, "check"),
+  destroy: (recipe, input) => runner.runManaged(recipe, input, "destroy"),
+  prune: (recipe, input) => runner.runManaged(recipe, input, "prune"),
+})
+
 export const managedRecipeAlchemyOutput = <Input, Output>(
   recipe: ManagedExecutableRecipeDefinition<Input, Output>,
   result: RecipeRunResult<Output>,
@@ -213,11 +248,11 @@ export const managedRecipeAlchemyOutput = <Input, Output>(
   descriptor: AlchemyResourceDescriptor.fromManagedRecipe(recipe),
   run: result.run,
   receipt: result.receipt,
-    health: result.health,
-    output: result.output,
-    diagnostics: result.diagnostics,
-    repairs: result.repairs,
-    bindings,
+  health: result.health,
+  output: result.output,
+  diagnostics: result.diagnostics,
+  repairs: result.repairs,
+  bindings,
 })
 
 export const managedRecipeAlchemyBindings = <Input, Output>(
@@ -226,6 +261,9 @@ export const managedRecipeAlchemyBindings = <Input, Output>(
 ): readonly ManagedRecipeAlchemyResourceBinding[] => [
   binding("recipe", recipe.id, recipe.id),
   ...recipe.lifecycle.map((action) => binding("lifecycle", recipe.id, action)),
+  ...(recipe.lifecycleSubstrates ?? []).map((substrate) =>
+    binding("substrate", recipe.id, `${substrate.kind}:${substrate.tool}:${substrate.id}`)
+  ),
   binding("receipt", recipe.id, result.receipt.receiptId),
   binding("health", recipe.id, result.health.status),
   ...result.diagnostics.map((diagnostic) => binding("diagnostic", recipe.id, diagnostic.diagnosticId)),
@@ -261,6 +299,11 @@ export class RecipeRunner extends Context.Service<
   RecipeRunnerApi
 >()("@attune/framework-runtime/RecipeRunner") {}
 
+export class ManagedRecipeLifecycle extends Context.Service<
+  ManagedRecipeLifecycle,
+  ManagedRecipeLifecycleApi
+>()("@attune/framework-runtime/ManagedRecipeLifecycle") {}
+
 export const RecipePlannerLive: Layer.Layer<RecipePlanner> = Layer.succeed(
   RecipePlanner,
   makeRecipePlanner(),
@@ -269,6 +312,11 @@ export const RecipePlannerLive: Layer.Layer<RecipePlanner> = Layer.succeed(
 export const RecipeRunnerLive: Layer.Layer<RecipeRunner> = Layer.succeed(
   RecipeRunner,
   makeRecipeRunner(),
+)
+
+export const ManagedRecipeLifecycleLive: Layer.Layer<ManagedRecipeLifecycle> = Layer.succeed(
+  ManagedRecipeLifecycle,
+  makeManagedRecipeLifecycle(),
 )
 
 const decodeRecipeInput = <Input, Output>(
@@ -299,11 +347,12 @@ const passedRecipeResult = <Input, Output>(
   action?: ManagedRecipeLifecycleAction,
 ): RecipeRunResult<Output> => {
   const completedAt = new Date().toISOString()
+  const status = passedStatusFor(action)
   const runRecord: RecipeRun = {
     runId,
     recipeId: recipe.id,
     ...(action === undefined ? {} : { action }),
-    status: "passed",
+    status,
     startedAt,
     completedAt,
   }
@@ -311,7 +360,7 @@ const passedRecipeResult = <Input, Output>(
     receiptId: `recipe-receipt:${recipe.id}:${startedAt}`,
     recipeId: recipe.id,
     runId,
-    status: "passed",
+    status,
     startedAt,
     completedAt,
     command: NxTarget.fromRecipe(recipe),
@@ -326,6 +375,14 @@ const passedRecipeResult = <Input, Output>(
     repairs: [],
     health: HealthView.fromRecipe(recipe, { receipts: [receipt], checkedAt: completedAt }),
   }
+}
+
+const passedStatusFor = (
+  action: ManagedRecipeLifecycleAction | undefined,
+): RecipeRun["status"] => {
+  if (action === "destroy") return "destroyed"
+  if (action === "prune") return "pruned"
+  return "passed"
 }
 
 const failedRecipeResult = <Input, Output>(

@@ -6,6 +6,7 @@ export * from "./command-surface-conformance.js"
 export * from "./framework-atom-implementation-policy.js"
 export * from "./framework-import-boundary.js"
 export * from "./framework-no-report-policy.js"
+export * from "./recipes.js"
 
 export const RuleId = Schema.Literals([
   "attune/alchemy-lifecycle-owner",
@@ -102,7 +103,7 @@ export const scanWorkspace = ({ workspaceRoot }: ScanOptions): PolicyResult => {
 }
 
 const collectFiles = (root: string): readonly ScannedFile[] => {
-  const ignored = new Set([".git", "node_modules", "dist", "coverage", ".nx"])
+  const ignored = new Set([".git", "node_modules", "dist", "coverage", ".nx", "archive"])
   const out: ScannedFile[] = []
   const visit = (dir: string): void => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

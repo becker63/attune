@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest"
 import { Schema } from "effect"
 import fc from "fast-check"
+import { RecipeRecordView, type RecipeDefinition } from "@attune/framework-protocol"
 import {
   CounterexampleCacheEntrySchema,
+  FrameworkTestingRecipes,
   assertExactSymbolMapCoverage,
   atomGraphMovementRecordsFromObservations,
   atomMovementEvidence,
@@ -91,6 +93,19 @@ const coverage = (
 })
 
 describe("@attune/framework-testing", () => {
+  it("declares framework testing recipes from the package barrel", () => {
+    const records = FrameworkTestingRecipes.map((recipe) =>
+      RecipeRecordView.fromRecipe(recipe as RecipeDefinition<unknown, unknown>)
+    )
+
+    expect(records.map((record) => record.recipeId)).toEqual([
+      "framework-testing.program-harness-observations",
+      "framework-testing.coverage-guided-rerun",
+      "framework-testing.worker-replay-metadata",
+    ])
+    expect(records.every((record) => record.sourcePath === "framework/testing/src/recipes.ts")).toBe(true)
+  })
+
   it("defines symbol handler registries and observation producers for generated harnesses", () => {
     const registry = defineSymbolHandlerRegistry({
       projectId: "demo",

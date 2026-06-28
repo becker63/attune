@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  FoldKitReportRecipes,
   compileFoldkitMdx,
   deriveThreads,
   activityFixtureItems,
@@ -10,6 +11,13 @@ import {
 } from "../src/index.js"
 
 describe("FoldKit activity helpers", () => {
+  it("declares receipt-to-report projection as a FoldKit recipe", () => {
+    expect(FoldKitReportRecipes.map((recipe) => recipe.id)).toEqual([
+      "attune-foldkit.recipe-receipts-report",
+    ])
+    expect(FoldKitReportRecipes[0]?.nxTarget).toBe("attune-foldkit:test")
+  })
+
   it("derives threads from fixture items", () => {
     const threads = deriveThreads(activityFixtureItems)
 

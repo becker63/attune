@@ -15,8 +15,11 @@ The architectural canon lives in `docs/attuned/`.
 Attune's direction is:
 
 - Effect owns execution, resource lifetimes, and external boundaries.
-- EventLog records what happened.
-- Drizzle materializes durable facts.
+- Recipes and ManagedRecipes are the active derivation and lifecycle substrate.
+- Local TimescaleDB/Postgres materializes generic recipe receipts, diagnostics,
+  repairs, health, Tend events, token metrics, and outbox facts.
+- Kanel, Kysely, and SafeQL own the active SQL typing and validation route.
+- EventLog records product facts where a package recipe requires it.
 - Reactivity announces which facts changed.
 - Atoms derive current state and decision packets.
 - CocoIndex recalls candidate relationships.
@@ -54,7 +57,7 @@ nx run <project>:test
 Nx is the public workflow surface. Nix supplies the reproducible tools behind
 those targets. A normal package's Attune surface should be
 `src/attune.package.ts`; generated framework consequences belong to Nx repair,
-framework services, ProtocolStore projections, or gitignored cache. See
+framework services, recipe receipt projections, or gitignored cache. See
 `docs/attuned/Attune Framework Operating Surface.md` and
 `docs/platform/nx-nix-workflow.md`.
 

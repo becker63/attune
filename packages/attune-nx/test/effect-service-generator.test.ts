@@ -103,7 +103,7 @@ describe("@attune/nx:effect-service", () => {
     )
   })
 
-  it("records symbol metadata in artifact provenance", () => {
+  it("does not emit legacy artifact-ownership provenance", () => {
     const tree = new MemoryTree()
 
     effectServiceGenerator(tree, {
@@ -115,27 +115,8 @@ describe("@attune/nx:effect-service", () => {
       project: "decision-core",
     })
 
-    const shard = JSON.parse(
-      tree.files.get("packages/decision-core/attune.artifact-ownership.json") ?? "{}",
-    )
-
-    expect(shard.entries[0]).toMatchObject({
-      generatorName: "@attune/nx:effect-service",
-      generatorVersion: "0.0.0-test",
-      options: {
-        directory: "packages/decision-core/src/effect/services",
-        export: true,
-        name: "Decision Runner",
-        symbolId: "decision.runner.execute",
-        symbolKind: "generator",
-        tag: "@attune/service/DecisionRunner",
-      },
-      ownedFiles: [
-        "packages/decision-core/src/effect/services/decision-runner.ts",
-        "packages/decision-core/src/effect/services/index.ts",
-      ],
-      openspecChangeId: "promote-program-index-runtime-substrate",
-    })
+    expect(tree.files.has("packages/decision-core/attune.artifact-ownership.json")).toBe(false)
+    expect(tree.files.has("attune.artifact-ownership.index.json")).toBe(false)
   })
 
   it("keeps repeated generator output deterministic", () => {

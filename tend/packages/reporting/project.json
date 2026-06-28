@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "tend-reporting",
+  "projectType": "library",
+  "root": "tend/packages/reporting",
+  "sourceRoot": "tend/packages/reporting/src",
+  "targets": {
+    "typecheck": {
+      "executor": "@attune/nx:toolchain",
+      "options": {
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "check",
+        "parameters": {
+          "classic": true,
+          "tsconfig": "tsconfig.json"
+        }
+      }
+    },
+    "test": {
+      "executor": "@attune/nx:package-check",
+      "options": {
+        "dryRun": false,
+        "checks": ["test"]
+      }
+    }
+  },
+  "tags": ["scope:tend", "attune:reporting"]
+}

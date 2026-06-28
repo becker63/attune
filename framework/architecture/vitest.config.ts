@@ -21,10 +21,6 @@ export default defineConfig({
         replacement: fileURLToPath(new URL("../runtime/src/index.ts", import.meta.url)),
       },
       {
-        find: "@attune/framework-sqlite",
-        replacement: fileURLToPath(new URL("../sqlite/src/index.ts", import.meta.url)),
-      },
-      {
         find: "joern-effect/package-effect",
         replacement: fileURLToPath(new URL("../../packages/joern-effect/node_modules/effect/dist/esm/index.js", import.meta.url)),
       },
@@ -32,5 +28,6 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    include: ["test/**/*.test.ts"],
   },
 })

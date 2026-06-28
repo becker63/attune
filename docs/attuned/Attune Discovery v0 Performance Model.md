@@ -1,3 +1,10 @@
+## Historical ARS Note
+
+This performance model is retained as v0 product-loop context. Any Drizzle,
+program-index, or old durable substrate language below is historical unless a
+new OpenSpec explicitly re-promotes it. The active ARS substrate is
+Recipe/ManagedRecipe plus local TimescaleDB/Postgres recipe receipts.
+
 **Status:** v0 performance architecture  
 **Scope:** Attune Discovery runtime, CocoIndex, joern-effect, memory/caching, queues, and measurement  
 **Goal:** keep the first implementation honest about where runtime and memory will actually go.

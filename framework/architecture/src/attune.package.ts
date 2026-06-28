@@ -62,11 +62,6 @@ export const ProjectFacts = defineAttuneProjectFacts({
       name: "command-surface-conformance",
     },
     {
-      id: "generator-shape-conformance",
-      kind: "policy-rule",
-      name: "generator-shape-conformance",
-    },
-    {
       id: "artifact-ownership-policy-scan",
       kind: "policy-rule",
       name: "artifact-ownership-policy-scan",

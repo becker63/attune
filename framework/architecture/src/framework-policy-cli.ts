@@ -99,6 +99,7 @@ const reportFilePattern = /\.(json|jsonc|md|mdx|txt)$/u
 const ignoredDirs = new Set([
   ".git",
   ".nx",
+  "archive",
   "coverage",
   "dist",
   "node_modules",
@@ -655,7 +656,7 @@ function packageLocalCompanionReplacementExists(
     return projectFactsReplacementExists(packageRoot, filesByPath)
   }
   if (companionPath.endsWith("/attune.artifact-ownership.json")) {
-    return sourceOwnershipProjectionExists(packageRoot, projectName, filesByPath)
+    return false
   }
   return false
 }
@@ -665,16 +666,16 @@ function packageLocalCompanionReplacementLabel(
   companionPath: string,
 ): string {
   if (companionPath.endsWith("/src/attune.contract.generated.ts")) {
-    return `program-index project facts for ${projectName}`
+    return `recipe project facts for ${projectName}`
   }
   if (companionPath.endsWith("/src/attune.generated.ts")) {
-    return `program-index artifact and observation facts for ${projectName}`
+    return `recipe artifact and observation facts for ${projectName}`
   }
   if (companionPath.endsWith("/src/attune.package.typecheck.ts")) {
-    return `program-index symbol/schema/edge facts for ${projectName}`
+    return `recipe symbol/schema/edge facts for ${projectName}`
   }
   if (companionPath.endsWith("/attune.artifact-ownership.json")) {
-    return `framework/cache artifact ownership projection for ${projectName}`
+    return `recipe receipt provenance for ${projectName}`
   }
   return `mechanical replacement for ${companionPath}`
 }
@@ -685,29 +686,6 @@ function projectFactsReplacementExists(
 ): boolean {
   const projectFactsFile = filesByPath.get(`${packageRoot}/src/attune.package.ts`)
   return projectFactsFile !== undefined && isAuthoredProjectFactsFile(projectFactsFile)
-}
-
-function sourceOwnershipProjectionExists(
-  packageRoot: string,
-  projectName: string,
-  filesByPath: ReadonlyMap<string, WorkspaceFile>,
-): boolean {
-  const indexFile = filesByPath.get("attune.artifact-ownership.index.json")
-  if (indexFile === undefined) return false
-  const index = parseJsonRecord(indexFile.content)
-  const shards = Array.isArray(index?.shards) ? index.shards : []
-  return shards.some((entry) => {
-    if (!isRecord(entry)) return false
-    if (entry.project !== projectName || entry.projectRoot !== packageRoot) return false
-    const shard = typeof entry.shard === "string" ? entry.shard : ""
-    return (
-      (
-        shard === `.attune/cache/artifact-ownership/${projectName}.json` ||
-        shard === `framework/architecture/src/generated/artifact-ownership/${projectName}.json`
-      ) &&
-      filesByPath.has(shard)
-    )
-  })
 }
 
 function checkPackageLocalAttuneCompanionImports(
@@ -736,7 +714,7 @@ function checkPackageLocalAttuneCompanionImports(
       ? "error"
       : "warning"
     const replacementText = hasReplacement
-      ? `Use ${replacementLabel} or the program-index repair target instead.`
+      ? `Use ${replacementLabel} or the recipe repair target instead.`
       : `Replacement path is not complete yet: ${replacementLabel}.`
 
     diagnostics.push(finalRatchetDiagnostic(
@@ -793,7 +771,7 @@ function checkProjectFactsSize(
     contractFile.path,
     [
       `Project facts ${packageRoot}/src/attune.package.ts has ${lineCount} lines and exceeds the staged ${threshold} line threshold.`,
-      "Move derived handlers, observation partition data, repair descriptors, coverage search plans, and artifact freshness metadata into generated/cache materialization or program-index projections.",
+      "Move derived handlers, observation partition data, repair descriptors, coverage search plans, and artifact freshness metadata into generated/cache materialization or recipe projections.",
       `Run nx run ${projectNameFromPackageRoot(packageRoot)}:attune-repair or workspace:attune-repair when available.`,
     ].join(" "),
     severity,
@@ -1632,7 +1610,7 @@ function checkMechanicalProgramOntologyFile(file: WorkspaceFile): readonly Frame
       diagnostics.push(finalRatchetDiagnostic(
         "compatibility-metadata",
         file.path,
-        `Line ${lineIndex + 1} keeps compatibility metadata in a primary program-index path; recipe projection must not maintain compatibility rows or labels.`,
+        `Line ${lineIndex + 1} keeps compatibility metadata in a primary legacy program-index path; recipe projection must not maintain compatibility rows or labels.`,
       ))
     }
   }
@@ -1657,7 +1635,7 @@ function oldOntologyRuntimeObjectDiagnostic(
     "old-ontology-runtime-object",
     filePath,
     [
-      `Line ${line} adds ${name} as a program-index runtime object.`,
+      `Line ${line} adds ${name} as a legacy program-index runtime object.`,
       "Use mechanical facts instead: project, target, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, or invalidation.",
       "Old ontology terms may appear only as historical context or deletion/quarantine plans.",
     ].join(" "),
@@ -1673,7 +1651,7 @@ function oldOntologyDiagnosticCopyDiagnostic(
     "old-ontology-diagnostic-copy",
     filePath,
     [
-      `Line ${line} uses ${term} in primary program-index diagnostic copy.`,
+      `Line ${line} uses ${term} in primary legacy program-index diagnostic copy.`,
       "Diagnostics must name the mechanical fact first: project, source_file, symbol, schema_descriptor, edge, artifact, observation, diagnostic, repair, or invalidation.",
       "Old labels are allowed only when the same diagnostic frames them as historical context or deletion/quarantine work.",
     ].join(" "),
@@ -1957,15 +1935,6 @@ function finalRatchetDiagnostic(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function parseJsonRecord(content: string): Record<string, unknown> | undefined {
-  try {
-    const value = JSON.parse(content) as unknown
-    return isRecord(value) ? value : undefined
-  } catch {
-    return undefined
-  }
 }
 
 function normalizePath(value: string): string {

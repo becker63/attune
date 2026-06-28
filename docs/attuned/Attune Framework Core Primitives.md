@@ -1,11 +1,19 @@
 # Attune Framework Core Primitives
 
+> Historical note: this file records the pre-ARS mechanical-facts model. The
+> active clean-fork substrate is now Recipe/ManagedRecipe plus Effect Alchemy
+> lifecycle and the generic TimescaleDB/Postgres recipe spine from
+> `openspec/changes/arbor-recipe-substrate-migration`. Historical SQLite,
+> Drizzle, program-index, generated companion, and artifact-ownership references
+> below are historical context or quarantine policy, not active compatibility lanes.
+
 ## One-line model
 
 Source declares intent.
-Nx materializes facts.
-SQLite stores facts.
-SQL projections derive facts.
+Recipes model derivation and lifecycle.
+ManagedRecipes run stateful work through Effect Alchemy.
+TimescaleDB/Postgres stores receipts, diagnostics, repairs, health, and Tend facts.
+SQL/Kanel/Kysely/SafeQL derives typed query receipts.
 Reactivity invalidates facts.
 Atoms explain facts.
 Diagnostics name invalid facts.
@@ -94,8 +102,8 @@ actions require review or manual execution.
 ## Invalidation
 
 An invalidation records that a fact changed. Reactivity keys and atoms consume
-these changes through framework runtime query services. Atoms do not write
-SQLite, run Nx, call providers, or own lifecycle.
+these changes through framework runtime query services. Atoms do not write DB
+rows, run Nx, call providers, or own lifecycle.
 
 ## Authored Roots
 
@@ -115,14 +123,16 @@ artifact freshness, observations, diagnostics, repairs, and invalidations.
 
 ## Local Index And Projections
 
-The SQLite program index under `.attune/cache` is the primary local compiler
-database. It stores mechanical facts and exposes simple derivations through SQL
-tables or views such as diagnostics by file, repairable diagnostics, stale
-artifacts, and project health.
+The active local durable spine is the generic TimescaleDB/Postgres recipe
+database managed by `framework-runtime.local-timescaledb`. It stores recipe
+declarations, edges, IO descriptors, runs, receipts, diagnostics, repairs, and
+health views. Gitignored cache paths may still hold generated Kanel, SafeQL, or
+tool receipts, but they are not package-local source truth.
 
 Runtime and language-service code should read through framework query and
-diagnostic services, not raw tables. Product packages must not import SQLite,
-Drizzle tables, private stores, or cache paths as product source.
+diagnostic services, not raw tables. Product packages must not import raw DB
+tables, legacy SQLite/Drizzle/PgTyped substrates, private stores, or cache paths
+as product source.
 
 ## Generated Materialization
 
@@ -144,7 +154,7 @@ Use the cheapest boundary that can prove the fact:
 
 1. TypeScript checks local shape.
 2. Effect Schema validates boundary data.
-3. SQLite and SQL projections answer workspace fact queries.
+3. Recipe receipts and SQL projections answer workspace fact queries.
 4. Nx targets prove freshness, generated output, typecheck, and tests.
 5. Property, proof, provider, and simulation targets record observations.
 6. Architecture policy catches cross-workspace drift and final ratchets.
@@ -158,15 +168,15 @@ archived OpenSpec context, historical notes, or deletion plans, but they are not
 a runtime compatibility lane. Do not project old generated companions, artifact
 ownership shards, or old ontology labels into live rows as compatibility input.
 Delete, quarantine, archive, or replace the old surface with framework-owned
-recipe/program-index projections.
+recipe projections.
 
 ## Do Not
 
-- Do not hand-edit SQLite/cache rows.
+- Do not hand-edit DB/cache rows.
 - Do not commit report-ledger truth.
 - Do not add package-local generated Attune companions as normal source.
 - Do not teach raw generators as the default workflow.
-- Do not add new first-class old-ontology runtime objects when mechanical rows
-  can represent the same data.
+- Do not add new first-class old-ontology runtime objects when recipe rows can
+  represent the same data.
 - Do not run provider, Kubernetes, Alchemy, destructive, container, or heavy
   proof-pressure targets without explicit authorization.

@@ -7,22 +7,24 @@ import type {
   ProgramDiagnostic,
   RecipeDefinition,
   RecipeDiagnostic,
+  RecipeHealth,
   RecipeReceipt,
   RecipeRepair,
   SourceDeclarationRange,
   SourceRange,
 } from "@attune/framework-protocol"
 import { Effect } from "effect"
+import type ts from "typescript"
 import {
   diagnosticsForProgramFacts,
-  programIndexDiagnosticsForFile,
   type DiagnosticRequirementExplanation,
   type ProjectFactSummary,
   type ProgramDiagnosticsApi,
-  type ProgramIndexApi,
   type ProgramFactProjectionInput,
   type ProgramFactQueryApi,
 } from "@attune/framework-runtime"
+
+export * from "./recipes.js"
 
 type RuntimeDiagnostic = ProgramDiagnostic & {
   readonly range?: SourceRange
@@ -58,6 +60,25 @@ export interface LanguageServiceView {
   readonly quickInfo: readonly LanguageServiceQuickInfo[]
   readonly codeActions: Readonly<Record<string, readonly LanguageServiceCodeAction[]>>
   readonly codeLenses: readonly LanguageServiceCodeLens[]
+}
+
+export interface EffectLanguageServiceReference {
+  readonly packageName: "@effect/language-service"
+  readonly repository: "https://github.com/Effect-TS/language-service"
+  readonly localReferencePath: "imports/github/effect-language-service"
+}
+
+export const effectLanguageServiceReference: EffectLanguageServiceReference = {
+  packageName: "@effect/language-service",
+  repository: "https://github.com/Effect-TS/language-service",
+  localReferencePath: "imports/github/effect-language-service",
+}
+
+export interface TypeScriptLanguageServiceProjection {
+  readonly diagnostics: readonly ts.Diagnostic[]
+  readonly codeFixes: readonly ts.CodeFixAction[]
+  readonly applicableRefactors: readonly ts.ApplicableRefactorInfo[]
+  readonly quickInfo: ts.QuickInfo | undefined
 }
 
 export interface SourceTextFixture {
@@ -447,6 +468,101 @@ const viewFromDiagnostics = (
   }
 }
 
+const attuneTypeScriptDiagnosticCode = 930001
+
+const typeScriptDiagnosticCategory = (
+  severity: ProgramDiagnostic["severity"],
+): ts.DiagnosticCategory => {
+  if (severity === "error") return 1 as ts.DiagnosticCategory
+  if (severity === "warning") return 0 as ts.DiagnosticCategory
+  return 3 as ts.DiagnosticCategory
+}
+
+const typeScriptTextSpanFromRange = (
+  range?: SourceRange,
+): ts.TextSpan => ({
+  start: range?.start ?? 0,
+  length: range === undefined ? 0 : Math.max(0, range.end - range.start),
+})
+
+export const typeScriptDiagnosticFromLanguageServiceDiagnostic = (
+  diagnostic: LanguageServiceDiagnostic,
+): ts.Diagnostic => ({
+  file: undefined,
+  start: diagnostic.range?.start,
+  length: diagnostic.range === undefined
+    ? undefined
+    : Math.max(0, diagnostic.range.end - diagnostic.range.start),
+  category: typeScriptDiagnosticCategory(diagnostic.severity),
+  code: attuneTypeScriptDiagnosticCode,
+  source: "attune.recipe",
+  messageText: diagnostic.displayMessage,
+})
+
+const actionKey = (action: ProgramRepairAction): string =>
+  [action.kind, action.id, action.target ?? "no-target"].join(":")
+
+const collectProgramRepairActions = (
+  view: LanguageServiceView,
+): readonly ProgramRepairAction[] => {
+  const actions = [
+    ...Object.values(view.codeActions).flat().map((codeAction) => codeAction.action),
+    ...view.codeLenses.flatMap((lens) => lens.action === undefined ? [] : [lens.action]),
+  ]
+  const unique = new Map(actions.map((action) => [actionKey(action), action]))
+  return [...unique.values()]
+}
+
+const codeFixNameFromAction = (action: ProgramRepairAction): string =>
+  `@attune/recipe/codefix/${action.kind}/${action.id}`
+
+export const typeScriptCodeFixActionFromProgramRepairAction = (
+  action: ProgramRepairAction,
+): ts.CodeFixAction => ({
+  fixName: codeFixNameFromAction(action),
+  description: action.title,
+  changes: [],
+})
+
+export const typeScriptApplicableRefactorFromProgramRepairAction = (
+  action: ProgramRepairAction,
+): ts.ApplicableRefactorInfo => ({
+  name: `@attune/recipe/refactor/${action.kind}/${action.id}`,
+  description: action.title,
+  actions: [{
+    name: `@attune/recipe/refactor/${action.kind}/${action.id}`,
+    description: action.title,
+    kind: `refactor.rewrite.attune.recipe.${action.kind}`,
+  }],
+})
+
+const typeScriptQuickInfoFromLanguageServiceQuickInfo = (
+  quickInfo: LanguageServiceQuickInfo,
+): ts.QuickInfo => ({
+  kind: "const" as ts.ScriptElementKind,
+  kindModifiers: "",
+  textSpan: typeScriptTextSpanFromRange(),
+  displayParts: [{
+    text: quickInfo.text,
+    kind: "text",
+  }],
+})
+
+export const typeScriptLanguageServiceProjectionFromView = (
+  view: LanguageServiceView,
+): TypeScriptLanguageServiceProjection => {
+  const actions = collectProgramRepairActions(view)
+  const quickInfo = view.quickInfo.at(-1)
+  return {
+    diagnostics: view.diagnostics.map(typeScriptDiagnosticFromLanguageServiceDiagnostic),
+    codeFixes: actions.map(typeScriptCodeFixActionFromProgramRepairAction),
+    applicableRefactors: actions.map(typeScriptApplicableRefactorFromProgramRepairAction),
+    quickInfo: quickInfo === undefined
+      ? undefined
+      : typeScriptQuickInfoFromLanguageServiceQuickInfo(quickInfo),
+  }
+}
+
 export const projectLanguageServiceView = (
   input: ProgramFactProjectionInput,
   options: {
@@ -464,6 +580,7 @@ export const projectLanguageServiceViewFromRecipe = <Input, Output>(
   recipe: RecipeDefinition<Input, Output>,
   input: {
     readonly diagnostics?: readonly RecipeDiagnostic[]
+    readonly health?: RecipeHealth
     readonly receipts?: readonly RecipeReceipt[]
     readonly repairs?: readonly RecipeRepair[]
     readonly sourceRanges?: LanguageServiceSourceRangeIndex
@@ -495,15 +612,141 @@ export const projectLanguageServiceViewFromRecipe = <Input, Output>(
     sourcePath,
     ...(input.sourceRanges === undefined ? {} : { sourceRanges: input.sourceRanges }),
   })
+  const repairs = input.repairs ?? []
+  const receipts = input.receipts ?? []
+  const health = input.health
 
   return {
     ...view,
+    quickInfo: [
+      ...view.quickInfo,
+      recipeQuickInfo(recipe, {
+        sourcePath,
+        receipts,
+        repairs,
+        ...(health === undefined ? {} : { health }),
+      }),
+    ],
     codeLenses: [
+      recipeOwnershipCodeLens(recipe, sourcePath),
+      ...(health === undefined ? [] : [recipeHealthCodeLens(recipe, health, sourcePath)]),
+      ...failedReceiptCodeLenses(recipe, receipts, sourcePath),
+      ...repairCommandCodeLenses(recipe, repairs, sourcePath),
       ...view.codeLenses,
       recipeLens,
     ],
   }
 }
+
+export const projectTypeScriptLanguageServiceProjectionFromRecipe = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  input: {
+    readonly diagnostics?: readonly RecipeDiagnostic[]
+    readonly health?: RecipeHealth
+    readonly receipts?: readonly RecipeReceipt[]
+    readonly repairs?: readonly RecipeRepair[]
+    readonly sourceRanges?: LanguageServiceSourceRangeIndex
+  } = {},
+): TypeScriptLanguageServiceProjection =>
+  typeScriptLanguageServiceProjectionFromView(
+    projectLanguageServiceViewFromRecipe(recipe, input),
+  )
+
+const recipeQuickInfo = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  input: {
+    readonly sourcePath: string
+    readonly health?: RecipeHealth
+    readonly receipts: readonly RecipeReceipt[]
+    readonly repairs: readonly RecipeRepair[]
+  },
+): LanguageServiceQuickInfo => ({
+  sourcePath: input.sourcePath,
+  projectId: recipe.projectId ?? recipe.id,
+  text: [
+    `recipe: ${recipe.id}`,
+    `owner: ${recipe.projectId ?? recipe.id}`,
+    `target: ${NxTarget.fromRecipe(recipe)}`,
+    ...(input.health === undefined ? [] : [
+      `health: ${input.health.status}`,
+      input.health.explanation,
+    ]),
+    `receipts: ${input.receipts.length}`,
+    `repairs: ${input.repairs.map((repair) => repair.nxTarget ?? repair.kind).join(", ") || "none"}`,
+  ].join("\n"),
+})
+
+const recipeOwnershipCodeLens = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  sourcePath: string,
+): LanguageServiceCodeLens => ({
+  title: `recipe owner: ${recipe.id}`,
+  sourcePath,
+})
+
+const recipeHealthCodeLens = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  health: RecipeHealth,
+  sourcePath: string,
+): LanguageServiceCodeLens => ({
+  title: `recipe health: ${health.status}`,
+  sourcePath,
+  action: {
+    id: `recipe:${recipe.id}:health`,
+    title: `Run ${NxTarget.fromRecipe(recipe)}`,
+    kind: "nx-check",
+    target: NxTarget.fromRecipe(recipe),
+    options: {
+      recipeId: recipe.id,
+      health: health.status,
+    },
+  },
+})
+
+const failedReceiptCodeLenses = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  receipts: readonly RecipeReceipt[],
+  sourcePath: string,
+): readonly LanguageServiceCodeLens[] =>
+  receipts
+    .filter((receipt) => receipt.status === "failed" || receipt.status === "blocked")
+    .map((receipt) => ({
+      title: `failed receipt: ${receipt.receiptId}`,
+      sourcePath,
+      action: {
+        id: `recipe:${recipe.id}:receipt:${receipt.receiptId}`,
+        title: `Run ${NxTarget.fromRecipe(recipe)}`,
+        kind: "nx-check",
+        target: NxTarget.fromRecipe(recipe),
+        options: {
+          recipeId: recipe.id,
+          receiptId: receipt.receiptId,
+        },
+      },
+    }))
+
+const repairCommandCodeLenses = <Input, Output>(
+  recipe: RecipeDefinition<Input, Output>,
+  repairs: readonly RecipeRepair[],
+  sourcePath: string,
+): readonly LanguageServiceCodeLens[] =>
+  repairs.map((repair) => {
+    const target = repair.nxTarget ?? NxTarget.fromRecipe(recipe)
+    return {
+      title: `repair command: nx run ${target}`,
+      sourcePath,
+      action: {
+        id: `recipe:${recipe.id}:repair:${repair.repairId}`,
+        title: repair.title,
+        kind: "nx-check",
+        target,
+        options: {
+          recipeId: recipe.id,
+          repairId: repair.repairId,
+        },
+      },
+    }
+  })
 
 export const projectLanguageServiceViewFromRuntime = (
   services: {
@@ -533,22 +776,3 @@ export const projectLanguageServiceViewFromRuntime = (
       repairFindingLenses,
     })
   })
-
-export const projectLanguageServiceViewFromProgramIndex = (
-  programIndex: ProgramIndexApi,
-  request: Pick<LanguageServiceProjectionRequest, "sourcePath" | "sourceRanges">,
-): Effect.Effect<LanguageServiceView, never> =>
-  programIndexDiagnosticsForFile(programIndex, request.sourcePath).pipe(
-    Effect.map((diagnostics) =>
-      viewFromDiagnostics(diagnostics, {
-        sourcePath: request.sourcePath,
-        ...(request.sourceRanges === undefined ? {} : { sourceRanges: request.sourceRanges }),
-      })
-    ),
-    Effect.catch(() =>
-      Effect.succeed(viewFromDiagnostics([], {
-        sourcePath: request.sourcePath,
-        ...(request.sourceRanges === undefined ? {} : { sourceRanges: request.sourceRanges }),
-      }))
-    ),
-  )

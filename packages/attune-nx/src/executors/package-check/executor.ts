@@ -152,7 +152,7 @@ export const createPackageCheckPlans = (
       case "contract":
         return [{
           kind: "process",
-          label: "package-check:program-index-diagnostics",
+          label: "package-check:recipe-substrate",
           adapter: "pnpm-exec-nx-run",
           executable: "pnpm",
           args: ["exec", "nx", "run", "workspace:attune-check"],

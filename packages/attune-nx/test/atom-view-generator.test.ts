@@ -131,44 +131,11 @@ describe("atom-view generator", () => {
     )
   })
 
-  it("records artifact provenance for atom-view ownership", () => {
+  it("does not emit legacy artifact-ownership provenance", () => {
     const tree = runGenerator()
-    const shard = JSON.parse(
-      tree.files.get("packages/home-deployment/attune.artifact-ownership.json") ?? "{}",
-    )
 
-    expect(shard).toMatchObject({
-      schemaVersion: 1,
-      project: "home-deployment",
-      projectRoot: "packages/home-deployment",
-    })
-    expect(shard.entries[0]).toMatchObject({
-      generatorName: "@attune/nx:atom-view",
-      generatorVersion: "0.0.0-test",
-      owningProject: "home-deployment",
-      sourceShapeKind: "atom-view",
-      options: {
-        directory: "packages/home-deployment/src/atoms",
-        name: "Host Readiness",
-        symbolId: "nixos-anywhere-install",
-        projectId: "home-deployment",
-        reactivityKey: "host-readiness",
-      },
-      checkTargets: [
-        { project: "home-deployment", target: "atom-graph-conformance" },
-      ],
-      syncTargets: [
-        { project: "home-deployment", target: "sync-project-facts" },
-      ],
-    })
-    expect(shard.entries[0].ownedFiles).toEqual([
-      "packages/home-deployment/src/atoms/host-readiness.atom-graph.ts",
-      "packages/home-deployment/src/atoms/host-readiness.base-atom.ts",
-      "packages/home-deployment/src/atoms/host-readiness.derived-atom.ts",
-      "packages/home-deployment/src/atoms/host-readiness.project-atom.ts",
-      "packages/home-deployment/src/atoms/host-readiness.reactivity.ts",
-      "packages/home-deployment/src/atoms/index.ts",
-    ])
+    expect(tree.files.has("packages/home-deployment/attune.artifact-ownership.json")).toBe(false)
+    expect(tree.files.has("attune.artifact-ownership.index.json")).toBe(false)
   })
 
   it("emits deterministic output across repeated runs", () => {

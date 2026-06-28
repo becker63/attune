@@ -1,5 +1,6 @@
 import { Effect } from "effect"
 import { describe, expect, it } from "vitest"
+import { JoernFuzzerRecipes } from "../src/index.js"
 import {
   configForPreset,
   FuzzerLive,
@@ -11,6 +12,18 @@ import {
 } from "../src/fuzz/index.js"
 
 describe("joern-effect semantic fuzzer pipeline", () => {
+  it("declares fuzzer runs as recipe evidence pipelines with managed worker resources", () => {
+    expect(JoernFuzzerRecipes.map((recipe) => recipe.id)).toEqual([
+      "joern-effect-properties.semantic-case",
+      "joern-effect-properties.worker-fuzzer",
+    ])
+    expect(JoernFuzzerRecipes[1]).toMatchObject({
+      resourceKind: "joern-fuzzer-worker",
+      lifecycle: ["plan", "apply", "check", "destroy"],
+      humanReviewRequired: true,
+    })
+  })
+
   it("models the public pipeline as coarse stage data", () => {
     expect(fuzzPipelineStages.map((stage) => stage.id)).toEqual([
       "load-corpus",

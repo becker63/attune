@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest"
+import { RecipeRecordView, type RecipeDefinition } from "@attune/framework-protocol"
 
 import {
   AttuneDiscoveryWorkflow,
   WorkerPool,
   AttuneCrds,
   LocalComputeStack,
+  PlatformAlchemyK8sRecipes,
   createAlchemyK8sProvider,
   createKubernetesProviderDryRun,
   createKubernetesProviderTest,
@@ -14,6 +16,24 @@ import {
 } from "../src/index.js"
 
 describe("platform-alchemy-k8s", () => {
+  it("declares platform Alchemy Kubernetes recipes from the package barrel", () => {
+    const records = PlatformAlchemyK8sRecipes.map((recipe) =>
+      RecipeRecordView.fromRecipe(recipe as RecipeDefinition<unknown, unknown>)
+    )
+
+    expect(records.map((record) => record.recipeId)).toEqual([
+      "platform-alchemy-k8s.local-cluster-plan",
+      "platform-alchemy-k8s.local-compute-stack",
+      "platform-alchemy-k8s.discovery-workflow",
+      "platform-alchemy-k8s.kubernetes-object-set",
+    ])
+    expect(records.at(-1)).toMatchObject({
+      kind: "managed-recipe",
+      resourceKind: "kubernetes-object-set",
+      humanReviewRequired: true,
+    })
+  })
+
   it("renders the thinkcentre cpu worker pool as Kubernetes resources", () => {
     const provider = createAlchemyK8sProvider()
     const plan = provider.plan(WorkerPool.thinkcentreCpu("registry.local/attune-worker:test"))

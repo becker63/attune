@@ -23,12 +23,27 @@ export interface RecipeReceiptStoreRunRecord {
   readonly repairs: readonly RecipeRepair[]
 }
 
+export interface RecipeReceiptStoreRecipeView {
+  readonly recipe: RecipeRecord | undefined
+  readonly latestReceipt: RecipeReceipt | undefined
+  readonly receipts: readonly RecipeReceipt[]
+  readonly runs: readonly RecipeRun[]
+  readonly health: RecipeHealth | undefined
+  readonly diagnostics: readonly RecipeDiagnostic[]
+  readonly repairs: readonly RecipeRepair[]
+}
+
 export interface RecipeReceiptStoreApi {
   readonly registerRecipe: <Input, Output>(
     recipe: RecipeDefinition<Input, Output>,
   ) => Effect.Effect<void>
   readonly recordPlan: (plan: RecipePlan) => Effect.Effect<void>
   readonly recordRunResult: (record: RecipeReceiptStoreRunRecord) => Effect.Effect<void>
+  readonly recipeView: (recipeId: string) => Effect.Effect<RecipeReceiptStoreRecipeView>
+  readonly receiptById: (receiptId: string) => Effect.Effect<RecipeReceipt | undefined>
+  readonly receiptsForRecipe: (recipeId: string) => Effect.Effect<readonly RecipeReceipt[]>
+  readonly receiptsByStatus: (status: RecipeReceipt["status"]) => Effect.Effect<readonly RecipeReceipt[]>
+  readonly runsForRecipe: (recipeId: string) => Effect.Effect<readonly RecipeRun[]>
   readonly latestReceipt: (recipeId: string) => Effect.Effect<RecipeReceipt | undefined>
   readonly healthForRecipe: (recipeId: string) => Effect.Effect<RecipeHealth | undefined>
   readonly diagnosticsForRecipe: (recipeId: string) => Effect.Effect<readonly RecipeDiagnostic[]>
@@ -91,6 +106,38 @@ export const createInMemoryRecipeReceiptStore = (
         }
         for (const repair of record.repairs) repairs.set(repair.repairId, repair)
       }),
+    recipeView: (recipeId) =>
+      Effect.sync(() => {
+        const recipeReceipts = sortedByCompletedAt([...receipts.values()].filter((receipt) => receipt.recipeId === recipeId))
+        return {
+          recipe: recipes.get(recipeId),
+          latestReceipt: recipeReceipts.at(-1),
+          receipts: recipeReceipts,
+          runs: sortedByStartedAt([...runs.values()].filter((run) => run.recipeId === recipeId)),
+          health: health.get(recipeId),
+          diagnostics: sortById(
+            [...diagnostics.values()].filter((diagnostic) => diagnostic.recipeId === recipeId),
+            (diagnostic) => diagnostic.diagnosticId,
+          ),
+          repairs: sortById(
+            [...repairs.values()].filter((repair) => repair.recipeId === recipeId),
+            (repair) => repair.repairId,
+          ),
+        }
+      }),
+    receiptById: (receiptId) => Effect.sync(() => receipts.get(receiptId)),
+    receiptsForRecipe: (recipeId) =>
+      Effect.sync(() =>
+        sortedByCompletedAt([...receipts.values()].filter((receipt) => receipt.recipeId === recipeId))
+      ),
+    receiptsByStatus: (status) =>
+      Effect.sync(() =>
+        sortedByCompletedAt([...receipts.values()].filter((receipt) => receipt.status === status))
+      ),
+    runsForRecipe: (recipeId) =>
+      Effect.sync(() =>
+        sortedByStartedAt([...runs.values()].filter((run) => run.recipeId === recipeId))
+      ),
     latestReceipt: (recipeId) =>
       Effect.sync(() =>
         sortedByCompletedAt([...receipts.values()].filter((receipt) => receipt.recipeId === recipeId)).at(-1)
@@ -154,6 +201,15 @@ function sortedByCompletedAt(
   return [...values].sort((left, right) =>
     timestampFor(left).localeCompare(timestampFor(right)) ||
     left.receiptId.localeCompare(right.receiptId)
+  )
+}
+
+function sortedByStartedAt(
+  values: readonly RecipeRun[],
+): RecipeRun[] {
+  return [...values].sort((left, right) =>
+    left.startedAt.localeCompare(right.startedAt) ||
+    left.runId.localeCompare(right.runId)
   )
 }
 

@@ -2,6 +2,8 @@ CREATE SCHEMA IF NOT EXISTS framework_core;
 CREATE SCHEMA IF NOT EXISTS framework_event;
 CREATE SCHEMA IF NOT EXISTS framework_view;
 
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+
 CREATE TABLE IF NOT EXISTS framework_core.recipe (
   recipe_id text PRIMARY KEY,
   recipe_kind text NOT NULL CHECK (recipe_kind IN ('recipe', 'managed-recipe')),
@@ -68,7 +70,8 @@ CREATE TABLE IF NOT EXISTS framework_event.recipe_diagnostic (
   source_path text,
   range_start integer,
   range_end integer,
-  cause jsonb
+  cause jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS framework_event.recipe_repair (
@@ -82,6 +85,20 @@ CREATE TABLE IF NOT EXISTS framework_event.recipe_repair (
   risk text NOT NULL CHECK (risk IN ('safe', 'needs-review', 'manual-only')),
   evidence_requirements text[] NOT NULL DEFAULT ARRAY[]::text[],
   payload jsonb
+);
+
+CREATE TABLE IF NOT EXISTS framework_event.recipe_receipt_metric (
+  recipe_id text NOT NULL REFERENCES framework_core.recipe(recipe_id) ON DELETE CASCADE,
+  receipt_id text REFERENCES framework_event.recipe_receipt(receipt_id) ON DELETE SET NULL,
+  metric_name text NOT NULL,
+  metric_value double precision NOT NULL,
+  observed_at timestamptz NOT NULL
+);
+
+SELECT create_hypertable(
+  'framework_event.recipe_receipt_metric',
+  'observed_at',
+  if_not_exists => TRUE
 );
 
 CREATE OR REPLACE VIEW framework_view.recipe_health AS

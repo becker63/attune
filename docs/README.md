@@ -1,11 +1,15 @@
 # Attune Docs
 
-This directory contains the active architectural canon for the unified Attune repo.
+This directory contains Attune architecture notes and historical migration
+context. The active substrate canon for the ARS clean fork is the OpenSpec
+change `arbor-recipe-substrate-migration`.
 
 Start with `attuned/`. Those documents are the current guiding light for the product architecture:
 
 - Effect owns execution and resource boundaries.
-- EventLog, Drizzle, Reactivity, and atoms provide the state model.
+- Recipe/ManagedRecipe, Effect Alchemy lifecycle, local TimescaleDB/Postgres,
+  Kanel, Kysely, SafeQL, Tend/OpenCode receipts, Reactivity, and atoms provide
+  the active substrate model.
 - CocoIndex finds candidates.
 - Joern proves through known templates.
 - The model proposes bounded decisions; the runtime validates and records them.
@@ -15,9 +19,9 @@ Core framework vocabulary:
 - `attuned/Attune Framework Core Primitives.md` - package, service, operation,
   projection, atom/view, Reactivity, provider, generator, policy, evidence,
   diagnostic, repair action, and mostly deduced ID authoring rules.
-- `attuned/Attune Framework Operating Surface.md` - the short agent-facing loop
-  for small package declarations, Nx repairs, private SQLite projection state,
-  generated companions, and what not to hand-edit.
+- `attuned/Attune Framework Operating Surface.md` - historical plus current
+  agent-facing loop for small package declarations, Nx repairs, recipe receipt
+  projections, and what not to hand-edit.
 - `platform/nx-nix-workflow.md` - the Nx-first/Nix-backed workflow contract,
   active Nix directory layout, Buck2 guard, and Joern property target modes.
 

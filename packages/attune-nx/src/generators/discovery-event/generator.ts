@@ -54,7 +54,7 @@ export const project${names.className} = (
   reactivity: ${names.className}ReactivitySink,
   event: ${names.className}Event,
 ): Effect.Effect<void> =>
-  // Drizzle tables belong behind this persistence/read-model boundary.
+  // Persistence tables belong behind this Effect service/read-model boundary.
   Effect.zipRight(store.record${names.className}(event), reactivity.announce(${names.propertyName}ViewKey))
 
 export const ${names.propertyName}ReplayFixture = [

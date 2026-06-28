@@ -20,7 +20,7 @@ import {
 export const generatedArtifactKinds = [
   "project-facts",
   "source-artifacts",
-  "artifact-provenance",
+  "recipe-receipt-provenance",
   "transport-harness",
   "observation-harness",
   "atom-graph",

@@ -1,130 +1,179 @@
 # Design
 
-## Authority Model
+## Context
 
-This change is the active planning and task truth for the Arbor recipe substrate migration. Git remains implementation truth. TimescaleDB/Postgres becomes future runtime/control truth after implementation. Linear remains an external human-facing projection target.
+ARS is the active OpenSpec change for the narrowed overnight architecture
+migration. It is not a product-completion plan. Git remains source truth, this
+OpenSpec change remains planning truth, and future recipe receipts in
+TimescaleDB/Postgres become runtime/control evidence after implementation.
 
-The final planning surface is intentionally small:
+The current repository already has a useful but incomplete recipe kernel slice
+around protocol declarations, runtime kernel/receipt store, Alchemy bridging,
+SQL migration text, Nx/language-service projections, package recipe examples,
+and Tend recipe examples. This design sharpens that work into one substrate
+route instead of preserving several parallel ontologies.
 
-```text
-openspec/changes/arbor-recipe-substrate-migration/
-  .openspec.yaml
-  proposal.md
-  design.md
-  tasks.md
-  specs/arbor-recipe-substrate-migration/spec.md
-```
+## Agent Compaction Anchor
 
-No custom execution ledger is allowed. All task planning lives in `tasks.md`.
+If this implementation thread compacts, preserve this instruction as active
+scope: ARS is an aggressive clean-fork migration. Do not maintain compatibility
+lanes for the old Pi/Tend experiment, program-index-first public ontology,
+SQLite/Drizzle/PgTyped substrate route, package-local generated companions, or
+artifact-ownership shards. Every active Nx/package project must be expressed
+maximally in terms of the framework Recipe or ManagedRecipe abstraction, with
+stateful work modeled as ManagedRecipe plus Effect Alchemy lifecycle. Legacy
+surfaces may remain only as deleted, archived, quarantined, or explicitly
+historical context with no live adapter path.
 
-## Recipe Kernel
+Legacy cleanup is part of the migration, not a follow-up nicety. ARS cannot be
+called complete while active policy targets, tests, imports, generated
+companions, SQLite/Drizzle/PgTyped routes, program-index materializers, or
+artifact-ownership shards still function as compatibility substrates. Any
+remaining legacy reference must be removed, moved behind a named quarantine
+recipe, or documented as historical/deferred with no public runtime or agent
+workflow depending on it.
 
-Recipe declarations are pure. `fromRecipe` translations are pure where possible. Planner reads the world. Runner changes the world. Health explains the world. Repair is a typed action proposal derived from failed or stale health, not an agent guess.
+Code generation is not an exception. CocoIndex adapter/tool generation, Joern
+generated bindings and proof-template generation, Nx generators, SQL/Kanel type
+generation, policy-rule generation, and package artifact generation all belong
+as Recipes or ManagedRecipes with typed inputs, outputs, dependencies, receipts,
+diagnostics, repairs, and validation evidence.
 
-```text
-Recipe = typed input -> Effect execution -> typed output
-       + declared dependencies
-       + receipt
-       + diagnostics
-       + repair
-       + health
+The database route is the migration pressure test, not an optional artifact
+exercise. Static migration text, generated config, or unit fakes are not enough
+to declare ARS complete. A real local TimescaleDB/Postgres service must be
+planned, applied, checked, destroyed, and pruned through
+`LocalTimescaleManagedRecipe`, with Arion and nix2container supplied by Nix
+behind the ManagedRecipe/Effect Alchemy boundary. The first durable tables must
+stay deliberately generic: recipe declarations, edges, IO descriptors, runs,
+receipts, diagnostics, repairs, health, Tend event envelopes, token metrics,
+and outbox rows before any product-specific schema expansion.
 
-ManagedRecipe = Recipe + lifecycle/state semantics
-              + plan/apply/check/destroy
-              + Alchemy-backed managed resource behavior
-```
+Every active package participates in that pressure. A package recipe declaration
+is incomplete until the package can emit its recipe facts, dependency edges,
+expected IO, runs, receipts, diagnostics, repairs, and health state into the
+generic TimescaleDB/Postgres spine. Package-local `recipes.ts` files are source
+declarations; the DB is the shared runtime/control projection. Packages must
+not invent private durable tables or keep package-local generated companions as
+the observable truth when the generic recipe spine can carry the fact.
 
-Definitions:
+## Goals / Non-Goals
 
-- Recipe declaration: pure typed derivation description.
-- `fromRecipe` translation: pure projection to Nx target, LSP diagnostic, repair action, documentation, report, or Alchemy resource description where possible.
-- Planner: effectful service that reads Nx graph, file state, DB receipts, changed inputs, policy state, and observed resource state.
-- Runner: effectful service that executes Recipe/ManagedRecipe work and writes outputs, receipts, diagnostics, repairs, and events.
-- Receipt: durable evidence packet for a run, check, plan, proof, policy evaluation, or projection.
-- Diagnostic: typed finding emitted from recipe health/checking.
-- Repair: typed action proposal with allowed files, command target, risk, and evidence requirements.
-- Health: read-side projection explaining clean, stale, failed, blocked, drifted, superseded, or unknown state.
+**Goals:**
 
-Use `fromRecipe`, not effectful `toRecipe` methods:
+- Make Recipe/ManagedRecipe the architecture substrate.
+- Make Effect Alchemy the lifecycle/state substrate for ManagedRecipe.
+- Manage local TimescaleDB/Postgres through that lifecycle.
+- Wire the durable SQL route through migrations, Kanel, Kysely, SafeQL, and
+  Effect service exports.
+- Make Tend/OpenCode consume recipe receipts and observations for execution
+  discipline and token control.
+- Migrate package-facing domain declarations to recipes without requiring full
+  product behavior.
+- Express code generation and generated artifact pipelines as recipes rather
+  than side-channel generator metadata.
+- Complete legacy cleanup as required migration work: remove, archive, or
+  quarantine legacy substrate lanes rather than maintaining compatibility
+  adapters.
 
-```text
-NxTarget.fromRecipe(recipe)
-HealthView.fromRecipe(recipe)
-RepairPlan.fromRecipe(recipe)
-LspDiagnostic.fromRecipe(recipe)
-AlchemyResource.fromManagedRecipe(recipe)
-```
+**Non-Goals:**
 
-## Effect And Alchemy
+- Full Attune Discovery product loop implementation.
+- Full FoldKit workbench product or UI.
+- Full Canopy production deployment or live Kubernetes apply.
+- Full Joern proof catalog.
+- Long fuzzer, container, or proof campaigns.
+- Production SaaS, public reporting polish, or marketing surface.
+- Package moves unrelated to the substrate migration.
 
-Effect runs recipes. Alchemy manages lifecycle recipes. All Alchemy resources can be modeled as ManagedRecipe outputs. Not all Recipes are Alchemy resources. ManagedRecipe is the bridge between pure app derivation and lifecycle/stateful resources.
+## Overnight Migration Architecture
 
-Use ManagedRecipe when the output has lifecycle/state:
-
-- local TimescaleDB service,
-- Nix/Arion Joern fuzzer runtime,
-- Canopy/Kubernetes object set,
-- OpenCode/Tend service boundary,
-- worker pool/resource class,
-- home/ThinkCentre machine or network bootstrap resource.
-
-Use plain Recipe for pure derivations:
-
-- SQL migrations -> Kanel types,
-- Joern schema -> generated DSL,
-- RuleCandidate -> ast-grep/Oxlint/CodeQL rule,
-- OpenCode trace -> Tend report,
-- EventLog/projection rows -> FoldKit/MDX report,
-- program/package facts -> diagnostics and repair plans.
-
-## DB Receipt Spine
-
-The old top-level program-index ontology is demoted:
-
-```text
-project
-target
-source_file
-symbol
-schema_descriptor
-edge
-generated_output
-observation
-diagnostic
-repair
-invalidation
-event
-proof
-trace
-```
-
-The new top-level ontology is:
+The canonical ARS architecture path is:
 
 ```text
-recipe
-managed_recipe
-recipe_edge
-recipe_input
-recipe_output
-recipe_run
-recipe_receipt
-recipe_diagnostic
-recipe_repair
-recipe_health
+Recipe declaration
+  -> RecipeRegistry
+  -> Planner
+  -> Runner
+  -> ReceiptStore
+  -> TimescaleDB/Postgres
+  -> Health/Diagnostics/Repairs
+  -> Nx/Trellis/Tend/FoldKit projections
 ```
 
-Program-index facts still exist, but as recipe inputs, outputs, observations, or projections:
+Recipe declarations stay pure. `fromRecipe` projections stay pure where
+possible. Planner services read the world. Runner services change the world.
+ReceiptStore records evidence. Health, diagnostics, and repairs explain state
+to Nx, Trellis, Tend, FoldKit, and agents.
 
-- `project`, `source_file`, `symbol`, and `schema_descriptor` are recipe facts or inputs.
-- `generated_output` is a recipe output with ownership.
-- `diagnostic` is emitted by recipe health/checking.
-- `repair` is derived from recipe diagnostics and planner state.
-- `invalidation` is a recipe input/output staleness signal.
-- `proof`, `trace`, and `event` are recipe receipts and observations.
+## ManagedRecipe Lifecycle
 
-The first framework DB spine starts generic:
+Stateful or lifecycle-bearing outputs use ManagedRecipe:
 
-```sql
+```text
+ManagedRecipe
+  -> Effect Alchemy provider/resource
+  -> plan
+  -> apply/run
+  -> check
+  -> destroy/prune
+  -> observed state
+  -> drift diagnostic
+  -> repair plan
+  -> receipt
+```
+
+ManagedRecipe is the bridge between pure recipe declaration and lifecycle
+resources. All Alchemy resources can be modeled as ManagedRecipe outputs, but
+not every Recipe is an Alchemy resource.
+
+## Local Database Route
+
+Local TimescaleDB/Postgres is kernel-owned lifecycle work, not an ad hoc
+developer service:
+
+```text
+LocalTimescaleManagedRecipe
+  -> Nix/Arion/nix2container service closure
+  -> readiness check
+  -> migration apply
+  -> Kanel generation
+  -> Kysely service compile
+  -> SafeQL validation
+  -> receipt
+```
+
+Nix, Arion, and nix2container may implement the service substrate, but they sit
+behind the ManagedRecipe/Alchemy boundary. Nx targets expose lifecycle actions
+as public workflow projections; they do not become a separate long-lived service
+ontology.
+
+This route is the concrete pressure on the migration. The first live spin-up
+must exercise the actual service closure:
+
+```text
+LocalTimescaleManagedRecipe.plan
+  -> build or select nix2container Timescale/Postgres image closure
+  -> render Arion service definition
+  -> apply service lifecycle through Effect Alchemy
+  -> wait for readiness with bounded diagnostics
+  -> apply generic migrations
+  -> verify generic tables and Timescale hypertables
+  -> run Kanel generation
+  -> compile Kysely query services
+  -> run SafeQL raw SQL validation
+  -> write lifecycle and validation receipts
+  -> destroy/prune through the same ManagedRecipe boundary
+```
+
+Static SQL validation remains useful, but it is not a substitute for this live
+managed lifecycle check. If the local environment cannot run the service, the
+blocker must be recorded as an environment blocker with the exact Nx target and
+ManagedRecipe action attempted.
+
+The first durable DB spine is generic:
+
+```text
 framework_core.recipe
 framework_core.recipe_edge
 framework_core.recipe_io
@@ -136,224 +185,168 @@ framework_view.recipe_health
 framework_view.repair_plan
 ```
 
-Active DB families are bounded to:
+Every package emits into that spine. The minimum package emission path is:
 
 ```text
-framework_*
-attune_*
-tend_*
-canopy_*
+package src/recipes.ts
+  -> WorkspaceRecipeRegistry
+  -> register recipe rows and dependency edges
+  -> register expected input/output descriptors
+  -> record plan/run/receipt rows for package checks and repairs
+  -> record diagnostics, repairs, and health views
+  -> Tend/OpenCode/reporting reads the shared receipt spine
 ```
 
-Linear is not a schema family. Artifact payloads use domain rows with `BlobRef`, `ObjectRef`, `GeneratedFile`, or `GeneratedOutput` semantics instead of a generic `artifact_*` DB family.
+Domain tables may follow after the recipe receipt spine exists. Active DB
+families are bounded to `framework_*`, `attune_*`, `tend_*`, and `canopy_*`.
+Linear remains an external human projection. Generic `artifact_*` schema
+families are not an ARS database domain.
 
-## SQL Route
+## Tend Route
 
-The active SQL route is:
+Tend is the first real consumer of the recipe receipt substrate:
 
 ```text
-SQL migrations
-  -> TimescaleDB/Postgres
-  -> Kanel schema type generation
-  -> Kysely typed query services
-  -> SafeQL raw SQL validation
-  -> Effect service exports
+OpenCode session/tool/command observations
+  -> Tend event envelope
+  -> Tend recipe receipt projection
+  -> long-job registry
+  -> Magic Context policy decision
+  -> OpenRTK compression packet
+  -> resume/wakeup packet
+  -> token audit report
 ```
 
-SQLite, Drizzle, and PgTyped remain historical context only. The migration does not maintain a compatibility adapter for them. The first durable implementation should start with the generic framework recipe receipt spine before domain-specific table families.
+Tend records session, tool, command, validation, token, long-job, policy,
+compression, resume, and wakeup facts as typed observations and receipts. It
+must not invent a parallel execution ontology when RecipeReceipt and the local
+TimescaleDB/Postgres route can carry the evidence.
 
-## No Compatibility Lane
+Tend lives under the first-class `tend/packages/*` workspace root in ARS. The
+old Pi-agent Tend experiment is deleted rather than preserved as a
+compatibility lane. OpenCode is the first forcing harness: its extension must
+route session observation, tool choice, command output compression, Magic
+Context selection/compaction, OpenRTK packets, long-job registration, wakeups,
+and token reporting through Tend tools. Future Codex integration is not
+implemented by ARS, but the OpenCode extension contracts must be shaped so a
+Codex adapter can be forced through the same Tend/OpenRTK/Magic Context policy
+surface instead of creating a bypass.
 
-Superseded surfaces are removed, quarantined, archived, or replaced by
-recipe-backed projections. They are not maintained as live compatibility input.
+Required metrics include:
 
-No framework service, materializer, policy rule, test, or documentation should
-preserve a compatibility row/materializer/adapter path for:
+- tokens per accepted repair,
+- tokens per valid diff,
+- search calls per repair,
+- broad `rg` calls per session,
+- validation commands per accepted diff,
+- manual generated-file edit attempts,
+- long-job polling tokens,
+- OpenRTK compression estimates,
+- Magic Context retained/dropped context estimates.
 
-- program-index-first ontology as the active top-level model,
-- package-local generated companions,
-- artifact ownership shards,
-- SQLite/Drizzle/PgTyped substrate paths,
-- old source metadata labels such as generated companion, type-guidance, or package-contract compatibility sources.
+## Decisions
 
-Historical references may exist only as archive/deletion context. Active runtime
-and policy surfaces must project authored source facts, recipe facts, receipts,
-diagnostics, repairs, and health directly.
+### Recipe is the top-level ontology
 
-## Nx, Nix, And Execution
+Program facts, generated outputs, observations, traces, proofs, events,
+diagnostics, repairs, and health all attach to recipes as inputs, outputs,
+receipts, or projections. The old program-index-first entity list is historical
+context, not the active architecture.
 
-Nx is the deterministic scheduling and public workflow surface. Nix supplies reproducible toolchains and runtime closures. Arion/nix2container-style runtime definitions are ManagedRecipe execution substrates when a recipe needs a service, worker, Joern runtime, or local DB.
+Alternative considered: keep program-index-first and adapt recipes into it.
+Rejected because it preserves two public models and keeps package agents
+reasoning about generated companions and compatibility rows instead of the
+recipe graph.
 
-Recipe projections define:
+### Code generation is recipe work
 
-- Nx targets for check, repair, typecheck, test, build, and proof slices.
-- Nix closures for deterministic toolchain/runtime availability.
-- Nix/Arion managed service definitions for local TimescaleDB, Joern fuzzers, and worker classes.
-- Receipts for command invocation, stdout/stderr summaries, output hashes, and validation evidence.
+Generated bindings, generated adapters, generated SQL types, generated policy
+rules, generated proof templates, and generated package artifacts are specified
+as Recipes or ManagedRecipes. Generators may still be the implementation
+mechanism behind an Nx target, but the public semantic unit is the recipe: typed
+input, generated output, dependencies, diagnostics, repair plan, receipt, and
+validation evidence.
 
-## Trellis
+Alternative considered: keep code generation as raw generator metadata plus
+artifact ownership shards. Rejected because the original point of Recipe is to
+make derivation pipelines agent-legible without a parallel generated-artifact
+ontology.
 
-Trellis is a recipe-aware LSP/MCP/editor-agent companion, not a static skill pack.
+### ManagedRecipe owns lifecycle
 
-Trellis surfaces:
+Stateful resources such as local TimescaleDB, service runtimes, platform
+resources, worker pools, and Tend/OpenCode control surfaces use ManagedRecipe
+plus Effect Alchemy lifecycle semantics.
 
-- generated output ownership,
-- stale recipe diagnostics,
-- failed recipe receipts,
-- repair code actions,
-- exact Nx target suggestions,
-- affected downstream recipes,
-- OpenCode/Tend hints,
-- "do not edit this generated file" guards,
-- "run this recipe repair" code actions.
+Alternative considered: expose long-lived local services directly as Nx/Arion
+commands. Rejected because service state, drift, destroy/prune, and repair need
+typed receipts and lifecycle health, not command-only convention.
 
-Static skills and docs may still be generated as fallback projections, but they are not the product center.
+### SQL route is migrations to Kanel to Kysely to SafeQL
 
-## Tend And OpenCode
+The durable SQL route is migration-first and Postgres/TimescaleDB-first. Kanel
+owns generated TypeScript schema types, Kysely owns typed query services,
+SafeQL validates raw SQL, and Effect services export the runtime API.
 
-Tend is agent execution discipline and token/control runtime over recipe facts. Tend consumes recipe receipts, diagnostics, repairs, health, and Trellis hints to reduce wasted context.
+Alternative considered: continue SQLite/Drizzle/PgTyped compatibility. Rejected
+for ARS because it would keep the old substrate alive and split receipt truth.
 
-Tend tracks:
+### Package migration is declaration-first
 
-- long-job registration and wakeups,
-- OpenCode session/tool/command event recording,
-- Magic Context enforcement,
-- RTK command/output compression,
-- validation anxiety reduction,
-- prompt/context policy,
-- token audit reports.
+Packages should expose domain logic as recipe declarations with typed inputs,
+outputs, dependencies, and validation evidence. They do not need to implement
+the complete product behavior behind those declarations in this ARS change.
 
-Required cost metrics:
+Alternative considered: finish every product domain while migrating package
+declarations. Rejected because it couples the overnight substrate migration to
+unbounded product work.
 
-```text
-tokens per accepted repair
-tokens per valid diff
-search calls per repair
-broad rg calls per session
-validation commands per accepted diff
-manual generated-file edit attempts
-long-job polling tokens
-```
+### Product and platform completion moves to follow-up specs
 
-## Attune Product Recipe Loop
+Discovery product behavior, FoldKit UI, Canopy live deploy, full Joern proof
+catalog, and long fuzzer campaigns are deferred unless a narrow substrate test
+requires a tiny slice.
 
-The product loop becomes a recipe graph:
+Alternative considered: keep those as ARS completion criteria. Rejected because
+it made the task ladder impossible to validate honestly.
 
-```text
-repo snapshot recipe
-  -> anchor retrieval recipe
-  -> motif family recipe
-  -> hypothesis recipe
-  -> Joern proof recipe
-  -> evidence scoring recipe
-  -> rule candidate recipe
-  -> deterministic rule recipe
-  -> report/review recipe
-```
+## Migration Plan
 
-This keeps the old discovery and FoldKit story while making it executable, observable, and repairable.
+1. Rewrite and validate ARS planning artifacts with the narrowed scope.
+2. Harden Recipe/ManagedRecipe protocol and runtime kernel APIs.
+3. Implement local TimescaleDB/Postgres as a ManagedRecipe lifecycle resource.
+4. Wire migrations, Kanel, Kysely, SafeQL, and Effect service exports.
+5. Project recipes and ManagedRecipes into Nx/Nix/Arion public targets.
+6. Migrate packages to recipe declarations without finishing deferred products.
+7. Build Tend/OpenCode on recipe receipts and local DB facts.
+8. Remove, archive, or quarantine active legacy substrate lanes as mandatory
+   ARS completion work.
+9. Run the orchestrated validation and repair loop.
 
-## Canopy And Platform Lifecycle
+Rollback for the spec rewrite is reverting only these OpenSpec artifacts. Source
+implementation phases must keep their own validation and rollback notes in the
+phase that changes them.
 
-Canopy/platform lifecycle is ManagedRecipe-first:
+## Risks / Trade-offs
 
-```text
-desired state
-  -> rendered resources
-  -> policy check
-  -> deploy plan
-  -> observed status
-  -> drift diagnostic
-  -> repair plan
-```
+- Scope drift into product completion -> keep hard non-goals in proposal, spec,
+  and tasks.
+- Partial existing recipe code is mistaken for completion -> tasks use Complete,
+  Partial, Pending, and Deferred labels and only check boxes after validation.
+- Local DB tooling is environment-sensitive -> provide unit contracts and gate
+  DB integration tests with explicit environment flags.
+- Generated SQL types tempt hand-authored permanent table shapes -> Kanel is
+  the intended durable route; handwritten Kysely types are temporary scaffolding
+  only when a blocker is recorded.
+- Legacy code may still reference old substrate names -> quarantine or archive
+  with justification rather than silently preserving compatibility.
 
-Effect Alchemy is the lifecycle substrate for ManagedRecipe. Kubernetes object sets, home compute resources, ThinkCentre networking, provider idempotence, manual gates, and typed platform deployment are all modeled as ManagedRecipe plans and receipts before implementation touches infrastructure.
+## Open Questions
 
-The `attune-cp-1`, `attune-cp-2`, and `attune-cp-3` bare-metal control-plane bootstrap remains part of this Canopy lane. Inventory, disk identity, installer readiness, destructive wipe/install approval, host activation, and token/auth readiness are native Effect Alchemy gate resources projected through ManagedRecipe receipts. Unknown host facts stay unknown, evidence-required, or blocked until local probe evidence exists. DryRun and Test modes may plan or simulate; Live mode must validate typed gate proof immediately before any irreversible host, disk, identity, Tailscale, K3s, Kubernetes, or local secret-state mutation.
-
-`packages/home-deployment` owns the future inventory, lifecycle resources, provider gates, CLI next-step output, local non-secret state schema, and safety tests. `nix/hosts` owns the `attune-cp-*` NixOS host flake and shared whole-disk UEFI GPT Disko module. Docs and gitignore rules must keep operator flow, local evidence, Alchemy state, host keys, SSH private keys, kubeconfigs, and host-local secret material separated from committed source truth.
-
-## Joern, Fuzzer, And Proof
-
-Joern/fuzzer/proof work becomes recipe evidence production:
-
-- Proof templates are recipes with typed inputs, serializer projections, and receipts.
-- Fuzzer runs are recipes or ManagedRecipes depending on whether they need workers/containers.
-- Corpus seeds, mutation plans, semantic queries, query reuse, and telemetry become recipe inputs/outputs.
-- Joern proof output is normalized into observation packets and receipts before product scoring consumes it.
-- Agents do not author arbitrary Joern queries in v0; they choose bounded recipe/proof templates.
-
-## Dispatch, FoldKit, And Reports
-
-Dispatch/FoldKit/product surfaces become report and explanation recipes:
-
-- workbench snapshots,
-- event and atom projections,
-- MDX/fixture reports,
-- review packets,
-- Linear comment summaries,
-- phone-friendly/digest surfaces.
-
-Dispatch is historical naming context where applicable; FoldKit and report recipes own the future explanation surface.
-
-## Linear Projection
-
-The final `tasks.md` is canonical. Linear mirrors it.
-
-For existing issue references:
-
-- still-active work maps to an `ARS-*` task,
-- superseded planning receives a replacement `ARS-*` reference,
-- historical evidence remains listed as source context,
-- no duplicate Linear issue is created when an existing issue maps to the task,
-- Linear status never replaces OpenSpec evidence.
-
-Preferred project name is `Arbor - Recipe Substrate Migration`. Existing projects may be reused if they clearly own the work.
-
-## Migrated Source Appendix
-
-The active changes discovered for this consolidation map as follows:
-
-| Source change | Final destination |
-| --- | --- |
-| `add-attune-pi-agent` | ARS-070 Attune product recipe loop |
-| `add-attuned-semantic-workbench` | ARS-070, ARS-100 |
-| `add-codex-autonomous-workstation` | ARS-060, ARS-070, ARS-110 |
-| `add-dispatch-foldkit-frontend` | ARS-100 |
-| `add-effect-corpus-fuzzer` | ARS-090 |
-| `add-foldkit-fixture-closed-loop` | ARS-100 |
-| `add-joern-proof-router-dsl` | ARS-090 |
-| `add-semantic-ts-morph-fuzzer` | ARS-090 |
-| `bootstrap-home-compute-cluster` | ARS-080 |
-| `bootstrap-home-compute-cluster/attune-cp-gated-bare-metal-provisioning` | ARS-080 |
-| `bootstrap-thinkcentre-network` | ARS-080 |
-| `compress-attune-package-surface` | ARS-010, ARS-030, ARS-050 |
-| `consolidate-attune-program-index-megaspec` | ARS-010, ARS-020, ARS-110, ARS-120 |
-| `define-post-infra-product-story` | ARS-070, ARS-110 |
-| `document-local-compute-control-plane` | ARS-080 |
-| `effect-alchemy-platform-lifecycle` | ARS-040, ARS-080 |
-| `enforce-nix-agent-policy-gates` | ARS-030 |
-| `foundation-reshape-and-tend-execution` | ARS-030, ARS-060, ARS-110, ARS-120 |
-| `harden-day0-provider-idempotence` | ARS-080 |
-| `promote-program-index-runtime-substrate` | ARS-010, ARS-020, ARS-030, ARS-050 |
-| `reshape-arbor-monorepo-and-tend-opencode-runtime` | ARS-030, ARS-060, ARS-110 |
-| `sqlite-program-index-reactive-projections` | ARS-020, ARS-050 |
-| `standardize-effect-package-contracts` | ARS-010, ARS-030, ARS-050 |
-| `standardize-nx-nix-build` | ARS-030, ARS-090 |
-| `wire-dispatch-foldkit-fixtured-site` | ARS-100 |
-
-Custom ledgers absorbed:
-
-- `foundation-reshape-and-tend-execution/execution.md` -> ARS task blocks.
-- `consolidate-attune-program-index-megaspec/linear-issue-map.md` -> ARS-110.
-- `consolidate-attune-program-index-megaspec/spec-inventory.md` -> this appendix and ARS-120.
-- `consolidate-attune-program-index-megaspec/supersession-plan.md` -> ARS-120.
-- Deleted root bootstrap artifacts `mega.md`, `timescaledb.md`, and `migration-spec.md` -> absorbed source rationale for the Recipe/ManagedRecipe, SQL, and supersession direction.
-
-Contradictions resolved:
-
-- SQLite-first and Drizzle-first language is historical context only; TimescaleDB/Postgres with Kanel/Kysely/SafeQL/Effect services is active.
-- Program-index-first ontology is historical context only; Recipe is active.
-- Compatibility adapters are not maintained; superseded generated companions, artifact ownership shards, old source metadata labels, and DB substrate paths are deletion/archive/replacement work.
-- Linear and artifact schema families are not active DB domains.
-- Trellis is not merely static skill generation; it is the recipe-aware companion surface.
+- Exact Nx target names for DB migrate, type generation, and SafeQL validation
+  should follow repo conventions during implementation.
+- The future Codex adapter transport is deferred, but its policy contract is
+  not: it must route through the same Tend/OpenRTK/Magic Context forcing
+  surface as OpenCode.
+- Which legacy SQLite/program-index surfaces are deleted versus quarantined
+  depends on what targeted validation and import-boundary checks reveal.

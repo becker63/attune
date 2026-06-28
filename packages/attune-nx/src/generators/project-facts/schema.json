@@ -6,7 +6,7 @@
   "properties": {
     "projectId": {
       "type": "string",
-      "description": "Stable program-index project id, for example attune-nx."
+      "description": "Stable recipe project id, for example attune-nx."
     },
     "projectKind": {
       "type": "string",
@@ -27,7 +27,7 @@
     },
     "sourceRoot": {
       "type": "string",
-      "description": "Project root recorded in artifact provenance, for example packages/attune-nx."
+      "description": "Project root recorded in recipe receipt provenance, for example packages/attune-nx."
     },
     "directory": {
       "type": "string",
@@ -35,7 +35,7 @@
     },
     "owningProject": {
       "type": "string",
-      "description": "Owning Nx project id for generated artifact provenance."
+      "description": "Owning Nx project id for generated recipe receipt provenance."
     },
     "symbolId": {
       "type": "string",
@@ -64,15 +64,15 @@
     },
     "generatorVersion": {
       "type": "string",
-      "description": "Generator version recorded in artifact provenance."
+      "description": "Generator version recorded in recipe receipt provenance."
     },
     "generatorRevision": {
       "type": "string",
-      "description": "Generator revision recorded in artifact provenance."
+      "description": "Generator revision recorded in recipe receipt provenance."
     },
     "openspecChangeId": {
       "type": "string",
-      "description": "OpenSpec change id recorded in artifact provenance."
+      "description": "OpenSpec change id recorded in recipe receipt provenance."
     }
   },
   "required": ["projectId", "projectKind"],

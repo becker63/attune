@@ -7,7 +7,7 @@ ask for clarification in the Codex thread before changing files.
 ## Mission
 
 Attune is an Effect-first code intelligence system with an agent-legible
-program index. Codex is the implementation agent, OpenSpec is the planning
+Recipe/ManagedRecipe substrate. Codex is the implementation agent, OpenSpec is the planning
 gate, Nx check/repair targets are the public workflow surface, and GitHub PRs
 are the review boundary.
 
@@ -19,12 +19,19 @@ Pi proposes.
 Effect validates.
 Joern proves.
 EventLog remembers.
-Drizzle materializes.
+TimescaleDB/Postgres materializes recipe receipts.
 Reactivity refreshes.
 Atoms reason.
 FoldKit explains.
 Humans promote.
 ```
+
+ARS clean-fork note: while `arbor-recipe-substrate-migration` is active, the
+spec is the source of truth. Do not maintain compatibility lanes for
+historical program-index-first public ontology, SQLite/Drizzle/PgTyped
+substrate routes, historical package-local generated companions, or
+artifact-ownership shards. Legacy surfaces must be removed, archived,
+quarantined, or explicitly historical with no live adapter path.
 
 ## Cloud Codex Environment
 
@@ -95,9 +102,9 @@ task is explicit and low risk.
 
 Attune Framework lives under root `framework/` and defines the programming
 model. Packages under `packages/` expose their small authored Attune
-declaration through `src/attune.package.ts`. Framework runtime,
-SQLite/Drizzle store, language-service internals, and Nx internals are private
-framework implementation details.
+declaration through `src/attune.package.ts`. Framework runtime, local
+TimescaleDB/Postgres recipe spine, language-service internals, and Nx internals
+are private framework implementation details.
 
 For package or framework-facing work, use the simple loop:
 
@@ -133,9 +140,9 @@ For package declarations:
 8. Report validation results plus any remaining diagnostics.
 
 Agents repair diagnostics rather than raw framework internals. Do not hand-edit
-raw descriptor JSON, SQLite rows, Drizzle tables, private store internals,
-diagnostic dumps, validation summaries, architecture summaries, or generated
-ledger/status files as source truth. Property and fuzz validation output belongs
+raw descriptor JSON, DB rows, private store internals, diagnostic dumps,
+validation summaries, architecture summaries, or generated ledger/status files
+as source truth. Property and fuzz validation output belongs
 in framework services, stdout/CI artifacts, or gitignored local cache such as
 `.attune/cache`; checked-in validation reports are not part of the core
 workflow.
@@ -156,24 +163,25 @@ attune.artifact-ownership.json
 ```
 
 Existing legacy generated companions and artifact ownership shards are migration
-scaffolding until Nx repair and the program-index projection fully own their
-materialization. Compile-only package assertions live in the framework-owned
-aggregate, not package-local typecheck files.
+scaffolding slated for deletion, quarantine, archive, or replacement by
+framework-owned recipe projections. Compile-only package assertions live in the
+framework-owned aggregate, not package-local typecheck files.
 
-The new consolidation direction is that Attune indexes the TypeScript/Effect/Nx
-program first. Nx project graph facts, TypeScript exported symbols, Effect
-Schema descriptor rows, generated artifact freshness, observations,
-diagnostics, repairs, and invalidation events belong in the local SQLite
-program index under `.attune/cache`. Historical project-facts/generated
-companions are deletion or replacement scaffolding, not compatibility inputs
-and not a second public ontology agents should memorize.
+The new consolidation direction is that Attune expresses TypeScript/Effect/Nx
+program facts through Recipes and ManagedRecipes first. Nx project graph facts,
+TypeScript exported symbols, Effect Schema descriptor rows, generated artifact
+freshness, observations, diagnostics, repairs, invalidation events, and package
+DB emission readiness belong in framework-owned recipe/cache projections and
+the generic TimescaleDB/Postgres recipe spine. Historical
+project-facts/generated companions are deletion or replacement scaffolding, not
+compatibility inputs and not a second public ontology agents should memorize.
 
 Do not manually expand `attune.package.ts` with derived handler maps, property
 tables, type partitions, RPC descriptors, coverage-search plans, validation
 producer maps, worker metadata, or generated artifact ledgers. Those belong in
 framework-owned generated/cache materialization, focused validation modules, or
-private program-index projections. Run the suggested Nx repair target before
-editing generated or derived program-index artifacts by hand.
+private recipe projections. Run the suggested Nx repair target before editing
+generated or derived recipe artifacts by hand.
 
 ## Repo Map
 
@@ -227,7 +235,7 @@ Default order:
 1. Codex agent contract and framework diagnostics workflow.
 2. Northstar backlog projection from docs.
 3. EventLog and `DiscoveryEvents` facade.
-4. Drizzle/Neon durable projections.
+4. Generic TimescaleDB/Postgres recipe receipt projections.
 5. Effect Reactivity keys.
 6. Server-side effect-atom graph.
 7. DecisionPacket, score, plateau, and FoldKit scene atoms.
@@ -272,7 +280,8 @@ semantic workflow surfaces.
 ## Safety Rules
 
 - Do not write raw EventLog events outside `DiscoveryEventsLive`.
-- Do not import Drizzle tables outside the memory/persistence boundary.
+- Do not import raw DB tables, legacy SQLite/Drizzle/PgTyped substrates, or
+  private stores outside the framework persistence boundary.
 - Do not put durable writes inside atoms.
 - Projection writes should announce Reactivity keys.
 - Base atoms may subscribe to Reactivity keys; derived atoms should compose.

@@ -48,9 +48,9 @@ export const ProjectFacts = defineAttuneProjectFacts({
       name: "Query Project Facts Graph",
     },
     {
-      id: "upsert-artifact-provenance",
+      id: "upsert-recipe-receipt-provenance",
       kind: "command",
-      name: "Upsert Artifact Provenance",
+      name: "Upsert Recipe Receipt Provenance",
     },
     {
       id: "normalize-executor-intent",
