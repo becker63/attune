@@ -1,0 +1,10 @@
+{
+  "name": "@attune/tend-long-job-opencode",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./server.js",
+  "exports": {
+    "./server": "./server.js",
+    "./tui": "./tui.js"
+  }
+}

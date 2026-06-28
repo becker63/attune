@@ -180,6 +180,277 @@
                 platforms = final.lib.platforms.unix;
               };
             };
+
+            opencode-upstream =
+              let
+                opencodeVersion = "1.17.11";
+                platform = {
+                  x86_64-linux = {
+                    packageName = "opencode-linux-x64";
+                    hash = "sha512-at2oODO6N4yMTlvtKOFECVDvj4Nz3iFygmSKyoVdokgpMhYt6l9ta63pEp1jAaTxLpjQGbCzpRYbY/QqRAeB9Q==";
+                  };
+                  aarch64-linux = {
+                    packageName = "opencode-linux-arm64";
+                    hash = "sha512-CN3LSlqSrC1LbYHXZs21B8hIB951ebCRowwC+p4SDwPPUKknRzGYi5V7FjXAp8xq5hx27/QGgmGjfauv6RbAiA==";
+                  };
+                  x86_64-darwin = {
+                    packageName = "opencode-darwin-x64";
+                    hash = "sha512-ZxQzLT92FT96Y8ahpHZiejD+m7vQYhAfskMwc0baDjkctEXy6UkZT5gY5jTDl+Bb74xgmKYJK6Lz20luhOXA==";
+                  };
+                  aarch64-darwin = {
+                    packageName = "opencode-darwin-arm64";
+                    hash = "sha512-WpBokL8RL8BvdPKzJhQlLbVigz4jT0uESDWgwLcsU2JAP8hOWc/bMgzf87C7VtJlcjUY9ao60UzbPlsUffb/0g==";
+                  };
+                }.${system} or (throw "Unsupported OpenCode platform for ${system}");
+              in
+              final.stdenvNoCC.mkDerivation {
+                pname = "opencode-upstream";
+                version = opencodeVersion;
+
+                src = final.fetchurl {
+                  url = "https://registry.npmjs.org/${platform.packageName}/-/${platform.packageName}-${opencodeVersion}.tgz";
+                  inherit (platform) hash;
+                };
+
+                unpackPhase = ''
+                  tar -xzf "$src"
+                '';
+
+                installPhase = ''
+                  runHook preInstall
+                  ${final.lib.optionalString final.stdenv.isLinux ''
+                    install -Dm755 package/bin/opencode "$out/libexec/opencode-bin"
+                    mkdir -p "$out/bin"
+                    cat > "$out/bin/opencode" <<EOF
+                    #!${final.runtimeShell}
+                    exec "${final.stdenv.cc.bintools.dynamicLinker}" \
+                      --library-path "${final.lib.makeLibraryPath [ final.glibc ]}" \
+                      "$out/libexec/opencode-bin" "\$@"
+                    EOF
+                    chmod +x "$out/bin/opencode"
+                  ''}
+                  ${final.lib.optionalString final.stdenv.isDarwin ''
+                    install -Dm755 package/bin/opencode "$out/bin/opencode"
+                  ''}
+                  runHook postInstall
+                '';
+
+                meta = {
+                  description = "Pinned upstream OpenCode CLI";
+                  homepage = "https://opencode.ai";
+                  license = final.lib.licenses.mit;
+                  mainProgram = "opencode";
+                  platforms = final.lib.platforms.unix;
+                };
+              };
+
+            attune-opencode-harness = final.stdenvNoCC.mkDerivation (finalAttrs: {
+              pname = "attune-opencode-harness";
+              version = "0.0.0";
+
+              src = final.lib.fileset.toSource {
+                root = ./.;
+                fileset = final.lib.fileset.unions [
+                  ./package.json
+                  ./pnpm-lock.yaml
+                  ./pnpm-workspace.yaml
+                  ./tsconfig.base.json
+                  ./.codex/skills/openspec-apply-change
+                  ./.codex/skills/openspec-archive-change
+                  ./.codex/skills/openspec-explore
+                  ./.codex/skills/openspec-propose
+                  ./.codex/skills/openspec-sync-specs
+                  ./packages/trellis/protocol
+                  ./packages/tend/core
+                  ./packages/tend/long-job
+                  ./packages/tend/opencode
+                  ./packages/tend/policies
+                  ./packages/tend/reporting
+                  ./packages/tend/token-audit
+                ];
+              };
+
+              pnpmDeps = final.fetchPnpmDeps {
+                inherit (finalAttrs) pname version src;
+                pnpm = final.pnpm_10;
+                fetcherVersion = 3;
+                hash = "sha256-eAKzJmbCZAXEpyf/qrvslWNd6jzszAv5E3tgbvNtHls=";
+              };
+
+              nativeBuildInputs = [
+                final.makeWrapper
+                final.nodejs_22
+                final.pnpm_10
+                final.pnpmConfigHook
+              ];
+
+              dontBuild = true;
+
+              installPhase = ''
+                runHook preInstall
+
+                workspace="$out/share/attune-opencode-workspace"
+                configDir="$out/share/attune-opencode-config"
+                mkdir -p "$workspace" "$out/bin"
+                cp package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json "$workspace/"
+                mkdir -p "$workspace/packages/tend" "$workspace/packages/trellis" "$workspace/node_modules"
+                cp -R packages/tend/core "$workspace/packages/tend/core"
+                cp -R packages/tend/long-job "$workspace/packages/tend/long-job"
+                cp -R packages/tend/opencode "$workspace/packages/tend/opencode"
+                cp -R packages/tend/policies "$workspace/packages/tend/policies"
+                cp -R packages/tend/reporting "$workspace/packages/tend/reporting"
+                cp -R packages/tend/token-audit "$workspace/packages/tend/token-audit"
+                cp -R packages/trellis/protocol "$workspace/packages/trellis/protocol"
+                cp -R node_modules/.pnpm "$workspace/node_modules/.pnpm"
+                if [ -f node_modules/.modules.yaml ]; then
+                  cp node_modules/.modules.yaml "$workspace/node_modules/.modules.yaml"
+                fi
+                mkdir -p "$configDir/commands" "$configDir/plugins" "$configDir/skills"
+                cp packages/tend/opencode/opencode-config/commands/*.md "$configDir/commands/"
+                cp packages/tend/opencode/opencode-config/plugins/*.js "$configDir/plugins/"
+                cp -R packages/tend/opencode/opencode-config/plugin-packages "$configDir/plugin-packages"
+                cp -R .codex/skills/openspec-apply-change "$configDir/skills/openspec-apply-change"
+                cp -R .codex/skills/openspec-archive-change "$configDir/skills/openspec-archive-change"
+                cp -R .codex/skills/openspec-explore "$configDir/skills/openspec-explore"
+                cp -R .codex/skills/openspec-propose "$configDir/skills/openspec-propose"
+                cp -R .codex/skills/openspec-sync-specs "$configDir/skills/openspec-sync-specs"
+                node - "$configDir" <<'NODE'
+                const fs = require("fs")
+                const path = require("path")
+                const { pathToFileURL } = require("url")
+
+                const configDir = process.argv[2]
+                const pluginPackageDir = path.join(configDir, "plugin-packages", "@attune")
+                const pluginPackages = fs
+                  .readdirSync(pluginPackageDir)
+                  .sort()
+                  .map((directory) => pathToFileURL(path.join(pluginPackageDir, directory)).href)
+                const openSpecCommand = {
+                  "attune-fingerprint": {
+                    description: "Show the flake-installed Attune/Tend OpenCode harness fingerprint",
+                    template: "!`tend-opencode fingerprint --format json`",
+                  },
+                  "openspec-propose": {
+                    description: "Create a new OpenSpec change proposal, design, specs, and tasks",
+                    template: "Use the `openspec-propose` skill to create an OpenSpec change.\n\nUser request:\n\n$ARGUMENTS",
+                  },
+                  "openspec-apply": {
+                    description: "Apply tasks from an active OpenSpec change",
+                    template: "Use the `openspec-apply-change` skill to implement an OpenSpec change.\n\nChange or request:\n\n$ARGUMENTS",
+                  },
+                  "openspec-explore": {
+                    description: "Explore an OpenSpec idea or change without implementing it",
+                    template: "Use the `openspec-explore` skill to investigate this OpenSpec topic.\n\nTopic:\n\n$ARGUMENTS",
+                  },
+                  "openspec-archive": {
+                    description: "Archive a completed OpenSpec change",
+                    template: "Use the `openspec-archive-change` skill to archive an OpenSpec change.\n\nChange:\n\n$ARGUMENTS",
+                  },
+                  "openspec-sync-specs": {
+                    description: "Sync OpenSpec delta specs into main specs",
+                    template: "Use the `openspec-sync-specs` skill to sync delta specs.\n\nChange:\n\n$ARGUMENTS",
+                  },
+                  "openspec-status": {
+                    description: "Show OpenSpec status JSON for a change",
+                    template: "Run the requested OpenSpec status command and summarize the result.\n\n!`openspec status --change \"$ARGUMENTS\" --json`",
+                  },
+                  "openspec-validate": {
+                    description: "Validate an OpenSpec change strictly",
+                    template: "Run the requested OpenSpec validation and summarize the result.\n\n!`openspec validate \"$ARGUMENTS\" --strict`",
+                  },
+                }
+                fs.writeFileSync(
+                  path.join(configDir, "opencode-config-content.json"),
+                  JSON.stringify(
+                    {
+                      $schema: "https://opencode.ai/config.json",
+                      plugin: pluginPackages,
+                      skills: {
+                        paths: [path.join(configDir, "skills")],
+                      },
+                      command: openSpecCommand,
+                    },
+                    null,
+                    2,
+                  ),
+                )
+                fs.copyFileSync(
+                  path.join(configDir, "opencode-config-content.json"),
+                  path.join(configDir, "opencode.json"),
+                )
+                fs.writeFileSync(
+                  path.join(configDir, "tui.json"),
+                  JSON.stringify(
+                    {
+                      $schema: "https://opencode.ai/config.json",
+                      plugin: pluginPackages,
+                    },
+                    null,
+                    2,
+                  ),
+                )
+                NODE
+
+                pluginPaths="$(find "$configDir/plugins" -maxdepth 1 -type f -name '*.js' | sort | paste -sd: -)"
+                pluginPackagePaths="$(find "$configDir/plugin-packages/@attune" -mindepth 1 -maxdepth 1 -type d | sort | paste -sd: -)"
+
+                runtimePath="${
+                  final.lib.makeBinPath [
+                    final.git
+                    final.nodejs_22
+                    final.pnpm_10
+                    (final.writeShellApplication {
+                      name = "openspec";
+                      runtimeInputs = [
+                        final.nodejs_22
+                      ];
+                      text = ''
+                        export npm_config_yes=true
+                        exec npm exec --yes --package=@fission-ai/openspec@latest -- openspec "$@"
+                      '';
+                    })
+                  ]
+                }"
+
+                makeWrapper "$workspace/packages/tend/opencode/node_modules/.bin/tsx" "$out/bin/tend-opencode-tools" \
+                  --add-flags "$workspace/packages/tend/opencode/src/cli.ts" \
+                  --prefix PATH : "$runtimePath" \
+                  --set ATTUNE_OPENCODE_FLAKE_PROVIDED 1 \
+                  --set ATTUNE_OPENCODE_FLAKE_SOURCE "$workspace" \
+                  --set ATTUNE_OPENCODE_UPSTREAM_PATH "${final.opencode-upstream}/bin/opencode" \
+                  --set ATTUNE_OPENCODE_UPSTREAM_VERSION "${final.opencode-upstream.version}" \
+                  --set ATTUNE_OPENCODE_CONFIG_DIR "$configDir" \
+                  --set ATTUNE_OPENCODE_PLUGIN_PATH "$configDir/plugins/attune-tend.js" \
+                  --set ATTUNE_OPENCODE_PLUGIN_PATHS "$pluginPaths" \
+                  --set ATTUNE_OPENCODE_PLUGIN_PACKAGE_PATHS "$pluginPackagePaths" \
+                  --set ATTUNE_OPENCODE_CONFIG_CONTENT_FILE "$configDir/opencode-config-content.json" \
+                  --set OPENCODE_CONFIG "$configDir/opencode.json" \
+                  --set ATTUNE_OPENCODE_RUNTIME_PATH "$out/bin/tend-opencode-tools"
+
+                makeWrapper "$workspace/packages/tend/opencode/node_modules/.bin/tsx" "$out/bin/tend-opencode" \
+                  --add-flags "$workspace/packages/tend/opencode/src/attune-cli.ts" \
+                  --prefix PATH : "$runtimePath" \
+                  --set ATTUNE_OPENCODE_FLAKE_PROVIDED 1 \
+                  --set ATTUNE_OPENCODE_FLAKE_SOURCE "$workspace" \
+                  --set ATTUNE_OPENCODE_UPSTREAM_PATH "${final.opencode-upstream}/bin/opencode" \
+                  --set ATTUNE_OPENCODE_UPSTREAM_VERSION "${final.opencode-upstream.version}" \
+                  --set ATTUNE_OPENCODE_CONFIG_DIR "$configDir" \
+                  --set ATTUNE_OPENCODE_PLUGIN_PATH "$configDir/plugins/attune-tend.js" \
+                  --set ATTUNE_OPENCODE_PLUGIN_PATHS "$pluginPaths" \
+                  --set ATTUNE_OPENCODE_PLUGIN_PACKAGE_PATHS "$pluginPackagePaths" \
+                  --set ATTUNE_OPENCODE_CONFIG_CONTENT_FILE "$configDir/opencode-config-content.json" \
+                  --set OPENCODE_CONFIG "$configDir/opencode.json" \
+                  --set ATTUNE_OPENCODE_RUNTIME_PATH "$out/bin/tend-opencode"
+
+                runHook postInstall
+              '';
+
+              meta = {
+                description = "Flake-installed Attune OpenCode harness and Tend OpenCode CLI";
+                license = final.lib.licenses.mit;
+                platforms = final.lib.platforms.unix;
+              };
+            });
           })
         ];
         pkgs = import nixpkgs {
@@ -260,6 +531,9 @@
         packages = {
           inherit joern openSpec;
           attune-pi-agent-extension = pkgs.attune-pi-agent-extension;
+          opencode-upstream = pkgs.opencode-upstream;
+          tend-opencode = pkgs.attune-opencode-harness;
+          tend-opencode-tools = pkgs.attune-opencode-harness;
           pi-task-extension = pkgs.pi-task-extension;
           pi = pkgs.pi;
           joern-effect-property-image = propertyImage;
@@ -273,8 +547,24 @@
           program = "${windowsDesktopGuard}/bin/attune-desktop-guard";
         };
 
+        apps.tend-opencode = {
+          type = "app";
+          program = "${pkgs.attune-opencode-harness}/bin/tend-opencode";
+        };
+
+        apps.tend-opencode-tools = {
+          type = "app";
+          program = "${pkgs.attune-opencode-harness}/bin/tend-opencode-tools";
+        };
+
+        apps.opencode-upstream = {
+          type = "app";
+          program = "${pkgs.opencode-upstream}/bin/opencode";
+        };
+
         devShells.default = pkgs.mkShell {
           packages = [
+            pkgs.attune-opencode-harness
             pkgs.git
             pkgs.jdk21
             pkgs.arion
@@ -320,6 +610,8 @@
             echo "  pnpm exec nx run joern-effect:generate"
             echo "  pnpm exec nx run cocoindex-effect:generate"
             echo "  pnpm exec nx run platform-alchemy-k8s:generate"
+            echo "  tend-opencode fingerprint --format json"
+            echo "  tend-opencode run-harness-test --format json"
           '';
         };
 
