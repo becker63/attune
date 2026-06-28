@@ -9,6 +9,9 @@ export default function syncJoernTemplatesGenerator(
 ): GeneratorTask {
   syncRegistry(tree, schema, {
     sourceLabel: "sync-joern-templates",
+    ownerRecipeId: "joern-effect.generated-template-registry",
+    projectionId: "sync-joern-templates",
+    sourceDescriptor: "packages/attune/nx/src/generators/sync-joern-templates",
     defaultDirectory: "src/joern/templates",
     registryFileName: "TemplateRegistry.generated.ts",
     exportPattern: /export\s+const\s+([A-Za-z][A-Za-z0-9]*Template)\b/gu,

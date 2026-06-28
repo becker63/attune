@@ -39,14 +39,17 @@
           "runtimeChecks": [
             "recipe-registry",
             "managed-recipe-lifecycle",
+            "nx-target-projection-conformance",
             "package-db-emission",
             "recipe-diagnostics",
             "recipe-repairs",
             "import-boundary",
             "local-cache",
-            "no-checked-in-report"
+            "no-checked-in-report",
+            "no-compat-scripts"
           ],
-          "readModel": "RecipeDbEmissionView"
+          "readModel": "RecipeDbEmissionView",
+          "projectionRegistry": "ProjectionRegistry"
         }
       },
       "options": {
@@ -60,7 +63,8 @@
             "framework-nx:test",
             "framework-language-service:test",
             "attune-architecture:test",
-            "workspace:framework-policy-check"
+            "workspace:framework-policy-check",
+            "workspace:no-compat-script-check"
           ]
         },
         "timeoutSeconds": 240,
@@ -125,6 +129,26 @@
         "dryRun": false
       }
     },
+    "no-compat-script-check": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Focused no-compat package-local script file check for migrated Recipe/ManagedRecipe workflow surfaces.",
+        "attune": {
+          "tier": "public",
+          "surface": "check",
+          "recipeId": "attune-architecture.no-compat-script-check"
+        }
+      },
+      "options": {
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "framework-policy",
+        "parameters": {
+          "only": "no-compat-scripts"
+        },
+        "dryRun": false
+      }
+    },
     "arch:scan": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
@@ -185,11 +209,11 @@
             "workspace:arch:churn",
             "effect-oxlint-policy:test",
             "effect-oxlint-policy:build",
+            "effect-oxlint-policy:policy",
             "joern-effect-properties:proof",
             "joern-effect-properties:fuzz",
             "attune-pi-agent:proof"
-          ],
-          "effectOxlintPolicy": true
+          ]
         },
         "dryRun": false
       }
@@ -232,10 +256,10 @@
             "workspace:arch:types",
             "workspace:arch:churn",
             "effect-oxlint-policy:test",
-            "effect-oxlint-policy:build"
+            "effect-oxlint-policy:build",
+            "effect-oxlint-policy:policy"
           ],
           "graphFile": "/tmp/attune-nx-graph.json",
-          "effectOxlintPolicy": true,
           "verifyPrCompletion": true,
           "verifyPrCompletionRecipeId": "attune-architecture.pr-completion-audit"
         },

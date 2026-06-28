@@ -9,6 +9,9 @@ export default function syncK8sResourcesGenerator(
 ): GeneratorTask {
   syncRegistry(tree, schema, {
     sourceLabel: "sync-k8s-resources",
+    ownerRecipeId: "platform-alchemy-k8s.local-compute-stack",
+    projectionId: "sync-k8s-resources",
+    sourceDescriptor: "packages/canopy/platform-alchemy-k8s/src/resources",
     defaultDirectory: "src/resources",
     registryFileName: "ResourceRegistry.generated.ts",
     exportPattern: /export\s+const\s+([A-Z][A-Za-z0-9]*)\b/gu,

@@ -11,6 +11,9 @@ export const registerLongJob = (input: {
   readonly jobId: string
   readonly sessionId: string
   readonly recipeId: string
+  readonly runId?: string
+  readonly receiptId?: string
+  readonly observationId?: string
   readonly registeredAt: string
   readonly pollTarget: string
   readonly wakeAfter?: string
@@ -18,6 +21,9 @@ export const registerLongJob = (input: {
   jobId: input.jobId,
   sessionId: input.sessionId,
   recipeId: input.recipeId,
+  ...(input.runId === undefined ? {} : { runId: input.runId }),
+  ...(input.receiptId === undefined ? {} : { receiptId: input.receiptId }),
+  ...(input.observationId === undefined ? {} : { observationId: input.observationId }),
   registeredAt: input.registeredAt,
   ...(input.wakeAfter === undefined ? {} : { wakeAfter: input.wakeAfter }),
   pollTarget: input.pollTarget,
@@ -32,6 +38,9 @@ export const wakeupPacketFromLongJob = (
   jobId: job.jobId,
   wakeAfter: job.wakeAfter ?? job.registeredAt,
   targetRecipeId: job.recipeId,
+  ...(job.runId === undefined ? {} : { runId: job.runId }),
+  ...(job.receiptId === undefined ? {} : { receiptId: job.receiptId }),
+  ...(job.observationId === undefined ? {} : { observationId: job.observationId }),
   targetCommand: job.pollTarget,
 })
 

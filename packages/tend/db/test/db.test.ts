@@ -4,8 +4,10 @@ import {
   readTendControlMigration,
   tendEventInsertContract,
   tendKanelConfig,
+  tendRecipeSpineLinkRequirements,
   tendSafeQlConfig,
   validateTendControlMigration,
+  validateTendRecipeSpineLinks,
 } from "../src/index.js"
 
 describe("@attune/tend-db", () => {
@@ -18,6 +20,10 @@ describe("@attune/tend-db", () => {
     expect(sql).toContain("create_hypertable")
     expect(sql).toContain("tend_event.token_metric")
     expect(sql).toContain("tend_outbox.wakeup")
+    expect(validateTendRecipeSpineLinks(sql)).toEqual([])
+    expect(tendRecipeSpineLinkRequirements.map((requirement) => requirement.relation)).toContain(
+      "tend_event.command_output_sample",
+    )
   })
 
   it("describes Kanel, Kysely, SafeQL, and event insertion contracts", () => {
@@ -26,7 +32,10 @@ describe("@attune/tend-db", () => {
       outputPath: ".attune/cache/generated/tend/db/kanel",
     })
     expect(tendSafeQlConfig().checkedStatements[0]).toContain("INSERT INTO tend_event.event")
+    expect(tendSafeQlConfig().checkedStatements.join("\n")).toContain("observation_id")
+    expect(tendEventInsertContract().parameters).toContain("runId")
     expect(tendEventInsertContract().parameters).toContain("receiptId")
+    expect(tendEventInsertContract().parameters).toContain("observationId")
     expect(TendDbRecipes[0]?.id).toBe("tend-db.control-spine")
   })
 })

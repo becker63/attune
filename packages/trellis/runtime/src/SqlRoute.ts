@@ -10,6 +10,7 @@ export const frameworkRecipeReceiptTables = [
   "framework_event.recipe_run",
   "framework_event.recipe_receipt",
   "framework_event.recipe_receipt_metric",
+  "framework_event.recipe_observation",
   "framework_event.recipe_diagnostic",
   "framework_event.recipe_repair",
   "framework_view.recipe_health",
@@ -26,6 +27,7 @@ export interface FrameworkSqlStatement {
 export interface FrameworkRecipeReceiptKanelConfig {
   readonly connectionEnv: "DATABASE_URL"
   readonly schemas: readonly ["framework_core", "framework_event", "framework_view"]
+  readonly tables: readonly FrameworkRecipeReceiptTable[]
   readonly outputPath: ".attune/cache/generated/framework-runtime/db/kanel"
   readonly kyselyOutputPath: ".attune/cache/generated/framework-runtime/db/kanel/framework-recipe-receipt.database.generated.ts"
   readonly migrationPath: typeof frameworkRecipeReceiptMigrationPath
@@ -61,12 +63,14 @@ export interface FrameworkRecipeReceiptKyselyServiceContract {
   readonly receiptsByStatus: (
     status: FrameworkRecipeReceiptStatus,
   ) => FrameworkSqlStatement
+  readonly observationsForRecipe: (recipeId: string) => FrameworkSqlStatement
 }
 
 export const frameworkRecipeReceiptKanelConfig =
   (): FrameworkRecipeReceiptKanelConfig => ({
     connectionEnv: "DATABASE_URL",
     schemas: ["framework_core", "framework_event", "framework_view"],
+    tables: frameworkRecipeReceiptTables,
     outputPath: ".attune/cache/generated/framework-runtime/db/kanel",
     kyselyOutputPath:
       ".attune/cache/generated/framework-runtime/db/kanel/framework-recipe-receipt.database.generated.ts",
@@ -88,6 +92,11 @@ export const frameworkRecipeReceiptSqlValidationStatements =
     {
       name: "recipe-receipt-metrics-by-recipe",
       sql: "SELECT * FROM framework_event.recipe_receipt_metric WHERE recipe_id = $1",
+      parameters: ["framework-runtime.local-timescaledb"],
+    },
+    {
+      name: "recipe-observations-by-recipe",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE recipe_id = $1 ORDER BY observed_at DESC",
       parameters: ["framework-runtime.local-timescaledb"],
     },
   ]
@@ -124,6 +133,15 @@ WHERE receipt_status = $1
 ORDER BY COALESCE(completed_at, started_at) DESC, receipt_id DESC
 `.trim(),
       parameters: [status],
+    }),
+    observationsForRecipe: (recipeId) => ({
+      sql: `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE recipe_id = $1
+ORDER BY observed_at DESC, observation_id DESC
+`.trim(),
+      parameters: [recipeId],
     }),
   })
 

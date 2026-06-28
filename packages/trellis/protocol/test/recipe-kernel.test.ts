@@ -9,18 +9,29 @@ import {
   HealthView,
   LspDiagnostic,
   NxTarget,
+  NxTargetConformance,
+  NxTargetProjectionSchema,
+  NxTargetProjectionView,
+  ProjectionRegistry,
   RecipeRegistry,
   RecipePublicTargets,
   RecipeDbEmissionView,
   RecipeEdgeRecordView,
   RecipeHealthSchema,
+  RecipeInvocationActionSchema,
+  RecipeInvocationSchema,
   RecipeIoRecordView,
   RecipeRegistrySnapshotSchema,
+  RecipeObservationView,
+  RecipeObservationSchema,
+  GeneratedArtifactFreshnessPayloadSchema,
   RecipeReceiptSchema,
   RecipeReceiptStoreSnapshotSchema,
   RecipeRecordView,
+  RecipeProjectionCatalog,
   RecipeRepairPlan,
   recipeId,
+  recipeObservationId,
   recipeReceiptId,
   recipeRunId,
   type RecipeDiagnostic,
@@ -56,6 +67,26 @@ describe("recipe protocol", () => {
       completedAt: "2026-06-27T00:00:01.000Z",
       command: "workspace:recipe-check",
       validationEvidence: ["nx run framework-protocol:test"],
+    })
+    const observation = Schema.decodeUnknownSync(RecipeObservationSchema)({
+      observationId: "observation-1",
+      recipeId: recipe.id,
+      runId: receipt.runId,
+      receiptId: receipt.receiptId,
+      observationKind: "framework-protocol.schema-decoded",
+      observedAt: "2026-06-27T00:00:01.000Z",
+      source: "framework-protocol:test",
+      payload: { decoded: true },
+    })
+    const freshnessObservation = RecipeObservationView.generatedArtifactFreshness({
+      recipeId: recipe.id,
+      artifactPath: "packages/demo/src/generated/widget.ts",
+      fresh: true,
+      observedAt: "2026-06-27T00:00:02.000Z",
+      runId: receipt.runId,
+      receiptId: receipt.receiptId,
+      projectionId: "framework.projection.generated-artifact",
+      source: "framework-protocol:test",
     })
     const diagnostic: RecipeDiagnostic = {
       diagnosticId: "diagnostic-1",
@@ -139,13 +170,33 @@ describe("recipe protocol", () => {
       io: RecipeIoRecordView.fromRecipe(recipe),
       runs: [],
       receipts: [receipt],
+      observations: [observation, freshnessObservation],
       diagnostics: [diagnostic],
       repairs,
       health: [health],
     })).toMatchObject({
       recipes: [{ recipeId: "workspace.recipe-check" }],
       receipts: [{ receiptId: "receipt-1" }],
+      observations: [
+        { observationId: "observation-1" },
+        {
+          recipeId: "workspace.recipe-check",
+          observationKind: "generated-artifact.freshness",
+          payload: {
+            artifactPath: "packages/demo/src/generated/widget.ts",
+            ownerRecipeId: "workspace.recipe-check",
+            fresh: true,
+          },
+        },
+      ],
       health: [{ recipeId: "workspace.recipe-check" }],
+    })
+    expect(Schema.decodeUnknownSync(GeneratedArtifactFreshnessPayloadSchema)(
+      freshnessObservation.payload,
+    )).toMatchObject({
+      artifactPath: "packages/demo/src/generated/widget.ts",
+      ownerRecipeId: "workspace.recipe-check",
+      fresh: true,
     })
   })
 
@@ -205,6 +256,194 @@ describe("recipe protocol", () => {
     })
   })
 
+  it("renders deterministic ProjectionRegistry Nx targets and conformance records", () => {
+    const recipe = defineRecipe({
+      id: "workspace.recipe-check",
+      projectId: "workspace",
+      inputSchema: RecipeInput,
+      outputSchema: RecipeOutput,
+      nxTarget: "workspace:check",
+      validationEvidence: ["nx run workspace:check"],
+    })
+    const managedRecipe = defineManagedRecipe({
+      id: "workspace.local-db",
+      projectId: "workspace",
+      inputSchema: RecipeInput,
+      outputSchema: RecipeOutput,
+      nxTarget: "workspace:validate-sql",
+      lifecycle: ["plan", "apply", "check", "destroy", "prune"],
+      resourceKind: "postgres-service",
+      lifecycleSubstrates: [{
+        id: "workspace.local-db.sql",
+        kind: "sql-validation",
+        tool: "SafeQL",
+        lifecycleActions: ["check"],
+      }],
+      observedState: { ready: false },
+      driftRepair: {
+        repairId: "recipe-repair:workspace.local-db:drift",
+        recipeId: "workspace.local-db",
+        title: "Repair local DB drift",
+        kind: "managed-lifecycle",
+        nxTarget: "workspace:validate-sql",
+        allowedFiles: ["packages/trellis/protocol/**"],
+        risk: "needs-review",
+        evidenceRequirements: ["nx run workspace:check"],
+      },
+      humanReviewRequired: true,
+    })
+    const projections = NxTargetProjectionView.fromRecipes([managedRecipe, recipe])
+    const repeated = NxTargetProjectionView.fromRecipes([managedRecipe, recipe])
+    const registry = ProjectionRegistry.fromProjections([...RecipeProjectionCatalog])
+    const rendered = registry.render<readonly unknown[], readonly unknown[]>(
+      "framework.projection.nx-target",
+      [recipe],
+    )
+
+    expect(projections).toEqual(repeated)
+    expect(Schema.decodeUnknownSync(Schema.Array(NxTargetProjectionSchema))(projections)).toHaveLength(8)
+    expect(RecipeProjectionCatalog.map((projection) => projection.kind)).toEqual([
+      "nx-target",
+      "recipe-db-emission",
+      "recipe-receipt",
+      "oxlint-diagnostic",
+    ])
+    expect(registry.list().map((projection) => projection.projectionId)).toEqual([
+      "framework.projection.nx-target",
+      "framework.projection.oxlint-diagnostic",
+      "framework.projection.recipe-db-emission",
+      "framework.projection.recipe-receipt",
+    ])
+    expect(rendered?.[0]).toMatchObject({
+      recipeId: "workspace.recipe-check",
+      projectionId: "framework.projection.nx-target",
+      metadata: {
+        attune: {
+          recipeId: "workspace.recipe-check",
+          projectionId: "framework.projection.nx-target",
+          tier: "public",
+          action: "check",
+        },
+      },
+    })
+
+    const conformance = NxTargetConformance.checkProjectJson({
+      projectName: "workspace",
+      projections,
+      projectJson: {
+        targets: {
+          check: {
+            executor: "nx:run-commands",
+            metadata: {
+              attune: {
+                recipeId: "workspace.recipe-check",
+              },
+            },
+          },
+          repair: {
+            executor: "nx:run-commands",
+            metadata: {
+              attune: {
+                projectionId: "framework.projection.nx-target",
+              },
+            },
+          },
+          "attune:repair-schema": {
+            executor: "nx:run-commands",
+            metadata: {
+              attune: {
+                tier: "internal",
+                publicParentTarget: "repair",
+              },
+            },
+          },
+          generate: {
+            executor: "nx:run-commands",
+          },
+        },
+      },
+    })
+
+    expect(conformance).toEqual([
+      expect.objectContaining({ targetName: "attune:repair-schema", status: "internal" }),
+      expect.objectContaining({ targetName: "check", status: "recipe-owned" }),
+      expect.objectContaining({
+        targetName: "generate",
+        status: "orphaned",
+        guidance: expect.stringContaining("Add recipe metadata"),
+      }),
+      expect.objectContaining({ targetName: "repair", status: "projection-owned" }),
+    ])
+    expect(NxTargetConformance.isConformant(conformance)).toBe(false)
+    expect(NxTargetConformance.orphanedTargets(conformance).map((target) => target.targetName)).toEqual(["generate"])
+  })
+
+  it("decodes RecipeInvocation envelopes and rejects unknown actions", () => {
+    const supportedActions = [
+      "generate",
+      "check",
+      "repair",
+      "plan",
+      "apply",
+      "destroy",
+      "prune",
+      "fuzz",
+      "validate-sql",
+      "migrate",
+      "generate-types",
+    ] as const
+
+    expect(supportedActions.map((action) =>
+      Schema.decodeUnknownSync(RecipeInvocationActionSchema)(action)
+    )).toEqual([...supportedActions])
+
+    const invocation = Schema.decodeUnknownSync(RecipeInvocationSchema)({
+      recipeId: "framework-runtime.local-timescaledb",
+      action: "validate-sql",
+      input: {
+        workspaceRoot: "/workspace",
+      },
+      parameters: {
+        stage: "validate-sql",
+        dryRun: false,
+      },
+      runId: "run-1",
+      requestedBy: {
+        kind: "agent",
+        id: "codex",
+        name: "Codex",
+      },
+      startedAt: "2026-06-28T00:00:00.000Z",
+      source: {
+        surface: "nx",
+        projectId: "framework-runtime",
+        target: "framework-runtime:db:validate-sql",
+        cwd: "/workspace",
+        sourcePath: "packages/trellis/runtime/project.json",
+      },
+    })
+
+    expect(invocation).toMatchObject({
+      recipeId: "framework-runtime.local-timescaledb",
+      action: "validate-sql",
+      runId: "run-1",
+      requestedBy: {
+        kind: "agent",
+        id: "codex",
+      },
+      source: {
+        surface: "nx",
+        target: "framework-runtime:db:validate-sql",
+      },
+    })
+    expect(() =>
+      Schema.decodeUnknownSync(RecipeInvocationSchema)({
+        recipeId: "framework-runtime.local-timescaledb",
+        action: "deploy",
+      })
+    ).toThrow()
+  })
+
   it("preserves external domain schema values at integration boundaries", () => {
     const externalInput = { library: "effect-v3", schemaName: "JoernTemplateExecutorRunInput" }
     const externalOutput = { library: "effect-v3", schemaName: "JoernTemplateExecutorRunOutput" }
@@ -245,6 +484,9 @@ describe("recipe protocol", () => {
     )
     expect(recipeReceiptId(base.id, "2026-06-28T00:00:00.000Z")).toBe(
       "recipe-receipt:recipe:workspace-graph:2026-06-28T00:00:00.000Z",
+    )
+    expect(recipeObservationId(base.id, "workspace.graph.ready", "2026-06-28T00:00:01.000Z")).toBe(
+      "recipe-observation:recipe:workspace-graph:workspace.graph.ready:2026-06-28T00:00:01.000Z",
     )
     expect(registry.get(dependent.id)).toBe(dependent)
     expect(registry.dependenciesOf(dependent.id)).toEqual([

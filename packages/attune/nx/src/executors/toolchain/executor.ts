@@ -1,3 +1,9 @@
+import { Schema } from "effect"
+import {
+  RecipeInvocationSchema,
+  type RecipeInvocation,
+  type RecipeInvocationAction,
+} from "@attune/framework-protocol"
 import {
   assertKnownRootOptions,
   createIntent,
@@ -68,6 +74,7 @@ export type ToolchainIntent = ExecutorIntent<{
   readonly action: ToolchainAction
   readonly toolId: string | null
   readonly parameters: Readonly<Record<string, string | number | boolean | readonly string[]>>
+  readonly recipeInvocation?: RecipeInvocation
 }>
 
 const toolchainOptionKeys = ["tool", "action", "toolId", "parameters"] as const
@@ -109,8 +116,9 @@ export const normalizeToolchainOptions = (
 export const createToolchainIntent = (
   options: NormalizedToolchainOptions,
   context?: ExecutorContextLike,
-): ToolchainIntent =>
-  createIntent({
+): ToolchainIntent => {
+  const recipeInvocation = recipeInvocationForToolchain(options, context)
+  return createIntent({
     executor: "attune:toolchain",
     common: options,
     context,
@@ -120,8 +128,10 @@ export const createToolchainIntent = (
       action: options.action,
       toolId: options.toolId,
       parameters: options.parameters,
+      ...(recipeInvocation === undefined ? {} : { recipeInvocation }),
     },
   })
+}
 
 export default async function toolchainExecutor(
   options: unknown,
@@ -252,15 +262,15 @@ function createTypeScriptBuildPlan(
     args: ["exec", "tsc", "-p", tsconfig],
     cwd: context.projectRoot,
   }]
-  if (readStringParameter(options, "postBuild") === "attune-nx-generator-cjs-wrappers") {
+  if (readStringParameter(options, "postBuild") === "attune-nx-plugin-build-outputs") {
     const recipeId = readRecipeId(options)
     if (recipeId === null) return [missingRecipeProvenancePlan(options)]
     plans.push({
       kind: "process",
       label: "toolchain:typescript:build:post-build",
-      adapter: "node-script",
-      executable: "node",
-      args: ["scripts/write-generator-cjs-wrappers.mjs"],
+      adapter: "pnpm-exec-tsx",
+      executable: "pnpm",
+      args: ["exec", "tsx", "src/internal/build/NxPluginBuildOutputs.ts"],
       cwd: context.projectRoot,
       env: recipeEnv(recipeId),
     })
@@ -269,7 +279,16 @@ function createTypeScriptBuildPlan(
     const recipeId = readRecipeId(options)
     if (recipeId === null) return [missingRecipeProvenancePlan(options)]
     plans.push(
-      ...["index.js", "index.js.map", "index.d.ts", "index.d.ts.map"].map(
+      ...[
+        "index.js",
+        "index.js.map",
+        "index.d.ts",
+        "index.d.ts.map",
+        "plugin.js",
+        "plugin.js.map",
+        "plugin.d.ts",
+        "plugin.d.ts.map",
+      ].map(
         (filename): ExecutorTypedPlan => ({
           kind: "process",
           label: `toolchain:typescript:build:post-build:${filename}`,
@@ -283,6 +302,19 @@ function createTypeScriptBuildPlan(
           env: recipeEnv(recipeId),
         }),
       ),
+      {
+        kind: "process",
+        label: "toolchain:typescript:build:post-build:rules",
+        adapter: "copy-file",
+        executable: "cp",
+        args: [
+          "-R",
+          "dist/trellis/oxlint-policy/src/rules",
+          "dist",
+        ],
+        cwd: context.projectRoot,
+        env: recipeEnv(recipeId),
+      },
     )
   }
   return plans
@@ -386,7 +418,7 @@ function createArchitectureCheckPlan(
         "--quiet",
       ], context.workspaceRoot)]
     case "tool-versions":
-      return nodeScriptPlan("toolchain:architecture:tool-versions", "packages/trellis/architecture/scripts/tool-versions.mjs", options, context)
+      return tsxRecipePlan("toolchain:architecture:tool-versions", "packages/trellis/architecture/src/internal/checks/ToolVersionsCli.ts", options, context)
     case "framework-policy": {
       const only = readStringParameter(options, "only")
       return [tsxPlan(
@@ -397,11 +429,11 @@ function createArchitectureCheckPlan(
       )]
     }
     case "scan":
-      return nodeScriptPlan("toolchain:architecture:scan", "packages/trellis/architecture/scripts/scan.mjs", options, context)
+      return tsxRecipePlan("toolchain:architecture:scan", "packages/trellis/architecture/src/internal/checks/WorkspaceScanCli.ts", options, context)
     case "types":
-      return nodeScriptPlan("toolchain:architecture:types", "packages/trellis/architecture/scripts/ts-extended-diagnostics.mjs", options, context)
+      return tsxRecipePlan("toolchain:architecture:types", "packages/trellis/architecture/src/internal/checks/TypeScriptExtendedDiagnosticsCli.ts", options, context)
     case "churn":
-      return nodeScriptPlan("toolchain:architecture:churn", "packages/trellis/architecture/scripts/churn-complexity.mjs", options, context)
+      return tsxRecipePlan("toolchain:architecture:churn", "packages/trellis/architecture/src/internal/checks/ChurnComplexityCli.ts", options, context)
     case "effect-oxlint-policy":
       return [pnpmExecPlan("toolchain:architecture:effect-oxlint-policy", "pnpm-exec-oxlint", [
         "oxlint",
@@ -415,9 +447,9 @@ function createArchitectureCheckPlan(
         "--quiet",
       ], context.workspaceRoot)]
     case "verify-pr-completion":
-      return nodeScriptPlan("toolchain:architecture:verify-pr-completion", "packages/trellis/architecture/scripts/verify-pr-completion.mjs", options, context)
+      return tsxRecipePlan("toolchain:architecture:verify-pr-completion", "packages/trellis/architecture/src/internal/checks/PrCompletionAuditCli.ts", options, context)
     case "codex-audit-prs":
-      return nodeScriptPlan("toolchain:architecture:codex-audit-prs", "packages/trellis/architecture/scripts/audit-pr-recovery.mjs", options, context)
+      return tsxRecipePlan("toolchain:architecture:codex-audit-prs", "packages/trellis/architecture/src/internal/checks/PrRecoveryAuditCli.ts", options, context)
     default:
       return [unsupportedToolchainPlan(options)]
   }
@@ -528,7 +560,39 @@ function createGenerationStagePlan(
   }
   if (recipeId === null) return [missingRecipeProvenancePlan(options)]
 
-  const script = readStringParameter(options, "script") ?? "scripts/generationStage.ts"
+  if (
+    options.targetProject === "joern-effect" ||
+    context.projectPath === "packages/attune/joern-effect"
+  ) {
+    return createJoernEffectGenerationStagePlan(stage, recipeId, context)
+  }
+
+  if (
+    options.targetProject === "platform-alchemy-k8s" ||
+    context.projectPath === "packages/canopy/platform-alchemy-k8s"
+  ) {
+    return createPlatformAlchemyK8sGenerationStagePlan(stage, recipeId, options, context)
+  }
+
+  const entrypoint = generationStageEntrypoint(options, context)
+  if (entrypoint === null) {
+    return [{
+      kind: "unsupported",
+      label: `toolchain:${options.tool}:${options.action}`,
+      reason:
+        `No typed generation-stage entrypoint is registered for ${options.targetProject ?? context.projectPath}.`,
+    }]
+  }
+  return [generationStageProcessPlan(options, context, entrypoint, stage, recipeId)]
+}
+
+function generationStageProcessPlan(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+  entrypoint: string,
+  stage: string,
+  recipeId: string,
+): ExecutorTypedPlan {
   const env = {
     ...recipeEnv(recipeId),
     ...(readBooleanParameter(options, "tmpDir", false)
@@ -539,16 +603,165 @@ function createGenerationStagePlan(
       }
       : {}),
   }
-  const plan: ExecutorTypedPlan = {
+  return {
     kind: "process",
     label: `toolchain:${options.tool}:${options.action}`,
     adapter: "pnpm-exec-tsx-generation-stage",
     executable: "pnpm",
-    args: ["exec", "tsx", script, stage],
+    args: ["exec", "tsx", entrypoint, stage],
     cwd: context.projectRoot,
     env,
   }
-  return [plan]
+}
+
+function generationStageEntrypoint(
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): string | null {
+  if (
+    options.toolId === "framework-runtime-db" ||
+    options.targetProject === "framework-runtime" ||
+    context.projectPath === "packages/trellis/runtime"
+  ) {
+    return "src/internal/db/LocalTimescaleCli.ts"
+  }
+
+  if (
+    options.toolId === "generation-stage" &&
+    (
+      options.targetProject === "cocoindex-effect" ||
+      context.projectPath === "packages/attune/cocoindex-effect"
+    )
+  ) {
+    return "src/internal/generation/CocoIndexGenerationCli.ts"
+  }
+
+  return null
+}
+
+function createJoernEffectGenerationStagePlan(
+  stage: string,
+  recipeId: string,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  if (stage === "emit-template-registry") {
+    return [syncJoernTemplatesPlan(recipeId, context)]
+  }
+
+  if (stage === "emit-generated") {
+    return [
+      generationStageProcessPlan(
+        { ...baseGenerationStageOptions("joern", "generate"), parameters: { recipeId, stage } },
+        context,
+        "src/internal/generation/JoernGenerationCli.ts",
+        stage,
+        recipeId,
+      ),
+      syncJoernTemplatesPlan(recipeId, context),
+    ]
+  }
+
+  return [generationStageProcessPlan(
+    { ...baseGenerationStageOptions("joern", "generate"), parameters: { recipeId, stage } },
+    context,
+    "src/internal/generation/JoernGenerationCli.ts",
+    stage,
+    recipeId,
+  )]
+}
+
+function createPlatformAlchemyK8sGenerationStagePlan(
+  stage: string,
+  recipeId: string,
+  options: NormalizedToolchainOptions,
+  context: ToolchainPlanContext,
+): readonly ExecutorTypedPlan[] {
+  if (stage === "sync-k8s-resources") {
+    return [syncK8sResourcesPlan(recipeId, context)]
+  }
+
+  const crdPlan = generationStageProcessPlan(
+    options,
+    context,
+    "src/internal/generation/CrdGenerationCli.ts",
+    stage,
+    recipeId,
+  )
+
+  return stage === "emit-generated"
+    ? [crdPlan, syncK8sResourcesPlan(recipeId, context)]
+    : [crdPlan]
+}
+
+function syncJoernTemplatesPlan(
+  recipeId: string,
+  context: ToolchainPlanContext,
+): ExecutorTypedPlan {
+  return {
+    kind: "process",
+    label: "toolchain:joern:generate:sync-template-registry",
+    adapter: "pnpm-exec-nx-generate",
+    executable: "pnpm",
+    args: [
+      "exec",
+      "nx",
+      "generate",
+      "@attune/nx:sync-joern-templates",
+      "--directory",
+      "packages/attune/joern-effect/src/joern/templates",
+      "--registry",
+      "packages/attune/joern-effect/src/joern/templates/TemplateRegistry.generated.ts",
+    ],
+    cwd: context.workspaceRoot,
+    env: recipeEnv(recipeId),
+  }
+}
+
+function syncK8sResourcesPlan(
+  recipeId: string,
+  context: ToolchainPlanContext,
+): ExecutorTypedPlan {
+  return {
+    kind: "process",
+    label: "toolchain:kubernetes:generate:sync-resource-registry",
+    adapter: "pnpm-exec-nx-generate",
+    executable: "pnpm",
+    args: [
+      "exec",
+      "nx",
+      "generate",
+      "@attune/nx:sync-k8s-resources",
+      "--directory",
+      "packages/canopy/platform-alchemy-k8s/src/resources",
+      "--registry",
+      "packages/canopy/platform-alchemy-k8s/src/resources/ResourceRegistry.generated.ts",
+    ],
+    cwd: context.workspaceRoot,
+    env: recipeEnv(recipeId),
+  }
+}
+
+function baseGenerationStageOptions(
+  tool: ToolchainKind,
+  action: ToolchainAction,
+): NormalizedToolchainOptions {
+  return {
+    targetProject: null,
+    inputs: [],
+    outputs: [],
+    evidenceOutputs: [],
+    configDependencies: [],
+    resourceTier: "local",
+    workerBudget: null,
+    timeoutSeconds: null,
+    destructiveGate: null,
+    resourceProviderGate: null,
+    dryRun: false,
+    tool,
+    action,
+    toolId: "generation-stage",
+    parameters: {},
+  }
 }
 
 function pnpmExecPlan(
@@ -567,7 +780,7 @@ function pnpmExecPlan(
   }
 }
 
-function nodeScriptPlan(
+function tsxRecipePlan(
   label: string,
   script: string,
   options: NormalizedToolchainOptions,
@@ -575,15 +788,9 @@ function nodeScriptPlan(
 ): readonly ExecutorTypedPlan[] {
   const recipeId = readRecipeId(options)
   if (recipeId === null) return [missingRecipeProvenancePlan(options)]
-  return [{
-    kind: "process",
-    label,
-    adapter: "node-script",
-    executable: "node",
-    args: [script],
-    cwd: context.workspaceRoot,
-    env: recipeEnv(recipeId),
-  }]
+  const plan = tsxPlan(label, script, [], context.workspaceRoot)
+  if (plan.kind !== "process") return [unsupportedToolchainPlan(options)]
+  return [{ ...plan, env: recipeEnv(recipeId) }]
 }
 
 function tsxPlan(
@@ -686,7 +893,7 @@ function createWorkerPropertyPlan(
   return createWorkerScriptPlan({
     label: "toolchain:worker-fuzz:test",
     recipeId: readRecipeId(options),
-    script: readStringParameter(options, "script") ?? "scripts/runPropertyVitest.ts",
+    script: "src/fuzz/cli/PropertyVitestCli.ts",
     args: readStringArrayParameter(options, "arguments"),
     nixDevShell: readBooleanParameter(options, "nixDevShell", false),
     context,
@@ -705,7 +912,7 @@ function createWorkerFuzzPlan(
   return createWorkerScriptPlan({
     label: "toolchain:worker-fuzz:fuzz",
     recipeId: readRecipeId(options),
-    script: readStringParameter(options, "script") ?? "scripts/runFuzzer.ts",
+    script: "src/fuzz/cli/FuzzerCli.ts",
     args,
     nixDevShell: readBooleanParameter(options, "nixDevShell", false),
     context,
@@ -724,7 +931,7 @@ function createWorkerScriptPlan(input: {
     return [{
       kind: "unsupported",
       label: input.label,
-      reason: "script-backed worker execution requires $.parameters.recipeId.",
+      reason: "worker execution requires $.parameters.recipeId.",
     }]
   }
 
@@ -816,7 +1023,7 @@ const allowedParameterKeys = (
     case "generation-stage:generate":
     case "joern:generate":
     case "kubernetes:generate":
-      return ["recipeId", "script", "stage", "tmpDir"]
+      return ["recipeId", "stage", "tmpDir"]
     case "nx:generate":
       return ["arguments", "generator"]
     case "nix:build":
@@ -833,7 +1040,7 @@ const allowedParameterKeys = (
     case "vite:serve":
       return ["host", "port"]
     case "worker-fuzz:test":
-      return ["arguments", "nixDevShell", "recipeId", "script"]
+      return ["arguments", "nixDevShell", "recipeId"]
     case "worker-fuzz:fuzz":
       return [
         "batches",
@@ -846,7 +1053,6 @@ const allowedParameterKeys = (
         "queryFeedback",
         "recipeId",
         "runId",
-        "script",
         "workers",
       ]
     case "workspace:check":
@@ -884,6 +1090,71 @@ const readStringParameter = (
 const readRecipeId = (options: NormalizedToolchainOptions): string | null =>
   readStringParameter(options, "recipeId")
 
+const recipeInvocationActions = new Set<RecipeInvocationAction>([
+  "generate",
+  "check",
+  "repair",
+  "plan",
+  "apply",
+  "destroy",
+  "prune",
+  "fuzz",
+  "validate-sql",
+  "migrate",
+  "generate-types",
+])
+
+function recipeInvocationForToolchain(
+  options: NormalizedToolchainOptions,
+  context?: ExecutorContextLike,
+): RecipeInvocation | undefined {
+  const recipeId = readRecipeId(options)
+  if (recipeId === null) return undefined
+
+  const action = recipeInvocationActionForToolchain(options)
+  if (action === null) return undefined
+
+  const projectId = context?.projectName ?? options.targetProject ?? undefined
+  const target = context?.targetName === undefined
+    ? undefined
+    : projectId === undefined
+      ? context.targetName
+      : `${projectId}:${context.targetName}`
+
+  return Schema.decodeUnknownSync(RecipeInvocationSchema)({
+    recipeId,
+    action,
+    parameters: options.parameters,
+    requestedBy: {
+      kind: "tool",
+      id: "attune-nx",
+      name: "@attune/nx",
+    },
+    source: {
+      surface: "nx",
+      ...(projectId === undefined ? {} : { projectId }),
+      ...(target === undefined ? {} : { target }),
+    },
+  })
+}
+
+function recipeInvocationActionForToolchain(
+  options: NormalizedToolchainOptions,
+): RecipeInvocationAction | null {
+  const stage = readStringParameter(options, "stage")
+  if (stage !== null && recipeInvocationActions.has(stage as RecipeInvocationAction)) {
+    return stage as RecipeInvocationAction
+  }
+  if (options.tool === "architecture" && options.action === "generate" && options.toolId === "recipe-repair") {
+    return "repair"
+  }
+  if (options.tool === "alchemy" && options.action === "deploy") return "apply"
+  if (recipeInvocationActions.has(options.action as RecipeInvocationAction)) {
+    return options.action as RecipeInvocationAction
+  }
+  return null
+}
+
 const recipeEnv = (recipeId: string): Readonly<Record<string, string>> => ({
   ATTUNE_RECIPE_ID: recipeId,
 })
@@ -893,7 +1164,7 @@ const missingRecipeProvenancePlan = (
 ): ExecutorTypedPlan => ({
   kind: "unsupported",
   label: `toolchain:${options.tool}:${options.action}`,
-  reason: "script-backed typed execution requires $.parameters.recipeId.",
+  reason: "typed recipe execution requires $.parameters.recipeId.",
 })
 
 const readBooleanParameter = (

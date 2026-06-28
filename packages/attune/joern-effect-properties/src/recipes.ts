@@ -58,7 +58,7 @@ export const JoernFuzzerRecipes = [
     nxTarget: "joern-effect-properties:proof",
     sourcePath: "packages/attune/joern-effect-properties/src/recipes.ts",
     allowedFiles: [
-      "packages/attune/joern-effect-properties/scripts/runPropertyVitest.ts",
+      "packages/attune/joern-effect-properties/src/fuzz/cli/PropertyVitestCli.ts",
       "packages/attune/joern-effect-properties/src/**",
       "packages/attune/joern-effect-properties/test/**",
       "packages/attune/joern-effect-properties/project.json",
@@ -78,7 +78,7 @@ export const JoernFuzzerRecipes = [
     nxTarget: "joern-effect-properties:test",
     sourcePath: "packages/attune/joern-effect-properties/src/recipes.ts",
     allowedFiles: [
-      "packages/attune/joern-effect-properties/scripts/runFuzzer.ts",
+      "packages/attune/joern-effect-properties/src/fuzz/cli/FuzzerCli.ts",
       "packages/attune/joern-effect-properties/src/**",
       "packages/attune/joern-effect-properties/project.json",
     ],

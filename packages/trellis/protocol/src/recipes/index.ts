@@ -36,6 +36,49 @@ export const ManagedRecipeLifecycleActionSchema = Schema.Literals([
 ] as const)
 export type ManagedRecipeLifecycleAction = typeof ManagedRecipeLifecycleActionSchema.Type
 
+export const RecipeInvocationActionSchema = Schema.Literals([
+  "generate",
+  "check",
+  "repair",
+  "plan",
+  "apply",
+  "destroy",
+  "prune",
+  "fuzz",
+  "validate-sql",
+  "migrate",
+  "generate-types",
+] as const)
+export type RecipeInvocationAction = typeof RecipeInvocationActionSchema.Type
+
+export const RecipeInvocationRequestedBySchema = Schema.Struct({
+  kind: Schema.Literals(["human", "agent", "system", "ci", "tool"] as const),
+  id: Schema.optional(Schema.String),
+  name: Schema.optional(Schema.String),
+})
+export type RecipeInvocationRequestedBy = typeof RecipeInvocationRequestedBySchema.Type
+
+export const RecipeInvocationSourceSchema = Schema.Struct({
+  surface: Schema.Literals(["nx", "cli", "lsp", "tend", "opencode", "test", "policy"] as const),
+  projectId: Schema.optional(Schema.String),
+  target: Schema.optional(Schema.String),
+  cwd: Schema.optional(Schema.String),
+  sourcePath: Schema.optional(Schema.String),
+})
+export type RecipeInvocationSource = typeof RecipeInvocationSourceSchema.Type
+
+export const RecipeInvocationSchema = Schema.Struct({
+  recipeId: Schema.String,
+  action: RecipeInvocationActionSchema,
+  input: Schema.optional(Schema.Unknown),
+  parameters: Schema.optional(Schema.Record(Schema.String, Schema.Unknown)),
+  runId: Schema.optional(Schema.String),
+  requestedBy: Schema.optional(RecipeInvocationRequestedBySchema),
+  startedAt: Schema.optional(Schema.String),
+  source: Schema.optional(RecipeInvocationSourceSchema),
+})
+export type RecipeInvocation = typeof RecipeInvocationSchema.Type
+
 export const ManagedRecipeLifecycleSubstrateKindSchema = Schema.Literals([
   "database-service",
   "container-runtime",
@@ -61,6 +104,7 @@ export type RecipeKind = typeof RecipeKindSchema.Type
 export type RecipeId = string & { readonly RecipeId: unique symbol }
 export type RecipeRunId = string & { readonly RecipeRunId: unique symbol }
 export type RecipeReceiptId = string & { readonly RecipeReceiptId: unique symbol }
+export type RecipeObservationId = string & { readonly RecipeObservationId: unique symbol }
 export type RecipeDiagnosticId = string & { readonly RecipeDiagnosticId: unique symbol }
 export type RecipeRepairId = string & { readonly RecipeRepairId: unique symbol }
 
@@ -69,6 +113,12 @@ export const recipeRunId = (recipe: string, startedAt: string): RecipeRunId =>
   stableId("recipe-run", recipe, startedAt) as RecipeRunId
 export const recipeReceiptId = (recipe: string, startedAt: string): RecipeReceiptId =>
   stableId("recipe-receipt", recipe, startedAt) as RecipeReceiptId
+export const recipeObservationId = (
+  recipe: string,
+  observationKind: string,
+  observedAt: string,
+): RecipeObservationId =>
+  stableId("recipe-observation", recipe, observationKind, observedAt) as RecipeObservationId
 export const recipeDiagnosticId = (recipe: string, code: string, startedAt: string): RecipeDiagnosticId =>
   stableId("recipe-diagnostic", recipe, code, startedAt) as RecipeDiagnosticId
 export const recipeRepairId = (diagnosticId: string): RecipeRepairId =>
@@ -116,6 +166,29 @@ export const RecipeReceiptSchema = Schema.Struct({
   payload: Schema.optional(Schema.Unknown),
 })
 export type RecipeReceipt = typeof RecipeReceiptSchema.Type
+
+export const RecipeObservationSchema = Schema.Struct({
+  observationId: Schema.String,
+  recipeId: Schema.String,
+  runId: Schema.optional(Schema.String),
+  receiptId: Schema.optional(Schema.String),
+  observationKind: Schema.String,
+  observedAt: Schema.String,
+  source: Schema.optional(Schema.String),
+  payload: Schema.Unknown,
+})
+export type RecipeObservation = typeof RecipeObservationSchema.Type
+
+export const GeneratedArtifactFreshnessPayloadSchema = Schema.Struct({
+  artifactPath: Schema.String,
+  ownerRecipeId: Schema.String,
+  fresh: Schema.Boolean,
+  projectionId: Schema.optional(Schema.String),
+  source: Schema.optional(Schema.String),
+  contentHash: Schema.optional(Schema.String),
+})
+export type GeneratedArtifactFreshnessPayload =
+  typeof GeneratedArtifactFreshnessPayloadSchema.Type
 
 export const RecipeSourceRangeSchema = Schema.Struct({
   start: Schema.Number,
@@ -208,6 +281,7 @@ export const RecipeReceiptStoreSnapshotSchema = Schema.Struct({
   io: Schema.Array(RecipeIoSchema),
   runs: Schema.Array(RecipeRunSchema),
   receipts: Schema.Array(RecipeReceiptSchema),
+  observations: Schema.Array(RecipeObservationSchema),
   diagnostics: Schema.Array(RecipeDiagnosticSchema),
   repairs: Schema.Array(RecipeRepairSchema),
   health: Schema.Array(RecipeHealthSchema),
@@ -221,6 +295,63 @@ export const RecipeDbEmissionRecordSetSchema = Schema.Struct({
   health: Schema.Array(RecipeHealthSchema),
 })
 export type RecipeDbEmissionRecordSet = typeof RecipeDbEmissionRecordSetSchema.Type
+
+export const ProjectionKindSchema = Schema.Literals([
+  "nx-target",
+  "recipe-db-emission",
+  "recipe-receipt",
+  "oxlint-diagnostic",
+] as const)
+export type ProjectionKind = typeof ProjectionKindSchema.Type
+
+export const ProjectionDefinitionRecordSchema = Schema.Struct({
+  projectionId: Schema.String,
+  kind: ProjectionKindSchema,
+})
+export type ProjectionDefinitionRecord = typeof ProjectionDefinitionRecordSchema.Type
+
+export const NxTargetProjectionTierSchema = Schema.Literals(["public", "internal"] as const)
+export type NxTargetProjectionTier = typeof NxTargetProjectionTierSchema.Type
+
+export const NxTargetProjectionSchema = Schema.Struct({
+  projectionId: Schema.String,
+  recipeId: Schema.String,
+  projectId: Schema.String,
+  targetName: Schema.String,
+  target: Schema.String,
+  tier: NxTargetProjectionTierSchema,
+  surface: Schema.String,
+  action: Schema.String,
+  evidence: Schema.Array(Schema.String),
+  metadata: Schema.Struct({
+    attune: Schema.Struct({
+      recipeId: Schema.String,
+      projectionId: Schema.String,
+      tier: NxTargetProjectionTierSchema,
+      surface: Schema.String,
+      action: Schema.String,
+      evidence: Schema.Array(Schema.String),
+    }),
+  }),
+})
+export type NxTargetProjection = typeof NxTargetProjectionSchema.Type
+
+export const NxTargetConformanceStatusSchema = Schema.Literals([
+  "recipe-owned",
+  "projection-owned",
+  "internal",
+  "orphaned",
+] as const)
+export type NxTargetConformanceStatus = typeof NxTargetConformanceStatusSchema.Type
+
+export const NxTargetConformanceRecordSchema = Schema.Struct({
+  targetName: Schema.String,
+  status: NxTargetConformanceStatusSchema,
+  guidance: Schema.String,
+  recipeId: Schema.optional(Schema.String),
+  projectionId: Schema.optional(Schema.String),
+})
+export type NxTargetConformanceRecord = typeof NxTargetConformanceRecordSchema.Type
 
 export const RecipeRegistrySnapshotSchema = Schema.Struct({
   recipes: Schema.Array(RecipeRecordSchema),
@@ -309,11 +440,39 @@ export interface RecipeRegistryApi {
   readonly snapshot: () => RecipeRegistrySnapshot
 }
 
+export interface ProjectionDefinition<Input, Output> {
+  readonly id: string
+  readonly kind: ProjectionKind
+  readonly inputSchema: Schema.Schema<Input>
+  readonly outputSchema: Schema.Schema<Output>
+  readonly render: (input: Input) => Output
+}
+
+export interface ProjectionRegistryApi {
+  readonly register: <Input, Output>(
+    projection: ProjectionDefinition<Input, Output>,
+  ) => ProjectionRegistryApi
+  readonly get: (id: string) => ProjectionDefinition<unknown, unknown> | undefined
+  readonly list: () => readonly ProjectionDefinitionRecord[]
+  readonly render: <Input, Output>(id: string, input: Input) => Output | undefined
+}
+
+export const defineProjection = <Input, Output>(
+  projection: ProjectionDefinition<Input, Output>,
+): ProjectionDefinition<Input, Output> => projection
+
 export const RecipeRegistry = {
   empty: (): RecipeRegistryApi => makeRecipeRegistry([]),
   fromRecipes: (
     recipes: readonly RecipeDefinition[],
   ): RecipeRegistryApi => makeRecipeRegistry(recipes),
+}
+
+export const ProjectionRegistry = {
+  empty: (): ProjectionRegistryApi => makeProjectionRegistry([]),
+  fromProjections: (
+    projections: readonly ProjectionDefinition<any, any>[],
+  ): ProjectionRegistryApi => makeProjectionRegistry(projections),
 }
 
 export const NxTarget = {
@@ -379,6 +538,39 @@ export const LspDiagnostic = {
     relatedObservations: diagnostic.receiptId === undefined ? [] : [diagnostic.receiptId],
     ...(diagnostic.range === undefined ? {} : { range: diagnostic.range as SourceRange }),
   }),
+}
+
+export const RecipeObservationView = {
+  generatedArtifactFreshness: (input: {
+    readonly recipeId: string
+    readonly artifactPath: string
+    readonly fresh: boolean
+    readonly observedAt: string
+    readonly runId?: string
+    readonly receiptId?: string
+    readonly projectionId?: string
+    readonly source?: string
+    readonly contentHash?: string
+  }): RecipeObservation => {
+    const observationKind = "generated-artifact.freshness"
+    return {
+      observationId: recipeObservationId(input.recipeId, `${observationKind}:${input.artifactPath}`, input.observedAt),
+      recipeId: input.recipeId,
+      ...(input.runId === undefined ? {} : { runId: input.runId }),
+      ...(input.receiptId === undefined ? {} : { receiptId: input.receiptId }),
+      observationKind,
+      observedAt: input.observedAt,
+      ...(input.source === undefined ? {} : { source: input.source }),
+      payload: {
+        artifactPath: input.artifactPath,
+        ownerRecipeId: input.recipeId,
+        fresh: input.fresh,
+        ...(input.projectionId === undefined ? {} : { projectionId: input.projectionId }),
+        ...(input.source === undefined ? {} : { source: input.source }),
+        ...(input.contentHash === undefined ? {} : { contentHash: input.contentHash }),
+      } satisfies GeneratedArtifactFreshnessPayload,
+    }
+  },
 }
 
 export const AlchemyResourceDescriptor = {
@@ -447,6 +639,111 @@ export const RecipeDbEmissionView = {
   }),
 }
 
+export const NxTargetProjectionView = {
+  fromRecipe: <Input, Output>(
+    recipe: RecipeDefinition<Input, Output>,
+  ): readonly NxTargetProjection[] =>
+    RecipePublicTargets.fromRecipe(recipe).map((target) => {
+      const projectId = recipe.projectId ?? projectNameFromRecipeId(recipe.id)
+      const projectionId = "framework.projection.nx-target"
+      const targetName = targetNameFromNxTarget(target.target)
+      const evidence = [...(target.evidenceRequirements ?? [])]
+      return {
+        projectionId,
+        recipeId: recipe.id,
+        projectId,
+        targetName,
+        target: target.target,
+        tier: "public",
+        surface: target.kind,
+        action: target.kind,
+        evidence,
+        metadata: {
+          attune: {
+            recipeId: recipe.id,
+            projectionId,
+            tier: "public",
+            surface: target.kind,
+            action: target.kind,
+            evidence,
+          },
+        },
+      } satisfies NxTargetProjection
+    }),
+  fromRecipes: (
+    recipes: readonly RecipeDefinition[],
+  ): readonly NxTargetProjection[] =>
+    recipes.flatMap((recipe) => NxTargetProjectionView.fromRecipe(recipe))
+      .sort((left, right) =>
+        left.projectId.localeCompare(right.projectId) ||
+        left.targetName.localeCompare(right.targetName) ||
+        left.recipeId.localeCompare(right.recipeId)
+      ),
+}
+
+export const RecipeProjectionCatalog = [
+  defineProjection({
+    id: "framework.projection.nx-target",
+    kind: "nx-target",
+    inputSchema: Schema.Array(Schema.Unknown) as Schema.Schema<readonly RecipeDefinition[]>,
+    outputSchema: Schema.Array(NxTargetProjectionSchema),
+    render: NxTargetProjectionView.fromRecipes,
+  }),
+  defineProjection({
+    id: "framework.projection.recipe-db-emission",
+    kind: "recipe-db-emission",
+    inputSchema: Schema.Array(Schema.Unknown) as Schema.Schema<readonly RecipeDefinition[]>,
+    outputSchema: RecipeDbEmissionRecordSetSchema,
+    render: RecipeDbEmissionView.fromRecipes,
+  }),
+  defineProjection({
+    id: "framework.projection.recipe-receipt",
+    kind: "recipe-receipt",
+    inputSchema: RecipeReceiptSchema,
+    outputSchema: RecipeReceiptSchema,
+    render: (receipt) => receipt,
+  }),
+  defineProjection({
+    id: "framework.projection.oxlint-diagnostic",
+    kind: "oxlint-diagnostic",
+    inputSchema: RecipeDiagnosticSchema,
+    outputSchema: RecipeDiagnosticSchema,
+    render: (diagnostic) => diagnostic,
+  }),
+] as const
+
+export const NxTargetConformance = {
+  checkProjectJson: (input: {
+    readonly projectName: string
+    readonly projectJson: unknown
+    readonly projections?: readonly NxTargetProjection[]
+  }): readonly NxTargetConformanceRecord[] => {
+    const projectJson = asJsonRecord(input.projectJson)
+    const targets = asJsonRecord(projectJson?.["targets"])
+    if (targets === undefined) return []
+
+    return Object.entries(targets)
+      .flatMap(([targetName, target]) => {
+        const targetRecord = asJsonRecord(target)
+        if (targetRecord === undefined) return []
+        return [classifyNxTarget({
+          projectName: input.projectName,
+          targetName,
+          target: targetRecord,
+          targets,
+          projections: input.projections ?? [],
+        })]
+      })
+      .sort((left, right) => left.targetName.localeCompare(right.targetName))
+  },
+  orphanedTargets: (
+    records: readonly NxTargetConformanceRecord[],
+  ): readonly NxTargetConformanceRecord[] =>
+    records.filter((record) => record.status === "orphaned"),
+  isConformant: (records: readonly NxTargetConformanceRecord[]): boolean =>
+    NxTargetConformance.orphanedTargets(records).length === 0,
+}
+
 export const recipeIo = (
   recipeId: string,
   role: RecipeIoRole,
@@ -491,6 +788,33 @@ const makeRecipeRegistry = (
       topoOrder: api.topoOrder(),
     }),
   }
+  return api
+}
+
+const makeProjectionRegistry = (
+  initialProjections: readonly ProjectionDefinition<any, any>[],
+): ProjectionRegistryApi => {
+  const projections = new Map<string, ProjectionDefinition<any, any>>()
+  const api: ProjectionRegistryApi = {
+    register: (projection) => {
+      projections.set(projection.id, projection)
+      return api
+    },
+    get: (id) => projections.get(id),
+    list: () =>
+      [...projections.values()]
+        .map((projection) => ({
+          projectionId: projection.id,
+          kind: projection.kind,
+        }))
+        .sort((left, right) => left.projectionId.localeCompare(right.projectionId)),
+    render: (id, input) => {
+      const projection = projections.get(id)
+      if (projection === undefined) return undefined
+      return projection.render(input) as never
+    },
+  }
+  for (const projection of initialProjections) api.register(projection)
   return api
 }
 
@@ -554,6 +878,112 @@ const defaultPublicTargets = <Input, Output>(
       evidenceRequirements: [...(recipe.validationEvidence ?? [])],
     },
   ]
+}
+
+const targetNameFromNxTarget = (target: string): string => {
+  const [, targetName] = target.split(":")
+  return targetName ?? target
+}
+
+const conventionalPublicTargetNames = new Set([
+  "check",
+  "repair",
+  "generate",
+  "check-generated",
+  "fuzz",
+  "proof",
+  "plan",
+  "apply",
+  "destroy",
+  "migrate",
+  "validate-sql",
+  "generate-types",
+])
+
+const classifyNxTarget = (input: {
+  readonly projectName: string
+  readonly targetName: string
+  readonly target: JsonRecord
+  readonly targets: JsonRecord
+  readonly projections: readonly NxTargetProjection[]
+}): NxTargetConformanceRecord => {
+  const attune = attuneMetadata(input.target)
+  const expectedProjection = input.projections.find((projection) =>
+    projection.projectId === input.projectName && projection.targetName === input.targetName
+  )
+  const recipeId = stringValue(attune?.["recipeId"]) ?? expectedProjection?.recipeId
+  const projectionId = stringValue(attune?.["projectionId"]) ?? expectedProjection?.projectionId
+  const tier = stringValue(attune?.["tier"])
+
+  if (tier === "internal" && hasPublicParent(input.targetName, input.target, input.targets)) {
+    return {
+      targetName: input.targetName,
+      status: "internal",
+      guidance: "Internal target is linked to a public parent target.",
+      ...(recipeId === undefined ? {} : { recipeId }),
+      ...(projectionId === undefined ? {} : { projectionId }),
+    }
+  }
+
+  if (attune?.["recipeId"] !== undefined) {
+    return {
+      targetName: input.targetName,
+      status: "recipe-owned",
+      guidance: "Target declares metadata.attune.recipeId.",
+      recipeId: stringValue(attune["recipeId"]) ?? "",
+      ...(projectionId === undefined ? {} : { projectionId }),
+    }
+  }
+
+  if (attune?.["projectionId"] !== undefined || expectedProjection !== undefined) {
+    return {
+      targetName: input.targetName,
+      status: "projection-owned",
+      guidance: expectedProjection === undefined
+        ? "Target declares metadata.attune.projectionId."
+        : "Target matches a ProjectionRegistry Nx target projection.",
+      ...(recipeId === undefined ? {} : { recipeId }),
+      projectionId: projectionId ?? "framework.projection.nx-target",
+    }
+  }
+
+  if (conventionalPublicTargetNames.has(input.targetName)) {
+    return {
+      targetName: input.targetName,
+      status: "orphaned",
+      guidance: "Add recipe metadata, projection metadata, route through RecipeInvocation, or mark the target internal with a public parent.",
+    }
+  }
+
+  return {
+    targetName: input.targetName,
+    status: "internal",
+    guidance: "Target is not part of the public recipe workflow vocabulary.",
+  }
+}
+
+type JsonRecord = Record<string, unknown>
+
+const asJsonRecord = (value: unknown): JsonRecord | undefined =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as JsonRecord
+    : undefined
+
+const attuneMetadata = (target: JsonRecord): JsonRecord | undefined =>
+  asJsonRecord(asJsonRecord(target["metadata"])?.["attune"])
+
+const stringValue = (value: unknown): string | undefined =>
+  typeof value === "string" && value.length > 0 ? value : undefined
+
+const hasPublicParent = (
+  targetName: string,
+  target: JsonRecord,
+  targets: JsonRecord,
+): boolean => {
+  const attune = attuneMetadata(target)
+  const parent = stringValue(attune?.["publicParentTarget"])
+  if (parent !== undefined) return asJsonRecord(targets[parent]) !== undefined
+  return targetName.startsWith("attune:repair-") && asJsonRecord(targets["repair"]) !== undefined
 }
 
 const projectNameFromRecipeId = (recipeId: string): string => {

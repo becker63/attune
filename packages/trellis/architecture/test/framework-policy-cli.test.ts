@@ -682,6 +682,40 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("rejects live package-local script files for active packages", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/trellis/runtime/scripts/generationStage.ts": [
+        "import { runLocalTimescaleCli } from \"../src/internal/db/LocalTimescaleCli.js\"",
+        "runLocalTimescaleCli(process.argv.slice(2))",
+      ].join("\n"),
+      "packages/attune/joern-effect/scripts/generationStage.ts": [
+        "console.log(\"active package roots reject any live package-local script\")",
+      ].join("\n"),
+      "packages/canopy/home-deployment/scripts/attune-nixos-bootstrap": [
+        "#!/usr/bin/env bash",
+        "echo command-plan",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["no-compat-scripts"] })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "live-package-local-script-file",
+        filePath: "packages/trellis/runtime/scripts/generationStage.ts",
+      }),
+      expect.objectContaining({
+        code: "live-package-local-script-file",
+        filePath: "packages/attune/joern-effect/scripts/generationStage.ts",
+      }),
+      expect.objectContaining({
+        code: "live-package-local-script-file",
+        filePath: "packages/canopy/home-deployment/scripts/attune-nixos-bootstrap",
+      }),
+    ]))
+  })
+
   it("rejects stale architecture-lint final-surface references, stale policy target guidance, and expired migration waivers", () => {
     const workspaceRoot = makeWorkspace({
       "docs/final-framework-surface.md": [
@@ -836,6 +870,43 @@ describe("framework policy CLI", () => {
         filePath: "attune.artifact-ownership.index.json",
       }),
     ]))
+  })
+
+  it("rejects custom lifecycle runtimes and deferred context systems in active source", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/trellis/runtime/src/ResourceDiffEngine.ts": [
+        "export class ResourceDiffEngine {",
+        "  plan() { return [] }",
+        "}",
+      ].join("\n"),
+      "packages/attune/cocoindex-effect/src/ContextPacket.ts": [
+        "export interface ContextPacket {",
+        "  readonly budget: number",
+        "}",
+      ].join("\n"),
+      "openspec/changes/example/design.md": [
+        "Do not build ResourceDiffEngine or ContextPacket in this clean fork.",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["policy-surface"] })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.ratchetDiagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "forbidden-clean-fork-overgrowth",
+        filePath: "packages/trellis/runtime/src/ResourceDiffEngine.ts",
+        message: expect.stringContaining("ResourceDiffEngine"),
+      }),
+      expect.objectContaining({
+        code: "forbidden-clean-fork-overgrowth",
+        filePath: "packages/attune/cocoindex-effect/src/ContextPacket.ts",
+        message: expect.stringContaining("ContextPacket"),
+      }),
+    ]))
+    expect(result.ratchetDiagnostics).not.toContainEqual(expect.objectContaining({
+      filePath: "openspec/changes/example/design.md",
+    }))
   })
 
   it("rejects old ontology runtime objects in primary program-index paths", () => {

@@ -9,5 +9,5 @@
       "joern-effect": ["./src/index.ts"]
     }
   },
-  "include": ["src", "examples", "test", "scripts"]
+  "include": ["src", "examples", "test"]
 }

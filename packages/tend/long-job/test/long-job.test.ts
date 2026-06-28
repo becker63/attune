@@ -7,6 +7,9 @@ describe("@attune/tend-long-job", () => {
       jobId: "job-1",
       sessionId: "session-1",
       recipeId: "framework-runtime.local-timescaledb",
+      runId: "run-1",
+      receiptId: "receipt-1",
+      observationId: "observation-1",
       registeredAt: "2026-06-28T00:00:00.000Z",
       wakeAfter: "2026-06-28T00:05:00.000Z",
       pollTarget: "framework-runtime:db:migrate",
@@ -17,6 +20,9 @@ describe("@attune/tend-long-job", () => {
     expect(wakeupPacketFromLongJob(job)).toMatchObject({
       wakeupId: "wakeup:job-1",
       targetRecipeId: "framework-runtime.local-timescaledb",
+      runId: "run-1",
+      receiptId: "receipt-1",
+      observationId: "observation-1",
       targetCommand: "framework-runtime:db:migrate",
     })
   })

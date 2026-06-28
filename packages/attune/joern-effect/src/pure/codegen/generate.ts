@@ -3,8 +3,11 @@ import { emitFastCheckArbitraries, emitGenerated } from "./emitGenerated.js"
 import { extractSchema } from "./extractSchema.js"
 import { normalizeSchema } from "./normalizeSchema.js"
 
-export const generate = (outDir = "src/pure/generated"): Effect.Effect<void, Error> =>
-  extractSchema().pipe(
+export const generate = (
+  outDir = "src/pure/generated",
+  defaultSchemaPath?: string,
+): Effect.Effect<void, Error> =>
+  extractSchema(defaultSchemaPath).pipe(
     Effect.map(normalizeSchema),
     Effect.flatMap((schema) => emitGenerated(schema, outDir)),
   )

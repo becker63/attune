@@ -60,8 +60,8 @@ export const CocoIndexEffectRecipes = [
     nxTarget: "cocoindex-effect:generate",
     sourcePath: "packages/attune/cocoindex-effect/src/recipes.ts",
     allowedFiles: [
-      "packages/attune/cocoindex-effect/scripts/generationStage.ts",
-      "packages/attune/cocoindex-effect/scripts/generate-cocoindex-mcp-types.ts",
+      "packages/attune/cocoindex-effect/src/internal/generation/CocoIndexGenerationCli.ts",
+      "packages/attune/cocoindex-effect/src/internal/generation/CocoIndexMcpTypes.ts",
       "packages/attune/cocoindex-effect/src/generated/**",
       "packages/attune/cocoindex-effect/project.json",
     ],
@@ -77,7 +77,7 @@ export const CocoIndexEffectRecipes = [
     nxTarget: "cocoindex-effect:generate",
     sourcePath: "packages/attune/cocoindex-effect/src/recipes.ts",
     allowedFiles: [
-      "packages/attune/cocoindex-effect/scripts/generate-cocoindex-mcp-types.ts",
+      "packages/attune/cocoindex-effect/src/internal/generation/CocoIndexMcpTypes.ts",
       "packages/attune/cocoindex-effect/src/generated/**",
       "packages/attune/cocoindex-effect/project.json",
     ],

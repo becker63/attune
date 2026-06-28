@@ -16,9 +16,14 @@ import {
   frameworkRecipeReceiptKyselyServiceContract,
   frameworkRecipeReceiptSafeQlConfig,
   frameworkRecipeReceiptSqlValidationStatements,
+  frameworkRecipeReceiptTables,
   HealthView,
   LspDiagnostic,
   LocalTimescaleManagedRecipe,
+  localTimescaleLifecycleObservationKinds,
+  localTimescaleLifecycleObservations,
+  localTimescaleObservationPayload,
+  makeAlchemyResourceBridge,
   makeManagedRecipeAlchemyProvider,
   makeManagedRecipeLifecycle,
   makeRecipePlanner,
@@ -34,7 +39,9 @@ import {
   type PostgresQueryClient,
   type PostgresQueryResult,
   type RecipeDiagnostic,
+  type RecipeObservation,
   type RecipeRepair,
+  recipeObservationId,
 } from "../src/index.js"
 
 const RecipeInput = Schema.Struct({
@@ -86,6 +93,8 @@ describe("RecipeKernel", () => {
     const result = await Effect.runPromise(runner.run(recipe, { projectId: "workspace" }))
 
     expect(result.output).toEqual({ checked: true })
+    expect(result.run.action).toBeUndefined()
+    expect(result.observations).toEqual([])
     expect(result.receipt).toMatchObject({
       recipeId: "workspace.policy-fast",
       status: "passed",
@@ -168,6 +177,22 @@ describe("RecipeKernel", () => {
     const recipeView = await Effect.runPromise(store.recipeView(recipe.id))
     const receiptById = await Effect.runPromise(store.receiptById(result.receipt.receiptId))
     const health = await Effect.runPromise(store.healthForRecipe(recipe.id))
+    const observation: RecipeObservation = {
+      observationId: recipeObservationId(recipe.id, "workspace.policy-fast.checked", result.receipt.completedAt ?? result.receipt.startedAt),
+      recipeId: recipe.id,
+      runId: result.run.runId,
+      receiptId: result.receipt.receiptId,
+      observationKind: "workspace.policy-fast.checked",
+      observedAt: result.receipt.completedAt ?? result.receipt.startedAt,
+      source: "framework-runtime:test",
+      payload: { checked: true },
+    }
+    await Effect.runPromise(store.recordObservation(observation))
+    const observations = await Effect.runPromise(store.observationsForRecipe(recipe.id))
+    const observationsForRun = await Effect.runPromise(store.observationsForRun(result.run.runId))
+    const observationsForReceipt = await Effect.runPromise(store.observationsForReceipt(result.receipt.receiptId))
+    const observationsByKind = await Effect.runPromise(store.observationsByKind(observation.observationKind))
+    const recipeViewWithObservation = await Effect.runPromise(store.recipeView(recipe.id))
     const replanned = await Effect.runPromise(planner.plan(recipe, { projectId: "workspace" }))
     const snapshot = await Effect.runPromise(store.snapshot())
 
@@ -185,6 +210,11 @@ describe("RecipeKernel", () => {
     })
     expect(receiptById).toEqual(result.receipt)
     expect(health).toMatchObject({ recipeId: recipe.id, status: "clean" })
+    expect(observations).toEqual([observation])
+    expect(observationsForRun).toEqual([observation])
+    expect(observationsForReceipt).toEqual([observation])
+    expect(observationsByKind).toEqual([observation])
+    expect(recipeViewWithObservation.observations).toEqual([observation])
     expect(replanned.health.status).toBe("clean")
     expect(snapshot.recipes).toContainEqual({
       recipeId: "workspace.policy-fast",
@@ -203,6 +233,7 @@ describe("RecipeKernel", () => {
     expect(snapshot.io.map((item) => item.role)).toEqual(["input", "output"])
     expect(snapshot.runs).toContainEqual(result.run)
     expect(snapshot.receipts).toContainEqual(result.receipt)
+    expect(snapshot.observations).toContainEqual(observation)
     expect(snapshot.health).toContainEqual(result.health)
   })
 
@@ -357,6 +388,21 @@ describe("RecipeKernel", () => {
       id: "local-timescaledb",
       health: { status: "clean" },
     })
+    const bridge = makeAlchemyResourceBridge()
+    const bridged = await Effect.runPromise(bridge.run({
+      recipe: managedRecipe,
+      input: { projectId: "workspace" },
+      action: "check",
+    }))
+    expect(bridged).toMatchObject({
+      provider: "attune:alchemy:managed-recipe",
+      id: "local-timescaledb",
+      descriptor: {
+        requiresHumanReview: true,
+      },
+      observations: [],
+    })
+    expect(bridged.bindings?.some((binding) => binding.data.kind === "human-review")).toBe(true)
 
     const lifecycle = makeManagedRecipeLifecycle(makeRecipePlanner(), makeRecipeRunner())
     const lifecyclePlan = await Effect.runPromise(lifecycle.plan(managedRecipe, { projectId: "workspace" }))
@@ -388,6 +434,7 @@ describe("RecipeKernel", () => {
     expect(sql).toContain("framework_event.recipe_run")
     expect(sql).toContain("framework_event.recipe_receipt")
     expect(sql).toContain("framework_event.recipe_receipt_metric")
+    expect(sql).toContain("framework_event.recipe_observation")
     expect(sql).toContain("framework_event.recipe_diagnostic")
     expect(sql).toContain("framework_event.recipe_repair")
     expect(sql).toContain("framework_view.recipe_health")
@@ -399,6 +446,7 @@ describe("RecipeKernel", () => {
     expect(validateFrameworkRecipeReceiptSql(sql)).toEqual([])
     expect(frameworkRecipeReceiptKanelConfig()).toMatchObject({
       connectionEnv: "DATABASE_URL",
+      tables: expect.arrayContaining(["framework_event.recipe_observation"]),
       outputPath: ".attune/cache/generated/framework-runtime/db/kanel",
       kyselyOutputPath:
         ".attune/cache/generated/framework-runtime/db/kanel/framework-recipe-receipt.database.generated.ts",
@@ -407,6 +455,7 @@ describe("RecipeKernel", () => {
       "SELECT * FROM framework_view.recipe_health WHERE recipe_id = $1",
       "SELECT * FROM framework_event.recipe_receipt WHERE receipt_status = $1",
       "SELECT * FROM framework_event.recipe_receipt_metric WHERE recipe_id = $1",
+      "SELECT * FROM framework_event.recipe_observation WHERE recipe_id = $1 ORDER BY observed_at DESC",
     ])
     expect(validateFrameworkRecipeReceiptStatements()).toEqual([])
     expect(frameworkRecipeReceiptSqlValidationStatements().map((statement) => statement.name))
@@ -414,9 +463,14 @@ describe("RecipeKernel", () => {
         "recipe-health-by-recipe",
         "recipe-receipts-by-status",
         "recipe-receipt-metrics-by-recipe",
+        "recipe-observations-by-recipe",
       ])
     expect(frameworkRecipeReceiptKyselyServiceContract().latestReceipt("recipe-1")).toMatchObject({
       parameters: ["recipe-1"],
+    })
+    expect(frameworkRecipeReceiptKyselyServiceContract().observationsForRecipe("recipe-1")).toMatchObject({
+      parameters: ["recipe-1"],
+      sql: expect.stringContaining("framework_event.recipe_observation"),
     })
     expect(frameworkRecipeReceiptKyselyServiceContract()).toMatchObject({
       databaseType: "KanelGeneratedFrameworkRecipeReceiptDatabase",
@@ -425,6 +479,26 @@ describe("RecipeKernel", () => {
         ".attune/cache/generated/framework-runtime/db/kanel/framework-recipe-receipt.database.generated.ts",
       bootstrapTypeStatus: "cache-generated-kanel-types-required",
     })
+  })
+
+  it("locks the framework schema names as the shared substrate boundary", () => {
+    const schemaNames = ["framework_core", "framework_event", "framework_view"] as const
+    const sql = readFileSync(
+      new URL("../sql/0001_framework_recipe_receipt_spine.sql", import.meta.url),
+      "utf8",
+    )
+
+    expect(frameworkRecipeReceiptKanelConfig().schemas).toEqual(schemaNames)
+    expect([...new Set(frameworkRecipeReceiptTables.map((table) => table.split(".")[0]))])
+      .toEqual(schemaNames)
+    for (const schemaName of schemaNames) {
+      expect(sql).toContain(`CREATE SCHEMA IF NOT EXISTS ${schemaName}`)
+    }
+
+    const renamedSql = sql.replaceAll("framework_event", "trellis_event")
+    expect(validateFrameworkRecipeReceiptSql(renamedSql)).toContain(
+      "missing table/view framework_event.recipe_run",
+    )
   })
 
   it("exports local TimescaleDB/Postgres as a real ManagedRecipe", async () => {
@@ -443,7 +517,8 @@ describe("RecipeKernel", () => {
       "SafeQL",
     ])
 
-    const lifecycle = makeManagedRecipeLifecycle()
+    const store = createInMemoryRecipeReceiptStore()
+    const lifecycle = makeManagedRecipeLifecycle(makeRecipePlanner(store), makeRecipeRunner(store))
     const result = await Effect.runPromise(lifecycle.check(LocalTimescaleManagedRecipe, {
       workspaceRoot: "/workspace",
       runIntegration: false,
@@ -467,6 +542,53 @@ describe("RecipeKernel", () => {
       },
     })
     expect(result.receipt.validationEvidence).toContain("framework-runtime:db:validate-sql")
+
+    const observedAt = result.receipt.completedAt ?? result.receipt.startedAt
+    const expectedObservations = localTimescaleLifecycleObservations(result.output, {
+      observedAt,
+      runId: result.run.runId,
+      receiptId: result.receipt.receiptId,
+    })
+    const storedObservations = await Effect.runPromise(store.observationsForRecipe(LocalTimescaleManagedRecipe.id))
+    expect(localTimescaleLifecycleObservationKinds(result.output)).toEqual([
+      "local-timescaledb.sql-validated",
+      "local-timescaledb.kanel-generated",
+      "local-timescaledb.safeql-validated",
+    ])
+    expect(result.observations).toEqual(expectedObservations)
+    expect(storedObservations).toEqual(expect.arrayContaining([...result.observations]))
+    expect(result.observations).toMatchObject([
+      {
+        recipeId: "framework-runtime.local-timescaledb",
+        runId: result.run.runId,
+        receiptId: result.receipt.receiptId,
+        observationKind: "local-timescaledb.sql-validated",
+        source: "framework-runtime.local-timescaledb",
+      },
+      {
+        observationKind: "local-timescaledb.kanel-generated",
+      },
+      {
+        observationKind: "local-timescaledb.safeql-validated",
+      },
+    ])
+    expect(localTimescaleObservationPayload(result.output, "local-timescaledb.sql-validated")).toMatchObject({
+      alchemy: {
+        provider: "effect-alchemy",
+        resourceKind: "timescaledb-postgres-recipe-receipts",
+        phase: "check",
+      },
+      service: {
+        ready: false,
+        integrationGuard: "ATTUNE_RUN_DB_INTEGRATION=1",
+      },
+      migration: {
+        applied: false,
+      },
+      receiptStore: {
+        implementation: "PostgresRecipeReceiptStore",
+      },
+    })
   })
 
   const dbIntegrationIt = process.env["ATTUNE_RUN_DB_INTEGRATION"] === "1"
@@ -476,7 +598,7 @@ describe("RecipeKernel", () => {
   dbIntegrationIt("runs the guarded local TimescaleDB SQL integration route", () => {
     const result = spawnSync(
       "pnpm",
-      ["exec", "tsx", "scripts/generationStage.ts", "integration-test"],
+      ["exec", "tsx", "src/internal/db/LocalTimescaleCli.ts", "integration-test"],
       {
         cwd: new URL("..", import.meta.url).pathname,
         env: {
@@ -520,6 +642,18 @@ describe("RecipeKernel", () => {
             validation_evidence: ["framework-runtime:test"],
           }])
         }
+        if (sql.includes("FROM framework_event.recipe_observation")) {
+          return rows([{
+            observation_id: "observation-1",
+            recipe_id: "workspace.policy-fast",
+            run_id: "run-1",
+            receipt_id: "receipt-1",
+            observation_kind: "workspace.policy-fast.checked",
+            observed_at: "2026-06-28T00:00:01.000Z",
+            source: "framework-runtime:test",
+            payload: { checked: true },
+          }])
+        }
         if (sql.includes("framework_event.recipe_run")) return rows([])
         if (sql.includes("framework_view.recipe_health")) {
           return rows([{
@@ -542,12 +676,27 @@ describe("RecipeKernel", () => {
       execute: () => Effect.succeed({ checked: true }),
     })
     const result = await Effect.runPromise(makeRecipeRunner(store).run(recipe, { projectId: "workspace" }))
+    const observation: RecipeObservation = {
+      observationId: "observation-1",
+      recipeId: recipe.id,
+      runId: result.run.runId,
+      receiptId: result.receipt.receiptId,
+      observationKind: "workspace.policy-fast.checked",
+      observedAt: result.receipt.completedAt ?? result.receipt.startedAt,
+      source: "framework-runtime:test",
+      payload: { checked: true },
+    }
+    await Effect.runPromise(store.recordObservation(observation))
     const view = await Effect.runPromise(store.recipeView(recipe.id))
+    const observations = await Effect.runPromise(store.observationsForRecipe(recipe.id))
 
     expect(result.receipt.status).toBe("passed")
     expect(calls.some((call) => call.sql.includes("INSERT INTO framework_core.recipe"))).toBe(true)
     expect(calls.some((call) => call.sql.includes("INSERT INTO framework_event.recipe_receipt"))).toBe(true)
+    expect(calls.some((call) => call.sql.includes("INSERT INTO framework_event.recipe_observation"))).toBe(true)
     expect(view.latestReceipt).toMatchObject({ receiptId: "receipt-1", status: "passed" })
+    expect(view.observations).toMatchObject([{ observationId: "observation-1" }])
+    expect(observations).toMatchObject([{ observationKind: "workspace.policy-fast.checked" }])
   })
 
   it("exports runtime package recipes including the local Timescale ManagedRecipe", () => {

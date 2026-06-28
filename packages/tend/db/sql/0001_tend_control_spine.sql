@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS tend_core.session (
   agent_kind text NOT NULL CHECK (agent_kind IN ('opencode', 'codex', 'other')),
   started_at timestamptz NOT NULL,
   workspace_root text NOT NULL,
-  recipe_id text
+  recipe_id text,
+  run_id text,
+  observation_id text
 );
 
 CREATE TABLE IF NOT EXISTS tend_core.context_decision (
@@ -20,7 +22,11 @@ CREATE TABLE IF NOT EXISTS tend_core.context_decision (
   dropped_context_refs text[] NOT NULL DEFAULT ARRAY[]::text[],
   retained_token_estimate integer NOT NULL,
   dropped_token_estimate integer NOT NULL,
-  policy_decision_id text NOT NULL
+  policy_decision_id text NOT NULL,
+  recipe_id text,
+  run_id text,
+  receipt_id text,
+  observation_id text
 );
 
 CREATE TABLE IF NOT EXISTS tend_core.openrtk_action (
@@ -32,7 +38,11 @@ CREATE TABLE IF NOT EXISTS tend_core.openrtk_action (
   original_token_estimate integer NOT NULL,
   compressed_token_estimate integer NOT NULL,
   dropped_token_estimate integer NOT NULL,
-  policy_decision_id text
+  policy_decision_id text,
+  recipe_id text,
+  run_id text,
+  receipt_id text,
+  observation_id text
 );
 
 CREATE TABLE IF NOT EXISTS tend_core.tool_call (
@@ -42,6 +52,9 @@ CREATE TABLE IF NOT EXISTS tend_core.tool_call (
   status text NOT NULL CHECK (status IN ('started', 'succeeded', 'failed', 'blocked')),
   occurred_at timestamptz NOT NULL,
   recipe_id text,
+  run_id text,
+  receipt_id text,
+  observation_id text,
   payload jsonb
 );
 
@@ -49,6 +62,9 @@ CREATE TABLE IF NOT EXISTS tend_core.long_job (
   job_id text PRIMARY KEY,
   session_id text NOT NULL REFERENCES tend_core.session(session_id) ON DELETE CASCADE,
   recipe_id text NOT NULL,
+  run_id text,
+  receipt_id text,
+  observation_id text,
   registered_at timestamptz NOT NULL,
   wake_after timestamptz,
   poll_target text NOT NULL,
@@ -69,7 +85,9 @@ CREATE TABLE IF NOT EXISTS tend_event.event (
   event_kind text NOT NULL,
   occurred_at timestamptz NOT NULL,
   recipe_id text,
+  run_id text,
   receipt_id text,
+  observation_id text,
   payload jsonb NOT NULL
 );
 
@@ -80,7 +98,11 @@ CREATE TABLE IF NOT EXISTS tend_event.token_usage (
   output_tokens integer,
   cached_tokens integer,
   total_tokens integer NOT NULL,
-  occurred_at timestamptz NOT NULL
+  occurred_at timestamptz NOT NULL,
+  recipe_id text,
+  run_id text,
+  receipt_id text,
+  observation_id text
 );
 
 CREATE TABLE IF NOT EXISTS tend_event.token_metric (
@@ -88,7 +110,11 @@ CREATE TABLE IF NOT EXISTS tend_event.token_metric (
   event_id text REFERENCES tend_event.event(event_id) ON DELETE SET NULL,
   metric_name text NOT NULL,
   metric_value double precision NOT NULL,
-  observed_at timestamptz NOT NULL
+  observed_at timestamptz NOT NULL,
+  recipe_id text,
+  run_id text,
+  receipt_id text,
+  observation_id text
 );
 
 SELECT create_hypertable(
@@ -104,7 +130,11 @@ CREATE TABLE IF NOT EXISTS tend_event.command_output_sample (
   output_class text NOT NULL,
   sample text NOT NULL,
   truncated boolean NOT NULL,
-  token_estimate integer NOT NULL
+  token_estimate integer NOT NULL,
+  recipe_id text,
+  run_id text,
+  receipt_id text,
+  observation_id text
 );
 
 CREATE TABLE IF NOT EXISTS tend_event.long_job_observation (
@@ -113,6 +143,9 @@ CREATE TABLE IF NOT EXISTS tend_event.long_job_observation (
   session_id text NOT NULL REFERENCES tend_core.session(session_id) ON DELETE CASCADE,
   observed_at timestamptz NOT NULL,
   status text NOT NULL,
+  recipe_id text,
+  run_id text,
+  receipt_id text,
   payload jsonb NOT NULL
 );
 
@@ -148,6 +181,9 @@ CREATE TABLE IF NOT EXISTS tend_outbox.wakeup (
   job_id text NOT NULL REFERENCES tend_core.long_job(job_id) ON DELETE CASCADE,
   wake_after timestamptz NOT NULL,
   target_recipe_id text NOT NULL,
+  run_id text,
+  receipt_id text,
+  observation_id text,
   target_command text NOT NULL,
   delivered_at timestamptz
 );

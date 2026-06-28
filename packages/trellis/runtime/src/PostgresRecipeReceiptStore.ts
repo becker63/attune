@@ -6,6 +6,7 @@ import {
   type RecipeDiagnostic,
   type RecipeHealth,
   type RecipeIo,
+  type RecipeObservation,
   type RecipeReceipt,
   type RecipeReceiptStoreSnapshot,
   type RecipeRecord,
@@ -64,13 +65,17 @@ export const createPostgresRecipeReceiptStore = (
     await upsertReceipt(client, record.receipt)
     for (const diagnostic of record.diagnostics) await upsertDiagnostic(client, diagnostic)
     for (const repair of record.repairs) await upsertRepair(client, repair)
+    for (const observation of record.observations ?? []) await upsertObservation(client, observation)
     await upsertHealth(client, record.health)
   }),
+  recordObservation: (observation) =>
+    postgresEffect(() => upsertObservation(client, observation)),
   recipeView: (recipeId) => postgresEffect(async () => {
-    const [recipe, receipts, runs, health, diagnostics, repairs] = await Promise.all([
+    const [recipe, receipts, runs, observations, health, diagnostics, repairs] = await Promise.all([
       selectOne(client, recipeSelectSql, [recipeId], recipeRecordFromRow),
       selectMany(client, receiptsForRecipeSql, [recipeId], receiptFromRow),
       selectMany(client, runsForRecipeSql, [recipeId], runFromRow),
+      selectMany(client, observationsForRecipeSql, [recipeId], observationFromRow),
       selectOne(client, healthForRecipeSql, [recipeId], healthFromRow),
       selectMany(client, diagnosticsForRecipeSql, [recipeId], diagnosticFromRow),
       selectMany(client, repairsForRecipeSql, [recipeId], repairFromRow),
@@ -80,6 +85,7 @@ export const createPostgresRecipeReceiptStore = (
       latestReceipt: receipts[0],
       receipts,
       runs,
+      observations,
       health,
       diagnostics,
       repairs,
@@ -93,6 +99,14 @@ export const createPostgresRecipeReceiptStore = (
     postgresEffect(() => selectMany(client, receiptsByStatusSql, [status], receiptFromRow)),
   runsForRecipe: (recipeId) =>
     postgresEffect(() => selectMany(client, runsForRecipeSql, [recipeId], runFromRow)),
+  observationsForRecipe: (recipeId) =>
+    postgresEffect(() => selectMany(client, observationsForRecipeSql, [recipeId], observationFromRow)),
+  observationsForRun: (runId) =>
+    postgresEffect(() => selectMany(client, observationsForRunSql, [runId], observationFromRow)),
+  observationsForReceipt: (receiptId) =>
+    postgresEffect(() => selectMany(client, observationsForReceiptSql, [receiptId], observationFromRow)),
+  observationsByKind: (observationKind) =>
+    postgresEffect(() => selectMany(client, observationsByKindSql, [observationKind], observationFromRow)),
   latestReceipt: (recipeId) =>
     postgresEffect(() => selectOne(client, latestReceiptSql, [recipeId], receiptFromRow)),
   healthForRecipe: (recipeId) =>
@@ -111,6 +125,7 @@ export const createPostgresRecipeReceiptStore = (
     io: await selectMany(client, ioSnapshotSql, [], ioFromRow),
     runs: await selectMany(client, runSnapshotSql, [], runFromRow),
     receipts: await selectMany(client, receiptSnapshotSql, [], receiptFromRow),
+    observations: await selectMany(client, observationSnapshotSql, [], observationFromRow),
     diagnostics: await selectMany(client, diagnosticSnapshotSql, [], diagnosticFromRow),
     repairs: await selectMany(client, repairSnapshotSql, [], repairFromRow),
     health: await selectMany(client, healthSnapshotSql, [], healthFromRow),
@@ -215,6 +230,27 @@ ON CONFLICT (receipt_id) DO UPDATE SET
   payload = EXCLUDED.payload
 `
 
+const observationUpsertSql = `
+INSERT INTO framework_event.recipe_observation (
+  observation_id,
+  recipe_id,
+  run_id,
+  receipt_id,
+  observation_kind,
+  observed_at,
+  source,
+  payload
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+ON CONFLICT (observation_id) DO UPDATE SET
+  recipe_id = EXCLUDED.recipe_id,
+  run_id = EXCLUDED.run_id,
+  receipt_id = EXCLUDED.receipt_id,
+  observation_kind = EXCLUDED.observation_kind,
+  observed_at = EXCLUDED.observed_at,
+  source = EXCLUDED.source,
+  payload = EXCLUDED.payload
+`
+
 const diagnosticUpsertSql = `
 INSERT INTO framework_event.recipe_diagnostic (
   diagnostic_id,
@@ -280,6 +316,7 @@ const edgeSnapshotSql = "SELECT * FROM framework_core.recipe_edge ORDER BY recip
 const ioSnapshotSql = "SELECT * FROM framework_core.recipe_io ORDER BY io_id"
 const runSnapshotSql = "SELECT * FROM framework_event.recipe_run ORDER BY started_at, run_id"
 const receiptSnapshotSql = "SELECT * FROM framework_event.recipe_receipt ORDER BY COALESCE(completed_at, started_at), receipt_id"
+const observationSnapshotSql = "SELECT * FROM framework_event.recipe_observation ORDER BY observation_id"
 const diagnosticSnapshotSql = "SELECT * FROM framework_event.recipe_diagnostic ORDER BY diagnostic_id"
 const repairSnapshotSql = "SELECT * FROM framework_event.recipe_repair ORDER BY repair_id"
 const healthSnapshotSql = "SELECT * FROM framework_view.recipe_health ORDER BY recipe_id"
@@ -308,6 +345,30 @@ SELECT *
 FROM framework_event.recipe_run
 WHERE recipe_id = $1
 ORDER BY started_at, run_id
+`
+const observationsForRecipeSql = `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE recipe_id = $1
+ORDER BY observed_at DESC, observation_id DESC
+`
+const observationsForRunSql = `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE run_id = $1
+ORDER BY observed_at DESC, observation_id DESC
+`
+const observationsForReceiptSql = `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE receipt_id = $1
+ORDER BY observed_at DESC, observation_id DESC
+`
+const observationsByKindSql = `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE observation_kind = $1
+ORDER BY observed_at DESC, observation_id DESC
 `
 const healthForRecipeSql = "SELECT * FROM framework_view.recipe_health WHERE recipe_id = $1"
 const diagnosticsForRecipeSql = "SELECT * FROM framework_event.recipe_diagnostic WHERE recipe_id = $1 ORDER BY diagnostic_id"
@@ -350,6 +411,21 @@ const upsertReceipt = (client: PostgresQueryClient, receipt: RecipeReceipt): Pro
     receipt.outputHash ?? null,
     receipt.validationEvidence ?? [],
     json(receipt.payload),
+  ])
+
+const upsertObservation = (
+  client: PostgresQueryClient,
+  observation: RecipeObservation,
+): Promise<unknown> =>
+  client.query(observationUpsertSql, [
+    observation.observationId,
+    observation.recipeId,
+    observation.runId ?? null,
+    observation.receiptId ?? null,
+    observation.observationKind,
+    observation.observedAt,
+    observation.source ?? null,
+    jsonRequired(observation.payload),
   ])
 
 const upsertDiagnostic = (
@@ -459,6 +535,17 @@ const receiptFromRow = (row: Record<string, unknown>): RecipeReceipt => ({
   ...optionalUnknownField(row, "payload", "payload"),
 })
 
+const observationFromRow = (row: Record<string, unknown>): RecipeObservation => ({
+  observationId: stringCell(row, "observation_id"),
+  recipeId: stringCell(row, "recipe_id"),
+  ...optionalStringField(row, "run_id", "runId"),
+  ...optionalStringField(row, "receipt_id", "receiptId"),
+  observationKind: stringCell(row, "observation_kind"),
+  observedAt: stringCell(row, "observed_at"),
+  ...optionalStringField(row, "source", "source"),
+  payload: requiredUnknownCell(row, "payload"),
+})
+
 const diagnosticFromRow = (row: Record<string, unknown>): RecipeDiagnostic => ({
   diagnosticId: stringCell(row, "diagnostic_id"),
   recipeId: stringCell(row, "recipe_id"),
@@ -548,8 +635,16 @@ const optionalUnknownField = <Key extends string>(
   return { [targetKey]: value } as Partial<Record<Key, unknown>>
 }
 
+const requiredUnknownCell = (row: Record<string, unknown>, key: string): unknown => {
+  if (!(key in row)) throw new TypeError(`Expected Postgres cell ${key}.`)
+  return row[key]
+}
+
 const json = (value: unknown): string | null =>
   value === undefined ? null : JSON.stringify(value)
+
+const jsonRequired = (value: unknown): string =>
+  JSON.stringify(value === undefined ? null : value)
 
 const optionalLifecycleActionField = (
   row: Record<string, unknown>,

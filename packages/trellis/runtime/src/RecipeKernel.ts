@@ -17,6 +17,7 @@ import {
   type RecipeDefinition,
   type RecipeDiagnostic,
   type RecipeHealth,
+  type RecipeObservation,
   type RecipePlan,
   type RecipeReceipt,
   type RecipeRepair,
@@ -35,17 +36,36 @@ export class RecipeExecutionError extends Data.TaggedError("RecipeExecutionError
 export interface ExecutableRecipeDefinition<Input = unknown, Output = unknown>
   extends RecipeDefinition<Input, Output> {
   readonly execute: (input: Input) => Effect.Effect<Output, unknown>
+  readonly observations?: (
+    context: RecipeObservationContext<Input, Output>,
+  ) => readonly RecipeObservation[]
 }
 
 export interface ManagedExecutableRecipeDefinition<Input = unknown, Output = unknown>
   extends ManagedRecipeDefinition<Input, Output> {
   readonly execute: (input: Input) => Effect.Effect<Output, unknown>
+  readonly observations?: (
+    context: RecipeObservationContext<Input, Output>,
+  ) => readonly RecipeObservation[]
 }
 
 export interface RecipeRunResult<Output = unknown> {
   readonly run: RecipeRun
   readonly receipt: RecipeReceipt
   readonly output: Output
+  readonly health: RecipeHealth
+  readonly diagnostics: readonly RecipeDiagnostic[]
+  readonly repairs: readonly RecipeRepair[]
+  readonly observations: readonly RecipeObservation[]
+}
+
+export interface RecipeObservationContext<Input = unknown, Output = unknown> {
+  readonly recipe: ExecutableRecipeDefinition<Input, Output>
+  readonly input: Input
+  readonly output: Output
+  readonly action?: ManagedRecipeLifecycleAction
+  readonly run: RecipeRun
+  readonly receipt: RecipeReceipt
   readonly health: RecipeHealth
   readonly diagnostics: readonly RecipeDiagnostic[]
   readonly repairs: readonly RecipeRepair[]
@@ -113,7 +133,21 @@ export interface ManagedRecipeAlchemyOutput<Output = unknown> {
   readonly output: Output
   readonly diagnostics: readonly RecipeDiagnostic[]
   readonly repairs: readonly RecipeRepair[]
+  readonly observations: readonly RecipeObservation[]
   readonly bindings?: readonly ManagedRecipeAlchemyResourceBinding[]
+}
+
+export interface AlchemyResourceBridgeRequest<Input, Output> {
+  readonly recipe: ManagedExecutableRecipeDefinition<Input, Output>
+  readonly input: Input
+  readonly action?: ManagedRecipeLifecycleAction
+  readonly bindings?: readonly ManagedRecipeAlchemyResourceBinding[]
+}
+
+export interface AlchemyResourceBridgeApi {
+  readonly run: <Input, Output>(
+    request: AlchemyResourceBridgeRequest<Input, Output>,
+  ) => Effect.Effect<ManagedRecipeAlchemyOutput<Output>, RecipeExecutionError>
 }
 
 export interface ManagedRecipeAlchemyBinding {
@@ -122,6 +156,7 @@ export interface ManagedRecipeAlchemyBinding {
     | "lifecycle"
     | "substrate"
     | "receipt"
+    | "observation"
     | "health"
     | "diagnostic"
     | "repair"
@@ -204,8 +239,16 @@ export const makeRecipeRunner = (
     const runId = `recipe-run:${recipe.id}:${startedAt}`
 
     return decodeRecipeInput(recipe, input).pipe(
-      Effect.flatMap((decodedInput) => recipe.execute(decodedInput)),
-      Effect.flatMap((output) => decodeRecipeOutput(recipe, output)),
+      Effect.flatMap((decodedInput) =>
+        recipe.execute(decodedInput).pipe(
+          Effect.map((output) => ({ decodedInput, output })),
+        )
+      ),
+      Effect.flatMap(({ decodedInput, output }) =>
+        decodeRecipeOutput(recipe, output).pipe(
+          Effect.map((decodedOutput) => ({ decodedInput, output: decodedOutput })),
+        )
+      ),
       Effect.mapError((cause) =>
         new RecipeExecutionError({
           recipeId: recipe.id,
@@ -215,7 +258,8 @@ export const makeRecipeRunner = (
       ),
       Effect.match({
         onFailure: (error) => failedRecipeResult(recipe, runId, startedAt, error, action),
-        onSuccess: (output) => passedRecipeResult(recipe, runId, startedAt, output, action),
+        onSuccess: ({ decodedInput, output }) =>
+          passedRecipeResult(recipe, runId, startedAt, decodedInput, output, action),
       }),
       Effect.flatMap((result) => persistRunResult(store, recipe, result)),
     )
@@ -252,12 +296,13 @@ export const managedRecipeAlchemyOutput = <Input, Output>(
   output: result.output,
   diagnostics: result.diagnostics,
   repairs: result.repairs,
+  observations: result.observations,
   bindings,
 })
 
 export const managedRecipeAlchemyBindings = <Input, Output>(
   recipe: ManagedRecipeDefinition<Input, Output>,
-  result: Pick<RecipeRunResult<Output>, "receipt" | "health" | "diagnostics" | "repairs">,
+  result: Pick<RecipeRunResult<Output>, "receipt" | "health" | "diagnostics" | "repairs" | "observations">,
 ): readonly ManagedRecipeAlchemyResourceBinding[] => [
   binding("recipe", recipe.id, recipe.id),
   ...recipe.lifecycle.map((action) => binding("lifecycle", recipe.id, action)),
@@ -265,6 +310,9 @@ export const managedRecipeAlchemyBindings = <Input, Output>(
     binding("substrate", recipe.id, `${substrate.kind}:${substrate.tool}:${substrate.id}`)
   ),
   binding("receipt", recipe.id, result.receipt.receiptId),
+  ...result.observations.map((observation) =>
+    binding("observation", recipe.id, observation.observationId)
+  ),
   binding("health", recipe.id, result.health.status),
   ...result.diagnostics.map((diagnostic) => binding("diagnostic", recipe.id, diagnostic.diagnosticId)),
   ...result.repairs.map((repair) => binding("repair", recipe.id, repair.repairId)),
@@ -272,22 +320,37 @@ export const managedRecipeAlchemyBindings = <Input, Output>(
   ...(recipe.humanReviewRequired === true ? [binding("human-review", recipe.id, "required")] : []),
 ]
 
-export const makeManagedRecipeAlchemyProvider = (
+export const makeAlchemyResourceBridge = (
   runner: RecipeRunnerApi = makeRecipeRunner(),
-): ProviderService<ManagedRecipeAlchemyResource<any, any>> => ({
-  version: 2,
-  read: ({ output }) => Effect.succeed(output),
-  reconcile: ({ news, bindings }) =>
-    runner.runManaged(news.recipe, news.input, news.action ?? "apply").pipe(
+): AlchemyResourceBridgeApi => ({
+  run: ({ recipe, input, action = "apply", bindings = [] }) =>
+    runner.runManaged(recipe, input, action).pipe(
       Effect.map((result) => managedRecipeAlchemyOutput(
-        news.recipe,
+        recipe,
         result,
-        mergeAlchemyBindings(bindings ?? [], managedRecipeAlchemyBindings(news.recipe, result)),
+        mergeAlchemyBindings(bindings, managedRecipeAlchemyBindings(recipe, result)),
       )),
     ),
-  delete: () => Effect.void,
-  list: () => Effect.succeed([]),
 })
+
+export const makeManagedRecipeAlchemyProvider = (
+  runner: RecipeRunnerApi = makeRecipeRunner(),
+): ProviderService<ManagedRecipeAlchemyResource<any, any>> => {
+  const bridge = makeAlchemyResourceBridge(runner)
+  return {
+    version: 2,
+    read: ({ output }) => Effect.succeed(output),
+    reconcile: ({ news, bindings }) =>
+      bridge.run({
+        recipe: news.recipe,
+        input: news.input,
+        action: news.action ?? "apply",
+        bindings: bindings ?? [],
+      }),
+    delete: () => Effect.void,
+    list: () => Effect.succeed([]),
+  }
+}
 
 export class RecipePlanner extends Context.Service<
   RecipePlanner,
@@ -343,6 +406,7 @@ const passedRecipeResult = <Input, Output>(
   recipe: ExecutableRecipeDefinition<Input, Output>,
   runId: string,
   startedAt: string,
+  input: Input,
   output: Output,
   action?: ManagedRecipeLifecycleAction,
 ): RecipeRunResult<Output> => {
@@ -366,14 +430,29 @@ const passedRecipeResult = <Input, Output>(
     command: NxTarget.fromRecipe(recipe),
     validationEvidence: [...(recipe.validationEvidence ?? [])],
   }
+  const diagnostics: readonly RecipeDiagnostic[] = []
+  const repairs: readonly RecipeRepair[] = []
+  const health = HealthView.fromRecipe(recipe, { receipts: [receipt], checkedAt: completedAt })
+  const observations = recipe.observations?.({
+    recipe,
+    input,
+    output,
+    ...(action === undefined ? {} : { action }),
+    run: runRecord,
+    receipt,
+    health,
+    diagnostics,
+    repairs,
+  }) ?? []
 
   return {
     run: runRecord,
     receipt,
     output,
-    diagnostics: [],
-    repairs: [],
-    health: HealthView.fromRecipe(recipe, { receipts: [receipt], checkedAt: completedAt }),
+    diagnostics,
+    repairs,
+    observations,
+    health,
   }
 }
 
@@ -430,6 +509,7 @@ const failedRecipeResult = <Input, Output>(
     output: undefined as Output,
     diagnostics: [diagnostic],
     repairs,
+    observations: [],
     health: HealthView.fromRecipe(recipe, {
       receipts: [receipt],
       diagnostics: [diagnostic],

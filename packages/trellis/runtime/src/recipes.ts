@@ -103,7 +103,7 @@ export const FrameworkRuntimeRecipes = [
     nxTarget: "framework-runtime:db:generate-types",
     sourcePath: "packages/trellis/runtime/src/recipes.ts",
     allowedFiles: [
-      "packages/trellis/runtime/scripts/generationStage.ts",
+      "packages/trellis/runtime/src/internal/db/LocalTimescaleCli.ts",
       "packages/trellis/runtime/src/SqlRoute.ts",
       "packages/trellis/runtime/src/LocalTimescaleRecipe.ts",
       "packages/trellis/runtime/sql/**",

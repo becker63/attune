@@ -23,6 +23,53 @@ export const tendRequiredRelations = [
   "tend_outbox.wakeup",
 ] as const
 
+export const tendRecipeSpineLinkRequirements = [
+  {
+    relation: "tend_core.session",
+    columns: ["recipe_id", "run_id", "observation_id"],
+  },
+  {
+    relation: "tend_core.context_decision",
+    columns: ["recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+  {
+    relation: "tend_core.openrtk_action",
+    columns: ["source_observation_ids", "recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+  {
+    relation: "tend_core.tool_call",
+    columns: ["recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+  {
+    relation: "tend_core.long_job",
+    columns: ["recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+  {
+    relation: "tend_event.event",
+    columns: ["recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+  {
+    relation: "tend_event.token_usage",
+    columns: ["event_id", "recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+  {
+    relation: "tend_event.token_metric",
+    columns: ["event_id", "recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+  {
+    relation: "tend_event.command_output_sample",
+    columns: ["command_observation_id", "recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+  {
+    relation: "tend_event.long_job_observation",
+    columns: ["observation_id", "recipe_id", "run_id", "receipt_id"],
+  },
+  {
+    relation: "tend_outbox.wakeup",
+    columns: ["target_recipe_id", "run_id", "receipt_id", "observation_id"],
+  },
+] as const
+
 export const TendEventInsertContract = Schema.Struct({
   statementName: Schema.String,
   sql: Schema.String,
@@ -39,14 +86,27 @@ INSERT INTO tend_event.event (
   event_kind,
   occurred_at,
   recipe_id,
+  run_id,
   receipt_id,
+  observation_id,
   payload
-) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
 ON CONFLICT (event_id) DO UPDATE SET
   payload = EXCLUDED.payload,
+  run_id = EXCLUDED.run_id,
   receipt_id = EXCLUDED.receipt_id
 `.trim(),
-  parameters: ["eventId", "sessionId", "kind", "occurredAt", "recipeId", "receiptId", "payload"],
+  parameters: [
+    "eventId",
+    "sessionId",
+    "kind",
+    "occurredAt",
+    "recipeId",
+    "runId",
+    "receiptId",
+    "observationId",
+    "payload",
+  ],
 })
 
 export const tendKanelConfig = () => ({
@@ -63,6 +123,8 @@ export const tendSafeQlConfig = () => ({
     tendEventInsertContract().sql,
     "SELECT * FROM tend_view.token_usage_by_session_5m WHERE session_id = $1",
     "SELECT * FROM tend_outbox.wakeup WHERE session_id = $1",
+    "SELECT * FROM tend_event.event WHERE recipe_id = $1 AND observation_id = $2",
+    "SELECT * FROM tend_event.command_output_sample WHERE observation_id = $1",
   ] as const,
 })
 
@@ -70,9 +132,32 @@ export const readTendControlMigration = (workspaceRoot = process.cwd()): string 
   readFileSync(`${workspaceRoot}/${tendControlMigrationPath}`, "utf8")
 
 export const validateTendControlMigration = (sql: string): readonly string[] =>
-  tendRequiredRelations
-    .filter((relation) => !sql.includes(relation))
-    .map((relation) => `missing Tend relation ${relation}`)
+  [
+    ...tendRequiredRelations
+      .filter((relation) => !sql.includes(relation))
+      .map((relation) => `missing Tend relation ${relation}`),
+    ...validateTendRecipeSpineLinks(sql),
+  ]
+
+export const validateTendRecipeSpineLinks = (sql: string): readonly string[] =>
+  tendRecipeSpineLinkRequirements.flatMap(({ relation, columns }) => {
+    const body = tableBody(sql, relation)
+    if (body === undefined) return [`missing Tend relation ${relation}`]
+    return columns
+      .filter((column) => !new RegExp(`\\b${escapeRegExp(column)}\\b`, "u").test(body))
+      .map((column) => `missing Tend recipe-spine link ${relation}.${column}`)
+  })
+
+const tableBody = (sql: string, relation: string): string | undefined => {
+  const match = new RegExp(
+    `CREATE TABLE IF NOT EXISTS ${escapeRegExp(relation)}\\s*\\((?<body>[\\s\\S]*?)\\);`,
+    "u",
+  ).exec(sql)
+  return match?.groups?.body
+}
+
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
 
 export const TendDbRecipes = [
   defineRecipe({

@@ -31,6 +31,7 @@ describe("attune architecture policy", () => {
       "attune-architecture.artifact-ownership-quarantine",
       "attune-architecture.tool-version-audit",
       "attune-architecture.workspace-scan",
+      "attune-architecture.no-compat-script-check",
       "attune-architecture.typescript-diagnostics",
       "attune-architecture.churn-complexity",
       "attune-architecture.pr-completion-audit",

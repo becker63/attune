@@ -7,6 +7,7 @@ import {
   type RecipeEdgeRecord,
   type RecipeHealth,
   type RecipeIo,
+  type RecipeObservation,
   type RecipePlan,
   type RecipeReceipt,
   type RecipeReceiptStoreSnapshot,
@@ -21,6 +22,7 @@ export interface RecipeReceiptStoreRunRecord {
   readonly health: RecipeHealth
   readonly diagnostics: readonly RecipeDiagnostic[]
   readonly repairs: readonly RecipeRepair[]
+  readonly observations?: readonly RecipeObservation[]
 }
 
 export interface RecipeReceiptStoreRecipeView {
@@ -28,6 +30,7 @@ export interface RecipeReceiptStoreRecipeView {
   readonly latestReceipt: RecipeReceipt | undefined
   readonly receipts: readonly RecipeReceipt[]
   readonly runs: readonly RecipeRun[]
+  readonly observations: readonly RecipeObservation[]
   readonly health: RecipeHealth | undefined
   readonly diagnostics: readonly RecipeDiagnostic[]
   readonly repairs: readonly RecipeRepair[]
@@ -39,11 +42,16 @@ export interface RecipeReceiptStoreApi {
   ) => Effect.Effect<void>
   readonly recordPlan: (plan: RecipePlan) => Effect.Effect<void>
   readonly recordRunResult: (record: RecipeReceiptStoreRunRecord) => Effect.Effect<void>
+  readonly recordObservation: (observation: RecipeObservation) => Effect.Effect<void>
   readonly recipeView: (recipeId: string) => Effect.Effect<RecipeReceiptStoreRecipeView>
   readonly receiptById: (receiptId: string) => Effect.Effect<RecipeReceipt | undefined>
   readonly receiptsForRecipe: (recipeId: string) => Effect.Effect<readonly RecipeReceipt[]>
   readonly receiptsByStatus: (status: RecipeReceipt["status"]) => Effect.Effect<readonly RecipeReceipt[]>
   readonly runsForRecipe: (recipeId: string) => Effect.Effect<readonly RecipeRun[]>
+  readonly observationsForRecipe: (recipeId: string) => Effect.Effect<readonly RecipeObservation[]>
+  readonly observationsForRun: (runId: string) => Effect.Effect<readonly RecipeObservation[]>
+  readonly observationsForReceipt: (receiptId: string) => Effect.Effect<readonly RecipeObservation[]>
+  readonly observationsByKind: (observationKind: string) => Effect.Effect<readonly RecipeObservation[]>
   readonly latestReceipt: (recipeId: string) => Effect.Effect<RecipeReceipt | undefined>
   readonly healthForRecipe: (recipeId: string) => Effect.Effect<RecipeHealth | undefined>
   readonly diagnosticsForRecipe: (recipeId: string) => Effect.Effect<readonly RecipeDiagnostic[]>
@@ -57,6 +65,7 @@ export const emptyRecipeReceiptStoreSnapshot = (): RecipeReceiptStoreSnapshot =>
   io: [],
   runs: [],
   receipts: [],
+  observations: [],
   diagnostics: [],
   repairs: [],
   health: [],
@@ -70,6 +79,7 @@ export const createInMemoryRecipeReceiptStore = (
   const io = keyed(initial.io, (item) => item.id)
   const runs = keyed(initial.runs, (run) => run.runId)
   const receipts = keyed(initial.receipts, (receipt) => receipt.receiptId)
+  const observations = keyed(initial.observations, (observation) => observation.observationId)
   const diagnostics = keyed(initial.diagnostics, (diagnostic) => diagnostic.diagnosticId)
   const repairs = keyed(initial.repairs, (repair) => repair.repairId)
   const health = keyed(initial.health, (item) => item.recipeId)
@@ -105,6 +115,13 @@ export const createInMemoryRecipeReceiptStore = (
           diagnostics.set(diagnostic.diagnosticId, diagnostic)
         }
         for (const repair of record.repairs) repairs.set(repair.repairId, repair)
+        for (const observation of record.observations ?? []) {
+          observations.set(observation.observationId, observation)
+        }
+      }),
+    recordObservation: (observation) =>
+      Effect.sync(() => {
+        observations.set(observation.observationId, observation)
       }),
     recipeView: (recipeId) =>
       Effect.sync(() => {
@@ -114,6 +131,9 @@ export const createInMemoryRecipeReceiptStore = (
           latestReceipt: recipeReceipts.at(-1),
           receipts: recipeReceipts,
           runs: sortedByStartedAt([...runs.values()].filter((run) => run.recipeId === recipeId)),
+          observations: sortedByObservedAtDesc(
+            [...observations.values()].filter((observation) => observation.recipeId === recipeId),
+          ),
           health: health.get(recipeId),
           diagnostics: sortById(
             [...diagnostics.values()].filter((diagnostic) => diagnostic.recipeId === recipeId),
@@ -137,6 +157,24 @@ export const createInMemoryRecipeReceiptStore = (
     runsForRecipe: (recipeId) =>
       Effect.sync(() =>
         sortedByStartedAt([...runs.values()].filter((run) => run.recipeId === recipeId))
+      ),
+    observationsForRecipe: (recipeId) =>
+      Effect.sync(() =>
+        sortedByObservedAtDesc([...observations.values()].filter((observation) => observation.recipeId === recipeId))
+      ),
+    observationsForRun: (runId) =>
+      Effect.sync(() =>
+        sortedByObservedAtDesc([...observations.values()].filter((observation) => observation.runId === runId))
+      ),
+    observationsForReceipt: (receiptId) =>
+      Effect.sync(() =>
+        sortedByObservedAtDesc([...observations.values()].filter((observation) => observation.receiptId === receiptId))
+      ),
+    observationsByKind: (observationKind) =>
+      Effect.sync(() =>
+        sortedByObservedAtDesc(
+          [...observations.values()].filter((observation) => observation.observationKind === observationKind),
+        )
       ),
     latestReceipt: (recipeId) =>
       Effect.sync(() =>
@@ -164,6 +202,7 @@ export const createInMemoryRecipeReceiptStore = (
         io: sortById([...io.values()], (item) => item.id),
         runs: sortById([...runs.values()], (run) => run.runId),
         receipts: sortById([...receipts.values()], (receipt) => receipt.receiptId),
+        observations: sortById([...observations.values()], (observation) => observation.observationId),
         diagnostics: sortById([...diagnostics.values()], (diagnostic) => diagnostic.diagnosticId),
         repairs: sortById([...repairs.values()], (repair) => repair.repairId),
         health: sortById([...health.values()], (item) => item.recipeId),
@@ -210,6 +249,15 @@ function sortedByStartedAt(
   return [...values].sort((left, right) =>
     left.startedAt.localeCompare(right.startedAt) ||
     left.runId.localeCompare(right.runId)
+  )
+}
+
+function sortedByObservedAtDesc(
+  values: readonly RecipeObservation[],
+): RecipeObservation[] {
+  return [...values].sort((left, right) =>
+    right.observedAt.localeCompare(left.observedAt) ||
+    right.observationId.localeCompare(left.observationId)
   )
 }
 

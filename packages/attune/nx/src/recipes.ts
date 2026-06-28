@@ -62,6 +62,7 @@ export const AttuneNxRecipes = [
     allowedFiles: [
       "packages/attune/nx/executors.json",
       "packages/attune/nx/generators.json",
+      "packages/attune/nx/src/executors/generated/**",
       "packages/attune/nx/src/executors/**/*.cjs",
       "packages/attune/nx/src/generators/**/*.cjs",
     ],
@@ -83,15 +84,16 @@ export const AttuneNxRecipes = [
   defineRecipe({
     id: "attune-nx.cjs-wrapper-generation",
     projectId: "attune-nx",
-    title: "Generate CommonJS wrappers for compiled Attune Nx generator entrypoints",
+    title: "Materialize Attune Nx plugin build outputs from typed source",
     inputSchema: AttuneNxGeneratorCatalogInput,
     outputSchema: AttuneNxGeneratorRunOutput,
     dependencies: [{ recipeId: "attune-nx.generator-catalog" }],
     nxTarget: "attune-nx:build",
     sourcePath: "packages/attune/nx/src/recipes.ts",
     allowedFiles: [
-      "packages/attune/nx/scripts/write-generator-cjs-wrappers.mjs",
+      "packages/attune/nx/src/internal/build/NxPluginBuildOutputs.ts",
       "packages/attune/nx/generators.json",
+      "packages/attune/nx/src/executors/generated/executor.cjs",
       "packages/attune/nx/src/generators/**",
     ],
     validationEvidence: ["attune-nx:build", "attune-nx:test"],

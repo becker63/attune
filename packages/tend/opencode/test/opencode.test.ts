@@ -16,10 +16,24 @@ describe("@attune/tend-opencode", () => {
     expect(decoded.session.agentKind).toBe("opencode")
     expect(decoded.toolCalls[0]?.toolName).toBe("tend.observe")
     expect(decoded.commands[0]?.command).toBe("nx test framework-runtime")
+    expect(decoded.commands[0]).toMatchObject({
+      recipeId: "framework-runtime.local-timescaledb",
+      runId: "opencode-run:opencode-session-1",
+    })
     expect(decoded.receipts[0]).toMatchObject({
       recipeId: "framework-runtime.local-timescaledb",
+      runId: "opencode-run:opencode-session-1",
       status: "passed",
       command: "framework-runtime:test",
+    })
+    expect(decoded.observations.map((observation) => observation.observationKind)).toEqual(
+      expect.arrayContaining(["tend.command", "tend.validation", "tend.openrtk-action"]),
+    )
+    expect(decoded.observations.find((observation) => observation.observationKind === "tend.validation")).toMatchObject({
+      recipeId: "framework-runtime.local-timescaledb",
+      runId: "opencode-run:opencode-session-1",
+      receiptId: "opencode-receipt:validation-1",
+      source: "tend",
     })
     expect(decoded.events.map((event) => event.kind)).toContain("openrtk-action")
     expect(decoded.events.map((event) => event.kind)).toContain("magic-context-decision")

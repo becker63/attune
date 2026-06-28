@@ -9,5 +9,5 @@
       "kubernetes-types/*": ["../../node_modules/.pnpm/node_modules/kubernetes-types/*"]
     }
   },
-  "include": ["src", "scripts", "test", "vitest.config.ts"]
+  "include": ["src", "test", "vitest.config.ts"]
 }

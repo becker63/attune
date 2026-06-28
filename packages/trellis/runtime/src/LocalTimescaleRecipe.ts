@@ -2,8 +2,10 @@ import { Effect, Schema } from "effect"
 import {
   ManagedRecipeLifecycleActionSchema,
   defineManagedExecutableRecipe,
+  recipeObservationId,
   type ManagedRecipeLifecycleAction,
   type ManagedRecipeLifecycleSubstrate,
+  type RecipeObservation,
 } from "./RecipeKernel.js"
 import {
   frameworkRecipeReceiptKanelConfig,
@@ -52,6 +54,27 @@ export const LocalTimescaleManagedRecipeOutput = Schema.Struct({
 })
 export type LocalTimescaleManagedRecipeOutput =
   typeof LocalTimescaleManagedRecipeOutput.Type
+
+export const LocalTimescaleManagedRecipeId = "framework-runtime.local-timescaledb" as const
+
+export const LocalTimescaleObservationKindSchema = Schema.Literals([
+  "local-timescaledb.service-planned",
+  "local-timescaledb.service-ready",
+  "local-timescaledb.migration-applied",
+  "local-timescaledb.sql-validated",
+  "local-timescaledb.kanel-generated",
+  "local-timescaledb.safeql-validated",
+] as const)
+export type LocalTimescaleObservationKind = typeof LocalTimescaleObservationKindSchema.Type
+
+export interface LocalTimescaleObservationInput {
+  readonly output: LocalTimescaleManagedRecipeOutput
+  readonly observationKind: LocalTimescaleObservationKind
+  readonly observedAt: string
+  readonly runId?: string
+  readonly receiptId?: string
+  readonly source?: string
+}
 
 export const localTimescaleLifecycleSubstrates =
   (): readonly ManagedRecipeLifecycleSubstrate[] => [
@@ -137,8 +160,84 @@ export const localTimescaleLifecycleOutput = (
   },
 })
 
+export const localTimescaleObservationPayload = (
+  output: LocalTimescaleManagedRecipeOutput,
+  observationKind: LocalTimescaleObservationKind,
+): Record<string, unknown> => ({
+  alchemy: {
+    resourceId: "local-timescaledb",
+    resourceKind: "timescaledb-postgres-recipe-receipts",
+    phase: output.action,
+    provider: "effect-alchemy",
+  },
+  observation: {
+    kind: observationKind,
+    recipeId: LocalTimescaleManagedRecipeId,
+  },
+  service: {
+    name: output.serviceName,
+    databaseUrl: output.serviceClosure.databaseUrl,
+    ready: output.readiness.ready,
+    readinessCheck: output.readiness.check,
+    integrationGuard: output.readiness.integrationGuard,
+  },
+  migration: output.migration,
+  sqlRoute: {
+    kanel: output.sqlRoute.kanel,
+    kysely: output.sqlRoute.kysely,
+    safeql: output.sqlRoute.safeql,
+  },
+  receiptStore: output.receiptStore,
+})
+
+export const localTimescaleObservation = (
+  input: LocalTimescaleObservationInput,
+): RecipeObservation => ({
+  observationId: recipeObservationId(
+    LocalTimescaleManagedRecipeId,
+    input.observationKind,
+    input.observedAt,
+  ),
+  recipeId: LocalTimescaleManagedRecipeId,
+  ...(input.runId === undefined ? {} : { runId: input.runId }),
+  ...(input.receiptId === undefined ? {} : { receiptId: input.receiptId }),
+  observationKind: input.observationKind,
+  observedAt: input.observedAt,
+  source: input.source ?? "framework-runtime.local-timescaledb",
+  payload: localTimescaleObservationPayload(input.output, input.observationKind),
+})
+
+export const localTimescaleLifecycleObservationKinds = (
+  output: LocalTimescaleManagedRecipeOutput,
+): readonly LocalTimescaleObservationKind[] => [
+  ...(output.action === "plan" ? ["local-timescaledb.service-planned" as const] : []),
+  ...(output.readiness.ready ? ["local-timescaledb.service-ready" as const] : []),
+  ...(output.migration.applied ? ["local-timescaledb.migration-applied" as const] : []),
+  ...(
+    output.action === "check" || output.action === "apply"
+      ? [
+        "local-timescaledb.sql-validated" as const,
+        "local-timescaledb.kanel-generated" as const,
+        "local-timescaledb.safeql-validated" as const,
+      ]
+      : []
+  ),
+]
+
+export const localTimescaleLifecycleObservations = (
+  output: LocalTimescaleManagedRecipeOutput,
+  options: Omit<LocalTimescaleObservationInput, "output" | "observationKind">,
+): readonly RecipeObservation[] =>
+  localTimescaleLifecycleObservationKinds(output).map((observationKind) =>
+    localTimescaleObservation({
+      ...options,
+      output,
+      observationKind,
+    })
+  )
+
 export const LocalTimescaleManagedRecipe = defineManagedExecutableRecipe({
-  id: "framework-runtime.local-timescaledb",
+  id: LocalTimescaleManagedRecipeId,
   projectId: "framework-runtime",
   title: "Local TimescaleDB/Postgres recipe receipt spine",
   inputSchema: LocalTimescaleManagedRecipeInput,
@@ -171,5 +270,11 @@ export const LocalTimescaleManagedRecipe = defineManagedExecutableRecipe({
     evidenceRequirements: ["framework-runtime:db:validate-sql", "framework-runtime:test"],
   },
   humanReviewRequired: false,
+  observations: ({ output, run, receipt }) =>
+    localTimescaleLifecycleObservations(output, {
+      observedAt: receipt.completedAt ?? receipt.startedAt,
+      runId: run.runId,
+      receiptId: receipt.receiptId,
+    }),
   execute: (input) => Effect.succeed(localTimescaleLifecycleOutput(input)),
 })

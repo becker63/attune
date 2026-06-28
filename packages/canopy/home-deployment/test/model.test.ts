@@ -22,6 +22,7 @@ import {
   toLifecycleResources,
   type PlannedResource,
 } from "../src/index.ts"
+import { renderNixosBootstrapCommandPlan } from "../src/internal/bootstrap/NixosBootstrapCommandPlan.ts"
 
 const completed = (...ids: readonly string[]) => new Set(ids)
 
@@ -223,6 +224,24 @@ describe("home-deployment", () => {
     expect(install?.observeCommand?.display).toContain("/run/current-system")
     expect(install?.observeCommand?.display).toContain("/etc/attune/day0.json")
     expect(install?.observeCommand?.display).toContain(host.expectedDisk.device)
+  })
+
+  it("renders the NixOS bootstrap command plan from typed source, not package-local scripts", () => {
+    const config = defaultHomeDeploymentConfig()
+    const host = config.hosts[0]!
+
+    const plan = renderNixosBootstrapCommandPlan({
+      host,
+      sshTarget: "root@192.0.2.10",
+      hostFlake: "./nix/hosts",
+      tokenSource: "/tmp/k3s-token",
+      sshKey: "/tmp/attune-id",
+    })
+
+    expect(plan).toContain("# Probe installer SSH for attune-cp-1:")
+    expect(plan).toContain("'ssh' '-o' 'BatchMode=yes' '-o' 'ConnectTimeout=5' '-i' '/tmp/attune-id' 'root@192.0.2.10' 'true'")
+    expect(plan).toContain("'nixos-anywhere' '--ssh-option' 'IdentityFile=/tmp/attune-id' '--flake' './nix/hosts#attune-cp-1' 'root@192.0.2.10'")
+    expect(plan).toContain("'scp' '-i' '/tmp/attune-id' '/tmp/k3s-token' 'attune@attune-cp-1:/tmp/attune-k3s-server-token'")
   })
 
   it("unblocks host install from completed Alchemy state and typed gates", () => {

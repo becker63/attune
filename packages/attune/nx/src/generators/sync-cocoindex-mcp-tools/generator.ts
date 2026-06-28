@@ -9,6 +9,9 @@ export default function syncCocoIndexMcpToolsGenerator(
 ): GeneratorTask {
   syncRegistry(tree, schema, {
     sourceLabel: "sync-cocoindex-mcp-tools",
+    ownerRecipeId: "cocoindex-effect.sync-mcp-tools",
+    projectionId: "sync-cocoindex-mcp-tools",
+    sourceDescriptor: "packages/attune/nx/src/generators/sync-cocoindex-mcp-tools",
     defaultDirectory: "src/cocoindex/tools",
     registryFileName: "ToolRegistry.generated.ts",
     exportPattern: /export\s+const\s+([A-Za-z][A-Za-z0-9]*Tool)\b/gu,

@@ -27,6 +27,12 @@
   "rules": {
     "attune/no-raw-process-env": "warn",
     "attune/no-raw-node-apis": "warn",
-    "attune/no-hand-authored-architecture-shapes": "warn"
+    "attune/no-hand-authored-architecture-shapes": "warn",
+    "attune/no-public-script-workflow": "warn",
+    "attune/recipe-owned-nx-target": "warn",
+    "attune/no-private-ledger": "warn",
+    "attune/managed-recipe-requires-substrate": "warn",
+    "attune/generated-artifact-owned-by-recipe": "warn",
+    "attune/no-raw-pg-outside-runtime": "warn"
   }
 }

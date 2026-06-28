@@ -202,9 +202,10 @@ The hook runs the generated-file check and TypeScript typecheck before push.
 
 ## Schema Extraction
 
-The checked-in schema snapshot is `schema/joern-cpg-schema.1.7.70.json`. It is extracted by compiling `scripts/ExtractCpgSchema.java` against the Nix-built Joern jars and reading Joern's real `GraphSchema` metadata.
+The checked-in schema snapshot is `schema/joern-cpg-schema.1.7.70.json`. It is extracted by compiling `src/internal/generation/ExtractCpgSchema.java` against the Nix-built Joern jars and reading Joern's real `GraphSchema` metadata.
 
-The generation path intentionally fails if no real schema source is provided. The default path is:
+The default generation path uses the checked-in schema snapshot so the public
+Nx target can run without an out-of-band schema extraction step:
 
 ```bash
 nix run .#generate

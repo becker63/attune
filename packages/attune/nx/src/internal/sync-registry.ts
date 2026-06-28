@@ -10,6 +10,9 @@ export interface SyncRegistrySchema {
 
 export interface SyncRegistryOptions {
   readonly sourceLabel: string
+  readonly ownerRecipeId?: string
+  readonly projectionId?: string
+  readonly sourceDescriptor?: string
   readonly defaultDirectory: string
   readonly registryFileName: string
   readonly exportPattern: RegExp
@@ -53,7 +56,11 @@ const renderRegistry = (
       ? `export const ${options.registryConstName} = [] as const`
       : `export const ${options.registryConstName} = [${names}] as const`
 
-  return `${generatedHeader(options.sourceLabel)}${imports}${imports.length > 0 ? "\n\n" : ""}${body}
+  return `${generatedHeader(options.sourceLabel, {
+    ...(options.ownerRecipeId === undefined ? {} : { recipeId: options.ownerRecipeId }),
+    ...(options.projectionId === undefined ? {} : { projectionId: options.projectionId }),
+    ...(options.sourceDescriptor === undefined ? {} : { source: options.sourceDescriptor }),
+  })}${imports}${imports.length > 0 ? "\n\n" : ""}${body}
 
 export type ${options.registryTypeName} = (typeof ${options.registryConstName})[number]
 `

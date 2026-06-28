@@ -87,10 +87,9 @@ export const PlatformAlchemyK8sRecipes = [
     nxTarget: "platform-alchemy-k8s:generate",
     sourcePath: "packages/canopy/platform-alchemy-k8s/src/recipes.ts",
     allowedFiles: [
-      "packages/canopy/platform-alchemy-k8s/scripts/generationStage.ts",
-      "packages/canopy/platform-alchemy-k8s/scripts/generate-crd-types.ts",
       "packages/canopy/platform-alchemy-k8s/src/crds/**",
       "packages/canopy/platform-alchemy-k8s/src/generated/**",
+      "packages/canopy/platform-alchemy-k8s/src/internal/generation/**",
       "packages/canopy/platform-alchemy-k8s/project.json",
     ],
     validationEvidence: ["platform-alchemy-k8s:generate", "platform-alchemy-k8s:test"],

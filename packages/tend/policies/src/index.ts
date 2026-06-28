@@ -40,6 +40,10 @@ export const futureCodexForcingPolicy = (): TendForcedToolPolicy => ({
 export const evaluateForcedToolPolicy = (input: {
   readonly sessionId: string
   readonly requestedTool: string
+  readonly recipeId?: string
+  readonly runId?: string
+  readonly receiptId?: string
+  readonly observationId?: string
   readonly policy?: TendForcedToolPolicy
 }): TendPolicyDecision => {
   const policy = input.policy ?? defaultOpenCodeForcingPolicy()
@@ -53,6 +57,10 @@ export const evaluateForcedToolPolicy = (input: {
       ? `${input.requestedTool} bypasses Tend/OpenRTK/Magic Context.`
       : `${input.requestedTool} must be mediated by Tend.`,
     requiredTool: forbidden ? "tend.observe" : input.requestedTool,
+    ...(input.recipeId === undefined ? {} : { recipeId: input.recipeId }),
+    ...(input.runId === undefined ? {} : { runId: input.runId }),
+    ...(input.receiptId === undefined ? {} : { receiptId: input.receiptId }),
+    ...(input.observationId === undefined ? {} : { observationId: input.observationId }),
   }
 }
 
@@ -61,6 +69,10 @@ export const selectMagicContext = (input: {
   readonly policyDecisionId: string
   readonly contextRefs: readonly string[]
   readonly maxRetained: number
+  readonly recipeId?: string
+  readonly runId?: string
+  readonly receiptId?: string
+  readonly observationId?: string
 }): TendMagicContextDecision => {
   const retainedContextRefs = input.contextRefs.slice(0, input.maxRetained)
   const droppedContextRefs = input.contextRefs.slice(input.maxRetained)
@@ -72,6 +84,10 @@ export const selectMagicContext = (input: {
     retainedTokenEstimate: retainedContextRefs.length * 100,
     droppedTokenEstimate: droppedContextRefs.length * 100,
     policyDecisionId: input.policyDecisionId,
+    ...(input.recipeId === undefined ? {} : { recipeId: input.recipeId }),
+    ...(input.runId === undefined ? {} : { runId: input.runId }),
+    ...(input.receiptId === undefined ? {} : { receiptId: input.receiptId }),
+    ...(input.observationId === undefined ? {} : { observationId: input.observationId }),
   }
 }
 
@@ -87,6 +103,10 @@ export const compressWithOpenRtk = (input: {
     sessionId: input.sessionId,
     sourceObservationIds: [input.command.commandObservationId],
     codec: "openrtk.command-output-v1",
+    ...(input.command.recipeId === undefined ? {} : { recipeId: input.command.recipeId }),
+    ...(input.command.runId === undefined ? {} : { runId: input.command.runId }),
+    ...(input.command.receiptId === undefined ? {} : { receiptId: input.command.receiptId }),
+    ...(input.command.observationId === undefined ? {} : { observationId: input.command.observationId }),
     summary: `Compressed output for ${input.command.command}.`,
     originalTokenEstimate,
     compressedTokenEstimate,

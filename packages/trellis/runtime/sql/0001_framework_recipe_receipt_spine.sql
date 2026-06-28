@@ -95,6 +95,26 @@ CREATE TABLE IF NOT EXISTS framework_event.recipe_receipt_metric (
   observed_at timestamptz NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS framework_event.recipe_observation (
+  observation_id text PRIMARY KEY,
+  recipe_id text NOT NULL REFERENCES framework_core.recipe(recipe_id) ON DELETE CASCADE,
+  run_id text REFERENCES framework_event.recipe_run(run_id) ON DELETE SET NULL,
+  receipt_id text REFERENCES framework_event.recipe_receipt(receipt_id) ON DELETE SET NULL,
+  observation_kind text NOT NULL,
+  observed_at timestamptz NOT NULL,
+  source text,
+  payload jsonb NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS recipe_observation_recipe_observed_at_idx
+  ON framework_event.recipe_observation (recipe_id, observed_at DESC);
+
+CREATE INDEX IF NOT EXISTS recipe_observation_run_observed_at_idx
+  ON framework_event.recipe_observation (run_id, observed_at DESC);
+
+CREATE INDEX IF NOT EXISTS recipe_observation_kind_observed_at_idx
+  ON framework_event.recipe_observation (observation_kind, observed_at DESC);
+
 SELECT create_hypertable(
   'framework_event.recipe_receipt_metric',
   'observed_at',

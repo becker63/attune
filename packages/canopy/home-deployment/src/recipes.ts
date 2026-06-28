@@ -126,7 +126,7 @@ export const CanopyManagedRecipes = [
     nxTarget: "home-deployment:check",
     sourcePath: "packages/canopy/home-deployment/src/recipes.ts",
     allowedFiles: [
-      "packages/canopy/home-deployment/scripts/attune-nixos-bootstrap",
+      "packages/canopy/home-deployment/src/internal/bootstrap/**",
       "packages/canopy/home-deployment/src/**",
       "nix/hosts/**",
     ],

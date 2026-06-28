@@ -43,6 +43,27 @@
         ]
       }
     },
+    "policy": {
+      "executor": "@attune/nx:toolchain",
+      "metadata": {
+        "description": "Run the Attune effect-oxlint policy pack through the stable policy target.",
+        "attune": {
+          "tier": "public",
+          "surface": "check",
+          "recipeId": "effect-oxlint-policy.policy-pack"
+        }
+      },
+      "options": {
+        "targetProject": "effect-oxlint-policy",
+        "tool": "architecture",
+        "action": "check",
+        "toolId": "effect-oxlint-policy",
+        "parameters": {
+          "recipeId": "effect-oxlint-policy.policy-pack"
+        },
+        "dryRun": false
+      }
+    },
     "attune:repair-symbol-registry": {
       "executor": "@attune/nx:toolchain",
       "metadata": {

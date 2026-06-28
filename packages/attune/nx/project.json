@@ -15,7 +15,7 @@
         "toolId": "tsc",
         "parameters": {
           "tsconfig": "tsconfig.build.json",
-          "postBuild": "attune-nx-generator-cjs-wrappers",
+          "postBuild": "attune-nx-plugin-build-outputs",
           "recipeId": "attune-nx.cjs-wrapper-generation"
         },
         "dryRun": false

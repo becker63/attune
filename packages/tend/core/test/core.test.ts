@@ -7,6 +7,8 @@ import {
   TendOpenRtkCompressionActionSchema,
   TendSessionSchema,
   TendToolCallSchema,
+  recipeObservationFromTendEvent,
+  recipeObservationsFromTendEvents,
 } from "../src/index.js"
 
 describe("@attune/tend-core", () => {
@@ -31,6 +33,10 @@ describe("@attune/tend-core", () => {
       toolName: "tend.observe",
       status: "succeeded",
       occurredAt: "2026-06-28T00:00:01.000Z",
+      recipeId: "framework-runtime.local-timescaledb",
+      runId: "run-1",
+      receiptId: "receipt-1",
+      observationId: "observation-1",
       tokens: { totalTokens: 42 },
     }).toolName).toBe("tend.observe")
 
@@ -39,6 +45,9 @@ describe("@attune/tend-core", () => {
       sessionId: "session-1",
       kind: "openrtk-action",
       occurredAt: "2026-06-28T00:00:02.000Z",
+      recipeId: "framework-runtime.local-timescaledb",
+      runId: "run-1",
+      observationId: "observation-2",
       payload: { actionId: "openrtk-1" },
     }).kind).toBe("openrtk-action")
 
@@ -62,5 +71,38 @@ describe("@attune/tend-core", () => {
       compressedTokenEstimate: 250,
       droppedTokenEstimate: 750,
     }).codec).toBe("openrtk.command-output-v1")
+  })
+
+  it("projects linked Tend events into framework recipe observations", () => {
+    const event = Schema.decodeUnknownSync(TendEventEnvelopeSchema)({
+      eventId: "event-1",
+      sessionId: "session-1",
+      kind: "command",
+      occurredAt: "2026-06-28T00:00:02.000Z",
+      recipeId: "framework-runtime.local-timescaledb",
+      runId: "run-1",
+      receiptId: "receipt-1",
+      observationId: "observation-1",
+      payload: { command: "nx run framework-runtime:test" },
+    })
+
+    expect(recipeObservationFromTendEvent(event)).toMatchObject({
+      observationId: "observation-1",
+      recipeId: "framework-runtime.local-timescaledb",
+      runId: "run-1",
+      receiptId: "receipt-1",
+      observationKind: "tend.command",
+      source: "tend",
+    })
+    expect(recipeObservationsFromTendEvents([
+      event,
+      {
+        eventId: "event-2",
+        sessionId: "session-1",
+        kind: "token-usage",
+        occurredAt: "2026-06-28T00:00:03.000Z",
+        payload: { totalTokens: 20 },
+      },
+    ])).toHaveLength(1)
   })
 })

@@ -32,6 +32,7 @@ export type FrameworkPolicyCheck =
   | "atom-graph"
   | "property-evidence"
   | "coverage-conformance"
+  | "no-compat-scripts"
   | "policy-surface"
   | "final-ratchet"
 
@@ -66,6 +67,7 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "missing-coverage-conformance"
   | "worker-target-metadata"
   | "package-local-scripts"
+  | "live-package-local-script-file"
   | "arbitrary-run-commands"
   | "stale-architecture-lint-reference"
   | "stale-policy-architecture-guidance"
@@ -83,6 +85,7 @@ export type FrameworkFinalRatchetDiagnosticCode =
   | "old-ontology-active-doc"
   | "old-authored-project-api"
   | "project-facts-too-large"
+  | "forbidden-clean-fork-overgrowth"
   | "package-local-attune-companion"
   | "package-local-attune-companion-import"
 
@@ -143,6 +146,10 @@ const oldOntologyActiveDocNounPattern =
 const diagnosticMessageLinePattern = /\bmessage\s*:/u
 const oldAuthoredDeclarationApiPattern =
   /\b(?<name>PackageDeclaration|PackageViewRoots|defineAttunePackageDeclaration|PackageContractSchema)\b/gu
+const forbiddenCleanForkManagedRuntimePattern =
+  /\b(?<name>ResourceDiffEngine|LifecyclePlanner|ObservedStateStore|CustomManagedResourceRuntime|DistributedApplyEngine|ManagedResourceRuntime)\b/u
+const forbiddenCleanForkContextSystemPattern =
+  /\b(?<name>ContextLens|ContextPacket|ContextStore|VectorContextSelector|SemanticCompression|AgentMemory)\b/u
 const authoredProjectFactsPattern =
   /\b(?:ProjectFacts|defineAttuneProjectFacts)\b/u
 const activeOperatingDocPaths = new Set([
@@ -162,6 +169,8 @@ const packageLocalAttuneCompanionNames = [
 ] as const
 const packageLocalAttuneCompanionImportPattern =
   /\b(?:from\s+|import\s*\(\s*|require\s*\(\s*|import\s+(?:type\s+)?)(?<quote>["'])(?<source>\.{1,2}\/[^"']*attune\.(?:contract\.generated|generated|package\.typecheck)(?:\.[cm]?[jt]sx?)?)\k<quote>/gu
+const packageLocalScriptFilePattern =
+  /^(?<root>packages\/(?:(?:attune|canopy|tend|trellis)\/[^/]+|[^/]+))\/scripts\/.+$/u
 const activePackageRootPattern =
   /^packages\/(?:(?<owner>attune|canopy|tend|trellis)\/(?<name>[^/]+)|(?<legacyName>[^/]+))$/u
 const activePackageSourceRootPattern =
@@ -183,7 +192,6 @@ const oneFileSurfaceCompletedRoots = new Set([
   "packages/canopy/platform-alchemy-k8s",
   "packages/trellis/oxlint-policy",
 ])
-
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
 
 // Historical OpenSpec records may mention the old architecture package
@@ -389,6 +397,7 @@ function parsePolicyCheck(value: string): FrameworkPolicyCheck | undefined {
     case "atom-graph":
     case "property-evidence":
     case "coverage-conformance":
+    case "no-compat-scripts":
     case "policy-surface":
     case "final-ratchet":
       return value
@@ -419,6 +428,7 @@ function isRatchetDiagnosticEnabled(
   if (checks.has("atom-graph") && atomGraphDiagnosticCodes.has(code)) return true
   if (checks.has("property-evidence") && propertyEvidenceDiagnosticCodes.has(code)) return true
   if (checks.has("coverage-conformance") && coverageConformanceDiagnosticCodes.has(code)) return true
+  if (checks.has("no-compat-scripts") && noCompatScriptDiagnosticCodes.has(code)) return true
   return checks.has("policy-surface") && policySurfaceDiagnosticCodes.has(code)
 }
 
@@ -442,8 +452,13 @@ const coverageConformanceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnost
   "missing-coverage-conformance",
 ])
 
+const noCompatScriptDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
+  "live-package-local-script-file",
+])
+
 const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode>([
   "package-local-scripts",
+  "live-package-local-script-file",
   "arbitrary-run-commands",
   "stale-architecture-lint-reference",
   "stale-policy-architecture-guidance",
@@ -461,6 +476,7 @@ const policySurfaceDiagnosticCodes = new Set<FrameworkFinalRatchetDiagnosticCode
   "old-ontology-active-doc",
   "old-authored-project-api",
   "project-facts-too-large",
+  "forbidden-clean-fork-overgrowth",
   "package-local-attune-companion",
 ])
 
@@ -479,7 +495,13 @@ function collectFiles(root: string): readonly WorkspaceFile[] {
 
       if (!entry.isFile()) continue
       const relativePath = path.relative(root, absolutePath).split(path.sep).join("/")
-      if (!sourceFilePattern.test(relativePath) && !reportFilePattern.test(relativePath)) continue
+      if (
+        !sourceFilePattern.test(relativePath) &&
+        !reportFilePattern.test(relativePath) &&
+        !packageLocalScriptFilePattern.test(relativePath)
+      ) {
+        continue
+      }
 
       out.push({
         path: relativePath,
@@ -573,10 +595,12 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
 
   for (const file of files) {
     diagnostics.push(...checkCommandSurfaceFile(file))
+    diagnostics.push(...checkNoCompatScriptFile(file))
     diagnostics.push(...checkArchitectureLintReferences(file))
     diagnostics.push(...checkPolicyArchitectureGuidance(file))
     diagnostics.push(...checkWorkerTargetMetadata(file))
     diagnostics.push(...checkFinalCleanupFile(file))
+    diagnostics.push(...checkCleanForkOvergrowthFile(file))
     diagnostics.push(...checkMechanicalProgramOntologyFile(file))
     diagnostics.push(...checkActiveOperatingDocFile(file))
     diagnostics.push(...checkPackageLocalAttuneCompanionImports(file, filesByPath))
@@ -1480,6 +1504,18 @@ function checkPackageJsonScripts(file: WorkspaceFile): readonly FrameworkFinalRa
   )]
 }
 
+function checkNoCompatScriptFile(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
+  const match = packageLocalScriptFilePattern.exec(file.path)
+  const packageRoot = match?.groups?.root
+  if (packageRoot === undefined) return []
+
+  return [finalRatchetDiagnostic(
+    "live-package-local-script-file",
+    file.path,
+    "Active packages must remove package-local script files entirely; retarget Nx/tests/recipes to typed source modules instead of keeping pass-through shims.",
+  )]
+}
+
 function checkProjectJsonRunCommands(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
   const parsed = parseJsonObject(file)
   if (parsed === undefined || !isRecord(parsed.targets)) return []
@@ -1583,6 +1619,58 @@ function checkFinalCleanupFile(file: WorkspaceFile): readonly FrameworkFinalRatc
   }
 
   return diagnostics
+}
+
+function checkCleanForkOvergrowthFile(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
+  if (
+    !sourceFilePattern.test(file.path) ||
+    file.path.startsWith("openspec/") ||
+    isCleanForkOvergrowthPolicyExemptPath(file.path)
+  ) {
+    return []
+  }
+
+  const diagnostics: FrameworkFinalRatchetDiagnostic[] = []
+  const lines = file.content.split(/\r?\n/u)
+
+  for (const [lineIndex, line] of lines.entries()) {
+    const managedRuntimeMatch = forbiddenCleanForkManagedRuntimePattern.exec(line)
+    if (managedRuntimeMatch !== null) {
+      diagnostics.push(finalRatchetDiagnostic(
+        "forbidden-clean-fork-overgrowth",
+        file.path,
+        [
+          `Line ${lineIndex + 1} introduces ${managedRuntimeMatch.groups?.name ?? "a custom ManagedResource runtime shape"}.`,
+          "ManagedRecipe lifecycle must route through Effect Alchemy or an explicit existing substrate, not a custom runtime, planner, diff engine, scheduler, or observed-state store.",
+        ].join(" "),
+      ))
+    }
+
+    const contextSystemMatch = forbiddenCleanForkContextSystemPattern.exec(line)
+    if (contextSystemMatch !== null) {
+      diagnostics.push(finalRatchetDiagnostic(
+        "forbidden-clean-fork-overgrowth",
+        file.path,
+        [
+          `Line ${lineIndex + 1} introduces ${contextSystemMatch.groups?.name ?? "a deferred context system"}.`,
+          "ContextLens, ContextPacket, vector context selection, semantic compression, and agent memory are deferred outside this clean fork.",
+        ].join(" "),
+      ))
+    }
+  }
+
+  return diagnostics
+}
+
+function isCleanForkOvergrowthPolicyExemptPath(filePath: string): boolean {
+  return (
+    filePath === "packages/trellis/architecture/src/framework-policy-cli.ts" ||
+    filePath === "architecture/src/framework-policy-cli.ts" ||
+    filePath === "trellis/architecture/src/framework-policy-cli.ts" ||
+    filePath.startsWith("packages/trellis/architecture/test/") ||
+    filePath.startsWith("architecture/test/") ||
+    filePath.startsWith("trellis/architecture/test/")
+  )
 }
 
 function checkMechanicalProgramOntologyFile(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
