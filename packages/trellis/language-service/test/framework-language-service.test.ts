@@ -27,6 +27,7 @@ import {
   codeActionsForDiagnostic,
   diagnosticCodeLens,
   effectLanguageServiceReference,
+  FrameworkLanguageServiceRecipePackage,
   FrameworkLanguageServiceRecipes,
   isDirectGeneratedFileWriteAction,
   projectLanguageServiceViewFromRecipe,
@@ -149,11 +150,41 @@ describe("@attune/framework-language-service", () => {
     )
 
     expect(records.map((record) => record.recipeId)).toEqual([
-      "framework-language-service.program-diagnostic-view",
-      "framework-language-service.recipe-health-view",
-      "framework-language-service.typescript-projection",
+      "trellis-language-service.cli-invocation-surfaces",
+      "trellis-language-service.workspace-inventory",
+      "trellis-language-service.typescript-program",
+      "trellis-language-service.upstream-effect-diagnostics",
+      "trellis-language-service.upstream-effect-fixes",
+      "trellis-language-service.recipe-fact-diagnostics",
+      "trellis-language-service.repair-plan",
+      "trellis-language-service.diagnostics-json-projection",
+      "trellis-language-service.fixes-json-projection",
+      "trellis-language-service.apply-result-json-projection",
+      "trellis-language-service.check-summary-projection",
+      "trellis-language-service.receipt-observation-recording",
     ])
     expect(records.every((record) => record.sourcePath === "packages/trellis/language-service/src/recipes.ts")).toBe(true)
+    expect(FrameworkLanguageServiceRecipePackage).toMatchObject({
+      packageId: "framework-language-service",
+      sourceRoot: "packages/trellis/language-service/src",
+    })
+    expect(FrameworkLanguageServiceRecipePackage.recipes.map((recipe) => recipe.id)).toEqual(
+      FrameworkLanguageServiceRecipes.map((recipe) => recipe.id),
+    )
+    expect(FrameworkLanguageServiceRecipes.map((recipe) => "recipeRole" in recipe ? recipe.recipeRole : "recipe")).toEqual([
+      "invocation",
+      "recipe",
+      "recipe",
+      "diagnostic",
+      "repair",
+      "diagnostic",
+      "repair",
+      "projection",
+      "projection",
+      "projection",
+      "projection",
+      "observation",
+    ])
   })
 
   it("turns runtime diagnostics into editor actions without mutating files", () => {

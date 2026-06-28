@@ -94,6 +94,35 @@ describe("framework import boundary", () => {
     ]))
   })
 
+  it("rejects product imports of language-service deep internals", () => {
+    const result = checkFrameworkImportBoundary({
+      files: [{
+        path: "packages/attune/foldkit/src/model.ts",
+        content: [
+          "import { collectDiagnostics } from \"@attune/framework-language-service/cli-core\"",
+          "import { collectTrellisDiagnostics } from \"../../trellis/language-service/src/diagnostic-recipes\"",
+          "export const diagnostics = [collectDiagnostics, collectTrellisDiagnostics]",
+        ].join("\n"),
+      }],
+    })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ruleId: FrameworkImportBoundaryRuleId,
+        code: "framework-language-service-import",
+        filePath: "packages/attune/foldkit/src/model.ts",
+        importSource: "@attune/framework-language-service/cli-core",
+      }),
+      expect.objectContaining({
+        ruleId: FrameworkImportBoundaryRuleId,
+        code: "framework-language-service-import",
+        filePath: "packages/attune/foldkit/src/model.ts",
+        importSource: "../../trellis/language-service/src/diagnostic-recipes",
+      }),
+    ]))
+  })
+
   it("rejects raw Drizzle table imports from product packages", () => {
     const result = checkFrameworkImportBoundary({
       files: [{

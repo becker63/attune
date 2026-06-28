@@ -251,7 +251,8 @@ const isFrameworkNxInternalImport = (importSource: string): boolean =>
 const isFrameworkLanguageServiceImport = (importSource: string): boolean =>
   importSource === "@attune/framework-language-service" ||
   importSource.startsWith("@attune/framework-language-service/") ||
-  importSource.includes("packages/trellis/language-service/")
+  importSource.includes("packages/trellis/language-service/") ||
+  importSource.includes("trellis/language-service/")
 
 const isFrameworkTestingImport = (importSource: string): boolean =>
   importSource === frameworkTestingImport || importSource.startsWith(`${frameworkTestingImport}/`)

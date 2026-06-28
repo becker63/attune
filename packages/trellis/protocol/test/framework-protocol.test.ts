@@ -14,9 +14,15 @@ import {
   AttuneProtocolWaiverSchema,
   baseAtom,
   definePackageViewGraph,
+  defineDiagnosticRecipe,
+  defineInvocationRecipe,
+  defineObservationRecipe,
   deriveDiagnosticRequirements,
   deriveSymbolProjectionEdges,
   deriveSymbolRegistry,
+  defineProjectionRecipe,
+  defineRecipePackage,
+  defineRepairRecipe,
   diagnoseAvoidableStringReferences,
   derivedAtom,
   schemaDescriptorFromProjectFacts,
@@ -69,6 +75,74 @@ describe("@attune/framework-protocol", () => {
     expect(contract.packageId).toBe("demo")
     expect(contract.operations[0]?.kind).toBe("projection")
     expect(schemaDescriptorIdForProject(contract.packageId)).toBe("attune/project/demo")
+  })
+
+  it("declares recipe packages and specialized recipe-family wrappers without a second runtime", () => {
+    const Input = Schema.Struct({ projectId: Schema.String })
+    const Output = Schema.Struct({ ok: Schema.Boolean })
+    const invocation = defineInvocationRecipe({
+      id: "demo.cli",
+      projectId: "demo",
+      inputSchema: Input,
+      outputSchema: Output,
+      entrypoints: ["packages/demo/src/cli.ts"],
+    })
+    const diagnostic = defineDiagnosticRecipe({
+      id: "demo.diagnostics",
+      projectId: "demo",
+      inputSchema: Input,
+      outputSchema: Output,
+      observedFiles: ["packages/demo/src/diagnostics.ts"],
+    })
+    const repair = defineRepairRecipe({
+      id: "demo.repairs",
+      projectId: "demo",
+      inputSchema: Input,
+      outputSchema: Output,
+      affectedFiles: ["packages/demo/src/repairs.ts"],
+    })
+    const projection = defineProjectionRecipe({
+      id: "demo.json",
+      projectId: "demo",
+      inputSchema: Input,
+      outputSchema: Output,
+      outputs: ["DemoJsonOutput"],
+    })
+    const observation = defineObservationRecipe({
+      id: "demo.observations",
+      projectId: "demo",
+      inputSchema: Input,
+      outputSchema: Output,
+      observedFiles: ["packages/demo/src/receipt-observations.ts"],
+    })
+    const recipePackage = defineRecipePackage({
+      packageId: "demo",
+      kind: "framework-test",
+      sourceRoot: "packages/demo/src",
+      recipes: [invocation, diagnostic, repair, projection, observation],
+      ownership: [{
+        id: "core",
+        files: ["packages/demo/src/**"],
+        recipeIds: [invocation.id, diagnostic.id, repair.id],
+      }],
+    })
+
+    expect(recipePackage.recipes.map((recipe) => recipe.id)).toEqual([
+      "demo.cli",
+      "demo.diagnostics",
+      "demo.repairs",
+      "demo.json",
+      "demo.observations",
+    ])
+    expect(recipePackage.recipes.map((recipe) => "recipeRole" in recipe ? recipe.recipeRole : "recipe")).toEqual([
+      "invocation",
+      "diagnostic",
+      "repair",
+      "projection",
+      "observation",
+    ])
+    expect(invocation.inputSchema).toBe(Input)
+    expect(projection.outputSchema).toBe(Output)
   })
 
   it("exposes compile-only contract conformance helpers through the public framework facade", () => {

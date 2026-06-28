@@ -1,10 +1,15 @@
 ## Live Package Inventory
 
-- `packages/trellis/language-service/package.json` currently names the package `@attune/framework-language-service`, has no `bin`, and depends on `@attune/framework-protocol`, `@attune/framework-runtime`, and `effect`.
-- `packages/trellis/language-service/project.json` currently defines `typecheck`, `test`, `check`, and `repair` targets but no build target.
-- `packages/trellis/language-service/src/recipes.ts` currently declares editor-first recipes: `program-diagnostic-view`, `recipe-health-view`, and `typescript-projection`.
+- `packages/trellis/language-service/package.json` keeps the package name `@attune/framework-language-service`, exposes the `trellis-ls` binary, and depends on `@attune/framework-protocol`, `@attune/framework-runtime`, `effect`, and TypeScript.
+- `packages/trellis/language-service/project.json` defines `typecheck`, `test`, `build`, `check`, and `repair` targets with CLI/recipe repair metadata.
+- `packages/trellis/language-service/src/recipes.ts` is now the package's single authored Attune declaration. It declares `FrameworkLanguageServiceRecipePackage` with CLI invocation, workspace inventory, TypeScript program, upstream Effect diagnostic/fix, Trellis diagnostic, repair, JSON projection, check summary, and observation recipes.
+- `packages/trellis/language-service/src/attune.package.ts` has been removed for the dogfood package after equivalent recipe package metadata landed in `src/recipes.ts`.
 - `packages/trellis/language-service/src/index.ts` currently projects runtime/program fact diagnostics into editor-shaped diagnostics, code actions, code lenses, quick info, and TypeScript diagnostic/codefix/refactor shapes.
-- `packages/trellis/language-service/test/framework-language-service.test.ts` currently tests recipe records, runtime diagnostic projection, generated-file source-edit filtering, and the upstream Effect LS reference metadata.
+- `packages/trellis/language-service/src/diagnostic-recipes.ts` owns Trellis migration diagnostics for package-local scripts, raw Postgres boundary usage, authored `attune.package.ts`, recipe-only ownership, role ownership, and legacy ProjectFacts authored truth.
+- `packages/trellis/language-service/src/diagnostic-recipes.ts` also exposes oxlint-era invariants as Trellis diagnostic families for generated artifact ownership/freshness, public Nx target ownership, ManagedRecipe/Alchemy metadata, private ledger/receipt-spine linkage, and Tend recipe/receipt/observation linkage.
+- `packages/trellis/language-service/src/diagnostic-recipes.ts` now accepts query-backed `ProgramDiagnostics`, direct `ProgramFactProjection` inputs, and `NxTargetProjection` facts so CLI diagnostics can normalize existing ProgramFact and ProjectionRegistry findings instead of reimplementing those substrates.
+- `packages/trellis/language-service/src/repair-recipes.ts` owns Trellis repair plan normalization, safe public Nx repair serialization, generated direct-edit filtering, recipe-only migration fix plans, and review-required manual repair plans for lifecycle, DB, generated, and Tend risks.
+- `packages/trellis/language-service/test/framework-language-service.test.ts` currently tests recipe records, recipe package metadata, runtime diagnostic projection, generated-file source-edit filtering, and the upstream Effect LS reference metadata.
 - `packages/trellis/recipes.ts` includes `FrameworkLanguageServiceRecipes` in the workspace recipe catalog under project ID `framework-language-service`.
 
 ## Reusable Trellis Substrate
@@ -38,6 +43,61 @@
 - Useful source directories: `src/cli/**`, `src/core/**`, `src/diagnostics/**`, `src/refactors/**`, `src/quickinfo/**`, `src/codegens/**`, `src/completions/**`, `src/goto/**`, `src/inlays/**`, `src/renames/**`, `src/utils/**`, and `test/**`.
 - Useful command files: `src/cli.ts`, `src/cli/diagnostics.ts`, `src/cli/quickfixes.ts`, `src/cli/check.ts`, and `src/cli/utils.ts`.
 - Important runtime APIs: `LSP.getSemanticDiagnosticsWithCodeFixes`, `diagnostics` registry, `TypeScriptContext`, `getFileNamesInTsConfig`, TypeScript `ChangeTracker` quickfix rendering, and project-service file loading.
+
+## Preflight Evidence
+
+- `git status --short` was clean after checkpoint commit `32fbb06`.
+- `pnpm exec nx show projects` listed `framework-language-service`, `framework-protocol`, `framework-runtime`, and `workspace`.
+- `openspec list --json` showed this change in progress and predecessor changes `effect-oxlint-recipe-substrate-clean-fork` and `arbor-recipe-substrate-migration` complete.
+- `find packages -path '*/scripts/*' -type f | sort` returned no package-local script files.
+- `pnpm exec nx run framework-language-service:test --output-style=static` passed: 1 test file, 10 tests.
+- `pnpm exec nx run framework-protocol:test --output-style=static` passed: 8 test files, 47 tests.
+- `pnpm exec nx run framework-runtime:test --output-style=static` passed: 2 test files, 17 passed and 1 skipped.
+- `pnpm exec nx run workspace:policy-fast --output-style=static` passed. The local PR completion subcheck printed a `curl 422` and skipped because no PR context was available, but the Nx target exited successfully.
+
+## Implementation Progress Evidence
+
+- Added `trellis-ls` binary metadata to `@attune/framework-language-service` and linked the package from the root workspace so `pnpm exec trellis-ls ...` resolves locally.
+- Added `build`, CLI-oriented `check`, and CLI-oriented `repair` target metadata for `framework-language-service`.
+- Added Effect Schema-backed contracts for diagnostics, fixes, apply, check, command metadata, evidence mode, fix kinds, spans, summaries, edits, and refusal metadata.
+- Added a headless CLI parser for canonical `diagnostics`, `fixes`, `apply`, and `check` commands plus the optional aliases `diags`, `codefixes`, and `apply-codefix`.
+- Added deterministic diagnostic/fix ID generation, TypeScript project/file/workspace loading, JSON/text output, TypeScript diagnostic normalization, and text edit diff/write helpers.
+- Added an attributed `src/upstream-effect/**` adapter boundary for upstream Effect language-service commit `df50dfce9ab8b299f6d21c35c231bcc12cbca4ee`. This first slice implements a focused local `effect/floatingEffect` fixture adapter and keeps the full upstream `LSP.getSemanticDiagnosticsWithCodeFixes` fork open.
+- Added Trellis diagnostic coverage for package-local `scripts/` regressions and raw Postgres imports outside the runtime DB boundary.
+- Added Trellis repair planning for package-local script diagnostics through public `nx run workspace:repair` and review-required manual guidance for raw Postgres boundary diagnostics.
+- Implemented `apply --mode diff` no-write previews, `apply --mode write` for safe local edits and public safe Nx repairs, stale fix refusal, manual/unsafe/review-required refusal, and optional recheck output.
+- Refocused `packages/trellis/language-service/src/recipes.ts` from editor-first recipes to CLI-first diagnostics/fixes/apply/check projection recipes, added `defineRecipePackage`, and deleted `packages/trellis/language-service/src/attune.package.ts` for the dogfood package.
+- Added protocol-level specialized recipe builders: `defineProjectionRecipe`, `defineDiagnosticRecipe`, `defineRepairRecipe`, `defineObservationRecipe`, and `defineInvocationRecipe` as typed wrappers over the existing `RecipeDefinition` substrate.
+- Added `--profile recipe-only-source` to diagnostics/check command context and JSON metadata.
+- Split Trellis diagnostic and repair logic out of `cli-core.ts` into DiagnosticRecipe-owned and RepairRecipe-owned modules. The CLI now parses args, loads scope, invokes diagnostic/fix pipelines, renders JSON, maps exit codes, and records optional observations.
+- Added recipe-only diagnostics and fixes for authored `attune.package.ts`, source ownership, workflow InvocationRecipe ownership, generated ProjectionRecipe ownership, DiagnosticRecipe/RepairRecipe/ObservationRecipe ownership, and legacy ProjectFacts authored truth.
+- Added an architecture policy successor path that accepts `src/recipes.ts` with `defineRecipePackage` when `src/attune.package.ts` has been removed.
+- Added generated artifact ownership/freshness diagnostics, public Nx target ownership diagnostics from project JSON, ManagedRecipe/Alchemy substrate/review diagnostics, private-ledger/operation receipt diagnostics, and Tend recipe/observation/receipt linkage diagnostics.
+- Added ProgramFact runtime/projection diagnostic normalization through `ProgramDiagnostics`, `ProgramFactQuery`, `ProgramFactProjection`, and `diagnosticsForProgramFacts`; added Nx target ownership/projection diagnostics through `NxTargetConformance` using `NxTargetProjection` facts.
+- Added product import-boundary coverage for public-package imports of language-service deep internals; agents/products must use the CLI contract rather than importing the package as an API.
+- Added `packages/trellis/language-service/README.md` documenting the CLI, JSON stdout, exit codes, no-DB default, and oxlint-as-transitional guardrail.
+- Added package tests for schema decoding, CLI help, upstream attribution, effect diagnostic/fix fixture, targeted and project-wide fixes, diff no-write, safe write, stale refusal, manual refusal, Nx repair serialization, receipt/observation recording, ProgramFact runtime diagnostics, Nx ProjectionRegistry facts, recipe-only profile diagnostics/fixes/apply diff, JSON snapshots, no upstream deep imports, and no language-service-specific ledger/schema.
+
+## Final Validation Evidence For This Slice
+
+- `pnpm exec nx run framework-language-service:typecheck --output-style=static` passed.
+- `pnpm exec nx run framework-language-service:test --output-style=static` passed: 2 test files, 29 tests.
+- `pnpm exec nx run framework-language-service:build --output-style=static` passed.
+- `pnpm exec nx run framework-protocol:test --output-style=static` passed: 8 test files, 48 tests.
+- `pnpm exec nx run framework-runtime:test --output-style=static` passed: 2 test files, 17 passed and 1 skipped.
+- `pnpm exec nx run attune-architecture:test --output-style=static` passed: 7 test files, 76 tests.
+- `pnpm exec nx run workspace:policy-fast --output-style=static` passed. The local PR completion subcheck printed a `curl 422` and skipped because no PR context was available, but the Nx target exited successfully.
+- `pnpm exec trellis-ls diagnostics --project packages/trellis/language-service/tsconfig.json --format json` passed with zero diagnostics.
+- `pnpm exec trellis-ls fixes --project packages/trellis/language-service/tsconfig.json --format json` passed with zero fixes for the clean package.
+- `trellis-ls apply --project <temp-fixture>/tsconfig.json --fix-id <safe-fixture-fix> --mode diff --format json` passed through the repo-local binary and left the fixture source unchanged.
+- `pnpm exec trellis-ls check --project packages/trellis/language-service/tsconfig.json --format json` passed with `blocking: false`.
+- `pnpm exec trellis-ls diagnostics --workspace . --profile recipe-only-source --format json` passed. The captured summary reported 483 diagnostics across the current repository migration backlog, including 49 `trellis/orphan-public-nx-target`, 46 `trellis/target-missing-recipe-invocation`, 22 `trellis/authored-attune-package-file`, and 33 `trellis/source-uses-legacy-abstraction` diagnostics.
+- `openspec validate fork-effect-language-service-for-trellis-cli --strict` passed.
+
+## Remaining Implementation Gaps
+
+- Full upstream source fork/adaptation remains open: the current adapter is still focused and does not yet execute upstream `LSP.getSemanticDiagnosticsWithCodeFixes`.
+- Full upstream Effect diagnostic/fix execution remains open: task 5.2 still needs the vendored/adapted `LSP.getSemanticDiagnosticsWithCodeFixes` path rather than the focused local `effect/floatingEffect` adapter.
 
 ## Guardrails
 

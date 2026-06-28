@@ -196,6 +196,30 @@ describe("framework policy CLI", () => {
     ]))
   })
 
+  it("accepts a recipe package declaration as the package source-truth successor", () => {
+    const workspaceRoot = makeWorkspace({
+      "packages/trellis/language-service/package.json": JSON.stringify({ name: "@attune/framework-language-service" }),
+      "packages/trellis/language-service/src/recipes.ts": [
+        "const defineRecipePackage = (recipePackage) => recipePackage",
+        "export const FrameworkLanguageServiceRecipePackage = defineRecipePackage({",
+        "  packageId: \"framework-language-service\",",
+        "  sourceRoot: \"packages/trellis/language-service/src\",",
+        "  recipes: [],",
+        "} as const)",
+      ].join("\n"),
+    })
+
+    const result = checkFrameworkPolicyWorkspace(workspaceRoot, { checks: ["final-ratchet"] })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.ratchetDiagnostics).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: "missing-project-facts",
+        filePath: "packages/trellis/language-service/package.json",
+      }),
+    ]))
+  })
+
   it("rejects old authored declaration API names in active package surfaces", () => {
     const workspaceRoot = makeWorkspace({
       "packages/legacy-authoring/package.json": JSON.stringify({ name: "@attune/legacy-authoring" }),

@@ -375,6 +375,49 @@ export interface RecipeDefinition<Input = unknown, Output = unknown> {
   readonly publicTargets?: readonly RecipePublicTarget[]
 }
 
+export type RecipeFamilyRole =
+  | "projection"
+  | "diagnostic"
+  | "repair"
+  | "observation"
+  | "invocation"
+
+export interface RecipeFamilyDefinition<Input = unknown, Output = unknown>
+  extends RecipeDefinition<Input, Output> {
+  readonly recipeRole: RecipeFamilyRole
+  readonly entrypoints?: readonly string[]
+  readonly outputs?: readonly string[]
+  readonly observedFiles?: readonly string[]
+  readonly affectedFiles?: readonly string[]
+}
+
+export type ProjectionRecipeDefinition<Input = unknown, Output = unknown> =
+  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "projection" }
+export type DiagnosticRecipeDefinition<Input = unknown, Output = unknown> =
+  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "diagnostic" }
+export type RepairRecipeDefinition<Input = unknown, Output = unknown> =
+  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "repair" }
+export type ObservationRecipeDefinition<Input = unknown, Output = unknown> =
+  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "observation" }
+export type InvocationRecipeDefinition<Input = unknown, Output = unknown> =
+  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "invocation" }
+
+export interface RecipePackageOwnershipGroup {
+  readonly id: string
+  readonly title?: string
+  readonly files: readonly string[]
+  readonly recipeIds: readonly string[]
+}
+
+export interface RecipePackageDefinition {
+  readonly packageId: string
+  readonly title?: string
+  readonly kind?: string
+  readonly sourceRoot: string
+  readonly recipes: readonly RecipeDefinition[]
+  readonly ownership?: readonly RecipePackageOwnershipGroup[]
+}
+
 export interface ExternalSchemaRecipeDefinition<Input = unknown, Output = unknown>
   extends Omit<RecipeDefinition<Input, Output>, "inputSchema" | "outputSchema"> {
   readonly inputSchema: unknown
@@ -413,6 +456,30 @@ export type FrameworkProtocolRecipeSurfaceOutput = typeof FrameworkProtocolRecip
 export const defineRecipe = <Input, Output>(
   recipe: RecipeDefinition<Input, Output>,
 ): RecipeDefinition<Input, Output> => recipe
+
+export const defineProjectionRecipe = <Input, Output>(
+  recipe: Omit<ProjectionRecipeDefinition<Input, Output>, "recipeRole">,
+): ProjectionRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "projection" })
+
+export const defineDiagnosticRecipe = <Input, Output>(
+  recipe: Omit<DiagnosticRecipeDefinition<Input, Output>, "recipeRole">,
+): DiagnosticRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "diagnostic" })
+
+export const defineRepairRecipe = <Input, Output>(
+  recipe: Omit<RepairRecipeDefinition<Input, Output>, "recipeRole">,
+): RepairRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "repair" })
+
+export const defineObservationRecipe = <Input, Output>(
+  recipe: Omit<ObservationRecipeDefinition<Input, Output>, "recipeRole">,
+): ObservationRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "observation" })
+
+export const defineInvocationRecipe = <Input, Output>(
+  recipe: Omit<InvocationRecipeDefinition<Input, Output>, "recipeRole">,
+): InvocationRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "invocation" })
+
+export const defineRecipePackage = (
+  recipePackage: RecipePackageDefinition,
+): RecipePackageDefinition => recipePackage
 
 export const defineExternalSchemaRecipe = <Input, Output>(
   recipe: ExternalSchemaRecipeDefinition<Input, Output>,

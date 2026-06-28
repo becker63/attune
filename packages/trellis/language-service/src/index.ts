@@ -25,6 +25,11 @@ import {
 } from "@attune/framework-runtime"
 
 export * from "./recipes.js"
+export * from "./contracts.js"
+export * from "./cli-core.js"
+export * from "./diagnostic-recipes.js"
+export * from "./repair-recipes.js"
+export * from "./upstream-effect/index.js"
 
 type RuntimeDiagnostic = ProgramDiagnostic & {
   readonly range?: SourceRange

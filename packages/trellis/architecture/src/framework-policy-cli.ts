@@ -179,6 +179,7 @@ const activePackageProjectFilePattern =
   /^packages\/(?:(?<owner>attune|canopy|tend|trellis)\/(?<name>[^/]+)|(?<legacyName>[^/]+))\/(?:package|project)\.json$/u
 const authoredAttunePackageFilePattern =
   /^(?<root>packages\/(?:(?:attune|canopy|tend|trellis)\/[^/]+|[^/]+))\/src\/attune\.package\.ts$/u
+const recipePackageDeclarationPattern = /\bdefineRecipePackage\s*\(/u
 const oneFileSurfaceCompletedRoots = new Set([
   "packages/trellis/architecture",
   "packages/attune/nx",
@@ -533,6 +534,8 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
     const contractFile = filesByPath.get(contractPath)
 
     if (contractFile === undefined) {
+      const recipePackageFile = findRecipePackageDeclarationFile(packageRoot, filesByPath)
+      if (recipePackageFile !== undefined) continue
       diagnostics.push(finalRatchetDiagnostic(
         "missing-project-facts",
         `${packageRoot}/package.json`,
@@ -618,6 +621,17 @@ function findSemanticPackageContractFile(
   if (packageLocalGeneratedContract !== undefined) return packageLocalGeneratedContract
 
   return contractFile
+}
+
+function findRecipePackageDeclarationFile(
+  packageRoot: string,
+  filesByPath: ReadonlyMap<string, WorkspaceFile>,
+): WorkspaceFile | undefined {
+  const recipePackageFile = filesByPath.get(`${packageRoot}/src/recipes.ts`)
+  if (recipePackageFile === undefined) return undefined
+  return recipePackageDeclarationPattern.test(recipePackageFile.content)
+    ? recipePackageFile
+    : undefined
 }
 
 function isAuthoredProjectFactsFile(file: WorkspaceFile): boolean {

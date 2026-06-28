@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@attune/framework-language-service':
+        specifier: workspace:*
+        version: link:packages/trellis/language-service
       '@effect/rpc':
         specifier: 0.75.1
         version: 0.75.1(@effect/platform@0.96.2(effect@4.0.0-beta.78))(effect@4.0.0-beta.78)
@@ -505,6 +508,12 @@ importers:
       effect:
         specifier: 4.0.0-beta.78
         version: 4.0.0-beta.78
+      tsx:
+        specifier: ^4.19.4
+        version: 4.22.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   packages/trellis/nx:
     dependencies:

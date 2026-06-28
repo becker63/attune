@@ -142,6 +142,44 @@ The CLI defaults to in-memory/file-backed evidence and emits command metadata in
 
 No language-service-specific ledger is introduced. The Postgres route remains the existing `framework_core`, `framework_event`, and `framework_view` spine through runtime services.
 
+### Recipe-Only Source Migration Is Now In Scope
+
+`trellis-ls` is also the migration engine for moving Attune packages from authored ProjectFacts scaffolding to recipe-native source truth. Authored `src/attune.package.ts`, `defineAttuneProjectFacts`, `ProjectFacts`, and `ProjectRuntimeRoots` are legacy migration scaffolding, not the final package declaration model. `ProjectFacts` may remain as a derived projection only when downstream tooling still needs the shape.
+
+The replacement is a `defineRecipePackage` declaration colocated with the package recipe catalog. A recipe package declares package ID, kind/title, exported recipes, and lightweight ownership groupings. It does not recreate the old hand-authored symbol graph; source ownership comes from Recipe-family declarations.
+
+The existing final-ratchet architecture policy remains the workspace gate while this migration is partial. For dogfood packages, the policy accepts `src/recipes.ts` with `defineRecipePackage` as the package source-truth successor only after equivalent recipe package metadata exists; packages without that declaration still follow the old `src/attune.package.ts` requirement until they migrate.
+
+The first dogfood package is `packages/trellis/language-service`:
+
+- `src/recipes.ts` becomes the single authored Attune declaration for the package.
+- `src/attune.package.ts` is deleted or quarantined after equivalent recipe package metadata exists.
+- CLI invocation surfaces are represented by `InvocationRecipe`.
+- Diagnostics are represented by `DiagnosticRecipe`.
+- Fix planning and apply behavior are represented by `RepairRecipe`.
+- JSON outputs are represented by `ProjectionRecipe`.
+- Command summary/evidence recording is represented by `ObservationRecipe`.
+
+### Specialized Recipe Builders Are Typed Wrappers
+
+Add `defineProjectionRecipe`, `defineDiagnosticRecipe`, `defineRepairRecipe`, `defineObservationRecipe`, and `defineInvocationRecipe` as typed specializations over `RecipeDefinition`. They add role metadata and role-specific ownership fields but do not create a separate runtime universe. Existing recipe registry, receipt, observation, invocation, and Nx projection code should continue to consume them as Recipes.
+
+### Recipe-Only Migration Profile
+
+Add `--profile recipe-only-source` to diagnostics/check flows. The strict profile enables migration diagnostics for:
+
+- `trellis/authored-attune-package-file`
+- `trellis/source-file-unowned-by-recipe`
+- `trellis/workflow-not-invocation-recipe`
+- `trellis/generated-output-not-projection-recipe`
+- `trellis/diagnostic-logic-not-diagnostic-recipe`
+- `trellis/repair-logic-not-repair-recipe`
+- `trellis/observation-not-observation-recipe`
+- `trellis/source-uses-legacy-abstraction`
+- generic recipe role specialization findings
+
+Safe fixes may update exports/imports, attach files to existing recipes, add obvious generated ownership metadata, or remove `attune.package.ts` only when replacement recipe package metadata exists. Scaffolded new specialized recipe declarations should default to diff/preview first. ManagedRecipe lifecycle, DB observation behavior, Tend data models, package topology changes, generated path moves, and infrastructure-adjacent migrations remain manual or review-required.
+
 ## Risks / Trade-offs
 
 - Upstream source is large and fast-moving -> Keep vendored code isolated, document the commit, and put local changes in wrappers whenever possible.
@@ -197,6 +235,10 @@ Record optional observations through `RecipeReceiptStore` or the configured no-D
 ### Phase 7: Recipe Refocus and Validation
 
 Replace the editor-first recipes in `src/recipes.ts` and `src/attune.package.ts` with CLI-first recipes and runtime roots. Update tests and run the validation plan.
+
+### Phase 8: Recipe-Only Source Dogfood
+
+Add protocol-level specialized recipe builders and `defineRecipePackage`. Refactor `framework-language-service` so `src/recipes.ts` is the single authored package declaration, remove authored `src/attune.package.ts`, add the recipe-only diagnostics profile, and implement the first migration diagnostics/fixes for the language-service package before expanding across the workspace.
 
 Rollback is source-level only: remove the new binary, vendored upstream subtree, CLI contracts, and recipe refocus changes. No durable DB migration is required by the basic CLI path.
 

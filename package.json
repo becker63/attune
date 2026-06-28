@@ -13,6 +13,7 @@
   },
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
+    "@attune/framework-language-service": "workspace:*",
     "@effect/rpc": "0.75.1",
     "@fast-check/worker": "0.6.0",
     "@nx/js": "^22.2.0",

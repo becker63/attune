@@ -14,6 +14,9 @@ Attune now has a uniform Recipe/ManagedRecipe, ProjectionRegistry, RecipeInvocat
 - Expose safe fix plans as `text-edit`, `workspace-edit`, `nx-repair`, or `manual`, preferring public Nx repair targets such as `nx run <project>:repair` for structural repairs.
 - Implement strict apply safety: `apply --mode diff` never writes, and `apply --mode write` refuses unsafe or review-required repairs by default.
 - Route useful command results toward existing RecipeReceiptStore/RecipeObservation surfaces when available without requiring live Postgres for basic diagnostics or fixes.
+- Extend `trellis-ls` into a recipe-only source migration engine: authored `attune.package.ts` files are legacy scaffolding, package identity and package facts move into recipe package declarations, and source ownership is expressed through Recipe-family declarations rather than hand-authored ProjectFacts.
+- Add specialized Recipe-family builders for projection, diagnostic, repair, observation, and invocation roles as typed wrappers over the existing Recipe substrate.
+- Add a strict `recipe-only-source` diagnostics profile that flags authored package facts, unowned source files, workflow code outside InvocationRecipes, generated outputs outside ProjectionRecipes, diagnostic logic outside DiagnosticRecipes, repair logic outside RepairRecipes, and observation emission outside ObservationRecipes.
 
 ## Capabilities
 
@@ -26,6 +29,7 @@ Attune now has a uniform Recipe/ManagedRecipe, ProjectionRegistry, RecipeInvocat
 - `trellis-language-service-repair-plans`: Safe, machine-readable fix discovery for text edits, workspace edits, public Nx repairs, and manual repairs.
 - `trellis-language-service-safe-apply`: Preview and apply behavior for exactly one selected fix with no-write diff mode, safe write mode, refusal metadata, and optional recheck.
 - `trellis-language-service-receipts-observations`: Optional recording of diagnostic, fix, refusal, and check observations through the existing recipe receipt/observation spine.
+- `trellis-language-service-recipe-only-source-migration`: Strict migration profile, diagnostics, and fixes that drive packages away from authored `attune.package.ts` ProjectFacts scaffolding and toward recipe package declarations plus specialized Recipe-family ownership.
 
 ### Modified Capabilities
 
@@ -35,6 +39,7 @@ None. This repository currently has active change-local specs but no archived/ma
 
 - Primary package: `packages/trellis/language-service` package metadata, Nx targets, `src/**`, `test/**`, and generated distribution shape for the `trellis-ls` binary.
 - Adjacent reusable substrate: `packages/trellis/protocol/src/diagnostics/**`, `packages/trellis/protocol/src/recipes/**`, `packages/trellis/protocol/src/project-facts/**`, `packages/trellis/runtime/src/ProgramDiagnostics.ts`, `packages/trellis/runtime/src/ProgramFactQuery.ts`, `packages/trellis/runtime/src/RecipeReceiptStore.ts`, and recipe catalog wiring in `packages/trellis/recipes.ts`.
+- Recipe-only dogfood surface: `packages/trellis/language-service/src/recipes.ts` becomes the package's single authored Attune declaration, while `packages/trellis/language-service/src/attune.package.ts` is removed or quarantined as legacy scaffolding after equivalent recipe package metadata exists.
 - Policy migration source: `packages/trellis/oxlint-policy/src/rules/**` becomes an implementation inventory for Trellis diagnostic recipes, while oxlint remains a CI check and transition pressure.
 - Nx workflow surface: `framework-language-service` gains build/typecheck/test coverage for the CLI and may add public `check`/`repair` metadata aligned with the new recipes.
 - Dependencies may add the upstream CLI/runtime needs, likely `@effect/platform-node` and `@typescript-eslint/project-service`, plus TypeScript/test harness dependencies already used by the workspace.

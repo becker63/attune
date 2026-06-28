@@ -17,6 +17,20 @@
         }
       }
     },
+    "build": {
+      "executor": "@attune/nx:toolchain",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "dryRun": false,
+        "tool": "typescript",
+        "action": "build",
+        "parameters": {
+          "tsconfig": "tsconfig.json"
+        }
+      }
+    },
     "test": {
       "executor": "@attune/nx:package-check",
       "options": {
@@ -29,7 +43,12 @@
     "check": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Project check surface for Recipe/ManagedRecipe substrate diagnostics."
+        "description": "Project check surface for Trellis language-service CLI diagnostics.",
+        "attune": {
+          "tier": "public",
+          "surface": "check",
+          "recipeId": "trellis-language-service.check-summary-projection"
+        }
       },
       "options": {
         "targetProject": "framework-language-service",
@@ -47,7 +66,13 @@
     "repair": {
       "executor": "@attune/nx:toolchain",
       "metadata": {
-        "description": "Project repair surface for safe Recipe/ManagedRecipe repair materialization."
+        "description": "Project repair surface for safe Trellis language-service repair materialization.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "safeOnly": true,
+          "recipeId": "trellis-language-service.repair-plan"
+        }
       },
       "options": {
         "targetProject": "framework-language-service",
