@@ -104,6 +104,9 @@ const readWorkspaceFiles = (workspacePath: string): readonly string[] => {
         continue
       }
       const fullPath = path.join(directory, entry.name)
+      if (isVendoredUpstreamEffectSource(fullPath)) {
+        continue
+      }
       if (entry.isDirectory()) {
         visit(fullPath)
       } else if (/\.[cm]?tsx?$/u.test(entry.name)) {
@@ -114,6 +117,11 @@ const readWorkspaceFiles = (workspacePath: string): readonly string[] => {
   if (fs.existsSync(workspacePath)) visit(workspacePath)
   return files
 }
+
+const isVendoredUpstreamEffectSource = (targetPath: string): boolean =>
+  targetPath.replaceAll(path.sep, "/").endsWith(
+    "packages/trellis/language-service/src/upstream-effect/vendor",
+  )
 
 const defaultCompilerOptions = (): ts.CompilerOptions => ({
   module: ts.ModuleKind.NodeNext,

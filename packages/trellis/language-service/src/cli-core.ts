@@ -311,6 +311,7 @@ export const collectDiagnostics = (
   const effect = collectUpstreamEffectDiagnostics({
     workspaceRoot: loaded.workspaceRoot,
     fileNames: loaded.fileNames,
+    ...(loaded.program === undefined ? {} : { program: loaded.program }),
   })
   const diagnosticsWithoutTrellisRepairIds = [
     ...collectTypeScriptDiagnostics(loaded),

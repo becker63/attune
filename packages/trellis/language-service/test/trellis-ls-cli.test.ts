@@ -294,7 +294,16 @@ describe("trellis-ls CLI core", () => {
       repository: "https://github.com/Effect-TS/language-service",
       commit: "df50dfce9ab8b299f6d21c35c231bcc12cbca4ee",
       packageVersion: "0.86.2",
+      copiedSourceRoot: "src/upstream-effect/vendor",
+      adaptedEntryPoint: "LSP.getSemanticDiagnosticsWithCodeFixes",
     })
+    expect(fs.existsSync(path.join(packageRoot, "src", "upstream-effect", "vendor", "core", "LSP.ts"))).toBe(true)
+    expect(fs.existsSync(
+      path.join(packageRoot, "src", "upstream-effect", "vendor", "cli", "diagnostics.ts"),
+    )).toBe(true)
+    expect(fs.existsSync(
+      path.join(packageRoot, "src", "upstream-effect", "vendor", "diagnostics", "floatingEffect.ts"),
+    )).toBe(true)
   })
 
   it("exposes help for canonical CLI commands", () => {
@@ -1014,6 +1023,7 @@ describe("trellis-ls CLI core", () => {
               "tags": [
                 "effect",
                 "upstream-effect",
+                "LSP.getSemanticDiagnosticsWithCodeFixes",
                 "quickfix",
               ],
             },

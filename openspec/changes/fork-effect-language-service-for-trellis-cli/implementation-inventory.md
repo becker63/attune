@@ -5,6 +5,8 @@
 - `packages/trellis/language-service/src/recipes.ts` is now the package's single authored Attune declaration. It declares `FrameworkLanguageServiceRecipePackage` with CLI invocation, workspace inventory, TypeScript program, upstream Effect diagnostic/fix, Trellis diagnostic, repair, JSON projection, check summary, and observation recipes.
 - `packages/trellis/language-service/src/attune.package.ts` has been removed for the dogfood package after equivalent recipe package metadata landed in `src/recipes.ts`.
 - `packages/trellis/language-service/src/index.ts` currently projects runtime/program fact diagnostics into editor-shaped diagnostics, code actions, code lenses, quick info, and TypeScript diagnostic/codefix/refactor shapes.
+- `packages/trellis/language-service/src/upstream-effect/vendor/**` contains the copied upstream `packages/language-service/src/**` tree from `Effect-TS/language-service` commit `df50dfce9ab8b299f6d21c35c231bcc12cbca4ee`; it is excluded from local TypeScript compilation and used as the future-sync reference.
+- `packages/trellis/language-service/src/upstream-effect/index.ts` is the compiled Trellis adapter. It exposes the adapted `LSP.getSemanticDiagnosticsWithCodeFixes` entrypoint, runs the focused `floatingEffect` diagnostic through that path, and normalizes diagnostics/fixes into Trellis JSON.
 - `packages/trellis/language-service/src/diagnostic-recipes.ts` owns Trellis migration diagnostics for package-local scripts, raw Postgres boundary usage, authored `attune.package.ts`, recipe-only ownership, role ownership, and legacy ProjectFacts authored truth.
 - `packages/trellis/language-service/src/diagnostic-recipes.ts` also exposes oxlint-era invariants as Trellis diagnostic families for generated artifact ownership/freshness, public Nx target ownership, ManagedRecipe/Alchemy metadata, private ledger/receipt-spine linkage, and Tend recipe/receipt/observation linkage.
 - `packages/trellis/language-service/src/diagnostic-recipes.ts` now accepts query-backed `ProgramDiagnostics`, direct `ProgramFactProjection` inputs, and `NxTargetProjection` facts so CLI diagnostics can normalize existing ProgramFact and ProjectionRegistry findings instead of reimplementing those substrates.
@@ -62,7 +64,8 @@
 - Added Effect Schema-backed contracts for diagnostics, fixes, apply, check, command metadata, evidence mode, fix kinds, spans, summaries, edits, and refusal metadata.
 - Added a headless CLI parser for canonical `diagnostics`, `fixes`, `apply`, and `check` commands plus the optional aliases `diags`, `codefixes`, and `apply-codefix`.
 - Added deterministic diagnostic/fix ID generation, TypeScript project/file/workspace loading, JSON/text output, TypeScript diagnostic normalization, and text edit diff/write helpers.
-- Added an attributed `src/upstream-effect/**` adapter boundary for upstream Effect language-service commit `df50dfce9ab8b299f6d21c35c231bcc12cbca4ee`. This first slice implements a focused local `effect/floatingEffect` fixture adapter and keeps the full upstream `LSP.getSemanticDiagnosticsWithCodeFixes` fork open.
+- Added an attributed `src/upstream-effect/**` adapter boundary for upstream Effect language-service commit `df50dfce9ab8b299f6d21c35c231bcc12cbca4ee`, including a copied raw upstream source tree under `vendor/**`.
+- Replaced the early line-scanner shim with an adapted upstream LSP execution shape. `collectUpstreamEffectDiagnostics` now runs the focused `floatingEffect` diagnostic through `getSemanticDiagnosticsWithCodeFixes`, using the loaded TypeScript program/type checker when available, and keeps the Trellis-safe `void` quickfix as a documented local deviation.
 - Added Trellis diagnostic coverage for package-local `scripts/` regressions and raw Postgres imports outside the runtime DB boundary.
 - Added Trellis repair planning for package-local script diagnostics through public `nx run workspace:repair` and review-required manual guidance for raw Postgres boundary diagnostics.
 - Implemented `apply --mode diff` no-write previews, `apply --mode write` for safe local edits and public safe Nx repairs, stale fix refusal, manual/unsafe/review-required refusal, and optional recheck output.
@@ -76,7 +79,7 @@
 - Added ProgramFact runtime/projection diagnostic normalization through `ProgramDiagnostics`, `ProgramFactQuery`, `ProgramFactProjection`, and `diagnosticsForProgramFacts`; added Nx target ownership/projection diagnostics through `NxTargetConformance` using `NxTargetProjection` facts.
 - Added product import-boundary coverage for public-package imports of language-service deep internals; agents/products must use the CLI contract rather than importing the package as an API.
 - Added `packages/trellis/language-service/README.md` documenting the CLI, JSON stdout, exit codes, no-DB default, and oxlint-as-transitional guardrail.
-- Added package tests for schema decoding, CLI help, upstream attribution, effect diagnostic/fix fixture, targeted and project-wide fixes, diff no-write, safe write, stale refusal, manual refusal, Nx repair serialization, receipt/observation recording, ProgramFact runtime diagnostics, Nx ProjectionRegistry facts, recipe-only profile diagnostics/fixes/apply diff, JSON snapshots, no upstream deep imports, and no language-service-specific ledger/schema.
+- Added package tests for schema decoding, CLI help, upstream attribution/source copy, adapted LSP entrypoint metadata, effect diagnostic/fix fixture, targeted and project-wide fixes, diff no-write, safe write, stale refusal, manual refusal, Nx repair serialization, receipt/observation recording, ProgramFact runtime diagnostics, Nx ProjectionRegistry facts, recipe-only profile diagnostics/fixes/apply diff, JSON snapshots, no upstream deep imports, and no language-service-specific ledger/schema.
 
 ## Final Validation Evidence For This Slice
 
@@ -91,13 +94,12 @@
 - `pnpm exec trellis-ls fixes --project packages/trellis/language-service/tsconfig.json --format json` passed with zero fixes for the clean package.
 - `trellis-ls apply --project <temp-fixture>/tsconfig.json --fix-id <safe-fixture-fix> --mode diff --format json` passed through the repo-local binary and left the fixture source unchanged.
 - `pnpm exec trellis-ls check --project packages/trellis/language-service/tsconfig.json --format json` passed with `blocking: false`.
-- `pnpm exec trellis-ls diagnostics --workspace . --profile recipe-only-source --format json` passed. The captured summary reported 483 diagnostics across the current repository migration backlog, including 49 `trellis/orphan-public-nx-target`, 46 `trellis/target-missing-recipe-invocation`, 22 `trellis/authored-attune-package-file`, and 33 `trellis/source-uses-legacy-abstraction` diagnostics.
+- `pnpm exec trellis-ls diagnostics --workspace . --profile recipe-only-source --format json` passed. The captured summary reported 447 diagnostics across the current repository migration backlog, including 49 `trellis/orphan-public-nx-target`, 46 `trellis/target-missing-recipe-invocation`, 22 `trellis/authored-attune-package-file`, and 33 `trellis/source-uses-legacy-abstraction` diagnostics. The raw upstream vendor source is skipped by workspace discovery so it remains attribution/sync material rather than live project source.
 - `openspec validate fork-effect-language-service-for-trellis-cli --strict` passed.
 
 ## Remaining Implementation Gaps
 
-- Full upstream source fork/adaptation remains open: the current adapter is still focused and does not yet execute upstream `LSP.getSemanticDiagnosticsWithCodeFixes`.
-- Full upstream Effect diagnostic/fix execution remains open: task 5.2 still needs the vendored/adapted `LSP.getSemanticDiagnosticsWithCodeFixes` path rather than the focused local `effect/floatingEffect` adapter.
+- No OpenSpec task gaps remain for this change. The upstream adapter is intentionally focused for v0; expanding additional upstream diagnostic families beyond the `floatingEffect` fixture is future feature work, not an unchecked task in this change.
 
 ## Guardrails
 

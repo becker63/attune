@@ -11,7 +11,7 @@
 
 ## 2. Upstream Effect Fork Landing
 
-- [ ] 2.1 Copy/adapt upstream Effect language-service source from `Effect-TS/language-service` into `packages/trellis/language-service/src/upstream-effect/**`.
+- [x] 2.1 Copy/adapt upstream Effect language-service source from `Effect-TS/language-service` into `packages/trellis/language-service/src/upstream-effect/**`.
 - [x] 2.2 Add upstream attribution documenting repository URL, commit `df50dfce9ab8b299f6d21c35c231bcc12cbca4ee`, package version `0.86.2`, MIT license, copied directories, and local deviations.
 - [x] 2.3 Add package dependencies needed by the fork, including TypeScript project-service and Effect platform runtime dependencies where required.
 - [x] 2.4 Keep upstream editor patch/setup/config commands hidden or deferred from the public `trellis-ls` command surface.
@@ -39,7 +39,7 @@
 ## 5. Upstream Effect Diagnostics And Fixes
 
 - [x] 5.1 Wrap upstream TypeScript project/file loading for `--project` and `--file` scopes.
-- [ ] 5.2 Run upstream Effect diagnostics through the vendored/adapted `LSP.getSemanticDiagnosticsWithCodeFixes` path.
+- [x] 5.2 Run upstream Effect diagnostics through the vendored/adapted `LSP.getSemanticDiagnosticsWithCodeFixes` path.
 - [x] 5.3 Normalize upstream diagnostics into `source: "effect"` and `effect/<ruleName>` codes with stable diagnostic IDs.
 - [x] 5.4 Normalize upstream quickfixes into `text-edit` and `workspace-edit` fixes with deterministic fix IDs.
 - [x] 5.5 Render quickfix previews and diffs without writing files.
