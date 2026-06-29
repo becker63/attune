@@ -156,13 +156,27 @@ ON CONFLICT (observation_id) DO UPDATE SET
     },
     {
       name: "measurement-report-projection-inputs",
-      sql: "SELECT * FROM framework_event.recipe_observation WHERE payload->>'measurementSessionId' = $1 AND observation_kind IN ($2, $3, $4, $5) ORDER BY observed_at ASC",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE payload->>'measurementSessionId' = $1 AND observation_kind IN ($2, $3, $4, $5, $6, $7, $8, $9, $10) ORDER BY observed_at ASC",
       parameters: [
         "measurement-session-1",
         "measurement.harness.proof",
         "measurement.command.observed",
         "measurement.trace.inventory.summary",
+        "measurement.agent.metrics.summary",
+        "measurement.recipe-spine.coverage",
+        "measurement.edit-attempts.summary",
+        "measurement.legacy-substrate.audit",
         "measurement.micro-experiment.summary",
+        "measurement.migration-readiness.summary",
+      ],
+    },
+    {
+      name: "measurement-agent-metrics-by-session-phase",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE payload->>'measurementSessionId' = $1 AND observation_kind = $2 AND payload->>'measurementPhase' = $3 ORDER BY observed_at DESC",
+      parameters: [
+        "measurement-session-1",
+        "measurement.agent.metrics.summary",
+        "treatment",
       ],
     },
   ]

@@ -1,6 +1,16 @@
 import { spawnSync } from "node:child_process"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
+import { Effect } from "effect"
+import {
+  LocalTimescaleManagedRecipe,
+  localTimescaleLifecycleObservations,
+  localTimescaleLifecycleOutput,
+} from "../../LocalTimescaleRecipe.js"
+import {
+  createMeasurementObservationSink,
+  measurementStoreConfigFromEnv,
+} from "../../MeasurementObservation.js"
 import {
   frameworkRecipeReceiptKanelConfig,
   frameworkRecipeReceiptSafeQlConfig,
@@ -13,7 +23,7 @@ import {
 
 let stage = "unknown"
 
-export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slice(2)): void {
+export async function runLocalTimescaleCli(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
   const requestedStage = argv[0]
 
   if (requestedStage === undefined) {
@@ -26,21 +36,27 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
 
   switch (stage) {
     case "plan": {
-      console.log(JSON.stringify({
+      const result = {
         stage,
         managedRecipe: "framework-runtime.local-timescaledb",
         lifecycle: ["plan", "apply", "check", "migrate", "validate-sql", "stop", "destroy", "prune"],
         serviceClosure: localTimescale,
         genericTables: frameworkRecipeReceiptTables,
-      }))
+      }
+      await emitLifecycleEvidence("plan")
+      console.log(JSON.stringify(result))
       break
     }
     case "apply": {
-      console.log(JSON.stringify(applyLiveDatabase()))
+      const result = applyLiveDatabase()
+      await emitLifecycleEvidence("apply")
+      console.log(JSON.stringify(result))
       break
     }
     case "check": {
-      console.log(JSON.stringify(checkLiveDatabase()))
+      const result = checkLiveDatabase()
+      await emitLifecycleEvidence("check")
+      console.log(JSON.stringify(result))
       break
     }
     case "stop": {
@@ -62,11 +78,13 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
       const integration = integrationEnabled()
         ? applyMigrationAgainstLiveDb()
         : "skipped; set ATTUNE_RUN_DB_INTEGRATION=1 for live apply"
-      console.log(JSON.stringify({
+      const result = {
         stage,
         migration: "packages/trellis/runtime/sql/0001_framework_recipe_receipt_spine.sql",
         integration,
-      }))
+      }
+      await emitLifecycleEvidence("migrate")
+      console.log(JSON.stringify(result))
       break
     }
     case "generate-types": {
@@ -93,12 +111,14 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
       const integration = integrationEnabled()
         ? validateSqlAgainstLiveDb()
         : "static migration/statement validation"
-      console.log(JSON.stringify({
+      const result = {
         stage,
         validator: "SafeQL",
         config: frameworkRecipeReceiptSafeQlConfig(),
         integration,
-      }))
+      }
+      await emitLifecycleEvidence("validate-sql")
+      console.log(JSON.stringify(result))
       break
     }
     case "integration-test": {
@@ -141,6 +161,51 @@ export function runLocalTimescaleCli(argv: readonly string[] = process.argv.slic
     }
     default:
       throw new Error(`Unsupported db lifecycle stage: ${stage}`)
+  }
+}
+
+async function emitLifecycleEvidence(action: "plan" | "apply" | "check" | "migrate" | "validate-sql"): Promise<void> {
+  if (action === "plan" && !integrationEnabled()) return
+  const measurementSessionId = process.env["ATTUNE_MEASUREMENT_SESSION_ID"]
+  let sink: Awaited<ReturnType<typeof createMeasurementObservationSink>> | undefined
+  try {
+    sink = await createMeasurementObservationSink(measurementStoreConfigFromEnv())
+    if (sink.store === undefined) return
+    await Effect.runPromise(sink.store.registerRecipe(LocalTimescaleManagedRecipe))
+    const output = localTimescaleLifecycleOutput({
+      workspaceRoot: workspaceRoot(),
+      databaseUrlEnv: localTimescale.databaseUrl,
+      dataDir: localTimescale.dataDir,
+      port: localTimescale.port,
+      storeMode: localTimescale.storeMode,
+      action,
+      runIntegration: integrationEnabled(),
+    })
+    const observedAt = new Date().toISOString()
+    for (const observation of localTimescaleLifecycleObservations(output, {
+      observedAt,
+      source: `framework-runtime:db:${action}`,
+    })) {
+      const payload = observation.payload !== null
+        && typeof observation.payload === "object"
+        && !Array.isArray(observation.payload)
+        ? observation.payload as Record<string, unknown>
+        : {}
+      await Effect.runPromise(sink.store.recordObservation({
+        ...observation,
+        payload: {
+          ...payload,
+          ...(measurementSessionId === undefined ? {} : { measurementSessionId }),
+          lifecycleOwner: "framework-runtime",
+          lifecycleAction: action,
+        },
+      }))
+    }
+  } catch (error) {
+    if (action === "plan") return
+    throw error
+  } finally {
+    await sink?.close()
   }
 }
 
@@ -678,5 +743,8 @@ function runNixDevelop(args: readonly string[]): string {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  runLocalTimescaleCli(process.argv.slice(2))
+  runLocalTimescaleCli(process.argv.slice(2)).catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exit(1)
+  })
 }

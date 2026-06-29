@@ -100,7 +100,7 @@ const readWorkspaceFiles = (workspacePath: string): readonly string[] => {
   const files: string[] = []
   const visit = (directory: string): void => {
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-      if (entry.name === "node_modules" || entry.name === "dist" || entry.name === ".git") {
+      if (entry.name === "node_modules" || entry.name === "dist" || entry.name === ".git" || entry.name === ".attune") {
         continue
       }
       const fullPath = path.join(directory, entry.name)

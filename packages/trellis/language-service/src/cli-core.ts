@@ -224,6 +224,7 @@ export const runApplyCommand = (
       affectedFiles: [...fix.affectedFiles],
       ...previewFields(collection.loaded.workspaceRoot, fix),
     }
+    recordCommandObservation(options, applyDiffObservation(output, fix))
     return { output, exitCode: 0 }
   }
 
@@ -496,6 +497,28 @@ const appliedFixObservation = (
     applied: output.applied,
     affectedFiles: output.affectedFiles,
     commandPreview: output.commandPreview,
+  },
+})
+
+const applyDiffObservation = (
+  output: TrellisLsApplyOutput,
+  fix: TrellisLsFix,
+): RecipeObservation => commandObservation({
+  recipeId: "trellis-language-service.apply-result-json-projection",
+  observationKind: "trellis-language-service.apply-diff-summary",
+  source: "trellis-ls apply",
+  payload: {
+    command: output.command,
+    project: output.project,
+    file: output.file,
+    workspace: output.workspace,
+    fixId: output.fixId,
+    diagnosticId: fix.diagnosticId,
+    fixKind: fix.kind,
+    applied: false,
+    refused: false,
+    affectedFiles: output.affectedFiles,
+    rawDiffStored: false,
   },
 })
 

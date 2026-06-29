@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import {
   assertJsonFormat,
+  assertMeasurementPhase,
   assertOutputFormat,
   decodeOpenCodeSessionFile,
   observeCommandWithStoreEmission,
@@ -51,7 +52,11 @@ const main = async (): Promise<void> => {
       case "observe": {
         const { flags, command: observedCommand } = parseObserve(rest)
         assertJsonFormat(stringFlag(flags, "format"))
-        const output = await observeCommandWithStoreEmission({ command: observedCommand })
+        const measurementPhase = assertMeasurementPhase(stringFlag(flags, "phase"))
+        const output = await observeCommandWithStoreEmission({
+          command: observedCommand,
+          ...(measurementPhase === undefined ? {} : { measurementPhase }),
+        })
         process.stdout.write(renderJson(output))
         process.exit(output.storeEmission.status === "failed" ? 1 : 0)
       }
@@ -134,7 +139,7 @@ const writeHelp = (): void => {
     "  doctor --format json",
     "  decode --file <path> --format json",
     "  summarize --file <path> --format markdown|json",
-    "  observe --format json -- <command...>",
+    "  observe --format json [--phase baseline|treatment] -- <command...>",
     "  measurement-report --format json [--reports-dir reports/tend-opencode-codex-measurement] [--export-only|--dry-run]",
     "",
   ].join("\n"))

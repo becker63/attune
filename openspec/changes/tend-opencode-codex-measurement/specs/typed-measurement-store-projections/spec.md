@@ -19,6 +19,8 @@ measurement observation storage and projection queries.
 - **AND** it validates querying observations by measurement session
 - **AND** it validates querying command observations by recipe ID
 - **AND** it validates querying command observations by Nx target
+- **AND** it validates querying command observations by generic target ID and
+  measurement phase
 - **AND** it validates querying observations by observation kind
 - **AND** it validates querying harness proof observations
 - **AND** it validates querying lifecycle health observations
@@ -35,6 +37,15 @@ projection rather than relying on cache files as source truth.
   store boundary
 - **AND** the helper returns sanitized records keyed by measurement session,
   observation kind, recipe ID, Nx target, or observation ID as needed
+- **AND** the helper returns sanitized observation timelines, safe trace totals,
+  duration summaries, success/failure rates, target/recipe coverage counts,
+  store-emission coverage, and diagnostic latency when available
+- **AND** the helper returns selected comparable baseline session summaries
+  and selected-baseline-vs-treatment comparisons when available
+- **AND** the helper returns controlled baseline phase metrics and safe
+  aggregate token/tool counts when available
+- **AND** the helper returns phase-level generic agent metrics and
+  migration-readiness gate summaries when available
 - **AND** the report generator does not query raw Postgres directly from
   product code
 
@@ -56,6 +67,9 @@ by the command ladder and micro-experiment.
 - **THEN** they can select by measurement session ID
 - **AND** they can select by inferred recipe ID when available
 - **AND** they can select by inferred Nx target when available
+- **AND** they can select by generic target ID for non-Nx producer commands
+- **AND** they can select by measurement phase so one controlled baseline phase
+  can be compared with treatment observations in the same session
 - **AND** they can select by `measurement.command.observed` observation kind
 
 #### Scenario: Health and proof observations can be selected
@@ -65,3 +79,7 @@ by the command ladder and micro-experiment.
 - **AND** they can select SQL validation evidence observations
 - **AND** they can select trace inventory and micro-experiment summary
   observations
+- **AND** they can select `measurement.agent.metrics.summary` observations by
+  measurement phase
+- **AND** they can select `measurement.migration-readiness.summary`
+  observations for final readiness reports

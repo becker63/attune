@@ -10,9 +10,17 @@ observations for the active measurement session.
   the measurement session
 - **AND** it produces
   `reports/tend-opencode-codex-measurement/command-ladder.md`
-- **AND** the report lists each command, inferred Nx target, inferred recipe ID
-  when available, duration, exit code, store observation ID, store emission
-  status, and cost class
+- **AND** the report lists each command, measurement phase, generic target ID,
+  inferred Nx target when available, inferred recipe ID when available,
+  duration, exit code, safe aggregate token/tool counts when available, store
+  observation ID, store emission status, and cost class
+- **AND** the report summarizes command timing with first/last observation,
+  observed span, duration sample count, total/average/min/p50/p95/max duration,
+  success rate, store-emission coverage, unknown target/recipe counts, unique
+  target and recipe counts, and lifecycle/proof/diagnostic observation counts
+- **AND** non-Nx producer commands such as `trellis-ls diagnostics` and
+  `trellis-ls fixes` count as known target IDs when mapped to stable
+  `trellis-ls:*` identities
 - **AND** the report explains which commands are appropriate for early
   diagnostic loops and which commands are final confirmation gates
 - **AND** the report is an export from stored observations, not durable truth
@@ -38,6 +46,9 @@ and safe historical aggregate observations.
 - **THEN** the command ladder report records the repeated pattern
 - **AND** it identifies whether `tend-opencode` observation would have helped
   avoid or explain the repeat
+- **AND** baseline-phase command observations are summarized separately from
+  treatment-phase command observations when a controlled microbenchmark is
+  present
 
 #### Scenario: Failed command patterns are summarized
 - **WHEN** an observed command exits nonzero

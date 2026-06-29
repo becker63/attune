@@ -32,6 +32,11 @@ than the source of truth.
 - Store command observations, trace inventory summaries, micro-experiment
   summaries, and report projection receipts as `framework_event.recipe_observation`
   records automatically by default.
+- Select one comparable historical baseline session from safe trace metadata,
+  emit `measurement.baseline.session.selected` and
+  `measurement.baseline.session.summary` observations, and compare the
+  treatment run against that selected session before attempting the heavy
+  migration test.
 - Treat `.attune/cache/measurement/*` as local export/projection output only
   and emit reviewed measurement reports under
   `reports/tend-opencode-codex-measurement/`.
@@ -66,6 +71,10 @@ than the source of truth.
 - `codex-trace-safe-inventory`: Emits sanitized aggregate trace inventory
   observations without storing raw prompts, full conversations, secrets, or raw
   trace rows.
+- `comparable-baseline-session-selection`: Groups safe historical trace
+  metadata by session ID, scores comparable Attune/Trellis LS sessions, emits
+  selected-baseline observations, and projects a single-session baseline
+  comparison.
 - `agent-command-ladder-measurement`: Builds command ladder reports from
   DB-backed observations for a measurement session.
 - `codex-opencode-micro-experiment`: Stores baseline/treatment metrics and

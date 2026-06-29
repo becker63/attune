@@ -19,6 +19,7 @@ import {
   runDoctor,
   runHarnessSelfTest,
 } from "../src/cli-core.js"
+import { writeMeasurementReports } from "../src/measurement.js"
 import {
   AttuneOpenCodeFingerprintSchema,
   TendOpenCodeCommandObservationOutputSchema,
@@ -174,8 +175,8 @@ describe("@attune/tend-opencode", () => {
   })
 
   it("prepares package-backed OpenCode and TUI plugin config when delegating to upstream", () => {
-    const runtimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), "attune-opencode-runtime-"))
-    const home = fs.mkdtempSync(path.join(os.tmpdir(), "attune-opencode-home-"))
+    const runtimeRoot = fs.mkdtempSync(path.join(os.tmpdir(), "tend-opencode-runtime-"))
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "tend-opencode-home-"))
     const sourceConfigDir = configDir()
     const env = createOpenCodeDelegationEnv({
       ...process.env,
@@ -258,6 +259,31 @@ describe("@attune/tend-opencode", () => {
     expect(decoded.commandLine).not.toContain("private-value")
   })
 
+  it("extracts safe aggregate command metrics from parseable JSON output", () => {
+    const previousPhase = process.env.ATTUNE_MEASUREMENT_PHASE
+    process.env.ATTUNE_MEASUREMENT_PHASE = "baseline"
+    try {
+      const observed = commandObservationFromResult({
+        command: ["node", "-e", "process.stdout.write(JSON.stringify({ total_tokens: 123, toolCallCount: 4 }))"],
+        cwd: workspaceRoot,
+        startedAt: "2026-06-28T00:01:10.000Z",
+        completedAt: "2026-06-28T00:01:10.010Z",
+        durationMs: 10,
+        exitCode: 0,
+        stdout: JSON.stringify({ total_tokens: 123, toolCallCount: 4 }),
+        stderr: "",
+      })
+      const decoded = Schema.decodeUnknownSync(TendOpenCodeCommandObservationOutputSchema)(observed)
+
+      expect(decoded.measurementPhase).toBe("baseline")
+      expect(decoded.tokenTotal).toBe(123)
+      expect(decoded.toolCalls).toBe(4)
+      expect(decoded.tokenMetricSource).toBe("stdout-json")
+    } finally {
+      restoreEnv("ATTUNE_MEASUREMENT_PHASE", previousPhase)
+    }
+  })
+
   it("emits observed commands to the configured framework store", async () => {
     const previousMode = process.env.ATTUNE_RECIPE_STORE_MODE
     const previousSession = process.env.ATTUNE_MEASUREMENT_SESSION_ID
@@ -281,6 +307,103 @@ describe("@attune/tend-opencode", () => {
     }
   })
 
+  it("projects enriched safe measurement metrics into report exports", async () => {
+    const previousMode = process.env.ATTUNE_RECIPE_STORE_MODE
+    const previousConfigDir = process.env.ATTUNE_OPENCODE_CONFIG_DIR
+    process.env.ATTUNE_RECIPE_STORE_MODE = "export-only"
+    process.env.ATTUNE_OPENCODE_CONFIG_DIR = configDir()
+    const codexHome = fs.mkdtempSync(path.join(os.tmpdir(), "tend-opencode-metrics-codex-"))
+    const reportDir = fs.mkdtempSync(path.join(os.tmpdir(), "tend-opencode-metrics-reports-"))
+    fs.writeFileSync(path.join(codexHome, "trace.jsonl"), [
+      JSON.stringify({
+        timestamp: "2026-06-28T00:00:00.000Z",
+        command: ["pnpm", "exec", "nx", "run", "framework-runtime:test"],
+        durationMs: 10,
+        exitCode: 0,
+        model: "gpt-5",
+        sessionId: "session-safe",
+        totalTokens: 7,
+        toolName: "shell",
+      }),
+      JSON.stringify({
+        timestamp: "2026-06-28T00:00:20.000Z",
+        command: ["pnpm", "exec", "nx", "run", "framework-runtime:test"],
+        durationMs: 30,
+        exitCode: 1,
+        model: "gpt-5",
+        sessionId: "session-safe",
+        totalTokens: 11,
+        toolName: "shell",
+      }),
+      JSON.stringify({
+        timestamp: "2026-06-28T00:00:25.000Z",
+        command: ["pnpm", "exec", "nx", "run", "framework-language-service:test"],
+        durationMs: 20,
+        exitCode: 0,
+        model: "gpt-5",
+        sessionId: "session-safe",
+        totalTokens: 13,
+        toolName: "shell",
+      }),
+      JSON.stringify({
+        timestamp: "2026-06-28T00:00:28.000Z",
+        sessionId: "session-safe",
+        payload: {
+          type: "function_call",
+          info: {
+            last_token_usage: {
+              total_tokens: 5,
+            },
+          },
+        },
+      }),
+    ].join("\n"), "utf8")
+    try {
+      await writeMeasurementReports({
+        workspaceRoot,
+        codexHome,
+        reportsDir: reportDir,
+        measurementSessionId: "measurement:test-enriched-metrics",
+        exportOnly: true,
+      })
+
+      const baseline = fs.readFileSync(path.join(reportDir, "historical-baseline.md"), "utf8")
+      const microExperiment = fs.readFileSync(path.join(reportDir, "codex-opencode-micro-experiment.md"), "utf8")
+      const jsonSummary = JSON.parse(
+        fs.readFileSync(path.join(reportDir, "trace-inventory-summary.json"), "utf8"),
+      ) as {
+        readonly inventory: {
+          readonly commandEventCount?: number
+          readonly tokenTotal?: number
+          readonly toolCalls?: number
+          readonly durationMs?: { readonly count?: number }
+          readonly selectedBaselineSession?: { readonly sessionId?: string; readonly commandEvents?: number }
+        }
+      }
+
+      expect(baseline).toContain("Command events discovered: 3")
+      expect(baseline).toContain("## Selected Comparable Baseline Session")
+      expect(baseline).toContain("Session ID: session-safe")
+      expect(baseline).toContain("Repeated command invocations: 2")
+      expect(baseline).toContain("Failed exit code observations: 1")
+      expect(baseline).toContain("Duration average ms: 20")
+      expect(baseline).toContain("Token total observed: 36")
+      expect(baseline).toContain("Tool-call count observed: 4")
+      expect(microExperiment).toContain("Selected Baseline Vs Treatment")
+      expect(microExperiment).toContain("Command success rate: 66.7%")
+      expect(microExperiment).toContain("Unique/repeated command families: 2 / 1")
+      expect(jsonSummary.inventory.commandEventCount).toBe(3)
+      expect(jsonSummary.inventory.tokenTotal).toBe(36)
+      expect(jsonSummary.inventory.toolCalls).toBe(4)
+      expect(jsonSummary.inventory.durationMs?.count).toBe(3)
+      expect(jsonSummary.inventory.selectedBaselineSession?.sessionId).toBe("session-safe")
+      expect(jsonSummary.inventory.selectedBaselineSession?.commandEvents).toBe(3)
+    } finally {
+      restoreEnv("ATTUNE_RECIPE_STORE_MODE", previousMode)
+      restoreEnv("ATTUNE_OPENCODE_CONFIG_DIR", previousConfigDir)
+    }
+  })
+
   it("links observed Nx commands to target and recipe identifiers", () => {
     const observed = commandObservationFromResult({
       command: ["pnpm", "exec", "nx", "run", "framework-language-service:test", "--output-style=static"],
@@ -297,6 +420,116 @@ describe("@attune/tend-opencode", () => {
     expect(decoded.knownNxTarget).toBe("framework-language-service:test")
     expect(decoded.targetId).toBe("framework-language-service:test")
     expect(decoded.inferredRecipeId).toBe("trellis-language-service.check-summary-projection")
+  })
+
+  it("links direct Trellis LS commands to generic target and recipe identifiers", () => {
+    const diagnostics = Schema.decodeUnknownSync(TendOpenCodeCommandObservationOutputSchema)(
+      commandObservationFromResult({
+        command: [
+          "pnpm",
+          "exec",
+          "trellis-ls",
+          "diagnostics",
+          "--project",
+          "packages/trellis/language-service/tsconfig.json",
+          "--format",
+          "json",
+        ],
+        cwd: workspaceRoot,
+        startedAt: "2026-06-28T00:02:00.000Z",
+        completedAt: "2026-06-28T00:02:01.000Z",
+        durationMs: 1000,
+        exitCode: 0,
+        stdout: "",
+        stderr: "",
+      }),
+    )
+    const fixes = Schema.decodeUnknownSync(TendOpenCodeCommandObservationOutputSchema)(
+      commandObservationFromResult({
+        command: [
+          "pnpm",
+          "exec",
+          "trellis-ls",
+          "fixes",
+          "--project",
+          "packages/trellis/language-service/tsconfig.json",
+          "--format",
+          "json",
+        ],
+        cwd: workspaceRoot,
+        startedAt: "2026-06-28T00:02:02.000Z",
+        completedAt: "2026-06-28T00:02:03.000Z",
+        durationMs: 1000,
+        exitCode: 0,
+        stdout: "",
+        stderr: "",
+      }),
+    )
+
+    expect(diagnostics.knownNxTarget).toBeUndefined()
+    expect(diagnostics.targetId).toBe("trellis-ls:diagnostics")
+    expect(diagnostics.inferredRecipeId).toBe("trellis-language-service.diagnostics-json-projection")
+    expect(fixes.knownNxTarget).toBeUndefined()
+    expect(fixes.targetId).toBe("trellis-ls:fixes")
+    expect(fixes.inferredRecipeId).toBe("trellis-language-service.fixes-json-projection")
+  })
+
+  it("links heavy-migration producer commands beyond diagnostics", () => {
+    const cases = [
+      {
+        command: ["pnpm", "exec", "trellis-ls", "apply", "--mode", "diff"],
+        targetId: "trellis-ls:apply",
+        recipeId: "trellis-language-service.apply-result-json-projection",
+      },
+      {
+        command: ["pnpm", "exec", "trellis-ls", "apply-codefix", "--mode", "diff"],
+        targetId: "trellis-ls:apply",
+        recipeId: "trellis-language-service.apply-result-json-projection",
+      },
+      {
+        command: ["pnpm", "exec", "trellis-ls", "check", "--format", "json"],
+        targetId: "trellis-ls:check",
+        recipeId: "trellis-language-service.check-summary-projection",
+      },
+      {
+        command: ["pnpm", "exec", "nx", "run", "framework-language-service:repair", "--output-style=static"],
+        targetId: "framework-language-service:repair",
+        recipeId: "trellis-language-service.repair-plan",
+      },
+      {
+        command: ["pnpm", "exec", "nx", "run", "workspace:db", "--output-style=static"],
+        targetId: "workspace:db",
+        recipeId: "framework-runtime.local-timescaledb",
+      },
+      {
+        command: ["nix", "run", ".#tend-opencode", "--", "measurement-report", "--format", "json"],
+        targetId: "tend-opencode:measurement-report",
+        recipeId: "tend-opencode.command-observation",
+      },
+      {
+        command: ["tend-opencode-tools", "measurement-report", "--format", "json"],
+        targetId: "tend-opencode:measurement-report",
+        recipeId: "tend-opencode.command-observation",
+      },
+    ] as const
+
+    for (const item of cases) {
+      const decoded = Schema.decodeUnknownSync(TendOpenCodeCommandObservationOutputSchema)(
+        commandObservationFromResult({
+          command: item.command,
+          cwd: workspaceRoot,
+          startedAt: "2026-06-28T00:02:04.000Z",
+          completedAt: "2026-06-28T00:02:05.000Z",
+          durationMs: 1000,
+          exitCode: 0,
+          stdout: "",
+          stderr: "",
+        }),
+      )
+
+      expect(decoded.targetId).toBe(item.targetId)
+      expect(decoded.inferredRecipeId).toBe(item.recipeId)
+    }
   })
 
   it("runs the Attune harness self-test with a flake-provided runtime expectation", () => {

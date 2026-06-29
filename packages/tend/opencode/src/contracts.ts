@@ -97,6 +97,13 @@ export const TendOpenCodeStoreEmissionSchema = Schema.Struct({
 export type TendOpenCodeStoreEmission =
   typeof TendOpenCodeStoreEmissionSchema.Type
 
+export const TendOpenCodeMeasurementPhaseSchema = Schema.Literals([
+  "baseline",
+  "treatment",
+] as const)
+export type TendOpenCodeMeasurementPhase =
+  typeof TendOpenCodeMeasurementPhaseSchema.Type
+
 export const TendOpenCodeCommandObservationOutputSchema = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   command: Schema.Literal("observe"),
@@ -113,10 +120,14 @@ export const TendOpenCodeCommandObservationOutputSchema = Schema.Struct({
   status: Schema.Literals(["succeeded", "failed"] as const),
   stdoutSummary: TendOpenCodeCommandOutputSummarySchema,
   stderrSummary: TendOpenCodeCommandOutputSummarySchema,
+  measurementPhase: Schema.optional(TendOpenCodeMeasurementPhaseSchema),
   knownNxTarget: Schema.optional(Schema.String),
   targetId: Schema.optional(Schema.String),
   recipeId: Schema.optional(Schema.String),
   inferredRecipeId: Schema.optional(Schema.String),
+  tokenTotal: Schema.optional(Schema.Number),
+  toolCalls: Schema.optional(Schema.Number),
+  tokenMetricSource: Schema.optional(Schema.String),
   storeEmission: TendOpenCodeStoreEmissionSchema,
   rawOutputStored: Schema.Literal(false),
 })
@@ -140,6 +151,7 @@ export const TendOpenCodeSessionSummarySchema = Schema.Struct({
   workspaceRoot: Schema.String,
   eventCount: Schema.Number,
   toolCallCount: Schema.Number,
+  tokenTotal: Schema.Number,
   commandCount: Schema.Number,
   validationCount: Schema.Number,
   receiptCount: Schema.Number,

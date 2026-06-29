@@ -20,6 +20,13 @@ export const MeasurementObservationKindSchema = Schema.Literals([
   "measurement.harness.proof",
   "measurement.command.observed",
   "measurement.trace.inventory.summary",
+  "measurement.agent.metrics.summary",
+  "measurement.recipe-spine.coverage",
+  "measurement.edit-attempts.summary",
+  "measurement.legacy-substrate.audit",
+  "measurement.migration-readiness.summary",
+  "measurement.baseline.session.selected",
+  "measurement.baseline.session.summary",
   "measurement.micro-experiment.summary",
   "measurement.report.projected",
 ] as const)
@@ -38,6 +45,27 @@ export const MeasurementCountRecordSchema = Schema.Struct({
   count: Schema.Number,
 })
 export type MeasurementCountRecord = typeof MeasurementCountRecordSchema.Type
+
+export const MeasurementNumericSummarySchema = Schema.Struct({
+  count: Schema.Number,
+  total: Schema.Number,
+  min: Schema.optional(Schema.Number),
+  max: Schema.optional(Schema.Number),
+  average: Schema.optional(Schema.Number),
+  p50: Schema.optional(Schema.Number),
+  p95: Schema.optional(Schema.Number),
+})
+export type MeasurementNumericSummary =
+  typeof MeasurementNumericSummarySchema.Type
+
+export const MeasurementTimestampRangeSchema = Schema.Struct({
+  count: Schema.Number,
+  earliest: Schema.optional(Schema.String),
+  latest: Schema.optional(Schema.String),
+  spanMs: Schema.optional(Schema.Number),
+})
+export type MeasurementTimestampRange =
+  typeof MeasurementTimestampRangeSchema.Type
 
 export const MeasurementPrivacySummarySchema = Schema.Struct({
   rawPromptsStored: Schema.Literal(false),
@@ -124,10 +152,14 @@ export const MeasurementCommandObservationPayloadSchema = Schema.Struct({
   status: Schema.Literals(["succeeded", "failed"] as const),
   stdoutSummary: MeasurementCommandOutputSummarySchema,
   stderrSummary: MeasurementCommandOutputSummarySchema,
+  measurementPhase: Schema.optional(Schema.Literals(["baseline", "treatment"] as const)),
   knownNxTarget: Schema.optional(Schema.String),
   targetId: Schema.optional(Schema.String),
   recipeId: Schema.optional(Schema.String),
   inferredRecipeId: Schema.optional(Schema.String),
+  tokenTotal: Schema.optional(Schema.Number),
+  toolCalls: Schema.optional(Schema.Number),
+  tokenMetricSource: Schema.optional(Schema.String),
   rawOutputStored: Schema.Literal(false),
 })
 export type MeasurementCommandObservationPayload =
@@ -152,6 +184,54 @@ export const MeasurementSqliteSchemaSummarySchema = Schema.Struct({
 export type MeasurementSqliteSchemaSummary =
   typeof MeasurementSqliteSchemaSummarySchema.Type
 
+export const MeasurementHistoricalSessionSummarySchema = Schema.Struct({
+  sessionId: Schema.String,
+  score: Schema.Number,
+  scoreReasons: Schema.Array(Schema.String),
+  startedAt: Schema.optional(Schema.String),
+  completedAt: Schema.optional(Schema.String),
+  wallTimeMs: Schema.optional(Schema.Number),
+  commandEvents: Schema.Number,
+  uniqueCommandFamilies: Schema.Number,
+  repeatedCommandFamilies: Schema.Number,
+  repeatedCommandInvocations: Schema.Number,
+  exitCodeEvents: Schema.Number,
+  failedCommands: Schema.Number,
+  successfulCommands: Schema.Number,
+  commandSuccessRate: Schema.optional(Schema.Number),
+  expensiveChecks: Schema.Number,
+  workspacePolicyFastCount: Schema.Number,
+  timeToFirstUsefulDiagnosticMs: Schema.optional(Schema.Number),
+  durationMs: MeasurementNumericSummarySchema,
+  tokenTotal: Schema.Number,
+  toolCalls: Schema.Number,
+  modelIds: Schema.Array(MeasurementCountRecordSchema),
+  commandFamilies: Schema.Array(MeasurementCountRecordSchema),
+  exitCodes: Schema.Array(MeasurementCountRecordSchema),
+  matchedSignals: Schema.Array(Schema.String),
+  hasAttuneTrellisSignal: Schema.Boolean,
+  hasEnoughSamples: Schema.Boolean,
+  giantCatchallPenalty: Schema.Boolean,
+  privacy: MeasurementPrivacySummarySchema,
+})
+export type MeasurementHistoricalSessionSummary =
+  typeof MeasurementHistoricalSessionSummarySchema.Type
+
+export const MeasurementBaselineSessionSelectionPayloadSchema = Schema.Struct({
+  schemaVersion: Schema.optional(Schema.Literal(1)),
+  measurementSessionId: Schema.String,
+  selectedAt: Schema.String,
+  selectedSessionId: Schema.String,
+  score: Schema.Number,
+  scoreReasons: Schema.Array(Schema.String),
+  candidateCount: Schema.Number,
+  selectionMethod: Schema.String,
+  selectedSession: MeasurementHistoricalSessionSummarySchema,
+  privacy: MeasurementPrivacySummarySchema,
+})
+export type MeasurementBaselineSessionSelectionPayload =
+  typeof MeasurementBaselineSessionSelectionPayloadSchema.Type
+
 export const MeasurementTraceInventorySummaryPayloadSchema = Schema.Struct({
   schemaVersion: Schema.optional(Schema.Literal(1)),
   measurementSessionId: Schema.String,
@@ -164,9 +244,19 @@ export const MeasurementTraceInventorySummaryPayloadSchema = Schema.Struct({
   sqliteSchemaFilesInspected: Schema.Number,
   sqliteSchemaFilesSkipped: Schema.Number,
   sqliteSchemas: Schema.Array(MeasurementSqliteSchemaSummarySchema),
+  commandEventCount: Schema.optional(Schema.Number),
+  uniqueCommandFamilies: Schema.optional(Schema.Number),
+  repeatedCommandFamilyCount: Schema.optional(Schema.Number),
+  repeatedCommandInvocationCount: Schema.optional(Schema.Number),
+  exitCodeEventCount: Schema.optional(Schema.Number),
+  failedExitCodeCount: Schema.optional(Schema.Number),
+  timestampRange: Schema.optional(MeasurementTimestampRangeSchema),
+  durationMs: Schema.optional(MeasurementNumericSummarySchema),
   commandFamilies: Schema.Array(MeasurementCountRecordSchema),
   repeatedCommandPatterns: Schema.Array(MeasurementCountRecordSchema),
   exitCodes: Schema.Array(MeasurementCountRecordSchema),
+  comparableSessionCandidates: Schema.optional(Schema.Array(MeasurementHistoricalSessionSummarySchema)),
+  selectedBaselineSession: Schema.optional(MeasurementHistoricalSessionSummarySchema),
   toolCalls: Schema.Number,
   tokenTotal: Schema.Number,
   modelIds: Schema.Array(MeasurementCountRecordSchema),
@@ -175,6 +265,111 @@ export const MeasurementTraceInventorySummaryPayloadSchema = Schema.Struct({
 })
 export type MeasurementTraceInventorySummaryPayload =
   typeof MeasurementTraceInventorySummaryPayloadSchema.Type
+
+export const MeasurementAgentMetricsPhaseSchema = Schema.Literals([
+  "baseline",
+  "treatment",
+  "session",
+] as const)
+export type MeasurementAgentMetricsPhase =
+  typeof MeasurementAgentMetricsPhaseSchema.Type
+
+export const MeasurementAgentMetricsSummaryPayloadSchema = Schema.Struct({
+  schemaVersion: Schema.optional(Schema.Literal(1)),
+  measurementSessionId: Schema.String,
+  measurementPhase: MeasurementAgentMetricsPhaseSchema,
+  capturedAt: Schema.String,
+  source: Schema.String,
+  tokenTotal: Schema.Number,
+  toolCalls: Schema.Number,
+  sampleCount: Schema.Number,
+  traceFilesScanned: Schema.Number,
+  windowCount: Schema.Number,
+  startedAt: Schema.optional(Schema.String),
+  completedAt: Schema.optional(Schema.String),
+  tokenMetricSource: Schema.String,
+  privacy: MeasurementPrivacySummarySchema,
+})
+export type MeasurementAgentMetricsSummaryPayload =
+  typeof MeasurementAgentMetricsSummaryPayloadSchema.Type
+
+export const MeasurementRecipeSpineCoveragePayloadSchema = Schema.Struct({
+  schemaVersion: Schema.optional(Schema.Literal(1)),
+  measurementSessionId: Schema.String,
+  capturedAt: Schema.String,
+  recipeCount: Schema.Number,
+  edgeCount: Schema.Number,
+  ioCount: Schema.Number,
+  runCount: Schema.Number,
+  receiptCount: Schema.Number,
+  observationCount: Schema.Number,
+  diagnosticCount: Schema.Number,
+  repairCount: Schema.Number,
+  healthCount: Schema.Number,
+  frameworkSchemasPreserved: Schema.Boolean,
+  observationStore: Schema.Literal("framework_event.recipe_observation"),
+  privacy: MeasurementPrivacySummarySchema,
+})
+export type MeasurementRecipeSpineCoveragePayload =
+  typeof MeasurementRecipeSpineCoveragePayloadSchema.Type
+
+export const MeasurementEditAttemptSummaryPayloadSchema = Schema.Struct({
+  schemaVersion: Schema.optional(Schema.Literal(1)),
+  measurementSessionId: Schema.String,
+  capturedAt: Schema.String,
+  dirtyPathCount: Schema.Number,
+  sourceEditCount: Schema.Number,
+  reportExportEditCount: Schema.Number,
+  generatedPrivateLedgerEditAttempts: Schema.Number,
+  generatedPrivateLedgerPathClasses: Schema.Array(Schema.String),
+  privacy: MeasurementPrivacySummarySchema,
+})
+export type MeasurementEditAttemptSummaryPayload =
+  typeof MeasurementEditAttemptSummaryPayloadSchema.Type
+
+export const MeasurementLegacySubstrateAuditPayloadSchema = Schema.Struct({
+  schemaVersion: Schema.optional(Schema.Literal(1)),
+  measurementSessionId: Schema.String,
+  capturedAt: Schema.String,
+  scannedPathCount: Schema.Number,
+  historicalReferenceCount: Schema.Number,
+  enforcementReferenceCount: Schema.Number,
+  testFixtureReferenceCount: Schema.Number,
+  measurementInventoryReferenceCount: Schema.Number,
+  blockingLiveReferenceCount: Schema.Number,
+  privacy: MeasurementPrivacySummarySchema,
+})
+export type MeasurementLegacySubstrateAuditPayload =
+  typeof MeasurementLegacySubstrateAuditPayloadSchema.Type
+
+export const MeasurementMigrationReadinessGateStatusSchema = Schema.Literals([
+  "pass",
+  "blocked",
+  "not-measured",
+  "warning",
+] as const)
+export type MeasurementMigrationReadinessGateStatus =
+  typeof MeasurementMigrationReadinessGateStatusSchema.Type
+
+export const MeasurementMigrationReadinessGateSchema = Schema.Struct({
+  gate: Schema.String,
+  status: MeasurementMigrationReadinessGateStatusSchema,
+  evidence: Schema.String,
+  followUp: Schema.optional(Schema.String),
+})
+export type MeasurementMigrationReadinessGate =
+  typeof MeasurementMigrationReadinessGateSchema.Type
+
+export const MeasurementMigrationReadinessSummaryPayloadSchema = Schema.Struct({
+  schemaVersion: Schema.optional(Schema.Literal(1)),
+  measurementSessionId: Schema.String,
+  summarizedAt: Schema.String,
+  proceedToRecipeOnlyMigration: Schema.Literal(false),
+  gates: Schema.Array(MeasurementMigrationReadinessGateSchema),
+  privacy: MeasurementPrivacySummarySchema,
+})
+export type MeasurementMigrationReadinessSummaryPayload =
+  typeof MeasurementMigrationReadinessSummaryPayloadSchema.Type
 
 export const MeasurementExperimentRunMetricsSchema = Schema.Struct({
   mode: Schema.Literals(["baseline", "treatment"] as const),
@@ -191,6 +386,45 @@ export const MeasurementExperimentRunMetricsSchema = Schema.Struct({
   rawContextBytes: Schema.optional(Schema.Number),
   tokenTotal: Schema.optional(Schema.Number),
   toolCalls: Schema.optional(Schema.Number),
+  tokenMetricSource: Schema.optional(Schema.String),
+  agentMetricSampleCount: Schema.optional(Schema.Number),
+  agentMetricTraceFilesScanned: Schema.optional(Schema.Number),
+  agentMetricWindowCount: Schema.optional(Schema.Number),
+  successfulCommands: Schema.optional(Schema.Number),
+  knownExitCodeCommands: Schema.optional(Schema.Number),
+  commandSuccessRate: Schema.optional(Schema.Number),
+  commandFailureRate: Schema.optional(Schema.Number),
+  durationSampleCount: Schema.optional(Schema.Number),
+  durationTotalMs: Schema.optional(Schema.Number),
+  durationAverageMs: Schema.optional(Schema.Number),
+  durationMinMs: Schema.optional(Schema.Number),
+  durationMaxMs: Schema.optional(Schema.Number),
+  durationP50Ms: Schema.optional(Schema.Number),
+  durationP95Ms: Schema.optional(Schema.Number),
+  cheapCommands: Schema.optional(Schema.Number),
+  mediumCommands: Schema.optional(Schema.Number),
+  finalGateCommands: Schema.optional(Schema.Number),
+  workspaceWideCommands: Schema.optional(Schema.Number),
+  unknownTargetCommands: Schema.optional(Schema.Number),
+  unknownRecipeCommands: Schema.optional(Schema.Number),
+  storeEmittedCommands: Schema.optional(Schema.Number),
+  uniqueTargets: Schema.optional(Schema.Number),
+  uniqueRecipes: Schema.optional(Schema.Number),
+  trellisDiagnosticObservations: Schema.optional(Schema.Number),
+  observationInputCount: Schema.optional(Schema.Number),
+  traceFiles: Schema.optional(Schema.Number),
+  jsonlFiles: Schema.optional(Schema.Number),
+  sqliteFiles: Schema.optional(Schema.Number),
+  sqliteSchemaTables: Schema.optional(Schema.Number),
+  uniqueModels: Schema.optional(Schema.Number),
+  uniqueSessions: Schema.optional(Schema.Number),
+  uniqueCommandFamilies: Schema.optional(Schema.Number),
+  repeatedCommandFamilies: Schema.optional(Schema.Number),
+  topCommandFamily: Schema.optional(Schema.String),
+  topExitCode: Schema.optional(Schema.String),
+  firstObservedAt: Schema.optional(Schema.String),
+  lastObservedAt: Schema.optional(Schema.String),
+  observedCommandSpanMs: Schema.optional(Schema.Number),
   findingQuality: Schema.optional(Schema.String),
 })
 export type MeasurementExperimentRunMetrics =
@@ -211,6 +445,8 @@ export const MeasurementMicroExperimentSummaryPayloadSchema = Schema.Struct({
   summarizedAt: Schema.String,
   task: Schema.String,
   baseline: Schema.optional(MeasurementExperimentRunMetricsSchema),
+  selectedBaselineSession: Schema.optional(MeasurementHistoricalSessionSummarySchema),
+  selectedBaseline: Schema.optional(MeasurementExperimentRunMetricsSchema),
   treatment: Schema.optional(MeasurementExperimentRunMetricsSchema),
   comparison: Schema.optional(Schema.Struct({
     shellCommandDelta: Schema.optional(Schema.Number),
@@ -219,6 +455,31 @@ export const MeasurementMicroExperimentSummaryPayloadSchema = Schema.Struct({
     expensiveCheckDelta: Schema.optional(Schema.Number),
     timeToUsefulDiagnosticDeltaMs: Schema.optional(Schema.Number),
     rawContextByteDelta: Schema.optional(Schema.Number),
+    wallTimeDeltaMs: Schema.optional(Schema.Number),
+    successfulCommandDelta: Schema.optional(Schema.Number),
+    commandSuccessRateDelta: Schema.optional(Schema.Number),
+    durationAverageDeltaMs: Schema.optional(Schema.Number),
+    tokenDelta: Schema.optional(Schema.Number),
+    toolCallDelta: Schema.optional(Schema.Number),
+    uniqueTargetDelta: Schema.optional(Schema.Number),
+    uniqueRecipeDelta: Schema.optional(Schema.Number),
+    findingQualitySummary: Schema.optional(Schema.String),
+  })),
+  selectedBaselineComparison: Schema.optional(Schema.Struct({
+    shellCommandDelta: Schema.optional(Schema.Number),
+    repeatedCommandDelta: Schema.optional(Schema.Number),
+    failedCommandDelta: Schema.optional(Schema.Number),
+    expensiveCheckDelta: Schema.optional(Schema.Number),
+    timeToUsefulDiagnosticDeltaMs: Schema.optional(Schema.Number),
+    rawContextByteDelta: Schema.optional(Schema.Number),
+    wallTimeDeltaMs: Schema.optional(Schema.Number),
+    successfulCommandDelta: Schema.optional(Schema.Number),
+    commandSuccessRateDelta: Schema.optional(Schema.Number),
+    durationAverageDeltaMs: Schema.optional(Schema.Number),
+    tokenDelta: Schema.optional(Schema.Number),
+    toolCallDelta: Schema.optional(Schema.Number),
+    uniqueTargetDelta: Schema.optional(Schema.Number),
+    uniqueRecipeDelta: Schema.optional(Schema.Number),
     findingQualitySummary: Schema.optional(Schema.String),
   })),
   findingQualityMatrix: Schema.optional(Schema.Array(MeasurementFindingQualityRowSchema)),

@@ -124,6 +124,8 @@ measurement.session.completed
 measurement.harness.proof
 measurement.command.observed
 measurement.trace.inventory.summary
+measurement.baseline.session.selected
+measurement.baseline.session.summary
 measurement.micro-experiment.summary
 measurement.report.projected
 ```
@@ -167,6 +169,39 @@ prompts, full conversations, secrets, raw trace dumps, raw trace rows, full
 session dumps, or ambiguous text payloads. The system should redact or reject
 before inserting into the framework store, rather than treating report export
 as the first privacy boundary.
+
+### Comparable Baseline Session Narrows The Benchmark
+
+The historical aggregate baseline remains useful background pressure, but it is
+not a fair one-to-one comparator for the DB-backed treatment run. The trace
+inventory therefore groups safe historical metadata by session identity. Raw
+session IDs are never stored directly unless already non-sensitive and short;
+otherwise they are represented as deterministic hashes.
+
+Each candidate session summary stores only safe session ID, timestamp range,
+command-family counts, duration summary, exit-code counts, model IDs, token and
+tool-call counts when available, derived repeated-command and expensive-check
+counts, and safe score reasons. It does not store prompts, messages,
+conversations, raw trace rows, raw session dumps, secrets, full command output,
+or ambiguous text payloads.
+
+Candidate sessions are scored for comparability with the treatment run. The
+score favors Attune/Trellis LS related command families, especially
+`framework-language-service`, `trellis-ls`, `recipe-substrate`,
+`tend-opencode`, and adjacent recipe-migration signals. It favors sessions with
+enough command, duration, and exit-code samples to compare safely, and it
+penalizes giant multi-day catchall sessions. The selected candidate is emitted
+as `measurement.baseline.session.selected` plus a
+`measurement.baseline.session.summary` observation.
+
+Final report projection compares the treatment run against both the aggregate
+historical baseline and the selected comparable session. The selected-session
+comparison includes wall time, command count, repeated commands, failures,
+expensive checks, duration p50/p95/max, token/tool counts when available,
+success rate, and time to first useful diagnostic when inferable. If the
+selected session is weak, if Trellis LS target/recipe identity remains unknown,
+or if token/tool metrics remain unavailable, the recommendation keeps the heavy
+recipe-only migration paused and asks for a tighter repeat.
 
 ### SQL Route Validates Measurement Queries
 
@@ -226,7 +261,9 @@ but they are not durable measurement truth and do not replace root `AGENTS.md`.
    insert/query/report paths.
 8. Generate reports from DB observations and record report projection
    observations.
-9. Validate with focused framework-runtime, framework-protocol, Tend, Trellis
+9. Select a comparable historical baseline session and emit DB-backed selected
+   baseline observations.
+10. Validate with focused framework-runtime, framework-protocol, Tend, Trellis
    LS, recipe-substrate, and OpenSpec checks. Do not run `workspace:policy-fast`
    as an end-of-change validation for this spec update.
 

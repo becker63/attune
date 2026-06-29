@@ -27,6 +27,10 @@ private traces, raw trace rows, full command output, or full conversation text.
 - **THEN** they use bounded summaries, aggregate counts, command names,
   durations, exit codes, timestamps, safe token/tool metrics, high-level
   findings, observation IDs, and store emission statuses
+- **AND** they may include derived safe metrics such as command success rate,
+  duration percentiles, observation timeline span, DB emission coverage,
+  target/recipe coverage, diagnostic latency, trace inventory totals, and
+  evidence-gap counts
 - **AND** they do not include raw prompts, full conversations, secrets, raw
   session dumps, raw trace rows, raw private trace dumps, or full command
   transcripts
@@ -52,6 +56,11 @@ the heavy recipe-only LS-guided migration using DB-backed measurement evidence.
   in command discipline or context usage
 - **AND** it answers whether the repository is ready to attempt the heavy
   recipe-only LS-guided migration
+- **AND** it includes migration-readiness gates for selected baseline
+  corroboration, phase token/tool metrics, treatment target/recipe identity,
+  framework lifecycle coverage, recipe-spine coverage, repair/diff acceptance,
+  generated/private ledger edit attempts, legacy-substrate drift,
+  reproducibility, and finding quality
 
 #### Scenario: Remaining gaps are explicit
 - **WHEN** any required evidence is missing, inconclusive, or unsafe to collect

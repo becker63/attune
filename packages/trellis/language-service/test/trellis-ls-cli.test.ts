@@ -828,10 +828,11 @@ describe("trellis-ls CLI core", () => {
     expect(kinds).toEqual(expect.arrayContaining([
       "trellis-language-service.diagnostic-run-summary",
       "trellis-language-service.fix-list-summary",
+      "trellis-language-service.apply-diff-summary",
       "trellis-language-service.upstream-quickfix-application",
       "trellis-language-service.check-summary",
     ]))
-    expect(kinds.filter((kind) => kind === "trellis-language-service.apply-diff-summary")).toHaveLength(0)
+    expect(kinds.filter((kind) => kind === "trellis-language-service.apply-diff-summary")).toHaveLength(1)
   })
 
   it("normalizes protocol repair actions and recipe repairs into Trellis fixes", () => {

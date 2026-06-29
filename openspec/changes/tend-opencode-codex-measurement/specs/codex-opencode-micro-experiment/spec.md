@@ -37,6 +37,10 @@ and treatment metrics as generic measurement observations.
   commands, failed commands, expensive checks, wall time, token/context metrics
   when available, and quality of findings as observations or export-only
   projections
+- **AND** when baseline commands are collected through Tend/OpenCode command
+  observation, they are marked with measurement phase `baseline` so one
+  controlled baseline session can be compared against treatment in the same
+  framework store projection
 
 #### Scenario: Treatment mode begins with DB-backed proof chain
 - **WHEN** the treatment mode runs
@@ -57,6 +61,8 @@ and treatment metrics as generic measurement observations.
   check ladder before broad manual file inspection
 - **AND** it records every expensive validation command through Tend command
   observation and the shared framework observation sink
+- **AND** treatment commands are unphased or marked with measurement phase
+  `treatment`, and baseline-phase commands do not count as treatment metrics
 
 ### Requirement: Micro-experiment comparison is evidence-based
 The system SHALL compare baseline and treatment results using command,
@@ -69,6 +75,21 @@ framework store.
   failed commands, expensive checks, `workspace:policy-fast` count when
   measured, time to useful diagnostic, token/context metrics when available,
   quality of migration next-step plan, and whether raw context use decreased
+- **AND** it includes wall-clock span, successful command count, success/failure
+  rates, duration sample count, total/average/min/p50/p95/max duration,
+  store-emitted command count, unknown target/recipe counts, unique target and
+  recipe counts, trace/jsonl/sqlite file counts, unique model/session counts,
+  repeated command-family counts, and top safe command/exit-code metadata when
+  available
+- **AND** when controlled baseline command observations are present, the
+  primary baseline comparison uses that single baseline phase rather than the
+  full historical inventory aggregate
+- **AND** the comparison includes safe aggregate token/tool metrics from
+  parseable JSON command output or stored generic agent metrics when available
+- **AND** generic agent metrics may be stored as phase-level
+  `measurement.agent.metrics.summary` observations derived only from
+  sanitized trace-window aggregates, never raw trace rows, prompts,
+  conversations, or full command output
 - **AND** the comparison report is generated from stored observations rather
   than cache files as durable truth
 
@@ -91,3 +112,21 @@ framework store.
 - **THEN** the final report recommends additional measurement or harness work
   instead of starting the heavy recipe-only migration
 - **AND** it lists the evidence gaps that blocked the recommendation
+
+### Requirement: Heavy migration readiness is explicitly gated
+The system SHALL project a typed migration-readiness summary before any
+recommendation about the heavy recipe-only LS-guided migration.
+
+#### Scenario: Readiness gates block unsafe migration starts
+- **WHEN** final measurement reports are generated
+- **THEN** the projection includes a
+  `measurement.migration-readiness.summary` observation
+- **AND** the summary keeps `proceedToRecipeOnlyMigration` false unless all
+  required gates pass and a human explicitly approves the migration
+- **AND** gates include selected historical baseline corroboration, controlled
+  baseline presence, phase token/tool metrics, treatment target/recipe
+  identity, framework local-store lifecycle coverage, recipe-spine emission
+  coverage, repair/diff acceptance, generated/private ledger edit attempts,
+  legacy-substrate drift, reproducibility, and finding-quality coverage
+- **AND** blocked or not-measured gates appear in the final remaining-gaps
+  table with the smallest follow-up needed

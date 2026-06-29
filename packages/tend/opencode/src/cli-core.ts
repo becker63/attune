@@ -30,6 +30,7 @@ import type {
   TendOpenCodeDoctorOutput,
   TendOpenCodeHarnessTestOutput,
   TendOpenCodeJsonFormat,
+  TendOpenCodeMeasurementPhase,
   TendOpenCodeOutputFormat,
   TendOpenCodeSessionSummary,
 } from "./contracts.js"
@@ -213,6 +214,7 @@ export interface ObserveCommandOptions {
   readonly cwd?: string
   readonly startedAt?: string
   readonly measurementSessionId?: string
+  readonly measurementPhase?: TendOpenCodeMeasurementPhase
 }
 
 export const defaultTendOpenCodeCapabilities = (): TendOpenCodeCapabilities => ({
@@ -424,6 +426,10 @@ export const summarizeOpenCodeSessionFile = (
     workspaceRoot: decoded.session.workspaceRoot,
     eventCount: decoded.events.length,
     toolCallCount: decoded.toolCalls.length,
+    tokenTotal: decoded.events.reduce((sum, event) => {
+      const payload = event.payload as { readonly tokens?: { readonly totalTokens?: unknown } }
+      return sum + (typeof payload.tokens?.totalTokens === "number" ? payload.tokens.totalTokens : 0)
+    }, 0),
     commandCount: decoded.commands.length,
     validationCount: decoded.validations.length,
     receiptCount: decoded.receipts.length,
@@ -442,6 +448,7 @@ export const renderSessionSummaryMarkdown = (
   `Workspace: ${summary.workspaceRoot}`,
   `Events: ${summary.eventCount}`,
   `Tool calls: ${summary.toolCallCount}`,
+  `Token total: ${summary.tokenTotal}`,
   `Commands: ${summary.commandCount}`,
   `Validations: ${summary.validationCount}`,
   `Receipts: ${summary.receiptCount}`,
@@ -487,6 +494,9 @@ export const observeCommand = (
     stderr,
     ...(options.measurementSessionId === undefined ? {} : {
       measurementSessionId: options.measurementSessionId,
+    }),
+    ...(options.measurementPhase === undefined ? {} : {
+      measurementPhase: options.measurementPhase,
     }),
   })
 }
@@ -563,16 +573,23 @@ export const commandObservationFromResult = (input: {
   readonly stdout: string
   readonly stderr: string
   readonly measurementSessionId?: string
+  readonly measurementPhase?: TendOpenCodeMeasurementPhase
 }): TendOpenCodeCommandObservationOutput => {
   const sanitizedCommand = sanitizeCommandArgv(input.command)
   const commandLine = shellJoin(sanitizedCommand)
   const knownNxTarget = inferNxTarget(input.command)
-  const targetId = knownNxTarget
-  const inferredRecipeId = inferRecipeId(knownNxTarget)
+  const targetId = knownNxTarget ?? inferTrellisLsTarget(input.command) ?? inferTendOpenCodeTarget(input.command)
+  const inferredRecipeId = inferRecipeId(targetId)
   const measurementSessionId = input.measurementSessionId ?? defaultMeasurementSessionId(input.cwd)
+  const measurementPhase = input.measurementPhase ?? measurementPhaseFromEnv()
+  const commandMetrics = extractSafeCommandOutputMetrics(input.stdout, input.stderr)
   const observationId = recipeObservationId(
     commandObservationRecipeId,
-    `measurement.command.observed:${measurementSessionId}:${stableHash([commandLine, input.cwd])}`,
+    `measurement.command.observed:${measurementSessionId}:${stableHash([
+      commandLine,
+      input.cwd,
+      measurementPhase ?? "unphased",
+    ])}`,
     input.startedAt,
   )
 
@@ -592,10 +609,16 @@ export const commandObservationFromResult = (input: {
     status: input.exitCode === 0 ? "succeeded" : "failed",
     stdoutSummary: summarizeCommandOutput(input.stdout),
     stderrSummary: summarizeCommandOutput(input.stderr),
+    ...(measurementPhase === undefined ? {} : { measurementPhase }),
     ...(knownNxTarget === undefined ? {} : { knownNxTarget }),
     ...(targetId === undefined ? {} : { targetId }),
     recipeId: commandObservationRecipeId,
     ...(inferredRecipeId === undefined ? {} : { inferredRecipeId }),
+    ...(commandMetrics.tokenTotal === undefined ? {} : { tokenTotal: commandMetrics.tokenTotal }),
+    ...(commandMetrics.toolCalls === undefined ? {} : { toolCalls: commandMetrics.toolCalls }),
+    ...(commandMetrics.tokenMetricSource === undefined ? {} : {
+      tokenMetricSource: commandMetrics.tokenMetricSource,
+    }),
     storeEmission: {
       status: "not-attempted",
       mode: measurementStoreConfigFromEnv().mode,
@@ -790,6 +813,14 @@ export const assertOutputFormat = (format: string | undefined): TendOpenCodeOutp
   throw new Error(`Invalid --format: ${value}`)
 }
 
+export const assertMeasurementPhase = (
+  value: string | undefined,
+): TendOpenCodeMeasurementPhase | undefined => {
+  if (value === undefined) return undefined
+  if (value === "baseline" || value === "treatment") return value
+  throw new Error(`Invalid --phase: ${value}`)
+}
+
 const runTrellisHelpCheck = (): TendOpenCodeDoctorCheck =>
   runDoctorCommand("trellis-ls-help", [...trellisCommand(), "--help"])
 
@@ -926,7 +957,7 @@ const runActualOpenCodePluginProbe = (options: {
     }
   }
 
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "attune-opencode-plugins-"))
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "tend-opencode-plugins-"))
   const home = path.join(tempRoot, "home")
   const xdgConfig = path.join(home, ".config")
   const opencodeConfig = path.join(xdgConfig, "opencode")
@@ -1707,10 +1738,14 @@ const commandObservationPayload = (
   status: observed.status,
   stdoutSummary: observed.stdoutSummary,
   stderrSummary: observed.stderrSummary,
+  ...(observed.measurementPhase === undefined ? {} : { measurementPhase: observed.measurementPhase }),
   ...(observed.knownNxTarget === undefined ? {} : { knownNxTarget: observed.knownNxTarget }),
   ...(observed.targetId === undefined ? {} : { targetId: observed.targetId }),
   ...(observed.recipeId === undefined ? {} : { recipeId: observed.recipeId }),
   ...(observed.inferredRecipeId === undefined ? {} : { inferredRecipeId: observed.inferredRecipeId }),
+  ...(observed.tokenTotal === undefined ? {} : { tokenTotal: observed.tokenTotal }),
+  ...(observed.toolCalls === undefined ? {} : { toolCalls: observed.toolCalls }),
+  ...(observed.tokenMetricSource === undefined ? {} : { tokenMetricSource: observed.tokenMetricSource }),
   rawOutputStored: false,
 })
 
@@ -1817,18 +1852,192 @@ const inferNxTarget = (argv: readonly string[]): string | undefined => {
   return undefined
 }
 
+const inferTrellisLsTarget = (argv: readonly string[]): string | undefined => {
+  const trellisIndex = argv.findIndex((arg) => path.basename(arg) === "trellis-ls")
+  if (trellisIndex < 0) return undefined
+  const command = argv[trellisIndex + 1]
+  if (command === "diagnostics") return "trellis-ls:diagnostics"
+  if (command === "fixes") return "trellis-ls:fixes"
+  if (command === "apply" || command === "apply-codefix") return "trellis-ls:apply"
+  if (command === "check") return "trellis-ls:check"
+  return undefined
+}
+
+const inferTendOpenCodeTarget = (argv: readonly string[]): string | undefined => {
+  const binaryIndex = argv.findIndex((arg) => {
+    const base = path.basename(arg)
+    return base === "tend-opencode"
+      || base === "tend-opencode-tools"
+      || arg === ".#tend-opencode"
+      || arg === ".#tend-opencode-tools"
+  })
+  if (binaryIndex < 0) return undefined
+  const separatorIndex = argv.findIndex((arg, index) => index > binaryIndex && arg === "--")
+  const command = argv[separatorIndex >= 0 ? separatorIndex + 1 : binaryIndex + 1]
+  if (
+    command === "fingerprint"
+    || command === "doctor"
+    || command === "run-harness-test"
+    || command === "observe"
+    || command === "measurement-report"
+    || command === "decode"
+    || command === "summarize"
+  ) {
+    return `tend-opencode:${command}`
+  }
+  return undefined
+}
+
 const inferRecipeId = (target: string | undefined): string | undefined => {
   if (target === undefined) return undefined
+  if (
+    target === "tend-opencode:observe"
+    || target === "tend-opencode:measurement-report"
+    || target === "tend-opencode:fingerprint"
+    || target === "tend-opencode:doctor"
+    || target === "tend-opencode:run-harness-test"
+  ) {
+    return "tend-opencode.command-observation"
+  }
+  if (target === "tend-opencode:decode" || target === "tend-opencode:summarize") {
+    return "tend-opencode.decode-session"
+  }
   if (target.startsWith("tend-opencode:")) return "tend-opencode.decode-session"
   if (target.startsWith("tend-core:")) return "tend-core.event-envelope"
   if (target.startsWith("tend-token-audit:")) return "tend-token-audit.metrics"
+  if (target === "framework-language-service:repair") return "trellis-language-service.repair-plan"
   if (target.startsWith("framework-language-service:")) {
     return "trellis-language-service.check-summary-projection"
   }
+  if (target === "trellis-ls:diagnostics") return "trellis-language-service.diagnostics-json-projection"
+  if (target === "trellis-ls:fixes") return "trellis-language-service.fixes-json-projection"
+  if (target === "trellis-ls:apply") return "trellis-language-service.apply-result-json-projection"
+  if (target === "trellis-ls:check") return "trellis-language-service.check-summary-projection"
   if (target.startsWith("framework-runtime:db:")) return "framework-runtime.local-timescaledb"
+  if (target === "workspace:db") return "framework-runtime.local-timescaledb"
   if (target === "workspace:recipe-substrate-check") return "workspace.recipe-substrate-check"
   if (target === "workspace:policy-fast") return "workspace.policy-fast"
   return undefined
+}
+
+const measurementPhaseFromEnv = (): TendOpenCodeMeasurementPhase | undefined =>
+  process.env.ATTUNE_MEASUREMENT_PHASE === "baseline"
+  || process.env.ATTUNE_MEASUREMENT_PHASE === "treatment"
+    ? process.env.ATTUNE_MEASUREMENT_PHASE
+    : undefined
+
+const extractSafeCommandOutputMetrics = (
+  stdout: string,
+  stderr: string,
+): {
+  readonly tokenTotal?: number
+  readonly toolCalls?: number
+  readonly tokenMetricSource?: string
+} => {
+  const outputs = [
+    ["stdout-json", stdout] as const,
+    ["stderr-json", stderr] as const,
+  ]
+  let tokenTotal = 0
+  let hasTokenTotal = false
+  let toolCalls = 0
+  let hasToolCalls = false
+  const sources: string[] = []
+
+  for (const [source, output] of outputs) {
+    const value = parseWholeJson(output)
+    if (value === undefined) continue
+    const metrics = safeMetricsFromJsonValue(value)
+    if (metrics.tokenTotal !== undefined) {
+      tokenTotal += metrics.tokenTotal
+      hasTokenTotal = true
+    }
+    if (metrics.toolCalls !== undefined) {
+      toolCalls += metrics.toolCalls
+      hasToolCalls = true
+    }
+    if (metrics.tokenTotal !== undefined || metrics.toolCalls !== undefined) {
+      sources.push(source)
+    }
+  }
+
+  return {
+    ...(hasTokenTotal ? { tokenTotal } : {}),
+    ...(hasToolCalls ? { toolCalls } : {}),
+    ...(sources.length === 0 ? {} : { tokenMetricSource: sources.join("+") }),
+  }
+}
+
+const parseWholeJson = (output: string): unknown | undefined => {
+  const trimmed = output.trim()
+  if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) return undefined
+  try {
+    return JSON.parse(trimmed) as unknown
+  } catch {
+    return undefined
+  }
+}
+
+const safeMetricsFromJsonValue = (
+  value: unknown,
+): {
+  readonly tokenTotal?: number
+  readonly toolCalls?: number
+} => {
+  let tokenTotal = 0
+  let hasTokenTotal = false
+  let inputOutputTokenTotal = 0
+  let hasInputOutputTokenTotal = false
+  let toolCalls = 0
+  let hasToolCalls = false
+
+  const visit = (node: unknown, key = ""): void => {
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item, key)
+      return
+    }
+    if (node === null || typeof node !== "object") {
+      if (typeof node === "string" && key === "type" && (
+        node === "function_call"
+        || node === "custom_tool_call"
+        || node === "web_search_call"
+        || node === "tool_search_call"
+        || node === "view_image_tool_call"
+      )) {
+        toolCalls += 1
+        hasToolCalls = true
+        return
+      }
+      if (typeof node === "number" && Number.isFinite(node) && node >= 0) {
+        if (/^(?:tokenTotal|totalTokens|total_tokens|tokenCount|token_count|tokens|tokensUsed|tokens_used)$/u.test(key)) {
+          tokenTotal += node
+          hasTokenTotal = true
+          return
+        }
+        if (/^(?:inputTokens|outputTokens|promptTokens|completionTokens|input_tokens|output_tokens|prompt_tokens|completion_tokens)$/u.test(key)) {
+          inputOutputTokenTotal += node
+          hasInputOutputTokenTotal = true
+          return
+        }
+        if (/^(?:toolCalls|toolCallCount|tool_call_count)$/u.test(key)) {
+          toolCalls += node
+          hasToolCalls = true
+        }
+      }
+      return
+    }
+    for (const [childKey, childValue] of Object.entries(node)) {
+      visit(childValue, childKey)
+    }
+  }
+
+  visit(value)
+  return {
+    ...(hasTokenTotal || hasInputOutputTokenTotal
+      ? { tokenTotal: hasTokenTotal ? tokenTotal : inputOutputTokenTotal }
+      : {}),
+    ...(hasToolCalls ? { toolCalls } : {}),
+  }
 }
 
 const secretNamePattern = /(?:api[_-]?key|token|secret|password|passwd|auth|credential|cookie|bearer)/iu

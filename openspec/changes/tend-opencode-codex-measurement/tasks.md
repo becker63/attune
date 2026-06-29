@@ -128,3 +128,46 @@
 - [x] 12.10 Run `openspec validate tend-opencode-codex-measurement --strict`.
 - [x] 12.11 If live DB validation is available, run the guarded integration path and record it; otherwise report the exact command skipped and residual risk.
 - [x] 12.12 Do not run `workspace:policy-fast` as an end-of-change validation for this change unless a later human instruction explicitly requests it.
+
+## 13. Metrics Enrichment Follow-Up
+
+- [x] 13.1 Add sanitized trace inventory totals for command events, unique command families, repeated command families, repeated command invocations, exit-code observations, failed exit-code observations, timestamp span, and duration summary.
+- [x] 13.2 Add treatment command metrics for successful commands, success/failure rates, duration total/average/min/p50/p95/max, store-emission coverage, unknown target/recipe counts, unique target/recipe counts, and observation span.
+- [x] 13.3 Add diagnostic latency, observation matrix, trace/model/session counts, token/tool totals, and evidence-gap counts to generated reports.
+- [x] 13.4 Extend runtime measurement payload schemas and Tend/OpenCode tests for enriched safe metrics.
+- [x] 13.5 Regenerate root report projections from DB-backed observations after the enrichment change.
+- [x] 13.6 Rerun focused tests without running `workspace:policy-fast`.
+
+## 14. Comparable Baseline Session Selection
+
+- [x] 14.1 Add an OpenSpec delta for comparable historical baseline session selection and single-session treatment comparison.
+- [x] 14.2 Group safe historical trace metadata by hashed/non-sensitive session ID without storing raw prompts, raw conversations, raw trace rows, raw session dumps, secrets, or full command output.
+- [x] 14.3 Score historical sessions for Attune/Trellis LS comparability using safe command-family signals, sample sufficiency, duration/window shape, and giant-catchall penalties.
+- [x] 14.4 Emit `measurement.baseline.session.selected` and `measurement.baseline.session.summary` observations through the framework observation sink by default.
+- [x] 14.5 Compare treatment metrics against the selected baseline session in generated markdown/JSON reports.
+- [x] 14.6 Add runtime schemas and Tend/OpenCode tests for selected baseline session payloads and reports.
+- [x] 14.7 Regenerate root report projections from DB-backed observations.
+- [x] 14.8 Rerun focused validation without running `workspace:policy-fast`.
+
+## 15. Controlled Baseline And Scenario Isolation
+
+- [x] 15.1 Add measurement phase metadata so a single session can contain controlled baseline and treatment command observations.
+- [x] 15.2 Keep `knownNxTarget` Nx-only and add generic target identity for direct producer commands such as `trellis-ls diagnostics` and `trellis-ls fixes`.
+- [x] 15.3 Map Trellis LS direct command identities to existing `trellis-language-service.*-json-projection` recipe IDs.
+- [x] 15.4 Promote only safe aggregate token/tool metrics from parseable JSON command output and current Codex trace shapes.
+- [x] 15.5 Treat controlled baseline phase observations as the primary microbenchmark baseline when present.
+- [x] 15.6 Extend runtime schemas and Tend/OpenCode tests for measurement phase, generic target ID, and safe token/tool aggregates.
+- [x] 15.7 Run DB-backed controlled baseline/treatment scenarios and regenerate reports.
+- [x] 15.8 Rerun focused validation without running `workspace:policy-fast`.
+
+## 16. Heavy Migration Readiness Gates
+
+- [x] 16.1 Add phase-level generic agent metrics observations for sanitized token/tool aggregates derived from trace windows.
+- [x] 16.2 Add a typed migration-readiness summary observation with pass/blocked/not-measured gates.
+- [x] 16.3 Keep the heavy recipe-only migration blocked when the selected historical baseline lacks Attune/Trellis signal.
+- [x] 16.4 Keep the migration blocked when controlled baseline or treatment token/tool metrics are absent.
+- [x] 16.5 Keep the migration blocked when treatment command target/recipe identity is incomplete.
+- [x] 16.6 Add readiness gates for framework lifecycle coverage, recipe-spine emission coverage, repair/diff acceptance, generated/private ledger edit attempts, legacy substrate drift, reproducibility, and finding-quality coverage.
+- [x] 16.7 Extend identity inference for Trellis LS apply/check, framework-language-service repair, Tend report generation, and workspace DB commands.
+- [x] 16.8 Regenerate DB-backed scenarios and reports with the readiness gates.
+- [x] 16.9 Rerun focused validation without running `workspace:policy-fast`.

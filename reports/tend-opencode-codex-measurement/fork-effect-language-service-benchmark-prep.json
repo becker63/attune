@@ -1,0 +1,323 @@
+{
+  "generatedAt": "2026-06-28T21:39:37-04:00",
+  "updatedAt": "2026-06-29T00:00:00-04:00",
+  "source": {
+    "codexActivityWindowDays": 14,
+    "codexActivityWindowEndedAt": "2026-06-28T21:39:37-04:00",
+    "rolloutTelemetrySource": "~/.codex/sessions/**/*.jsonl",
+    "codexThreadStateSource": "~/.codex/state_5.sqlite",
+    "privacy": {
+      "rawPromptsStored": false,
+      "rawConversationStored": false,
+      "rawTraceRowsStored": false,
+      "fullToolOutputStored": false,
+      "commandArgumentsStored": false
+    }
+  },
+  "target": {
+    "changeId": "fork-effect-language-service-for-trellis-cli",
+    "tasks": 92,
+    "specs": 8,
+    "requirements": 55,
+    "scenarios": 67,
+    "words": 11035,
+    "uniqueFileMentions": 51,
+    "validationMentions": 237,
+    "implementationThread": {
+      "threadId": "019f0f07-9e84-76d3-b50b-5133dde652cf",
+      "startedAt": "2026-06-28T12:19:45-04:00",
+      "updatedAt": "2026-06-28T13:43:20-04:00",
+      "stateTokensUsed": 65167638,
+      "sessionFileBytes": 5937329,
+      "sessionRows": 3459,
+      "eventSpan": {
+        "firstEvent": "2026-06-28T16:20:05.525Z",
+        "lastEvent": "2026-06-28T17:43:20.672Z"
+      },
+      "turns": {
+        "started": 6,
+        "completed": 5,
+        "compactions": 3,
+        "averageCompletedTurnDurationMs": 937365,
+        "averageTimeToFirstTokenMs": 7365
+      },
+      "tokens": {
+        "inputTokens": 64966983,
+        "cachedInputTokens": 63333888,
+        "outputTokens": 200655,
+        "reasoningOutputTokens": 48809,
+        "totalTokens": 65167638,
+        "tokenEvents": 451
+      },
+      "toolCalls": {
+        "total": 703,
+        "functionCalls": 616,
+        "customToolCalls": 87,
+        "execCommand": 461,
+        "writeStdin": 132,
+        "updatePlan": 19,
+        "applyPatch": 87,
+        "patchApplyEvents": 84,
+        "patchApplySuccess": 84
+      },
+      "commandOutcomes": {
+        "execCommandCalls": 461,
+        "completed": 390,
+        "runningSessionStarts": 71,
+        "completedViaWriteStdin": 71,
+        "exitCodes": {
+          "0": 448,
+          "1": 9,
+          "2": 3,
+          "254": 1
+        }
+      },
+      "commandFamilies": {
+        "sed": 179,
+        "nx run": 54,
+        "git": 47,
+        "openspec": 35,
+        "trellis-ls": 31,
+        "find": 30,
+        "rg": 27,
+        "nl": 19,
+        "openspec validate": 10
+      },
+      "nxTargets": {
+        "framework-language-service:test": 16,
+        "framework-language-service:typecheck": 13,
+        "workspace:policy-fast": 8,
+        "framework-language-service:build": 7,
+        "framework-protocol:test": 4,
+        "framework-runtime:test": 4,
+        "attune-architecture:test": 2
+      },
+      "trellisLsCommands": {
+        "diagnostics": 16,
+        "fixes": 9,
+        "check": 6
+      },
+      "openspecValidate": {
+        "fork-effect-language-service-for-trellis-cli": 10
+      }
+    },
+    "codeSurface": {
+      "languageServiceAllFiles": 198,
+      "languageServiceAllLoc": 38327,
+      "localSourceFilesExcludingVendor": 12,
+      "localSourceLocExcludingVendor": 4000,
+      "upstreamVendorFiles": 175,
+      "upstreamVendorLoc": 32395,
+      "testFiles": 2,
+      "testLoc": 1682
+    },
+    "implementationOutcomes": [
+      "trellis-ls binary metadata landed",
+      "diagnostics/fixes/apply/check CLI commands landed",
+      "Effect Schema JSON contracts landed",
+      "upstream Effect language-service source vendored with attribution",
+      "DiagnosticRecipe and RepairRecipe modules own migration diagnostics/fixes",
+      "safe apply diff/write/refusal behavior landed",
+      "recipe-only-source profile landed",
+      "language-service dogfood package uses src/recipes.ts as declaration"
+    ],
+    "validationEvidence": {
+      "framework-language-service:typecheck": "passed",
+      "framework-language-service:test": "passed, 29 tests",
+      "framework-language-service:build": "passed",
+      "framework-protocol:test": "passed, 48 tests",
+      "framework-runtime:test": "passed, 17 passed / 1 skipped",
+      "attune-architecture:test": "passed, 76 tests",
+      "workspace:policy-fast": "passed during historical implementation",
+      "trellis-ls diagnostics project": "passed, zero diagnostics",
+      "trellis-ls fixes project": "passed, zero fixes",
+      "trellis-ls apply diff fixture": "passed, no write",
+      "trellis-ls check project": "passed, blocking false",
+      "trellis-ls recipe-only-source workspace": "passed, 447 backlog diagnostics projected",
+      "openspec strict": "passed"
+    },
+    "workloadFamilies": [
+      "upstream-effect-fork",
+      "trellis-ls-cli",
+      "json-contracts",
+      "effect-diagnostic-normalization",
+      "trellis-recipe-diagnostics",
+      "repair-plans",
+      "safe-apply",
+      "receipt-observation-emission",
+      "recipe-only-source-dogfood"
+    ]
+  },
+  "recommendedComparison": {
+    "changeId": "effect-oxlint-recipe-substrate-clean-fork",
+    "reason": "Different implementation context with similar clean-fork, recipe-substrate, workflow-surface, observation-spine, and validation shape.",
+    "selectionNote": "Uses the exact clean-fork thread 019f0e3b. Broader oxlint keyword matches include unrelated standardize/compress/promote migrations and are not used as primary telemetry.",
+    "tasks": 63,
+    "specs": 6,
+    "requirements": 36,
+    "scenarios": 85,
+    "words": 9658,
+    "uniqueFileMentions": 62,
+    "validationMentions": 115,
+    "implementationThread": {
+      "threadId": "019f0e3b-a482-7520-a909-570724e5f017",
+      "startedAt": "2026-06-28T08:36:57-04:00",
+      "updatedAt": "2026-06-28T10:55:05-04:00",
+      "stateTokensUsed": 100377896,
+      "sessionFileBytes": 9746271,
+      "sessionRows": 5337,
+      "eventSpan": {
+        "firstEvent": "2026-06-28T12:38:15.032Z",
+        "lastEvent": "2026-06-28T14:55:05.128Z"
+      },
+      "turns": {
+        "started": 8,
+        "completed": 6,
+        "compactions": 6,
+        "averageCompletedTurnDurationMs": 1231743,
+        "averageTimeToFirstTokenMs": 9362
+      },
+      "tokens": {
+        "inputTokens": 100088153,
+        "cachedInputTokens": 97927552,
+        "outputTokens": 289743,
+        "reasoningOutputTokens": 79185,
+        "totalTokens": 100377896,
+        "tokenEvents": 686
+      },
+      "toolCalls": {
+        "total": 1110,
+        "functionCalls": 944,
+        "customToolCalls": 166,
+        "execCommand": 735,
+        "writeStdin": 191,
+        "updatePlan": 15,
+        "applyPatch": 166,
+        "patchApplyEvents": 163,
+        "patchApplySuccess": 163
+      },
+      "commandOutcomes": {
+        "execCommandCalls": 735,
+        "completed": 604,
+        "runningSessionStarts": 130,
+        "completedViaWriteStdin": 130,
+        "exitCodes": {
+          "0": 699,
+          "1": 27,
+          "2": 7,
+          "101": 1
+        }
+      },
+      "commandFamilies": {
+        "sed": 319,
+        "nx run": 128,
+        "rg": 118,
+        "find": 48,
+        "openspec": 32,
+        "git": 17,
+        "nl": 16,
+        "openspec validate": 8,
+        "nx run-many": 6
+      },
+      "nxTargets": {
+        "framework-runtime:test": 13,
+        "effect-oxlint-policy:build": 13,
+        "effect-oxlint-policy:test": 12,
+        "attune-nx:test": 11,
+        "attune-architecture:test": 10,
+        "effect-oxlint-policy:policy": 6,
+        "framework-runtime:db:validate-sql": 6,
+        "attune-nx:typecheck": 6,
+        "workspace:policy-fast": 5,
+        "framework-protocol:test": 5,
+        "workspace:no-compat-script-check": 5,
+        "workspace:recipe-substrate-check": 4
+      },
+      "trellisLsCommands": {},
+      "openspecValidate": {
+        "effect-oxlint-recipe-substrate-clean-fork": 3,
+        "all": 2,
+        "--change": 1,
+        "--changes": 1,
+        "--help": 1
+      }
+    },
+    "codeSurface": {
+      "oxlintPolicyAllFiles": 178,
+      "oxlintPolicyAllLoc": 9926,
+      "oxlintPolicySourceFiles": 125,
+      "oxlintPolicySourceLoc": 7884,
+      "oxlintPolicyTestFiles": 1,
+      "oxlintPolicyTestLoc": 756,
+      "sampledRuntimeObservationFiles": 5,
+      "sampledRuntimeObservationLoc": 1705,
+      "sampledProtocolRecipeFiles": 1,
+      "sampledProtocolRecipeLoc": 1156
+    },
+    "implementationOutcomes": [
+      "Attune/Trellis effect-oxlint policy pack rules landed",
+      "framework_event.recipe_observation landed",
+      "ManagedRecipe/Alchemy lifecycle observations aligned",
+      "ProjectionRegistry and RecipeInvocation formalized",
+      "package-local scripts removed from active package paths",
+      "workspace:no-compat-script-check fails active package-local scripts",
+      "Tend and generated ownership alignment tasks completed"
+    ],
+    "validationEvidence": {
+      "effect-oxlint-policy:test": "task complete",
+      "framework protocol RecipeObservation/RecipeInvocation/ProjectionRegistry coverage": "task complete",
+      "framework-runtime:test": "task complete",
+      "framework-runtime:db:validate-sql": "task complete",
+      "workspace recipe-substrate check": "task complete",
+      "workspace:policy-fast": "task complete during historical implementation",
+      "workspace:no-compat-script-check": "task complete",
+      "openspec strict": "complete in OpenSpec status"
+    }
+  },
+  "ratios": {
+    "tasks": 1.46,
+    "specs": 1.33,
+    "requirements": 1.53,
+    "scenarios": 0.79,
+    "words": 1.14,
+    "uniqueFileMentions": 0.82,
+    "validationMentions": 2.06,
+    "recordedThreadTokens": 0.65,
+    "toolCalls": 0.63,
+    "execCommandCalls": 0.63,
+    "applyPatchCalls": 0.52,
+    "nxRunCommands": 0.42,
+    "openspecValidateCommands": 1.25
+  },
+  "secondaryControls": [
+    {
+      "changeId": "arbor-recipe-substrate-migration",
+      "use": "secondary-control",
+      "reason": "Similar recipe-substrate lineage, but too close to the target domain."
+    },
+    {
+      "changeId": "flake-installed-attune-opencode-harness",
+      "use": "apparatus-control",
+      "reason": "Useful Tend/OpenCode harness control, but too close to the measurement machinery."
+    },
+    {
+      "changeId": "bootstrap-thinkcentre-alchemy",
+      "use": "outlier-only",
+      "reason": "Operational infrastructure thread with external deployment concerns and very high subagent/token volume."
+    }
+  ],
+  "recommendedReportSection": "Comparable Clean-Fork Baseline",
+  "benchmarkAxes": [
+    "scope-denominator",
+    "command-budget",
+    "validation-budget",
+    "repair-loop-quality",
+    "source-migration-effect",
+    "observation-quality",
+    "safety",
+    "cost",
+    "correctness",
+    "human-review-burden",
+    "codex-rollout-telemetry"
+  ]
+}
