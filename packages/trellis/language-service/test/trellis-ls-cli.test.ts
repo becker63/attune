@@ -26,13 +26,18 @@ import {
   runApplyCommand,
   runCheckCommand,
   runDiagnosticsCommand,
+  runFastPathCommand,
   runFixesCommand,
+  runPacketsCommand,
   trellisFixFromProgramRepairAction,
   trellisFixFromRecipeRepair,
+  TrellisLsPacketsOutputSchema,
   TrellisLsApplyOutputSchema,
   TrellisLsCheckOutputSchema,
   TrellisLsDiagnosticsOutputSchema,
+  TrellisLsFastPathOutputSchema,
   TrellisLsFixesOutputSchema,
+  collectUpstreamEffectDiagnosticInventory,
   upstreamEffectSource,
 } from "../src/index.js"
 import type { LoadedProject } from "../src/project-loader.js"
@@ -59,6 +64,49 @@ const makeFixture = (): {
     "export const demo = () => {",
     "  Effect.succeed(1)",
     "}",
+    "",
+  ].join("\n"))
+  const project = path.join(root, "tsconfig.json")
+  fs.writeFileSync(project, JSON.stringify({
+    compilerOptions: {
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
+      target: "ES2023",
+      strict: true,
+      skipLibCheck: true,
+    },
+    include: ["src/**/*.ts"],
+  }, null, 2))
+
+  return { root, project, file }
+}
+
+const makeEffectProfilesFixture = (): {
+  readonly root: string
+  readonly project: string
+  readonly file: string
+} => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-effect-profiles-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.writeFileSync(path.join(root, "package.json"), "{\"type\":\"module\"}\n")
+  fs.symlinkSync(path.join(packageRoot, "node_modules"), path.join(root, "node_modules"), "dir")
+  fs.mkdirSync(path.join(root, "src"), { recursive: true })
+  const file = path.join(root, "src", "effect-rules.ts")
+  fs.writeFileSync(file, [
+    "import { Effect } from \"effect\"",
+    "import { pipe } from \"effect/Function\"",
+    "",
+    "declare const process: { env: { PORT?: string } }",
+    "",
+    "export const demo = () => {",
+    "  Effect.succeed(1)",
+    "  return Effect.succeed(undefined)",
+    "}",
+    "",
+    "export const styled = pipe(1)",
+    "console.log(\"preview\")",
+    "export const now = Date.now()",
+    "export const port = process.env.PORT",
     "",
   ].join("\n"))
   const project = path.join(root, "tsconfig.json")
@@ -225,7 +273,7 @@ const normalizeForSnapshot = (value: unknown): unknown =>
   JSON.parse(JSON.stringify(value, (_key, rawValue: unknown) => {
     if (typeof rawValue !== "string") return rawValue
     return rawValue
-      .replace(/\/tmp\/trellis-ls-[^"/\s]+/gu, "<workspace>")
+      .replace(/\/tmp\/(?:nix-shell\.[^/\s]+\/)?trellis-ls-[^"/\s]+/gu, "<workspace>")
       .replace(/diag_[A-Za-z0-9_-]+/gu, "diag_snapshot")
       .replace(/fix_[A-Za-z0-9_-]+/gu, "fix_snapshot")
   }))
@@ -319,6 +367,7 @@ describe("trellis-ls CLI core", () => {
     expect(result.status).toBe(0)
     expect(result.stdout).toContain("trellis-ls diagnostics")
     expect(result.stdout).toContain("trellis-ls fixes")
+    expect(result.stdout).toContain("trellis-ls packets")
     expect(result.stdout).toContain("trellis-ls apply")
     expect(result.stdout).toContain("trellis-ls check")
     expect(result.stdout).not.toContain("trellis-ls patch")
@@ -365,6 +414,424 @@ describe("trellis-ls CLI core", () => {
     expect(decoded.diagnostics[0]?.repairIds).toHaveLength(1)
   })
 
+  it("normalizes the vendored upstream Effect diagnostic inventory", () => {
+    const inventory = collectUpstreamEffectDiagnosticInventory()
+
+    expect(inventory.ruleCount).toBeGreaterThan(70)
+    expect(inventory.groupCounts).toMatchObject({
+      correctness: expect.any(Number),
+      effectNative: expect.any(Number),
+      style: expect.any(Number),
+    })
+    expect(inventory.severityCounts).toMatchObject({
+      error: expect.any(Number),
+      warning: expect.any(Number),
+      off: expect.any(Number),
+    })
+    expect(inventory.fixabilityCounts).toMatchObject({
+      fixable: expect.any(Number),
+      manual: expect.any(Number),
+    })
+    expect(inventory.supportedEffectVersions).toEqual(expect.arrayContaining(["v3", "v4"]))
+  })
+
+  it("selects staged Effect profiles and emits multiple upstream Effect rules", () => {
+    const fixture = makeEffectProfilesFixture()
+    const codesFor = (profile: NonNullable<Parameters<typeof runDiagnosticsCommand>[0]["profile"]>) =>
+      runDiagnosticsCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        source: "effect",
+        profile,
+        format: "json",
+      }).output.diagnostics.map((diagnostic) => diagnostic.code)
+
+    expect(codesFor("effect-correctness")).toEqual(expect.arrayContaining([
+      "effect/floatingEffect",
+    ]))
+    expect(codesFor("effect-autofix-safe")).toEqual(expect.arrayContaining([
+      "effect/effectSucceedWithVoid",
+      "effect/unnecessaryPipe",
+    ]))
+    expect(codesFor("effect-style-autofix")).toEqual(expect.arrayContaining([
+      "effect/effectSucceedWithVoid",
+      "effect/unnecessaryPipe",
+    ]))
+    expect(codesFor("effect-native-inventory")).toEqual(expect.arrayContaining([
+      "effect/globalConsole",
+      "effect/globalDate",
+      "effect/processEnv",
+    ]))
+
+    const full = codesFor("effect-full-inventory")
+    expect(full).toEqual(expect.arrayContaining([
+      "effect/floatingEffect",
+      "effect/effectSucceedWithVoid",
+      "effect/unnecessaryPipe",
+      "effect/globalConsole",
+    ]))
+
+    const diagnostics = runDiagnosticsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-full-inventory",
+      format: "json",
+    }).output.diagnostics
+    expect(diagnostics[0]?.tags).toEqual(expect.arrayContaining([
+      expect.stringMatching(/^effect-group:/u),
+      expect.stringMatching(/^effect-supported:/u),
+    ]))
+  })
+
+  it("projects deterministic Effect diagnostic packets with validation ladders", () => {
+    const fixture = makeEffectProfilesFixture()
+    const first = Schema.decodeUnknownSync(TrellisLsPacketsOutputSchema)(
+      runPacketsCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        source: "effect",
+        profile: "effect-autofix-safe",
+        format: "json",
+      }).output,
+    )
+    const second = runPacketsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-autofix-safe",
+      format: "json",
+    }).output
+
+    expect(first.packetCount).toBeGreaterThanOrEqual(2)
+    expect(first.packets.map((packet) => packet.packetId)).toEqual(
+      second.packets.map((packet) => packet.packetId),
+    )
+    expect(first.packets[0]).toMatchObject({
+      source: "effect",
+      profile: "effect-autofix-safe",
+      riskClass: "safe-autofix",
+      safeFixCount: expect.any(Number),
+      contextBundle: {
+        rawSourceStored: false,
+        rawCommandOutputStored: false,
+      },
+    })
+    expect(first.packets[0]?.validationLadder.map((step) => step.step)).toEqual([
+      "cheap",
+      "focused",
+      "medium",
+      "final",
+    ])
+  })
+
+  it("supports packet fixes, diff apply, write apply, and packet check", () => {
+    const fixture = makeEffectProfilesFixture()
+    const packet = runPacketsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-autofix-safe",
+      format: "json",
+    }).output.packets.find((candidate) =>
+      candidate.code === "effect/effectSucceedWithVoid"
+    )!
+
+    const fixes = Schema.decodeUnknownSync(TrellisLsFixesOutputSchema)(
+      runFixesCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        profile: "effect-autofix-safe",
+        packetId: packet.packetId,
+        format: "json",
+      }).output,
+    )
+    const diff = Schema.decodeUnknownSync(TrellisLsApplyOutputSchema)(
+      runApplyCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        profile: "effect-autofix-safe",
+        packetId: packet.packetId,
+        mode: "diff",
+        format: "json",
+      }).output,
+    )
+    const write = Schema.decodeUnknownSync(TrellisLsApplyOutputSchema)(
+      runApplyCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        profile: "effect-autofix-safe",
+        packetId: packet.packetId,
+        mode: "write",
+        format: "json",
+      }).output,
+    )
+    const checkResult = runCheckCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-autofix-safe",
+      packetId: packet.packetId,
+      format: "json",
+    })
+    const check = Schema.decodeUnknownSync(TrellisLsCheckOutputSchema)(checkResult.output)
+
+    expect(fixes.packetId).toBe(packet.packetId)
+    expect(fixes.fixes).toHaveLength(1)
+    expect(diff.applied).toBe(false)
+    expect(diff.diff).toContain("Effect.void")
+    expect(write.applied).toBe(true)
+    expect(fs.readFileSync(fixture.file, "utf8")).toContain("return Effect.void")
+    expect(checkResult.exitCode).toBe(0)
+    expect(check.validationStatus).toBe("cleared")
+    expect(check.validationLadder).toBeUndefined()
+  })
+
+  it("runs a privacy-preserving packet fast path preview without writing", () => {
+    const fixture = makeEffectProfilesFixture()
+    const store = createInMemoryRecipeReceiptStore()
+    const packet = runPacketsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-autofix-safe",
+      format: "json",
+    }).output.packets.find((candidate) =>
+      candidate.code === "effect/effectSucceedWithVoid"
+    )!
+
+    const result = runFastPathCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-autofix-safe",
+      packetId: packet.packetId,
+      mode: "preview",
+      format: "json",
+      receiptStore: store,
+    })
+    const output = Schema.decodeUnknownSync(TrellisLsFastPathOutputSchema)(result.output)
+    const snapshot = Effect.runSync(store.snapshot())
+
+    expect(result.exitCode).toBe(0)
+    expect(output.command).toBe("fastpath")
+    expect(output.applied).toBe(false)
+    expect(output.refused).toBe(false)
+    expect(output.safeFixCount).toBeGreaterThan(0)
+    expect(output.observationIds).toHaveLength(1)
+    expect(output.privacy).toMatchObject({
+      rawSourceStored: false,
+      rawCommandOutputStored: false,
+      rawDiffStored: false,
+      patchTextStored: false,
+    })
+    expect(JSON.stringify(output)).not.toContain("@@")
+    expect(fs.readFileSync(fixture.file, "utf8")).toContain("Effect.succeed(undefined)")
+    expect(snapshot.observations.map((observation) => observation.observationKind)).toContain(
+      "trellis-language-service.effect-packet-fastpath-summary",
+    )
+  })
+
+  it("runs a packet fast path write and checks for cleared status", () => {
+    const fixture = makeEffectProfilesFixture()
+    const packet = runPacketsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-autofix-safe",
+      format: "json",
+    }).output.packets.find((candidate) =>
+      candidate.code === "effect/effectSucceedWithVoid"
+    )!
+
+    const result = runFastPathCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-autofix-safe",
+      packetId: packet.packetId,
+      mode: "write",
+      format: "json",
+    })
+    const output = Schema.decodeUnknownSync(TrellisLsFastPathOutputSchema)(result.output)
+
+    expect(result.exitCode).toBe(0)
+    expect(output.applied).toBe(true)
+    expect(output.appliedFixCount).toBe(1)
+    expect(output.validationStatus).toBe("cleared")
+    expect(output.check?.validationStatus).toBe("cleared")
+    expect(fs.readFileSync(fixture.file, "utf8")).toContain("return Effect.void")
+  })
+
+  it("re-resolves a stale packet ID from stable target identity", () => {
+    const fixture = makeEffectProfilesFixture()
+    const packet = runPacketsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-autofix-safe",
+      format: "json",
+    }).output.packets.find((candidate) =>
+      candidate.code === "effect/effectSucceedWithVoid"
+    )!
+    const targetId = packet.contextBundle.examples[0]!.diagnosticId
+
+    const result = runFastPathCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-autofix-safe",
+      packetId: "packet_stale",
+      targetId,
+      mode: "preview",
+      format: "json",
+    })
+    const output = Schema.decodeUnknownSync(TrellisLsFastPathOutputSchema)(result.output)
+
+    expect(result.exitCode).toBe(0)
+    expect(output.stale).toBe(true)
+    expect(output.resolution.status).toBe("re-resolved")
+    expect(output.resolvedPacketId).toBe(packet.packetId)
+    expect(output.targetIds).toContain(targetId)
+  })
+
+  it("refuses stale packet fast path when target identity is too broad", () => {
+    const fixture = makeEffectProfilesFixture()
+    const result = runFastPathCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-autofix-safe",
+      packetId: "packet_stale",
+      ruleName: "effectSucceedWithVoid",
+      mode: "write",
+      format: "json",
+    })
+    const output = Schema.decodeUnknownSync(TrellisLsFastPathOutputSchema)(result.output)
+
+    expect(result.exitCode).toBe(1)
+    expect(output.refused).toBe(true)
+    expect(output.validationStatus).toBe("stale")
+    expect(output.resolution.status).toBe("failed")
+    expect(output.refusal?.code).toBe("trellis-ls/packet-fastpath-stale")
+  })
+
+  it("refuses packet write when a packet only has suppression fixes", () => {
+    const fixture = makeFixture()
+    const packet = runPacketsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-correctness",
+      format: "json",
+    }).output.packets[0]!
+    const result = runApplyCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-correctness",
+      packetId: packet.packetId,
+      mode: "write",
+      format: "json",
+    })
+    const output = Schema.decodeUnknownSync(TrellisLsApplyOutputSchema)(result.output)
+
+    expect(result.exitCode).toBe(1)
+    expect(output.refused).toBe(true)
+    expect(output.refusal?.code).toBe("trellis-ls/packet-has-no-safe-fixes")
+  })
+
+  it("refuses unsafe packet fast path writes without applying suppressions", () => {
+    const fixture = makeFixture()
+    const packet = runPacketsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-correctness",
+      format: "json",
+    }).output.packets[0]!
+    const before = fs.readFileSync(fixture.file, "utf8")
+
+    const result = runFastPathCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-correctness",
+      packetId: packet.packetId,
+      mode: "write",
+      format: "json",
+    })
+    const output = Schema.decodeUnknownSync(TrellisLsFastPathOutputSchema)(result.output)
+
+    expect(result.exitCode).toBe(1)
+    expect(output.applied).toBe(false)
+    expect(output.refused).toBe(true)
+    expect(output.validationStatus).toBe("refused")
+    expect(output.refusal?.code).toBe("trellis-ls/packet-has-no-safe-fixes")
+    expect(fs.readFileSync(fixture.file, "utf8")).toBe(before)
+  })
+
+  it("exposes review-required manual handles for Effect-native inventory packets", () => {
+    const fixture = makeEffectProfilesFixture()
+    const packet = runPacketsCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      source: "effect",
+      profile: "effect-full-inventory",
+      format: "json",
+    }).output.packets.find((candidate) =>
+      candidate.code === "effect/globalConsole"
+    )!
+
+    const hiddenByDefault = runFixesCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-full-inventory",
+      packetId: packet.packetId,
+      format: "json",
+    }).output
+    const fixes = Schema.decodeUnknownSync(TrellisLsFixesOutputSchema)(
+      runFixesCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        profile: "effect-full-inventory",
+        packetId: packet.packetId,
+        includeManual: true,
+        format: "json",
+      }).output,
+    )
+    const before = fs.readFileSync(fixture.file, "utf8")
+    const result = runFastPathCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      profile: "effect-full-inventory",
+      packetId: packet.packetId,
+      mode: "write",
+      format: "json",
+    })
+    const output = Schema.decodeUnknownSync(TrellisLsFastPathOutputSchema)(result.output)
+
+    expect(packet).toMatchObject({
+      riskClass: "review-required",
+      safeFixCount: 0,
+      reviewRequiredFixCount: 1,
+    })
+    expect(packet.contextBundle.examples[0]?.fixIds).toHaveLength(1)
+    expect(hiddenByDefault.fixes).toHaveLength(0)
+    expect(fixes.fixes).toHaveLength(1)
+    expect(fixes.fixes[0]).toMatchObject({
+      kind: "manual",
+      title: "Review Effect logging migration for global console usage",
+      safe: false,
+      requiresReview: true,
+      canApply: false,
+      affectedFiles: ["src/effect-rules.ts"],
+    })
+    expect(fixes.fixes[0]?.edits).toBeUndefined()
+    expect(result.exitCode).toBe(1)
+    expect(output.applied).toBe(false)
+    expect(output.refused).toBe(true)
+    expect(output.fixCount).toBe(1)
+    expect(output.safeFixCount).toBe(0)
+    expect(output.reviewRequiredFixCount).toBe(1)
+    expect(output.excludedFixIds).toEqual([fixes.fixes[0]!.fixId])
+    expect(output.refusal?.code).toBe("trellis-ls/packet-has-no-safe-fixes")
+    expect(fs.readFileSync(fixture.file, "utf8")).toBe(before)
+  })
+
   it("returns fixes for a diagnostic and for project scope", () => {
     const fixture = makeFixture()
     const diagnostics = runDiagnosticsCommand({
@@ -396,8 +863,8 @@ describe("trellis-ls CLI core", () => {
     expect(targeted.fixes[0]).toMatchObject({
       diagnosticId,
       kind: "text-edit",
-      safe: true,
-      requiresReview: false,
+      safe: false,
+      requiresReview: true,
       canApply: true,
     })
   })
@@ -427,17 +894,20 @@ describe("trellis-ls CLI core", () => {
     expect(fs.readFileSync(fixture.file, "utf8")).toBe(before)
   })
 
-  it("applies a safe text edit in write mode", () => {
-    const fixture = makeFixture()
+  it("applies a safe Effect text edit in write mode", () => {
+    const fixture = makeEffectProfilesFixture()
     const fixId = runFixesCommand({
       cwd: fixture.root,
       project: "tsconfig.json",
+      profile: "effect-autofix-safe",
+      safeOnly: true,
       format: "json",
-    }).output.fixes[0]!.fixId
+    }).output.fixes.find((fix) => fix.title.includes("Effect.void"))!.fixId
 
     const result = runApplyCommand({
       cwd: fixture.root,
       project: "tsconfig.json",
+      profile: "effect-autofix-safe",
       fixId,
       mode: "write",
       format: "json",
@@ -448,9 +918,42 @@ describe("trellis-ls CLI core", () => {
     expect(result.exitCode).toBe(0)
     expect(output.applied).toBe(true)
     expect(output.recheck?.diagnostics.filter((diagnostic) =>
-      diagnostic.code === "effect/floatingEffect"
+      diagnostic.code === "effect/effectSucceedWithVoid"
     )).toHaveLength(0)
-    expect(fs.readFileSync(fixture.file, "utf8")).toContain("void Effect.succeed(1)")
+    expect(fs.readFileSync(fixture.file, "utf8")).toContain("return Effect.void")
+  })
+
+  it("refuses suppression fixes in safe write mode", () => {
+    const fixture = makeFixture()
+    const fix = runFixesCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      format: "json",
+    }).output.fixes[0]!
+
+    expect(fix).toMatchObject({
+      safe: false,
+      requiresReview: true,
+    })
+    expect(runFixesCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      safeOnly: true,
+      format: "json",
+    }).output.fixes).toHaveLength(0)
+
+    const result = runApplyCommand({
+      cwd: fixture.root,
+      project: "tsconfig.json",
+      fixId: fix.fixId,
+      mode: "write",
+      format: "json",
+    })
+    const output = Schema.decodeUnknownSync(TrellisLsApplyOutputSchema)(result.output)
+
+    expect(result.exitCode).toBe(1)
+    expect(output.refused).toBe(true)
+    expect(output.refusal?.code).toBe("trellis-ls/review-required")
   })
 
   it("refuses stale or missing fixes without writing", () => {
@@ -780,24 +1283,28 @@ describe("trellis-ls CLI core", () => {
   })
 
   it("records command observations through the configured receipt store", () => {
-    const fixture = makeFixture()
+    const fixture = makeEffectProfilesFixture()
     const store = createInMemoryRecipeReceiptStore()
     const diagnostics = runDiagnosticsCommand({
       cwd: fixture.root,
       project: "tsconfig.json",
       source: "effect",
+      profile: "effect-autofix-safe",
       format: "json",
       receiptStore: store,
     }).output
     const fixes = runFixesCommand({
       cwd: fixture.root,
       project: "tsconfig.json",
+      profile: "effect-autofix-safe",
+      safeOnly: true,
       format: "json",
       receiptStore: store,
     }).output
     const diff = runApplyCommand({
       cwd: fixture.root,
       project: "tsconfig.json",
+      profile: "effect-autofix-safe",
       fixId: fixes.fixes[0]!.fixId,
       mode: "diff",
       format: "json",
@@ -806,6 +1313,7 @@ describe("trellis-ls CLI core", () => {
     const applied = runApplyCommand({
       cwd: fixture.root,
       project: "tsconfig.json",
+      profile: "effect-autofix-safe",
       fixId: fixes.fixes[0]!.fixId,
       mode: "write",
       format: "json",
@@ -814,6 +1322,7 @@ describe("trellis-ls CLI core", () => {
     const check = runCheckCommand({
       cwd: fixture.root,
       project: "tsconfig.json",
+      profile: "effect-autofix-safe",
       format: "json",
       receiptStore: store,
     }).output
@@ -1014,10 +1523,10 @@ describe("trellis-ls CLI core", () => {
           "project": "tsconfig.json",
           "schemaVersion": 1,
           "summary": {
-            "errorCount": 0,
+            "errorCount": 1,
             "messageCount": 0,
             "suggestionCount": 0,
-            "warningCount": 1,
+            "warningCount": 0,
           },
           "workspaceRoot": "<workspace>",
         },
@@ -1032,7 +1541,7 @@ describe("trellis-ls CLI core", () => {
               "repairIds": [
                 "fix_snapshot",
               ],
-              "severity": "warning",
+              "severity": "error",
               "source": "effect",
               "span": {
                 "end": 80,
@@ -1046,6 +1555,12 @@ describe("trellis-ls CLI core", () => {
                 "effect",
                 "upstream-effect",
                 "LSP.getSemanticDiagnosticsWithCodeFixes",
+                "effect-rule:floatingEffect",
+                "effect-group:correctness",
+                "effect-default-severity:error",
+                "effect-fixable:false",
+                "effect-supported:v3",
+                "effect-supported:v4",
                 "quickfix",
               ],
             },
@@ -1067,9 +1582,9 @@ describe("trellis-ls CLI core", () => {
               ],
               "fixId": "fix_snapshot",
               "kind": "text-edit",
-              "preview": "Adds \`void \` before the Effect expression.",
-              "requiresReview": false,
-              "safe": true,
+              "preview": "Adds \`void \` before the Effect expression. Review required: this suppresses a floating Effect diagnostic.",
+              "requiresReview": true,
+              "safe": false,
               "title": "Mark floating Effect as intentionally discarded",
             },
           ],
@@ -1084,10 +1599,10 @@ describe("trellis-ls CLI core", () => {
           "project": "tsconfig.json",
           "schemaVersion": 1,
           "summary": {
-            "errorCount": 0,
+            "errorCount": 1,
             "messageCount": 0,
             "suggestionCount": 0,
-            "warningCount": 1,
+            "warningCount": 0,
           },
           "workspaceRoot": "<workspace>",
         },
@@ -1110,9 +1625,9 @@ describe("trellis-ls CLI core", () => {
               ],
               "fixId": "fix_snapshot",
               "kind": "text-edit",
-              "preview": "Adds \`void \` before the Effect expression.",
-              "requiresReview": false,
-              "safe": true,
+              "preview": "Adds \`void \` before the Effect expression. Review required: this suppresses a floating Effect diagnostic.",
+              "requiresReview": true,
+              "safe": false,
               "title": "Mark floating Effect as intentionally discarded",
             },
           ],

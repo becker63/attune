@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 
 export const stableTrellisLsId = (
-  prefix: "diag" | "fix",
+  prefix: "diag" | "fix" | "packet",
   parts: readonly unknown[],
 ): string => {
   const hash = createHash("sha256")

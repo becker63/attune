@@ -4572,6 +4572,7 @@ const shellScriptCommandFamily = (
   if (nxTarget !== undefined) return `nx run ${nxTarget}`
   const explicitTarget = script.match(/\b((?:framework-language-service|framework-runtime|tend-opencode|workspace):[@A-Za-z0-9_.:-]+)\b/u)?.[1]
   if (explicitTarget !== undefined) return `nx run ${explicitTarget}`
+  if (/\btrellis-ls\b[^\n;&|]*\b(?:fastpath|packet-fastpath)\b/u.test(script)) return "trellis-ls fastpath"
   if (/\btrellis-ls\b[^\n;&|]*\bdiagnostics\b/u.test(script)) return "trellis-ls diagnostics"
   if (/\btrellis-ls\b[^\n;&|]*\bfix/u.test(script)) return "trellis-ls fixes"
   if (/\btend-opencode\b[^\n;&|]*\bobserve\b/u.test(script)) return "tend-opencode observe"

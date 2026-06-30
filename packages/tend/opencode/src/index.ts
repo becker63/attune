@@ -22,6 +22,7 @@ import {
 import { compressWithOpenRtk, evaluateForcedToolPolicy, selectMagicContext } from "@attune/tend-policies"
 
 export { opencodeSessionLogFixture } from "./fixtures/opencode-session-log.js"
+export * from "./benchmark.js"
 
 export const OpenCodeRawEventSchema = Schema.Struct({
   type: Schema.Literals(["session", "tool", "command", "validation"] as const),

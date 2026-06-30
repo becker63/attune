@@ -1837,7 +1837,7 @@ const sanitizeCommandArg = (
 }
 
 const inferNxTarget = (argv: readonly string[]): string | undefined => {
-  const nxIndex = argv.findIndex((arg) => arg === "nx")
+  const nxIndex = argv.findIndex((arg) => path.basename(arg) === "nx")
   if (nxIndex >= 0) {
     const command = argv[nxIndex + 1]
     if (command === "run") return argv[nxIndex + 2]
@@ -1860,6 +1860,7 @@ const inferTrellisLsTarget = (argv: readonly string[]): string | undefined => {
   if (command === "fixes") return "trellis-ls:fixes"
   if (command === "apply" || command === "apply-codefix") return "trellis-ls:apply"
   if (command === "check") return "trellis-ls:check"
+  if (command === "fastpath" || command === "packet-fastpath") return "trellis-ls:fastpath"
   return undefined
 }
 
@@ -1913,6 +1914,7 @@ const inferRecipeId = (target: string | undefined): string | undefined => {
   if (target === "trellis-ls:fixes") return "trellis-language-service.fixes-json-projection"
   if (target === "trellis-ls:apply") return "trellis-language-service.apply-result-json-projection"
   if (target === "trellis-ls:check") return "trellis-language-service.check-summary-projection"
+  if (target === "trellis-ls:fastpath") return "trellis-language-service.effect-packet-fastpath"
   if (target.startsWith("framework-runtime:db:")) return "framework-runtime.local-timescaledb"
   if (target === "workspace:db") return "framework-runtime.local-timescaledb"
   if (target === "workspace:recipe-substrate-check") return "workspace.recipe-substrate-check"

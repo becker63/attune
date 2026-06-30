@@ -13,12 +13,16 @@ import {
   runApplyCommand,
   runCheckCommand,
   runDiagnosticsCommand,
+  runFastPathCommand,
   runFixesCommand,
+  runPacketsCommand,
   type ApplyOptions,
   type CheckOptions,
   type CommandResult,
   type DiagnosticsOptions,
+  type FastPathOptions,
   type FixesOptions,
+  type PacketsOptions,
 } from "./cli-core.js"
 import type {
   TrellisLsApplyOutput,
@@ -29,8 +33,11 @@ import type {
   TrellisLsDiagnosticsOutput,
   TrellisLsEvidenceMode,
   TrellisLsFailOn,
+  TrellisLsFastPathMode,
+  TrellisLsFastPathOutput,
   TrellisLsFixesOutput,
   TrellisLsFormat,
+  TrellisLsPacketsOutput,
   TrellisLsProfile,
 } from "./contracts.js"
 
@@ -40,6 +47,8 @@ type TrellisLsCliOutput =
   | TrellisLsFixesOutput
   | TrellisLsApplyOutput
   | TrellisLsCheckOutput
+  | TrellisLsPacketsOutput
+  | TrellisLsFastPathOutput
 
 const trellisLsCliObservationRecipe = defineRecipe({
   id: "trellis-language-service.cli-observation-sink",
@@ -71,6 +80,10 @@ const main = async (): Promise<void> => {
         await writeResult(runFixesCommand(fixesOptions(parseFlags(rest))))
         return
       }
+      case "packets": {
+        await writeResult(runPacketsCommand(packetsOptions(parseFlags(rest))))
+        return
+      }
       case "apply":
       case "apply-codefix": {
         await writeResult(runApplyCommand(applyOptions(parseFlags(rest))))
@@ -78,6 +91,11 @@ const main = async (): Promise<void> => {
       }
       case "check": {
         await writeResult(runCheckCommand(checkOptions(parseFlags(rest))))
+        return
+      }
+      case "fastpath":
+      case "packet-fastpath": {
+        await writeResult(runFastPathCommand(fastPathOptions(parseFlags(rest))))
         return
       }
       default:
@@ -109,8 +127,10 @@ const emitConfiguredObservation = async <Output extends TrellisLsCliOutput>(
     sink = await createMeasurementObservationSink(config)
     if (sink.store === undefined) return output
     await Effect.runPromise(sink.store.registerRecipe(trellisLsCliObservationRecipe))
-    await Effect.runPromise(sink.store.recordObservation(trellisLsCliObservation(output)))
-    return withEvidenceMode(output, config.mode === "in-memory" ? "in-memory" : "durable")
+    const outputWithEvidence = withEvidenceMode(output, config.mode === "in-memory" ? "in-memory" : "durable")
+    const observation = trellisLsCliObservation(outputWithEvidence)
+    await Effect.runPromise(sink.store.recordObservation(observation))
+    return withCliObservationId(outputWithEvidence, observation.observationId)
   } catch (error) {
     if (process.env.ATTUNE_TRELLIS_LS_STORE_REQUIRED === "1") {
       throw error
@@ -131,6 +151,17 @@ const withEvidenceMode = <Output extends TrellisLsCliOutput>(
     evidenceMode,
   },
 })
+
+const withCliObservationId = <Output extends TrellisLsCliOutput>(
+  output: Output,
+  observationId: string,
+): Output =>
+  output.command === "fastpath"
+    ? {
+      ...output,
+      observationIds: [...output.observationIds, observationId],
+    } as Output
+    : output
 
 const trellisLsCliObservation = (
   output: TrellisLsCliOutput,
@@ -177,6 +208,10 @@ const observationKindFor = (command: TrellisLsCommand): string => {
       return "trellis-language-service.apply-result-summary"
     case "check":
       return "trellis-language-service.check-run-summary"
+    case "packets":
+      return "trellis-language-service.packet-queue-summary"
+    case "fastpath":
+      return "trellis-language-service.effect-packet-fastpath-summary"
   }
 }
 
@@ -207,7 +242,7 @@ const diagnosticIdsForOutput = (output: TrellisLsCliOutput): readonly string[] =
 const fixIdsForOutput = (output: TrellisLsCliOutput): readonly string[] =>
   "fixes" in output && Array.isArray(output.fixes)
     ? output.fixes.map((fix) => fix.fixId)
-    : "fixId" in output ? [output.fixId] : []
+    : "fixId" in output && output.fixId !== undefined ? [output.fixId] : []
 
 const parseFlags = (args: readonly string[]): ParsedFlags => {
   const flags: Record<string, string | boolean> = {}
@@ -242,29 +277,61 @@ const fixesOptions = (flags: ParsedFlags): FixesOptions => ({
   ...scopeOptions(flags),
   format: formatFlag(flags),
   ...optionalStringField("diagnosticId", stringFlag(flags, "diagnostic-id")),
+  ...optionalStringField("packetId", stringFlag(flags, "packet-id")),
   safeOnly: booleanFlag(flags, "safe-only"),
   includeManual: booleanFlag(flags, "include-manual"),
+  ...optionalStringField("profile", profileFlag(flags)),
 })
 
 const applyOptions = (flags: ParsedFlags): ApplyOptions => {
   const fixId = stringFlag(flags, "fix-id")
-  if (fixId === undefined) throw new CliInputError("Missing required --fix-id")
+  const packetId = stringFlag(flags, "packet-id")
+  if (fixId === undefined && packetId === undefined) {
+    throw new CliInputError("Missing required --fix-id or --packet-id")
+  }
   return {
     ...scopeOptions(flags),
     format: formatFlag(flags),
-    fixId,
+    ...optionalStringField("fixId", fixId),
+    ...optionalStringField("packetId", packetId),
     mode: applyModeFlag(flags),
     safeOnly: booleanFlag(flags, "safe-only"),
     recheck: booleanFlag(flags, "recheck"),
+    ...optionalStringField("profile", profileFlag(flags)),
   }
 }
 
 const checkOptions = (flags: ParsedFlags): CheckOptions => ({
   ...scopeOptions(flags),
   format: formatFlag(flags),
+  ...optionalStringField("packetId", stringFlag(flags, "packet-id")),
   ...optionalStringField("failOn", checkFailOnFlag(flags)),
   ...optionalStringField("profile", profileFlag(flags)),
 })
+
+const packetsOptions = (flags: ParsedFlags): PacketsOptions => ({
+  ...scopeOptions(flags),
+  format: formatFlag(flags),
+  ...optionalStringField("source", packetSourceFlag(flags)),
+  ...optionalStringField("profile", profileFlag(flags)),
+})
+
+const fastPathOptions = (flags: ParsedFlags): FastPathOptions => {
+  const packetId = stringFlag(flags, "packet-id")
+  if (packetId === undefined) {
+    throw new CliInputError("Missing required --packet-id")
+  }
+  return {
+    ...scopeOptions(flags),
+    format: formatFlag(flags),
+    packetId,
+    mode: fastPathModeFlag(flags),
+    ...optionalStringField("targetId", stringFlag(flags, "target-id")),
+    ...optionalStringField("ruleName", stringFlag(flags, "rule-name")),
+    ...optionalStringField("sourcePath", stringFlag(flags, "source-path")),
+    ...optionalStringField("profile", profileFlag(flags)),
+  }
+}
 
 const scopeOptions = (flags: ParsedFlags): {
   readonly project?: string
@@ -309,6 +376,12 @@ const sourceFlag = (flags: ParsedFlags): DiagnosticsOptions["source"] => {
   throw new CliInputError(`Invalid --source: ${value}`)
 }
 
+const packetSourceFlag = (flags: ParsedFlags): "effect" => {
+  const value = stringFlag(flags, "source") ?? "effect"
+  if (value === "effect") return value
+  throw new CliInputError(`Invalid --source for packets: ${value}`)
+}
+
 const failOnFlag = (
   flags: ParsedFlags,
   fallback: TrellisLsFailOn,
@@ -332,10 +405,24 @@ const applyModeFlag = (flags: ParsedFlags): TrellisLsApplyMode => {
   throw new CliInputError(`Invalid --mode: ${value}`)
 }
 
+const fastPathModeFlag = (flags: ParsedFlags): TrellisLsFastPathMode => {
+  const value = stringFlag(flags, "mode") ?? "preview"
+  if (value === "preview" || value === "write") return value
+  throw new CliInputError(`Invalid --mode for fastpath: ${value}`)
+}
+
 const profileFlag = (flags: ParsedFlags): TrellisLsProfile | undefined => {
   const value = stringFlag(flags, "profile")
   if (value === undefined) return undefined
-  if (value === "default" || value === "recipe-only-source") return value
+  if (
+    value === "default" ||
+    value === "recipe-only-source" ||
+    value === "effect-correctness" ||
+    value === "effect-autofix-safe" ||
+    value === "effect-style-autofix" ||
+    value === "effect-native-inventory" ||
+    value === "effect-full-inventory"
+  ) return value
   throw new CliInputError(`Invalid --profile: ${value}`)
 }
 
@@ -361,6 +448,29 @@ const renderText = (output: unknown): string => {
       return `${item.fixId ?? "fix"} ${item.kind ?? "fix"} ${item.title ?? ""}`
     }).join("\n") + "\n"
   }
+  if ("packets" in output && Array.isArray(output.packets)) {
+    return output.packets.map((packet) => {
+      const item = packet as {
+        readonly packetId?: string
+        readonly code?: string
+        readonly diagnosticCount?: number
+        readonly safeFixCount?: number
+      }
+      return `${item.packetId ?? "packet"} ${item.code ?? "effect"} diagnostics=${item.diagnosticCount ?? 0} safeFixes=${item.safeFixCount ?? 0}`
+    }).join("\n") + "\n"
+  }
+  if ("packetId" in output && "validationStatus" in output && "applied" in output) {
+    const item = output as {
+      readonly packetId?: string
+      readonly mode?: string
+      readonly applied?: boolean
+      readonly refused?: boolean
+      readonly validationStatus?: string
+      readonly safeFixCount?: number
+      readonly affectedFileCount?: number
+    }
+    return `${item.packetId ?? "packet"} mode=${item.mode ?? "preview"} applied=${item.applied ?? false} refused=${item.refused ?? false} validation=${item.validationStatus ?? "not-measured"} safeFixes=${item.safeFixCount ?? 0} files=${item.affectedFileCount ?? 0}\n`
+  }
   return `${JSON.stringify(output, null, 2)}\n`
 }
 
@@ -369,8 +479,13 @@ const writeHelp = (): void => {
     "trellis-ls diagnostics --project <tsconfig> --format json",
     "trellis-ls diagnostics --workspace . --profile recipe-only-source --format json",
     "trellis-ls fixes --project <tsconfig> [--diagnostic-id <id>] --format json",
+    "trellis-ls packets --project <tsconfig> --source effect --profile effect-autofix-safe --format json",
+    "trellis-ls fixes --project <tsconfig> --packet-id <id> --format json",
     "trellis-ls apply --project <tsconfig> --fix-id <id> --mode diff|write --format json",
+    "trellis-ls apply --project <tsconfig> --packet-id <id> --mode diff|write --format json",
+    "trellis-ls fastpath --project <tsconfig> --packet-id <id> --mode preview|write --format json",
     "trellis-ls check --project <tsconfig> --format json",
+    "trellis-ls check --project <tsconfig> --packet-id <id> --format json",
     "",
   ].join("\n"))
 }
