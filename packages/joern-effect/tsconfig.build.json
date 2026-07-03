@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "joern-effect": ["./src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "harness/**/*.ts"]
+}
