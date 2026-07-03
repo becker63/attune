@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "EffectServiceGeneratorSchema",
+  "title": "Effect Service",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Service name, for example JoernTemplateExecutor."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Directory where the service module should be written.",
+      "default": "src/effect/services"
+    },
+    "export": {
+      "type": "boolean",
+      "description": "Update an index.ts barrel in the service directory.",
+      "default": true
+    },
+    "tag": {
+      "type": "string",
+      "description": "Effect.Service identifier."
+    },
+    "symbolId": {
+      "type": "string",
+      "description": "Auditable symbol id recorded in the generated project-facts placeholder."
+    },
+    "symbolKind": {
+      "type": "string",
+      "description": "Canonical symbol kind recorded in the generated project-facts placeholder.",
+      "default": "command",
+      "enum": [
+        "codec",
+        "query",
+        "command",
+        "projection",
+        "event-facade",
+        "atom-family",
+        "resource-provider",
+        "generator",
+        "policy-rule",
+        "joern-template"
+      ]
+    },
+    "project": {
+      "type": "string",
+      "description": "Owning Nx project recorded in artifact provenance."
+    },
+    "generatorVersion": {
+      "type": "string",
+      "description": "Generator package version recorded in artifact provenance."
+    },
+    "generatorRevision": {
+      "type": "string",
+      "description": "Generator source revision recorded in artifact provenance."
+    },
+    "openspecChangeId": {
+      "type": "string",
+      "description": "OpenSpec change id recorded in artifact provenance."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

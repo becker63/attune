@@ -1,0 +1,160 @@
+import { describe, expect, it } from "vitest"
+
+import effectServiceGenerator from "../src/generators/effect-service/generator.js"
+import type { GeneratorTree } from "../src/internal/tree.js"
+
+class MemoryTree implements GeneratorTree {
+  readonly files = new Map<string, string>()
+
+  exists(path: string): boolean {
+    return (
+      this.files.has(path) ||
+      [...this.files.keys()].some((file) => file.startsWith(`${path}/`))
+    )
+  }
+
+  read(path: string): string | null {
+    return this.files.get(path) ?? null
+  }
+
+  write(path: string, content: string): void {
+    this.files.set(path, content)
+  }
+
+  children(path: string): string[] {
+    const prefix = `${path}/`
+    return [...this.files.keys()]
+      .filter((file) => file.startsWith(prefix))
+      .map((file) => file.slice(prefix.length))
+      .filter((file) => !file.includes("/"))
+  }
+}
+
+const generatedService = (tree: MemoryTree): string =>
+  tree.files.get(
+    "packages/decision-core/src/effect/services/decision-runner.ts",
+  ) ?? ""
+
+describe("@attune/nx:effect-service", () => {
+  it("generates the canonical Effect.Service shape with accessors", () => {
+    const tree = new MemoryTree()
+
+    effectServiceGenerator(tree, {
+      name: "Decision Runner",
+      directory: "packages/decision-core/src/effect/services",
+      project: "decision-core",
+    })
+
+    const source = generatedService(tree)
+    expect(source).toContain('import { Effect, Schema } from "effect"')
+    expect(source).toContain(
+      "export class DecisionRunner extends Effect.Service<DecisionRunner>()",
+    )
+    expect(source).toContain('  "@attune/service/DecisionRunner",')
+    expect(source).toContain("    accessors: true,")
+    expect(source).toContain(
+      "    effect: Effect.succeed(makeDecisionRunner()),",
+    )
+    expect(source).not.toContain("Context.Tag")
+  })
+
+  it("emits symbol schema and project-facts registration placeholders", () => {
+    const tree = new MemoryTree()
+
+    effectServiceGenerator(tree, {
+      name: "Decision Runner",
+      directory: "packages/decision-core/src/effect/services",
+      symbolId: "decision.runner.execute",
+      symbolKind: "resource-provider",
+      project: "decision-core",
+    })
+
+    const source = generatedService(tree)
+    expect(source).toContain("export const DecisionRunnerRunInput = Schema.Void")
+    expect(source).toContain(
+      "export const DecisionRunnerRunOutput = Schema.Void",
+    )
+    expect(source).toContain("export const DecisionRunnerRunSymbol = {")
+    expect(source).toContain('  id: "decision.runner.execute",')
+    expect(source).toContain('  kind: "resource-provider",')
+    expect(source).toContain('  inferredDiagnosticRules: "inferDiagnosticRules()",')
+    expect(source).toContain("  diagnosticRuleExtensions: [],")
+    expect(source).toContain(
+      '    "resourceProviderSymbol({ id, input, output, diagnosticRules: inferDiagnosticRules(), edges: touches(...) })",',
+    )
+  })
+
+  it("exports ProjectLayer and ProjectTestLayer from the service default layer", () => {
+    const tree = new MemoryTree()
+
+    effectServiceGenerator(tree, {
+      name: "Decision Runner",
+      directory: "packages/decision-core/src/effect/services",
+      project: "decision-core",
+    })
+
+    const source = generatedService(tree)
+    expect(source).toContain(
+      "export const DecisionRunnerLive = DecisionRunner.Default",
+    )
+    expect(source).toContain("export const ProjectLayer = DecisionRunnerLive")
+    expect(source).toContain(
+      "export const ProjectTestLayer = DecisionRunnerLive",
+    )
+  })
+
+  it("records symbol metadata in artifact provenance", () => {
+    const tree = new MemoryTree()
+
+    effectServiceGenerator(tree, {
+      name: "Decision Runner",
+      directory: "packages/decision-core/src/effect/services",
+      generatorVersion: "0.0.0-test",
+      symbolId: "decision.runner.execute",
+      symbolKind: "generator",
+      project: "decision-core",
+    })
+
+    const shard = JSON.parse(
+      tree.files.get("packages/decision-core/attune.artifact-ownership.json") ?? "{}",
+    )
+
+    expect(shard.entries[0]).toMatchObject({
+      generatorName: "@attune/nx:effect-service",
+      generatorVersion: "0.0.0-test",
+      options: {
+        directory: "packages/decision-core/src/effect/services",
+        export: true,
+        name: "Decision Runner",
+        symbolId: "decision.runner.execute",
+        symbolKind: "generator",
+        tag: "@attune/service/DecisionRunner",
+      },
+      ownedFiles: [
+        "packages/decision-core/src/effect/services/decision-runner.ts",
+        "packages/decision-core/src/effect/services/index.ts",
+      ],
+      openspecChangeId: "promote-program-index-runtime-substrate",
+    })
+  })
+
+  it("keeps repeated generator output deterministic", () => {
+    const first = new MemoryTree()
+    const second = new MemoryTree()
+    const options = {
+      name: "Decision Runner",
+      directory: "packages/decision-core/src/effect/services",
+      symbolId: "decision.runner.execute",
+      symbolKind: "generator" as const,
+      project: "decision-core",
+    }
+
+    effectServiceGenerator(first, options)
+    effectServiceGenerator(first, options)
+    effectServiceGenerator(second, options)
+
+    expect([...first.files.entries()].sort()).toEqual(
+      [...second.files.entries()].sort(),
+    )
+  })
+})

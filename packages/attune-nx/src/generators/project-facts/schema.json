@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "ProjectFactsGeneratorSchema",
+  "title": "Attune Project Facts",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "type": "string",
+      "description": "Stable program-index project id, for example attune-nx."
+    },
+    "projectKind": {
+      "type": "string",
+      "description": "Mechanical project category.",
+      "enum": [
+        "generator-tooling",
+        "architecture-policy",
+        "policy-plugin",
+        "core-discovery-runtime",
+        "semantic-recall-service",
+        "foldkit-ui",
+        "agent-extension",
+        "joern-runtime-and-dsl",
+        "property-proof-runtime",
+        "platform-resource-provider",
+        "day0-resource-runbook"
+      ]
+    },
+    "sourceRoot": {
+      "type": "string",
+      "description": "Project root recorded in artifact provenance, for example packages/attune-nx."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Source directory where attune.package.ts files should be written. Defaults to <sourceRoot>/src when sourceRoot is provided, otherwise src."
+    },
+    "owningProject": {
+      "type": "string",
+      "description": "Owning Nx project id for generated artifact provenance."
+    },
+    "symbolId": {
+      "type": "string",
+      "description": "Optional seed symbol id. Defaults to <projectId>-boundary."
+    },
+    "symbolKind": {
+      "type": "string",
+      "description": "Optional seed symbol kind.",
+      "enum": [
+        "codec",
+        "query",
+        "command",
+        "projection",
+        "event-facade",
+        "atom-family",
+        "resource-provider",
+        "generator",
+        "policy-rule",
+        "joern-template"
+      ],
+      "default": "query"
+    },
+    "symbolName": {
+      "type": "string",
+      "description": "Optional human-readable symbol name used for generated schema identifiers."
+    },
+    "generatorVersion": {
+      "type": "string",
+      "description": "Generator version recorded in artifact provenance."
+    },
+    "generatorRevision": {
+      "type": "string",
+      "description": "Generator revision recorded in artifact provenance."
+    },
+    "openspecChangeId": {
+      "type": "string",
+      "description": "OpenSpec change id recorded in artifact provenance."
+    }
+  },
+  "required": ["projectId", "projectKind"],
+  "additionalProperties": false
+}
