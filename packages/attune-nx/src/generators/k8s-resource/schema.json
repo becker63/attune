@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "K8sResourceGeneratorSchema",
+  "title": "Kubernetes Resource",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Resource module name, for example RepoSandbox."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Directory where the resource module should be written.",
+      "default": "src/resources"
+    },
+    "export": {
+      "type": "boolean",
+      "description": "Update an index.ts barrel in the resource directory.",
+      "default": true
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

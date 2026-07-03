@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "CocoIndexMcpToolGeneratorSchema",
+  "title": "CocoIndex MCP Tool",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Tool module name, for example Search."
+    },
+    "directory": {
+      "type": "string",
+      "description": "Directory where the tool module should be written.",
+      "default": "src/cocoindex/tools"
+    },
+    "export": {
+      "type": "boolean",
+      "description": "Update an index.ts barrel in the tool directory.",
+      "default": true
+    },
+    "toolName": {
+      "type": "string",
+      "description": "MCP tool name exposed by cocoindex-code."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}
