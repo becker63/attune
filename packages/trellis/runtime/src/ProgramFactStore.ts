@@ -7,6 +7,10 @@ import {
   ProgramObservationSchema,
   ProgramObservationRunSchema,
   ProgramDiagnosticRequirementSchema,
+  defineAlchemyResource,
+  defineObservationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   type ProgramArtifactRecord,
   type ProgramRepairFinding,
   type ProgramSchemaDescriptor,
@@ -17,6 +21,58 @@ import {
 } from "@attune/framework-protocol"
 
 import type { ProgramFactRuntimeSnapshot } from "./ProgramFactProjection.js"
+
+const programFactStoreRecipeId = "framework-runtime.program-fact-store-snapshot" as const
+const programFactProjectionRecipeId = "framework-runtime.program-fact-projection" as const
+const programFactStoreSourcePath = "packages/trellis/runtime/src/ProgramFactStore.ts" as const
+
+export const ProgramFactStoreSnapshotSchema = Schema.Struct({
+  schemaDescriptors: Schema.Array(Schema.Unknown),
+  diagnosticRequirements: Schema.Array(Schema.Unknown),
+  observationRuns: Schema.Array(Schema.Unknown),
+  observations: Schema.Array(Schema.Unknown),
+  artifacts: Schema.Array(Schema.Unknown),
+  replayMetadata: Schema.Array(Schema.Unknown),
+  waiverState: Schema.Array(Schema.Unknown),
+  coverageFeedback: Schema.Array(Schema.Unknown),
+  repairFindings: Schema.Array(Schema.Unknown),
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ProgramFactStoreSnapshotResource = defineAlchemyResource({
+  id: "framework-runtime.program-fact-store.snapshot",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ProgramFactStoreSnapshot",
+  ownerRecipeId: programFactStoreRecipeId,
+  producedBy: [programFactStoreRecipeId],
+  consumedBy: [programFactStoreRecipeId, programFactProjectionRecipeId],
+  addressFields: [
+    "schemaDescriptors",
+    "diagnosticRequirements",
+    "observationRuns",
+    "observations",
+  ],
+  addressSchema: ProgramFactStoreSnapshotSchema as never,
+  stateSchema: ProgramFactStoreSnapshotSchema as never,
+  modes: ["read", "observe", "project"],
+  programmaticResourceExport: "decodeProgramFactStoreSnapshot",
+  programmaticBridgeSourcePath: programFactStoreSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ProgramFactProjectionInputResourceForStore = defineAlchemyResource({
+  id: "framework-runtime.program-fact-projection.input",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ProgramFactRuntimeSnapshot",
+  ownerRecipeId: programFactProjectionRecipeId,
+  consumedBy: [programFactProjectionRecipeId],
+  addressFields: ["schemaDescriptorId", "projectId", "sourcePath"],
+  addressSchema: ProgramFactStoreSnapshotSchema as never,
+  stateSchema: ProgramFactStoreSnapshotSchema as never,
+  modes: ["read", "observe", "project"],
+  programmaticResourceExport: "ProgramFactProjectionLive",
+  programmaticBridgeSourcePath: "packages/trellis/runtime/src/ProgramFactProjection.ts",
+})
 
 export const ReplayObservationMetadataSchema = Schema.Struct({
   replayId: Schema.String,
@@ -416,7 +472,7 @@ export const diagnosticFromQueryError = (
     code: "attune/program-facts/invalid-store-payload",
     severity: "error",
     projectId: error.projectId ?? fallback.projectId,
-    sourcePath: error.sourcePath ?? fallback.sourcePath,
+    sourcePath: fallback.sourcePath,
     explanation: error.message,
     suggestedActions: [{
       id: "refresh-artifact-materialization",
@@ -441,3 +497,85 @@ export const mapStoreError = (
     operation,
     cause: error,
   })
+
+export interface ProgramFactStoreSnapshotProjectorService {
+  readonly snapshot: (
+    input: ProgramFactStoreSnapshot,
+  ) => Effect.Effect<ProgramFactStoreSnapshot>
+}
+
+export class ProgramFactStoreSnapshotProjector extends Context.Service<
+  ProgramFactStoreSnapshotProjector,
+  ProgramFactStoreSnapshotProjectorService
+>()("@attune/framework-runtime/ProgramFactStoreSnapshotProjector") {}
+
+export const ProgramFactStoreSnapshotProjectorLive: Layer.Layer<
+  ProgramFactStoreSnapshotProjector
+> = Layer.succeed(
+  ProgramFactStoreSnapshotProjector,
+  {
+    snapshot: (input) => Effect.succeed(input),
+  },
+)
+
+export const ProgramFactStoreSnapshotLayer = defineRecipeLayer({
+  id: "framework-runtime.program-fact-store-snapshot.layer",
+  sourcePath: programFactStoreSourcePath,
+  exportName: "ProgramFactStoreSnapshotProjectorLive",
+  layer: ProgramFactStoreSnapshotProjectorLive as never,
+  provides: [{
+    id: "framework-runtime.program-fact-store-snapshot.service",
+    service: ProgramFactStoreSnapshotProjector as never,
+  }],
+})
+
+export const observeProgramFactStoreSnapshot = (
+  input: ProgramFactStoreSnapshot,
+): Effect.Effect<ProgramFactStoreSnapshot, never, ProgramFactStoreSnapshotProjector> =>
+  Effect.gen(function* observeProgramFactStoreSnapshotBody() {
+    const projector = yield* ProgramFactStoreSnapshotProjector
+    return yield* projector.snapshot(input)
+  })
+
+export const ProgramFactStoreSnapshotHandler = defineRecipeHandler<
+  ProgramFactStoreSnapshot,
+  ProgramFactStoreSnapshot,
+  never,
+  ProgramFactStoreSnapshotProjector
+>({
+  id: "framework-runtime.program-fact-store-snapshot.handler",
+  recipeId: programFactStoreRecipeId,
+  sourcePath: programFactStoreSourcePath,
+  exportName: "observeProgramFactStoreSnapshot",
+  layer: ProgramFactStoreSnapshotLayer,
+  emitsReceipts: ["framework-runtime.program-fact-store.snapshot.observed"],
+  handler: (input) => observeProgramFactStoreSnapshot(input) as never,
+})
+
+export const ProgramFactStoreSnapshotRecipe = defineObservationRecipe({
+  id: programFactStoreRecipeId,
+  projectId: "framework-runtime",
+  title: "Observe runtime program fact store snapshots",
+  inputSchema: ProgramFactStoreSnapshotSchema as never,
+  outputSchema: ProgramFactStoreSnapshotSchema as never,
+  allowedFiles: [programFactStoreSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  io: {
+    inputSchema: ProgramFactStoreSnapshotSchema as never,
+    outputSchema: ProgramFactStoreSnapshotSchema as never,
+    inputResources: [ProgramFactStoreSnapshotResource],
+    outputResources: [ProgramFactStoreSnapshotResource],
+  },
+  handler: ProgramFactStoreSnapshotHandler,
+  alchemyDag: [{
+    fromRecipeId: programFactStoreRecipeId,
+    toRecipeId: programFactProjectionRecipeId,
+    resource: ProgramFactProjectionInputResourceForStore,
+    kind: "observes",
+    modes: ["read", "observe", "project"],
+  }],
+})
+
+export const ProgramFactStoreRecipes = [
+  ProgramFactStoreSnapshotRecipe,
+] as const

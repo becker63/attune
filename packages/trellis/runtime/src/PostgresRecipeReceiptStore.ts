@@ -1,7 +1,12 @@
-import { Effect } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
+  RecipeReceiptStoreSnapshotSchema,
   RecipeEdgeRecordView,
   RecipeRecordView,
+  defineAlchemyResource,
+  defineObservationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   type RecipeDefinition,
   type RecipeDiagnostic,
   type RecipeHealth,
@@ -653,3 +658,185 @@ const optionalLifecycleActionField = (
   if (value === null || value === undefined) return {}
   return { action: stringCell(row, "lifecycle_action") as RecipeRun["action"] }
 }
+
+const postgresRecipeReceiptStoreRecipeId =
+  "framework-runtime.postgres-recipe-receipt-store" as const
+const postgresRecipeReceiptStoreSourcePath =
+  "packages/trellis/runtime/src/PostgresRecipeReceiptStore.ts" as const
+
+export const PostgresRecipeReceiptStoreContractInputSchema = Schema.Struct({
+  databaseUrlEnv: Schema.optional(Schema.String),
+  schemaRoot: Schema.Literal("framework_event"),
+})
+export type PostgresRecipeReceiptStoreContractInput =
+  typeof PostgresRecipeReceiptStoreContractInputSchema.Type
+
+export const PostgresRecipeReceiptStoreContractOutputSchema = Schema.Struct({
+  storeFactory: Schema.Literal("createPostgresRecipeReceiptStore"),
+  writeStatementCount: Schema.Number,
+  readStatementCount: Schema.Number,
+  snapshotSupported: Schema.Boolean,
+  receiptStoreSnapshotSchema: Schema.Literal("RecipeReceiptStoreSnapshotSchema"),
+})
+export type PostgresRecipeReceiptStoreContractOutput =
+  typeof PostgresRecipeReceiptStoreContractOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const PostgresRecipeReceiptStoreDatabaseResource = defineAlchemyResource({
+  id: "framework-runtime.postgres-recipe-receipt-store.database",
+  kind: "database",
+  alchemyType: "attune:resource:PostgresRecipeReceiptStore",
+  ownerRecipeId: postgresRecipeReceiptStoreRecipeId,
+  producedBy: [postgresRecipeReceiptStoreRecipeId],
+  consumedBy: [postgresRecipeReceiptStoreRecipeId],
+  addressFields: ["databaseUrlEnv", "schemaRoot"],
+  addressSchema: PostgresRecipeReceiptStoreContractInputSchema as never,
+  stateSchema: RecipeReceiptStoreSnapshotSchema as never,
+  modes: ["read", "write", "observe", "check"],
+  programmaticResourceExport: "PostgresRecipeReceiptStoreContractLive",
+  programmaticBridgeSourcePath: postgresRecipeReceiptStoreSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const PostgresRecipeReceiptStoreContractResource = defineAlchemyResource({
+  id: "framework-runtime.postgres-recipe-receipt-store.contract",
+  kind: "report",
+  alchemyType: "attune:resource:PostgresRecipeReceiptStoreContract",
+  ownerRecipeId: postgresRecipeReceiptStoreRecipeId,
+  producedBy: [postgresRecipeReceiptStoreRecipeId],
+  consumedBy: [postgresRecipeReceiptStoreRecipeId],
+  addressFields: ["storeFactory", "writeStatementCount", "readStatementCount"],
+  addressSchema: PostgresRecipeReceiptStoreContractOutputSchema as never,
+  stateSchema: PostgresRecipeReceiptStoreContractOutputSchema as never,
+  modes: ["read", "observe", "project"],
+  programmaticResourceExport: "PostgresRecipeReceiptStoreContractLive",
+  programmaticBridgeSourcePath: postgresRecipeReceiptStoreSourcePath,
+})
+
+export interface PostgresRecipeReceiptStoreContractService {
+  readonly describe: (
+    input: PostgresRecipeReceiptStoreContractInput,
+  ) => Effect.Effect<PostgresRecipeReceiptStoreContractOutput>
+}
+
+export class PostgresRecipeReceiptStoreContract extends Context.Service<
+  PostgresRecipeReceiptStoreContract,
+  PostgresRecipeReceiptStoreContractService
+>()("@attune/framework-runtime/PostgresRecipeReceiptStoreContract") {}
+
+const postgresReceiptStoreWriteStatements = [
+  recipeUpsertSql,
+  recipeEdgeUpsertSql,
+  ioUpsertSql,
+  runUpsertSql,
+  receiptUpsertSql,
+  observationUpsertSql,
+  diagnosticUpsertSql,
+  repairUpsertSql,
+  healthUpsertSql,
+] as const
+
+const postgresReceiptStoreReadStatements = [
+  recipeSelectSql,
+  receiptsForRecipeSql,
+  runsForRecipeSql,
+  observationsForRecipeSql,
+  healthForRecipeSql,
+  diagnosticsForRecipeSql,
+  repairsForRecipeSql,
+  receiptByIdSql,
+  receiptsByStatusSql,
+  observationsForRunSql,
+  observationsForReceiptSql,
+  observationsByKindSql,
+  latestReceiptSql,
+  recipeSnapshotSql,
+  edgeSnapshotSql,
+  ioSnapshotSql,
+  runSnapshotSql,
+  receiptSnapshotSql,
+  observationSnapshotSql,
+  diagnosticSnapshotSql,
+  repairSnapshotSql,
+  healthSnapshotSql,
+] as const
+
+export const postgresRecipeReceiptStoreContractOutput =
+  (): PostgresRecipeReceiptStoreContractOutput => ({
+    storeFactory: "createPostgresRecipeReceiptStore",
+    writeStatementCount: postgresReceiptStoreWriteStatements.length,
+    readStatementCount: postgresReceiptStoreReadStatements.length,
+    snapshotSupported: true,
+    receiptStoreSnapshotSchema: "RecipeReceiptStoreSnapshotSchema",
+  })
+
+export const PostgresRecipeReceiptStoreContractLive = Layer.succeed(
+  PostgresRecipeReceiptStoreContract,
+  {
+    describe: (_input: PostgresRecipeReceiptStoreContractInput) =>
+      Effect.succeed(postgresRecipeReceiptStoreContractOutput()),
+  },
+)
+
+export const PostgresRecipeReceiptStoreContractLayer = defineRecipeLayer({
+  id: "framework-runtime.postgres-recipe-receipt-store.layer",
+  sourcePath: postgresRecipeReceiptStoreSourcePath,
+  exportName: "PostgresRecipeReceiptStoreContractLive",
+  layer: PostgresRecipeReceiptStoreContractLive as never,
+  provides: [{
+    id: "framework-runtime.postgres-recipe-receipt-store.service",
+    service: PostgresRecipeReceiptStoreContract as never,
+  }],
+})
+
+export const describePostgresRecipeReceiptStore = (
+  input: PostgresRecipeReceiptStoreContractInput,
+): Effect.Effect<PostgresRecipeReceiptStoreContractOutput, never, PostgresRecipeReceiptStoreContract> =>
+  Effect.gen(function* describePostgresRecipeReceiptStoreBody() {
+    const contract = yield* PostgresRecipeReceiptStoreContract
+    return yield* contract.describe(input)
+  })
+
+export const PostgresRecipeReceiptStoreHandler = defineRecipeHandler<
+  PostgresRecipeReceiptStoreContractInput,
+  PostgresRecipeReceiptStoreContractOutput,
+  never,
+  PostgresRecipeReceiptStoreContract
+>({
+  id: "framework-runtime.postgres-recipe-receipt-store.handler",
+  recipeId: postgresRecipeReceiptStoreRecipeId,
+  sourcePath: postgresRecipeReceiptStoreSourcePath,
+  exportName: "describePostgresRecipeReceiptStore",
+  layer: PostgresRecipeReceiptStoreContractLayer,
+  emitsReceipts: ["framework-runtime.postgres-recipe-receipt-store.described"],
+  handler: (input) => describePostgresRecipeReceiptStore(input) as never,
+})
+
+export const PostgresRecipeReceiptStoreRecipe = defineObservationRecipe({
+  id: postgresRecipeReceiptStoreRecipeId,
+  projectId: "framework-runtime",
+  title: "Describe durable Postgres recipe receipt store operations",
+  inputSchema: PostgresRecipeReceiptStoreContractInputSchema,
+  outputSchema: PostgresRecipeReceiptStoreContractOutputSchema,
+  nxTarget: "framework-runtime:test",
+  allowedFiles: [postgresRecipeReceiptStoreSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  io: {
+    inputSchema: PostgresRecipeReceiptStoreContractInputSchema,
+    outputSchema: PostgresRecipeReceiptStoreContractOutputSchema,
+    inputResources: [PostgresRecipeReceiptStoreDatabaseResource],
+    outputResources: [PostgresRecipeReceiptStoreContractResource],
+  },
+  handler: PostgresRecipeReceiptStoreHandler,
+  alchemyDag: [{
+    fromRecipeId: postgresRecipeReceiptStoreRecipeId,
+    toRecipeId: "framework-runtime.receipt-store-summary",
+    resource: PostgresRecipeReceiptStoreContractResource,
+    kind: "observes",
+    modes: ["read", "observe", "project"],
+  }],
+})
+
+export const PostgresRecipeReceiptStoreRecipes = [
+  PostgresRecipeReceiptStoreRecipe,
+] as const

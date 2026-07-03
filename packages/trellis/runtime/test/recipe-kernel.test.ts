@@ -10,8 +10,11 @@ import {
   AlchemyResourceDescriptor,
   createPostgresRecipeReceiptStore,
   createInMemoryRecipeReceiptStore,
+  defineAlchemyResource,
+  defineManagedRecipeAlchemyBinding,
   defineManagedExecutableRecipe,
   defineExecutableRecipe,
+  defineRecipeHandler,
   frameworkRecipeReceiptKanelConfig,
   frameworkRecipeReceiptKyselyServiceContract,
   frameworkRecipeReceiptSafeQlConfig,
@@ -44,12 +47,153 @@ import {
   recipeObservationId,
 } from "../src/index.js"
 
+const safeRepairRisk = "safe" as const
+const needsReviewRepairRisk = "needs-review" as const
+
 const RecipeInput = Schema.Struct({
   projectId: Schema.String,
 })
 
 const RecipeOutput = Schema.Struct({
   checked: Schema.Boolean,
+})
+
+const recipeKernelTestSourcePath = "packages/trellis/runtime/test/recipe-kernel.test.ts" as const
+const localTimescaleFixtureRecipeId = "local-timescaledb" as const
+const localTimescaleFixtureSourceRecipeId = "local-timescaledb.source" as const
+const localTimescaleFixtureServiceSubstrateId = "local-timescaledb.service" as const
+const localTimescaleFixtureImageSubstrateId = "local-timescaledb.image" as const
+const localTimescaleFixtureComposeSubstrateId = "local-timescaledb.compose" as const
+const localTimescaleFixtureTypesSubstrateId = "framework-recipe-spine.types" as const
+const localTimescaleFixtureQueryServiceSubstrateId = "framework-recipe-spine.query-service" as const
+const localTimescaleFixtureSafeQlSubstrateId = "framework-recipe-spine.safeql" as const
+
+const LocalTimescaleFixtureResource = defineAlchemyResource({
+  id: "local-timescaledb.resource",
+  kind: "database",
+  alchemyType: "attune:resource:TimescalePostgresTestFixture",
+  ownerRecipeId: localTimescaleFixtureRecipeId,
+  producedBy: [localTimescaleFixtureRecipeId],
+  consumedBy: [localTimescaleFixtureRecipeId],
+  addressSchema: RecipeInput,
+  stateSchema: RecipeOutput,
+  modes: ["read", "plan", "apply", "check", "destroy"],
+  programmaticResourceExport: "LocalTimescaleFixtureResource",
+})
+
+const LocalTimescaleFixtureAlchemyBinding = defineManagedRecipeAlchemyBinding({
+  id: "local-timescaledb.alchemy-binding",
+  managedRecipeId: localTimescaleFixtureRecipeId,
+  alchemyResourceType: "attune:alchemy:ManagedRecipe",
+  providerId: "local-timescaledb.provider",
+  resource: LocalTimescaleFixtureResource,
+  lifecycle: {
+    plan: "local-timescaledb.plan",
+    apply: "local-timescaledb.apply",
+    check: "local-timescaledb.check",
+    destroy: "local-timescaledb.destroy",
+    prune: "local-timescaledb.prune",
+  },
+  bindings: ["local-timescaledb.resource"],
+})
+
+const localTimescaleFixtureExecute = (
+  input: typeof RecipeInput.Type,
+): Effect.Effect<typeof RecipeOutput.Type> =>
+  Effect.succeed({ checked: input.projectId.length > 0 })
+
+const LocalTimescaleFixtureHandler = defineRecipeHandler<
+  typeof RecipeInput.Type,
+  typeof RecipeOutput.Type
+>({
+  id: "local-timescaledb.handler",
+  recipeId: localTimescaleFixtureRecipeId,
+  sourcePath: recipeKernelTestSourcePath,
+  exportName: "localTimescaleFixtureExecute",
+  emitsReceipts: ["local-timescaledb.checked"],
+  handler: localTimescaleFixtureExecute,
+})
+
+export const LocalTimescaleFixtureDriftRepair: RecipeRepair = {
+  repairId: "recipe-repair:local-timescaledb:drift",
+  recipeId: "local-timescaledb",
+  title: "Repair local TimescaleDB drift",
+  kind: "managed-lifecycle",
+  nxTarget: "workspace:repair",
+  allowedFiles: ["packages/trellis/runtime/**"],
+  risk: needsReviewRepairRisk,
+  evidenceRequirements: ["nx run workspace:check"],
+}
+
+export const LocalTimescaleFixtureRecipe = defineManagedExecutableRecipe({
+  id: localTimescaleFixtureRecipeId,
+  projectId: "workspace",
+  inputSchema: RecipeInput,
+  outputSchema: RecipeOutput,
+  io: {
+    inputSchema: RecipeInput,
+    outputSchema: RecipeOutput,
+    inputResources: [LocalTimescaleFixtureResource],
+    outputResources: [LocalTimescaleFixtureResource],
+  },
+  handler: LocalTimescaleFixtureHandler,
+  nxTarget: "workspace:recipe-local-timescaledb",
+  sourcePath: recipeKernelTestSourcePath,
+  lifecycle: ["plan", "apply", "check", "destroy", "prune"],
+  resourceKind: "timescaledb",
+  alchemy: LocalTimescaleFixtureAlchemyBinding,
+  alchemyDag: [{
+    fromRecipeId: localTimescaleFixtureSourceRecipeId,
+    toRecipeId: localTimescaleFixtureRecipeId,
+    resource: LocalTimescaleFixtureResource,
+    kind: "manages",
+    modes: ["read", "plan", "apply", "check", "destroy"],
+  }],
+  lifecycleSubstrates: [
+    {
+      id: localTimescaleFixtureServiceSubstrateId,
+      kind: "database-service",
+      tool: "TimescaleDB/Postgres",
+      lifecycleActions: ["plan", "apply", "check", "destroy", "prune"],
+      evidence: ["packages/trellis/runtime/sql/0001_framework_recipe_receipt_spine.sql"],
+    },
+    {
+      id: localTimescaleFixtureImageSubstrateId,
+      kind: "container-runtime",
+      tool: "nix2container",
+      lifecycleActions: ["plan", "apply", "check", "destroy"],
+    },
+    {
+      id: localTimescaleFixtureComposeSubstrateId,
+      kind: "container-runtime",
+      tool: "Arion",
+      lifecycleActions: ["plan", "apply", "check", "destroy"],
+    },
+    {
+      id: localTimescaleFixtureTypesSubstrateId,
+      kind: "schema-codegen",
+      tool: "Kanel",
+      lifecycleActions: ["apply", "check"],
+      nxTarget: "framework-runtime:generate-kanel-types",
+    },
+    {
+      id: localTimescaleFixtureQueryServiceSubstrateId,
+      kind: "query-service",
+      tool: "Kysely",
+      lifecycleActions: ["apply", "check"],
+    },
+    {
+      id: localTimescaleFixtureSafeQlSubstrateId,
+      kind: "sql-validation",
+      tool: "SafeQL",
+      lifecycleActions: ["check"],
+      nxTarget: "framework-runtime:safeql-check",
+    },
+  ],
+  observedState: { status: "running" },
+  driftRepair: LocalTimescaleFixtureDriftRepair,
+  humanReviewRequired: true,
+  execute: localTimescaleFixtureExecute,
 })
 
 describe("RecipeKernel", () => {
@@ -122,7 +266,7 @@ describe("RecipeKernel", () => {
       repairId: "recipe-repair:diagnostic:policy-fast:stale",
       kind: "nx-target",
       nxTarget: "workspace:policy-fast",
-      risk: "safe",
+      risk: safeRepairRisk,
     })
     expect(HealthView.fromRecipe(recipe, {
       receipts: [result.receipt],
@@ -238,74 +382,16 @@ describe("RecipeKernel", () => {
   })
 
   it("models lifecycle/stateful outputs as ManagedRecipes with Alchemy resource projection", async () => {
-    const driftRepair: RecipeRepair = {
-      repairId: "recipe-repair:local-timescaledb:drift",
-      recipeId: "local-timescaledb",
-      title: "Repair local TimescaleDB drift",
-      kind: "managed-lifecycle",
-      nxTarget: "workspace:repair",
-      allowedFiles: ["packages/trellis/runtime/**"],
-      risk: "needs-review",
-      evidenceRequirements: ["nx run workspace:check"],
-    }
-    const managedRecipe = defineManagedExecutableRecipe({
-      id: "local-timescaledb",
-      projectId: "workspace",
-      inputSchema: RecipeInput,
-      outputSchema: RecipeOutput,
-      nxTarget: "workspace:recipe-local-timescaledb",
-      lifecycle: ["plan", "apply", "check", "destroy", "prune"],
-      resourceKind: "timescaledb",
-      lifecycleSubstrates: [
-        {
-          id: "local-timescaledb.service",
-          kind: "database-service",
-          tool: "TimescaleDB/Postgres",
-          lifecycleActions: ["plan", "apply", "check", "destroy", "prune"],
-          evidence: ["packages/trellis/runtime/sql/0001_framework_recipe_receipt_spine.sql"],
-        },
-        {
-          id: "local-timescaledb.image",
-          kind: "container-runtime",
-          tool: "nix2container",
-          lifecycleActions: ["plan", "apply", "check", "destroy"],
-        },
-        {
-          id: "local-timescaledb.compose",
-          kind: "container-runtime",
-          tool: "Arion",
-          lifecycleActions: ["plan", "apply", "check", "destroy"],
-        },
-        {
-          id: "framework-recipe-spine.types",
-          kind: "schema-codegen",
-          tool: "Kanel",
-          lifecycleActions: ["apply", "check"],
-          nxTarget: "framework-runtime:generate-kanel-types",
-        },
-        {
-          id: "framework-recipe-spine.query-service",
-          kind: "query-service",
-          tool: "Kysely",
-          lifecycleActions: ["apply", "check"],
-        },
-        {
-          id: "framework-recipe-spine.safeql",
-          kind: "sql-validation",
-          tool: "SafeQL",
-          lifecycleActions: ["check"],
-          nxTarget: "framework-runtime:safeql-check",
-        },
-      ],
-      observedState: { status: "running" },
-      driftRepair,
-      humanReviewRequired: true,
-      execute: () => Effect.succeed({ checked: true }),
-    })
+    const driftRepair = LocalTimescaleFixtureDriftRepair
+    const managedRecipe = LocalTimescaleFixtureRecipe
 
-    expect(AlchemyResourceDescriptor.fromManagedRecipe(managedRecipe)).toEqual({
+    expect(AlchemyResourceDescriptor.fromManagedRecipe(managedRecipe)).toMatchObject({
       id: "local-timescaledb",
       kind: "timescaledb",
+      alchemy: expect.objectContaining({
+        managedRecipeId: localTimescaleFixtureRecipeId,
+        resource: expect.objectContaining({ id: "local-timescaledb.resource" }),
+      }),
       lifecycle: ["plan", "apply", "check", "destroy", "prune"],
       requiresHumanReview: true,
       lifecycleSubstrates: expect.arrayContaining([
@@ -768,12 +854,32 @@ describe("RecipeKernel", () => {
 
   it("exports runtime package recipes including the local Timescale ManagedRecipe", () => {
     expect(FrameworkRuntimeRecipes.map((recipe) => recipe.id)).toEqual([
+      "framework-runtime.receipt-store-snapshot",
+      "framework-runtime.receipt-store-summary",
+      "framework-runtime.program-diagnostics-source",
+      "framework-runtime.program-diagnostics",
+      "framework-runtime.measurement-observation-store",
+      "framework-runtime.measurement-observation-session-query",
+      "framework-runtime.postgres-recipe-receipt-store",
+      "framework-runtime.local-timescale-cli-invocation",
+      "framework-runtime.program-fact-projection",
+      "framework-runtime.program-fact-query",
+      "framework-runtime.program-fact-runtime",
+      "framework-runtime.program-fact-store-snapshot",
+      "framework-runtime.managed-recipe-alchemy-provider",
+      "framework-runtime.config-surface",
+      "framework-runtime.test-suite",
       "framework-runtime.recipe-kernel",
-      "framework-runtime.receipt-store",
       "framework-runtime.sql-route",
       "framework-runtime.sql-route-generation",
       "framework-runtime.local-timescaledb",
     ])
+    expect(FrameworkRuntimeRecipes.flatMap((recipe) => recipe.alchemyDag ?? [])).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        fromRecipeId: "framework-runtime.receipt-store-snapshot",
+        toRecipeId: "framework-runtime.receipt-store-summary",
+      }),
+    ]))
     expect(FrameworkRuntimeRecipes.at(-1)).toMatchObject({
       id: "framework-runtime.local-timescaledb",
       resourceKind: "timescaledb-postgres-recipe-receipts",

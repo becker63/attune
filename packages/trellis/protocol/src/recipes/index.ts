@@ -1,5 +1,21 @@
-import { Schema } from "effect"
+import { Effect, Schema, type Layer } from "effect"
+import { DiagnosticObligationRecipes } from "../diagnostic-obligations/index.js"
+import { DiagnosticRulesIndexRecipes } from "../diagnostic-rules/index.js"
 import type { ProgramDiagnostic, ProgramRepairAction, SourceRange } from "../diagnostics/index.js"
+import { DiagnosticsRecipes } from "../diagnostics/index.js"
+import { ObservationsRecipes } from "../observations/index.js"
+import {
+  ProjectFactsAssertionsRecipes,
+  ProjectFactsCoreRecipes,
+  ProjectFactsDiagnosticRulesRecipes,
+  ProjectFactsIndexRecipes,
+  ProjectFactsRpcRecipes,
+  ProjectFactsTypeGuidanceRecipes,
+  ProjectFactsValidationRecipes,
+} from "../project-facts/index.js"
+import { SchemaDescriptorRecipes } from "../schema-descriptors/index.js"
+import { ProtocolSourceRecipes } from "../source/index.js"
+import { ProtocolWaiverRecipes } from "../waivers/index.js"
 
 export const RecipeIoRoleSchema = Schema.Literals(["input", "output", "observation", "receipt"] as const)
 export type RecipeIoRole = typeof RecipeIoRoleSchema.Type
@@ -51,6 +67,9 @@ export const RecipeInvocationActionSchema = Schema.Literals([
   "validate-sql",
   "migrate",
   "generate-types",
+  "judge",
+  "benchmark",
+  "report",
   "stop",
 ] as const)
 export type RecipeInvocationAction = typeof RecipeInvocationActionSchema.Type
@@ -66,8 +85,8 @@ export const RecipeInvocationSourceSchema = Schema.Struct({
   surface: Schema.Literals(["nx", "cli", "lsp", "tend", "opencode", "test", "policy"] as const),
   projectId: Schema.optional(Schema.String),
   target: Schema.optional(Schema.String),
-  cwd: Schema.optional(Schema.String),
   sourcePath: Schema.optional(Schema.String),
+  cwd: Schema.optional(Schema.String),
 })
 export type RecipeInvocationSource = typeof RecipeInvocationSourceSchema.Type
 
@@ -102,10 +121,156 @@ export const ManagedRecipeLifecycleSubstrateSchema = Schema.Struct({
 })
 export type ManagedRecipeLifecycleSubstrate = typeof ManagedRecipeLifecycleSubstrateSchema.Type
 
+export const AlchemyResourceKindSchema = Schema.Literals([
+  "file",
+  "directory",
+  "generated-directory",
+  "workflow-target",
+  "nx-target",
+  "database",
+  "runtime-sql",
+  "kubernetes-object-set",
+  "observation-stream",
+  "external-service",
+  "report",
+  "configuration",
+  "schema",
+  "package-metadata",
+  "asset",
+] as const)
+export type AlchemyResourceKind = typeof AlchemyResourceKindSchema.Type
+
+export const AlchemyResourceModeSchema = Schema.Literals([
+  "read",
+  "write",
+  "project",
+  "observe",
+  "invoke",
+  "plan",
+  "apply",
+  "check",
+  "destroy",
+  "external",
+] as const)
+export type AlchemyResourceMode = typeof AlchemyResourceModeSchema.Type
+
+export const AlchemyResourceContractRecordSchema = Schema.Struct({
+  id: Schema.String,
+  kind: AlchemyResourceKindSchema,
+  alchemyType: Schema.String,
+  modes: Schema.Array(AlchemyResourceModeSchema),
+  providerId: Schema.optional(Schema.String),
+  ownerRecipeId: Schema.optional(Schema.String),
+  addressFields: Schema.optional(Schema.Array(Schema.String)),
+  producedBy: Schema.optional(Schema.Array(Schema.String)),
+  consumedBy: Schema.optional(Schema.Array(Schema.String)),
+  programmaticResourceExport: Schema.optional(Schema.String),
+  programmaticProviderExport: Schema.optional(Schema.String),
+  programmaticBridgeSourcePath: Schema.optional(Schema.String),
+})
+export type AlchemyResourceContractRecord =
+  typeof AlchemyResourceContractRecordSchema.Type
+
+export const AlchemyRecipeDagEdgeKindSchema = Schema.Literals([
+  "invokes",
+  "projects",
+  "observes",
+  "diagnoses",
+  "repairs",
+  "judges",
+  "manages",
+  "validates",
+] as const)
+export type AlchemyRecipeDagEdgeKind = typeof AlchemyRecipeDagEdgeKindSchema.Type
+
+export const AlchemyRecipeDagEdgeSchema = Schema.Struct({
+  id: Schema.String,
+  fromRecipeId: Schema.String,
+  toRecipeId: Schema.String,
+  resourceId: Schema.String,
+  kind: AlchemyRecipeDagEdgeKindSchema,
+  modes: Schema.Array(AlchemyResourceModeSchema),
+  inputMapping: Schema.optional(Schema.Array(Schema.String)),
+  outputMapping: Schema.optional(Schema.Array(Schema.String)),
+  validationTargets: Schema.optional(Schema.Array(Schema.String)),
+})
+export type AlchemyRecipeDagEdge = typeof AlchemyRecipeDagEdgeSchema.Type
+
+export const RecipeIdentityHandleSchema = Schema.Struct({
+  id: Schema.String,
+  packageId: Schema.String,
+  exportName: Schema.String,
+})
+export type RecipeIdentityHandle = typeof RecipeIdentityHandleSchema.Type
+
+export const EffectServiceRequirementRecordSchema = Schema.Struct({
+  id: Schema.String,
+})
+export type EffectServiceRequirementRecord =
+  typeof EffectServiceRequirementRecordSchema.Type
+
+export const RecipeLayerBindingRecordSchema = Schema.Struct({
+  id: Schema.String,
+  exportName: Schema.String,
+  provides: Schema.Array(EffectServiceRequirementRecordSchema),
+})
+export type RecipeLayerBindingRecord = typeof RecipeLayerBindingRecordSchema.Type
+
+export const RecipeHandlerBindingRecordSchema = Schema.Struct({
+  id: Schema.String,
+  recipeId: Schema.String,
+  sourcePath: Schema.String,
+  exportName: Schema.String,
+  errorSchemaName: Schema.optional(Schema.String),
+  layer: Schema.optional(RecipeLayerBindingRecordSchema),
+  emitsReceipts: Schema.optional(Schema.Array(Schema.String)),
+})
+export type RecipeHandlerBindingRecord =
+  typeof RecipeHandlerBindingRecordSchema.Type
+
+export const RecipeExpressionMissingReasonSchema = Schema.Literals([
+  "alchemy-resource-io",
+  "effect-handler",
+  "managed-alchemy-binding",
+  "alchemy-dag",
+] as const)
+export type RecipeExpressionMissingReason =
+  typeof RecipeExpressionMissingReasonSchema.Type
+
+export const RecipeExpressionContractStatusSchema = Schema.Literals([
+  "ready",
+  "missing-expression",
+] as const)
+export type RecipeExpressionContractStatus =
+  typeof RecipeExpressionContractStatusSchema.Type
+
+export const RecipeExpressionContractSummarySchema = Schema.Struct({
+  recipeId: Schema.String,
+  status: RecipeExpressionContractStatusSchema,
+  hasAlchemyResourceIo: Schema.Boolean,
+  hasEffectHandler: Schema.Boolean,
+  hasLayerBinding: Schema.Boolean,
+  hasManagedAlchemyBinding: Schema.Boolean,
+  hasAlchemyDagMembership: Schema.Boolean,
+  stringIdSurfaceCount: Schema.Number,
+  stringOnlyIoSuspect: Schema.Boolean,
+  missing: Schema.Array(RecipeExpressionMissingReasonSchema),
+  inputResources: Schema.Array(AlchemyResourceContractRecordSchema),
+  outputResources: Schema.Array(AlchemyResourceContractRecordSchema),
+  handler: Schema.optional(RecipeHandlerBindingRecordSchema),
+  alchemyDag: Schema.Array(AlchemyRecipeDagEdgeSchema),
+})
+export type RecipeExpressionContractSummary =
+  typeof RecipeExpressionContractSummarySchema.Type
+
 export const RecipeKindSchema = Schema.Literals(["recipe", "managed-recipe"] as const)
 export type RecipeKind = typeof RecipeKindSchema.Type
 
 export type RecipeId = string & { readonly RecipeId: unique symbol }
+export type AlchemyResourceId = string & { readonly AlchemyResourceId: unique symbol }
+export type RecipeHandlerId = string & { readonly RecipeHandlerId: unique symbol }
+export type RecipeLayerId = string & { readonly RecipeLayerId: unique symbol }
+export type AlchemyRecipeDagEdgeId = string & { readonly AlchemyRecipeDagEdgeId: unique symbol }
 export type RecipeRunId = string & { readonly RecipeRunId: unique symbol }
 export type RecipeReceiptId = string & { readonly RecipeReceiptId: unique symbol }
 export type RecipeObservationId = string & { readonly RecipeObservationId: unique symbol }
@@ -113,6 +278,35 @@ export type RecipeDiagnosticId = string & { readonly RecipeDiagnosticId: unique 
 export type RecipeRepairId = string & { readonly RecipeRepairId: unique symbol }
 
 export const recipeId = (value: string): RecipeId => stableId("recipe", value) as RecipeId
+export const alchemyResourceId = (value: string): AlchemyResourceId =>
+  stableId("alchemy-resource", value) as AlchemyResourceId
+export const recipeHandlerId = (value: string): RecipeHandlerId =>
+  stableId("recipe-handler", value) as RecipeHandlerId
+export const recipeLayerId = (value: string): RecipeLayerId =>
+  stableId("recipe-layer", value) as RecipeLayerId
+export const alchemyRecipeDagEdgeId = (
+  fromRecipeId: string,
+  toRecipeId: string,
+  resourceId: string,
+  kind: AlchemyRecipeDagEdgeKind,
+): AlchemyRecipeDagEdgeId =>
+  stableId("recipe-dag-edge", fromRecipeId, toRecipeId, resourceId, kind) as AlchemyRecipeDagEdgeId
+export const inferredRecipeId = (input: {
+  readonly packageId: string
+  readonly exportName: string
+  readonly family?: RecipeFamilyRole | "recipe" | "managed"
+}): RecipeId =>
+  recipeId([
+    input.packageId,
+    input.family ?? "recipe",
+    input.exportName,
+  ].join("."))
+export const inferredAlchemyResourceId = (input: {
+  readonly packageId: string
+  readonly exportName: string
+  readonly kind: AlchemyResourceKind
+}): AlchemyResourceId =>
+  alchemyResourceId([input.packageId, input.kind, input.exportName].join("."))
 export const recipeRunId = (recipe: string, startedAt: string): RecipeRunId =>
   stableId("recipe-run", recipe, startedAt) as RecipeRunId
 export const recipeReceiptId = (recipe: string, startedAt: string): RecipeReceiptId =>
@@ -204,8 +398,8 @@ export const RecipeDiagnosticSchema = Schema.Struct({
   recipeId: Schema.String,
   code: Schema.String,
   severity: Schema.Literals(["error", "warning", "info"] as const),
-  message: Schema.String,
   sourcePath: Schema.optional(Schema.String),
+  message: Schema.String,
   range: Schema.optional(RecipeSourceRangeSchema),
   cause: Schema.optional(Schema.Unknown),
   receiptId: Schema.optional(Schema.String),
@@ -265,8 +459,8 @@ export const RecipeRecordSchema = Schema.Struct({
   kind: RecipeKindSchema,
   projectId: Schema.optional(Schema.String),
   title: Schema.optional(Schema.String),
-  nxTarget: Schema.optional(Schema.String),
   sourcePath: Schema.optional(Schema.String),
+  nxTarget: Schema.optional(Schema.String),
   resourceKind: Schema.optional(Schema.String),
   humanReviewRequired: Schema.Boolean,
 })
@@ -279,9 +473,13 @@ export const RecipeEdgeRecordSchema = Schema.Struct({
 })
 export type RecipeEdgeRecord = typeof RecipeEdgeRecordSchema.Type
 
+export const RecipeDagEdgeRecordSchema = AlchemyRecipeDagEdgeSchema
+export type RecipeDagEdgeRecord = typeof RecipeDagEdgeRecordSchema.Type
+
 export const RecipeReceiptStoreSnapshotSchema = Schema.Struct({
   recipes: Schema.Array(RecipeRecordSchema),
   edges: Schema.Array(RecipeEdgeRecordSchema),
+  dagEdges: Schema.optional(Schema.Array(RecipeDagEdgeRecordSchema)),
   io: Schema.Array(RecipeIoSchema),
   runs: Schema.Array(RecipeRunSchema),
   receipts: Schema.Array(RecipeReceiptSchema),
@@ -295,6 +493,7 @@ export type RecipeReceiptStoreSnapshot = typeof RecipeReceiptStoreSnapshotSchema
 export const RecipeDbEmissionRecordSetSchema = Schema.Struct({
   recipes: Schema.Array(RecipeRecordSchema),
   edges: Schema.Array(RecipeEdgeRecordSchema),
+  dagEdges: Schema.Array(RecipeDagEdgeRecordSchema),
   io: Schema.Array(RecipeIoSchema),
   health: Schema.Array(RecipeHealthSchema),
 })
@@ -365,19 +564,96 @@ export const RecipeRegistrySnapshotSchema = Schema.Struct({
 })
 export type RecipeRegistrySnapshot = typeof RecipeRegistrySnapshotSchema.Type
 
-export interface RecipeDefinition<Input = unknown, Output = unknown> {
+export interface AlchemyResourceContract<Address = unknown, State = unknown> {
+  readonly id: string
+  readonly kind: AlchemyResourceKind
+  readonly alchemyType: string
+  readonly addressSchema: Schema.Schema<Address>
+  readonly stateSchema: Schema.Schema<State>
+  readonly modes: readonly AlchemyResourceMode[]
+  readonly providerId?: string
+  readonly ownerRecipeId?: string
+  readonly addressFields?: readonly string[]
+  readonly producedBy?: readonly string[]
+  readonly consumedBy?: readonly string[]
+  readonly programmaticResourceExport?: string
+  readonly programmaticProviderExport?: string
+  readonly programmaticBridgeSourcePath?: string
+}
+
+export interface EffectServiceRequirement<Service = unknown> {
+  readonly id: string
+  readonly service: unknown
+}
+
+export interface RecipeLayerBinding {
+  readonly id: string
+  readonly sourcePath: string
+  readonly exportName: string
+  readonly layer: Layer.Layer<any, any, any>
+  readonly provides: readonly EffectServiceRequirement[]
+}
+
+export interface TypedRecipeIo<Input = unknown, Output = unknown> {
+  readonly inputSchema: Schema.Schema<Input>
+  readonly outputSchema: Schema.Schema<Output>
+  readonly inputResources: readonly AlchemyResourceContract[]
+  readonly outputResources: readonly AlchemyResourceContract[]
+}
+
+export interface RecipeHandlerBinding<Input = unknown, Output = unknown, Error = unknown, Requirements = never> {
+  readonly id: string
+  readonly recipeId: string
+  readonly sourcePath: string
+  readonly exportName: string
+  readonly handler: (input: Input) => Effect.Effect<Output, Error, Requirements>
+  readonly errorSchema?: Schema.Schema<Error>
+  readonly errorSchemaName?: string
+  readonly layer?: RecipeLayerBinding
+  readonly emitsReceipts?: readonly string[]
+}
+
+export interface AlchemyManagedResourceBinding<Input = unknown, Output = unknown> {
+  readonly id: string
+  readonly managedRecipeId: string
+  readonly alchemyResourceType: string
+  readonly providerId: string
+  readonly resource: AlchemyResourceContract
+  readonly lifecycle: Partial<Record<ManagedRecipeLifecycleAction | "read" | "diff", string>>
+  readonly bindings?: readonly string[]
+}
+
+export interface AlchemyRecipeDagEdgeDeclaration {
+  readonly id?: string
+  readonly fromRecipeId: string
+  readonly toRecipeId: string
+  readonly resource: AlchemyResourceContract | string
+  readonly kind: AlchemyRecipeDagEdgeKind
+  readonly modes: readonly AlchemyResourceMode[]
+  readonly inputMapping?: readonly string[]
+  readonly outputMapping?: readonly string[]
+  readonly validationTargets?: readonly string[]
+}
+
+export interface RecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> {
   readonly id: string
   readonly projectId?: string
   readonly title?: string
   readonly inputSchema: Schema.Schema<Input>
   readonly outputSchema: Schema.Schema<Output>
+  readonly io?: TypedRecipeIo<Input, Output>
+  readonly handler?: RecipeHandlerBinding<Input, Output, Error, Requirements>
   readonly dependencies?: readonly RecipeDependency[]
   readonly sourcePath?: string
   readonly nxTarget?: string
   readonly allowedFiles?: readonly string[]
   readonly validationEvidence?: readonly string[]
   readonly publicTargets?: readonly RecipePublicTarget[]
+  readonly alchemyDag?: readonly AlchemyRecipeDagEdgeDeclaration[]
 }
+
+export type AnyRecipeDefinition = RecipeDefinition<any, any, any, any>
+export type AnyRecipeHandlerBinding = RecipeHandlerBinding<any, any, any, any>
 
 export type RecipeFamilyRole =
   | "projection"
@@ -385,9 +661,24 @@ export type RecipeFamilyRole =
   | "repair"
   | "observation"
   | "invocation"
+  | "judge"
+  | "documentation"
+  | "toolchain"
+  | "config"
+  | "openspec"
+  | "test"
+  | "schema"
+  | "runtime"
+  | "asset"
 
-export interface RecipeFamilyDefinition<Input = unknown, Output = unknown>
-  extends RecipeDefinition<Input, Output> {
+export interface EffectRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never>
+  extends RecipeDefinition<Input, Output, Error, Requirements> {
+  readonly io: TypedRecipeIo<Input, Output>
+  readonly handler: RecipeHandlerBinding<Input, Output, Error, Requirements>
+}
+
+export interface RecipeFamilyDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never>
+  extends RecipeDefinition<Input, Output, Error, Requirements> {
   readonly recipeRole: RecipeFamilyRole
   readonly entrypoints?: readonly string[]
   readonly outputs?: readonly string[]
@@ -395,16 +686,34 @@ export interface RecipeFamilyDefinition<Input = unknown, Output = unknown>
   readonly affectedFiles?: readonly string[]
 }
 
-export type ProjectionRecipeDefinition<Input = unknown, Output = unknown> =
-  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "projection" }
-export type DiagnosticRecipeDefinition<Input = unknown, Output = unknown> =
-  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "diagnostic" }
-export type RepairRecipeDefinition<Input = unknown, Output = unknown> =
-  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "repair" }
-export type ObservationRecipeDefinition<Input = unknown, Output = unknown> =
-  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "observation" }
-export type InvocationRecipeDefinition<Input = unknown, Output = unknown> =
-  RecipeFamilyDefinition<Input, Output> & { readonly recipeRole: "invocation" }
+export type ProjectionRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "projection" }
+export type DiagnosticRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "diagnostic" }
+export type RepairRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "repair" }
+export type ObservationRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "observation" }
+export type InvocationRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "invocation" }
+export type JudgeRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "judge" }
+export type DocumentationRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "documentation" }
+export type ToolchainRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "toolchain" }
+export type ConfigRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "config" }
+export type OpenSpecChangeRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "openspec" }
+export type TestRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "test" }
+export type SchemaRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "schema" }
+export type RuntimeRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "runtime" }
+export type AssetRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  RecipeFamilyDefinition<Input, Output, Error, Requirements> & { readonly recipeRole: "asset" }
 
 export interface RecipePackageOwnershipGroup {
   readonly id: string
@@ -418,7 +727,7 @@ export interface RecipePackageDefinition {
   readonly title?: string
   readonly kind?: string
   readonly sourceRoot: string
-  readonly recipes: readonly RecipeDefinition[]
+  readonly recipes: readonly AnyRecipeDefinition[]
   readonly ownership?: readonly RecipePackageOwnershipGroup[]
 }
 
@@ -428,9 +737,11 @@ export interface ExternalSchemaRecipeDefinition<Input = unknown, Output = unknow
   readonly outputSchema: unknown
 }
 
-export interface ManagedRecipeDefinition<Input = unknown, Output = unknown> extends RecipeDefinition<Input, Output> {
+export interface ManagedRecipeDefinition<Input = unknown, Output = unknown, Error = unknown, Requirements = never>
+  extends RecipeDefinition<Input, Output, Error, Requirements> {
   readonly lifecycle: readonly ManagedRecipeLifecycleAction[]
   readonly resourceKind: string
+  readonly alchemy?: AlchemyManagedResourceBinding<Input, Output>
   readonly lifecycleSubstrates?: readonly ManagedRecipeLifecycleSubstrate[]
   readonly observedState?: unknown
   readonly driftRepair?: RecipeRepair
@@ -442,6 +753,124 @@ export interface ExternalSchemaManagedRecipeDefinition<Input = unknown, Output =
   readonly inputSchema: unknown
   readonly outputSchema: unknown
 }
+
+export const RecipeAuthoringModeSchema = Schema.Literals([
+  "project",
+  "plan",
+  "apply",
+  "run",
+  "check",
+  "destroy",
+  "write",
+] as const)
+export type RecipeAuthoringMode = typeof RecipeAuthoringModeSchema.Type
+
+export const RecipeAuthoringKindSchema = Schema.Literals(["recipe", "managed-recipe"] as const)
+export type RecipeAuthoringKind = typeof RecipeAuthoringKindSchema.Type
+
+export interface RecipeAuthoringRun<Input, Output, Error = unknown, Requirements = never> {
+  (input: Input): Output | Effect.Effect<Output, Error, Requirements>
+}
+
+export type RecipeAuthoringHandlerBinding<Input = unknown, Output = unknown, Error = unknown, Requirements = never> =
+  Omit<RecipeHandlerBinding<Input, Output, Error, Requirements>, "recipeId" | "sourcePath"> & {
+    readonly recipeId?: string
+    readonly sourcePath?: string
+  }
+
+export interface RecipeAuthoringRuntimeOverrides<Input, Output, Error = unknown, Requirements = never> {
+  readonly id?: string
+  readonly projectId?: string
+  readonly sourcePath?: string
+  readonly nxTarget?: string
+  readonly allowedFiles?: readonly string[]
+  readonly validationEvidence?: readonly string[]
+  readonly io?: TypedRecipeIo<Input, Output>
+  readonly handler?: RecipeAuthoringHandlerBinding<Input, Output, Error, Requirements>
+  readonly dependencies?: readonly RecipeDependency[]
+  readonly publicTargets?: readonly RecipePublicTarget[]
+  readonly alchemyDag?: readonly AlchemyRecipeDagEdgeDeclaration[]
+}
+
+export interface RecipeAuthoringDefinition<Input, Output, Error = unknown, Requirements = never> {
+  readonly modes: readonly RecipeAuthoringMode[]
+  readonly input: Schema.Schema<Input>
+  readonly output: Schema.Schema<Output>
+  readonly run: RecipeAuthoringRun<Input, Output, Error, Requirements>
+  readonly title?: string
+  readonly allowedFiles?: readonly string[]
+  readonly validationEvidence?: readonly string[]
+  readonly runtime?: RecipeAuthoringRuntimeOverrides<Input, Output, Error, Requirements>
+}
+
+export interface ManagedRecipeAuthoringDefinition<Input, Output, Error = unknown, Requirements = never>
+  extends RecipeAuthoringDefinition<Input, Output, Error, Requirements> {
+  readonly needsHumanReview?: boolean
+  readonly resourceKind?: string
+}
+
+export interface RecipeAuthoringFact<Input = unknown, Output = unknown, Error = unknown, Requirements = never> {
+  readonly schemaVersion: "recipe-authoring.v1"
+  readonly authoringKind: RecipeAuthoringKind
+  readonly sourceUrl: string
+  readonly sourcePath: string
+  readonly modes: readonly RecipeAuthoringMode[]
+  readonly inputSchema: Schema.Schema<Input>
+  readonly outputSchema: Schema.Schema<Output>
+  readonly run: RecipeAuthoringRun<Input, Output, Error, Requirements>
+  readonly title?: string
+  readonly allowedFiles?: readonly string[]
+  readonly validationEvidence?: readonly string[]
+  readonly runtime?: RecipeAuthoringRuntimeOverrides<Input, Output, Error, Requirements>
+  readonly needsHumanReview?: boolean
+  readonly resourceKind?: string
+}
+
+export interface RecipeModuleAuthor {
+  <Input, Output, Error = unknown, Requirements = never>(
+    definition: RecipeAuthoringDefinition<Input, Output, Error, Requirements>,
+  ): RecipeAuthoringFact<Input, Output, Error, Requirements>
+  readonly managed: <Input, Output, Error = unknown, Requirements = never>(
+    definition: ManagedRecipeAuthoringDefinition<Input, Output, Error, Requirements>,
+  ) => RecipeAuthoringFact<Input, Output, Error, Requirements>
+}
+
+export interface RecipeModuleLoweringContext {
+  readonly packageId: string
+  readonly exportName: string
+  readonly projectId?: string
+  readonly allowedFiles?: readonly string[]
+  readonly validationEvidence?: readonly string[]
+}
+
+export interface RecipeAuthoringSafetyDiagnostic {
+  readonly code: "recipe-authoring/unsafe-ordinary-lifecycle" | "recipe-authoring/managed-review-required"
+  readonly severity: "error" | "warning"
+  readonly message: string
+}
+
+export const RecipeAuthoringProjectionSchema = Schema.Struct({
+  schemaVersion: Schema.Literal("recipe-authoring-projection.v1"),
+  outputPath: Schema.String,
+  recipeId: Schema.String,
+  packageId: Schema.String,
+  exportName: Schema.String,
+  authoredSourcePath: Schema.String,
+  generatedTypeScript: Schema.String,
+  provenance: Schema.Struct({
+    authoredModule: Schema.String,
+    sourcePath: Schema.String,
+    exportName: Schema.String,
+  }),
+  compatibility: Schema.Struct({
+    generatedRoot: Schema.Literal(".framework/generated"),
+    legacyGeneratedRoot: Schema.Literal(".attune/cache/generated"),
+    mixesGeneratedTruth: Schema.Literal(false),
+    note: Schema.String,
+  }),
+})
+export type RecipeAuthoringProjection =
+  typeof RecipeAuthoringProjectionSchema.Type
 
 export const FrameworkProtocolRecipeSurfaceInput = Schema.Struct({
   packageId: Schema.String,
@@ -457,29 +886,264 @@ export const FrameworkProtocolRecipeSurfaceOutput = Schema.Struct({
 })
 export type FrameworkProtocolRecipeSurfaceOutput = typeof FrameworkProtocolRecipeSurfaceOutput.Type
 
-export const defineRecipe = <Input, Output>(
-  recipe: RecipeDefinition<Input, Output>,
-): RecipeDefinition<Input, Output> => recipe
+export const defineRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: RecipeDefinition<Input, Output, Error, Requirements>,
+): RecipeDefinition<Input, Output, Error, Requirements> => recipe
 
-export const defineProjectionRecipe = <Input, Output>(
-  recipe: Omit<ProjectionRecipeDefinition<Input, Output>, "recipeRole">,
-): ProjectionRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "projection" })
+export const defineAlchemyResource = <Address, State>(
+  resource: AlchemyResourceContract<Address, State>,
+): AlchemyResourceContract<Address, State> => resource
 
-export const defineDiagnosticRecipe = <Input, Output>(
-  recipe: Omit<DiagnosticRecipeDefinition<Input, Output>, "recipeRole">,
-): DiagnosticRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "diagnostic" })
+export const defineRecipeHandler = <Input, Output, Error = unknown, Requirements = never>(
+  handler: RecipeHandlerBinding<Input, Output, Error, Requirements>,
+): RecipeHandlerBinding<Input, Output, Error, Requirements> => handler
 
-export const defineRepairRecipe = <Input, Output>(
-  recipe: Omit<RepairRecipeDefinition<Input, Output>, "recipeRole">,
-): RepairRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "repair" })
+export const defineRecipeLayer = (
+  layer: RecipeLayerBinding,
+): RecipeLayerBinding => layer
 
-export const defineObservationRecipe = <Input, Output>(
-  recipe: Omit<ObservationRecipeDefinition<Input, Output>, "recipeRole">,
-): ObservationRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "observation" })
+export const defineEffectRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: EffectRecipeDefinition<Input, Output, Error, Requirements>,
+): EffectRecipeDefinition<Input, Output, Error, Requirements> => recipe
 
-export const defineInvocationRecipe = <Input, Output>(
-  recipe: Omit<InvocationRecipeDefinition<Input, Output>, "recipeRole">,
-): InvocationRecipeDefinition<Input, Output> => ({ ...recipe, recipeRole: "invocation" })
+export const defineManagedRecipeAlchemyBinding = <Input, Output>(
+  binding: AlchemyManagedResourceBinding<Input, Output>,
+): AlchemyManagedResourceBinding<Input, Output> => binding
+
+export const defineAlchemyRecipeDagEdge = (
+  edge: AlchemyRecipeDagEdgeDeclaration,
+): AlchemyRecipeDagEdgeDeclaration => edge
+
+export const defineRecipeIdentity = (input: {
+  readonly packageId: string
+  readonly exportName: string
+  readonly family?: RecipeFamilyRole | "recipe" | "managed"
+}): RecipeIdentityHandle => ({
+  id: inferredRecipeId(input),
+  packageId: input.packageId,
+  exportName: input.exportName,
+})
+
+export const defineRecipeModule = (
+  sourceUrl: string,
+): RecipeModuleAuthor => {
+  const sourcePath = sourcePathFromModuleUrl(sourceUrl)
+  const defineAuthoringFact = <Input, Output, Error = unknown, Requirements = never>(
+    authoringKind: RecipeAuthoringKind,
+    definition: RecipeAuthoringDefinition<Input, Output, Error, Requirements>,
+    managed?: Pick<ManagedRecipeAuthoringDefinition<Input, Output, Error, Requirements>, "needsHumanReview" | "resourceKind">,
+  ): RecipeAuthoringFact<Input, Output, Error, Requirements> => ({
+    schemaVersion: "recipe-authoring.v1",
+    authoringKind,
+    sourceUrl,
+    sourcePath,
+    modes: [...definition.modes],
+    inputSchema: definition.input,
+    outputSchema: definition.output,
+    run: definition.run,
+    ...(definition.title === undefined ? {} : { title: definition.title }),
+    ...(definition.allowedFiles === undefined ? {} : { allowedFiles: [...definition.allowedFiles] }),
+    ...(definition.validationEvidence === undefined ? {} : { validationEvidence: [...definition.validationEvidence] }),
+    ...(definition.runtime === undefined ? {} : { runtime: cloneRecipeAuthoringRuntimeOverrides(definition.runtime) }),
+    ...(managed?.needsHumanReview === undefined ? {} : { needsHumanReview: managed.needsHumanReview }),
+    ...(managed?.resourceKind === undefined ? {} : { resourceKind: managed.resourceKind }),
+  })
+
+  const author = (<Input, Output, Error = unknown, Requirements = never>(
+    definition: RecipeAuthoringDefinition<Input, Output, Error, Requirements>,
+  ) => defineAuthoringFact("recipe", definition)) as RecipeModuleAuthor
+
+  return Object.assign(author, {
+    managed: <Input, Output, Error = unknown, Requirements = never>(
+      definition: ManagedRecipeAuthoringDefinition<Input, Output, Error, Requirements>,
+    ) => defineAuthoringFact("managed-recipe", definition, {
+      ...(definition.needsHumanReview === undefined ? {} : { needsHumanReview: definition.needsHumanReview }),
+      ...(definition.resourceKind === undefined ? {} : { resourceKind: definition.resourceKind }),
+    }),
+  })
+}
+
+export const lowerRecipeAuthoringFact = <Input, Output, Error = unknown, Requirements = never>(
+  fact: RecipeAuthoringFact<Input, Output, Error, Requirements>,
+  context: RecipeModuleLoweringContext,
+): RecipeDefinition<Input, Output, Error, Requirements> | ManagedRecipeDefinition<Input, Output, Error, Requirements> => {
+  const runtime = fact.runtime
+  const id = runtime?.id ?? inferredRecipeId({
+    packageId: context.packageId,
+    exportName: context.exportName,
+    family: fact.authoringKind === "managed-recipe" ? "managed" : "recipe",
+  })
+  const sourcePath = runtime?.sourcePath ?? fact.sourcePath
+  const handler = runtime?.handler === undefined
+    ? defineRecipeHandler<Input, Output, Error, Requirements>({
+      id: recipeHandlerId(`${id}.handler`),
+      recipeId: id,
+      sourcePath,
+      exportName: context.exportName,
+      handler: (input) => normalizeRecipeAuthoringRun(fact.run(input)) as Effect.Effect<Output, Error, Requirements>,
+      emitsReceipts: [`${id}.completed`],
+    })
+    : defineRecipeHandler<Input, Output, Error, Requirements>({
+      ...runtime.handler,
+      recipeId: runtime.handler.recipeId ?? id,
+      sourcePath: runtime.handler.sourcePath ?? sourcePath,
+    })
+  const base: RecipeDefinition<Input, Output, Error, Requirements> = {
+    id,
+    projectId: runtime?.projectId ?? context.projectId ?? context.packageId,
+    ...(fact.title === undefined ? {} : { title: fact.title }),
+    inputSchema: fact.inputSchema,
+    outputSchema: fact.outputSchema,
+    sourcePath,
+    ...(runtime?.nxTarget === undefined ? {} : { nxTarget: runtime.nxTarget }),
+    allowedFiles: [...(runtime?.allowedFiles ?? fact.allowedFiles ?? context.allowedFiles ?? [sourcePath])],
+    validationEvidence: [...(runtime?.validationEvidence ?? fact.validationEvidence ?? context.validationEvidence ?? [])],
+    io: runtime?.io ?? {
+      inputSchema: fact.inputSchema,
+      outputSchema: fact.outputSchema,
+      inputResources: [],
+      outputResources: [],
+    },
+    handler,
+    ...(runtime?.dependencies === undefined ? {} : { dependencies: [...runtime.dependencies] }),
+    ...(runtime?.publicTargets === undefined ? {} : { publicTargets: [...runtime.publicTargets] }),
+    ...(runtime?.alchemyDag === undefined ? {} : { alchemyDag: [...runtime.alchemyDag] }),
+  }
+
+  if (fact.authoringKind !== "managed-recipe") return defineRecipe(base)
+
+  return defineManagedRecipe({
+    ...base,
+    lifecycle: managedLifecycleFromAuthoringModes(fact.modes),
+    resourceKind: fact.resourceKind ?? "managed-recipe",
+    humanReviewRequired: fact.needsHumanReview ?? false,
+  })
+}
+
+const cloneRecipeAuthoringRuntimeOverrides = <Input, Output, Error = unknown, Requirements = never>(
+  runtime: RecipeAuthoringRuntimeOverrides<Input, Output, Error, Requirements>,
+): RecipeAuthoringRuntimeOverrides<Input, Output, Error, Requirements> => ({
+  ...(runtime.id === undefined ? {} : { id: runtime.id }),
+  ...(runtime.projectId === undefined ? {} : { projectId: runtime.projectId }),
+  ...(runtime.sourcePath === undefined ? {} : { sourcePath: runtime.sourcePath }),
+  ...(runtime.nxTarget === undefined ? {} : { nxTarget: runtime.nxTarget }),
+  ...(runtime.allowedFiles === undefined ? {} : { allowedFiles: [...runtime.allowedFiles] }),
+  ...(runtime.validationEvidence === undefined ? {} : { validationEvidence: [...runtime.validationEvidence] }),
+  ...(runtime.io === undefined ? {} : { io: runtime.io }),
+  ...(runtime.handler === undefined ? {} : { handler: runtime.handler }),
+  ...(runtime.dependencies === undefined ? {} : { dependencies: [...runtime.dependencies] }),
+  ...(runtime.publicTargets === undefined ? {} : { publicTargets: [...runtime.publicTargets] }),
+  ...(runtime.alchemyDag === undefined ? {} : { alchemyDag: [...runtime.alchemyDag] }),
+})
+
+export const recipeAuthoringSafetyDiagnostics = <Input, Output, Error = unknown, Requirements = never>(
+  fact: RecipeAuthoringFact<Input, Output, Error, Requirements>,
+): readonly RecipeAuthoringSafetyDiagnostic[] => {
+  const mutating = fact.modes.some((mode) => mode === "apply" || mode === "destroy" || mode === "write")
+  return [
+    ...(fact.authoringKind === "recipe" && mutating
+      ? [{
+        code: "recipe-authoring/unsafe-ordinary-lifecycle",
+        severity: "error",
+        message: "Recipes with apply, write, or destroy modes must use recipe.managed(...) or an explicit review-gated lifecycle form.",
+      }] satisfies RecipeAuthoringSafetyDiagnostic[]
+      : []),
+    ...(fact.authoringKind === "managed-recipe" && mutating && fact.needsHumanReview !== true
+      ? [{
+        code: "recipe-authoring/managed-review-required",
+        severity: "warning",
+        message: "Managed recipes with apply, write, or destroy modes should keep needsHumanReview or equivalent safety policy visible.",
+      }] satisfies RecipeAuthoringSafetyDiagnostic[]
+      : []),
+  ]
+}
+
+export const projectRecipeAuthoringRuntime = <Input, Output, Error = unknown, Requirements = never>(
+  fact: RecipeAuthoringFact<Input, Output, Error, Requirements>,
+  context: RecipeModuleLoweringContext,
+): RecipeAuthoringProjection => {
+// @attune-packet-target generated-runtime-projection eligible
+  const lowered = lowerRecipeAuthoringFact(fact, context)
+  const generatedKind = fact.authoringKind === "managed-recipe" ? "managed" : "recipe"
+  const outputPath = `.framework/generated/packages/${context.packageId}/${context.exportName}.${generatedKind}.generated.ts`
+
+  return Schema.decodeUnknownSync(RecipeAuthoringProjectionSchema)({
+    schemaVersion: "recipe-authoring-projection.v1",
+    outputPath,
+    recipeId: lowered.id,
+    packageId: context.packageId,
+    exportName: context.exportName,
+    authoredSourcePath: fact.sourcePath,
+    generatedTypeScript: renderRecipeAuthoringProjectionTypeScript(lowered, context.exportName),
+    provenance: {
+      authoredModule: fact.sourceUrl,
+      sourcePath: fact.sourcePath,
+      exportName: context.exportName,
+    },
+    compatibility: {
+      generatedRoot: ".framework/generated",
+      legacyGeneratedRoot: ".attune/cache/generated",
+      mixesGeneratedTruth: false,
+      note: "New Recipe authoring projections use .framework/generated. Existing .attune/cache/generated references remain compatibility scaffolding until a later generated-surface consolidation.",
+    },
+  })
+}
+
+export const defineProjectionRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<ProjectionRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): ProjectionRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "projection" })
+
+export const defineDiagnosticRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<DiagnosticRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): DiagnosticRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "diagnostic" })
+
+export const defineRepairRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<RepairRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): RepairRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "repair" })
+
+export const defineObservationRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<ObservationRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): ObservationRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "observation" })
+
+export const defineInvocationRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<InvocationRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): InvocationRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "invocation" })
+
+export const defineJudgeRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<JudgeRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): JudgeRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "judge" })
+
+export const defineDocumentationRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<DocumentationRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): DocumentationRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "documentation" })
+
+export const defineToolchainRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<ToolchainRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): ToolchainRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "toolchain" })
+
+export const defineConfigRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<ConfigRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): ConfigRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "config" })
+
+export const defineOpenSpecChangeRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<OpenSpecChangeRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): OpenSpecChangeRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "openspec" })
+
+export const defineTestRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<TestRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): TestRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "test" })
+
+export const defineSchemaRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<SchemaRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): SchemaRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "schema" })
+
+export const defineRuntimeRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<RuntimeRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): RuntimeRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "runtime" })
+
+export const defineAssetRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: Omit<AssetRecipeDefinition<Input, Output, Error, Requirements>, "recipeRole">,
+): AssetRecipeDefinition<Input, Output, Error, Requirements> => ({ ...recipe, recipeRole: "asset" })
 
 export const defineRecipePackage = (
   recipePackage: RecipePackageDefinition,
@@ -490,21 +1154,65 @@ export const defineExternalSchemaRecipe = <Input, Output>(
 ): RecipeDefinition<Input, Output> =>
   recipe as RecipeDefinition<Input, Output>
 
-export const defineManagedRecipe = <Input, Output>(
-  recipe: ManagedRecipeDefinition<Input, Output>,
-): ManagedRecipeDefinition<Input, Output> => recipe
+export const defineManagedRecipe = <Input, Output, Error = unknown, Requirements = never>(
+  recipe: ManagedRecipeDefinition<Input, Output, Error, Requirements> & RecipeDefinition<Input, Output, Error, Requirements>,
+): ManagedRecipeDefinition<Input, Output, Error, Requirements> & RecipeDefinition<Input, Output, Error, Requirements> => recipe
 
 export const defineExternalSchemaManagedRecipe = <Input, Output>(
   recipe: ExternalSchemaManagedRecipeDefinition<Input, Output>,
 ): ManagedRecipeDefinition<Input, Output> =>
   recipe as ManagedRecipeDefinition<Input, Output>
 
+export interface FrameworkProtocolRecipeHelpers {
+  readonly defineAlchemyResource: typeof defineAlchemyResource
+  readonly defineAlchemyRecipeDagEdge: typeof defineAlchemyRecipeDagEdge
+  readonly defineRecipeHandler: typeof defineRecipeHandler
+  readonly defineRecipe: typeof defineRecipe
+  readonly defineProjectionRecipe: typeof defineProjectionRecipe
+  readonly defineDiagnosticRecipe: typeof defineDiagnosticRecipe
+  readonly defineRepairRecipe: typeof defineRepairRecipe
+  readonly defineObservationRecipe: typeof defineObservationRecipe
+  readonly defineInvocationRecipe: typeof defineInvocationRecipe
+  readonly defineJudgeRecipe: typeof defineJudgeRecipe
+  readonly defineDocumentationRecipe: typeof defineDocumentationRecipe
+  readonly defineToolchainRecipe: typeof defineToolchainRecipe
+  readonly defineConfigRecipe: typeof defineConfigRecipe
+  readonly defineOpenSpecChangeRecipe: typeof defineOpenSpecChangeRecipe
+  readonly defineTestRecipe: typeof defineTestRecipe
+  readonly defineSchemaRecipe: typeof defineSchemaRecipe
+  readonly defineRuntimeRecipe: typeof defineRuntimeRecipe
+  readonly defineAssetRecipe: typeof defineAssetRecipe
+  readonly defineManagedRecipe: typeof defineManagedRecipe
+  readonly defineManagedRecipeAlchemyBinding: typeof defineManagedRecipeAlchemyBinding
+}
+
+export const frameworkProtocolRecipeHelpers: FrameworkProtocolRecipeHelpers = {
+  defineAlchemyResource,
+  defineAlchemyRecipeDagEdge,
+  defineRecipeHandler,
+  defineRecipe,
+  defineProjectionRecipe,
+  defineDiagnosticRecipe,
+  defineRepairRecipe,
+  defineObservationRecipe,
+  defineInvocationRecipe,
+  defineJudgeRecipe,
+  defineDocumentationRecipe,
+  defineToolchainRecipe,
+  defineConfigRecipe,
+  defineOpenSpecChangeRecipe,
+  defineTestRecipe,
+  defineSchemaRecipe,
+  defineRuntimeRecipe,
+  defineAssetRecipe,
+  defineManagedRecipe,
+  defineManagedRecipeAlchemyBinding,
+}
+
 export interface RecipeRegistryApi {
-  readonly register: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
-  ) => RecipeRegistryApi
-  readonly get: (id: string) => RecipeDefinition | undefined
-  readonly list: () => readonly RecipeDefinition[]
+  readonly register: (recipe: AnyRecipeDefinition) => RecipeRegistryApi
+  readonly get: (id: string) => AnyRecipeDefinition | undefined
+  readonly list: () => readonly AnyRecipeDefinition[]
   readonly dependenciesOf: (id: string) => readonly RecipeDependency[]
   readonly dependentsOf: (id: string) => readonly RecipeDependency[]
   readonly topoOrder: () => readonly string[]
@@ -535,7 +1243,7 @@ export const defineProjection = <Input, Output>(
 export const RecipeRegistry = {
   empty: (): RecipeRegistryApi => makeRecipeRegistry([]),
   fromRecipes: (
-    recipes: readonly RecipeDefinition[],
+    recipes: readonly AnyRecipeDefinition[],
   ): RecipeRegistryApi => makeRecipeRegistry(recipes),
 }
 
@@ -547,20 +1255,18 @@ export const ProjectionRegistry = {
 }
 
 export const NxTarget = {
-  fromRecipe: <Input, Output>(recipe: RecipeDefinition<Input, Output>): string =>
+  fromRecipe: (recipe: AnyRecipeDefinition): string =>
     recipe.nxTarget ?? `${recipe.id}:run`,
 }
 
 export const RecipePublicTargets = {
-  fromRecipe: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
-  ): readonly RecipePublicTarget[] =>
+  fromRecipe: (recipe: AnyRecipeDefinition): readonly RecipePublicTarget[] =>
     recipe.publicTargets ?? defaultPublicTargets(recipe),
 }
 
 export const HealthView = {
-  fromRecipe: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
+  fromRecipe: (
+    recipe: AnyRecipeDefinition,
     input: {
       readonly receipts?: readonly RecipeReceipt[]
       readonly diagnostics?: readonly RecipeDiagnostic[]
@@ -587,22 +1293,22 @@ export const HealthView = {
 }
 
 export const RecipeRepairPlan = {
-  fromRecipe: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
+  fromRecipe: (
+    recipe: AnyRecipeDefinition,
     diagnostics: readonly RecipeDiagnostic[],
   ): readonly RecipeRepair[] =>
     diagnostics.map((diagnostic) => recipeRepairFromDiagnostic(recipe, diagnostic)),
 }
 
 export const LspDiagnostic = {
-  fromRecipe: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
+  fromRecipe: (
+    recipe: AnyRecipeDefinition,
     diagnostic: RecipeDiagnostic,
   ): ProgramDiagnostic => ({
     code: diagnostic.code,
     severity: diagnostic.severity,
     projectId: recipe.projectId ?? recipe.id,
-    sourcePath: diagnostic.sourcePath ?? recipe.sourcePath ?? recipe.id,
+    sourcePath: recipe.sourcePath ?? "unknown",
     explanation: diagnostic.message,
     cause: diagnostic.cause,
     suggestedActions: [programRepairActionFromRecipe(recipe, diagnostic)],
@@ -652,6 +1358,15 @@ export const AlchemyResourceDescriptor = {
     readonly kind: string
     readonly lifecycle: readonly ManagedRecipeLifecycleAction[]
     readonly requiresHumanReview: boolean
+    readonly alchemy?: Readonly<{
+      readonly id: string
+      readonly managedRecipeId: string
+      readonly alchemyResourceType: string
+      readonly providerId: string
+      readonly resource: AlchemyResourceContractRecord
+      readonly lifecycle: Partial<Record<ManagedRecipeLifecycleAction | "read" | "diff", string>>
+      readonly bindings?: readonly string[]
+    }>
     readonly lifecycleSubstrates?: readonly ManagedRecipeLifecycleSubstrate[]
     readonly observedState?: unknown
   }> => ({
@@ -659,13 +1374,14 @@ export const AlchemyResourceDescriptor = {
     kind: recipe.resourceKind,
     lifecycle: recipe.lifecycle,
     requiresHumanReview: recipe.humanReviewRequired ?? false,
+    ...(recipe.alchemy === undefined ? {} : { alchemy: alchemyManagedResourceRecordFromBinding(recipe.alchemy) }),
     ...(recipe.lifecycleSubstrates === undefined ? {} : { lifecycleSubstrates: recipe.lifecycleSubstrates }),
     ...(recipe.observedState === undefined ? {} : { observedState: recipe.observedState }),
   }),
 }
 
 export const RecipeRecordView = {
-  fromRecipe: <Input, Output>(recipe: RecipeDefinition<Input, Output>): RecipeRecord => ({
+  fromRecipe: (recipe: AnyRecipeDefinition): RecipeRecord => ({
     recipeId: recipe.id,
     kind: isManagedRecipeDefinition(recipe) ? "managed-recipe" : "recipe",
     ...(recipe.projectId === undefined ? {} : { projectId: recipe.projectId }),
@@ -680,9 +1396,7 @@ export const RecipeRecordView = {
 }
 
 export const RecipeEdgeRecordView = {
-  fromRecipe: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
-  ): readonly RecipeEdgeRecord[] =>
+  fromRecipe: (recipe: AnyRecipeDefinition): readonly RecipeEdgeRecord[] =>
     [...(recipe.dependencies ?? [])].map((dependency) => ({
       recipeId: recipe.id,
       dependsOnRecipeId: dependency.recipeId,
@@ -690,30 +1404,89 @@ export const RecipeEdgeRecordView = {
     })),
 }
 
+export const RecipeDagEdgeRecordView = {
+  fromRecipe: (recipe: AnyRecipeDefinition): readonly RecipeDagEdgeRecord[] =>
+    [...(recipe.alchemyDag ?? [])].map((edge) => alchemyRecipeDagEdgeRecordFromDeclaration(recipe, edge)),
+}
+
 export const RecipeIoRecordView = {
-  fromRecipe: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
-  ): readonly RecipeIo[] => [
-    recipeIo(recipe.id, "input", "input", `${recipe.id}.input`),
-    recipeIo(recipe.id, "output", "output", `${recipe.id}.output`),
-  ],
+  fromRecipe: (recipe: AnyRecipeDefinition): readonly RecipeIo[] => {
+    const base = [
+      recipeIo(recipe.id, "input", "input", `${recipe.id}.input`),
+      recipeIo(recipe.id, "output", "output", `${recipe.id}.output`),
+    ]
+    if (recipe.io === undefined) return base
+
+    return [
+      base[0]!,
+      ...recipe.io.inputResources.map((resource) =>
+        recipeIoResource(recipe.id, "input", resource)
+      ),
+      base[1]!,
+      ...recipe.io.outputResources.map((resource) =>
+        recipeIoResource(recipe.id, "output", resource)
+      ),
+    ]
+  },
+}
+
+export const RecipeExpressionContractView = {
+  fromRecipe: (recipe: AnyRecipeDefinition): RecipeExpressionContractSummary => {
+    const inputResources = [...(recipe.io?.inputResources ?? [])]
+      .map(alchemyResourceRecordFromContract)
+    const outputResources = [...(recipe.io?.outputResources ?? [])]
+      .map(alchemyResourceRecordFromContract)
+    const hasAlchemyResourceIo = inputResources.length > 0 || outputResources.length > 0
+    const hasEffectHandler = recipe.handler !== undefined
+    const hasLayerBinding = recipe.handler?.layer !== undefined
+    const hasManagedAlchemyBinding = isManagedRecipeDefinition(recipe) && recipe.alchemy !== undefined
+    const alchemyDag = RecipeDagEdgeRecordView.fromRecipe(recipe)
+    const hasAlchemyDagMembership = alchemyDag.length > 0
+    const stringIdSurfaceCount = stringIdSurfaceCountForRecipe(recipe)
+    const missing: RecipeExpressionMissingReason[] = [
+      ...(hasAlchemyResourceIo ? [] : ["alchemy-resource-io"] satisfies RecipeExpressionMissingReason[]),
+      ...(hasEffectHandler ? [] : ["effect-handler"] satisfies RecipeExpressionMissingReason[]),
+      ...(!isManagedRecipeDefinition(recipe) || hasManagedAlchemyBinding
+        ? []
+        : ["managed-alchemy-binding"] satisfies RecipeExpressionMissingReason[]),
+      ...(hasAlchemyDagMembership ? [] : ["alchemy-dag"] satisfies RecipeExpressionMissingReason[]),
+    ]
+
+    return {
+      recipeId: recipe.id,
+      status: missing.length === 0 ? "ready" : "missing-expression",
+      hasAlchemyResourceIo,
+      hasEffectHandler,
+      hasLayerBinding,
+      hasManagedAlchemyBinding,
+      hasAlchemyDagMembership,
+      stringIdSurfaceCount,
+      stringOnlyIoSuspect: !hasAlchemyResourceIo,
+      missing,
+      inputResources,
+      outputResources,
+      alchemyDag,
+      ...(recipe.handler === undefined
+        ? {}
+        : { handler: recipeHandlerRecordFromBinding(recipe.handler) }),
+    }
+  },
 }
 
 export const RecipeDbEmissionView = {
   fromRecipes: (
-    recipes: readonly RecipeDefinition[],
+    recipes: readonly AnyRecipeDefinition[],
   ): RecipeDbEmissionRecordSet => ({
     recipes: recipes.map((recipe) => RecipeRecordView.fromRecipe(recipe)),
     edges: recipes.flatMap((recipe) => RecipeEdgeRecordView.fromRecipe(recipe)),
+    dagEdges: recipes.flatMap((recipe) => RecipeDagEdgeRecordView.fromRecipe(recipe)),
     io: recipes.flatMap((recipe) => RecipeIoRecordView.fromRecipe(recipe)),
     health: recipes.map((recipe) => HealthView.fromRecipe(recipe)),
   }),
 }
 
 export const NxTargetProjectionView = {
-  fromRecipe: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
-  ): readonly NxTargetProjection[] =>
+  fromRecipe: (recipe: AnyRecipeDefinition): readonly NxTargetProjection[] =>
     RecipePublicTargets.fromRecipe(recipe).map((target) => {
       const projectId = recipe.projectId ?? projectNameFromRecipeId(recipe.id)
       const projectionId = "framework.projection.nx-target"
@@ -742,7 +1515,7 @@ export const NxTargetProjectionView = {
       } satisfies NxTargetProjection
     }),
   fromRecipes: (
-    recipes: readonly RecipeDefinition[],
+    recipes: readonly AnyRecipeDefinition[],
   ): readonly NxTargetProjection[] =>
     recipes.flatMap((recipe) => NxTargetProjectionView.fromRecipe(recipe))
       .sort((left, right) =>
@@ -756,14 +1529,14 @@ export const RecipeProjectionCatalog = [
   defineProjection({
     id: "framework.projection.nx-target",
     kind: "nx-target",
-    inputSchema: Schema.Array(Schema.Unknown) as Schema.Schema<readonly RecipeDefinition[]>,
+    inputSchema: Schema.Array(Schema.Unknown) as Schema.Schema<readonly AnyRecipeDefinition[]>,
     outputSchema: Schema.Array(NxTargetProjectionSchema),
     render: NxTargetProjectionView.fromRecipes,
   }),
   defineProjection({
     id: "framework.projection.recipe-db-emission",
     kind: "recipe-db-emission",
-    inputSchema: Schema.Array(Schema.Unknown) as Schema.Schema<readonly RecipeDefinition[]>,
+    inputSchema: Schema.Array(Schema.Unknown) as Schema.Schema<readonly AnyRecipeDefinition[]>,
     outputSchema: RecipeDbEmissionRecordSetSchema,
     render: RecipeDbEmissionView.fromRecipes,
   }),
@@ -828,12 +1601,122 @@ export const recipeIo = (
   ...(schemaName === undefined ? {} : { schemaName }),
 })
 
+const recipeIoResource = (
+  recipeId: string,
+  role: Extract<RecipeIoRole, "input" | "output">,
+  resource: AlchemyResourceContract,
+): RecipeIo => ({
+  id: `${recipeId}:${role}:alchemy-resource:${resource.id}`,
+  recipeId,
+  role,
+  name: resource.id,
+  schemaName: resource.alchemyType,
+  payload: {
+    alchemyResource: alchemyResourceRecordFromContract(resource),
+  },
+})
+
+const alchemyResourceRecordFromContract = (
+  resource: AlchemyResourceContract,
+): AlchemyResourceContractRecord => ({
+  id: resource.id,
+  kind: resource.kind,
+  alchemyType: resource.alchemyType,
+  modes: [...resource.modes],
+  ...(resource.providerId === undefined ? {} : { providerId: resource.providerId }),
+  ...(resource.ownerRecipeId === undefined ? {} : { ownerRecipeId: resource.ownerRecipeId }),
+  ...(resource.addressFields === undefined ? {} : { addressFields: [...resource.addressFields] }),
+  ...(resource.producedBy === undefined ? {} : { producedBy: [...resource.producedBy] }),
+  ...(resource.consumedBy === undefined ? {} : { consumedBy: [...resource.consumedBy] }),
+  ...(resource.programmaticResourceExport === undefined
+    ? {}
+    : { programmaticResourceExport: resource.programmaticResourceExport }),
+  ...(resource.programmaticProviderExport === undefined
+    ? {}
+    : { programmaticProviderExport: resource.programmaticProviderExport }),
+  ...(resource.programmaticBridgeSourcePath === undefined
+    ? {}
+    : { programmaticBridgeSourcePath: resource.programmaticBridgeSourcePath }),
+})
+
+const alchemyRecipeDagEdgeRecordFromDeclaration = (
+  recipe: AnyRecipeDefinition,
+  edge: AlchemyRecipeDagEdgeDeclaration,
+): RecipeDagEdgeRecord => {
+  const resourceId = typeof edge.resource === "string" ? edge.resource : edge.resource.id
+  return {
+    id: edge.id ?? stableId("recipe-dag-edge", recipe.id, edge.fromRecipeId, edge.toRecipeId, resourceId, edge.kind),
+    fromRecipeId: edge.fromRecipeId,
+    toRecipeId: edge.toRecipeId,
+    resourceId,
+    kind: edge.kind,
+    modes: [...edge.modes],
+    ...(edge.inputMapping === undefined ? {} : { inputMapping: [...edge.inputMapping] }),
+    ...(edge.outputMapping === undefined ? {} : { outputMapping: [...edge.outputMapping] }),
+    ...(edge.validationTargets === undefined ? {} : { validationTargets: [...edge.validationTargets] }),
+  }
+}
+
+const stringIdSurfaceCountForRecipe = (recipe: AnyRecipeDefinition): number =>
+  [
+    recipe.id,
+    recipe.handler?.id,
+    recipe.handler?.recipeId,
+    recipe.handler?.layer?.id,
+    ...(recipe.io?.inputResources.map((resource) => resource.id) ?? []),
+    ...(recipe.io?.outputResources.map((resource) => resource.id) ?? []),
+    ...(recipe.alchemyDag?.flatMap((edge) => [
+      edge.id,
+      edge.fromRecipeId,
+      edge.toRecipeId,
+      typeof edge.resource === "string" ? edge.resource : edge.resource.id,
+    ]) ?? []),
+  ].filter((value): value is string => typeof value === "string" && value.length > 0).length
+
+const effectServiceRequirementRecordFromRequirement = (
+  requirement: EffectServiceRequirement,
+): EffectServiceRequirementRecord => ({
+  id: requirement.id,
+})
+
+const recipeLayerBindingRecordFromBinding = (
+  layer: RecipeLayerBinding,
+): RecipeLayerBindingRecord => ({
+  id: layer.id,
+  exportName: layer.exportName,
+  provides: layer.provides.map(effectServiceRequirementRecordFromRequirement),
+})
+
+const recipeHandlerRecordFromBinding = (
+  handler: AnyRecipeHandlerBinding,
+): RecipeHandlerBindingRecord => ({
+  id: handler.id,
+  recipeId: handler.recipeId,
+  sourcePath: handler.sourcePath,
+  exportName: handler.exportName,
+  ...(handler.errorSchemaName === undefined ? {} : { errorSchemaName: handler.errorSchemaName }),
+  ...(handler.layer === undefined ? {} : { layer: recipeLayerBindingRecordFromBinding(handler.layer) }),
+  ...(handler.emitsReceipts === undefined ? {} : { emitsReceipts: [...handler.emitsReceipts] }),
+})
+
+const alchemyManagedResourceRecordFromBinding = (
+  binding: AlchemyManagedResourceBinding,
+) => ({
+  id: binding.id,
+  managedRecipeId: binding.managedRecipeId,
+  alchemyResourceType: binding.alchemyResourceType,
+  providerId: binding.providerId,
+  resource: alchemyResourceRecordFromContract(binding.resource),
+  lifecycle: { ...binding.lifecycle },
+  ...(binding.bindings === undefined ? {} : { bindings: [...binding.bindings] }),
+})
+
 const makeRecipeRegistry = (
-  initialRecipes: readonly RecipeDefinition[],
+  initialRecipes: readonly AnyRecipeDefinition[],
 ): RecipeRegistryApi => {
-  const recipes = new Map<string, RecipeDefinition>()
+  const recipes = new Map<string, AnyRecipeDefinition>()
   const duplicateRecipeIds = new Set<string>()
-  const registerMutable = (recipe: RecipeDefinition): void => {
+  const registerMutable = (recipe: AnyRecipeDefinition): void => {
     if (recipes.has(recipe.id)) duplicateRecipeIds.add(recipe.id)
     recipes.set(recipe.id, recipe)
   }
@@ -890,7 +1773,7 @@ const makeProjectionRegistry = (
 }
 
 const topoOrder = (
-  recipes: readonly RecipeDefinition[],
+  recipes: readonly AnyRecipeDefinition[],
 ): readonly string[] => {
   const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]))
   const visited = new Set<string>()
@@ -918,14 +1801,12 @@ const topoOrder = (
   return ordered
 }
 
-const isManagedRecipeDefinition = <Input, Output>(
-  recipe: RecipeDefinition<Input, Output>,
-): recipe is ManagedRecipeDefinition<Input, Output> =>
+const isManagedRecipeDefinition = (
+  recipe: AnyRecipeDefinition,
+): recipe is ManagedRecipeDefinition<any, any> =>
   "resourceKind" in recipe
 
-const defaultPublicTargets = <Input, Output>(
-  recipe: RecipeDefinition<Input, Output>,
-): readonly RecipePublicTarget[] => {
+const defaultPublicTargets = (recipe: AnyRecipeDefinition): readonly RecipePublicTarget[] => {
   const projectId = recipe.projectId ?? projectNameFromRecipeId(recipe.id)
   return [
     {
@@ -1076,8 +1957,8 @@ const healthStatusFrom = (
   return "unknown"
 }
 
-const healthExplanation = <Input, Output>(
-  recipe: RecipeDefinition<Input, Output>,
+const healthExplanation = (
+  recipe: AnyRecipeDefinition,
   status: RecipeHealthStatus,
   latestReceipt: RecipeReceipt | undefined,
   diagnostics: readonly RecipeDiagnostic[],
@@ -1091,8 +1972,8 @@ const healthExplanation = <Input, Output>(
   return `${recipe.id} has not recorded a recipe receipt yet.`
 }
 
-const recipeRepairFromDiagnostic = <Input, Output>(
-  recipe: RecipeDefinition<Input, Output>,
+const recipeRepairFromDiagnostic = (
+  recipe: AnyRecipeDefinition,
   diagnostic: RecipeDiagnostic,
 ): RecipeRepair => ({
   repairId: `recipe-repair:${diagnostic.diagnosticId}`,
@@ -1115,8 +1996,65 @@ const stableId = (
     .filter((part) => part.length > 0)
     .join(":")
 
-const programRepairActionFromRecipe = <Input, Output>(
-  recipe: RecipeDefinition<Input, Output>,
+const sourcePathFromModuleUrl = (sourceUrl: string): string => {
+  try {
+    const url = new URL(sourceUrl)
+    return url.protocol === "file:"
+      ? decodeURIComponent(url.pathname)
+      : sourceUrl
+  } catch {
+    return sourceUrl
+  }
+}
+
+const normalizeRecipeAuthoringRun = <Output, Error = unknown, Requirements = never>(
+  output: Output | Effect.Effect<Output, Error, Requirements>,
+): Effect.Effect<Output, Error, Requirements> =>
+  Effect.isEffect(output) ? output : Effect.succeed(output)
+
+const managedLifecycleFromAuthoringModes = (
+  modes: readonly RecipeAuthoringMode[],
+): readonly ManagedRecipeLifecycleAction[] =>
+  modes.flatMap((mode) =>
+    isManagedRecipeLifecycleAction(mode) ? [mode] : []
+  )
+
+const isManagedRecipeLifecycleAction = (
+  mode: RecipeAuthoringMode,
+): mode is Extract<ManagedRecipeLifecycleAction, RecipeAuthoringMode> =>
+  mode === "plan"
+  || mode === "apply"
+  || mode === "run"
+  || mode === "check"
+  || mode === "destroy"
+
+const renderRecipeAuthoringProjectionTypeScript = (
+  recipe: AnyRecipeDefinition,
+  exportName: string,
+): string => {
+  const defineCall = isManagedRecipeDefinition(recipe) ? "defineManagedRecipe" : "defineRecipe"
+  const humanReview = isManagedRecipeDefinition(recipe)
+    ? `,\n  humanReviewRequired: ${recipe.humanReviewRequired === true ? "true" : "false"},\n  resourceKind: ${JSON.stringify(recipe.resourceKind)},\n  lifecycle: ${JSON.stringify(recipe.lifecycle)}`
+    : ""
+  return [
+    "// @generated by recipe-authoring-surface; do not edit by hand.",
+    `// source: ${recipe.sourcePath ?? "unknown"}`,
+    `export const ${exportName}RuntimeRecipe = ${defineCall}({`,
+    `  id: ${JSON.stringify(recipe.id)},`,
+    `  projectId: ${JSON.stringify(recipe.projectId)},`,
+    `  sourcePath: ${JSON.stringify(recipe.sourcePath)},`,
+    `  allowedFiles: ${JSON.stringify(recipe.allowedFiles ?? [])},`,
+    `  validationEvidence: ${JSON.stringify(recipe.validationEvidence ?? [])}${humanReview},`,
+    "  inputSchema,",
+    "  outputSchema,",
+    "  handler,",
+    "})",
+    "",
+  ].join("\n")
+}
+
+const programRepairActionFromRecipe = (
+  recipe: AnyRecipeDefinition,
   diagnostic: RecipeDiagnostic,
 ): ProgramRepairAction => ({
   id: `recipe-action:${diagnostic.diagnosticId}`,
@@ -1129,28 +2067,346 @@ const programRepairActionFromRecipe = <Input, Output>(
   },
 })
 
+const FrameworkProtocolRootRecipeId = "framework-protocol.root" as const
+const FrameworkProtocolRecipeSourcePath = "packages/trellis/protocol/src/recipes/index.ts" as const
+const FrameworkProtocolRecipeValidationEvidence = [
+  "framework-protocol:test",
+  "framework-protocol:typecheck",
+] as const
+
+const ProjectFactDiagnosticRulesRecipeId =
+  "framework-protocol.project-fact-diagnostic-rules" as const
+const SourceSurfaceRecipeId = "framework-protocol.source-surface" as const
+const TestSuiteRecipeId = "framework-protocol.test-suite" as const
+const RecipeKernelContractRecipeId =
+  "framework-protocol.recipe-kernel-contract" as const
+const RecipeProjectionsRecipeId = "framework-protocol.recipe-projections" as const
+
+const frameworkProtocolRecipeSurfaceOutput = (
+  input: FrameworkProtocolRecipeSurfaceInput,
+): FrameworkProtocolRecipeSurfaceOutput => ({
+  exportedRecipeApi: input.packageId === "framework-protocol",
+  exportedRegistry: true,
+  supportsManagedRecipe: true,
+  supportsStableIds: true,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const ProjectFactDiagnosticRulesSource = defineAlchemyResource({
+  id: "framework-protocol.project-fact-diagnostic-rules.source",
+  kind: "file",
+  alchemyType: "attune:resource:ProtocolSourceFile",
+  addressSchema: FrameworkProtocolRecipeSurfaceInput,
+  stateSchema: FrameworkProtocolRecipeSurfaceInput,
+  modes: ["read"],
+  consumedBy: [ProjectFactDiagnosticRulesRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const ProjectFactDiagnosticRulesReport = defineAlchemyResource({
+  id: "framework-protocol.project-fact-diagnostic-rules.report",
+  kind: "report",
+  alchemyType: "attune:resource:ProjectFactDiagnosticRuleReport",
+  addressSchema: FrameworkProtocolRecipeSurfaceInput,
+  stateSchema: FrameworkProtocolRecipeSurfaceOutput,
+  modes: ["project", "read"],
+  ownerRecipeId: ProjectFactDiagnosticRulesRecipeId,
+  producedBy: [ProjectFactDiagnosticRulesRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const SourceSurfaceResource = defineAlchemyResource({
+  id: "framework-protocol.source-surface.resource",
+  kind: "schema",
+  alchemyType: "attune:resource:ProtocolSourceSurface",
+  addressSchema: FrameworkProtocolRecipeSurfaceInput,
+  stateSchema: FrameworkProtocolRecipeSurfaceOutput,
+  modes: ["project", "read"],
+  ownerRecipeId: SourceSurfaceRecipeId,
+  producedBy: [SourceSurfaceRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const TestSuiteResource = defineAlchemyResource({
+  id: "framework-protocol.test-suite.resource",
+  kind: "report",
+  alchemyType: "attune:resource:ProtocolTestSuite",
+  addressSchema: FrameworkProtocolRecipeSurfaceInput,
+  stateSchema: FrameworkProtocolRecipeSurfaceOutput,
+  modes: ["check", "read"],
+  ownerRecipeId: TestSuiteRecipeId,
+  producedBy: [TestSuiteRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const RecipeKernelContractResource = defineAlchemyResource({
+  id: "framework-protocol.recipe-kernel-contract.resource",
+  kind: "schema",
+  alchemyType: "attune:resource:RecipeKernelContract",
+  addressSchema: FrameworkProtocolRecipeSurfaceInput,
+  stateSchema: FrameworkProtocolRecipeSurfaceOutput,
+  modes: ["project", "read"],
+  ownerRecipeId: RecipeKernelContractRecipeId,
+  producedBy: [RecipeKernelContractRecipeId],
+  consumedBy: [RecipeProjectionsRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const RecipeProjectionResource = defineAlchemyResource({
+  id: "framework-protocol.recipe-projections.resource",
+  kind: "schema",
+  alchemyType: "attune:resource:RecipeProjectionContract",
+  addressSchema: FrameworkProtocolRecipeSurfaceInput,
+  stateSchema: FrameworkProtocolRecipeSurfaceOutput,
+  modes: ["project", "read"],
+  ownerRecipeId: RecipeProjectionsRecipeId,
+  producedBy: [RecipeProjectionsRecipeId],
+})
+
+const projectFactDiagnosticRulesHandler = defineRecipeHandler<
+  FrameworkProtocolRecipeSurfaceInput,
+  FrameworkProtocolRecipeSurfaceOutput,
+  never,
+  never
+>({
+  id: "framework-protocol.project-fact-diagnostic-rules.handler",
+  recipeId: ProjectFactDiagnosticRulesRecipeId,
+  sourcePath: FrameworkProtocolRecipeSourcePath,
+  exportName: "frameworkProtocolRecipeSurfaceOutput",
+  emitsReceipts: ["framework-protocol.project-fact-diagnostic-rules"],
+  handler: (input) => Effect.succeed(frameworkProtocolRecipeSurfaceOutput(input)),
+})
+
+const sourceSurfaceHandler = defineRecipeHandler<
+  FrameworkProtocolRecipeSurfaceInput,
+  FrameworkProtocolRecipeSurfaceOutput,
+  never,
+  never
+>({
+  id: "framework-protocol.source-surface.handler",
+  recipeId: SourceSurfaceRecipeId,
+  sourcePath: FrameworkProtocolRecipeSourcePath,
+  exportName: "frameworkProtocolRecipeSurfaceOutput",
+  emitsReceipts: ["framework-protocol.source-surface"],
+  handler: (input) => Effect.succeed(frameworkProtocolRecipeSurfaceOutput(input)),
+})
+
+const testSuiteHandler = defineRecipeHandler<
+  FrameworkProtocolRecipeSurfaceInput,
+  FrameworkProtocolRecipeSurfaceOutput,
+  never,
+  never
+>({
+  id: "framework-protocol.test-suite.handler",
+  recipeId: TestSuiteRecipeId,
+  sourcePath: FrameworkProtocolRecipeSourcePath,
+  exportName: "frameworkProtocolRecipeSurfaceOutput",
+  emitsReceipts: ["framework-protocol.test-suite"],
+  handler: (input) => Effect.succeed(frameworkProtocolRecipeSurfaceOutput(input)),
+})
+
+const recipeKernelContractHandler = defineRecipeHandler<
+  FrameworkProtocolRecipeSurfaceInput,
+  FrameworkProtocolRecipeSurfaceOutput,
+  never,
+  never
+>({
+  id: "framework-protocol.recipe-kernel-contract.handler",
+  recipeId: RecipeKernelContractRecipeId,
+  sourcePath: FrameworkProtocolRecipeSourcePath,
+  exportName: "frameworkProtocolRecipeSurfaceOutput",
+  emitsReceipts: ["framework-protocol.recipe-kernel-contract"],
+  handler: (input) => Effect.succeed(frameworkProtocolRecipeSurfaceOutput(input)),
+})
+
+const recipeProjectionsHandler = defineRecipeHandler<
+  FrameworkProtocolRecipeSurfaceInput,
+  FrameworkProtocolRecipeSurfaceOutput,
+  never,
+  never
+>({
+  id: "framework-protocol.recipe-projections.handler",
+  recipeId: RecipeProjectionsRecipeId,
+  sourcePath: FrameworkProtocolRecipeSourcePath,
+  exportName: "frameworkProtocolRecipeSurfaceOutput",
+  emitsReceipts: ["framework-protocol.recipe-projections"],
+  handler: (input) => Effect.succeed(frameworkProtocolRecipeSurfaceOutput(input)),
+})
+
 export const FrameworkProtocolRecipes = [
-  defineRecipe({
-    id: "framework-protocol.recipe-kernel-contract",
+  ...DiagnosticObligationRecipes(frameworkProtocolRecipeHelpers),
+  ...DiagnosticRulesIndexRecipes(frameworkProtocolRecipeHelpers),
+  ...DiagnosticsRecipes(frameworkProtocolRecipeHelpers),
+  ...ObservationsRecipes(frameworkProtocolRecipeHelpers),
+  ...ProjectFactsAssertionsRecipes(frameworkProtocolRecipeHelpers),
+  ...ProjectFactsCoreRecipes(frameworkProtocolRecipeHelpers),
+  ...ProjectFactsDiagnosticRulesRecipes(frameworkProtocolRecipeHelpers),
+  ...ProjectFactsIndexRecipes(frameworkProtocolRecipeHelpers),
+  ...ProjectFactsRpcRecipes(frameworkProtocolRecipeHelpers),
+  ...ProjectFactsTypeGuidanceRecipes(frameworkProtocolRecipeHelpers),
+  ...ProjectFactsValidationRecipes(frameworkProtocolRecipeHelpers),
+  ...ProtocolSourceRecipes(frameworkProtocolRecipeHelpers),
+  ...ProtocolWaiverRecipes(frameworkProtocolRecipeHelpers),
+  ...SchemaDescriptorRecipes(frameworkProtocolRecipeHelpers),
+  defineDiagnosticRecipe({
+    id: ProjectFactDiagnosticRulesRecipeId,
+    projectId: "framework-protocol",
+    title: "Own project-fact diagnostic rule source",
+    inputSchema: FrameworkProtocolRecipeSurfaceInput,
+    outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+    io: {
+      inputSchema: FrameworkProtocolRecipeSurfaceInput,
+      outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+      inputResources: [ProjectFactDiagnosticRulesSource],
+      outputResources: [ProjectFactDiagnosticRulesReport],
+    },
+    handler: projectFactDiagnosticRulesHandler,
+    alchemyDag: [{
+      fromRecipeId: FrameworkProtocolRootRecipeId,
+      toRecipeId: ProjectFactDiagnosticRulesRecipeId,
+      resource: ProjectFactDiagnosticRulesReport,
+      kind: "diagnoses",
+      modes: ["project", "read"],
+    }],
+    nxTarget: "framework-protocol:test",
+    observedFiles: ["packages/trellis/protocol/src/project-facts/diagnostic-rules.ts"],
+    allowedFiles: ["packages/trellis/protocol/src/project-facts/diagnostic-rules.ts"],
+    validationEvidence: FrameworkProtocolRecipeValidationEvidence,
+  }),
+  defineSchemaRecipe({
+    id: SourceSurfaceRecipeId,
+    projectId: "framework-protocol",
+    title: "Own framework protocol source modules outside the recipe package declaration",
+    inputSchema: FrameworkProtocolRecipeSurfaceInput,
+    outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+    io: {
+      inputSchema: FrameworkProtocolRecipeSurfaceInput,
+      outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+      inputResources: [ProjectFactDiagnosticRulesSource],
+      outputResources: [SourceSurfaceResource],
+    },
+    handler: sourceSurfaceHandler,
+    alchemyDag: [{
+      fromRecipeId: FrameworkProtocolRootRecipeId,
+      toRecipeId: SourceSurfaceRecipeId,
+      resource: SourceSurfaceResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }],
+    nxTarget: "framework-protocol:test",
+    allowedFiles: [
+      "packages/trellis/protocol/src/diagnostic-obligations/index.ts",
+      "packages/trellis/protocol/src/diagnostic-rules/index.ts",
+      "packages/trellis/protocol/src/diagnostics/index.ts",
+      "packages/trellis/protocol/src/index.ts",
+      "packages/trellis/protocol/src/observations/index.ts",
+      "packages/trellis/protocol/src/project-facts/**",
+      "packages/trellis/protocol/src/schema-descriptors/index.ts",
+      "packages/trellis/protocol/src/source/index.ts",
+      "packages/trellis/protocol/src/waivers/index.ts",
+      "packages/trellis/protocol/vitest.config.ts",
+    ],
+    validationEvidence: FrameworkProtocolRecipeValidationEvidence,
+  }),
+// @attune-packet-target generated-runtime-projection eligible
+  defineTestRecipe({
+    id: TestSuiteRecipeId,
+    projectId: "framework-protocol",
+    title: "Own framework protocol unit, packet, and project-fact tests",
+    inputSchema: FrameworkProtocolRecipeSurfaceInput,
+    outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+    io: {
+      inputSchema: FrameworkProtocolRecipeSurfaceInput,
+      outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+      inputResources: [ProjectFactDiagnosticRulesSource],
+      outputResources: [TestSuiteResource],
+    },
+    handler: testSuiteHandler,
+    alchemyDag: [{
+      fromRecipeId: FrameworkProtocolRootRecipeId,
+      toRecipeId: TestSuiteRecipeId,
+      resource: TestSuiteResource,
+      kind: "validates",
+      modes: ["check", "read"],
+    }],
+    nxTarget: "framework-protocol:test",
+    allowedFiles: ["packages/trellis/protocol/test/**"],
+    validationEvidence: ["framework-protocol:test"],
+  }),
+  defineSchemaRecipe({
+    id: RecipeKernelContractRecipeId,
     projectId: "framework-protocol",
     title: "Define Recipe, ManagedRecipe, registry, receipt, diagnostic, repair, and health contracts",
     inputSchema: FrameworkProtocolRecipeSurfaceInput,
     outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+    io: {
+      inputSchema: FrameworkProtocolRecipeSurfaceInput,
+      outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+      inputResources: [ProjectFactDiagnosticRulesSource],
+      outputResources: [RecipeKernelContractResource],
+    },
+    handler: recipeKernelContractHandler,
+    alchemyDag: [{
+      fromRecipeId: FrameworkProtocolRootRecipeId,
+      toRecipeId: RecipeKernelContractRecipeId,
+      resource: RecipeKernelContractResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }],
     nxTarget: "framework-protocol:test",
-    sourcePath: "packages/trellis/protocol/src/recipes/index.ts",
     allowedFiles: ["packages/trellis/protocol/**"],
-    validationEvidence: ["framework-protocol:test", "framework-protocol:typecheck"],
+    validationEvidence: FrameworkProtocolRecipeValidationEvidence,
   }),
-  defineRecipe({
-    id: "framework-protocol.recipe-projections",
+// @attune-packet-target generated-runtime-projection eligible
+  defineProjectionRecipe({
+    id: RecipeProjectionsRecipeId,
     projectId: "framework-protocol",
     title: "Project recipes into Nx, LSP, records, edges, public targets, and Alchemy descriptors",
     inputSchema: FrameworkProtocolRecipeSurfaceInput,
     outputSchema: FrameworkProtocolRecipeSurfaceOutput,
-    dependencies: [{ recipeId: "framework-protocol.recipe-kernel-contract" }],
+    io: {
+      inputSchema: FrameworkProtocolRecipeSurfaceInput,
+      outputSchema: FrameworkProtocolRecipeSurfaceOutput,
+      inputResources: [RecipeKernelContractResource],
+      outputResources: [RecipeProjectionResource],
+    },
+    handler: recipeProjectionsHandler,
+    dependencies: [{ recipeId: RecipeKernelContractRecipeId }],
+    alchemyDag: [
+      {
+        fromRecipeId: FrameworkProtocolRootRecipeId,
+        toRecipeId: RecipeProjectionsRecipeId,
+        resource: RecipeProjectionResource,
+        kind: "projects",
+        modes: ["project", "read"],
+      },
+      {
+        fromRecipeId: RecipeProjectionsRecipeId,
+        toRecipeId: RecipeKernelContractRecipeId,
+        resource: RecipeKernelContractResource,
+        kind: "projects",
+        modes: ["read", "project"],
+      },
+    ],
     nxTarget: "framework-protocol:test",
-    sourcePath: "packages/trellis/protocol/src/recipes/index.ts",
     allowedFiles: ["packages/trellis/protocol/**", "packages/trellis/language-service/**", "packages/trellis/nx/**"],
     validationEvidence: ["framework-protocol:test", "framework-nx:test", "framework-language-service:test"],
   }),
 ] as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkProtocolRecipePackage = defineRecipePackage({
+  packageId: "framework-protocol",
+  kind: "framework-protocol",
+  title: "Trellis framework protocol recipe, packet, source, and test contracts",
+  sourceRoot: "packages/trellis/protocol/src",
+  recipes: FrameworkProtocolRecipes,
+  ownership: [
+    {
+      id: "protocol-contracts",
+      title: "Protocol recipes, packets, diagnostics, observations, source facts, and tests",
+      files: ["packages/trellis/protocol/src/**", "packages/trellis/protocol/test/**"],
+      recipeIds: FrameworkProtocolRecipes.map((recipe) => recipe.id),
+    },
+  ],
+})

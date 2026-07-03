@@ -1,6 +1,16 @@
 import { readFile, writeFile } from "node:fs/promises"
 import { join, resolve } from "node:path"
-import { Schema } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineDocumentationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
+import { JoernGeneratedSchemaModulesResource } from "../../pure/codegen/generate.js"
+
+const joernReadmeRenderRecipeId = "joern-effect.generation-readme-render"
+const joernReadmeRenderSourcePath = "packages/attune/joern-effect/src/internal/generation/JoernReadme.ts"
 
 const PackageJson = Schema.Struct({
   packageManager: Schema.optional(Schema.String),
@@ -10,6 +20,34 @@ export interface JoernReadmeRenderInput {
   readonly workspaceRoot?: string
   readonly packageRoot?: string
 }
+
+export const JoernReadmeRenderInputSchema = Schema.Struct({
+  workspaceRoot: Schema.optional(Schema.String),
+  packageRoot: Schema.optional(Schema.String),
+})
+export type JoernReadmeRenderInputSchema = typeof JoernReadmeRenderInputSchema.Type
+
+export const JoernReadmeRenderOutputSchema = Schema.Struct({
+  readmePath: Schema.String,
+  rendered: Schema.Boolean,
+})
+export type JoernReadmeRenderOutput = typeof JoernReadmeRenderOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernReadmeResource = defineAlchemyResource({
+  id: "joern-effect.generation-readme-render.resource",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: joernReadmeRenderRecipeId,
+  producedBy: [joernReadmeRenderRecipeId],
+  consumedBy: [joernReadmeRenderRecipeId],
+  addressFields: ["packageRoot"],
+  addressSchema: JoernReadmeRenderInputSchema as never,
+  stateSchema: JoernReadmeRenderOutputSchema as never,
+  modes: ["project", "write", "check"],
+  programmaticResourceExport: "JoernReadmeRenderLive",
+  programmaticBridgeSourcePath: joernReadmeRenderSourcePath,
+})
 
 export const renderJoernReadme = async (
   input: JoernReadmeRenderInput = {},
@@ -58,3 +96,96 @@ export const renderJoernReadme = async (
 
   await writeFile(join(packageRoot, "README.md"), rendered)
 }
+
+export interface JoernReadmeRenderService {
+  readonly render: (
+    input: JoernReadmeRenderInputSchema,
+  ) => Effect.Effect<JoernReadmeRenderOutput, Error>
+}
+
+export class JoernReadmeRender extends Context.Tag("joern-effect/ReadmeRender")<
+  JoernReadmeRender,
+  JoernReadmeRenderService
+>() {}
+
+export const renderJoernReadmeEffect = (
+  input: JoernReadmeRenderInputSchema,
+): Effect.Effect<JoernReadmeRenderOutput, Error> =>
+  Effect.tryPromise({
+    catch: (cause) => new Error(String(cause)),
+    try: async () => {
+      const packageRoot = input.packageRoot ?? process.cwd()
+      await renderJoernReadme({
+        ...(input.workspaceRoot === undefined ? {} : { workspaceRoot: input.workspaceRoot }),
+        ...(input.packageRoot === undefined ? {} : { packageRoot: input.packageRoot }),
+      })
+      return {
+        readmePath: join(packageRoot, "README.md"),
+        rendered: true,
+      }
+    },
+  })
+
+export const JoernReadmeRenderLive = Layer.succeed(JoernReadmeRender, {
+  render: renderJoernReadmeEffect,
+})
+
+export const JoernReadmeRenderLayer = defineRecipeLayer({
+  id: "joern-effect.generation-readme-render.layer",
+  sourcePath: joernReadmeRenderSourcePath,
+  exportName: "JoernReadmeRenderLive",
+  layer: JoernReadmeRenderLive as never,
+  provides: [{
+    id: "joern-effect.generation-readme-render.service",
+    service: JoernReadmeRender as never,
+  }],
+})
+
+export const renderJoernReadmeViaLayer = (
+  input: JoernReadmeRenderInputSchema,
+): Effect.Effect<JoernReadmeRenderOutput, Error, JoernReadmeRender> =>
+  Effect.gen(function* renderJoernReadmeViaLayerBody() {
+    const renderer = yield* JoernReadmeRender
+    return yield* renderer.render(input)
+  })
+
+export const JoernReadmeRenderHandler = defineRecipeHandler<
+  JoernReadmeRenderInputSchema,
+  JoernReadmeRenderOutput,
+  Error,
+  JoernReadmeRender
+>({
+  id: "joern-effect.generation-readme-render.handler",
+  recipeId: joernReadmeRenderRecipeId,
+  sourcePath: joernReadmeRenderSourcePath,
+  exportName: "renderJoernReadmeViaLayer",
+  layer: JoernReadmeRenderLayer,
+  emitsReceipts: ["joern.generation-readme.rendered"],
+  handler: (input) => renderJoernReadmeViaLayer(input) as never,
+})
+
+export const JoernReadmeRenderRecipe = defineDocumentationRecipe({
+  id: joernReadmeRenderRecipeId,
+  projectId: "joern-effect",
+  title: "Render Joern README from typed toolchain and package metadata",
+  inputSchema: JoernReadmeRenderInputSchema as never,
+  outputSchema: JoernReadmeRenderOutputSchema as never,
+  allowedFiles: [joernReadmeRenderSourcePath],
+  validationEvidence: ["joern-effect:generate", "joern-effect:test"],
+  io: {
+    inputSchema: JoernReadmeRenderInputSchema as never,
+    outputSchema: JoernReadmeRenderOutputSchema as never,
+    inputResources: [JoernGeneratedSchemaModulesResource],
+    outputResources: [JoernReadmeResource],
+  },
+  handler: JoernReadmeRenderHandler,
+  alchemyDag: [{
+    fromRecipeId: "joern-effect.codegen.schema-modules",
+    toRecipeId: joernReadmeRenderRecipeId,
+    resource: JoernGeneratedSchemaModulesResource,
+    kind: "projects",
+    modes: ["project", "write", "check"],
+  }],
+})
+
+export const JoernReadmeRenderRecipes = [JoernReadmeRenderRecipe] as const

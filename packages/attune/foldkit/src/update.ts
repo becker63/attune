@@ -1,9 +1,29 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol";
+import { Effect } from "effect";
 import type { Command } from "foldkit";
 
 import { AdvanceFixtureStep, StartFixtureRun } from "./fixture-commands.js";
 import { sitePageForRoute } from "./fixtures/app-site-fixture.js";
 import type { Message } from "./message.js";
+import { FoldKitMessageResource } from "./message.js";
 import type { Model } from "./model.js";
+import { FoldKitModelResource } from "./model.js";
+import {
+  FoldKitPackageSourceResource,
+  FoldKitProjectId,
+  FoldKitSourceAddress,
+  FoldKitSourceReport,
+  FoldKitTestTarget,
+  FoldKitTypecheckTarget,
+  FoldKitUpdateRecipeId,
+  FoldKitViewRecipeId,
+  foldKitSourceReport,
+} from "./schema.js";
 
 type UpdateReturn = readonly [Model, ReadonlyArray<Command.Command<Message>>];
 type MessageByTag<TTag extends Message["_tag"]> = Extract<
@@ -168,3 +188,73 @@ export const update = (model: Model, message: Message): UpdateReturn => {
 
   return [model, []];
 };
+
+export const FoldKitUpdateSourcePath =
+  "packages/attune/foldkit/src/update.ts" as const;
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitUpdateResource = defineAlchemyResource({
+  id: "attune-foldkit.update-loop.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: FoldKitUpdateRecipeId,
+  producedBy: [FoldKitUpdateRecipeId],
+  consumedBy: [FoldKitViewRecipeId],
+  addressSchema: FoldKitSourceAddress,
+  stateSchema: FoldKitSourceReport,
+  modes: ["read", "project", "observe"],
+});
+
+export const describeFoldKitUpdateLoop = (): FoldKitSourceReport =>
+  foldKitSourceReport({
+    recipeId: FoldKitUpdateRecipeId,
+    sourcePath: FoldKitUpdateSourcePath,
+    surface: "FoldKit update loop that maps messages to model changes and commands",
+    exportedSymbols: ["update"],
+  });
+
+export const FoldKitUpdateHandler = defineRecipeHandler<
+  FoldKitSourceAddress,
+  FoldKitSourceReport
+>({
+  id: "attune-foldkit.update-loop.handler",
+  recipeId: FoldKitUpdateRecipeId,
+  sourcePath: FoldKitUpdateSourcePath,
+  exportName: "describeFoldKitUpdateLoop",
+  handler: () => Effect.succeed(describeFoldKitUpdateLoop()),
+  emitsReceipts: ["attune-foldkit.update-loop.report"],
+});
+
+export const FoldKitUpdateDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FoldKitUpdateRecipeId,
+  toRecipeId: FoldKitViewRecipeId,
+  resource: FoldKitUpdateResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitUpdateRecipe = defineProjectionRecipe({
+  id: FoldKitUpdateRecipeId,
+  projectId: FoldKitProjectId,
+  title: "Project FoldKit messages through the update loop",
+  inputSchema: FoldKitSourceAddress,
+  outputSchema: FoldKitSourceReport,
+  nxTarget: FoldKitTestTarget,
+  allowedFiles: [FoldKitUpdateSourcePath],
+  validationEvidence: [FoldKitTypecheckTarget, FoldKitTestTarget],
+  io: {
+    inputSchema: FoldKitSourceAddress,
+    outputSchema: FoldKitSourceReport,
+    inputResources: [
+      FoldKitPackageSourceResource,
+      FoldKitMessageResource,
+      FoldKitModelResource,
+    ],
+    outputResources: [FoldKitUpdateResource],
+  },
+  handler: FoldKitUpdateHandler,
+  alchemyDag: [FoldKitUpdateDagEdge],
+});
+
+export const FoldKitUpdateRecipes = [FoldKitUpdateRecipe] as const;

@@ -2,6 +2,16 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 import { createHash } from "node:crypto"
+import { fileURLToPath } from "node:url"
+
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  defineRepairRecipe,
+} from "@attune/framework-protocol"
+import { Effect, Layer, Schema } from "effect"
 
 interface RepairProject {
   readonly project: string
@@ -23,11 +33,9 @@ interface RepairAction {
 
 const repairProjects: readonly RepairProject[] = [
   { project: "attune-foldkit", projectRoot: "packages/attune/foldkit" },
-  { project: "attune-nx", projectRoot: "packages/attune/nx" },
   { project: "attune-pi-agent", projectRoot: "packages/attune/pi-agent" },
   { project: "attuned-discovery", projectRoot: "packages/attune/discovery" },
   { project: "cocoindex-effect", projectRoot: "packages/attune/cocoindex-effect" },
-  { project: "effect-oxlint-policy", projectRoot: "packages/trellis/oxlint-policy" },
   { project: "home-deployment", projectRoot: "packages/canopy/home-deployment" },
   { project: "joern-effect", projectRoot: "packages/attune/joern-effect" },
   { project: "joern-effect-properties", projectRoot: "packages/attune/joern-effect-properties" },
@@ -44,23 +52,25 @@ const requestedProject = readArg("--project")
 const requestedKind = readRepairKind()
 const dryRun = args.includes("--dry-run")
 
-const selectedProjects = requestedProject === null
-  ? repairProjects
-  : repairProjects.filter((entry) => entry.project === requestedProject)
+export function runRecipeRepairCli(): void {
+  const selectedProjects = requestedProject === null
+    ? repairProjects
+    : repairProjects.filter((entry) => entry.project === requestedProject)
 
-if (requestedProject !== null && selectedProjects.length === 0) {
-  console.error(`Attune repair has no known project metadata for ${requestedProject}.`)
-  process.exit(1)
-}
+  if (requestedProject !== null && selectedProjects.length === 0) {
+    console.error(`Attune repair has no known project metadata for ${requestedProject}.`)
+    process.exit(1)
+  }
 
-const actions = selectedProjects.flatMap((project) => repairProject(project))
+  const actions = selectedProjects.flatMap((project) => repairProject(project))
 
-if (actions.length === 0) {
-  console.log("Attune repair: no recipe-substrate cleanup actions were needed.")
-} else {
-  console.log(`Attune repair: ${dryRun ? "planned" : "applied"} ${actions.length} recipe-substrate cleanup action(s).`)
-  for (const action of actions) {
-    console.log(`${action.kind.toUpperCase()} ${action.path} ${action.message}`)
+  if (actions.length === 0) {
+    console.log("Attune repair: no recipe-substrate cleanup actions were needed.")
+  } else {
+    console.log(`Attune repair: ${dryRun ? "planned" : "applied"} ${actions.length} recipe-substrate cleanup action(s).`)
+    for (const action of actions) {
+      console.log(`${action.kind.toUpperCase()} ${action.path} ${action.message}`)
+    }
   }
 }
 
@@ -316,4 +326,109 @@ function absolute(relativePath: string): string {
 
 function hashText(content: string): string {
   return createHash("sha256").update(content).digest("hex")
+}
+
+export const ArchitectureRecipeRepairRecipeId =
+  "attune-architecture.recipe-repair-cli" as const
+const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+const ArchitectureRecipeRepairSourcePath =
+  "packages/trellis/architecture/src/recipe-repair-cli.ts" as const
+
+const ArchitectureRecipeRepairInput = Schema.Struct({
+  workspaceRoot: Schema.String,
+  project: Schema.optional(Schema.String),
+  kind: Schema.optional(Schema.String),
+  dryRun: Schema.optional(Schema.Boolean),
+})
+type ArchitectureRecipeRepairInput = typeof ArchitectureRecipeRepairInput.Type
+
+const ArchitectureRecipeRepairOutput = Schema.Struct({
+  scriptPath: Schema.String,
+  invocationModel: Schema.Literal("RecipeInvocation"),
+  validationTargetHandles: Schema.Array(Schema.String),
+})
+type ArchitectureRecipeRepairOutput = typeof ArchitectureRecipeRepairOutput.Type
+
+export const projectRecipeRepairInvocation = (
+  _input: ArchitectureRecipeRepairInput,
+): ArchitectureRecipeRepairOutput => ({
+  scriptPath: ArchitectureRecipeRepairSourcePath,
+  invocationModel: "RecipeInvocation",
+  validationTargetHandles: ["workspace:repair", "attune-architecture:test"],
+})
+
+export const ArchitectureRecipeRepairRuntimeLayer = defineRecipeLayer({
+  id: "attune-architecture.recipe-repair.runtime.layer",
+  sourcePath: ArchitectureRecipeRepairSourcePath,
+  exportName: "runRecipeRepairCli",
+  layer: Layer.empty as never,
+  provides: [{ id: "filesystem", service: "node:fs" }],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureRecipeRepairInputResource = defineAlchemyResource({
+  id: "attune-architecture.recipe-repair.input",
+  kind: "configuration",
+  alchemyType: "attune:resource:Configuration",
+  consumedBy: [ArchitectureRecipeRepairRecipeId],
+  addressSchema: ArchitectureRecipeRepairInput,
+  stateSchema: ArchitectureRecipeRepairInput,
+  modes: ["read", "plan"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureRecipeRepairReportResource = defineAlchemyResource({
+  id: "attune-architecture.recipe-repair.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitectureRecipeRepairRecipeId,
+  producedBy: [ArchitectureRecipeRepairRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: ArchitectureRecipeRepairInput,
+  stateSchema: ArchitectureRecipeRepairOutput,
+  modes: ["project", "observe"],
+})
+
+export const ArchitectureRecipeRepairDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureRecipeRepairRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureRecipeRepairReportResource,
+  kind: "repairs",
+  modes: ["plan", "observe"],
+})
+
+export const ArchitectureRecipeRepairRecipe = defineRepairRecipe({
+  id: "attune-architecture.recipe-repair-cli",
+  projectId: "attune-architecture",
+  title: "Expose architecture recipe repair CLI as a RepairRecipe surface",
+  inputSchema: ArchitectureRecipeRepairInput,
+  outputSchema: ArchitectureRecipeRepairOutput,
+  nxTarget: "workspace:repair",
+  affectedFiles: [ArchitectureRecipeRepairSourcePath],
+  allowedFiles: [ArchitectureRecipeRepairSourcePath],
+  validationEvidence: ["workspace:repair", "attune-architecture:test"],
+  io: {
+    inputSchema: ArchitectureRecipeRepairInput,
+    outputSchema: ArchitectureRecipeRepairOutput,
+    inputResources: [ArchitectureRecipeRepairInputResource],
+    outputResources: [ArchitectureRecipeRepairReportResource],
+  },
+  handler: defineRecipeHandler<ArchitectureRecipeRepairInput, ArchitectureRecipeRepairOutput>({
+    id: "attune-architecture.recipe-repair-cli.handler",
+    recipeId: ArchitectureRecipeRepairRecipeId,
+    sourcePath: ArchitectureRecipeRepairSourcePath,
+    exportName: "projectRecipeRepairInvocation",
+    handler: (input) => Effect.succeed(projectRecipeRepairInvocation(input)),
+    layer: ArchitectureRecipeRepairRuntimeLayer,
+    emitsReceipts: ["attune-architecture.recipe-repair-cli.projected"],
+  }),
+  alchemyDag: [ArchitectureRecipeRepairDagEdge],
+})
+
+export const ArchitectureRecipeRepairRecipes = [
+  ArchitectureRecipeRepairRecipe,
+] as const
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  runRecipeRepairCli()
 }

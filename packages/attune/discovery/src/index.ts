@@ -1,5 +1,10 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol";
 import { Context, Effect, Layer, Ref, Schema as S } from "effect";
-import { createAttuneDiscoveryRecipes } from "./recipes.js";
 
 export const RunStatus = S.Literals([
   "initializing",
@@ -322,19 +327,491 @@ export const DiscoveryReportInput = S.Struct({
 });
 export type DiscoveryReportInput = typeof DiscoveryReportInput.Type;
 
-export const AttuneDiscoveryRecipes = createAttuneDiscoveryRecipes({
-  RepoSnapshot,
-  DiscoveryRun,
-  AnchorCard,
-  MotifHypothesis,
-  EvidencePacket,
-  DecisionPacket,
-  RuleCandidate,
-  DeterministicRule,
-  DiscoveryReportInput,
-  WorkbenchSnapshot,
+const DiscoveryIndexSourcePath = "packages/attune/discovery/src/index.ts";
+const AttuneDiscoveryProjectId = "attuned-discovery";
+const AttuneDiscoveryCheckTarget = "attuned-discovery:check";
+const AttuneDiscoveryTestTarget = "attuned-discovery:test";
+
+const RepoSnapshotRecipeId = "attuned-discovery.repo-snapshot";
+const AnchorRetrievalRecipeId = "attuned-discovery.anchor-retrieval";
+const HypothesisRecipeId = "attuned-discovery.hypothesis";
+const JoernProofRecipeId = "attuned-discovery.joern-proof";
+const EvidenceScoringRecipeId = "attuned-discovery.evidence-scoring";
+const RuleCandidateRecipeId = "attuned-discovery.rule-candidate";
+const DeterministicRuleRecipeId = "attuned-discovery.deterministic-rule";
+const ReportRecipeId = "attuned-discovery.report";
+
+// @attune-packet-target generated-runtime-projection eligible
+const RepoSnapshotResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.repo-snapshot",
+  kind: "schema",
+  alchemyType: "attuned-discovery/repo-snapshot",
+  addressSchema: RepoSnapshot,
+  stateSchema: RepoSnapshot,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: RepoSnapshotRecipeId,
 });
-export { createAttuneDiscoveryRecipes } from "./recipes.js";
+
+// @attune-packet-target generated-runtime-projection eligible
+const DiscoveryRunResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.discovery-run",
+  kind: "observation-stream",
+  alchemyType: "attuned-discovery/discovery-run",
+  addressSchema: DiscoveryRun,
+  stateSchema: DiscoveryRun,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: AnchorRetrievalRecipeId,
+});
+
+// @attune-packet-target generated-runtime-projection eligible
+const AnchorCardResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.anchor-card",
+  kind: "report",
+  alchemyType: "attuned-discovery/anchor-card",
+  addressSchema: DiscoveryRun,
+  stateSchema: S.Array(AnchorCard),
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: AnchorRetrievalRecipeId,
+});
+
+// @attune-packet-target generated-runtime-projection eligible
+const MotifHypothesisResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.motif-hypothesis",
+  kind: "report",
+  alchemyType: "attuned-discovery/motif-hypothesis",
+  addressSchema: S.Array(AnchorCard),
+  stateSchema: MotifHypothesis,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: HypothesisRecipeId,
+});
+
+// @attune-packet-target generated-runtime-projection eligible
+const EvidencePacketResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.evidence-packet",
+  kind: "report",
+  alchemyType: "attuned-discovery/evidence-packet",
+  addressSchema: MotifHypothesis,
+  stateSchema: EvidencePacket,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: JoernProofRecipeId,
+});
+
+// @attune-packet-target generated-runtime-projection eligible
+const DecisionPacketResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.decision-packet",
+  kind: "report",
+  alchemyType: "attuned-discovery/decision-packet",
+  addressSchema: S.Array(EvidencePacket),
+  stateSchema: DecisionPacket,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: EvidenceScoringRecipeId,
+});
+
+// @attune-packet-target generated-runtime-projection eligible
+const RuleCandidateResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.rule-candidate",
+  kind: "report",
+  alchemyType: "attuned-discovery/rule-candidate",
+  addressSchema: DecisionPacket,
+  stateSchema: RuleCandidate,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: RuleCandidateRecipeId,
+});
+
+// @attune-packet-target generated-runtime-projection eligible
+const DeterministicRuleResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.deterministic-rule",
+  kind: "report",
+  alchemyType: "attuned-discovery/deterministic-rule",
+  addressSchema: RuleCandidate,
+  stateSchema: DeterministicRule,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: DeterministicRuleRecipeId,
+});
+
+// @attune-packet-target generated-runtime-projection eligible
+const WorkbenchSnapshotResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.workbench-snapshot",
+  kind: "report",
+  alchemyType: "attuned-discovery/workbench-snapshot",
+  addressSchema: DiscoveryReportInput,
+  stateSchema: WorkbenchSnapshot,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: ReportRecipeId,
+});
+
+const RepoSnapshotHandler = defineRecipeHandler<any, any, never, never>({
+  id: "attuned-discovery.repo-snapshot.handler",
+  recipeId: RepoSnapshotRecipeId,
+  sourcePath: DiscoveryIndexSourcePath,
+  exportName: "RepoSnapshotHandler",
+  handler: (input) => Effect.succeed(input),
+});
+
+const AnchorRetrievalHandler = defineRecipeHandler<any, any, never, never>({
+  id: "attuned-discovery.anchor-retrieval.handler",
+  recipeId: AnchorRetrievalRecipeId,
+  sourcePath: DiscoveryIndexSourcePath,
+  exportName: "AnchorRetrievalHandler",
+  handler: () => Effect.succeed([]),
+});
+
+const HypothesisHandler = defineRecipeHandler<any, any, never, never>({
+  id: "attuned-discovery.hypothesis.handler",
+  recipeId: HypothesisRecipeId,
+  sourcePath: DiscoveryIndexSourcePath,
+  exportName: "HypothesisHandler",
+  handler: (anchors) =>
+    Effect.succeed({
+      hypothesisId: "recipe-expression-placeholder",
+      runId: anchors[0]?.runId ?? "recipe-expression",
+      anchorIds: anchors.map((anchor: AnchorCard) => anchor.anchorId),
+      title: "Recipe-local hypothesis expression",
+      summary: "File-local recipe handler for discovery hypothesis creation.",
+      status: "candidate" as const,
+      score: 0,
+    }),
+});
+
+const JoernProofHandler = defineRecipeHandler<any, any, never, never>({
+  id: "attuned-discovery.joern-proof.handler",
+  recipeId: JoernProofRecipeId,
+  sourcePath: DiscoveryIndexSourcePath,
+  exportName: "JoernProofHandler",
+  handler: (hypothesis) =>
+    Effect.succeed({
+      evidenceId: `${hypothesis.hypothesisId}:recipe-expression-evidence`,
+      runId: hypothesis.runId,
+      hypothesisId: hypothesis.hypothesisId,
+      templateId: "recipe-expression",
+      confidence: "empty" as const,
+      summary: "Bounded proof handler is expressed as a local Effect recipe.",
+      durationMs: 0,
+      excerpts: [],
+      createdAt: "1970-01-01T00:00:00.000Z",
+    }),
+});
+
+const EvidenceScoringHandler = defineRecipeHandler<any, any, never, never>({
+  id: "attuned-discovery.evidence-scoring.handler",
+  recipeId: EvidenceScoringRecipeId,
+  sourcePath: DiscoveryIndexSourcePath,
+  exportName: "EvidenceScoringHandler",
+  handler: (evidence) =>
+    Effect.succeed({
+      packetId: "recipe-expression-decision-packet",
+      run: {
+        runId: evidence[0]?.runId ?? "recipe-expression",
+        repo: "attune",
+        repoSnapshotId: "recipe-expression",
+        status: "reviewing" as const,
+        budget: {
+          joernRunsRemaining: 0,
+          anchorSearchesRemaining: 0,
+          optimizerTurnsRemaining: 0,
+        },
+        startedAt: "1970-01-01T00:00:00.000Z",
+        updatedAt: "1970-01-01T00:00:00.000Z",
+      },
+      anchors: [],
+      hypotheses: [],
+      evidence,
+      budget: {
+        joernRunsRemaining: 0,
+        anchorSearchesRemaining: 0,
+        optimizerTurnsRemaining: 0,
+      },
+      availableDecisions: [],
+      bestNextAction: {
+        kind: "stop" as const,
+        label: "Stop",
+        targetId: "recipe-expression",
+        templateId: "recipe-expression",
+      },
+    }),
+});
+
+const RuleCandidateHandler = defineRecipeHandler<any, any, never, never>({
+  id: "attuned-discovery.rule-candidate.handler",
+  recipeId: RuleCandidateRecipeId,
+  sourcePath: DiscoveryIndexSourcePath,
+  exportName: "RuleCandidateHandler",
+  handler: (packet) =>
+    Effect.succeed({
+      ruleId: "recipe-expression-rule",
+      runId: packet.run.runId,
+      hypothesisId: packet.hypotheses[0]?.hypothesisId ?? "recipe-expression",
+      evidenceIds: packet.evidence.map((item: EvidencePacket) => item.evidenceId),
+      title: "Recipe expression rule candidate",
+      deterministicRuleKind: "ast-grep" as const,
+      confidence: "empty" as const,
+    }),
+});
+
+const DeterministicRuleHandler = defineRecipeHandler<any, any, never, never>({
+  id: "attuned-discovery.deterministic-rule.handler",
+  recipeId: DeterministicRuleRecipeId,
+  sourcePath: DiscoveryIndexSourcePath,
+  exportName: "DeterministicRuleHandler",
+  handler: (candidate) =>
+    Effect.succeed({
+      ruleId: candidate.ruleId,
+      candidateId: candidate.ruleId,
+      kind: candidate.deterministicRuleKind,
+      targetPath: DiscoveryIndexSourcePath,
+      source: candidate.title,
+      generatedAt: "1970-01-01T00:00:00.000Z",
+    }),
+});
+
+const ReportHandler = defineRecipeHandler<any, any, never, never>({
+  id: "attuned-discovery.report.handler",
+  recipeId: ReportRecipeId,
+  sourcePath: DiscoveryIndexSourcePath,
+  exportName: "ReportHandler",
+  handler: (input) =>
+    Effect.succeed({
+      runId: input.run.runId,
+      version: 0,
+      decisionPacket: {
+        packetId: "recipe-expression-report",
+        run: input.run,
+        anchors: input.anchors,
+        hypotheses: input.hypotheses,
+        evidence: input.evidence,
+        budget: input.run.budget,
+        availableDecisions: [],
+        bestNextAction: {
+          kind: "stop" as const,
+          label: "Stop",
+          targetId: "recipe-expression",
+          templateId: "recipe-expression",
+        },
+      },
+      scene: {
+        sceneId: "recipe-expression",
+        title: "Recipe expression",
+        nodes: [],
+      },
+      reviewQueue: [],
+      report: {
+        runId: input.run.runId,
+        version: 0,
+        sections: [],
+        selectedSceneId: "recipe-expression",
+        selectedLayout: "river" as const,
+      },
+    }),
+});
+
+const anchorRetrievalDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: AnchorRetrievalRecipeId,
+  toRecipeId: RepoSnapshotRecipeId,
+  resource: RepoSnapshotResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+const hypothesisDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: HypothesisRecipeId,
+  toRecipeId: AnchorRetrievalRecipeId,
+  resource: AnchorCardResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+const joernProofDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: JoernProofRecipeId,
+  toRecipeId: HypothesisRecipeId,
+  resource: MotifHypothesisResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+const evidenceScoringDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: EvidenceScoringRecipeId,
+  toRecipeId: JoernProofRecipeId,
+  resource: EvidencePacketResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+const ruleCandidateDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: RuleCandidateRecipeId,
+  toRecipeId: EvidenceScoringRecipeId,
+  resource: DecisionPacketResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+const deterministicRuleDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: DeterministicRuleRecipeId,
+  toRecipeId: RuleCandidateRecipeId,
+  resource: RuleCandidateResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+const reportDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ReportRecipeId,
+  toRecipeId: DeterministicRuleRecipeId,
+  resource: DeterministicRuleResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+export const AttuneDiscoveryRecipes = [
+  defineRecipe({
+    id: RepoSnapshotRecipeId,
+    projectId: AttuneDiscoveryProjectId,
+    title: "Capture repository snapshot",
+    inputSchema: RepoSnapshot,
+    outputSchema: RepoSnapshot,
+    nxTarget: AttuneDiscoveryCheckTarget,
+    allowedFiles: [DiscoveryIndexSourcePath],
+    validationEvidence: [AttuneDiscoveryTestTarget],
+    io: {
+      inputSchema: RepoSnapshot,
+      outputSchema: RepoSnapshot,
+      inputResources: [RepoSnapshotResource],
+      outputResources: [RepoSnapshotResource],
+    },
+    handler: RepoSnapshotHandler,
+  }),
+  defineRecipe({
+    id: AnchorRetrievalRecipeId,
+    projectId: AttuneDiscoveryProjectId,
+    title: "Retrieve semantic anchors",
+    inputSchema: DiscoveryRun,
+    outputSchema: S.Array(AnchorCard),
+    dependencies: [{ recipeId: RepoSnapshotRecipeId }],
+    nxTarget: AttuneDiscoveryCheckTarget,
+    allowedFiles: [DiscoveryIndexSourcePath],
+    validationEvidence: [AttuneDiscoveryTestTarget],
+    io: {
+      inputSchema: DiscoveryRun,
+      outputSchema: S.Array(AnchorCard),
+      inputResources: [DiscoveryRunResource],
+      outputResources: [AnchorCardResource],
+    },
+    handler: AnchorRetrievalHandler,
+    alchemyDag: [anchorRetrievalDagEdge],
+  }),
+  defineRecipe({
+    id: HypothesisRecipeId,
+    projectId: AttuneDiscoveryProjectId,
+    title: "Create motif hypothesis",
+    inputSchema: S.Array(AnchorCard),
+    outputSchema: MotifHypothesis,
+    dependencies: [{ recipeId: AnchorRetrievalRecipeId }],
+    nxTarget: AttuneDiscoveryCheckTarget,
+    allowedFiles: [DiscoveryIndexSourcePath],
+    validationEvidence: [AttuneDiscoveryTestTarget],
+    io: {
+      inputSchema: S.Array(AnchorCard),
+      outputSchema: MotifHypothesis,
+      inputResources: [AnchorCardResource],
+      outputResources: [MotifHypothesisResource],
+    },
+    handler: HypothesisHandler,
+    alchemyDag: [hypothesisDagEdge],
+  }),
+  defineRecipe({
+    id: JoernProofRecipeId,
+    projectId: AttuneDiscoveryProjectId,
+    title: "Run bounded Joern proof",
+    inputSchema: MotifHypothesis,
+    outputSchema: EvidencePacket,
+    dependencies: [{ recipeId: HypothesisRecipeId }],
+    nxTarget: AttuneDiscoveryCheckTarget,
+    allowedFiles: [DiscoveryIndexSourcePath],
+    validationEvidence: [AttuneDiscoveryTestTarget],
+    io: {
+      inputSchema: MotifHypothesis,
+      outputSchema: EvidencePacket,
+      inputResources: [MotifHypothesisResource],
+      outputResources: [EvidencePacketResource],
+    },
+    handler: JoernProofHandler,
+    alchemyDag: [joernProofDagEdge],
+  }),
+  defineRecipe({
+    id: EvidenceScoringRecipeId,
+    projectId: AttuneDiscoveryProjectId,
+    title: "Score proof evidence",
+    inputSchema: S.Array(EvidencePacket),
+    outputSchema: DecisionPacket,
+    dependencies: [{ recipeId: JoernProofRecipeId }],
+    nxTarget: AttuneDiscoveryCheckTarget,
+    allowedFiles: [DiscoveryIndexSourcePath],
+    validationEvidence: [AttuneDiscoveryTestTarget],
+    io: {
+      inputSchema: S.Array(EvidencePacket),
+      outputSchema: DecisionPacket,
+      inputResources: [EvidencePacketResource],
+      outputResources: [DecisionPacketResource],
+    },
+    handler: EvidenceScoringHandler,
+    alchemyDag: [evidenceScoringDagEdge],
+  }),
+  defineRecipe({
+    id: RuleCandidateRecipeId,
+    projectId: AttuneDiscoveryProjectId,
+    title: "Promote evidence into rule candidate",
+    inputSchema: DecisionPacket,
+    outputSchema: RuleCandidate,
+    dependencies: [{ recipeId: EvidenceScoringRecipeId }],
+    nxTarget: AttuneDiscoveryCheckTarget,
+    allowedFiles: [DiscoveryIndexSourcePath],
+    validationEvidence: [AttuneDiscoveryTestTarget],
+    io: {
+      inputSchema: DecisionPacket,
+      outputSchema: RuleCandidate,
+      inputResources: [DecisionPacketResource],
+      outputResources: [RuleCandidateResource],
+    },
+    handler: RuleCandidateHandler,
+    alchemyDag: [ruleCandidateDagEdge],
+  }),
+  defineRecipe({
+    id: DeterministicRuleRecipeId,
+    projectId: AttuneDiscoveryProjectId,
+    title: "Generate deterministic rule artifact",
+    inputSchema: RuleCandidate,
+    outputSchema: DeterministicRule,
+    dependencies: [{ recipeId: RuleCandidateRecipeId }],
+    nxTarget: AttuneDiscoveryCheckTarget,
+    allowedFiles: [DiscoveryIndexSourcePath],
+    validationEvidence: [AttuneDiscoveryTestTarget],
+    io: {
+      inputSchema: RuleCandidate,
+      outputSchema: DeterministicRule,
+      inputResources: [RuleCandidateResource],
+      outputResources: [DeterministicRuleResource],
+    },
+    handler: DeterministicRuleHandler,
+    alchemyDag: [deterministicRuleDagEdge],
+  }),
+  defineRecipe({
+    id: ReportRecipeId,
+    projectId: AttuneDiscoveryProjectId,
+    title: "Render discovery report and workbench snapshot",
+    inputSchema: DiscoveryReportInput,
+    outputSchema: WorkbenchSnapshot,
+    dependencies: [{ recipeId: DeterministicRuleRecipeId }],
+    nxTarget: AttuneDiscoveryCheckTarget,
+    allowedFiles: [DiscoveryIndexSourcePath],
+    validationEvidence: [AttuneDiscoveryTestTarget],
+    io: {
+      inputSchema: DiscoveryReportInput,
+      outputSchema: WorkbenchSnapshot,
+      inputResources: [DeterministicRuleResource],
+      outputResources: [WorkbenchSnapshotResource],
+    },
+    handler: ReportHandler,
+    alchemyDag: [reportDagEdge],
+  }),
+] as const;
 
 export const RunSummary = S.Struct({
   runId: S.String,

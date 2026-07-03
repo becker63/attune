@@ -4,15 +4,32 @@ import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
 
-import { Effect, Schema } from "effect"
-import { defineRecipe, recipeObservationId, type RecipeObservation } from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
+import {
+  PacketMigrationJudgeRefs,
+  PacketSchema,
+  defineAlchemyResource,
+  defineJudgeRecipe,
+  defineObservationRecipe,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  recipeObservationId,
+  type MigrationJudgment,
+  type Packet,
+  type PacketReceiptPayload,
+  type RecipeInvocation,
+  type RecipeObservation,
+} from "@attune/framework-protocol"
 import {
   createMeasurementObservation,
   createMeasurementObservationSink,
   measurementStoreConfigFromEnv,
   recordMeasurementObservation,
+} from "@attune/framework-runtime/MeasurementObservation"
+import {
   validateFrameworkRecipeReceiptStatements,
-} from "@attune/framework-runtime"
+} from "@attune/framework-runtime/SqlRoute"
 
 export type RecipeOnlyBenchmarkAction =
   | "plan"
@@ -97,8 +114,8 @@ export interface RecipeOnlyBenchmarkResult {
   readonly evaluatorContract: BenchmarkEvaluatorContract
   readonly baseSnapshot?: HiddenJudgeSummary
   readonly agentLocalBaseSnapshot?: HiddenJudgeSummary
-  readonly targetDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
-  readonly holdoutDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
+  readonly targetProtocolPacketProjection?: BenchmarkProtocolPacketProjection
+  readonly holdoutProtocolPacketProjection?: BenchmarkProtocolPacketProjection
   readonly arms: readonly BenchmarkArmResult[]
   readonly scorecard?: BenchmarkScorecard
   readonly holdoutEvaluation?: BenchmarkHoldoutEvaluation
@@ -252,9 +269,23 @@ export interface BenchmarkDiagnosticSpan {
   readonly endColumn?: number
 }
 
-export interface BenchmarkTargetDiagnosticPacket {
+export interface BenchmarkProtocolPacketProjectionLink {
+  readonly projectionKind: "framework-protocol-packet-benchmark-projection"
+  readonly source: "framework-language-service"
+  readonly packetIds: readonly string[]
+  readonly receiptKind: PacketReceiptPayload["kind"]
+  readonly rawPromptStored: false
+  readonly rawTraceStored: false
+  readonly fullSourceStored: false
+  readonly rawDiffStored: false
+  readonly patchTextStored: false
+}
+
+export interface BenchmarkProtocolPacketProjection {
   readonly packetId: string
   readonly packetIds?: readonly string[]
+  readonly protocolProjection?: BenchmarkProtocolPacketProjectionLink
+  readonly protocolPackets?: readonly Packet[]
   readonly capturedAt: string
   readonly evaluatorId: string
   readonly sourceSnapshot: "hidden-root-base"
@@ -279,7 +310,7 @@ export interface BenchmarkTargetDiagnosticPacket {
   readonly rawMessagesStored: false
 }
 
-export interface BenchmarkTargetDiagnosticEvaluation {
+export interface BenchmarkProtocolPacketProjectionEvaluation {
   readonly packetId: string
   readonly total: number
   readonly resolved: number
@@ -354,7 +385,7 @@ export interface BenchmarkHoldoutEvaluation {
   readonly revealedTargetCommitments: readonly string[]
   readonly packetId: string
   readonly packetIds?: readonly string[]
-  readonly sourceSnapshot: BenchmarkTargetDiagnosticPacket["sourceSnapshot"]
+  readonly sourceSnapshot: BenchmarkProtocolPacketProjection["sourceSnapshot"]
   readonly profile?: string
   readonly packetSelectionStrategy?: string
   readonly targetFamilies: readonly string[]
@@ -397,8 +428,8 @@ export interface BenchmarkArmResult {
   readonly stopReason?: string
   readonly hiddenJudge?: HiddenJudgeSummary
   readonly agentLocalJudge?: HiddenJudgeSummary
-  readonly targetPacketEvaluation?: BenchmarkTargetDiagnosticEvaluation
-  readonly quickTurn?: BenchmarkQuickTurnResult
+  readonly targetPacketEvaluation?: BenchmarkProtocolPacketProjectionEvaluation
+  readonly quickTurn?: BenchmarkProtocolPacketFastPathResult
   readonly telemetry?: CodexThreadTelemetry
   readonly clusterTelemetry?: CodexClusterTelemetry
   readonly observedValidationCommandCount?: number
@@ -406,7 +437,7 @@ export interface BenchmarkArmResult {
   readonly patchQuality?: PatchQualitySummary
 }
 
-export type BenchmarkEffectPacketStatus =
+export type BenchmarkProtocolPacketStatus =
   | "selected"
   | "running"
   | "cleared"
@@ -417,14 +448,14 @@ export type BenchmarkEffectPacketStatus =
   | "failed-validation"
   | "not-measured"
 
-export interface BenchmarkEffectPacketValidationStep {
+export interface BenchmarkProtocolPacketValidationStep {
   readonly tier: "cheap" | "focused" | "medium" | "final"
   readonly command: string
   readonly targetId?: string
   readonly required: boolean
 }
 
-export interface BenchmarkQuickTurnResult {
+export interface BenchmarkProtocolPacketFastPathResult {
   readonly loopKind: BenchmarkPacketFastPathLoopKind
   readonly arm: RecipeOnlyBenchmarkArmName
   readonly armId: string
@@ -441,7 +472,7 @@ export interface BenchmarkQuickTurnResult {
   readonly completedAt: string
   readonly durationMs: number
   readonly exitCode: number
-  readonly status: BenchmarkEffectPacketStatus
+  readonly status: BenchmarkProtocolPacketStatus
   readonly applied: boolean
   readonly refused: boolean
   readonly stale: boolean
@@ -451,7 +482,7 @@ export interface BenchmarkQuickTurnResult {
   readonly appliedFixCount: number
   readonly affectedFiles: readonly string[]
   readonly affectedFileCount: number
-  readonly validationLadder: readonly BenchmarkEffectPacketValidationStep[]
+  readonly validationLadder: readonly BenchmarkProtocolPacketValidationStep[]
   readonly diagnosticCountBefore: number
   readonly diagnosticCountAfter: number
   readonly validatedClearedCount: number
@@ -864,7 +895,7 @@ interface JsonlTelemetryAccumulator {
   applyPatchCalls: number
 }
 
-interface EffectPacketQueueSnapshot {
+interface FrameworkProtocolPacketProjectionQueueSnapshot {
   readonly capturedAt: string
   readonly evaluatorId: string
   readonly command: string
@@ -872,7 +903,7 @@ interface EffectPacketQueueSnapshot {
   readonly profile: string
   readonly packetSelectionStrategy: string
   readonly parseStatus: "json" | "empty" | "regex-fallback"
-  readonly packets: readonly EffectPacketQueueRecord[]
+  readonly packets: readonly FrameworkProtocolPacketProjectionRecord[]
   readonly ruleCounts: readonly CountRecord[]
   readonly fixabilityCounts: readonly CountRecord[]
   readonly riskCounts: readonly CountRecord[]
@@ -881,8 +912,9 @@ interface EffectPacketQueueSnapshot {
   readonly outputStored: false
 }
 
-export interface EffectPacketQueueRecord {
+export interface FrameworkProtocolPacketProjectionRecord {
   readonly packetId: string
+  readonly protocolPacket?: Packet
   readonly rule: string
   readonly diagnosticCount: number
   readonly safeFixCount: number
@@ -893,14 +925,85 @@ export interface EffectPacketQueueRecord {
   readonly targetItems: readonly BenchmarkDiagnosticRecord[]
 }
 
-const benchmarkRecipeId = "tend-opencode.effect-packet-ablation-benchmark"
-const codexTelemetryRecipeId = "tend-opencode.codex-telemetry-ingest"
-const hiddenJudgeRecipeId = "tend-opencode.effect-packet-hidden-judge"
+const benchmarkRecipeId = "tend-opencode.effect-packet-ablation-benchmark" as const
+const codexTelemetryRecipeId = "tend-opencode.codex-telemetry-ingest" as const
+const hiddenJudgeRecipeId = "tend-opencode.effect-packet-hidden-judge" as const
+const benchmarkSourcePath = "packages/tend/opencode/src/benchmark.ts" as const
+const benchmarkHandlerId = "tend-opencode.effect-packet-ablation-benchmark.handler" as const
+const hiddenJudgeHandlerId = "tend-opencode.effect-packet-hidden-judge.handler" as const
+const codexTelemetryHandlerId = "tend-opencode.codex-telemetry-ingest.handler" as const
 const defaultReportsDir = "reports/tend-opencode-codex-measurement"
 const defaultStateRoot = ".attune/state/benchmarks"
 const defaultEffectProfile = "effect-full-inventory"
 const defaultHiddenJudgeProfile = "effect-full-inventory"
 const defaultPacketSelectionStrategy = "ranked-full-effect-packet-queue-v2"
+
+export interface TendOpenCodeBenchmarkServicesShape {
+  readonly runBenchmark: (input: unknown) => Effect.Effect<unknown>
+  readonly judge: (input: unknown) => Effect.Effect<unknown>
+  readonly ingestTelemetry: (input: unknown) => Effect.Effect<unknown>
+}
+
+export class TendOpenCodeBenchmarkServices extends Context.Service<
+  TendOpenCodeBenchmarkServices,
+  TendOpenCodeBenchmarkServicesShape
+>()("tend-opencode/BenchmarkServices") {}
+
+// @attune-packet-target generated-runtime-projection eligible
+const TendOpenCodeBenchmarkInputResource = defineAlchemyResource({
+  id: "tend-opencode.benchmark-input.resource",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ObservationStream",
+  ownerRecipeId: benchmarkRecipeId,
+  consumedBy: [benchmarkRecipeId, hiddenJudgeRecipeId, codexTelemetryRecipeId],
+  addressSchema: Schema.String,
+  stateSchema: Schema.Unknown,
+  modes: ["read", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const TendOpenCodeBenchmarkReportResource = defineAlchemyResource({
+  id: "tend-opencode.benchmark-report.resource",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: benchmarkRecipeId,
+  producedBy: [benchmarkRecipeId, hiddenJudgeRecipeId, codexTelemetryRecipeId],
+  addressSchema: Schema.String,
+  stateSchema: Schema.Unknown,
+  modes: ["project", "read", "write"],
+})
+
+export const TendOpenCodeBenchmarkLive = Layer.succeed(TendOpenCodeBenchmarkServices, {
+  runBenchmark: (input) => Effect.promise(() => runRecipeOnlyWorktreeBenchmark(input as RecipeOnlyBenchmarkOptions)),
+  judge: (input) => Effect.succeed(input),
+  ingestTelemetry: (input) => Effect.succeed(input),
+})
+
+export const TendOpenCodeBenchmarkLayer = defineRecipeLayer({
+  id: "tend-opencode.benchmark.layer",
+  sourcePath: benchmarkSourcePath,
+  exportName: "TendOpenCodeBenchmarkLive",
+  layer: TendOpenCodeBenchmarkLive,
+  provides: [{
+    id: "tend-opencode.benchmark.services",
+    service: TendOpenCodeBenchmarkServices,
+  }],
+})
+
+export const tendOpenCodeBenchmarkInvocation = (
+  input: RecipeOnlyBenchmarkOptions = {},
+): RecipeInvocation => ({
+  recipeId: benchmarkRecipeId,
+  action: "benchmark",
+  input,
+  source: {
+    surface: "cli",
+    projectId: "tend-opencode",
+    target: "tend-opencode benchmark",
+    cwd: input.workspaceRoot,
+  },
+})
+
 const hiddenJudgeArgv = [
   "pnpm",
   "exec",
@@ -915,7 +1018,7 @@ const hiddenJudgeArgv = [
   "--format",
   "json",
 ] as const
-const packetQueueArgv = [
+const frameworkProtocolPacketProjectionQueueArgv = [
   "pnpm",
   "exec",
   "trellis-ls",
@@ -943,14 +1046,14 @@ const benchmarkArmDefinitions: readonly {
 }[] = [
   {
     arm: "opencode-effect-packets",
-    title: "OpenCode + Effect packets",
+    title: "OpenCode + protocol packet projections",
     agentRuntime: "opencode",
     trellisExposureMode: "effect-packets",
     packetizationPolicy: "effect-packets",
   },
   {
     arm: "codex-effect-packets",
-    title: "Codex + Effect packets",
+    title: "Codex + protocol packet projections",
     agentRuntime: "codex",
     trellisExposureMode: "effect-packets",
     packetizationPolicy: "effect-packets",
@@ -1013,25 +1116,25 @@ const packetFastPathLoopKind = (
 
 const packetFastPathArmsForLoop = (
   plan: BenchmarkPlan,
-  targetDiagnosticPacket?: BenchmarkTargetDiagnosticPacket,
+  targetProtocolPacketProjection?: BenchmarkProtocolPacketProjection,
 ): readonly BenchmarkArmPlan[] => {
   if (!isPacketFastPathLoop(plan.loopPlan.loopKind)) return []
-  if (!targetPacketSupportsFastPath(targetDiagnosticPacket)) return []
+  if (!targetPacketSupportsFastPath(targetProtocolPacketProjection)) return []
   const packetArms = plan.arms.filter((arm) => arm.packetizationPolicy === "effect-packets")
   return plan.loopPlan.loopKind === "full-ab" ? packetArms : packetArms.slice(0, 1)
 }
 
 const targetPacketSupportsFastPath = (
-  targetDiagnosticPacket: BenchmarkTargetDiagnosticPacket | undefined,
+  targetProtocolPacketProjection: BenchmarkProtocolPacketProjection | undefined,
 ): boolean =>
-  targetDiagnosticPacket?.sourceSnapshot === "effect-packet-queue-base" &&
-  (targetDiagnosticPacket.packetIds?.length ?? 0) > 0 &&
-  !sourceScopeSlicePacketTarget(targetDiagnosticPacket)
+  targetProtocolPacketProjection?.sourceSnapshot === "effect-packet-queue-base" &&
+  (targetProtocolPacketProjection.packetIds?.length ?? 0) > 0 &&
+  !sourceScopeSlicePacketTarget(targetProtocolPacketProjection)
 
 const sourceScopeSlicePacketTarget = (
-  targetDiagnosticPacket: BenchmarkTargetDiagnosticPacket | undefined,
-): targetDiagnosticPacket is BenchmarkTargetDiagnosticPacket =>
-  targetDiagnosticPacket?.packetSelectionStrategy?.includes(":source-scope-slice") === true
+  targetProtocolPacketProjection: BenchmarkProtocolPacketProjection | undefined,
+): targetProtocolPacketProjection is BenchmarkProtocolPacketProjection =>
+  targetProtocolPacketProjection?.packetSelectionStrategy?.includes(":source-scope-slice") === true
 
 const benchmarkEvidenceTier = (
   loopKind: BenchmarkLoopKind,
@@ -1066,17 +1169,168 @@ const privacySummary = {
   fullCommandOutputStored: false,
 } as const
 
-const BenchmarkRecipe = defineRecipe({
+const packetReceiptPrivacy = {
+  storeRawPrompt: false,
+  storeRawTrace: false,
+  storeFullSource: false,
+  storeRawCommandOutput: false,
+  storePatchText: false,
+  storeRawDiff: false,
+  boundedContextOnly: true,
+} as const
+
+const benchmarkPacketReceiptPayload = (input: {
+  readonly plan: BenchmarkPlan
+  readonly packetId: string
+  readonly recipeId?: string
+  readonly targetIds?: readonly string[]
+  readonly ruleIds?: readonly string[]
+  readonly kind: PacketReceiptPayload["kind"]
+  readonly status: PacketReceiptPayload["status"]
+  readonly judgmentId?: string
+  readonly payload?: Record<string, unknown>
+}): PacketReceiptPayload => ({
+  packetId: input.packetId,
+  recipeId: input.recipeId ?? benchmarkRecipeId,
+  sourceSnapshotId: benchmarkSourceSnapshotId(input.plan),
+  targetIds: input.targetIds ?? [input.packetId],
+  ruleIds: input.ruleIds ?? [],
+  kind: input.kind,
+  status: input.status,
+  ...(input.judgmentId === undefined ? {} : { judgmentId: input.judgmentId }),
+  payload: {
+    benchmarkRunId: input.plan.benchmarkRunId,
+    measurementSessionId: input.plan.measurementSessionId,
+    loopId: input.plan.loopPlan.loopId,
+    loopKind: input.plan.loopPlan.loopKind,
+    ...(input.payload ?? {}),
+  },
+  privacy: packetReceiptPrivacy,
+})
+
+const benchmarkSourceSnapshotId = (plan: BenchmarkPlan): string =>
+  `benchmark-source-snapshot:${plan.loopPlan.sourceStateFingerprint}`
+
+const benchmarkRuleIdsForRuleName = (ruleName: string): readonly string[] =>
+  ruleName === "not-selected" ? [] : [ruleName]
+
+const benchmarkPacketTargetIds = (
+  packet: BenchmarkProtocolPacketProjection,
+): readonly string[] => {
+  const targetIds = uniqueStrings(packet.items.map((item) => item.targetId))
+  return targetIds.length === 0 ? [packet.packetId] : targetIds
+}
+
+const benchmarkPacketRuleIds = (
+  packet: BenchmarkProtocolPacketProjection,
+): readonly string[] =>
+  uniqueStrings([
+    ...packet.items.map((item) => item.ruleName),
+    ...packet.targetFamilies,
+  ])
+
+const benchmarkProtocolPacketProjectionLink = (input: {
+  readonly packetIds: readonly string[]
+  readonly receiptKind: PacketReceiptPayload["kind"]
+}): BenchmarkProtocolPacketProjectionLink => ({
+  projectionKind: "framework-protocol-packet-benchmark-projection",
+  source: "framework-language-service",
+  packetIds: input.packetIds,
+  receiptKind: input.receiptKind,
+  rawPromptStored: false,
+  rawTraceStored: false,
+  fullSourceStored: false,
+  rawDiffStored: false,
+  patchTextStored: false,
+})
+
+const benchmarkPacketStatusFromQuickTurn = (
+  status: "running" | BenchmarkProtocolPacketStatus,
+): PacketReceiptPayload["status"] => {
+  if (status === "running") return "applying"
+  if (status === "not-measured") return "blocked"
+  return status
+}
+
+const benchmarkFinalJudgePacketId = (
+  plan: BenchmarkPlan,
+  armResult: BenchmarkArmResult,
+): string =>
+  armResult.targetPacketEvaluation?.packetId ?? `benchmark-final-judge:${plan.benchmarkRunId}:${armResult.armId}`
+
+const benchmarkMigrationJudgmentForFinalJudge = (
+  plan: BenchmarkPlan,
+  armResult: BenchmarkArmResult,
+  hiddenJudge: HiddenJudgeSummary,
+): MigrationJudgment => {
+  const packetId = benchmarkFinalJudgePacketId(plan, armResult)
+  const selectedTargetsCleared = armResult.targetPacketEvaluation === undefined
+    || armResult.targetPacketEvaluation.remaining === 0
+  const noDiagnosticRegression = hiddenJudge.diagnosticDelta === undefined || hiddenJudge.diagnosticDelta <= 0
+  const completeEvidence = hiddenJudge.status === "completed" &&
+    hiddenJudge.parseStatus !== "empty" &&
+    hiddenJudge.detailsComplete
+  const privacyClean = hiddenJudge.outputStored === false
+  const promotionAllowed = selectedTargetsCleared && noDiagnosticRegression && completeEvidence && privacyClean
+  const behaviorScore = noDiagnosticRegression ? 1 : 0
+  const targetScore = selectedTargetsCleared ? 1 : 0
+  const evidenceScore = completeEvidence ? 1 : 0
+  const privacyScore = privacyClean ? 1 : 0
+  const fileAccountingScore = 1
+  const recipeExpressionScore = 1
+  const score = {
+    architectureConformance: targetScore,
+    selectedTargetClearance: targetScore,
+    behaviorPreservation: behaviorScore,
+    complexityReduction: noDiagnosticRegression ? 1 : 0,
+    evidenceCompleteness: evidenceScore,
+    fileAccounting: fileAccountingScore,
+    recipeExpression: recipeExpressionScore,
+    privacyCompliance: privacyScore,
+    determinism: hiddenJudge.evaluatorKind === "hidden-root" ? 1 : 0,
+    residualRisk: promotionAllowed ? 1 : 0,
+    total: (
+      targetScore +
+      targetScore +
+      behaviorScore +
+      (noDiagnosticRegression ? 1 : 0) +
+      evidenceScore +
+      fileAccountingScore +
+      recipeExpressionScore +
+      privacyScore +
+      (hiddenJudge.evaluatorKind === "hidden-root" ? 1 : 0) +
+      (promotionAllowed ? 1 : 0)
+    ) / 10,
+  }
+
+  return {
+    judgmentId: `benchmark-judgment:${plan.benchmarkRunId}:${armResult.armId}:${packetId}`,
+    judge: PacketMigrationJudgeRefs.architectureMigration,
+    status: promotionAllowed ? "pass" : "fail",
+    promotionAllowed,
+    score,
+    blockerPacketIds: promotionAllowed ? [] : [packetId],
+    regressions: noDiagnosticRegression ? [] : ["hidden-judge-diagnostic-regression"],
+    missingEvidence: completeEvidence ? [] : ["hidden-judge-incomplete-evidence"],
+    privacyFindings: privacyClean ? [] : ["hidden-judge-output-stored"],
+    receiptIds: [],
+    summary: promotionAllowed
+      ? "Hidden judge found no selected packet regression for this benchmark arm."
+      : "Hidden judge blocked promotion for this benchmark arm.",
+  }
+}
+
+// @attune-packet-target generated-runtime-projection eligible
+const BenchmarkRecipe = defineProjectionRecipe({
   id: benchmarkRecipeId,
   projectId: "tend-opencode",
-  title: "Run Effect packet ablation benchmark",
+  title: "Run protocol packet projection ablation benchmark",
   inputSchema: Schema.Unknown,
   outputSchema: Schema.Unknown,
   nxTarget: "tend-opencode:test",
-  sourcePath: "packages/tend/opencode/src/benchmark.ts",
+  outputs: ["reports/tend-opencode-codex-measurement/**"],
   allowedFiles: [
-    "packages/tend/opencode/**",
-    "packages/trellis/runtime/**",
+    "packages/tend/opencode/src/benchmark.ts",
     "reports/tend-opencode-codex-measurement/**",
   ],
   validationEvidence: [
@@ -1084,47 +1338,116 @@ const BenchmarkRecipe = defineRecipe({
     "framework-runtime:test",
     "framework-runtime:db:validate-sql",
   ],
+  io: {
+    inputSchema: Schema.Unknown,
+    outputSchema: Schema.Unknown,
+    inputResources: [TendOpenCodeBenchmarkInputResource],
+    outputResources: [TendOpenCodeBenchmarkReportResource],
+  },
+// @attune-packet-target generated-runtime-projection eligible
+  handler: defineRecipeHandler({
+    id: benchmarkHandlerId,
+    recipeId: benchmarkRecipeId,
+    sourcePath: benchmarkSourcePath,
+    exportName: "runRecipeOnlyWorktreeBenchmark",
+    layer: TendOpenCodeBenchmarkLayer,
+    emitsReceipts: ["benchmark.report.projected"],
+    handler: (input: unknown) =>
+      Effect.gen(function* runTendOpenCodeBenchmark() {
+        const services = yield* TendOpenCodeBenchmarkServices
+        return yield* services.runBenchmark(input)
+      }),
+  }),
+  alchemyDag: [{
+    fromRecipeId: benchmarkRecipeId,
+    toRecipeId: hiddenJudgeRecipeId,
+    resource: TendOpenCodeBenchmarkReportResource,
+    kind: "judges",
+    modes: ["project", "read"],
+  }, {
+    fromRecipeId: benchmarkRecipeId,
+    toRecipeId: codexTelemetryRecipeId,
+    resource: TendOpenCodeBenchmarkReportResource,
+    kind: "observes",
+    modes: ["project", "observe"],
+  }],
 })
 
-const HiddenJudgeRecipe = defineRecipe({
+const HiddenJudgeRecipe = defineJudgeRecipe({
   id: hiddenJudgeRecipeId,
   projectId: "tend-opencode",
-  title: "Run Effect packet benchmark hidden judge",
+  title: "Run protocol packet projection benchmark hidden judge",
   inputSchema: Schema.Unknown,
   outputSchema: Schema.Unknown,
   nxTarget: "framework-language-service:test",
-  sourcePath: "packages/tend/opencode/src/benchmark.ts",
   allowedFiles: [
-    "packages/tend/opencode/**",
-    "packages/trellis/language-service/**",
+    "packages/tend/opencode/src/benchmark.ts",
     "reports/tend-opencode-codex-measurement/**",
   ],
   validationEvidence: [
     "framework-language-service:test",
     "framework-runtime:db:validate-sql",
   ],
+  io: {
+    inputSchema: Schema.Unknown,
+    outputSchema: Schema.Unknown,
+    inputResources: [TendOpenCodeBenchmarkInputResource],
+    outputResources: [TendOpenCodeBenchmarkReportResource],
+  },
+// @attune-packet-target generated-runtime-projection eligible
+  handler: defineRecipeHandler({
+    id: hiddenJudgeHandlerId,
+    recipeId: hiddenJudgeRecipeId,
+    sourcePath: benchmarkSourcePath,
+    exportName: "benchmarkMigrationJudgmentForFinalJudge",
+    layer: TendOpenCodeBenchmarkLayer,
+    emitsReceipts: ["benchmark.hidden-judge.judged"],
+    handler: (input: unknown) =>
+      Effect.gen(function* judgeTendOpenCodeBenchmark() {
+        const services = yield* TendOpenCodeBenchmarkServices
+        return yield* services.judge(input)
+      }),
+  }),
 })
 
-const CodexTelemetryRecipe = defineRecipe({
+const CodexTelemetryRecipe = defineObservationRecipe({
   id: codexTelemetryRecipeId,
   projectId: "tend-opencode",
-  title: "Ingest sanitized agent telemetry for Effect packet benchmark scoring",
+  title: "Ingest sanitized agent telemetry for protocol packet projection benchmark scoring",
   inputSchema: Schema.Unknown,
   outputSchema: Schema.Unknown,
   nxTarget: "tend-opencode:test",
-  sourcePath: "packages/tend/opencode/src/benchmark.ts",
   allowedFiles: [
-    "packages/tend/opencode/**",
-    "packages/trellis/runtime/**",
+    "packages/tend/opencode/src/benchmark.ts",
     "reports/tend-opencode-codex-measurement/**",
   ],
   validationEvidence: [
     "tend-opencode:test",
     "framework-runtime:db:validate-sql",
   ],
+  io: {
+    inputSchema: Schema.Unknown,
+    outputSchema: Schema.Unknown,
+    inputResources: [TendOpenCodeBenchmarkInputResource],
+    outputResources: [TendOpenCodeBenchmarkReportResource],
+  },
+// @attune-packet-target generated-runtime-projection eligible
+  handler: defineRecipeHandler({
+    id: codexTelemetryHandlerId,
+    recipeId: codexTelemetryRecipeId,
+    sourcePath: benchmarkSourcePath,
+    exportName: "createBenchmarkReasoningEvidence",
+    layer: TendOpenCodeBenchmarkLayer,
+    emitsReceipts: ["benchmark.telemetry.ingested"],
+    handler: (input: unknown) =>
+      Effect.gen(function* ingestTendOpenCodeTelemetry() {
+        const services = yield* TendOpenCodeBenchmarkServices
+        return yield* services.ingestTelemetry(input)
+      }),
+  }),
 })
 
-const BenchmarkProducerRecipes = [
+export const BenchmarkProducerRecipes = [
   BenchmarkRecipe,
   HiddenJudgeRecipe,
   CodexTelemetryRecipe,
@@ -1233,10 +1556,10 @@ export const runRecipeOnlyWorktreeBenchmark = async (
   }
   let baseSnapshot: HiddenJudgeSummary | undefined
   let agentLocalBaseSnapshot: HiddenJudgeSummary | undefined
-  let targetDiagnosticPacket: BenchmarkTargetDiagnosticPacket | undefined
-  let holdoutDiagnosticPacket: BenchmarkTargetDiagnosticPacket | undefined
-  let quickTurnPacket: EffectPacketQueueRecord | undefined
-  const quickTurnResults = new Map<string, BenchmarkQuickTurnResult>()
+  let targetProtocolPacketProjection: BenchmarkProtocolPacketProjection | undefined
+  let holdoutProtocolPacketProjection: BenchmarkProtocolPacketProjection | undefined
+  let quickTurnPacket: FrameworkProtocolPacketProjectionRecord | undefined
+  const quickTurnResults = new Map<string, BenchmarkProtocolPacketFastPathResult>()
   const pairedStateByArm = new Map<string, BenchmarkArmPairedStateEvidence>()
   let targetPacketObservationEmitted = false
 
@@ -1280,9 +1603,9 @@ export const runRecipeOnlyWorktreeBenchmark = async (
     }
 
     const emitTargetPacket = async (): Promise<void> => {
-      if (targetDiagnosticPacket === undefined || targetPacketObservationEmitted) return
+      if (targetProtocolPacketProjection === undefined || targetPacketObservationEmitted) return
       targetPacketObservationEmitted = true
-      await emit(targetPacketObservation(plan, evaluatorContract, targetDiagnosticPacket))
+      await emit(targetPacketObservation(plan, evaluatorContract, targetProtocolPacketProjection))
     }
 
     await emit(createBenchmarkObservation({
@@ -1337,26 +1660,26 @@ export const runRecipeOnlyWorktreeBenchmark = async (
           resourceEnvelope.timeoutMs,
           "hidden-root",
         )
-        const packetQueue = runEffectPacketQueue(
+        const protocolProjectionQueue = runFrameworkProtocolPacketProjectionQueue(
           baseJudgeCwd(plan, mode),
           evaluatorContract,
           resourceEnvelope.timeoutMs,
         )
-        quickTurnPacket = selectedQuickTurnPacketForLoop(packetQueue, plan)
-        const queueHoldoutPacket = createHoldoutDiagnosticPacketFromQueue(packetQueue, plan)
-        holdoutDiagnosticPacket = packetSupportsPromotionTarget(queueHoldoutPacket)
+        quickTurnPacket = selectedFastPathProtocolPacketProjectionForLoop(protocolProjectionQueue, plan)
+        const queueHoldoutPacket = createHoldoutProtocolPacketProjectionFromQueue(protocolProjectionQueue, plan)
+        holdoutProtocolPacketProjection = packetSupportsPromotionTarget(queueHoldoutPacket)
           ? queueHoldoutPacket
-          : createHoldoutDiagnosticPacketFromHiddenSnapshot(baseSnapshot, evaluatorContract, plan)
-        const queueTargetPacket = packetQueue.packets.length > 0
-          ? createTargetDiagnosticPacketFromQueue(packetQueue, plan)
+          : createHoldoutProtocolPacketProjectionFromHiddenSnapshot(baseSnapshot, evaluatorContract, plan)
+        const queueTargetPacket = protocolProjectionQueue.packets.length > 0
+          ? createProtocolPacketProjectionFromQueue(protocolProjectionQueue, plan)
           : undefined
-        targetDiagnosticPacket = packetSupportsPromotionTarget(queueTargetPacket)
+        targetProtocolPacketProjection = packetSupportsPromotionTarget(queueTargetPacket)
           ? queueTargetPacket
-          : createTargetDiagnosticPacket(baseSnapshot, evaluatorContract, {
-            excludedTargetIds: targetIdsForPacket(holdoutDiagnosticPacket),
+          : createProtocolPacketProjectionFromHiddenSnapshot(baseSnapshot, evaluatorContract, {
+            excludedTargetIds: targetIdsForPacket(holdoutProtocolPacketProjection),
           })
         await emitTargetPacket()
-        writeBenchmarkPrompts(plan, evaluatorContract, targetDiagnosticPacket)
+        writeBenchmarkPrompts(plan, evaluatorContract, targetProtocolPacketProjection)
       }
     }
 
@@ -1424,7 +1747,7 @@ export const runRecipeOnlyWorktreeBenchmark = async (
         promptFiles: plan.arms.map((arm) => arm.promptFile),
         reports: [],
         evaluatorContract,
-        ...(targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket }),
+        ...(targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection }),
         arms: plan.arms.map(armResultFromPlan),
         targetStatus,
         telemetry: [],
@@ -1474,7 +1797,7 @@ export const runRecipeOnlyWorktreeBenchmark = async (
         reports: [],
         evaluatorContract,
         ...(baseSnapshot === undefined ? {} : { baseSnapshot }),
-        ...(targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket }),
+        ...(targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection }),
         arms: armResults,
         targetStatus,
         telemetry: [],
@@ -1496,32 +1819,32 @@ export const runRecipeOnlyWorktreeBenchmark = async (
         "hidden-root",
       )
       if (mode === "dry-run") {
-        holdoutDiagnosticPacket = createHoldoutDiagnosticPacketFromHiddenSnapshot(baseSnapshot, evaluatorContract, plan)
-        targetDiagnosticPacket = createTargetDiagnosticPacket(baseSnapshot, evaluatorContract, {
-          excludedTargetIds: targetIdsForPacket(holdoutDiagnosticPacket),
+        holdoutProtocolPacketProjection = createHoldoutProtocolPacketProjectionFromHiddenSnapshot(baseSnapshot, evaluatorContract, plan)
+        targetProtocolPacketProjection = createProtocolPacketProjectionFromHiddenSnapshot(baseSnapshot, evaluatorContract, {
+          excludedTargetIds: targetIdsForPacket(holdoutProtocolPacketProjection),
         })
       } else {
-        const packetQueue = runEffectPacketQueue(
+        const protocolProjectionQueue = runFrameworkProtocolPacketProjectionQueue(
           baseJudgeCwd(plan, mode),
           evaluatorContract,
           resourceEnvelope.timeoutMs,
         )
-        quickTurnPacket = selectedQuickTurnPacketForLoop(packetQueue, plan)
-        const queueHoldoutPacket = createHoldoutDiagnosticPacketFromQueue(packetQueue, plan)
-        holdoutDiagnosticPacket = packetSupportsPromotionTarget(queueHoldoutPacket)
+        quickTurnPacket = selectedFastPathProtocolPacketProjectionForLoop(protocolProjectionQueue, plan)
+        const queueHoldoutPacket = createHoldoutProtocolPacketProjectionFromQueue(protocolProjectionQueue, plan)
+        holdoutProtocolPacketProjection = packetSupportsPromotionTarget(queueHoldoutPacket)
           ? queueHoldoutPacket
-          : createHoldoutDiagnosticPacketFromHiddenSnapshot(baseSnapshot, evaluatorContract, plan)
-        const queueTargetPacket = packetQueue.packets.length > 0
-          ? createTargetDiagnosticPacketFromQueue(packetQueue, plan)
+          : createHoldoutProtocolPacketProjectionFromHiddenSnapshot(baseSnapshot, evaluatorContract, plan)
+        const queueTargetPacket = protocolProjectionQueue.packets.length > 0
+          ? createProtocolPacketProjectionFromQueue(protocolProjectionQueue, plan)
           : undefined
-        targetDiagnosticPacket = packetSupportsPromotionTarget(queueTargetPacket)
+        targetProtocolPacketProjection = packetSupportsPromotionTarget(queueTargetPacket)
           ? queueTargetPacket
-          : createTargetDiagnosticPacket(baseSnapshot, evaluatorContract, {
-            excludedTargetIds: targetIdsForPacket(holdoutDiagnosticPacket),
+          : createProtocolPacketProjectionFromHiddenSnapshot(baseSnapshot, evaluatorContract, {
+            excludedTargetIds: targetIdsForPacket(holdoutProtocolPacketProjection),
           })
       }
       await emitTargetPacket()
-      writeBenchmarkPrompts(plan, evaluatorContract, targetDiagnosticPacket)
+      writeBenchmarkPrompts(plan, evaluatorContract, targetProtocolPacketProjection)
     }
     if (shouldJudge && mode !== "dry-run") {
       const basePath = baseJudgeCwd(plan, mode)
@@ -1535,11 +1858,11 @@ export const runRecipeOnlyWorktreeBenchmark = async (
     }
 
     if (shouldJudge && action === "run" && mode !== "dry-run") {
-      const packetFastPathArms = packetFastPathArmsForLoop(plan, targetDiagnosticPacket)
+      const packetFastPathArms = packetFastPathArmsForLoop(plan, targetProtocolPacketProjection)
       if (
         packetFastPathArms.length === 0 &&
         isPacketFastPathLoop(plan.loopPlan.loopKind) &&
-        targetDiagnosticPacket?.sourceSnapshot === "hidden-root-base"
+        targetProtocolPacketProjection?.sourceSnapshot === "hidden-root-base"
       ) {
         skipped.push("packet fast path skipped because the promotion target uses hidden reasoning-bearing diagnostics")
       }
@@ -1642,9 +1965,9 @@ export const runRecipeOnlyWorktreeBenchmark = async (
         hiddenJudge,
         ...(quickTurn === undefined ? {} : { quickTurn }),
       }
-      const targetPacketEvaluation = targetDiagnosticPacket === undefined
+      const targetPacketEvaluation = targetProtocolPacketProjection === undefined
         ? undefined
-        : evaluateTargetDiagnosticPacket(targetDiagnosticPacket, hiddenJudge.diagnostics, targetPacketScoringContext)
+        : evaluateProtocolPacketProjection(targetProtocolPacketProjection, hiddenJudge.diagnostics, targetPacketScoringContext)
       return {
         ...armResultFromPlan(arm),
         ...optionalString("startingHead", pairedState?.startingHead),
@@ -1737,7 +2060,7 @@ export const runRecipeOnlyWorktreeBenchmark = async (
       }))
     }
 
-    const scorecard = computeScorecard(baseSnapshot, targetDiagnosticPacket, armResults)
+    const scorecard = computeScorecard(baseSnapshot, targetProtocolPacketProjection, armResults)
     await emit(scorecardObservation(plan, scorecard))
     const baselineArm = selectBaselineArm(armResults)
     const treatmentArm = selectTreatmentArm(armResults)
@@ -1745,7 +2068,7 @@ export const runRecipeOnlyWorktreeBenchmark = async (
       benchmarkRunId,
       measurementSessionId,
       loopPlan: plan.loopPlan,
-      packet: holdoutDiagnosticPacket,
+      packet: holdoutProtocolPacketProjection,
       baseline: baselineArm,
       treatment: treatmentArm,
       visibleImprovementMultiple: multiple(
@@ -1759,7 +2082,7 @@ export const runRecipeOnlyWorktreeBenchmark = async (
     const targetStatus = computeBenchmarkTargetStatus({
       plan,
       ...(baseSnapshot === undefined ? {} : { baseSnapshot }),
-      ...(targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket }),
+      ...(targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection }),
       scorecard,
       armResults,
       ...(holdoutEvaluation === undefined ? {} : { holdoutEvaluation }),
@@ -1783,8 +2106,8 @@ export const runRecipeOnlyWorktreeBenchmark = async (
         evaluatorContract,
       ...(baseSnapshot === undefined ? {} : { baseSnapshot }),
       ...(agentLocalBaseSnapshot === undefined ? {} : { agentLocalBaseSnapshot }),
-      ...(targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket }),
-      ...(holdoutDiagnosticPacket === undefined ? {} : { holdoutDiagnosticPacket }),
+      ...(targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection }),
+      ...(holdoutProtocolPacketProjection === undefined ? {} : { holdoutProtocolPacketProjection }),
       armResults,
       telemetry,
       clusterTelemetry,
@@ -1844,7 +2167,7 @@ export const runRecipeOnlyWorktreeBenchmark = async (
         packetSelectionStrategy: plan.packetSelectionStrategy,
         budgets: plan.budgets,
         evaluatorContract,
-        ...(targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket }),
+        ...(targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection }),
         resourceEnvelope,
         startedAt,
         completedAt,
@@ -1876,8 +2199,8 @@ export const runRecipeOnlyWorktreeBenchmark = async (
       evaluatorContract,
         ...(baseSnapshot === undefined ? {} : { baseSnapshot }),
         ...(agentLocalBaseSnapshot === undefined ? {} : { agentLocalBaseSnapshot }),
-        ...(targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket }),
-        ...(holdoutDiagnosticPacket === undefined ? {} : { holdoutDiagnosticPacket }),
+        ...(targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection }),
+        ...(holdoutProtocolPacketProjection === undefined ? {} : { holdoutProtocolPacketProjection }),
         arms: armResults,
         scorecard,
         ...(holdoutEvaluation === undefined ? {} : { holdoutEvaluation }),
@@ -1928,7 +2251,7 @@ export const runRecipeOnlyWorktreeBenchmark = async (
       evaluatorContract,
       ...(baseSnapshot === undefined ? {} : { baseSnapshot }),
       ...(agentLocalBaseSnapshot === undefined ? {} : { agentLocalBaseSnapshot }),
-      ...(targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket }),
+      ...(targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection }),
       arms: plan.arms.map((arm) => ({
         ...armResultFromPlan(arm),
         status: "failed",
@@ -2082,7 +2405,7 @@ const createBenchmarkPlan = (input: {
 const writeBenchmarkPrompts = (
   plan: BenchmarkPlan,
   evaluatorContract: BenchmarkEvaluatorContract,
-  targetPacket?: BenchmarkTargetDiagnosticPacket,
+  targetPacket?: BenchmarkProtocolPacketProjection,
 ): void => {
   if (targetPacket !== undefined) writeSelectedDiagnosticsScripts(plan, evaluatorContract, targetPacket)
   for (const arm of plan.arms) {
@@ -2094,7 +2417,7 @@ const writeBenchmarkPrompts = (
 const writeSelectedDiagnosticsScripts = (
   plan: BenchmarkPlan,
   evaluatorContract: BenchmarkEvaluatorContract,
-  targetPacket: BenchmarkTargetDiagnosticPacket,
+  targetPacket: BenchmarkProtocolPacketProjection,
 ): void => {
   const checksDir = path.join(plan.stateDir, "checks")
   fs.mkdirSync(checksDir, { recursive: true })
@@ -2145,8 +2468,8 @@ const packetTargetApplyWorktreeScriptPath = (
   path.join(arm.worktreePath, "attune-packet-target-apply.sh")
 
 const packetApplyHelperSupported = (
-  targetPacket: BenchmarkTargetDiagnosticPacket | undefined,
-): targetPacket is BenchmarkTargetDiagnosticPacket =>
+  targetPacket: BenchmarkProtocolPacketProjection | undefined,
+): targetPacket is BenchmarkProtocolPacketProjection =>
   targetPacket !== undefined &&
   targetPacket.items.some((item) =>
     (
@@ -2162,7 +2485,7 @@ const packetApplyHelperSupported = (
 const selectedDiagnosticsScript = (
   arm: BenchmarkArmPlan,
   evaluatorContract: BenchmarkEvaluatorContract,
-  targetPacket: BenchmarkTargetDiagnosticPacket,
+  targetPacket: BenchmarkProtocolPacketProjection,
 ): string => {
   const files = uniqueStrings(targetPacket.items.flatMap((item) => {
     const file = item.sourcePath ?? item.file
@@ -2244,7 +2567,7 @@ const selectedDiagnosticsScript = (
 export const renderSelectedDiagnosticsScriptForEvaluation = selectedDiagnosticsScript
 
 const packetTargetApplyScript = (
-  targetPacket: BenchmarkTargetDiagnosticPacket,
+  targetPacket: BenchmarkProtocolPacketProjection,
   evaluatorContract: BenchmarkEvaluatorContract,
   arm: BenchmarkArmPlan,
 ): string => {
@@ -2756,13 +3079,13 @@ const benchmarkPrompt = (
   plan: BenchmarkPlan,
   arm: BenchmarkArmPlan,
   evaluatorContract: BenchmarkEvaluatorContract,
-  targetPacket?: BenchmarkTargetDiagnosticPacket,
+  targetPacket?: BenchmarkProtocolPacketProjection,
 ): string => {
   if (usesCompactPacketHelperPrompt(plan, arm, targetPacket)) {
     return compactPacketHelperPrompt(plan, arm, targetPacket)
   }
   return [
-  `# Effect Packet Queue Benchmark - ${benchmarkArmDefinition(arm.arm).title}`,
+  `# Effect Protocol Packet Projection Benchmark - ${benchmarkArmDefinition(arm.arm).title}`,
   "",
   `Workspace: ${arm.worktreePath}`,
   `Benchmark run: ${plan.benchmarkRunId}`,
@@ -2806,7 +3129,7 @@ const benchmarkPrompt = (
     ]
     : []),
   "",
-  "## Shared fixed Effect packet queue",
+  "## Shared fixed Effect protocol packet projection",
   "",
   ...targetPacketSectionLines(arm, targetPacket),
   "",
@@ -2826,7 +3149,7 @@ const benchmarkPrompt = (
   "",
   ...(arm.packetizationPolicy === "effect-packets"
     ? [
-      "Effect packet policy:",
+      "protocol packet projection policy:",
       ...(sourceScopeSlicePacketTarget(targetPacket)
         ? [
           "- Use the selected source-scope target slice above as the work queue; do not dump the full packet inventory unless the listed files are insufficient.",
@@ -2991,7 +3314,7 @@ const benchmarkPrompt = (
     ]
     : []),
   "- Keep one heavy validation running at a time; avoid broad parallel test or repair sweeps unless focused validation is insufficient.",
-  "- Make at least one explicit attempt against the shared Effect packet target.",
+  "- Make at least one explicit attempt against the shared protocol packet projection target.",
   "- A clear from a different packet, excluded scope, evaluator file, measurement file, report, OpenSpec artifact, generated file, or test file is a negative-control failure, not benchmark progress.",
   "- Keep DB lifecycle operations on framework-runtime surfaces; Tend/OpenCode must not start, stop, migrate, validate, prune, or administer the store.",
   "- Prefer Nx-owned validation and the existing recipe/runtime substrate.",
@@ -3006,8 +3329,8 @@ export const renderBenchmarkPromptForEvaluation = benchmarkPrompt
 const usesCompactPacketHelperPrompt = (
   plan: BenchmarkPlan,
   arm: BenchmarkArmPlan,
-  targetPacket: BenchmarkTargetDiagnosticPacket | undefined,
-): targetPacket is BenchmarkTargetDiagnosticPacket =>
+  targetPacket: BenchmarkProtocolPacketProjection | undefined,
+): targetPacket is BenchmarkProtocolPacketProjection =>
   arm.packetizationPolicy === "effect-packets" &&
   (plan.loopPlan.loopKind === "quick-turn" ||
     plan.loopPlan.loopKind === "pair-turn" ||
@@ -3017,9 +3340,9 @@ const usesCompactPacketHelperPrompt = (
 const compactPacketHelperPrompt = (
   plan: BenchmarkPlan,
   arm: BenchmarkArmPlan,
-  targetPacket: BenchmarkTargetDiagnosticPacket,
+  targetPacket: BenchmarkProtocolPacketProjection,
 ): string => [
-  `# Effect Packet Helper Benchmark - ${benchmarkArmDefinition(arm.arm).title}`,
+  `# Protocol Packet Projection Helper Benchmark - ${benchmarkArmDefinition(arm.arm).title}`,
   "",
   `Workspace: ${arm.worktreePath}`,
   `Benchmark run: ${plan.benchmarkRunId}`,
@@ -3065,11 +3388,11 @@ const compactPacketHelperPrompt = (
 
 const targetPacketSectionLines = (
   arm: BenchmarkArmPlan,
-  targetPacket: BenchmarkTargetDiagnosticPacket | undefined,
+  targetPacket: BenchmarkProtocolPacketProjection | undefined,
 ): readonly string[] => {
   if (targetPacket === undefined) {
     return [
-      "- Pending until benchmark setup captures the base Effect packet queue.",
+      "- Pending until benchmark setup captures the base Effect protocol packet projection.",
       "- No benchmark packet IDs have been registered in this prompt yet.",
       "- Do not run packet fastpath/apply/write from a pending prompt; run benchmark setup/resume first or stop with that blocker.",
     ]
@@ -3082,19 +3405,19 @@ const targetPacketSectionLines = (
 }
 
 const rawEffectHiddenTargetPromptLines = (
-  targetPacket: BenchmarkTargetDiagnosticPacket,
+  targetPacket: BenchmarkProtocolPacketProjection,
 ): readonly string[] => [
   "- A source-scope target set is pre-registered for scoring, but exact packet IDs, files, families, and line numbers are withheld from raw-effect arms.",
   `- Hidden target diagnostic count: ${targetPacket.itemCount}.`,
   `- Hidden target source snapshot: ${targetPacket.sourceSnapshot}.`,
-  "- Use raw Effect diagnostics only for discovery and repair; do not infer packet inventory from packet IDs, packet queues, packet ranking, or packet observations.",
+  "- Use raw Effect diagnostics only for discovery and repair; do not infer packet inventory from packet IDs, protocol packet projections, packet ranking, or packet observations.",
   "- The generated selected-target script is validation only after a raw diagnostic pass and repair attempt.",
 ]
 
 const packetTargetApplyPromptLines = (
   plan: BenchmarkPlan,
   arm: BenchmarkArmPlan,
-  targetPacket: BenchmarkTargetDiagnosticPacket | undefined,
+  targetPacket: BenchmarkProtocolPacketProjection | undefined,
 ): readonly string[] => {
   if (!packetApplyHelperSupported(targetPacket)) return []
   const stateScriptPath = packetTargetApplyStateScriptPath(plan, arm)
@@ -3111,7 +3434,7 @@ const packetTargetApplyPromptLines = (
 const packetFastPathPromptLines = (
   evaluatorContract: BenchmarkEvaluatorContract,
   arm: BenchmarkArmPlan,
-  targetPacket: BenchmarkTargetDiagnosticPacket | undefined,
+  targetPacket: BenchmarkProtocolPacketProjection | undefined,
 ): readonly string[] => {
   const packetIds = targetPacket?.packetIds ?? []
   if (packetIds.length === 0) return []
@@ -3150,7 +3473,7 @@ const packetFastPathPromptLines = (
 }
 
 const targetPacketPromptLines = (
-  targetPacket: BenchmarkTargetDiagnosticPacket,
+  targetPacket: BenchmarkProtocolPacketProjection,
 ): readonly string[] => [
   ...(targetPacket.packetIds === undefined || targetPacket.packetIds.length === 0
     ? []
@@ -3319,17 +3642,17 @@ const runHiddenJudge = (
   }
 }
 
-const runEffectPacketQueue = (
+const runFrameworkProtocolPacketProjectionQueue = (
   cwd: string,
   evaluatorContract: BenchmarkEvaluatorContract,
   timeoutMs = defaultBenchmarkCommandTimeoutMs,
-): EffectPacketQueueSnapshot => {
-  const argv = packetQueueArgvFor(cwd)
+): FrameworkProtocolPacketProjectionQueueSnapshot => {
+  const argv = frameworkProtocolPacketProjectionQueueArgvFor(cwd)
   const result = runCommand(argv, evaluatorContract.toolchainRoot, timeoutMs)
   if (result.exitCode !== 0) {
-    throw new Error(`Effect packet queue capture failed: ${result.stderr || result.stdout || (result.error ?? "unknown error")}`)
+    throw new Error(`Effect protocol packet projection capture failed: ${result.stderr || result.stdout || (result.error ?? "unknown error")}`)
   }
-  const parsed = parseEffectPacketQueue(result.stdout, evaluatorContract.evaluatorId)
+  const parsed = parseFrameworkProtocolPacketProjectionQueue(result.stdout, evaluatorContract.evaluatorId)
   return {
     capturedAt: result.completedAt,
     evaluatorId: evaluatorContract.evaluatorId,
@@ -3348,9 +3671,9 @@ const runEffectPacketQueue = (
   }
 }
 
-export const rankBenchmarkEffectPacketTargets = (
-  packets: readonly EffectPacketQueueRecord[],
-): readonly EffectPacketQueueRecord[] =>
+export const rankBenchmarkProtocolPacketProjectionTargets = (
+  packets: readonly FrameworkProtocolPacketProjectionRecord[],
+): readonly FrameworkProtocolPacketProjectionRecord[] =>
   [...packets].sort((left, right) =>
     packetReasoningPriority(right) - packetReasoningPriority(left)
     || packetSourceScopeTargetCount(right) - packetSourceScopeTargetCount(left)
@@ -3359,25 +3682,25 @@ export const rankBenchmarkEffectPacketTargets = (
     || left.packetId.localeCompare(right.packetId)
   )
 
-const selectedBenchmarkEffectPacketsForLoop = (
-  queue: EffectPacketQueueSnapshot,
+const selectedBenchmarkProtocolPacketProjectionsForLoop = (
+  queue: FrameworkProtocolPacketProjectionQueueSnapshot,
   plan: BenchmarkPlan,
-): readonly EffectPacketQueueRecord[] => {
+): readonly FrameworkProtocolPacketProjectionRecord[] => {
   const holdoutPacketIds = new Set(selectedHoldoutEffectPackets(queue, plan).map((packet) => packet.packetId))
-  return rankBenchmarkEffectPacketTargets(queue.packets)
+  return rankBenchmarkProtocolPacketProjectionTargets(queue.packets)
     .filter((packet) => !holdoutPacketIds.has(packet.packetId))
-    .filter(isBenchmarkEffectPacketTargetEligible)
+    .filter(isBenchmarkProtocolPacketProjectionTargetEligible)
     .slice(0, targetEffectPacketLimitForLoop(plan.loopPlan.loopKind))
 }
 
-const selectedBenchmarkEffectPacketSlicesForLoop = (
-  queue: EffectPacketQueueSnapshot,
+const selectedBenchmarkProtocolPacketProjectionSlicesForLoop = (
+  queue: FrameworkProtocolPacketProjectionQueueSnapshot,
   plan: BenchmarkPlan,
-): readonly EffectPacketQueueRecord[] => {
+): readonly FrameworkProtocolPacketProjectionRecord[] => {
   const holdoutPacketIds = new Set(selectedHoldoutEffectPackets(queue, plan).map((packet) => packet.packetId))
-  return rankBenchmarkEffectPacketTargets(queue.packets)
+  return rankBenchmarkProtocolPacketProjectionTargets(queue.packets)
     .filter((packet) => !holdoutPacketIds.has(packet.packetId))
-    .filter((packet) => benchmarkEffectPacketTargetSliceItems(packet).length > 0)
+    .filter((packet) => benchmarkProtocolPacketProjectionTargetSliceItems(packet).length > 0)
     .slice(0, targetEffectPacketLimitForLoop(plan.loopPlan.loopKind))
 }
 
@@ -3393,20 +3716,20 @@ const targetEffectPacketLimitForLoop = (loopKind: BenchmarkLoopKind): number => 
   }
 }
 
-const selectedQuickTurnPacketForLoop = (
-  queue: EffectPacketQueueSnapshot,
+const selectedFastPathProtocolPacketProjectionForLoop = (
+  queue: FrameworkProtocolPacketProjectionQueueSnapshot,
   plan: BenchmarkPlan,
-): EffectPacketQueueRecord | undefined =>
-  selectedBenchmarkEffectPacketsForLoop(queue, plan)[0]
+): FrameworkProtocolPacketProjectionRecord | undefined =>
+  selectedBenchmarkProtocolPacketProjectionsForLoop(queue, plan)[0]
 
 const selectedHoldoutEffectPackets = (
-  queue: EffectPacketQueueSnapshot,
+  queue: FrameworkProtocolPacketProjectionQueueSnapshot,
   plan: BenchmarkPlan,
-): readonly EffectPacketQueueRecord[] => {
+): readonly FrameworkProtocolPacketProjectionRecord[] => {
   const count = holdoutPacketCountForLoop(plan.loopPlan.loopKind)
   if (count === 0) return []
-  const candidates = rankBenchmarkEffectPacketTargets(queue.packets)
-    .filter(isBenchmarkEffectPacketTargetEligible)
+  const candidates = rankBenchmarkProtocolPacketProjectionTargets(queue.packets)
+    .filter(isBenchmarkProtocolPacketProjectionTargetEligible)
   return [...candidates]
     .sort((left, right) =>
       packetReasoningPriority(right) - packetReasoningPriority(left)
@@ -3423,7 +3746,7 @@ const holdoutPacketCountForLoop = (loopKind: BenchmarkLoopKind): number =>
 
 const seededHoldoutRank = (
   seed: string,
-  packet: EffectPacketQueueRecord,
+  packet: FrameworkProtocolPacketProjectionRecord,
 ): string =>
   hashBenchmarkContent([
     seed,
@@ -3433,18 +3756,18 @@ const seededHoldoutRank = (
   ].join("\0"))
 
 const packetSupportsPromotionTarget = (
-  packet: BenchmarkTargetDiagnosticPacket | undefined,
-): packet is BenchmarkTargetDiagnosticPacket =>
+  packet: BenchmarkProtocolPacketProjection | undefined,
+): packet is BenchmarkProtocolPacketProjection =>
   packet !== undefined &&
   packet.items.some((item) => isPrimarySourceTarget(item) && isReasoningBearingTarget(item))
 
 const targetIdsForPacket = (
-  packet: BenchmarkTargetDiagnosticPacket | undefined,
+  packet: BenchmarkProtocolPacketProjection | undefined,
 ): ReadonlySet<string> =>
   new Set(packet?.items.map((item) => item.targetId) ?? [])
 
 const packetReasoningPriority = (
-  packet: EffectPacketQueueRecord,
+  packet: FrameworkProtocolPacketProjectionRecord,
 ): number => {
   if (packet.targetItems.some(isReasoningBearingTarget)) return 3
   if (reasoningBearingEffectDiagnosticFamilies().includes(packet.rule.replace(/^effect\//u, ""))) return 2
@@ -3453,37 +3776,37 @@ const packetReasoningPriority = (
 }
 
 const packetSourceScopeTargetCount = (
-  packet: EffectPacketQueueRecord,
+  packet: FrameworkProtocolPacketProjectionRecord,
 ): number =>
   packet.targetItems.filter(isPrimarySourceTarget).length
 
-export const isBenchmarkEffectPacketTargetEligible = (
-  packet: EffectPacketQueueRecord,
+export const isBenchmarkProtocolPacketProjectionTargetEligible = (
+  packet: FrameworkProtocolPacketProjectionRecord,
 ): boolean => {
   const affectedFiles = packetAffectedFileIdentities(packet)
   return packet.targetItems.length > 0 &&
     packet.targetItems.every(isPrimarySourceTarget) &&
     packet.targetItems.some(isReasoningBearingTarget) &&
     affectedFiles.length > 0 &&
-    affectedFiles.every(isBenchmarkEffectPacketAllowedSourceFile)
+    affectedFiles.every(isBenchmarkProtocolPacketProjectionAllowedSourceFile)
 }
 
-export const benchmarkEffectPacketTargetSliceItems = (
-  packet: EffectPacketQueueRecord,
+export const benchmarkProtocolPacketProjectionTargetSliceItems = (
+  packet: FrameworkProtocolPacketProjectionRecord,
 ): readonly BenchmarkDiagnosticRecord[] =>
   packet.targetItems.filter((item) => {
     const file = item.sourcePath ?? item.file
     return isPrimarySourceTarget(item) &&
       isReasoningBearingTarget(item) &&
       file !== undefined &&
-      isBenchmarkEffectPacketAllowedSourceFile(file)
+      isBenchmarkProtocolPacketProjectionAllowedSourceFile(file)
   })
 
-export const benchmarkEffectPacketTargetSliceItemsForLoop = (
-  packet: EffectPacketQueueRecord,
+export const benchmarkProtocolPacketProjectionTargetSliceItemsForLoop = (
+  packet: FrameworkProtocolPacketProjectionRecord,
   loopKind: BenchmarkLoopKind,
 ): readonly BenchmarkDiagnosticRecord[] =>
-  rankBenchmarkEffectPacketTargetSliceItems(benchmarkEffectPacketTargetSliceItems(packet))
+  rankBenchmarkProtocolPacketProjectionTargetSliceItems(benchmarkProtocolPacketProjectionTargetSliceItems(packet))
     .slice(0, targetSliceItemLimitPerPacketForLoop(loopKind))
 
 const targetSliceItemLimitPerPacketForLoop = (loopKind: BenchmarkLoopKind): number => {
@@ -3498,7 +3821,7 @@ const targetSliceItemLimitPerPacketForLoop = (loopKind: BenchmarkLoopKind): numb
   }
 }
 
-const rankBenchmarkEffectPacketTargetSliceItems = (
+const rankBenchmarkProtocolPacketProjectionTargetSliceItems = (
   items: readonly BenchmarkDiagnosticRecord[],
 ): readonly BenchmarkDiagnosticRecord[] => {
   const groupCounts = new Map<string, number>()
@@ -3522,7 +3845,7 @@ const targetSliceItemFile = (item: BenchmarkDiagnosticRecord): string =>
   item.sourcePath ?? item.file ?? ""
 
 const packetAffectedFileIdentities = (
-  packet: EffectPacketQueueRecord,
+  packet: FrameworkProtocolPacketProjectionRecord,
 ): readonly string[] =>
   uniqueStrings([
     ...packet.affectedFiles,
@@ -3532,16 +3855,16 @@ const packetAffectedFileIdentities = (
     }),
   ])
 
-const isBenchmarkEffectPacketAllowedSourceFile = (file: string): boolean =>
+const isBenchmarkProtocolPacketProjectionAllowedSourceFile = (file: string): boolean =>
   sourceScopeForFile(normalizeBenchmarkPatchPath(file)).membership === "source-scope"
 
 const runQuickTurnFastPath = (input: {
   readonly plan: BenchmarkPlan
   readonly arm: BenchmarkArmPlan
-  readonly packet: EffectPacketQueueRecord | undefined
+  readonly packet: FrameworkProtocolPacketProjectionRecord | undefined
   readonly evaluatorContract: BenchmarkEvaluatorContract
   readonly timeoutMs: number
-}): BenchmarkQuickTurnResult => {
+}): BenchmarkProtocolPacketFastPathResult => {
   const loopKind = packetFastPathLoopKind(input.plan.loopPlan.loopKind)
   const packet = input.packet
   if (packet === undefined) {
@@ -3580,7 +3903,7 @@ const runQuickTurnFastPath = (input: {
       observationIds: [],
       refusalCode: `tend-opencode/${loopKind}-packet-not-selected`,
       reasoningEvidence: emptyReasoningEvidence("refusal", "packet-not-selected"),
-      stopReason: `${loopKind} could not run because no executable packet ID was selected from the Effect packet queue`,
+      stopReason: `${loopKind} could not run because no executable packet ID was selected from the Effect protocol packet projection`,
       rawCommandOutputStored: false,
       rawDiffStored: false,
       patchTextStored: false,
@@ -3588,12 +3911,12 @@ const runQuickTurnFastPath = (input: {
     }
   }
 
-  const executableQueue = runEffectPacketQueue(
+  const executableQueue = runFrameworkProtocolPacketProjectionQueue(
     input.arm.worktreePath,
     input.evaluatorContract,
     input.timeoutMs,
   )
-  const executablePacket = selectQuickTurnExecutablePacket(packet, executableQueue.packets)
+  const executablePacket = selectExecutableProtocolPacketProjection(packet, executableQueue.packets)
   if (executablePacket === undefined) {
     const observedAt = nowIso()
     return {
@@ -3719,10 +4042,10 @@ const runQuickTurnFastPath = (input: {
   }
 }
 
-const selectQuickTurnExecutablePacket = (
-  target: EffectPacketQueueRecord,
-  packets: readonly EffectPacketQueueRecord[],
-): EffectPacketQueueRecord | undefined =>
+const selectExecutableProtocolPacketProjection = (
+  target: FrameworkProtocolPacketProjectionRecord,
+  packets: readonly FrameworkProtocolPacketProjectionRecord[],
+): FrameworkProtocolPacketProjectionRecord | undefined =>
   packets.find((packet) => packet.packetId === target.packetId)
   ?? packets.find((packet) => packet.rule === target.rule && packetsShareAffectedSource(target, packet))
   ?? packets.find((packet) => packet.rule === target.rule)
@@ -3743,10 +4066,10 @@ const emptyReasoningEvidence = (
 })
 
 export const createBenchmarkReasoningEvidence = (input: {
-  readonly packet: EffectPacketQueueRecord
-  readonly status: BenchmarkEffectPacketStatus
+  readonly packet: FrameworkProtocolPacketProjectionRecord
+  readonly status: BenchmarkProtocolPacketStatus
   readonly appliedFixCount: number
-  readonly validationLadder: readonly BenchmarkEffectPacketValidationStep[]
+  readonly validationLadder: readonly BenchmarkProtocolPacketValidationStep[]
   readonly acceptanceRationaleLabel?: string
   readonly refusalRationaleLabel?: string
 }): BenchmarkReasoningEvidence => {
@@ -3776,14 +4099,14 @@ export const createBenchmarkReasoningEvidence = (input: {
 }
 
 const packetReasoningBurden = (
-  packet: EffectPacketQueueRecord,
+  packet: FrameworkProtocolPacketProjectionRecord,
 ): BenchmarkReasoningBurden =>
   packet.targetItems.find(isReasoningBearingTarget)?.reasoningBurden
   ?? reasoningBurdenForRule(packet.rule, packet.riskClass)
 
 const packetsShareAffectedSource = (
-  left: EffectPacketQueueRecord,
-  right: EffectPacketQueueRecord,
+  left: FrameworkProtocolPacketProjectionRecord,
+  right: FrameworkProtocolPacketProjectionRecord,
 ): boolean =>
   left.affectedFiles.some((leftFile) =>
     right.affectedFiles.some((rightFile) => sameSourceSuffix(leftFile, rightFile))
@@ -3797,12 +4120,12 @@ const sameSourceSuffix = (left: string, right: string): boolean => {
     normalizedRight.endsWith(`/${normalizedLeft}`)
 }
 
-const parseEffectPacketQueue = (
+const parseFrameworkProtocolPacketProjectionQueue = (
   stdout: string,
   evaluatorId: string,
 ): {
-  readonly parseStatus: EffectPacketQueueSnapshot["parseStatus"]
-  readonly packets: readonly EffectPacketQueueRecord[]
+  readonly parseStatus: FrameworkProtocolPacketProjectionQueueSnapshot["parseStatus"]
+  readonly packets: readonly FrameworkProtocolPacketProjectionRecord[]
 } => {
   const parsed = parseJsonObject(stdout)
   const rawPackets = Array.isArray(parsed?.["packets"])
@@ -3812,37 +4135,42 @@ const parseEffectPacketQueue = (
       : []
   const packets = rawPackets
     .filter((item): item is Record<string, unknown> => item !== null && typeof item === "object")
-    .map((item, index) => effectPacketRecord(item, index, evaluatorId))
+    .map((item, index) => frameworkProtocolPacketProjectionRecord(item, index, evaluatorId))
   return {
     parseStatus: parsed === undefined ? "empty" : "json",
     packets,
   }
 }
 
-const effectPacketRecord = (
+const frameworkProtocolPacketProjectionRecord = (
   item: Record<string, unknown>,
   index: number,
   evaluatorId: string,
-): EffectPacketQueueRecord => {
-  const rule = safeString(item["ruleName"])
+): FrameworkProtocolPacketProjectionRecord => {
+  const protocolPacket = decodeFrameworkProtocolPacketForBenchmarkProjection(item["corePacket"])
+    ?? decodeFrameworkProtocolPacketForBenchmarkProjection(item["packet"])
+  const rule = protocolPacket?.ruleIds[0]
+    ?? safeString(item["ruleName"])
     ?? safeString(item["rule"])
     ?? safeString(item["code"])
     ?? "effect/unknown"
   const affectedFiles = stringArray(item["affectedFiles"])
     .concat(stringArray(item["files"]))
+    .concat(protocolPacketSourcePaths(protocolPacket))
     .map((file) => normalizeDiagnosticFileIdentity(file) ?? file)
-  const validationCommands = validationCommandsFromPacket(item)
+  const validationCommands = validationCommandsFromProtocolProjection(item)
   const diagnosticCount = safeNumber(item["diagnosticCount"])
     ?? (Array.isArray(item["diagnostics"]) ? item["diagnostics"].length : undefined)
     ?? Math.max(1, stringArray(item["diagnosticIds"]).length)
   const safeFixCount = safeNumber(item["safeFixCount"])
     ?? safeNumber(item["safeFixes"])
     ?? 0
-  const packetId = safeString(item["packetId"])
+  const packetId = protocolPacket?.id
+    ?? safeString(item["packetId"])
     ?? safeString(item["id"])
     ?? hashBenchmarkContent([evaluatorId, rule, index, affectedFiles.join("\0")].join("\0")).slice(0, 24)
   const profile = safeString(item["profile"]) ?? defaultEffectProfile
-  const targetItems = packetTargetItemsFromQueueRecord(item, {
+  const targetItems = protocolProjectionTargetItemsFromQueueRecord(item, {
     evaluatorId,
     profile,
     rule,
@@ -3851,6 +4179,7 @@ const effectPacketRecord = (
   })
   return {
     packetId,
+    ...(protocolPacket === undefined ? {} : { protocolPacket }),
     rule,
     diagnosticCount,
     safeFixCount,
@@ -3862,7 +4191,22 @@ const effectPacketRecord = (
   }
 }
 
-const packetTargetItemsFromQueueRecord = (
+const decodeFrameworkProtocolPacketForBenchmarkProjection = (value: unknown): Packet | undefined => {
+  if (value === undefined) return undefined
+  try {
+    return Schema.decodeUnknownSync(PacketSchema)(value)
+  } catch {
+    return undefined
+  }
+}
+
+const protocolPacketSourcePaths = (packet: Packet | undefined): readonly string[] =>
+  packet?.targets.flatMap((target) => {
+    const sourcePath = target.identity.sourcePath
+    return sourcePath === undefined ? [] : [sourcePath]
+  }) ?? []
+
+const protocolProjectionTargetItemsFromQueueRecord = (
   item: Record<string, unknown>,
   context: {
     readonly evaluatorId: string
@@ -3898,7 +4242,7 @@ const packetTargetItemsFromQueueRecord = (
   })
 }
 
-const validationCommandsFromPacket = (item: Record<string, unknown>): readonly string[] => {
+const validationCommandsFromProtocolProjection = (item: Record<string, unknown>): readonly string[] => {
   const direct = stringArray(item["validationCommands"])
   if (direct.length > 0) return direct
   const ladder = item["validationLadder"]
@@ -3934,7 +4278,7 @@ const hiddenJudgeArgvFor = (workspacePath: string): readonly string[] => [
   "json",
 ]
 
-const packetQueueArgvFor = (workspacePath: string): readonly string[] => [
+const frameworkProtocolPacketProjectionQueueArgvFor = (workspacePath: string): readonly string[] => [
   "pnpm",
   "exec",
   "trellis-ls",
@@ -3951,7 +4295,7 @@ const packetQueueArgvFor = (workspacePath: string): readonly string[] => [
 
 const fastPathArgvFor = (
   workspacePath: string,
-  packet: EffectPacketQueueRecord,
+  packet: FrameworkProtocolPacketProjectionRecord,
   profile: string,
 ): readonly string[] => {
   const target = packet.targetItems[0]
@@ -4055,14 +4399,14 @@ const evaluatorContractForWorktree = (worktreePath: string): BenchmarkEvaluatorC
   }
 }
 
-const createTargetDiagnosticPacket = (
+const createProtocolPacketProjectionFromHiddenSnapshot = (
   baseSnapshot: HiddenJudgeSummary,
   evaluatorContract: BenchmarkEvaluatorContract,
   options: {
     readonly excludedTargetIds?: ReadonlySet<string>
     readonly packetSelectionStrategy?: string
   } = {},
-): BenchmarkTargetDiagnosticPacket => {
+): BenchmarkProtocolPacketProjection => {
   const diagnosticsByRule = new Map<string, readonly BenchmarkDiagnosticRecord[]>()
   for (const diagnostic of baseSnapshot.diagnostics
     .filter(isEffectDiagnostic)
@@ -4090,8 +4434,13 @@ const createTargetDiagnosticPacket = (
     evaluatorContract.evaluatorId,
     ...items.map((item) => item.diagnosticId),
   ].join("\0")
+  const packetId = hashBenchmarkContent(packetSeed).slice(0, 24)
   return {
-    packetId: hashBenchmarkContent(packetSeed).slice(0, 24),
+    packetId,
+    protocolProjection: benchmarkProtocolPacketProjectionLink({
+      packetIds: [packetId],
+      receiptKind: "selected",
+    }),
     capturedAt: baseSnapshot.completedAt,
     evaluatorId: evaluatorContract.evaluatorId,
     sourceSnapshot: "hidden-root-base",
@@ -4109,13 +4458,13 @@ const createTargetDiagnosticPacket = (
   }
 }
 
-export const createBenchmarkTargetDiagnosticPacket = createTargetDiagnosticPacket
+export const createBenchmarkProtocolPacketProjection = createProtocolPacketProjectionFromHiddenSnapshot
 
-const createHoldoutDiagnosticPacketFromHiddenSnapshot = (
+const createHoldoutProtocolPacketProjectionFromHiddenSnapshot = (
   baseSnapshot: HiddenJudgeSummary,
   evaluatorContract: BenchmarkEvaluatorContract,
   plan: BenchmarkPlan,
-): BenchmarkTargetDiagnosticPacket | undefined => {
+): BenchmarkProtocolPacketProjection | undefined => {
   const count = holdoutPacketCountForLoop(plan.loopPlan.loopKind)
   if (count === 0) return undefined
   const items = baseSnapshot.diagnostics
@@ -4137,8 +4486,13 @@ const createHoldoutDiagnosticPacketFromHiddenSnapshot = (
     "hidden-reasoning-holdout",
     ...items.map((item) => item.targetId),
   ].join("\0")
+  const packetId = hashBenchmarkContent(packetSeed).slice(0, 24)
   return {
-    packetId: hashBenchmarkContent(packetSeed).slice(0, 24),
+    packetId,
+    protocolProjection: benchmarkProtocolPacketProjectionLink({
+      packetIds: [packetId],
+      receiptKind: "selected",
+    }),
     capturedAt: baseSnapshot.completedAt,
     evaluatorId: evaluatorContract.evaluatorId,
     sourceSnapshot: "hidden-root-base",
@@ -4171,12 +4525,12 @@ const seededHoldoutRankForDiagnostic = (
     diagnostic.targetId,
   ].join("\0"))
 
-const targetDiagnosticPacketFromSelectedPackets = (
-  queue: EffectPacketQueueSnapshot,
-  selectedPackets: readonly EffectPacketQueueRecord[],
+const targetProtocolPacketProjectionFromSelectedPackets = (
+  queue: FrameworkProtocolPacketProjectionQueueSnapshot,
+  selectedPackets: readonly FrameworkProtocolPacketProjectionRecord[],
   packetSelectionStrategy = queue.packetSelectionStrategy,
-  itemSelector: (packet: EffectPacketQueueRecord) => readonly BenchmarkDiagnosticRecord[] = (packet) => packet.targetItems,
-): BenchmarkTargetDiagnosticPacket => {
+  itemSelector: (packet: FrameworkProtocolPacketProjectionRecord) => readonly BenchmarkDiagnosticRecord[] = (packet) => packet.targetItems,
+): BenchmarkProtocolPacketProjection => {
   const items = selectedPackets.flatMap((packet) => itemSelector(packet))
   const expectedItemCount = items.length
   const packetSeed = [
@@ -4186,9 +4540,18 @@ const targetDiagnosticPacketFromSelectedPackets = (
     ...selectedPackets.map((packet) => packet.packetId),
     ...items.map((item) => item.targetId),
   ].join("\0")
+  const packetIds = selectedPackets.map((packet) => packet.packetId)
+  const protocolPackets = selectedPackets.flatMap((packet) =>
+    packet.protocolPacket === undefined ? [] : [packet.protocolPacket]
+  )
   return {
     packetId: hashBenchmarkContent(packetSeed).slice(0, 24),
-    packetIds: selectedPackets.map((packet) => packet.packetId),
+    packetIds,
+    protocolProjection: benchmarkProtocolPacketProjectionLink({
+      packetIds,
+      receiptKind: "selected",
+    }),
+    ...(protocolPackets.length === 0 ? {} : { protocolPackets }),
     capturedAt: queue.capturedAt,
     evaluatorId: queue.evaluatorId,
     sourceSnapshot: "effect-packet-queue-base",
@@ -4213,39 +4576,39 @@ const targetDiagnosticPacketFromSelectedPackets = (
   }
 }
 
-const createTargetDiagnosticPacketFromQueue = (
-  queue: EffectPacketQueueSnapshot,
+const createProtocolPacketProjectionFromQueue = (
+  queue: FrameworkProtocolPacketProjectionQueueSnapshot,
   plan: BenchmarkPlan,
-): BenchmarkTargetDiagnosticPacket =>
-  targetDiagnosticPacketFromSelectedPacketsOrSlices(
+): BenchmarkProtocolPacketProjection =>
+  targetProtocolPacketProjectionFromSelectedPacketsOrSlices(
     queue,
-    selectedBenchmarkEffectPacketsForLoop(queue, plan),
-    selectedBenchmarkEffectPacketSlicesForLoop(queue, plan),
+    selectedBenchmarkProtocolPacketProjectionsForLoop(queue, plan),
+    selectedBenchmarkProtocolPacketProjectionSlicesForLoop(queue, plan),
     plan.loopPlan.loopKind,
   )
 
-const targetDiagnosticPacketFromSelectedPacketsOrSlices = (
-  queue: EffectPacketQueueSnapshot,
-  executablePackets: readonly EffectPacketQueueRecord[],
-  slicePackets: readonly EffectPacketQueueRecord[],
+const targetProtocolPacketProjectionFromSelectedPacketsOrSlices = (
+  queue: FrameworkProtocolPacketProjectionQueueSnapshot,
+  executablePackets: readonly FrameworkProtocolPacketProjectionRecord[],
+  slicePackets: readonly FrameworkProtocolPacketProjectionRecord[],
   loopKind: BenchmarkLoopKind,
-): BenchmarkTargetDiagnosticPacket =>
+): BenchmarkProtocolPacketProjection =>
   executablePackets.length > 0
-    ? targetDiagnosticPacketFromSelectedPackets(queue, executablePackets)
-    : targetDiagnosticPacketFromSelectedPackets(
+    ? targetProtocolPacketProjectionFromSelectedPackets(queue, executablePackets)
+    : targetProtocolPacketProjectionFromSelectedPackets(
       queue,
       slicePackets,
       `${queue.packetSelectionStrategy}:source-scope-slice-v2:limit-${targetSliceItemLimitPerPacketForLoop(loopKind)}`,
-      (packet) => benchmarkEffectPacketTargetSliceItemsForLoop(packet, loopKind),
+      (packet) => benchmarkProtocolPacketProjectionTargetSliceItemsForLoop(packet, loopKind),
     )
 
-const createHoldoutDiagnosticPacketFromQueue = (
-  queue: EffectPacketQueueSnapshot,
+const createHoldoutProtocolPacketProjectionFromQueue = (
+  queue: FrameworkProtocolPacketProjectionQueueSnapshot,
   plan: BenchmarkPlan,
-): BenchmarkTargetDiagnosticPacket | undefined => {
+): BenchmarkProtocolPacketProjection | undefined => {
   const selectedPackets = selectedHoldoutEffectPackets(queue, plan)
   if (selectedPackets.length === 0) return undefined
-  return targetDiagnosticPacketFromSelectedPackets(
+  return targetProtocolPacketProjectionFromSelectedPackets(
     queue,
     selectedPackets,
     `${queue.packetSelectionStrategy}:holdout:${plan.loopPlan.holdoutSelectionPolicy}`,
@@ -4261,11 +4624,11 @@ const hiddenDiagnosticFamilyPriority = (family: string): number => {
   return reasoningBurdenForRule(normalized) === "autofix-only" ? 0 : 1
 }
 
-const evaluateTargetDiagnosticPacket = (
-  packet: BenchmarkTargetDiagnosticPacket,
+const evaluateProtocolPacketProjection = (
+  packet: BenchmarkProtocolPacketProjection,
   afterDiagnostics: readonly BenchmarkDiagnosticRecord[],
   scoringContext: BenchmarkTargetScoringContext = {},
-): BenchmarkTargetDiagnosticEvaluation => {
+): BenchmarkProtocolPacketProjectionEvaluation => {
   const afterKeys = new Set(afterDiagnostics.filter(isEffectDiagnostic).map(exactScoringKey))
   const sourceScopeItems = packet.items.filter(isPrimarySourceTarget)
   const outOfScopeItems = packet.items.filter((item) => !isPrimarySourceTarget(item))
@@ -4321,13 +4684,13 @@ const evaluateTargetDiagnosticPacket = (
   }
 }
 
-export const evaluateBenchmarkTargetDiagnosticPacket = evaluateTargetDiagnosticPacket
+export const evaluateBenchmarkProtocolPacketProjection = evaluateProtocolPacketProjection
 
 const minimumCrossFamilyDiagnosticFamilies = 2
 const minimumCrossFamilyPacketClasses = 2
 
 export const evaluateBenchmarkCrossFamilyConfirmation = (input: {
-  readonly evaluation: BenchmarkTargetDiagnosticEvaluation | undefined
+  readonly evaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined
   readonly improvementMultiple: number | undefined
 }): BenchmarkCrossFamilyConfirmation => {
   const evaluation = input.evaluation
@@ -4383,8 +4746,8 @@ export const evaluateBenchmarkCrossFamilyConfirmation = (input: {
 
 export const evaluateBenchmarkReasoningWork = (input: {
   readonly treatment: BenchmarkArmResult | undefined
-  readonly treatmentEvaluation: BenchmarkTargetDiagnosticEvaluation | undefined
-  readonly targetDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
+  readonly treatmentEvaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined
+  readonly targetProtocolPacketProjection?: BenchmarkProtocolPacketProjection
 }): BenchmarkReasoningWorkEvaluation => {
   const evidence = reasoningEvidenceForTreatmentArm(input)
   const reasoningBearingPacketSet =
@@ -4433,15 +4796,15 @@ export const evaluateBenchmarkReasoningWork = (input: {
 
 const reasoningEvidenceForTreatmentArm = (input: {
   readonly treatment: BenchmarkArmResult | undefined
-  readonly treatmentEvaluation: BenchmarkTargetDiagnosticEvaluation | undefined
-  readonly targetDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
+  readonly treatmentEvaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined
+  readonly targetProtocolPacketProjection?: BenchmarkProtocolPacketProjection
 }): BenchmarkReasoningEvidence | undefined => {
   if (input.treatment?.quickTurn?.reasoningEvidence !== undefined) {
     return input.treatment.quickTurn.reasoningEvidence
   }
   const treatment = input.treatment
   const evaluation = input.treatmentEvaluation
-  const targetPacket = input.targetDiagnosticPacket
+  const targetPacket = input.targetProtocolPacketProjection
   if (
     treatment === undefined ||
     evaluation === undefined ||
@@ -4542,7 +4905,7 @@ const evaluateHoldoutDiagnosticPacket = (input: {
   readonly benchmarkRunId: string
   readonly measurementSessionId: string
   readonly loopPlan: BenchmarkLoopPlan
-  readonly packet: BenchmarkTargetDiagnosticPacket | undefined
+  readonly packet: BenchmarkProtocolPacketProjection | undefined
   readonly baseline: BenchmarkArmResult | undefined
   readonly treatment: BenchmarkArmResult | undefined
   readonly visibleImprovementMultiple: number | undefined
@@ -4550,14 +4913,14 @@ const evaluateHoldoutDiagnosticPacket = (input: {
   if (!isHoldoutEvaluationLoop(input.loopPlan.loopKind) || input.packet === undefined) return undefined
   const baselineEvaluation = input.baseline?.hiddenJudge === undefined
     ? undefined
-    : evaluateTargetDiagnosticPacket(
+    : evaluateProtocolPacketProjection(
       input.packet,
       input.baseline.hiddenJudge.diagnostics,
       scoringContextForArmResult(input.baseline),
     )
   const treatmentEvaluation = input.treatment?.hiddenJudge === undefined
     ? undefined
-    : evaluateTargetDiagnosticPacket(
+    : evaluateProtocolPacketProjection(
       input.packet,
       input.treatment.hiddenJudge.diagnostics,
       scoringContextForArmResult(input.treatment),
@@ -4654,7 +5017,7 @@ const scoringContextForArmResult = (
 })
 
 const precisionAdjustedReasoningClears = (
-  evaluation: BenchmarkTargetDiagnosticEvaluation | undefined,
+  evaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined,
 ): number =>
   (evaluation?.reasoningBearingResolved ?? 0) * (evaluation?.precision ?? 0)
 
@@ -4662,7 +5025,7 @@ export interface BenchmarkTargetScoringContext {
   readonly patchQuality?: PatchQualitySummary
   readonly worktreePatchSummary?: PatchSummary
   readonly hiddenJudge?: HiddenJudgeSummary
-  readonly quickTurn?: BenchmarkQuickTurnResult
+  readonly quickTurn?: BenchmarkProtocolPacketFastPathResult
 }
 
 const isPrimarySourceTarget = (item: BenchmarkDiagnosticRecord): boolean =>
@@ -4687,7 +5050,7 @@ const reasoningBurdenWeight = (burden: BenchmarkReasoningBurden): number => {
 }
 
 const precisionPenaltiesForEvaluation = (input: {
-  readonly packet: BenchmarkTargetDiagnosticPacket
+  readonly packet: BenchmarkProtocolPacketProjection
   readonly incidentalOutOfScopeResolved: number
   readonly scoringContext: BenchmarkTargetScoringContext
 }): readonly BenchmarkPrecisionPenalty[] => {
@@ -4812,7 +5175,7 @@ const precisionPenaltiesForEvaluation = (input: {
   ]
 }
 
-const packetTargetsGlobalConsole = (packet: BenchmarkTargetDiagnosticPacket): boolean =>
+const packetTargetsGlobalConsole = (packet: BenchmarkProtocolPacketProjection): boolean =>
   packet.targetFamilies.some(isGlobalConsoleDiagnosticCode) ||
   packet.items.some((item) =>
     isGlobalConsoleDiagnosticCode(item.code) || item.ruleName === "globalConsole"
@@ -4821,7 +5184,7 @@ const packetTargetsGlobalConsole = (packet: BenchmarkTargetDiagnosticPacket): bo
 const isGlobalConsoleDiagnosticCode = (code: string): boolean =>
   code === "effect/globalConsole" || code === "globalConsole"
 
-const packetTargetsProcessEnv = (packet: BenchmarkTargetDiagnosticPacket): boolean =>
+const packetTargetsProcessEnv = (packet: BenchmarkProtocolPacketProjection): boolean =>
   packet.targetFamilies.some(isProcessEnvDiagnosticCode) ||
   packet.items.some((item) =>
     isProcessEnvDiagnosticCode(item.code) || item.ruleName === "processEnv"
@@ -4836,7 +5199,7 @@ const precisionFromPenalties = (
   penalties.reduce((value, penalty) => value * penalty.multiplier, 1)
 
 const scorerSelfChecksForEvaluation = (input: {
-  readonly packet: BenchmarkTargetDiagnosticPacket
+  readonly packet: BenchmarkProtocolPacketProjection
   readonly sourceScopeItems: readonly BenchmarkDiagnosticRecord[]
   readonly afterDiagnostics: readonly BenchmarkDiagnosticRecord[]
   readonly resolved: readonly BenchmarkDiagnosticRecord[]
@@ -4915,7 +5278,7 @@ const aggregateStatisticsForTargetItems = (
 }
 
 const packetClassCountForTargetPacket = (
-  packet: BenchmarkTargetDiagnosticPacket,
+  packet: BenchmarkProtocolPacketProjection,
 ): number => {
   if (packet.packetCount !== undefined) return packet.packetCount
   if (packet.packetIds !== undefined && packet.packetIds.length > 0) return packet.packetIds.length
@@ -5826,7 +6189,7 @@ const clusterTelemetryForPlan = (
 
 const computeScorecard = (
   baseSnapshot: HiddenJudgeSummary | undefined,
-  targetPacket: BenchmarkTargetDiagnosticPacket | undefined,
+  targetPacket: BenchmarkProtocolPacketProjection | undefined,
   armResults: readonly BenchmarkArmResult[],
 ): BenchmarkScorecard => {
   const missingMetricReasons: string[] = []
@@ -5856,7 +6219,7 @@ const computeScorecard = (
       "primary-outcome",
       armResults,
       (arm) => arm.targetPacketEvaluation?.resolved,
-      "Exact source-scope target diagnostics from the shared Effect packet queue, validated by the frozen hidden evaluator.",
+      "Exact source-scope target diagnostics from the shared Effect protocol packet projection, validated by the frozen hidden evaluator.",
       true,
     ),
     scorecardMetric(
@@ -6009,7 +6372,7 @@ const computeScorecard = (
       "safety",
       armResults,
       (arm) => arm.clusterTelemetry?.forbiddenPacketCommandCount,
-      "Raw Effect arms must not use packet queue commands, packet IDs, packet context bundles, or packet observations as guidance.",
+      "Raw Effect arms must not use protocol packet projection commands, packet IDs, packet context bundles, or packet observations as guidance.",
     ),
     scorecardMetric(
       "safe fixes applied",
@@ -6169,8 +6532,8 @@ const aggregateStatisticsForArmResults = (
 }
 
 const aggregateStatisticsForTargetComparison = (input: {
-  readonly baselineEvaluation: BenchmarkTargetDiagnosticEvaluation | undefined
-  readonly treatmentEvaluation: BenchmarkTargetDiagnosticEvaluation | undefined
+  readonly baselineEvaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined
+  readonly treatmentEvaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined
   readonly baselineTokens: number | undefined
   readonly treatmentTokens: number | undefined
 }): BenchmarkAggregateStatistics => {
@@ -6205,7 +6568,7 @@ const aggregateStatisticsForTargetComparison = (input: {
 }
 
 const diagnosticClassCounts = (
-  evaluation: BenchmarkTargetDiagnosticEvaluation | undefined,
+  evaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined,
 ): Map<string, number> => {
   const counts = new Map<string, number>()
   for (const row of evaluation?.resolvedByCode ?? []) counts.set(row.value, row.count)
@@ -6214,18 +6577,18 @@ const diagnosticClassCounts = (
 }
 
 const resolvedClassCounts = (
-  evaluation: BenchmarkTargetDiagnosticEvaluation | undefined,
+  evaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined,
 ): Map<string, number> =>
   new Map((evaluation?.resolvedByCode ?? []).map((row) => [row.value, row.count]))
 
 const legacyMetricCaveatsForTargetStatus = (input: {
   readonly baseSnapshot: HiddenJudgeSummary | undefined
-  readonly targetDiagnosticPacket: BenchmarkTargetDiagnosticPacket | undefined
+  readonly targetProtocolPacketProjection: BenchmarkProtocolPacketProjection | undefined
   readonly armResults: readonly BenchmarkArmResult[]
 }): readonly BenchmarkLegacyMetricCaveat[] => {
   const caveats: BenchmarkLegacyMetricCaveat[] = []
-  const exactTargetCount = input.targetDiagnosticPacket?.items.filter(isPrimarySourceTarget).length
-  const aggregateSafeFixCount = input.targetDiagnosticPacket?.safeFixCount
+  const exactTargetCount = input.targetProtocolPacketProjection?.items.filter(isPrimarySourceTarget).length
+  const aggregateSafeFixCount = input.targetProtocolPacketProjection?.safeFixCount
   if (
     exactTargetCount !== undefined &&
     aggregateSafeFixCount !== undefined &&
@@ -6399,8 +6762,8 @@ const tokenEfficiencyWinnerFor = (
 }
 
 const estimateSafeFixesApplied = (
-  targetPacket: BenchmarkTargetDiagnosticPacket | undefined,
-  evaluation: BenchmarkTargetDiagnosticEvaluation | undefined,
+  targetPacket: BenchmarkProtocolPacketProjection | undefined,
+  evaluation: BenchmarkProtocolPacketProjectionEvaluation | undefined,
 ): number | undefined => {
   if (targetPacket === undefined || evaluation === undefined) return undefined
   const safeFixCount = targetPacket.safeFixCount
@@ -6482,8 +6845,8 @@ const writeBenchmarkReports = (input: {
   readonly evaluatorContract: BenchmarkEvaluatorContract
   readonly baseSnapshot?: HiddenJudgeSummary
   readonly agentLocalBaseSnapshot?: HiddenJudgeSummary
-  readonly targetDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
-  readonly holdoutDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
+  readonly targetProtocolPacketProjection?: BenchmarkProtocolPacketProjection
+  readonly holdoutProtocolPacketProjection?: BenchmarkProtocolPacketProjection
   readonly armResults: readonly BenchmarkArmResult[]
   readonly telemetry: readonly CodexThreadTelemetry[]
   readonly clusterTelemetry: readonly CodexClusterTelemetry[]
@@ -6508,8 +6871,8 @@ const writeBenchmarkReports = (input: {
     evaluatorContract: input.evaluatorContract,
     ...(input.baseSnapshot === undefined ? {} : { baseSnapshot: input.baseSnapshot }),
     ...(input.agentLocalBaseSnapshot === undefined ? {} : { agentLocalBaseSnapshot: input.agentLocalBaseSnapshot }),
-    ...(input.targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket: input.targetDiagnosticPacket }),
-    ...(input.holdoutDiagnosticPacket === undefined ? {} : { holdoutDiagnosticPacket: input.holdoutDiagnosticPacket }),
+    ...(input.targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection: input.targetProtocolPacketProjection }),
+    ...(input.holdoutProtocolPacketProjection === undefined ? {} : { holdoutProtocolPacketProjection: input.holdoutProtocolPacketProjection }),
     arms: input.armResults,
     telemetry: input.telemetry,
     clusterTelemetry: input.clusterTelemetry,
@@ -6536,8 +6899,8 @@ const renderBenchmarkMarkdown = (payload: {
   readonly evaluatorContract: BenchmarkEvaluatorContract
   readonly baseSnapshot?: HiddenJudgeSummary
   readonly agentLocalBaseSnapshot?: HiddenJudgeSummary
-  readonly targetDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
-  readonly holdoutDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
+  readonly targetProtocolPacketProjection?: BenchmarkProtocolPacketProjection
+  readonly holdoutProtocolPacketProjection?: BenchmarkProtocolPacketProjection
   readonly arms: readonly BenchmarkArmResult[]
   readonly telemetry: readonly CodexThreadTelemetry[]
   readonly clusterTelemetry: readonly CodexClusterTelemetry[]
@@ -6552,7 +6915,7 @@ const renderBenchmarkMarkdown = (payload: {
 }): string => {
   const armHeaders = payload.plan.arms.map((arm) => arm.arm)
   return [
-    "# Effect Packet Queue Ablation Benchmark",
+    "# Effect Protocol Packet Projection Ablation Benchmark",
     "",
     `Generated: ${payload.generatedAt}`,
     `Benchmark run: ${payload.benchmarkRunId}`,
@@ -6730,16 +7093,16 @@ const renderBenchmarkMarkdown = (payload: {
       return `| ${arm.arm} | ${formatMetric(arm.agentLocalJudge?.diagnosticCount ?? null)} | ${formatMetric(localCleared ?? null)} | ${formatMetric(arm.hiddenJudge?.diagnosticCount ?? null)} | ${formatMetric(hiddenCleared ?? null)} | ${formatMetric(split ?? null)} |`
     }),
     "",
-    "## Fixed Packet Queue",
+    "## Fixed Protocol Packet Projection",
     "",
-    `Packet: ${payload.targetDiagnosticPacket?.packetId ?? "not measured"}`,
-    `Packets: ${payload.targetDiagnosticPacket?.packetCount ?? "not measured"}`,
-    `Diagnostics: ${payload.targetDiagnosticPacket?.itemCount ?? "not measured"}`,
-    `Safe fixes: ${payload.targetDiagnosticPacket?.safeFixCount ?? "not measured"}`,
+    `Packet: ${payload.targetProtocolPacketProjection?.packetId ?? "not measured"}`,
+    `Packets: ${payload.targetProtocolPacketProjection?.packetCount ?? "not measured"}`,
+    `Diagnostics: ${payload.targetProtocolPacketProjection?.itemCount ?? "not measured"}`,
+    `Safe fixes: ${payload.targetProtocolPacketProjection?.safeFixCount ?? "not measured"}`,
     "",
     "| Code | Count |",
     "| --- | ---: |",
-    ...(payload.targetDiagnosticPacket?.familyCounts ?? []).map((row) => `| ${row.value} | ${row.count} |`),
+    ...(payload.targetProtocolPacketProjection?.familyCounts ?? []).map((row) => `| ${row.value} | ${row.count} |`),
     "",
     "## Worktree Changes",
     "",
@@ -6862,18 +7225,18 @@ const planSummaryObservation = (
           evidence: "Prompt requires an OpenSpec plan before implementation.",
         },
         {
-          criterion: "Effect packet migration target",
+          criterion: "protocol packet projection migration target",
           score: 1,
           maxScore: 1,
-          evidence: "Prompt names the fixed Effect diagnostic packet queue as the benchmark target.",
+          evidence: "Prompt names the fixed Effect diagnostic protocol packet projection as the benchmark target.",
         },
         {
           criterion: "packetization policy",
           score: 1,
           maxScore: 1,
           evidence: arm.packetizationPolicy === "effect-packets"
-            ? "Prompt permits packet queue commands and validation ladders."
-            : "Prompt permits raw Effect diagnostics while forbidding packet queue commands.",
+            ? "Prompt permits protocol packet projection commands and validation ladders."
+            : "Prompt permits raw Effect diagnostics while forbidding protocol packet projection commands.",
         },
         {
           criterion: "privacy guardrails",
@@ -7048,7 +7411,7 @@ const loopLifecycleObservation = (
 const targetPacketObservation = (
   plan: BenchmarkPlan,
   evaluatorContract: BenchmarkEvaluatorContract,
-  packet: BenchmarkTargetDiagnosticPacket,
+  packet: BenchmarkProtocolPacketProjection,
 ): RecipeObservation =>
   createBenchmarkObservation({
     kind: "measurement.benchmark.target-packet.summary",
@@ -7083,6 +7446,20 @@ const targetPacketObservation = (
       familyCounts: packet.familyCounts,
       items: packet.items,
       rawMessagesStored: false,
+      protocolReceipt: benchmarkPacketReceiptPayload({
+        plan,
+        packetId: packet.packetId,
+        targetIds: benchmarkPacketTargetIds(packet),
+        ruleIds: benchmarkPacketRuleIds(packet),
+        kind: "ranked",
+        status: "selected",
+        payload: {
+          benchmarkProjection: "target-packet",
+          sourcePacketIds: packet.packetIds ?? [],
+          sourceSnapshot: packet.sourceSnapshot,
+          profile: packet.profile ?? plan.effectProfile,
+        },
+      }),
       privacy: privacySummary,
     },
   })
@@ -7094,6 +7471,8 @@ const finalJudgeObservation = (
   const hiddenJudge = armResult.hiddenJudge
   if (hiddenJudge === undefined) throw new Error("Cannot create final judge observation without judge output")
   const plannedArm = plan.arms.find((arm) => arm.armId === armResult.armId)
+  const protocolJudgment = benchmarkMigrationJudgmentForFinalJudge(plan, armResult, hiddenJudge)
+  const protocolPacketId = benchmarkFinalJudgePacketId(plan, armResult)
   return createBenchmarkObservation({
     kind: "measurement.benchmark.final-judge.summary",
     recipeId: hiddenJudgeRecipeId,
@@ -7140,6 +7519,25 @@ const finalJudgeObservation = (
       remainingDiagnosticCount: hiddenJudge.diagnosticCount,
       outputStored: false,
       resourceEnvelope: hiddenJudge.resourceEnvelope,
+      protocolReceipt: benchmarkPacketReceiptPayload({
+        plan,
+        packetId: protocolPacketId,
+        recipeId: hiddenJudgeRecipeId,
+        targetIds: [protocolPacketId],
+        ruleIds: ["benchmark/hidden-judge"],
+        kind: "judged",
+        status: protocolJudgment.promotionAllowed ? "cleared" : "failed-validation",
+        judgmentId: protocolJudgment.judgmentId,
+        payload: {
+          benchmarkProjection: "final-judge",
+          arm: armResult.arm,
+          armId: armResult.armId,
+          evaluatorKind: hiddenJudge.evaluatorKind,
+          remainingDiagnosticCount: hiddenJudge.diagnosticCount,
+          ...optionalNumber("diagnosticDelta", hiddenJudge.diagnosticDelta),
+        },
+      }),
+      protocolJudgment,
       privacy: privacySummary,
     },
   })
@@ -7147,8 +7545,8 @@ const finalJudgeObservation = (
 
 const quickTurnPacketLifecycleObservation = (
   plan: BenchmarkPlan,
-  quickTurn: BenchmarkQuickTurnResult,
-  status: "running" | BenchmarkEffectPacketStatus,
+  quickTurn: BenchmarkProtocolPacketFastPathResult,
+  status: "running" | BenchmarkProtocolPacketStatus,
 ): RecipeObservation =>
   createBenchmarkObservation({
     kind: status === "running"
@@ -7180,13 +7578,28 @@ const quickTurnPacketLifecycleObservation = (
       validatedClearedCount: quickTurn.validatedClearedCount,
       remainingCount: quickTurn.remainingCount,
       reasoningEvidence: quickTurn.reasoningEvidence,
+      protocolReceipt: benchmarkPacketReceiptPayload({
+        plan,
+        packetId: quickTurn.packetId,
+        targetIds: [quickTurn.packetId],
+        ruleIds: benchmarkRuleIdsForRuleName(quickTurn.ruleName),
+        kind: status === "running" ? "planned" : "checked",
+        status: benchmarkPacketStatusFromQuickTurn(status),
+        payload: {
+          benchmarkProjection: status === "running" ? "packet-started" : "packet-completed",
+          arm: quickTurn.arm,
+          armId: quickTurn.armId,
+          profile: quickTurn.profile,
+          remainingCount: quickTurn.remainingCount,
+        },
+      }),
       privacy: privacySummary,
     },
   })
 
 const quickTurnPacketFixPreviewObservation = (
   plan: BenchmarkPlan,
-  quickTurn: BenchmarkQuickTurnResult,
+  quickTurn: BenchmarkProtocolPacketFastPathResult,
 ): RecipeObservation =>
   createBenchmarkObservation({
     kind: "measurement.benchmark.packet.fix-preview",
@@ -7211,13 +7624,30 @@ const quickTurnPacketFixPreviewObservation = (
       affectedFileCount: quickTurn.affectedFileCount,
       rawDiffStored: false,
       patchTextStored: false,
+      protocolReceipt: benchmarkPacketReceiptPayload({
+        plan,
+        packetId: quickTurn.packetId,
+        targetIds: [quickTurn.packetId],
+        ruleIds: benchmarkRuleIdsForRuleName(quickTurn.ruleName),
+        kind: "planned",
+        status: "planned",
+        payload: {
+          benchmarkProjection: "packet-fix-preview",
+          arm: quickTurn.arm,
+          armId: quickTurn.armId,
+          profile: quickTurn.profile,
+          fixCount: quickTurn.fixCount,
+          safeFixCount: quickTurn.safeFixCount,
+          reviewRequiredFixCount: quickTurn.reviewRequiredFixCount,
+        },
+      }),
       privacy: privacySummary,
     },
   })
 
 const quickTurnPacketApplyObservation = (
   plan: BenchmarkPlan,
-  quickTurn: BenchmarkQuickTurnResult,
+  quickTurn: BenchmarkProtocolPacketFastPathResult,
 ): RecipeObservation =>
   createBenchmarkObservation({
     kind: "measurement.benchmark.packet.apply-result",
@@ -7247,13 +7677,32 @@ const quickTurnPacketApplyObservation = (
       ...optionalString("refusalCode", quickTurn.refusalCode),
       rawDiffStored: false,
       patchTextStored: false,
+      protocolReceipt: benchmarkPacketReceiptPayload({
+        plan,
+        packetId: quickTurn.packetId,
+        targetIds: [quickTurn.packetId],
+        ruleIds: benchmarkRuleIdsForRuleName(quickTurn.ruleName),
+        kind: "applied",
+        status: benchmarkPacketStatusFromQuickTurn(quickTurn.status),
+        payload: {
+          benchmarkProjection: "packet-apply-result",
+          arm: quickTurn.arm,
+          armId: quickTurn.armId,
+          profile: quickTurn.profile,
+          applied: quickTurn.applied,
+          refused: quickTurn.refused,
+          stale: quickTurn.stale,
+          affectedFileCount: quickTurn.affectedFileCount,
+          ...optionalString("refusalCode", quickTurn.refusalCode),
+        },
+      }),
       privacy: privacySummary,
     },
   })
 
 const quickTurnPacketValidationObservation = (
   plan: BenchmarkPlan,
-  quickTurn: BenchmarkQuickTurnResult,
+  quickTurn: BenchmarkProtocolPacketFastPathResult,
 ): RecipeObservation =>
   createBenchmarkObservation({
     kind: "measurement.benchmark.packet.validation-result",
@@ -7279,6 +7728,24 @@ const quickTurnPacketValidationObservation = (
       validatedClearedCount: quickTurn.validatedClearedCount,
       remainingCount: quickTurn.remainingCount,
       reasoningEvidence: quickTurn.reasoningEvidence,
+      protocolReceipt: benchmarkPacketReceiptPayload({
+        plan,
+        packetId: quickTurn.packetId,
+        targetIds: [quickTurn.packetId],
+        ruleIds: benchmarkRuleIdsForRuleName(quickTurn.ruleName),
+        kind: "checked",
+        status: benchmarkPacketStatusFromQuickTurn(quickTurn.status),
+        payload: {
+          benchmarkProjection: "packet-validation-result",
+          arm: quickTurn.arm,
+          armId: quickTurn.armId,
+          profile: quickTurn.profile,
+          diagnosticCountBefore: quickTurn.diagnosticCountBefore,
+          diagnosticCountAfter: quickTurn.diagnosticCountAfter,
+          validatedClearedCount: quickTurn.validatedClearedCount,
+          remainingCount: quickTurn.remainingCount,
+        },
+      }),
       privacy: privacySummary,
     },
   })
@@ -7693,7 +8160,7 @@ const auditChecks = (input: {
 const computeBenchmarkTargetStatus = (input: {
   readonly plan: BenchmarkPlan
   readonly baseSnapshot?: HiddenJudgeSummary
-  readonly targetDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
+  readonly targetProtocolPacketProjection?: BenchmarkProtocolPacketProjection
   readonly scorecard: BenchmarkScorecard
   readonly armResults: readonly BenchmarkArmResult[]
   readonly holdoutEvaluation?: BenchmarkHoldoutEvaluation
@@ -7756,7 +8223,7 @@ const computeBenchmarkTargetStatus = (input: {
   const reasoningWork = evaluateBenchmarkReasoningWork({
     treatment,
     treatmentEvaluation,
-    ...(input.targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket: input.targetDiagnosticPacket }),
+    ...(input.targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection: input.targetProtocolPacketProjection }),
   })
   const aggregateStatistics = aggregateStatisticsForTargetComparison({
     baselineEvaluation,
@@ -7766,12 +8233,12 @@ const computeBenchmarkTargetStatus = (input: {
   })
   const legacyMetricCaveats = legacyMetricCaveatsForTargetStatus({
     baseSnapshot: input.baseSnapshot,
-    targetDiagnosticPacket: input.targetDiagnosticPacket,
+    targetProtocolPacketProjection: input.targetProtocolPacketProjection,
     armResults: input.armResults,
   })
   const blockers = targetStatusBlockers({
     plan: input.plan,
-    ...(input.targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket: input.targetDiagnosticPacket }),
+    ...(input.targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection: input.targetProtocolPacketProjection }),
     baseline,
     treatment,
     improvementMultiple,
@@ -8033,7 +8500,7 @@ const multiple = (
 
 const targetStatusBlockers = (input: {
   readonly plan: BenchmarkPlan
-  readonly targetDiagnosticPacket?: BenchmarkTargetDiagnosticPacket
+  readonly targetProtocolPacketProjection?: BenchmarkProtocolPacketProjection
   readonly baseline: BenchmarkArmResult | undefined
   readonly treatment: BenchmarkArmResult | undefined
   readonly improvementMultiple: number | undefined
@@ -8059,8 +8526,8 @@ const targetStatusBlockers = (input: {
   ...validationIntegrityBlockersForArm(input.treatment?.clusterTelemetry),
   ...(input.improvementMultiple === undefined ? ["comparable baseline efficiency missing or zero"] : []),
   ...(isPacketFastPathLoop(input.plan.loopPlan.loopKind) &&
-    input.targetDiagnosticPacket?.sourceSnapshot === "hidden-root-base"
-    ? ["packet fast path target is hidden-root-base and not executable from the Effect packet queue"]
+    input.targetProtocolPacketProjection?.sourceSnapshot === "hidden-root-base"
+    ? ["packet fast path target is hidden-root-base and not executable from the Effect protocol packet projection"]
     : []),
   ...(input.treatment?.quickTurn?.refused === true
     ? [
@@ -8616,7 +9083,6 @@ const isBenchmarkGeneratedValidationHelper = (file: string): boolean =>
 export const classifyBenchmarkPatchCategory = (file: string): string => {
   const normalizedFile = normalizeBenchmarkPatchPath(file)
   if (normalizedFile.startsWith("packages/trellis/language-service/")) return "evaluator-rule"
-  if (normalizedFile.startsWith("packages/trellis/oxlint-policy/")) return "evaluator-rule"
   if (normalizedFile.startsWith("packages/trellis/protocol/")) return "framework-protocol"
   if (normalizedFile.startsWith("packages/tend/opencode/")) return "measurement-report"
   if (normalizedFile.startsWith("packages/trellis/runtime/")) return "measurement-report"
@@ -8715,7 +9181,7 @@ const jsonRecord = (value: unknown): Record<string, unknown> | undefined =>
     ? value as Record<string, unknown>
     : undefined
 
-const fastPathValidationStatus = (value: string | undefined): BenchmarkEffectPacketStatus | undefined => {
+const fastPathValidationStatus = (value: string | undefined): BenchmarkProtocolPacketStatus | undefined => {
   switch (value) {
     case "cleared":
     case "partially-cleared":
@@ -8732,10 +9198,10 @@ const fastPathValidationStatus = (value: string | undefined): BenchmarkEffectPac
 
 const packetStatusFromFastPath = (input: {
   readonly exitCode: number
-  readonly validationStatus: BenchmarkEffectPacketStatus | undefined
+  readonly validationStatus: BenchmarkProtocolPacketStatus | undefined
   readonly stale: boolean
   readonly refused: boolean
-}): BenchmarkEffectPacketStatus => {
+}): BenchmarkProtocolPacketStatus => {
   if (input.stale) return "stale"
   if (input.refused) return "refused"
   if (input.validationStatus !== undefined) return input.validationStatus
@@ -8759,10 +9225,10 @@ const diagnosticCountFromFastPathCheck = (
 const validationStepsForQuickTurn = (
   plan: BenchmarkPlan,
   fastPathOutput: Record<string, unknown> | undefined,
-): readonly BenchmarkEffectPacketValidationStep[] => {
+): readonly BenchmarkProtocolPacketValidationStep[] => {
   const ladder = fastPathOutput?.["validationLadder"]
   if (Array.isArray(ladder)) {
-    const steps = ladder.flatMap((entry): BenchmarkEffectPacketValidationStep[] => {
+    const steps = ladder.flatMap((entry): BenchmarkProtocolPacketValidationStep[] => {
       const record = jsonRecord(entry)
       if (record === undefined) return []
       const command = safeString(record["command"])
@@ -8776,7 +9242,7 @@ const validationStepsForQuickTurn = (
     })
     if (steps.length > 0) return steps
   }
-  return plan.loopPlan.validationLadder.map((command, index): BenchmarkEffectPacketValidationStep => ({
+  return plan.loopPlan.validationLadder.map((command, index): BenchmarkProtocolPacketValidationStep => ({
     tier: index === 0 ? "cheap" : "focused",
     command,
     required: true,
@@ -8785,7 +9251,7 @@ const validationStepsForQuickTurn = (
 
 const validationTier = (
   value: string | undefined,
-): BenchmarkEffectPacketValidationStep["tier"] => {
+): BenchmarkProtocolPacketValidationStep["tier"] => {
   switch (value) {
     case "cheap":
     case "focused":
@@ -8800,8 +9266,8 @@ const validationTier = (
 const quickTurnStopReason = (
   loopKind: BenchmarkPacketFastPathLoopKind,
   exitCode: number,
-  status: BenchmarkEffectPacketStatus,
-  validationStatus: BenchmarkEffectPacketStatus | undefined,
+  status: BenchmarkProtocolPacketStatus,
+  validationStatus: BenchmarkProtocolPacketStatus | undefined,
 ): string => {
   if (status === "cleared") return `${loopKind} fastpath applied and cleared the selected packet`
   if (status === "partially-cleared") return `${loopKind} fastpath applied with remaining packet diagnostics`
@@ -9050,8 +9516,8 @@ const benchmarkStatusResult = (input: {
     evaluatorContract: savedResult?.evaluatorContract ?? input.evaluatorContract,
     ...(savedResult?.baseSnapshot === undefined ? {} : { baseSnapshot: savedResult.baseSnapshot }),
     ...(savedResult?.agentLocalBaseSnapshot === undefined ? {} : { agentLocalBaseSnapshot: savedResult.agentLocalBaseSnapshot }),
-    ...(savedResult?.targetDiagnosticPacket === undefined ? {} : { targetDiagnosticPacket: savedResult.targetDiagnosticPacket }),
-    ...(savedResult?.holdoutDiagnosticPacket === undefined ? {} : { holdoutDiagnosticPacket: savedResult.holdoutDiagnosticPacket }),
+    ...(savedResult?.targetProtocolPacketProjection === undefined ? {} : { targetProtocolPacketProjection: savedResult.targetProtocolPacketProjection }),
+    ...(savedResult?.holdoutProtocolPacketProjection === undefined ? {} : { holdoutProtocolPacketProjection: savedResult.holdoutProtocolPacketProjection }),
     arms: savedResult?.arms ?? savedPlan.arms.map(armResultFromPlan),
     ...(savedResult?.scorecard === undefined ? {} : { scorecard: savedResult.scorecard }),
     ...(savedResult?.holdoutEvaluation === undefined ? {} : { holdoutEvaluation: savedResult.holdoutEvaluation }),

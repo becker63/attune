@@ -1,4 +1,5 @@
-import { Effect } from "effect"
+import { Effect, Schema } from "effect"
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
 import { CpgProgram, GraphWeights, Joern, cpg } from "joern-effect"
 
 export const requestInputToProcessExecution = CpgProgram.effect(
@@ -130,3 +131,79 @@ export const runRequestInputToProcessExecution = (repoPath: string) =>
   CpgProgram.run(requestInputToProcessExecution).pipe(
     Effect.provide(Joern.layer({ repoPath })),
   )
+
+const JoernEffectExampleEffectCpgProgramRecipeId = "joern-effect.examples.effect-cpg-program" as const
+const JoernEffectExampleEffectCpgProgramResourceId = "joern-effect.examples.effect-cpg-program.resource" as const
+const JoernEffectExampleEffectCpgProgramHandlerId = "joern-effect.examples.effect-cpg-program.handler" as const
+const JoernEffectExampleEffectCpgProgramSourcePath = "packages/attune/joern-effect/examples/effect-cpg-program.ts" as const
+const JoernEffectSourceSurfaceRecipeId = "joern-effect.source-surface" as const
+
+export const JoernEffectExampleEffectCpgProgramInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectExampleEffectCpgProgramSourcePath),
+})
+export type JoernEffectExampleEffectCpgProgramInput = typeof JoernEffectExampleEffectCpgProgramInput.Type
+
+export const JoernEffectExampleEffectCpgProgramOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectExampleEffectCpgProgramSourcePath),
+})
+export type JoernEffectExampleEffectCpgProgramOutput = typeof JoernEffectExampleEffectCpgProgramOutput.Type
+
+export const JoernEffectExampleEffectCpgProgramResource = defineAlchemyResource({
+  id: JoernEffectExampleEffectCpgProgramResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectExampleEffectCpgProgramRecipeId,
+  producedBy: [JoernEffectExampleEffectCpgProgramRecipeId],
+  consumedBy: [JoernEffectExampleEffectCpgProgramRecipeId, JoernEffectSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectExampleEffectCpgProgramInput as never,
+  stateSchema: JoernEffectExampleEffectCpgProgramOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectExampleEffectCpgProgramHandler = defineRecipeHandler<
+  JoernEffectExampleEffectCpgProgramInput,
+  JoernEffectExampleEffectCpgProgramOutput
+>({
+  id: JoernEffectExampleEffectCpgProgramHandlerId,
+  recipeId: JoernEffectExampleEffectCpgProgramRecipeId,
+  sourcePath: JoernEffectExampleEffectCpgProgramSourcePath,
+  exportName: "JoernEffectExampleEffectCpgProgramRecipes",
+  emitsReceipts: ["joern-effect.examples.effect-cpg-program.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectExampleEffectCpgProgramRecipe = defineRecipe({
+  id: JoernEffectExampleEffectCpgProgramRecipeId,
+  projectId: "joern-effect",
+  title: "Express effect-cpg-program example as a file-local recipe",
+  inputSchema: JoernEffectExampleEffectCpgProgramInput as never,
+  outputSchema: JoernEffectExampleEffectCpgProgramOutput as never,
+  nxTarget: "joern-effect:typecheck",
+  sourcePath: JoernEffectExampleEffectCpgProgramSourcePath,
+  allowedFiles: [JoernEffectExampleEffectCpgProgramSourcePath],
+  validationEvidence: ["joern-effect:typecheck"],
+  io: {
+    inputSchema: JoernEffectExampleEffectCpgProgramInput as never,
+    outputSchema: JoernEffectExampleEffectCpgProgramOutput as never,
+    inputResources: [JoernEffectExampleEffectCpgProgramResource],
+    outputResources: [JoernEffectExampleEffectCpgProgramResource],
+  },
+  handler: JoernEffectExampleEffectCpgProgramHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectExampleEffectCpgProgramRecipeId,
+      toRecipeId: JoernEffectSourceSurfaceRecipeId,
+      resource: JoernEffectExampleEffectCpgProgramResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectExampleEffectCpgProgramRecipes = [JoernEffectExampleEffectCpgProgramRecipe] as const

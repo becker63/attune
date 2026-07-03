@@ -56,9 +56,9 @@ entrypoint.
 The canonical cloud smoke checks are Nx-owned targets:
 
 ```bash
-nx graph --file=/tmp/attune-nx-graph.json
+nx graph --file=/tmp/attune-workspace-graph.json
 nx run workspace:policy-fast
-nx run attune-nx:typecheck
+nx run workspace:packetized-architecture-judge
 nx run attuned-discovery:typecheck
 ```
 
@@ -189,9 +189,6 @@ generated or derived recipe artifacts by hand.
 
 ## Repo Map
 
-- `packages/attune/nx`: local Nx generators and sync generators. Reach them
-  through Attune check/repair diagnostics and repair plans unless debugging an
-  advanced generator issue.
 - `packages/attune/discovery`: current semantic discovery package. It contains
   the first schema, fixture, event replay, projection, and WorkbenchSnapshot
   slice.
@@ -210,8 +207,9 @@ generated or derived recipe artifacts by hand.
   logic, constrained MDX fixtures, activity helpers, and Vite web boot
   (`attune-foldkit`, `@attune/foldkit-ui`).
 - `packages/canopy/platform-alchemy-k8s`: Kubernetes/Alchemy platform resource package.
-  Kubernetes generation should become an `@attune/nx` generator issue before
-  repeated hand-written resource shapes expand.
+  Kubernetes generation should be expressed through packet/judge-owned
+  ProjectionRecipe or ManagedRecipe surfaces before repeated hand-written
+  resource shapes expand.
 
 ## Agent Operating Loop
 
@@ -312,7 +310,8 @@ Run the smallest validation that proves the slice:
   observations, replay, or coverage guidance.
 - Build only when packaging or app boot changes.
 - OpenSpec validation when changing OpenSpec artifacts.
-- Generator typecheck/tests when changing `@attune/nx`.
+- Packet/judge and recipe-projection checks when changing generated or repair
+  surfaces.
 - `workspace:policy-fast` for normal policy coverage.
 - `workspace:framework-policy-check` when the slice touches generated ledgers,
   generator provenance, or legacy artifact ownership scaffolding.

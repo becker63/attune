@@ -1,4 +1,12 @@
-import type { PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
+import { RenderedResourceSet, type PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
+import { KubernetesObjectSetRecipeId } from "../provider/kubernetes-object-set.js"
 import { AttuneArtifact } from "./attune-artifact.js"
 import { AttuneDiscoveryRun } from "./attune-discovery-run.js"
 import { AttunePhase } from "./attune-phase.js"
@@ -6,6 +14,17 @@ import { AttuneToolJob } from "./attune-tool-job.js"
 import { BudgetPolicy } from "./budget-policy.js"
 import { mergeResourceSets } from "./common.js"
 import { JoernQuery } from "./joern-query.js"
+import {
+  DiscoveryWorkflowRecipeId,
+  LocalComputeStackResource,
+} from "./local-compute-stack.js"
+
+const DiscoveryWorkflowResourceId =
+  "platform-alchemy-k8s.discovery-workflow.resource" as const
+const DiscoveryWorkflowHandlerId =
+  "platform-alchemy-k8s.discovery-workflow.handler" as const
+const DiscoveryWorkflowSourcePath =
+  "packages/canopy/platform-alchemy-k8s/src/resources/discovery-workflow.ts" as const
 
 export interface AttuneDiscoveryWorkflowProps {
   readonly runId: string
@@ -15,6 +34,33 @@ export interface AttuneDiscoveryWorkflowProps {
   readonly workerPoolRef?: string
   readonly resourceClass?: string
 }
+
+export const DiscoveryWorkflowRecipeInput = Schema.Struct({
+  runId: Schema.String,
+  namespace: Schema.String,
+  repoUrl: Schema.String,
+  workerImage: Schema.String,
+  workerPoolRef: Schema.optional(Schema.String),
+  resourceClass: Schema.optional(Schema.String),
+})
+export type DiscoveryWorkflowRecipeInput = typeof DiscoveryWorkflowRecipeInput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const DiscoveryWorkflowResource = defineAlchemyResource({
+  id: DiscoveryWorkflowResourceId,
+  kind: "kubernetes-object-set",
+  alchemyType: "attune:alchemy:KubernetesGraph",
+  ownerRecipeId: DiscoveryWorkflowRecipeId,
+  producedBy: [DiscoveryWorkflowRecipeId],
+  consumedBy: [KubernetesObjectSetRecipeId],
+  addressFields: ["namespace", "runId"],
+  addressSchema: DiscoveryWorkflowRecipeInput as never,
+  stateSchema: RenderedResourceSet as never,
+  modes: ["project", "plan", "read"],
+  programmaticResourceExport: "AttuneKubernetesGraph",
+  programmaticProviderExport: "platformAlchemyK8sProviders",
+  programmaticBridgeSourcePath: "packages/canopy/platform-alchemy-k8s/src/provider/alchemy-resource.ts",
+})
 
 export const AttuneDiscoveryWorkflow = {
   make: (props: AttuneDiscoveryWorkflowProps): PlatformResourceSet => {
@@ -187,3 +233,53 @@ export const AttuneDiscoveryWorkflow = {
     ])
   },
 } as const
+
+const discoveryWorkflowPropsFromInput = (input: DiscoveryWorkflowRecipeInput): AttuneDiscoveryWorkflowProps => ({
+  runId: input.runId,
+  namespace: input.namespace,
+  repoUrl: input.repoUrl,
+  workerImage: input.workerImage,
+  ...(input.workerPoolRef === undefined ? {} : { workerPoolRef: input.workerPoolRef }),
+  ...(input.resourceClass === undefined ? {} : { resourceClass: input.resourceClass }),
+})
+
+export const DiscoveryWorkflowHandler = defineRecipeHandler<
+  DiscoveryWorkflowRecipeInput,
+  typeof RenderedResourceSet.Type
+>({
+  id: DiscoveryWorkflowHandlerId,
+  recipeId: DiscoveryWorkflowRecipeId,
+  sourcePath: DiscoveryWorkflowSourcePath,
+  exportName: "AttuneDiscoveryWorkflow",
+  handler: (input) =>
+    Effect.succeed(AttuneDiscoveryWorkflow.make(discoveryWorkflowPropsFromInput(input)).render()) as never,
+  emitsReceipts: ["platform-alchemy-k8s.discovery-workflow.rendered"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const DiscoveryWorkflowRecipe = defineProjectionRecipe({
+  id: DiscoveryWorkflowRecipeId,
+  projectId: "platform-alchemy-k8s",
+  title: "Render discovery workflow resource set",
+  inputSchema: DiscoveryWorkflowRecipeInput as never,
+  outputSchema: RenderedResourceSet as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [DiscoveryWorkflowSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test"],
+  io: {
+    inputSchema: DiscoveryWorkflowRecipeInput as never,
+    outputSchema: RenderedResourceSet as never,
+    inputResources: [LocalComputeStackResource],
+    outputResources: [DiscoveryWorkflowResource],
+  },
+  handler: DiscoveryWorkflowHandler,
+  alchemyDag: [{
+    fromRecipeId: DiscoveryWorkflowRecipeId,
+    toRecipeId: KubernetesObjectSetRecipeId,
+    resource: DiscoveryWorkflowResource,
+    kind: "projects",
+    modes: ["project", "plan", "read"],
+  }],
+})
+
+export const DiscoveryWorkflowRecipes = [DiscoveryWorkflowRecipe] as const

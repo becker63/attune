@@ -496,15 +496,17 @@ flowchart TD
   F --> G["JoernTemplateExecutor"]
 ```
 
-Nx generators should own the source-code grammar around this:
+Packetized repair recipes should own the source-code grammar around this:
 
 ```txt
-nx g @attune/nx:joern-template source_to_sink_flow
-nx g @attune/nx:decision discovery run_joern_template
-nx g @attune/nx:event discovery evidence.scored
+nx run joern-effect:repair
+nx run attuned-discovery:repair
+nx run workspace:packetized-architecture-judge
 ```
 
-The agent should not manually create the shape. It should run generators and fill in implementation details.
+The agent should not manually create the shape. It should follow packet
+diagnostics, run the repair targets, fill in implementation details, and let
+the judge validate promotion.
 
 ---
 

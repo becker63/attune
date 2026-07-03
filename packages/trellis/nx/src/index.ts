@@ -1,4 +1,10 @@
 import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+  defineRepairRecipe,
+  defineRuntimeRecipe,
   hashProgramValue,
   NxTarget,
   RecipePublicTargets,
@@ -12,10 +18,65 @@ import {
   type ProgramSchemaDescriptor,
   type ProgramSymbolDescriptor,
 } from "@attune/framework-protocol"
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 import type { TargetConfiguration } from "nx/src/devkit-exports"
 
-export * from "./recipes.js"
+export const FrameworkNxProjectId = "framework-nx" as const
+export const FrameworkNxSourcePath = "packages/trellis/nx/src/index.ts" as const
+export const FrameworkNxTestTarget = "framework-nx:test" as const
+export const FrameworkNxSourceSurfaceRecipeId = "framework-nx.source-surface" as const
+export const FrameworkNxRecipePublicTargetsRecipeId = "framework-nx.recipe-public-targets" as const
+export const FrameworkNxRecipeRepairPlanRecipeId = "framework-nx.recipe-repair-plan" as const
+export const FrameworkNxMaterializationPlanRecipeId = "framework-nx.materialization-plan" as const
+
+export const FrameworkNxRecipeProjectionInput = Schema.Struct({
+  recipeId: Schema.String,
+  projectId: Schema.String,
+  sourcePath: Schema.String,
+  nxTarget: Schema.String,
+})
+export type FrameworkNxRecipeProjectionInput = typeof FrameworkNxRecipeProjectionInput.Type
+
+export const FrameworkNxTargetProjection = Schema.Struct({
+  recipeId: Schema.String,
+  projectId: Schema.String,
+  sourcePath: Schema.String,
+  kind: Schema.Literals(["check", "repair", "proof", "report"] as const),
+  target: Schema.String,
+  command: Schema.String,
+})
+export type FrameworkNxTargetProjection = typeof FrameworkNxTargetProjection.Type
+
+export const FrameworkNxRepairProjection = Schema.Struct({
+  diagnosticId: Schema.String,
+  target: Schema.String,
+  command: Schema.String,
+  route: Schema.String,
+  repairKind: Schema.String,
+  validateAfter: Schema.Array(Schema.String),
+})
+export type FrameworkNxRepairProjection = typeof FrameworkNxRepairProjection.Type
+
+export const FrameworkNxMaterializationInput = Schema.Struct({
+  projectId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  sourcePath: Schema.String,
+})
+export type FrameworkNxMaterializationInput = typeof FrameworkNxMaterializationInput.Type
+
+export const FrameworkNxMaterializationOutput = Schema.Struct({
+  actionCount: Schema.Number,
+  artifactCount: Schema.Number,
+  checkedInReportFindingCount: Schema.Number,
+})
+export type FrameworkNxMaterializationOutput = typeof FrameworkNxMaterializationOutput.Type
+
+export const FrameworkNxSourceSurfaceReport = Schema.Struct({
+  projectId: Schema.String,
+  sourcePath: Schema.String,
+  validationTarget: Schema.String,
+})
+export type FrameworkNxSourceSurfaceReport = typeof FrameworkNxSourceSurfaceReport.Type
 
 export interface FrameworkNxActionPlan {
   readonly actionId: string
@@ -81,7 +142,6 @@ export const FrameworkNxRecipePublicTargetSchema = Schema.Struct({
   kind: Schema.Literals(["check", "repair", "proof", "report"] as const),
   target: Schema.String,
   command: Schema.String,
-  sourcePath: Schema.String,
   evidenceRequirements: Schema.Array(Schema.String),
   targetConfiguration: Schema.Unknown,
 })
@@ -148,10 +208,10 @@ const generatorTargets = {
   atomProjectionEdge: "@attune/framework-nx:atom-projection-edge",
   schemaObservations: "@attune/framework-nx:schema-observations",
   frameworkDiagnostics: "workspace:check",
-  packageContract: "@attune/nx:package-contract",
-  effectService: "@attune/nx:effect-service",
-  joernTemplate: "@attune/nx:joern-template",
-  cocoindexMcpTool: "@attune/nx:cocoindex-mcp-tool",
+  packageContract: "@attune/framework-nx:recipe-declaration",
+  effectService: "@attune/framework-nx:effect-service-boundary",
+  joernTemplate: "@attune/framework-nx:joern-template",
+  cocoindexMcpTool: "@attune/framework-nx:cocoindex-mcp-tool",
 } as const
 
 export const frameworkRepairTargets = {
@@ -254,7 +314,7 @@ const optionalOperation = (symbolId: string | undefined): Record<string, string>
 
 export const protocolMaterializeAction = (
   projectId: string,
-  sourcePath: string,
+  sourcePath: string = FrameworkNxSourcePath,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
     actionId: "attune.protocol.materialize",
@@ -268,7 +328,7 @@ export const protocolMaterializeAction = (
 
 export const symbolRegistryAction = (
   projectId: string,
-  sourcePath: string,
+  sourcePath: string = FrameworkNxSourcePath,
   symbolId?: string,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
@@ -287,7 +347,7 @@ export const symbolRegistryAction = (
 
 export const programHarnessAction = (
   projectId: string,
-  sourcePath: string,
+  sourcePath: string = FrameworkNxSourcePath,
   symbolId?: string,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
@@ -306,7 +366,7 @@ export const programHarnessAction = (
 
 export const observationScaffoldAction = (
   projectId: string,
-  sourcePath: string,
+  sourcePath: string = FrameworkNxSourcePath,
   symbolId?: string,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
@@ -325,7 +385,7 @@ export const observationScaffoldAction = (
 
 export const atomProjectionEdgeAction = (
   projectId: string,
-  sourcePath: string,
+  sourcePath: string = FrameworkNxSourcePath,
   symbolId?: string,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
@@ -344,7 +404,7 @@ export const atomProjectionEdgeAction = (
 
 export const schemaObservationsAction = (
   projectId: string,
-  sourcePath: string,
+  sourcePath: string = FrameworkNxSourcePath,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
     actionId: "attune.program.schema-observations",
@@ -358,7 +418,7 @@ export const schemaObservationsAction = (
 
 export const frameworkDiagnosticsAction = (
   projectId: string,
-  sourcePath: string,
+  sourcePath: string = FrameworkNxSourcePath,
 ): FrameworkNxActionPlan =>
   createFrameworkNxActionPlan({
     actionId: "attune.protocol.framework-diagnostics",
@@ -379,7 +439,6 @@ export const frameworkNxActionPlanFromRecipe = <Input, Output>(
   return createFrameworkNxActionPlan({
     actionId: `attune.recipe.${recipe.id}`,
     title: recipe.title ?? `Run recipe ${recipe.id}`,
-    sourcePath: recipe.sourcePath ?? recipe.id,
     projectId,
     generatorOrTarget: target,
     options: {
@@ -401,7 +460,6 @@ export const frameworkNxPublicTargetsFromRecipe = <Input, Output>(
     kind: target.kind,
     target: target.target,
     command: `nx run ${target.target}`,
-    sourcePath: recipe.sourcePath ?? recipe.id,
     evidenceRequirements: [...(target.evidenceRequirements ?? recipe.validationEvidence ?? [])],
     targetConfiguration: recipePublicTargetConfiguration(recipe, target.kind, target.target),
   }))
@@ -412,7 +470,7 @@ const recipePublicTargetConfiguration = <Input, Output>(
   kind: RecipePublicTargetKind,
   target: string,
 ): TargetConfiguration => ({
-  executor: "@attune/nx:toolchain",
+  executor: "nx:run-commands",
   metadata: {
     description: `Recipe ${kind} projection for ${recipe.id}.`,
     attune: {
@@ -422,16 +480,7 @@ const recipePublicTargetConfiguration = <Input, Output>(
     },
   },
   options: {
-    targetProject: recipe.projectId ?? projectNameFromRecipeId(recipe.id),
-    tool: "workspace",
-    action: "check",
-    toolId: "nx-targets",
-    parameters: {
-      targets: [target],
-      recipeId: recipe.id,
-      recipeSurface: kind,
-    },
-    dryRun: false,
+    command: `pnpm exec nx run ${target}`,
   },
 })
 
@@ -543,8 +592,8 @@ export const createFrameworkMaterializationPlan = (
 
   return {
     projectId: descriptor.projectId,
-    schemaDescriptorId: descriptor.schemaDescriptorId,
     sourcePath: descriptor.sourcePath,
+    schemaDescriptorId: descriptor.schemaDescriptorId,
     descriptorHashRecord: createDescriptorHashRecord(descriptor),
     actions: [
       protocolMaterializeAction(descriptor.projectId, descriptor.sourcePath),
@@ -580,6 +629,314 @@ export const detectCheckedInReportOutputs = (
 
 export const hasCheckedInReportOutputs = (paths: readonly string[]): boolean =>
   detectCheckedInReportOutputs(paths).length > 0
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxPackageSourceResource = defineAlchemyResource({
+  id: "framework-nx.package-source",
+  kind: "package-metadata",
+  alchemyType: "attune:resource:FrameworkNxPackageSource",
+  ownerRecipeId: FrameworkNxSourceSurfaceRecipeId,
+  consumedBy: [
+    FrameworkNxSourceSurfaceRecipeId,
+    FrameworkNxRecipePublicTargetsRecipeId,
+    FrameworkNxRecipeRepairPlanRecipeId,
+    FrameworkNxMaterializationPlanRecipeId,
+  ],
+  addressFields: ["projectId", "sourcePath"],
+  addressSchema: FrameworkNxRecipeProjectionInput,
+  stateSchema: FrameworkNxRecipeProjectionInput,
+  modes: ["read", "check"],
+  programmaticResourceExport: "describeFrameworkNxSourceSurface",
+  programmaticBridgeSourcePath: FrameworkNxSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxSourceSurfaceReportResource = defineAlchemyResource({
+  id: "framework-nx.source-surface.report",
+  kind: "report",
+  alchemyType: "attune:resource:FrameworkNxSourceSurfaceReport",
+  ownerRecipeId: FrameworkNxSourceSurfaceRecipeId,
+  producedBy: [FrameworkNxSourceSurfaceRecipeId],
+  consumedBy: [FrameworkNxRecipePublicTargetsRecipeId],
+  addressFields: ["projectId", "sourcePath"],
+  addressSchema: FrameworkNxRecipeProjectionInput,
+  stateSchema: FrameworkNxSourceSurfaceReport,
+  modes: ["project", "check", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxTargetProjectionResource = defineAlchemyResource({
+  id: "framework-nx.recipe-public-targets.resource",
+  kind: "nx-target",
+  alchemyType: "attune:resource:NxTargetProjection",
+  ownerRecipeId: FrameworkNxRecipePublicTargetsRecipeId,
+  producedBy: [FrameworkNxRecipePublicTargetsRecipeId],
+  consumedBy: [
+    FrameworkNxRecipeRepairPlanRecipeId,
+    FrameworkNxMaterializationPlanRecipeId,
+  ],
+  addressFields: ["recipeId", "projectId", "nxTarget"],
+  addressSchema: FrameworkNxRecipeProjectionInput,
+  stateSchema: Schema.Array(FrameworkNxTargetProjection),
+  modes: ["project", "invoke", "check"],
+  programmaticResourceExport: "projectFrameworkNxPublicTargets",
+  programmaticBridgeSourcePath: FrameworkNxSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxRepairProjectionResource = defineAlchemyResource({
+  id: "framework-nx.recipe-repair-plan.resource",
+  kind: "report",
+  alchemyType: "attune:resource:RecipeRepairPlan",
+  ownerRecipeId: FrameworkNxRecipeRepairPlanRecipeId,
+  producedBy: [FrameworkNxRecipeRepairPlanRecipeId],
+  addressFields: ["recipeId", "projectId", "nxTarget"],
+  addressSchema: FrameworkNxRecipeProjectionInput,
+  stateSchema: FrameworkNxRepairProjection,
+  modes: ["plan", "apply", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxMaterializationDescriptorResource = defineAlchemyResource({
+  id: "framework-nx.materialization-plan.input",
+  kind: "schema",
+  alchemyType: "attune:resource:SchemaDescriptor",
+  ownerRecipeId: FrameworkNxMaterializationPlanRecipeId,
+  consumedBy: [FrameworkNxMaterializationPlanRecipeId],
+  addressFields: ["projectId", "schemaDescriptorId", "sourcePath"],
+  addressSchema: FrameworkNxMaterializationInput,
+  stateSchema: FrameworkNxMaterializationInput,
+  modes: ["read", "plan"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxMaterializationPlanResource = defineAlchemyResource({
+  id: "framework-nx.materialization-plan.resource",
+  kind: "report",
+  alchemyType: "attune:resource:FrameworkMaterializationPlan",
+  ownerRecipeId: FrameworkNxMaterializationPlanRecipeId,
+  producedBy: [FrameworkNxMaterializationPlanRecipeId],
+  addressFields: ["projectId", "schemaDescriptorId", "sourcePath"],
+  addressSchema: FrameworkNxMaterializationInput,
+  stateSchema: FrameworkNxMaterializationOutput,
+  modes: ["plan", "project", "check"],
+})
+
+const frameworkNxTargetKinds = ["check", "repair", "proof", "report"] as const
+
+export const describeFrameworkNxSourceSurface = (
+  input: FrameworkNxRecipeProjectionInput,
+): Effect.Effect<FrameworkNxSourceSurfaceReport> =>
+  Effect.succeed({
+    projectId: input.projectId,
+    sourcePath: input.sourcePath,
+    validationTarget: FrameworkNxTestTarget,
+  })
+
+export const projectFrameworkNxPublicTargets = (
+  input: FrameworkNxRecipeProjectionInput,
+): Effect.Effect<FrameworkNxTargetProjection[]> =>
+  Effect.succeed(
+    frameworkNxTargetKinds.map((kind) => ({
+      recipeId: input.recipeId,
+      projectId: input.projectId,
+      sourcePath: input.sourcePath,
+      kind,
+      target: input.nxTarget,
+      command: `nx run ${input.nxTarget}`,
+    })),
+  )
+
+export const projectFrameworkNxRepairProjection = (
+  input: FrameworkNxRecipeProjectionInput,
+): Effect.Effect<FrameworkNxRepairProjection> =>
+  Effect.succeed({
+    diagnosticId: `${input.recipeId}:diagnostic`,
+    target: input.nxTarget,
+    command: `nx run ${input.nxTarget}`,
+    route: `recipe:${input.recipeId}`,
+    repairKind: "nx-target",
+    validateAfter: [input.nxTarget],
+  })
+
+export const summarizeFrameworkNxMaterialization = (
+  input: FrameworkNxMaterializationInput,
+): Effect.Effect<FrameworkNxMaterializationOutput> =>
+  Effect.succeed({
+    actionCount: input.projectId.length > 0 ? 7 : 0,
+    artifactCount: 5,
+    checkedInReportFindingCount: 0,
+  })
+
+export const FrameworkNxSourceSurfaceHandler = defineRecipeHandler<
+  FrameworkNxRecipeProjectionInput,
+  FrameworkNxSourceSurfaceReport
+>({
+  id: "framework-nx.source-surface.handler",
+  recipeId: FrameworkNxSourceSurfaceRecipeId,
+  sourcePath: FrameworkNxSourcePath,
+  exportName: "describeFrameworkNxSourceSurface",
+  emitsReceipts: ["framework-nx.source-surface.reported"],
+  handler: describeFrameworkNxSourceSurface,
+})
+
+export const FrameworkNxRecipePublicTargetsHandler = defineRecipeHandler<
+  FrameworkNxRecipeProjectionInput,
+  FrameworkNxTargetProjection[]
+>({
+  id: "framework-nx.recipe-public-targets.handler",
+  recipeId: FrameworkNxRecipePublicTargetsRecipeId,
+  sourcePath: FrameworkNxSourcePath,
+  exportName: "projectFrameworkNxPublicTargets",
+  emitsReceipts: ["framework-nx.recipe-public-targets.projected"],
+  handler: projectFrameworkNxPublicTargets,
+})
+
+export const FrameworkNxRecipeRepairPlanHandler = defineRecipeHandler<
+  FrameworkNxRecipeProjectionInput,
+  FrameworkNxRepairProjection
+>({
+  id: "framework-nx.recipe-repair-plan.handler",
+  recipeId: FrameworkNxRecipeRepairPlanRecipeId,
+  sourcePath: FrameworkNxSourcePath,
+  exportName: "projectFrameworkNxRepairProjection",
+  emitsReceipts: ["framework-nx.recipe-repair-plan.projected"],
+  handler: projectFrameworkNxRepairProjection,
+})
+
+export const FrameworkNxMaterializationPlanHandler = defineRecipeHandler<
+  FrameworkNxMaterializationInput,
+  FrameworkNxMaterializationOutput
+>({
+  id: "framework-nx.materialization-plan.handler",
+  recipeId: FrameworkNxMaterializationPlanRecipeId,
+  sourcePath: FrameworkNxSourcePath,
+  exportName: "summarizeFrameworkNxMaterialization",
+  emitsReceipts: ["framework-nx.materialization-plan.reported"],
+  handler: summarizeFrameworkNxMaterialization,
+})
+
+export const FrameworkNxSourceToPublicTargetsDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FrameworkNxSourceSurfaceRecipeId,
+  toRecipeId: FrameworkNxRecipePublicTargetsRecipeId,
+  resource: FrameworkNxSourceSurfaceReportResource,
+  kind: "projects",
+  modes: ["project", "check", "observe"],
+  validationTargets: [FrameworkNxTestTarget],
+})
+
+export const FrameworkNxPublicTargetsToRepairDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FrameworkNxRecipePublicTargetsRecipeId,
+  toRecipeId: FrameworkNxRecipeRepairPlanRecipeId,
+  resource: FrameworkNxTargetProjectionResource,
+  kind: "repairs",
+  modes: ["project", "invoke", "check"],
+  validationTargets: [FrameworkNxTestTarget],
+})
+
+export const FrameworkNxPublicTargetsToMaterializationDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FrameworkNxRecipePublicTargetsRecipeId,
+  toRecipeId: FrameworkNxMaterializationPlanRecipeId,
+  resource: FrameworkNxTargetProjectionResource,
+  kind: "projects",
+  modes: ["project", "invoke", "check"],
+  validationTargets: [FrameworkNxTestTarget, "workspace:framework-policy-check"],
+})
+
+export const FrameworkNxSourceSurfaceRecipe = defineRuntimeRecipe({
+  id: FrameworkNxSourceSurfaceRecipeId,
+  projectId: FrameworkNxProjectId,
+  title: "Own framework Nx package entry and test configuration source",
+  inputSchema: FrameworkNxRecipeProjectionInput,
+  outputSchema: FrameworkNxSourceSurfaceReport,
+  nxTarget: FrameworkNxTestTarget,
+  allowedFiles: [
+    FrameworkNxSourcePath,
+    "packages/trellis/nx/vitest.config.ts",
+  ],
+  validationEvidence: [FrameworkNxTestTarget],
+  io: {
+    inputSchema: FrameworkNxRecipeProjectionInput,
+    outputSchema: FrameworkNxSourceSurfaceReport,
+    inputResources: [FrameworkNxPackageSourceResource],
+    outputResources: [FrameworkNxSourceSurfaceReportResource],
+  },
+  handler: FrameworkNxSourceSurfaceHandler,
+  alchemyDag: [FrameworkNxSourceToPublicTargetsDagEdge],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxRecipePublicTargetsRecipe = defineProjectionRecipe({
+  id: FrameworkNxRecipePublicTargetsRecipeId,
+  projectId: FrameworkNxProjectId,
+  title: "Project recipes into public Nx targets",
+  inputSchema: FrameworkNxRecipeProjectionInput,
+  outputSchema: Schema.Array(FrameworkNxTargetProjection),
+  nxTarget: FrameworkNxTestTarget,
+  allowedFiles: [FrameworkNxSourcePath],
+  validationEvidence: [FrameworkNxTestTarget],
+  io: {
+    inputSchema: FrameworkNxRecipeProjectionInput,
+    outputSchema: Schema.Array(FrameworkNxTargetProjection),
+    inputResources: [
+      FrameworkNxPackageSourceResource,
+      FrameworkNxSourceSurfaceReportResource,
+    ],
+    outputResources: [FrameworkNxTargetProjectionResource],
+  },
+  handler: FrameworkNxRecipePublicTargetsHandler,
+  alchemyDag: [
+    FrameworkNxPublicTargetsToRepairDagEdge,
+    FrameworkNxPublicTargetsToMaterializationDagEdge,
+  ],
+})
+
+export const FrameworkNxRecipeRepairPlanRecipe = defineRepairRecipe({
+  id: FrameworkNxRecipeRepairPlanRecipeId,
+  projectId: FrameworkNxProjectId,
+  title: "Project recipe diagnostics into repair plans",
+  inputSchema: FrameworkNxRecipeProjectionInput,
+  outputSchema: FrameworkNxRepairProjection,
+  nxTarget: FrameworkNxTestTarget,
+  allowedFiles: [FrameworkNxSourcePath],
+  validationEvidence: [FrameworkNxTestTarget],
+  io: {
+    inputSchema: FrameworkNxRecipeProjectionInput,
+    outputSchema: FrameworkNxRepairProjection,
+    inputResources: [FrameworkNxTargetProjectionResource],
+    outputResources: [FrameworkNxRepairProjectionResource],
+  },
+  handler: FrameworkNxRecipeRepairPlanHandler,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxMaterializationPlanRecipe = defineProjectionRecipe({
+  id: FrameworkNxMaterializationPlanRecipeId,
+  projectId: FrameworkNxProjectId,
+  title: "Plan framework-owned generated/cache materialization",
+  inputSchema: FrameworkNxMaterializationInput,
+  outputSchema: FrameworkNxMaterializationOutput,
+  nxTarget: FrameworkNxTestTarget,
+  allowedFiles: [FrameworkNxSourcePath, ".attune/cache/generated/**"],
+  validationEvidence: [FrameworkNxTestTarget, "workspace:framework-policy-check"],
+  io: {
+    inputSchema: FrameworkNxMaterializationInput,
+    outputSchema: FrameworkNxMaterializationOutput,
+    inputResources: [
+      FrameworkNxMaterializationDescriptorResource,
+      FrameworkNxTargetProjectionResource,
+    ],
+    outputResources: [FrameworkNxMaterializationPlanResource],
+  },
+  handler: FrameworkNxMaterializationPlanHandler,
+})
+
+export const FrameworkNxProductionRecipes = [
+  FrameworkNxSourceSurfaceRecipe,
+  FrameworkNxRecipePublicTargetsRecipe,
+  FrameworkNxRecipeRepairPlanRecipe,
+  FrameworkNxMaterializationPlanRecipe,
+] as const
 
 const projectNameFromSourcePath = (sourcePath: string): string => {
   const normalized = sourcePath.replaceAll("\\", "/")

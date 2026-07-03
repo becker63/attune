@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { TendDbRecipes } from "../src/recipes.js"
 import {
-  TendDbRecipes,
   readTendControlMigration,
   tendEventInsertContract,
   tendKanelConfig,
@@ -36,6 +36,12 @@ describe("@attune/tend-db", () => {
     expect(tendEventInsertContract().parameters).toContain("runId")
     expect(tendEventInsertContract().parameters).toContain("receiptId")
     expect(tendEventInsertContract().parameters).toContain("observationId")
-    expect(TendDbRecipes[0]?.id).toBe("tend-db.control-spine")
+    expect(TendDbRecipes.map((recipe) => recipe.id)).toEqual([
+      "tend-db.control-spine",
+      "tend-db.sql-validation-route",
+      "tend-db.config-surface",
+      "tend-db.test-suite",
+    ])
+    expect(TendDbRecipes.some((recipe) => recipe.sourcePath === "packages/tend/db/src/recipes.ts")).toBe(false)
   })
 })

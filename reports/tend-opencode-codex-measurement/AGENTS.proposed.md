@@ -1,6 +1,6 @@
 # AGENTS Proposed Measurement Guidance
 
-Derived from measurement session measurement:2026-06-29:controlled-baseline-treatment.
+Derived from measurement session measurement:2026-07-01:4ac244a5fdcc40fb.
 
 - Use `tend-opencode fingerprint --format json` and `tend-opencode run-harness-test --format json` before harnessed measurement.
 - Use framework-runtime targets for local TimescaleDB/Postgres lifecycle.

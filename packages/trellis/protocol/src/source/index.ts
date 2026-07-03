@@ -1,10 +1,14 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 import ts from "typescript"
 
 import type {
   AttuneOperationContract,
   TouchedViews,
 } from "../project-facts/index.js"
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export const SourceDeclarationPositionSchema = Schema.Struct({
   line: Schema.Number,
@@ -314,6 +318,94 @@ export const diagnoseAvoidableStringReferences = (
       message: `Reference ${reference} is not backed by a source declaration.`,
       suggestedAction: "Replace the raw string with a framework source reference or add an explicit id override.",
     }))
+}
+
+export const ProtocolSourceRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+})
+export type ProtocolSourceRecipeInput = typeof ProtocolSourceRecipeInput.Type
+
+export const ProtocolSourceRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  supportsSourceReferences: Schema.Boolean,
+  supportsExtractionSummary: Schema.Boolean,
+})
+export type ProtocolSourceRecipeOutput = typeof ProtocolSourceRecipeOutput.Type
+
+export const summarizeProtocolSourceSurface = (
+  input: ProtocolSourceRecipeInput,
+): ProtocolSourceRecipeOutput => ({
+  sourcePath: input.sourcePath,
+  supportsSourceReferences: true,
+  supportsExtractionSummary: true,
+})
+
+export const ProtocolSourceRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+  const ProtocolSourceRecipeId = "framework-protocol.source.references" as const
+  const ProtocolSourcePath =
+    "packages/trellis/protocol/src/source/index.ts" as const
+// @attune-packet-target generated-runtime-projection eligible
+  const ProtocolSourceFile = helpers.defineAlchemyResource({
+    id: "framework-protocol.source.references.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: ProtocolSourceRecipeInput,
+    stateSchema: ProtocolSourceRecipeInput,
+    modes: ["read"],
+    consumedBy: [ProtocolSourceRecipeId],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const ProtocolSourceSummary = helpers.defineAlchemyResource({
+    id: "framework-protocol.source.references.summary",
+    kind: "schema",
+    alchemyType: "attune:resource:ProtocolSourceReferenceSummary",
+    addressSchema: ProtocolSourceRecipeInput,
+    stateSchema: ProtocolSourceRecipeOutput,
+    modes: ["project", "read"],
+    ownerRecipeId: ProtocolSourceRecipeId,
+    producedBy: [ProtocolSourceRecipeId],
+  })
+  const ProtocolSourceHandler = helpers.defineRecipeHandler<
+    ProtocolSourceRecipeInput,
+    ProtocolSourceRecipeOutput,
+    never,
+    never
+  >({
+    id: "framework-protocol.source.references.handler",
+    recipeId: ProtocolSourceRecipeId,
+    sourcePath: ProtocolSourcePath,
+    exportName: "summarizeProtocolSourceSurface",
+    emitsReceipts: ["framework-protocol.source.references"],
+    handler: (input) => Effect.succeed(summarizeProtocolSourceSurface(input)),
+  })
+
+  return [
+    helpers.defineSchemaRecipe({
+      id: ProtocolSourceRecipeId,
+      projectId: "framework-protocol",
+      title: "Define source references and protocol source extraction summaries",
+      inputSchema: ProtocolSourceRecipeInput,
+      outputSchema: ProtocolSourceRecipeOutput,
+      io: {
+        inputSchema: ProtocolSourceRecipeInput,
+        outputSchema: ProtocolSourceRecipeOutput,
+        inputResources: [ProtocolSourceFile],
+        outputResources: [ProtocolSourceSummary],
+      },
+      handler: ProtocolSourceHandler,
+      alchemyDag: [{
+        fromRecipeId: "framework-protocol.root",
+        toRecipeId: ProtocolSourceRecipeId,
+        resource: "framework-protocol.source.references.summary",
+        kind: "projects",
+        modes: ["project", "read"],
+      }],
+      allowedFiles: [ProtocolSourcePath],
+      validationEvidence: ["framework-protocol:typecheck"],
+    }),
+  ] as const
 }
 
 export const ProtocolSourceImportSchema = Schema.Struct({

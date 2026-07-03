@@ -1,11 +1,22 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 import {
   RecipeObservationSchema,
   RecipeReceiptSchema,
-  defineRecipe,
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineObservationRecipe,
+  defineProjectionRecipe,
+  defineRecipeHandler,
   recipeObservationId,
   type RecipeObservation,
 } from "@attune/framework-protocol"
+
+export const TendCoreEventEnvelopeRecipeId = "tend-core.event-envelope" as const
+export const TendCoreReceiptProjectionRecipeId = "tend-core.receipt-projection" as const
+export const TendCoreTestSuiteRecipeId = "tend-core.test-suite" as const
+export const TendCoreConfigRecipeId = "tend-core.config-surface" as const
+export const TendCoreSourcePath = "packages/tend/core/src/index.ts" as const
+export const TendCoreTypecheckTarget = "tend-core:typecheck" as const
 
 export const TendObservationStatusSchema = Schema.Literals([
   "started",
@@ -19,6 +30,7 @@ export const TendTokenUsageSchema = Schema.Struct({
   inputTokens: Schema.optional(Schema.Number),
   outputTokens: Schema.optional(Schema.Number),
   cachedTokens: Schema.optional(Schema.Number),
+  reasoningTokens: Schema.optional(Schema.Number),
   totalTokens: Schema.Number,
 })
 export type TendTokenUsage = typeof TendTokenUsageSchema.Type
@@ -108,6 +120,8 @@ export const TendEventKindSchema = Schema.Literals([
   "command",
   "validation",
   "token-usage",
+  "token-efficiency",
+  "reasoning-trace",
   "command-output-sample",
   "long-job-observation",
   "policy-decision",
@@ -266,16 +280,158 @@ export const recipeObservationsFromTendEvents = (
     return observation === undefined ? [] : [observation]
   })
 
-export const TendCoreRecipes = [
-  defineRecipe({
-    id: "tend-core.event-envelope",
-    projectId: "tend-core",
-    title: "Normalize Tend session, tool, command, policy, OpenRTK, and wakeup events",
-    inputSchema: Schema.Array(TendEventEnvelopeSchema),
-    outputSchema: TendReceiptProjectionSchema,
-    nxTarget: "tend-core:test",
-    sourcePath: "packages/tend/core/src/index.ts",
-    allowedFiles: ["packages/tend/core/**"],
-    validationEvidence: ["tend-core:test", "tend-core:typecheck"],
+export const TendCoreAddress = Schema.Struct({
+  packageRoot: Schema.Literal("packages/tend/core"),
+  recipeId: Schema.String,
+})
+export type TendCoreAddress = typeof TendCoreAddress.Type
+
+export const TendReceiptProjectionInput = Schema.Struct({
+  sessionId: Schema.String,
+  receipts: Schema.Array(RecipeReceiptSchema),
+  events: Schema.Array(TendEventEnvelopeSchema),
+})
+export type TendReceiptProjectionInput = typeof TendReceiptProjectionInput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendCorePackageResource = defineAlchemyResource({
+  id: "tend-core.package-root",
+  kind: "directory",
+  alchemyType: "attune:resource:Directory",
+  consumedBy: [
+    TendCoreEventEnvelopeRecipeId,
+    TendCoreReceiptProjectionRecipeId,
+    TendCoreTestSuiteRecipeId,
+  ],
+  addressSchema: TendCoreAddress,
+  stateSchema: Schema.Struct({
+    sourceRoot: Schema.Literal("packages/tend/core/src"),
+    packageId: Schema.Literal("tend-core"),
   }),
+  modes: ["read"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendEventEnvelopeStreamResource = defineAlchemyResource({
+  id: "tend-core.event-envelope-stream",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ObservationStream",
+  ownerRecipeId: TendCoreEventEnvelopeRecipeId,
+  consumedBy: [TendCoreEventEnvelopeRecipeId, TendCoreReceiptProjectionRecipeId],
+  addressSchema: TendCoreAddress,
+  stateSchema: Schema.Array(TendEventEnvelopeSchema),
+  modes: ["read", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendRecipeObservationProjectionResource = defineAlchemyResource({
+  id: "tend-core.recipe-observation-projection",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ObservationStream",
+  ownerRecipeId: TendCoreEventEnvelopeRecipeId,
+  producedBy: [TendCoreEventEnvelopeRecipeId, TendCoreReceiptProjectionRecipeId],
+  consumedBy: [TendCoreReceiptProjectionRecipeId],
+  addressSchema: TendCoreAddress,
+  stateSchema: TendRecipeObservationProjectionSchema,
+  modes: ["project", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendReceiptProjectionResource = defineAlchemyResource({
+  id: "tend-core.receipt-projection",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ObservationStream",
+  ownerRecipeId: TendCoreReceiptProjectionRecipeId,
+  producedBy: [TendCoreReceiptProjectionRecipeId],
+  addressSchema: TendCoreAddress,
+  stateSchema: TendReceiptProjectionSchema,
+  modes: ["project", "observe"],
+})
+
+export const projectTendRecipeObservationProjection = (
+  events: readonly TendEventEnvelope[],
+): TendRecipeObservationProjection => ({
+  sessionId: events[0]?.sessionId ?? "unknown-session",
+  observations: [...recipeObservationsFromTendEvents(events)],
+  events: [...events],
+})
+
+export const projectTendReceiptProjection = (
+  input: TendReceiptProjectionInput,
+): TendReceiptProjection => ({
+  sessionId: input.sessionId,
+  receipts: input.receipts,
+  observations: [...recipeObservationsFromTendEvents(input.events)],
+  events: input.events,
+})
+
+export const TendCoreEventEnvelopeHandler = defineRecipeHandler<readonly TendEventEnvelope[], TendRecipeObservationProjection>({
+  id: "tend-core.event-envelope.handler",
+  recipeId: TendCoreEventEnvelopeRecipeId,
+  sourcePath: TendCoreSourcePath,
+  exportName: "projectTendRecipeObservationProjection",
+  handler: (events) => Effect.succeed(projectTendRecipeObservationProjection(events)),
+  emitsReceipts: ["tend-core.recipe-observation-projection"],
+})
+
+export const TendCoreReceiptProjectionHandler = defineRecipeHandler<TendReceiptProjectionInput, TendReceiptProjection>({
+  id: "tend-core.receipt-projection.handler",
+  recipeId: TendCoreReceiptProjectionRecipeId,
+  sourcePath: TendCoreSourcePath,
+  exportName: "projectTendReceiptProjection",
+  handler: (input) => Effect.succeed(projectTendReceiptProjection(input)),
+  emitsReceipts: ["tend-core.receipt-projection"],
+})
+
+export const TendCoreEventEnvelopeDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: TendCoreEventEnvelopeRecipeId,
+  toRecipeId: TendCoreReceiptProjectionRecipeId,
+  resource: TendRecipeObservationProjectionResource,
+  kind: "projects",
+  modes: ["project", "observe"],
+})
+
+export const tendCoreEventEnvelopeRecipe = defineObservationRecipe({
+  id: TendCoreEventEnvelopeRecipeId,
+  projectId: "tend-core",
+  title: "Decode Tend event envelopes as recipe-linked receipt inputs",
+  inputSchema: Schema.Array(TendEventEnvelopeSchema),
+  outputSchema: TendRecipeObservationProjectionSchema,
+  allowedFiles: [
+    TendCoreSourcePath,
+  ],
+  validationEvidence: [TendCoreTypecheckTarget],
+  io: {
+    inputSchema: Schema.Array(TendEventEnvelopeSchema),
+    outputSchema: TendRecipeObservationProjectionSchema,
+    inputResources: [TendEventEnvelopeStreamResource],
+    outputResources: [TendRecipeObservationProjectionResource],
+  },
+  handler: TendCoreEventEnvelopeHandler,
+  alchemyDag: [TendCoreEventEnvelopeDagEdge],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const tendCoreReceiptProjectionRecipe = defineProjectionRecipe({
+  id: TendCoreReceiptProjectionRecipeId,
+  title: "Project Tend core state from recipe receipts",
+  inputSchema: TendReceiptProjectionInput,
+  outputSchema: TendReceiptProjectionSchema,
+  allowedFiles: [TendCoreSourcePath],
+  validationEvidence: [TendCoreTypecheckTarget],
+  io: {
+    inputSchema: TendReceiptProjectionInput,
+    outputSchema: TendReceiptProjectionSchema,
+    inputResources: [
+      TendEventEnvelopeStreamResource,
+      TendRecipeObservationProjectionResource,
+    ],
+    outputResources: [TendReceiptProjectionResource],
+  },
+  handler: TendCoreReceiptProjectionHandler,
+})
+
+export const TendCoreProductionRecipes = [
+  tendCoreEventEnvelopeRecipe,
+  tendCoreReceiptProjectionRecipe,
 ] as const

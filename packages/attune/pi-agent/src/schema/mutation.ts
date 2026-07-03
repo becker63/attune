@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 export const MutationSurvivorClassification = S.Literals([
   "missing-assertion",
@@ -43,3 +44,26 @@ export const MutationReport = S.Struct({
   survivors: S.Array(MutationSurvivor),
 })
 export type MutationReport = typeof MutationReport.Type
+
+export const mutationSchemaModule = (): readonly string[] => [
+  "MutationSurvivorClassification",
+  "MutationObligation",
+  "MutationSurvivor",
+  "MutationReport",
+]
+
+export const AttunePiMutationSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.mutation.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/mutation.ts",
+  exportName: "mutationSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.mutation.projected"],
+  handler: () => Effect.succeed(mutationSchemaModule()),
+})
+
+export const AttunePiMutationSchemaRecipeModule = [
+  AttunePiMutationSchemaHandler,
+] as const

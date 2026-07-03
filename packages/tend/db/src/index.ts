@@ -1,9 +1,22 @@
 import { readFileSync } from "node:fs"
-import { Schema } from "effect"
-import { defineRecipe } from "@attune/framework-protocol"
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  defineRuntimeRecipe,
+} from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
 
 export const tendControlMigrationPath =
   "packages/tend/db/sql/0001_tend_control_spine.sql" as const
+export const TendDbControlSpineRecipeId = "tend-db.control-spine" as const
+export const TendDbSqlValidationRouteRecipeId = "tend-db.sql-validation-route" as const
+export const TendDbTestSuiteRecipeId = "tend-db.test-suite" as const
+export const TendDbConfigRecipeId = "tend-db.config-surface" as const
+export const TendDbSourcePath = "packages/tend/db/src/index.ts" as const
+export const TendDbTypecheckTarget = "tend-db:typecheck" as const
 
 export const tendRequiredRelations = [
   "tend_core.session",
@@ -159,16 +172,219 @@ const tableBody = (sql: string, relation: string): string | undefined => {
 const escapeRegExp = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
 
-export const TendDbRecipes = [
-  defineRecipe({
-    id: "tend-db.control-spine",
-    projectId: "tend-db",
-    title: "Apply Tend TimescaleDB/Postgres control spine",
-    inputSchema: Schema.Struct({ migrationSql: Schema.String }),
-    outputSchema: Schema.Struct({ diagnostics: Schema.Array(Schema.String) }),
-    nxTarget: "tend-db:test",
-    sourcePath: "packages/tend/db/sql/0001_tend_control_spine.sql",
-    allowedFiles: ["packages/tend/db/**"],
-    validationEvidence: ["tend-db:test", "framework-runtime:db:validate-sql"],
+export interface TendDbFilesystemService {
+  readonly readTextFile: (path: string) => Effect.Effect<string>
+}
+
+export class TendDbFilesystem extends Context.Service<
+  TendDbFilesystem,
+  TendDbFilesystemService
+>()("@attune/TendDbFilesystem") {}
+
+export const TendDbFilesystemLive = defineRecipeLayer({
+  id: "tend-db.filesystem-layer",
+  sourcePath: "packages/tend/db/src/index.ts",
+  exportName: "TendDbFilesystemLive",
+  layer: Layer.succeed(TendDbFilesystem, {
+    readTextFile: (file) => Effect.sync(() => readFileSync(file, "utf8")),
   }),
+  provides: [{
+    id: "tend-db.filesystem",
+    service: TendDbFilesystem,
+  }],
+})
+
+export const readTendControlMigrationEffect = (
+  workspaceRoot = process.cwd(),
+): Effect.Effect<string, never, TendDbFilesystem> =>
+  Effect.gen(function* readTendControlMigrationFromLayer() {
+    const filesystem = yield* TendDbFilesystem
+    return yield* filesystem.readTextFile(`${workspaceRoot}/${tendControlMigrationPath}`)
+  })
+
+export const TendDbAddress = Schema.Struct({
+  packageRoot: Schema.Literal("packages/tend/db"),
+  recipeId: Schema.String,
+})
+export type TendDbAddress = typeof TendDbAddress.Type
+
+export const TendDbSqlValidationInput = Schema.Struct({
+  migrationSql: Schema.String,
+})
+export type TendDbSqlValidationInput = typeof TendDbSqlValidationInput.Type
+
+export const TendDbSqlValidationOutput = Schema.Struct({
+  recipeId: Schema.String,
+  runtimeBoundary: Schema.String,
+  diagnostics: Schema.Array(Schema.String),
+})
+export type TendDbSqlValidationOutput = typeof TendDbSqlValidationOutput.Type
+
+export const TendDbTestReport = Schema.Struct({
+  recipeId: Schema.String,
+  runtimeBoundary: Schema.String,
+})
+export type TendDbTestReport = typeof TendDbTestReport.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendDbPackageResource = defineAlchemyResource({
+  id: "tend-db.package-root",
+  kind: "directory",
+  alchemyType: "attune:resource:Directory",
+  consumedBy: [
+    TendDbControlSpineRecipeId,
+    TendDbSqlValidationRouteRecipeId,
+    TendDbTestSuiteRecipeId,
+    TendDbConfigRecipeId,
+  ],
+  addressSchema: TendDbAddress,
+  stateSchema: Schema.Struct({
+    sourceRoot: Schema.Literal("packages/tend/db/src"),
+    packageId: Schema.Literal("tend-db"),
+  }),
+  modes: ["read"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendDbMigrationSqlResource = defineAlchemyResource({
+  id: "tend-db.control-spine-sql",
+  kind: "runtime-sql",
+  alchemyType: "attune:resource:RuntimeSql",
+  ownerRecipeId: TendDbControlSpineRecipeId,
+  consumedBy: [TendDbControlSpineRecipeId, TendDbSqlValidationRouteRecipeId],
+  programmaticResourceExport: "readTendControlMigrationEffect",
+  programmaticBridgeSourcePath: TendDbSourcePath,
+  addressSchema: TendDbAddress,
+  stateSchema: Schema.Struct({
+    path: Schema.Literal("packages/tend/db/sql/0001_tend_control_spine.sql"),
+    migrationName: Schema.Literal("0001_tend_control_spine"),
+  }),
+  modes: ["read", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendDbRuntimeRouteResource = defineAlchemyResource({
+  id: "tend-db.runtime-route",
+  kind: "database",
+  alchemyType: "attune:resource:DatabaseRoute",
+  ownerRecipeId: TendDbSqlValidationRouteRecipeId,
+  producedBy: [TendDbControlSpineRecipeId, TendDbSqlValidationRouteRecipeId],
+  programmaticResourceExport: "tendEventInsertContract",
+  programmaticProviderExport: "tendSafeQlConfig",
+  programmaticBridgeSourcePath: TendDbSourcePath,
+  addressSchema: TendDbAddress,
+  stateSchema: Schema.Struct({
+    migrationPath: Schema.Literal(tendControlMigrationPath),
+    kanelOutputPath: Schema.Literal(".attune/cache/generated/tend/db/kanel"),
+    insertStatement: Schema.Literal("tend_event.event.insert"),
+  }),
+  modes: ["project", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendDbValidationReportResource = defineAlchemyResource({
+  id: "tend-db.sql-validation-report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: TendDbSqlValidationRouteRecipeId,
+  producedBy: [
+    TendDbControlSpineRecipeId,
+    TendDbSqlValidationRouteRecipeId,
+    TendDbTestSuiteRecipeId,
+  ],
+  addressSchema: TendDbAddress,
+  stateSchema: TendDbSqlValidationOutput,
+  modes: ["check", "observe"],
+})
+
+export const summarizeTendDbControlSpine = (
+  input: TendDbSqlValidationInput,
+): TendDbSqlValidationOutput => ({
+  recipeId: TendDbControlSpineRecipeId,
+  runtimeBoundary: tendEventInsertContract().statementName,
+  diagnostics: [...validateTendControlMigration(input.migrationSql)],
+})
+
+export const summarizeTendDbSqlValidationRoute = (
+  input: TendDbSqlValidationInput,
+): TendDbSqlValidationOutput => ({
+  recipeId: TendDbSqlValidationRouteRecipeId,
+  runtimeBoundary: `${tendKanelConfig().connectionEnv}:${tendSafeQlConfig().connectionEnv}`,
+  diagnostics: [...validateTendControlMigration(input.migrationSql)],
+})
+
+export const TendDbControlSpineHandler = defineRecipeHandler<TendDbSqlValidationInput, TendDbSqlValidationOutput>({
+  id: "tend-db.control-spine.handler",
+  recipeId: TendDbControlSpineRecipeId,
+  sourcePath: TendDbSourcePath,
+  exportName: "summarizeTendDbControlSpine",
+  layer: TendDbFilesystemLive,
+  handler: (input) => Effect.succeed(summarizeTendDbControlSpine(input)),
+  emitsReceipts: ["tend-db.sql-validation-report"],
+})
+
+export const TendDbSqlValidationRouteHandler = defineRecipeHandler<TendDbSqlValidationInput, TendDbSqlValidationOutput>({
+  id: "tend-db.sql-validation-route.handler",
+  recipeId: TendDbSqlValidationRouteRecipeId,
+  sourcePath: TendDbSourcePath,
+  exportName: "summarizeTendDbSqlValidationRoute",
+  layer: TendDbFilesystemLive,
+  handler: (input) => Effect.succeed(summarizeTendDbSqlValidationRoute(input)),
+  emitsReceipts: ["tend-db.sql-validation-route"],
+})
+
+export const TendDbControlSpineDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: TendDbControlSpineRecipeId,
+  toRecipeId: TendDbSqlValidationRouteRecipeId,
+  resource: TendDbValidationReportResource,
+  kind: "validates",
+  modes: ["check", "observe"],
+  validationTargets: [TendDbTypecheckTarget],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const tendDbControlSpineRecipe = defineProjectionRecipe({
+  id: TendDbControlSpineRecipeId,
+  projectId: "tend-db",
+  title: "Route Tend control-spine state through recipe runtime boundaries",
+  inputSchema: TendDbSqlValidationInput,
+  outputSchema: TendDbSqlValidationOutput,
+  allowedFiles: [
+    TendDbSourcePath,
+    "packages/tend/db/sql/0001_tend_control_spine.sql",
+  ],
+  validationEvidence: [TendDbTypecheckTarget],
+  io: {
+    inputSchema: TendDbSqlValidationInput,
+    outputSchema: TendDbSqlValidationOutput,
+    inputResources: [TendDbMigrationSqlResource],
+    outputResources: [TendDbRuntimeRouteResource, TendDbValidationReportResource],
+  },
+  handler: TendDbControlSpineHandler,
+  alchemyDag: [TendDbControlSpineDagEdge],
+})
+
+export const tendDbSqlValidationRouteRecipe = defineRuntimeRecipe({
+  id: TendDbSqlValidationRouteRecipeId,
+  projectId: "tend-db",
+  title: "Validate Tend SQL access as a runtime-owned query route",
+  inputSchema: TendDbSqlValidationInput,
+  outputSchema: TendDbSqlValidationOutput,
+  allowedFiles: [
+    TendDbSourcePath,
+    "packages/tend/db/sql/0001_tend_control_spine.sql",
+  ],
+  validationEvidence: [TendDbTypecheckTarget],
+  io: {
+    inputSchema: TendDbSqlValidationInput,
+    outputSchema: TendDbSqlValidationOutput,
+    inputResources: [TendDbMigrationSqlResource],
+    outputResources: [TendDbRuntimeRouteResource, TendDbValidationReportResource],
+  },
+  handler: TendDbSqlValidationRouteHandler,
+})
+
+export const TendDbProductionRecipes = [
+  tendDbControlSpineRecipe,
+  tendDbSqlValidationRouteRecipe,
 ] as const

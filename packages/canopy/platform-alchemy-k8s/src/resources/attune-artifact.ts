@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+import {
+  K8sResourceModuleCatalogResource,
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport,
+  PlatformAlchemyK8sProjectId,
+  PlatformAlchemyK8sResourceRegistryRecipeId,
+  k8sResourceModuleReport,
+} from "./common.js"
+
 import type { PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
 import { attuneLabels, configMap, dnsLabel, resourceSet } from "./common.js"
 
@@ -33,3 +48,56 @@ export const AttuneArtifact = {
     ])
   },
 } as const
+
+
+export const AttuneArtifactResourceRecipeId = "platform-alchemy-k8s.attune-artifact-resource" as const
+const AttuneArtifactResourceHandlerId = "platform-alchemy-k8s.attune-artifact-resource.handler" as const
+const AttuneArtifactResourceSourcePath = "packages/canopy/platform-alchemy-k8s/src/resources/attune-artifact.ts" as const
+
+export const AttuneArtifactResourceHandler = defineRecipeHandler<
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport
+>({
+  id: AttuneArtifactResourceHandlerId,
+  recipeId: AttuneArtifactResourceRecipeId,
+  sourcePath: AttuneArtifactResourceSourcePath,
+  exportName: "AttuneArtifact",
+  handler: () =>
+    Effect.succeed(k8sResourceModuleReport({
+      recipeId: AttuneArtifactResourceRecipeId,
+      sourcePath: AttuneArtifactResourceSourcePath,
+      exportName: "AttuneArtifact",
+      moduleKind: "attune artifact Kubernetes resource factory",
+    })) as never,
+  emitsReceipts: [`platform-alchemy-k8s.attune-artifact-resource.projected`],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttuneArtifactResourceRecipe = defineProjectionRecipe({
+  id: AttuneArtifactResourceRecipeId,
+  projectId: PlatformAlchemyK8sProjectId,
+  title: "Declare attune artifact Kubernetes resource factory",
+  inputSchema: K8sResourceModuleRecipeInput as never,
+  outputSchema: K8sResourceModuleReport as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [AttuneArtifactResourceSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test", "platform-alchemy-k8s:typecheck"],
+  io: {
+    inputSchema: K8sResourceModuleRecipeInput as never,
+    outputSchema: K8sResourceModuleReport as never,
+    inputResources: [K8sResourceModuleCatalogResource],
+    outputResources: [K8sResourceModuleCatalogResource],
+  },
+  handler: AttuneArtifactResourceHandler,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: PlatformAlchemyK8sResourceRegistryRecipeId,
+      toRecipeId: AttuneArtifactResourceRecipeId,
+      resource: K8sResourceModuleCatalogResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }),
+  ],
+})
+
+export const AttuneArtifactResourceRecipes = [AttuneArtifactResourceRecipe] as const

@@ -1,10 +1,11 @@
 # Codex Cloud And Local Environment
 
 This is the cloud and local worker setup path for Codex agents in Attune. Nx
-targets, framework diagnostics, and `@attune/nx` generators are the public
-workflow API. Nix supplies the reproducible toolchain substrate for those
-targets; agents should not teach Corepack setup, global package-manager
-bootstrap, shell wrappers, or root helper scripts as the normal workflow.
+targets and framework diagnostics are the public workflow API; packet/judge
+recipes own repair, generation, and promotion behavior behind those targets.
+Nix supplies the reproducible toolchain substrate for those targets; agents
+should not teach Corepack setup, global package-manager bootstrap, shell
+wrappers, or root helper scripts as the normal workflow.
 
 The target Attune Framework loop is diagnostics-first:
 
@@ -29,15 +30,15 @@ and Nx check output.
 Run Nx-owned targets from the repository root:
 
 ```bash
-nx graph --file=/tmp/attune-nx-graph.json
+nx graph --file=/tmp/attune-workspace-graph.json
 nx run workspace:policy-fast
-nx run attune-nx:typecheck
+nx run workspace:packetized-architecture-judge
 nx run attuned-discovery:typecheck
 ```
 
 `workspace:policy-fast` is the default policy gate for a Codex slice. The graph
-command writes to `/tmp/attune-nx-graph.json` so Nx does not need to open a
-browser or write generated graph output under the workspace.
+command writes to `/tmp/attune-workspace-graph.json` so Nx does not need to
+open a browser or write generated graph output under the workspace.
 
 If `nx` is not already on PATH, enter the repository dev shell and run the same
 public Nx targets from there. Inside that shell, `pnpm exec nx ...` is an

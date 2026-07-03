@@ -1,3 +1,5 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 export type CoverageSearchPartitionKind =
   | "input"
   | "output"
@@ -783,3 +785,79 @@ export const mergeCoverageSearchEvidence = (
     typeGuidancePartitions,
   }
 }
+
+const JoernEffectPropertiesCoverageSearchLocalRecipeId = "joern-effect-properties.coverage-search" as const
+const JoernEffectPropertiesCoverageSearchLocalResourceId = "joern-effect-properties.coverage-search.resource" as const
+const JoernEffectPropertiesCoverageSearchLocalHandlerId = "joern-effect-properties.coverage-search.handler" as const
+const JoernEffectPropertiesCoverageSearchLocalSourcePath = "packages/attune/joern-effect-properties/src/coverageSearch.ts" as const
+const JoernEffectPropertiesCoverageSearchLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesCoverageSearchLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesCoverageSearchLocalSourcePath),
+})
+export type JoernEffectPropertiesCoverageSearchLocalRecipeInput = typeof JoernEffectPropertiesCoverageSearchLocalRecipeInput.Type
+
+export const JoernEffectPropertiesCoverageSearchLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesCoverageSearchLocalSourcePath),
+})
+export type JoernEffectPropertiesCoverageSearchLocalRecipeOutput = typeof JoernEffectPropertiesCoverageSearchLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesCoverageSearchLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesCoverageSearchLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesCoverageSearchLocalRecipeId,
+  producedBy: [JoernEffectPropertiesCoverageSearchLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesCoverageSearchLocalRecipeId, JoernEffectPropertiesCoverageSearchLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesCoverageSearchLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesCoverageSearchLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesCoverageSearchLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesCoverageSearchLocalRecipeInput,
+  JoernEffectPropertiesCoverageSearchLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesCoverageSearchLocalHandlerId,
+  recipeId: JoernEffectPropertiesCoverageSearchLocalRecipeId,
+  sourcePath: JoernEffectPropertiesCoverageSearchLocalSourcePath,
+  exportName: "JoernEffectPropertiesCoverageSearchLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.coverage-search.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesCoverageSearchLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesCoverageSearchLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/coverageSearch.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesCoverageSearchLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesCoverageSearchLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesCoverageSearchLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesCoverageSearchLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesCoverageSearchLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesCoverageSearchLocalResource],
+    outputResources: [JoernEffectPropertiesCoverageSearchLocalResource],
+  },
+  handler: JoernEffectPropertiesCoverageSearchLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesCoverageSearchLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesCoverageSearchLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesCoverageSearchLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesCoverageSearchLocalRecipes = [JoernEffectPropertiesCoverageSearchLocalRecipe] as const

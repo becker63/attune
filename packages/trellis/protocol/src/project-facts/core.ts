@@ -1,4 +1,9 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
+
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export const OperationKinds = [
   "codec",
@@ -146,7 +151,7 @@ export interface AttuneProjectEdgeFact {
   readonly kind: "reactivity-key" | "atom" | "schema" | "artifact" | "service" | string
 }
 
-export interface AttuneProjectFacts<
+export interface AttuneLegacyPackageFacts<
   Id extends string = string,
   Kind extends string = string,
   Symbols extends readonly AttuneProjectSymbolFact[] = readonly AttuneProjectSymbolFact[],
@@ -161,11 +166,11 @@ export interface AttuneProjectFacts<
   readonly invariants?: readonly AttuneDiagnosticRuleDescriptor[]
 }
 
-export const defineAttuneProjectFacts = <const Facts extends AttuneProjectFacts>(
+export const defineAttuneLegacyPackageFacts = <const Facts extends AttuneLegacyPackageFacts>(
   facts: Facts,
 ): Facts => facts
 
-export interface ProjectRuntimeRoots<
+export interface LegacyPackageRuntimeRoots<
   ReactivityKeys extends readonly string[] = readonly string[],
   Atoms extends readonly string[] = readonly string[],
 > {
@@ -380,3 +385,86 @@ export const attuneTypeDiagnostic = <const Message extends readonly unknown[]>(
   _tag: "AttuneTypeError",
   message,
 })
+
+export const ProjectFactsCoreRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+})
+export type ProjectFactsCoreRecipeInput = typeof ProjectFactsCoreRecipeInput.Type
+
+export const ProjectFactsCoreRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  operationKindCount: Schema.Number,
+  packageKindCount: Schema.Number,
+})
+export type ProjectFactsCoreRecipeOutput = typeof ProjectFactsCoreRecipeOutput.Type
+
+export const summarizeProjectFactsCore = (
+  input: ProjectFactsCoreRecipeInput,
+): ProjectFactsCoreRecipeOutput => ({
+  sourcePath: input.sourcePath,
+  operationKindCount: OperationKinds.length,
+  packageKindCount: PackageKinds.length,
+})
+
+export const ProjectFactsCoreRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+// @attune-packet-target generated-runtime-projection eligible
+  const CoreSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.core.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: ProjectFactsCoreRecipeInput,
+    stateSchema: ProjectFactsCoreRecipeInput,
+    modes: ["read"],
+    consumedBy: ["framework-protocol.project-facts.core-schema"],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const CoreSchemaResource = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.core.schema",
+    kind: "schema",
+    alchemyType: "attune:resource:ProjectFactsCoreSchema",
+    addressSchema: ProjectFactsCoreRecipeInput,
+    stateSchema: ProjectFactsCoreRecipeOutput,
+    modes: ["project", "read"],
+    ownerRecipeId: "framework-protocol.project-facts.core-schema",
+    producedBy: ["framework-protocol.project-facts.core-schema"],
+  })
+  const CoreHandler = helpers.defineRecipeHandler<ProjectFactsCoreRecipeInput, ProjectFactsCoreRecipeOutput, never, never>({
+    id: "framework-protocol.project-facts.core-schema.handler",
+    recipeId: "framework-protocol.project-facts.core-schema",
+    sourcePath: "packages/trellis/protocol/src/project-facts/core.ts",
+    exportName: "summarizeProjectFactsCore",
+    emitsReceipts: ["project-facts.core-schema-summary"],
+    handler: (input) => Effect.succeed(summarizeProjectFactsCore(input)),
+  })
+  const CoreDagEdge = helpers.defineAlchemyRecipeDagEdge({
+    fromRecipeId: "framework-protocol.project-facts.core.source",
+    toRecipeId: "framework-protocol.project-facts.core-schema",
+    resource: "framework-protocol.project-facts.core.schema",
+    kind: "projects",
+    modes: ["read", "project"],
+  })
+
+  return [
+    helpers.defineSchemaRecipe({
+      id: "framework-protocol.project-facts.core-schema",
+      projectId: "framework-protocol",
+      title: "Define legacy project-fact and package contract schema helpers",
+      inputSchema: ProjectFactsCoreRecipeInput,
+      outputSchema: ProjectFactsCoreRecipeOutput,
+      io: {
+        inputSchema: ProjectFactsCoreRecipeInput,
+        outputSchema: ProjectFactsCoreRecipeOutput,
+        inputResources: [CoreSource],
+        outputResources: [CoreSchemaResource],
+      },
+      handler: CoreHandler,
+      alchemyDag: [CoreDagEdge],
+      nxTarget: "framework-protocol:typecheck",
+      observedFiles: ["packages/trellis/protocol/src/project-facts/core.ts"],
+      allowedFiles: ["packages/trellis/protocol/src/project-facts/core.ts"],
+      validationEvidence: ["framework-protocol:typecheck"],
+    }),
+  ] as const
+}

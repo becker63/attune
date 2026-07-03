@@ -1,30 +1,163 @@
 #!/usr/bin/env tsx
+import { pathToFileURL } from "node:url"
+
+import { Effect, Schema } from "effect"
+import {
+  RecipeInvocationSchema,
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineInvocationRecipe,
+  defineObservationRecipe,
+  defineRecipeHandler,
+  type RecipeInvocation,
+} from "@attune/framework-protocol"
 import {
   assertJsonFormat,
   assertMeasurementPhase,
   assertOutputFormat,
   decodeOpenCodeSessionFile,
+  decodeOpenCodeSessionFileWithStoreEmission,
   observeCommandWithStoreEmission,
   renderJson,
   renderSessionSummaryMarkdown,
   runDoctor,
   summarizeOpenCodeSessionFile,
   createAttuneOpenCodeFingerprint,
+  tendOpenCodeCommandObservationInvocation,
 } from "./cli-core.js"
+import { runOpenSpecPacketCliWithStoreEmission } from "./contracts.js"
 import {
-  runRecipeOnlyWorktreeBenchmark,
   type BenchmarkEvidenceTier,
   type BenchmarkLoopKind,
   type RecipeOnlyBenchmarkAction,
   type RecipeOnlyBenchmarkMode,
   type RecipeOnlyBenchmarkOptions,
 } from "./benchmark.js"
-import { writeMeasurementReports } from "./measurement.js"
 
 type ParsedFlags = Readonly<Record<string, string | boolean>>
 
+const tendOpenCodeToolsCliEntryRecipeId = "tend-opencode.tools-cli-entry"
+const tendOpenCodeToolsCliEntryReceiptRecipeId = "tend-opencode.tools-cli-entry-receipt"
+const tendOpenCodeToolsSourcePath = "packages/tend/opencode/src/cli.ts"
+
+const TendOpenCodeToolsCliEntryInputSchema = Schema.Struct({
+  argv: Schema.Array(Schema.String),
+  cwd: Schema.String,
+})
+type TendOpenCodeToolsCliEntryInput = typeof TendOpenCodeToolsCliEntryInputSchema.Type
+
+const TendOpenCodeToolsCliEntryOutputSchema = Schema.Struct({
+  invocation: RecipeInvocationSchema,
+})
+type TendOpenCodeToolsCliEntryOutput = typeof TendOpenCodeToolsCliEntryOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendOpenCodeToolsCliEntryResource = defineAlchemyResource({
+  id: "tend-opencode.tools-cli-entry.workflow-target",
+  kind: "workflow-target",
+  alchemyType: "attune:resource:WorkflowTarget",
+  ownerRecipeId: tendOpenCodeToolsCliEntryRecipeId,
+  consumedBy: [
+    tendOpenCodeToolsCliEntryRecipeId,
+    tendOpenCodeToolsCliEntryReceiptRecipeId,
+  ],
+  producedBy: [tendOpenCodeToolsCliEntryRecipeId, tendOpenCodeToolsCliEntryReceiptRecipeId],
+  addressFields: ["argv", "cwd"],
+  addressSchema: TendOpenCodeToolsCliEntryInputSchema,
+  stateSchema: TendOpenCodeToolsCliEntryOutputSchema,
+  modes: ["invoke", "observe", "read"],
+  programmaticResourceExport: "createTendOpenCodeToolsCliEntryInvocation",
+  programmaticBridgeSourcePath: tendOpenCodeToolsSourcePath,
+})
+
+export const createTendOpenCodeToolsCliEntryInvocation = (
+  input: TendOpenCodeToolsCliEntryInput,
+): TendOpenCodeToolsCliEntryOutput => ({
+  invocation: {
+    recipeId: tendOpenCodeToolsCliEntryRecipeId,
+    action: "report",
+    input,
+    source: {
+      surface: "cli",
+      projectId: "tend-opencode",
+      target: "tend-opencode-tools",
+      cwd: input.cwd,
+    },
+  },
+})
+
+export const TendOpenCodeToolsCliEntryRecipe = defineInvocationRecipe({
+  id: "tend-opencode.tools-cli-entry",
+  projectId: "tend-opencode",
+  title: "Expose the tend-opencode-tools executable entrypoint as a recipe invocation adapter",
+  inputSchema: TendOpenCodeToolsCliEntryInputSchema,
+  outputSchema: TendOpenCodeToolsCliEntryOutputSchema,
+  entrypoints: [tendOpenCodeToolsSourcePath],
+  allowedFiles: [tendOpenCodeToolsSourcePath],
+  validationEvidence: ["tend-opencode:typecheck", "tend-opencode:test"],
+  io: {
+    inputSchema: TendOpenCodeToolsCliEntryInputSchema,
+    outputSchema: TendOpenCodeToolsCliEntryOutputSchema,
+    inputResources: [TendOpenCodeToolsCliEntryResource],
+    outputResources: [TendOpenCodeToolsCliEntryResource],
+  },
+// @attune-packet-target generated-runtime-projection eligible
+  handler: defineRecipeHandler({
+    id: "tend-opencode.tools-cli-entry.handler",
+    recipeId: tendOpenCodeToolsCliEntryRecipeId,
+    sourcePath: tendOpenCodeToolsSourcePath,
+    exportName: "createTendOpenCodeToolsCliEntryInvocation",
+    emitsReceipts: ["recipe.invocation.created"],
+    handler: (input: TendOpenCodeToolsCliEntryInput) =>
+      Effect.succeed(createTendOpenCodeToolsCliEntryInvocation(input)),
+  }),
+})
+
+export const TendOpenCodeToolsCliEntryReceiptRecipe = defineObservationRecipe({
+  id: "tend-opencode.tools-cli-entry-receipt",
+  projectId: "tend-opencode",
+  title: "Record tend-opencode-tools entry invocations as local recipe receipt evidence",
+  inputSchema: TendOpenCodeToolsCliEntryOutputSchema,
+  outputSchema: TendOpenCodeToolsCliEntryOutputSchema,
+  allowedFiles: [tendOpenCodeToolsSourcePath],
+  validationEvidence: ["tend-opencode:typecheck", "tend-opencode:test"],
+  io: {
+    inputSchema: TendOpenCodeToolsCliEntryOutputSchema,
+    outputSchema: TendOpenCodeToolsCliEntryOutputSchema,
+    inputResources: [TendOpenCodeToolsCliEntryResource],
+    outputResources: [TendOpenCodeToolsCliEntryResource],
+  },
+// @attune-packet-target generated-runtime-projection eligible
+  handler: defineRecipeHandler({
+    id: "tend-opencode.tools-cli-entry-receipt.handler",
+    recipeId: tendOpenCodeToolsCliEntryReceiptRecipeId,
+    sourcePath: tendOpenCodeToolsSourcePath,
+    exportName: "TendOpenCodeToolsCliEntryReceiptRecipe",
+    emitsReceipts: ["recipe.invocation.created"],
+    handler: (input: TendOpenCodeToolsCliEntryOutput) => Effect.succeed(input),
+  }),
+})
+
+export const TendOpenCodeToolsCliEntryReceiptDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "tend-opencode.tools-cli-entry",
+  toRecipeId: "tend-opencode.tools-cli-entry-receipt",
+  resource: TendOpenCodeToolsCliEntryResource,
+  kind: "observes",
+  modes: ["invoke", "observe"],
+})
+
+export const TendOpenCodeToolsCliRecipes = [
+  TendOpenCodeToolsCliEntryRecipe,
+  TendOpenCodeToolsCliEntryReceiptRecipe,
+] as const
+
 const main = async (): Promise<void> => {
   const [command, ...rest] = process.argv.slice(2)
+  const cliEntryInvocation: RecipeInvocation = createTendOpenCodeToolsCliEntryInvocation({
+    argv: process.argv.slice(2),
+    cwd: process.cwd(),
+  }).invocation
+  void cliEntryInvocation
   if (command === undefined || command === "--help" || command === "-h") {
     writeHelp()
     process.exit(0)
@@ -47,8 +180,9 @@ const main = async (): Promise<void> => {
       case "decode": {
         const flags = parseFlags(rest)
         assertJsonFormat(stringFlag(flags, "format"))
-        process.stdout.write(renderJson(decodeOpenCodeSessionFile(requiredFile(flags))))
-        process.exit(0)
+        const output = await decodeOpenCodeSessionFileWithStoreEmission(requiredFile(flags))
+        process.stdout.write(renderJson(output))
+        process.exit(output.storeEmission?.status === "failed" ? 1 : 0)
       }
       case "summarize": {
         const flags = parseFlags(rest)
@@ -57,12 +191,24 @@ const main = async (): Promise<void> => {
         process.stdout.write(format === "json" ? renderJson(summary) : renderSessionSummaryMarkdown(summary))
         process.exit(0)
       }
+      case "openspec": {
+        const output = await runOpenSpecPacketCliWithStoreEmission(rest)
+        process.stdout.write(renderJson(output))
+        process.exit(output.storeEmission?.status === "failed" ? 1 : 0)
+      }
       case "observe": {
         const { flags, command: observedCommand } = parseObserve(rest)
         assertJsonFormat(stringFlag(flags, "format"))
         const measurementPhase = assertMeasurementPhase(stringFlag(flags, "phase"))
         const measurementSessionId = stringFlag(flags, "session-id")
         const cwd = stringFlag(flags, "cwd")
+        const invocation: RecipeInvocation = tendOpenCodeCommandObservationInvocation({
+          argv: observedCommand,
+          cwd: cwd ?? process.cwd(),
+          ...(measurementPhase === undefined ? {} : { measurementPhase }),
+          ...(measurementSessionId === undefined ? {} : { measurementSessionId }),
+        })
+        void invocation
         const output = await observeCommandWithStoreEmission({
           command: observedCommand,
           ...(cwd === undefined ? {} : { cwd }),
@@ -79,19 +225,37 @@ const main = async (): Promise<void> => {
         const measurementSessionId = stringFlag(flags, "session-id")
         const exportOnly = booleanFlag(flags, "export-only")
         const dryRun = booleanFlag(flags, "dry-run")
-        const output = await writeMeasurementReports({
+        const input = {
           ...(reportsDir === undefined ? {} : { reportsDir }),
           ...(measurementSessionId === undefined ? {} : { measurementSessionId }),
           ...(exportOnly ? { exportOnly } : {}),
           ...(dryRun ? { dryRun } : {}),
-        })
+        }
+        const {
+          tendOpenCodeMeasurementReportInvocation,
+          writeMeasurementReports,
+        } = await import("./measurement.js")
+        const invocation: RecipeInvocation = tendOpenCodeMeasurementReportInvocation(input)
+        void invocation
+        const output = await writeMeasurementReports(input)
         process.stdout.write(renderJson(output))
         process.exit(output.storeEmission.status === "failed" ? 1 : 0)
       }
       case "benchmark": {
         const flags = parseFlags(rest)
+        if (flags["help"] === true || flags["h"] === true) {
+          writeHelp()
+          process.exit(0)
+        }
         assertJsonFormat(stringFlag(flags, "format"))
-        const output = await runRecipeOnlyWorktreeBenchmark(benchmarkOptionsFromFlags(flags))
+        const input = benchmarkOptionsFromFlags(flags)
+        const {
+          runRecipeOnlyWorktreeBenchmark,
+          tendOpenCodeBenchmarkInvocation,
+        } = await import("./benchmark.js")
+        const invocation: RecipeInvocation = tendOpenCodeBenchmarkInvocation(input)
+        void invocation
+        const output = await runRecipeOnlyWorktreeBenchmark(input)
         process.stdout.write(renderJson(output))
         process.exit(output.storeEmission.status === "failed" ? 1 : 0)
       }
@@ -282,6 +446,9 @@ const writeHelp = (): void => {
     "  doctor --format json",
     "  decode --file <path> --format json",
     "  summarize --file <path> --format markdown|json",
+    "  openspec apply-packetized --change <change> --mode shadow|preview|active --format json",
+    "  openspec packet-status --change <change> --format json",
+    "  openspec packet-loop --change <change> --until complete --format json",
     "  observe --format json [--session-id <id>] [--phase baseline|treatment] [--cwd <path>] -- <command...>",
     "  measurement-report --format json [--reports-dir reports/tend-opencode-codex-measurement] [--export-only|--dry-run]",
     "  benchmark --format json --action plan|setup|judge|ingest|report|run|resume|status [--loop-kind quick-turn|pair-turn|full-ab|audit] [--evidence-tier exploratory|candidate|promotion-eligible] [--run-id <id>] [--timeout-ms <ms>] [--opencode-effect-packets-thread-id <id>] [--codex-effect-packets-thread-id <id>] [--opencode-raw-effect-thread-id <id>] [--codex-raw-effect-thread-id <id>] [--export-only|--dry-run]",
@@ -289,4 +456,6 @@ const writeHelp = (): void => {
   ].join("\n"))
 }
 
-void main()
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  void main()
+}

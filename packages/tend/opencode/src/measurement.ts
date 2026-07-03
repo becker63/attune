@@ -3,14 +3,23 @@ import * as childProcess from "node:child_process"
 import * as fs from "node:fs"
 import * as os from "node:os"
 import * as path from "node:path"
-import { Effect } from "effect"
-import { Schema } from "effect"
-import { defineRecipe, type RecipeObservation, type RecipeReceiptStoreSnapshot } from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  type RecipeInvocation,
+  type RecipeObservation,
+  type RecipeReceiptStoreSnapshot,
+} from "@attune/framework-protocol"
 import {
   createAttuneOpenCodeFingerprint,
   runDoctor,
   runHarnessSelfTest,
   summarizeCommandOutput,
+  TendOpenCodeCommandObservationRecipe,
+  TendOpenCodeCommandObservationRecipeId,
 } from "./cli-core.js"
 import type {
   TendOpenCodeCommandOutputSummary,
@@ -28,17 +37,149 @@ import {
   recordMeasurementObservation,
 } from "@attune/framework-runtime"
 
-const commandObservationRecipe = defineRecipe({
-  id: "tend-opencode.command-observation",
-  projectId: "tend-opencode",
-  title: "Emit DB-backed Tend/OpenCode measurement observations",
-  inputSchema: Schema.Unknown,
-  outputSchema: Schema.Unknown,
-  nxTarget: "tend-opencode:test",
-  sourcePath: "packages/tend/opencode/src/measurement.ts",
-  allowedFiles: ["packages/tend/opencode/**", "reports/**"],
-  validationEvidence: ["tend-opencode:test", "framework-runtime:db:validate-sql"],
+const measurementReportRecipeId = "tend-opencode.measurement-report" as const
+const measurementReportHandlerId = "tend-opencode.measurement-report.handler" as const
+const measurementReportSourcePath = "packages/tend/opencode/src/measurement.ts" as const
+
+const TendOpenCodeMeasurementReportInputSchema = Schema.Struct({
+  workspaceRoot: Schema.optional(Schema.String),
+  codexHome: Schema.optional(Schema.String),
+  maxFiles: Schema.optional(Schema.Number),
+  reportsDir: Schema.optional(Schema.String),
+  measurementSessionId: Schema.optional(Schema.String),
+  exportOnly: Schema.optional(Schema.Boolean),
+  dryRun: Schema.optional(Schema.Boolean),
 })
+type TendOpenCodeMeasurementReportInput = typeof TendOpenCodeMeasurementReportInputSchema.Type
+
+const TendOpenCodeMeasurementReportOutputSchema = Schema.Struct({
+  measurementSessionId: Schema.String,
+  reportsDir: Schema.String,
+  reports: Schema.Array(Schema.String),
+  storeEmission: Schema.Struct({
+    status: Schema.String,
+    error: Schema.optional(Schema.String),
+  }),
+})
+type TendOpenCodeMeasurementReportOutput = typeof TendOpenCodeMeasurementReportOutputSchema.Type
+
+export interface TendOpenCodeMeasurementReportService {
+  readonly writeReports: (
+    input: TendOpenCodeMeasurementReportInput,
+  ) => Effect.Effect<TendOpenCodeMeasurementReportOutput>
+}
+
+export class TendOpenCodeMeasurementReportServices extends Context.Service<
+  TendOpenCodeMeasurementReportServices,
+  TendOpenCodeMeasurementReportService
+>()("tend-opencode/MeasurementReportServices") {}
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendOpenCodeMeasurementReportResource = defineAlchemyResource({
+  id: "tend-opencode.measurement-report.resource",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: measurementReportRecipeId,
+  consumedBy: [measurementReportRecipeId],
+  producedBy: [measurementReportRecipeId],
+  addressFields: ["reportsDir", "measurementSessionId"],
+  addressSchema: TendOpenCodeMeasurementReportInputSchema,
+  stateSchema: TendOpenCodeMeasurementReportOutputSchema,
+  modes: ["project", "read", "write"],
+})
+
+export const TendOpenCodeMeasurementReportLive = Layer.succeed(TendOpenCodeMeasurementReportServices, {
+  writeReports: (input) =>
+    Effect.promise(async () => {
+      const options: MeasurementReportOptions = {
+        ...(input.workspaceRoot === undefined ? {} : { workspaceRoot: input.workspaceRoot }),
+        ...(input.codexHome === undefined ? {} : { codexHome: input.codexHome }),
+        ...(input.maxFiles === undefined ? {} : { maxFiles: input.maxFiles }),
+        ...(input.reportsDir === undefined ? {} : { reportsDir: input.reportsDir }),
+        ...(input.measurementSessionId === undefined ? {} : { measurementSessionId: input.measurementSessionId }),
+        ...(input.exportOnly === undefined ? {} : { exportOnly: input.exportOnly }),
+        ...(input.dryRun === undefined ? {} : { dryRun: input.dryRun }),
+      }
+      const result = await writeMeasurementReports(options)
+      return {
+        measurementSessionId: result.measurementSessionId,
+        reportsDir: result.reportsDir,
+        reports: result.reports,
+        storeEmission: result.storeEmission,
+      }
+    }),
+})
+
+export const TendOpenCodeMeasurementReportLayer = defineRecipeLayer({
+  id: "tend-opencode.measurement-report.layer",
+  sourcePath: "packages/tend/opencode/src/measurement.ts",
+  exportName: "TendOpenCodeMeasurementReportLive",
+  layer: TendOpenCodeMeasurementReportLive,
+  provides: [{
+    id: "tend-opencode.measurement-report.services",
+    service: TendOpenCodeMeasurementReportServices,
+  }],
+})
+
+export const tendOpenCodeMeasurementReportInvocation = (
+  input: TendOpenCodeMeasurementReportInput,
+): RecipeInvocation => ({
+  recipeId: measurementReportRecipeId,
+  action: "report",
+  input,
+  source: {
+    surface: "cli",
+    projectId: "tend-opencode",
+    target: "tend-opencode measurement-report",
+    cwd: input.workspaceRoot,
+  },
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendOpenCodeMeasurementReportRecipe = defineProjectionRecipe({
+  id: measurementReportRecipeId,
+  title: "Project DB-backed Tend/OpenCode measurement reports",
+  inputSchema: TendOpenCodeMeasurementReportInputSchema,
+  outputSchema: TendOpenCodeMeasurementReportOutputSchema,
+  nxTarget: "tend-opencode:test",
+  outputs: ["reports/tend-opencode-codex-measurement/**"],
+  allowedFiles: [
+    "packages/tend/opencode/src/measurement.ts",
+    "reports/tend-opencode-codex-measurement/**",
+  ],
+  validationEvidence: ["tend-opencode:test", "framework-runtime:db:validate-sql"],
+  io: {
+    inputSchema: TendOpenCodeMeasurementReportInputSchema,
+    outputSchema: TendOpenCodeMeasurementReportOutputSchema,
+    inputResources: [TendOpenCodeMeasurementReportResource],
+    outputResources: [TendOpenCodeMeasurementReportResource],
+  },
+// @attune-packet-target generated-runtime-projection eligible
+  handler: defineRecipeHandler({
+    id: measurementReportHandlerId,
+    recipeId: measurementReportRecipeId,
+    sourcePath: measurementReportSourcePath,
+    exportName: "writeMeasurementReports",
+    layer: TendOpenCodeMeasurementReportLayer,
+    emitsReceipts: ["measurement.report.projected"],
+    handler: (input: TendOpenCodeMeasurementReportInput) =>
+      Effect.gen(function* writeTendOpenCodeMeasurementReport() {
+        const services = yield* TendOpenCodeMeasurementReportServices
+        return yield* services.writeReports(input)
+      }),
+  }),
+  alchemyDag: [{
+    fromRecipeId: TendOpenCodeCommandObservationRecipeId,
+    toRecipeId: measurementReportRecipeId,
+    resource: TendOpenCodeMeasurementReportResource,
+    kind: "projects",
+    modes: ["observe", "project"],
+  }],
+})
+
+export const TendOpenCodeMeasurementRecipes = [
+  TendOpenCodeMeasurementReportRecipe,
+] as const
 
 export interface TraceInventoryOptions {
   readonly workspaceRoot?: string
@@ -631,7 +772,7 @@ export const writeMeasurementReports = async (
     }
 
     if (sink.store !== undefined) {
-      await Effect.runPromise(sink.store.registerRecipe(commandObservationRecipe))
+      await Effect.runPromise(sink.store.registerRecipe(TendOpenCodeCommandObservationRecipe))
     }
     const traceObservation = createMeasurementObservation({
       kind: "measurement.trace.inventory.summary",
@@ -1062,8 +1203,6 @@ const legacySubstrateReferenceClass = (
   }
   if (
     filePath.startsWith("packages/trellis/architecture/src/")
-    || filePath.startsWith("packages/trellis/oxlint-policy/src/")
-    || filePath.startsWith("packages/attune/nx/src/")
     || filePath.startsWith("packages/trellis/nx/src/")
     || filePath === "packages/trellis/runtime/src/SqlRoute.ts"
     || filePath === "packages/trellis/runtime/src/MeasurementObservation.ts"
@@ -1235,7 +1374,7 @@ const runMeasurementPreflight = async (input: {
 
   try {
     if (input.sink.store !== undefined) {
-      await Effect.runPromise(input.sink.store.registerRecipe(commandObservationRecipe))
+      await Effect.runPromise(input.sink.store.registerRecipe(TendOpenCodeCommandObservationRecipe))
       await Effect.runPromise(input.sink.store.registerRecipe(LocalTimescaleManagedRecipe))
       const harnessObservation = createMeasurementObservation({
         kind: "measurement.harness.proof",

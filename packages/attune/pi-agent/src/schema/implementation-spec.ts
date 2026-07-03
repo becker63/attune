@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 import { MutationObligation } from "./mutation.js"
 import { PermissionProfile } from "./permission-profile.js"
@@ -62,3 +63,28 @@ export const ImplementationSpec = S.Struct({
   artifactPolicy: ArtifactPolicy,
 })
 export type ImplementationSpec = typeof ImplementationSpec.Type
+
+export const implementationSpecSchemaModule = (): readonly string[] => [
+  "Boundary",
+  "ValidationCommand",
+  "ReviewGate",
+  "ForbiddenAction",
+  "ArtifactPolicy",
+  "ImplementationSpec",
+]
+
+export const AttunePiImplementationSpecSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.implementation-spec.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/implementation-spec.ts",
+  exportName: "implementationSpecSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.implementation-spec.projected"],
+  handler: () => Effect.succeed(implementationSpecSchemaModule()),
+})
+
+export const AttunePiImplementationSpecSchemaRecipeModule = [
+  AttunePiImplementationSpecSchemaHandler,
+] as const

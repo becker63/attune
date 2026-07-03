@@ -1,3 +1,12 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineDiagnosticRecipe,
+  defineRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
 export type CommandSurfaceRuleId =
   | "attune/command-surface/raw-run-command"
   | "attune/command-surface/package-script"
@@ -30,7 +39,7 @@ export interface CommandSurfaceConformanceResult {
 
 const rawToolPattern = /(^|[`"\s])(arion|alchemy|bash|bun|corepack|deno|docker|helm|joern|kubectl|nix|nixos-rebuild|node|npm|npx|pnpm|podman|sh|tsx|ts-node|tsc|vite|vitest|yarn|zsh)(\s|$)/iu
 const stalePolicyArchitecturePattern = /\bworkspace:policy-architecture\b/u
-const directAttuneGeneratorDocPattern = /\bnx\s+(?:g|generate)\s+@attune\/nx:[\w-]+/u
+const directFrameworkGeneratorDocPattern = /\bnx\s+(?:g|generate)\s+@attune\/framework-nx:[\w-]+/u
 
 export const checkCommandSurfaceConformance = ({
   files,
@@ -112,11 +121,11 @@ const checkDocCommandSurface = (file: CommandSurfaceFile): readonly CommandSurfa
       ))
     }
 
-    if (directAttuneGeneratorDocPattern.test(line) && !isInternalGuidance(file, line)) {
+    if (directFrameworkGeneratorDocPattern.test(line) && !isInternalGuidance(file, line)) {
       diagnostics.push(warning(
         file.path,
         "attune/command-surface/direct-generator-doc",
-        `Line ${index + 1} documents a direct @attune/nx generator invocation as public workflow; prefer check diagnostics and repair.`,
+        `Line ${index + 1} documents a direct framework generator invocation as public workflow; prefer check diagnostics and repair.`,
       ))
     }
   })
@@ -280,3 +289,190 @@ const warning = (
   filePath,
   message,
 })
+
+export const ArchitectureSourceSurfaceRecipeId = "attune-architecture.source-surface" as const
+export const ArchitectureCommandSurfaceRecipeId = "attune-architecture.command-surface-conformance" as const
+const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+const ArchitectureCommandSurfaceSourcePath =
+  "packages/trellis/architecture/src/command-surface-conformance.ts" as const
+
+const CommandSurfaceFileSchema = Schema.Struct({
+  path: Schema.String,
+  content: Schema.String,
+  classification: Schema.optional(Schema.Literals(["public", "internal", "bootstrap"] as const)),
+})
+
+const CommandSurfaceDiagnosticSchema = Schema.Struct({
+  ruleId: Schema.String,
+  severity: Schema.Literals(["error", "warning"] as const),
+  filePath: Schema.String,
+  message: Schema.String,
+})
+
+const CommandSurfaceConformanceInput = Schema.Struct({
+  files: Schema.Array(CommandSurfaceFileSchema),
+  finalRatchet: Schema.optional(Schema.Boolean),
+})
+type CommandSurfaceConformanceInput = typeof CommandSurfaceConformanceInput.Type
+
+const CommandSurfaceConformanceOutput = Schema.Struct({
+  diagnostics: Schema.Array(CommandSurfaceDiagnosticSchema),
+  exitCode: Schema.Number,
+})
+type CommandSurfaceConformanceOutput = typeof CommandSurfaceConformanceOutput.Type
+
+const ArchitectureSourceSurfaceInput = Schema.Struct({
+  packageRoot: Schema.Literal("packages/trellis/architecture"),
+})
+type ArchitectureSourceSurfaceInput = typeof ArchitectureSourceSurfaceInput.Type
+
+const ArchitectureSourceSurfaceOutput = Schema.Struct({
+  sourceRoot: Schema.Literal("packages/trellis/architecture/src"),
+  moduleCount: Schema.Number,
+})
+type ArchitectureSourceSurfaceOutput = typeof ArchitectureSourceSurfaceOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureCommandSurfaceInputResource = defineAlchemyResource({
+  id: "attune-architecture.command-surface.input",
+  kind: "configuration",
+  alchemyType: "attune:resource:Configuration",
+  consumedBy: [ArchitectureCommandSurfaceRecipeId],
+  addressSchema: CommandSurfaceConformanceInput,
+  stateSchema: CommandSurfaceConformanceInput,
+  modes: ["read", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureCommandSurfaceReportResource = defineAlchemyResource({
+  id: "attune-architecture.command-surface.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitectureCommandSurfaceRecipeId,
+  producedBy: [ArchitectureCommandSurfaceRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: ArchitectureSourceSurfaceInput,
+  stateSchema: CommandSurfaceConformanceOutput,
+  modes: ["project", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureSourceSurfaceResource = defineAlchemyResource({
+  id: "attune-architecture.source-surface.resource",
+  kind: "directory",
+  alchemyType: "attune:resource:Directory",
+  ownerRecipeId: ArchitectureSourceSurfaceRecipeId,
+  producedBy: [ArchitectureSourceSurfaceRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: ArchitectureSourceSurfaceInput,
+  stateSchema: ArchitectureSourceSurfaceOutput,
+  modes: ["read", "observe"],
+})
+
+export const ArchitectureCommandSurfaceHandler = defineRecipeHandler<
+  CommandSurfaceConformanceInput,
+  CommandSurfaceConformanceOutput
+>({
+  id: "attune-architecture.command-surface-conformance.handler",
+  recipeId: ArchitectureCommandSurfaceRecipeId,
+  sourcePath: ArchitectureCommandSurfaceSourcePath,
+  exportName: "checkCommandSurfaceConformance",
+  handler: (input) =>
+    Effect.succeed((() => {
+      const result = checkCommandSurfaceConformance({
+        files: input.files.map((file): CommandSurfaceFile =>
+          file.classification === undefined
+            ? { path: file.path, content: file.content }
+            : { path: file.path, content: file.content, classification: file.classification }
+        ),
+        ...(input.finalRatchet === undefined ? {} : { finalRatchet: input.finalRatchet }),
+      })
+      return {
+        diagnostics: [...result.diagnostics],
+        exitCode: result.exitCode,
+      }
+    })()),
+  emitsReceipts: ["attune-architecture.command-surface-conformance.reported"],
+})
+
+export const ArchitectureSourceSurfaceHandler = defineRecipeHandler<
+  ArchitectureSourceSurfaceInput,
+  ArchitectureSourceSurfaceOutput
+>({
+  id: "attune-architecture.source-surface.handler",
+  recipeId: ArchitectureSourceSurfaceRecipeId,
+  sourcePath: ArchitectureCommandSurfaceSourcePath,
+  exportName: "ArchitectureSourceSurfaceRecipes",
+  handler: () =>
+    Effect.succeed({
+      sourceRoot: "packages/trellis/architecture/src",
+      moduleCount: 16,
+    }),
+  emitsReceipts: ["attune-architecture.source-surface.observed"],
+})
+
+export const ArchitectureCommandSurfaceDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureCommandSurfaceRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureCommandSurfaceReportResource,
+  kind: "diagnoses",
+  modes: ["check", "observe"],
+})
+
+export const ArchitectureSourceSurfaceDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureSourceSurfaceRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureSourceSurfaceResource,
+  kind: "observes",
+  modes: ["read", "observe"],
+})
+
+export const ArchitectureSourceSurfaceRecipe = defineRecipe({
+  id: ArchitectureSourceSurfaceRecipeId,
+  projectId: "attune-architecture",
+  title: "Own architecture policy source modules",
+  inputSchema: ArchitectureSourceSurfaceInput,
+  outputSchema: ArchitectureSourceSurfaceOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: [
+    "packages/trellis/architecture/src/command-surface-conformance.ts",
+    "packages/trellis/architecture/src/framework-atom-implementation-policy.ts",
+    "packages/trellis/architecture/src/framework-import-boundary.ts",
+    "packages/trellis/architecture/src/framework-no-report-policy.ts",
+    "packages/trellis/architecture/src/index.ts",
+    "packages/trellis/architecture/vitest.config.ts",
+  ],
+  validationEvidence: ["attune-architecture:test", "workspace:policy-fast"],
+  io: {
+    inputSchema: ArchitectureSourceSurfaceInput,
+    outputSchema: ArchitectureSourceSurfaceOutput,
+    inputResources: [ArchitectureSourceSurfaceResource],
+    outputResources: [ArchitectureSourceSurfaceResource],
+  },
+  handler: ArchitectureSourceSurfaceHandler,
+  alchemyDag: [ArchitectureSourceSurfaceDagEdge],
+})
+
+export const ArchitectureCommandSurfaceConformanceRecipe = defineDiagnosticRecipe({
+  id: ArchitectureCommandSurfaceRecipeId,
+  projectId: "attune-architecture",
+  title: "Validate public command surface conformance",
+  inputSchema: CommandSurfaceConformanceInput,
+  outputSchema: CommandSurfaceConformanceOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: [ArchitectureCommandSurfaceSourcePath, "project.json", "nx.json"],
+  validationEvidence: ["attune-architecture:test", "workspace:policy-fast"],
+  io: {
+    inputSchema: CommandSurfaceConformanceInput,
+    outputSchema: CommandSurfaceConformanceOutput,
+    inputResources: [ArchitectureCommandSurfaceInputResource],
+    outputResources: [ArchitectureCommandSurfaceReportResource],
+  },
+  handler: ArchitectureCommandSurfaceHandler,
+  alchemyDag: [ArchitectureCommandSurfaceDagEdge],
+})
+
+export const ArchitectureCommandSurfaceConformanceRecipes = [
+  ArchitectureSourceSurfaceRecipe,
+  ArchitectureCommandSurfaceConformanceRecipe,
+] as const

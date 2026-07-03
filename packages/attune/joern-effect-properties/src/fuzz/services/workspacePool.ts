@@ -1,7 +1,8 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
 import { mkdir, mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { Context, Effect, Layer } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
   Joern,
   projectNameForRepo,
@@ -109,3 +110,79 @@ export const JoernWorkspacePoolLive: Layer.Layer<JoernWorkspacePool> = Layer.suc
   JoernWorkspacePool,
   makeJoernWorkspacePool(),
 )
+
+const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeId = "joern-effect-properties.fuzz.services.workspace-pool" as const
+const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalResourceId = "joern-effect-properties.fuzz.services.workspace-pool.resource" as const
+const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalHandlerId = "joern-effect-properties.fuzz.services.workspace-pool.handler" as const
+const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/services/workspacePool.ts" as const
+const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesWorkspacePoolLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeInput = typeof JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesWorkspacePoolLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeOutput = typeof JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeId, JoernEffectPropertiesFuzzServicesWorkspacePoolLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeInput,
+  JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.services.workspace-pool.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/services/workspacePool.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzServicesWorkspacePoolLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzServicesWorkspacePoolLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzServicesWorkspacePoolLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzServicesWorkspacePoolLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipes = [JoernEffectPropertiesFuzzServicesWorkspacePoolLocalRecipe] as const

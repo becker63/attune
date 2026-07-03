@@ -1,6 +1,13 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
-import { Schema } from "effect"
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
+import { Effect, Layer, Schema } from "effect"
 
 export * from "./command-surface-conformance.js"
 export * from "./framework-atom-implementation-policy.js"
@@ -214,3 +221,106 @@ const pathMatches = (pattern: string, filePath: string): boolean => {
 
 export const formatDiagnostics = (diagnostics: readonly PolicyDiagnostic[]): string =>
   diagnostics.map((d) => `${d.severity.toUpperCase()} ${d.ruleId} ${d.filePath}: ${d.message}`).join("\n")
+
+export const ArchitectureIndexRecipeId = "attune-architecture.index-workspace-policy" as const
+const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+const ArchitectureIndexSourcePath = "packages/trellis/architecture/src/index.ts" as const
+
+const ArchitectureIndexInput = Schema.Struct({
+  workspaceRoot: Schema.String,
+})
+type ArchitectureIndexInput = typeof ArchitectureIndexInput.Type
+
+const ArchitectureIndexOutput = Schema.Struct({
+  diagnostics: Schema.Array(Schema.Struct({
+    ruleId: Schema.String,
+    severity: Schema.Literals(["error", "warning"] as const),
+    filePath: Schema.String,
+    message: Schema.String,
+  })),
+  exitCode: Schema.Number,
+})
+type ArchitectureIndexOutput = typeof ArchitectureIndexOutput.Type
+
+export const projectArchitectureIndexPolicy = (
+  input: ArchitectureIndexInput,
+): ArchitectureIndexOutput => {
+  const result = scanWorkspace(input)
+  return {
+    diagnostics: [...result.diagnostics],
+    exitCode: result.exitCode,
+  }
+}
+
+export const ArchitectureIndexFilesystemLayer = defineRecipeLayer({
+  id: "attune-architecture.index.filesystem.layer",
+  sourcePath: ArchitectureIndexSourcePath,
+  exportName: "scanWorkspace",
+  layer: Layer.empty as never,
+  provides: [{ id: "filesystem", service: "node:fs" }],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureIndexWorkspaceResource = defineAlchemyResource({
+  id: "attune-architecture.index.workspace",
+  kind: "directory",
+  alchemyType: "attune:resource:Directory",
+  consumedBy: [ArchitectureIndexRecipeId],
+  addressSchema: ArchitectureIndexInput,
+  stateSchema: Schema.Struct({
+    sourceRoot: Schema.Literal("packages/trellis/architecture/src"),
+  }),
+  modes: ["read", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureIndexReportResource = defineAlchemyResource({
+  id: "attune-architecture.index.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitectureIndexRecipeId,
+  producedBy: [ArchitectureIndexRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: ArchitectureIndexInput,
+  stateSchema: ArchitectureIndexOutput,
+  modes: ["project", "observe"],
+})
+
+export const ArchitectureIndexDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureIndexRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureIndexReportResource,
+  kind: "diagnoses",
+  modes: ["check", "observe"],
+})
+
+export const ArchitectureIndexRecipe = defineRecipe({
+  id: "attune-architecture.index-workspace-policy",
+  projectId: "attune-architecture",
+  title: "Express architecture workspace scanner from the public barrel",
+  inputSchema: ArchitectureIndexInput,
+  outputSchema: ArchitectureIndexOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: [ArchitectureIndexSourcePath],
+  validationEvidence: ["attune-architecture:test"],
+  io: {
+    inputSchema: ArchitectureIndexInput,
+    outputSchema: ArchitectureIndexOutput,
+    inputResources: [ArchitectureIndexWorkspaceResource],
+    outputResources: [ArchitectureIndexReportResource],
+  },
+  handler: defineRecipeHandler<ArchitectureIndexInput, ArchitectureIndexOutput>({
+    id: "attune-architecture.index-workspace-policy.handler",
+    recipeId: ArchitectureIndexRecipeId,
+    sourcePath: ArchitectureIndexSourcePath,
+    exportName: "projectArchitectureIndexPolicy",
+    handler: (input) => Effect.sync(() => projectArchitectureIndexPolicy(input)),
+    layer: ArchitectureIndexFilesystemLayer,
+    emitsReceipts: ["attune-architecture.index-workspace-policy.reported"],
+  }),
+  alchemyDag: [ArchitectureIndexDagEdge],
+})
+
+export const ArchitectureIndexRecipes = [
+  ArchitectureIndexRecipe,
+] as const

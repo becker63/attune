@@ -1,3 +1,5 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 import {
   flushPropertyEvents,
   makeSpanId,
@@ -262,3 +264,79 @@ export const checkAttuneProperty = async <T>(
   }))
   await flushPropertyEvents()
 }
+
+const JoernEffectPropertiesAttunePropertyLocalRecipeId = "joern-effect-properties.attune-property" as const
+const JoernEffectPropertiesAttunePropertyLocalResourceId = "joern-effect-properties.attune-property.resource" as const
+const JoernEffectPropertiesAttunePropertyLocalHandlerId = "joern-effect-properties.attune-property.handler" as const
+const JoernEffectPropertiesAttunePropertyLocalSourcePath = "packages/attune/joern-effect-properties/src/attuneProperty.ts" as const
+const JoernEffectPropertiesAttunePropertyLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesAttunePropertyLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesAttunePropertyLocalSourcePath),
+})
+export type JoernEffectPropertiesAttunePropertyLocalRecipeInput = typeof JoernEffectPropertiesAttunePropertyLocalRecipeInput.Type
+
+export const JoernEffectPropertiesAttunePropertyLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesAttunePropertyLocalSourcePath),
+})
+export type JoernEffectPropertiesAttunePropertyLocalRecipeOutput = typeof JoernEffectPropertiesAttunePropertyLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesAttunePropertyLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesAttunePropertyLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesAttunePropertyLocalRecipeId,
+  producedBy: [JoernEffectPropertiesAttunePropertyLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesAttunePropertyLocalRecipeId, JoernEffectPropertiesAttunePropertyLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesAttunePropertyLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesAttunePropertyLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesAttunePropertyLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesAttunePropertyLocalRecipeInput,
+  JoernEffectPropertiesAttunePropertyLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesAttunePropertyLocalHandlerId,
+  recipeId: JoernEffectPropertiesAttunePropertyLocalRecipeId,
+  sourcePath: JoernEffectPropertiesAttunePropertyLocalSourcePath,
+  exportName: "JoernEffectPropertiesAttunePropertyLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.attune-property.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesAttunePropertyLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesAttunePropertyLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/attuneProperty.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesAttunePropertyLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesAttunePropertyLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesAttunePropertyLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesAttunePropertyLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesAttunePropertyLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesAttunePropertyLocalResource],
+    outputResources: [JoernEffectPropertiesAttunePropertyLocalResource],
+  },
+  handler: JoernEffectPropertiesAttunePropertyLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesAttunePropertyLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesAttunePropertyLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesAttunePropertyLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesAttunePropertyLocalRecipes = [JoernEffectPropertiesAttunePropertyLocalRecipe] as const

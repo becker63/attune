@@ -43,3 +43,10 @@ imports/**/build/
 imports/**/target/
 imports/**/coverage/
 imports/**/.next/
+packages/attune/cocoindex-effect/src/generated/
+packages/attune/cocoindex-effect/src/cocoindex/tools/ToolRegistry.generated.ts
+packages/attune/joern-effect/src/pure/generated/
+packages/attune/joern-effect/src/internal/generated/
+packages/attune/joern-effect/src/joern/templates/generated/
+packages/canopy/platform-alchemy-k8s/src/generated/
+packages/canopy/platform-alchemy-k8s/src/resources/ResourceRegistry.generated.ts

@@ -1,3 +1,6 @@
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect } from "effect"
+
 export interface AttunePiNames {
   readonly className: string
   readonly fileName: string
@@ -24,3 +27,19 @@ export const toNames = (value: string): AttunePiNames => {
     title: fallback.map((part) => capitalize(part.toLowerCase())).join(" "),
   }
 }
+
+export const AttunePiGeneratorNamesHandler = defineRecipeHandler<
+  string,
+  AttunePiNames
+>({
+  id: "attune-pi-agent.generator-names.handler",
+  recipeId: "attune-pi-agent.generator-artifacts",
+  sourcePath: "packages/attune/pi-agent/src/generators/internal/names.ts",
+  exportName: "toNames",
+  emitsReceipts: ["attune-pi-agent.generator-names.normalized"],
+  handler: (value) => Effect.succeed(toNames(value)),
+})
+
+export const AttunePiGeneratorNamesRecipeModule = [
+  AttunePiGeneratorNamesHandler,
+] as const

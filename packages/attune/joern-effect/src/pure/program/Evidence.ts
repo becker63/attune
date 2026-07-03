@@ -1,3 +1,4 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
 import { MultiDirectedGraph } from "graphology"
 import type { AbstractGraph } from "graphology-types"
 import { Data, Effect, Schema } from "effect"
@@ -316,3 +317,79 @@ export const protocolDeviation = (
     root,
     title,
   })
+
+const JoernEffectPureProgramEvidenceLocalRecipeId = "joern-effect.pure.program.evidence" as const
+const JoernEffectPureProgramEvidenceLocalResourceId = "joern-effect.pure.program.evidence.resource" as const
+const JoernEffectPureProgramEvidenceLocalHandlerId = "joern-effect.pure.program.evidence.handler" as const
+const JoernEffectPureProgramEvidenceLocalSourcePath = "packages/attune/joern-effect/src/pure/program/Evidence.ts" as const
+const JoernEffectPureProgramEvidenceLocalSourceSurfaceRecipeId = "joern-effect.source-surface" as const
+
+export const JoernEffectPureProgramEvidenceLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPureProgramEvidenceLocalSourcePath),
+})
+export type JoernEffectPureProgramEvidenceLocalRecipeInput = typeof JoernEffectPureProgramEvidenceLocalRecipeInput.Type
+
+export const JoernEffectPureProgramEvidenceLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPureProgramEvidenceLocalSourcePath),
+})
+export type JoernEffectPureProgramEvidenceLocalRecipeOutput = typeof JoernEffectPureProgramEvidenceLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPureProgramEvidenceLocalResource = defineAlchemyResource({
+  id: JoernEffectPureProgramEvidenceLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPureProgramEvidenceLocalRecipeId,
+  producedBy: [JoernEffectPureProgramEvidenceLocalRecipeId],
+  consumedBy: [JoernEffectPureProgramEvidenceLocalRecipeId, JoernEffectPureProgramEvidenceLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPureProgramEvidenceLocalRecipeInput as never,
+  stateSchema: JoernEffectPureProgramEvidenceLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPureProgramEvidenceLocalHandler = defineRecipeHandler<
+  JoernEffectPureProgramEvidenceLocalRecipeInput,
+  JoernEffectPureProgramEvidenceLocalRecipeOutput
+>({
+  id: JoernEffectPureProgramEvidenceLocalHandlerId,
+  recipeId: JoernEffectPureProgramEvidenceLocalRecipeId,
+  sourcePath: JoernEffectPureProgramEvidenceLocalSourcePath,
+  exportName: "JoernEffectPureProgramEvidenceLocalRecipes",
+  emitsReceipts: ["joern-effect.pure.program.evidence.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPureProgramEvidenceLocalRecipe = defineRecipe({
+  id: JoernEffectPureProgramEvidenceLocalRecipeId,
+  projectId: "joern-effect",
+  title: "Express src/pure/program/Evidence.ts as a file-local recipe",
+  inputSchema: JoernEffectPureProgramEvidenceLocalRecipeInput as never,
+  outputSchema: JoernEffectPureProgramEvidenceLocalRecipeOutput as never,
+  nxTarget: "joern-effect:typecheck",
+  allowedFiles: [JoernEffectPureProgramEvidenceLocalSourcePath],
+  validationEvidence: ["joern-effect:typecheck"],
+  io: {
+    inputSchema: JoernEffectPureProgramEvidenceLocalRecipeInput as never,
+    outputSchema: JoernEffectPureProgramEvidenceLocalRecipeOutput as never,
+    inputResources: [JoernEffectPureProgramEvidenceLocalResource],
+    outputResources: [JoernEffectPureProgramEvidenceLocalResource],
+  },
+  handler: JoernEffectPureProgramEvidenceLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPureProgramEvidenceLocalRecipeId,
+      toRecipeId: JoernEffectPureProgramEvidenceLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPureProgramEvidenceLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPureProgramEvidenceLocalRecipes = [JoernEffectPureProgramEvidenceLocalRecipe] as const

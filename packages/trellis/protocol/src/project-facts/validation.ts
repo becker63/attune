@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
 import {
   PackageContractSchema,
@@ -12,6 +12,10 @@ import {
   type OperationDiagnosticRuleInput,
   type ViewDiagnosticRuleMetadata,
 } from "./diagnostic-rules.js"
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export type PackageContractEnforcementBoundary =
   | "typescript-contract-builder"
@@ -320,4 +324,91 @@ function hasWaiverCategory(waivers: readonly unknown[] | undefined, category: st
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+export const ProjectFactsValidationRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+  contract: Schema.Unknown,
+})
+export type ProjectFactsValidationRecipeInput = typeof ProjectFactsValidationRecipeInput.Type
+
+export const ProjectFactsValidationRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  diagnosticCount: Schema.Number,
+  decoded: Schema.Boolean,
+})
+export type ProjectFactsValidationRecipeOutput = typeof ProjectFactsValidationRecipeOutput.Type
+
+export const summarizeProjectFactsValidation = (
+  input: ProjectFactsValidationRecipeInput,
+): ProjectFactsValidationRecipeOutput => {
+  const result = validatePackageContract(input.contract)
+  return {
+    sourcePath: input.sourcePath,
+    diagnosticCount: result.diagnostics.length,
+    decoded: result.contract !== undefined,
+  }
+}
+
+export const ProjectFactsValidationRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+// @attune-packet-target generated-runtime-projection eligible
+  const ValidationSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.validation.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: ProjectFactsValidationRecipeInput,
+    stateSchema: ProjectFactsValidationRecipeInput,
+    modes: ["read"],
+    consumedBy: ["framework-protocol.project-facts.contract-validation"],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const ValidationReport = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.validation.report",
+    kind: "report",
+    alchemyType: "attune:resource:ProjectFactsValidationReport",
+    addressSchema: ProjectFactsValidationRecipeInput,
+    stateSchema: ProjectFactsValidationRecipeOutput,
+    modes: ["check", "read"],
+    ownerRecipeId: "framework-protocol.project-facts.contract-validation",
+    producedBy: ["framework-protocol.project-facts.contract-validation"],
+  })
+  const ValidationHandler = helpers.defineRecipeHandler<ProjectFactsValidationRecipeInput, ProjectFactsValidationRecipeOutput, never, never>({
+    id: "framework-protocol.project-facts.contract-validation.handler",
+    recipeId: "framework-protocol.project-facts.contract-validation",
+    sourcePath: "packages/trellis/protocol/src/project-facts/validation.ts",
+    exportName: "summarizeProjectFactsValidation",
+    emitsReceipts: ["project-facts.validation-summary"],
+    handler: (input) => Effect.succeed(summarizeProjectFactsValidation(input)),
+  })
+  const ValidationDagEdge = helpers.defineAlchemyRecipeDagEdge({
+    fromRecipeId: "framework-protocol.project-facts.validation.source",
+    toRecipeId: "framework-protocol.project-facts.contract-validation",
+    resource: "framework-protocol.project-facts.validation.report",
+    kind: "validates",
+    modes: ["read", "check"],
+  })
+
+  return [
+    helpers.defineDiagnosticRecipe({
+      id: "framework-protocol.project-facts.contract-validation",
+      projectId: "framework-protocol",
+      title: "Validate decoded project-fact package contracts",
+      inputSchema: ProjectFactsValidationRecipeInput,
+      outputSchema: ProjectFactsValidationRecipeOutput,
+      io: {
+        inputSchema: ProjectFactsValidationRecipeInput,
+        outputSchema: ProjectFactsValidationRecipeOutput,
+        inputResources: [ValidationSource],
+        outputResources: [ValidationReport],
+      },
+      handler: ValidationHandler,
+      alchemyDag: [ValidationDagEdge],
+      nxTarget: "framework-protocol:test",
+      observedFiles: ["packages/trellis/protocol/src/project-facts/validation.ts"],
+      allowedFiles: ["packages/trellis/protocol/src/project-facts/validation.ts"],
+      validationEvidence: ["framework-protocol:test", "framework-protocol:typecheck"],
+    }),
+  ] as const
 }

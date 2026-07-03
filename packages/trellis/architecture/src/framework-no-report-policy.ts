@@ -1,3 +1,11 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineDiagnosticRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
 export const FrameworkNoReportRuleId = "attune/no-checked-in-protocol-report" as const
 
 export type FrameworkNoReportRuleId = typeof FrameworkNoReportRuleId
@@ -241,3 +249,107 @@ const normalizePath = (path: string): string => path.replaceAll("\\", "/")
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
+
+export const ArchitectureNoReportPolicyRecipeId =
+  "attune-architecture.no-report-policy" as const
+const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+const ArchitectureNoReportPolicySourcePath =
+  "packages/trellis/architecture/src/framework-no-report-policy.ts" as const
+
+const FrameworkNoReportFileSchema = Schema.Struct({
+  path: Schema.String,
+  content: Schema.String,
+})
+
+const FrameworkNoReportDiagnosticSchema = Schema.Struct({
+  ruleId: Schema.String,
+  severity: Schema.Literal("error"),
+  filePath: Schema.String,
+  message: Schema.String,
+  category: Schema.String,
+})
+
+const FrameworkNoReportInput = Schema.Struct({
+  files: Schema.Array(FrameworkNoReportFileSchema),
+})
+type FrameworkNoReportInput = typeof FrameworkNoReportInput.Type
+
+const FrameworkNoReportOutput = Schema.Struct({
+  diagnostics: Schema.Array(FrameworkNoReportDiagnosticSchema),
+  exitCode: Schema.Number,
+})
+type FrameworkNoReportOutput = typeof FrameworkNoReportOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureNoReportInputResource = defineAlchemyResource({
+  id: "attune-architecture.no-report.input",
+  kind: "file",
+  alchemyType: "attune:resource:SourceFileSet",
+  consumedBy: [ArchitectureNoReportPolicyRecipeId],
+  addressSchema: FrameworkNoReportInput,
+  stateSchema: FrameworkNoReportInput,
+  modes: ["read", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureNoReportReportResource = defineAlchemyResource({
+  id: "attune-architecture.no-report.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitectureNoReportPolicyRecipeId,
+  producedBy: [ArchitectureNoReportPolicyRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: Schema.Struct({ packageRoot: Schema.Literal("packages/trellis/architecture") }),
+  stateSchema: FrameworkNoReportOutput,
+  modes: ["project", "observe"],
+})
+
+export const ArchitectureNoReportPolicyHandler = defineRecipeHandler<
+  FrameworkNoReportInput,
+  FrameworkNoReportOutput
+>({
+  id: "attune-architecture.no-report-policy.handler",
+  recipeId: ArchitectureNoReportPolicyRecipeId,
+  sourcePath: ArchitectureNoReportPolicySourcePath,
+  exportName: "checkFrameworkNoReportPolicy",
+  handler: (input) =>
+    Effect.succeed((() => {
+      const result = checkFrameworkNoReportPolicy(input)
+      return {
+        diagnostics: [...result.diagnostics],
+        exitCode: result.exitCode,
+      }
+    })()),
+  emitsReceipts: ["attune-architecture.no-report-policy.reported"],
+})
+
+export const ArchitectureNoReportPolicyDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureNoReportPolicyRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureNoReportReportResource,
+  kind: "diagnoses",
+  modes: ["check", "observe"],
+})
+
+export const ArchitectureNoReportPolicyRecipe = defineDiagnosticRecipe({
+  id: ArchitectureNoReportPolicyRecipeId,
+  projectId: "attune-architecture",
+  title: "Reject checked-in protocol reports as source truth",
+  inputSchema: FrameworkNoReportInput,
+  outputSchema: FrameworkNoReportOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: [ArchitectureNoReportPolicySourcePath, "reports/**", "docs/**"],
+  validationEvidence: ["attune-architecture:test", "workspace:policy-fast"],
+  io: {
+    inputSchema: FrameworkNoReportInput,
+    outputSchema: FrameworkNoReportOutput,
+    inputResources: [ArchitectureNoReportInputResource],
+    outputResources: [ArchitectureNoReportReportResource],
+  },
+  handler: ArchitectureNoReportPolicyHandler,
+  alchemyDag: [ArchitectureNoReportPolicyDagEdge],
+})
+
+export const ArchitectureNoReportPolicyRecipes = [
+  ArchitectureNoReportPolicyRecipe,
+] as const

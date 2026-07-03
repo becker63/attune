@@ -1,115 +1,42 @@
-import { defineRecipe } from "@attune/framework-protocol";
-import { Schema as S } from "effect";
+import { defineRecipePackage } from "@attune/framework-protocol";
+import { AttuneDiscoveryConfigRecipes } from "./config-recipes.js";
+import { AttuneDiscoveryRecipes } from "./index.js";
+import { AttuneDiscoveryReadModelRecipes } from "./memory/read-model.js";
+import { AttuneDiscoveryProjectionRecipes } from "./projection/read-model-projection.js";
+import { AttuneDiscoveryTestRecipes } from "./test-recipes.js";
 
-export interface AttuneDiscoveryRecipeSchemas {
-  readonly RepoSnapshot: S.Schema<unknown>;
-  readonly DiscoveryRun: S.Schema<unknown>;
-  readonly AnchorCard: S.Schema<unknown>;
-  readonly MotifHypothesis: S.Schema<unknown>;
-  readonly EvidencePacket: S.Schema<unknown>;
-  readonly DecisionPacket: S.Schema<unknown>;
-  readonly RuleCandidate: S.Schema<unknown>;
-  readonly DeterministicRule: S.Schema<unknown>;
-  readonly DiscoveryReportInput: S.Schema<unknown>;
-  readonly WorkbenchSnapshot: S.Schema<unknown>;
-}
-
-export const createAttuneDiscoveryRecipes = (
-  schemas: AttuneDiscoveryRecipeSchemas,
-) => [
-  defineRecipe({
-    id: "attuned-discovery.repo-snapshot",
-    projectId: "attuned-discovery",
-    title: "Capture repository snapshot",
-    inputSchema: schemas.RepoSnapshot,
-    outputSchema: schemas.RepoSnapshot,
-    nxTarget: "attuned-discovery:check",
-    sourcePath: "packages/attune/discovery/src/recipes.ts",
-    allowedFiles: ["packages/attune/discovery/src/**"],
-    validationEvidence: ["attuned-discovery:test"],
-  }),
-  defineRecipe({
-    id: "attuned-discovery.anchor-retrieval",
-    projectId: "attuned-discovery",
-    title: "Retrieve semantic anchors",
-    inputSchema: schemas.DiscoveryRun,
-    outputSchema: S.Array(schemas.AnchorCard),
-    dependencies: [{ recipeId: "attuned-discovery.repo-snapshot", reason: "anchors are scoped to a repo snapshot" }],
-    nxTarget: "attuned-discovery:check",
-    sourcePath: "packages/attune/discovery/src/recipes.ts",
-    allowedFiles: ["packages/attune/discovery/src/**"],
-    validationEvidence: ["attuned-discovery:test"],
-  }),
-  defineRecipe({
-    id: "attuned-discovery.hypothesis",
-    projectId: "attuned-discovery",
-    title: "Create motif hypothesis",
-    inputSchema: S.Array(schemas.AnchorCard),
-    outputSchema: schemas.MotifHypothesis,
-    dependencies: [{ recipeId: "attuned-discovery.anchor-retrieval" }],
-    nxTarget: "attuned-discovery:check",
-    sourcePath: "packages/attune/discovery/src/recipes.ts",
-    allowedFiles: ["packages/attune/discovery/src/**"],
-    validationEvidence: ["attuned-discovery:test"],
-  }),
-  defineRecipe({
-    id: "attuned-discovery.joern-proof",
-    projectId: "attuned-discovery",
-    title: "Run bounded Joern proof",
-    inputSchema: schemas.MotifHypothesis,
-    outputSchema: schemas.EvidencePacket,
-    dependencies: [{ recipeId: "attuned-discovery.hypothesis" }],
-    nxTarget: "attuned-discovery:check",
-    sourcePath: "packages/attune/discovery/src/recipes.ts",
-    allowedFiles: ["packages/attune/discovery/src/**"],
-    validationEvidence: ["attuned-discovery:test"],
-  }),
-  defineRecipe({
-    id: "attuned-discovery.evidence-scoring",
-    projectId: "attuned-discovery",
-    title: "Score proof evidence",
-    inputSchema: S.Array(schemas.EvidencePacket),
-    outputSchema: schemas.DecisionPacket,
-    dependencies: [{ recipeId: "attuned-discovery.joern-proof" }],
-    nxTarget: "attuned-discovery:check",
-    sourcePath: "packages/attune/discovery/src/recipes.ts",
-    allowedFiles: ["packages/attune/discovery/src/**"],
-    validationEvidence: ["attuned-discovery:test"],
-  }),
-  defineRecipe({
-    id: "attuned-discovery.rule-candidate",
-    projectId: "attuned-discovery",
-    title: "Promote evidence into rule candidate",
-    inputSchema: schemas.DecisionPacket,
-    outputSchema: schemas.RuleCandidate,
-    dependencies: [{ recipeId: "attuned-discovery.evidence-scoring" }],
-    nxTarget: "attuned-discovery:check",
-    sourcePath: "packages/attune/discovery/src/recipes.ts",
-    allowedFiles: ["packages/attune/discovery/src/**"],
-    validationEvidence: ["attuned-discovery:test"],
-  }),
-  defineRecipe({
-    id: "attuned-discovery.deterministic-rule",
-    projectId: "attuned-discovery",
-    title: "Generate deterministic rule artifact",
-    inputSchema: schemas.RuleCandidate,
-    outputSchema: schemas.DeterministicRule,
-    dependencies: [{ recipeId: "attuned-discovery.rule-candidate" }],
-    nxTarget: "attuned-discovery:check",
-    sourcePath: "packages/attune/discovery/src/recipes.ts",
-    allowedFiles: ["packages/attune/discovery/src/**"],
-    validationEvidence: ["attuned-discovery:test"],
-  }),
-  defineRecipe({
-    id: "attuned-discovery.report",
-    projectId: "attuned-discovery",
-    title: "Render discovery report and workbench snapshot",
-    inputSchema: schemas.DiscoveryReportInput,
-    outputSchema: schemas.WorkbenchSnapshot,
-    dependencies: [{ recipeId: "attuned-discovery.deterministic-rule" }],
-    nxTarget: "attuned-discovery:check",
-    sourcePath: "packages/attune/discovery/src/recipes.ts",
-    allowedFiles: ["packages/attune/discovery/src/**"],
-    validationEvidence: ["attuned-discovery:test"],
-  }),
+export const createAttuneDiscoveryRecipes = () => [
+  ...AttuneDiscoveryRecipes,
+  ...AttuneDiscoveryReadModelRecipes,
+  ...AttuneDiscoveryProjectionRecipes,
+  ...AttuneDiscoveryConfigRecipes,
+  ...AttuneDiscoveryTestRecipes,
 ] as const;
+
+export const createAttuneDiscoveryRecipePackage = () => {
+  const recipes = createAttuneDiscoveryRecipes();
+// @attune-packet-target generated-runtime-projection eligible
+  return defineRecipePackage({
+    packageId: "attuned-discovery",
+    kind: "core-discovery-runtime",
+    title: "Attuned Discovery recipe package",
+    sourceRoot: "packages/attune/discovery/src",
+    recipes,
+    ownership: [
+      {
+        id: "discovery-runtime",
+        title: "Discovery file-local recipe modules and runtime source",
+        files: [
+          "packages/attune/discovery/src/index.ts",
+          "packages/attune/discovery/src/memory/read-model.ts",
+          "packages/attune/discovery/src/projection/read-model-projection.ts",
+          "packages/attune/discovery/src/config-recipes.ts",
+          "packages/attune/discovery/src/test-recipes.ts",
+          "packages/attune/discovery/vitest.config.ts",
+          "packages/attune/discovery/test/**",
+        ],
+        recipeIds: recipes.map((recipe) => recipe.id),
+      },
+    ],
+  });
+};

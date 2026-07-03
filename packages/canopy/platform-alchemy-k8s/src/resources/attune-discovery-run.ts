@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+import {
+  K8sResourceModuleCatalogResource,
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport,
+  PlatformAlchemyK8sProjectId,
+  PlatformAlchemyK8sResourceRegistryRecipeId,
+  k8sResourceModuleReport,
+} from "./common.js"
+
 import type { PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
 import { AttuneBudget } from "./attune-budget.js"
 import { AttunePolicy } from "./attune-policy.js"
@@ -78,3 +93,56 @@ export const AttuneDiscoveryRun = {
       }),
     ]),
 } as const
+
+
+export const AttuneDiscoveryRunResourceRecipeId = "platform-alchemy-k8s.attune-discovery-run-resource" as const
+const AttuneDiscoveryRunResourceHandlerId = "platform-alchemy-k8s.attune-discovery-run-resource.handler" as const
+const AttuneDiscoveryRunResourceSourcePath = "packages/canopy/platform-alchemy-k8s/src/resources/attune-discovery-run.ts" as const
+
+export const AttuneDiscoveryRunResourceHandler = defineRecipeHandler<
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport
+>({
+  id: AttuneDiscoveryRunResourceHandlerId,
+  recipeId: AttuneDiscoveryRunResourceRecipeId,
+  sourcePath: AttuneDiscoveryRunResourceSourcePath,
+  exportName: "AttuneDiscoveryRun",
+  handler: () =>
+    Effect.succeed(k8sResourceModuleReport({
+      recipeId: AttuneDiscoveryRunResourceRecipeId,
+      sourcePath: AttuneDiscoveryRunResourceSourcePath,
+      exportName: "AttuneDiscoveryRun",
+      moduleKind: "attune discovery run Kubernetes resource factory",
+    })) as never,
+  emitsReceipts: [`platform-alchemy-k8s.attune-discovery-run-resource.projected`],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttuneDiscoveryRunResourceRecipe = defineProjectionRecipe({
+  id: AttuneDiscoveryRunResourceRecipeId,
+  projectId: PlatformAlchemyK8sProjectId,
+  title: "Declare attune discovery run Kubernetes resource factory",
+  inputSchema: K8sResourceModuleRecipeInput as never,
+  outputSchema: K8sResourceModuleReport as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [AttuneDiscoveryRunResourceSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test", "platform-alchemy-k8s:typecheck"],
+  io: {
+    inputSchema: K8sResourceModuleRecipeInput as never,
+    outputSchema: K8sResourceModuleReport as never,
+    inputResources: [K8sResourceModuleCatalogResource],
+    outputResources: [K8sResourceModuleCatalogResource],
+  },
+  handler: AttuneDiscoveryRunResourceHandler,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: PlatformAlchemyK8sResourceRegistryRecipeId,
+      toRecipeId: AttuneDiscoveryRunResourceRecipeId,
+      resource: K8sResourceModuleCatalogResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }),
+  ],
+})
+
+export const AttuneDiscoveryRunResourceRecipes = [AttuneDiscoveryRunResourceRecipe] as const

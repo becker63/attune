@@ -1,4 +1,11 @@
-import { Schema } from "effect"
+import {
+  defineManagedRecipe,
+  defineManagedRecipeAlchemyBinding,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  type RecipeRepair,
+} from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
 
 import {
   KubernetesObjectSchema,
@@ -7,6 +14,30 @@ import {
   type KubernetesObject,
   type PlatformResourceSet,
 } from "./alchemy-k8s-provider.js"
+import { AttuneKubernetesGraphResourceContract } from "./alchemy-resource.js"
+import { resourceSet } from "../resources/common.js"
+
+export const KubernetesObjectSetRecipeId =
+  "platform-alchemy-k8s.kubernetes-object-set" as const
+const KubernetesObjectSetHandlerId =
+  "platform-alchemy-k8s.kubernetes-object-set.handler" as const
+const KubernetesObjectSetAlchemyBindingId =
+  "platform-alchemy-k8s.kubernetes-object-set.alchemy" as const
+const KubernetesProviderRuntimeLayerId =
+  "platform-alchemy-k8s.kubernetes-provider-runtime.layer" as const
+const KubernetesProviderRuntimeServiceId =
+  "platform-alchemy-k8s.kubernetes-provider-runtime" as const
+const PlatformAlchemyK8sProviderBridgeRecipeId =
+  "platform-alchemy-k8s.provider-bridge" as const
+const PlatformAlchemyK8sProviderCollectionId =
+  "platform-alchemy-k8s.provider-collection" as const
+const KubernetesObjectSetLifecycleSubstrateId =
+  "platform-alchemy-k8s.alchemy-provider" as const
+const KubernetesObjectSetDriftRepairId =
+  "recipe-repair:platform-alchemy-k8s.kubernetes-object-set:drift" as const
+const KubernetesObjectSetDriftRepairRisk = "needs-review" as const
+const KubernetesObjectSetSourcePath =
+  "packages/canopy/platform-alchemy-k8s/src/provider/kubernetes-object-set.ts" as const
 
 export type KubernetesProviderMode = "Live" | "DryRun" | "Test"
 export type KubernetesObjectSetAction = "render" | "validate" | "read" | "diff" | "apply" | "delete"
@@ -45,6 +76,47 @@ export interface KubernetesProvider {
   readonly apply: (resource: PlatformResourceSet) => KubernetesObjectSetResult
   readonly delete: (resource: PlatformResourceSet) => KubernetesObjectSetResult
 }
+
+export const KubernetesProviderModeSchema = Schema.Literals(["DryRun", "Test", "Live"] as const)
+export const KubernetesObjectSetActionSchema = Schema.Literals(["render", "validate", "read", "diff", "apply", "delete"] as const)
+export const KubernetesDiffOperationSchema = Schema.Literals(["create", "update", "delete", "unchanged"] as const)
+
+export const KubernetesObjectSetRecipeInput = Schema.Struct({
+  id: Schema.String,
+  objects: Schema.Array(KubernetesObjectSchema),
+  mode: KubernetesProviderModeSchema,
+  action: Schema.optional(KubernetesObjectSetActionSchema),
+})
+export type KubernetesObjectSetRecipeInput = typeof KubernetesObjectSetRecipeInput.Type
+
+export const KubernetesObjectSetDiffEntrySchema = Schema.Struct({
+  key: Schema.String,
+  operation: KubernetesDiffOperationSchema,
+  desired: Schema.optional(KubernetesObjectSchema),
+  observed: Schema.optional(KubernetesObjectSchema),
+})
+
+export const KubernetesObjectSetRecipeOutput = Schema.Struct({
+  provider: Schema.Literal("KubernetesProvider"),
+  mode: KubernetesProviderModeSchema,
+  action: KubernetesObjectSetActionSchema,
+  id: Schema.String,
+  objects: Schema.Array(KubernetesObjectSchema),
+  observed: Schema.Array(KubernetesObjectSchema),
+  diff: Schema.Array(KubernetesObjectSetDiffEntrySchema),
+  mutated: Schema.Boolean,
+  evidenceRefs: Schema.Array(Schema.String),
+})
+export type KubernetesObjectSetRecipeOutput = typeof KubernetesObjectSetRecipeOutput.Type
+
+export interface KubernetesProviderRuntimeService {
+  readonly providerForMode: (mode: KubernetesProviderMode) => KubernetesProvider
+}
+
+export class KubernetesProviderRuntime extends Context.Service<
+  KubernetesProviderRuntime,
+  KubernetesProviderRuntimeService
+>()("platform-alchemy-k8s/KubernetesProviderRuntime") {}
 
 const validateObject = (object: KubernetesObject): void => {
   Schema.decodeUnknownSync(KubernetesObjectSchema)(object)
@@ -144,3 +216,140 @@ export const createKubernetesProviderTest = (world: KubernetesObjectSetWorld = {
   createProvider("Test", new Map(world.objects))
 
 export const createKubernetesProviderLive = (): KubernetesProvider => createProvider("Live", new Map())
+
+export const KubernetesProviderRuntimeLive = Layer.succeed(KubernetesProviderRuntime, {
+  providerForMode: (mode: KubernetesProviderMode) => {
+    switch (mode) {
+      case "Live":
+        return createKubernetesProviderLive()
+      case "Test":
+        return createKubernetesProviderTest()
+      case "DryRun":
+        return createKubernetesProviderDryRun()
+    }
+  },
+})
+
+export const KubernetesProviderRuntimeLayer = defineRecipeLayer({
+  id: KubernetesProviderRuntimeLayerId,
+  sourcePath: KubernetesObjectSetSourcePath,
+  exportName: "KubernetesProviderRuntimeLive",
+  layer: KubernetesProviderRuntimeLive as never,
+  provides: [{
+    id: KubernetesProviderRuntimeServiceId,
+    service: KubernetesProviderRuntime as never,
+  }],
+})
+
+const runObjectSetAction = (
+  runtime: KubernetesProviderRuntimeService,
+  input: KubernetesObjectSetRecipeInput,
+): KubernetesObjectSetResult => {
+  const resource = resourceSet(input.id, input.objects as readonly KubernetesObject[])
+  const provider = runtime.providerForMode(input.mode)
+
+  switch (input.action ?? "validate") {
+    case "render":
+      return provider.render(resource)
+    case "read":
+      return provider.read(resource)
+    case "diff":
+      return provider.diff(resource)
+    case "apply":
+      return provider.apply(resource)
+    case "delete":
+      return provider.delete(resource)
+    case "validate":
+      return provider.validate(resource)
+  }
+}
+
+export const KubernetesObjectSetHandler = defineRecipeHandler<
+  KubernetesObjectSetRecipeInput,
+  KubernetesObjectSetRecipeOutput,
+  never,
+  KubernetesProviderRuntime
+>({
+  id: KubernetesObjectSetHandlerId,
+  recipeId: KubernetesObjectSetRecipeId,
+  sourcePath: KubernetesObjectSetSourcePath,
+  exportName: "KubernetesObjectSetHandler",
+  handler: (input) =>
+    Effect.gen(function* () {
+      const runtime = yield* KubernetesProviderRuntime
+      return runObjectSetAction(runtime, input)
+    }) as never,
+  layer: KubernetesProviderRuntimeLayer,
+  emitsReceipts: ["platform-alchemy-k8s.kubernetes-object-set.lifecycle"],
+})
+
+export const kubernetesObjectSetDriftRepair: RecipeRepair = {
+  repairId: KubernetesObjectSetDriftRepairId,
+  recipeId: KubernetesObjectSetRecipeId,
+  title: "Repair rendered Kubernetes object-set drift",
+  kind: "managed-lifecycle",
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: ["packages/canopy/platform-alchemy-k8s/src/provider/**", "packages/canopy/platform-alchemy-k8s/src/resources/**"],
+  risk: KubernetesObjectSetDriftRepairRisk,
+  evidenceRequirements: ["platform-alchemy-k8s:test", "workspace:policy-fast"],
+}
+
+// @attune-packet-target generated-runtime-projection eligible
+export const KubernetesObjectSetAlchemyBinding = defineManagedRecipeAlchemyBinding({
+  id: KubernetesObjectSetAlchemyBindingId,
+  managedRecipeId: KubernetesObjectSetRecipeId,
+  alchemyResourceType: "attune:alchemy:KubernetesGraph",
+  providerId: PlatformAlchemyK8sProviderCollectionId,
+  resource: AttuneKubernetesGraphResourceContract,
+  lifecycle: {
+    plan: "render",
+    read: "read",
+    diff: "diff",
+    check: "validate",
+    apply: "apply",
+    destroy: "delete",
+  },
+  bindings: ["AttuneKubernetesGraph", "platformAlchemyK8sProviders"],
+})
+
+export const KubernetesObjectSetManagedRecipe = defineManagedRecipe({
+  id: KubernetesObjectSetRecipeId,
+  projectId: "platform-alchemy-k8s",
+  title: "Manage rendered Kubernetes object-set lifecycle",
+  inputSchema: KubernetesObjectSetRecipeInput as never,
+  outputSchema: KubernetesObjectSetRecipeOutput as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: ["packages/canopy/platform-alchemy-k8s/src/provider/**", "packages/canopy/platform-alchemy-k8s/src/resources/**"],
+  validationEvidence: ["platform-alchemy-k8s:test", "workspace:policy-fast"],
+  io: {
+    inputSchema: KubernetesObjectSetRecipeInput as never,
+    outputSchema: KubernetesObjectSetRecipeOutput as never,
+    inputResources: [AttuneKubernetesGraphResourceContract],
+    outputResources: [AttuneKubernetesGraphResourceContract],
+  },
+  handler: KubernetesObjectSetHandler as never,
+  alchemyDag: [{
+    fromRecipeId: PlatformAlchemyK8sProviderBridgeRecipeId,
+    toRecipeId: KubernetesObjectSetRecipeId,
+    resource: AttuneKubernetesGraphResourceContract,
+    kind: "manages",
+    modes: ["plan", "apply", "check", "destroy", "read"],
+  }],
+  lifecycle: ["plan", "apply", "check", "destroy"],
+  resourceKind: "kubernetes-object-set",
+  alchemy: KubernetesObjectSetAlchemyBinding,
+  lifecycleSubstrates: [
+    {
+      id: KubernetesObjectSetLifecycleSubstrateId,
+      kind: "container-runtime",
+      tool: "alchemy",
+      lifecycleActions: ["plan", "apply", "check", "destroy"],
+      evidence: ["platform-alchemy-k8s:test"],
+    },
+  ],
+  observedState: { status: "unknown" },
+  driftRepair: kubernetesObjectSetDriftRepair,
+  humanReviewRequired: true,
+})
+
+export const KubernetesObjectSetRecipes = [KubernetesObjectSetManagedRecipe] as const

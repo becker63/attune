@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 export const PermissionDecision = S.Literals(["allow", "ask", "deny"])
 export type PermissionDecision = typeof PermissionDecision.Type
@@ -32,3 +33,27 @@ export const PermissionCheck = S.Struct({
   reason: S.String,
 })
 export type PermissionCheck = typeof PermissionCheck.Type
+
+export const permissionProfileSchemaModule = (): readonly string[] => [
+  "PermissionDecision",
+  "PermissionRuleKind",
+  "PermissionRule",
+  "PermissionProfile",
+  "PermissionCheck",
+]
+
+export const AttunePiPermissionProfileSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.permission-profile.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/permission-profile.ts",
+  exportName: "permissionProfileSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.permission-profile.projected"],
+  handler: () => Effect.succeed(permissionProfileSchemaModule()),
+})
+
+export const AttunePiPermissionProfileSchemaRecipeModule = [
+  AttunePiPermissionProfileSchemaHandler,
+] as const

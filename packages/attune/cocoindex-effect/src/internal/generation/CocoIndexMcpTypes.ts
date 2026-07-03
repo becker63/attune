@@ -1,9 +1,19 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import { Effect, Scope } from "effect"
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  type RecipeInvocation,
+} from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema, Scope } from "effect"
 
-import { startMcpStdioClient } from "../../mcp/stdio.js"
+import {
+  CocoIndexMcpStdioResource,
+  startMcpStdioClient,
+} from "../../mcp/stdio.js"
 
 type ToolDefinition = Readonly<{
   readonly name: string
@@ -12,7 +22,61 @@ type ToolDefinition = Readonly<{
 
 const sourceDir = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(sourceDir, "../../..")
-const outputPath = resolve(projectRoot, "src/generated/cocoindex-code-mcp.ts")
+export const generatedCocoIndexMcpSchemaPath =
+  ".attune/cache/generated/cocoindex-effect/cocoindex-code-mcp.ts"
+const outputPath = resolve(projectRoot, "../../../", generatedCocoIndexMcpSchemaPath)
+const CocoIndexProjectId = "cocoindex-effect" as const
+export const CocoIndexEmitMcpSchemaRecipeId =
+  "cocoindex-effect.emit-mcp-schema" as const
+const CocoIndexMcpToolGenerationRecipeId =
+  "cocoindex-effect.mcp-tool-generation" as const
+const GeneratedCocoIndexMcpSchemaResourceId =
+  "cocoindex-effect.generated-mcp-schema" as const
+const CocoIndexMcpSchemaGenerationHandlerId =
+  "cocoindex-effect.emit-mcp-schema.handler" as const
+const CocoIndexMcpSchemaGenerationSourcePath =
+  "packages/attune/cocoindex-effect/src/internal/generation/CocoIndexMcpTypes.ts" as const
+const CocoIndexMcpSchemaGenerationLayerId =
+  "cocoindex-effect.emit-mcp-schema.layer" as const
+const CocoIndexMcpSchemaGenerationServiceId =
+  "cocoindex-effect.emit-mcp-schema.runtime" as const
+
+export const CocoIndexMcpSchemaGenerationInput = Schema.Struct({
+  projectRoot: Schema.String,
+  outputPath: Schema.optional(Schema.String),
+  command: Schema.optional(Schema.String),
+})
+export type CocoIndexMcpSchemaGenerationInput =
+  typeof CocoIndexMcpSchemaGenerationInput.Type
+
+export const CocoIndexMcpSchemaGenerationOutput = Schema.Struct({
+  generatedFiles: Schema.Array(Schema.String),
+  sourceTool: Schema.Literal("search"),
+  snapshotFallbackAllowed: Schema.Boolean,
+})
+export type CocoIndexMcpSchemaGenerationOutput =
+  typeof CocoIndexMcpSchemaGenerationOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const GeneratedCocoIndexMcpSchemaResource = defineAlchemyResource({
+  id: GeneratedCocoIndexMcpSchemaResourceId,
+  kind: "generated-directory",
+  alchemyType: "attune:resource:GeneratedDirectory",
+  ownerRecipeId: CocoIndexEmitMcpSchemaRecipeId,
+  producedBy: [CocoIndexEmitMcpSchemaRecipeId],
+  consumedBy: [
+    "cocoindex-effect.scaffold-mcp-tool",
+    CocoIndexMcpToolGenerationRecipeId,
+    "cocoindex-effect.generated-surface-check",
+  ],
+  addressFields: ["projectRoot", "outputPath"],
+  addressSchema: CocoIndexMcpSchemaGenerationInput,
+  stateSchema: CocoIndexMcpSchemaGenerationOutput,
+  modes: ["project", "read"],
+  programmaticResourceExport: "runCocoIndexMcpTypesGeneration",
+  programmaticProviderExport: "CocoIndexMcpSchemaGenerationHandler",
+  programmaticBridgeSourcePath: CocoIndexMcpSchemaGenerationSourcePath,
+})
 
 const main = Effect.gen(function* generateCocoIndexMcpTypes() {
   const tools = yield* Effect.scoped(inspectTools()).pipe(
@@ -35,6 +99,100 @@ const main = Effect.gen(function* generateCocoIndexMcpTypes() {
 
 export const runCocoIndexMcpTypesGeneration = (): Promise<void> =>
   Effect.runPromise(main)
+
+export interface CocoIndexMcpSchemaGenerationService {
+  readonly emit: () => Effect.Effect<void>
+}
+
+export class CocoIndexMcpSchemaGenerationRuntime extends Context.Service<
+  CocoIndexMcpSchemaGenerationRuntime,
+  CocoIndexMcpSchemaGenerationService
+>()("cocoindex-effect/CocoIndexMcpSchemaGenerationRuntime") {}
+
+export const CocoIndexMcpSchemaGenerationLive = Layer.succeed(CocoIndexMcpSchemaGenerationRuntime, {
+  emit: () => Effect.promise(runCocoIndexMcpTypesGeneration),
+})
+
+export const CocoIndexMcpSchemaGenerationLayer = defineRecipeLayer({
+  id: CocoIndexMcpSchemaGenerationLayerId,
+  sourcePath: CocoIndexMcpSchemaGenerationSourcePath,
+  exportName: "CocoIndexMcpSchemaGenerationLive",
+  layer: CocoIndexMcpSchemaGenerationLive,
+  provides: [{
+    id: CocoIndexMcpSchemaGenerationServiceId,
+    service: CocoIndexMcpSchemaGenerationRuntime,
+  }],
+})
+
+export const CocoIndexMcpSchemaGenerationHandler = defineRecipeHandler<
+  CocoIndexMcpSchemaGenerationInput,
+  CocoIndexMcpSchemaGenerationOutput,
+  never,
+  CocoIndexMcpSchemaGenerationRuntime
+>({
+  id: CocoIndexMcpSchemaGenerationHandlerId,
+  recipeId: CocoIndexEmitMcpSchemaRecipeId,
+  sourcePath: CocoIndexMcpSchemaGenerationSourcePath,
+  exportName: "runCocoIndexMcpTypesGeneration",
+  handler: (input) =>
+    Effect.gen(function* emitCocoIndexMcpSchema() {
+      const runtime = yield* CocoIndexMcpSchemaGenerationRuntime
+      yield* runtime.emit()
+      return {
+        generatedFiles: [input.outputPath ?? generatedCocoIndexMcpSchemaPath],
+        sourceTool: "search" as const,
+        snapshotFallbackAllowed:
+          process.env.COCOINDEX_MCP_GENERATOR_ALLOW_SNAPSHOT !== "0",
+      }
+    }),
+  layer: CocoIndexMcpSchemaGenerationLayer,
+  emitsReceipts: ["cocoindex-effect.generated-mcp-schema"],
+})
+
+export const cocoIndexMcpSchemaGenerationRecipeInvocation = (): RecipeInvocation => ({
+  recipeId: CocoIndexEmitMcpSchemaRecipeId,
+  action: "generate",
+  input: {
+    projectRoot,
+    outputPath: generatedCocoIndexMcpSchemaPath,
+  },
+  source: {
+    surface: "nx",
+    projectId: CocoIndexProjectId,
+    target: "cocoindex-effect:generate",
+  },
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CocoIndexEmitMcpSchemaRecipe = defineProjectionRecipe({
+  id: CocoIndexEmitMcpSchemaRecipeId,
+  projectId: CocoIndexProjectId,
+  title: "Generate typed CocoIndex MCP schema from tool inspection",
+  inputSchema: CocoIndexMcpSchemaGenerationInput,
+  outputSchema: CocoIndexMcpSchemaGenerationOutput,
+  nxTarget: "cocoindex-effect:generate",
+  allowedFiles: [
+    "packages/attune/cocoindex-effect/src/internal/generation/CocoIndexMcpTypes.ts",
+    generatedCocoIndexMcpSchemaPath,
+  ],
+  validationEvidence: ["cocoindex-effect:generate", "cocoindex-effect:test"],
+  io: {
+    inputSchema: CocoIndexMcpSchemaGenerationInput,
+    outputSchema: CocoIndexMcpSchemaGenerationOutput,
+    inputResources: [CocoIndexMcpStdioResource],
+    outputResources: [GeneratedCocoIndexMcpSchemaResource],
+  },
+  handler: CocoIndexMcpSchemaGenerationHandler,
+  alchemyDag: [{
+    fromRecipeId: "cocoindex-effect.mcp-stdio",
+    toRecipeId: CocoIndexEmitMcpSchemaRecipeId,
+    resource: CocoIndexMcpStdioResource,
+    kind: "invokes",
+    modes: ["read", "apply"],
+  }],
+})
+
+export const CocoIndexMcpTypesRecipes = [CocoIndexEmitMcpSchemaRecipe] as const
 
 const inspectTools = (): Effect.Effect<ReadonlyArray<ToolDefinition>, unknown, Scope.Scope> =>
   Effect.acquireRelease(

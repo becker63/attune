@@ -1,12 +1,23 @@
-import { Context, Effect, Layer } from "effect"
-import type {
-  ProgramArtifactRecord,
-  ProgramSchemaDescriptor,
-  ProgramObservation,
-  ProgramObservationRun,
+import { Context, Effect, Layer, Schema } from "effect"
+import {
+  deriveDiagnosticRequirements,
+  ProgramSchemaDescriptorSchema,
+  defineAlchemyResource,
+  defineManagedRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  type ProgramArtifactRecord,
+  type ProgramSchemaDescriptor,
+  type ProgramObservation,
+  type ProgramObservationRun,
 } from "@attune/framework-protocol"
 
-import { ProgramFactProjection, type ProgramFactProjectionApi } from "./ProgramFactProjection.js"
+import {
+  ProgramFactProjection,
+  ProgramFactProjectionInputResource,
+  programFactProjectionRecipeId,
+  type ProgramFactProjectionApi,
+} from "./ProgramFactProjection.js"
 import {
   decodeProgramFactStoreSnapshot,
   mapStoreError,
@@ -17,6 +28,34 @@ import {
   type ReplayObservationMetadata,
   type DiagnosticWaiverState,
 } from "./ProgramFactStore.js"
+
+const programFactRuntimeRecipeId = "framework-runtime.program-fact-runtime" as const
+const programFactRuntimeAlchemyBindingId =
+  "framework-runtime.program-fact-runtime.alchemy-binding" as const
+const programFactRuntimeSourcePath = "packages/trellis/runtime/src/ProgramFactRuntime.ts" as const
+
+export const SchemaDescriptorReceiptSchema = Schema.Struct({
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  descriptorHash: Schema.String,
+  diagnosticRequirementCount: Schema.Number,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ProgramFactRuntimeStoreResource = defineAlchemyResource({
+  id: "framework-runtime.program-fact-runtime.store",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ProgramFactStore",
+  ownerRecipeId: programFactRuntimeRecipeId,
+  producedBy: [programFactRuntimeRecipeId],
+  consumedBy: [programFactRuntimeRecipeId, programFactProjectionRecipeId],
+  addressFields: ["schemaDescriptorId", "projectId", "sourcePath"],
+  addressSchema: ProgramSchemaDescriptorSchema as never,
+  stateSchema: SchemaDescriptorReceiptSchema as never,
+  modes: ["read", "write", "observe", "project"],
+  programmaticResourceExport: "ProgramFactRuntimeLive",
+  programmaticBridgeSourcePath: programFactRuntimeSourcePath,
+})
 
 export interface SchemaDescriptorReceipt {
   readonly schemaDescriptorId: string
@@ -65,7 +104,7 @@ export const makeProgramFactRuntime = (
         const repairFindings = projection.computeRepairFindings({
           schemaDescriptorId: descriptor?.schemaDescriptorId ?? `attune/project/${projectId}`,
           projectId,
-          sourcePath: descriptor?.sourcePath ?? "unknown",
+          sourcePath: descriptor?.sourcePath ?? programFactRuntimeSourcePath,
           schemaDescriptors: snapshot.schemaDescriptors.filter((candidate) => candidate.projectId === projectId),
           diagnosticRequirements: snapshot.diagnosticRequirements.filter((diagnosticRequirement) =>
             diagnosticRequirement.projectId === projectId
@@ -154,3 +193,81 @@ export const ProgramFactRuntimeLive: Layer.Layer<
     return makeProgramFactRuntime(store, projection)
   }),
 )
+
+export const ProgramFactRuntimeLayer = defineRecipeLayer({
+  id: "framework-runtime.program-fact-runtime.layer",
+  sourcePath: programFactRuntimeSourcePath,
+  exportName: "ProgramFactRuntimeLive",
+  layer: ProgramFactRuntimeLive as never,
+  provides: [{
+    id: "framework-runtime.program-fact-runtime.service",
+    service: ProgramFactRuntime as never,
+  }],
+})
+
+export const materializeProgramFactRuntimeDescriptor = (
+  descriptor: ProgramSchemaDescriptor,
+): Effect.Effect<SchemaDescriptorReceipt> =>
+  Effect.succeed({
+    schemaDescriptorId: descriptor.schemaDescriptorId,
+    projectId: descriptor.projectId,
+    descriptorHash: descriptor.descriptorHash,
+    diagnosticRequirementCount: deriveDiagnosticRequirements(descriptor).length,
+  })
+
+export const ProgramFactRuntimeHandler = defineRecipeHandler<
+  ProgramSchemaDescriptor,
+  SchemaDescriptorReceipt
+>({
+  id: "framework-runtime.program-fact-runtime.handler",
+  recipeId: programFactRuntimeRecipeId,
+  sourcePath: programFactRuntimeSourcePath,
+  exportName: "materializeProgramFactRuntimeDescriptor",
+  layer: ProgramFactRuntimeLayer,
+  emitsReceipts: ["framework-runtime.program-fact-runtime.schema-descriptor.materialized"],
+  handler: materializeProgramFactRuntimeDescriptor,
+})
+
+export const ProgramFactRuntimeRecipe = defineManagedRecipe({
+  id: programFactRuntimeRecipeId,
+  projectId: "framework-runtime",
+  title: "Materialize program facts into the runtime store",
+  inputSchema: ProgramSchemaDescriptorSchema as never,
+  outputSchema: SchemaDescriptorReceiptSchema as never,
+  allowedFiles: [programFactRuntimeSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  lifecycle: ["plan", "apply", "check"],
+  resourceKind: "program-fact-runtime-store",
+  io: {
+    inputSchema: ProgramSchemaDescriptorSchema as never,
+    outputSchema: SchemaDescriptorReceiptSchema as never,
+    inputResources: [ProgramFactRuntimeStoreResource],
+    outputResources: [ProgramFactRuntimeStoreResource],
+  },
+  handler: ProgramFactRuntimeHandler,
+  alchemy: {
+    id: programFactRuntimeAlchemyBindingId,
+    managedRecipeId: programFactRuntimeRecipeId,
+    alchemyResourceType: "attune:alchemy:ProgramFactRuntime",
+    providerId: "framework-runtime.managed-recipe-alchemy-provider",
+    resource: ProgramFactRuntimeStoreResource,
+    lifecycle: {
+      plan: "program-fact-runtime.plan",
+      apply: "program-fact-runtime.apply",
+      check: "program-fact-runtime.check",
+      read: "program-fact-runtime.read",
+    },
+    bindings: [programFactProjectionRecipeId],
+  },
+  alchemyDag: [{
+    fromRecipeId: programFactRuntimeRecipeId,
+    toRecipeId: programFactProjectionRecipeId,
+    resource: ProgramFactRuntimeStoreResource,
+    kind: "projects",
+    modes: ["read", "write", "observe", "project"],
+  }],
+})
+
+export const ProgramFactRuntimeRecipes = [
+  ProgramFactRuntimeRecipe,
+] as const

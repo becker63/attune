@@ -1,6 +1,7 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname, join, normalize } from "node:path"
-import { Context, Effect, Layer } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
   CpgProgram,
   Joern,
@@ -381,3 +382,79 @@ export const FuzzOracleLive: Layer.Layer<FuzzOracle, never, PropertyHarnessRunti
     ),
   ),
 )
+
+const JoernEffectPropertiesFuzzServicesOracleLocalRecipeId = "joern-effect-properties.fuzz.services.oracle" as const
+const JoernEffectPropertiesFuzzServicesOracleLocalResourceId = "joern-effect-properties.fuzz.services.oracle.resource" as const
+const JoernEffectPropertiesFuzzServicesOracleLocalHandlerId = "joern-effect-properties.fuzz.services.oracle.handler" as const
+const JoernEffectPropertiesFuzzServicesOracleLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/services/oracle.ts" as const
+const JoernEffectPropertiesFuzzServicesOracleLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzServicesOracleLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesOracleLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesOracleLocalRecipeInput = typeof JoernEffectPropertiesFuzzServicesOracleLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzServicesOracleLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesOracleLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesOracleLocalRecipeOutput = typeof JoernEffectPropertiesFuzzServicesOracleLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzServicesOracleLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzServicesOracleLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzServicesOracleLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzServicesOracleLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzServicesOracleLocalRecipeId, JoernEffectPropertiesFuzzServicesOracleLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzServicesOracleLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzServicesOracleLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzServicesOracleLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzServicesOracleLocalRecipeInput,
+  JoernEffectPropertiesFuzzServicesOracleLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzServicesOracleLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzServicesOracleLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzServicesOracleLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzServicesOracleLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.services.oracle.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzServicesOracleLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzServicesOracleLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/services/oracle.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzServicesOracleLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzServicesOracleLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzServicesOracleLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzServicesOracleLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzServicesOracleLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzServicesOracleLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzServicesOracleLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzServicesOracleLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzServicesOracleLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzServicesOracleLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzServicesOracleLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzServicesOracleLocalRecipes = [JoernEffectPropertiesFuzzServicesOracleLocalRecipe] as const

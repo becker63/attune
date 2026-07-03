@@ -1,4 +1,190 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineRecipe,
+  defineRecipeHandler,
+  FileAccountingOracleResultSchema,
+  FileInventorySnapshotSchema,
+  JudgeRefSchema,
+  MigrationJudgmentSchema,
+  PacketSchema,
+  RecipeExpressionOracleResultSchema,
+  RecipeExpressionSnapshotSchema,
+  SelectedTargetOracleSchema,
+} from "@attune/framework-protocol"
+
+export const FrameworkLanguageServiceProjectId = "framework-language-service" as const
+export const LanguageServiceContractsSourcePath = "packages/trellis/language-service/src/contracts.ts" as const
+
+export const LanguageServiceProjectionInput = Schema.Struct({
+  projectId: Schema.String,
+  sourcePath: Schema.String,
+  diagnosticCodes: Schema.Array(Schema.String),
+})
+export type LanguageServiceProjectionInput = typeof LanguageServiceProjectionInput.Type
+
+export const LanguageServiceCliOutput = Schema.Struct({
+  diagnosticCount: Schema.Number,
+  fixCount: Schema.Number,
+  blocking: Schema.Boolean,
+  schemaVersion: Schema.Literal(1),
+  invocationModel: Schema.Literal("RecipeInvocation"),
+})
+export type LanguageServiceCliOutput = typeof LanguageServiceCliOutput.Type
+
+export const LanguageServiceApplyOutput = Schema.Struct({
+  applied: Schema.Boolean,
+  refused: Schema.Boolean,
+  affectedFileCount: Schema.Number,
+  schemaVersion: Schema.Literal(1),
+  invocationModel: Schema.Literal("RecipeInvocation"),
+})
+export type LanguageServiceApplyOutput = typeof LanguageServiceApplyOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServiceWorkspaceResource = defineAlchemyResource({
+  id: "trellis-language-service.workspace",
+  kind: "configuration",
+  alchemyType: "attune:resource:Configuration",
+  ownerRecipeId: "trellis-language-service.contracts",
+  consumedBy: ["trellis-language-service.contracts"],
+  addressSchema: Schema.String,
+  stateSchema: Schema.Struct({
+    workspaceRoot: Schema.String,
+    projectId: Schema.String,
+  }),
+  modes: ["read"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServiceCommandResource = defineAlchemyResource({
+  id: "trellis-language-service.command",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  addressSchema: Schema.String,
+  stateSchema: LanguageServiceCliOutput,
+  modes: ["project", "read"],
+  producedBy: ["trellis-language-service.contracts"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServiceApplyResource = defineAlchemyResource({
+  id: "trellis-language-service.apply-result",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  addressSchema: Schema.String,
+  stateSchema: LanguageServiceApplyOutput,
+  modes: ["project", "read"],
+  producedBy: ["trellis-language-service.apply-result-json-projection"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServiceDiagnosticsResource = defineAlchemyResource({
+  id: "trellis-language-service.diagnostics",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  addressSchema: Schema.String,
+  stateSchema: LanguageServiceCliOutput,
+  modes: ["project", "read", "observe"],
+  producedBy: ["trellis-language-service.upstream-effect-diagnostics", "trellis-language-service.recipe-fact-diagnostics"],
+  consumedBy: ["trellis-language-service.repair-plan"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServiceFixesResource = defineAlchemyResource({
+  id: "trellis-language-service.fixes",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  addressSchema: Schema.String,
+  stateSchema: LanguageServiceCliOutput,
+  modes: ["project", "read"],
+  producedBy: ["trellis-language-service.upstream-effect-fixes", "trellis-language-service.repair-plan"],
+  consumedBy: ["trellis-language-service.apply-result-json-projection"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServiceFileAccountingResource = defineAlchemyResource({
+  id: "trellis-language-service.file-accounting",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  addressSchema: Schema.String,
+  stateSchema: LanguageServiceCliOutput,
+  modes: ["project", "read", "check"],
+  producedBy: ["trellis-language-service.file-accounting-oracle"],
+  consumedBy: ["trellis-language-service.file-accounting-packet", "trellis-language-service.file-accounting-migration-judge"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServiceSourceExpressionResource = defineAlchemyResource({
+  id: "trellis-language-service.source-expression",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  addressSchema: Schema.String,
+  stateSchema: LanguageServiceCliOutput,
+  modes: ["project", "read", "check"],
+  producedBy: ["trellis-language-service.source-expression-oracle"],
+  consumedBy: ["trellis-language-service.source-expression-packet", "trellis-language-service.file-accounting-migration-judge"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServicePacketResource = defineAlchemyResource({
+  id: "trellis-language-service.packet-queue",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  addressSchema: Schema.String,
+  stateSchema: LanguageServiceCliOutput,
+  modes: ["project", "read"],
+  producedBy: ["trellis-language-service.file-accounting-packet", "trellis-language-service.source-expression-packet"],
+  consumedBy: ["trellis-language-service.file-accounting-migration-judge"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LanguageServiceReceiptResource = defineAlchemyResource({
+  id: "trellis-language-service.receipts",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ObservationStream",
+  addressSchema: Schema.String,
+  stateSchema: LanguageServiceCliOutput,
+  modes: ["observe", "read"],
+  producedBy: ["trellis-language-service.receipt-observation-recording"],
+})
+
+const languageServiceContractsHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.contracts.handler",
+  recipeId: "trellis-language-service.contracts",
+  sourcePath: LanguageServiceContractsSourcePath,
+  exportName: "LanguageServiceContractRecipes",
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+export const LanguageServiceContractsRecipe = defineRecipe({
+  id: "trellis-language-service.contracts",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Own Trellis language-service command and packet output contracts",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  allowedFiles: [LanguageServiceContractsSourcePath],
+  validationEvidence: ["framework-language-service:typecheck"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceWorkspaceResource],
+    outputResources: [LanguageServiceCommandResource],
+  },
+  handler: languageServiceContractsHandler,
+})
+
+export const LanguageServiceContractRecipes = [LanguageServiceContractsRecipe] as const
 
 export const TrellisLsCommandSchema = Schema.Literals([
   "diagnostics",
@@ -6,6 +192,9 @@ export const TrellisLsCommandSchema = Schema.Literals([
   "apply",
   "check",
   "packets",
+  "file-accounting",
+  "source-expression",
+  "judge",
   "fastpath",
 ] as const)
 export type TrellisLsCommand = typeof TrellisLsCommandSchema.Type
@@ -137,6 +326,7 @@ export const TrellisLsFixSchema = Schema.Struct({
   canApply: Schema.Boolean,
   command: Schema.optional(TrellisLsCommandPreviewSchema),
   edits: Schema.optional(Schema.Array(TrellisLsTextEditSchema)),
+  deleteFiles: Schema.optional(Schema.Array(Schema.String)),
 })
 export type TrellisLsFix = typeof TrellisLsFixSchema.Type
 
@@ -183,7 +373,8 @@ export type TrellisLsPacketContextExample =
 
 export const TrellisLsPacketSchema = Schema.Struct({
   packetId: Schema.String,
-  source: Schema.Literal("effect"),
+  corePacket: PacketSchema,
+  source: Schema.Literals(["effect", "trellis"] as const),
   profile: TrellisLsProfileSchema,
   ruleName: Schema.String,
   code: Schema.String,
@@ -270,6 +461,7 @@ export const TrellisLsApplyOutputSchema = Schema.Struct({
   applied: Schema.Boolean,
   refused: Schema.Boolean,
   affectedFiles: Schema.Array(Schema.String),
+  deletedFiles: Schema.optional(Schema.Array(Schema.String)),
   diff: Schema.optional(Schema.String),
   commandPreview: Schema.optional(TrellisLsCommandPreviewSchema),
   refusal: Schema.optional(TrellisLsRefusalSchema),
@@ -314,6 +506,56 @@ export const TrellisLsPacketsOutputSchema = Schema.Struct({
 })
 export type TrellisLsPacketsOutput = typeof TrellisLsPacketsOutputSchema.Type
 
+export const TrellisLsFileAccountingOutputSchema = Schema.Struct({
+  schemaVersion: Schema.Literal(1),
+  command: Schema.Literal("file-accounting"),
+  workspaceRoot: Schema.String,
+  project: Schema.optional(Schema.String),
+  file: Schema.optional(Schema.String),
+  workspace: Schema.optional(Schema.String),
+  metadata: TrellisLsCommandMetadataSchema,
+  snapshot: FileInventorySnapshotSchema,
+  oracle: FileAccountingOracleResultSchema,
+  targetCount: Schema.Number,
+  diagnosticCount: Schema.Number,
+})
+export type TrellisLsFileAccountingOutput = typeof TrellisLsFileAccountingOutputSchema.Type
+
+export const TrellisLsSourceExpressionOutputSchema = Schema.Struct({
+  schemaVersion: Schema.Literal(1),
+  command: Schema.Literal("source-expression"),
+  workspaceRoot: Schema.String,
+  project: Schema.optional(Schema.String),
+  file: Schema.optional(Schema.String),
+  workspace: Schema.optional(Schema.String),
+  metadata: TrellisLsCommandMetadataSchema,
+  snapshot: RecipeExpressionSnapshotSchema,
+  oracle: RecipeExpressionOracleResultSchema,
+  targetCount: Schema.Number,
+  diagnosticCount: Schema.Number,
+})
+export type TrellisLsSourceExpressionOutput =
+  typeof TrellisLsSourceExpressionOutputSchema.Type
+
+export const TrellisLsJudgeOutputSchema = Schema.Struct({
+  schemaVersion: Schema.Literal(1),
+  command: Schema.Literal("judge"),
+  workspaceRoot: Schema.String,
+  project: Schema.optional(Schema.String),
+  file: Schema.optional(Schema.String),
+  workspace: Schema.optional(Schema.String),
+  packetId: Schema.optional(Schema.String),
+  metadata: TrellisLsCommandMetadataSchema,
+  profile: TrellisLsProfileSchema,
+  source: Schema.Literals(["effect", "trellis"] as const),
+  judge: JudgeRefSchema,
+  packetIds: Schema.Array(Schema.String),
+  selectedTargetOracles: Schema.Array(SelectedTargetOracleSchema),
+  judgment: MigrationJudgmentSchema,
+  receiptObservationIds: Schema.Array(Schema.String),
+})
+export type TrellisLsJudgeOutput = typeof TrellisLsJudgeOutputSchema.Type
+
 export const TrellisLsFastPathResolutionSchema = Schema.Struct({
   status: Schema.Literals(["resolved", "re-resolved", "failed"] as const),
   requestedPacketId: Schema.String,
@@ -356,6 +598,7 @@ export const TrellisLsFastPathOutputSchema = Schema.Struct({
   mode: TrellisLsFastPathModeSchema,
   metadata: TrellisLsCommandMetadataSchema,
   profile: TrellisLsProfileSchema,
+  source: Schema.Literals(["effect", "trellis"] as const),
   resolution: TrellisLsFastPathResolutionSchema,
   stale: Schema.Boolean,
   applied: Schema.Boolean,

@@ -1,4 +1,9 @@
-import { Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 
 import { attuneSpec } from "../commands/attune-spec.js"
 import {
@@ -22,6 +27,34 @@ export interface AnswerAttuneSpecConversationInput {
   readonly answer: string | ReadonlyArray<string>
   readonly questionId?: string
 }
+
+const specConversationRecipeId = "attune-pi-agent.spec-conversation"
+
+export const StartAttuneSpecConversationInputSchema = Schema.Struct({
+  rawPrompt: Schema.String,
+  sessionId: Schema.optional(Schema.String),
+})
+
+export const AnswerAttuneSpecConversationInputSchema = Schema.Struct({
+  state: AttuneSpecConversationState,
+  answer: Schema.Union([Schema.String, Schema.Array(Schema.String)]),
+  questionId: Schema.optional(Schema.String),
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiSpecConversationResource = defineAlchemyResource({
+  id: "attune-pi-agent.spec-conversation.resource",
+  kind: "workflow-target",
+  alchemyType: "attune:resource:WorkflowTarget",
+  ownerRecipeId: specConversationRecipeId,
+  consumedBy: [specConversationRecipeId],
+  producedBy: [specConversationRecipeId],
+  addressFields: ["rawPrompt", "sessionId"],
+  addressSchema: StartAttuneSpecConversationInputSchema,
+  stateSchema: AttuneSpecConversationTurn,
+  modes: ["invoke", "project", "observe"],
+  programmaticResourceExport: "AttunePiSpecConversationResource",
+})
 
 const requiredQuestionOrder = [
   "affectedPackages",
@@ -57,6 +90,14 @@ export const startAttuneSpecConversation = (
     draft: result.draft,
   })
 }
+
+export const startAttuneSpecConversationFromRecipeInput = (
+  input: typeof StartAttuneSpecConversationInputSchema.Type,
+): AttuneSpecConversationTurn =>
+  startAttuneSpecConversation({
+    rawPrompt: input.rawPrompt,
+    ...(input.sessionId === undefined ? {} : { sessionId: input.sessionId }),
+  })
 
 export const answerAttuneSpecConversation = (
   input: AnswerAttuneSpecConversationInput,
@@ -269,3 +310,40 @@ const conversationSessionId = (rawPrompt: string): string => {
 
 const messageId = (sessionId: string, index: number): string =>
   `${sessionId}-message-${String(index).padStart(3, "0")}`
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiSpecConversationRecipe = defineProjectionRecipe({
+  id: "attune-pi-agent.spec-conversation",
+  title: "Project Pi spec interview state into renderable conversation turns",
+  inputSchema: StartAttuneSpecConversationInputSchema,
+  outputSchema: AttuneSpecConversationTurn,
+  nxTarget: "attune-pi-agent:test",
+  allowedFiles: [
+    "packages/attune/pi-agent/src/pi/index.ts",
+    "packages/attune/pi-agent/src/pi/spec-conversation.ts",
+    "packages/attune/pi-agent/src/schema/pi-conversation.ts",
+    "packages/attune/pi-agent/src/schema/spec-interview.ts",
+  ],
+  validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:typecheck"],
+  io: {
+    inputSchema: StartAttuneSpecConversationInputSchema,
+    outputSchema: AttuneSpecConversationTurn,
+    inputResources: [AttunePiSpecConversationResource],
+    outputResources: [AttunePiSpecConversationResource],
+  },
+  handler: defineRecipeHandler<
+    typeof StartAttuneSpecConversationInputSchema.Type,
+    typeof AttuneSpecConversationTurn.Type
+  >({
+    id: "attune-pi-agent.spec-conversation.handler",
+    recipeId: specConversationRecipeId,
+    sourcePath: "packages/attune/pi-agent/src/pi/spec-conversation.ts",
+    exportName: "startAttuneSpecConversationFromRecipeInput",
+    emitsReceipts: ["attune-pi-agent.spec-conversation.projected"],
+    handler: (input) => Effect.succeed(startAttuneSpecConversationFromRecipeInput(input)),
+  }),
+})
+
+export const AttunePiConversationRecipes = [
+  AttunePiSpecConversationRecipe,
+] as const

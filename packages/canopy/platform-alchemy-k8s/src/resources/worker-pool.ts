@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+import {
+  K8sResourceModuleCatalogResource,
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport,
+  PlatformAlchemyK8sProjectId,
+  PlatformAlchemyK8sResourceRegistryRecipeId,
+  k8sResourceModuleReport,
+} from "./common.js"
+
 import type { KubernetesObject, PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
 import { BudgetPolicy, type BudgetPolicyRequired } from "./budget-policy.js"
 import { attuneLabels, dnsLabel, mergeResourceSets, resourceSet } from "./common.js"
@@ -239,3 +254,56 @@ export const WorkerPool = {
     ])
   },
 } as const
+
+
+export const WorkerPoolResourceRecipeId = "platform-alchemy-k8s.worker-pool-resource" as const
+const WorkerPoolResourceHandlerId = "platform-alchemy-k8s.worker-pool-resource.handler" as const
+const WorkerPoolResourceSourcePath = "packages/canopy/platform-alchemy-k8s/src/resources/worker-pool.ts" as const
+
+export const WorkerPoolResourceHandler = defineRecipeHandler<
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport
+>({
+  id: WorkerPoolResourceHandlerId,
+  recipeId: WorkerPoolResourceRecipeId,
+  sourcePath: WorkerPoolResourceSourcePath,
+  exportName: "WorkerPool",
+  handler: () =>
+    Effect.succeed(k8sResourceModuleReport({
+      recipeId: WorkerPoolResourceRecipeId,
+      sourcePath: WorkerPoolResourceSourcePath,
+      exportName: "WorkerPool",
+      moduleKind: "worker pool Kubernetes resource factory",
+    })) as never,
+  emitsReceipts: [`platform-alchemy-k8s.worker-pool-resource.projected`],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const WorkerPoolResourceRecipe = defineProjectionRecipe({
+  id: WorkerPoolResourceRecipeId,
+  projectId: PlatformAlchemyK8sProjectId,
+  title: "Declare worker pool Kubernetes resource factory",
+  inputSchema: K8sResourceModuleRecipeInput as never,
+  outputSchema: K8sResourceModuleReport as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [WorkerPoolResourceSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test", "platform-alchemy-k8s:typecheck"],
+  io: {
+    inputSchema: K8sResourceModuleRecipeInput as never,
+    outputSchema: K8sResourceModuleReport as never,
+    inputResources: [K8sResourceModuleCatalogResource],
+    outputResources: [K8sResourceModuleCatalogResource],
+  },
+  handler: WorkerPoolResourceHandler,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: PlatformAlchemyK8sResourceRegistryRecipeId,
+      toRecipeId: WorkerPoolResourceRecipeId,
+      resource: K8sResourceModuleCatalogResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }),
+  ],
+})
+
+export const WorkerPoolResourceRecipes = [WorkerPoolResourceRecipe] as const

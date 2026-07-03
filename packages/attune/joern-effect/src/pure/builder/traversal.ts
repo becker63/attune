@@ -1,4 +1,5 @@
-import { Effect } from "effect"
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 import { Query } from "../../edge/runtime/Query.js"
 import { emitSelect, emitTraversal } from "../../edge/runtime/emitCpgql.js"
 import { CpgProgramBuilder } from "../program/CpgProgramBuilder.js"
@@ -440,3 +441,79 @@ addStepGetters(stepNames)
 
 export const starter = (name: string): Traversal =>
   new Traversal([{ kind: "starter", name }])
+
+const JoernEffectPureBuilderTraversalLocalRecipeId = "joern-effect.pure.builder.traversal" as const
+const JoernEffectPureBuilderTraversalLocalResourceId = "joern-effect.pure.builder.traversal.resource" as const
+const JoernEffectPureBuilderTraversalLocalHandlerId = "joern-effect.pure.builder.traversal.handler" as const
+const JoernEffectPureBuilderTraversalLocalSourcePath = "packages/attune/joern-effect/src/pure/builder/traversal.ts" as const
+const JoernEffectPureBuilderTraversalLocalSourceSurfaceRecipeId = "joern-effect.source-surface" as const
+
+export const JoernEffectPureBuilderTraversalLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPureBuilderTraversalLocalSourcePath),
+})
+export type JoernEffectPureBuilderTraversalLocalRecipeInput = typeof JoernEffectPureBuilderTraversalLocalRecipeInput.Type
+
+export const JoernEffectPureBuilderTraversalLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPureBuilderTraversalLocalSourcePath),
+})
+export type JoernEffectPureBuilderTraversalLocalRecipeOutput = typeof JoernEffectPureBuilderTraversalLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPureBuilderTraversalLocalResource = defineAlchemyResource({
+  id: JoernEffectPureBuilderTraversalLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPureBuilderTraversalLocalRecipeId,
+  producedBy: [JoernEffectPureBuilderTraversalLocalRecipeId],
+  consumedBy: [JoernEffectPureBuilderTraversalLocalRecipeId, JoernEffectPureBuilderTraversalLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPureBuilderTraversalLocalRecipeInput as never,
+  stateSchema: JoernEffectPureBuilderTraversalLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPureBuilderTraversalLocalHandler = defineRecipeHandler<
+  JoernEffectPureBuilderTraversalLocalRecipeInput,
+  JoernEffectPureBuilderTraversalLocalRecipeOutput
+>({
+  id: JoernEffectPureBuilderTraversalLocalHandlerId,
+  recipeId: JoernEffectPureBuilderTraversalLocalRecipeId,
+  sourcePath: JoernEffectPureBuilderTraversalLocalSourcePath,
+  exportName: "JoernEffectPureBuilderTraversalLocalRecipes",
+  emitsReceipts: ["joern-effect.pure.builder.traversal.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPureBuilderTraversalLocalRecipe = defineRecipe({
+  id: JoernEffectPureBuilderTraversalLocalRecipeId,
+  projectId: "joern-effect",
+  title: "Express src/pure/builder/traversal.ts as a file-local recipe",
+  inputSchema: JoernEffectPureBuilderTraversalLocalRecipeInput as never,
+  outputSchema: JoernEffectPureBuilderTraversalLocalRecipeOutput as never,
+  nxTarget: "joern-effect:typecheck",
+  allowedFiles: [JoernEffectPureBuilderTraversalLocalSourcePath],
+  validationEvidence: ["joern-effect:typecheck"],
+  io: {
+    inputSchema: JoernEffectPureBuilderTraversalLocalRecipeInput as never,
+    outputSchema: JoernEffectPureBuilderTraversalLocalRecipeOutput as never,
+    inputResources: [JoernEffectPureBuilderTraversalLocalResource],
+    outputResources: [JoernEffectPureBuilderTraversalLocalResource],
+  },
+  handler: JoernEffectPureBuilderTraversalLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPureBuilderTraversalLocalRecipeId,
+      toRecipeId: JoernEffectPureBuilderTraversalLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPureBuilderTraversalLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPureBuilderTraversalLocalRecipes = [JoernEffectPureBuilderTraversalLocalRecipe] as const

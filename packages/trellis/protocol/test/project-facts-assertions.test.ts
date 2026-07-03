@@ -45,7 +45,7 @@ const PackageContract = {
       input: "GenerateInput",
       output: "GenerateOutput",
       generator: {
-        name: "@attune/nx:example",
+        name: "@attune/framework-nx:example",
       },
       requires: ["Tree"],
       laws: ["generator.deterministic"],
@@ -132,7 +132,7 @@ const MetadataGeneratorContract = {
       output: "GenerateOutput",
       metadata: {
         generator: {
-          name: "@attune/nx:example",
+          name: "@attune/framework-nx:example",
         },
       },
     },

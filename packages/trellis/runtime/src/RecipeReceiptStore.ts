@@ -1,7 +1,13 @@
-import { Context, Effect, Layer } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
+  RecipeReceiptStoreSnapshotSchema,
   RecipeEdgeRecordView,
   RecipeRecordView,
+  defineAlchemyResource,
+  defineObservationRecipe,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   type RecipeDefinition,
   type RecipeDiagnostic,
   type RecipeEdgeRecord,
@@ -15,6 +21,55 @@ import {
   type RecipeRepair,
   type RecipeRun,
 } from "@attune/framework-protocol"
+
+const recipeReceiptStoreSnapshotRecipeId = "framework-runtime.receipt-store-snapshot"
+const recipeReceiptStoreSummaryRecipeId = "framework-runtime.receipt-store-summary"
+const recipeReceiptStoreSourcePath = "packages/trellis/runtime/src/RecipeReceiptStore.ts"
+
+export const RecipeReceiptStoreSummarySchema = Schema.Struct({
+  recipeCount: Schema.Number,
+  edgeCount: Schema.Number,
+  ioCount: Schema.Number,
+  runCount: Schema.Number,
+  receiptCount: Schema.Number,
+  observationCount: Schema.Number,
+  diagnosticCount: Schema.Number,
+  repairCount: Schema.Number,
+  healthCount: Schema.Number,
+})
+export type RecipeReceiptStoreSummary = typeof RecipeReceiptStoreSummarySchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const RecipeReceiptStoreSnapshotResource = defineAlchemyResource({
+  id: "framework-runtime.receipt-store-snapshot.resource",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ObservationStream",
+  ownerRecipeId: recipeReceiptStoreSnapshotRecipeId,
+  producedBy: [recipeReceiptStoreSnapshotRecipeId],
+  consumedBy: [recipeReceiptStoreSnapshotRecipeId, recipeReceiptStoreSummaryRecipeId],
+  addressFields: ["recipes", "runs", "receipts", "observations"],
+  addressSchema: RecipeReceiptStoreSnapshotSchema as never,
+  stateSchema: RecipeReceiptStoreSnapshotSchema as never,
+  modes: ["read", "observe", "project"],
+  programmaticResourceExport: "RecipeReceiptStoreSnapshotProjectorLive",
+  programmaticBridgeSourcePath: recipeReceiptStoreSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const RecipeReceiptStoreSummaryResource = defineAlchemyResource({
+  id: "framework-runtime.receipt-store-summary.resource",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: recipeReceiptStoreSummaryRecipeId,
+  producedBy: [recipeReceiptStoreSummaryRecipeId],
+  consumedBy: [recipeReceiptStoreSummaryRecipeId],
+  addressFields: ["recipeCount", "receiptCount", "observationCount"],
+  addressSchema: RecipeReceiptStoreSnapshotSchema as never,
+  stateSchema: RecipeReceiptStoreSummarySchema as never,
+  modes: ["read", "project", "observe"],
+  programmaticResourceExport: "RecipeReceiptStoreSummaryProjectorLive",
+  programmaticBridgeSourcePath: recipeReceiptStoreSourcePath,
+})
 
 export interface RecipeReceiptStoreRunRecord {
   readonly run: RecipeRun
@@ -37,8 +92,8 @@ export interface RecipeReceiptStoreRecipeView {
 }
 
 export interface RecipeReceiptStoreApi {
-  readonly registerRecipe: <Input, Output>(
-    recipe: RecipeDefinition<Input, Output>,
+  readonly registerRecipe: <Input, Output, Error = unknown, Requirements = never>(
+    recipe: RecipeDefinition<Input, Output, Error, Requirements>,
   ) => Effect.Effect<void>
   readonly recordPlan: (plan: RecipePlan) => Effect.Effect<void>
   readonly recordRunResult: (record: RecipeReceiptStoreRunRecord) => Effect.Effect<void>
@@ -58,6 +113,28 @@ export interface RecipeReceiptStoreApi {
   readonly repairsForRecipe: (recipeId: string) => Effect.Effect<readonly RecipeRepair[]>
   readonly snapshot: () => Effect.Effect<RecipeReceiptStoreSnapshot>
 }
+
+export interface RecipeReceiptStoreSnapshotProjectorService {
+  readonly snapshot: (
+    input: RecipeReceiptStoreSnapshot,
+  ) => Effect.Effect<RecipeReceiptStoreSnapshot>
+}
+
+export class RecipeReceiptStoreSnapshotProjector extends Context.Service<
+  RecipeReceiptStoreSnapshotProjector,
+  RecipeReceiptStoreSnapshotProjectorService
+>()("@attune/framework-runtime/RecipeReceiptStoreSnapshotProjector") {}
+
+export interface RecipeReceiptStoreSummaryProjectorService {
+  readonly summarize: (
+    input: RecipeReceiptStoreSnapshot,
+  ) => Effect.Effect<RecipeReceiptStoreSummary>
+}
+
+export class RecipeReceiptStoreSummaryProjector extends Context.Service<
+  RecipeReceiptStoreSummaryProjector,
+  RecipeReceiptStoreSummaryProjectorService
+>()("@attune/framework-runtime/RecipeReceiptStoreSummaryProjector") {}
 
 export const emptyRecipeReceiptStoreSnapshot = (): RecipeReceiptStoreSnapshot => ({
   recipes: [],
@@ -219,6 +296,151 @@ export const RecipeReceiptStoreLive: Layer.Layer<RecipeReceiptStore> = Layer.suc
   RecipeReceiptStore,
   createInMemoryRecipeReceiptStore(),
 )
+
+export const RecipeReceiptStoreSnapshotProjectorLive = Layer.succeed(
+  RecipeReceiptStoreSnapshotProjector,
+  {
+    snapshot: (input: RecipeReceiptStoreSnapshot) =>
+      createInMemoryRecipeReceiptStore(input).snapshot(),
+  },
+)
+
+export const RecipeReceiptStoreSnapshotProjectorLayer = defineRecipeLayer({
+  id: "framework-runtime.receipt-store-snapshot.layer",
+  sourcePath: recipeReceiptStoreSourcePath,
+  exportName: "RecipeReceiptStoreSnapshotProjectorLive",
+  layer: RecipeReceiptStoreSnapshotProjectorLive as never,
+  provides: [{
+    id: "framework-runtime.receipt-store-snapshot.service",
+    service: RecipeReceiptStoreSnapshotProjector as never,
+  }],
+})
+
+export const RecipeReceiptStoreSummaryProjectorLive = Layer.succeed(
+  RecipeReceiptStoreSummaryProjector,
+  {
+    summarize: (input: RecipeReceiptStoreSnapshot) =>
+      Effect.succeed(summarizeRecipeReceiptStoreSnapshot(input)),
+  },
+)
+
+export const RecipeReceiptStoreSummaryProjectorLayer = defineRecipeLayer({
+  id: "framework-runtime.receipt-store-summary.layer",
+  sourcePath: recipeReceiptStoreSourcePath,
+  exportName: "RecipeReceiptStoreSummaryProjectorLive",
+  layer: RecipeReceiptStoreSummaryProjectorLive as never,
+  provides: [{
+    id: "framework-runtime.receipt-store-summary.service",
+    service: RecipeReceiptStoreSummaryProjector as never,
+  }],
+})
+
+export const projectRecipeReceiptStoreSnapshot = (
+  input: RecipeReceiptStoreSnapshot,
+): Effect.Effect<RecipeReceiptStoreSnapshot, never, RecipeReceiptStoreSnapshotProjector> =>
+  Effect.gen(function* projectRecipeReceiptStoreSnapshotBody() {
+    const projector = yield* RecipeReceiptStoreSnapshotProjector
+    return yield* projector.snapshot(input)
+  })
+
+export const summarizeRecipeReceiptStoreSnapshot = (
+  snapshot: RecipeReceiptStoreSnapshot,
+): RecipeReceiptStoreSummary => ({
+  recipeCount: snapshot.recipes.length,
+  edgeCount: snapshot.edges.length,
+  ioCount: snapshot.io.length,
+  runCount: snapshot.runs.length,
+  receiptCount: snapshot.receipts.length,
+  observationCount: snapshot.observations.length,
+  diagnosticCount: snapshot.diagnostics.length,
+  repairCount: snapshot.repairs.length,
+  healthCount: snapshot.health.length,
+})
+
+export const projectRecipeReceiptStoreSummary = (
+  input: RecipeReceiptStoreSnapshot,
+): Effect.Effect<RecipeReceiptStoreSummary, never, RecipeReceiptStoreSummaryProjector> =>
+  Effect.gen(function* projectRecipeReceiptStoreSummaryBody() {
+    const projector = yield* RecipeReceiptStoreSummaryProjector
+    return yield* projector.summarize(input)
+  })
+
+export const RecipeReceiptStoreSnapshotHandler = defineRecipeHandler<
+  RecipeReceiptStoreSnapshot,
+  RecipeReceiptStoreSnapshot,
+  never,
+  RecipeReceiptStoreSnapshotProjector
+>({
+  id: "framework-runtime.receipt-store-snapshot.handler",
+  recipeId: recipeReceiptStoreSnapshotRecipeId,
+  sourcePath: recipeReceiptStoreSourcePath,
+  exportName: "projectRecipeReceiptStoreSnapshot",
+  layer: RecipeReceiptStoreSnapshotProjectorLayer,
+  emitsReceipts: ["framework-runtime.receipt-store.snapshot.projected"],
+  handler: (input) => projectRecipeReceiptStoreSnapshot(input) as never,
+})
+
+export const RecipeReceiptStoreSummaryHandler = defineRecipeHandler<
+  RecipeReceiptStoreSnapshot,
+  RecipeReceiptStoreSummary,
+  never,
+  RecipeReceiptStoreSummaryProjector
+>({
+  id: "framework-runtime.receipt-store-summary.handler",
+  recipeId: recipeReceiptStoreSummaryRecipeId,
+  sourcePath: recipeReceiptStoreSourcePath,
+  exportName: "projectRecipeReceiptStoreSummary",
+  layer: RecipeReceiptStoreSummaryProjectorLayer,
+  emitsReceipts: ["framework-runtime.receipt-store.summary.projected"],
+  handler: (input) => projectRecipeReceiptStoreSummary(input) as never,
+})
+
+export const RecipeReceiptStoreSnapshotRecipe = defineObservationRecipe({
+  id: recipeReceiptStoreSnapshotRecipeId,
+  projectId: "framework-runtime",
+  title: "Project recipe receipt store state into the observation resource graph",
+  inputSchema: RecipeReceiptStoreSnapshotSchema as never,
+  outputSchema: RecipeReceiptStoreSnapshotSchema as never,
+  allowedFiles: [recipeReceiptStoreSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  io: {
+    inputSchema: RecipeReceiptStoreSnapshotSchema as never,
+    outputSchema: RecipeReceiptStoreSnapshotSchema as never,
+    inputResources: [RecipeReceiptStoreSnapshotResource],
+    outputResources: [RecipeReceiptStoreSnapshotResource],
+  },
+  handler: RecipeReceiptStoreSnapshotHandler,
+  alchemyDag: [{
+    fromRecipeId: recipeReceiptStoreSnapshotRecipeId,
+    toRecipeId: recipeReceiptStoreSummaryRecipeId,
+    resource: RecipeReceiptStoreSnapshotResource,
+    kind: "projects",
+    modes: ["read", "observe", "project"],
+  }],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const RecipeReceiptStoreSummaryRecipe = defineProjectionRecipe({
+  id: recipeReceiptStoreSummaryRecipeId,
+  projectId: "framework-runtime",
+  title: "Summarize recipe receipt store state for runtime reporting",
+  inputSchema: RecipeReceiptStoreSnapshotSchema as never,
+  outputSchema: RecipeReceiptStoreSummarySchema as never,
+  allowedFiles: [recipeReceiptStoreSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  io: {
+    inputSchema: RecipeReceiptStoreSnapshotSchema as never,
+    outputSchema: RecipeReceiptStoreSummarySchema as never,
+    inputResources: [RecipeReceiptStoreSnapshotResource],
+    outputResources: [RecipeReceiptStoreSummaryResource],
+  },
+  handler: RecipeReceiptStoreSummaryHandler,
+})
+
+export const RecipeReceiptStoreRecipes = [
+  RecipeReceiptStoreSnapshotRecipe,
+  RecipeReceiptStoreSummaryRecipe,
+] as const
 
 function keyed<A>(
   values: readonly A[],

@@ -6,190 +6,215 @@
   "sourceRoot": "packages/trellis/runtime/src",
   "targets": {
     "typecheck": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "typescript",
-        "action": "check",
-        "parameters": {
-          "classic": true,
-          "tsconfig": "tsconfig.json"
+        "command": "cd packages/trellis/runtime && pnpm exec tsc --noEmit -p tsconfig.json"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "typecheck",
+          "action": "typecheck",
+          "recipeId": "framework-runtime.typecheck",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "test": {
-      "executor": "@attune/nx:package-check",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "checks": [
-          "test"
-        ]
+        "command": "cd packages/trellis/runtime && pnpm exec vitest run"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "test",
+          "action": "test",
+          "recipeId": "framework-runtime.test",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "db:plan": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "plan",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts plan"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "plan",
+          "recipeId": "framework-runtime.db.plan",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:apply": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "apply",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts apply"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "apply",
+          "recipeId": "framework-runtime.db.apply",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "check",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts check"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "check",
+          "recipeId": "framework-runtime.db.check",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:stop": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "stop",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts stop"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "stop",
+          "recipeId": "framework-runtime.db.stop",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:destroy": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "destroy",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts destroy"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "destroy",
+          "recipeId": "framework-runtime.db.destroy",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:prune": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "prune",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts prune"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "prune",
+          "recipeId": "framework-runtime.db.prune",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:migrate": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "migrate",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts migrate"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "migrate",
+          "recipeId": "framework-runtime.db.migrate",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:generate-types": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "generate-types",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts generate-types"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "generate-types",
+          "recipeId": "framework-runtime.db.generate-types",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:validate-sql": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "validate-sql",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts validate-sql"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "validate-sql",
+          "recipeId": "framework-runtime.db.validate-sql",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "db:integration-test": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "generation-stage",
-        "action": "generate",
-        "toolId": "framework-runtime-db",
-        "parameters": {
-          "stage": "integration-test",
-          "recipeId": "framework-runtime.local-timescaledb"
+        "command": "cd packages/trellis/runtime && ATTUNE_RECIPE_ID=framework-runtime.local-timescaledb pnpm exec tsx src/internal/db/LocalTimescaleCli.ts integration-test"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "integration-test",
+          "recipeId": "framework-runtime.db.integration-test",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Project check surface for Recipe/ManagedRecipe substrate diagnostics."
+        "description": "Project check surface for Recipe/ManagedRecipe substrate diagnostics.",
+        "attune": {
+          "tier": "public",
+          "surface": "check",
+          "action": "check",
+          "recipeId": "framework-runtime.check",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "targetProject": "framework-runtime",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:recipe-substrate-check"
-          ]
-        },
-        "dryRun": false
+        "command": "pnpm exec nx run workspace:recipe-substrate-check"
       }
     },
     "repair": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Project repair surface for safe Recipe/ManagedRecipe repair materialization."
+        "description": "Project repair surface for safe Recipe/ManagedRecipe repair materialization.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "action": "repair",
+          "recipeId": "framework-runtime.repair",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "targetProject": "framework-runtime",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:repair"
-          ]
-        },
-        "dryRun": false
+        "command": "pnpm exec nx run workspace:repair"
       }
     }
   },

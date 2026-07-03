@@ -1,4 +1,5 @@
-import { Arbitrary as EffectArbitrary, Schema } from "effect"
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Arbitrary as EffectArbitrary, Schema, Effect } from "effect"
 import fc from "fast-check"
 
 export type PackageBoundaryRandomSource = "main-thread"
@@ -386,3 +387,79 @@ export const checkPackageBoundaryProperty = async <Input, Output = unknown>(
 export const replaySeedFromEvidence = (
   evidence: PackageBoundaryPropertyEvidence,
 ): PackageBoundaryReplayMetadata => evidence.run.replay
+
+const JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeId = "joern-effect-properties.package-boundary-property" as const
+const JoernEffectPropertiesPackageBoundaryPropertyLocalResourceId = "joern-effect-properties.package-boundary-property.resource" as const
+const JoernEffectPropertiesPackageBoundaryPropertyLocalHandlerId = "joern-effect-properties.package-boundary-property.handler" as const
+const JoernEffectPropertiesPackageBoundaryPropertyLocalSourcePath = "packages/attune/joern-effect-properties/src/packageBoundaryProperty.ts" as const
+const JoernEffectPropertiesPackageBoundaryPropertyLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesPackageBoundaryPropertyLocalSourcePath),
+})
+export type JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeInput = typeof JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeInput.Type
+
+export const JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesPackageBoundaryPropertyLocalSourcePath),
+})
+export type JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeOutput = typeof JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesPackageBoundaryPropertyLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesPackageBoundaryPropertyLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeId,
+  producedBy: [JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeId, JoernEffectPropertiesPackageBoundaryPropertyLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesPackageBoundaryPropertyLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeInput,
+  JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesPackageBoundaryPropertyLocalHandlerId,
+  recipeId: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeId,
+  sourcePath: JoernEffectPropertiesPackageBoundaryPropertyLocalSourcePath,
+  exportName: "JoernEffectPropertiesPackageBoundaryPropertyLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.package-boundary-property.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesPackageBoundaryPropertyLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/packageBoundaryProperty.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesPackageBoundaryPropertyLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesPackageBoundaryPropertyLocalResource],
+    outputResources: [JoernEffectPropertiesPackageBoundaryPropertyLocalResource],
+  },
+  handler: JoernEffectPropertiesPackageBoundaryPropertyLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesPackageBoundaryPropertyLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesPackageBoundaryPropertyLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesPackageBoundaryPropertyLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesPackageBoundaryPropertyLocalRecipes = [JoernEffectPropertiesPackageBoundaryPropertyLocalRecipe] as const

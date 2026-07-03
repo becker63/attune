@@ -96,13 +96,32 @@ describe("Attune Pi agent schemas and evidence", () => {
   })
 
   it("expresses Pi agent work as framework recipes without Tend compatibility", () => {
-    expect(AttunePiAgentRecipes.map((recipe) => recipe.id)).toEqual([
+    const recipeIds = AttunePiAgentRecipes.map((recipe) => recipe.id)
+
+    expect(recipeIds).toEqual(expect.arrayContaining([
+      "attune-pi-agent.schema-catalog",
+      "attune-pi-agent.spec-conversation",
       "attune-pi-agent.implementation-spec",
+      "attune-pi-agent.default-permission-profile",
       "attune-pi-agent.permission-profile",
       "attune-pi-agent.evidence-matrix",
+      "attune-pi-agent.run-artifacts",
+      "attune-pi-agent.generator-config",
       "attune-pi-agent.generator-artifacts",
+      "attune-pi-agent.spec-generator",
+      "attune-pi-agent.permission-policy-generator",
+      "attune-pi-agent.test-obligation-generator",
+      "attune-pi-agent.taskplane-task-generator",
       "attune-pi-agent.command-surface",
-    ])
-    expect(AttunePiAgentRecipes.some((recipe) => recipe.id.includes("tend"))).toBe(false)
+      "attune-pi-agent.attune-evidence-command",
+      "attune-pi-agent.orientation-command",
+      "attune-pi-agent.documentation-surface",
+      "attune-pi-agent.test-suite",
+    ]))
+    expect(new Set(recipeIds).size).toBe(recipeIds.length)
+    expect(recipeIds.some((recipeId) => recipeId.includes("tend"))).toBe(false)
+    expect(AttunePiAgentRecipes.every((recipe) =>
+      recipe.sourcePath !== "packages/attune/pi-agent/src/recipes.ts"
+    )).toBe(true)
   })
 })

@@ -1,8 +1,18 @@
-import { Context, Layer } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
   deriveDiagnosticRequirements,
   diagnosticFromRepairFinding,
   requiredObservationKindsFor,
+  ProgramArtifactRecordSchema,
+  ProgramDiagnosticRequirementSchema,
+  ProgramObservationRunSchema,
+  ProgramObservationSchema,
+  ProgramRepairFindingSchema,
+  ProgramSchemaDescriptorSchema,
+  defineAlchemyResource,
+  defineDiagnosticRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   type ProgramArtifactRecord,
   type ProgramRepairFinding,
   type ProgramSchemaDescriptor,
@@ -11,11 +21,67 @@ import {
   type ProgramObservationRun,
   type ProgramDiagnosticRequirement,
 } from "@attune/framework-protocol"
-import type {
-  CoverageObservationFeedback,
-  ReplayObservationMetadata,
-  DiagnosticWaiverState,
+import {
+  CoverageObservationFeedbackSchema,
+  DiagnosticWaiverStateSchema,
+  ReplayObservationMetadataSchema,
+  type CoverageObservationFeedback,
+  type DiagnosticWaiverState,
+  type ReplayObservationMetadata,
 } from "./ProgramFactStore.js"
+
+export const programFactProjectionRecipeId = "framework-runtime.program-fact-projection" as const
+const programDiagnosticsRecipeId = "framework-runtime.program-diagnostics" as const
+const programFactProjectionSourcePath =
+  "packages/trellis/runtime/src/ProgramFactProjection.ts" as const
+
+export const ProgramFactProjectionRecipeInput = Schema.Struct({
+  schemaDescriptorId: Schema.String,
+  projectId: Schema.String,
+  sourcePath: Schema.String,
+  schemaDescriptors: Schema.optional(Schema.Array(ProgramSchemaDescriptorSchema)),
+  diagnosticRequirements: Schema.optional(Schema.Array(ProgramDiagnosticRequirementSchema)),
+  observationRuns: Schema.optional(Schema.Array(ProgramObservationRunSchema)),
+  observations: Schema.optional(Schema.Array(ProgramObservationSchema)),
+  artifacts: Schema.optional(Schema.Array(ProgramArtifactRecordSchema)),
+  replayMetadata: Schema.optional(Schema.Array(ReplayObservationMetadataSchema)),
+  waiverState: Schema.optional(Schema.Array(DiagnosticWaiverStateSchema)),
+  coverageFeedback: Schema.optional(Schema.Array(CoverageObservationFeedbackSchema)),
+  repairFindings: Schema.optional(Schema.Array(ProgramRepairFindingSchema)),
+})
+
+export const ProgramFactProjectionRecipeOutput = Schema.Array(ProgramRepairFindingSchema)
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ProgramFactProjectionInputResource = defineAlchemyResource({
+  id: "framework-runtime.program-fact-projection.input",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ProgramFactRuntimeSnapshot",
+  ownerRecipeId: programFactProjectionRecipeId,
+  consumedBy: [programFactProjectionRecipeId],
+  addressFields: ["schemaDescriptorId", "projectId", "sourcePath"],
+  addressSchema: ProgramFactProjectionRecipeInput as never,
+  stateSchema: ProgramFactProjectionRecipeInput as never,
+  modes: ["read", "observe"],
+  programmaticResourceExport: "ProgramFactProjectionLive",
+  programmaticBridgeSourcePath: programFactProjectionSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ProgramFactProjectionFindingsResource = defineAlchemyResource({
+  id: "framework-runtime.program-fact-projection.findings",
+  kind: "report",
+  alchemyType: "attune:resource:ProgramRepairFindings",
+  ownerRecipeId: programFactProjectionRecipeId,
+  producedBy: [programFactProjectionRecipeId],
+  consumedBy: [programFactProjectionRecipeId, programDiagnosticsRecipeId],
+  addressFields: ["schemaDescriptorId", "projectId", "sourcePath"],
+  addressSchema: ProgramFactProjectionRecipeInput as never,
+  stateSchema: ProgramFactProjectionRecipeOutput as never,
+  modes: ["read", "observe", "project"],
+  programmaticResourceExport: "ProgramFactProjectionLive",
+  programmaticBridgeSourcePath: programFactProjectionSourcePath,
+})
 
 export interface ProgramFactRuntimeSnapshot {
   readonly schemaDescriptors: readonly ProgramSchemaDescriptor[]
@@ -121,8 +187,8 @@ export const computeProgramFactFindings = (
         findingId: `finding:${diagnosticRequirement.diagnosticRequirementId}`,
         schemaDescriptorId: input.schemaDescriptorId,
         projectId: input.projectId,
-        kind: "missing-observation",
         sourcePath: input.sourcePath,
+        kind: "missing-observation",
         diagnosticRequirementId: diagnosticRequirement.diagnosticRequirementId,
         explanation: diagnosticRequirement.reason,
         repairActions: [{
@@ -148,8 +214,8 @@ export const computeProgramFactFindings = (
       findingId: `finding:${artifact.artifactId}`,
       schemaDescriptorId: input.schemaDescriptorId,
       projectId: input.projectId,
+      sourcePath: input.sourcePath,
       kind: "stale-generated-source" as const,
-      sourcePath: artifact.path,
       explanation: generatedArtifactExplanation(artifact),
       repairActions: [{
         id: "refresh-artifact-materialization",
@@ -167,8 +233,8 @@ export const computeProgramFactFindings = (
       findingId: `finding:${waiver.waiverId}`,
       schemaDescriptorId: input.schemaDescriptorId,
       projectId: input.projectId,
-      kind: "waiver-issue" as const,
       sourcePath: input.sourcePath,
+      kind: "waiver-issue" as const,
       ...(waiver.symbolId === undefined ? {} : { symbolId: waiver.symbolId }),
       ...(waiver.targetDiagnosticRequirementId === undefined ? {} : { diagnosticRequirementId: waiver.targetDiagnosticRequirementId }),
       explanation: `Waiver ${waiver.waiverId} is ${waiver.status}: ${waiver.reason}`,
@@ -187,8 +253,8 @@ export const computeProgramFactFindings = (
       findingId: `finding:${metadata.replayId}`,
       schemaDescriptorId: input.schemaDescriptorId,
       projectId: input.projectId,
-      kind: "blocked-observation" as const,
       sourcePath: input.sourcePath,
+      kind: "blocked-observation" as const,
       ...(metadata.symbolId === undefined ? {} : { symbolId: metadata.symbolId }),
       explanation: replayFailureExplanation(metadata),
       repairActions: [{
@@ -210,8 +276,8 @@ export const computeProgramFactFindings = (
       findingId: `finding:${feedback.coverageId}`,
       schemaDescriptorId: input.schemaDescriptorId,
       projectId: input.projectId,
+      sourcePath: input.sourcePath,
       kind: "high-rejection-filter" as const,
-      sourcePath: feedback.sourcePath ?? input.sourcePath,
       ...(feedback.symbolId === undefined ? {} : { symbolId: feedback.symbolId }),
       explanation: highRejectionExplanation(feedback),
       repairActions: [{
@@ -231,8 +297,8 @@ export const computeProgramFactFindings = (
       findingId: `finding:${feedback.coverageId}`,
       schemaDescriptorId: input.schemaDescriptorId,
       projectId: input.projectId,
+      sourcePath: input.sourcePath,
       kind: "weak-oracle" as const,
-      sourcePath: feedback.sourcePath ?? input.sourcePath,
       ...(feedback.symbolId === undefined ? {} : { symbolId: feedback.symbolId }),
       explanation: `Implementation coverage reached ${feedback.coveragePoint}, but expected semantic graph movement or law observation was not recorded.`,
       repairActions: [{
@@ -388,3 +454,71 @@ export const ProgramFactProjectionLive: Layer.Layer<ProgramFactProjection> = Lay
   ProgramFactProjection,
   ProgramFactProjectionLiveValue,
 )
+
+export const ProgramFactProjectionLayer = defineRecipeLayer({
+  id: "framework-runtime.program-fact-projection.layer",
+  sourcePath: programFactProjectionSourcePath,
+  exportName: "ProgramFactProjectionLive",
+  layer: ProgramFactProjectionLive as never,
+  provides: [{
+    id: "framework-runtime.program-fact-projection.service",
+    service: ProgramFactProjection as never,
+  }],
+})
+
+export const projectProgramFactRepairFindings = (
+  input: ProgramFactProjectionInput,
+): Effect.Effect<readonly ProgramRepairFinding[], never, ProgramFactProjection> =>
+  Effect.gen(function* projectProgramFactRepairFindingsBody() {
+    const projection = yield* ProgramFactProjection
+    return projection.computeRepairFindings(input)
+  })
+
+export const ProgramFactProjectionHandler = defineRecipeHandler<
+  ProgramFactProjectionInput,
+  readonly ProgramRepairFinding[],
+  never,
+  ProgramFactProjection
+>({
+  id: "framework-runtime.program-fact-projection.handler",
+  recipeId: programFactProjectionRecipeId,
+  sourcePath: programFactProjectionSourcePath,
+  exportName: "projectProgramFactRepairFindings",
+  layer: ProgramFactProjectionLayer,
+  emitsReceipts: ["framework-runtime.program-fact-projection.findings.projected"],
+  handler: (input) => projectProgramFactRepairFindings(input) as never,
+})
+
+export const ProgramFactProjectionRecipe = defineDiagnosticRecipe<
+  ProgramFactProjectionInput,
+  readonly ProgramRepairFinding[],
+  never,
+  ProgramFactProjection
+>({
+  id: programFactProjectionRecipeId,
+  projectId: "framework-runtime",
+  title: "Project program fact snapshots into repair findings",
+  inputSchema: ProgramFactProjectionRecipeInput as never,
+  outputSchema: ProgramFactProjectionRecipeOutput as never,
+  observedFiles: [programFactProjectionSourcePath],
+  allowedFiles: [programFactProjectionSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  io: {
+    inputSchema: ProgramFactProjectionRecipeInput as never,
+    outputSchema: ProgramFactProjectionRecipeOutput as never,
+    inputResources: [ProgramFactProjectionInputResource],
+    outputResources: [ProgramFactProjectionFindingsResource],
+  },
+  handler: ProgramFactProjectionHandler,
+  alchemyDag: [{
+    fromRecipeId: programFactProjectionRecipeId,
+    toRecipeId: programDiagnosticsRecipeId,
+    resource: ProgramFactProjectionFindingsResource,
+    kind: "diagnoses",
+    modes: ["read", "observe", "project"],
+  }],
+})
+
+export const ProgramFactProjectionRecipes = [
+  ProgramFactProjectionRecipe,
+] as const

@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 import { ImplementationSpec } from "./implementation-spec.js"
 import {
@@ -43,3 +44,27 @@ export const AttuneSpecConversationTurn = S.Struct({
   draft: S.NullOr(ImplementationSpec),
 })
 export type AttuneSpecConversationTurn = typeof AttuneSpecConversationTurn.Type
+
+export const piConversationSchemaModule = (): readonly string[] => [
+  "PiConversationRole",
+  "PiMessageKind",
+  "PiConversationMessage",
+  "AttuneSpecConversationState",
+  "AttuneSpecConversationTurn",
+]
+
+export const AttunePiConversationSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.pi-conversation.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/pi-conversation.ts",
+  exportName: "piConversationSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.pi-conversation.projected"],
+  handler: () => Effect.succeed(piConversationSchemaModule()),
+})
+
+export const AttunePiConversationSchemaRecipeModule = [
+  AttunePiConversationSchemaHandler,
+] as const

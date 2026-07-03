@@ -1,7 +1,11 @@
-import { Effect, Schema } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
   ManagedRecipeLifecycleActionSchema,
+  defineAlchemyResource,
+  defineManagedRecipeAlchemyBinding,
   defineManagedExecutableRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   recipeObservationId,
   type ManagedRecipeLifecycleAction,
   type ManagedRecipeLifecycleSubstrate,
@@ -62,6 +66,66 @@ export type LocalTimescaleManagedRecipeOutput =
   typeof LocalTimescaleManagedRecipeOutput.Type
 
 export const LocalTimescaleManagedRecipeId = "framework-runtime.local-timescaledb" as const
+const LocalTimescaleManagedRecipeSourcePath =
+  "packages/trellis/runtime/src/LocalTimescaleRecipe.ts" as const
+const localTimescaleDriftRepairRisk = "needs-review" as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LocalTimescaleDatabaseResource = defineAlchemyResource({
+  id: "framework-runtime.local-timescaledb.resource",
+  kind: "database",
+  alchemyType: "attune:resource:TimescalePostgres",
+  ownerRecipeId: LocalTimescaleManagedRecipeId,
+  producedBy: [LocalTimescaleManagedRecipeId],
+  consumedBy: [
+    LocalTimescaleManagedRecipeId,
+    "framework-runtime.sql-route-generation",
+  ],
+  addressFields: ["databaseUrlEnv", "dataDir", "port", "storeMode"],
+  addressSchema: LocalTimescaleManagedRecipeInput as never,
+  stateSchema: LocalTimescaleManagedRecipeOutput as never,
+  modes: ["read", "plan", "apply", "check", "destroy"],
+  providerId: "framework-runtime.managed-recipe-alchemy-provider",
+  programmaticResourceExport: "ManagedRecipeAlchemy",
+  programmaticProviderExport: "ManagedRecipeAlchemyProvider",
+  programmaticBridgeSourcePath: "packages/trellis/runtime/src/alchemy.ts",
+})
+
+export const LocalTimescaleManagedRecipeAlchemyBinding =
+// @attune-packet-target generated-runtime-projection eligible
+  defineManagedRecipeAlchemyBinding({
+    id: "framework-runtime.local-timescaledb.alchemy-binding",
+    managedRecipeId: LocalTimescaleManagedRecipeId,
+    alchemyResourceType: "attune:alchemy:ManagedRecipe",
+    providerId: "framework-runtime.managed-recipe-alchemy-provider",
+    resource: LocalTimescaleDatabaseResource,
+    lifecycle: {
+      plan: "local-timescaledb.plan",
+      apply: "local-timescaledb.apply",
+      check: "local-timescaledb.check",
+      migrate: "local-timescaledb.migrate",
+      "validate-sql": "local-timescaledb.validate-sql",
+      stop: "local-timescaledb.stop",
+      destroy: "local-timescaledb.destroy",
+      prune: "local-timescaledb.prune",
+    },
+    bindings: [
+      "framework-runtime.recipe-receipts",
+      "framework-runtime.sql-route-generation",
+    ],
+  })
+
+export interface LocalTimescaleLifecycleService {
+  readonly run: (
+    input: LocalTimescaleManagedRecipeInput,
+    action?: ManagedRecipeLifecycleAction,
+  ) => Effect.Effect<LocalTimescaleManagedRecipeOutput>
+}
+
+export class LocalTimescaleLifecycle extends Context.Service<
+  LocalTimescaleLifecycle,
+  LocalTimescaleLifecycleService
+>()("@attune/framework-runtime/LocalTimescaleLifecycle") {}
 
 export const LocalTimescaleObservationKindSchema = Schema.Literals([
   "local-timescaledb.service-planned",
@@ -177,6 +241,54 @@ export const localTimescaleLifecycleOutput = (
   }
 }
 
+export const LocalTimescaleLifecycleLive = Layer.succeed(
+  LocalTimescaleLifecycle,
+  {
+    run: (
+      input: LocalTimescaleManagedRecipeInput,
+      action?: ManagedRecipeLifecycleAction,
+    ) => Effect.succeed(localTimescaleLifecycleOutput(input, action)),
+  },
+)
+
+export const LocalTimescaleLifecycleLayer = defineRecipeLayer({
+  id: "framework-runtime.local-timescaledb.lifecycle.layer",
+  sourcePath: LocalTimescaleManagedRecipeSourcePath,
+  exportName: "LocalTimescaleLifecycleLive",
+  layer: LocalTimescaleLifecycleLive as never,
+  provides: [{
+    id: "framework-runtime.local-timescaledb.lifecycle.service",
+    service: LocalTimescaleLifecycle as never,
+  }],
+})
+
+export const runLocalTimescaleLifecycle = (
+  input: LocalTimescaleManagedRecipeInput,
+): Effect.Effect<LocalTimescaleManagedRecipeOutput, never, LocalTimescaleLifecycle> =>
+  Effect.gen(function* runLocalTimescaleLifecycleBody() {
+    const lifecycle = yield* LocalTimescaleLifecycle
+    return yield* lifecycle.run(input, input.action ?? "check")
+  })
+
+export const LocalTimescaleLifecycleHandler = defineRecipeHandler<
+  LocalTimescaleManagedRecipeInput,
+  LocalTimescaleManagedRecipeOutput,
+  never,
+  never
+>({
+  id: "framework-runtime.local-timescaledb.lifecycle.handler",
+  recipeId: LocalTimescaleManagedRecipeId,
+  sourcePath: LocalTimescaleManagedRecipeSourcePath,
+  exportName: "runLocalTimescaleLifecycle",
+  layer: LocalTimescaleLifecycleLayer,
+  emitsReceipts: [
+    "local-timescaledb.service-planned",
+    "local-timescaledb.service-ready",
+    "local-timescaledb.sql-validated",
+  ],
+  handler: (input) => runLocalTimescaleLifecycle(input) as never,
+})
+
 export const localTimescaleObservationPayload = (
   output: LocalTimescaleManagedRecipeOutput,
   observationKind: LocalTimescaleObservationKind,
@@ -259,14 +371,16 @@ export const localTimescaleLifecycleObservations = (
     })
   )
 
-export const LocalTimescaleManagedRecipe = defineManagedExecutableRecipe({
+export const LocalTimescaleManagedRecipe = defineManagedExecutableRecipe<
+  LocalTimescaleManagedRecipeInput,
+  LocalTimescaleManagedRecipeOutput
+>({
   id: LocalTimescaleManagedRecipeId,
   projectId: "framework-runtime",
   title: "Local TimescaleDB/Postgres recipe receipt spine",
   inputSchema: LocalTimescaleManagedRecipeInput,
   outputSchema: LocalTimescaleManagedRecipeOutput,
   nxTarget: "framework-runtime:db:migrate",
-  sourcePath: "packages/trellis/runtime/src/LocalTimescaleRecipe.ts",
   allowedFiles: ["packages/trellis/runtime/**", "nix/**"],
   validationEvidence: [
     "framework-runtime:db:migrate",
@@ -275,8 +389,23 @@ export const LocalTimescaleManagedRecipe = defineManagedExecutableRecipe({
     "framework-runtime:db:integration-test",
     "framework-runtime:test",
   ],
+  io: {
+    inputSchema: LocalTimescaleManagedRecipeInput,
+    outputSchema: LocalTimescaleManagedRecipeOutput,
+    inputResources: [LocalTimescaleDatabaseResource],
+    outputResources: [LocalTimescaleDatabaseResource],
+  },
+  handler: LocalTimescaleLifecycleHandler,
   lifecycle: ["plan", "apply", "check", "migrate", "validate-sql", "stop", "destroy", "prune"],
   resourceKind: "timescaledb-postgres-recipe-receipts",
+  alchemy: LocalTimescaleManagedRecipeAlchemyBinding,
+  alchemyDag: [{
+    fromRecipeId: "framework-runtime.sql-route-generation",
+    toRecipeId: LocalTimescaleManagedRecipeId,
+    resource: LocalTimescaleDatabaseResource,
+    kind: "manages",
+    modes: ["read", "plan", "apply", "check", "destroy"],
+  }],
   lifecycleSubstrates: localTimescaleLifecycleSubstrates(),
   observedState: {
     integrationGuard: "ATTUNE_RUN_DB_INTEGRATION=1",
@@ -292,7 +421,7 @@ export const LocalTimescaleManagedRecipe = defineManagedExecutableRecipe({
     kind: "managed-lifecycle",
     nxTarget: "framework-runtime:db:migrate",
     allowedFiles: ["packages/trellis/runtime/**", "nix/**"],
-    risk: "needs-review",
+    risk: localTimescaleDriftRepairRisk,
     evidenceRequirements: ["framework-runtime:db:validate-sql", "framework-runtime:test"],
   },
   humanReviewRequired: false,

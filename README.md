@@ -28,11 +28,10 @@ Attune's direction is:
 - `packages/attune/` - FoldKit, discovery, CocoIndex, Joern, PI, and domain code.
 - `packages/canopy/` - home deployment, platform resources, Kubernetes, and Alchemy lifecycle code.
 - `packages/tend/` - OpenCode observation, token control, long-job, Magic Context, and reporting code.
-- `packages/trellis/` - Recipe/ManagedRecipe framework substrate, runtime, DB route, Nx, testing, and Oxlint policy.
+- `packages/trellis/` - Recipe/ManagedRecipe framework substrate, runtime, DB route, Nx model, packet judge, and testing.
 - `packages/attune/joern-effect` - generated Joern TypeScript/Effect SDK and DSL.
 - `packages/attune/joern-effect-properties` - Effect-based semantic fuzzer and Joern
   property workbench.
-- `packages/attune/nx` - local Nx generator/workspace tooling.
 - `nix/` - flake toolchains, Joern runtime closure, nix2container, and Arion
   runtime definitions.
 - `docs/` - active project docs and migration reports.
@@ -55,9 +54,10 @@ nx run <project>:typecheck
 nx run <project>:test
 ```
 
-Nx is the public workflow surface. Nix supplies the reproducible tools behind
-those targets. A normal package's Attune surface should be
-`src/attune.package.ts`; generated framework consequences belong to Nx repair,
+Nx remains the public command surface. Packet/judge recipes own workflow
+diagnostics, repairs, and promotion checks, while Nix supplies the reproducible
+tools behind those targets. A normal package's Attune surface should be
+`src/attune.package.ts`; generated framework consequences belong to repair,
 framework services, recipe receipt projections, or gitignored cache. See
 `docs/attuned/Attune Framework Operating Surface.md` and
 `docs/platform/nx-nix-workflow.md`.

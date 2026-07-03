@@ -1,4 +1,17 @@
-import type { PermissionProfile } from "../schema/permission-profile.js"
+import {
+  defineAlchemyResource,
+  defineConfigRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
+import {
+  PermissionProfile as PermissionProfileSchema,
+  type PermissionProfile,
+} from "../schema/permission-profile.js"
+
+const defaultPermissionProfileRecipeId = "attune-pi-agent.default-permission-profile"
+const permissionProfileRecipeId = "attune-pi-agent.permission-profile"
 
 export const defaultAttunePiPermissionProfile: PermissionProfile = {
   id: "attune-pi-default-deny-first",
@@ -84,3 +97,65 @@ export const defaultAttunePiPermissionProfile: PermissionProfile = {
     },
   ],
 }
+
+export const AttunePiPermissionProfileAddress = Schema.Struct({
+  packageRoot: Schema.Literal("packages/attune/pi-agent"),
+  profileId: Schema.optional(Schema.String),
+})
+export type AttunePiPermissionProfileAddress =
+  typeof AttunePiPermissionProfileAddress.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiDefaultPermissionProfileResource = defineAlchemyResource({
+  id: "attune-pi-agent.default-permission-profile.resource",
+  kind: "configuration",
+  alchemyType: "attune:resource:Configuration",
+  ownerRecipeId: defaultPermissionProfileRecipeId,
+  consumedBy: [defaultPermissionProfileRecipeId, permissionProfileRecipeId],
+  producedBy: [defaultPermissionProfileRecipeId],
+  addressSchema: AttunePiPermissionProfileAddress,
+  stateSchema: PermissionProfileSchema,
+  modes: ["read", "project"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiDefaultPermissionProfileRecipe = defineConfigRecipe({
+  id: "attune-pi-agent.default-permission-profile",
+  title: "Project the default deny-first Pi permission profile",
+  inputSchema: AttunePiPermissionProfileAddress,
+  outputSchema: PermissionProfileSchema,
+  nxTarget: "attune-pi-agent:test",
+  allowedFiles: [
+    "packages/attune/pi-agent/src/permissions/default-profile.ts",
+    "packages/attune/pi-agent/src/schema/permission-profile.ts",
+  ],
+  validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:typecheck"],
+  io: {
+    inputSchema: AttunePiPermissionProfileAddress,
+    outputSchema: PermissionProfileSchema,
+    inputResources: [AttunePiDefaultPermissionProfileResource],
+    outputResources: [AttunePiDefaultPermissionProfileResource],
+  },
+  handler: defineRecipeHandler<
+    typeof AttunePiPermissionProfileAddress.Type,
+    typeof PermissionProfileSchema.Type
+  >({
+    id: "attune-pi-agent.default-permission-profile.handler",
+    recipeId: defaultPermissionProfileRecipeId,
+    sourcePath: "packages/attune/pi-agent/src/permissions/default-profile.ts",
+    exportName: "defaultAttunePiPermissionProfile",
+    emitsReceipts: ["attune-pi-agent.permission-profile.projected"],
+    handler: () => Effect.succeed(defaultAttunePiPermissionProfile),
+  }),
+  alchemyDag: [{
+    fromRecipeId: defaultPermissionProfileRecipeId,
+    toRecipeId: permissionProfileRecipeId,
+    resource: AttunePiDefaultPermissionProfileResource,
+    kind: "projects",
+    modes: ["read", "project"],
+  }],
+})
+
+export const AttunePiDefaultPermissionProfileRecipes = [
+  AttunePiDefaultPermissionProfileRecipe,
+] as const

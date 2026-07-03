@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 export const CounterexamplePolicy = S.Struct({
   persistMinimizedCounterexamples: S.Boolean,
@@ -39,3 +40,26 @@ export const PropertyCounterexample = S.Struct({
   persistedFixturePath: S.NullOr(S.String),
 })
 export type PropertyCounterexample = typeof PropertyCounterexample.Type
+
+export const propertyTestSchemaModule = (): readonly string[] => [
+  "CounterexamplePolicy",
+  "PropertyObligation",
+  "PropertyFailureClassification",
+  "PropertyCounterexample",
+]
+
+export const AttunePiPropertyTestSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.property-test.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/property-test.ts",
+  exportName: "propertyTestSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.property-test.projected"],
+  handler: () => Effect.succeed(propertyTestSchemaModule()),
+})
+
+export const AttunePiPropertyTestSchemaRecipeModule = [
+  AttunePiPropertyTestSchemaHandler,
+] as const

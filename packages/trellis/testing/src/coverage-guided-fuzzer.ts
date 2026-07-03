@@ -1,4 +1,23 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+
 import type { AtomGraphObservation } from "./atom-graph-observer.js"
+import {
+  FrameworkTestingProgramHarnessObservationResource,
+  FrameworkTestingProgramHarnessRecipeId,
+} from "./program-harness.js"
+import {
+  FrameworkTestingHarnessInput,
+  FrameworkTestingObservationOutput,
+  FrameworkTestingProjectId,
+  FrameworkTestingTestTarget,
+  FrameworkTestingTypecheckTarget,
+} from "./recipe-contracts.js"
 import type { PropertyTier, ReplayMetadata } from "./replay-metadata.js"
 
 export type CoverageSearchPartitionKind =
@@ -1567,3 +1586,98 @@ export const mergeCoverageWorkerShards = (
     workerShards: ordered.map(shardSummary),
   }
 }
+
+export const FrameworkTestingCoverageGuidedRerunRecipeId = "framework-testing.coverage-guided-rerun" as const
+export const FrameworkTestingCoverageGuidedFuzzerSourcePath =
+  "packages/trellis/testing/src/coverage-guided-fuzzer.ts" as const
+
+export const describeFrameworkTestingCoverageGuidedRerun = (
+  input: FrameworkTestingHarnessInput,
+): FrameworkTestingObservationOutput => ({
+  observationCount: input.symbolIds.length,
+  coveragePointCount: input.symbolIds.length * 2,
+  replayMetadataCount: input.symbolIds.length,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingCoverageGuidedRerunInputResource = defineAlchemyResource({
+  id: "framework-testing.coverage-guided-rerun.input",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:FrameworkTestingCoverageGuidedRerunInput",
+  addressSchema: FrameworkTestingHarnessInput,
+  stateSchema: FrameworkTestingObservationOutput,
+  modes: ["observe", "read"],
+  consumedBy: [FrameworkTestingCoverageGuidedRerunRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingCoverageGuidedRerunPlanResource = defineAlchemyResource({
+  id: "framework-testing.coverage-guided-rerun.plan",
+  kind: "report",
+  alchemyType: "attune:resource:FrameworkTestingCoverageGuidedRerunPlan",
+  addressSchema: FrameworkTestingHarnessInput,
+  stateSchema: FrameworkTestingObservationOutput,
+  modes: ["plan", "read"],
+  ownerRecipeId: FrameworkTestingCoverageGuidedRerunRecipeId,
+  producedBy: [FrameworkTestingCoverageGuidedRerunRecipeId],
+})
+
+export const FrameworkTestingCoverageGuidedRerunHandler = defineRecipeHandler<
+  FrameworkTestingHarnessInput,
+  FrameworkTestingObservationOutput,
+  never,
+  never
+>({
+  id: "framework-testing.coverage-guided-rerun.handler",
+  recipeId: FrameworkTestingCoverageGuidedRerunRecipeId,
+  sourcePath: FrameworkTestingCoverageGuidedFuzzerSourcePath,
+  exportName: "describeFrameworkTestingCoverageGuidedRerun",
+  emitsReceipts: ["framework-testing.coverage-guided-rerun.plan"],
+  handler: (input) => Effect.succeed(describeFrameworkTestingCoverageGuidedRerun(input)),
+})
+
+export const FrameworkTestingCoverageGuidedRerunDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FrameworkTestingProgramHarnessRecipeId,
+  toRecipeId: FrameworkTestingCoverageGuidedRerunRecipeId,
+  resource: FrameworkTestingProgramHarnessObservationResource,
+  kind: "validates",
+  modes: ["observe", "plan", "read"],
+  validationTargets: [FrameworkTestingTestTarget],
+})
+
+export const FrameworkTestingCoverageGuidedRerunOutputDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "framework-testing.coverage-guided-rerun.input",
+  toRecipeId: FrameworkTestingCoverageGuidedRerunRecipeId,
+  resource: FrameworkTestingCoverageGuidedRerunPlanResource,
+  kind: "projects",
+  modes: ["read", "plan"],
+  validationTargets: [FrameworkTestingTestTarget],
+})
+
+export const FrameworkTestingCoverageGuidedRerunRecipes = [
+// @attune-packet-target generated-runtime-projection eligible
+  defineProjectionRecipe({
+    id: FrameworkTestingCoverageGuidedRerunRecipeId,
+    projectId: FrameworkTestingProjectId,
+    title: "Plan coverage-guided property reruns",
+    inputSchema: FrameworkTestingHarnessInput,
+    outputSchema: FrameworkTestingObservationOutput,
+    io: {
+      inputSchema: FrameworkTestingHarnessInput,
+      outputSchema: FrameworkTestingObservationOutput,
+      inputResources: [
+        FrameworkTestingProgramHarnessObservationResource,
+        FrameworkTestingCoverageGuidedRerunInputResource,
+      ],
+      outputResources: [FrameworkTestingCoverageGuidedRerunPlanResource],
+    },
+    handler: FrameworkTestingCoverageGuidedRerunHandler,
+    alchemyDag: [
+      FrameworkTestingCoverageGuidedRerunDagEdge,
+      FrameworkTestingCoverageGuidedRerunOutputDagEdge,
+    ],
+    nxTarget: FrameworkTestingTestTarget,
+    allowedFiles: [FrameworkTestingCoverageGuidedFuzzerSourcePath],
+    validationEvidence: [FrameworkTestingTestTarget, FrameworkTestingTypecheckTarget],
+  }),
+] as const

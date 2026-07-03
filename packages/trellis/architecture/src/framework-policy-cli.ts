@@ -4,6 +4,19 @@ import * as path from "node:path"
 import { fileURLToPath } from "node:url"
 
 import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineConfigRecipe,
+  defineDiagnosticRecipe,
+  defineDocumentationRecipe,
+  defineOpenSpecChangeRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  defineTestRecipe,
+} from "@attune/framework-protocol"
+import { Effect, Layer, Schema } from "effect"
+
+import {
   checkFrameworkImportBoundary,
   type FrameworkImportBoundaryDiagnostic,
   type FrameworkImportBoundaryFile,
@@ -152,7 +165,7 @@ const forbiddenCleanForkManagedRuntimePattern =
 const forbiddenCleanForkContextSystemPattern =
   /\b(?<name>ContextLens|ContextPacket|ContextStore|VectorContextSelector|SemanticCompression|AgentMemory)\b/u
 const authoredProjectFactsPattern =
-  /\b(?:ProjectFacts|defineAttuneProjectFacts)\b/u
+  /\b(?:LegacyPackageFacts|defineAttuneLegacyPackageFacts)\b/u
 const activeOperatingDocPaths = new Set([
   "AGENTS.md",
   "docs/attuned/Attune Framework Operating Surface.md",
@@ -183,7 +196,6 @@ const authoredAttunePackageFilePattern =
 const recipePackageDeclarationPattern = /\bdefineRecipePackage\s*\(/u
 const oneFileSurfaceCompletedRoots = new Set([
   "packages/trellis/architecture",
-  "packages/attune/nx",
   "packages/attune/pi-agent",
   "packages/attune/foldkit",
   "packages/attune/discovery",
@@ -192,7 +204,6 @@ const oneFileSurfaceCompletedRoots = new Set([
   "packages/attune/joern-effect",
   "packages/attune/joern-effect-properties",
   "packages/canopy/platform-alchemy-k8s",
-  "packages/trellis/oxlint-policy",
 ])
 const staleArchitecturePackageIdentity = ["attune-architecture", "lint"].join("-")
 
@@ -540,7 +551,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
       diagnostics.push(finalRatchetDiagnostic(
         "missing-project-facts",
         `${packageRoot}/package.json`,
-        `Active package ${packageRoot} must expose src/attune.package.ts after the project-facts migration.`,
+        `Active package ${packageRoot} must expose a Recipe package declaration after the project-facts migration.`,
       ))
       continue
     }
@@ -555,7 +566,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-package-view-graph",
           contractPath,
-          "Project facts must declare PackageViews and register them through views: PackageViews until the recipe projection replaces this source shape.",
+          "legacy package facts must declare PackageViews and register them through views: PackageViews until the recipe projection replaces this source shape.",
         ))
       }
 
@@ -566,7 +577,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-property-evidence-harness",
           contractPath,
-          "Project facts must expose generated property/evidence harness metadata or an explicit local waiver until the recipe projection replaces this source shape.",
+          "legacy package facts must expose generated property/evidence harness metadata or an explicit local waiver until the recipe projection replaces this source shape.",
         ))
       }
 
@@ -577,7 +588,7 @@ function checkFinalRatchetPolicy(files: readonly WorkspaceFile[]): readonly Fram
         diagnostics.push(finalRatchetDiagnostic(
           "missing-coverage-conformance",
           contractPath,
-          "Project facts must expose PackageTypeGuidance, coverageSearch, or coverage expectations until the recipe projection replaces this source shape.",
+          "legacy package facts must expose PackageTypeGuidance, coverageSearch, or coverage expectations until the recipe projection replaces this source shape.",
         ))
       }
 
@@ -628,11 +639,22 @@ function findRecipePackageDeclarationFile(
   packageRoot: string,
   filesByPath: ReadonlyMap<string, WorkspaceFile>,
 ): WorkspaceFile | undefined {
-  const recipePackageFile = filesByPath.get(`${packageRoot}/src/recipes.ts`)
-  if (recipePackageFile === undefined) return undefined
-  return recipePackageDeclarationPattern.test(recipePackageFile.content)
-    ? recipePackageFile
-    : undefined
+  const candidatePaths = [
+    `${packageRoot}/src/recipes.ts`,
+    `${packageRoot}/src/recipes/index.ts`,
+  ]
+
+  for (const candidatePath of candidatePaths) {
+    const recipePackageFile = filesByPath.get(candidatePath)
+    if (
+      recipePackageFile !== undefined &&
+      recipePackageDeclarationPattern.test(recipePackageFile.content)
+    ) {
+      return recipePackageFile
+    }
+  }
+
+  return undefined
 }
 
 function isAuthoredProjectFactsFile(file: WorkspaceFile): boolean {
@@ -713,7 +735,7 @@ function packageLocalCompanionReplacementLabel(
   companionPath: string,
 ): string {
   if (companionPath.endsWith("/src/attune.contract.generated.ts")) {
-    return `recipe project facts for ${projectName}`
+    return `recipe legacy package facts for ${projectName}`
   }
   if (companionPath.endsWith("/src/attune.generated.ts")) {
     return `recipe artifact and observation facts for ${projectName}`
@@ -798,7 +820,7 @@ function packageRootForSourceFile(filePath: string): string | undefined {
   const normalizedPath = normalizePath(filePath)
   const match =
     activePackageSourceRootPattern.exec(normalizedPath) ??
-    /^(?<root>framework\/(?:architecture|oxlint-policy))\/src\//u.exec(normalizedPath)
+    /^(?<root>framework\/architecture)\/src\//u.exec(normalizedPath)
   return match?.groups?.root
 }
 
@@ -819,7 +841,7 @@ function checkProjectFactsSize(
     "project-facts-too-large",
     contractFile.path,
     [
-      `Project facts ${packageRoot}/src/attune.package.ts has ${lineCount} lines and exceeds the staged ${threshold} line threshold.`,
+      `legacy package facts ${packageRoot}/src/attune.package.ts has ${lineCount} lines and exceeds the staged ${threshold} line threshold.`,
       "Move derived handlers, observation partition data, repair descriptors, coverage search plans, and artifact freshness metadata into generated/cache materialization or recipe projections.",
       `Run nx run ${projectNameFromPackageRoot(packageRoot)}:repair or workspace:repair when available.`,
     ].join(" "),
@@ -840,8 +862,8 @@ function checkAuthoredProjectFactsSurface(
       "old-authored-project-api",
       contractFile.path,
       [
-        `Authored project facts for ${packageRoot} still expose old declaration API ${name}.`,
-        "Use ProjectFacts, ProjectRuntimeRoots, defineAttuneProjectFacts, symbols, and edges as the active package source vocabulary.",
+        `Authored legacy package facts for ${packageRoot} still expose old declaration API ${name}.`,
+        "Use LegacyPackageFacts, LegacyPackageRuntimeRoots, defineAttuneLegacyPackageFacts, symbols, and edges as the active package source vocabulary.",
       ].join(" "),
     ))
   }
@@ -1539,15 +1561,27 @@ function checkProjectJsonRunCommands(file: WorkspaceFile): readonly FrameworkFin
 
   for (const [targetName, rawTarget] of Object.entries(parsed.targets)) {
     if (!isRecord(rawTarget) || rawTarget.executor !== "nx:run-commands") continue
+    if (isRecipeProjectedRunCommandTarget(rawTarget)) continue
 
     diagnostics.push(finalRatchetDiagnostic(
       "arbitrary-run-commands",
       file.path,
-      `Target ${targetName} uses nx:run-commands; final package workflows require typed Nx executors or inferred contract-derived targets.`,
+      `Target ${targetName} uses nx:run-commands without packet/judge recipe projection metadata; final package workflows require typed Nx executors or inferred contract-derived targets.`,
     ))
   }
 
   return diagnostics
+}
+
+function isRecipeProjectedRunCommandTarget(rawTarget: Readonly<Record<string, unknown>>): boolean {
+  const metadata = rawTarget["metadata"]
+  if (!isRecord(metadata)) return false
+  const attune = metadata["attune"]
+  if (!isRecord(attune)) return false
+  return typeof attune["recipeId"] === "string" &&
+    typeof attune["projectionId"] === "string" &&
+    typeof attune["surface"] === "string" &&
+    attune["projectionId"] === "framework.projection.nx-target"
 }
 
 function checkArchitectureLintReferences(file: WorkspaceFile): readonly FrameworkFinalRatchetDiagnostic[] {
@@ -2068,6 +2102,425 @@ function escapeRegExp(value: string): string {
 function isCliEntryPoint(moduleUrl: string, entryPoint: string | undefined): boolean {
   return entryPoint !== undefined && path.resolve(fileURLToPath(moduleUrl)) === path.resolve(entryPoint)
 }
+
+export const ArchitectureWorkspaceRecipeCatalogRecipeId =
+  "attune-architecture.workspace-recipe-catalog-source" as const
+export const ArchitectureTestSuiteRecipeId = "attune-architecture.test-suite" as const
+export const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+export const ArchitectureArtifactOwnershipQuarantineRecipeId =
+  "attune-architecture.artifact-ownership-quarantine" as const
+export const ArchitectureNoCompatScriptCheckRecipeId =
+  "attune-architecture.no-compat-script-check" as const
+export const ArchitectureDocumentationOwnershipRecipeId =
+  "attune-architecture.workspace-documentation-ownership" as const
+export const ArchitectureConfigOwnershipRecipeId =
+  "attune-architecture.workspace-config-ownership" as const
+export const ArchitectureOpenSpecOwnershipRecipeId =
+  "attune-architecture.openspec-change-ownership" as const
+
+const ArchitectureFrameworkPolicySourcePath =
+  "packages/trellis/architecture/src/framework-policy-cli.ts" as const
+
+const ArchitecturePolicyCheckSchema = Schema.Literals([
+  "all",
+  "import-boundary",
+  "no-report",
+  "atom-graph",
+  "property-evidence",
+  "coverage-conformance",
+  "no-compat-scripts",
+  "policy-surface",
+  "final-ratchet",
+] as const)
+
+const ArchitecturePolicyWorkspaceInput = Schema.Struct({
+  workspaceRoot: Schema.optional(Schema.String),
+  checks: Schema.optional(Schema.Array(ArchitecturePolicyCheckSchema)),
+})
+type ArchitecturePolicyWorkspaceInput = typeof ArchitecturePolicyWorkspaceInput.Type
+
+const ArchitecturePolicyWorkspaceOutput = Schema.Struct({
+  invocationModel: Schema.Literal("RecipeInvocation"),
+  importDiagnostics: Schema.Array(Schema.Unknown),
+  atomImplementationDiagnostics: Schema.Array(Schema.Unknown),
+  noReportDiagnostics: Schema.Array(Schema.Unknown),
+  ratchetDiagnostics: Schema.Array(Schema.Unknown),
+  outputLines: Schema.Array(Schema.String),
+  exitCode: Schema.Number,
+})
+type ArchitecturePolicyWorkspaceOutput = typeof ArchitecturePolicyWorkspaceOutput.Type
+
+const architecturePolicyRecipeIds = [
+  ArchitectureWorkspaceRecipeCatalogRecipeId,
+  ArchitectureTestSuiteRecipeId,
+  ArchitectureWorkspacePolicyRecipeId,
+  ArchitectureArtifactOwnershipQuarantineRecipeId,
+  ArchitectureNoCompatScriptCheckRecipeId,
+  ArchitectureDocumentationOwnershipRecipeId,
+  ArchitectureConfigOwnershipRecipeId,
+  ArchitectureOpenSpecOwnershipRecipeId,
+] as const
+
+export const ArchitectureFrameworkPolicyFilesystemLayer = defineRecipeLayer({
+  id: "attune-architecture.framework-policy.filesystem.layer",
+  sourcePath: ArchitectureFrameworkPolicySourcePath,
+  exportName: "checkFrameworkPolicyWorkspace",
+  layer: Layer.empty as never,
+  provides: [{ id: "filesystem", service: "node:fs" }],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureFrameworkPolicyWorkspaceResource = defineAlchemyResource({
+  id: "attune-architecture.framework-policy.workspace",
+  kind: "directory",
+  alchemyType: "attune:resource:Directory",
+  consumedBy: architecturePolicyRecipeIds,
+  addressSchema: ArchitecturePolicyWorkspaceInput,
+  stateSchema: Schema.Struct({
+    sourceRoot: Schema.Literal("packages/trellis/architecture/src"),
+  }),
+  modes: ["read", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureFrameworkPolicyReportResource = defineAlchemyResource({
+  id: "attune-architecture.framework-policy.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  producedBy: architecturePolicyRecipeIds,
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: ArchitecturePolicyWorkspaceInput,
+  stateSchema: ArchitecturePolicyWorkspaceOutput,
+  modes: ["project", "observe"],
+})
+
+const projectArchitecturePolicyWorkspace = (
+  input: ArchitecturePolicyWorkspaceInput,
+): ArchitecturePolicyWorkspaceOutput => {
+  const result = checkFrameworkPolicyWorkspace(
+    input.workspaceRoot ?? process.cwd(),
+    input.checks === undefined ? {} : { checks: input.checks },
+  )
+  return {
+    invocationModel: "RecipeInvocation",
+    importDiagnostics: [...result.importDiagnostics],
+    atomImplementationDiagnostics: [...result.atomImplementationDiagnostics],
+    noReportDiagnostics: [...result.noReportDiagnostics],
+    ratchetDiagnostics: [...result.ratchetDiagnostics],
+    outputLines: [...result.outputLines],
+    exitCode: result.exitCode,
+  }
+}
+
+export const ArchitectureWorkspacePolicyHandler = defineRecipeHandler<
+  ArchitecturePolicyWorkspaceInput,
+  ArchitecturePolicyWorkspaceOutput
+>({
+  id: "attune-architecture.workspace-policy.handler",
+  recipeId: ArchitectureWorkspacePolicyRecipeId,
+  sourcePath: ArchitectureFrameworkPolicySourcePath,
+  exportName: "checkFrameworkPolicyWorkspace",
+  handler: (input) => Effect.sync(() => projectArchitecturePolicyWorkspace(input)),
+  layer: ArchitectureFrameworkPolicyFilesystemLayer,
+  emitsReceipts: ["attune-architecture.workspace-policy.reported"],
+})
+
+const ArchitectureWorkspaceRecipeCatalogDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureWorkspaceRecipeCatalogRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureFrameworkPolicyReportResource,
+  kind: "observes",
+  modes: ["read", "observe"],
+})
+
+const ArchitectureTestSuiteDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureTestSuiteRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureFrameworkPolicyReportResource,
+  kind: "validates",
+  modes: ["check", "observe"],
+})
+
+const ArchitectureArtifactOwnershipQuarantineDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureArtifactOwnershipQuarantineRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureFrameworkPolicyReportResource,
+  kind: "observes",
+  modes: ["read", "observe"],
+})
+
+const ArchitectureNoCompatScriptCheckDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureNoCompatScriptCheckRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureFrameworkPolicyReportResource,
+  kind: "diagnoses",
+  modes: ["check", "observe"],
+})
+
+const ArchitectureDocumentationOwnershipDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureDocumentationOwnershipRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureFrameworkPolicyReportResource,
+  kind: "observes",
+  modes: ["read", "observe"],
+})
+
+const ArchitectureConfigOwnershipDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureConfigOwnershipRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureFrameworkPolicyReportResource,
+  kind: "observes",
+  modes: ["read", "observe"],
+})
+
+const ArchitectureOpenSpecOwnershipDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureOpenSpecOwnershipRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureFrameworkPolicyReportResource,
+  kind: "observes",
+  modes: ["read", "observe"],
+})
+
+export const ArchitectureWorkspaceRecipeCatalogRecipe = defineDocumentationRecipe({
+  id: "attune-architecture.workspace-recipe-catalog-source",
+  projectId: "attune-architecture",
+  title: "Own workspace recipe catalog aggregation source",
+  inputSchema: ArchitecturePolicyWorkspaceInput,
+  outputSchema: ArchitecturePolicyWorkspaceOutput,
+  allowedFiles: ["packages/trellis/recipes.ts"],
+  validationEvidence: ["workspace:policy-fast", "workspace:packetized-architecture-judge"],
+  io: {
+    inputSchema: ArchitecturePolicyWorkspaceInput,
+    outputSchema: ArchitecturePolicyWorkspaceOutput,
+    inputResources: [ArchitectureFrameworkPolicyWorkspaceResource],
+    outputResources: [ArchitectureFrameworkPolicyReportResource],
+  },
+  handler: defineRecipeHandler<ArchitecturePolicyWorkspaceInput, ArchitecturePolicyWorkspaceOutput>({
+    id: "attune-architecture.workspace-recipe-catalog-source.handler",
+    recipeId: ArchitectureWorkspaceRecipeCatalogRecipeId,
+    sourcePath: ArchitectureFrameworkPolicySourcePath,
+    exportName: "projectArchitecturePolicyWorkspace",
+    handler: (input) => Effect.sync(() => projectArchitecturePolicyWorkspace(input)),
+    layer: ArchitectureFrameworkPolicyFilesystemLayer,
+    emitsReceipts: ["attune-architecture.workspace-recipe-catalog-source.reported"],
+  }),
+  alchemyDag: [ArchitectureWorkspaceRecipeCatalogDagEdge],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureTestSuiteRecipe = defineTestRecipe({
+  id: "attune-architecture.test-suite",
+  projectId: "attune-architecture",
+  title: "Own architecture policy and workspace recipe tests",
+  inputSchema: ArchitecturePolicyWorkspaceInput,
+  outputSchema: ArchitecturePolicyWorkspaceOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: ["packages/trellis/architecture/test/**"],
+  validationEvidence: ["attune-architecture:test"],
+  io: {
+    inputSchema: ArchitecturePolicyWorkspaceInput,
+    outputSchema: ArchitecturePolicyWorkspaceOutput,
+    inputResources: [ArchitectureFrameworkPolicyWorkspaceResource],
+    outputResources: [ArchitectureFrameworkPolicyReportResource],
+  },
+  handler: defineRecipeHandler<ArchitecturePolicyWorkspaceInput, ArchitecturePolicyWorkspaceOutput>({
+    id: "attune-architecture.test-suite.handler",
+    recipeId: ArchitectureTestSuiteRecipeId,
+    sourcePath: ArchitectureFrameworkPolicySourcePath,
+    exportName: "projectArchitecturePolicyWorkspace",
+    handler: (input) => Effect.sync(() => projectArchitecturePolicyWorkspace(input)),
+    layer: ArchitectureFrameworkPolicyFilesystemLayer,
+    emitsReceipts: ["attune-architecture.test-suite.reported"],
+  }),
+  alchemyDag: [ArchitectureTestSuiteDagEdge],
+})
+
+export const ArchitectureWorkspacePolicyRecipe = defineDiagnosticRecipe({
+  id: ArchitectureWorkspacePolicyRecipeId,
+  projectId: "attune-architecture",
+  title: "Scan workspace architecture policy",
+  inputSchema: ArchitecturePolicyWorkspaceInput,
+  outputSchema: ArchitecturePolicyWorkspaceOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: ["packages/trellis/architecture/**"],
+  validationEvidence: ["attune-architecture:test"],
+  io: {
+    inputSchema: ArchitecturePolicyWorkspaceInput,
+    outputSchema: ArchitecturePolicyWorkspaceOutput,
+    inputResources: [ArchitectureFrameworkPolicyWorkspaceResource],
+    outputResources: [ArchitectureFrameworkPolicyReportResource],
+  },
+  handler: ArchitectureWorkspacePolicyHandler,
+})
+
+export const ArchitectureArtifactOwnershipQuarantineRecipe = defineDiagnosticRecipe({
+  id: "attune-architecture.artifact-ownership-quarantine",
+  projectId: "attune-architecture",
+  title: "Report legacy artifact ownership as quarantine evidence",
+  inputSchema: ArchitecturePolicyWorkspaceInput,
+  outputSchema: ArchitecturePolicyWorkspaceOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: ["packages/trellis/architecture/**", "**/attune.artifact-ownership.json"],
+  validationEvidence: ["attune-architecture:test", "workspace:framework-policy-check"],
+  io: {
+    inputSchema: ArchitecturePolicyWorkspaceInput,
+    outputSchema: ArchitecturePolicyWorkspaceOutput,
+    inputResources: [ArchitectureFrameworkPolicyWorkspaceResource],
+    outputResources: [ArchitectureFrameworkPolicyReportResource],
+  },
+  handler: defineRecipeHandler<ArchitecturePolicyWorkspaceInput, ArchitecturePolicyWorkspaceOutput>({
+    id: "attune-architecture.artifact-ownership-quarantine.handler",
+    recipeId: ArchitectureArtifactOwnershipQuarantineRecipeId,
+    sourcePath: ArchitectureFrameworkPolicySourcePath,
+    exportName: "projectArchitecturePolicyWorkspace",
+    handler: (input) => Effect.sync(() => projectArchitecturePolicyWorkspace(input)),
+    layer: ArchitectureFrameworkPolicyFilesystemLayer,
+    emitsReceipts: ["attune-architecture.artifact-ownership-quarantine.reported"],
+  }),
+  alchemyDag: [ArchitectureArtifactOwnershipQuarantineDagEdge],
+})
+
+export const ArchitectureNoCompatScriptCheckRecipe = defineDiagnosticRecipe({
+  id: "attune-architecture.no-compat-script-check",
+  projectId: "attune-architecture",
+  title: "Reject live package-local script files for no-compat migrated workflow surfaces",
+  inputSchema: ArchitecturePolicyWorkspaceInput,
+  outputSchema: ArchitecturePolicyWorkspaceOutput,
+  nxTarget: "workspace:no-compat-script-check",
+  allowedFiles: [
+    ArchitectureFrameworkPolicySourcePath,
+    "project.json",
+    "packages/**/scripts/**",
+  ],
+  validationEvidence: ["workspace:no-compat-script-check", "attune-architecture:test"],
+  io: {
+    inputSchema: ArchitecturePolicyWorkspaceInput,
+    outputSchema: ArchitecturePolicyWorkspaceOutput,
+    inputResources: [ArchitectureFrameworkPolicyWorkspaceResource],
+    outputResources: [ArchitectureFrameworkPolicyReportResource],
+  },
+  handler: defineRecipeHandler<ArchitecturePolicyWorkspaceInput, ArchitecturePolicyWorkspaceOutput>({
+    id: "attune-architecture.no-compat-script-check.handler",
+    recipeId: ArchitectureNoCompatScriptCheckRecipeId,
+    sourcePath: ArchitectureFrameworkPolicySourcePath,
+    exportName: "projectArchitecturePolicyWorkspace",
+    handler: (input) => Effect.sync(() => projectArchitecturePolicyWorkspace(input)),
+    layer: ArchitectureFrameworkPolicyFilesystemLayer,
+    emitsReceipts: ["attune-architecture.no-compat-script-check.reported"],
+  }),
+  alchemyDag: [ArchitectureNoCompatScriptCheckDagEdge],
+})
+
+export const ArchitectureDocumentationOwnershipRecipe = defineDocumentationRecipe({
+  id: "attune-architecture.workspace-documentation-ownership",
+  projectId: "attune-architecture",
+  title: "Own workspace documentation and report surfaces for file accounting",
+  inputSchema: ArchitecturePolicyWorkspaceInput,
+  outputSchema: ArchitecturePolicyWorkspaceOutput,
+  allowedFiles: ["AGENTS.md", "README.md", ".codex/skills/**", "docs/**", "reports/**", "packages/**/README.md", "packages/**/docs/**"],
+  observedFiles: ["AGENTS.md", "README.md", ".codex/skills/**", "docs/**", "reports/**", "packages/**/README.md", "packages/**/docs/**"],
+  validationEvidence: ["workspace:packetized-architecture-judge"],
+  io: {
+    inputSchema: ArchitecturePolicyWorkspaceInput,
+    outputSchema: ArchitecturePolicyWorkspaceOutput,
+    inputResources: [ArchitectureFrameworkPolicyWorkspaceResource],
+    outputResources: [ArchitectureFrameworkPolicyReportResource],
+  },
+  handler: defineRecipeHandler<ArchitecturePolicyWorkspaceInput, ArchitecturePolicyWorkspaceOutput>({
+    id: "attune-architecture.workspace-documentation-ownership.handler",
+    recipeId: ArchitectureDocumentationOwnershipRecipeId,
+    sourcePath: ArchitectureFrameworkPolicySourcePath,
+    exportName: "projectArchitecturePolicyWorkspace",
+    handler: (input) => Effect.sync(() => projectArchitecturePolicyWorkspace(input)),
+    layer: ArchitectureFrameworkPolicyFilesystemLayer,
+    emitsReceipts: ["attune-architecture.workspace-documentation-ownership.reported"],
+  }),
+  alchemyDag: [ArchitectureDocumentationOwnershipDagEdge],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureConfigOwnershipRecipe = defineConfigRecipe({
+  id: "attune-architecture.workspace-config-ownership",
+  projectId: "attune-architecture",
+  title: "Own workspace config and package metadata surfaces for file accounting",
+  inputSchema: ArchitecturePolicyWorkspaceInput,
+  outputSchema: ArchitecturePolicyWorkspaceOutput,
+  allowedFiles: [
+    ".gitignore",
+    ".githooks/**",
+    ".nxignore",
+    ".pre-commit-config.yaml",
+    ".sops.yaml",
+    "AGENTS.md",
+    "nx.json",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "project.json",
+    "repomix.config.json",
+    "tsconfig.base.json",
+    "packages/**/package.json",
+    "packages/**/project.json",
+    "packages/**/tsconfig*.json",
+  ],
+  observedFiles: ["project.json", "nx.json", "package.json", "repomix.config.json", "packages/**/project.json"],
+  validationEvidence: ["workspace:policy-fast", "workspace:packetized-architecture-judge"],
+  io: {
+    inputSchema: ArchitecturePolicyWorkspaceInput,
+    outputSchema: ArchitecturePolicyWorkspaceOutput,
+    inputResources: [ArchitectureFrameworkPolicyWorkspaceResource],
+    outputResources: [ArchitectureFrameworkPolicyReportResource],
+  },
+  handler: defineRecipeHandler<ArchitecturePolicyWorkspaceInput, ArchitecturePolicyWorkspaceOutput>({
+    id: "attune-architecture.workspace-config-ownership.handler",
+    recipeId: ArchitectureConfigOwnershipRecipeId,
+    sourcePath: ArchitectureFrameworkPolicySourcePath,
+    exportName: "projectArchitecturePolicyWorkspace",
+    handler: (input) => Effect.sync(() => projectArchitecturePolicyWorkspace(input)),
+    layer: ArchitectureFrameworkPolicyFilesystemLayer,
+    emitsReceipts: ["attune-architecture.workspace-config-ownership.reported"],
+  }),
+  alchemyDag: [ArchitectureConfigOwnershipDagEdge],
+})
+
+export const ArchitectureOpenSpecOwnershipRecipe = defineOpenSpecChangeRecipe({
+  id: "attune-architecture.openspec-change-ownership",
+  projectId: "attune-architecture",
+  title: "Own OpenSpec change artifacts for file accounting",
+  inputSchema: ArchitecturePolicyWorkspaceInput,
+  outputSchema: ArchitecturePolicyWorkspaceOutput,
+  allowedFiles: ["openspec/**"],
+  observedFiles: ["openspec/**"],
+  validationEvidence: ["openspec validate packetized-recipe-invocation-architecture --strict"],
+  io: {
+    inputSchema: ArchitecturePolicyWorkspaceInput,
+    outputSchema: ArchitecturePolicyWorkspaceOutput,
+    inputResources: [ArchitectureFrameworkPolicyWorkspaceResource],
+    outputResources: [ArchitectureFrameworkPolicyReportResource],
+  },
+  handler: defineRecipeHandler<ArchitecturePolicyWorkspaceInput, ArchitecturePolicyWorkspaceOutput>({
+    id: "attune-architecture.openspec-change-ownership.handler",
+    recipeId: ArchitectureOpenSpecOwnershipRecipeId,
+    sourcePath: ArchitectureFrameworkPolicySourcePath,
+    exportName: "projectArchitecturePolicyWorkspace",
+    handler: (input) => Effect.sync(() => projectArchitecturePolicyWorkspace(input)),
+    layer: ArchitectureFrameworkPolicyFilesystemLayer,
+    emitsReceipts: ["attune-architecture.openspec-change-ownership.reported"],
+  }),
+  alchemyDag: [ArchitectureOpenSpecOwnershipDagEdge],
+})
+
+export const ArchitectureFrameworkPolicyRecipes = [
+  ArchitectureWorkspaceRecipeCatalogRecipe,
+  ArchitectureTestSuiteRecipe,
+  ArchitectureWorkspacePolicyRecipe,
+  ArchitectureArtifactOwnershipQuarantineRecipe,
+  ArchitectureNoCompatScriptCheckRecipe,
+  ArchitectureDocumentationOwnershipRecipe,
+  ArchitectureConfigOwnershipRecipe,
+  ArchitectureOpenSpecOwnershipRecipe,
+] as const
 
 if (isCliEntryPoint(import.meta.url, process.argv[1])) {
   process.exitCode = runFrameworkPolicyCli()

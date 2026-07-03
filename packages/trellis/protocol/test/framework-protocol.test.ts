@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 import { describe, expect, expectTypeOf, it } from "vitest"
 import {
   DiagnosticRuleDescriptorSchema,
@@ -13,10 +13,14 @@ import {
 import {
   AttuneProtocolWaiverSchema,
   baseAtom,
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
   definePackageViewGraph,
   defineDiagnosticRecipe,
   defineInvocationRecipe,
   defineObservationRecipe,
+  defineRecipeHandler,
+  defineRecipeModule,
   deriveDiagnosticRequirements,
   deriveSymbolProjectionEdges,
   deriveSymbolRegistry,
@@ -25,11 +29,15 @@ import {
   defineRepairRecipe,
   diagnoseAvoidableStringReferences,
   derivedAtom,
-  schemaDescriptorFromProjectFacts,
+  schemaDescriptorFromLegacyPackageFacts,
   diagnosticFromRepairFinding,
   extractProtocolSourceSummary,
   hashProgramValue,
+  lowerRecipeAuthoringFact,
   packageViewAtom,
+  projectRecipeAuthoringRuntime,
+  RecipeRecordView,
+  recipeAuthoringSafetyDiagnostics,
   schemaDescriptorIdForProject,
   reactivityKey,
   roundtripSourceReference,
@@ -50,6 +58,12 @@ import {
   type SymbolIds,
   type OutputOf,
 } from "../src/project-facts/index.js"
+
+const makeInvocationRecipeFixture = defineInvocationRecipe
+const makeDiagnosticRecipeFixture = defineDiagnosticRecipe
+const makeRepairRecipeFixture = defineRepairRecipe
+const makeProjectionRecipeFixture = defineProjectionRecipe
+const makeObservationRecipeFixture = defineObservationRecipe
 
 describe("@attune/framework-protocol", () => {
   it("keeps package authoring on the public framework facade", () => {
@@ -80,35 +94,35 @@ describe("@attune/framework-protocol", () => {
   it("declares recipe packages and specialized recipe-family wrappers without a second runtime", () => {
     const Input = Schema.Struct({ projectId: Schema.String })
     const Output = Schema.Struct({ ok: Schema.Boolean })
-    const invocation = defineInvocationRecipe({
+    const invocation = makeInvocationRecipeFixture({
       id: "demo.cli",
       projectId: "demo",
       inputSchema: Input,
       outputSchema: Output,
       entrypoints: ["packages/demo/src/cli.ts"],
     })
-    const diagnostic = defineDiagnosticRecipe({
+    const diagnostic = makeDiagnosticRecipeFixture({
       id: "demo.diagnostics",
       projectId: "demo",
       inputSchema: Input,
       outputSchema: Output,
       observedFiles: ["packages/demo/src/diagnostics.ts"],
     })
-    const repair = defineRepairRecipe({
+    const repair = makeRepairRecipeFixture({
       id: "demo.repairs",
       projectId: "demo",
       inputSchema: Input,
       outputSchema: Output,
       affectedFiles: ["packages/demo/src/repairs.ts"],
     })
-    const projection = defineProjectionRecipe({
+    const projection = makeProjectionRecipeFixture({
       id: "demo.json",
       projectId: "demo",
       inputSchema: Input,
       outputSchema: Output,
       outputs: ["DemoJsonOutput"],
     })
-    const observation = defineObservationRecipe({
+    const observation = makeObservationRecipeFixture({
       id: "demo.observations",
       projectId: "demo",
       inputSchema: Input,
@@ -143,6 +157,197 @@ describe("@attune/framework-protocol", () => {
     ])
     expect(invocation.inputSchema).toBe(Input)
     expect(projection.outputSchema).toBe(Output)
+  })
+
+  it("authors ordinary recipes through defineRecipeModule with inferred lowering context", () => {
+    const TokenEvents = Schema.Struct({ total: Schema.Number })
+    const TokenAuditReport = Schema.Struct({ total: Schema.Number, ok: Schema.Boolean })
+    type TokenEvents = typeof TokenEvents.Type
+    type TokenAuditReport = typeof TokenAuditReport.Type
+    const recipe = defineRecipeModule("file:///workspace/packages/tend/token-audit/src/recipes.ts")
+
+    const tokenAudit = recipe({
+      modes: ["project", "check"],
+      input: TokenEvents,
+      output: TokenAuditReport,
+      run: (input: TokenEvents): TokenAuditReport => ({ total: input.total, ok: true }),
+    })
+    const lowered = lowerRecipeAuthoringFact(tokenAudit, {
+      packageId: "tend-token-audit",
+      projectId: "tend-token-audit",
+      exportName: "tokenAudit",
+      validationEvidence: ["tend-token-audit:typecheck"],
+    })
+
+    expectTypeOf(tokenAudit.run).parameter(0).toEqualTypeOf<TokenEvents>()
+    expect(tokenAudit.authoringKind).toBe("recipe")
+    expect(tokenAudit.sourcePath).toBe("/workspace/packages/tend/token-audit/src/recipes.ts")
+    expect(lowered.id).toBe("recipe:tend-token-audit.recipe.tokenAudit")
+    expect(lowered.sourcePath).toBe(tokenAudit.sourcePath)
+    expect(lowered.handler?.id).toBe("recipe-handler:recipe:tend-token-audit.recipe.tokenAudit.handler")
+    expect(lowered.projectId).toBe("tend-token-audit")
+    expect(RecipeRecordView.fromRecipe(lowered)).toMatchObject({
+      recipeId: "recipe:tend-token-audit.recipe.tokenAudit",
+      kind: "recipe",
+      projectId: "tend-token-audit",
+    })
+    expect(Effect.runSync(lowered.handler!.handler({ total: 2 }))).toEqual({ total: 2, ok: true })
+    expect(recipeAuthoringSafetyDiagnostics(tokenAudit)).toEqual([])
+
+    const projection = projectRecipeAuthoringRuntime(tokenAudit, {
+      packageId: "tend-token-audit",
+      projectId: "tend-token-audit",
+      exportName: "tokenAudit",
+      validationEvidence: ["tend-token-audit:typecheck"],
+    })
+    expect(projection.outputPath).toBe(".framework/generated/packages/tend-token-audit/tokenAudit.recipe.generated.ts")
+    expect(projection.provenance).toMatchObject({
+      authoredModule: "file:///workspace/packages/tend/token-audit/src/recipes.ts",
+      exportName: "tokenAudit",
+      sourcePath: "/workspace/packages/tend/token-audit/src/recipes.ts",
+    })
+    expect(projection.compatibility).toMatchObject({
+      generatedRoot: ".framework/generated",
+      legacyGeneratedRoot: ".attune/cache/generated",
+      mixesGeneratedTruth: false,
+    })
+    expect(projection.generatedTypeScript).toContain("defineRecipe")
+  })
+
+  it("preserves explicit runtime IR while moving authored source to compact recipe modules", () => {
+    const ContractInput = Schema.Struct({ packageRoot: Schema.String })
+    const ContractOutput = Schema.Struct({ ok: Schema.Boolean })
+    type ContractInput = typeof ContractInput.Type
+    type ContractOutput = typeof ContractOutput.Type
+    const sourcePath = "/workspace/packages/demo/src/recipes.ts"
+    const recipe = defineRecipeModule(`file://${sourcePath}`)
+    const resource = defineAlchemyResource({
+      id: "demo.contract.resource",
+      kind: "schema",
+      alchemyType: "attune:resource:DemoContract",
+      ownerRecipeId: "demo.contract",
+      producedBy: ["demo.contract"],
+      consumedBy: ["demo.downstream"],
+      addressSchema: ContractInput,
+      stateSchema: ContractOutput,
+      modes: ["read", "check", "observe"],
+    })
+    const handler = {
+      id: "demo.contract.handler",
+      exportName: "describeDemoContract",
+      handler: () => Effect.succeed({ ok: true }),
+      emitsReceipts: ["demo.contract"],
+    }
+    const edge = defineAlchemyRecipeDagEdge({
+      fromRecipeId: "demo.contract",
+      toRecipeId: "demo.downstream",
+      resource,
+      kind: "projects",
+      modes: ["read", "check", "observe"],
+    })
+
+    const compactContract = recipe({
+      modes: ["project", "check"],
+      input: ContractInput,
+      output: ContractOutput,
+      title: "Expose the demo contract",
+      run: () => ({ ok: true }),
+      runtime: {
+        id: "demo.contract",
+        projectId: "demo",
+        nxTarget: "demo:typecheck",
+        validationEvidence: ["demo:typecheck", "demo:test"],
+        io: {
+          inputSchema: ContractInput,
+          outputSchema: ContractOutput,
+          inputResources: [resource],
+          outputResources: [resource],
+        },
+        handler,
+        alchemyDag: [edge],
+      },
+    })
+    const lowered = lowerRecipeAuthoringFact(compactContract, {
+      packageId: "demo",
+      projectId: "demo",
+      exportName: "demoContract",
+    })
+
+    expect(lowered.id).toBe("demo.contract")
+    expect(lowered.projectId).toBe("demo")
+    expect(lowered.sourcePath).toBe(sourcePath)
+    expect(lowered.nxTarget).toBe("demo:typecheck")
+    expect(lowered.allowedFiles).toEqual([sourcePath])
+    expect(lowered.validationEvidence).toEqual(["demo:typecheck", "demo:test"])
+    expect(lowered.handler).toEqual({
+      ...handler,
+      recipeId: "demo.contract",
+      sourcePath,
+    })
+    expect(lowered.io?.inputResources).toEqual([resource])
+    expect(lowered.io?.outputResources).toEqual([resource])
+    expect(lowered.alchemyDag).toEqual([edge])
+  })
+
+  it("authors managed recipes with visible review policy and safety diagnostics", () => {
+    const KubernetesObjectSetInput = Schema.Struct({ namespace: Schema.String })
+    const KubernetesObjectSetState = Schema.Struct({ applied: Schema.Boolean })
+    type KubernetesObjectSetInput = typeof KubernetesObjectSetInput.Type
+    type KubernetesObjectSetState = typeof KubernetesObjectSetState.Type
+    const recipe = defineRecipeModule("file:///workspace/packages/canopy/platform-alchemy-k8s/src/recipes.ts")
+
+    const kubernetesObjectSet = recipe.managed({
+      modes: ["plan", "apply", "check", "destroy"],
+      input: KubernetesObjectSetInput,
+      output: KubernetesObjectSetState,
+      needsHumanReview: true,
+      resourceKind: "kubernetes-object-set",
+      run: (input: KubernetesObjectSetInput): Effect.Effect<KubernetesObjectSetState> =>
+        Effect.succeed({ applied: input.namespace.length > 0 }),
+    })
+    const lowered = lowerRecipeAuthoringFact(kubernetesObjectSet, {
+      packageId: "platform-alchemy-k8s",
+      projectId: "platform-alchemy-k8s",
+      exportName: "kubernetesObjectSet",
+    })
+
+    expect(kubernetesObjectSet.authoringKind).toBe("managed-recipe")
+    expect(recipeAuthoringSafetyDiagnostics(kubernetesObjectSet)).toEqual([])
+    expect(RecipeRecordView.fromRecipe(lowered)).toMatchObject({
+      recipeId: "recipe:platform-alchemy-k8s.managed.kubernetesObjectSet",
+      kind: "managed-recipe",
+      projectId: "platform-alchemy-k8s",
+      resourceKind: "kubernetes-object-set",
+      humanReviewRequired: true,
+    })
+    expect(projectRecipeAuthoringRuntime(kubernetesObjectSet, {
+      packageId: "platform-alchemy-k8s",
+      projectId: "platform-alchemy-k8s",
+      exportName: "kubernetesObjectSet",
+    })).toMatchObject({
+      outputPath: ".framework/generated/packages/platform-alchemy-k8s/kubernetesObjectSet.managed.generated.ts",
+      recipeId: "recipe:platform-alchemy-k8s.managed.kubernetesObjectSet",
+    })
+
+    const unsafeOrdinary = recipe({
+      modes: ["apply"],
+      input: KubernetesObjectSetInput,
+      output: KubernetesObjectSetState,
+      run: () => ({ applied: true }),
+    })
+    const hiddenReview = recipe.managed({
+      modes: ["apply"],
+      input: KubernetesObjectSetInput,
+      output: KubernetesObjectSetState,
+      run: () => ({ applied: true }),
+    })
+
+    expect(recipeAuthoringSafetyDiagnostics(unsafeOrdinary).map((diagnostic) => diagnostic.code)).toEqual([
+      "recipe-authoring/unsafe-ordinary-lifecycle",
+    ])
+    expect(recipeAuthoringSafetyDiagnostics(hiddenReview).map((diagnostic) => diagnostic.code)).toEqual([
+      "recipe-authoring/managed-review-required",
+    ])
   })
 
   it("exposes compile-only contract conformance helpers through the public framework facade", () => {
@@ -255,7 +460,7 @@ describe("@attune/framework-protocol", () => {
         operationKinds: ["generator"],
         description: "Generated file provenance is recorded in the project-specific ledger.",
         source: "custom-extension",
-        metadata: { owner: "@attune/nx:effect-service" },
+        metadata: { owner: "@attune/framework-nx:effect-service-boundary" },
       }],
     } as const
 
@@ -273,7 +478,7 @@ describe("@attune/framework-protocol", () => {
     ])
     expect(inferDiagnosticRules(operation).at(-1)).toMatchObject({
       source: "custom-extension",
-      metadata: { owner: "@attune/nx:effect-service" },
+      metadata: { owner: "@attune/framework-nx:effect-service-boundary" },
     })
   })
 
@@ -318,7 +523,7 @@ describe("@attune/framework-protocol", () => {
       ],
     } as const)
 
-    const descriptor = schemaDescriptorFromProjectFacts({
+    const descriptor = schemaDescriptorFromLegacyPackageFacts({
       sourcePath: "packages/demo/src/attune.package.ts",
       contract,
     })

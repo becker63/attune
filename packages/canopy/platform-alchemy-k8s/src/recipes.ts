@@ -1,157 +1,76 @@
-import {
-  defineExternalSchemaManagedRecipe,
-  defineExternalSchemaRecipe,
-  type RecipeRepair,
-} from "@attune/framework-protocol"
-import { Schema } from "effect"
+import { defineRecipePackage } from "@attune/framework-protocol"
 
-import {
-  LocalClusterPlan,
-} from "./cluster/local-cluster.js"
-import {
-  RenderedResourceSet,
-} from "./provider/alchemy-k8s-provider.js"
-
-export const LocalClusterRecipeInput = Schema.Struct({
-  name: Schema.optional(Schema.String),
-  driver: Schema.optional(Schema.Literals(["k3d", "kind"] as const)),
-  agents: Schema.optional(Schema.Number),
-})
-export type LocalClusterRecipeInput = typeof LocalClusterRecipeInput.Type
-
-export const LocalComputeStackRecipeInput = Schema.Struct({
-  namespace: Schema.optional(Schema.String),
-  controlPlaneImage: Schema.optional(Schema.String),
-  workerImage: Schema.optional(Schema.String),
-  gpuWorkerImage: Schema.optional(Schema.String),
-})
-export type LocalComputeStackRecipeInput = typeof LocalComputeStackRecipeInput.Type
-
-export const DiscoveryWorkflowRecipeInput = Schema.Struct({
-  runId: Schema.String,
-  namespace: Schema.String,
-  repoUrl: Schema.String,
-  workerImage: Schema.String,
-  workerPoolRef: Schema.optional(Schema.String),
-  resourceClass: Schema.optional(Schema.String),
-})
-export type DiscoveryWorkflowRecipeInput = typeof DiscoveryWorkflowRecipeInput.Type
-
-export const KubernetesObjectSetRecipeInput = Schema.Struct({
-  id: Schema.String,
-  objects: Schema.Array(Schema.Unknown),
-  mode: Schema.Literals(["DryRun", "Test", "Live"] as const),
-})
-export type KubernetesObjectSetRecipeInput = typeof KubernetesObjectSetRecipeInput.Type
-
-export const KubernetesObjectSetRecipeOutput = Schema.Struct({
-  provider: Schema.Literal("KubernetesProvider"),
-  mode: Schema.Literals(["DryRun", "Test", "Live"] as const),
-  action: Schema.Literals(["render", "validate", "read", "diff", "apply", "delete"] as const),
-  id: Schema.String,
-  mutated: Schema.Boolean,
-  evidenceRefs: Schema.Array(Schema.String),
-})
-export type KubernetesObjectSetRecipeOutput = typeof KubernetesObjectSetRecipeOutput.Type
-
-export const KubernetesGeneratedArtifactRecipeInput = Schema.Struct({
-  stage: Schema.String,
-  projectRoot: Schema.String,
-})
-export type KubernetesGeneratedArtifactRecipeInput = typeof KubernetesGeneratedArtifactRecipeInput.Type
-
-export const KubernetesGeneratedArtifactRecipeOutput = Schema.Struct({
-  generatedFiles: Schema.Array(Schema.String),
-  recipeId: Schema.String,
-})
-export type KubernetesGeneratedArtifactRecipeOutput = typeof KubernetesGeneratedArtifactRecipeOutput.Type
-
-export const kubernetesObjectSetDriftRepair: RecipeRepair = {
-  repairId: "recipe-repair:platform-alchemy-k8s.kubernetes-object-set:drift",
-  recipeId: "platform-alchemy-k8s.kubernetes-object-set",
-  title: "Repair rendered Kubernetes object-set drift",
-  kind: "managed-lifecycle",
-  nxTarget: "platform-alchemy-k8s:test",
-  allowedFiles: ["packages/canopy/platform-alchemy-k8s/**"],
-  risk: "needs-review",
-  evidenceRequirements: ["platform-alchemy-k8s:test", "workspace:policy-fast"],
-}
+import { LocalClusterRecipes } from "./cluster/local-cluster.js"
+import { K8sCrdDefinitionsRecipes } from "./crds/definitions.js"
+import { K8sCrdTypesRecipes } from "./crds/types.js"
+import { CrdGenerationRecipes } from "./internal/generation/CrdGenerationCli.js"
+import { AlchemyK8sProviderContractRecipes } from "./provider/alchemy-k8s-provider.js"
+import { PlatformAlchemyK8sProviderBridgeRecipes } from "./provider/alchemy-resource.js"
+import { EffectK8sClientBoundaryRecipes } from "./provider/effect-k8s-client.js"
+import { KubernetesObjectSetRecipes } from "./provider/kubernetes-object-set.js"
+import { KubernetesTypesContractRecipes } from "./provider/kubernetes-types.js"
+import { AttuneArtifactResourceRecipes } from "./resources/attune-artifact.js"
+import { AttuneBudgetResourceRecipes } from "./resources/attune-budget.js"
+import { AttuneDiscoveryRunResourceRecipes } from "./resources/attune-discovery-run.js"
+import { AttunePhaseResourceRecipes } from "./resources/attune-phase.js"
+import { AttunePolicyResourceRecipes } from "./resources/attune-policy.js"
+import { AttuneReportResourceRecipes } from "./resources/attune-report.js"
+import { AttuneToolJobResourceRecipes } from "./resources/attune-tool-job.js"
+import { BudgetPolicyResourceRecipes } from "./resources/budget-policy.js"
+import { K8sResourceCommonRecipes } from "./resources/common.js"
+import { AttuneControlPlaneResourceRecipes } from "./resources/control-plane.js"
+import { AttuneCustomResourcesResourceRecipes } from "./resources/custom-resources.js"
+import { DiscoveryWorkflowRecipes } from "./resources/discovery-workflow.js"
+import { K8sResourcesBarrelRecipes } from "./resources/index.js"
+import { JoernQueryResourceRecipes } from "./resources/joern-query.js"
+import { LocalComputeStackRecipes } from "./resources/local-compute-stack.js"
+import { LocalPostgresResourceRecipes } from "./resources/postgres.js"
+import { RepoSandboxResourceRecipes } from "./resources/repo-sandbox.js"
+import { K8sResourceRegistryRecipes } from "./resources/registry.js"
+import { ResourceClassResourceRecipes } from "./resources/resource-class.js"
+import { RunNamespaceResourceRecipes } from "./resources/run-namespace.js"
+import { WorkerPoolResourceRecipes } from "./resources/worker-pool.js"
+import { PlatformAlchemyK8sTestRecipes } from "./test-recipes.js"
 
 export const PlatformAlchemyK8sRecipes = [
-  defineExternalSchemaRecipe({
-    id: "platform-alchemy-k8s.crd-type-generation",
-    projectId: "platform-alchemy-k8s",
-    title: "Generate Kubernetes CRD types and manifests through a recipe-backed stage",
-    inputSchema: KubernetesGeneratedArtifactRecipeInput,
-    outputSchema: KubernetesGeneratedArtifactRecipeOutput,
-    nxTarget: "platform-alchemy-k8s:generate",
-    sourcePath: "packages/canopy/platform-alchemy-k8s/src/recipes.ts",
-    allowedFiles: [
-      "packages/canopy/platform-alchemy-k8s/src/crds/**",
-      "packages/canopy/platform-alchemy-k8s/src/generated/**",
-      "packages/canopy/platform-alchemy-k8s/src/internal/generation/**",
-      "packages/canopy/platform-alchemy-k8s/project.json",
-    ],
-    validationEvidence: ["platform-alchemy-k8s:generate", "platform-alchemy-k8s:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "platform-alchemy-k8s.local-cluster-plan",
-    projectId: "platform-alchemy-k8s",
-    title: "Render local Kubernetes cluster command plan",
-    inputSchema: LocalClusterRecipeInput,
-    outputSchema: LocalClusterPlan,
-    nxTarget: "platform-alchemy-k8s:test",
-    sourcePath: "packages/canopy/platform-alchemy-k8s/src/recipes.ts",
-    allowedFiles: ["packages/canopy/platform-alchemy-k8s/src/cluster/**"],
-    validationEvidence: ["platform-alchemy-k8s:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "platform-alchemy-k8s.local-compute-stack",
-    projectId: "platform-alchemy-k8s",
-    title: "Render local compute stack resource set",
-    inputSchema: LocalComputeStackRecipeInput,
-    outputSchema: RenderedResourceSet,
-    nxTarget: "platform-alchemy-k8s:test",
-    sourcePath: "packages/canopy/platform-alchemy-k8s/src/recipes.ts",
-    allowedFiles: ["packages/canopy/platform-alchemy-k8s/src/resources/**"],
-    validationEvidence: ["platform-alchemy-k8s:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "platform-alchemy-k8s.discovery-workflow",
-    projectId: "platform-alchemy-k8s",
-    title: "Render discovery workflow resource set",
-    inputSchema: DiscoveryWorkflowRecipeInput,
-    outputSchema: RenderedResourceSet,
-    dependencies: [{ recipeId: "platform-alchemy-k8s.local-compute-stack" }],
-    nxTarget: "platform-alchemy-k8s:test",
-    sourcePath: "packages/canopy/platform-alchemy-k8s/src/recipes.ts",
-    allowedFiles: ["packages/canopy/platform-alchemy-k8s/src/resources/**"],
-    validationEvidence: ["platform-alchemy-k8s:test"],
-  }),
-  defineExternalSchemaManagedRecipe({
-    id: "platform-alchemy-k8s.kubernetes-object-set",
-    projectId: "platform-alchemy-k8s",
-    title: "Manage rendered Kubernetes object-set lifecycle",
-    inputSchema: KubernetesObjectSetRecipeInput,
-    outputSchema: KubernetesObjectSetRecipeOutput,
-    dependencies: [{ recipeId: "platform-alchemy-k8s.discovery-workflow" }],
-    nxTarget: "platform-alchemy-k8s:test",
-    sourcePath: "packages/canopy/platform-alchemy-k8s/src/recipes.ts",
-    allowedFiles: ["packages/canopy/platform-alchemy-k8s/src/provider/**", "packages/canopy/platform-alchemy-k8s/src/resources/**"],
-    validationEvidence: ["platform-alchemy-k8s:test", "workspace:policy-fast"],
-    lifecycle: ["plan", "apply", "check", "destroy"],
-    resourceKind: "kubernetes-object-set",
-    lifecycleSubstrates: [
-      {
-        id: "platform-alchemy-k8s.alchemy-provider",
-        kind: "container-runtime",
-        tool: "alchemy",
-        lifecycleActions: ["plan", "apply", "check", "destroy"],
-        evidence: ["platform-alchemy-k8s:test"],
-      },
-    ],
-    observedState: { status: "unknown" },
-    driftRepair: kubernetesObjectSetDriftRepair,
-    humanReviewRequired: true,
-  }),
+  ...CrdGenerationRecipes,
+  ...LocalClusterRecipes,
+  ...K8sCrdDefinitionsRecipes,
+  ...K8sCrdTypesRecipes,
+  ...AlchemyK8sProviderContractRecipes,
+  ...EffectK8sClientBoundaryRecipes,
+  ...KubernetesTypesContractRecipes,
+  ...K8sResourceCommonRecipes,
+  ...AttuneArtifactResourceRecipes,
+  ...AttuneBudgetResourceRecipes,
+  ...AttuneDiscoveryRunResourceRecipes,
+  ...AttunePhaseResourceRecipes,
+  ...AttunePolicyResourceRecipes,
+  ...AttuneReportResourceRecipes,
+  ...AttuneToolJobResourceRecipes,
+  ...BudgetPolicyResourceRecipes,
+  ...AttuneControlPlaneResourceRecipes,
+  ...AttuneCustomResourcesResourceRecipes,
+  ...K8sResourcesBarrelRecipes,
+  ...JoernQueryResourceRecipes,
+  ...LocalPostgresResourceRecipes,
+  ...RepoSandboxResourceRecipes,
+  ...ResourceClassResourceRecipes,
+  ...RunNamespaceResourceRecipes,
+  ...WorkerPoolResourceRecipes,
+  ...K8sResourceRegistryRecipes,
+  ...PlatformAlchemyK8sProviderBridgeRecipes,
+  ...LocalComputeStackRecipes,
+  ...DiscoveryWorkflowRecipes,
+  ...KubernetesObjectSetRecipes,
+  ...PlatformAlchemyK8sTestRecipes,
 ] as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const PlatformAlchemyK8sRecipePackage = defineRecipePackage({
+  packageId: "platform-alchemy-k8s",
+  kind: "platform-resource-provider",
+  title: "Platform Alchemy Kubernetes resource recipes",
+  sourceRoot: "packages/canopy/platform-alchemy-k8s/src",
+  recipes: PlatformAlchemyK8sRecipes,
+})

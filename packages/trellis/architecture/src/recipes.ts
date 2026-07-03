@@ -1,172 +1,95 @@
-import { defineRecipe } from "@attune/framework-protocol"
-import { Schema } from "effect"
+import { defineRecipePackage } from "@attune/framework-protocol"
 
-export const ArchitecturePolicyScanInput = Schema.Struct({
-  workspaceRoot: Schema.String,
-  policyManifestPath: Schema.optional(Schema.String),
-})
-export type ArchitecturePolicyScanInput = typeof ArchitecturePolicyScanInput.Type
-
-export const ArchitecturePolicyDiagnostic = Schema.Struct({
-  ruleId: Schema.String,
-  severity: Schema.Literals(["error", "warning"] as const),
-  filePath: Schema.String,
-  message: Schema.String,
-})
-export type ArchitecturePolicyDiagnostic = typeof ArchitecturePolicyDiagnostic.Type
-
-export const ArchitecturePolicyScanResult = Schema.Struct({
-  diagnostics: Schema.Array(ArchitecturePolicyDiagnostic),
-  exitCode: Schema.Number,
-})
-export type ArchitecturePolicyScanResult = typeof ArchitecturePolicyScanResult.Type
-
-export const ArchitectureConformanceInput = Schema.Struct({
-  projectId: Schema.String,
-  sourceRoot: Schema.String,
-})
-export type ArchitectureConformanceInput = typeof ArchitectureConformanceInput.Type
-
-export const ArchitectureConformanceResult = Schema.Struct({
-  ok: Schema.Boolean,
-  findings: Schema.Array(ArchitecturePolicyDiagnostic),
-})
-export type ArchitectureConformanceResult = typeof ArchitectureConformanceResult.Type
-
-export const ArchitectureScriptPipelineInput = Schema.Struct({
-  workspaceRoot: Schema.String,
-  recipeId: Schema.String,
-})
-export type ArchitectureScriptPipelineInput = typeof ArchitectureScriptPipelineInput.Type
-
-export const ArchitectureScriptPipelineOutput = Schema.Struct({
-  scriptPath: Schema.String,
-  validationTargets: Schema.Array(Schema.String),
-})
-export type ArchitectureScriptPipelineOutput = typeof ArchitectureScriptPipelineOutput.Type
+import { ArchitectureCliRecipes } from "./cli.js"
+import { ArchitectureCommandSurfaceConformanceRecipes } from "./command-surface-conformance.js"
+import { ArchitectureAtomImplementationPolicyRecipes } from "./framework-atom-implementation-policy.js"
+import { ArchitectureFrameworkImportBoundaryRecipes } from "./framework-import-boundary.js"
+import { ArchitectureNoReportPolicyRecipes } from "./framework-no-report-policy.js"
+import { ArchitectureFrameworkPolicyRecipes } from "./framework-policy-cli.js"
+import { ArchitectureRecipeRepairRecipes } from "./recipe-repair-cli.js"
+import { ArchitectureChurnComplexityRecipes } from "./internal/checks/ChurnComplexityCli.js"
+import { ArchitecturePacketizedJudgeRecipes } from "./internal/checks/PacketizedArchitectureJudgeCli.js"
+import { ArchitecturePrCompletionAuditRecipes } from "./internal/checks/PrCompletionAuditCli.js"
+import { ArchitecturePrRecoveryAuditRecipes } from "./internal/checks/PrRecoveryAuditCli.js"
+import { ArchitectureToolVersionsRecipes } from "./internal/checks/ToolVersionsCli.js"
+import { ArchitectureTypeScriptDiagnosticsRecipes } from "./internal/checks/TypeScriptExtendedDiagnosticsCli.js"
+import { ArchitectureWorkspaceScanRecipes } from "./internal/checks/WorkspaceScanCli.js"
 
 export const AttuneArchitectureRecipes = [
-  defineRecipe({
-    id: "attune-architecture.workspace-policy",
-    projectId: "attune-architecture",
-    title: "Scan workspace architecture policy",
-    inputSchema: ArchitecturePolicyScanInput,
-    outputSchema: ArchitecturePolicyScanResult,
-    nxTarget: "attune-architecture:test",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/**"],
-    validationEvidence: ["attune-architecture:test"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.command-surface-conformance",
-    projectId: "attune-architecture",
-    title: "Validate public command surface conformance",
-    inputSchema: ArchitectureConformanceInput,
-    outputSchema: ArchitectureConformanceResult,
-    dependencies: [{ recipeId: "attune-architecture.workspace-policy" }],
-    nxTarget: "attune-architecture:test",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/**", "project.json", "nx.json"],
-    validationEvidence: ["attune-architecture:test", "workspace:policy-fast"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.artifact-ownership-quarantine",
-    projectId: "attune-architecture",
-    title: "Report legacy artifact ownership as quarantine evidence",
-    inputSchema: ArchitecturePolicyScanInput,
-    outputSchema: ArchitecturePolicyScanResult,
-    dependencies: [{ recipeId: "attune-architecture.workspace-policy" }],
-    nxTarget: "attune-architecture:test",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/**", "**/attune.artifact-ownership.json"],
-    validationEvidence: ["attune-architecture:test", "workspace:framework-policy-check"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.tool-version-audit",
-    projectId: "attune-architecture",
-    title: "Audit pinned tool versions through the architecture source pipeline",
-    inputSchema: ArchitectureScriptPipelineInput,
-    outputSchema: ArchitectureScriptPipelineOutput,
-    dependencies: [{ recipeId: "attune-architecture.workspace-policy" }],
-    nxTarget: "workspace:tool-versions",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/src/internal/checks/ToolVersionsCli.ts", "flake.nix", "package.json"],
-    validationEvidence: ["workspace:tool-versions"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.workspace-scan",
-    projectId: "attune-architecture",
-    title: "Run the workspace architecture scan as a recipe-backed source check",
-    inputSchema: ArchitectureScriptPipelineInput,
-    outputSchema: ArchitectureScriptPipelineOutput,
-    dependencies: [{ recipeId: "attune-architecture.workspace-policy" }],
-    nxTarget: "workspace:arch:scan",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/src/internal/checks/WorkspaceScanCli.ts", "packages/**", "project.json"],
-    validationEvidence: ["workspace:arch:scan", "workspace:policy-fast"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.no-compat-script-check",
-    projectId: "attune-architecture",
-    title: "Reject live package-local script files for no-compat migrated workflow surfaces",
-    inputSchema: ArchitectureScriptPipelineInput,
-    outputSchema: ArchitectureScriptPipelineOutput,
-    dependencies: [{ recipeId: "attune-architecture.workspace-policy" }],
-    nxTarget: "workspace:no-compat-script-check",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: [
-      "packages/trellis/architecture/src/framework-policy-cli.ts",
-      "project.json",
-      "packages/**/scripts/**",
-    ],
-    validationEvidence: ["workspace:no-compat-script-check", "attune-architecture:test"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.typescript-diagnostics",
-    projectId: "attune-architecture",
-    title: "Collect TypeScript extended diagnostics as recipe evidence",
-    inputSchema: ArchitectureScriptPipelineInput,
-    outputSchema: ArchitectureScriptPipelineOutput,
-    dependencies: [{ recipeId: "attune-architecture.workspace-policy" }],
-    nxTarget: "workspace:arch:types",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/src/internal/checks/TypeScriptExtendedDiagnosticsCli.ts", "packages/**", "tsconfig.base.json"],
-    validationEvidence: ["workspace:arch:types", "workspace:policy-fast"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.churn-complexity",
-    projectId: "attune-architecture",
-    title: "Summarize churn and complexity pressure as recipe evidence",
-    inputSchema: ArchitectureScriptPipelineInput,
-    outputSchema: ArchitectureScriptPipelineOutput,
-    dependencies: [{ recipeId: "attune-architecture.workspace-policy" }],
-    nxTarget: "workspace:arch:churn",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/src/internal/checks/ChurnComplexityCli.ts", "packages/**"],
-    validationEvidence: ["workspace:arch:churn", "workspace:policy-fast"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.pr-completion-audit",
-    projectId: "attune-architecture",
-    title: "Verify PR completion state through a recipe-backed Codex audit",
-    inputSchema: ArchitectureScriptPipelineInput,
-    outputSchema: ArchitectureScriptPipelineOutput,
-    dependencies: [{ recipeId: "attune-architecture.workspace-policy" }],
-    nxTarget: "workspace:policy-fast",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/src/internal/checks/PrCompletionAuditCli.ts", "project.json"],
-    validationEvidence: ["workspace:policy-fast"],
-  }),
-  defineRecipe({
-    id: "attune-architecture.pr-recovery-audit",
-    projectId: "attune-architecture",
-    title: "Audit PR recovery signals through a recipe-backed Codex source check",
-    inputSchema: ArchitectureScriptPipelineInput,
-    outputSchema: ArchitectureScriptPipelineOutput,
-    dependencies: [{ recipeId: "attune-architecture.pr-completion-audit" }],
-    nxTarget: "workspace:codex-audit-prs",
-    sourcePath: "packages/trellis/architecture/src/recipes.ts",
-    allowedFiles: ["packages/trellis/architecture/src/internal/checks/PrRecoveryAuditCli.ts", "project.json"],
-    validationEvidence: ["workspace:codex-audit-prs"],
-  }),
+  ...ArchitectureCommandSurfaceConformanceRecipes,
+  ...ArchitectureFrameworkImportBoundaryRecipes,
+  ...ArchitectureAtomImplementationPolicyRecipes,
+  ...ArchitectureNoReportPolicyRecipes,
+  ...ArchitectureFrameworkPolicyRecipes,
+  ...ArchitectureToolVersionsRecipes,
+  ...ArchitectureWorkspaceScanRecipes,
+  ...ArchitecturePacketizedJudgeRecipes,
+  ...ArchitectureCliRecipes,
+  ...ArchitectureTypeScriptDiagnosticsRecipes,
+  ...ArchitectureChurnComplexityRecipes,
+  ...ArchitecturePrCompletionAuditRecipes,
+  ...ArchitecturePrRecoveryAuditRecipes,
+  ...ArchitectureRecipeRepairRecipes,
 ] as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureRecipePackage = defineRecipePackage({
+  packageId: "attune-architecture",
+  kind: "architecture-policy",
+  title: "Trellis architecture policy and source-check recipes",
+  sourceRoot: "packages/trellis/architecture/src",
+  recipes: AttuneArchitectureRecipes,
+  ownership: [
+    {
+      id: "architecture-policy-core",
+      title: "Architecture policy modules with file-local recipe expression",
+      files: [
+        "packages/trellis/architecture/src/command-surface-conformance.ts",
+        "packages/trellis/architecture/src/framework-atom-implementation-policy.ts",
+        "packages/trellis/architecture/src/framework-import-boundary.ts",
+        "packages/trellis/architecture/src/framework-no-report-policy.ts",
+        "packages/trellis/architecture/src/framework-policy-cli.ts",
+        "packages/trellis/architecture/src/index.ts",
+      ],
+      recipeIds: [
+        ...ArchitectureCommandSurfaceConformanceRecipes,
+        ...ArchitectureAtomImplementationPolicyRecipes,
+        ...ArchitectureFrameworkImportBoundaryRecipes,
+        ...ArchitectureNoReportPolicyRecipes,
+        ...ArchitectureFrameworkPolicyRecipes,
+      ].map((recipe) => recipe.id),
+    },
+    {
+      id: "architecture-invocation-surfaces",
+      title: "Architecture CLI and workspace invocation surfaces",
+      files: [
+        "packages/trellis/architecture/src/cli.ts",
+        "packages/trellis/architecture/src/internal/checks/ChurnComplexityCli.ts",
+        "packages/trellis/architecture/src/internal/checks/PacketizedArchitectureJudgeCli.ts",
+        "packages/trellis/architecture/src/internal/checks/PrCompletionAuditCli.ts",
+        "packages/trellis/architecture/src/internal/checks/PrRecoveryAuditCli.ts",
+        "packages/trellis/architecture/src/internal/checks/ToolVersionsCli.ts",
+        "packages/trellis/architecture/src/internal/checks/TypeScriptExtendedDiagnosticsCli.ts",
+        "packages/trellis/architecture/src/internal/checks/WorkspaceScanCli.ts",
+        "packages/trellis/architecture/src/recipe-repair-cli.ts",
+      ],
+      recipeIds: [
+        ...ArchitectureCliRecipes,
+        ...ArchitectureChurnComplexityRecipes,
+        ...ArchitecturePacketizedJudgeRecipes,
+        ...ArchitecturePrCompletionAuditRecipes,
+        ...ArchitecturePrRecoveryAuditRecipes,
+        ...ArchitectureToolVersionsRecipes,
+        ...ArchitectureTypeScriptDiagnosticsRecipes,
+        ...ArchitectureWorkspaceScanRecipes,
+        ...ArchitectureRecipeRepairRecipes,
+      ].map((recipe) => recipe.id),
+    },
+    {
+      id: "architecture-test-source",
+      title: "Architecture policy test evidence",
+      files: ["packages/trellis/architecture/test/**"],
+      recipeIds: ArchitectureFrameworkPolicyRecipes.map((recipe) => recipe.id),
+    },
+  ],
+})

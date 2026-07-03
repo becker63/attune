@@ -1,4 +1,9 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
+
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export const TypeGuidancePartitionKind = Schema.Literals([
   "operation-id",
@@ -391,3 +396,96 @@ const normalizeOperationTypeGuidance = (
   transforms: [...(operation.transforms ?? [])],
   filters: [...(operation.filters ?? [])],
 })
+
+export const TypeGuidanceRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+  packageId: Schema.String,
+})
+export type TypeGuidanceRecipeInput = typeof TypeGuidanceRecipeInput.Type
+
+export const TypeGuidanceRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  packageId: Schema.String,
+  operationCount: Schema.Number,
+  partitionCount: Schema.Number,
+})
+export type TypeGuidanceRecipeOutput = typeof TypeGuidanceRecipeOutput.Type
+
+export const summarizeTypeGuidance = (
+  input: TypeGuidanceRecipeInput,
+): TypeGuidanceRecipeOutput => {
+  const guidance = defineTypeGuidance(
+    { packageId: input.packageId, operations: [] as const },
+    { operations: {} },
+  )
+  return {
+    sourcePath: input.sourcePath,
+    packageId: guidance.packageId,
+    operationCount: Object.keys(guidance.operations).length,
+    partitionCount: Object.values(packagePartitionIds(guidance)).flat().length,
+  }
+}
+
+export const ProjectFactsTypeGuidanceRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+// @attune-packet-target generated-runtime-projection eligible
+  const TypeGuidanceSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.type-guidance.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: TypeGuidanceRecipeInput,
+    stateSchema: TypeGuidanceRecipeInput,
+    modes: ["read"],
+    consumedBy: ["framework-protocol.project-facts.type-guidance"],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const TypeGuidanceReport = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.type-guidance.report",
+    kind: "report",
+    alchemyType: "attune:resource:ProjectFactsTypeGuidance",
+    addressSchema: TypeGuidanceRecipeInput,
+    stateSchema: TypeGuidanceRecipeOutput,
+    modes: ["project", "read"],
+    ownerRecipeId: "framework-protocol.project-facts.type-guidance",
+    producedBy: ["framework-protocol.project-facts.type-guidance"],
+  })
+  const TypeGuidanceHandler = helpers.defineRecipeHandler<TypeGuidanceRecipeInput, TypeGuidanceRecipeOutput, never, never>({
+    id: "framework-protocol.project-facts.type-guidance.handler",
+    recipeId: "framework-protocol.project-facts.type-guidance",
+    sourcePath: "packages/trellis/protocol/src/project-facts/type-guidance.ts",
+    exportName: "summarizeTypeGuidance",
+    emitsReceipts: ["project-facts.type-guidance-summary"],
+    handler: (input) => Effect.succeed(summarizeTypeGuidance(input)),
+  })
+  const TypeGuidanceDagEdge = helpers.defineAlchemyRecipeDagEdge({
+    fromRecipeId: "framework-protocol.project-facts.type-guidance.source",
+    toRecipeId: "framework-protocol.project-facts.type-guidance",
+    resource: "framework-protocol.project-facts.type-guidance.report",
+    kind: "projects",
+    modes: ["read", "project"],
+  })
+
+  return [
+// @attune-packet-target generated-runtime-projection eligible
+    helpers.defineProjectionRecipe({
+      id: "framework-protocol.project-facts.type-guidance",
+      projectId: "framework-protocol",
+      title: "Project package contracts into type-guidance partitions",
+      inputSchema: TypeGuidanceRecipeInput,
+      outputSchema: TypeGuidanceRecipeOutput,
+      io: {
+        inputSchema: TypeGuidanceRecipeInput,
+        outputSchema: TypeGuidanceRecipeOutput,
+        inputResources: [TypeGuidanceSource],
+        outputResources: [TypeGuidanceReport],
+      },
+      handler: TypeGuidanceHandler,
+      alchemyDag: [TypeGuidanceDagEdge],
+      nxTarget: "framework-protocol:test",
+      outputs: ["PackageTypeGuidance"],
+      allowedFiles: ["packages/trellis/protocol/src/project-facts/type-guidance.ts"],
+      validationEvidence: ["framework-protocol:test", "framework-protocol:typecheck"],
+    }),
+  ] as const
+}

@@ -1,6 +1,10 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
 import type { ProgramRepairFinding } from "../diagnostics/index.js"
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export const ProtocolWaiverCategories = [
   "lower-level-context-tag",
@@ -113,8 +117,8 @@ export const waiverDeltasFromFindings = (input: {
     findingId: `${input.schemaDescriptorId}:${finding.waiverId}:${finding.code}`,
     schemaDescriptorId: input.schemaDescriptorId,
     projectId: finding.projectId,
-    kind: "waiver-issue",
     sourcePath: finding.sourcePath,
+    kind: "waiver-issue",
     explanation: finding.message,
     repairActions: [{
       id: "repair-waiver",
@@ -126,6 +130,95 @@ export const waiverDeltasFromFindings = (input: {
       },
     }],
   }))
+
+export const ProtocolWaiverRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+})
+export type ProtocolWaiverRecipeInput = typeof ProtocolWaiverRecipeInput.Type
+
+export const ProtocolWaiverRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  categoryCount: Schema.Number,
+  diagnosesWaivers: Schema.Boolean,
+})
+export type ProtocolWaiverRecipeOutput = typeof ProtocolWaiverRecipeOutput.Type
+
+export const summarizeProtocolWaiverSurface = (
+  input: ProtocolWaiverRecipeInput,
+): ProtocolWaiverRecipeOutput => ({
+  sourcePath: input.sourcePath,
+  categoryCount: ProtocolWaiverCategories.length,
+  diagnosesWaivers: true,
+})
+
+export const ProtocolWaiverRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+  const ProtocolWaiverRecipeId = "framework-protocol.waivers.surface" as const
+  const ProtocolWaiverSourcePath =
+    "packages/trellis/protocol/src/waivers/index.ts" as const
+// @attune-packet-target generated-runtime-projection eligible
+  const ProtocolWaiverSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.waivers.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: ProtocolWaiverRecipeInput,
+    stateSchema: ProtocolWaiverRecipeInput,
+    modes: ["read"],
+    consumedBy: [ProtocolWaiverRecipeId],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const ProtocolWaiverReport = helpers.defineAlchemyResource({
+    id: "framework-protocol.waivers.report",
+    kind: "report",
+    alchemyType: "attune:resource:ProtocolWaiverReport",
+    addressSchema: ProtocolWaiverRecipeInput,
+    stateSchema: ProtocolWaiverRecipeOutput,
+    modes: ["observe", "read"],
+    ownerRecipeId: ProtocolWaiverRecipeId,
+    producedBy: [ProtocolWaiverRecipeId],
+  })
+  const ProtocolWaiverHandler = helpers.defineRecipeHandler<
+    ProtocolWaiverRecipeInput,
+    ProtocolWaiverRecipeOutput,
+    never,
+    never
+  >({
+    id: "framework-protocol.waivers.surface.handler",
+    recipeId: ProtocolWaiverRecipeId,
+    sourcePath: ProtocolWaiverSourcePath,
+    exportName: "summarizeProtocolWaiverSurface",
+    emitsReceipts: ["framework-protocol.waivers.surface"],
+    handler: (input) => Effect.succeed(summarizeProtocolWaiverSurface(input)),
+  })
+
+  return [
+    helpers.defineObservationRecipe({
+      id: ProtocolWaiverRecipeId,
+      projectId: "framework-protocol",
+      title: "Observe protocol waiver categories and findings",
+      inputSchema: ProtocolWaiverRecipeInput,
+      outputSchema: ProtocolWaiverRecipeOutput,
+      io: {
+        inputSchema: ProtocolWaiverRecipeInput,
+        outputSchema: ProtocolWaiverRecipeOutput,
+        inputResources: [ProtocolWaiverSource],
+        outputResources: [ProtocolWaiverReport],
+      },
+      handler: ProtocolWaiverHandler,
+      alchemyDag: [{
+        fromRecipeId: "framework-protocol.root",
+        toRecipeId: ProtocolWaiverRecipeId,
+        resource: "framework-protocol.waivers.report",
+        kind: "observes",
+        modes: ["observe", "read"],
+      }],
+      observedFiles: [ProtocolWaiverSourcePath],
+      allowedFiles: [ProtocolWaiverSourcePath],
+      validationEvidence: ["framework-protocol:typecheck"],
+    }),
+  ] as const
+}
 
 const isTemporaryWaiver = (waiver: AttuneProtocolWaiver): boolean =>
   waiver.category.startsWith("temporary-")

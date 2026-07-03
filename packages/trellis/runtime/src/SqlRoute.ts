@@ -1,4 +1,19 @@
 import { readFileSync } from "node:fs"
+import { Context, Effect, Layer, Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  defineRuntimeRecipe,
+} from "@attune/framework-protocol"
+
+import { RecipeReceiptStoreSummaryResource } from "./RecipeReceiptStore.js"
+
+const frameworkRuntimeSqlRouteRecipeId = "framework-runtime.sql-route" as const
+const frameworkRuntimeSqlRouteGenerationRecipeId =
+  "framework-runtime.sql-route-generation" as const
+const frameworkRuntimeSqlRouteSourcePath =
+  "packages/trellis/runtime/src/SqlRoute.ts" as const
 
 export const frameworkRecipeReceiptMigrationPath =
   "packages/trellis/runtime/sql/0001_framework_recipe_receipt_spine.sql" as const
@@ -44,6 +59,95 @@ export interface FrameworkSqlValidationStatement {
   readonly sql: string
   readonly parameters: readonly unknown[]
 }
+
+export const RuntimeSqlRouteInput = Schema.Struct({
+  packageId: Schema.optional(Schema.String),
+  sourceRoot: Schema.optional(Schema.String),
+  workspaceRoot: Schema.optional(Schema.String),
+  stage: Schema.optional(Schema.Literals([
+    "migrate",
+    "generate-types",
+    "validate-sql",
+    "integration-test",
+  ] as const)),
+})
+export type RuntimeSqlRouteInput = typeof RuntimeSqlRouteInput.Type
+
+export const RuntimeSqlRouteOutput = Schema.Struct({
+  migrationPath: Schema.String,
+  kanelOutputPath: Schema.String,
+  kyselyGeneratedTypesSource: Schema.String,
+  safeQlStatementCount: Schema.Number,
+  statementValidationErrorCount: Schema.Number,
+  legacySubstrateMentionCount: Schema.Number,
+})
+export type RuntimeSqlRouteOutput = typeof RuntimeSqlRouteOutput.Type
+
+export const RuntimeSqlGeneratedDirectoryOutput = Schema.Struct({
+  outputPath: Schema.String,
+  kyselyOutputPath: Schema.String,
+  generatedTypesSource: Schema.String,
+})
+export type RuntimeSqlGeneratedDirectoryOutput =
+  typeof RuntimeSqlGeneratedDirectoryOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkRuntimeSqlRouteResource = defineAlchemyResource({
+  id: "framework-runtime.sql-route.resource",
+  kind: "runtime-sql",
+  alchemyType: "attune:resource:RuntimeSqlRoute",
+  ownerRecipeId: frameworkRuntimeSqlRouteRecipeId,
+  producedBy: [frameworkRuntimeSqlRouteRecipeId],
+  consumedBy: [
+    frameworkRuntimeSqlRouteRecipeId,
+    frameworkRuntimeSqlRouteGenerationRecipeId,
+  ],
+  addressFields: ["migrationPath", "kanelOutputPath", "safeQlStatementCount"],
+  addressSchema: RuntimeSqlRouteOutput as never,
+  stateSchema: RuntimeSqlRouteOutput as never,
+  modes: ["read", "check", "project"],
+  programmaticResourceExport: "FrameworkRuntimeSqlRouteProjectorLive",
+  programmaticBridgeSourcePath: frameworkRuntimeSqlRouteSourcePath,
+})
+
+export const FrameworkRuntimeSqlGeneratedDirectoryResource =
+// @attune-packet-target generated-runtime-projection eligible
+  defineAlchemyResource({
+    id: "framework-runtime.sql-generated-directory.resource",
+    kind: "generated-directory",
+    alchemyType: "attune:resource:GeneratedDirectory",
+    ownerRecipeId: frameworkRuntimeSqlRouteGenerationRecipeId,
+    producedBy: [frameworkRuntimeSqlRouteGenerationRecipeId],
+    consumedBy: [frameworkRuntimeSqlRouteGenerationRecipeId],
+    addressFields: ["outputPath", "kyselyOutputPath"],
+    addressSchema: RuntimeSqlGeneratedDirectoryOutput as never,
+    stateSchema: RuntimeSqlGeneratedDirectoryOutput as never,
+    modes: ["read", "write", "project", "check"],
+    programmaticResourceExport: "FrameworkRuntimeSqlRouteGenerationLive",
+    programmaticBridgeSourcePath: frameworkRuntimeSqlRouteSourcePath,
+  })
+
+export interface FrameworkRuntimeSqlRouteProjectorService {
+  readonly project: (
+    input: RuntimeSqlRouteInput,
+  ) => Effect.Effect<RuntimeSqlRouteOutput>
+}
+
+export class FrameworkRuntimeSqlRouteProjector extends Context.Service<
+  FrameworkRuntimeSqlRouteProjector,
+  FrameworkRuntimeSqlRouteProjectorService
+>()("@attune/framework-runtime/FrameworkRuntimeSqlRouteProjector") {}
+
+export interface FrameworkRuntimeSqlRouteGenerationService {
+  readonly generate: (
+    input: RuntimeSqlRouteInput,
+  ) => Effect.Effect<RuntimeSqlRouteOutput>
+}
+
+export class FrameworkRuntimeSqlRouteGeneration extends Context.Service<
+  FrameworkRuntimeSqlRouteGeneration,
+  FrameworkRuntimeSqlRouteGenerationService
+>()("@attune/framework-runtime/FrameworkRuntimeSqlRouteGeneration") {}
 
 export type FrameworkRecipeReceiptStatus =
   | "planned"
@@ -135,6 +239,20 @@ export interface FrameworkRecipeReceiptKyselyServiceContract {
   ) => FrameworkSqlStatement
   readonly benchmarkAuditInputs: (
     benchmarkRunId: string,
+  ) => FrameworkSqlStatement
+  readonly openspecPacketObservationsByChange: (
+    recipeId: string,
+    changeId: string,
+  ) => FrameworkSqlStatement
+  readonly openspecPacketSelectedTargetDeltaInputs: (
+    recipeId: string,
+    changeId: string,
+    packetFamilyCode: string,
+    selectorSummary: string,
+  ) => FrameworkSqlStatement
+  readonly openspecPacketImplementationCommandInputs: (
+    recipeId: string,
+    implementationTitle: string,
   ) => FrameworkSqlStatement
 }
 
@@ -455,6 +573,66 @@ ON CONFLICT (observation_id) DO UPDATE SET
         "measurement.benchmark.audit.summary",
       ],
     },
+    {
+      name: "openspec-packet-observations-by-change",
+      sql: "SELECT * FROM framework_event.recipe_observation WHERE recipe_id = $1 AND payload->>'changeId' = $2 AND observation_kind LIKE 'openspec.packet.%' ORDER BY observed_at ASC, observation_id ASC",
+      parameters: [
+        "tend-opencode.openspec-packet-sidecar",
+        "compress-recipe-authoring-surface",
+      ],
+    },
+    {
+      name: "openspec-packet-selected-target-delta-inputs",
+      sql: `
+SELECT observation_id, observed_at, payload
+FROM framework_event.recipe_observation
+WHERE recipe_id = $1
+  AND payload->>'changeId' = $2
+  AND observation_kind = 'openspec.packet.selected-target.checked'
+  AND EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(COALESCE(payload->'candidateSummaries', '[]'::jsonb)) AS candidate(summary)
+    WHERE candidate.summary->>'packetFamilyCode' = $3
+      AND candidate.summary->>'selectorSummary' = $4
+  )
+ORDER BY observed_at ASC, observation_id ASC
+`.trim(),
+      parameters: [
+        "tend-opencode.openspec-packet-sidecar",
+        "compress-recipe-authoring-surface",
+        "recipe-authoring/manual-recipe-id-inferable",
+        "manual recipeId fields scoped to packages/attune/cocoindex-effect/src/CocoIndexClient.ts",
+      ],
+    },
+    {
+      name: "openspec-packet-implementation-command-inputs",
+      sql: `
+SELECT observation_id, observed_at, payload
+FROM framework_event.recipe_observation
+WHERE recipe_id = $1
+  AND observation_kind = 'measurement.command.observed'
+  AND (
+    payload->>'command' LIKE '%' || $2 || '%'
+    OR payload->>'commandLine' LIKE '%' || $2 || '%'
+    OR payload->>'stdout' LIKE '%' || $2 || '%'
+    OR payload->>'stderr' LIKE '%' || $2 || '%'
+  )
+ORDER BY
+  CASE
+    WHEN payload ? 'tokenTotal' AND payload->>'tokenTotal' <> '0' THEN 0
+    WHEN payload->>'tokenMetricSource' IN ('opencode-json-events', 'stdout-json', 'delegated-stdio-estimate') THEN 0
+    WHEN payload->>'stdout' LIKE '%"type":"step.finish"%' THEN 0
+    ELSE 1
+  END ASC,
+  observed_at DESC,
+  observation_id DESC
+LIMIT 1
+`.trim(),
+      parameters: [
+        "tend-opencode.command-observation",
+        "recipe-authoring-source-path-slice",
+      ],
+    },
   ]
 
 export const frameworkRecipeReceiptSafeQlConfig =
@@ -768,6 +946,54 @@ ORDER BY observed_at ASC, observation_id ASC
 `.trim(),
       parameters: [benchmarkRunId],
     }),
+    openspecPacketObservationsByChange: (recipeId, changeId) => ({
+      sql: `
+SELECT *
+FROM framework_event.recipe_observation
+WHERE recipe_id = $1
+  AND payload->>'changeId' = $2
+  AND observation_kind LIKE 'openspec.packet.%'
+ORDER BY observed_at ASC, observation_id ASC
+`.trim(),
+      parameters: [recipeId, changeId],
+    }),
+    openspecPacketSelectedTargetDeltaInputs: (
+      recipeId,
+      changeId,
+      packetFamilyCode,
+      selectorSummary,
+    ) => ({
+      sql: `
+SELECT observation_id, observed_at, payload
+FROM framework_event.recipe_observation
+WHERE recipe_id = $1
+  AND payload->>'changeId' = $2
+  AND observation_kind = 'openspec.packet.selected-target.checked'
+  AND EXISTS (
+    SELECT 1
+    FROM jsonb_array_elements(COALESCE(payload->'candidateSummaries', '[]'::jsonb)) AS candidate(summary)
+    WHERE candidate.summary->>'packetFamilyCode' = $3
+      AND candidate.summary->>'selectorSummary' = $4
+  )
+ORDER BY observed_at ASC, observation_id ASC
+`.trim(),
+      parameters: [recipeId, changeId, packetFamilyCode, selectorSummary],
+    }),
+    openspecPacketImplementationCommandInputs: (recipeId, implementationTitle) => ({
+      sql: `
+SELECT observation_id, observed_at, payload
+FROM framework_event.recipe_observation
+WHERE recipe_id = $1
+  AND observation_kind = 'measurement.command.observed'
+  AND (
+    payload->>'command' LIKE '%' || $2 || '%'
+    OR payload->>'commandLine' LIKE '%' || $2 || '%'
+  )
+ORDER BY observed_at DESC, observation_id DESC
+LIMIT 1
+`.trim(),
+      parameters: [recipeId, implementationTitle],
+    }),
   })
 
 export const validateFrameworkRecipeReceiptSql = (
@@ -817,6 +1043,207 @@ export const validateFrameworkRecipeReceiptStatements = (
     ]
   })
 }
+
+export const runtimeSqlRouteOutput = (
+  _input: RuntimeSqlRouteInput = {},
+): RuntimeSqlRouteOutput => {
+  const statementValidationErrors = validateFrameworkRecipeReceiptStatements()
+  return {
+    migrationPath: frameworkRecipeReceiptKanelConfig().migrationPath,
+    kanelOutputPath: frameworkRecipeReceiptKanelConfig().outputPath,
+    kyselyGeneratedTypesSource:
+      frameworkRecipeReceiptKyselyServiceContract().generatedTypesSource,
+    safeQlStatementCount:
+      frameworkRecipeReceiptSafeQlConfig().checkedStatements.length,
+    statementValidationErrorCount: statementValidationErrors.length,
+    legacySubstrateMentionCount: statementValidationErrors.filter((error) =>
+      error.includes("forbidden legacy substrate mention")
+    ).length,
+  }
+}
+
+export const runtimeSqlGeneratedDirectoryOutput =
+  (): RuntimeSqlGeneratedDirectoryOutput => {
+    const kanel = frameworkRecipeReceiptKanelConfig()
+    const kysely = frameworkRecipeReceiptKyselyServiceContract()
+    return {
+      outputPath: kanel.outputPath,
+      kyselyOutputPath: kanel.kyselyOutputPath,
+      generatedTypesSource: kysely.generatedTypesSource,
+    }
+  }
+
+export const FrameworkRuntimeSqlRouteProjectorLive = Layer.succeed(
+  FrameworkRuntimeSqlRouteProjector,
+  {
+    project: (input: RuntimeSqlRouteInput) =>
+      Effect.succeed(runtimeSqlRouteOutput(input)),
+  },
+)
+
+export const FrameworkRuntimeSqlRouteProjectorLayer = defineRecipeLayer({
+  id: "framework-runtime.sql-route.layer",
+  sourcePath: frameworkRuntimeSqlRouteSourcePath,
+  exportName: "FrameworkRuntimeSqlRouteProjectorLive",
+  layer: FrameworkRuntimeSqlRouteProjectorLive as never,
+  provides: [{
+    id: "framework-runtime.sql-route.service",
+    service: FrameworkRuntimeSqlRouteProjector as never,
+  }],
+})
+
+export const projectRuntimeSqlRoute = (
+  input: RuntimeSqlRouteInput,
+): Effect.Effect<RuntimeSqlRouteOutput, never, FrameworkRuntimeSqlRouteProjector> =>
+  Effect.gen(function* projectRuntimeSqlRouteBody() {
+    const projector = yield* FrameworkRuntimeSqlRouteProjector
+    return yield* projector.project(input)
+  })
+
+export const FrameworkRuntimeSqlRouteHandler = defineRecipeHandler<
+  RuntimeSqlRouteInput,
+  RuntimeSqlRouteOutput,
+  never,
+  FrameworkRuntimeSqlRouteProjector
+>({
+  id: "framework-runtime.sql-route.handler",
+  recipeId: frameworkRuntimeSqlRouteRecipeId,
+  sourcePath: frameworkRuntimeSqlRouteSourcePath,
+  exportName: "projectRuntimeSqlRoute",
+  layer: FrameworkRuntimeSqlRouteProjectorLayer,
+  emitsReceipts: ["framework-runtime.sql-route.projected"],
+  handler: (input) => projectRuntimeSqlRoute(input) as never,
+})
+
+export const FrameworkRuntimeSqlRouteGenerationLive = Layer.succeed(
+  FrameworkRuntimeSqlRouteGeneration,
+  {
+    generate: (input: RuntimeSqlRouteInput) =>
+      Effect.succeed(runtimeSqlRouteOutput(input)),
+  },
+)
+
+export const FrameworkRuntimeSqlRouteGenerationLayer = defineRecipeLayer({
+  id: "framework-runtime.sql-route-generation.layer",
+  sourcePath: frameworkRuntimeSqlRouteSourcePath,
+  exportName: "FrameworkRuntimeSqlRouteGenerationLive",
+  layer: FrameworkRuntimeSqlRouteGenerationLive as never,
+  provides: [{
+    id: "framework-runtime.sql-route-generation.service",
+    service: FrameworkRuntimeSqlRouteGeneration as never,
+  }],
+})
+
+export const generateRuntimeSqlRouteArtifacts = (
+  input: RuntimeSqlRouteInput,
+): Effect.Effect<RuntimeSqlRouteOutput, never, FrameworkRuntimeSqlRouteGeneration> =>
+  Effect.gen(function* generateRuntimeSqlRouteArtifactsBody() {
+    const generator = yield* FrameworkRuntimeSqlRouteGeneration
+    return yield* generator.generate(input)
+  })
+
+export const FrameworkRuntimeSqlRouteGenerationHandler = defineRecipeHandler<
+  RuntimeSqlRouteInput,
+  RuntimeSqlRouteOutput,
+  never,
+  FrameworkRuntimeSqlRouteGeneration
+>({
+  id: "framework-runtime.sql-route-generation.handler",
+  recipeId: frameworkRuntimeSqlRouteGenerationRecipeId,
+  sourcePath: frameworkRuntimeSqlRouteSourcePath,
+  exportName: "generateRuntimeSqlRouteArtifacts",
+  layer: FrameworkRuntimeSqlRouteGenerationLayer,
+  emitsReceipts: ["framework-runtime.sql-route.generated"],
+  handler: (input) => generateRuntimeSqlRouteArtifacts(input) as never,
+})
+
+export const FrameworkRuntimeSqlRouteRecipe = defineRuntimeRecipe({
+  id: frameworkRuntimeSqlRouteRecipeId,
+  projectId: "framework-runtime",
+  title: "Validate migration to TimescaleDB/Postgres to Kanel to Kysely to SafeQL route",
+  inputSchema: RuntimeSqlRouteInput,
+  outputSchema: RuntimeSqlRouteOutput,
+  nxTarget: "framework-runtime:db:validate-sql",
+  allowedFiles: [
+    frameworkRuntimeSqlRouteSourcePath,
+    "packages/trellis/runtime/sql/**",
+    "packages/trellis/runtime/project.json",
+  ],
+  validationEvidence: [
+    "framework-runtime:db:migrate",
+    "framework-runtime:db:generate-types",
+    "framework-runtime:db:validate-sql",
+    "framework-runtime:db:integration-test",
+    "framework-runtime:test",
+  ],
+  io: {
+    inputSchema: RuntimeSqlRouteInput,
+    outputSchema: RuntimeSqlRouteOutput,
+    inputResources: [RecipeReceiptStoreSummaryResource],
+    outputResources: [FrameworkRuntimeSqlRouteResource],
+  },
+  handler: FrameworkRuntimeSqlRouteHandler,
+  alchemyDag: [
+    {
+      fromRecipeId: frameworkRuntimeSqlRouteRecipeId,
+      toRecipeId: "framework-runtime.receipt-store-summary",
+      resource: RecipeReceiptStoreSummaryResource,
+      kind: "validates",
+      modes: ["read", "observe", "check"],
+    },
+    {
+      fromRecipeId: frameworkRuntimeSqlRouteRecipeId,
+      toRecipeId: frameworkRuntimeSqlRouteGenerationRecipeId,
+      resource: FrameworkRuntimeSqlRouteResource,
+      kind: "projects",
+      modes: ["read", "project", "check"],
+    },
+  ],
+})
+
+export const FrameworkRuntimeSqlRouteGenerationRecipe = defineRuntimeRecipe({
+  id: frameworkRuntimeSqlRouteGenerationRecipeId,
+  projectId: "framework-runtime",
+  title: "Run SQL route generation and validation stages behind LocalTimescaleManagedRecipe",
+  inputSchema: RuntimeSqlRouteInput,
+  outputSchema: RuntimeSqlRouteOutput,
+  nxTarget: "framework-runtime:db:generate-types",
+  allowedFiles: [
+    "packages/trellis/runtime/src/internal/db/LocalTimescaleCli.ts",
+    frameworkRuntimeSqlRouteSourcePath,
+    "packages/trellis/runtime/src/LocalTimescaleRecipe.ts",
+    "packages/trellis/runtime/sql/**",
+    "packages/trellis/runtime/project.json",
+    "nix/**",
+  ],
+  validationEvidence: [
+    "framework-runtime:db:migrate",
+    "framework-runtime:db:generate-types",
+    "framework-runtime:db:validate-sql",
+    "framework-runtime:db:integration-test",
+  ],
+  io: {
+    inputSchema: RuntimeSqlRouteInput,
+    outputSchema: RuntimeSqlRouteOutput,
+    inputResources: [FrameworkRuntimeSqlRouteResource],
+    outputResources: [FrameworkRuntimeSqlGeneratedDirectoryResource],
+  },
+  handler: FrameworkRuntimeSqlRouteGenerationHandler,
+  alchemyDag: [
+    {
+      fromRecipeId: frameworkRuntimeSqlRouteGenerationRecipeId,
+      toRecipeId: "framework-runtime.local-timescaledb",
+      resource: "framework-runtime.local-timescaledb.resource",
+      kind: "manages",
+      modes: ["read", "project", "check"],
+    },
+  ],
+})
+
+export const FrameworkRuntimeSqlRouteRecipes = [
+  FrameworkRuntimeSqlRouteRecipe,
+  FrameworkRuntimeSqlRouteGenerationRecipe,
+] as const
 
 export const readFrameworkRecipeReceiptMigration = (
   workspaceRoot = process.cwd(),

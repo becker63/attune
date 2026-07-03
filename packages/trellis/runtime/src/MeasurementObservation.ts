@@ -1,6 +1,12 @@
 import { createRequire } from "node:module"
-import { Effect, Schema } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
+  RecipeObservationSchema,
+  defineAlchemyResource,
+  defineObservationRecipe,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   recipeObservationId,
   type RecipeObservation,
 } from "@attune/framework-protocol"
@@ -1527,8 +1533,97 @@ export interface MeasurementStoreConfig {
 export interface MeasurementObservationSink {
   readonly config: MeasurementStoreConfig
   readonly store?: RecipeReceiptStoreApi
+  readonly query?: PostgresQueryClient
   readonly close: () => Promise<void>
 }
+
+const measurementObservationRecipeId =
+  "framework-runtime.measurement-observation-store" as const
+const measurementObservationSessionQueryRecipeId =
+  "framework-runtime.measurement-observation-session-query" as const
+const measurementObservationSourcePath =
+  "packages/trellis/runtime/src/MeasurementObservation.ts" as const
+
+export const MeasurementObservationSinkInputSchema = Schema.Struct({
+  config: Schema.Struct({
+    mode: MeasurementStoreModeSchema,
+    databaseUrl: Schema.String,
+    dataDir: Schema.String,
+  }),
+  observation: RecipeObservationSchema,
+})
+export type MeasurementObservationSinkInput =
+  typeof MeasurementObservationSinkInputSchema.Type
+
+export const MeasurementObservationSessionQueryInputSchema = Schema.Struct({
+  measurementSessionId: Schema.String,
+})
+export type MeasurementObservationSessionQueryInput =
+  typeof MeasurementObservationSessionQueryInputSchema.Type
+
+export const MeasurementObservationSessionQueryOutputSchema = Schema.Struct({
+  observations: Schema.Array(RecipeObservationSchema),
+})
+export type MeasurementObservationSessionQueryOutput =
+  typeof MeasurementObservationSessionQueryOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const MeasurementObservationResource = defineAlchemyResource({
+  id: "framework-runtime.measurement-observation.resource",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:MeasurementObservation",
+  ownerRecipeId: measurementObservationRecipeId,
+  producedBy: [measurementObservationRecipeId],
+  consumedBy: [
+    measurementObservationRecipeId,
+    measurementObservationSessionQueryRecipeId,
+  ],
+  addressFields: ["observationId", "recipeId", "observationKind", "observedAt"],
+  addressSchema: RecipeObservationSchema as never,
+  stateSchema: RecipeObservationSchema as never,
+  modes: ["read", "write", "observe"],
+  programmaticResourceExport: "MeasurementObservationRecorderLive",
+  programmaticBridgeSourcePath: measurementObservationSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const MeasurementObservationSessionResource = defineAlchemyResource({
+  id: "framework-runtime.measurement-observation-session.resource",
+  kind: "report",
+  alchemyType: "attune:resource:MeasurementObservationSession",
+  ownerRecipeId: measurementObservationSessionQueryRecipeId,
+  producedBy: [measurementObservationSessionQueryRecipeId],
+  consumedBy: [measurementObservationSessionQueryRecipeId],
+  addressFields: ["measurementSessionId", "observations"],
+  addressSchema: MeasurementObservationSessionQueryInputSchema as never,
+  stateSchema: MeasurementObservationSessionQueryOutputSchema as never,
+  modes: ["read", "project", "observe"],
+  programmaticResourceExport: "MeasurementObservationSessionQueryLive",
+  programmaticBridgeSourcePath: measurementObservationSourcePath,
+})
+
+export interface MeasurementObservationRecorderService {
+  readonly record: (
+    input: MeasurementObservationSinkInput,
+  ) => Effect.Effect<RecipeObservation>
+}
+
+export class MeasurementObservationRecorder extends Context.Service<
+  MeasurementObservationRecorder,
+  MeasurementObservationRecorderService
+>()("@attune/framework-runtime/MeasurementObservationRecorder") {}
+
+export interface MeasurementObservationSessionQueryService {
+  readonly query: (
+    store: RecipeReceiptStoreApi,
+    input: MeasurementObservationSessionQueryInput,
+  ) => Effect.Effect<MeasurementObservationSessionQueryOutput>
+}
+
+export class MeasurementObservationSessionQuery extends Context.Service<
+  MeasurementObservationSessionQuery,
+  MeasurementObservationSessionQueryService
+>()("@attune/framework-runtime/MeasurementObservationSessionQuery") {}
 
 export const measurementStoreConfigFromEnv = (
   env: NodeJS.ProcessEnv = process.env,
@@ -1585,6 +1680,7 @@ export const createMeasurementObservationSink = async (
   return {
     config,
     store: createPostgresRecipeReceiptStore(client),
+    query: client,
     close: () => client.close(),
   }
 }
@@ -1622,6 +1718,149 @@ export const measurementCommandObservationsByNxTarget = (
       ),
     ),
   )
+
+export const MeasurementObservationRecorderLive = Layer.succeed(
+  MeasurementObservationRecorder,
+  {
+    record: (input: MeasurementObservationSinkInput) =>
+      Effect.gen(function* recordMeasurementObservationViaRecipe() {
+        const sink = yield* Effect.promise(() =>
+          createMeasurementObservationSink(input.config)
+        )
+        try {
+          return yield* recordMeasurementObservation(sink, input.observation)
+        } finally {
+          yield* Effect.promise(() => sink.close())
+        }
+      }),
+  },
+)
+
+export const MeasurementObservationRecorderLayer = defineRecipeLayer({
+  id: "framework-runtime.measurement-observation-store.layer",
+  sourcePath: measurementObservationSourcePath,
+  exportName: "MeasurementObservationRecorderLive",
+  layer: MeasurementObservationRecorderLive as never,
+  provides: [{
+    id: "framework-runtime.measurement-observation-store.service",
+    service: MeasurementObservationRecorder as never,
+  }],
+})
+
+export const recordMeasurementObservationViaRecipe = (
+  input: MeasurementObservationSinkInput,
+): Effect.Effect<RecipeObservation, never, MeasurementObservationRecorder> =>
+  Effect.gen(function* recordMeasurementObservationViaRecipeBody() {
+    const recorder = yield* MeasurementObservationRecorder
+    return yield* recorder.record(input)
+  })
+
+export const MeasurementObservationHandler = defineRecipeHandler<
+  MeasurementObservationSinkInput,
+  RecipeObservation,
+  never,
+  MeasurementObservationRecorder
+>({
+  id: "framework-runtime.measurement-observation-store.handler",
+  recipeId: measurementObservationRecipeId,
+  sourcePath: measurementObservationSourcePath,
+  exportName: "recordMeasurementObservationViaRecipe",
+  layer: MeasurementObservationRecorderLayer,
+  emitsReceipts: ["framework-runtime.measurement-observation.recorded"],
+  handler: (input) => recordMeasurementObservationViaRecipe(input) as never,
+})
+
+export const MeasurementObservationSessionQueryLive = Layer.succeed(
+  MeasurementObservationSessionQuery,
+  {
+    query: (store: RecipeReceiptStoreApi, input: MeasurementObservationSessionQueryInput) =>
+      measurementObservationsBySession(store, input.measurementSessionId).pipe(
+        Effect.map((observations) => ({ observations })),
+      ),
+  },
+)
+
+export const MeasurementObservationSessionQueryLayer = defineRecipeLayer({
+  id: "framework-runtime.measurement-observation-session-query.layer",
+  sourcePath: measurementObservationSourcePath,
+  exportName: "MeasurementObservationSessionQueryLive",
+  layer: MeasurementObservationSessionQueryLive as never,
+  provides: [{
+    id: "framework-runtime.measurement-observation-session-query.service",
+    service: MeasurementObservationSessionQuery as never,
+  }],
+})
+
+export const queryMeasurementObservationSession = (
+  input: MeasurementObservationSessionQueryInput,
+): Effect.Effect<MeasurementObservationSessionQueryOutput> => {
+  const store = createInMemoryRecipeReceiptStore()
+  return measurementObservationsBySession(store, input.measurementSessionId).pipe(
+    Effect.map((observations) => ({ observations })),
+  )
+}
+
+export const MeasurementObservationSessionQueryHandler = defineRecipeHandler<
+  MeasurementObservationSessionQueryInput,
+  MeasurementObservationSessionQueryOutput
+>({
+  id: "framework-runtime.measurement-observation-session-query.handler",
+  recipeId: measurementObservationSessionQueryRecipeId,
+  sourcePath: measurementObservationSourcePath,
+  exportName: "queryMeasurementObservationSession",
+  layer: MeasurementObservationSessionQueryLayer,
+  emitsReceipts: ["framework-runtime.measurement-observation.session-projected"],
+  handler: queryMeasurementObservationSession,
+})
+
+export const MeasurementObservationRecipe = defineObservationRecipe({
+  id: measurementObservationRecipeId,
+  projectId: "framework-runtime",
+  title: "Record measurement observations through the recipe receipt store boundary",
+  inputSchema: MeasurementObservationSinkInputSchema,
+  outputSchema: RecipeObservationSchema,
+  nxTarget: "framework-runtime:test",
+  allowedFiles: [measurementObservationSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  io: {
+    inputSchema: MeasurementObservationSinkInputSchema,
+    outputSchema: RecipeObservationSchema,
+    inputResources: [MeasurementObservationResource],
+    outputResources: [MeasurementObservationResource],
+  },
+  handler: MeasurementObservationHandler,
+  alchemyDag: [{
+    fromRecipeId: measurementObservationRecipeId,
+    toRecipeId: measurementObservationSessionQueryRecipeId,
+    resource: MeasurementObservationResource,
+    kind: "observes",
+    modes: ["read", "observe"],
+  }],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const MeasurementObservationSessionQueryRecipe = defineProjectionRecipe({
+  id: measurementObservationSessionQueryRecipeId,
+  projectId: "framework-runtime",
+  title: "Project measurement observations by measurement session",
+  inputSchema: MeasurementObservationSessionQueryInputSchema,
+  outputSchema: MeasurementObservationSessionQueryOutputSchema,
+  nxTarget: "framework-runtime:test",
+  allowedFiles: [measurementObservationSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  io: {
+    inputSchema: MeasurementObservationSessionQueryInputSchema,
+    outputSchema: MeasurementObservationSessionQueryOutputSchema,
+    inputResources: [MeasurementObservationResource],
+    outputResources: [MeasurementObservationSessionResource],
+  },
+  handler: MeasurementObservationSessionQueryHandler,
+})
+
+export const MeasurementObservationRecipes = [
+  MeasurementObservationRecipe,
+  MeasurementObservationSessionQueryRecipe,
+] as const
 
 const parseStoreMode = (value: string | undefined): MeasurementStoreMode => {
   if (

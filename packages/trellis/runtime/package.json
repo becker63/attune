@@ -8,6 +8,22 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./MeasurementObservation": {
+      "types": "./src/MeasurementObservation.ts",
+      "import": "./src/MeasurementObservation.ts"
+    },
+    "./PostgresRecipeReceiptStore": {
+      "types": "./src/PostgresRecipeReceiptStore.ts",
+      "import": "./src/PostgresRecipeReceiptStore.ts"
+    },
+    "./RecipeReceiptStore": {
+      "types": "./src/RecipeReceiptStore.ts",
+      "import": "./src/RecipeReceiptStore.ts"
+    },
+    "./SqlRoute": {
+      "types": "./src/SqlRoute.ts",
+      "import": "./src/SqlRoute.ts"
+    },
     "./alchemy": {
       "types": "./src/alchemy.ts",
       "import": "./src/alchemy.ts"

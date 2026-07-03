@@ -25,6 +25,6 @@ Exit codes:
 - `1`: diagnostics met the selected fail threshold, or apply refused a fix.
 - `2`: CLI input, project loading, configuration, or runtime failure.
 
-`effect-oxlint` remains transitional CI pressure. Durable architecture
-invariants should be exposed through Trellis diagnostics and fixes rather than
-documented as the agent repair protocol.
+Historical `effect-oxlint` policy invariants are expressed through Trellis
+diagnostics and fixes. The agent repair protocol should use the language
+service directly rather than an oxlint policy package.

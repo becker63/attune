@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 export const TestObligationKind = S.Literals([
   "unit",
@@ -44,3 +45,26 @@ export const SnapshotObligation = S.Struct({
   driftPolicy: S.String,
 })
 export type SnapshotObligation = typeof SnapshotObligation.Type
+
+export const testObligationSchemaModule = (): readonly string[] => [
+  "TestObligationKind",
+  "FailureClassification",
+  "TestObligation",
+  "SnapshotObligation",
+]
+
+export const AttunePiTestObligationSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.test-obligation.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/test-obligation.ts",
+  exportName: "testObligationSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.test-obligation.projected"],
+  handler: () => Effect.succeed(testObligationSchemaModule()),
+})
+
+export const AttunePiTestObligationSchemaRecipeModule = [
+  AttunePiTestObligationSchemaHandler,
+] as const

@@ -1,6 +1,14 @@
 import { createHash } from "node:crypto"
 import { basename, resolve } from "node:path"
-import { Effect } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineManagedRecipe,
+  defineManagedRecipeAlchemyBinding,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
 import {
   JoernExecutableNotFoundError,
   JoernHttpError,
@@ -8,12 +16,59 @@ import {
   JoernServerStartError,
   JoernServerTimeoutError,
 } from "./errors.js"
-import { chooseFreePort } from "./ports.js"
-import { resolveJoernExecutable, startJoernProcess, stopProcess } from './process.js';
+import { chooseFreePort, JoernPortAllocationResource } from "./ports.js"
+import {
+  JoernExecutableResource,
+  JoernProcessLifecycleResource,
+  resolveJoernExecutable,
+  startJoernProcess,
+  stopProcess,
+} from './process.js';
 import type { StartedProcess } from './process.js';
 import { EnvVars, readIntEnvOr } from "./env.js"
-import { defaultTransport } from './transport.js';
+import {
+  defaultTransport,
+  JoernImportCodeResource,
+  JoernReadinessProbeResource,
+} from './transport.js';
 import type { JoernImportFrontend, JoernTransport } from './transport.js';
+
+const joernServerLifecycleRecipeId = "joern-effect.server-lifecycle"
+const joernClientRuntimeRecipeId = "joern-effect.joern-client-runtime"
+const joernServerLifecycleSourcePath = "packages/attune/joern-effect/src/edge/runtime/JoernServer.ts"
+const joernServerLifecycleAlchemyBindingId = "joern-effect.server-lifecycle.alchemy" as const
+const joernServerProviderId = "joern-effect.server-provider" as const
+const joernServerLifecycleSubstrateId = "joern-effect.server.lifecycle" as const
+
+export const JoernServerLifecycleInputSchema = Schema.Struct({
+  repoPath: Schema.String,
+  frontend: Schema.optional(Schema.String),
+  skipInitialImport: Schema.optional(Schema.Boolean),
+})
+export type JoernServerLifecycleInput = typeof JoernServerLifecycleInputSchema.Type
+
+export const JoernServerLifecycleOutputSchema = Schema.Struct({
+  baseUrl: Schema.String,
+  repoPath: Schema.String,
+  projectName: Schema.String,
+})
+export type JoernServerLifecycleOutput = typeof JoernServerLifecycleOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernServerLifecycleResource = defineAlchemyResource({
+  id: "joern-effect.server-lifecycle.resource",
+  kind: "external-service",
+  alchemyType: "attune:resource:ExternalService",
+  ownerRecipeId: joernServerLifecycleRecipeId,
+  producedBy: [joernServerLifecycleRecipeId],
+  consumedBy: [joernServerLifecycleRecipeId, joernClientRuntimeRecipeId],
+  addressFields: ["repoPath"],
+  addressSchema: JoernServerLifecycleInputSchema as never,
+  stateSchema: JoernServerLifecycleOutputSchema as never,
+  modes: ["plan", "apply", "check", "destroy", "invoke"],
+  programmaticResourceExport: "JoernServerLifecycleLive",
+  programmaticBridgeSourcePath: joernServerLifecycleSourcePath,
+})
 
 export type JoernLayerConfig = {
   readonly repoPath: string
@@ -57,7 +112,7 @@ export const projectNameForRepo = (repoPath: string): string => {
   return `${base}-${hash}`
 }
 
-const waitUntilReady = (
+export const waitUntilReady = (
   baseUrl: string,
   started: StartedProcess,
   port: number,
@@ -171,3 +226,161 @@ export const scopedJoernServer = (
     acquireJoernServer(config, deps),
     ([, started]) => deps.stopProcess(started).pipe(Effect.ignore),
   ).pipe(Effect.map(([server]) => server))
+
+const normalizeServerLifecycleInput = (
+  input: JoernServerLifecycleInput,
+): JoernLayerConfig => ({
+  repoPath: input.repoPath,
+  ...(input.frontend === "auto" || input.frontend === "jssrc" ? { frontend: input.frontend } : {}),
+  ...(input.skipInitialImport === undefined ? {} : { skipInitialImport: input.skipInitialImport }),
+})
+
+export interface JoernServerLifecycleService {
+  readonly run: (
+    input: JoernServerLifecycleInput,
+  ) => Effect.Effect<
+    JoernServerLifecycleOutput,
+    | JoernExecutableNotFoundError
+    | JoernServerStartError
+    | JoernServerTimeoutError
+    | JoernImportError
+    | JoernHttpError
+  >
+}
+
+export class JoernServerLifecycle extends Context.Tag("joern-effect/ServerLifecycle")<
+  JoernServerLifecycle,
+  JoernServerLifecycleService
+>() {}
+
+export const runJoernServerLifecycle = (
+  input: JoernServerLifecycleInput,
+): Effect.Effect<
+  JoernServerLifecycleOutput,
+  | JoernExecutableNotFoundError
+  | JoernServerStartError
+  | JoernServerTimeoutError
+  | JoernImportError
+  | JoernHttpError
+> =>
+  Effect.scoped(
+    scopedJoernServer(normalizeServerLifecycleInput(input)).pipe(
+      Effect.map((server) => ({
+        baseUrl: server.baseUrl,
+        repoPath: server.repoPath,
+        projectName: server.projectName,
+      })),
+    ),
+  )
+
+export const JoernServerLifecycleLive = Layer.succeed(JoernServerLifecycle, {
+  run: runJoernServerLifecycle,
+})
+
+export const JoernServerLifecycleLayer = defineRecipeLayer({
+  id: "joern-effect.server-lifecycle.layer",
+  sourcePath: joernServerLifecycleSourcePath,
+  exportName: "JoernServerLifecycleLive",
+  layer: JoernServerLifecycleLive as never,
+  provides: [{
+    id: "joern-effect.server-lifecycle.service",
+    service: JoernServerLifecycle as never,
+  }],
+})
+
+export const runJoernServerLifecycleViaLayer = (
+  input: JoernServerLifecycleInput,
+): Effect.Effect<
+  JoernServerLifecycleOutput,
+  | JoernExecutableNotFoundError
+  | JoernServerStartError
+  | JoernServerTimeoutError
+  | JoernImportError
+  | JoernHttpError,
+  JoernServerLifecycle
+> =>
+  Effect.gen(function* runJoernServerLifecycleViaLayerBody() {
+    const lifecycle = yield* JoernServerLifecycle
+    return yield* lifecycle.run(input)
+  })
+
+export const JoernServerLifecycleHandler = defineRecipeHandler<
+  JoernServerLifecycleInput,
+  JoernServerLifecycleOutput,
+  | JoernExecutableNotFoundError
+  | JoernServerStartError
+  | JoernServerTimeoutError
+  | JoernImportError
+  | JoernHttpError,
+  JoernServerLifecycle
+>({
+  id: "joern-effect.server-lifecycle.handler",
+  recipeId: joernServerLifecycleRecipeId,
+  sourcePath: joernServerLifecycleSourcePath,
+  exportName: "runJoernServerLifecycleViaLayer",
+  layer: JoernServerLifecycleLayer,
+  emitsReceipts: ["joern.server.lifecycle.checked"],
+  handler: (input) => runJoernServerLifecycleViaLayer(input) as never,
+})
+
+export const JoernServerLifecycleRecipe = defineManagedRecipe({
+  id: joernServerLifecycleRecipeId,
+  projectId: "joern-effect",
+  title: "Manage scoped Joern server acquisition, readiness, import, and release",
+  inputSchema: JoernServerLifecycleInputSchema as never,
+  outputSchema: JoernServerLifecycleOutputSchema as never,
+  allowedFiles: [joernServerLifecycleSourcePath],
+  validationEvidence: ["joern-effect:typecheck", "joern-effect:test"],
+  io: {
+    inputSchema: JoernServerLifecycleInputSchema as never,
+    outputSchema: JoernServerLifecycleOutputSchema as never,
+    inputResources: [
+      JoernPortAllocationResource,
+      JoernExecutableResource,
+      JoernProcessLifecycleResource,
+      JoernReadinessProbeResource,
+      JoernImportCodeResource,
+    ],
+    outputResources: [JoernServerLifecycleResource],
+  },
+  handler: JoernServerLifecycleHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: joernServerLifecycleRecipeId,
+      toRecipeId: joernClientRuntimeRecipeId,
+      resource: JoernServerLifecycleResource,
+      kind: "manages",
+      modes: ["plan", "apply", "check", "destroy", "invoke"],
+    }),
+  ],
+// @attune-packet-target generated-runtime-projection eligible
+  alchemy: defineManagedRecipeAlchemyBinding({
+    id: joernServerLifecycleAlchemyBindingId,
+    managedRecipeId: joernServerLifecycleRecipeId,
+    alchemyResourceType: "attune:alchemy:ManagedRecipe",
+    providerId: joernServerProviderId,
+    resource: JoernServerLifecycleResource,
+    lifecycle: {
+      plan: "projectNameForRepo",
+      apply: "acquireJoernServer",
+      check: "waitUntilReady",
+      stop: "stopProcess",
+      destroy: "stopProcess",
+      read: "scopedJoernServer",
+      diff: "projectNameForRepo",
+    },
+  }),
+  lifecycle: ["plan", "apply", "check", "stop", "destroy", "prune"],
+  resourceKind: "joern-server",
+  lifecycleSubstrates: [{
+    id: joernServerLifecycleSubstrateId,
+    kind: "query-service",
+    tool: "joern",
+    lifecycleActions: ["plan", "apply", "check", "stop", "destroy"],
+    evidence: ["nx run joern-effect:test"],
+  }],
+  observedState: { running: false, imported: false },
+  humanReviewRequired: true,
+})
+
+export const JoernServerLifecycleRecipes = [JoernServerLifecycleRecipe] as const

@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+import {
+  K8sResourceModuleCatalogResource,
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport,
+  PlatformAlchemyK8sProjectId,
+  PlatformAlchemyK8sResourceRegistryRecipeId,
+  k8sResourceModuleReport,
+} from "../resources/common.js"
+
 import { Schema } from "effect"
 
 export interface AttuneCrdDefinition {
@@ -221,3 +236,56 @@ export const attuneCrdDefinitions: readonly AttuneCrdDefinition[] = [
     }),
   },
 ] as const
+
+
+export const K8sCrdDefinitionsRecipeId = "platform-alchemy-k8s.crd-definitions" as const
+const K8sCrdDefinitionsHandlerId = "platform-alchemy-k8s.crd-definitions.handler" as const
+const K8sCrdDefinitionsSourcePath = "packages/canopy/platform-alchemy-k8s/src/crds/definitions.ts" as const
+
+export const K8sCrdDefinitionsHandler = defineRecipeHandler<
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport
+>({
+  id: K8sCrdDefinitionsHandlerId,
+  recipeId: K8sCrdDefinitionsRecipeId,
+  sourcePath: K8sCrdDefinitionsSourcePath,
+  exportName: "attuneCrdDefinitions",
+  handler: () =>
+    Effect.succeed(k8sResourceModuleReport({
+      recipeId: K8sCrdDefinitionsRecipeId,
+      sourcePath: K8sCrdDefinitionsSourcePath,
+      exportName: "attuneCrdDefinitions",
+      moduleKind: "Kubernetes CRD definition catalog",
+    })) as never,
+  emitsReceipts: [`platform-alchemy-k8s.crd-definitions.projected`],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const K8sCrdDefinitionsRecipe = defineProjectionRecipe({
+  id: K8sCrdDefinitionsRecipeId,
+  projectId: PlatformAlchemyK8sProjectId,
+  title: "Declare Kubernetes CRD definition catalog",
+  inputSchema: K8sResourceModuleRecipeInput as never,
+  outputSchema: K8sResourceModuleReport as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [K8sCrdDefinitionsSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test", "platform-alchemy-k8s:typecheck"],
+  io: {
+    inputSchema: K8sResourceModuleRecipeInput as never,
+    outputSchema: K8sResourceModuleReport as never,
+    inputResources: [K8sResourceModuleCatalogResource],
+    outputResources: [K8sResourceModuleCatalogResource],
+  },
+  handler: K8sCrdDefinitionsHandler,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: PlatformAlchemyK8sResourceRegistryRecipeId,
+      toRecipeId: K8sCrdDefinitionsRecipeId,
+      resource: K8sResourceModuleCatalogResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }),
+  ],
+})
+
+export const K8sCrdDefinitionsRecipes = [K8sCrdDefinitionsRecipe] as const

@@ -1,3 +1,11 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineDiagnosticRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
 export const FrameworkImportBoundaryRuleId = "attune/framework-import-boundary" as const
 
 export type FrameworkImportBoundaryRuleId = typeof FrameworkImportBoundaryRuleId
@@ -270,3 +278,108 @@ const isRawDrizzleTableImport = (
   )
 
 const normalizePath = (path: string): string => path.replaceAll("\\", "/")
+
+export const ArchitectureFrameworkImportBoundaryRecipeId =
+  "attune-architecture.framework-import-boundary" as const
+const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+const ArchitectureFrameworkImportBoundarySourcePath =
+  "packages/trellis/architecture/src/framework-import-boundary.ts" as const
+
+const FrameworkImportBoundaryFileSchema = Schema.Struct({
+  path: Schema.String,
+  content: Schema.String,
+})
+
+const FrameworkImportBoundaryDiagnosticSchema = Schema.Struct({
+  ruleId: Schema.String,
+  code: Schema.String,
+  severity: Schema.Literal("error"),
+  filePath: Schema.String,
+  importSource: Schema.String,
+  message: Schema.String,
+})
+
+const FrameworkImportBoundaryInput = Schema.Struct({
+  files: Schema.Array(FrameworkImportBoundaryFileSchema),
+})
+type FrameworkImportBoundaryInput = typeof FrameworkImportBoundaryInput.Type
+
+const FrameworkImportBoundaryOutput = Schema.Struct({
+  diagnostics: Schema.Array(FrameworkImportBoundaryDiagnosticSchema),
+  exitCode: Schema.Number,
+})
+type FrameworkImportBoundaryOutput = typeof FrameworkImportBoundaryOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureFrameworkImportBoundaryInputResource = defineAlchemyResource({
+  id: "attune-architecture.framework-import-boundary.input",
+  kind: "file",
+  alchemyType: "attune:resource:SourceFileSet",
+  consumedBy: [ArchitectureFrameworkImportBoundaryRecipeId],
+  addressSchema: FrameworkImportBoundaryInput,
+  stateSchema: FrameworkImportBoundaryInput,
+  modes: ["read", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureFrameworkImportBoundaryReportResource = defineAlchemyResource({
+  id: "attune-architecture.framework-import-boundary.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitectureFrameworkImportBoundaryRecipeId,
+  producedBy: [ArchitectureFrameworkImportBoundaryRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: Schema.Struct({ packageRoot: Schema.Literal("packages/trellis/architecture") }),
+  stateSchema: FrameworkImportBoundaryOutput,
+  modes: ["project", "observe"],
+})
+
+export const ArchitectureFrameworkImportBoundaryHandler = defineRecipeHandler<
+  FrameworkImportBoundaryInput,
+  FrameworkImportBoundaryOutput
+>({
+  id: "attune-architecture.framework-import-boundary.handler",
+  recipeId: ArchitectureFrameworkImportBoundaryRecipeId,
+  sourcePath: ArchitectureFrameworkImportBoundarySourcePath,
+  exportName: "checkFrameworkImportBoundary",
+  handler: (input) =>
+    Effect.succeed((() => {
+      const result = checkFrameworkImportBoundary(input)
+      return {
+        diagnostics: [...result.diagnostics],
+        exitCode: result.exitCode,
+      }
+    })()),
+  emitsReceipts: ["attune-architecture.framework-import-boundary.reported"],
+})
+
+export const ArchitectureFrameworkImportBoundaryDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureFrameworkImportBoundaryRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureFrameworkImportBoundaryReportResource,
+  kind: "diagnoses",
+  modes: ["check", "observe"],
+})
+
+export const ArchitectureFrameworkImportBoundaryRecipe = defineDiagnosticRecipe({
+  id: ArchitectureFrameworkImportBoundaryRecipeId,
+  projectId: "attune-architecture",
+  title: "Validate framework import boundaries",
+  inputSchema: FrameworkImportBoundaryInput,
+  outputSchema: FrameworkImportBoundaryOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: [ArchitectureFrameworkImportBoundarySourcePath, "packages/**/src/**"],
+  validationEvidence: ["attune-architecture:test", "workspace:policy-fast"],
+  io: {
+    inputSchema: FrameworkImportBoundaryInput,
+    outputSchema: FrameworkImportBoundaryOutput,
+    inputResources: [ArchitectureFrameworkImportBoundaryInputResource],
+    outputResources: [ArchitectureFrameworkImportBoundaryReportResource],
+  },
+  handler: ArchitectureFrameworkImportBoundaryHandler,
+  alchemyDag: [ArchitectureFrameworkImportBoundaryDagEdge],
+})
+
+export const ArchitectureFrameworkImportBoundaryRecipes = [
+  ArchitectureFrameworkImportBoundaryRecipe,
+] as const

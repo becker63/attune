@@ -1,6 +1,10 @@
-import { Context, Effect, Layer } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
   requiredObservationKindsFor,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   type ProgramRepairFinding,
   type ProgramDiagnostic,
 } from "@attune/framework-protocol"
@@ -9,6 +13,9 @@ import {
   computeProgramFactFindings,
   diagnosticsForProgramFacts,
   projectionSnapshot,
+  ProgramFactProjectionInputResource,
+  ProgramFactProjectionRecipeInput,
+  programFactProjectionRecipeId,
   type ProgramFactProjectionApi,
   type ProgramFactProjectionInput,
   type ProgramFactRuntimeSnapshot,
@@ -21,6 +28,40 @@ import {
   ProgramFactStore,
   type ProgramFactStoreApi,
 } from "./ProgramFactStore.js"
+
+const programFactQueryRecipeId = "framework-runtime.program-fact-query" as const
+const programFactQuerySourcePath = "packages/trellis/runtime/src/ProgramFactQuery.ts" as const
+
+export const ProjectFactSummarySchema = Schema.Struct({
+  projectId: Schema.String,
+  schemaDescriptorId: Schema.String,
+  descriptorHash: Schema.optional(Schema.String),
+  symbolCount: Schema.Number,
+  diagnosticRequirementCount: Schema.Number,
+  observationRunCount: Schema.Number,
+  observationCount: Schema.Number,
+  replayObservationCount: Schema.Number,
+  coverageObservationCount: Schema.Number,
+  activeDiagnosticWaiverCount: Schema.Number,
+  diagnosticWaiverIssueCount: Schema.Number,
+  staleArtifactCount: Schema.Number,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ProgramFactQuerySummaryResource = defineAlchemyResource({
+  id: "framework-runtime.program-fact-query.summary",
+  kind: "report",
+  alchemyType: "attune:resource:ProjectFactSummary",
+  ownerRecipeId: programFactQueryRecipeId,
+  producedBy: [programFactQueryRecipeId],
+  consumedBy: [programFactQueryRecipeId],
+  addressFields: ["schemaDescriptorId", "projectId", "sourcePath"],
+  addressSchema: ProgramFactProjectionRecipeInput as never,
+  stateSchema: ProjectFactSummarySchema as never,
+  modes: ["read", "project", "observe"],
+  programmaticResourceExport: "ProgramFactQueryLive",
+  programmaticBridgeSourcePath: programFactQuerySourcePath,
+})
 
 export interface ProjectFactSummary {
   readonly projectId: string
@@ -217,7 +258,7 @@ export const makeProgramFactQuery = (
           coverageObservations: snapshot.coverageFeedback.filter((feedback) => feedback.projectId === projectId),
         })),
       ),
-    getDiagnosticsForFile: (sourcePath) =>
+    getDiagnosticsForFile: (sourcePath: string) =>
       typedSnapshot().pipe(
         Effect.map((snapshot) =>
           snapshot.schemaDescriptors
@@ -283,3 +324,63 @@ export const ProgramFactQueryLive: Layer.Layer<
     return makeProgramFactQuery(store, projection)
   }),
 )
+
+export const ProgramFactQueryLayer = defineRecipeLayer({
+  id: "framework-runtime.program-fact-query.layer",
+  sourcePath: programFactQuerySourcePath,
+  exportName: "ProgramFactQueryLive",
+  layer: ProgramFactQueryLive as never,
+  provides: [{
+    id: "framework-runtime.program-fact-query.service",
+    service: ProgramFactQuery as never,
+  }],
+})
+
+export const projectProgramFactSummary = (
+  input: ProgramFactProjectionInput,
+): Effect.Effect<ProjectFactSummary> => Effect.succeed(getProjectSummary(input))
+
+export const ProgramFactQueryHandler = defineRecipeHandler<
+  ProgramFactProjectionInput,
+  ProjectFactSummary
+>({
+  id: "framework-runtime.program-fact-query.handler",
+  recipeId: programFactQueryRecipeId,
+  sourcePath: programFactQuerySourcePath,
+  exportName: "projectProgramFactSummary",
+  layer: ProgramFactQueryLayer,
+  emitsReceipts: ["framework-runtime.program-fact-query.summary.projected"],
+  handler: projectProgramFactSummary,
+})
+
+export const ProgramFactQueryRecipe = defineProjectionRecipe<
+  ProgramFactProjectionInput,
+  ProjectFactSummary
+>({
+  id: programFactQueryRecipeId,
+  projectId: "framework-runtime",
+  title: "Project program fact snapshots into query summaries",
+  inputSchema: ProgramFactProjectionRecipeInput as never,
+  outputSchema: ProjectFactSummarySchema as never,
+  dependencies: [{ recipeId: programFactProjectionRecipeId }],
+  allowedFiles: [programFactQuerySourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test"],
+  io: {
+    inputSchema: ProgramFactProjectionRecipeInput as never,
+    outputSchema: ProjectFactSummarySchema as never,
+    inputResources: [ProgramFactProjectionInputResource],
+    outputResources: [ProgramFactQuerySummaryResource],
+  },
+  handler: ProgramFactQueryHandler,
+  alchemyDag: [{
+    fromRecipeId: programFactQueryRecipeId,
+    toRecipeId: programFactProjectionRecipeId,
+    resource: ProgramFactProjectionInputResource,
+    kind: "projects",
+    modes: ["read", "project", "observe"],
+  }],
+})
+
+export const ProgramFactQueryRecipes = [
+  ProgramFactQueryRecipe,
+] as const

@@ -1,5 +1,21 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
 import { Schema } from "effect"
+import { Effect } from "effect"
 import type fc from "fast-check"
+
+import {
+  FrameworkTestingProjectId,
+  FrameworkTestingSourceRecipeInput,
+  FrameworkTestingSourceRecipeOutput,
+  FrameworkTestingTestTarget,
+  FrameworkTestingTypecheckTarget,
+  frameworkTestingSourceSummary,
+} from "./recipe-contracts.js"
 
 export type PropertyTier = "commit" | "push" | "proof-pressure" | "nightly" | "debug"
 export type RandomSource = "main-thread" | "worker"
@@ -124,3 +140,81 @@ export const counterexampleCacheEntry = (
   }
   return Schema.decodeUnknownSync(CounterexampleCacheEntrySchema)(entry)
 }
+
+export const FrameworkTestingReplayMetadataRecipeId = "framework-testing.replay-metadata" as const
+export const FrameworkTestingReplayMetadataSourcePath = "packages/trellis/testing/src/replay-metadata.ts" as const
+
+export const describeFrameworkTestingReplayMetadata = (
+  input: FrameworkTestingSourceRecipeInput,
+): FrameworkTestingSourceRecipeOutput =>
+  frameworkTestingSourceSummary(input, "replay-metadata", {
+    replayMetadataCount: input.symbolIds.length + 1,
+  })
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingReplayMetadataSourceResource = defineAlchemyResource({
+  id: "framework-testing.replay-metadata.source",
+  kind: "file",
+  alchemyType: "attune:resource:FrameworkTestingReplayMetadataSource",
+  addressSchema: FrameworkTestingSourceRecipeInput,
+  stateSchema: FrameworkTestingSourceRecipeInput,
+  modes: ["read"],
+  consumedBy: [FrameworkTestingReplayMetadataRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingReplayMetadataReportResource = defineAlchemyResource({
+  id: "framework-testing.replay-metadata.report",
+  kind: "report",
+  alchemyType: "attune:resource:FrameworkTestingReplayMetadataReport",
+  addressSchema: FrameworkTestingSourceRecipeInput,
+  stateSchema: FrameworkTestingSourceRecipeOutput,
+  modes: ["project", "read"],
+  ownerRecipeId: FrameworkTestingReplayMetadataRecipeId,
+  producedBy: [FrameworkTestingReplayMetadataRecipeId],
+})
+
+export const FrameworkTestingReplayMetadataHandler = defineRecipeHandler<
+  FrameworkTestingSourceRecipeInput,
+  FrameworkTestingSourceRecipeOutput,
+  never,
+  never
+>({
+  id: "framework-testing.replay-metadata.handler",
+  recipeId: FrameworkTestingReplayMetadataRecipeId,
+  sourcePath: FrameworkTestingReplayMetadataSourcePath,
+  exportName: "describeFrameworkTestingReplayMetadata",
+  emitsReceipts: ["framework-testing.replay-metadata.report"],
+  handler: (input) => Effect.succeed(describeFrameworkTestingReplayMetadata(input)),
+})
+
+export const FrameworkTestingReplayMetadataDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "framework-testing.replay-metadata.source",
+  toRecipeId: FrameworkTestingReplayMetadataRecipeId,
+  resource: FrameworkTestingReplayMetadataReportResource,
+  kind: "projects",
+  modes: ["read", "project"],
+  validationTargets: [FrameworkTestingTestTarget],
+})
+
+export const FrameworkTestingReplayMetadataRecipes = [
+// @attune-packet-target generated-runtime-projection eligible
+  defineProjectionRecipe({
+    id: FrameworkTestingReplayMetadataRecipeId,
+    projectId: FrameworkTestingProjectId,
+    title: "Own replay and counterexample metadata helpers",
+    inputSchema: FrameworkTestingSourceRecipeInput,
+    outputSchema: FrameworkTestingSourceRecipeOutput,
+    io: {
+      inputSchema: FrameworkTestingSourceRecipeInput,
+      outputSchema: FrameworkTestingSourceRecipeOutput,
+      inputResources: [FrameworkTestingReplayMetadataSourceResource],
+      outputResources: [FrameworkTestingReplayMetadataReportResource],
+    },
+    handler: FrameworkTestingReplayMetadataHandler,
+    alchemyDag: [FrameworkTestingReplayMetadataDagEdge],
+    nxTarget: FrameworkTestingTestTarget,
+    allowedFiles: [FrameworkTestingReplayMetadataSourcePath],
+    validationEvidence: [FrameworkTestingTestTarget, FrameworkTestingTypecheckTarget],
+  }),
+] as const

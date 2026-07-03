@@ -4,161 +4,134 @@
   "sourceRoot": "packages/trellis/architecture/src",
   "targets": {
     "build": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "dependsOn": [],
       "outputs": [
         "{projectRoot}/dist"
       ],
       "options": {
-        "targetProject": "attune-architecture",
-        "tool": "typescript",
-        "action": "build",
-        "toolId": "tsc",
-        "parameters": {
-          "tsconfig": "tsconfig.build.json"
-        },
-        "dryRun": false
+        "command": "cd packages/trellis/architecture && pnpm exec tsc -p tsconfig.build.json"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "build",
+          "action": "build",
+          "recipeId": "attune-architecture.build",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "typecheck": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "typescript",
-        "action": "check",
-        "parameters": {
-          "classic": true
+        "command": "cd packages/trellis/architecture && pnpm exec tsc --noEmit"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "typecheck",
+          "action": "typecheck",
+          "recipeId": "attune-architecture.typecheck",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "test": {
-      "executor": "@attune/nx:package-check",
+      "executor": "nx:run-commands",
       "dependsOn": [],
       "options": {
-        "dryRun": false,
-        "checks": [
-          "test"
-        ]
+        "command": "cd packages/trellis/architecture && pnpm exec vitest run"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "test",
+          "action": "test",
+          "recipeId": "attune-architecture.test",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "attune:repair-symbol-registry": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer attune-architecture:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "symbol-registry",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-symbol-registry",
+          "recipeId": "attune-architecture.attune.repair-symbol-registry",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "attune-architecture",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "attune-architecture",
-          "kind": "symbol-registry"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/attune-architecture/attune-symbol-registry.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project attune-architecture --kind symbol-registry --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/attune-architecture/attune-symbol-registry.ts"
       ]
     },
     "attune:repair-property-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for property observations. Public agents should prefer attune-architecture:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "property-observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-property-observations",
+          "recipeId": "attune-architecture.attune.repair-property-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "attune-architecture",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "attune-architecture",
-          "kind": "property-observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/attune-architecture/attune-property-observations.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project attune-architecture --kind property-observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/attune-architecture/attune-property-observations.ts"
       ]
     },
     "attune:repair-schema-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for schema observations. Public agents should prefer attune-architecture:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "schema-observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-schema-observations",
+          "recipeId": "attune-architecture.attune.repair-schema-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "attune-architecture",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "attune-architecture",
-          "kind": "schema-observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/attune-architecture/attune-schema-observations.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project attune-architecture --kind schema-observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/attune-architecture/attune-schema-observations.ts"
       ]
     },
     "attune:repair-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer attune-architecture:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-observations",
+          "recipeId": "attune-architecture.attune.repair-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "attune-architecture",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "attune-architecture",
-          "kind": "observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/attune-architecture/attune-observation-scaffold.ts"
-        ],
-        "evidenceOutputs": [
-          ".attune/cache/observations/attune-architecture/observation-scaffold.json"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project attune-architecture --kind observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/attune-architecture/attune-observation-scaffold.ts",
@@ -166,82 +139,64 @@
       ]
     },
     "attune:repair-artifact-freshness": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer attune-architecture:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "artifact-freshness",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-artifact-freshness",
+          "recipeId": "attune-architecture.attune.repair-artifact-freshness",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "attune-architecture",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "attune-architecture",
-          "kind": "artifact-freshness"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/attune-architecture/artifact-freshness.json"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project attune-architecture --kind artifact-freshness --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/attune-architecture/artifact-freshness.json"
       ]
     },
     "check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable check verb.",
         "attune": {
           "tier": "public",
-          "surface": "check"
+          "surface": "check",
+          "action": "check",
+          "recipeId": "attune-architecture.check",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "attune-architecture",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:recipe-substrate-check"
-          ]
-        },
-        "dryRun": false
+        "command": "pnpm exec nx run workspace:recipe-substrate-check"
       }
     },
     "repair": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable repair verb when available.",
         "attune": {
           "tier": "public",
           "surface": "repair",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair",
+          "recipeId": "attune-architecture.repair",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "attune-architecture",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "attune-architecture:attune:repair-symbol-registry",
-            "attune-architecture:attune:repair-property-observations",
-            "attune-architecture:attune:repair-schema-observations",
-            "attune-architecture:attune:repair-observations",
-            "attune-architecture:attune:repair-artifact-freshness"
-          ]
-        },
-        "dryRun": false
+        "commands": [
+          "pnpm exec nx run attune-architecture:attune:repair-symbol-registry",
+          "pnpm exec nx run attune-architecture:attune:repair-property-observations",
+          "pnpm exec nx run attune-architecture:attune:repair-schema-observations",
+          "pnpm exec nx run attune-architecture:attune:repair-observations",
+          "pnpm exec nx run attune-architecture:attune:repair-artifact-freshness"
+        ],
+        "parallel": false
       }
     }
   }

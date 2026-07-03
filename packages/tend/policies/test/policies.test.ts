@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { TendPolicyRecipes } from "../src/recipes.js"
 import {
-  TendPolicyRecipes,
   compressWithOpenRtk,
   defaultOpenCodeForcingPolicy,
   evaluateForcedToolPolicy,
@@ -10,7 +10,14 @@ import {
 
 describe("@attune/tend-policies", () => {
   it("forces OpenCode and future Codex through Tend tools", () => {
-    expect(TendPolicyRecipes[0]?.id).toBe("tend-policies.forcing-harness")
+    expect(TendPolicyRecipes.map((recipe) => recipe.id)).toEqual([
+      "tend-policies.forced-tool-policy",
+      "tend-policies.magic-context-selection",
+      "tend-policies.openrtk-compression",
+      "tend-policies.test-suite",
+    ])
+    expect(TendPolicyRecipes.some((recipe) => recipe.sourcePath === "packages/tend/policies/src/recipes.ts"))
+      .toBe(false)
     expect(defaultOpenCodeForcingPolicy().requiredTools).toContain("openrtk.compress")
     expect(futureCodexForcingPolicy()).toMatchObject({
       agentKind: "codex",

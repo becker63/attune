@@ -117,7 +117,7 @@ const runtimeView = (
             [{
               sourcePath,
               text: [
-                "export const ProjectFacts = defineAttuneProjectFacts({",
+                "export const LegacyPackageFacts = defineAttuneLegacyPackageFacts({",
                 "  id: \"demo\",",
                 "  symbols: [projectSymbol],",
                 "})",
@@ -150,20 +150,31 @@ describe("@attune/framework-language-service", () => {
     )
 
     expect(records.map((record) => record.recipeId)).toEqual([
+      "trellis-language-service.source-surface",
+      "trellis-language-service.stable-id-source",
+      "trellis-language-service.contracts",
+      "trellis-language-service.test-suite",
+      "trellis-language-service.upstream-effect-documentation",
+      "trellis-language-service.upstream-effect-diagnostics",
       "trellis-language-service.cli-invocation-surfaces",
       "trellis-language-service.workspace-inventory",
       "trellis-language-service.typescript-program",
-      "trellis-language-service.upstream-effect-diagnostics",
       "trellis-language-service.upstream-effect-fixes",
-      "trellis-language-service.recipe-fact-diagnostics",
       "trellis-language-service.repair-plan",
+      "trellis-language-service.recipe-fact-diagnostics",
       "trellis-language-service.diagnostics-json-projection",
       "trellis-language-service.fixes-json-projection",
-      "trellis-language-service.apply-result-json-projection",
       "trellis-language-service.check-summary-projection",
+      "trellis-language-service.file-accounting-migration-judge",
+      "trellis-language-service.apply-result-json-projection",
+      "trellis-language-service.file-accounting-oracle",
+      "trellis-language-service.file-accounting-packet",
+      "trellis-language-service.source-expression-oracle",
+      "trellis-language-service.source-expression-packet",
       "trellis-language-service.receipt-observation-recording",
     ])
-    expect(records.every((record) => record.sourcePath === "packages/trellis/language-service/src/recipes.ts")).toBe(true)
+    expect(records.every((record) => record.sourcePath !== "packages/trellis/language-service/src/recipes.ts")).toBe(true)
+    expect(FrameworkLanguageServiceRecipes.every((recipe) => recipe.io !== undefined && recipe.handler !== undefined)).toBe(true)
     expect(FrameworkLanguageServiceRecipePackage).toMatchObject({
       packageId: "framework-language-service",
       sourceRoot: "packages/trellis/language-service/src",
@@ -172,17 +183,27 @@ describe("@attune/framework-language-service", () => {
       FrameworkLanguageServiceRecipes.map((recipe) => recipe.id),
     )
     expect(FrameworkLanguageServiceRecipes.map((recipe) => "recipeRole" in recipe ? recipe.recipeRole : "recipe")).toEqual([
+      "recipe",
+      "recipe",
+      "recipe",
+      "test",
+      "documentation",
+      "diagnostic",
       "invocation",
       "recipe",
       "recipe",
-      "diagnostic",
+      "repair",
       "repair",
       "diagnostic",
+      "projection",
+      "projection",
+      "projection",
+      "judge",
+      "projection",
+      "projection",
       "repair",
       "projection",
-      "projection",
-      "projection",
-      "projection",
+      "repair",
       "observation",
     ])
   })
@@ -216,7 +237,7 @@ describe("@attune/framework-language-service", () => {
       diagnostic.diagnosticRequirementId === "demo:project:property"
     )
 
-    expect(propertyDiagnostic?.range).toEqual({ start: 84, end: 100 })
+    expect(propertyDiagnostic?.range).toEqual({ start: 96, end: 112 })
   })
 
   it("projects invalid runtime store payloads into displayable diagnostics", async () => {

@@ -1,3 +1,12 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineDiagnosticRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
+import { Effect, Layer, Schema } from "effect"
+
 export const AtomImplementationPolicyRuleId = "attune/atom-implementation-boundary" as const
 
 export type AtomImplementationPolicyRuleId = typeof AtomImplementationPolicyRuleId
@@ -202,3 +211,119 @@ const sourcePosition = (content: string, index: number): { readonly line: number
 const lineAt = (content: string, line: number): string => content.split(/\r?\n/u)[line - 1] ?? ""
 
 const normalizePath = (path: string): string => path.replaceAll("\\", "/")
+
+export const ArchitectureAtomImplementationPolicyRecipeId =
+  "attune-architecture.atom-implementation-policy" as const
+const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+const ArchitectureAtomImplementationPolicySourcePath =
+  "packages/trellis/architecture/src/framework-atom-implementation-policy.ts" as const
+
+const AtomImplementationPolicyFileSchema = Schema.Struct({
+  path: Schema.String,
+  content: Schema.String,
+})
+
+const AtomImplementationPolicyDiagnosticSchema = Schema.Struct({
+  ruleId: Schema.String,
+  code: Schema.String,
+  severity: Schema.Literal("error"),
+  filePath: Schema.String,
+  line: Schema.Number,
+  column: Schema.Number,
+  sourceLine: Schema.String,
+  message: Schema.String,
+})
+
+const AtomImplementationPolicyInput = Schema.Struct({
+  files: Schema.Array(AtomImplementationPolicyFileSchema),
+})
+type AtomImplementationPolicyInput = typeof AtomImplementationPolicyInput.Type
+
+const AtomImplementationPolicyOutput = Schema.Struct({
+  diagnostics: Schema.Array(AtomImplementationPolicyDiagnosticSchema),
+  exitCode: Schema.Number,
+})
+type AtomImplementationPolicyOutput = typeof AtomImplementationPolicyOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureAtomImplementationPolicyInputResource = defineAlchemyResource({
+  id: "attune-architecture.atom-policy.input",
+  kind: "file",
+  alchemyType: "attune:resource:SourceFileSet",
+  consumedBy: [ArchitectureAtomImplementationPolicyRecipeId],
+  addressSchema: AtomImplementationPolicyInput,
+  stateSchema: AtomImplementationPolicyInput,
+  modes: ["read", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureAtomImplementationPolicyReportResource = defineAlchemyResource({
+  id: "attune-architecture.atom-policy.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitectureAtomImplementationPolicyRecipeId,
+  producedBy: [ArchitectureAtomImplementationPolicyRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: Schema.Struct({ packageRoot: Schema.Literal("packages/trellis/architecture") }),
+  stateSchema: AtomImplementationPolicyOutput,
+  modes: ["project", "observe"],
+})
+
+export const ArchitectureAtomImplementationPolicyLayer = defineRecipeLayer({
+  id: "attune-architecture.atom-implementation-policy.layer",
+  sourcePath: ArchitectureAtomImplementationPolicySourcePath,
+  exportName: "checkAtomImplementationPolicy",
+  layer: Layer.empty as never,
+  provides: [{ id: "scheduler-scan", service: "source-pattern-classifier" }],
+})
+
+export const ArchitectureAtomImplementationPolicyHandler = defineRecipeHandler<
+  AtomImplementationPolicyInput,
+  AtomImplementationPolicyOutput
+>({
+  id: "attune-architecture.atom-implementation-policy.handler",
+  recipeId: ArchitectureAtomImplementationPolicyRecipeId,
+  sourcePath: ArchitectureAtomImplementationPolicySourcePath,
+  exportName: "checkAtomImplementationPolicy",
+  handler: (input) =>
+    Effect.succeed((() => {
+      const result = checkAtomImplementationPolicy(input)
+      return {
+        diagnostics: [...result.diagnostics],
+        exitCode: result.exitCode,
+      }
+    })()),
+  layer: ArchitectureAtomImplementationPolicyLayer,
+  emitsReceipts: ["attune-architecture.atom-implementation-policy.reported"],
+})
+
+export const ArchitectureAtomImplementationPolicyDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureAtomImplementationPolicyRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureAtomImplementationPolicyReportResource,
+  kind: "diagnoses",
+  modes: ["check", "observe"],
+})
+
+export const ArchitectureAtomImplementationPolicyRecipe = defineDiagnosticRecipe({
+  id: ArchitectureAtomImplementationPolicyRecipeId,
+  projectId: "attune-architecture",
+  title: "Validate atom implementation boundaries",
+  inputSchema: AtomImplementationPolicyInput,
+  outputSchema: AtomImplementationPolicyOutput,
+  nxTarget: "attune-architecture:test",
+  allowedFiles: [ArchitectureAtomImplementationPolicySourcePath, "packages/**/src/**"],
+  validationEvidence: ["attune-architecture:test", "workspace:policy-fast"],
+  io: {
+    inputSchema: AtomImplementationPolicyInput,
+    outputSchema: AtomImplementationPolicyOutput,
+    inputResources: [ArchitectureAtomImplementationPolicyInputResource],
+    outputResources: [ArchitectureAtomImplementationPolicyReportResource],
+  },
+  handler: ArchitectureAtomImplementationPolicyHandler,
+  alchemyDag: [ArchitectureAtomImplementationPolicyDagEdge],
+})
+
+export const ArchitectureAtomImplementationPolicyRecipes = [
+  ArchitectureAtomImplementationPolicyRecipe,
+] as const

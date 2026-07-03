@@ -2,6 +2,15 @@ import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join, relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineInvocationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
+import { Effect, Layer, Schema } from "effect"
+
 const publicScripts = ["check", "codex:check", "codex:cloud-check", "arch:scan"] as const
 const ignoredDirs = new Set([".attune", ".git", ".nx", "dist", "imports", "node_modules"])
 const forbiddenBuckFileNames = new Set([".buckconfig", ".buckroot", "BUCK", "BUCK.v2"])
@@ -64,3 +73,104 @@ function visit(dir: string, violations: string[]): void {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   runWorkspaceArchitectureScan()
 }
+
+export const ArchitectureWorkspaceScanRecipeId =
+  "attune-architecture.workspace-scan" as const
+const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+const ArchitectureWorkspaceScanSourcePath =
+  "packages/trellis/architecture/src/internal/checks/WorkspaceScanCli.ts" as const
+
+const ArchitectureWorkspaceScanInput = Schema.Struct({
+  workspaceRoot: Schema.String,
+  recipeId: Schema.String,
+})
+type ArchitectureWorkspaceScanInput = typeof ArchitectureWorkspaceScanInput.Type
+
+const ArchitectureWorkspaceScanOutput = Schema.Struct({
+  scriptPath: Schema.String,
+  invocationModel: Schema.Literal("RecipeInvocation"),
+  validationTargetHandles: Schema.Array(Schema.String),
+})
+type ArchitectureWorkspaceScanOutput = typeof ArchitectureWorkspaceScanOutput.Type
+
+export const projectWorkspaceScanInvocation = (
+  _input: ArchitectureWorkspaceScanInput,
+): ArchitectureWorkspaceScanOutput => ({
+  scriptPath: ArchitectureWorkspaceScanSourcePath,
+  invocationModel: "RecipeInvocation",
+  validationTargetHandles: ["workspace:arch:scan", "workspace:policy-fast"],
+})
+
+export const ArchitectureWorkspaceScanFilesystemLayer = defineRecipeLayer({
+  id: "attune-architecture.workspace-scan.filesystem.layer",
+  sourcePath: ArchitectureWorkspaceScanSourcePath,
+  exportName: "runWorkspaceArchitectureScan",
+  layer: Layer.empty as never,
+  provides: [{ id: "filesystem", service: "node:fs" }],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureWorkspaceScanInputResource = defineAlchemyResource({
+  id: "attune-architecture.workspace-scan.input",
+  kind: "directory",
+  alchemyType: "attune:resource:Directory",
+  consumedBy: [ArchitectureWorkspaceScanRecipeId],
+  addressSchema: ArchitectureWorkspaceScanInput,
+  stateSchema: Schema.Struct({
+    sourceRoot: Schema.Literal("packages/trellis/architecture/src"),
+  }),
+  modes: ["read", "check"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitectureWorkspaceScanReportResource = defineAlchemyResource({
+  id: "attune-architecture.workspace-scan.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitectureWorkspaceScanRecipeId,
+  producedBy: [ArchitectureWorkspaceScanRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: ArchitectureWorkspaceScanInput,
+  stateSchema: ArchitectureWorkspaceScanOutput,
+  modes: ["project", "observe"],
+})
+
+export const ArchitectureWorkspaceScanDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitectureWorkspaceScanRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitectureWorkspaceScanReportResource,
+  kind: "invokes",
+  modes: ["invoke", "observe"],
+})
+
+export const ArchitectureWorkspaceScanRecipe = defineInvocationRecipe({
+  id: "attune-architecture.workspace-scan",
+  projectId: "attune-architecture",
+  title: "Run the workspace architecture scan as a recipe-backed source check",
+  inputSchema: ArchitectureWorkspaceScanInput,
+  outputSchema: ArchitectureWorkspaceScanOutput,
+  nxTarget: "workspace:arch:scan",
+  entrypoints: [ArchitectureWorkspaceScanSourcePath],
+  allowedFiles: [ArchitectureWorkspaceScanSourcePath, "packages/**", "project.json"],
+  validationEvidence: ["workspace:arch:scan", "workspace:policy-fast"],
+  io: {
+    inputSchema: ArchitectureWorkspaceScanInput,
+    outputSchema: ArchitectureWorkspaceScanOutput,
+    inputResources: [ArchitectureWorkspaceScanInputResource],
+    outputResources: [ArchitectureWorkspaceScanReportResource],
+  },
+  handler: defineRecipeHandler<ArchitectureWorkspaceScanInput, ArchitectureWorkspaceScanOutput>({
+    id: "attune-architecture.workspace-scan.handler",
+    recipeId: ArchitectureWorkspaceScanRecipeId,
+    sourcePath: ArchitectureWorkspaceScanSourcePath,
+    exportName: "projectWorkspaceScanInvocation",
+    handler: (input) => Effect.succeed(projectWorkspaceScanInvocation(input)),
+    layer: ArchitectureWorkspaceScanFilesystemLayer,
+    emitsReceipts: ["attune-architecture.workspace-scan.projected"],
+  }),
+  alchemyDag: [ArchitectureWorkspaceScanDagEdge],
+})
+
+export const ArchitectureWorkspaceScanRecipes = [
+  ArchitectureWorkspaceScanRecipe,
+] as const

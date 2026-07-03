@@ -1,4 +1,5 @@
-import { Context, Effect, Layer } from "effect"
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
 import fc from "fast-check"
 import { FuzzTelemetry, type FuzzTelemetryService } from "../services/telemetry.js"
 import { FuzzOracle, type FuzzOracleService } from "../services/oracle.js"
@@ -783,3 +784,79 @@ export type FuzzPipelineRunnerService = SemanticFuzzSchedulerService
 export const FuzzPipelineRunner = SemanticFuzzScheduler
 export const makeFuzzPipelineRunner = makeSemanticFuzzScheduler
 export const FuzzPipelineRunnerLive = SemanticFuzzSchedulerLive
+
+const JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeId = "joern-effect-properties.fuzz.pipeline.runner" as const
+const JoernEffectPropertiesFuzzPipelineRunnerLocalResourceId = "joern-effect-properties.fuzz.pipeline.runner.resource" as const
+const JoernEffectPropertiesFuzzPipelineRunnerLocalHandlerId = "joern-effect-properties.fuzz.pipeline.runner.handler" as const
+const JoernEffectPropertiesFuzzPipelineRunnerLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/pipeline/runner.ts" as const
+const JoernEffectPropertiesFuzzPipelineRunnerLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzPipelineRunnerLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeInput = typeof JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzPipelineRunnerLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeOutput = typeof JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzPipelineRunnerLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzPipelineRunnerLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeId, JoernEffectPropertiesFuzzPipelineRunnerLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzPipelineRunnerLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeInput,
+  JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzPipelineRunnerLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzPipelineRunnerLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzPipelineRunnerLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.pipeline.runner.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzPipelineRunnerLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/pipeline/runner.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzPipelineRunnerLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzPipelineRunnerLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzPipelineRunnerLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzPipelineRunnerLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzPipelineRunnerLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzPipelineRunnerLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzPipelineRunnerLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzPipelineRunnerLocalRecipes = [JoernEffectPropertiesFuzzPipelineRunnerLocalRecipe] as const

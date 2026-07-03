@@ -12,6 +12,10 @@ import {
   NxTarget,
   RecipeIoRecordView,
   RecipeRepairPlan,
+  defineAlchemyResource,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  defineRuntimeRecipe,
   type ManagedRecipeDefinition,
   type ManagedRecipeLifecycleAction,
   type RecipeDefinition,
@@ -528,9 +532,11 @@ const plannedRepair = <Input, Output>(
   kind: "nx-target",
   nxTarget: NxTarget.fromRecipe(recipe),
   allowedFiles: [...(recipe.allowedFiles ?? [])],
-  risk: "safe",
+  risk: safePlannedRepairRisk,
   evidenceRequirements: [...(recipe.validationEvidence ?? [])],
 })
+
+const safePlannedRepairRisk = "safe" as const
 
 const binding = (
   kind: ManagedRecipeAlchemyBinding["kind"],
@@ -582,3 +588,140 @@ const persistRunResult = <Input, Output>(
     Effect.as(result),
   )
 }
+
+export const frameworkRuntimeRecipeKernelRecipeId = "framework-runtime.recipe-kernel" as const
+const recipeReceiptStoreSnapshotRecipeId = "framework-runtime.receipt-store-snapshot" as const
+const frameworkRuntimeRecipeKernelSourcePath =
+  "packages/trellis/runtime/src/RecipeKernel.ts" as const
+
+export const FrameworkRuntimeRecipeKernelInput = Schema.Struct({
+  packageId: Schema.String,
+  sourceRoot: Schema.String,
+})
+export type FrameworkRuntimeRecipeKernelInput =
+  typeof FrameworkRuntimeRecipeKernelInput.Type
+
+export const FrameworkRuntimeRecipeKernelOutput = Schema.Struct({
+  planner: Schema.Boolean,
+  runner: Schema.Boolean,
+  lifecycle: Schema.Boolean,
+  alchemyBridge: Schema.Boolean,
+  receiptStore: Schema.String,
+})
+export type FrameworkRuntimeRecipeKernelOutput =
+  typeof FrameworkRuntimeRecipeKernelOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkRuntimeRecipeKernelResource = defineAlchemyResource({
+  id: "framework-runtime.recipe-kernel.resource",
+  kind: "package-metadata",
+  alchemyType: "attune:resource:RuntimeRecipeKernel",
+  ownerRecipeId: frameworkRuntimeRecipeKernelRecipeId,
+  producedBy: [frameworkRuntimeRecipeKernelRecipeId],
+  consumedBy: [frameworkRuntimeRecipeKernelRecipeId, recipeReceiptStoreSnapshotRecipeId],
+  addressFields: ["packageId", "sourceRoot"],
+  addressSchema: FrameworkRuntimeRecipeKernelInput as never,
+  stateSchema: FrameworkRuntimeRecipeKernelOutput as never,
+  modes: ["read", "project", "check"],
+  programmaticResourceExport: "FrameworkRuntimeRecipeKernelLive",
+  programmaticBridgeSourcePath: frameworkRuntimeRecipeKernelSourcePath,
+})
+
+export interface FrameworkRuntimeRecipeKernelService {
+  readonly describe: (
+    input: FrameworkRuntimeRecipeKernelInput,
+  ) => Effect.Effect<FrameworkRuntimeRecipeKernelOutput>
+}
+
+export class FrameworkRuntimeRecipeKernel extends Context.Service<
+  FrameworkRuntimeRecipeKernel,
+  FrameworkRuntimeRecipeKernelService
+>()("@attune/framework-runtime/FrameworkRuntimeRecipeKernel") {}
+
+export const FrameworkRuntimeRecipeKernelLive: Layer.Layer<
+  FrameworkRuntimeRecipeKernel
+> = Layer.succeed(
+  FrameworkRuntimeRecipeKernel,
+  {
+    describe: () =>
+      Effect.succeed({
+        planner: true,
+        runner: true,
+        lifecycle: true,
+        alchemyBridge: true,
+        receiptStore: "RecipeReceiptStoreApi",
+      }),
+  },
+)
+
+export const FrameworkRuntimeRecipeKernelLayer = defineRecipeLayer({
+  id: "framework-runtime.recipe-kernel.layer",
+  sourcePath: frameworkRuntimeRecipeKernelSourcePath,
+  exportName: "FrameworkRuntimeRecipeKernelLive",
+  layer: FrameworkRuntimeRecipeKernelLive as never,
+  provides: [{
+    id: "framework-runtime.recipe-kernel.service",
+    service: FrameworkRuntimeRecipeKernel as never,
+  }],
+})
+
+export const describeFrameworkRuntimeRecipeKernel = (
+  input: FrameworkRuntimeRecipeKernelInput,
+): Effect.Effect<
+  FrameworkRuntimeRecipeKernelOutput,
+  never,
+  FrameworkRuntimeRecipeKernel
+> =>
+  Effect.gen(function* describeFrameworkRuntimeRecipeKernelBody() {
+    const kernel = yield* FrameworkRuntimeRecipeKernel
+    return yield* kernel.describe(input)
+  })
+
+export const FrameworkRuntimeRecipeKernelHandler = defineRecipeHandler<
+  FrameworkRuntimeRecipeKernelInput,
+  FrameworkRuntimeRecipeKernelOutput,
+  never,
+  FrameworkRuntimeRecipeKernel
+>({
+  id: "framework-runtime.recipe-kernel.handler",
+  recipeId: frameworkRuntimeRecipeKernelRecipeId,
+  sourcePath: frameworkRuntimeRecipeKernelSourcePath,
+  exportName: "describeFrameworkRuntimeRecipeKernel",
+  layer: FrameworkRuntimeRecipeKernelLayer,
+  emitsReceipts: ["framework-runtime.recipe-kernel.described"],
+  handler: (input) => describeFrameworkRuntimeRecipeKernel(input) as never,
+})
+
+export const FrameworkRuntimeRecipeKernelRecipe = defineRuntimeRecipe<
+  FrameworkRuntimeRecipeKernelInput,
+  FrameworkRuntimeRecipeKernelOutput,
+  never,
+  FrameworkRuntimeRecipeKernel
+>({
+  id: frameworkRuntimeRecipeKernelRecipeId,
+  projectId: "framework-runtime",
+  title: "Run Recipe planner, runner, health, repair, and receipt kernel",
+  inputSchema: FrameworkRuntimeRecipeKernelInput,
+  outputSchema: FrameworkRuntimeRecipeKernelOutput,
+  nxTarget: "framework-runtime:test",
+  allowedFiles: [frameworkRuntimeRecipeKernelSourcePath],
+  validationEvidence: ["framework-runtime:test", "framework-runtime:typecheck"],
+  io: {
+    inputSchema: FrameworkRuntimeRecipeKernelInput,
+    outputSchema: FrameworkRuntimeRecipeKernelOutput,
+    inputResources: [FrameworkRuntimeRecipeKernelResource],
+    outputResources: [FrameworkRuntimeRecipeKernelResource],
+  },
+  handler: FrameworkRuntimeRecipeKernelHandler,
+  alchemyDag: [{
+    fromRecipeId: frameworkRuntimeRecipeKernelRecipeId,
+    toRecipeId: recipeReceiptStoreSnapshotRecipeId,
+    resource: FrameworkRuntimeRecipeKernelResource,
+    kind: "projects",
+    modes: ["read", "project", "check"],
+  }],
+})
+
+export const FrameworkRuntimeRecipeKernelRecipes = [
+  FrameworkRuntimeRecipeKernelRecipe,
+] as const

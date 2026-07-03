@@ -1,6 +1,15 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+
 import type {
   ActivityFilter,
   ActivityItem,
+  ActivityRisk,
   AttuneRoute,
   FoldkitDocument,
   FoldkitMdxBlock,
@@ -11,6 +20,41 @@ import type {
   WorkThread,
   WorkThreadStatus,
 } from "./schema.js"
+import {
+  FoldKitActivityRecipeId,
+  FoldKitAppMdxFixtureRecipeId,
+  FoldKitPackageSourceResource,
+  FoldKitProjectId,
+  FoldKitRecipeReport,
+  FoldKitReceiptReportRecipeId,
+  FoldKitSchemaCatalogResource,
+  FoldKitSourceAddress,
+  FoldKitSourceReport,
+  FoldKitTestTarget,
+  FoldKitTypecheckTarget,
+  RecipeReceiptReportInput,
+  foldKitSourceReport,
+} from "./schema.js"
+
+const activityRisk = {
+  low: "low",
+  medium: "medium",
+  safetyCritical: "safety-critical",
+} as const satisfies Record<string, ActivityRisk>
+
+const activityTag = {
+  agentWorkbench: "agent-workbench",
+  axiom: "axiom",
+  codexAppServer: "codex-app-server",
+  foldkitMdx: "foldkit-mdx",
+  fuzzer: "fuzzer",
+  git: "git",
+  linear: "linear",
+  liveIntegration: "live-integration",
+  openspec: "openspec",
+  planning: "planning",
+  safety: "safety",
+} as const
 
 export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
   {
@@ -24,7 +68,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
       "The product UI treats MDX as the constrained agent DSL and FoldKit as the renderer.",
     body:
       "The fixture is grounded in the v0 product pages, the imported FoldKit app, and the FoldKit package source.",
-    risk: "low",
+    risk: activityRisk.low,
     requiresHuman: false,
     agent: "Codex",
     refs: [
@@ -39,7 +83,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
         href: "https://linear.app/searchbench/issue/SEA-204",
       },
     ],
-    tags: ["foldkit-mdx", "openspec"],
+    tags: [activityTag.foldkitMdx, activityTag.openspec],
     sourceMode: "fixture",
   },
   {
@@ -53,7 +97,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
       "SEA-204 through SEA-209 track the one-week FoldKit product UI slice.",
     body:
       "The work is split into spec, compiler, Nx package, visual route migration, and live integration.",
-    risk: "low",
+    risk: activityRisk.low,
     requiresHuman: false,
     agent: "Codex",
     refs: [
@@ -63,7 +107,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
         href: "https://linear.app/searchbench/project/attune-post-infra-product-rollout-0c43acd6de83",
       },
     ],
-    tags: ["linear", "planning"],
+    tags: [activityTag.linear, activityTag.planning],
     sourceMode: "fixture",
   },
   {
@@ -77,7 +121,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
       "The autonomous workstation plan keeps joern-effect fuzzing bounded for agents and human-gated for long burns.",
     body:
       "Agents can run smoke/workbench jobs, summarize Axiom evidence, and open follow-up issues without launching unattended campaigns.",
-    risk: "medium",
+    risk: activityRisk.medium,
     requiresHuman: false,
     agent: "Codex",
     refs: [
@@ -87,7 +131,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
         href: "https://linear.app/searchbench/issue/SEA-201",
       },
     ],
-    tags: ["fuzzer", "axiom", "agent-workbench"],
+    tags: [activityTag.fuzzer, activityTag.axiom, activityTag.agentWorkbench],
     sourceMode: "fixture",
   },
   {
@@ -101,7 +145,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
       "The startup task is documented but not installed automatically; loopback binding and token handling require review.",
     body:
       "This protects the local workstation while preserving a future route to an Attune orchestrator.",
-    risk: "safety-critical",
+    risk: activityRisk.safetyCritical,
     requiresHuman: true,
     agent: "Codex",
     refs: [
@@ -111,7 +155,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
         href: "https://linear.app/searchbench/issue/SEA-203",
       },
     ],
-    tags: ["safety", "codex-app-server"],
+    tags: [activityTag.safety, activityTag.codexAppServer],
     sourceMode: "fixture",
   },
   {
@@ -125,7 +169,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
       "Fixture-mode Workbench lands first, then live projection work starts from SEA-209.",
     body:
       "The UI should show fixture-derived versus live-derived items and degrade to fixture history if connectors fail.",
-    risk: "medium",
+    risk: activityRisk.medium,
     requiresHuman: false,
     agent: "Codex",
     refs: [
@@ -135,7 +179,7 @@ export const activityFixtureItems: ReadonlyArray<ActivityItem> = [
         href: "https://linear.app/searchbench/issue/SEA-209",
       },
     ],
-    tags: ["live-integration", "linear", "git"],
+    tags: [activityTag.liveIntegration, activityTag.linear, activityTag.git],
     sourceMode: "fixture",
   },
 ]
@@ -474,3 +518,144 @@ const routeFromFrontmatter = (route: string | undefined): AttuneRoute =>
   route !== undefined && knownRoutes.has(route)
     ? (route as AttuneRoute)
     : "workbench"
+
+export const FoldKitActivitySourcePath =
+  "packages/attune/foldkit/src/activity.ts" as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitActivityReportResource = defineAlchemyResource({
+  id: "attune-foldkit.activity-projection.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: FoldKitActivityRecipeId,
+  producedBy: [FoldKitActivityRecipeId],
+  consumedBy: [FoldKitReceiptReportRecipeId],
+  addressSchema: FoldKitSourceAddress,
+  stateSchema: FoldKitSourceReport,
+  modes: ["read", "project", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitRecipeReceiptReportResource = defineAlchemyResource({
+  id: "attune-foldkit.recipe-receipts-report.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: FoldKitReceiptReportRecipeId,
+  producedBy: [FoldKitReceiptReportRecipeId],
+  consumedBy: [FoldKitAppMdxFixtureRecipeId],
+  addressSchema: RecipeReceiptReportInput,
+  stateSchema: FoldKitRecipeReport,
+  modes: ["read", "project", "observe"],
+})
+
+export const describeFoldKitActivitySurface = (): FoldKitSourceReport =>
+  foldKitSourceReport({
+    recipeId: FoldKitActivityRecipeId,
+    sourcePath: FoldKitActivitySourcePath,
+    surface:
+      "Activity fixtures, thread derivation, filters, and constrained MDX compilation",
+    exportedSymbols: [
+      "activityFixtureItems",
+      "deriveThreads",
+      "filterActivityItems",
+      "activitySummaryCounts",
+      "compileFoldkitMdx",
+      "workbenchMdx",
+    ],
+  })
+
+export const projectFoldKitRecipeReceiptReport = (
+  input: RecipeReceiptReportInput,
+): FoldKitRecipeReport => ({
+  page: compileFoldkitMdx(workbenchMdx, "fixtures/workbench.mdx"),
+  receipts: input.receipts,
+  threads: input.threads,
+})
+
+export const FoldKitActivityProjectionHandler = defineRecipeHandler<
+  FoldKitSourceAddress,
+  FoldKitSourceReport
+>({
+  id: "attune-foldkit.activity-projection.handler",
+  recipeId: FoldKitActivityRecipeId,
+  sourcePath: FoldKitActivitySourcePath,
+  exportName: "describeFoldKitActivitySurface",
+  handler: () => Effect.succeed(describeFoldKitActivitySurface()),
+  emitsReceipts: ["attune-foldkit.activity-projection.report"],
+})
+
+export const FoldKitRecipeReceiptReportHandler = defineRecipeHandler<
+  RecipeReceiptReportInput,
+  FoldKitRecipeReport
+>({
+  id: "attune-foldkit.recipe-receipts-report.handler",
+  recipeId: FoldKitReceiptReportRecipeId,
+  sourcePath: FoldKitActivitySourcePath,
+  exportName: "projectFoldKitRecipeReceiptReport",
+  handler: (input) => Effect.succeed(projectFoldKitRecipeReceiptReport(input)),
+  emitsReceipts: ["attune-foldkit.recipe-receipts-report.report"],
+})
+
+export const FoldKitActivityProjectionDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FoldKitActivityRecipeId,
+  toRecipeId: FoldKitReceiptReportRecipeId,
+  resource: FoldKitActivityReportResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+})
+
+export const FoldKitRecipeReceiptReportDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FoldKitReceiptReportRecipeId,
+  toRecipeId: FoldKitAppMdxFixtureRecipeId,
+  resource: FoldKitRecipeReceiptReportResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitActivityProjectionRecipe = defineProjectionRecipe({
+  id: FoldKitActivityRecipeId,
+  projectId: FoldKitProjectId,
+  title: "Project FoldKit activity and constrained MDX source",
+  inputSchema: FoldKitSourceAddress,
+  outputSchema: FoldKitSourceReport,
+  nxTarget: FoldKitTestTarget,
+  allowedFiles: [FoldKitActivitySourcePath],
+  validationEvidence: [FoldKitTypecheckTarget, FoldKitTestTarget],
+  io: {
+    inputSchema: FoldKitSourceAddress,
+    outputSchema: FoldKitSourceReport,
+    inputResources: [FoldKitPackageSourceResource, FoldKitSchemaCatalogResource],
+    outputResources: [FoldKitActivityReportResource],
+  },
+  handler: FoldKitActivityProjectionHandler,
+  alchemyDag: [FoldKitActivityProjectionDagEdge],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitRecipeReceiptReportRecipe = defineProjectionRecipe({
+  id: FoldKitReceiptReportRecipeId,
+  projectId: FoldKitProjectId,
+  title: "Project recipe receipts into a FoldKit report page",
+  inputSchema: RecipeReceiptReportInput,
+  outputSchema: FoldKitRecipeReport,
+  nxTarget: FoldKitTestTarget,
+  allowedFiles: [FoldKitActivitySourcePath],
+  validationEvidence: [FoldKitTypecheckTarget, FoldKitTestTarget],
+  io: {
+    inputSchema: RecipeReceiptReportInput,
+    outputSchema: FoldKitRecipeReport,
+    inputResources: [
+      FoldKitSchemaCatalogResource,
+      FoldKitActivityReportResource,
+    ],
+    outputResources: [FoldKitRecipeReceiptReportResource],
+  },
+  handler: FoldKitRecipeReceiptReportHandler,
+  alchemyDag: [FoldKitRecipeReceiptReportDagEdge],
+})
+
+export const FoldKitActivityRecipes = [
+  FoldKitActivityProjectionRecipe,
+  FoldKitRecipeReceiptReportRecipe,
+] as const

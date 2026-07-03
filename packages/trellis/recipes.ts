@@ -1,20 +1,19 @@
 import {
   RecipeDbEmissionView,
   RecipeRegistry,
+  defineAlchemyResource,
   defineRecipe,
-  type RecipeDefinition,
+  defineRecipeHandler,
+  type AnyRecipeDefinition,
 } from "@attune/framework-protocol"
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
 import { AttuneArchitectureRecipes } from "./architecture/src/recipes.js"
 import { FrameworkLanguageServiceRecipes } from "./language-service/src/recipes.js"
 import { FrameworkNxRecipes } from "./nx/src/recipes.js"
-import { FrameworkOxlintPolicyRecipes } from "./oxlint-policy/src/recipes.js"
 import { FrameworkProtocolRecipes } from "./protocol/src/recipes/index.js"
 import { FrameworkRuntimeRecipes } from "./runtime/src/recipes.js"
 import { FrameworkTestingRecipes } from "./testing/src/recipes.js"
-import { FoldKitReportRecipes } from "../attune/foldkit/src/recipes.js"
-import { AttuneNxRecipes } from "../attune/nx/src/recipes.js"
 import { AttunePiAgentRecipes } from "../attune/pi-agent/src/recipes.js"
 import { AttuneDiscoveryRecipes } from "../attune/discovery/src/index.js"
 import { CocoIndexEffectRecipes } from "../attune/cocoindex-effect/src/recipes.js"
@@ -22,18 +21,26 @@ import { CanopyManagedRecipes } from "../canopy/home-deployment/src/recipes.js"
 import { JoernFuzzerRecipes } from "../attune/joern-effect-properties/src/recipes.js"
 import { JoernProofRecipes } from "../attune/joern-effect/src/recipes.js"
 import { PlatformAlchemyK8sRecipes } from "../canopy/platform-alchemy-k8s/src/recipes.js"
-import { TendCoreRecipes } from "../tend/core/src/index.js"
-import { TendDbRecipes } from "../tend/db/src/index.js"
-import { TendLongJobRecipes } from "../tend/long-job/src/index.js"
-import { TendOpenCodeRecipes } from "../tend/opencode/src/index.js"
-import { TendPolicyRecipes } from "../tend/policies/src/index.js"
-import { TendReportRecipes } from "../tend/reporting/src/index.js"
-import { TendTokenAuditRecipes } from "../tend/token-audit/src/index.js"
+import { TendCoreRecipes } from "../tend/core/src/recipes.js"
+import { TendDbRecipes } from "../tend/db/src/recipes.js"
+import { TendLongJobRecipes } from "../tend/long-job/src/recipes.js"
+import { TendOpenCodeRecipes } from "../tend/opencode/src/recipes.js"
+import { TendPolicyRecipes } from "../tend/policies/src/recipes.js"
+import { TendReportRecipes } from "../tend/reporting/src/recipes.js"
+import { TendTokenAuditRecipes } from "../tend/token-audit/src/recipes.js"
 
-type AnyRecipe = RecipeDefinition<unknown, unknown>
+type AnyRecipe = AnyRecipeDefinition
+const workspaceRecipesSourcePath = "packages/trellis/recipes.ts" as const
+const workspaceRecipeCatalogRecipeId = "workspace.recipe-catalog" as const
+const workspaceRecipeCatalogSourceRecipeId = "workspace.recipe-catalog.source" as const
+const workspaceCleanForkPolicyRecipeId = "workspace.clean-fork-policy" as const
+const workspacePackageDbEmissionRecipeId = "workspace.package-db-emission" as const
+const attuneFoldKitWorkspaceCatalogRecipeId = "attune-foldkit.workspace-catalog" as const
+const attuneFoldKitWorkspaceCatalogSourceRecipeId = "attune-foldkit.workspace-catalog.source" as const
+const frameworkRuntimeLocalTimescaleRecipeId = "framework-runtime.local-timescaledb" as const
 
 const asRecipes = (
-  recipes: readonly RecipeDefinition[],
+  recipes: readonly AnyRecipeDefinition[],
 ): readonly AnyRecipe[] => recipes as readonly AnyRecipe[]
 
 export const WorkspaceRecipeCatalogInput = Schema.Struct({
@@ -62,46 +69,182 @@ export const WorkspacePackageDbEmissionOutput = Schema.Struct({
 export type WorkspacePackageDbEmissionOutput =
   typeof WorkspacePackageDbEmissionOutput.Type
 
+export const AttuneFoldKitWorkspaceCatalogInput = Schema.Struct({
+  packageId: Schema.Literal("attune-foldkit"),
+})
+export type AttuneFoldKitWorkspaceCatalogInput =
+  typeof AttuneFoldKitWorkspaceCatalogInput.Type
+
+export const AttuneFoldKitWorkspaceCatalogOutput = Schema.Struct({
+  packageId: Schema.Literal("attune-foldkit"),
+  packageCatalogSourcePath: Schema.String,
+  importsBrowserRuntime: Schema.Boolean,
+})
+export type AttuneFoldKitWorkspaceCatalogOutput =
+  typeof AttuneFoldKitWorkspaceCatalogOutput.Type
+
+export const AttuneFoldKitWorkspaceCatalogResource = defineAlchemyResource({
+  id: "attune-foldkit.workspace-catalog.resource",
+  kind: "package-metadata",
+  alchemyType: "attune:resource:FoldKitWorkspaceCatalog",
+  ownerRecipeId: attuneFoldKitWorkspaceCatalogRecipeId,
+  producedBy: [attuneFoldKitWorkspaceCatalogRecipeId],
+  consumedBy: [attuneFoldKitWorkspaceCatalogRecipeId],
+  addressSchema: AttuneFoldKitWorkspaceCatalogInput,
+  stateSchema: AttuneFoldKitWorkspaceCatalogOutput,
+  modes: ["read", "project", "check"],
+})
+
+export const WorkspaceRecipeCatalogResource = defineAlchemyResource({
+  id: "workspace.recipe-catalog.resource",
+  kind: "package-metadata",
+  alchemyType: "attune:resource:WorkspaceRecipeCatalog",
+  ownerRecipeId: workspaceRecipeCatalogRecipeId,
+  producedBy: [workspaceRecipeCatalogRecipeId],
+  consumedBy: [
+    workspaceRecipeCatalogRecipeId,
+    workspaceCleanForkPolicyRecipeId,
+    workspacePackageDbEmissionRecipeId,
+  ],
+  addressSchema: WorkspaceRecipeCatalogInput,
+  stateSchema: WorkspaceRecipeCatalogOutput,
+  modes: ["read", "project", "check"],
+})
+
+export const WorkspaceCleanForkPolicyResource = defineAlchemyResource({
+  id: "workspace.clean-fork-policy.resource",
+  kind: "report",
+  alchemyType: "attune:resource:WorkspaceCleanForkPolicy",
+  ownerRecipeId: workspaceCleanForkPolicyRecipeId,
+  producedBy: [workspaceCleanForkPolicyRecipeId],
+  consumedBy: [workspaceCleanForkPolicyRecipeId, workspacePackageDbEmissionRecipeId],
+  addressSchema: WorkspaceRecipeCatalogInput,
+  stateSchema: WorkspaceRecipeCatalogOutput,
+  modes: ["read", "check"],
+})
+
+export const WorkspacePackageDbEmissionResource = defineAlchemyResource({
+  id: "workspace.package-db-emission.resource",
+  kind: "report",
+  alchemyType: "attune:resource:WorkspacePackageDbEmission",
+  ownerRecipeId: workspacePackageDbEmissionRecipeId,
+  producedBy: [workspacePackageDbEmissionRecipeId],
+  consumedBy: [workspacePackageDbEmissionRecipeId],
+  addressSchema: WorkspaceRecipeCatalogInput,
+  stateSchema: WorkspacePackageDbEmissionOutput,
+  modes: ["read", "project", "check"],
+})
+
+export const WorkspaceRecipeCatalogHandler = defineRecipeHandler<
+  WorkspaceRecipeCatalogInput,
+  WorkspaceRecipeCatalogOutput
+>({
+  id: "workspace.recipe-catalog.handler",
+  recipeId: workspaceRecipeCatalogRecipeId,
+  sourcePath: workspaceRecipesSourcePath,
+  exportName: "workspaceRecipeCatalogOutput",
+  emitsReceipts: ["workspace.recipe-catalog.projected"],
+  handler: () => Effect.succeed(workspaceRecipeCatalogOutput()),
+})
+
+export const WorkspaceCleanForkPolicyHandler = defineRecipeHandler<
+  WorkspaceRecipeCatalogInput,
+  WorkspaceRecipeCatalogOutput
+>({
+  id: "workspace.clean-fork-policy.handler",
+  recipeId: workspaceCleanForkPolicyRecipeId,
+  sourcePath: workspaceRecipesSourcePath,
+  exportName: "workspaceRecipeCatalogOutput",
+  emitsReceipts: ["workspace.clean-fork-policy.checked"],
+  handler: () => Effect.succeed(workspaceRecipeCatalogOutput()),
+})
+
+export const WorkspacePackageDbEmissionHandler = defineRecipeHandler<
+  WorkspaceRecipeCatalogInput,
+  WorkspacePackageDbEmissionOutput
+>({
+  id: "workspace.package-db-emission.handler",
+  recipeId: workspacePackageDbEmissionRecipeId,
+  sourcePath: workspaceRecipesSourcePath,
+  exportName: "workspacePackageDbEmissionOutput",
+  emitsReceipts: ["workspace.package-db-emission.projected"],
+  handler: () => Effect.succeed(workspacePackageDbEmissionOutput()),
+})
+
+export const AttuneFoldKitWorkspaceCatalogHandler = defineRecipeHandler<
+  AttuneFoldKitWorkspaceCatalogInput,
+  AttuneFoldKitWorkspaceCatalogOutput
+>({
+  id: "attune-foldkit.workspace-catalog.handler",
+  recipeId: attuneFoldKitWorkspaceCatalogRecipeId,
+  sourcePath: workspaceRecipesSourcePath,
+  exportName: "attuneFoldKitWorkspaceCatalogOutput",
+  emitsReceipts: ["attune-foldkit.workspace-catalog.projected"],
+  handler: () => Effect.succeed(attuneFoldKitWorkspaceCatalogOutput()),
+})
+
 export const WorkspaceRecipes = [
   defineRecipe({
-    id: "workspace.recipe-catalog",
+    id: workspaceRecipeCatalogRecipeId,
     projectId: "workspace",
     title: "Aggregate active package recipe declarations",
     inputSchema: WorkspaceRecipeCatalogInput,
     outputSchema: WorkspaceRecipeCatalogOutput,
     nxTarget: "workspace:policy-fast",
-    sourcePath: "packages/trellis/recipes.ts",
+    sourcePath: workspaceRecipesSourcePath,
     allowedFiles: ["packages/**"],
     validationEvidence: ["attune-architecture:test", "workspace:policy-fast"],
+    io: {
+      inputSchema: WorkspaceRecipeCatalogInput,
+      outputSchema: WorkspaceRecipeCatalogOutput,
+      inputResources: [WorkspaceRecipeCatalogResource],
+      outputResources: [WorkspaceRecipeCatalogResource],
+    },
+    handler: WorkspaceRecipeCatalogHandler,
+    alchemyDag: [{
+      fromRecipeId: workspaceRecipeCatalogSourceRecipeId,
+      toRecipeId: workspaceRecipeCatalogRecipeId,
+      resource: WorkspaceRecipeCatalogResource,
+      kind: "projects",
+      modes: ["read", "project", "check"],
+    }],
   }),
   defineRecipe({
-    id: "workspace.clean-fork-policy",
+    id: workspaceCleanForkPolicyRecipeId,
     projectId: "workspace",
     title: "Enforce clean-fork recipe substrate migration policy",
     inputSchema: WorkspaceRecipeCatalogInput,
     outputSchema: WorkspaceRecipeCatalogOutput,
-    dependencies: [{ recipeId: "workspace.recipe-catalog" }],
     nxTarget: "workspace:framework-policy-check",
-    sourcePath: "packages/trellis/recipes.ts",
+    sourcePath: workspaceRecipesSourcePath,
     allowedFiles: [
       "openspec/changes/arbor-recipe-substrate-migration/**",
       "packages/**",
     ],
     validationEvidence: ["openspec validate arbor-recipe-substrate-migration --strict", "workspace:policy-fast"],
+    io: {
+      inputSchema: WorkspaceRecipeCatalogInput,
+      outputSchema: WorkspaceRecipeCatalogOutput,
+      inputResources: [WorkspaceRecipeCatalogResource],
+      outputResources: [WorkspaceCleanForkPolicyResource],
+    },
+    handler: WorkspaceCleanForkPolicyHandler,
+    alchemyDag: [{
+      fromRecipeId: workspaceCleanForkPolicyRecipeId,
+      toRecipeId: workspaceRecipeCatalogRecipeId,
+      resource: WorkspaceRecipeCatalogResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }],
   }),
   defineRecipe({
-    id: "workspace.package-db-emission",
+    id: workspacePackageDbEmissionRecipeId,
     projectId: "workspace",
     title: "Project every active package recipe into the generic TimescaleDB/Postgres spine",
     inputSchema: WorkspaceRecipeCatalogInput,
     outputSchema: WorkspacePackageDbEmissionOutput,
-    dependencies: [
-      { recipeId: "workspace.recipe-catalog" },
-      { recipeId: "framework-runtime.receipt-store" },
-      { recipeId: "framework-runtime.local-timescaledb" },
-    ],
     nxTarget: "workspace:policy-fast",
-    sourcePath: "packages/trellis/recipes.ts",
+    sourcePath: workspaceRecipesSourcePath,
     allowedFiles: [
       "packages/trellis/recipes.ts",
       "packages/trellis/protocol/**",
@@ -113,6 +256,61 @@ export const WorkspaceRecipes = [
       "framework-runtime:test",
       "workspace:policy-fast",
     ],
+    io: {
+      inputSchema: WorkspaceRecipeCatalogInput,
+      outputSchema: WorkspacePackageDbEmissionOutput,
+      inputResources: [WorkspaceRecipeCatalogResource],
+      outputResources: [WorkspacePackageDbEmissionResource],
+    },
+    handler: WorkspacePackageDbEmissionHandler,
+    alchemyDag: [
+      {
+        fromRecipeId: workspacePackageDbEmissionRecipeId,
+        toRecipeId: workspaceRecipeCatalogRecipeId,
+        resource: WorkspaceRecipeCatalogResource,
+        kind: "projects",
+        modes: ["read", "project", "check"],
+      },
+      {
+        fromRecipeId: workspacePackageDbEmissionRecipeId,
+        toRecipeId: frameworkRuntimeLocalTimescaleRecipeId,
+        resource: "framework-runtime.local-timescaledb.resource",
+        kind: "projects",
+        modes: ["read", "project", "check"],
+      },
+    ],
+  }),
+] as const
+
+export const AttuneFoldKitWorkspaceRecipes = [
+  defineRecipe({
+    id: attuneFoldKitWorkspaceCatalogRecipeId,
+    projectId: "attune-foldkit",
+    title: "Register FoldKit package recipe catalog without importing browser runtime modules",
+    inputSchema: AttuneFoldKitWorkspaceCatalogInput,
+    outputSchema: AttuneFoldKitWorkspaceCatalogOutput,
+    nxTarget: "attune-foldkit:check",
+    sourcePath: workspaceRecipesSourcePath,
+    allowedFiles: [
+      "packages/trellis/recipes.ts",
+      "packages/attune/foldkit/src/recipes.ts",
+      "packages/attune/foldkit/src/**",
+    ],
+    validationEvidence: ["attune-foldkit:typecheck", "attune-foldkit:test"],
+    io: {
+      inputSchema: AttuneFoldKitWorkspaceCatalogInput,
+      outputSchema: AttuneFoldKitWorkspaceCatalogOutput,
+      inputResources: [AttuneFoldKitWorkspaceCatalogResource],
+      outputResources: [AttuneFoldKitWorkspaceCatalogResource],
+    },
+    handler: AttuneFoldKitWorkspaceCatalogHandler,
+    alchemyDag: [{
+      fromRecipeId: attuneFoldKitWorkspaceCatalogSourceRecipeId,
+      toRecipeId: attuneFoldKitWorkspaceCatalogRecipeId,
+      resource: AttuneFoldKitWorkspaceCatalogResource,
+      kind: "projects",
+      modes: ["read", "project", "check"],
+    }],
   }),
 ] as const
 
@@ -121,12 +319,10 @@ export const WorkspacePackageRecipeCatalog = [
   { projectId: "attune-architecture", recipes: asRecipes(AttuneArchitectureRecipes) },
   { projectId: "framework-language-service", recipes: asRecipes(FrameworkLanguageServiceRecipes) },
   { projectId: "framework-nx", recipes: asRecipes(FrameworkNxRecipes) },
-  { projectId: "effect-oxlint-policy", recipes: asRecipes(FrameworkOxlintPolicyRecipes) },
   { projectId: "framework-protocol", recipes: asRecipes(FrameworkProtocolRecipes) },
   { projectId: "framework-runtime", recipes: asRecipes(FrameworkRuntimeRecipes) },
   { projectId: "framework-testing", recipes: asRecipes(FrameworkTestingRecipes) },
-  { projectId: "attune-foldkit", recipes: asRecipes(FoldKitReportRecipes) },
-  { projectId: "attune-nx", recipes: asRecipes(AttuneNxRecipes) },
+  { projectId: "attune-foldkit", recipes: asRecipes(AttuneFoldKitWorkspaceRecipes) },
   { projectId: "attune-pi-agent", recipes: asRecipes(AttunePiAgentRecipes) },
   { projectId: "attuned-discovery", recipes: asRecipes(AttuneDiscoveryRecipes) },
   { projectId: "cocoindex-effect", recipes: asRecipes(CocoIndexEffectRecipes) },
@@ -170,3 +366,9 @@ export const workspacePackageDbEmissionOutput = (): WorkspacePackageDbEmissionOu
     dbSpine: "generic-timescaledb-postgres-recipe-spine",
   }
 }
+
+export const attuneFoldKitWorkspaceCatalogOutput = (): AttuneFoldKitWorkspaceCatalogOutput => ({
+  packageId: "attune-foldkit",
+  packageCatalogSourcePath: "packages/attune/foldkit/src/recipes.ts",
+  importsBrowserRuntime: false,
+})

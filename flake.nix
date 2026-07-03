@@ -275,7 +275,7 @@
                 inherit (finalAttrs) pname version src;
                 pnpm = final.pnpm_10;
                 fetcherVersion = 3;
-                hash = "sha256-GOXt4Qu41VHpR//SH1uU9wf/QXPfKwe8rwVGUltnoCk=";
+                hash = "sha256-cqbftc8Qz3p1BChoQDKb1P0WEtLY46Pt4c1IO71+e8w=";
               };
 
               nativeBuildInputs = [
@@ -307,6 +307,38 @@
                 if [ -f node_modules/.modules.yaml ]; then
                   cp node_modules/.modules.yaml "$workspace/node_modules/.modules.yaml"
                 fi
+                node - "$workspace" <<'NODE'
+                const fs = require("fs")
+                const path = require("path")
+
+                const workspace = process.argv[2]
+                const pnpmStore = path.join(workspace, "node_modules", ".pnpm")
+                const packageJsonPath = fs
+                  .readdirSync(pnpmStore)
+                  .filter((entry) => entry.startsWith("@alchemy.run+node-utils@"))
+                  .map((entry) =>
+                    path.join(
+                      pnpmStore,
+                      entry,
+                      "node_modules",
+                      "@alchemy.run",
+                      "node-utils",
+                      "package.json",
+                    )
+                  )
+                  .find((candidate) => fs.existsSync(candidate))
+
+                if (packageJsonPath) {
+                  const manifest = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
+                  if (manifest.type !== "module") {
+                    manifest.type = "module"
+                    fs.writeFileSync(
+                      packageJsonPath,
+                      JSON.stringify(manifest, null, 2) + "\n",
+                    )
+                  }
+                }
+                NODE
                 mkdir -p "$configDir/commands" "$configDir/plugins" "$configDir/skills"
                 cp packages/tend/opencode/opencode-config/commands/*.md "$configDir/commands/"
                 cp packages/tend/opencode/opencode-config/plugins/*.js "$configDir/plugins/"

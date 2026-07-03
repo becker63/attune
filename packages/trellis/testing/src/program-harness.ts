@@ -1,4 +1,8 @@
 import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineObservationRecipe,
+  defineRecipeHandler,
   ProgramObservationSchema,
   type ProgramObservation,
 } from "@attune/framework-protocol"
@@ -17,7 +21,7 @@ import {
   type InputOf,
   type OutputOf,
 } from "../../protocol/src/project-facts/index.js"
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
 import {
   atomMovementEvidence,
@@ -47,6 +51,13 @@ import {
   ReplayMetadataSchema,
   type ReplayMetadata,
 } from "./replay-metadata.js"
+import {
+  FrameworkTestingHarnessInput,
+  FrameworkTestingObservationOutput,
+  FrameworkTestingProjectId,
+  FrameworkTestingTestTarget,
+  FrameworkTestingTypecheckTarget,
+} from "./recipe-contracts.js"
 import type { WorkerEvidenceMetadata } from "./worker-metadata.js"
 
 export type ProgramHarnessContract = Parameters<typeof defineProgramObservationRpcGroup>[0]
@@ -769,3 +780,81 @@ export const programHarnessControlIds: readonly ProgramObservationRpcControlId[]
 
 export type ProgramHarnessProtocolId<Contract extends ProgramHarnessContract> =
   `attune/project/${ProjectIdOf<Contract>}`
+
+export const FrameworkTestingProgramHarnessRecipeId = "framework-testing.program-harness-observations" as const
+export const FrameworkTestingProgramHarnessSourcePath = "packages/trellis/testing/src/program-harness.ts" as const
+
+export const describeFrameworkTestingProgramHarness = (
+  input: FrameworkTestingHarnessInput,
+): FrameworkTestingObservationOutput => ({
+  observationCount: input.symbolIds.length * 3,
+  coveragePointCount: input.symbolIds.length,
+  replayMetadataCount: input.symbolIds.length,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingProgramHarnessInputResource = defineAlchemyResource({
+  id: "framework-testing.program-harness.input",
+  kind: "schema",
+  alchemyType: "attune:resource:FrameworkTestingHarnessInput",
+  addressSchema: FrameworkTestingHarnessInput,
+  stateSchema: FrameworkTestingHarnessInput,
+  modes: ["read"],
+  consumedBy: [FrameworkTestingProgramHarnessRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingProgramHarnessObservationResource = defineAlchemyResource({
+  id: "framework-testing.program-harness.observations",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:FrameworkTestingHarnessObservations",
+  addressSchema: FrameworkTestingHarnessInput,
+  stateSchema: FrameworkTestingObservationOutput,
+  modes: ["observe", "read"],
+  ownerRecipeId: FrameworkTestingProgramHarnessRecipeId,
+  producedBy: [FrameworkTestingProgramHarnessRecipeId],
+})
+
+export const FrameworkTestingProgramHarnessHandler = defineRecipeHandler<
+  FrameworkTestingHarnessInput,
+  FrameworkTestingObservationOutput,
+  never,
+  never
+>({
+  id: "framework-testing.program-harness-observations.handler",
+  recipeId: FrameworkTestingProgramHarnessRecipeId,
+  sourcePath: FrameworkTestingProgramHarnessSourcePath,
+  exportName: "describeFrameworkTestingProgramHarness",
+  emitsReceipts: ["framework-testing.program-harness.observations"],
+  handler: (input) => Effect.succeed(describeFrameworkTestingProgramHarness(input)),
+})
+
+export const FrameworkTestingProgramHarnessDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "framework-testing.program-harness.input",
+  toRecipeId: FrameworkTestingProgramHarnessRecipeId,
+  resource: FrameworkTestingProgramHarnessObservationResource,
+  kind: "observes",
+  modes: ["read", "observe"],
+  validationTargets: [FrameworkTestingTestTarget],
+})
+
+export const FrameworkTestingProgramHarnessRecipes = [
+  defineObservationRecipe({
+    id: FrameworkTestingProgramHarnessRecipeId,
+    projectId: FrameworkTestingProjectId,
+    title: "Produce program harness observations",
+    inputSchema: FrameworkTestingHarnessInput,
+    outputSchema: FrameworkTestingObservationOutput,
+    io: {
+      inputSchema: FrameworkTestingHarnessInput,
+      outputSchema: FrameworkTestingObservationOutput,
+      inputResources: [FrameworkTestingProgramHarnessInputResource],
+      outputResources: [FrameworkTestingProgramHarnessObservationResource],
+    },
+    handler: FrameworkTestingProgramHarnessHandler,
+    alchemyDag: [FrameworkTestingProgramHarnessDagEdge],
+    nxTarget: FrameworkTestingTestTarget,
+    allowedFiles: [FrameworkTestingProgramHarnessSourcePath],
+    validationEvidence: [FrameworkTestingTestTarget, FrameworkTestingTypecheckTarget],
+  }),
+] as const

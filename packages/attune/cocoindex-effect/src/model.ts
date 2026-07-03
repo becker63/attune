@@ -1,5 +1,21 @@
 import { createHash } from "node:crypto"
-import { Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
+export const CocoIndexSourceSurfaceRecipeId =
+  "cocoindex-effect.source-surface" as const
+export const CocoIndexSearchAnchorsRecipeId =
+  "cocoindex-effect.search-anchors" as const
+const CocoIndexRawHitResourceId = "cocoindex-effect.raw-hit-stream" as const
+const CocoIndexAnchorCardResourceId = "cocoindex-effect.anchor-card-report" as const
+const CocoIndexAnchorNormalizationHandlerId =
+  "cocoindex-effect.source-surface.handler" as const
+const CocoIndexModelSourcePath =
+  "packages/attune/cocoindex-effect/src/model.ts" as const
 
 export const SourceLocation = Schema.Struct({
   path: Schema.String,
@@ -102,6 +118,44 @@ export const CocoIndexCommandEnvelope = Schema.Struct({
 })
 export type CocoIndexCommandEnvelope = typeof CocoIndexCommandEnvelope.Type
 
+export const CocoIndexNormalizeAnchorsInput = Schema.Struct({
+  request: SearchAnchorsRequest,
+  hits: Schema.Array(RawCocoIndexHit),
+})
+export type CocoIndexNormalizeAnchorsInput =
+  typeof CocoIndexNormalizeAnchorsInput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CocoIndexRawHitResource = defineAlchemyResource({
+  id: CocoIndexRawHitResourceId,
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ObservationStream",
+  ownerRecipeId: CocoIndexSourceSurfaceRecipeId,
+  consumedBy: [CocoIndexSourceSurfaceRecipeId],
+  addressFields: ["request.repoSnapshotId", "request.runId", "request.query"],
+  addressSchema: CocoIndexNormalizeAnchorsInput,
+  stateSchema: Schema.Array(RawCocoIndexHit),
+  modes: ["read", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CocoIndexAnchorCardResource = defineAlchemyResource({
+  id: CocoIndexAnchorCardResourceId,
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: CocoIndexSourceSurfaceRecipeId,
+  producedBy: [
+    CocoIndexSourceSurfaceRecipeId,
+    CocoIndexSearchAnchorsRecipeId,
+    "cocoindex-effect.search-similar-anchors",
+  ],
+  consumedBy: ["cocoindex-effect.search-similar-anchors"],
+  addressFields: ["request.repoSnapshotId", "request.runId"],
+  addressSchema: SearchAnchorsRequest,
+  stateSchema: Schema.Array(AnchorCard),
+  modes: ["project", "read", "observe"],
+})
+
 export const normalizeCocoIndexHit = (
   hit: RawCocoIndexHit,
   request: Pick<SearchAnchorsRequest, "repoSnapshotId" | "runId" | "query">,
@@ -196,3 +250,43 @@ const firstNonEmpty = (
 ): string => values.find((value) => value !== undefined && value.trim().length > 0)?.trim() ?? ""
 
 const clampScore = (score: number): number => Math.max(0, Math.min(1, score))
+
+export const CocoIndexAnchorNormalizationHandler = defineRecipeHandler<
+  CocoIndexNormalizeAnchorsInput,
+  ReadonlyArray<AnchorCard>
+>({
+  id: CocoIndexAnchorNormalizationHandlerId,
+  recipeId: CocoIndexSourceSurfaceRecipeId,
+  sourcePath: CocoIndexModelSourcePath,
+  exportName: "normalizeCocoIndexHits",
+  handler: (input) =>
+    Effect.succeed(normalizeCocoIndexHits(input.hits, input.request)),
+  emitsReceipts: ["cocoindex-effect.anchor-card-report"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const cocoIndexSourceSurfaceRecipe = defineProjectionRecipe({
+  id: CocoIndexSourceSurfaceRecipeId,
+  projectId: "cocoindex-effect",
+  title: "Normalize raw CocoIndex hits into AnchorCards",
+  inputSchema: CocoIndexNormalizeAnchorsInput,
+  outputSchema: Schema.Array(AnchorCard),
+  allowedFiles: [CocoIndexModelSourcePath],
+  validationEvidence: ["cocoindex-effect:test", "cocoindex-effect:typecheck"],
+  io: {
+    inputSchema: CocoIndexNormalizeAnchorsInput,
+    outputSchema: Schema.Array(AnchorCard),
+    inputResources: [CocoIndexRawHitResource],
+    outputResources: [CocoIndexAnchorCardResource],
+  },
+  handler: CocoIndexAnchorNormalizationHandler,
+  alchemyDag: [{
+    fromRecipeId: CocoIndexSourceSurfaceRecipeId,
+    toRecipeId: CocoIndexSearchAnchorsRecipeId,
+    resource: CocoIndexAnchorCardResource,
+    kind: "projects",
+    modes: ["project", "observe"],
+  }],
+})
+
+export const CocoIndexModelRecipes = [cocoIndexSourceSurfaceRecipe] as const

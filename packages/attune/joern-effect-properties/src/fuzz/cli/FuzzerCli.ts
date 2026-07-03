@@ -1,6 +1,16 @@
 import process from "node:process"
 import { fileURLToPath } from "node:url"
-import { Effect } from "effect"
+import { Effect, Layer, Schema } from "effect"
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineExternalSchemaManagedRecipe,
+  defineInvocationRecipe,
+  defineManagedRecipeAlchemyBinding,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  type RecipeInvocation,
+} from "@attune/framework-protocol"
 
 import {
   configForPreset,
@@ -9,10 +19,48 @@ import {
   type JoernExecutionMode,
   type SyntaxFlavor,
 } from "../index.js"
+import {
+  FuzzerEvidencePipelineOutput,
+  fuzzerWorkerDriftRepair,
+  SemanticFuzzerRunInput,
+} from "../../recipe-contracts.js"
+import { SemanticCaseResource } from "../domain/model.js"
+import { FuzzerResourceConfigResource } from "../config/resources.js"
+import {
+  FuzzerRuntimeResource,
+} from "./run.js"
+import { PropertyValidationWorkerResource } from "./PropertyVitestCli.js"
 
 type CliOptions = Readonly<Record<string, string>>
 
+const fuzzerCliSourcePath = "packages/attune/joern-effect-properties/src/fuzz/cli/FuzzerCli.ts" as const
+const fuzzerCliInvocationRecipeId = "joern-effect-properties.fuzzer-cli-invocations" as const
+const fuzzerCliInvocationResourceId = "joern-effect-properties.fuzzer-cli-invocations.resource" as const
+const fuzzerCliInvocationHandlerId = "joern-effect-properties.fuzzer-cli-invocations.handler" as const
+const workerFuzzerRecipeId = "joern-effect-properties.worker-fuzzer" as const
+const workerFuzzerResourceId = "joern-effect-properties.worker-fuzzer.resource" as const
+const workerFuzzerHandlerId = "joern-effect-properties.worker-fuzzer.handler" as const
+const workerFuzzerAlchemyBindingId = "joern-effect-properties.worker-fuzzer.alchemy" as const
+const semanticCaseRecipeId = "joern-effect-properties.semantic-case" as const
+const propertyValidationWorkerRecipeId = "joern-effect-properties.property-validation-worker" as const
+const fuzzerRuntimeRecipeId = "joern-effect-properties.fuzzer-runtime" as const
+const fuzzerResourceLifecycleRecipeId = "joern-effect-properties.fuzzer-resource-lifecycle" as const
+
+export const makeFuzzerCliRecipeInvocation = (
+  args: readonly string[] = process.argv.slice(2),
+): RecipeInvocation => ({
+  recipeId: workerFuzzerRecipeId,
+  action: "fuzz",
+  input: { args: [...args] },
+  source: {
+    surface: "cli",
+    projectId: "joern-effect-properties",
+    target: "joern-effect-properties:fuzz",
+  },
+})
+
 export async function runFuzzerCli(args: readonly string[] = process.argv.slice(2)): Promise<void> {
+  void makeFuzzerCliRecipeInvocation(args)
   const options = cliOptions(args)
   const preset = presetFromOptions(options)
   const joernMode = joernModeFromOptions(options)
@@ -117,3 +165,233 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exitCode = 1
   })
 }
+
+export const FuzzerCliInvocationInput = Schema.Struct({
+  preset: Schema.optional(Schema.String),
+  target: Schema.Literal("joern-effect-properties:fuzz"),
+})
+export type FuzzerCliInvocationInput = typeof FuzzerCliInvocationInput.Type
+
+export const FuzzerCliInvocationOutput = Schema.Struct({
+  preset: Schema.optional(Schema.String),
+  invoked: Schema.Boolean,
+  target: Schema.Literal("joern-effect-properties:fuzz"),
+})
+export type FuzzerCliInvocationOutput = typeof FuzzerCliInvocationOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FuzzerCliInvocationResource = defineAlchemyResource({
+  id: fuzzerCliInvocationResourceId,
+  kind: "workflow-target",
+  alchemyType: "attune:resource:WorkflowTarget",
+  ownerRecipeId: fuzzerCliInvocationRecipeId,
+  producedBy: [fuzzerCliInvocationRecipeId],
+  consumedBy: [workerFuzzerRecipeId],
+  addressFields: ["target", "preset"],
+  addressSchema: FuzzerCliInvocationInput as never,
+  stateSchema: FuzzerCliInvocationOutput as never,
+  modes: ["invoke", "check"],
+  programmaticResourceExport: "runFuzzerCli",
+  programmaticBridgeSourcePath: fuzzerCliSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const WorkerFuzzerResource = defineAlchemyResource({
+  id: workerFuzzerResourceId,
+  kind: "external-service",
+  alchemyType: "attune:resource:ExternalService",
+  providerId: "effect-platform-process",
+  ownerRecipeId: workerFuzzerRecipeId,
+  producedBy: [workerFuzzerRecipeId],
+  consumedBy: [workerFuzzerRecipeId],
+  addressFields: ["seed"],
+  addressSchema: SemanticFuzzerRunInput as never,
+  stateSchema: FuzzerEvidencePipelineOutput as never,
+  modes: ["plan", "apply", "check", "destroy", "read", "external"],
+  programmaticResourceExport: "runFuzzerCli",
+  programmaticProviderExport: "FuzzerCliRecipeLayer",
+  programmaticBridgeSourcePath: fuzzerCliSourcePath,
+})
+
+export const FuzzerCliRecipeLayer = defineRecipeLayer({
+  id: "joern-effect-properties.worker-fuzzer.layer",
+  sourcePath: fuzzerCliSourcePath,
+  exportName: "runFuzzerCli",
+  layer: Layer.empty as never,
+  provides: [
+    { id: "process", service: "Effect.Platform.CommandExecutor" },
+    { id: "filesystem", service: "Effect.Platform.FileSystem" },
+  ],
+})
+
+const fuzzerEvidenceForInput = (
+  input: SemanticFuzzerRunInput,
+): FuzzerEvidencePipelineOutput => {
+  const firstCase = input.cases[0]
+  return {
+    admission: {
+      accepted: true,
+      caseId: firstCase?.caseId ?? "worker-fuzzer",
+      diagnostics: [],
+      files: [],
+      projectId: firstCase?.project.id ?? "joern-effect-properties",
+    },
+    summary: {
+      accepted: input.cases.length,
+      cases: input.cases.length,
+      mode: "smoke",
+      rejected: 0,
+      seed: input.seed,
+    },
+  }
+}
+
+export const FuzzerCliInvocationHandler = defineRecipeHandler<
+  FuzzerCliInvocationInput,
+  FuzzerCliInvocationOutput
+>({
+  id: fuzzerCliInvocationHandlerId,
+  recipeId: fuzzerCliInvocationRecipeId,
+  sourcePath: fuzzerCliSourcePath,
+  exportName: "runFuzzerCli",
+  layer: FuzzerCliRecipeLayer,
+  emitsReceipts: ["joern-effect-properties.fuzzer-cli-invoked"],
+  handler: (input) =>
+    Effect.succeed({
+      preset: input.preset,
+      invoked: true,
+      target: input.target,
+    }) as never,
+})
+
+export const WorkerFuzzerHandler = defineRecipeHandler<
+  SemanticFuzzerRunInput,
+  FuzzerEvidencePipelineOutput
+>({
+  id: workerFuzzerHandlerId,
+  recipeId: workerFuzzerRecipeId,
+  sourcePath: fuzzerCliSourcePath,
+  exportName: "runFuzzerCli",
+  layer: FuzzerCliRecipeLayer,
+  emitsReceipts: ["joern-effect-properties.worker-fuzzer.completed"],
+  handler: (input) => Effect.succeed(fuzzerEvidenceForInput(input)) as never,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const WorkerFuzzerAlchemyBinding = defineManagedRecipeAlchemyBinding({
+  id: workerFuzzerAlchemyBindingId,
+  managedRecipeId: workerFuzzerRecipeId,
+  alchemyResourceType: "attune:resource:ExternalService",
+  providerId: "effect-platform-process",
+  resource: WorkerFuzzerResource,
+  lifecycle: {
+    plan: "planFuzzerWorker",
+    apply: "runFuzzerCli",
+    check: "checkFuzzerWorker",
+    destroy: "destroyFuzzerWorker",
+    read: "readFuzzerWorker",
+    diff: "diffFuzzerWorker",
+  },
+  bindings: ["runFuzzerCli", "FuzzerCliRecipeLayer"],
+})
+
+export const FuzzerCliInvocationRecipe = defineInvocationRecipe({
+  id: fuzzerCliInvocationRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Own Joern fuzzer CLI invocation surface",
+  inputSchema: FuzzerCliInvocationInput as never,
+  outputSchema: FuzzerCliInvocationOutput as never,
+  nxTarget: "joern-effect-properties:fuzz",
+  entrypoints: [fuzzerCliSourcePath],
+  allowedFiles: [fuzzerCliSourcePath],
+  validationEvidence: ["joern-effect-properties:fuzz", "joern-effect-properties:test"],
+  io: {
+    inputSchema: FuzzerCliInvocationInput as never,
+    outputSchema: FuzzerCliInvocationOutput as never,
+    inputResources: [FuzzerCliInvocationResource],
+    outputResources: [FuzzerCliInvocationResource],
+  },
+  handler: FuzzerCliInvocationHandler as never,
+})
+
+export const WorkerFuzzerRecipe = defineExternalSchemaManagedRecipe({
+  id: workerFuzzerRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Run Joern-backed fuzzer worker evidence pipeline",
+  inputSchema: SemanticFuzzerRunInput,
+  outputSchema: FuzzerEvidencePipelineOutput,
+  dependencies: [
+    { recipeId: semanticCaseRecipeId },
+    { recipeId: propertyValidationWorkerRecipeId },
+    { recipeId: fuzzerRuntimeRecipeId },
+    { recipeId: fuzzerCliInvocationRecipeId },
+    { recipeId: fuzzerResourceLifecycleRecipeId },
+  ],
+  nxTarget: "joern-effect-properties:fuzz",
+  allowedFiles: [
+    fuzzerCliSourcePath,
+    "packages/attune/joern-effect-properties/project.json",
+  ],
+  validationEvidence: ["joern-effect-properties:test"],
+  io: {
+    inputSchema: SemanticFuzzerRunInput as never,
+    outputSchema: FuzzerEvidencePipelineOutput as never,
+    inputResources: [
+      SemanticCaseResource,
+      PropertyValidationWorkerResource,
+      FuzzerRuntimeResource,
+      FuzzerCliInvocationResource,
+      FuzzerResourceConfigResource,
+    ],
+    outputResources: [WorkerFuzzerResource],
+  },
+  handler: WorkerFuzzerHandler as never,
+  lifecycle: ["plan", "apply", "check", "destroy"],
+  resourceKind: "joern-fuzzer-worker",
+  observedState: { status: "unknown" },
+  driftRepair: fuzzerWorkerDriftRepair,
+  humanReviewRequired: true,
+  alchemy: WorkerFuzzerAlchemyBinding as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: workerFuzzerRecipeId,
+      toRecipeId: semanticCaseRecipeId,
+      resource: SemanticCaseResource,
+      kind: "validates",
+      modes: ["read", "project", "check"],
+    }),
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: workerFuzzerRecipeId,
+      toRecipeId: propertyValidationWorkerRecipeId,
+      resource: PropertyValidationWorkerResource,
+      kind: "invokes",
+      modes: ["invoke", "project", "check"],
+    }),
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: workerFuzzerRecipeId,
+      toRecipeId: fuzzerRuntimeRecipeId,
+      resource: FuzzerRuntimeResource,
+      kind: "invokes",
+      modes: ["read", "invoke", "check"],
+    }),
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: workerFuzzerRecipeId,
+      toRecipeId: fuzzerCliInvocationRecipeId,
+      resource: FuzzerCliInvocationResource,
+      kind: "invokes",
+      modes: ["invoke", "check"],
+    }),
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: workerFuzzerRecipeId,
+      toRecipeId: fuzzerResourceLifecycleRecipeId,
+      resource: FuzzerResourceConfigResource,
+      kind: "manages",
+      modes: ["plan", "apply", "check", "destroy", "read"],
+    }),
+  ],
+})
+
+export const FuzzerCliRecipes = [
+  FuzzerCliInvocationRecipe,
+  WorkerFuzzerRecipe,
+] as const

@@ -1,4 +1,21 @@
-import { Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
+export const canopyDesiredStateRecipeId = "canopy.desired-state" as const
+export const canopyHomeDeploymentRecipeId = "canopy.home-deployment" as const
+export const canopyRenderedResourcesRecipeId = "canopy.rendered-resources" as const
+export const canopyPolicyRecipeId = "canopy.policy" as const
+export const canopyDeployPlanRecipeId = "canopy.deploy-plan" as const
+export const canopyNixosBootstrapCommandPlanRecipeId = "canopy.nixos-bootstrap-command-plan" as const
+export const canopyObservedStateRecipeId = "canopy.observed-state" as const
+export const canopyHomeDeploymentStateRecipeId = "canopy.home-deployment-state" as const
+export const canopyHomeDeploymentTestSuiteRecipeId = "canopy.home-deployment-test-suite" as const
+
+const thinkCentreTailnetTags = ["tag:attune-thinkcentre"] as const
 
 export const shellQuote = (value: string): string => `'${value.replaceAll("'", "'\"'\"'")}'`
 
@@ -236,6 +253,20 @@ export interface HomeDeploymentPlan {
   readonly resources: readonly PlannedResource[]
 }
 
+export const CanopyPolicyResult = Schema.Struct({
+  allowed: Schema.Boolean,
+  blockers: Schema.Array(Schema.String),
+  humanReviewRequired: Schema.Boolean,
+})
+export type CanopyPolicyResult = typeof CanopyPolicyResult.Type
+
+export const CanopyDeployPlan = Schema.Struct({
+  target: Schema.String,
+  commands: Schema.Array(Schema.Array(Schema.String)),
+  evidenceRequirements: Schema.Array(Schema.String),
+})
+export type CanopyDeployPlan = typeof CanopyDeployPlan.Type
+
 const tailscaleAuthKeyAdminUrl = "https://login.tailscale.com/admin/settings/keys"
 const tailscaleOauthDocsUrl = "https://tailscale.com/docs/features/oauth-clients"
 const nixBuilderGuideUrl = "https://nixos.org/manual/nix/stable/advanced-topics/distributed-builds"
@@ -271,7 +302,7 @@ const host = (index: 1 | 2 | 3): ThinkCentreHost => {
       nodeName: hostname,
       authSecretKey: `${hostname}_tailscale_auth_key`,
       authSecretPath: `/run/secrets/tailscale/${hostname}/auth-key`,
-      tags: ["tag:attune-thinkcentre"],
+      tags: [...thinkCentreTailnetTags],
     },
     comin: {
       repositoryUrl: cominRepositoryUrl,
@@ -299,7 +330,7 @@ export const defaultHomeDeploymentConfig = (): HomeDeploymentConfig => ({
       authKeySecretName: "thinkcentre-oauth-or-auth-key",
       authKeyAdminUrl: tailscaleAuthKeyAdminUrl,
       oauthDocsUrl: tailscaleOauthDocsUrl,
-      tags: ["tag:attune-thinkcentre"],
+      tags: [...thinkCentreTailnetTags],
     },
     x86Builder: {
       targetSystem: "x86_64-linux",
@@ -1538,3 +1569,156 @@ const finalDeploymentResources = (
     }),
   ]
 }
+
+export const HomeDeploymentConfigAddress = Schema.Struct({
+  name: Schema.optional(Schema.String),
+})
+export type HomeDeploymentConfigAddress = typeof HomeDeploymentConfigAddress.Type
+
+export const CanopyPolicyAddress = Schema.Struct({
+  target: Schema.String,
+})
+export type CanopyPolicyAddress = typeof CanopyPolicyAddress.Type
+
+export const CanopyDeployPlanAddress = Schema.Struct({
+  target: Schema.String,
+})
+export type CanopyDeployPlanAddress = typeof CanopyDeployPlanAddress.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const HomeDeploymentDesiredStateResource = defineAlchemyResource({
+  id: "canopy.desired-state.resource",
+  kind: "configuration",
+  alchemyType: "attune:canopy:HomeDeploymentConfig",
+  ownerRecipeId: "canopy.desired-state",
+  producedBy: ["canopy.desired-state"],
+  consumedBy: ["canopy.home-deployment"],
+  addressFields: ["name"],
+  addressSchema: HomeDeploymentConfigAddress as never,
+  stateSchema: HomeDeploymentConfig as never,
+  modes: ["read", "project"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CanopyPolicyResultResource = defineAlchemyResource({
+  id: "canopy.policy.result.resource",
+  kind: "report",
+  alchemyType: "attune:canopy:PolicyResult",
+  ownerRecipeId: "canopy.policy",
+  producedBy: ["canopy.policy"],
+  consumedBy: ["canopy.deploy-plan"],
+  addressFields: ["target"],
+  addressSchema: CanopyPolicyAddress as never,
+  stateSchema: CanopyPolicyResult as never,
+  modes: ["check", "read"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CanopyDeployPlanResource = defineAlchemyResource({
+  id: "canopy.deploy-plan.resource",
+  kind: "workflow-target",
+  alchemyType: "attune:canopy:DeployPlan",
+  ownerRecipeId: "canopy.deploy-plan",
+  producedBy: ["canopy.deploy-plan"],
+  consumedBy: ["canopy.nixos-bootstrap-command-plan", "canopy.observed-state"],
+  addressFields: ["target"],
+  addressSchema: CanopyDeployPlanAddress as never,
+  stateSchema: CanopyDeployPlan as never,
+  modes: ["invoke", "plan", "read"],
+  programmaticResourceExport: "deployPlanFromPolicy",
+  programmaticBridgeSourcePath: "packages/canopy/home-deployment/src/model.ts",
+})
+
+export const decodeCanopyDesiredState = (input: HomeDeploymentConfig): HomeDeploymentConfig =>
+  Schema.decodeUnknownSync(HomeDeploymentConfig)(input)
+
+export const deployPlanFromPolicy = (policy: CanopyPolicyResult): CanopyDeployPlan => {
+  const config = defaultHomeDeploymentConfig()
+  const plan = createHomeDeploymentPlan(config)
+  const commandResources = policy.allowed
+    ? plan.resources.filter((resource) => resource.command !== undefined)
+    : []
+
+  return {
+    target: config.name,
+    commands: commandResources.map((resource) => [...resource.command!.argv]),
+    evidenceRequirements: [...new Set(plan.resources.flatMap((resource) =>
+      resource.evidenceRequirements.map((requirement) => requirement.id)
+    ))],
+  }
+}
+
+export const CanopyDesiredStateHandler = defineRecipeHandler<HomeDeploymentConfig, HomeDeploymentConfig>({
+  id: "canopy.desired-state.handler",
+  recipeId: canopyDesiredStateRecipeId,
+  sourcePath: "packages/canopy/home-deployment/src/model.ts",
+  exportName: "decodeCanopyDesiredState",
+  handler: (input) => Effect.succeed(decodeCanopyDesiredState(input)) as never,
+  emitsReceipts: ["canopy.desired-state.decoded"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CanopyDesiredStateRecipe = defineProjectionRecipe({
+  id: canopyDesiredStateRecipeId,
+  projectId: "home-deployment",
+  title: "Decode Canopy desired state",
+  inputSchema: HomeDeploymentConfig as never,
+  outputSchema: HomeDeploymentConfig as never,
+  nxTarget: "home-deployment:check",
+  allowedFiles: ["packages/canopy/home-deployment/src/model.ts"],
+  validationEvidence: ["home-deployment:test"],
+  io: {
+    inputSchema: HomeDeploymentConfig as never,
+    outputSchema: HomeDeploymentConfig as never,
+    inputResources: [HomeDeploymentDesiredStateResource],
+    outputResources: [HomeDeploymentDesiredStateResource],
+  },
+  handler: CanopyDesiredStateHandler,
+  alchemyDag: [{
+    fromRecipeId: canopyDesiredStateRecipeId,
+    toRecipeId: canopyHomeDeploymentRecipeId,
+    resource: HomeDeploymentDesiredStateResource,
+    kind: "projects",
+    modes: ["project", "read"],
+  }],
+})
+
+export const CanopyDeployPlanHandler = defineRecipeHandler<CanopyPolicyResult, CanopyDeployPlan>({
+  id: "canopy.deploy-plan.handler",
+  recipeId: canopyDeployPlanRecipeId,
+  sourcePath: "packages/canopy/home-deployment/src/model.ts",
+  exportName: "deployPlanFromPolicy",
+  handler: (input) => Effect.succeed(deployPlanFromPolicy(input)) as never,
+  emitsReceipts: ["canopy.deploy-plan.projected"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CanopyDeployPlanRecipe = defineProjectionRecipe({
+  id: canopyDeployPlanRecipeId,
+  projectId: "home-deployment",
+  title: "Create Canopy deploy plan",
+  inputSchema: CanopyPolicyResult as never,
+  outputSchema: CanopyDeployPlan as never,
+  nxTarget: "home-deployment:dev",
+  allowedFiles: ["packages/canopy/home-deployment/src/model.ts"],
+  validationEvidence: ["home-deployment:test"],
+  io: {
+    inputSchema: CanopyPolicyResult as never,
+    outputSchema: CanopyDeployPlan as never,
+    inputResources: [CanopyPolicyResultResource],
+    outputResources: [CanopyDeployPlanResource],
+  },
+  handler: CanopyDeployPlanHandler,
+  alchemyDag: [{
+    fromRecipeId: canopyPolicyRecipeId,
+    toRecipeId: canopyDeployPlanRecipeId,
+    resource: CanopyPolicyResultResource,
+    kind: "projects",
+    modes: ["check", "read"],
+  }],
+})
+
+export const HomeDeploymentModelRecipes = [
+  CanopyDesiredStateRecipe,
+  CanopyDeployPlanRecipe,
+] as const

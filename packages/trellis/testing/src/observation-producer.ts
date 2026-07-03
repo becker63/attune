@@ -1,13 +1,23 @@
-import type {
-  ProgramObservation,
-} from "@attune/framework-protocol"
 import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineObservationRecipe,
+  defineRecipeHandler,
   ProgramObservationSchema,
+  type ProgramObservation,
   type ProgramObservationKind,
 } from "@attune/framework-protocol"
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
 import { defineExactSymbolMap } from "./symbol-map.js"
+import {
+  FrameworkTestingProjectId,
+  FrameworkTestingSourceRecipeInput,
+  FrameworkTestingSourceRecipeOutput,
+  FrameworkTestingTestTarget,
+  FrameworkTestingTypecheckTarget,
+  frameworkTestingSourceSummary,
+} from "./recipe-contracts.js"
 import type { PropertyTier, ReplayMetadata } from "./replay-metadata.js"
 
 export type ObservationContext = Readonly<{
@@ -235,3 +245,82 @@ export const weakOracleObservation = (
       ),
     },
   })
+
+export const FrameworkTestingObservationProducerRecipeId = "framework-testing.observation-producer" as const
+export const FrameworkTestingObservationProducerSourcePath =
+  "packages/trellis/testing/src/observation-producer.ts" as const
+
+export const describeFrameworkTestingObservationProducer = (
+  input: FrameworkTestingSourceRecipeInput,
+): FrameworkTestingSourceRecipeOutput =>
+  frameworkTestingSourceSummary(input, "observation-producer", {
+    observationCount: input.symbolIds.length + 1,
+  })
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingObservationProducerSourceResource = defineAlchemyResource({
+  id: "framework-testing.observation-producer.source",
+  kind: "file",
+  alchemyType: "attune:resource:FrameworkTestingObservationProducerSource",
+  addressSchema: FrameworkTestingSourceRecipeInput,
+  stateSchema: FrameworkTestingSourceRecipeInput,
+  modes: ["read"],
+  consumedBy: [FrameworkTestingObservationProducerRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingObservationProducerStreamResource = defineAlchemyResource({
+  id: "framework-testing.observation-producer.stream",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:FrameworkTestingObservationProducerStream",
+  addressSchema: FrameworkTestingSourceRecipeInput,
+  stateSchema: FrameworkTestingSourceRecipeOutput,
+  modes: ["observe", "read"],
+  ownerRecipeId: FrameworkTestingObservationProducerRecipeId,
+  producedBy: [FrameworkTestingObservationProducerRecipeId],
+})
+
+export const FrameworkTestingObservationProducerHandler = defineRecipeHandler<
+  FrameworkTestingSourceRecipeInput,
+  FrameworkTestingSourceRecipeOutput,
+  never,
+  never
+>({
+  id: "framework-testing.observation-producer.handler",
+  recipeId: FrameworkTestingObservationProducerRecipeId,
+  sourcePath: FrameworkTestingObservationProducerSourcePath,
+  exportName: "describeFrameworkTestingObservationProducer",
+  emitsReceipts: ["framework-testing.observation-producer.summary"],
+  handler: (input) => Effect.succeed(describeFrameworkTestingObservationProducer(input)),
+})
+
+export const FrameworkTestingObservationProducerDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "framework-testing.observation-producer.source",
+  toRecipeId: FrameworkTestingObservationProducerRecipeId,
+  resource: FrameworkTestingObservationProducerStreamResource,
+  kind: "observes",
+  modes: ["read", "observe"],
+  validationTargets: [FrameworkTestingTestTarget],
+})
+
+export const FrameworkTestingObservationProducerRecipes = [
+  defineObservationRecipe({
+    id: FrameworkTestingObservationProducerRecipeId,
+    projectId: FrameworkTestingProjectId,
+    title: "Own framework testing observation producer",
+    inputSchema: FrameworkTestingSourceRecipeInput,
+    outputSchema: FrameworkTestingSourceRecipeOutput,
+    io: {
+      inputSchema: FrameworkTestingSourceRecipeInput,
+      outputSchema: FrameworkTestingSourceRecipeOutput,
+      inputResources: [FrameworkTestingObservationProducerSourceResource],
+      outputResources: [FrameworkTestingObservationProducerStreamResource],
+    },
+    handler: FrameworkTestingObservationProducerHandler,
+    alchemyDag: [FrameworkTestingObservationProducerDagEdge],
+    nxTarget: FrameworkTestingTestTarget,
+    observedFiles: [FrameworkTestingObservationProducerSourcePath],
+    allowedFiles: [FrameworkTestingObservationProducerSourcePath],
+    validationEvidence: [FrameworkTestingTestTarget, FrameworkTestingTypecheckTarget],
+  }),
+] as const

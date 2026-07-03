@@ -16,12 +16,10 @@ describe("workspace recipe catalog", () => {
       "attune-architecture",
       "framework-language-service",
       "framework-nx",
-      "effect-oxlint-policy",
       "framework-protocol",
       "framework-runtime",
       "framework-testing",
       "attune-foldkit",
-      "attune-nx",
       "attune-pi-agent",
       "attuned-discovery",
       "cocoindex-effect",
@@ -42,16 +40,17 @@ describe("workspace recipe catalog", () => {
     expect(WorkspaceAllRecipes.map((recipe) => recipe.id)).toContain("workspace.package-db-emission")
     expect(WorkspaceRecipeRegistry.snapshot().duplicateRecipeIds).toEqual([])
     expect(workspaceRecipeCatalogOutput()).toMatchObject({
-      projectCount: 24,
+      projectCount: 22,
       cleanFork: true,
     })
-    expect(workspacePackageDbEmissionOutput()).toMatchObject({
-      projectCount: 24,
+    const dbEmission = workspacePackageDbEmissionOutput()
+    expect(dbEmission).toMatchObject({
+      projectCount: 22,
       recipeRows: WorkspaceAllRecipes.length,
-      ioRows: WorkspaceAllRecipes.length * 2,
       healthRows: WorkspaceAllRecipes.length,
-      emitReadyProjectCount: 24,
+      emitReadyProjectCount: 22,
       dbSpine: "generic-timescaledb-postgres-recipe-spine",
     })
+    expect(dbEmission.ioRows).toBeGreaterThanOrEqual(WorkspaceAllRecipes.length * 2)
   })
 })

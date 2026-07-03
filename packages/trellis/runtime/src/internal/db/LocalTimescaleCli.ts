@@ -1,9 +1,19 @@
 import { spawnSync } from "node:child_process"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
-import { Effect } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import {
+  defineAlchemyResource,
+  defineInvocationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  type RecipeInvocation,
+  type RecipeInvocationAction,
+} from "@attune/framework-protocol"
+import {
+  LocalTimescaleDatabaseResource,
   LocalTimescaleManagedRecipe,
+  LocalTimescaleManagedRecipeId,
   localTimescaleLifecycleObservations,
   localTimescaleLifecycleOutput,
 } from "../../LocalTimescaleRecipe.js"
@@ -23,6 +33,51 @@ import {
 
 let stage = "unknown"
 
+const localTimescaleCliInvocationRecipeId =
+  "framework-runtime.local-timescale-cli-invocation" as const
+const localTimescaleCliSourcePath =
+  "packages/trellis/runtime/src/internal/db/LocalTimescaleCli.ts" as const
+
+export const LocalTimescaleCliInvocationInputSchema = Schema.Struct({
+  argv: Schema.Array(Schema.String),
+})
+export type LocalTimescaleCliInvocationInput =
+  typeof LocalTimescaleCliInvocationInputSchema.Type
+
+export const LocalTimescaleCliInvocationOutputSchema = Schema.Struct({
+  stage: Schema.String,
+  completed: Schema.Boolean,
+})
+export type LocalTimescaleCliInvocationOutput =
+  typeof LocalTimescaleCliInvocationOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LocalTimescaleCliWorkflowResource = defineAlchemyResource({
+  id: "framework-runtime.local-timescale-cli.workflow",
+  kind: "workflow-target",
+  alchemyType: "attune:resource:WorkflowTarget",
+  ownerRecipeId: localTimescaleCliInvocationRecipeId,
+  producedBy: [localTimescaleCliInvocationRecipeId],
+  consumedBy: [localTimescaleCliInvocationRecipeId, LocalTimescaleManagedRecipeId],
+  addressFields: ["argv"],
+  addressSchema: LocalTimescaleCliInvocationInputSchema as never,
+  stateSchema: LocalTimescaleCliInvocationOutputSchema as never,
+  modes: ["invoke", "read", "check"],
+  programmaticResourceExport: "LocalTimescaleCliInvocationLive",
+  programmaticBridgeSourcePath: localTimescaleCliSourcePath,
+})
+
+export interface LocalTimescaleCliInvocationService {
+  readonly invoke: (
+    input: LocalTimescaleCliInvocationInput,
+  ) => Effect.Effect<LocalTimescaleCliInvocationOutput>
+}
+
+export class LocalTimescaleCliInvocation extends Context.Service<
+  LocalTimescaleCliInvocation,
+  LocalTimescaleCliInvocationService
+>()("@attune/framework-runtime/LocalTimescaleCliInvocation") {}
+
 export async function runLocalTimescaleCli(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
   const requestedStage = argv[0]
 
@@ -32,6 +87,7 @@ export async function runLocalTimescaleCli(argv: readonly string[] = process.arg
     )
   }
 
+  const invocation = localTimescaleCliRecipeInvocation(argv, requestedStage)
   stage = requestedStage
 
   switch (stage) {
@@ -39,6 +95,7 @@ export async function runLocalTimescaleCli(argv: readonly string[] = process.arg
       const result = {
         stage,
         managedRecipe: "framework-runtime.local-timescaledb",
+        invocationRecipeId: invocation.recipeId,
         lifecycle: ["plan", "apply", "check", "migrate", "validate-sql", "stop", "destroy", "prune"],
         serviceClosure: localTimescale,
         genericTables: frameworkRecipeReceiptTables,
@@ -161,6 +218,41 @@ export async function runLocalTimescaleCli(argv: readonly string[] = process.arg
     }
     default:
       throw new Error(`Unsupported db lifecycle stage: ${stage}`)
+  }
+}
+
+export const localTimescaleCliRecipeInvocation = (
+  argv: readonly string[],
+  requestedStage: string,
+): RecipeInvocation => ({
+  recipeId: localTimescaleCliInvocationRecipeId,
+  action: localTimescaleCliInvocationAction(requestedStage),
+  input: { argv: [...argv] },
+  source: {
+    surface: "cli",
+    projectId: "framework-runtime",
+    target: "framework-runtime:db:validate-sql",
+  },
+})
+
+const localTimescaleCliInvocationAction = (
+  requestedStage: string,
+): RecipeInvocationAction => {
+  switch (requestedStage) {
+    case "apply":
+    case "check":
+    case "destroy":
+    case "generate-types":
+    case "migrate":
+    case "plan":
+    case "prune":
+    case "stop":
+    case "validate-sql":
+      return requestedStage
+    case "integration-test":
+      return "check"
+    default:
+      return "check"
   }
 }
 
@@ -481,7 +573,6 @@ function validateSafeQlAgainstLiveDb(): Record<string, unknown> {
   return {
     validator: "@ts-safeql/eslint-plugin check-sql",
     version: packageVersion("@ts-safeql/eslint-plugin"),
-    sourcePath: sqlSourcePath,
     result: JSON.parse(lastNonEmptyLine(stdout)) as unknown,
   }
 }
@@ -741,6 +832,85 @@ function runNixDevelop(args: readonly string[]): string {
   }
   return result.stdout
 }
+
+export const LocalTimescaleCliInvocationLive = Layer.succeed(
+  LocalTimescaleCliInvocation,
+  {
+    invoke: (input: LocalTimescaleCliInvocationInput) =>
+      Effect.promise(async () => {
+        await runLocalTimescaleCli(input.argv)
+        return {
+          stage: input.argv[0] ?? "unknown",
+          completed: true,
+        }
+      }),
+  },
+)
+
+export const LocalTimescaleCliInvocationLayer = defineRecipeLayer({
+  id: "framework-runtime.local-timescale-cli-invocation.layer",
+  sourcePath: localTimescaleCliSourcePath,
+  exportName: "LocalTimescaleCliInvocationLive",
+  layer: LocalTimescaleCliInvocationLive as never,
+  provides: [{
+    id: "framework-runtime.local-timescale-cli-invocation.service",
+    service: LocalTimescaleCliInvocation as never,
+  }],
+})
+
+export const invokeLocalTimescaleCliRecipe = (
+  input: LocalTimescaleCliInvocationInput,
+): Effect.Effect<LocalTimescaleCliInvocationOutput, never, LocalTimescaleCliInvocation> =>
+  Effect.gen(function* invokeLocalTimescaleCliRecipeBody() {
+    const invocation = yield* LocalTimescaleCliInvocation
+    return yield* invocation.invoke(input)
+  })
+
+export const LocalTimescaleCliInvocationHandler = defineRecipeHandler<
+  LocalTimescaleCliInvocationInput,
+  LocalTimescaleCliInvocationOutput,
+  never,
+  LocalTimescaleCliInvocation
+>({
+  id: "framework-runtime.local-timescale-cli-invocation.handler",
+  recipeId: localTimescaleCliInvocationRecipeId,
+  sourcePath: localTimescaleCliSourcePath,
+  exportName: "invokeLocalTimescaleCliRecipe",
+  layer: LocalTimescaleCliInvocationLayer,
+  emitsReceipts: ["framework-runtime.local-timescale-cli.invoked"],
+  handler: (input) => invokeLocalTimescaleCliRecipe(input) as never,
+})
+
+export const LocalTimescaleCliInvocationRecipe = defineInvocationRecipe({
+  id: localTimescaleCliInvocationRecipeId,
+  projectId: "framework-runtime",
+  title: "Invoke local TimescaleDB lifecycle CLI stages",
+  inputSchema: LocalTimescaleCliInvocationInputSchema,
+  outputSchema: LocalTimescaleCliInvocationOutputSchema,
+  dependencies: [{ recipeId: LocalTimescaleManagedRecipeId }],
+  nxTarget: "framework-runtime:db:validate-sql",
+  entrypoints: [localTimescaleCliSourcePath],
+  allowedFiles: [localTimescaleCliSourcePath],
+  validationEvidence: ["framework-runtime:typecheck", "framework-runtime:test", "framework-runtime:db:validate-sql"],
+  io: {
+    inputSchema: LocalTimescaleCliInvocationInputSchema,
+    outputSchema: LocalTimescaleCliInvocationOutputSchema,
+    inputResources: [LocalTimescaleCliWorkflowResource],
+    outputResources: [LocalTimescaleDatabaseResource],
+  },
+  handler: LocalTimescaleCliInvocationHandler,
+  alchemyDag: [{
+    fromRecipeId: localTimescaleCliInvocationRecipeId,
+    toRecipeId: LocalTimescaleManagedRecipeId,
+    resource: LocalTimescaleCliWorkflowResource,
+    kind: "invokes",
+    modes: ["invoke", "read", "check"],
+  }],
+})
+
+export const LocalTimescaleCliInvocationRecipes = [
+  LocalTimescaleCliInvocationRecipe,
+] as const
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   runLocalTimescaleCli(process.argv.slice(2)).catch((error: unknown) => {

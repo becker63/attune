@@ -1,7 +1,13 @@
 #!/usr/bin/env tsx
-import { Effect, Schema } from "effect"
+import { fileURLToPath } from "node:url"
+
+import { Effect, Layer } from "effect"
 import {
-  defineRecipe,
+  defineAlchemyRecipeDagEdge,
+  defineInvocationRecipe,
+  defineObservationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   recipeObservationId,
   type RecipeObservation,
 } from "@attune/framework-protocol"
@@ -14,15 +20,21 @@ import {
   runCheckCommand,
   runDiagnosticsCommand,
   runFastPathCommand,
+  runFileAccountingCommand,
   runFixesCommand,
+  runJudgeCommand,
   runPacketsCommand,
+  runSourceExpressionCommand,
   type ApplyOptions,
   type CheckOptions,
   type CommandResult,
   type DiagnosticsOptions,
   type FastPathOptions,
+  type FileAccountingOptions,
   type FixesOptions,
+  type JudgeOptions,
   type PacketsOptions,
+  type SourceExpressionOptions,
 } from "./cli-core.js"
 import type {
   TrellisLsApplyOutput,
@@ -35,11 +47,24 @@ import type {
   TrellisLsFailOn,
   TrellisLsFastPathMode,
   TrellisLsFastPathOutput,
+  TrellisLsFileAccountingOutput,
   TrellisLsFixesOutput,
   TrellisLsFormat,
+  TrellisLsJudgeOutput,
   TrellisLsPacketsOutput,
   TrellisLsProfile,
+  TrellisLsSourceExpressionOutput,
 } from "./contracts.js"
+import {
+  FrameworkLanguageServiceProjectId,
+  LanguageServiceCliOutput,
+  LanguageServiceCommandResource,
+  LanguageServiceProjectionInput,
+  LanguageServiceReceiptResource,
+  LanguageServiceWorkspaceResource,
+} from "./contracts.js"
+
+export const LanguageServiceCliSourcePath = "packages/trellis/language-service/src/cli.ts" as const
 
 type ParsedFlags = Readonly<Record<string, string | boolean>>
 type TrellisLsCliOutput =
@@ -48,18 +73,136 @@ type TrellisLsCliOutput =
   | TrellisLsApplyOutput
   | TrellisLsCheckOutput
   | TrellisLsPacketsOutput
+  | TrellisLsFileAccountingOutput
+  | TrellisLsSourceExpressionOutput
+  | TrellisLsJudgeOutput
   | TrellisLsFastPathOutput
 
-const trellisLsCliObservationRecipe = defineRecipe({
-  id: "trellis-language-service.cli-observation-sink",
-  projectId: "framework-language-service",
-  title: "Emit Trellis language-service command summaries to the framework observation store",
-  inputSchema: Schema.Unknown,
-  outputSchema: Schema.Unknown,
-  sourcePath: "packages/trellis/language-service/src/cli.ts",
-  allowedFiles: ["packages/trellis/language-service/**"],
-  validationEvidence: ["framework-language-service:test"],
+const languageServiceCliLayer = defineRecipeLayer({
+  id: "trellis-language-service.cli.layer",
+  sourcePath: LanguageServiceCliSourcePath,
+  exportName: "languageServiceCliLayer",
+  layer: Layer.empty as never,
+  provides: [{
+    id: "trellis-language-service.cli-process",
+    service: "Effect.Platform.CommandExecutor",
+  }],
 })
+
+const languageServiceCliInvocationHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.cli-invocation-surfaces.handler",
+  recipeId: "trellis-language-service.cli-invocation-surfaces",
+  sourcePath: LanguageServiceCliSourcePath,
+  exportName: "main",
+  layer: languageServiceCliLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceReceiptObservationHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.receipt-observation-recording.handler",
+  recipeId: "trellis-language-service.receipt-observation-recording",
+  sourcePath: LanguageServiceCliSourcePath,
+  exportName: "trellisLsCliObservation",
+  layer: languageServiceCliLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceCliInvocationDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.source-surface",
+  toRecipeId: "trellis-language-service.cli-invocation-surfaces",
+  resource: LanguageServiceCommandResource,
+  kind: "invokes",
+  modes: ["invoke", "read"],
+})
+
+const languageServiceReceiptObservationDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.cli-invocation-surfaces",
+  toRecipeId: "trellis-language-service.receipt-observation-recording",
+  resource: LanguageServiceReceiptResource,
+  kind: "observes",
+  modes: ["observe", "read"],
+})
+
+export const LanguageServiceCliInvocationRecipe = defineInvocationRecipe({
+  id: "trellis-language-service.cli-invocation-surfaces",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Expose trellis-ls diagnostics, fixes, apply, check, packet, oracle, and judge invocation surfaces",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceCliSourcePath,
+  allowedFiles: [LanguageServiceCliSourcePath],
+  entrypoints: [
+    LanguageServiceCliSourcePath,
+    "packages/trellis/language-service/src/cli-core.ts",
+  ],
+  affectedFiles: [LanguageServiceCliSourcePath],
+  publicTargets: [
+    {
+      kind: "check",
+      target: "framework-language-service:check",
+      evidenceRequirements: ["pnpm exec nx run framework-language-service:check --output-style=static"],
+    },
+    {
+      kind: "repair",
+      target: "framework-language-service:repair",
+      evidenceRequirements: ["pnpm exec nx run framework-language-service:repair --output-style=static"],
+    },
+  ],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceWorkspaceResource],
+    outputResources: [LanguageServiceCommandResource],
+  },
+  handler: languageServiceCliInvocationHandler,
+  alchemyDag: [languageServiceCliInvocationDag],
+})
+
+export const LanguageServiceReceiptObservationRecipe = defineObservationRecipe({
+  id: "trellis-language-service.receipt-observation-recording",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Record Trellis language-service command summaries through RecipeObservation",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceCliSourcePath,
+  allowedFiles: [LanguageServiceCliSourcePath],
+  observedFiles: [LanguageServiceCliSourcePath],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceCommandResource],
+    outputResources: [LanguageServiceReceiptResource],
+  },
+  handler: languageServiceReceiptObservationHandler,
+  alchemyDag: [languageServiceReceiptObservationDag],
+})
+
+export const LanguageServiceCliRecipes = [
+  LanguageServiceCliInvocationRecipe,
+  LanguageServiceReceiptObservationRecipe,
+] as const
 
 const main = async (): Promise<void> => {
   const [command, ...rest] = process.argv.slice(2)
@@ -82,6 +225,18 @@ const main = async (): Promise<void> => {
       }
       case "packets": {
         await writeResult(runPacketsCommand(packetsOptions(parseFlags(rest))))
+        return
+      }
+      case "file-accounting": {
+        await writeResult(runFileAccountingCommand(fileAccountingOptions(parseFlags(rest))))
+        return
+      }
+      case "source-expression": {
+        await writeResult(runSourceExpressionCommand(sourceExpressionOptions(parseFlags(rest))))
+        return
+      }
+      case "judge": {
+        await writeResult(runJudgeCommand(judgeOptions(parseFlags(rest))))
         return
       }
       case "apply":
@@ -110,10 +265,10 @@ const main = async (): Promise<void> => {
 
 const writeResult = async <Output extends TrellisLsCliOutput>(
   result: CommandResult<Output>,
-): Promise<never> => {
+): Promise<void> => {
   const output = await emitConfiguredObservation(result.output)
-  writeOutput(output, output.metadata.format)
-  process.exit(result.exitCode)
+  await writeOutput(output, output.metadata.format)
+  process.exitCode = result.exitCode
 }
 
 const emitConfiguredObservation = async <Output extends TrellisLsCliOutput>(
@@ -126,7 +281,7 @@ const emitConfiguredObservation = async <Output extends TrellisLsCliOutput>(
   try {
     sink = await createMeasurementObservationSink(config)
     if (sink.store === undefined) return output
-    await Effect.runPromise(sink.store.registerRecipe(trellisLsCliObservationRecipe))
+    await Effect.runPromise(sink.store.registerRecipe(LanguageServiceReceiptObservationRecipe))
     const outputWithEvidence = withEvidenceMode(output, config.mode === "in-memory" ? "in-memory" : "durable")
     const observation = trellisLsCliObservation(outputWithEvidence)
     await Effect.runPromise(sink.store.recordObservation(observation))
@@ -172,11 +327,11 @@ const trellisLsCliObservation = (
   const scope = output.project ?? output.file ?? output.workspace ?? output.workspaceRoot
   return {
     observationId: recipeObservationId(
-      trellisLsCliObservationRecipe.id,
+      LanguageServiceReceiptObservationRecipe.id,
       `${observationKind}:${measurementSessionId ?? "global"}:${scope}`,
       observedAt,
     ),
-    recipeId: trellisLsCliObservationRecipe.id,
+    recipeId: LanguageServiceReceiptObservationRecipe.id,
     observationKind,
     observedAt,
     source: `trellis-ls ${output.command}`,
@@ -210,6 +365,12 @@ const observationKindFor = (command: TrellisLsCommand): string => {
       return "trellis-language-service.check-run-summary"
     case "packets":
       return "trellis-language-service.packet-queue-summary"
+    case "file-accounting":
+      return "trellis-language-service.file-accounting-summary"
+    case "source-expression":
+      return "trellis-language-service.source-expression-summary"
+    case "judge":
+      return "trellis-language-service.packet-judge-summary"
     case "fastpath":
       return "trellis-language-service.effect-packet-fastpath-summary"
   }
@@ -219,6 +380,7 @@ const summaryForOutput = (
   output: TrellisLsCliOutput,
 ): Record<string, number | boolean | string | undefined> => {
   if ("summary" in output) return output.summary
+  if ("oracle" in output) return output.oracle
   if ("applied" in output) {
     return {
       applied: output.applied,
@@ -316,6 +478,26 @@ const packetsOptions = (flags: ParsedFlags): PacketsOptions => ({
   ...optionalStringField("profile", profileFlag(flags)),
 })
 
+const fileAccountingOptions = (flags: ParsedFlags): FileAccountingOptions => ({
+  ...scopeOptions(flags),
+  format: formatFlag(flags),
+  profile: "recipe-only-source",
+})
+
+const sourceExpressionOptions = (flags: ParsedFlags): SourceExpressionOptions => ({
+  ...scopeOptions(flags),
+  format: formatFlag(flags),
+  profile: "recipe-only-source",
+})
+
+const judgeOptions = (flags: ParsedFlags): JudgeOptions => ({
+  ...scopeOptions(flags),
+  format: formatFlag(flags),
+  ...optionalStringField("source", packetSourceFlag(flags)),
+  ...optionalStringField("packetId", stringFlag(flags, "packet-id")),
+  ...optionalStringField("profile", profileFlag(flags)),
+})
+
 const fastPathOptions = (flags: ParsedFlags): FastPathOptions => {
   const packetId = stringFlag(flags, "packet-id")
   if (packetId === undefined) {
@@ -326,6 +508,7 @@ const fastPathOptions = (flags: ParsedFlags): FastPathOptions => {
     format: formatFlag(flags),
     packetId,
     mode: fastPathModeFlag(flags),
+    ...optionalStringField("source", packetSourceFlag(flags)),
     ...optionalStringField("targetId", stringFlag(flags, "target-id")),
     ...optionalStringField("ruleName", stringFlag(flags, "rule-name")),
     ...optionalStringField("sourcePath", stringFlag(flags, "source-path")),
@@ -376,9 +559,9 @@ const sourceFlag = (flags: ParsedFlags): DiagnosticsOptions["source"] => {
   throw new CliInputError(`Invalid --source: ${value}`)
 }
 
-const packetSourceFlag = (flags: ParsedFlags): "effect" => {
+const packetSourceFlag = (flags: ParsedFlags): "effect" | "trellis" => {
   const value = stringFlag(flags, "source") ?? "effect"
-  if (value === "effect") return value
+  if (value === "effect" || value === "trellis") return value
   throw new CliInputError(`Invalid --source for packets: ${value}`)
 }
 
@@ -426,13 +609,24 @@ const profileFlag = (flags: ParsedFlags): TrellisLsProfile | undefined => {
   throw new CliInputError(`Invalid --profile: ${value}`)
 }
 
-const writeOutput = (output: unknown, format: TrellisLsFormat): void => {
+const writeOutput = async (output: unknown, format: TrellisLsFormat): Promise<void> => {
   if (format === "json") {
-    process.stdout.write(`${JSON.stringify(output, null, 2)}\n`)
+    await writeStdout(`${JSON.stringify(output, null, 2)}\n`)
     return
   }
-  process.stdout.write(renderText(output))
+  await writeStdout(renderText(output))
 }
+
+const writeStdout = (text: string): Promise<void> =>
+  new Promise((resolve, reject) => {
+    process.stdout.write(text, (error) => {
+      if (error !== undefined && error !== null) {
+        reject(error)
+        return
+      }
+      resolve()
+    })
+  })
 
 const renderText = (output: unknown): string => {
   if (typeof output !== "object" || output === null) return `${String(output)}\n`
@@ -459,6 +653,24 @@ const renderText = (output: unknown): string => {
       return `${item.packetId ?? "packet"} ${item.code ?? "effect"} diagnostics=${item.diagnosticCount ?? 0} safeFixes=${item.safeFixCount ?? 0}`
     }).join("\n") + "\n"
   }
+  if ("oracle" in output) {
+    const item = output as {
+      readonly oracle?: {
+        readonly trackedFiles?: number
+        readonly accountedFiles?: number
+        readonly unaccountedFiles?: number
+        readonly sourceFiles?: number
+        readonly expressedSourceFiles?: number
+        readonly unexpressedSourceFiles?: number
+        readonly packetCount?: number
+        readonly promotionAllowed?: boolean
+      }
+    }
+    if (item.oracle?.sourceFiles !== undefined) {
+      return `source=${item.oracle.sourceFiles} expressed=${item.oracle.expressedSourceFiles ?? 0} unexpressed=${item.oracle.unexpressedSourceFiles ?? 0} packets=${item.oracle.packetCount ?? 0} promotionAllowed=${item.oracle.promotionAllowed ?? false}\n`
+    }
+    return `tracked=${item.oracle?.trackedFiles ?? 0} accounted=${item.oracle?.accountedFiles ?? 0} unaccounted=${item.oracle?.unaccountedFiles ?? 0} packets=${item.oracle?.packetCount ?? 0} promotionAllowed=${item.oracle?.promotionAllowed ?? false}\n`
+  }
   if ("packetId" in output && "validationStatus" in output && "applied" in output) {
     const item = output as {
       readonly packetId?: string
@@ -480,10 +692,13 @@ const writeHelp = (): void => {
     "trellis-ls diagnostics --workspace . --profile recipe-only-source --format json",
     "trellis-ls fixes --project <tsconfig> [--diagnostic-id <id>] --format json",
     "trellis-ls packets --project <tsconfig> --source effect --profile effect-autofix-safe --format json",
+    "trellis-ls file-accounting --workspace . --format json",
+    "trellis-ls source-expression --workspace . --format json",
+    "trellis-ls judge --project <tsconfig> --source effect|trellis [--packet-id <id>] --format json",
     "trellis-ls fixes --project <tsconfig> --packet-id <id> --format json",
     "trellis-ls apply --project <tsconfig> --fix-id <id> --mode diff|write --format json",
     "trellis-ls apply --project <tsconfig> --packet-id <id> --mode diff|write --format json",
-    "trellis-ls fastpath --project <tsconfig> --packet-id <id> --mode preview|write --format json",
+    "trellis-ls fastpath --project <tsconfig> --source effect|trellis --packet-id <id> --mode preview|write --format json",
     "trellis-ls check --project <tsconfig> --format json",
     "trellis-ls check --project <tsconfig> --packet-id <id> --format json",
     "",
@@ -492,4 +707,6 @@ const writeHelp = (): void => {
 
 class CliInputError extends Error {}
 
-void main()
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  void main()
+}

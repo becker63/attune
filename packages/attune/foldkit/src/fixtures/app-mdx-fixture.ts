@@ -1,5 +1,25 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+
 import { compileFoldkitMdx } from "../activity.js"
 import type { AttuneRoute } from "../schema.js"
+import {
+  FoldKitAppMdxFixtureRecipeId,
+  FoldKitAppSiteFixtureRecipeId,
+  FoldKitPackageSourceResource,
+  FoldKitProjectId,
+  FoldKitSourceAddress,
+  FoldKitSourceReport,
+  FoldKitTestTarget,
+  FoldKitTypecheckTarget,
+  foldKitSourceReport,
+} from "../schema.js"
+import { FoldKitMdxViewFixtureResource } from "./mdx-view-fixture.js"
 
 export type FoldkitAppPageFixture = Readonly<{
   readonly route: AttuneRoute
@@ -114,3 +134,78 @@ export const foldkitAppPages = foldkitAppPageFixtures.map((page) =>
 
 export const pageForRoute = (route: AttuneRoute) =>
   foldkitAppPages.find((page) => page.route === route) ?? foldkitAppPages[0]!
+
+export const FoldKitAppMdxFixtureSourcePath =
+  "packages/attune/foldkit/src/fixtures/app-mdx-fixture.ts" as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitAppMdxFixtureResource = defineAlchemyResource({
+  id: "attune-foldkit.app-mdx-fixture.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: FoldKitAppMdxFixtureRecipeId,
+  producedBy: [FoldKitAppMdxFixtureRecipeId],
+  consumedBy: [FoldKitAppSiteFixtureRecipeId],
+  addressSchema: FoldKitSourceAddress,
+  stateSchema: FoldKitSourceReport,
+  modes: ["read", "project", "observe"],
+})
+
+export const describeFoldKitAppMdxFixture = (): FoldKitSourceReport =>
+  foldKitSourceReport({
+    recipeId: FoldKitAppMdxFixtureRecipeId,
+    sourcePath: FoldKitAppMdxFixtureSourcePath,
+    surface: "Route-indexed MDX page fixtures compiled into FoldKit pages",
+    exportedSymbols: [
+      "foldkitAppPageFixtures",
+      "foldkitAppPages",
+      "pageForRoute",
+    ],
+  })
+
+export const FoldKitAppMdxFixtureHandler = defineRecipeHandler<
+  FoldKitSourceAddress,
+  FoldKitSourceReport
+>({
+  id: "attune-foldkit.app-mdx-fixture.handler",
+  recipeId: FoldKitAppMdxFixtureRecipeId,
+  sourcePath: FoldKitAppMdxFixtureSourcePath,
+  exportName: "describeFoldKitAppMdxFixture",
+  handler: () => Effect.succeed(describeFoldKitAppMdxFixture()),
+  emitsReceipts: ["attune-foldkit.app-mdx-fixture.report"],
+})
+
+export const FoldKitAppMdxFixtureDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FoldKitAppMdxFixtureRecipeId,
+  toRecipeId: FoldKitAppSiteFixtureRecipeId,
+  resource: FoldKitAppMdxFixtureResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitAppMdxFixtureRecipe = defineProjectionRecipe({
+  id: FoldKitAppMdxFixtureRecipeId,
+  projectId: FoldKitProjectId,
+  title: "Project FoldKit route MDX fixtures",
+  inputSchema: FoldKitSourceAddress,
+  outputSchema: FoldKitSourceReport,
+  nxTarget: FoldKitTestTarget,
+  allowedFiles: [FoldKitAppMdxFixtureSourcePath],
+  validationEvidence: [FoldKitTypecheckTarget, FoldKitTestTarget],
+  io: {
+    inputSchema: FoldKitSourceAddress,
+    outputSchema: FoldKitSourceReport,
+    inputResources: [
+      FoldKitPackageSourceResource,
+      FoldKitMdxViewFixtureResource,
+    ],
+    outputResources: [FoldKitAppMdxFixtureResource],
+  },
+  handler: FoldKitAppMdxFixtureHandler,
+  alchemyDag: [FoldKitAppMdxFixtureDagEdge],
+})
+
+export const FoldKitAppMdxFixtureRecipes = [
+  FoldKitAppMdxFixtureRecipe,
+] as const

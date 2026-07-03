@@ -1,4 +1,10 @@
 import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import {
   type DiscoveryAtomWorkspaceService,
   type DiscoveryEvent,
   type DiscoveryProjection,
@@ -16,11 +22,24 @@ import {
   replayDiscoveryEvents,
   viewKeysForDiscoveryEvent,
 } from "@attune/attuned-discovery"
+import { Effect } from "effect"
 
 import type {
   AppliedWorkbenchFixture,
   FoldkitWorkbenchFixture,
 } from "../fixture-types.js"
+import { FoldKitFixtureTypesResource } from "../fixture-types.js"
+import {
+  FoldKitMdxViewFixtureRecipeId,
+  FoldKitPackageSourceResource,
+  FoldKitProjectId,
+  FoldKitSourceAddress,
+  FoldKitSourceReport,
+  FoldKitTestTarget,
+  FoldKitTypecheckTarget,
+  FoldKitWorkbenchAtomFixtureRecipeId,
+  foldKitSourceReport,
+} from "../schema.js"
 
 export const workbenchAtomFixture = {
   fixtureId: "foldkit-closed-loop-workbench",
@@ -126,3 +145,80 @@ export const applyWorkbenchFixture = (
 }
 
 export const appliedWorkbenchAtomFixture = applyWorkbenchFixture()
+
+export const FoldKitWorkbenchAtomFixtureSourcePath =
+  "packages/attune/foldkit/src/fixtures/workbench-atom-fixture.ts" as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitWorkbenchAtomFixtureResource = defineAlchemyResource({
+  id: "attune-foldkit.workbench-atom-fixture.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: FoldKitWorkbenchAtomFixtureRecipeId,
+  producedBy: [FoldKitWorkbenchAtomFixtureRecipeId],
+  consumedBy: [FoldKitMdxViewFixtureRecipeId],
+  addressSchema: FoldKitSourceAddress,
+  stateSchema: FoldKitSourceReport,
+  modes: ["read", "project", "observe"],
+})
+
+export const describeFoldKitWorkbenchAtomFixture = (): FoldKitSourceReport =>
+  foldKitSourceReport({
+    recipeId: FoldKitWorkbenchAtomFixtureRecipeId,
+    sourcePath: FoldKitWorkbenchAtomFixtureSourcePath,
+    surface:
+      "Workbench atom fixture projection from discovery events into FoldKit snapshots",
+    exportedSymbols: [
+      "workbenchAtomFixture",
+      "makeDiscoveryAtomWorkspace",
+      "applyWorkbenchFixture",
+      "appliedWorkbenchAtomFixture",
+    ],
+  })
+
+export const FoldKitWorkbenchAtomFixtureHandler = defineRecipeHandler<
+  FoldKitSourceAddress,
+  FoldKitSourceReport
+>({
+  id: "attune-foldkit.workbench-atom-fixture.handler",
+  recipeId: FoldKitWorkbenchAtomFixtureRecipeId,
+  sourcePath: FoldKitWorkbenchAtomFixtureSourcePath,
+  exportName: "describeFoldKitWorkbenchAtomFixture",
+  handler: () => Effect.succeed(describeFoldKitWorkbenchAtomFixture()),
+  emitsReceipts: ["attune-foldkit.workbench-atom-fixture.report"],
+})
+
+export const FoldKitWorkbenchAtomFixtureDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FoldKitWorkbenchAtomFixtureRecipeId,
+  toRecipeId: FoldKitMdxViewFixtureRecipeId,
+  resource: FoldKitWorkbenchAtomFixtureResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitWorkbenchAtomFixtureRecipe = defineProjectionRecipe({
+  id: FoldKitWorkbenchAtomFixtureRecipeId,
+  projectId: FoldKitProjectId,
+  title: "Project discovery atom fixtures into FoldKit snapshots",
+  inputSchema: FoldKitSourceAddress,
+  outputSchema: FoldKitSourceReport,
+  nxTarget: FoldKitTestTarget,
+  allowedFiles: [FoldKitWorkbenchAtomFixtureSourcePath],
+  validationEvidence: [FoldKitTypecheckTarget, FoldKitTestTarget],
+  io: {
+    inputSchema: FoldKitSourceAddress,
+    outputSchema: FoldKitSourceReport,
+    inputResources: [
+      FoldKitPackageSourceResource,
+      FoldKitFixtureTypesResource,
+    ],
+    outputResources: [FoldKitWorkbenchAtomFixtureResource],
+  },
+  handler: FoldKitWorkbenchAtomFixtureHandler,
+  alchemyDag: [FoldKitWorkbenchAtomFixtureDagEdge],
+})
+
+export const FoldKitWorkbenchAtomFixtureRecipes = [
+  FoldKitWorkbenchAtomFixtureRecipe,
+] as const

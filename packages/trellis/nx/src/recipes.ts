@@ -1,80 +1,35 @@
-import { defineRecipe } from "@attune/framework-protocol"
-import { Schema } from "effect"
+import { defineRecipePackage } from "@attune/framework-protocol"
 
-export const FrameworkNxRecipeProjectionInput = Schema.Struct({
-  recipeId: Schema.String,
-  projectId: Schema.String,
-  nxTarget: Schema.String,
-  sourcePath: Schema.String,
-})
-export type FrameworkNxRecipeProjectionInput = typeof FrameworkNxRecipeProjectionInput.Type
-
-export const FrameworkNxTargetProjection = Schema.Struct({
-  recipeId: Schema.String,
-  projectId: Schema.String,
-  kind: Schema.Literals(["check", "repair", "proof", "report"] as const),
-  target: Schema.String,
-  command: Schema.String,
-})
-export type FrameworkNxTargetProjection = typeof FrameworkNxTargetProjection.Type
-
-export const FrameworkNxRepairProjection = Schema.Struct({
-  diagnosticId: Schema.String,
-  target: Schema.String,
-  command: Schema.String,
-  route: Schema.String,
-  repairKind: Schema.String,
-  validateAfter: Schema.Array(Schema.String),
-})
-export type FrameworkNxRepairProjection = typeof FrameworkNxRepairProjection.Type
-
-export const FrameworkNxMaterializationInput = Schema.Struct({
-  projectId: Schema.String,
-  schemaDescriptorId: Schema.String,
-  sourcePath: Schema.String,
-})
-export type FrameworkNxMaterializationInput = typeof FrameworkNxMaterializationInput.Type
-
-export const FrameworkNxMaterializationOutput = Schema.Struct({
-  actionCount: Schema.Number,
-  artifactCount: Schema.Number,
-  checkedInReportFindingCount: Schema.Number,
-})
-export type FrameworkNxMaterializationOutput = typeof FrameworkNxMaterializationOutput.Type
+import { FrameworkNxProductionRecipes } from "./index.js"
+import { FrameworkNxTestRecipes } from "./test-recipes.js"
 
 export const FrameworkNxRecipes = [
-  defineRecipe({
-    id: "framework-nx.recipe-public-targets",
-    projectId: "framework-nx",
-    title: "Project recipes into public Nx targets",
-    inputSchema: FrameworkNxRecipeProjectionInput,
-    outputSchema: Schema.Array(FrameworkNxTargetProjection),
-    nxTarget: "framework-nx:test",
-    sourcePath: "packages/trellis/nx/src/recipes.ts",
-    allowedFiles: ["packages/trellis/nx/**"],
-    validationEvidence: ["framework-nx:test"],
-  }),
-  defineRecipe({
-    id: "framework-nx.recipe-repair-plan",
-    projectId: "framework-nx",
-    title: "Project recipe diagnostics into repair plans",
-    inputSchema: FrameworkNxRecipeProjectionInput,
-    outputSchema: FrameworkNxRepairProjection,
-    dependencies: [{ recipeId: "framework-nx.recipe-public-targets" }],
-    nxTarget: "framework-nx:test",
-    sourcePath: "packages/trellis/nx/src/recipes.ts",
-    allowedFiles: ["packages/trellis/nx/**"],
-    validationEvidence: ["framework-nx:test"],
-  }),
-  defineRecipe({
-    id: "framework-nx.materialization-plan",
-    projectId: "framework-nx",
-    title: "Plan framework-owned generated/cache materialization",
-    inputSchema: FrameworkNxMaterializationInput,
-    outputSchema: FrameworkNxMaterializationOutput,
-    nxTarget: "framework-nx:test",
-    sourcePath: "packages/trellis/nx/src/recipes.ts",
-    allowedFiles: ["packages/trellis/nx/**", ".attune/cache/generated/**"],
-    validationEvidence: ["framework-nx:test", "workspace:framework-policy-check"],
-  }),
+  ...FrameworkNxProductionRecipes,
+  ...FrameworkNxTestRecipes,
 ] as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkNxRecipePackage = defineRecipePackage({
+  packageId: "framework-nx",
+  kind: "generator-tooling",
+  title: "Trellis framework Nx recipe projection recipes",
+  sourceRoot: "packages/trellis/nx/src",
+  recipes: FrameworkNxRecipes,
+  ownership: [
+    {
+      id: "framework-nx-projections",
+      title: "Recipe public target projection, repair plan, and framework materialization source",
+      files: ["packages/trellis/nx/src/index.ts"],
+      recipeIds: FrameworkNxProductionRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "framework-nx-test-source",
+      title: "Framework Nx test recipe module and test evidence",
+      files: [
+        "packages/trellis/nx/src/test-recipes.ts",
+        "packages/trellis/nx/test/**",
+      ],
+      recipeIds: FrameworkNxTestRecipes.map((recipe) => recipe.id),
+    },
+  ],
+})

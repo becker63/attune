@@ -1,7 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 
-import { Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineManagedRecipe,
+  defineManagedRecipeAlchemyBinding,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
 
 import type { GateConfirmationState } from "./model.ts"
 
@@ -187,3 +194,145 @@ export const failResourceInState = (
   failedResourceIds: uniqueSorted([...state.failedResourceIds, record.id]),
   records: [...state.records.filter((item) => item.id !== record.id), record],
 })
+
+export const HomeDeploymentStatePathAddress = Schema.Struct({
+  statePath: Schema.String,
+})
+export type HomeDeploymentStatePathAddress = typeof HomeDeploymentStatePathAddress.Type
+
+export const HomeDeploymentStateMutationInput = Schema.Struct({
+  statePath: Schema.String,
+  state: HomeDeploymentStateSchema,
+})
+export type HomeDeploymentStateMutationInput = typeof HomeDeploymentStateMutationInput.Type
+
+export const HomeDeploymentStateMutationOutput = Schema.Struct({
+  statePath: Schema.String,
+  confirmedGateCount: Schema.Number,
+  completedResourceCount: Schema.Number,
+  failedResourceCount: Schema.Number,
+  recordCount: Schema.Number,
+})
+export type HomeDeploymentStateMutationOutput = typeof HomeDeploymentStateMutationOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const HomeDeploymentStateFileResource = defineAlchemyResource({
+  id: "canopy.home-deployment-state.file.resource",
+  kind: "file",
+  alchemyType: "attune:canopy:HomeDeploymentStateFile",
+  ownerRecipeId: "canopy.home-deployment-state",
+  producedBy: ["canopy.home-deployment-state"],
+  consumedBy: ["canopy.home-deployment", "canopy.observed-state"],
+  addressFields: ["statePath"],
+  addressSchema: HomeDeploymentStatePathAddress as never,
+  stateSchema: HomeDeploymentStateSchema as never,
+  modes: ["read", "write", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const HomeDeploymentStateAlchemyBinding = defineManagedRecipeAlchemyBinding({
+  id: "canopy.home-deployment-state.alchemy",
+  managedRecipeId: "canopy.home-deployment-state",
+  alchemyResourceType: "attune:canopy:HomeDeploymentStateFile",
+  providerId: "canopy.home-deployment-state.store",
+  resource: HomeDeploymentStateFileResource,
+  lifecycle: {
+    plan: "read",
+    read: "read",
+    check: "read",
+    apply: "write",
+  },
+  bindings: ["HomeDeploymentStateStoreLive"],
+})
+
+export interface HomeDeploymentStateStoreService {
+  readonly read: (statePath: string) => HomeDeploymentState
+  readonly write: (statePath: string, state: HomeDeploymentState) => void
+}
+
+export class HomeDeploymentStateStore extends Context.Service<
+  HomeDeploymentStateStore,
+  HomeDeploymentStateStoreService
+>()("@attune/home-deployment/HomeDeploymentStateStore") {}
+
+export const HomeDeploymentStateStoreLive = Layer.succeed(HomeDeploymentStateStore, {
+  read: readHomeDeploymentState,
+  write: writeHomeDeploymentState,
+})
+
+export const HomeDeploymentStateStoreLayer = defineRecipeLayer({
+  id: "canopy.home-deployment-state.layer",
+  sourcePath: "packages/canopy/home-deployment/src/state.ts",
+  exportName: "HomeDeploymentStateStoreLive",
+  layer: HomeDeploymentStateStoreLive as never,
+  provides: [{
+    id: "canopy.home-deployment-state.store",
+    service: HomeDeploymentStateStore as never,
+  }],
+})
+
+export const persistHomeDeploymentState = (
+  store: HomeDeploymentStateStoreService,
+  input: HomeDeploymentStateMutationInput,
+): HomeDeploymentStateMutationOutput => {
+  store.write(input.statePath, input.state)
+  return {
+    statePath: input.statePath,
+    confirmedGateCount: input.state.confirmedGateIds.length,
+    completedResourceCount: input.state.completedResourceIds.length,
+    failedResourceCount: input.state.failedResourceIds.length,
+    recordCount: input.state.records.length,
+  }
+}
+
+export const HomeDeploymentStateMutationHandler = defineRecipeHandler<
+  HomeDeploymentStateMutationInput,
+  HomeDeploymentStateMutationOutput,
+  never,
+  HomeDeploymentStateStore
+>({
+  id: "canopy.home-deployment-state.handler",
+  recipeId: "canopy.home-deployment-state",
+  sourcePath: "packages/canopy/home-deployment/src/state.ts",
+  exportName: "persistHomeDeploymentState",
+  handler: (input) =>
+    Effect.gen(function* () {
+      const store = yield* HomeDeploymentStateStore
+      return persistHomeDeploymentState(store, input)
+    }) as never,
+  layer: HomeDeploymentStateStoreLayer,
+  emitsReceipts: ["canopy.home-deployment-state.persisted"],
+})
+
+export const HomeDeploymentStateManagedRecipe = defineManagedRecipe({
+  id: "canopy.home-deployment-state",
+  projectId: "home-deployment",
+  title: "Manage Canopy local deployment state file",
+  inputSchema: HomeDeploymentStateMutationInput as never,
+  outputSchema: HomeDeploymentStateMutationOutput as never,
+  nxTarget: "home-deployment:test",
+  allowedFiles: ["packages/canopy/home-deployment/src/state.ts"],
+  validationEvidence: ["home-deployment:test"],
+  io: {
+    inputSchema: HomeDeploymentStateMutationInput as never,
+    outputSchema: HomeDeploymentStateMutationOutput as never,
+    inputResources: [HomeDeploymentStateFileResource],
+    outputResources: [HomeDeploymentStateFileResource],
+  },
+  handler: HomeDeploymentStateMutationHandler as never,
+  alchemy: HomeDeploymentStateAlchemyBinding,
+  lifecycleSubstrates: [{
+    id: "canopy.home-deployment-state.node-fs",
+    kind: "container-runtime",
+    tool: "node:fs",
+    lifecycleActions: ["plan", "apply", "check"],
+    nxTarget: "home-deployment:test",
+    evidence: ["home-deployment:test"],
+  }],
+  lifecycle: ["plan", "apply", "check"],
+  resourceKind: "home-deployment-state-file",
+  observedState: { status: "unknown" },
+  humanReviewRequired: true,
+})
+
+export const HomeDeploymentStateRecipes = [HomeDeploymentStateManagedRecipe] as const

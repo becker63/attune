@@ -3,36 +3,38 @@
   "root": ".",
   "targets": {
     "check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:policy-fast"
-          ]
-        },
-        "dryRun": false
+        "command": "pnpm exec nx run workspace:policy-fast"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "check",
+          "action": "check",
+          "recipeId": "workspace.check",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "tool-versions": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Print pinned Nix/Nx tool versions used by active workspace targets."
+        "description": "Print pinned Nix/Nx tool versions used by active workspace targets.",
+        "attune": {
+          "tier": "public",
+          "surface": "tool-versions",
+          "action": "tool-versions",
+          "recipeId": "workspace.tool-versions",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "tool-versions",
-        "parameters": {
-          "recipeId": "attune-architecture.tool-version-audit"
-        },
-        "dryRun": false
+        "command": "ATTUNE_RECIPE_ID=attune-architecture.tool-version-audit pnpm exec tsx packages/trellis/architecture/src/internal/checks/ToolVersionsCli.ts"
       }
     },
     "recipe-substrate-check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Focused diagnostic target for Recipe/ManagedRecipe declarations, package DB emission readiness, generator derivation recipes, and framework policy.",
         "attune": {
@@ -49,294 +51,308 @@
             "no-compat-scripts"
           ],
           "readModel": "RecipeDbEmissionView",
-          "projectionRegistry": "ProjectionRegistry"
+          "projectionRegistry": "ProjectionRegistry",
+          "tier": "public",
+          "surface": "recipe-substrate-check",
+          "action": "recipe-substrate-check",
+          "recipeId": "workspace.recipe-substrate-check",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "framework-protocol:test",
-            "framework-runtime:test",
-            "framework-nx:test",
-            "framework-language-service:test",
-            "attune-architecture:test",
-            "workspace:framework-policy-check",
-            "workspace:no-compat-script-check"
-          ]
-        },
-        "timeoutSeconds": 240,
-        "dryRun": false
+        "commands": [
+          "pnpm exec nx run framework-protocol:test",
+          "pnpm exec nx run framework-runtime:test",
+          "pnpm exec nx run framework-nx:test",
+          "pnpm exec nx run framework-language-service:test",
+          "pnpm exec nx run attune-architecture:test",
+          "pnpm exec nx run workspace:framework-policy-check",
+          "pnpm exec nx run workspace:no-compat-script-check"
+        ],
+        "parallel": false
       }
     },
     "atom-graph-conformance": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Cheap deterministic package atom/Reactivity graph conformance diagnostics."
+        "description": "Cheap deterministic package atom/Reactivity graph conformance diagnostics.",
+        "attune": {
+          "tier": "public",
+          "surface": "atom-graph-conformance",
+          "action": "atom-graph-conformance",
+          "recipeId": "workspace.atom-graph-conformance",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "framework-policy",
-        "parameters": {
-          "only": "atom-graph"
-        },
-        "dryRun": false
+        "command": "pnpm exec tsx packages/trellis/architecture/src/framework-policy-cli.ts --only atom-graph"
       }
     },
     "property-evidence": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Cheap deterministic property evidence and worker target metadata diagnostics."
+        "description": "Cheap deterministic property evidence and worker target metadata diagnostics.",
+        "attune": {
+          "tier": "public",
+          "surface": "property-evidence",
+          "action": "property-evidence",
+          "recipeId": "workspace.property-evidence",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "framework-policy",
-        "parameters": {
-          "only": "property-evidence"
-        },
-        "dryRun": false
+        "command": "pnpm exec tsx packages/trellis/architecture/src/framework-policy-cli.ts --only property-evidence"
       }
     },
     "coverage-conformance": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Cheap deterministic package coverage guidance conformance diagnostics."
+        "description": "Cheap deterministic package coverage guidance conformance diagnostics.",
+        "attune": {
+          "tier": "public",
+          "surface": "coverage-conformance",
+          "action": "coverage-conformance",
+          "recipeId": "workspace.coverage-conformance",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "framework-policy",
-        "parameters": {
-          "only": "coverage-conformance"
-        },
-        "dryRun": false
+        "command": "pnpm exec tsx packages/trellis/architecture/src/framework-policy-cli.ts --only coverage-conformance"
       }
     },
     "framework-policy-check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Focused framework import-boundary and no checked-in protocol report policy check."
+        "description": "Focused framework import-boundary and no checked-in protocol report policy check.",
+        "attune": {
+          "tier": "public",
+          "surface": "framework-policy-check",
+          "action": "framework-policy-check",
+          "recipeId": "workspace.framework-policy-check",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "framework-policy",
-        "parameters": {},
-        "dryRun": false
+        "command": "pnpm exec tsx packages/trellis/architecture/src/framework-policy-cli.ts"
       }
     },
     "no-compat-script-check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Focused no-compat package-local script file check for migrated Recipe/ManagedRecipe workflow surfaces.",
         "attune": {
           "tier": "public",
           "surface": "check",
-          "recipeId": "attune-architecture.no-compat-script-check"
+          "recipeId": "attune-architecture.no-compat-script-check",
+          "action": "no-compat-script-check",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "framework-policy",
-        "parameters": {
-          "only": "no-compat-scripts"
-        },
-        "dryRun": false
+        "command": "pnpm exec tsx packages/trellis/architecture/src/framework-policy-cli.ts --only no-compat-scripts"
+      }
+    },
+    "packetized-architecture-judge": {
+      "executor": "nx:run-commands",
+      "metadata": {
+        "description": "Whole-repo file-accounting packetizer and promotion judge for packetized recipe invocation architecture.",
+        "attune": {
+          "tier": "public",
+          "surface": "check",
+          "recipeId": "attune-architecture.packetized-architecture-judge",
+          "projectionId": "framework.projection.nx-target",
+          "action": "packetized-architecture-judge"
+        }
+      },
+      "options": {
+        "command": "ATTUNE_RECIPE_ID=attune-architecture.packetized-architecture-judge pnpm exec tsx packages/trellis/architecture/src/internal/checks/PacketizedArchitectureJudgeCli.ts"
       }
     },
     "arch:scan": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:recipe-substrate-check."
+        "description": "Low-level architecture scanner used by workspace policy targets. Public workflows should use workspace:policy-fast, workspace:policy-proof-pressure, or workspace:recipe-substrate-check.",
+        "attune": {
+          "tier": "public",
+          "surface": "arch",
+          "action": "scan",
+          "recipeId": "workspace.arch.scan",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "scan",
-        "parameters": {
-          "recipeId": "attune-architecture.workspace-scan"
-        },
-        "dryRun": false
+        "command": "ATTUNE_RECIPE_ID=attune-architecture.workspace-scan pnpm exec tsx packages/trellis/architecture/src/internal/checks/WorkspaceScanCli.ts"
       }
     },
     "arch:types": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "types",
-        "parameters": {
-          "recipeId": "attune-architecture.typescript-diagnostics"
-        },
-        "dryRun": false
+        "command": "ATTUNE_RECIPE_ID=attune-architecture.typescript-diagnostics pnpm exec tsx packages/trellis/architecture/src/internal/checks/TypeScriptExtendedDiagnosticsCli.ts"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "arch",
+          "action": "types",
+          "recipeId": "workspace.arch.types",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "arch:churn": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "churn",
-        "parameters": {
-          "recipeId": "attune-architecture.churn-complexity"
-        },
-        "dryRun": false
+        "command": "ATTUNE_RECIPE_ID=attune-architecture.churn-complexity pnpm exec tsx packages/trellis/architecture/src/internal/checks/ChurnComplexityCli.ts"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "arch",
+          "action": "churn",
+          "recipeId": "workspace.arch.churn",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "policy-proof-pressure": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Heavy/manual proof-pressure surface for property, Joern, fuzz, coverage, and architecture campaigns."
+        "description": "Heavy/manual proof-pressure surface for property, Joern, fuzz, coverage, and architecture campaigns.",
+        "attune": {
+          "tier": "public",
+          "surface": "policy-proof-pressure",
+          "action": "policy-proof-pressure",
+          "recipeId": "workspace.policy-proof-pressure",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:recipe-substrate-check",
-            "workspace:atom-graph-conformance",
-            "workspace:property-evidence",
-            "workspace:coverage-conformance",
-            "attune-architecture:test",
-            "workspace:arch:scan",
-            "workspace:arch:types",
-            "workspace:arch:churn",
-            "effect-oxlint-policy:test",
-            "effect-oxlint-policy:build",
-            "effect-oxlint-policy:policy",
-            "joern-effect-properties:proof",
-            "joern-effect-properties:fuzz",
-            "attune-pi-agent:proof"
-          ]
-        },
-        "dryRun": false
+        "commands": [
+          "pnpm exec nx run workspace:recipe-substrate-check",
+          "pnpm exec nx run workspace:atom-graph-conformance",
+          "pnpm exec nx run workspace:property-evidence",
+          "pnpm exec nx run workspace:coverage-conformance",
+          "pnpm exec nx run attune-architecture:test",
+          "pnpm exec nx run workspace:arch:scan",
+          "pnpm exec nx run workspace:arch:types",
+          "pnpm exec nx run workspace:arch:churn",
+          "pnpm exec nx run joern-effect-properties:proof",
+          "pnpm exec nx run joern-effect-properties:fuzz",
+          "pnpm exec nx run attune-pi-agent:proof"
+        ],
+        "parallel": false
       }
     },
     "codex-audit-prs": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Codex PR recovery audit. Public completion checks run through workspace:policy-fast.",
         "attune": {
           "tier": "internal",
           "surface": "audit",
-          "recipeId": "attune-architecture.pr-recovery-audit"
+          "recipeId": "attune-architecture.pr-recovery-audit",
+          "action": "codex-audit-prs",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "tool": "architecture",
-        "action": "check",
-        "toolId": "codex-audit-prs",
-        "parameters": {
-          "recipeId": "attune-architecture.pr-recovery-audit"
-        },
-        "dryRun": false
+        "command": "ATTUNE_RECIPE_ID=attune-architecture.pr-recovery-audit pnpm exec tsx packages/trellis/architecture/src/internal/checks/PrRecoveryAuditCli.ts"
       }
     },
     "policy-fast": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "attune-nx:test",
-            "workspace:recipe-substrate-check",
-            "workspace:atom-graph-conformance",
-            "workspace:property-evidence",
-            "workspace:coverage-conformance",
-            "attune-architecture:test",
-            "workspace:arch:scan",
-            "workspace:arch:types",
-            "workspace:arch:churn",
-            "effect-oxlint-policy:test",
-            "effect-oxlint-policy:build",
-            "effect-oxlint-policy:policy"
-          ],
-          "graphFile": "/tmp/attune-nx-graph.json",
-          "verifyPrCompletion": true,
-          "verifyPrCompletionRecipeId": "attune-architecture.pr-completion-audit"
-        },
-        "timeoutSeconds": 360,
-        "dryRun": false
+        "commands": [
+          "pnpm exec nx graph --file=/tmp/attune-workspace-graph.json",
+          "pnpm exec nx run workspace:recipe-substrate-check",
+          "pnpm exec nx run workspace:atom-graph-conformance",
+          "pnpm exec nx run workspace:property-evidence",
+          "pnpm exec nx run workspace:coverage-conformance",
+          "pnpm exec nx run attune-architecture:test",
+          "pnpm exec nx run workspace:arch:scan",
+          "pnpm exec nx run workspace:arch:types",
+          "pnpm exec nx run workspace:arch:churn",
+          "ATTUNE_RECIPE_ID=attune-architecture.pr-completion-audit pnpm exec tsx packages/trellis/architecture/src/internal/checks/PrCompletionAuditCli.ts"
+        ],
+        "parallel": false
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "policy-fast",
+          "action": "policy-fast",
+          "recipeId": "workspace.policy-fast",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "test": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Public workspace test surface for the recipe substrate and focused package checks."
+        "description": "Public workspace test surface for the recipe substrate and focused package checks.",
+        "attune": {
+          "tier": "public",
+          "surface": "test",
+          "action": "test",
+          "recipeId": "workspace.test",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "attune-nx:test",
-            "attune-architecture:test",
-            "framework-runtime:test",
-            "workspace:recipe-substrate-check"
-          ]
-        },
-        "timeoutSeconds": 360,
-        "dryRun": false
+        "commands": [
+          "pnpm exec nx run attune-architecture:test",
+          "pnpm exec nx run framework-runtime:test",
+          "pnpm exec nx run workspace:recipe-substrate-check"
+        ],
+        "parallel": false
       }
     },
     "repair": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Public workspace repair surface for deterministic Recipe/ManagedRecipe repair materialization."
+        "description": "Public workspace repair surface for deterministic Recipe/ManagedRecipe repair materialization.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "action": "repair",
+          "recipeId": "workspace.repair",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true
-        },
-        "dryRun": false
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --all-safe"
       }
     },
     "db": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Public workspace database surface for the LocalTimescaleManagedRecipe health check."
+        "description": "Public workspace database surface for the LocalTimescaleManagedRecipe health check.",
+        "attune": {
+          "tier": "public",
+          "surface": "db",
+          "action": "db",
+          "recipeId": "workspace.db",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "framework-runtime:db:check"
-          ]
-        },
-        "timeoutSeconds": 240,
-        "dryRun": false
+        "command": "pnpm exec nx run framework-runtime:db:check"
       }
     },
     "dev": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Public workspace dev surface; currently starts the FoldKit Vite workbench package target."
+        "description": "Public workspace dev surface; currently starts the FoldKit Vite workbench package target.",
+        "attune": {
+          "tier": "public",
+          "surface": "dev",
+          "action": "dev",
+          "recipeId": "workspace.dev",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "attune-foldkit:dev"
-          ]
-        },
-        "resourceTier": "external",
-        "dryRun": false
+        "command": "pnpm exec nx run attune-foldkit:dev"
       }
     }
   }

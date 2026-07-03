@@ -1,7 +1,7 @@
 import { Schema } from "effect"
 import { describe, expect, it } from "vitest"
+import { TendCoreRecipes } from "../src/recipes.js"
 import {
-  TendCoreRecipes,
   TendEventEnvelopeSchema,
   TendMagicContextDecisionSchema,
   TendOpenRtkCompressionActionSchema,
@@ -15,8 +15,17 @@ describe("@attune/tend-core", () => {
   it("declares Tend core schemas and recipe surface", () => {
     expect(TendCoreRecipes.map((recipe) => recipe.id)).toEqual([
       "tend-core.event-envelope",
+      "tend-core.receipt-projection",
+      "tend-core.config-surface",
+      "tend-core.test-suite",
     ])
-    expect(TendCoreRecipes[0]?.sourcePath).toBe("packages/tend/core/src/index.ts")
+    expect(TendCoreRecipes.some((recipe) => recipe.sourcePath === "packages/tend/core/src/recipes.ts")).toBe(false)
+    expect(TendCoreRecipes.map((recipe) => recipe.sourcePath)).toEqual([
+      "packages/tend/core/src/index.ts",
+      "packages/tend/core/src/index.ts",
+      "packages/tend/core/src/config-recipes.ts",
+      "packages/tend/core/src/test-recipes.ts",
+    ])
   })
 
   it("decodes session, tool, event, Magic Context, and OpenRTK packets", () => {

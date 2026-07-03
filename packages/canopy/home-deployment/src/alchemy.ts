@@ -1,23 +1,38 @@
 import type { Diff } from "alchemy"
 import * as Provider from "alchemy/Provider"
 import { Resource, type Resource as AlchemyResource, type ResourceBinding } from "alchemy/Resource"
+import {
+  defineAlchemyResource,
+  defineManagedRecipe,
+  defineManagedRecipeAlchemyBinding,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  type RecipeRepair,
+} from "@attune/framework-protocol"
+import { Schema } from "effect"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 
 import {
   createHomePlatformLifecycleGraph,
+  HomeDeploymentLifecycleGraphResource,
   nextLifecycleAgentStep,
+  PlatformLifecycleGraphSchema,
   type AgentStep,
   type PlatformLifecycleGraph,
   type PlatformLifecycleResource,
 } from "./lifecycle.ts"
 import {
+  canopyDesiredStateRecipeId,
+  canopyHomeDeploymentRecipeId,
+  canopyHomeDeploymentStateRecipeId,
   createHomeDeploymentPlan,
   defaultHomeDeploymentConfig,
   type DeploymentPhase,
   type GateConfirmationState,
   type HomeDeploymentConfig,
   type HomeDeploymentPlan,
+  HomeDeploymentDesiredStateResource,
   type PlannedResource,
 } from "./model.ts"
 import {
@@ -32,10 +47,15 @@ import {
 import {
   completeResourceInState,
   gateStateFromHomeDeploymentState,
+  HomeDeploymentStateFileResource,
   readHomeDeploymentState,
   writeHomeDeploymentState,
   type HomeDeploymentState,
 } from "./state.ts"
+
+const canopyDriftRepairRisk = "needs-review" as const
+const canopyHomeDeploymentProviderCollectionId = "canopy.home-deployment.provider-collection" as const
+const canopyHomeDeploymentAlchemyProviderSubstrateId = "canopy.home-deployment.alchemy-provider" as const
 
 export interface ThinkCentreDay0DeploymentProps {
   readonly config?: HomeDeploymentConfig
@@ -459,3 +479,173 @@ export const homeDeploymentProviders = () =>
       ),
     ),
   )
+
+export const canopyDriftRepair: RecipeRepair = {
+  repairId: "recipe-repair:canopy.home-deployment:drift",
+  recipeId: canopyHomeDeploymentRecipeId,
+  title: "Repair Canopy managed platform drift",
+  kind: "managed-lifecycle",
+  nxTarget: "home-deployment:repair",
+  allowedFiles: ["packages/canopy/home-deployment/**", "packages/canopy/platform-alchemy-k8s/**"],
+  risk: canopyDriftRepairRisk,
+  evidenceRequirements: ["home-deployment:test", "workspace:policy-fast"],
+}
+
+export const HomeDeploymentProviderBridgeInput = Schema.Struct({
+  providerId: Schema.Literal(canopyHomeDeploymentProviderCollectionId),
+  sourcePath: Schema.optional(Schema.String),
+})
+export type HomeDeploymentProviderBridgeInput = typeof HomeDeploymentProviderBridgeInput.Type
+
+export const HomeDeploymentProviderBridgeOutput = Schema.Struct({
+  providerId: Schema.Literal(canopyHomeDeploymentProviderCollectionId),
+  resourceExport: Schema.Literal("ThinkCentreDay0Deployment"),
+  providerExport: Schema.Literal("homeDeploymentProviders"),
+  resourceContractId: Schema.Literal("canopy.home-deployment.alchemy-resource"),
+  managedRecipeId: Schema.Literal(canopyHomeDeploymentRecipeId),
+})
+export type HomeDeploymentProviderBridgeOutput = typeof HomeDeploymentProviderBridgeOutput.Type
+
+export const HomeDeploymentAlchemyAddress = Schema.Struct({
+  id: Schema.String,
+})
+export type HomeDeploymentAlchemyAddress = typeof HomeDeploymentAlchemyAddress.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const HomeDeploymentProviderCollectionResource = defineAlchemyResource({
+  id: "canopy.home-deployment.provider-collection.resource",
+  kind: "external-service",
+  alchemyType: "alchemy:ProviderCollection",
+  ownerRecipeId: canopyHomeDeploymentRecipeId,
+  producedBy: [canopyHomeDeploymentRecipeId],
+  consumedBy: [canopyHomeDeploymentRecipeId],
+  addressFields: ["providerId"],
+  addressSchema: HomeDeploymentProviderBridgeInput as never,
+  stateSchema: HomeDeploymentProviderBridgeOutput as never,
+  modes: ["read", "external"],
+  programmaticResourceExport: "ThinkCentreDay0Deployment",
+  programmaticProviderExport: "homeDeploymentProviders",
+  programmaticBridgeSourcePath: "packages/canopy/home-deployment/src/alchemy.ts",
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ThinkCentreDay0DeploymentResourceContract = defineAlchemyResource({
+  id: "canopy.home-deployment.alchemy-resource",
+  kind: "workflow-target",
+  alchemyType: "attune:alchemy:ThinkCentreDay0Deployment",
+  providerId: canopyHomeDeploymentProviderCollectionId,
+  ownerRecipeId: canopyHomeDeploymentRecipeId,
+  producedBy: [canopyHomeDeploymentRecipeId],
+  consumedBy: ["canopy.rendered-resources", "canopy.observed-state"],
+  addressFields: ["id"],
+  addressSchema: HomeDeploymentAlchemyAddress as never,
+  stateSchema: PlatformLifecycleGraphSchema as never,
+  modes: ["plan", "apply", "check", "destroy", "read"],
+  programmaticResourceExport: "ThinkCentreDay0Deployment",
+  programmaticProviderExport: "homeDeploymentProviders",
+  programmaticBridgeSourcePath: "packages/canopy/home-deployment/src/alchemy.ts",
+})
+
+export const HomeDeploymentProviderLayer = defineRecipeLayer({
+  id: "canopy.home-deployment.provider.layer",
+  sourcePath: "packages/canopy/home-deployment/src/alchemy.ts",
+  exportName: "homeDeploymentProviders",
+  layer: homeDeploymentProviders() as never,
+  provides: [{
+    id: canopyHomeDeploymentProviderCollectionId,
+    service: AttuneHomeDeploymentProviders as never,
+  }],
+})
+
+export const planHomeDeploymentLifecycle = (input: HomeDeploymentConfig): PlatformLifecycleGraph =>
+  createHomePlatformLifecycleGraph(input)
+
+export const CanopyHomeDeploymentHandler = defineRecipeHandler<
+  HomeDeploymentConfig,
+  PlatformLifecycleGraph,
+  never,
+  AttuneHomeDeploymentProviders
+>({
+  id: "canopy.home-deployment.handler",
+  recipeId: canopyHomeDeploymentRecipeId,
+  sourcePath: "packages/canopy/home-deployment/src/alchemy.ts",
+  exportName: "planHomeDeploymentLifecycle",
+  handler: (input) =>
+    Effect.gen(function* () {
+      yield* AttuneHomeDeploymentProviders
+      return planHomeDeploymentLifecycle(input)
+    }) as never,
+  layer: HomeDeploymentProviderLayer,
+  emitsReceipts: ["canopy.home-deployment.lifecycle"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CanopyHomeDeploymentAlchemyBinding = defineManagedRecipeAlchemyBinding({
+  id: "canopy.home-deployment.alchemy",
+  managedRecipeId: canopyHomeDeploymentRecipeId,
+  alchemyResourceType: "attune:alchemy:ThinkCentreDay0Deployment",
+  providerId: canopyHomeDeploymentProviderCollectionId,
+  resource: ThinkCentreDay0DeploymentResourceContract,
+  lifecycle: {
+    plan: "plan",
+    read: "read",
+    check: "check",
+    apply: "apply",
+    destroy: "delete",
+  },
+  bindings: ["ThinkCentreDay0Deployment", "homeDeploymentProviders"],
+})
+
+export const CanopyHomeDeploymentRecipe = defineManagedRecipe({
+  id: canopyHomeDeploymentRecipeId,
+  projectId: "home-deployment",
+  title: "Manage Canopy home deployment lifecycle",
+  inputSchema: HomeDeploymentDesiredStateResource.stateSchema as never,
+  outputSchema: PlatformLifecycleGraphSchema as never,
+  nxTarget: "home-deployment:dev",
+  allowedFiles: [
+    "packages/canopy/home-deployment/src/alchemy.ts",
+    "packages/canopy/home-deployment/src/lifecycle.ts",
+    "packages/canopy/home-deployment/alchemy.run.ts",
+  ],
+  validationEvidence: ["home-deployment:test"],
+  io: {
+    inputSchema: HomeDeploymentDesiredStateResource.stateSchema as never,
+    outputSchema: PlatformLifecycleGraphSchema as never,
+    inputResources: [HomeDeploymentDesiredStateResource, HomeDeploymentProviderCollectionResource],
+    outputResources: [HomeDeploymentLifecycleGraphResource, ThinkCentreDay0DeploymentResourceContract],
+  },
+  handler: CanopyHomeDeploymentHandler as never,
+  alchemyDag: [
+    {
+      fromRecipeId: canopyDesiredStateRecipeId,
+      toRecipeId: canopyHomeDeploymentRecipeId,
+      resource: HomeDeploymentDesiredStateResource,
+      kind: "manages",
+      modes: ["plan", "read"],
+    },
+    {
+      fromRecipeId: canopyHomeDeploymentStateRecipeId,
+      toRecipeId: canopyHomeDeploymentRecipeId,
+      resource: HomeDeploymentStateFileResource,
+      kind: "observes",
+      modes: ["read", "observe"],
+    },
+  ],
+  lifecycle: ["plan", "apply", "check", "destroy"],
+  resourceKind: "canopy-platform-lifecycle",
+  alchemy: CanopyHomeDeploymentAlchemyBinding,
+  lifecycleSubstrates: [{
+    id: canopyHomeDeploymentAlchemyProviderSubstrateId,
+    kind: "container-runtime",
+    tool: "alchemy",
+    lifecycleActions: ["plan", "apply", "check", "destroy"],
+    nxTarget: "home-deployment:dev",
+    evidence: ["home-deployment:test"],
+  }],
+  observedState: { status: "unknown" },
+  driftRepair: canopyDriftRepair,
+  humanReviewRequired: true,
+})
+
+export const HomeDeploymentAlchemyRecipes = [CanopyHomeDeploymentRecipe] as const

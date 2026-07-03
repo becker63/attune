@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 export const TaskKind = S.Literals([
   "pure-implementation",
@@ -33,3 +34,26 @@ export const TaskPlan = S.Struct({
   reviewGates: S.Array(S.String),
 })
 export type TaskPlan = typeof TaskPlan.Type
+
+export const taskPlanSchemaModule = (): readonly string[] => [
+  "TaskKind",
+  "PlannedTask",
+  "RiskClassification",
+  "TaskPlan",
+]
+
+export const AttunePiTaskPlanSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.task-plan.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/task-plan.ts",
+  exportName: "taskPlanSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.task-plan.projected"],
+  handler: () => Effect.succeed(taskPlanSchemaModule()),
+})
+
+export const AttunePiTaskPlanSchemaRecipeModule = [
+  AttunePiTaskPlanSchemaHandler,
+] as const

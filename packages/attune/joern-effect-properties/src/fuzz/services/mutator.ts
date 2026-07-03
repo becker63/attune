@@ -1,4 +1,5 @@
-import { Context, Effect, Layer } from "effect"
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
 import { Node, type Project, type SourceFile } from "ts-morph"
 import type { CounterexampleReplay } from "../domain/model.js"
 import {
@@ -478,3 +479,79 @@ export type ProjectMutatorService = SemanticMutatorService
 export const ProjectMutator = SemanticMutator
 export const makeProjectMutator = makeSemanticMutator
 export const ProjectMutatorLive = SemanticMutatorLive
+
+const JoernEffectPropertiesFuzzServicesMutatorLocalRecipeId = "joern-effect-properties.fuzz.services.mutator" as const
+const JoernEffectPropertiesFuzzServicesMutatorLocalResourceId = "joern-effect-properties.fuzz.services.mutator.resource" as const
+const JoernEffectPropertiesFuzzServicesMutatorLocalHandlerId = "joern-effect-properties.fuzz.services.mutator.handler" as const
+const JoernEffectPropertiesFuzzServicesMutatorLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/services/mutator.ts" as const
+const JoernEffectPropertiesFuzzServicesMutatorLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzServicesMutatorLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesMutatorLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesMutatorLocalRecipeInput = typeof JoernEffectPropertiesFuzzServicesMutatorLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzServicesMutatorLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesMutatorLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesMutatorLocalRecipeOutput = typeof JoernEffectPropertiesFuzzServicesMutatorLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzServicesMutatorLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzServicesMutatorLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzServicesMutatorLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzServicesMutatorLocalRecipeId, JoernEffectPropertiesFuzzServicesMutatorLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzServicesMutatorLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzServicesMutatorLocalRecipeInput,
+  JoernEffectPropertiesFuzzServicesMutatorLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzServicesMutatorLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzServicesMutatorLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzServicesMutatorLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.services.mutator.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzServicesMutatorLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/services/mutator.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzServicesMutatorLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzServicesMutatorLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzServicesMutatorLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzServicesMutatorLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzServicesMutatorLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzServicesMutatorLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzServicesMutatorLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzServicesMutatorLocalRecipes = [JoernEffectPropertiesFuzzServicesMutatorLocalRecipe] as const

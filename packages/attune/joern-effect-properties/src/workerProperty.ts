@@ -1,3 +1,5 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 import {
   assert as fastCheckWorkerAssert,
   propertyFor as fastCheckWorkerPropertyFor,
@@ -338,3 +340,78 @@ export const mergeWorkerEvidenceRecords = (
   }
 }
 
+const JoernEffectPropertiesWorkerPropertyLocalRecipeId = "joern-effect-properties.worker-property" as const
+const JoernEffectPropertiesWorkerPropertyLocalResourceId = "joern-effect-properties.worker-property.resource" as const
+const JoernEffectPropertiesWorkerPropertyLocalHandlerId = "joern-effect-properties.worker-property.handler" as const
+const JoernEffectPropertiesWorkerPropertyLocalSourcePath = "packages/attune/joern-effect-properties/src/workerProperty.ts" as const
+const JoernEffectPropertiesWorkerPropertyLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesWorkerPropertyLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesWorkerPropertyLocalSourcePath),
+})
+export type JoernEffectPropertiesWorkerPropertyLocalRecipeInput = typeof JoernEffectPropertiesWorkerPropertyLocalRecipeInput.Type
+
+export const JoernEffectPropertiesWorkerPropertyLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesWorkerPropertyLocalSourcePath),
+})
+export type JoernEffectPropertiesWorkerPropertyLocalRecipeOutput = typeof JoernEffectPropertiesWorkerPropertyLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesWorkerPropertyLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesWorkerPropertyLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesWorkerPropertyLocalRecipeId,
+  producedBy: [JoernEffectPropertiesWorkerPropertyLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesWorkerPropertyLocalRecipeId, JoernEffectPropertiesWorkerPropertyLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesWorkerPropertyLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesWorkerPropertyLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesWorkerPropertyLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesWorkerPropertyLocalRecipeInput,
+  JoernEffectPropertiesWorkerPropertyLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesWorkerPropertyLocalHandlerId,
+  recipeId: JoernEffectPropertiesWorkerPropertyLocalRecipeId,
+  sourcePath: JoernEffectPropertiesWorkerPropertyLocalSourcePath,
+  exportName: "JoernEffectPropertiesWorkerPropertyLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.worker-property.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesWorkerPropertyLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesWorkerPropertyLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/workerProperty.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesWorkerPropertyLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesWorkerPropertyLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesWorkerPropertyLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesWorkerPropertyLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesWorkerPropertyLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesWorkerPropertyLocalResource],
+    outputResources: [JoernEffectPropertiesWorkerPropertyLocalResource],
+  },
+  handler: JoernEffectPropertiesWorkerPropertyLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesWorkerPropertyLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesWorkerPropertyLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesWorkerPropertyLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesWorkerPropertyLocalRecipes = [JoernEffectPropertiesWorkerPropertyLocalRecipe] as const

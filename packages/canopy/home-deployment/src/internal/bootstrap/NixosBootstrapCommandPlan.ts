@@ -1,4 +1,18 @@
-import { shellQuote, type ThinkCentreHost } from "../../model.js"
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
+import {
+  CanopyDeployPlanResource,
+  canopyDeployPlanRecipeId,
+  canopyNixosBootstrapCommandPlanRecipeId,
+  shellQuote,
+  ThinkCentreHost as ThinkCentreHostSchema,
+  type ThinkCentreHost,
+} from "../../model.js"
 
 export interface NixosBootstrapCommandPlanInput {
   readonly host: ThinkCentreHost
@@ -8,6 +22,22 @@ export interface NixosBootstrapCommandPlanInput {
   readonly tokenSource?: string
   readonly sshKey?: string
 }
+
+export const NixosBootstrapCommandPlanInputSchema = Schema.Struct({
+  host: ThinkCentreHostSchema,
+  sshTarget: Schema.String,
+  hostFlake: Schema.optional(Schema.String),
+  tokenFile: Schema.optional(Schema.String),
+  tokenSource: Schema.optional(Schema.String),
+  sshKey: Schema.optional(Schema.String),
+})
+
+export const NixosBootstrapCommandPlanOutput = Schema.Struct({
+  target: Schema.String,
+  commandPlan: Schema.String,
+  commandCount: Schema.Number,
+})
+export type NixosBootstrapCommandPlanOutput = typeof NixosBootstrapCommandPlanOutput.Type
 
 export const renderNixosBootstrapCommandPlan = (input: NixosBootstrapCommandPlanInput): string => {
   const hostFlake = input.hostFlake ?? "./nix/hosts"
@@ -89,3 +119,92 @@ export const renderNixosBootstrapCommandPlan = (input: NixosBootstrapCommandPlan
 }
 
 const renderCommand = (parts: readonly string[]): string => parts.map(shellQuote).join(" ")
+
+export const renderNixosBootstrapCommandPlanOutput = (
+  input: NixosBootstrapCommandPlanInput,
+): NixosBootstrapCommandPlanOutput => {
+  const commandPlan = renderNixosBootstrapCommandPlan(input)
+  return {
+    target: input.host.hostname,
+    commandPlan,
+    commandCount: commandPlan.split("\n").filter((line) => line.startsWith("'")).length,
+  }
+}
+
+export const NixosBootstrapCommandPlanAddress = Schema.Struct({
+  target: Schema.String,
+})
+export type NixosBootstrapCommandPlanAddress = typeof NixosBootstrapCommandPlanAddress.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const NixosBootstrapCommandPlanInputResource = defineAlchemyResource({
+  id: "canopy.nixos-bootstrap-command-plan.input.resource",
+  kind: "configuration",
+  alchemyType: "attune:canopy:NixosBootstrapCommandPlanInput",
+  ownerRecipeId: "canopy.nixos-bootstrap-command-plan",
+  producedBy: ["canopy.deploy-plan"],
+  consumedBy: ["canopy.nixos-bootstrap-command-plan"],
+  addressFields: ["target"],
+  addressSchema: NixosBootstrapCommandPlanAddress as never,
+  stateSchema: NixosBootstrapCommandPlanInputSchema as never,
+  modes: ["read"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const NixosBootstrapCommandPlanResource = defineAlchemyResource({
+  id: "canopy.nixos-bootstrap-command-plan.resource",
+  kind: "workflow-target",
+  alchemyType: "attune:canopy:NixosBootstrapCommandPlan",
+  ownerRecipeId: "canopy.nixos-bootstrap-command-plan",
+  producedBy: ["canopy.nixos-bootstrap-command-plan"],
+  consumedBy: ["canopy.observed-state"],
+  addressFields: ["target"],
+  addressSchema: NixosBootstrapCommandPlanAddress as never,
+  stateSchema: NixosBootstrapCommandPlanOutput as never,
+  modes: ["invoke", "project", "read"],
+  programmaticResourceExport: "renderNixosBootstrapCommandPlanOutput",
+  programmaticBridgeSourcePath: "packages/canopy/home-deployment/src/internal/bootstrap/NixosBootstrapCommandPlan.ts",
+})
+
+export const NixosBootstrapCommandPlanHandler = defineRecipeHandler<
+  NixosBootstrapCommandPlanInput,
+  NixosBootstrapCommandPlanOutput
+>({
+  id: "canopy.nixos-bootstrap-command-plan.handler",
+  recipeId: canopyNixosBootstrapCommandPlanRecipeId,
+  sourcePath: "packages/canopy/home-deployment/src/internal/bootstrap/NixosBootstrapCommandPlan.ts",
+  exportName: "renderNixosBootstrapCommandPlanOutput",
+  handler: (input) => Effect.succeed(renderNixosBootstrapCommandPlanOutput(input)) as never,
+  emitsReceipts: ["canopy.nixos-bootstrap-command-plan.projected"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const NixosBootstrapCommandPlanRecipe = defineProjectionRecipe({
+  id: canopyNixosBootstrapCommandPlanRecipeId,
+  projectId: "home-deployment",
+  title: "Render NixOS bootstrap command plan without live host mutation",
+  inputSchema: NixosBootstrapCommandPlanInputSchema as never,
+  outputSchema: NixosBootstrapCommandPlanOutput as never,
+  nxTarget: "home-deployment:check",
+  allowedFiles: [
+    "packages/canopy/home-deployment/src/internal/bootstrap/NixosBootstrapCommandPlan.ts",
+    "nix/hosts/**",
+  ],
+  validationEvidence: ["home-deployment:test", "workspace:policy-fast"],
+  io: {
+    inputSchema: NixosBootstrapCommandPlanInputSchema as never,
+    outputSchema: NixosBootstrapCommandPlanOutput as never,
+    inputResources: [CanopyDeployPlanResource, NixosBootstrapCommandPlanInputResource],
+    outputResources: [NixosBootstrapCommandPlanResource],
+  },
+  handler: NixosBootstrapCommandPlanHandler as never,
+  alchemyDag: [{
+    fromRecipeId: canopyDeployPlanRecipeId,
+    toRecipeId: canopyNixosBootstrapCommandPlanRecipeId,
+    resource: CanopyDeployPlanResource,
+    kind: "invokes",
+    modes: ["invoke", "read"],
+  }],
+})
+
+export const HomeDeploymentBootstrapRecipes = [NixosBootstrapCommandPlanRecipe] as const

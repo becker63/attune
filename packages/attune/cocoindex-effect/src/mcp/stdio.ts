@@ -1,7 +1,24 @@
 import { spawn } from "node:child_process"
 import { createInterface, type Interface } from "node:readline"
-import { Effect } from "effect"
+import {
+  defineAlchemyResource,
+  defineManagedRecipe,
+  defineManagedRecipeAlchemyBinding,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
 import { CocoIndexCommandError, CocoIndexMcpProtocolError } from "../errors.js"
+
+export const CocoIndexMcpStdioRecipeId = "cocoindex-effect.mcp-stdio" as const
+const CocoIndexMcpStdioResourceId = "cocoindex-effect.mcp-stdio.resource" as const
+const CocoIndexMcpStdioHandlerId = "cocoindex-effect.mcp-stdio.handler" as const
+const CocoIndexMcpStdioAlchemyBindingId = "cocoindex-effect.mcp-stdio.alchemy" as const
+const CocoIndexMcpStdioProviderId = "cocoindex-effect.mcp-stdio.provider" as const
+const CocoIndexMcpStdioLayerId = "cocoindex-effect.mcp-stdio.layer" as const
+const CocoIndexMcpStdioRuntimeId = "cocoindex-effect.mcp-stdio.runtime" as const
+const CocoIndexMcpStdioSourcePath =
+  "packages/attune/cocoindex-effect/src/mcp/stdio.ts" as const
 
 export type McpStdioCommand = Readonly<{
   readonly command: string
@@ -16,6 +33,136 @@ export type McpStdioClient = Readonly<{
   readonly notify: (method: string, params?: unknown) => void
   readonly close: () => Promise<void>
 }>
+
+export const McpStdioCommandSchema = Schema.Struct({
+  command: Schema.String,
+  args: Schema.optional(Schema.Array(Schema.String)),
+  cwd: Schema.String,
+  env: Schema.optional(Schema.Record(Schema.String, Schema.String)),
+  startupTimeoutMs: Schema.optional(Schema.Number),
+})
+export type McpStdioCommandInput = typeof McpStdioCommandSchema.Type
+
+export const McpStdioSessionState = Schema.Struct({
+  command: Schema.String,
+  cwd: Schema.String,
+  protocolVersion: Schema.Literal("2025-06-18"),
+  phase: Schema.Literals(["Planned", "Ready", "Stopped"] as const),
+  startupTimeoutMs: Schema.Number,
+})
+export type McpStdioSessionState = typeof McpStdioSessionState.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CocoIndexMcpStdioResource = defineAlchemyResource({
+  id: CocoIndexMcpStdioResourceId,
+  kind: "external-service",
+  alchemyType: "attune:resource:McpStdioProcess",
+  providerId: CocoIndexMcpStdioProviderId,
+  ownerRecipeId: CocoIndexMcpStdioRecipeId,
+  producedBy: [CocoIndexMcpStdioRecipeId],
+  consumedBy: [
+    "cocoindex-effect.emit-mcp-schema",
+    "cocoindex-effect.repository-session",
+  ],
+  addressFields: ["command", "cwd"],
+  addressSchema: McpStdioCommandSchema,
+  stateSchema: McpStdioSessionState,
+  modes: ["plan", "apply", "check", "destroy", "read", "external"],
+  programmaticResourceExport: "startMcpStdioClient",
+  programmaticProviderExport: "CocoIndexMcpStdioRecipe",
+  programmaticBridgeSourcePath: CocoIndexMcpStdioSourcePath,
+})
+
+export interface CocoIndexMcpStdioRuntimeService {
+  readonly plan: (input: McpStdioCommandInput) => Effect.Effect<McpStdioSessionState>
+}
+
+export class CocoIndexMcpStdioRuntime extends Context.Service<
+  CocoIndexMcpStdioRuntime,
+  CocoIndexMcpStdioRuntimeService
+>()("cocoindex-effect/CocoIndexMcpStdioRuntime") {}
+
+export const CocoIndexMcpStdioRuntimeLive = Layer.succeed(CocoIndexMcpStdioRuntime, {
+  plan: (input) =>
+    Effect.succeed({
+      command: input.command,
+      cwd: input.cwd,
+      protocolVersion: "2025-06-18" as const,
+      phase: "Planned" as const,
+      startupTimeoutMs: input.startupTimeoutMs ?? 30_000,
+    }),
+})
+
+export const CocoIndexMcpStdioLayer = defineRecipeLayer({
+  id: CocoIndexMcpStdioLayerId,
+  sourcePath: CocoIndexMcpStdioSourcePath,
+  exportName: "CocoIndexMcpStdioRuntimeLive",
+  layer: CocoIndexMcpStdioRuntimeLive,
+  provides: [{
+    id: CocoIndexMcpStdioRuntimeId,
+    service: CocoIndexMcpStdioRuntime,
+  }],
+})
+
+export const CocoIndexMcpStdioLifecycleHandler = defineRecipeHandler<
+  McpStdioCommandInput,
+  McpStdioSessionState,
+  CocoIndexCommandError | CocoIndexMcpProtocolError,
+  CocoIndexMcpStdioRuntime
+>({
+  id: CocoIndexMcpStdioHandlerId,
+  recipeId: CocoIndexMcpStdioRecipeId,
+  sourcePath: CocoIndexMcpStdioSourcePath,
+  exportName: "startMcpStdioClient",
+  handler: (input) =>
+    Effect.gen(function* planMcpStdioLifecycle() {
+      const runtime = yield* CocoIndexMcpStdioRuntime
+      return yield* runtime.plan(input)
+    }),
+  layer: CocoIndexMcpStdioLayer,
+  emitsReceipts: ["cocoindex-effect.mcp-stdio.lifecycle"],
+})
+
+export const CocoIndexMcpStdioAlchemyBinding = defineManagedRecipeAlchemyBinding<
+  McpStdioCommandInput,
+  McpStdioSessionState
+>({
+  id: CocoIndexMcpStdioAlchemyBindingId,
+  managedRecipeId: CocoIndexMcpStdioRecipeId,
+  alchemyResourceType: "attune:managed-resource:McpStdioProcess",
+  providerId: CocoIndexMcpStdioProviderId,
+  resource: CocoIndexMcpStdioResource,
+  lifecycle: {
+    plan: "CocoIndexMcpStdioLifecycleHandler",
+    apply: "startMcpStdioClient",
+    check: "initializeMcp",
+    destroy: "McpStdioClient.close",
+    read: "CocoIndexMcpStdioLifecycleHandler",
+  },
+})
+
+export const CocoIndexMcpStdioRecipe = defineManagedRecipe({
+  id: CocoIndexMcpStdioRecipeId,
+  projectId: "cocoindex-effect",
+  title: "Manage CocoIndex MCP stdio process lifecycle",
+  inputSchema: McpStdioCommandSchema,
+  outputSchema: McpStdioSessionState,
+  allowedFiles: [CocoIndexMcpStdioSourcePath],
+  validationEvidence: ["cocoindex-effect:test", "cocoindex-effect:typecheck"],
+  lifecycle: ["plan", "apply", "check", "destroy"],
+  resourceKind: "mcp-stdio-client",
+  io: {
+    inputSchema: McpStdioCommandSchema,
+    outputSchema: McpStdioSessionState,
+    inputResources: [CocoIndexMcpStdioResource],
+    outputResources: [CocoIndexMcpStdioResource],
+  },
+  handler: CocoIndexMcpStdioLifecycleHandler as never,
+  alchemy: CocoIndexMcpStdioAlchemyBinding,
+  humanReviewRequired: true,
+})
+
+export const CocoIndexMcpStdioRecipes = [CocoIndexMcpStdioRecipe] as const
 
 type PendingRequest = {
   readonly resolve: (value: unknown) => void

@@ -1,4 +1,10 @@
-import { Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineInvocationRecipe,
+  defineRecipeHandler,
+  type RecipeInvocation,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 
 import { defaultAttunePiPermissionProfile } from "../permissions/default-profile.js"
 import {
@@ -9,6 +15,9 @@ import {
   type SuggestedObligation,
 } from "../schema/spec-interview.js"
 import type { ImplementationSpec } from "../schema/implementation-spec.js"
+
+const implementationSpecRecipeId = "attune-pi-agent.implementation-spec"
+const specConversationRecipeId = "attune-pi-agent.spec-conversation"
 
 const requiredSlots = [
   "affectedPackages",
@@ -22,6 +31,34 @@ const requiredSlots = [
 type RequiredSlot = (typeof requiredSlots)[number]
 
 type AnswerMap = ReadonlyMap<string, string | ReadonlyArray<string>>
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiSpecInterviewResource = defineAlchemyResource({
+  id: "attune-pi-agent.spec-interview.workflow-target",
+  kind: "workflow-target",
+  alchemyType: "attune:resource:WorkflowTarget",
+  ownerRecipeId: implementationSpecRecipeId,
+  consumedBy: [implementationSpecRecipeId],
+  producedBy: [implementationSpecRecipeId, specConversationRecipeId],
+  addressFields: ["rawPrompt"],
+  addressSchema: SpecInterviewInput,
+  stateSchema: SpecInterviewResult,
+  modes: ["invoke", "project", "observe"],
+  programmaticResourceExport: "AttunePiSpecInterviewResource",
+})
+
+export const attuneSpecInvocation = (
+  input: typeof SpecInterviewInput.Type,
+): RecipeInvocation => ({
+  recipeId: implementationSpecRecipeId,
+  action: "report",
+  input,
+  source: {
+    surface: "cli",
+    projectId: "attune-pi-agent",
+    target: "/attune-spec",
+  },
+})
 
 const questionBank: Record<RequiredSlot, SpecInterviewQuestion> = {
   affectedPackages: {
@@ -333,3 +370,44 @@ const slugify = (value: string): string => {
 
 const mergeUnique = (values: ReadonlyArray<string>): string[] =>
   [...new Set(values)]
+
+export const AttunePiImplementationSpecRecipe = defineInvocationRecipe({
+  id: "attune-pi-agent.implementation-spec",
+  projectId: "attune-pi-agent",
+  title: "Interview for bounded Pi implementation specs through recipe invocation",
+  inputSchema: SpecInterviewInput,
+  outputSchema: SpecInterviewResult,
+  nxTarget: "attune-pi-agent:test",
+  entrypoints: ["packages/attune/pi-agent/src/commands/index.ts"],
+  allowedFiles: [
+    "packages/attune/pi-agent/src/commands/attune-spec.ts",
+    "packages/attune/pi-agent/src/pi/spec-conversation.ts",
+    "packages/attune/pi-agent/src/schema/**",
+  ],
+  validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:typecheck"],
+  io: {
+    inputSchema: SpecInterviewInput,
+    outputSchema: SpecInterviewResult,
+    inputResources: [AttunePiSpecInterviewResource],
+    outputResources: [AttunePiSpecInterviewResource],
+  },
+  handler: defineRecipeHandler<typeof SpecInterviewInput.Type, typeof SpecInterviewResult.Type>({
+    id: "attune-pi-agent.implementation-spec.handler",
+    recipeId: implementationSpecRecipeId,
+    sourcePath: "packages/attune/pi-agent/src/commands/attune-spec.ts",
+    exportName: "attuneSpec",
+    emitsReceipts: ["attune-pi-agent.spec-interview.projected"],
+    handler: (input) => Effect.succeed(attuneSpec(input)),
+  }),
+  alchemyDag: [{
+    fromRecipeId: implementationSpecRecipeId,
+    toRecipeId: specConversationRecipeId,
+    resource: AttunePiSpecInterviewResource,
+    kind: "invokes",
+    modes: ["invoke", "project"],
+  }],
+})
+
+export const AttunePiSpecCommandRecipes = [
+  AttunePiImplementationSpecRecipe,
+] as const

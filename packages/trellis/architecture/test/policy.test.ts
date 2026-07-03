@@ -26,18 +26,35 @@ describe("attune architecture policy", () => {
     )
 
     expect(records.map((record) => record.recipeId)).toEqual([
-      "attune-architecture.workspace-policy",
+      "attune-architecture.source-surface",
       "attune-architecture.command-surface-conformance",
+      "attune-architecture.framework-import-boundary",
+      "attune-architecture.atom-implementation-policy",
+      "attune-architecture.no-report-policy",
+      "attune-architecture.workspace-recipe-catalog-source",
+      "attune-architecture.test-suite",
+      "attune-architecture.workspace-policy",
       "attune-architecture.artifact-ownership-quarantine",
-      "attune-architecture.tool-version-audit",
-      "attune-architecture.workspace-scan",
       "attune-architecture.no-compat-script-check",
+      "attune-architecture.workspace-documentation-ownership",
+      "attune-architecture.workspace-config-ownership",
+      "attune-architecture.openspec-change-ownership",
+      "attune-architecture.tool-version-audit",
+      "attune-architecture.workspace-nix-toolchain-ownership",
+      "attune-architecture.workspace-scan",
+      "attune-architecture.packetized-architecture-judge-invocation",
+      "attune-architecture.packetized-architecture-judge",
+      "attune-architecture.cli",
       "attune-architecture.typescript-diagnostics",
       "attune-architecture.churn-complexity",
       "attune-architecture.pr-completion-audit",
       "attune-architecture.pr-recovery-audit",
+      "attune-architecture.recipe-repair-cli",
     ])
-    expect(records.every((record) => record.sourcePath === "packages/trellis/architecture/src/recipes.ts")).toBe(true)
+    expect(records.every((record) => record.sourcePath !== "packages/trellis/architecture/src/recipes.ts")).toBe(true)
+    expect(AttuneArchitectureRecipes.every((recipe) =>
+      recipe.io !== undefined && recipe.handler !== undefined
+    )).toBe(true)
   })
 
   it("emits typed rule ids for undeclared workflow surfaces", () => {
@@ -72,7 +89,7 @@ describe("attune architecture policy", () => {
 
   it("reports Artifact ownership inventory as warning-only", () => {
     withWorkspace({
-      "packages/example/artifact-ownership.json": JSON.stringify({ artifactOwnership: { version: "1", shapes: [{ id: "effect-service", owner: "@attune/nx", generator: "@attune/nx:effect-service", paths: ["src/service.ts"] }] } }),
+      "packages/example/artifact-ownership.json": JSON.stringify({ artifactOwnership: { version: "1", shapes: [{ id: "effect-service", owner: "@attune/framework-nx", generator: "@attune/framework-nx:effect-service-boundary", paths: ["src/service.ts"] }] } }),
     }, (workspaceRoot) => {
       const result = scanWorkspace({ workspaceRoot })
       expect(result.exitCode).toBe(0)

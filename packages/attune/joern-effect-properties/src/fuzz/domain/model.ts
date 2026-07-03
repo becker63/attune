@@ -1,4 +1,9 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineRecipeHandler,
+  defineSchemaRecipe,
+} from "@attune/framework-protocol"
 
 export const SyntaxFlavor = Schema.Literal("js", "ts", "jsx", "tsx")
 export type SyntaxFlavor = Schema.Schema.Type<typeof SyntaxFlavor>
@@ -224,3 +229,53 @@ export const SemanticRunSummary = Schema.Struct({
   seed: Schema.Number,
 })
 export type SemanticRunSummary = Schema.Schema.Type<typeof SemanticRunSummary>
+
+const semanticCaseRecipeId = "joern-effect-properties.semantic-case" as const
+const semanticCaseSourcePath = "packages/attune/joern-effect-properties/src/fuzz/domain/model.ts" as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const SemanticCaseResource = defineAlchemyResource({
+  id: "joern-effect-properties.semantic-case.resource",
+  kind: "schema",
+  alchemyType: "attune:resource:Schema",
+  ownerRecipeId: semanticCaseRecipeId,
+  producedBy: [semanticCaseRecipeId],
+  consumedBy: [
+    semanticCaseRecipeId,
+    "joern-effect-properties.property-validation-worker",
+    "joern-effect-properties.worker-fuzzer",
+  ],
+  addressFields: ["caseId"],
+  addressSchema: SemanticCase as never,
+  stateSchema: SemanticCase as never,
+  modes: ["read", "project", "check"],
+})
+
+export const SemanticCaseHandler = defineRecipeHandler<SemanticCase, SemanticCase>({
+  id: "joern-effect-properties.semantic-case.handler",
+  recipeId: semanticCaseRecipeId,
+  sourcePath: semanticCaseSourcePath,
+  exportName: "SemanticCaseRecipes",
+  emitsReceipts: ["joern-effect-properties.semantic-case.projected"],
+  handler: (input) => Effect.succeed(input) as never,
+})
+
+export const SemanticCaseRecipe = defineSchemaRecipe({
+  id: semanticCaseRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Build semantic fuzzer case",
+  inputSchema: SemanticCase as never,
+  outputSchema: SemanticCase as never,
+  nxTarget: "joern-effect-properties:test",
+  allowedFiles: [semanticCaseSourcePath],
+  validationEvidence: ["joern-effect-properties:test"],
+  io: {
+    inputSchema: SemanticCase as never,
+    outputSchema: SemanticCase as never,
+    inputResources: [SemanticCaseResource],
+    outputResources: [SemanticCaseResource],
+  },
+  handler: SemanticCaseHandler as never,
+})
+
+export const SemanticCaseRecipes = [SemanticCaseRecipe] as const

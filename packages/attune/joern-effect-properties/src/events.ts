@@ -1,3 +1,5 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler, defineRecipeLayer } from "@attune/framework-protocol"
+import { Effect, Layer, Schema } from "effect"
 import { randomUUID } from "node:crypto"
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
@@ -417,3 +419,91 @@ export const makePropertyEvent = (
   source: "property",
   ...(input.payload === undefined ? {} : { payload: input.payload }),
 })
+
+const JoernEffectPropertiesEventsLocalRecipeId = "joern-effect-properties.events" as const
+const JoernEffectPropertiesEventsLocalResourceId = "joern-effect-properties.events.resource" as const
+const JoernEffectPropertiesEventsLocalHandlerId = "joern-effect-properties.events.handler" as const
+const JoernEffectPropertiesEventsLocalSourcePath = "packages/attune/joern-effect-properties/src/events.ts" as const
+const JoernEffectPropertiesEventsLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesEventsLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesEventsLocalSourcePath),
+})
+export type JoernEffectPropertiesEventsLocalRecipeInput = typeof JoernEffectPropertiesEventsLocalRecipeInput.Type
+
+export const JoernEffectPropertiesEventsLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesEventsLocalSourcePath),
+})
+export type JoernEffectPropertiesEventsLocalRecipeOutput = typeof JoernEffectPropertiesEventsLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesEventsLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesEventsLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesEventsLocalRecipeId,
+  producedBy: [JoernEffectPropertiesEventsLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesEventsLocalRecipeId, JoernEffectPropertiesEventsLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesEventsLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesEventsLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesEventsLocalLayer = defineRecipeLayer({
+  id: "joern-effect-properties.events.layer",
+  sourcePath: JoernEffectPropertiesEventsLocalSourcePath,
+  exportName: "writePropertyEvent",
+  layer: Layer.empty as never,
+  provides: [
+    { id: "filesystem", service: "Effect.Platform.FileSystem" },
+    { id: "external-event-sink", service: "AxiomWithoutBatching" },
+  ],
+})
+
+export const JoernEffectPropertiesEventsLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesEventsLocalRecipeInput,
+  JoernEffectPropertiesEventsLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesEventsLocalHandlerId,
+  recipeId: JoernEffectPropertiesEventsLocalRecipeId,
+  sourcePath: JoernEffectPropertiesEventsLocalSourcePath,
+  exportName: "JoernEffectPropertiesEventsLocalRecipes",
+  layer: JoernEffectPropertiesEventsLocalLayer,
+  emitsReceipts: ["joern-effect-properties.events.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesEventsLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesEventsLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/events.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesEventsLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesEventsLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesEventsLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesEventsLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesEventsLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesEventsLocalResource],
+    outputResources: [JoernEffectPropertiesEventsLocalResource],
+  },
+  handler: JoernEffectPropertiesEventsLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesEventsLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesEventsLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesEventsLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesEventsLocalRecipes = [JoernEffectPropertiesEventsLocalRecipe] as const

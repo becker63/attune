@@ -1,6 +1,10 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
 import { OperationKinds, OperationKindSchema, type OperationKind } from "./core.js"
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export const DiagnosticRuleFamilies = [
   "schema-validation",
@@ -462,3 +466,85 @@ const collectViews = (operation: OperationDiagnosticRuleInput, key: keyof ViewDi
 }
 
 const uniqueDiagnosticRuleIds = <Id extends DiagnosticRuleId>(ids: readonly Id[]): readonly Id[] => [...new Set(ids)]
+
+export const DiagnosticRulesRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+  operationKind: OperationKindSchema,
+})
+export type DiagnosticRulesRecipeInput = typeof DiagnosticRulesRecipeInput.Type
+
+export const DiagnosticRulesRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  ruleIds: Schema.Array(DiagnosticRuleIdSchema),
+})
+export type DiagnosticRulesRecipeOutput = typeof DiagnosticRulesRecipeOutput.Type
+
+export const summarizeDiagnosticRuleInference = (
+  input: DiagnosticRulesRecipeInput,
+): DiagnosticRulesRecipeOutput => ({
+  sourcePath: input.sourcePath,
+  ruleIds: [...allowedDiagnosticRuleIdsForKind(input.operationKind)],
+})
+
+export const ProjectFactsDiagnosticRulesRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+// @attune-packet-target generated-runtime-projection eligible
+  const DiagnosticRulesSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.diagnostic-rules.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: DiagnosticRulesRecipeInput,
+    stateSchema: DiagnosticRulesRecipeInput,
+    modes: ["read"],
+    consumedBy: ["framework-protocol.project-facts.diagnostic-rule-inference"],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const DiagnosticRuleCatalog = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.diagnostic-rules.catalog",
+    kind: "schema",
+    alchemyType: "attune:resource:DiagnosticRuleCatalog",
+    addressSchema: DiagnosticRulesRecipeInput,
+    stateSchema: DiagnosticRulesRecipeOutput,
+    modes: ["project", "read"],
+    ownerRecipeId: "framework-protocol.project-facts.diagnostic-rule-inference",
+    producedBy: ["framework-protocol.project-facts.diagnostic-rule-inference"],
+  })
+  const DiagnosticRulesHandler = helpers.defineRecipeHandler<DiagnosticRulesRecipeInput, DiagnosticRulesRecipeOutput, never, never>({
+    id: "framework-protocol.project-facts.diagnostic-rule-inference.handler",
+    recipeId: "framework-protocol.project-facts.diagnostic-rule-inference",
+    sourcePath: "packages/trellis/protocol/src/project-facts/diagnostic-rules.ts",
+    exportName: "summarizeDiagnosticRuleInference",
+    emitsReceipts: ["diagnostic-rules.inferred"],
+    handler: (input) => Effect.succeed(summarizeDiagnosticRuleInference(input)),
+  })
+  const DiagnosticRulesDagEdge = helpers.defineAlchemyRecipeDagEdge({
+    fromRecipeId: "framework-protocol.project-facts.diagnostic-rules.source",
+    toRecipeId: "framework-protocol.project-facts.diagnostic-rule-inference",
+    resource: "framework-protocol.project-facts.diagnostic-rules.catalog",
+    kind: "diagnoses",
+    modes: ["read", "project"],
+  })
+
+  return [
+    helpers.defineDiagnosticRecipe({
+      id: "framework-protocol.project-facts.diagnostic-rule-inference",
+      projectId: "framework-protocol",
+      title: "Infer canonical diagnostic rules from project-fact operation metadata",
+      inputSchema: DiagnosticRulesRecipeInput,
+      outputSchema: DiagnosticRulesRecipeOutput,
+      io: {
+        inputSchema: DiagnosticRulesRecipeInput,
+        outputSchema: DiagnosticRulesRecipeOutput,
+        inputResources: [DiagnosticRulesSource],
+        outputResources: [DiagnosticRuleCatalog],
+      },
+      handler: DiagnosticRulesHandler,
+      alchemyDag: [DiagnosticRulesDagEdge],
+      nxTarget: "framework-protocol:test",
+      observedFiles: ["packages/trellis/protocol/src/project-facts/diagnostic-rules.ts"],
+      allowedFiles: ["packages/trellis/protocol/src/project-facts/diagnostic-rules.ts"],
+      validationEvidence: ["framework-protocol:test", "framework-protocol:typecheck"],
+    }),
+  ] as const
+}

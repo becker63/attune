@@ -1,4 +1,9 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
+
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export type ProgramObservationKind =
   | "schema-decode"
@@ -11,7 +16,7 @@ export type ProgramObservationKind =
   | "counterexample"
   | "weak-oracle"
 
-export const ProgramObservationKindSchema = Schema.Literals([
+export const ProgramObservationKinds = [
   "schema-decode",
   "law-observed",
   "property-run",
@@ -21,7 +26,9 @@ export const ProgramObservationKindSchema = Schema.Literals([
   "coverage-point",
   "counterexample",
   "weak-oracle",
-] as const)
+] as const
+
+export const ProgramObservationKindSchema = Schema.Literals(ProgramObservationKinds)
 
 export interface ProgramObservation {
   readonly eventId: string
@@ -86,3 +93,86 @@ export const ProgramArtifactRecordSchema = Schema.Struct({
   actualHash: Schema.optional(Schema.String),
   status: Schema.Literals(["current", "stale", "missing"] as const),
 })
+
+export const ObservationsRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+})
+export type ObservationsRecipeInput = typeof ObservationsRecipeInput.Type
+
+export const ObservationsRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  observationKinds: Schema.Array(ProgramObservationKindSchema),
+  artifactStatuses: Schema.Array(Schema.Literals(["current", "stale", "missing"] as const)),
+})
+export type ObservationsRecipeOutput = typeof ObservationsRecipeOutput.Type
+
+export const summarizeObservationProtocol = (
+  input: ObservationsRecipeInput,
+): ObservationsRecipeOutput => ({
+  sourcePath: input.sourcePath,
+  observationKinds: [...ProgramObservationKinds],
+  artifactStatuses: ["current", "stale", "missing"],
+})
+
+export const ObservationsRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+// @attune-packet-target generated-runtime-projection eligible
+  const ObservationSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.observations.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: ObservationsRecipeInput,
+    stateSchema: ObservationsRecipeInput,
+    modes: ["read"],
+    consumedBy: ["framework-protocol.observations.protocol"],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const ObservationStream = helpers.defineAlchemyResource({
+    id: "framework-protocol.observations.stream",
+    kind: "observation-stream",
+    alchemyType: "attune:resource:ProgramObservationStream",
+    addressSchema: ObservationsRecipeInput,
+    stateSchema: ObservationsRecipeOutput,
+    modes: ["observe", "read"],
+    ownerRecipeId: "framework-protocol.observations.protocol",
+    producedBy: ["framework-protocol.observations.protocol"],
+  })
+  const ObservationHandler = helpers.defineRecipeHandler<ObservationsRecipeInput, ObservationsRecipeOutput, never, never>({
+    id: "framework-protocol.observations.protocol.handler",
+    recipeId: "framework-protocol.observations.protocol",
+    sourcePath: "packages/trellis/protocol/src/observations/index.ts",
+    exportName: "summarizeObservationProtocol",
+    emitsReceipts: ["observation.protocol-summary"],
+    handler: (input) => Effect.succeed(summarizeObservationProtocol(input)),
+  })
+  const ObservationDagEdge = helpers.defineAlchemyRecipeDagEdge({
+    fromRecipeId: "framework-protocol.observations.source",
+    toRecipeId: "framework-protocol.observations.protocol",
+    resource: "framework-protocol.observations.stream",
+    kind: "observes",
+    modes: ["read", "observe"],
+  })
+
+  return [
+    helpers.defineObservationRecipe({
+      id: "framework-protocol.observations.protocol",
+      projectId: "framework-protocol",
+      title: "Define program observation, run, and artifact receipt contracts",
+      inputSchema: ObservationsRecipeInput,
+      outputSchema: ObservationsRecipeOutput,
+      io: {
+        inputSchema: ObservationsRecipeInput,
+        outputSchema: ObservationsRecipeOutput,
+        inputResources: [ObservationSource],
+        outputResources: [ObservationStream],
+      },
+      handler: ObservationHandler,
+      alchemyDag: [ObservationDagEdge],
+      nxTarget: "framework-protocol:test",
+      observedFiles: ["packages/trellis/protocol/src/observations/index.ts"],
+      allowedFiles: ["packages/trellis/protocol/src/observations/index.ts"],
+      validationEvidence: ["framework-protocol:test", "framework-protocol:typecheck"],
+    }),
+  ] as const
+}

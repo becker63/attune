@@ -5,23 +5,47 @@ import * as os from "node:os"
 import * as path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
-import { Effect, Schema } from "effect"
-import { defineRecipe, recipeObservationId } from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
+import {
+  RecipeInvocationSchema,
+  defineAlchemyResource,
+  defineDocumentationRecipe,
+  defineInvocationRecipe,
+  defineObservationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  recipeObservationId,
+  type RecipeObservation,
+  type RecipeInvocation,
+  type RecipeReceipt,
+} from "@attune/framework-protocol"
 import {
   createMeasurementObservation,
   createMeasurementObservationSink,
   measurementStoreConfigFromEnv,
   recordMeasurementObservation,
-} from "@attune/framework-runtime"
+} from "@attune/framework-runtime/MeasurementObservation"
+import {
+  type RecipeReceiptStoreApi,
+} from "@attune/framework-runtime/RecipeReceiptStore"
 
 import {
   OpenCodeSessionLogSchema,
+  TendOpenCodeSessionDecoderRecipe,
   decodeOpenCodeSessionLog,
   opencodeSessionLogFixture,
   type OpenCodeSessionLog,
 } from "./index.js"
+import {
+  TendOpenCodeBulkStoreEmissionSchema,
+  TendOpenCodeCommandObservationOutputSchema,
+  TendOpenCodeDecodedOutputSchema,
+  createOpenSpecPacketSidecarProof,
+  finalizeObservedOpenSpecPacketRunWithStoreEmission,
+} from "./contracts.js"
 import type {
   AttuneOpenCodeFingerprint,
+  TendOpenCodeBulkStoreEmission,
   TendOpenCodeCapabilities,
   TendOpenCodeCommandObservationOutput,
   TendOpenCodeCommandOutputSummary,
@@ -32,6 +56,7 @@ import type {
   TendOpenCodeJsonFormat,
   TendOpenCodeMeasurementPhase,
   TendOpenCodeOutputFormat,
+  TendOpenCodePacketRunSummary,
   TendOpenCodeSessionSummary,
 } from "./contracts.js"
 
@@ -40,27 +65,290 @@ const packageJsonPath = path.join(packageRoot, "package.json")
 const defaultSummaryLimit = 240
 const tendOpenCodeEntrypoint = "tend-opencode"
 const tendOpenCodeToolsEntrypoint = "tend-opencode-tools"
-const commandObservationRecipeId = "tend-opencode.command-observation"
+export const TendOpenCodePackageId = "tend-opencode" as const
+export const TendOpenCodeTypecheckTarget = "tend-opencode:typecheck" as const
+export const TendOpenCodeTestTarget = "tend-opencode:test" as const
+export const TendOpenCodeCliInvocationRecipeId = "tend-opencode.cli-invocation" as const
+export const TendOpenCodeCommandObservationRecipeId = "tend-opencode.command-observation" as const
+export const TendOpenCodeCommandDocumentationRecipeId = "tend-opencode.command-documentation" as const
+const tendOpenCodeCliCoreSourcePath = "packages/tend/opencode/src/cli-core.ts" as const
+const tendOpenCodeCliInvocationHandlerId = "tend-opencode.cli-invocation.handler" as const
+const tendOpenCodeCommandObservationHandlerId = "tend-opencode.command-observation.handler" as const
+const tendOpenCodeCommandDocumentationHandlerId = "tend-opencode.command-documentation.handler" as const
+export const TendOpenCodePluginCapabilities = {
+  commandObservation: "commandObservation",
+  magicContext: "magicContext",
+  openRtk: "openRtk",
+  tokenAudit: "tokenAudit",
+  longJobObservation: "longJobObservation",
+  trellisLsIntegration: "trellisLsIntegration",
+} as const satisfies {
+  readonly [Capability in keyof Omit<TendOpenCodeCapabilities, "sessionDecode">]: Capability
+}
 
-const TendOpenCodeCommandObservationRecipe = defineRecipe({
-  id: commandObservationRecipeId,
-  projectId: "tend-opencode",
-  title: "Emit DB-backed Tend/OpenCode measurement command observations",
-  inputSchema: Schema.Struct({
-    argv: Schema.Array(Schema.String),
-    cwd: Schema.String,
-  }),
-  outputSchema: Schema.Unknown,
-  nxTarget: "tend-opencode:test",
-  sourcePath: "packages/tend/opencode/src/cli-core.ts",
-  allowedFiles: ["packages/tend/opencode/**"],
-  validationEvidence: ["tend-opencode:test", "framework-runtime:db:validate-sql"],
+export const TendOpenCodeCliInvocationInputSchema = Schema.Struct({
+  argv: Schema.Array(Schema.String),
+  cwd: Schema.String,
 })
+type TendOpenCodeCliInvocationInput = typeof TendOpenCodeCliInvocationInputSchema.Type
+
+export const TendOpenCodeCliInvocationOutputSchema = Schema.Struct({
+  invocation: RecipeInvocationSchema,
+  receiptLinked: Schema.Boolean,
+})
+type TendOpenCodeCliInvocationOutput = typeof TendOpenCodeCliInvocationOutputSchema.Type
+
+const TendOpenCodeCommandObservationInputSchema = Schema.Struct({
+  argv: Schema.Array(Schema.String),
+  cwd: Schema.String,
+  startedAt: Schema.optional(Schema.String),
+  measurementSessionId: Schema.optional(Schema.String),
+  measurementPhase: Schema.optional(Schema.Literals(["baseline", "treatment"] as const)),
+})
+type TendOpenCodeCommandObservationInput = typeof TendOpenCodeCommandObservationInputSchema.Type
+
+const TendOpenCodeCommandDocumentationInputSchema = Schema.Struct({
+  packageRoot: Schema.optional(Schema.String),
+})
+type TendOpenCodeCommandDocumentationInput =
+  typeof TendOpenCodeCommandDocumentationInputSchema.Type
+
+const TendOpenCodeCommandDocumentationOutputSchema = Schema.Struct({
+  recipeId: Schema.String,
+  configContent: Schema.String,
+})
+type TendOpenCodeCommandDocumentationOutput =
+  typeof TendOpenCodeCommandDocumentationOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendOpenCodePackageRootResource = defineAlchemyResource({
+  id: "tend-opencode.package-root.resource",
+  kind: "directory",
+  alchemyType: "attune:resource:Directory",
+  ownerRecipeId: TendOpenCodeCliInvocationRecipeId,
+  consumedBy: [
+    TendOpenCodeCliInvocationRecipeId,
+    "tend-opencode.test-and-fixture-suite",
+    "tend-opencode.session-decoder",
+    "tend-opencode.receipt-projection",
+    "tend-opencode.policy-forcing",
+  ],
+  addressSchema: Schema.String,
+  stateSchema: Schema.Struct({
+    path: Schema.String,
+    packageId: Schema.Literal(TendOpenCodePackageId),
+  }),
+  modes: ["read"],
+})
+
+export interface TendOpenCodeCommandObservationService {
+  readonly observe: (
+    input: TendOpenCodeCommandObservationInput,
+  ) => Effect.Effect<TendOpenCodeCommandObservationOutput>
+}
+
+export class TendOpenCodeCommandObservationServices extends Context.Service<
+  TendOpenCodeCommandObservationServices,
+  TendOpenCodeCommandObservationService
+>()("tend-opencode/CommandObservationServices") {}
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendOpenCodeCommandObservationWorkflowResource = defineAlchemyResource({
+  id: "tend-opencode.command-observation.workflow-target",
+  kind: "workflow-target",
+  alchemyType: "attune:resource:WorkflowTarget",
+  ownerRecipeId: TendOpenCodeCommandObservationRecipeId,
+  consumedBy: [TendOpenCodeCommandObservationRecipeId],
+  producedBy: [TendOpenCodeCommandObservationRecipeId],
+  addressFields: ["argv", "cwd"],
+  addressSchema: TendOpenCodeCommandObservationInputSchema,
+  stateSchema: TendOpenCodeCommandObservationOutputSchema,
+  modes: ["invoke", "observe"],
+  programmaticResourceExport: "TendOpenCodeCommandObservationWorkflowResource",
+  programmaticBridgeSourcePath: tendOpenCodeCliCoreSourcePath,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendOpenCodeCommandDocumentationResource = defineAlchemyResource({
+  id: "tend-opencode.command-documentation.resource",
+  kind: "configuration",
+  alchemyType: "attune:resource:Configuration",
+  ownerRecipeId: TendOpenCodeCommandDocumentationRecipeId,
+  consumedBy: [TendOpenCodeCommandDocumentationRecipeId],
+  producedBy: [TendOpenCodeCommandDocumentationRecipeId],
+  addressSchema: TendOpenCodeCommandDocumentationInputSchema,
+  stateSchema: TendOpenCodeCommandDocumentationOutputSchema,
+  modes: ["read", "project"],
+})
+
+export const TendOpenCodeCommandObservationLive = Layer.succeed(TendOpenCodeCommandObservationServices, {
+  observe: (input) =>
+    Effect.promise(() =>
+      observeCommandWithStoreEmission({
+        command: input.argv,
+        cwd: input.cwd,
+        ...(input.startedAt === undefined ? {} : { startedAt: input.startedAt }),
+        ...(input.measurementSessionId === undefined ? {} : { measurementSessionId: input.measurementSessionId }),
+        ...(input.measurementPhase === undefined ? {} : { measurementPhase: input.measurementPhase }),
+      })
+    ),
+})
+
+export const TendOpenCodeCommandObservationLayer = defineRecipeLayer({
+  id: "tend-opencode.command-observation.layer",
+  sourcePath: tendOpenCodeCliCoreSourcePath,
+  exportName: "TendOpenCodeCommandObservationLive",
+  layer: TendOpenCodeCommandObservationLive,
+  provides: [{
+    id: "tend-opencode.command-observation.services",
+    service: TendOpenCodeCommandObservationServices,
+  }],
+})
+
+export const tendOpenCodeCommandObservationInvocation = (
+  input: TendOpenCodeCommandObservationInput,
+): RecipeInvocation => ({
+  recipeId: TendOpenCodeCommandObservationRecipeId,
+  action: "report",
+  input,
+  source: {
+    surface: "cli",
+    projectId: "tend-opencode",
+    target: "tend-opencode observe",
+    cwd: input.cwd,
+  },
+})
+
+export const TendOpenCodeCliInvocationRecipe = defineInvocationRecipe({
+  id: TendOpenCodeCliInvocationRecipeId,
+  projectId: TendOpenCodePackageId,
+  title: "Expose Tend OpenCode CLI and measurement command surfaces through recipe invocation",
+  inputSchema: TendOpenCodeCliInvocationInputSchema,
+  outputSchema: TendOpenCodeCliInvocationOutputSchema,
+  entrypoints: [
+    "packages/tend/opencode/src/attune-cli.ts",
+    "packages/tend/opencode/src/cli-core.ts",
+    "packages/tend/opencode/src/cli.ts",
+    "packages/tend/opencode/src/measurement.ts",
+  ],
+  allowedFiles: [
+    "packages/tend/opencode/src/attune-cli.ts",
+    "packages/tend/opencode/src/benchmark.ts",
+    "packages/tend/opencode/src/cli-core.ts",
+    "packages/tend/opencode/src/cli.ts",
+    "packages/tend/opencode/src/measurement.ts",
+  ],
+  validationEvidence: [TendOpenCodeTypecheckTarget, TendOpenCodeTestTarget],
+  io: {
+    inputSchema: TendOpenCodeCliInvocationInputSchema,
+    outputSchema: TendOpenCodeCliInvocationOutputSchema,
+    inputResources: [TendOpenCodeCommandObservationWorkflowResource, TendOpenCodePackageRootResource],
+    outputResources: [TendOpenCodeCommandObservationWorkflowResource],
+  },
+  handler: defineRecipeHandler<TendOpenCodeCliInvocationInput, TendOpenCodeCliInvocationOutput>({
+    id: tendOpenCodeCliInvocationHandlerId,
+    recipeId: TendOpenCodeCliInvocationRecipeId,
+    sourcePath: tendOpenCodeCliCoreSourcePath,
+    exportName: "tendOpenCodeCommandObservationInvocation",
+    emitsReceipts: ["recipe.invocation.created"],
+    handler: (input) =>
+      Effect.succeed({
+        invocation: tendOpenCodeCommandObservationInvocation(input),
+        receiptLinked: true,
+      }),
+  }),
+  alchemyDag: [{
+    fromRecipeId: TendOpenCodeCliInvocationRecipeId,
+    toRecipeId: TendOpenCodeCommandObservationRecipeId,
+    resource: TendOpenCodeCommandObservationWorkflowResource,
+    kind: "invokes",
+    modes: ["invoke", "observe"],
+  }],
+})
+
+export const TendOpenCodeCommandObservationRecipe = defineObservationRecipe({
+  id: TendOpenCodeCommandObservationRecipeId,
+  projectId: TendOpenCodePackageId,
+  title: "Emit DB-backed Tend/OpenCode measurement command observations",
+  inputSchema: TendOpenCodeCommandObservationInputSchema,
+  outputSchema: TendOpenCodeCommandObservationOutputSchema,
+  nxTarget: "tend-opencode:test",
+  entrypoints: ["packages/tend/opencode/src/cli.ts", "packages/tend/opencode/src/attune-cli.ts"],
+  allowedFiles: [
+    "packages/tend/opencode/src/attune-cli.ts",
+    "packages/tend/opencode/src/cli-core.ts",
+    "packages/tend/opencode/src/cli.ts",
+  ],
+  validationEvidence: ["tend-opencode:test", "framework-runtime:db:validate-sql"],
+  io: {
+    inputSchema: TendOpenCodeCommandObservationInputSchema,
+    outputSchema: TendOpenCodeCommandObservationOutputSchema,
+    inputResources: [TendOpenCodeCommandObservationWorkflowResource],
+    outputResources: [TendOpenCodeCommandObservationWorkflowResource],
+  },
+// @attune-packet-target generated-runtime-projection eligible
+  handler: defineRecipeHandler({
+    id: tendOpenCodeCommandObservationHandlerId,
+    recipeId: TendOpenCodeCommandObservationRecipeId,
+    sourcePath: tendOpenCodeCliCoreSourcePath,
+    exportName: "observeCommandWithStoreEmission",
+    layer: TendOpenCodeCommandObservationLayer,
+    emitsReceipts: ["measurement.command.observed"],
+    handler: (input: TendOpenCodeCommandObservationInput) =>
+      Effect.gen(function* observeTendOpenCodeCommand() {
+        const services = yield* TendOpenCodeCommandObservationServices
+        return yield* services.observe(input)
+      }),
+  }),
+  alchemyDag: [{
+    fromRecipeId: TendOpenCodeCommandObservationRecipeId,
+    toRecipeId: TendOpenCodeCommandDocumentationRecipeId,
+    resource: TendOpenCodeCommandDocumentationResource,
+    kind: "observes",
+    modes: ["observe", "project"],
+  }],
+})
+
+export const TendOpenCodeCommandDocumentationRecipe = defineDocumentationRecipe({
+  id: TendOpenCodeCommandDocumentationRecipeId,
+  projectId: TendOpenCodePackageId,
+  title: "Own OpenCode command documentation and plugin package config",
+  inputSchema: TendOpenCodeCommandDocumentationInputSchema,
+  outputSchema: TendOpenCodeCommandDocumentationOutputSchema,
+  allowedFiles: ["packages/tend/opencode/opencode-config/**"],
+  observedFiles: ["packages/tend/opencode/opencode-config/**"],
+  validationEvidence: ["tend-opencode:typecheck"],
+  io: {
+    inputSchema: TendOpenCodeCommandDocumentationInputSchema,
+    outputSchema: TendOpenCodeCommandDocumentationOutputSchema,
+    inputResources: [TendOpenCodeCommandObservationWorkflowResource],
+    outputResources: [TendOpenCodeCommandDocumentationResource],
+  },
+// @attune-packet-target generated-runtime-projection eligible
+  handler: defineRecipeHandler({
+    id: tendOpenCodeCommandDocumentationHandlerId,
+    recipeId: TendOpenCodeCommandDocumentationRecipeId,
+    sourcePath: tendOpenCodeCliCoreSourcePath,
+    exportName: "createOpenCodeHarnessConfigContent",
+    emitsReceipts: ["opencode.command-docs.projected"],
+    handler: () =>
+      Effect.succeed({
+        recipeId: TendOpenCodeCommandDocumentationRecipeId,
+        configContent: createOpenCodeHarnessConfigContent(),
+      }),
+  }),
+})
+
+export const TendOpenCodeCommandRecipes = [
+  TendOpenCodeCliInvocationRecipe,
+  TendOpenCodeCommandObservationRecipe,
+  TendOpenCodeCommandDocumentationRecipe,
+] as const
 
 const attuneOpenCodePluginSpecs = [
   {
     name: "@attune/tend-opencode",
-    capability: "commandObservation",
+    capability: TendOpenCodePluginCapabilities.commandObservation,
     fileName: "attune-tend.js",
     packageDirName: "tend-opencode",
     probeFileName: "attune-tend-opencode.json",
@@ -71,7 +359,7 @@ const attuneOpenCodePluginSpecs = [
   },
   {
     name: "@attune/magic-context-opencode",
-    capability: "magicContext",
+    capability: TendOpenCodePluginCapabilities.magicContext,
     fileName: "attune-magic-context.js",
     packageDirName: "magic-context-opencode",
     probeFileName: "attune-magic-context-opencode.json",
@@ -82,7 +370,7 @@ const attuneOpenCodePluginSpecs = [
   },
   {
     name: "@attune/openrtk-opencode",
-    capability: "openRtk",
+    capability: TendOpenCodePluginCapabilities.openRtk,
     fileName: "attune-openrtk.js",
     packageDirName: "openrtk-opencode",
     probeFileName: "attune-openrtk-opencode.json",
@@ -93,7 +381,7 @@ const attuneOpenCodePluginSpecs = [
   },
   {
     name: "@attune/tend-token-audit-opencode",
-    capability: "tokenAudit",
+    capability: TendOpenCodePluginCapabilities.tokenAudit,
     fileName: "attune-token-audit.js",
     packageDirName: "tend-token-audit-opencode",
     probeFileName: "attune-tend-token-audit-opencode.json",
@@ -104,7 +392,7 @@ const attuneOpenCodePluginSpecs = [
   },
   {
     name: "@attune/tend-long-job-opencode",
-    capability: "longJobObservation",
+    capability: TendOpenCodePluginCapabilities.longJobObservation,
     fileName: "attune-long-job.js",
     packageDirName: "tend-long-job-opencode",
     probeFileName: "attune-tend-long-job-opencode.json",
@@ -115,7 +403,7 @@ const attuneOpenCodePluginSpecs = [
   },
   {
     name: "@attune/trellis-ls-opencode",
-    capability: "trellisLsIntegration",
+    capability: TendOpenCodePluginCapabilities.trellisLsIntegration,
     fileName: "attune-trellis-ls.js",
     packageDirName: "trellis-ls-opencode",
     probeFileName: "attune-trellis-ls-opencode.json",
@@ -255,6 +543,7 @@ export const createAttuneOpenCodeFingerprint = (
   const pluginFingerprints = attuneOpenCodePluginFingerprints(packageJson.version)
   const pluginPaths = pluginFingerprints.flatMap((plugin) => plugin.path === undefined ? [] : [plugin.path])
   const pluginPackagePaths = attuneOpenCodePluginPackagePaths()
+  const packetSidecar = createOpenSpecPacketSidecarProof()
   const envFlakeProvided = process.env.ATTUNE_OPENCODE_FLAKE_PROVIDED
   const flakeProvided = options.flakeProvided
     ?? (envFlakeProvided === undefined
@@ -298,6 +587,7 @@ export const createAttuneOpenCodeFingerprint = (
       ...(pluginPackagePaths.length === 0 ? {} : { pluginPackagePaths }),
     },
     capabilities: defaultTendOpenCodeCapabilities(),
+    packetSidecar,
   }
 }
 
@@ -362,6 +652,10 @@ export const createOpenCodeDelegationEnv = (
   env.OPENCODE_CONFIG = runtimeConfig.configPath
   env.ATTUNE_OPENCODE_RUNTIME_CONFIG_DIR = runtimeConfig.configDir
   env.ATTUNE_OPENCODE_RUNTIME_PLUGIN_DIR = runtimeConfig.pluginDir
+  env.ATTUNE_OPENCODE_TRACE_SESSION_ID = base.ATTUNE_OPENCODE_TRACE_SESSION_ID
+    ?? `opencode-live-${new Date().toISOString().replaceAll(/[^0-9A-Za-z]+/gu, "-")}`
+  env.ATTUNE_OPENCODE_TRACE_FILE = base.ATTUNE_OPENCODE_TRACE_FILE
+    ?? path.join(runtimeConfig.configDir, "traces", `${env.ATTUNE_OPENCODE_TRACE_SESSION_ID}.jsonl`)
   env.OPENCODE_CONFIG_CONTENT = createOpenCodeDelegationConfigContent()
   return env
 }
@@ -405,13 +699,162 @@ const prepareOpenCodeRuntimeConfig = (base: NodeJS.ProcessEnv): {
 }
 
 export const decodeOpenCodeSessionFile = (file: string): TendOpenCodeDecodedOutput => {
-  const input = Schema.decodeUnknownSync(OpenCodeSessionLogSchema)(JSON.parse(fs.readFileSync(file, "utf8")))
+  const raw = JSON.parse(fs.readFileSync(file, "utf8")) as {
+    readonly events?: readonly unknown[]
+  }
+  const enrichedInput = Schema.decodeUnknownSync(OpenCodeSessionLogSchema)({
+    ...raw,
+    events: (raw.events ?? []).map((event) =>
+      event !== null && typeof event === "object"
+        ? { ...(event as Record<string, unknown>), raw: event }
+        : event
+    ),
+  })
   return {
     schemaVersion: 1,
     command: "decode",
     file,
-    decoded: decodeOpenCodeSessionLog(input),
+    decoded: decodeOpenCodeSessionLog(enrichedInput),
   }
+}
+
+export const decodeOpenCodeSessionFileWithStoreEmission = async (
+  file: string,
+): Promise<TendOpenCodeDecodedOutput> => {
+  const output = decodeOpenCodeSessionFile(file)
+  const storeEmission = await emitDecodedOpenCodeSessionObservationsToStore(
+    output.decoded.observations,
+    output.decoded.receipts,
+  )
+  return Schema.decodeUnknownSync(TendOpenCodeDecodedOutputSchema)({
+    ...output,
+    storeEmission,
+  })
+}
+
+const emitDecodedOpenCodeSessionObservationsToStore = async (
+  observations: readonly RecipeObservation[],
+  receipts: readonly RecipeReceipt[],
+): Promise<TendOpenCodeBulkStoreEmission> => {
+  const config = measurementStoreConfigFromEnv()
+  if (config.mode === "disabled" || config.mode === "export-only") {
+    return Schema.decodeUnknownSync(TendOpenCodeBulkStoreEmissionSchema)({
+      status: config.mode === "disabled" ? "disabled" : "export-only",
+      mode: config.mode,
+      observationIds: observations.map((observation) => observation.observationId),
+      databaseUrl: sanitizeDatabaseUrl(config.databaseUrl),
+    })
+  }
+
+  let sink: Awaited<ReturnType<typeof createMeasurementObservationSink>> | undefined
+  try {
+    sink = await createMeasurementObservationSink(config)
+    if (sink.store === undefined) {
+      return Schema.decodeUnknownSync(TendOpenCodeBulkStoreEmissionSchema)({
+        status: "export-only",
+        mode: config.mode,
+        observationIds: observations.map((observation) => observation.observationId),
+        databaseUrl: sanitizeDatabaseUrl(config.databaseUrl),
+      })
+    }
+    await Effect.runPromise(sink.store.registerRecipe(TendOpenCodeSessionDecoderRecipe))
+    for (const record of decodedSessionRunRecords(observations, receipts)) {
+      await Effect.runPromise(sink.store.recordRunResult(record))
+    }
+    for (const observation of observations) {
+      await Effect.runPromise(sink.store.recordObservation(observation))
+    }
+    return Schema.decodeUnknownSync(TendOpenCodeBulkStoreEmissionSchema)({
+      status: "emitted",
+      mode: config.mode,
+      observationIds: observations.map((observation) => observation.observationId),
+      databaseUrl: sanitizeDatabaseUrl(config.databaseUrl),
+    })
+  } catch (error) {
+    return Schema.decodeUnknownSync(TendOpenCodeBulkStoreEmissionSchema)({
+      status: "failed",
+      mode: config.mode,
+      observationIds: observations.map((observation) => observation.observationId),
+      databaseUrl: sanitizeDatabaseUrl(config.databaseUrl),
+      error: error instanceof Error ? error.message : String(error),
+    })
+  } finally {
+    await sink?.close()
+  }
+}
+
+const decodedSessionRunRecords = (
+  observations: readonly RecipeObservation[],
+  receipts: readonly RecipeReceipt[],
+): readonly Parameters<RecipeReceiptStoreApi["recordRunResult"]>[0][] => {
+  const records: Array<Parameters<RecipeReceiptStoreApi["recordRunResult"]>[0]> = []
+  const recordedRunIds = new Set<string>()
+  for (const receipt of receipts) {
+    recordedRunIds.add(receipt.runId)
+    records.push(decodedSessionRunRecord(receipt))
+  }
+  for (const observation of observations) {
+    if (observation.runId === undefined || recordedRunIds.has(observation.runId)) continue
+    const receipt = syntheticDecodedSessionReceipt(observation)
+    recordedRunIds.add(observation.runId)
+    records.push(decodedSessionRunRecord(receipt))
+  }
+  return records
+}
+
+const decodedSessionRunRecord = (
+  receipt: RecipeReceipt,
+): Parameters<RecipeReceiptStoreApi["recordRunResult"]>[0] => ({
+  run: {
+    runId: receipt.runId,
+    recipeId: receipt.recipeId,
+    status: recipeRunStatusFromReceipt(receipt.status),
+    startedAt: receipt.startedAt,
+    ...(receipt.completedAt === undefined ? {} : { completedAt: receipt.completedAt }),
+  },
+  receipt,
+  health: {
+    recipeId: receipt.recipeId,
+    status: receipt.status === "passed" ? "clean" : receipt.status === "failed" ? "failed" : "unknown",
+    explanation: "Decoded OpenCode session trace persisted through Tend/OpenCode.",
+    checkedAt: receipt.completedAt ?? receipt.startedAt,
+    receiptIds: [receipt.receiptId],
+    diagnosticIds: [],
+    repairIds: [],
+  },
+  diagnostics: [],
+  repairs: [],
+  observations: [],
+})
+
+const syntheticDecodedSessionReceipt = (observation: RecipeObservation): RecipeReceipt => {
+  const observedAt = observation.observedAt
+  return {
+    receiptId: `opencode-receipt:session-decoded:${stableHash([
+      observation.runId ?? observation.observationId,
+      observation.recipeId,
+    ])}`,
+    recipeId: observation.recipeId,
+    runId: observation.runId ?? `opencode-run:${stableHash([observation.observationId])}`,
+    status: "passed",
+    startedAt: observedAt,
+    completedAt: observedAt,
+    command: "tend-opencode decode",
+    validationEvidence: ["tend-opencode:decode"],
+    payload: {
+      source: "opencode",
+      observationKind: observation.observationKind,
+      observationId: observation.observationId,
+    },
+  }
+}
+
+const recipeRunStatusFromReceipt = (
+  status: RecipeReceipt["status"],
+): Parameters<RecipeReceiptStoreApi["recordRunResult"]>[0]["run"]["status"] => {
+  if (status === "passed" || status === "failed" || status === "blocked") return status
+  if (status === "running") return "running"
+  return "passed"
 }
 
 export const summarizeOpenCodeSessionFile = (
@@ -525,7 +968,7 @@ export const observeCommandWithStoreEmission = async (
     const observation = createMeasurementObservation({
       observationId: observed.observationId,
       kind: "measurement.command.observed",
-      recipeId: commandObservationRecipeId,
+      recipeId: TendOpenCodeCommandObservationRecipeId,
       observedAt: observed.completedAt,
       source: "tend-opencode",
       ...(observed.measurementSessionId === undefined ? {} : {
@@ -538,8 +981,23 @@ export const observeCommandWithStoreEmission = async (
     }
     await Effect.runPromise(recordMeasurementObservation(sink, observation))
     writeCommandObservationExport(observed)
+    const packetRunFinalizer = await finalizeObservedOpenSpecPacketRunWithStoreEmission(observed)
+    if (packetRunFinalizer.status !== "not-packet-run") {
+      await Effect.runPromise(recordMeasurementObservation(sink, createMeasurementObservation({
+        observationId: `${observed.observationId}:packet-run-finalizer`,
+        kind: "measurement.benchmark.packet.completed",
+        recipeId: TendOpenCodeCommandObservationRecipeId,
+        observedAt: new Date().toISOString(),
+        source: "tend-opencode",
+        ...(observed.measurementSessionId === undefined ? {} : {
+          measurementSessionId: observed.measurementSessionId,
+        }),
+        payload: packetRunFinalizerObservationPayload(observed, packetRunFinalizer),
+      })))
+    }
     return {
       ...observed,
+      packetRunFinalizer,
       storeEmission: {
         status: "emitted",
         mode: config.mode,
@@ -582,9 +1040,13 @@ export const commandObservationFromResult = (input: {
   const inferredRecipeId = inferRecipeId(targetId)
   const measurementSessionId = input.measurementSessionId ?? defaultMeasurementSessionId(input.cwd)
   const measurementPhase = input.measurementPhase ?? measurementPhaseFromEnv()
-  const commandMetrics = extractSafeCommandOutputMetrics(input.stdout, input.stderr)
+  const extractedCommandMetrics = extractSafeCommandOutputMetrics(input.stdout, input.stderr)
+  const packetRunSummary = extractOpenSpecPacketRunSummary(input.stdout)
+  const commandMetrics = hasObservedCommandMetrics(extractedCommandMetrics)
+    ? extractedCommandMetrics
+    : packetRunSummary === undefined ? extractedCommandMetrics : estimatePacketLoopControlMetrics(input.stdout)
   const observationId = recipeObservationId(
-    commandObservationRecipeId,
+    TendOpenCodeCommandObservationRecipeId,
     `measurement.command.observed:${measurementSessionId}:${stableHash([
       commandLine,
       input.cwd,
@@ -609,23 +1071,64 @@ export const commandObservationFromResult = (input: {
     status: input.exitCode === 0 ? "succeeded" : "failed",
     stdoutSummary: summarizeCommandOutput(input.stdout),
     stderrSummary: summarizeCommandOutput(input.stderr),
+    stdout: redactSecrets(input.stdout),
+    stderr: redactSecrets(input.stderr),
     ...(measurementPhase === undefined ? {} : { measurementPhase }),
     ...(knownNxTarget === undefined ? {} : { knownNxTarget }),
     ...(targetId === undefined ? {} : { targetId }),
-    recipeId: commandObservationRecipeId,
+    recipeId: TendOpenCodeCommandObservationRecipeId,
     ...(inferredRecipeId === undefined ? {} : { inferredRecipeId }),
     ...(commandMetrics.tokenTotal === undefined ? {} : { tokenTotal: commandMetrics.tokenTotal }),
+    ...(commandMetrics.inputTokens === undefined ? {} : { inputTokens: commandMetrics.inputTokens }),
+    ...(commandMetrics.outputTokens === undefined ? {} : { outputTokens: commandMetrics.outputTokens }),
+    ...(commandMetrics.cachedTokens === undefined ? {} : { cachedTokens: commandMetrics.cachedTokens }),
+    ...(commandMetrics.reasoningTokens === undefined ? {} : { reasoningTokens: commandMetrics.reasoningTokens }),
+    ...(commandMetrics.effectiveTokens === undefined ? {} : { effectiveTokens: commandMetrics.effectiveTokens }),
     ...(commandMetrics.toolCalls === undefined ? {} : { toolCalls: commandMetrics.toolCalls }),
+    ...(commandMetrics.tokensPerToolCall === undefined ? {} : {
+      tokensPerToolCall: commandMetrics.tokensPerToolCall,
+    }),
+    ...(commandMetrics.tokenTotal === undefined || input.durationMs <= 0 ? {} : {
+      tokensPerSecond: commandMetrics.tokenTotal / (input.durationMs / 1000),
+    }),
     ...(commandMetrics.tokenMetricSource === undefined ? {} : {
       tokenMetricSource: commandMetrics.tokenMetricSource,
     }),
+    ...(packetRunSummary === undefined ? {} : { packetRunSummary }),
     storeEmission: {
       status: "not-attempted",
       mode: measurementStoreConfigFromEnv().mode,
       observationId,
       databaseUrl: sanitizeDatabaseUrl(measurementStoreConfigFromEnv().databaseUrl),
     },
-    rawOutputStored: false,
+    rawOutputStored: true,
+  }
+}
+
+const hasObservedCommandMetrics = (
+  metrics: ReturnType<typeof extractSafeCommandOutputMetrics>,
+): boolean =>
+  metrics.tokenTotal !== undefined
+  || metrics.inputTokens !== undefined
+  || metrics.outputTokens !== undefined
+  || metrics.cachedTokens !== undefined
+  || metrics.reasoningTokens !== undefined
+  || metrics.toolCalls !== undefined
+
+const estimatePacketLoopControlMetrics = (
+  stdout: string,
+): ReturnType<typeof extractSafeCommandOutputMetrics> => {
+  const outputTokens = estimateTextTokens(stdout)
+  const fastpathApplied = /"packetFastpath"\s*:\s*\{[\s\S]*?"applied"\s*:\s*true/u.test(stdout)
+  return {
+    tokenTotal: outputTokens,
+    outputTokens,
+    effectiveTokens: outputTokens,
+    toolCalls: 1,
+    tokensPerToolCall: outputTokens,
+    tokenMetricSource: fastpathApplied
+      ? "packet-fastpath+delegated-stdio-estimate"
+      : "packet-loop-control+delegated-stdio-estimate",
   }
 }
 
@@ -662,6 +1165,7 @@ export const runHarnessSelfTest = (
   options: FingerprintOptions,
 ): TendOpenCodeHarnessTestOutput => {
   const fingerprint = createAttuneOpenCodeFingerprint(options)
+  const packetSidecar = createOpenSpecPacketSidecarProof()
   const session = Schema.decodeUnknownSync(OpenCodeSessionLogSchema)(opencodeSessionLogFixture)
   const decoded = decodeOpenCodeSessionLog(session as OpenCodeSessionLog)
   const commandObservation = commandObservationFromResult({
@@ -710,7 +1214,7 @@ export const runHarnessSelfTest = (
     },
     {
       name: "synthetic-command-observed",
-      passed: commandObservation.status === "succeeded" && !commandObservation.rawOutputStored,
+      passed: commandObservation.status === "succeeded" && commandObservation.rawOutputStored,
       detail: commandObservation.observationId,
     },
     {
@@ -744,6 +1248,11 @@ export const runHarnessSelfTest = (
       detail: pluginHookExercise.reason ?? `${pluginHookExercise.entries.length} hook exercises`,
     },
     {
+      name: "openspec-packet-sidecar-self-test",
+      passed: packetSidecar.installed && packetSidecar.selfTest.passed && packetSidecar.selfTest.traceComplete,
+      detail: `${packetSidecar.selfTest.checks.length} sidecar checks`,
+    },
+    {
       name: "raw-trace-not-required",
       passed: true,
       detail: "No raw prompt or conversation text is required for the harness self-test.",
@@ -771,6 +1280,7 @@ export const runHarnessSelfTest = (
     actualPlugin: actualPluginProbe.actualPlugin,
     actualPlugins: actualPluginProbe.actualPlugins,
     pluginHookExercise,
+    packetSidecar,
     commandObservation,
     rawTraceRequired: false,
     leakageCheck: {
@@ -995,7 +1505,7 @@ const runActualOpenCodePluginProbe = (options: {
       cwd: process.cwd(),
       encoding: "utf8",
       maxBuffer: 1024 * 1024,
-      timeout: 8_000,
+      timeout: Number.parseInt(process.env.ATTUNE_OPENCODE_PLUGIN_PROBE_TIMEOUT_MS ?? "30000", 10),
       env: {
         ...process.env,
         ATTUNE_OPENCODE_PLUGIN_PROBE_DIR: probeDir,
@@ -1738,15 +2248,55 @@ const commandObservationPayload = (
   status: observed.status,
   stdoutSummary: observed.stdoutSummary,
   stderrSummary: observed.stderrSummary,
+  stdout: observed.stdout,
+  stderr: observed.stderr,
   ...(observed.measurementPhase === undefined ? {} : { measurementPhase: observed.measurementPhase }),
   ...(observed.knownNxTarget === undefined ? {} : { knownNxTarget: observed.knownNxTarget }),
   ...(observed.targetId === undefined ? {} : { targetId: observed.targetId }),
   ...(observed.recipeId === undefined ? {} : { recipeId: observed.recipeId }),
   ...(observed.inferredRecipeId === undefined ? {} : { inferredRecipeId: observed.inferredRecipeId }),
   ...(observed.tokenTotal === undefined ? {} : { tokenTotal: observed.tokenTotal }),
+  ...(observed.inputTokens === undefined ? {} : { inputTokens: observed.inputTokens }),
+  ...(observed.outputTokens === undefined ? {} : { outputTokens: observed.outputTokens }),
+  ...(observed.cachedTokens === undefined ? {} : { cachedTokens: observed.cachedTokens }),
+  ...(observed.reasoningTokens === undefined ? {} : { reasoningTokens: observed.reasoningTokens }),
+  ...(observed.effectiveTokens === undefined ? {} : { effectiveTokens: observed.effectiveTokens }),
   ...(observed.toolCalls === undefined ? {} : { toolCalls: observed.toolCalls }),
+  ...(observed.tokensPerToolCall === undefined ? {} : { tokensPerToolCall: observed.tokensPerToolCall }),
+  ...(observed.tokensPerSecond === undefined ? {} : { tokensPerSecond: observed.tokensPerSecond }),
   ...(observed.tokenMetricSource === undefined ? {} : { tokenMetricSource: observed.tokenMetricSource }),
-  rawOutputStored: false,
+  ...(observed.packetRunSummary === undefined ? {} : { packetRunSummary: observed.packetRunSummary }),
+  rawOutputStored: observed.rawOutputStored,
+})
+
+const packetRunFinalizerObservationPayload = (
+  observed: TendOpenCodeCommandObservationOutput,
+  packetRunFinalizer: NonNullable<TendOpenCodeCommandObservationOutput["packetRunFinalizer"]>,
+): Record<string, unknown> => ({
+  schemaVersion: 1,
+  commandObservationId: observed.observationId,
+  measurementSessionId: observed.measurementSessionId,
+  command: observed.commandLine,
+  argv: observed.argv,
+  cwd: observed.cwd,
+  startedAt: observed.startedAt,
+  completedAt: observed.completedAt,
+  durationMs: observed.durationMs,
+  exitCode: observed.exitCode,
+  status: observed.status,
+  ...(observed.packetRunSummary === undefined ? {} : { packetRunSummary: observed.packetRunSummary }),
+  packetRunFinalizer,
+  ...(observed.tokenTotal === undefined ? {} : { tokenTotal: observed.tokenTotal }),
+  ...(observed.inputTokens === undefined ? {} : { inputTokens: observed.inputTokens }),
+  ...(observed.outputTokens === undefined ? {} : { outputTokens: observed.outputTokens }),
+  ...(observed.cachedTokens === undefined ? {} : { cachedTokens: observed.cachedTokens }),
+  ...(observed.reasoningTokens === undefined ? {} : { reasoningTokens: observed.reasoningTokens }),
+  ...(observed.effectiveTokens === undefined ? {} : { effectiveTokens: observed.effectiveTokens }),
+  ...(observed.toolCalls === undefined ? {} : { toolCalls: observed.toolCalls }),
+  ...(observed.tokensPerToolCall === undefined ? {} : { tokensPerToolCall: observed.tokensPerToolCall }),
+  ...(observed.tokensPerSecond === undefined ? {} : { tokensPerSecond: observed.tokensPerSecond }),
+  ...(observed.tokenMetricSource === undefined ? {} : { tokenMetricSource: observed.tokenMetricSource }),
+  rawOutputStored: observed.rawOutputStored,
 })
 
 const writeCommandObservationExport = (
@@ -1883,6 +2433,7 @@ const inferTendOpenCodeTarget = (argv: readonly string[]): string | undefined =>
     || command === "measurement-report"
     || command === "decode"
     || command === "summarize"
+    || command === "openspec"
   ) {
     return `tend-opencode:${command}`
   }
@@ -1897,6 +2448,7 @@ const inferRecipeId = (target: string | undefined): string | undefined => {
     || target === "tend-opencode:fingerprint"
     || target === "tend-opencode:doctor"
     || target === "tend-opencode:run-harness-test"
+    || target === "tend-opencode:openspec"
   ) {
     return "tend-opencode.command-observation"
   }
@@ -1928,12 +2480,147 @@ const measurementPhaseFromEnv = (): TendOpenCodeMeasurementPhase | undefined =>
     ? process.env.ATTUNE_MEASUREMENT_PHASE
     : undefined
 
+const recordFromUnknown = (value: unknown): Record<string, unknown> | undefined =>
+  value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined
+
+const finiteNumberFromUnknown = (value: unknown): number | undefined =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : undefined
+
+const stringFromUnknown = (value: unknown): string | undefined =>
+  typeof value === "string" && value.length > 0 ? value : undefined
+
+const packetModeFromUnknown = (value: unknown): TendOpenCodePacketRunSummary["mode"] | undefined =>
+  value === "shadow" || value === "preview" || value === "active" ? value : undefined
+
+const packetStateFromUnknown = (value: unknown): TendOpenCodePacketRunSummary["state"] | undefined => {
+  const state = stringFromUnknown(value)
+  if (
+    state === "not-started" ||
+    state === "shadow" ||
+    state === "preview" ||
+    state === "active" ||
+    state === "complete" ||
+    state === "blocked" ||
+    state === "failed-validation" ||
+    state === "budget-exhausted" ||
+    state === "needs-human" ||
+    state === "stale" ||
+    state === "unsafe"
+  ) {
+    return state
+  }
+  return undefined
+}
+
+const regexStringField = (source: string, key: string): string | undefined => {
+  const match = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "u").exec(source)
+  return match?.[1]
+}
+
+const regexNumberField = (source: string, key: string): number | undefined => {
+  const match = new RegExp(`"${key}"\\s*:\\s*(\\d+(?:\\.\\d+)?)`, "u").exec(source)
+  if (match?.[1] === undefined) return undefined
+  const value = Number(match[1])
+  return Number.isFinite(value) && value >= 0 ? value : undefined
+}
+
+const regexLoopStatusNumberField = (source: string, key: string): number | undefined => {
+  const match = new RegExp(`"(?:loopStatus|status)"\\s*:\\s*\\{[\\s\\S]*?"${key}"\\s*:\\s*(\\d+(?:\\.\\d+)?)`, "u")
+    .exec(source)
+  if (match?.[1] === undefined) return undefined
+  const value = Number(match[1])
+  return Number.isFinite(value) && value >= 0 ? value : undefined
+}
+
+const regexLoopStatusState = (source: string): TendOpenCodePacketRunSummary["state"] | undefined =>
+  packetStateFromUnknown(
+    /"(?:loopStatus|status)"\s*:\s*\{[\s\S]*?"state"\s*:\s*"([^"]+)"/u.exec(source)?.[1],
+  )
+
+const extractOpenSpecPacketRunSummary = (
+  stdout: string,
+): TendOpenCodePacketRunSummary | undefined => {
+  if (!stdout.includes("\"command\": \"openspec.packet-loop\"")) return undefined
+
+  const parsed = recordFromUnknown(parseWholeJson(stdout))
+  if (parsed !== undefined && parsed.command === "openspec.packet-loop") {
+    const candidate = recordFromUnknown(Array.isArray(parsed.candidates) ? parsed.candidates[0] : undefined)
+    const loopStatus = recordFromUnknown(parsed.loopStatus) ?? recordFromUnknown(parsed.status)
+    const changeId = stringFromUnknown(parsed.changeId)
+    const mode = packetModeFromUnknown(parsed.mode)
+    const packetFamilyCode = stringFromUnknown(candidate?.packetFamilyCode)
+    const packetVariant = stringFromUnknown(candidate?.packetVariant)
+    const state = packetStateFromUnknown(loopStatus?.state)
+    const selectedTotal = finiteNumberFromUnknown(loopStatus?.selectedTotal)
+    const selectedRemaining = finiteNumberFromUnknown(loopStatus?.selectedRemaining)
+    const cleared = finiteNumberFromUnknown(loopStatus?.cleared)
+    const targetCountBefore = finiteNumberFromUnknown(parsed.targetCountBefore)
+    const targetCountAfter = finiteNumberFromUnknown(parsed.targetCountAfter)
+    const changedFileCount = finiteNumberFromUnknown(parsed.changedFileCount)
+    return {
+      parseStatus: "parsed",
+      parseReason: "Packet-loop stdout was valid JSON.",
+      command: "openspec.packet-loop",
+      ...(changeId === undefined ? {} : { changeId }),
+      ...(mode === undefined ? {} : { mode }),
+      ...(packetFamilyCode === undefined ? {} : { packetFamilyCode }),
+      ...(packetVariant === undefined ? {} : { packetVariant }),
+      ...(state === undefined ? {} : { state }),
+      ...(selectedTotal === undefined ? {} : { selectedTotal }),
+      ...(selectedRemaining === undefined ? {} : { selectedRemaining }),
+      ...(cleared === undefined ? {} : { cleared }),
+      ...(targetCountBefore === undefined ? {} : { targetCountBefore }),
+      ...(targetCountAfter === undefined ? {} : { targetCountAfter }),
+      ...(changedFileCount === undefined ? {} : { changedFileCount }),
+    }
+  }
+
+  const changeId = regexStringField(stdout, "changeId")
+  const mode = packetModeFromUnknown(regexStringField(stdout, "mode"))
+  const packetFamilyCode = regexStringField(stdout, "packetFamilyCode")
+  const packetVariant = regexStringField(stdout, "packetVariant")
+  const state = regexLoopStatusState(stdout)
+  const selectedTotal = regexLoopStatusNumberField(stdout, "selectedTotal")
+  const selectedRemaining = regexLoopStatusNumberField(stdout, "selectedRemaining")
+  const cleared = regexLoopStatusNumberField(stdout, "cleared")
+  const targetCountBefore = regexNumberField(stdout, "targetCountBefore")
+  const targetCountAfter = regexNumberField(stdout, "targetCountAfter")
+  const changedFileCount = regexNumberField(stdout, "changedFileCount")
+
+  return {
+    parseStatus: "partial",
+    parseReason: "Packet-loop stdout was not valid whole JSON; extracted bounded fields from observed stdout.",
+    command: "openspec.packet-loop",
+    ...(changeId === undefined ? {} : { changeId }),
+    ...(mode === undefined ? {} : { mode }),
+    ...(packetFamilyCode === undefined ? {} : { packetFamilyCode }),
+    ...(packetVariant === undefined ? {} : { packetVariant }),
+    ...(state === undefined ? {} : { state }),
+    ...(selectedTotal === undefined ? {} : { selectedTotal }),
+    ...(selectedRemaining === undefined ? {} : { selectedRemaining }),
+    ...(cleared === undefined ? {} : { cleared }),
+    ...(targetCountBefore === undefined ? {} : { targetCountBefore }),
+    ...(targetCountAfter === undefined ? {} : { targetCountAfter }),
+    ...(changedFileCount === undefined ? {} : { changedFileCount }),
+  }
+}
+
 const extractSafeCommandOutputMetrics = (
   stdout: string,
   stderr: string,
 ): {
   readonly tokenTotal?: number
+  readonly inputTokens?: number
+  readonly outputTokens?: number
+  readonly cachedTokens?: number
+  readonly reasoningTokens?: number
+  readonly effectiveTokens?: number
   readonly toolCalls?: number
+  readonly tokensPerToolCall?: number
   readonly tokenMetricSource?: string
 } => {
   const outputs = [
@@ -1942,31 +2629,156 @@ const extractSafeCommandOutputMetrics = (
   ]
   let tokenTotal = 0
   let hasTokenTotal = false
+  let inputTokens = 0
+  let hasInputTokens = false
+  let outputTokens = 0
+  let hasOutputTokens = false
+  let cachedTokens = 0
+  let hasCachedTokens = false
+  let reasoningTokens = 0
+  let hasReasoningTokens = false
   let toolCalls = 0
   let hasToolCalls = false
   const sources: string[] = []
 
   for (const [source, output] of outputs) {
     const value = parseWholeJson(output)
-    if (value === undefined) continue
-    const metrics = safeMetricsFromJsonValue(value)
+    const metrics = value === undefined
+      ? safeOpenCodeJsonEventMetricsFromJsonLines(output)
+      : safeKnownCommandMetricsFromJsonValue(value) ?? safeMetricsFromJsonValue(value)
+    if (metrics === undefined) continue
     if (metrics.tokenTotal !== undefined) {
       tokenTotal += metrics.tokenTotal
       hasTokenTotal = true
+    }
+    if (metrics.inputTokens !== undefined) {
+      inputTokens += metrics.inputTokens
+      hasInputTokens = true
+    }
+    if (metrics.outputTokens !== undefined) {
+      outputTokens += metrics.outputTokens
+      hasOutputTokens = true
+    }
+    if (metrics.cachedTokens !== undefined) {
+      cachedTokens += metrics.cachedTokens
+      hasCachedTokens = true
+    }
+    if (metrics.reasoningTokens !== undefined) {
+      reasoningTokens += metrics.reasoningTokens
+      hasReasoningTokens = true
     }
     if (metrics.toolCalls !== undefined) {
       toolCalls += metrics.toolCalls
       hasToolCalls = true
     }
-    if (metrics.tokenTotal !== undefined || metrics.toolCalls !== undefined) {
-      sources.push(source)
+    if (
+      metrics.tokenTotal !== undefined
+      || metrics.inputTokens !== undefined
+      || metrics.outputTokens !== undefined
+      || metrics.cachedTokens !== undefined
+      || metrics.reasoningTokens !== undefined
+      || metrics.toolCalls !== undefined
+    ) {
+      sources.push(metrics.tokenMetricSource ?? source)
     }
   }
+  const effectiveTokens = hasTokenTotal
+    ? Math.max(0, tokenTotal - (hasCachedTokens ? cachedTokens : 0))
+    : undefined
 
   return {
     ...(hasTokenTotal ? { tokenTotal } : {}),
+    ...(hasInputTokens ? { inputTokens } : {}),
+    ...(hasOutputTokens ? { outputTokens } : {}),
+    ...(hasCachedTokens ? { cachedTokens } : {}),
+    ...(hasReasoningTokens ? { reasoningTokens } : {}),
+    ...(effectiveTokens === undefined ? {} : { effectiveTokens }),
     ...(hasToolCalls ? { toolCalls } : {}),
+    ...(hasTokenTotal && hasToolCalls && toolCalls > 0 ? { tokensPerToolCall: tokenTotal / toolCalls } : {}),
     ...(sources.length === 0 ? {} : { tokenMetricSource: sources.join("+") }),
+  }
+}
+
+const safeOpenCodeJsonEventMetricsFromJsonLines = (
+  output: string,
+): {
+  readonly tokenTotal?: number
+  readonly inputTokens?: number
+  readonly outputTokens?: number
+  readonly cachedTokens?: number
+  readonly reasoningTokens?: number
+  readonly toolCalls?: number
+  readonly tokenMetricSource?: string
+} | undefined => {
+  let tokenTotal: number | undefined
+  let inputTokens: number | undefined
+  let outputTokens: number | undefined
+  let cachedTokens: number | undefined
+  let reasoningTokens: number | undefined
+  let toolCalls = 0
+  let hasToolCalls = false
+  let stepFinishEvents = 0
+  let jsonEvents = 0
+
+  const record = (value: unknown): Record<string, unknown> | undefined =>
+    value !== null && typeof value === "object" && !Array.isArray(value)
+      ? value as Record<string, unknown>
+      : undefined
+  const numberAt = (value: Record<string, unknown> | undefined, key: string): number | undefined => {
+    const candidate = value?.[key]
+    return typeof candidate === "number" && Number.isFinite(candidate) && candidate >= 0
+      ? candidate
+      : undefined
+  }
+  const maxMetric = (current: number | undefined, next: number | undefined): number | undefined =>
+    next === undefined ? current : current === undefined ? next : Math.max(current, next)
+
+  for (const line of output.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (trimmed.length === 0) continue
+    let event: unknown
+    try {
+      event = JSON.parse(trimmed) as unknown
+    } catch {
+      continue
+    }
+    const eventRecord = record(event)
+    if (eventRecord === undefined) continue
+    jsonEvents += 1
+    const part = record(eventRecord["part"])
+    const eventType = typeof eventRecord["type"] === "string" ? eventRecord["type"] : ""
+    const partType = typeof part?.["type"] === "string" ? part["type"] : ""
+    if (eventType === "tool_use" || partType === "tool") {
+      toolCalls += 1
+      hasToolCalls = true
+    }
+    if (eventType !== "step_finish" && partType !== "step-finish") continue
+    stepFinishEvents += 1
+    const tokens = record(part?.["tokens"]) ?? record(eventRecord["tokens"])
+    if (tokens === undefined) continue
+    tokenTotal = maxMetric(tokenTotal, numberAt(tokens, "total") ?? numberAt(tokens, "totalTokens"))
+    inputTokens = maxMetric(inputTokens, numberAt(tokens, "input") ?? numberAt(tokens, "inputTokens"))
+    outputTokens = maxMetric(outputTokens, numberAt(tokens, "output") ?? numberAt(tokens, "outputTokens"))
+    reasoningTokens = maxMetric(
+      reasoningTokens,
+      numberAt(tokens, "reasoning") ?? numberAt(tokens, "reasoningTokens"),
+    )
+    const cache = record(tokens["cache"])
+    cachedTokens = maxMetric(
+      cachedTokens,
+      numberAt(cache, "read") ?? numberAt(tokens, "cacheRead") ?? numberAt(tokens, "cacheReadTokens"),
+    )
+  }
+
+  if (jsonEvents === 0 || (stepFinishEvents === 0 && !hasToolCalls)) return undefined
+  return {
+    ...(tokenTotal === undefined ? {} : { tokenTotal }),
+    ...(inputTokens === undefined ? {} : { inputTokens }),
+    ...(outputTokens === undefined ? {} : { outputTokens }),
+    ...(cachedTokens === undefined ? {} : { cachedTokens }),
+    ...(reasoningTokens === undefined ? {} : { reasoningTokens }),
+    ...(hasToolCalls ? { toolCalls } : {}),
+    tokenMetricSource: "opencode-json-events",
   }
 }
 
@@ -1980,16 +2792,74 @@ const parseWholeJson = (output: string): unknown | undefined => {
   }
 }
 
+const safeKnownCommandMetricsFromJsonValue = (
+  value: unknown,
+): {
+  readonly tokenTotal?: number
+  readonly inputTokens?: number
+  readonly outputTokens?: number
+  readonly cachedTokens?: number
+  readonly reasoningTokens?: number
+  readonly toolCalls?: number
+  readonly tokenMetricSource?: string
+} | undefined => {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined
+  const object = value as Record<string, unknown>
+  if (object.command === "openspec packet-loop" || object.command === "openspec.packet-loop") {
+    const packetFastpath = object.packetFastpath
+    const fastpathApplied = packetFastpath !== null
+      && typeof packetFastpath === "object"
+      && !Array.isArray(packetFastpath)
+      && (packetFastpath as Record<string, unknown>).applied === true
+    const outputTokenEstimate = estimateTextTokens(JSON.stringify(object))
+    return {
+      tokenTotal: outputTokenEstimate,
+      outputTokens: outputTokenEstimate,
+      toolCalls: 1,
+      tokenMetricSource: fastpathApplied
+        ? "packet-fastpath+delegated-stdio-estimate"
+        : "packet-loop-control+delegated-stdio-estimate",
+    }
+  }
+  if (object.command === "summarize" && typeof object.tokenTotal === "number") {
+    return {
+      tokenTotal: Math.max(0, object.tokenTotal),
+      ...(typeof object.toolCallCount === "number" ? { toolCalls: Math.max(0, object.toolCallCount) } : {}),
+      tokenMetricSource: "opencode-session-summary",
+    }
+  }
+  return undefined
+}
+
+const estimateTextTokens = (text: string): number => {
+  const trimmed = text.trim()
+  if (trimmed.length === 0) return 0
+  const wordLikeTokens = trimmed.match(/[A-Za-z0-9_./:-]+|[^\sA-Za-z0-9_./:-]/gu)?.length ?? 0
+  const byteEstimate = Math.ceil(Buffer.byteLength(trimmed, "utf8") / 4)
+  return Math.max(1, wordLikeTokens, byteEstimate)
+}
+
 const safeMetricsFromJsonValue = (
   value: unknown,
 ): {
   readonly tokenTotal?: number
+  readonly inputTokens?: number
+  readonly outputTokens?: number
+  readonly cachedTokens?: number
+  readonly reasoningTokens?: number
   readonly toolCalls?: number
+  readonly tokenMetricSource?: string
 } => {
   let tokenTotal = 0
   let hasTokenTotal = false
-  let inputOutputTokenTotal = 0
-  let hasInputOutputTokenTotal = false
+  let inputTokens = 0
+  let hasInputTokens = false
+  let outputTokens = 0
+  let hasOutputTokens = false
+  let cachedTokens = 0
+  let hasCachedTokens = false
+  let reasoningTokens = 0
+  let hasReasoningTokens = false
   let toolCalls = 0
   let hasToolCalls = false
 
@@ -2016,9 +2886,24 @@ const safeMetricsFromJsonValue = (
           hasTokenTotal = true
           return
         }
-        if (/^(?:inputTokens|outputTokens|promptTokens|completionTokens|input_tokens|output_tokens|prompt_tokens|completion_tokens)$/u.test(key)) {
-          inputOutputTokenTotal += node
-          hasInputOutputTokenTotal = true
+        if (/^(?:inputTokens|promptTokens|input_tokens|prompt_tokens)$/u.test(key)) {
+          inputTokens += node
+          hasInputTokens = true
+          return
+        }
+        if (/^(?:outputTokens|completionTokens|output_tokens|completion_tokens)$/u.test(key)) {
+          outputTokens += node
+          hasOutputTokens = true
+          return
+        }
+        if (/^(?:cachedTokens|cachedInputTokens|cached_tokens|cached_input_tokens)$/u.test(key)) {
+          cachedTokens += node
+          hasCachedTokens = true
+          return
+        }
+        if (/^(?:reasoningTokens|reasoningOutputTokens|reasoning_tokens|reasoning_output_tokens)$/u.test(key)) {
+          reasoningTokens += node
+          hasReasoningTokens = true
           return
         }
         if (/^(?:toolCalls|toolCallCount|tool_call_count)$/u.test(key)) {
@@ -2034,10 +2919,15 @@ const safeMetricsFromJsonValue = (
   }
 
   visit(value)
+  const inputOutputTokenTotal = inputTokens + outputTokens
   return {
-    ...(hasTokenTotal || hasInputOutputTokenTotal
+    ...(hasTokenTotal || hasInputTokens || hasOutputTokens
       ? { tokenTotal: hasTokenTotal ? tokenTotal : inputOutputTokenTotal }
       : {}),
+    ...(hasInputTokens ? { inputTokens } : {}),
+    ...(hasOutputTokens ? { outputTokens } : {}),
+    ...(hasCachedTokens ? { cachedTokens } : {}),
+    ...(hasReasoningTokens ? { reasoningTokens } : {}),
     ...(hasToolCalls ? { toolCalls } : {}),
   }
 }

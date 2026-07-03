@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 import { ImplementationSpec } from "./implementation-spec.js"
 
@@ -53,3 +54,29 @@ export const SpecInterviewResult = S.Struct({
   draft: S.NullOr(ImplementationSpec),
 })
 export type SpecInterviewResult = typeof SpecInterviewResult.Type
+
+export const specInterviewSchemaModule = (): readonly string[] => [
+  "SpecInterviewAnswerKind",
+  "SpecInterviewQuestion",
+  "SpecInterviewAnswer",
+  "SpecInterviewInput",
+  "SuggestedObligation",
+  "SpecInterviewPhase",
+  "SpecInterviewResult",
+]
+
+export const AttunePiSpecInterviewSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.spec-interview.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/spec-interview.ts",
+  exportName: "specInterviewSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.spec-interview.projected"],
+  handler: () => Effect.succeed(specInterviewSchemaModule()),
+})
+
+export const AttunePiSpecInterviewSchemaRecipeModule = [
+  AttunePiSpecInterviewSchemaHandler,
+] as const

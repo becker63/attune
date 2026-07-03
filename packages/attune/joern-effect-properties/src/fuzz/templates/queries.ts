@@ -1,4 +1,5 @@
-import { Effect } from "effect"
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 import { CpgProgram, GraphWeights, cpg, prop } from "joern-effect"
 import type { CompiledCpgProgram, CpgProgramDefinition } from "joern-effect"
 import type { FuzzCase } from "../domain/model.js"
@@ -350,3 +351,79 @@ export const compileGeneratedDslPrograms = (
   options: DslGenerationOptions = {},
 ): Effect.Effect<readonly CompiledDslProgram<readonly unknown[]>[]> =>
   Effect.forEach(chooseGeneratedPrograms(cases, options), compileProgram)
+
+const JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeId = "joern-effect-properties.fuzz.templates.queries" as const
+const JoernEffectPropertiesFuzzTemplatesQueriesLocalResourceId = "joern-effect-properties.fuzz.templates.queries.resource" as const
+const JoernEffectPropertiesFuzzTemplatesQueriesLocalHandlerId = "joern-effect-properties.fuzz.templates.queries.handler" as const
+const JoernEffectPropertiesFuzzTemplatesQueriesLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/templates/queries.ts" as const
+const JoernEffectPropertiesFuzzTemplatesQueriesLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzTemplatesQueriesLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeInput = typeof JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzTemplatesQueriesLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeOutput = typeof JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzTemplatesQueriesLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzTemplatesQueriesLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeId, JoernEffectPropertiesFuzzTemplatesQueriesLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzTemplatesQueriesLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeInput,
+  JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzTemplatesQueriesLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzTemplatesQueriesLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.templates.queries.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/templates/queries.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzTemplatesQueriesLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzTemplatesQueriesLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzTemplatesQueriesLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzTemplatesQueriesLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzTemplatesQueriesLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzTemplatesQueriesLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipes = [JoernEffectPropertiesFuzzTemplatesQueriesLocalRecipe] as const

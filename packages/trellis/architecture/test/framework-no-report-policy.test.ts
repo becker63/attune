@@ -97,7 +97,7 @@ describe("framework no checked-in protocol report policy", () => {
       content: JSON.stringify({
         reportType: "github-protocol-summary",
         githubSummary: {
-          packageId: "attune-nx",
+          packageId: "framework-nx",
           diagnostics: ["attune/protocol/missing-property-evidence"],
         },
       }),

@@ -1,18 +1,36 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineInvocationRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol";
 import { Effect, Schema as S } from "effect";
-import { Command } from "foldkit";
+import { define as defineCommand, type Command } from "foldkit/command";
 
 import { advanceFixtureStep, startFixtureRoute } from "./fixture-route.js";
+import { FoldKitFixtureRouteResource } from "./fixture-route.js";
 import {
   FixtureStepApplied,
   FixtureStepFailed,
   type Message,
 } from "./message.js";
 import { FixtureStep } from "./fixture-route.js";
+import {
+  FoldKitFixtureCommandRecipeId,
+  FoldKitMessageRecipeId,
+  FoldKitPackageSourceResource,
+  FoldKitProjectId,
+  FoldKitSourceAddress,
+  FoldKitSourceReport,
+  FoldKitTestTarget,
+  FoldKitTypecheckTarget,
+  foldKitSourceReport,
+} from "./schema.js";
 
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-export const StartFixtureRun = Command.define(
+export const StartFixtureRun = defineCommand(
   "StartFixtureRun",
   FixtureStepApplied,
   FixtureStepFailed,
@@ -27,7 +45,7 @@ export const StartFixtureRun = Command.define(
   ),
 );
 
-export const AdvanceFixtureStep = Command.define(
+export const AdvanceFixtureStep = defineCommand(
   "AdvanceFixtureStep",
   { step: FixtureStep, selectedAnchorId: S.optional(S.String) },
   FixtureStepApplied,
@@ -48,4 +66,78 @@ export const AdvanceFixtureStep = Command.define(
   ),
 );
 
-export type FixtureCommand = Command.Command<Message>;
+export type FixtureCommand = Command<Message>;
+
+export const FoldKitFixtureCommandSourcePath =
+  "packages/attune/foldkit/src/fixture-commands.ts" as const;
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitFixtureCommandResource = defineAlchemyResource({
+  id: "attune-foldkit.fixture-command-surface.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: FoldKitFixtureCommandRecipeId,
+  producedBy: [FoldKitFixtureCommandRecipeId],
+  consumedBy: [FoldKitMessageRecipeId],
+  addressSchema: FoldKitSourceAddress,
+  stateSchema: FoldKitSourceReport,
+  modes: ["read", "project", "observe"],
+});
+
+export const describeFoldKitFixtureCommands = (): FoldKitSourceReport =>
+  foldKitSourceReport({
+    recipeId: FoldKitFixtureCommandRecipeId,
+    sourcePath: FoldKitFixtureCommandSourcePath,
+    surface: "FoldKit command constructors for fixture route execution",
+    exportedSymbols: [
+      "StartFixtureRun",
+      "AdvanceFixtureStep",
+      "FixtureCommand",
+    ],
+  });
+
+export const FoldKitFixtureCommandHandler = defineRecipeHandler<
+  FoldKitSourceAddress,
+  FoldKitSourceReport
+>({
+  id: "attune-foldkit.fixture-command-surface.handler",
+  recipeId: FoldKitFixtureCommandRecipeId,
+  sourcePath: FoldKitFixtureCommandSourcePath,
+  exportName: "describeFoldKitFixtureCommands",
+  handler: () => Effect.succeed(describeFoldKitFixtureCommands()),
+  emitsReceipts: ["attune-foldkit.fixture-command-surface.report"],
+});
+
+export const FoldKitFixtureCommandDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FoldKitFixtureCommandRecipeId,
+  toRecipeId: FoldKitMessageRecipeId,
+  resource: FoldKitFixtureCommandResource,
+  kind: "invokes",
+  modes: ["read", "project", "observe"],
+});
+
+export const FoldKitFixtureCommandRecipe = defineInvocationRecipe({
+  id: FoldKitFixtureCommandRecipeId,
+  projectId: FoldKitProjectId,
+  title: "Invoke FoldKit fixture route commands",
+  inputSchema: FoldKitSourceAddress,
+  outputSchema: FoldKitSourceReport,
+  nxTarget: FoldKitTestTarget,
+  allowedFiles: [FoldKitFixtureCommandSourcePath],
+  validationEvidence: [FoldKitTypecheckTarget, FoldKitTestTarget],
+  io: {
+    inputSchema: FoldKitSourceAddress,
+    outputSchema: FoldKitSourceReport,
+    inputResources: [
+      FoldKitPackageSourceResource,
+      FoldKitFixtureRouteResource,
+    ],
+    outputResources: [FoldKitFixtureCommandResource],
+  },
+  handler: FoldKitFixtureCommandHandler,
+  alchemyDag: [FoldKitFixtureCommandDagEdge],
+});
+
+export const FoldKitFixtureCommandRecipes = [
+  FoldKitFixtureCommandRecipe,
+] as const;

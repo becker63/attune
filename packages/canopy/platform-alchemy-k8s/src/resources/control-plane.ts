@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+import {
+  K8sResourceModuleCatalogResource,
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport,
+  PlatformAlchemyK8sProjectId,
+  PlatformAlchemyK8sResourceRegistryRecipeId,
+  k8sResourceModuleReport,
+} from "./common.js"
+
 import type { KubernetesObject, PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
 import { attuneLabels, dnsLabel, resourceSet } from "./common.js"
 import type { LocalPostgresRefs } from "./postgres.js"
@@ -130,3 +145,56 @@ export const AttuneControlPlane = {
     return resourceSet(`control-plane:${props.namespace}:${name}`, [serviceAccount, service, deployment])
   },
 } as const
+
+
+export const AttuneControlPlaneResourceRecipeId = "platform-alchemy-k8s.control-plane-resource" as const
+const AttuneControlPlaneResourceHandlerId = "platform-alchemy-k8s.control-plane-resource.handler" as const
+const AttuneControlPlaneResourceSourcePath = "packages/canopy/platform-alchemy-k8s/src/resources/control-plane.ts" as const
+
+export const AttuneControlPlaneResourceHandler = defineRecipeHandler<
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport
+>({
+  id: AttuneControlPlaneResourceHandlerId,
+  recipeId: AttuneControlPlaneResourceRecipeId,
+  sourcePath: AttuneControlPlaneResourceSourcePath,
+  exportName: "AttuneControlPlane",
+  handler: () =>
+    Effect.succeed(k8sResourceModuleReport({
+      recipeId: AttuneControlPlaneResourceRecipeId,
+      sourcePath: AttuneControlPlaneResourceSourcePath,
+      exportName: "AttuneControlPlane",
+      moduleKind: "attune control plane Kubernetes resource factory",
+    })) as never,
+  emitsReceipts: [`platform-alchemy-k8s.control-plane-resource.projected`],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttuneControlPlaneResourceRecipe = defineProjectionRecipe({
+  id: AttuneControlPlaneResourceRecipeId,
+  projectId: PlatformAlchemyK8sProjectId,
+  title: "Declare attune control plane Kubernetes resource factory",
+  inputSchema: K8sResourceModuleRecipeInput as never,
+  outputSchema: K8sResourceModuleReport as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [AttuneControlPlaneResourceSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test", "platform-alchemy-k8s:typecheck"],
+  io: {
+    inputSchema: K8sResourceModuleRecipeInput as never,
+    outputSchema: K8sResourceModuleReport as never,
+    inputResources: [K8sResourceModuleCatalogResource],
+    outputResources: [K8sResourceModuleCatalogResource],
+  },
+  handler: AttuneControlPlaneResourceHandler,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: PlatformAlchemyK8sResourceRegistryRecipeId,
+      toRecipeId: AttuneControlPlaneResourceRecipeId,
+      resource: K8sResourceModuleCatalogResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }),
+  ],
+})
+
+export const AttuneControlPlaneResourceRecipes = [AttuneControlPlaneResourceRecipe] as const

@@ -1,6 +1,14 @@
 import * as Alchemy from "alchemy"
 import type { Output } from "alchemy"
+import {
+  defineAlchemyResource,
+  defineInvocationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
 import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import * as Schema from "effect/Schema"
 
 import {
   ThinkCentreDay0Deployment,
@@ -18,10 +26,106 @@ import {
   readHomeDeploymentState,
   writeHomeDeploymentState,
 } from "./src/index.ts"
-import type { HomeDeploymentConfig, PlannedResource, ThinkCentreHost } from "./src/model.ts"
+import {
+  canopyHomeDeploymentRecipeId,
+  type HomeDeploymentConfig,
+  type PlannedResource,
+  type ThinkCentreHost,
+} from "./src/model.ts"
 import type { PlatformProviderMode } from "./src/providers.ts"
 
+const canopyHomeDeploymentAlchemyRunRecipeId = "canopy.home-deployment.alchemy-run" as const
+const canopyHomeDeploymentAlchemyRunSourcePath = "packages/canopy/home-deployment/alchemy.run.ts" as const
+const canopyHomeDeploymentAlchemyRunLayerId = "canopy.home-deployment.alchemy-run.layer" as const
+const canopyHomeDeploymentAlchemyRunTarget = "home-deployment:dev" as const
+const canopyHomeDeploymentAlchemyRunValidationEvidence = [
+  "home-deployment:typecheck",
+  "home-deployment:test",
+] as const
 const defaultDay0StatePath = ".attune/day0/state.json"
+
+export const HomeDeploymentAlchemyRunInput = Schema.Struct({
+  target: Schema.Literal("home-deployment:alchemy"),
+})
+export type HomeDeploymentAlchemyRunInput = typeof HomeDeploymentAlchemyRunInput.Type
+
+export const HomeDeploymentAlchemyRunReport = Schema.Struct({
+  target: Schema.Literal("home-deployment:alchemy"),
+  stackName: Schema.Literal("thinkcentre-day0"),
+  nxTarget: Schema.Literal(canopyHomeDeploymentAlchemyRunTarget),
+  managedRecipeId: Schema.Literal(canopyHomeDeploymentRecipeId),
+})
+export type HomeDeploymentAlchemyRunReport = typeof HomeDeploymentAlchemyRunReport.Type
+
+export const HomeDeploymentAlchemyRunResource = defineAlchemyResource({
+  id: "canopy.home-deployment.alchemy-run.resource",
+  kind: "workflow-target",
+  alchemyType: "attune:canopy:HomeDeploymentAlchemyRun",
+  ownerRecipeId: canopyHomeDeploymentAlchemyRunRecipeId,
+  producedBy: [canopyHomeDeploymentAlchemyRunRecipeId],
+  consumedBy: [canopyHomeDeploymentRecipeId],
+  addressFields: ["target"],
+  addressSchema: HomeDeploymentAlchemyRunInput as never,
+  stateSchema: HomeDeploymentAlchemyRunReport as never,
+  modes: ["invoke", "read", "check"],
+  programmaticResourceExport: "describeHomeDeploymentAlchemyRun",
+  programmaticBridgeSourcePath: canopyHomeDeploymentAlchemyRunSourcePath,
+})
+
+export const describeHomeDeploymentAlchemyRun = (): Effect.Effect<HomeDeploymentAlchemyRunReport> =>
+  Effect.succeed({
+    target: "home-deployment:alchemy",
+    stackName: "thinkcentre-day0",
+    nxTarget: canopyHomeDeploymentAlchemyRunTarget,
+    managedRecipeId: canopyHomeDeploymentRecipeId,
+  })
+
+export const HomeDeploymentAlchemyRunLayer = defineRecipeLayer({
+  id: canopyHomeDeploymentAlchemyRunLayerId,
+  sourcePath: canopyHomeDeploymentAlchemyRunSourcePath,
+  exportName: "describeHomeDeploymentAlchemyRun",
+  layer: Layer.empty as never,
+  provides: [],
+})
+
+export const HomeDeploymentAlchemyRunHandler = defineRecipeHandler<
+  HomeDeploymentAlchemyRunInput,
+  HomeDeploymentAlchemyRunReport
+>({
+  id: "canopy.home-deployment.alchemy-run.handler",
+  recipeId: canopyHomeDeploymentAlchemyRunRecipeId,
+  sourcePath: canopyHomeDeploymentAlchemyRunSourcePath,
+  exportName: "describeHomeDeploymentAlchemyRun",
+  handler: () => describeHomeDeploymentAlchemyRun() as never,
+  layer: HomeDeploymentAlchemyRunLayer,
+  emitsReceipts: ["canopy.home-deployment.alchemy-run.invoked"],
+})
+
+export const HomeDeploymentAlchemyRunRecipe = defineInvocationRecipe({
+  id: canopyHomeDeploymentAlchemyRunRecipeId,
+  projectId: "home-deployment",
+  title: "Invoke the Canopy home-deployment Alchemy stack",
+  inputSchema: HomeDeploymentAlchemyRunInput as never,
+  outputSchema: HomeDeploymentAlchemyRunReport as never,
+  nxTarget: canopyHomeDeploymentAlchemyRunTarget,
+  sourcePath: canopyHomeDeploymentAlchemyRunSourcePath,
+  allowedFiles: [canopyHomeDeploymentAlchemyRunSourcePath],
+  validationEvidence: canopyHomeDeploymentAlchemyRunValidationEvidence,
+  io: {
+    inputSchema: HomeDeploymentAlchemyRunInput as never,
+    outputSchema: HomeDeploymentAlchemyRunReport as never,
+    inputResources: [HomeDeploymentAlchemyRunResource],
+    outputResources: [HomeDeploymentAlchemyRunResource],
+  },
+  handler: HomeDeploymentAlchemyRunHandler,
+  alchemyDag: [{
+    fromRecipeId: canopyHomeDeploymentAlchemyRunRecipeId,
+    toRecipeId: canopyHomeDeploymentRecipeId,
+    resource: HomeDeploymentAlchemyRunResource,
+    kind: "invokes",
+    modes: ["invoke", "read", "check"],
+  }],
+})
 
 const csv = (value: string | undefined): readonly string[] =>
   value === undefined ? [] : value.split(",").map((item) => item.trim()).filter((item) => item.length > 0)

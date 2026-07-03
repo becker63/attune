@@ -1,7 +1,8 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler, defineRecipeLayer } from "@attune/framework-protocol"
 import { access, constants, mkdir, mkdtemp, rm, statfs, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
-import { Data, Effect, Schema } from "effect"
+import { Data, Effect, Layer, Schema } from "effect"
 import {
   CpgGraph,
   CpgProgram,
@@ -1003,3 +1004,92 @@ export const cleanupObservationRepo = (observation: SourceSinkObservation): Effe
   Effect.promise(async () => {
     await rm(observation.repo.path, { recursive: true, force: true })
   })
+
+const JoernEffectPropertiesSourceSinkPipelineLocalRecipeId = "joern-effect-properties.source-sink-pipeline" as const
+const JoernEffectPropertiesSourceSinkPipelineLocalResourceId = "joern-effect-properties.source-sink-pipeline.resource" as const
+const JoernEffectPropertiesSourceSinkPipelineLocalHandlerId = "joern-effect-properties.source-sink-pipeline.handler" as const
+const JoernEffectPropertiesSourceSinkPipelineLocalSourcePath = "packages/attune/joern-effect-properties/src/SourceSinkPipeline.ts" as const
+const JoernEffectPropertiesSourceSinkPipelineLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesSourceSinkPipelineLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesSourceSinkPipelineLocalSourcePath),
+})
+export type JoernEffectPropertiesSourceSinkPipelineLocalRecipeInput = typeof JoernEffectPropertiesSourceSinkPipelineLocalRecipeInput.Type
+
+export const JoernEffectPropertiesSourceSinkPipelineLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesSourceSinkPipelineLocalSourcePath),
+})
+export type JoernEffectPropertiesSourceSinkPipelineLocalRecipeOutput = typeof JoernEffectPropertiesSourceSinkPipelineLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesSourceSinkPipelineLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesSourceSinkPipelineLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesSourceSinkPipelineLocalRecipeId,
+  producedBy: [JoernEffectPropertiesSourceSinkPipelineLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesSourceSinkPipelineLocalRecipeId, JoernEffectPropertiesSourceSinkPipelineLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesSourceSinkPipelineLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesSourceSinkPipelineLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesSourceSinkPipelineLocalLayer = defineRecipeLayer({
+  id: "joern-effect-properties.source-sink-pipeline.layer",
+  sourcePath: JoernEffectPropertiesSourceSinkPipelineLocalSourcePath,
+  exportName: "runSourceSinkPipeline",
+  layer: Layer.empty as never,
+  provides: [
+    { id: "filesystem", service: "Effect.Platform.FileSystem" },
+    { id: "process", service: "Effect.Platform.CommandExecutor" },
+    { id: "joern-runtime", service: Joern as never },
+  ],
+})
+
+export const JoernEffectPropertiesSourceSinkPipelineLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesSourceSinkPipelineLocalRecipeInput,
+  JoernEffectPropertiesSourceSinkPipelineLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesSourceSinkPipelineLocalHandlerId,
+  recipeId: JoernEffectPropertiesSourceSinkPipelineLocalRecipeId,
+  sourcePath: JoernEffectPropertiesSourceSinkPipelineLocalSourcePath,
+  exportName: "JoernEffectPropertiesSourceSinkPipelineLocalRecipes",
+  layer: JoernEffectPropertiesSourceSinkPipelineLocalLayer,
+  emitsReceipts: ["joern-effect-properties.source-sink-pipeline.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesSourceSinkPipelineLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesSourceSinkPipelineLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/SourceSinkPipeline.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesSourceSinkPipelineLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesSourceSinkPipelineLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesSourceSinkPipelineLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesSourceSinkPipelineLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesSourceSinkPipelineLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesSourceSinkPipelineLocalResource],
+    outputResources: [JoernEffectPropertiesSourceSinkPipelineLocalResource],
+  },
+  handler: JoernEffectPropertiesSourceSinkPipelineLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesSourceSinkPipelineLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesSourceSinkPipelineLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesSourceSinkPipelineLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesSourceSinkPipelineLocalRecipes = [JoernEffectPropertiesSourceSinkPipelineLocalRecipe] as const

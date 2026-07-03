@@ -1,4 +1,9 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
+
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export const ProgramRepairActionSchema = Schema.Struct({
   id: Schema.String,
@@ -109,4 +114,99 @@ export const diagnosticFromRepairFinding = (
     ...(finding.symbolId === undefined ? {} : { symbolId: finding.symbolId }),
     ...(finding.diagnosticRequirementId === undefined ? {} : { diagnosticRequirementId: finding.diagnosticRequirementId }),
   }
+}
+
+export const DiagnosticsRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+})
+export type DiagnosticsRecipeInput = typeof DiagnosticsRecipeInput.Type
+
+export const DiagnosticsRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  diagnosticCode: Schema.String,
+  suggestedActionCount: Schema.Number,
+})
+export type DiagnosticsRecipeOutput = typeof DiagnosticsRecipeOutput.Type
+
+export const summarizeDiagnosticsProtocol = (
+  input: DiagnosticsRecipeInput,
+): DiagnosticsRecipeOutput => {
+  const diagnostic = diagnosticFromRepairFinding({
+    findingId: "framework-protocol-diagnostics",
+    schemaDescriptorId: "framework-protocol.diagnostics",
+    projectId: "framework-protocol",
+    kind: "missing-observation",
+    sourcePath: input.sourcePath,
+    explanation: "Program diagnostics preserve schema-backed repair findings.",
+    repairActions: [],
+  })
+
+  return {
+    sourcePath: input.sourcePath,
+    diagnosticCode: diagnostic.code,
+    suggestedActionCount: diagnostic.suggestedActions.length,
+  }
+}
+
+export const DiagnosticsRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+// @attune-packet-target generated-runtime-projection eligible
+  const ProgramDiagnosticSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.diagnostics.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: DiagnosticsRecipeInput,
+    stateSchema: DiagnosticsRecipeInput,
+    modes: ["read"],
+    consumedBy: ["framework-protocol.diagnostics.protocol"],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const ProgramDiagnosticStream = helpers.defineAlchemyResource({
+    id: "framework-protocol.diagnostics.stream",
+    kind: "observation-stream",
+    alchemyType: "attune:resource:ProgramDiagnosticStream",
+    addressSchema: DiagnosticsRecipeInput,
+    stateSchema: DiagnosticsRecipeOutput,
+    modes: ["observe", "read"],
+    ownerRecipeId: "framework-protocol.diagnostics.protocol",
+    producedBy: ["framework-protocol.diagnostics.protocol"],
+  })
+  const ProgramDiagnosticsHandler = helpers.defineRecipeHandler<DiagnosticsRecipeInput, DiagnosticsRecipeOutput, never, never>({
+    id: "framework-protocol.diagnostics.protocol.handler",
+    recipeId: "framework-protocol.diagnostics.protocol",
+    sourcePath: "packages/trellis/protocol/src/diagnostics/index.ts",
+    exportName: "summarizeDiagnosticsProtocol",
+    emitsReceipts: ["diagnostic.protocol-summary"],
+    handler: (input) => Effect.succeed(summarizeDiagnosticsProtocol(input)),
+  })
+  const ProgramDiagnosticsDagEdge = helpers.defineAlchemyRecipeDagEdge({
+    fromRecipeId: "framework-protocol.diagnostics.source",
+    toRecipeId: "framework-protocol.diagnostics.protocol",
+    resource: "framework-protocol.diagnostics.stream",
+    kind: "diagnoses",
+    modes: ["read", "observe"],
+  })
+
+  return [
+    helpers.defineDiagnosticRecipe({
+      id: "framework-protocol.diagnostics.protocol",
+      projectId: "framework-protocol",
+      title: "Define schema-backed program diagnostic and repair finding contracts",
+      inputSchema: DiagnosticsRecipeInput,
+      outputSchema: DiagnosticsRecipeOutput,
+      io: {
+        inputSchema: DiagnosticsRecipeInput,
+        outputSchema: DiagnosticsRecipeOutput,
+        inputResources: [ProgramDiagnosticSource],
+        outputResources: [ProgramDiagnosticStream],
+      },
+      handler: ProgramDiagnosticsHandler,
+      alchemyDag: [ProgramDiagnosticsDagEdge],
+      nxTarget: "framework-protocol:test",
+      observedFiles: ["packages/trellis/protocol/src/diagnostics/index.ts"],
+      allowedFiles: ["packages/trellis/protocol/src/diagnostics/index.ts"],
+      validationEvidence: ["framework-protocol:test", "framework-protocol:typecheck"],
+    }),
+  ] as const
 }

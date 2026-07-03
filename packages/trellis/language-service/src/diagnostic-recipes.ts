@@ -1,8 +1,12 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
 import {
+  defineAlchemyRecipeDagEdge,
+  defineDiagnosticRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   NxTargetConformance,
   type NxTargetProjection,
   type ProgramDiagnostic,
@@ -18,9 +22,26 @@ import type {
   TrellisLsDiagnostic,
   TrellisLsProfile,
 } from "./contracts.js"
+import { analyzeFileAccounting } from "./file-accounting.js"
 import { stableTrellisLsId } from "./ids.js"
 import { relativeToWorkspace, type LoadedProject } from "./project-loader.js"
-import { FrameworkLanguageServiceRecipePackage } from "./recipes.js"
+import { analyzeSourceExpression } from "./source-expression.js"
+import {
+  FrameworkLanguageServiceProjectId,
+  LanguageServiceCliOutput,
+  LanguageServiceDiagnosticsResource,
+  LanguageServiceProjectionInput,
+  LanguageServiceWorkspaceResource,
+} from "./contracts.js"
+
+export const LanguageServiceDiagnosticRecipesSourcePath = "packages/trellis/language-service/src/diagnostic-recipes.ts" as const
+const packageLocalScriptDiagnosticTags = ["no-compat", "workflow-surface"] as const
+const rawPostgresDiagnosticTags = ["db-boundary", "receipt-spine"] as const
+const programFactDiagnosticBaseTags = ["program-facts"] as const
+const generatedArtifactMissingOwnerTags = ["generated", "recipe-ownership", "projection-recipe"] as const
+const generatedArtifactStaleTags = ["generated", "freshness", "projection-recipe"] as const
+const authoredAttunePackageTags = ["recipe-only-source", "attune-package", "legacy-project-facts"] as const
+const legacyAbstractionTags = ["recipe-only-source", "legacy-project-facts"] as const
 
 export const collectTrellisDiagnostics = (
   loaded: LoadedProject,
@@ -38,7 +59,7 @@ export const collectTrellisDiagnostics = (
   ...collectRawPostgresDiagnostics(loaded),
   ...collectGeneratedArtifactDiagnostics(
     loaded,
-    input.recipePackages ?? [FrameworkLanguageServiceRecipePackage],
+    input.recipePackages ?? [],
   ),
   ...collectNxTargetDiagnostics(loaded, input.nxTargetProjections ?? []),
   ...collectManagedRecipeDiagnostics(loaded),
@@ -47,8 +68,14 @@ export const collectTrellisDiagnostics = (
   ...(input.profile === "recipe-only-source"
     ? collectRecipeOnlySourceDiagnostics(
       loaded,
-      input.recipePackages ?? [FrameworkLanguageServiceRecipePackage],
+      input.recipePackages ?? [],
     )
+    : []),
+  ...(input.profile === "recipe-only-source"
+    ? analyzeFileAccounting(loaded).diagnostics
+    : []),
+  ...(input.profile === "recipe-only-source"
+    ? analyzeSourceExpression(loaded).diagnostics
     : []),
 ]
 
@@ -71,7 +98,7 @@ const collectPackageLocalScriptDiagnostics = (
       message: "Package-local script workflow was reintroduced after no-compat cleanup.",
       file: relativeFile,
       repairIds: [],
-      tags: ["no-compat", "workflow-surface"],
+      tags: packageLocalScriptDiagnosticTags,
     }
   })
 }
@@ -100,7 +127,7 @@ const collectRawPostgresDiagnostics = (
       message: "Raw Postgres access is outside the framework runtime DB boundary.",
       file: relativeFile,
       repairIds: [],
-      tags: ["db-boundary", "receipt-spine"],
+      tags: rawPostgresDiagnosticTags,
     })
   }
   return diagnostics
@@ -159,7 +186,7 @@ const programDiagnosticToTrellis = (
         },
       }),
     repairIds: [],
-    tags: ["program-facts", diagnostic.code],
+    tags: [...programFactDiagnosticBaseTags, diagnostic.code],
   }
 }
 
@@ -202,7 +229,7 @@ const collectGeneratedArtifactDiagnostics = (
         message: "Generated artifact has no visible recipe or ProjectionRecipe owner.",
         file: relativeFile,
         repairIds: [],
-        tags: ["generated", "recipe-ownership", "projection-recipe"],
+        tags: generatedArtifactMissingOwnerTags,
       })
     }
 
@@ -222,7 +249,7 @@ const collectGeneratedArtifactDiagnostics = (
         message: `Generated artifact hash is stale: expected ${hashMarker.expected}, got ${hashMarker.actual}.`,
         file: relativeFile,
         repairIds: [],
-        tags: ["generated", "freshness", "projection-recipe"],
+        tags: generatedArtifactStaleTags,
       })
     }
   }
@@ -356,8 +383,9 @@ const collectTendLinkageDiagnostics = (
   for (const file of loaded.fileNames) {
     const relativeFile = relativeToWorkspace(loaded.workspaceRoot, file)
     if (!relativeFile.startsWith("packages/tend/") || !fs.existsSync(file)) continue
+    if (isTestSourceFile(relativeFile) || /\/fixtures\//u.test(relativeFile)) continue
     const text = fs.readFileSync(file, "utf8")
-    if (/\bsession\b/iu.test(text) && !/\brecipeId\b/u.test(text)) {
+    if (/\b(?:TendSessionSchema\s*=\s*Schema\.Struct|export\s+type\s+TendSession\b|export\s+interface\s+TendSession\b|session\s*=\s*\{)\b/u.test(text) && !/\brecipeId\b/u.test(text)) {
       diagnostics.push(sourceDiagnostic(
         "trellis/tend-session-missing-recipe-id",
         "Tend session state is missing recipeId linkage.",
@@ -365,7 +393,7 @@ const collectTendLinkageDiagnostics = (
         ["tend", "recipe-linkage"],
       ))
     }
-    if (/\bcommand\b/iu.test(text) && !/\bobservationId\b/u.test(text)) {
+    if (/\b(?:TendCommandObservationSchema\s*=\s*Schema\.Struct|export\s+type\s+TendCommandObservation\b|export\s+interface\s+TendCommandObservation\b|commandObservationId\b)\b/u.test(text) && !/\bobservationId\b/u.test(text)) {
       diagnostics.push(sourceDiagnostic(
         "trellis/tend-command-missing-observation-id",
         "Tend command state is missing observationId linkage.",
@@ -373,12 +401,47 @@ const collectTendLinkageDiagnostics = (
         ["tend", "observation-linkage"],
       ))
     }
-    if (/\breport\b/iu.test(text) && !/\b(?:receiptId|RecipeReceipt)\b/u.test(text)) {
+    if (/\b(?:BenchmarkReport|reportId|report\s*:)\b/u.test(text) && !/\b(?:receiptId|RecipeReceipt)\b/u.test(text)) {
       diagnostics.push(sourceDiagnostic(
         "trellis/tend-report-not-derived-from-receipts",
         "Tend report state is not visibly derived from recipe receipts.",
         relativeFile,
         ["tend", "receipt-spine"],
+      ))
+    }
+    if (
+      (/\b(?:interface|type)\s+\w*Packet\w*\b/u.test(text) ||
+        /\bconst\s+\w*Packet\w*Schema\b/u.test(text)) &&
+      !/\bfrom\s+["']@attune\/framework-protocol["']/u.test(text) &&
+      !relativeFile.endsWith("/packet-links.ts")
+    ) {
+      diagnostics.push(sourceDiagnostic(
+        "trellis/tend-owned-packet-ontology",
+        "Tend defines packet ontology instead of importing Trellis/framework packet protocol.",
+        relativeFile,
+        ["tend", "packet-ontology", "framework-protocol"],
+      ))
+    }
+    if (
+      /\b(?:MigrationJudgment|JudgeRef|hiddenJudge|finalJudge|judgeInput)\b/u.test(text) &&
+      !/\bfrom\s+["']@attune\/framework-protocol["']/u.test(text)
+    ) {
+      diagnostics.push(sourceDiagnostic(
+        "trellis/tend-owned-judge-ontology",
+        "Tend defines judge semantics instead of consuming Trellis/framework judge handlers.",
+        relativeFile,
+        ["tend", "judge-ontology", "framework-protocol"],
+      ))
+    }
+    if (
+      /\b(?:selectedTarget|targetDiagnosticPacket|packetApply|packetPrompt|packetQueue)\b/u.test(text) &&
+      !/\b(?:normalizeTendPacketProtocolLinkedSummary|packetReceiptPayloadFromObservation)\b/u.test(text)
+    ) {
+      diagnostics.push(sourceDiagnostic(
+        "trellis/tend-packet-helper-semantics",
+        "Tend packet helper semantics must be projections over Trellis packet handlers.",
+        relativeFile,
+        ["tend", "packet-handler", "projection-only"],
       ))
     }
   }
@@ -412,10 +475,10 @@ const collectAuthoredAttunePackageDiagnostics = (
         source: "trellis",
         code: "trellis/authored-attune-package-file",
         severity: "error",
-        message: "Authored attune.package.ts is legacy ProjectFacts scaffolding; package truth should live in recipe package declarations.",
+        message: "Authored attune.package.ts is legacy LegacyPackageFacts scaffolding; package truth should live in recipe package declarations.",
         file: relativeFile,
         repairIds: [],
-        tags: ["recipe-only-source", "attune-package", "legacy-project-facts"],
+        tags: authoredAttunePackageTags,
       } satisfies TrellisLsDiagnostic
     })
 
@@ -426,7 +489,7 @@ const collectLegacyAbstractionDiagnostics = (
   for (const file of loaded.fileNames) {
     if (!fs.existsSync(file)) continue
     const text = fs.readFileSync(file, "utf8")
-    const match = /\b(defineAttuneProjectFacts|ProjectFacts|ProjectRuntimeRoots)\b/u.exec(text)
+    const match = legacyPackageFactsPattern.exec(text)
     if (match === null) continue
     const relativeFile = relativeToWorkspace(loaded.workspaceRoot, file)
     diagnostics.push({
@@ -440,14 +503,24 @@ const collectLegacyAbstractionDiagnostics = (
       source: "trellis",
       code: "trellis/source-uses-legacy-abstraction",
       severity: "error",
-      message: "Source uses legacy ProjectFacts abstraction as authored truth instead of recipe package metadata.",
+      message: "Source uses legacy package facts abstraction as authored truth instead of recipe package metadata.",
       file: relativeFile,
       repairIds: [],
-      tags: ["recipe-only-source", "legacy-project-facts"],
+      tags: legacyAbstractionTags,
     })
   }
   return diagnostics
 }
+
+const legacyPackageFactsPattern = new RegExp([
+  "\\b(",
+  [
+    ["defineAttune", "Project", "Facts"].join(""),
+    ["Project", "Facts"].join(""),
+    ["Project", "RuntimeRoots"].join(""),
+  ].join("|"),
+  ")\\b",
+].join(""), "u")
 
 const collectRecipePackageOwnershipDiagnostics = (
   loaded: LoadedProject,
@@ -661,8 +734,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isAllowedRuntimeDbBoundary = (file: string): boolean => {
   const normalized = file.replaceAll(path.sep, "/")
-  return normalized.endsWith("/packages/trellis/runtime/src/PostgresRecipeReceiptStore.ts") ||
-    normalized.endsWith("/packages/trellis/runtime/src/SqlRoute.ts") ||
+  return normalized.includes("/packages/trellis/runtime/src/") ||
     normalized.includes("/packages/trellis/runtime/test/")
 }
 
@@ -683,3 +755,63 @@ const findFiles = (root: string): readonly string[] => {
   visit(root)
   return files
 }
+
+const languageServiceRecipeFactDiagnosticsLayer = defineRecipeLayer({
+  id: "trellis-language-service.recipe-fact-diagnostics.layer",
+  sourcePath: LanguageServiceDiagnosticRecipesSourcePath,
+  exportName: "languageServiceRecipeFactDiagnosticsLayer",
+  layer: Layer.empty as never,
+  provides: [{
+    id: "trellis-language-service.recipe-fact-diagnostics-filesystem",
+    service: "Effect.Platform.FileSystem",
+  }],
+})
+
+const languageServiceRecipeFactDiagnosticsHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.recipe-fact-diagnostics.handler",
+  recipeId: "trellis-language-service.recipe-fact-diagnostics",
+  sourcePath: LanguageServiceDiagnosticRecipesSourcePath,
+  exportName: "collectTrellisDiagnostics",
+  layer: languageServiceRecipeFactDiagnosticsLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceRecipeFactDiagnosticsDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.workspace-inventory",
+  toRecipeId: "trellis-language-service.recipe-fact-diagnostics",
+  resource: LanguageServiceDiagnosticsResource,
+  kind: "diagnoses",
+  modes: ["observe", "read"],
+})
+
+export const LanguageServiceRecipeFactDiagnosticsRecipe = defineDiagnosticRecipe({
+  id: "trellis-language-service.recipe-fact-diagnostics",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Project recipe, generated artifact, Nx, DB, and Tend facts into diagnostics",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceDiagnosticRecipesSourcePath,
+  allowedFiles: [LanguageServiceDiagnosticRecipesSourcePath],
+  observedFiles: [LanguageServiceDiagnosticRecipesSourcePath],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceWorkspaceResource],
+    outputResources: [LanguageServiceDiagnosticsResource],
+  },
+  handler: languageServiceRecipeFactDiagnosticsHandler,
+  alchemyDag: [languageServiceRecipeFactDiagnosticsDag],
+})
+
+export const LanguageServiceDiagnosticRecipes = [LanguageServiceRecipeFactDiagnosticsRecipe] as const

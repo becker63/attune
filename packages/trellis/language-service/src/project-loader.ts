@@ -1,6 +1,23 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 import ts from "typescript"
+import { Effect, Layer } from "effect"
+import {
+  defineAlchemyRecipeDagEdge,
+  defineRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
+
+import {
+  FrameworkLanguageServiceProjectId,
+  LanguageServiceCliOutput,
+  LanguageServiceCommandResource,
+  LanguageServiceProjectionInput,
+  LanguageServiceWorkspaceResource,
+} from "./contracts.js"
+
+export const LanguageServiceProjectLoaderSourcePath = "packages/trellis/language-service/src/project-loader.ts" as const
 
 export interface LoadedProject {
   readonly workspaceRoot: string
@@ -132,3 +149,111 @@ const defaultCompilerOptions = (): ts.CompilerOptions => ({
 })
 
 const unique = <A>(values: readonly A[]): readonly A[] => [...new Set(values)]
+
+const languageServiceProjectLoaderLayer = defineRecipeLayer({
+  id: "trellis-language-service.project-loader.layer",
+  sourcePath: LanguageServiceProjectLoaderSourcePath,
+  exportName: "languageServiceProjectLoaderLayer",
+  layer: Layer.empty as never,
+  provides: [{
+    id: "trellis-language-service.project-loader-filesystem",
+    service: "Effect.Platform.FileSystem",
+  }],
+})
+
+const languageServiceWorkspaceInventoryHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.workspace-inventory.handler",
+  recipeId: "trellis-language-service.workspace-inventory",
+  sourcePath: LanguageServiceProjectLoaderSourcePath,
+  exportName: "loadProjectScope",
+  layer: languageServiceProjectLoaderLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceTypeScriptProgramHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.typescript-program.handler",
+  recipeId: "trellis-language-service.typescript-program",
+  sourcePath: LanguageServiceProjectLoaderSourcePath,
+  exportName: "createProgramFromTsconfig",
+  layer: languageServiceProjectLoaderLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceWorkspaceInventoryDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.cli-invocation-surfaces",
+  toRecipeId: "trellis-language-service.workspace-inventory",
+  resource: LanguageServiceWorkspaceResource,
+  kind: "invokes",
+  modes: ["read"],
+})
+
+const languageServiceTypeScriptProgramDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.workspace-inventory",
+  toRecipeId: "trellis-language-service.typescript-program",
+  resource: LanguageServiceCommandResource,
+  kind: "projects",
+  modes: ["project"],
+})
+
+export const LanguageServiceWorkspaceInventoryRecipe = defineRecipe({
+  id: "trellis-language-service.workspace-inventory",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Load Trellis language-service workspace inventory facts",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceProjectLoaderSourcePath,
+  allowedFiles: [LanguageServiceProjectLoaderSourcePath],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceWorkspaceResource],
+    outputResources: [LanguageServiceCommandResource],
+  },
+  handler: languageServiceWorkspaceInventoryHandler,
+  alchemyDag: [languageServiceWorkspaceInventoryDag],
+})
+
+export const LanguageServiceTypeScriptProgramRecipe = defineRecipe({
+  id: "trellis-language-service.typescript-program",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Load TypeScript program facts for Trellis language-service scope",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceProjectLoaderSourcePath,
+  allowedFiles: [LanguageServiceProjectLoaderSourcePath],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceWorkspaceResource],
+    outputResources: [LanguageServiceCommandResource],
+  },
+  handler: languageServiceTypeScriptProgramHandler,
+  alchemyDag: [languageServiceTypeScriptProgramDag],
+})
+
+export const LanguageServiceProjectLoaderRecipes = [
+  LanguageServiceWorkspaceInventoryRecipe,
+  LanguageServiceTypeScriptProgramRecipe,
+] as const

@@ -1,4 +1,5 @@
 import {
+  defineRecipeHandler,
   LspDiagnostic,
   NxTarget,
 } from "@attune/framework-protocol"
@@ -24,12 +25,21 @@ import {
   type ProgramFactQueryApi,
 } from "@attune/framework-runtime"
 
+import {
+  LanguageServiceCliOutput,
+  LanguageServiceProjectionInput,
+} from "./contracts.js"
+import { LanguageServiceSourceSurfaceRecipes } from "./index-recipes.js"
+
 export * from "./recipes.js"
 export * from "./contracts.js"
 export * from "./cli-core.js"
 export * from "./diagnostic-recipes.js"
 export * from "./repair-recipes.js"
+export * from "./source-expression.js"
 export * from "./upstream-effect/index.js"
+
+export const LanguageServiceIndexSourcePath = "packages/trellis/language-service/src/index.ts" as const
 
 type RuntimeDiagnostic = ProgramDiagnostic & {
   readonly range?: SourceRange
@@ -781,3 +791,25 @@ export const projectLanguageServiceViewFromRuntime = (
       repairFindingLenses,
     })
   })
+
+const languageServiceSourceSurfaceHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.source-surface.handler",
+  recipeId: "trellis-language-service.source-surface",
+  sourcePath: LanguageServiceIndexSourcePath,
+  exportName: "FrameworkLanguageServiceIndexRecipes",
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+export const FrameworkLanguageServiceIndexRecipes = [
+  ...LanguageServiceSourceSurfaceRecipes,
+] as const

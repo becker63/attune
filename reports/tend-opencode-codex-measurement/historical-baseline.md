@@ -1,10 +1,10 @@
 # Historical Baseline
 
-Measurement session: measurement:2026-06-29:controlled-baseline-treatment
-Projection input observations: 188
-Scanned at: 2026-06-29T01:24:32.366Z
-Trace files: 326
-JSONL files: 322
+Measurement session: measurement:2026-07-01:4ac244a5fdcc40fb
+Projection input observations: 0
+Scanned at: 2026-07-01T19:21:18.800Z
+Trace files: 426
+JSONL files: 422
 SQLite-like files: 4
 SQLite schema files inspected: 4
 SQLite schema files skipped: 0
@@ -19,51 +19,50 @@ Exit code observations: 14473
 Failed exit code observations: 1238
 Known-success rate: 91.4%
 Token total observed: 646988621
-Tool-call count observed: 59231
+Tool-call count observed: 79203
 Unique model IDs observed: 9
 Unique session IDs observed: 20
 SQLite tables summarized: 15
 
 ## Temporal And Duration Metadata
-Timestamp samples: 482181
+Timestamp samples: 618878
 Earliest timestamp: 2026-04-16T02:05:36.256Z
-Latest timestamp: 2026-06-29T01:24:28.856Z
-Timestamp span ms: 6391132600
-Duration samples: 5923
-Duration total ms: 1474949136
-Duration average ms: 249020.62
-Duration min/p50/p95/max ms: 10 / 76204 / 857745 / 28857703
+Latest timestamp: 2026-07-01T19:21:11.276Z
+Timestamp span ms: 6628535020
+Duration samples: 6456
+Duration total ms: 1745760739
+Duration average ms: 270409.04
+Duration min/p50/p95/max ms: 10 / 77093 / 1002863 / 28857703
 
 ## Selected Comparable Baseline Session
-- Session ID: sha256:967e510d338496d4
-- Score: 237
-- Strength: selected comparable historical session; signals=trellis-ls, framework-language-service, recipe-substrate, tend-opencode, recipe
-- Score reasons: store-backed controlled baseline phase; matched command signal: trellis-ls; matched command signal: framework-language-service; matched command signal: recipe-substrate; matched command signal: tend-opencode; matched command signal: recipe; command observations: 8; duration samples: 8; exit-code samples: 8; token/tool aggregate: 63532591/11
-- Started/completed: 2026-06-29T00:26:30.718Z / 2026-06-29T01:18:52.721Z
-- Wall time ms: 3142003
-- Command events: 8
-- Unique/repeated command families: 11 / 4
-- Repeated command invocations: 9
-- Successful/failed commands: 8 / 0
-- Known exit-code commands: 8
-- Command success rate: 100.0%
+- Session ID: sha256:1e0f8966cc77d457
+- Score: 59
+- Strength: weak selected historical session; no Attune/Trellis LS signal
+- Score reasons: enough samples: 44 command events; duration samples: 5; exit-code samples: 22; bounded task window: 611455ms
+- Started/completed: 2026-05-19T02:49:40.328Z / 2026-05-19T02:59:51.783Z
+- Wall time ms: 611455
+- Command events: 44
+- Unique/repeated command families: 23 / 1
+- Repeated command invocations: 22
+- Successful/failed commands: 16 / 6
+- Known exit-code commands: 22
+- Command success rate: 72.7%
 - Expensive checks: 0
 - workspace:policy-fast count: 0
 - Time to first useful diagnostic ms: not inferable
-- Duration samples: 8
-- Duration total ms: 84257
-- Duration average ms: 10532.13
-- Duration min/p50/p95/max ms: 3495 / 4075 / 32652 / 32652
-- Token total: 63532591
-- Tool calls: 11
-- Matched signals: trellis-ls, framework-language-service, recipe-substrate, tend-opencode, recipe
-- Top command family: trellis-language-service.check-summary-projection
+- Duration samples: 5
+- Duration total ms: 193979
+- Duration average ms: 38795.80
+- Duration min/p50/p95/max ms: 7760 / 27324 / 110728 / 110728
+- Token total: 506439
+- Tool calls: 29
+- Matched signals: none
+- Top command family: bash -c [shell-script-redacted]
 - Top exit code: 0
 
 ## Comparable Session Candidates
 | Session | Score | Commands | Failures | Expensive | Wall ms | Duration p50/p95/max ms | Token/tool | Signals | Strength |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- |
-| sha256:967e510d338496d4 | 237 | 8 | 0 | 0 | 3142003 | 4075 / 32652 / 32652 | 63532591 / 11 | trellis-ls, framework-language-service, recipe-substrate, tend-opencode, recipe | selected comparable historical session; signals=trellis-ls, framework-language-service, recipe-substrate, tend-opencode, recipe |
 | sha256:1e0f8966cc77d457 | 59 | 44 | 6 | 0 | 611455 | 27324 / 110728 / 110728 | 506439 / 29 | none | weak selected historical session; no Attune/Trellis LS signal |
 | sha256:787e89708ada7b5e | 59 | 62 | 2 | 0 | 645292 | 70368 / 181569 / 181569 | 1334879 / 51 | none | weak selected historical session; no Attune/Trellis LS signal |
 | sha256:3bdd41d06821b14f | 59 | 133 | 4 | 2 | 1925154 | 38607 / 318599 / 318599 | 3959998 / 97 | none | weak selected historical session; no Attune/Trellis LS signal |
@@ -75,6 +74,7 @@ Duration min/p50/p95/max ms: 10 / 76204 / 857745 / 28857703
 | sha256:ed827480072e20b1 | 59 | 330 | 10 | 36 | 6489305 | 103247 / 432337 / 432337 | 11681823 / 209 | none | weak selected historical session; no Attune/Trellis LS signal |
 | sha256:8c9b33f4a56e169f | 59 | 336 | 7 | 11 | 2438645 | 72873 / 1120620 / 1120620 | 8609718 / 194 | none | weak selected historical session; no Attune/Trellis LS signal |
 | sha256:f581ed5b5a8fd94a | 59 | 394 | 16 | 36 | 5549614 | 175012 / 685013 / 685013 | 20538186 / 279 | none | weak selected historical session; no Attune/Trellis LS signal |
+| sha256:a595295077a73ce2 | 59 | 438 | 19 | 0 | 6761903 | 148189 / 537978 / 537978 | 17361432 / 290 | none | weak selected historical session; no Attune/Trellis LS signal |
 
 ## SQLite Schema Metadata
 - sha256:c4bcd56ac056f1e0 (sqlite): 2 tables
@@ -201,9 +201,9 @@ Duration min/p50/p95/max ms: 10 / 76204 / 857745 / 28857703
 - 28: 1
 
 ## Model IDs
-- gpt-5.5: 12324
+- gpt-5.5: 13576
 - gpt-5.4: 1744
-- gpt-5.3-codex-spark: 320
+- gpt-5.3-codex-spark: 558
 - gpt-5.3-codex: 30
 - inkeep-rag: 20
 - gpt-5.4-mini: 12
@@ -213,6 +213,8 @@ Duration min/p50/p95/max ms: 10 / 76204 / 857745 / 28857703
 
 ## Session IDs
 - sha256:799c28c736a326b7: 142
+- sha256:3286b5f202e04610: 102
+- sha256:4dcc19f5f71c1f05: 78
 - sha256:1169bab2e9db403e: 77
 - sha256:7445dc1caaed9012: 52
 - sha256:27fefd5c9263034b: 48
@@ -221,6 +223,7 @@ Duration min/p50/p95/max ms: 10 / 76204 / 857745 / 28857703
 - sha256:2d40bf81ab9d6359: 34
 - sha256:58bcbb4b0fbbde2a: 33
 - sha256:fde29b785eba12cc: 30
+- sha256:223c21615bf6e390: 29
 - sha256:1ec9ad5b0f6a0862: 28
 - sha256:9a568f8253b465d3: 28
 - sha256:54316ee3966946b3: 25
@@ -229,8 +232,5 @@ Duration min/p50/p95/max ms: 10 / 76204 / 857745 / 28857703
 - sha256:ddbb09ff295e8e0e: 25
 - sha256:02dfa42bb6bac63a: 23
 - sha256:53a1e8f3719f41bd: 23
-- sha256:5a68010bccbb6a5e: 23
-- sha256:27d16c980d84cc64: 21
-- sha256:e4c78a9cb4a57a3a: 21
 
 Raw prompts, conversations, raw trace rows, and full command output were not stored.

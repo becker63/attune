@@ -1,147 +1,108 @@
+import { defineRecipePackage } from "@attune/framework-protocol"
+
 import {
-  defineExternalSchemaManagedRecipe,
-  defineExternalSchemaRecipe,
-  type RecipeRepair,
-} from "@attune/framework-protocol"
-import { Schema } from "effect"
-
-import { HomeDeploymentConfig } from "./model.js"
-import { ProviderEvidence } from "./providers.js"
-
-export const PlatformLifecycleGraphSchema = Schema.Struct({
-  name: Schema.String,
-  resources: Schema.Array(Schema.Unknown),
-})
-export type PlatformLifecycleGraphRecipe = typeof PlatformLifecycleGraphSchema.Type
-
-export const CanopyRenderedResources = Schema.Struct({
-  lifecycleGraph: PlatformLifecycleGraphSchema,
-  resourceCount: Schema.Number,
-})
-export type CanopyRenderedResources = typeof CanopyRenderedResources.Type
-
-export const CanopyPolicyResult = Schema.Struct({
-  allowed: Schema.Boolean,
-  blockers: Schema.Array(Schema.String),
-  humanReviewRequired: Schema.Boolean,
-})
-export type CanopyPolicyResult = typeof CanopyPolicyResult.Type
-
-export const CanopyDeployPlan = Schema.Struct({
-  target: Schema.String,
-  commands: Schema.Array(Schema.Array(Schema.String)),
-  evidenceRequirements: Schema.Array(Schema.String),
-})
-export type CanopyDeployPlan = typeof CanopyDeployPlan.Type
-
-export const CanopyObservedState = Schema.Struct({
-  evidence: Schema.Array(ProviderEvidence),
-  ready: Schema.Boolean,
-})
-export type CanopyObservedState = typeof CanopyObservedState.Type
-
-export const canopyDriftRepair: RecipeRepair = {
-  repairId: "recipe-repair:canopy.home-deployment:drift",
-  recipeId: "canopy.home-deployment",
-  title: "Repair Canopy managed platform drift",
-  kind: "managed-lifecycle",
-  nxTarget: "home-deployment:repair",
-  allowedFiles: ["packages/canopy/home-deployment/**", "packages/canopy/platform-alchemy-k8s/**"],
-  risk: "needs-review",
-  evidenceRequirements: ["home-deployment:test", "workspace:policy-fast"],
-}
+  CanopyHomeDeploymentRecipe,
+  HomeDeploymentAlchemyRecipes,
+} from "./alchemy.ts"
+import { HomeDeploymentConfigRecipes } from "./config-recipes.ts"
+import { NixosBootstrapCommandPlanRecipe } from "./internal/bootstrap/NixosBootstrapCommandPlan.ts"
+import {
+  CanopyPolicyRecipe,
+  CanopyRenderedResourcesRecipe,
+  HomeDeploymentLifecycleRecipes,
+} from "./lifecycle.ts"
+import {
+  CanopyDeployPlanRecipe,
+  CanopyDesiredStateRecipe,
+  HomeDeploymentModelRecipes,
+} from "./model.ts"
+import {
+  CanopyObservedStateRecipe,
+  HomeDeploymentProviderRecipes,
+} from "./providers.ts"
+import { HomeDeploymentStateRecipes } from "./state.ts"
+import { HomeDeploymentTestRecipes } from "./test-recipes.ts"
 
 export const CanopyManagedRecipes = [
-  defineExternalSchemaRecipe({
-    id: "canopy.desired-state",
-    projectId: "home-deployment",
-    title: "Decode Canopy desired state",
-    inputSchema: HomeDeploymentConfig,
-    outputSchema: HomeDeploymentConfig,
-    nxTarget: "home-deployment:check",
-    sourcePath: "packages/canopy/home-deployment/src/recipes.ts",
-    allowedFiles: ["packages/canopy/home-deployment/**"],
-    validationEvidence: ["home-deployment:test"],
-  }),
-  defineExternalSchemaManagedRecipe({
-    id: "canopy.home-deployment",
-    projectId: "home-deployment",
-    title: "Manage Canopy home deployment lifecycle",
-    inputSchema: HomeDeploymentConfig,
-    outputSchema: PlatformLifecycleGraphSchema,
-    dependencies: [{ recipeId: "canopy.desired-state" }],
-    nxTarget: "home-deployment:dev",
-    sourcePath: "packages/canopy/home-deployment/src/recipes.ts",
-    allowedFiles: ["packages/canopy/home-deployment/**", "packages/canopy/platform-alchemy-k8s/**"],
-    validationEvidence: ["home-deployment:test"],
-    lifecycle: ["plan", "apply", "check", "destroy"],
-    resourceKind: "canopy-platform-lifecycle",
-    observedState: { status: "unknown" },
-    driftRepair: canopyDriftRepair,
-    humanReviewRequired: true,
-  }),
-  defineExternalSchemaRecipe({
-    id: "canopy.rendered-resources",
-    projectId: "home-deployment",
-    title: "Render platform resources",
-    inputSchema: PlatformLifecycleGraphSchema,
-    outputSchema: CanopyRenderedResources,
-    dependencies: [{ recipeId: "canopy.home-deployment" }],
-    nxTarget: "home-deployment:check",
-    sourcePath: "packages/canopy/home-deployment/src/recipes.ts",
-    allowedFiles: ["packages/canopy/home-deployment/**", "packages/canopy/platform-alchemy-k8s/**"],
-    validationEvidence: ["home-deployment:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "canopy.policy",
-    projectId: "home-deployment",
-    title: "Evaluate Canopy policy gates",
-    inputSchema: CanopyRenderedResources,
-    outputSchema: CanopyPolicyResult,
-    dependencies: [{ recipeId: "canopy.rendered-resources" }],
-    nxTarget: "home-deployment:check",
-    sourcePath: "packages/canopy/home-deployment/src/recipes.ts",
-    allowedFiles: ["packages/canopy/home-deployment/**", "packages/canopy/platform-alchemy-k8s/**"],
-    validationEvidence: ["home-deployment:test", "workspace:policy-fast"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "canopy.deploy-plan",
-    projectId: "home-deployment",
-    title: "Create Canopy deploy plan",
-    inputSchema: CanopyPolicyResult,
-    outputSchema: CanopyDeployPlan,
-    dependencies: [{ recipeId: "canopy.policy" }],
-    nxTarget: "home-deployment:dev",
-    sourcePath: "packages/canopy/home-deployment/src/recipes.ts",
-    allowedFiles: ["packages/canopy/home-deployment/**"],
-    validationEvidence: ["home-deployment:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "canopy.nixos-bootstrap-command-plan",
-    projectId: "home-deployment",
-    title: "Render NixOS bootstrap command plan without live host mutation",
-    inputSchema: CanopyPolicyResult,
-    outputSchema: CanopyDeployPlan,
-    dependencies: [{ recipeId: "canopy.deploy-plan" }],
-    nxTarget: "home-deployment:check",
-    sourcePath: "packages/canopy/home-deployment/src/recipes.ts",
-    allowedFiles: [
-      "packages/canopy/home-deployment/src/internal/bootstrap/**",
-      "packages/canopy/home-deployment/src/**",
-      "nix/hosts/**",
-    ],
-    validationEvidence: ["home-deployment:test", "workspace:policy-fast"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "canopy.observed-state",
-    projectId: "home-deployment",
-    title: "Observe Canopy provider state",
-    inputSchema: CanopyDeployPlan,
-    outputSchema: CanopyObservedState,
-    dependencies: [{ recipeId: "canopy.nixos-bootstrap-command-plan" }],
-    nxTarget: "home-deployment:test",
-    sourcePath: "packages/canopy/home-deployment/src/recipes.ts",
-    allowedFiles: ["packages/canopy/home-deployment/**"],
-    validationEvidence: ["home-deployment:test"],
-  }),
+  CanopyDesiredStateRecipe,
+  CanopyHomeDeploymentRecipe,
+  CanopyRenderedResourcesRecipe,
+  CanopyPolicyRecipe,
+  CanopyDeployPlanRecipe,
+  NixosBootstrapCommandPlanRecipe,
+  CanopyObservedStateRecipe,
 ] as const
+
+export const HomeDeploymentRecipes = [
+  ...HomeDeploymentModelRecipes,
+  ...HomeDeploymentAlchemyRecipes,
+  ...HomeDeploymentLifecycleRecipes,
+  ...HomeDeploymentProviderRecipes,
+  ...HomeDeploymentStateRecipes,
+  ...HomeDeploymentConfigRecipes,
+  ...HomeDeploymentTestRecipes,
+] as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const HomeDeploymentRecipePackage = defineRecipePackage({
+  packageId: "home-deployment",
+  kind: "day0-resource-runbook",
+  title: "Canopy home deployment lifecycle recipes",
+  sourceRoot: "packages/canopy/home-deployment/src",
+  recipes: HomeDeploymentRecipes,
+  ownership: [
+    {
+      id: "desired-state-model",
+      title: "Home deployment desired-state model and deploy plan projection",
+      files: ["packages/canopy/home-deployment/src/model.ts"],
+      recipeIds: ["canopy.desired-state", "canopy.deploy-plan"],
+    },
+    {
+      id: "alchemy-managed-lifecycle",
+      title: "Alchemy provider-backed home deployment lifecycle",
+      files: ["packages/canopy/home-deployment/src/alchemy.ts", "packages/canopy/home-deployment/alchemy.run.ts"],
+      recipeIds: ["canopy.home-deployment"],
+    },
+    {
+      id: "lifecycle-render-policy",
+      title: "Lifecycle graph projection, rendered resources, and policy checks",
+      files: ["packages/canopy/home-deployment/src/lifecycle.ts"],
+      recipeIds: ["canopy.rendered-resources", "canopy.policy"],
+    },
+    {
+      id: "provider-observation",
+      title: "Provider evidence and observed-state projection",
+      files: ["packages/canopy/home-deployment/src/providers.ts"],
+      recipeIds: ["canopy.observed-state"],
+    },
+    {
+      id: "bootstrap-workflow",
+      title: "NixOS bootstrap command workflow projection",
+      files: ["packages/canopy/home-deployment/src/internal/bootstrap/NixosBootstrapCommandPlan.ts"],
+      recipeIds: ["canopy.nixos-bootstrap-command-plan"],
+    },
+    {
+      id: "managed-state-file",
+      title: "Local deployment state file lifecycle",
+      files: ["packages/canopy/home-deployment/src/state.ts"],
+      recipeIds: ["canopy.home-deployment-state"],
+    },
+    {
+      id: "home-deployment-config",
+      title: "Home deployment package configuration",
+      files: [
+        "packages/canopy/home-deployment/package.json",
+        "packages/canopy/home-deployment/project.json",
+        "packages/canopy/home-deployment/tsconfig.json",
+        "packages/canopy/home-deployment/vitest.config.ts",
+      ],
+      recipeIds: ["canopy.home-deployment.config-surface"],
+    },
+    {
+      id: "home-deployment-tests",
+      title: "Home deployment test ownership",
+      files: ["packages/canopy/home-deployment/test/**"],
+      recipeIds: ["canopy.home-deployment-test-suite"],
+    },
+  ],
+})

@@ -1,11 +1,19 @@
-import { Schema } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 import { describe, expect, it } from "vitest"
 import {
   AlchemyResourceDescriptor,
+  RecipeExpressionContractSummarySchema,
+  RecipeExpressionContractView,
   FrameworkProtocolRecipes,
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineManagedRecipeAlchemyBinding,
   defineManagedRecipe,
   defineExternalSchemaRecipe,
+  defineProjectionRecipe,
   defineRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
   HealthView,
   LspDiagnostic,
   NxTarget,
@@ -30,6 +38,9 @@ import {
   RecipeRecordView,
   RecipeProjectionCatalog,
   RecipeRepairPlan,
+  alchemyRecipeDagEdgeId,
+  inferredAlchemyResourceId,
+  inferredRecipeId,
   recipeId,
   recipeObservationId,
   recipeReceiptId,
@@ -37,6 +48,19 @@ import {
   type RecipeDiagnostic,
   type RecipeRepair,
 } from "../src/index.js"
+
+const makeAlchemyDagEdgeFixture = defineAlchemyRecipeDagEdge
+const makeAlchemyResourceFixture = defineAlchemyResource
+const makeManagedRecipeAlchemyBindingFixture = defineManagedRecipeAlchemyBinding
+const makeManagedRecipeFixture = defineManagedRecipe
+const makeExternalSchemaRecipeFixture = defineExternalSchemaRecipe
+const makeProjectionRecipeFixture = defineProjectionRecipe
+const makeRecipeFixture = defineRecipe
+const makeRecipeHandlerFixture = defineRecipeHandler
+const makeRecipeLayerFixture = defineRecipeLayer
+const NeedsReviewRisk = "needs-review" as const
+const PlatformAlchemyValidationTargets = ["platform-alchemy-k8s:test"] as const
+const CocoIndexValidationTargets = ["cocoindex-effect:test"] as const
 
 const RecipeInput = Schema.Struct({
   projectId: Schema.String,
@@ -46,9 +70,28 @@ const RecipeOutput = Schema.Struct({
   changed: Schema.Boolean,
 })
 
+const ProjectionInput = Schema.Struct({
+  packageRoot: Schema.String,
+  target: Schema.String,
+})
+type ProjectionInput = typeof ProjectionInput.Type
+
+const ProjectionOutput = Schema.Struct({
+  generatedFiles: Schema.Array(Schema.String),
+  contentHash: Schema.String,
+})
+type ProjectionOutput = typeof ProjectionOutput.Type
+
+class ProjectionServices extends Context.Service<
+  ProjectionServices,
+  {
+    readonly emit: (input: ProjectionInput) => Effect.Effect<ProjectionOutput>
+  }
+>()("framework-protocol/test/ProjectionServices") {}
+
 describe("recipe protocol", () => {
   it("declares typed Recipes and pure fromRecipe projections", () => {
-    const recipe = defineRecipe({
+    const recipe = makeRecipeFixture({
       id: "workspace.recipe-check",
       projectId: "workspace",
       inputSchema: RecipeInput,
@@ -208,14 +251,67 @@ describe("recipe protocol", () => {
       kind: "managed-lifecycle",
       nxTarget: "workspace:repair",
       allowedFiles: ["packages/canopy/platform-alchemy-k8s/**"],
-      risk: "needs-review",
+      risk: NeedsReviewRisk,
       evidenceRequirements: ["nx run workspace:check"],
     }
-    const recipe = defineManagedRecipe({
+    const KubernetesObjectSet = makeAlchemyResourceFixture({
+      id: "platform-alchemy-k8s.kubernetes-object-set.resource",
+      kind: "kubernetes-object-set",
+      alchemyType: "attune:resource:KubernetesObjectSet",
+      providerId: "platform-alchemy-k8s.provider",
+      addressSchema: Schema.Struct({
+        id: Schema.String,
+        namespace: Schema.String,
+      }),
+      stateSchema: RecipeOutput,
+      modes: ["plan", "apply", "check", "destroy", "read"],
+      ownerRecipeId: "canopy.deploy",
+    })
+    const KubernetesObjectSetDag = [
+      makeAlchemyDagEdgeFixture({
+        fromRecipeId: "platform-alchemy-k8s.provider",
+        toRecipeId: "canopy.deploy",
+        resource: KubernetesObjectSet,
+        kind: "manages",
+        modes: ["plan", "apply", "check", "destroy", "read"],
+        validationTargets: PlatformAlchemyValidationTargets,
+      }),
+    ] as const
+    const recipe = makeManagedRecipeFixture({
       id: "canopy.deploy",
       projectId: "platform-alchemy-k8s",
       inputSchema: RecipeInput,
       outputSchema: RecipeOutput,
+      io: {
+        inputSchema: RecipeInput,
+        outputSchema: RecipeOutput,
+        inputResources: [KubernetesObjectSet],
+        outputResources: [KubernetesObjectSet],
+      },
+      handler: makeRecipeHandlerFixture<typeof RecipeInput.Type, typeof RecipeOutput.Type, never, never>({
+        id: "canopy.deploy.lifecycle-handler",
+        recipeId: "canopy.deploy",
+        sourcePath: "packages/canopy/platform-alchemy-k8s/src/provider/alchemy-k8s-provider.ts",
+        exportName: "runKubernetesObjectSetLifecycle",
+        emitsReceipts: ["managed-recipe.lifecycle"],
+        handler: () => Effect.succeed({ changed: false }),
+      }),
+      alchemyDag: KubernetesObjectSetDag,
+      alchemy: makeManagedRecipeAlchemyBindingFixture({
+        id: "canopy.deploy.alchemy",
+        managedRecipeId: "canopy.deploy",
+        alchemyResourceType: "attune:alchemy:ManagedRecipe",
+        providerId: "platform-alchemy-k8s.provider",
+        resource: KubernetesObjectSet,
+        lifecycle: {
+          plan: "runKubernetesObjectSetLifecycle",
+          apply: "runKubernetesObjectSetLifecycle",
+          check: "runKubernetesObjectSetLifecycle",
+          destroy: "runKubernetesObjectSetLifecycle",
+          read: "readKubernetesObjectSet",
+          diff: "diffKubernetesObjectSet",
+        },
+      }),
       lifecycle: ["plan", "apply", "check", "destroy", "prune"],
       resourceKind: "kubernetes-object-set",
       lifecycleSubstrates: [
@@ -232,11 +328,30 @@ describe("recipe protocol", () => {
       humanReviewRequired: true,
     })
 
-    expect(AlchemyResourceDescriptor.fromManagedRecipe(recipe)).toEqual({
+    expect(AlchemyResourceDescriptor.fromManagedRecipe(recipe)).toEqual(expect.objectContaining({
       id: "canopy.deploy",
       kind: "kubernetes-object-set",
       lifecycle: ["plan", "apply", "check", "destroy", "prune"],
       requiresHumanReview: true,
+      alchemy: {
+        id: "canopy.deploy.alchemy",
+        managedRecipeId: "canopy.deploy",
+        alchemyResourceType: "attune:alchemy:ManagedRecipe",
+        providerId: "platform-alchemy-k8s.provider",
+        resource: expect.objectContaining({
+          id: "platform-alchemy-k8s.kubernetes-object-set.resource",
+          kind: "kubernetes-object-set",
+          modes: ["plan", "apply", "check", "destroy", "read"],
+        }),
+        lifecycle: {
+          plan: "runKubernetesObjectSetLifecycle",
+          apply: "runKubernetesObjectSetLifecycle",
+          check: "runKubernetesObjectSetLifecycle",
+          destroy: "runKubernetesObjectSetLifecycle",
+          read: "readKubernetesObjectSet",
+          diff: "diffKubernetesObjectSet",
+        },
+      },
       lifecycleSubstrates: [
         {
           id: "canopy.resource-render",
@@ -247,6 +362,15 @@ describe("recipe protocol", () => {
         },
       ],
       observedState: { ready: false },
+    }))
+    expect(RecipeExpressionContractView.fromRecipe(recipe)).toMatchObject({
+      recipeId: "canopy.deploy",
+      status: "ready",
+      hasAlchemyResourceIo: true,
+      hasEffectHandler: true,
+      hasManagedAlchemyBinding: true,
+      hasAlchemyDagMembership: true,
+      missing: [],
     })
     expect(RecipeRecordView.fromRecipe(recipe)).toMatchObject({
       recipeId: "canopy.deploy",
@@ -256,8 +380,189 @@ describe("recipe protocol", () => {
     })
   })
 
+  it("distinguishes string-only recipe IO from typed Alchemy resource expression", async () => {
+    const stringOnlyRecipe = makeRecipeFixture({
+      id: "cocoindex-effect.string-only-mcp-schema",
+      projectId: "cocoindex-effect",
+      inputSchema: ProjectionInput,
+      outputSchema: ProjectionOutput,
+      allowedFiles: [".attune/cache/generated/demo/**"],
+    })
+
+    expect(RecipeExpressionContractView.fromRecipe(stringOnlyRecipe)).toMatchObject({
+      recipeId: "cocoindex-effect.string-only-mcp-schema",
+      status: "missing-expression",
+      hasAlchemyResourceIo: false,
+      hasEffectHandler: false,
+      stringOnlyIoSuspect: true,
+      missing: ["alchemy-resource-io", "effect-handler", "alchemy-dag"],
+    })
+
+    const PackageRoot = makeAlchemyResourceFixture({
+      id: "cocoindex-effect.package-root",
+      kind: "directory",
+      alchemyType: "attune:resource:Directory",
+      addressSchema: Schema.String,
+      stateSchema: Schema.Struct({
+        path: Schema.String,
+        packageId: Schema.String,
+      }),
+      modes: ["read"],
+      consumedBy: ["cocoindex-effect.emit-mcp-schema"],
+    })
+
+    const GeneratedDirectory = makeAlchemyResourceFixture({
+      id: "cocoindex-effect.generated-mcp-schema",
+      kind: "generated-directory",
+      alchemyType: "attune:resource:GeneratedDirectory",
+      addressSchema: Schema.String,
+      stateSchema: ProjectionOutput,
+      modes: ["project", "read"],
+      producedBy: ["cocoindex-effect.emit-mcp-schema"],
+    })
+
+    const ProjectionLayer = Layer.succeed(ProjectionServices, {
+      emit: (input) =>
+        Effect.succeed({
+          generatedFiles: [`${input.packageRoot}/.attune/cache/generated/cocoindex-code-mcp.ts`],
+          contentHash: "hash-cocoindex",
+        }),
+    })
+    const ProjectionLive = makeRecipeLayerFixture({
+      id: "cocoindex-effect.projection-layer",
+      sourcePath: "packages/attune/cocoindex-effect/src/internal/generation/CocoIndexMcpTypes.ts",
+      exportName: "CocoIndexProjectionLive",
+      layer: ProjectionLayer,
+      provides: [{
+        id: "cocoindex-effect.projection-services",
+        service: ProjectionServices,
+      }],
+    })
+    const CocoIndexProjectionDag = [
+      makeAlchemyDagEdgeFixture({
+        fromRecipeId: "cocoindex-effect.package-root",
+        toRecipeId: "cocoindex-effect.emit-mcp-schema",
+        resource: GeneratedDirectory,
+        kind: "projects",
+        modes: ["project", "read"],
+        validationTargets: CocoIndexValidationTargets,
+      }),
+    ] as const
+
+    const typedRecipe = makeProjectionRecipeFixture({
+      id: "cocoindex-effect.emit-mcp-schema",
+      projectId: "cocoindex-effect",
+      inputSchema: ProjectionInput,
+      outputSchema: ProjectionOutput,
+      io: {
+        inputSchema: ProjectionInput,
+        outputSchema: ProjectionOutput,
+        inputResources: [PackageRoot],
+        outputResources: [GeneratedDirectory],
+      },
+      handler: makeRecipeHandlerFixture<ProjectionInput, ProjectionOutput, never, ProjectionServices>({
+        id: "cocoindex-effect.emit-mcp-schema.handler",
+        recipeId: "cocoindex-effect.emit-mcp-schema",
+        sourcePath: "packages/attune/cocoindex-effect/src/internal/generation/CocoIndexMcpTypes.ts",
+        exportName: "emitCocoIndexMcpSchema",
+        layer: ProjectionLive,
+        emitsReceipts: ["projection.generated-directory"],
+        handler: (input) =>
+          Effect.gen(function* emitCocoIndexMcpSchema() {
+            const projection = yield* ProjectionServices
+            return yield* projection.emit(input)
+          }),
+      }),
+      alchemyDag: CocoIndexProjectionDag,
+      allowedFiles: [".attune/cache/generated/cocoindex-effect/**"],
+    })
+
+    const summary = RecipeExpressionContractView.fromRecipe(typedRecipe)
+    const decodedSummary = Schema.decodeUnknownSync(RecipeExpressionContractSummarySchema)(summary)
+    expect(decodedSummary).toMatchObject({
+      recipeId: "cocoindex-effect.emit-mcp-schema",
+      status: "ready",
+      hasAlchemyResourceIo: true,
+      hasEffectHandler: true,
+      hasLayerBinding: true,
+      hasAlchemyDagMembership: true,
+      stringOnlyIoSuspect: false,
+      missing: [],
+      inputResources: [{ id: "cocoindex-effect.package-root", kind: "directory" }],
+      outputResources: [{ id: "cocoindex-effect.generated-mcp-schema", kind: "generated-directory" }],
+      handler: {
+        id: "cocoindex-effect.emit-mcp-schema.handler",
+        layer: {
+          id: "cocoindex-effect.projection-layer",
+          provides: [{ id: "cocoindex-effect.projection-services" }],
+        },
+      },
+    })
+    expect(decodedSummary.alchemyDag).toEqual([
+      expect.objectContaining({
+        fromRecipeId: "cocoindex-effect.package-root",
+        toRecipeId: "cocoindex-effect.emit-mcp-schema",
+        resourceId: "cocoindex-effect.generated-mcp-schema",
+      }),
+    ])
+
+    expect(alchemyRecipeDagEdgeId(
+      "cocoindex-effect.package-root",
+      "cocoindex-effect.emit-mcp-schema",
+      "cocoindex-effect.generated-mcp-schema",
+      "projects",
+    )).toBe("recipe-dag-edge:cocoindex-effect.package-root:cocoindex-effect.emit-mcp-schema:cocoindex-effect.generated-mcp-schema:projects")
+    expect(inferredRecipeId({
+      packageId: "cocoindex-effect",
+      exportName: "emitMcpSchema",
+      family: "projection",
+    })).toBe("recipe:cocoindex-effect.projection.emitMcpSchema")
+    expect(inferredAlchemyResourceId({
+      packageId: "cocoindex-effect",
+      exportName: "GeneratedDirectory",
+      kind: "generated-directory",
+    })).toBe("alchemy-resource:cocoindex-effect.generated-directory.GeneratedDirectory")
+
+    expect(RecipeIoRecordView.fromRecipe(typedRecipe)).toEqual([
+      expect.objectContaining({ id: "cocoindex-effect.emit-mcp-schema:input:input" }),
+      expect.objectContaining({
+        id: "cocoindex-effect.emit-mcp-schema:input:alchemy-resource:cocoindex-effect.package-root",
+        payload: {
+          alchemyResource: expect.objectContaining({
+            id: "cocoindex-effect.package-root",
+            kind: "directory",
+            modes: ["read"],
+          }),
+        },
+      }),
+      expect.objectContaining({ id: "cocoindex-effect.emit-mcp-schema:output:output" }),
+      expect.objectContaining({
+        id: "cocoindex-effect.emit-mcp-schema:output:alchemy-resource:cocoindex-effect.generated-mcp-schema",
+        payload: {
+          alchemyResource: expect.objectContaining({
+            id: "cocoindex-effect.generated-mcp-schema",
+            kind: "generated-directory",
+            modes: ["project", "read"],
+          }),
+        },
+      }),
+    ])
+
+    await expect(Effect.runPromise(
+      typedRecipe.handler!.handler({
+        packageRoot: "packages/attune/cocoindex-effect",
+        target: "cocoindex-effect:generate",
+      }).pipe(Effect.provide(ProjectionLayer)),
+    )).resolves.toEqual({
+      generatedFiles: [
+        "packages/attune/cocoindex-effect/.attune/cache/generated/cocoindex-code-mcp.ts",
+      ],
+      contentHash: "hash-cocoindex",
+    })
+  })
+
   it("renders deterministic ProjectionRegistry Nx targets and conformance records", () => {
-    const recipe = defineRecipe({
+    const recipe = makeRecipeFixture({
       id: "workspace.recipe-check",
       projectId: "workspace",
       inputSchema: RecipeInput,
@@ -265,7 +570,7 @@ describe("recipe protocol", () => {
       nxTarget: "workspace:check",
       validationEvidence: ["nx run workspace:check"],
     })
-    const managedRecipe = defineManagedRecipe({
+    const managedRecipe = makeManagedRecipeFixture({
       id: "workspace.local-db",
       projectId: "workspace",
       inputSchema: RecipeInput,
@@ -287,7 +592,7 @@ describe("recipe protocol", () => {
         kind: "managed-lifecycle",
         nxTarget: "workspace:validate-sql",
         allowedFiles: ["packages/trellis/protocol/**"],
-        risk: "needs-review",
+        risk: NeedsReviewRisk,
         evidenceRequirements: ["nx run workspace:check"],
       },
       humanReviewRequired: true,
@@ -447,7 +752,7 @@ describe("recipe protocol", () => {
   it("preserves external domain schema values at integration boundaries", () => {
     const externalInput = { library: "effect-v3", schemaName: "JoernTemplateExecutorRunInput" }
     const externalOutput = { library: "effect-v3", schemaName: "JoernTemplateExecutorRunOutput" }
-    const recipe = defineExternalSchemaRecipe({
+    const recipe = makeExternalSchemaRecipeFixture({
       id: "joern-effect.proof-template",
       projectId: "joern-effect",
       inputSchema: externalInput,
@@ -461,14 +766,14 @@ describe("recipe protocol", () => {
   })
 
   it("builds a central RecipeRegistry with stable ids and dependency order", () => {
-    const base = defineRecipe({
+    const base = makeRecipeFixture({
       id: recipeId("workspace graph"),
       projectId: "workspace",
       inputSchema: RecipeInput,
       outputSchema: RecipeOutput,
       nxTarget: "workspace:graph",
     })
-    const dependent = defineRecipe({
+    const dependent = makeRecipeFixture({
       id: recipeId("workspace policy-fast"),
       projectId: "workspace",
       inputSchema: RecipeInput,
@@ -517,14 +822,65 @@ describe("recipe protocol", () => {
     const registry = RecipeRegistry.fromRecipes([...FrameworkProtocolRecipes])
 
     expect(FrameworkProtocolRecipes.map((recipe) => recipe.id)).toEqual([
+      "framework-protocol.diagnostic-obligations.protocol",
+      "framework-protocol.diagnostic-rules.index",
+      "framework-protocol.diagnostics.protocol",
+      "framework-protocol.observations.protocol",
+      "framework-protocol.project-facts.type-assertions",
+      "framework-protocol.project-facts.core-schema",
+      "framework-protocol.project-facts.diagnostic-rule-inference",
+      "framework-protocol.project-facts.public-index",
+      "framework-protocol.project-facts.rpc-descriptors",
+      "framework-protocol.project-facts.type-guidance",
+      "framework-protocol.project-facts.contract-validation",
+      "framework-protocol.source.references",
+      "framework-protocol.waivers.surface",
+      "framework-protocol.schema-descriptors.surface",
+      "framework-protocol.project-fact-diagnostic-rules",
+      "framework-protocol.source-surface",
+      "framework-protocol.test-suite",
       "framework-protocol.recipe-kernel-contract",
       "framework-protocol.recipe-projections",
     ])
     expect(registry.topoOrder()).toEqual([
+      "framework-protocol.diagnostic-obligations.protocol",
+      "framework-protocol.diagnostic-rules.index",
+      "framework-protocol.diagnostics.protocol",
+      "framework-protocol.observations.protocol",
+      "framework-protocol.project-fact-diagnostic-rules",
+      "framework-protocol.project-facts.contract-validation",
+      "framework-protocol.project-facts.core-schema",
+      "framework-protocol.project-facts.diagnostic-rule-inference",
+      "framework-protocol.project-facts.public-index",
+      "framework-protocol.project-facts.rpc-descriptors",
+      "framework-protocol.project-facts.type-assertions",
+      "framework-protocol.project-facts.type-guidance",
       "framework-protocol.recipe-kernel-contract",
       "framework-protocol.recipe-projections",
+      "framework-protocol.schema-descriptors.surface",
+      "framework-protocol.source-surface",
+      "framework-protocol.source.references",
+      "framework-protocol.test-suite",
+      "framework-protocol.waivers.surface",
     ])
     expect(registry.snapshot().recipes.map((recipe) => recipe.projectId)).toEqual([
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
+      "framework-protocol",
       "framework-protocol",
       "framework-protocol",
     ])

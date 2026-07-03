@@ -4,190 +4,156 @@
   "sourceRoot": "packages/canopy/platform-alchemy-k8s/src",
   "targets": {
     "build": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "outputs": [
         "{projectRoot}/dist"
       ],
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "typescript",
-        "action": "build",
-        "toolId": "tsc",
-        "parameters": {
-          "tsconfig": "tsconfig.json"
-        },
-        "dryRun": false
+        "command": "cd packages/canopy/platform-alchemy-k8s && pnpm exec tsc -p tsconfig.json"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "build",
+          "action": "build",
+          "recipeId": "platform-alchemy-k8s.build",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "typecheck": {
-      "executor": "@attune/nx:package-check",
+      "executor": "nx:run-commands",
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "checks": [
-          "typecheck"
-        ],
-        "dryRun": false
+        "command": "cd packages/canopy/platform-alchemy-k8s && pnpm exec tsgo --noEmit"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "typecheck",
+          "action": "typecheck",
+          "recipeId": "platform-alchemy-k8s.typecheck",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "generate": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "outputs": [
-        "{projectRoot}/src/generated/crds.ts",
-        "{projectRoot}/src/generated/crds",
-        "{projectRoot}/src/resources/ResourceRegistry.generated.ts"
+        "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/crds.ts",
+        "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/crds",
+        "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/resources/ResourceRegistry.generated.ts"
       ],
       "metadata": {
         "description": "Recipe-backed Kubernetes CRD type, manifest, and resource registry generation.",
         "attune": {
           "tier": "public",
           "surface": "generate",
-          "recipeId": "platform-alchemy-k8s.crd-type-generation"
+          "recipeId": "platform-alchemy-k8s.crd-type-generation",
+          "action": "generate",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "kubernetes",
-        "action": "generate",
-        "toolId": "generation-stage",
-        "parameters": {
-          "stage": "emit-generated",
-          "tmpDir": true,
-          "recipeId": "platform-alchemy-k8s.crd-type-generation"
-        },
-        "dryRun": false
+        "command": "cd packages/canopy/platform-alchemy-k8s && TMPDIR=/tmp TEMP=/tmp TMP=/tmp ATTUNE_RECIPE_ID=platform-alchemy-k8s.crd-type-generation pnpm exec tsx src/internal/generation/CrdGenerationCli.ts emit-generated"
       }
     },
     "test": {
-      "executor": "@attune/nx:package-check",
+      "executor": "nx:run-commands",
       "dependsOn": [
         "generate"
       ],
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "checks": [
-          "test"
-        ],
-        "dryRun": false
+        "command": "cd packages/canopy/platform-alchemy-k8s && pnpm exec vitest run"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "test",
+          "action": "test",
+          "recipeId": "platform-alchemy-k8s.test",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "attune:repair-symbol-registry": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer platform-alchemy-k8s:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "symbol-registry",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-symbol-registry",
+          "recipeId": "platform-alchemy-k8s.attune.repair-symbol-registry",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "platform-alchemy-k8s",
-          "kind": "symbol-registry"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project platform-alchemy-k8s --kind symbol-registry --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/attune-symbol-registry.ts"
       ]
     },
     "attune:repair-property-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for property observations. Public agents should prefer platform-alchemy-k8s:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "property-observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-property-observations",
+          "recipeId": "platform-alchemy-k8s.attune.repair-property-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "platform-alchemy-k8s",
-          "kind": "property-observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/platform-alchemy-k8s/attune-property-observations.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project platform-alchemy-k8s --kind property-observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/attune-property-observations.ts"
       ]
     },
     "attune:repair-schema-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for schema observations. Public agents should prefer platform-alchemy-k8s:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "schema-observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-schema-observations",
+          "recipeId": "platform-alchemy-k8s.attune.repair-schema-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "platform-alchemy-k8s",
-          "kind": "schema-observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/platform-alchemy-k8s/attune-schema-observations.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project platform-alchemy-k8s --kind schema-observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/attune-schema-observations.ts"
       ]
     },
     "attune:repair-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer platform-alchemy-k8s:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-observations",
+          "recipeId": "platform-alchemy-k8s.attune.repair-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "platform-alchemy-k8s",
-          "kind": "observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/platform-alchemy-k8s/attune-observation-scaffold.ts"
-        ],
-        "evidenceOutputs": [
-          ".attune/cache/observations/platform-alchemy-k8s/observation-scaffold.json"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project platform-alchemy-k8s --kind observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/attune-observation-scaffold.ts",
@@ -195,82 +161,64 @@
       ]
     },
     "attune:repair-artifact-freshness": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer platform-alchemy-k8s:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "artifact-freshness",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-artifact-freshness",
+          "recipeId": "platform-alchemy-k8s.attune.repair-artifact-freshness",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "platform-alchemy-k8s",
-          "kind": "artifact-freshness"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/platform-alchemy-k8s/artifact-freshness.json"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project platform-alchemy-k8s --kind artifact-freshness --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/platform-alchemy-k8s/artifact-freshness.json"
       ]
     },
     "check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable check verb.",
         "attune": {
           "tier": "public",
-          "surface": "check"
+          "surface": "check",
+          "action": "check",
+          "recipeId": "platform-alchemy-k8s.check",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:recipe-substrate-check"
-          ]
-        },
-        "dryRun": false
+        "command": "pnpm exec nx run workspace:recipe-substrate-check"
       }
     },
     "repair": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable repair verb when available.",
         "attune": {
           "tier": "public",
           "surface": "repair",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair",
+          "recipeId": "platform-alchemy-k8s.repair",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "platform-alchemy-k8s",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "platform-alchemy-k8s:attune:repair-symbol-registry",
-            "platform-alchemy-k8s:attune:repair-property-observations",
-            "platform-alchemy-k8s:attune:repair-schema-observations",
-            "platform-alchemy-k8s:attune:repair-observations",
-            "platform-alchemy-k8s:attune:repair-artifact-freshness"
-          ]
-        },
-        "dryRun": false
+        "commands": [
+          "pnpm exec nx run platform-alchemy-k8s:attune:repair-symbol-registry",
+          "pnpm exec nx run platform-alchemy-k8s:attune:repair-property-observations",
+          "pnpm exec nx run platform-alchemy-k8s:attune:repair-schema-observations",
+          "pnpm exec nx run platform-alchemy-k8s:attune:repair-observations",
+          "pnpm exec nx run platform-alchemy-k8s:attune:repair-artifact-freshness"
+        ],
+        "parallel": false
       }
     }
   }

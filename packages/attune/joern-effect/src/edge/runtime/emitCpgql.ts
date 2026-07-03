@@ -1,5 +1,41 @@
+import { Effect, Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineRecipeHandler,
+  defineRuntimeRecipe,
+} from "@attune/framework-protocol"
 import type { Selection } from "../../pure/builder/select.js"
 import type { FilterValue, TraversalSegment } from "../../pure/builder/traversalAst.js"
+import { JoernQueryContractResource } from "./Query.js"
+
+const joernCpgqlEmitterRecipeId = "joern-effect.cpgql-emitter"
+const joernQueryContractRecipeId = "joern-effect.query-contract"
+const joernCpgqlEmitterSourcePath = "packages/attune/joern-effect/src/edge/runtime/emitCpgql.ts"
+
+export const JoernCpgqlEmitterInputSchema = Schema.Struct({
+  segments: Schema.Array(Schema.Unknown),
+  selection: Schema.optional(Schema.Unknown),
+})
+export type JoernCpgqlEmitterInput = typeof JoernCpgqlEmitterInputSchema.Type
+
+export const JoernCpgqlEmitterOutputSchema = Schema.Struct({
+  cpgql: Schema.String,
+})
+export type JoernCpgqlEmitterOutput = typeof JoernCpgqlEmitterOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernCpgqlEmitterResource = defineAlchemyResource({
+  id: "joern-effect.cpgql-emitter.resource",
+  kind: "schema",
+  alchemyType: "attune:resource:Schema",
+  ownerRecipeId: joernCpgqlEmitterRecipeId,
+  producedBy: [joernCpgqlEmitterRecipeId],
+  consumedBy: [joernCpgqlEmitterRecipeId, joernQueryContractRecipeId],
+  addressFields: ["segments"],
+  addressSchema: JoernCpgqlEmitterInputSchema as never,
+  stateSchema: JoernCpgqlEmitterOutputSchema as never,
+  modes: ["project", "read"],
+})
 
 export const escapeScalaString = (value: string): string =>
   value
@@ -99,3 +135,55 @@ ${entries}
   .toJson`
   return imports.length > 0 ? `${imports.join("\n")}\n${query}` : query
 }
+
+export const projectJoernCpgql = (
+  input: JoernCpgqlEmitterInput,
+): JoernCpgqlEmitterOutput => {
+  const segments = input.segments as readonly TraversalSegment[]
+  if (input.selection !== undefined) {
+    return {
+      cpgql: emitSelect(segments, input.selection as Selection),
+    }
+  }
+  return {
+    cpgql: emitTraversal(segments),
+  }
+}
+
+export const JoernCpgqlEmitterHandler = defineRecipeHandler<
+  JoernCpgqlEmitterInput,
+  JoernCpgqlEmitterOutput
+>({
+  id: "joern-effect.cpgql-emitter.handler",
+  recipeId: joernCpgqlEmitterRecipeId,
+  sourcePath: joernCpgqlEmitterSourcePath,
+  exportName: "projectJoernCpgql",
+  emitsReceipts: ["joern.cpgql.projected"],
+  handler: (input) => Effect.succeed(projectJoernCpgql(input)) as never,
+})
+
+export const JoernCpgqlEmitterRecipe = defineRuntimeRecipe({
+  id: joernCpgqlEmitterRecipeId,
+  projectId: "joern-effect",
+  title: "Project typed Joern traversal selections into CPGQL",
+  inputSchema: JoernCpgqlEmitterInputSchema as never,
+  outputSchema: JoernCpgqlEmitterOutputSchema as never,
+  allowedFiles: [joernCpgqlEmitterSourcePath],
+  validationEvidence: ["joern-effect:typecheck", "joern-effect:test"],
+  io: {
+    inputSchema: JoernCpgqlEmitterInputSchema as never,
+    outputSchema: JoernCpgqlEmitterOutputSchema as never,
+    inputResources: [JoernCpgqlEmitterResource],
+    outputResources: [JoernQueryContractResource],
+  },
+  handler: JoernCpgqlEmitterHandler,
+  alchemyDag: [{
+    fromRecipeId: joernCpgqlEmitterRecipeId,
+    toRecipeId: joernQueryContractRecipeId,
+    resource: JoernQueryContractResource,
+    kind: "projects",
+    modes: ["project", "read"],
+  }],
+})
+
+export const JoernCpgqlEmitterRecipes = [JoernCpgqlEmitterRecipe] as const

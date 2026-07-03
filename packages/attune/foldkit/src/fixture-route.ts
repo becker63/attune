@@ -1,3 +1,9 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineRecipeHandler,
+  defineRuntimeRecipe,
+} from "@attune/framework-protocol";
 import { Effect, Schema as S } from "effect";
 
 import {
@@ -30,6 +36,18 @@ import {
   runStarted,
   viewKeysForDiscoveryEvent,
 } from "@attune/attuned-discovery";
+import { FoldKitAppSiteFixtureResource } from "./fixtures/app-site-fixture.js";
+import {
+  FoldKitFixtureCommandRecipeId,
+  FoldKitFixtureRouteRecipeId,
+  FoldKitPackageSourceResource,
+  FoldKitProjectId,
+  FoldKitSourceAddress,
+  FoldKitSourceReport,
+  FoldKitTestTarget,
+  FoldKitTypecheckTarget,
+  foldKitSourceReport,
+} from "./schema.js";
 
 export const FixtureScenarioId = S.Literal("foldkit-fixture-closed-loop");
 export type FixtureScenarioId = typeof FixtureScenarioId.Type;
@@ -467,3 +485,79 @@ const atomLabelsForWorkspace = (
   `foldScene:${iteration}`,
   `snapshot:${iteration}`,
 ];
+
+export const FoldKitFixtureRouteSourcePath =
+  "packages/attune/foldkit/src/fixture-route.ts" as const;
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitFixtureRouteResource = defineAlchemyResource({
+  id: "attune-foldkit.fixture-route-runtime.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: FoldKitFixtureRouteRecipeId,
+  producedBy: [FoldKitFixtureRouteRecipeId],
+  consumedBy: [FoldKitFixtureCommandRecipeId],
+  addressSchema: FoldKitSourceAddress,
+  stateSchema: FoldKitSourceReport,
+  modes: ["read", "project", "observe"],
+});
+
+export const describeFoldKitFixtureRouteRuntime = (): FoldKitSourceReport =>
+  foldKitSourceReport({
+    recipeId: FoldKitFixtureRouteRecipeId,
+    sourcePath: FoldKitFixtureRouteSourcePath,
+    surface:
+      "In-memory fixture route runtime that projects discovery events into snapshots",
+    exportedSymbols: [
+      "initialFixtureRouteModel",
+      "startFixtureRoute",
+      "advanceFixtureStep",
+      "applyFixtureStep",
+      "decodeFixtureRouteEvent",
+      "replayFixtureRouteEvents",
+    ],
+  });
+
+export const FoldKitFixtureRouteHandler = defineRecipeHandler<
+  FoldKitSourceAddress,
+  FoldKitSourceReport
+>({
+  id: "attune-foldkit.fixture-route-runtime.handler",
+  recipeId: FoldKitFixtureRouteRecipeId,
+  sourcePath: FoldKitFixtureRouteSourcePath,
+  exportName: "describeFoldKitFixtureRouteRuntime",
+  handler: () => Effect.succeed(describeFoldKitFixtureRouteRuntime()),
+  emitsReceipts: ["attune-foldkit.fixture-route-runtime.report"],
+});
+
+export const FoldKitFixtureRouteDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FoldKitFixtureRouteRecipeId,
+  toRecipeId: FoldKitFixtureCommandRecipeId,
+  resource: FoldKitFixtureRouteResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+});
+
+export const FoldKitFixtureRouteRecipe = defineRuntimeRecipe({
+  id: FoldKitFixtureRouteRecipeId,
+  projectId: FoldKitProjectId,
+  title: "Own FoldKit fixture route runtime state",
+  inputSchema: FoldKitSourceAddress,
+  outputSchema: FoldKitSourceReport,
+  nxTarget: FoldKitTestTarget,
+  allowedFiles: [FoldKitFixtureRouteSourcePath],
+  validationEvidence: [FoldKitTypecheckTarget, FoldKitTestTarget],
+  io: {
+    inputSchema: FoldKitSourceAddress,
+    outputSchema: FoldKitSourceReport,
+    inputResources: [
+      FoldKitPackageSourceResource,
+      FoldKitAppSiteFixtureResource,
+    ],
+    outputResources: [FoldKitFixtureRouteResource],
+  },
+  handler: FoldKitFixtureRouteHandler,
+  alchemyDag: [FoldKitFixtureRouteDagEdge],
+});
+
+export const FoldKitFixtureRouteRecipes = [FoldKitFixtureRouteRecipe] as const;

@@ -1,3 +1,4 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
 import { Effect, Schema } from "effect"
 import { Query } from "../../edge/runtime/Query.js"
 import { emitSelect, emitTraversal, escapeScalaString } from "../../edge/runtime/emitCpgql.js"
@@ -1008,3 +1009,79 @@ export const CpgProgram = {
     )
   },
 }
+
+const JoernEffectPureProgramCpgProgramLocalRecipeId = "joern-effect.pure.program.cpg-program" as const
+const JoernEffectPureProgramCpgProgramLocalResourceId = "joern-effect.pure.program.cpg-program.resource" as const
+const JoernEffectPureProgramCpgProgramLocalHandlerId = "joern-effect.pure.program.cpg-program.handler" as const
+const JoernEffectPureProgramCpgProgramLocalSourcePath = "packages/attune/joern-effect/src/pure/program/CpgProgram.ts" as const
+const JoernEffectPureProgramCpgProgramLocalSourceSurfaceRecipeId = "joern-effect.source-surface" as const
+
+export const JoernEffectPureProgramCpgProgramLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPureProgramCpgProgramLocalSourcePath),
+})
+export type JoernEffectPureProgramCpgProgramLocalRecipeInput = typeof JoernEffectPureProgramCpgProgramLocalRecipeInput.Type
+
+export const JoernEffectPureProgramCpgProgramLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPureProgramCpgProgramLocalSourcePath),
+})
+export type JoernEffectPureProgramCpgProgramLocalRecipeOutput = typeof JoernEffectPureProgramCpgProgramLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPureProgramCpgProgramLocalResource = defineAlchemyResource({
+  id: JoernEffectPureProgramCpgProgramLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPureProgramCpgProgramLocalRecipeId,
+  producedBy: [JoernEffectPureProgramCpgProgramLocalRecipeId],
+  consumedBy: [JoernEffectPureProgramCpgProgramLocalRecipeId, JoernEffectPureProgramCpgProgramLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPureProgramCpgProgramLocalRecipeInput as never,
+  stateSchema: JoernEffectPureProgramCpgProgramLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPureProgramCpgProgramLocalHandler = defineRecipeHandler<
+  JoernEffectPureProgramCpgProgramLocalRecipeInput,
+  JoernEffectPureProgramCpgProgramLocalRecipeOutput
+>({
+  id: JoernEffectPureProgramCpgProgramLocalHandlerId,
+  recipeId: JoernEffectPureProgramCpgProgramLocalRecipeId,
+  sourcePath: JoernEffectPureProgramCpgProgramLocalSourcePath,
+  exportName: "JoernEffectPureProgramCpgProgramLocalRecipes",
+  emitsReceipts: ["joern-effect.pure.program.cpg-program.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPureProgramCpgProgramLocalRecipe = defineRecipe({
+  id: JoernEffectPureProgramCpgProgramLocalRecipeId,
+  projectId: "joern-effect",
+  title: "Express src/pure/program/CpgProgram.ts as a file-local recipe",
+  inputSchema: JoernEffectPureProgramCpgProgramLocalRecipeInput as never,
+  outputSchema: JoernEffectPureProgramCpgProgramLocalRecipeOutput as never,
+  nxTarget: "joern-effect:typecheck",
+  allowedFiles: [JoernEffectPureProgramCpgProgramLocalSourcePath],
+  validationEvidence: ["joern-effect:typecheck"],
+  io: {
+    inputSchema: JoernEffectPureProgramCpgProgramLocalRecipeInput as never,
+    outputSchema: JoernEffectPureProgramCpgProgramLocalRecipeOutput as never,
+    inputResources: [JoernEffectPureProgramCpgProgramLocalResource],
+    outputResources: [JoernEffectPureProgramCpgProgramLocalResource],
+  },
+  handler: JoernEffectPureProgramCpgProgramLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPureProgramCpgProgramLocalRecipeId,
+      toRecipeId: JoernEffectPureProgramCpgProgramLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPureProgramCpgProgramLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPureProgramCpgProgramLocalRecipes = [JoernEffectPureProgramCpgProgramLocalRecipe] as const

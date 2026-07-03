@@ -1,4 +1,10 @@
+import { Effect, Schema } from "effect"
+
 import type { OperationKind, PackageKind } from "./core.js"
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export type AttuneAssertionDiagnostic<
   Code extends string,
@@ -446,4 +452,86 @@ export function assertTypeGuidanceComplete<const C, const Guidance>(
   _guidance: Guidance & AssertArgument<AssertTypeGuidanceComplete<C, Guidance>>,
 ): true {
   return true
+}
+
+export const ProjectFactsAssertionsRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+  contract: Schema.Unknown,
+})
+export type ProjectFactsAssertionsRecipeInput = typeof ProjectFactsAssertionsRecipeInput.Type
+
+export const ProjectFactsAssertionsRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  accepted: Schema.Boolean,
+})
+export type ProjectFactsAssertionsRecipeOutput = typeof ProjectFactsAssertionsRecipeOutput.Type
+
+export const summarizeProjectFactsAssertions = (
+  input: ProjectFactsAssertionsRecipeInput,
+): ProjectFactsAssertionsRecipeOutput => ({
+  sourcePath: input.sourcePath,
+  accepted: assertPackageContract(input.contract as never),
+})
+
+export const ProjectFactsAssertionsRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+// @attune-packet-target generated-runtime-projection eligible
+  const AssertionsSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.assertions.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: ProjectFactsAssertionsRecipeInput,
+    stateSchema: ProjectFactsAssertionsRecipeInput,
+    modes: ["read"],
+    consumedBy: ["framework-protocol.project-facts.type-assertions"],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const AssertionsReport = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.assertions.report",
+    kind: "report",
+    alchemyType: "attune:resource:ProjectFactsAssertionReport",
+    addressSchema: ProjectFactsAssertionsRecipeInput,
+    stateSchema: ProjectFactsAssertionsRecipeOutput,
+    modes: ["check", "read"],
+    ownerRecipeId: "framework-protocol.project-facts.type-assertions",
+    producedBy: ["framework-protocol.project-facts.type-assertions"],
+  })
+  const AssertionsHandler = helpers.defineRecipeHandler<ProjectFactsAssertionsRecipeInput, ProjectFactsAssertionsRecipeOutput, never, never>({
+    id: "framework-protocol.project-facts.type-assertions.handler",
+    recipeId: "framework-protocol.project-facts.type-assertions",
+    sourcePath: "packages/trellis/protocol/src/project-facts/assertions.ts",
+    exportName: "summarizeProjectFactsAssertions",
+    emitsReceipts: ["project-facts.assertion-summary"],
+    handler: (input) => Effect.succeed(summarizeProjectFactsAssertions(input)),
+  })
+  const AssertionsDagEdge = helpers.defineAlchemyRecipeDagEdge({
+    fromRecipeId: "framework-protocol.project-facts.assertions.source",
+    toRecipeId: "framework-protocol.project-facts.type-assertions",
+    resource: "framework-protocol.project-facts.assertions.report",
+    kind: "validates",
+    modes: ["read", "check"],
+  })
+
+  return [
+    helpers.defineDiagnosticRecipe({
+      id: "framework-protocol.project-facts.type-assertions",
+      projectId: "framework-protocol",
+      title: "Expose compile-time project-fact assertion obligations",
+      inputSchema: ProjectFactsAssertionsRecipeInput,
+      outputSchema: ProjectFactsAssertionsRecipeOutput,
+      io: {
+        inputSchema: ProjectFactsAssertionsRecipeInput,
+        outputSchema: ProjectFactsAssertionsRecipeOutput,
+        inputResources: [AssertionsSource],
+        outputResources: [AssertionsReport],
+      },
+      handler: AssertionsHandler,
+      alchemyDag: [AssertionsDagEdge],
+      nxTarget: "framework-protocol:typecheck",
+      observedFiles: ["packages/trellis/protocol/src/project-facts/assertions.ts"],
+      allowedFiles: ["packages/trellis/protocol/src/project-facts/assertions.ts"],
+      validationEvidence: ["framework-protocol:typecheck"],
+    }),
+  ] as const
 }

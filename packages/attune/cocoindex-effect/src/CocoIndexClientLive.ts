@@ -1,6 +1,15 @@
 import { spawn } from "node:child_process"
+import {
+  defineAlchemyResource,
+  defineRecipeModule,
+  defineProjectionRecipe,
+  lowerRecipeAuthoringFact,
+} from "@attune/framework-protocol"
 import { Effect, Layer, Schema, Scope } from "effect"
-import { CocoIndexClient, type CocoIndexClientService } from "./CocoIndexClient.js"
+import {
+  CocoIndexClient,
+  type CocoIndexClientService,
+} from "./CocoIndexClient.js"
 import {
   CocoIndexCommandError,
   CocoIndexDecodeError,
@@ -11,19 +20,60 @@ import {
   CocoIndexMcpSearchInput,
   CocoIndexMcpSearchResult,
   type CocoIndexMcpSearchResult as CocoIndexMcpSearchResultType,
-} from "./generated/cocoindex-code-mcp.js"
+} from "./cocoindex/mcp-schema.js"
 import { startMcpStdioClient, type McpStdioClient } from "./mcp/stdio.js"
 import {
   AnchorCard,
+  CocoIndexAnchorCardResource,
+  EnsureIndexedRequest,
   EnsureIndexedResult,
+  SearchAnchorsRequest,
+  SearchSimilarAnchorsRequest,
+  CocoIndexSearchAnchorsRecipeId,
   type CocoIndexCommandEnvelope,
   type CocoIndexCommandOperation,
-  type EnsureIndexedRequest,
   type GetAnchorRequest,
-  type SearchAnchorsRequest,
-  type SearchSimilarAnchorsRequest,
   normalizeCocoIndexHits,
 } from "./model.js"
+
+export const CocoIndexEnsureIndexedRecipeId =
+  "cocoindex-effect.ensure-indexed" as const
+export const CocoIndexSearchSimilarAnchorsRecipeId =
+  "cocoindex-effect.search-similar-anchors" as const
+const CocoIndexRepositoryIndexResourceId =
+  "cocoindex-effect.repository-index" as const
+const CocoIndexClientProviderId =
+  "cocoindex-effect.cocoindex-client.provider" as const
+const CocoIndexEnsureIndexedHandlerId =
+  "cocoindex-effect.ensure-indexed.handler" as const
+const CocoIndexSearchAnchorsHandlerId =
+  "cocoindex-effect.search-anchors.handler" as const
+const CocoIndexSearchSimilarAnchorsHandlerId =
+  "cocoindex-effect.search-similar-anchors.handler" as const
+const CocoIndexClientLiveSourcePath =
+  "packages/attune/cocoindex-effect/src/CocoIndexClientLive.ts" as const
+const recipe = defineRecipeModule(import.meta.url)
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CocoIndexRepositoryIndexResource = defineAlchemyResource({
+  id: CocoIndexRepositoryIndexResourceId,
+  kind: "external-service",
+  alchemyType: "attune:resource:CocoIndexRepositoryIndex",
+  providerId: CocoIndexClientProviderId,
+  ownerRecipeId: CocoIndexEnsureIndexedRecipeId,
+  producedBy: [CocoIndexEnsureIndexedRecipeId],
+  consumedBy: [
+    CocoIndexSearchAnchorsRecipeId,
+    CocoIndexSearchSimilarAnchorsRecipeId,
+  ],
+  addressFields: ["repoPath", "repoSnapshotId"],
+  addressSchema: EnsureIndexedRequest,
+  stateSchema: EnsureIndexedResult,
+  modes: ["read", "write", "check", "external"],
+  programmaticResourceExport: "CocoIndexClientMcpLive",
+  programmaticProviderExport: "CocoIndexClient",
+  programmaticBridgeSourcePath: CocoIndexClientLiveSourcePath,
+})
 
 export type CocoIndexCommandConfig = Readonly<{
   readonly executable: string
@@ -47,7 +97,12 @@ export const makeCocoIndexCommandClient = (
   ensureIndexed: (input: EnsureIndexedRequest) =>
     runCocoIndexCommand(config, "ensureIndexed", input, EnsureIndexedResult),
   searchAnchors: (input: SearchAnchorsRequest) =>
-    runCocoIndexCommand(config, "searchAnchors", input, Schema.Array(AnchorCard)),
+    runCocoIndexCommand(
+      config,
+      "searchAnchors",
+      input,
+      Schema.Array(AnchorCard),
+    ),
   searchSimilarAnchors: (input: SearchSimilarAnchorsRequest) =>
     runCocoIndexCommand(
       config,
@@ -69,9 +124,7 @@ export const CocoIndexClientMcpLive = (
 ): Layer.Layer<CocoIndexClient, CocoIndexError> =>
   Layer.effect(
     CocoIndexClient,
-    startCocoIndexMcpSession(config).pipe(
-      Effect.map(makeCocoIndexMcpClient),
-    ),
+    startCocoIndexMcpSession(config).pipe(Effect.map(makeCocoIndexMcpClient)),
   )
 
 export const makeCocoIndexMcpClient = (
@@ -140,30 +193,32 @@ export const makeCocoIndexMcpClient = (
       offset: 0,
       refresh_index: false,
     }).pipe(
-      Effect.map((result) =>
-        normalizeCocoIndexHits(
-          result.results.map((chunk) => ({
-            path: chunk.file_path,
-            startLine: chunk.start_line,
-            endLine: chunk.end_line,
-            language: chunk.language,
-            score: chunk.score,
-            code: chunk.content,
-          })),
-          {
-            repoSnapshotId: input.repoSnapshotId,
-            runId: input.runId,
-            query: input.anchorId,
-            topK: 1,
-          },
-        )[0],
+      Effect.map(
+        (result) =>
+          normalizeCocoIndexHits(
+            result.results.map((chunk) => ({
+              path: chunk.file_path,
+              startLine: chunk.start_line,
+              endLine: chunk.end_line,
+              language: chunk.language,
+              score: chunk.score,
+              code: chunk.content,
+            })),
+            {
+              repoSnapshotId: input.repoSnapshotId,
+              runId: input.runId,
+              query: input.anchorId,
+              topK: 1,
+            },
+          )[0],
       ),
       Effect.flatMap((anchor) =>
         anchor
           ? Effect.succeed(anchor)
           : Effect.fail(
               new CocoIndexMcpProtocolError({
-                message: "CocoIndex MCP search did not return the requested anchor",
+                message:
+                  "CocoIndex MCP search did not return the requested anchor",
                 method: "tools/call:search",
                 payload: input,
               }),
@@ -210,7 +265,9 @@ const runMcpSearch = (
 ): Effect.Effect<CocoIndexMcpSearchResultType, CocoIndexError> =>
   Effect.tryPromise({
     try: async () => {
-      const decodedInput = Schema.decodeUnknownSync(CocoIndexMcpSearchInput)(input)
+      const decodedInput = Schema.decodeUnknownSync(CocoIndexMcpSearchInput)(
+        input,
+      )
       const payload = await session.request("tools/call", {
         name: "search",
         arguments: decodedInput,
@@ -230,7 +287,9 @@ const runMcpSearch = (
           }),
   })
 
-const decodeMcpToolResult = (payload: unknown): CocoIndexMcpSearchResultType => {
+const decodeMcpToolResult = (
+  payload: unknown,
+): CocoIndexMcpSearchResultType => {
   const maybeStructured = asRecord(payload).structuredContent
   if (maybeStructured !== undefined) {
     return Schema.decodeUnknownSync(CocoIndexMcpSearchResult)(maybeStructured)
@@ -246,7 +305,9 @@ const decodeMcpToolResult = (payload: unknown): CocoIndexMcpSearchResultType => 
       const text = asRecord(item).text
       if (typeof text !== "string") continue
       try {
-        return Schema.decodeUnknownSync(CocoIndexMcpSearchResult)(JSON.parse(text))
+        return Schema.decodeUnknownSync(CocoIndexMcpSearchResult)(
+          JSON.parse(text),
+        )
       } catch {
         // Keep scanning content blocks; MCP servers may also emit human text.
       }
@@ -267,7 +328,9 @@ const looksLikeSearchResult = (
   Array.isArray(asRecord(payload).results)
 
 const asRecord = (input: unknown): Record<string, unknown> =>
-  input !== null && typeof input === "object" ? input as Record<string, unknown> : {}
+  input !== null && typeof input === "object"
+    ? (input as Record<string, unknown>)
+    : {}
 
 const runCocoIndexCommand = <A>(
   config: CocoIndexCommandConfig,
@@ -297,16 +360,17 @@ const runCocoIndexCommand = <A>(
           }),
       }),
     ),
-    Effect.mapError((error): CocoIndexError =>
-      error instanceof CocoIndexCommandError ||
-      error instanceof CocoIndexDecodeError
-        ? error
-        : new CocoIndexCommandError({
-            message: "CocoIndex command failed",
-            operation,
-            cause: error,
-          }),
-      ),
+    Effect.mapError(
+      (error): CocoIndexError =>
+        error instanceof CocoIndexCommandError ||
+        error instanceof CocoIndexDecodeError
+          ? error
+          : new CocoIndexCommandError({
+              message: "CocoIndex command failed",
+              operation,
+              cause: error,
+            }),
+    ),
   )
 }
 
@@ -350,9 +414,7 @@ const execJson = (
           stderr: stderrText,
           ...(exitCode === null ? {} : { exitCode }),
         }
-        reject(
-          new CocoIndexCommandError(errorInput),
-        )
+        reject(new CocoIndexCommandError(errorInput))
         return
       }
 
@@ -372,3 +434,178 @@ const execJson = (
 
     child.stdin.end(JSON.stringify(envelope))
   })
+
+const CocoIndexEnsureIndexedAuthoring = recipe<
+  EnsureIndexedRequest,
+  typeof EnsureIndexedResult.Type,
+  CocoIndexError,
+  CocoIndexClient
+>({
+  modes: ["project", "check"],
+  title: "Ensure CocoIndex has a repository snapshot indexed",
+  input: EnsureIndexedRequest,
+  output: EnsureIndexedResult,
+  run: (input) =>
+    Effect.gen(function* ensureCocoIndexRepositoryIndexed() {
+      const client = yield* CocoIndexClient
+      return yield* client.ensureIndexed(input)
+    }),
+  runtime: {
+    id: CocoIndexEnsureIndexedRecipeId,
+    projectId: "cocoindex-effect",
+    nxTarget: "cocoindex-effect:test",
+    validationEvidence: ["cocoindex-effect:test", "cocoindex-effect:typecheck"],
+    io: {
+      inputSchema: EnsureIndexedRequest,
+      outputSchema: EnsureIndexedResult,
+      inputResources: [CocoIndexRepositoryIndexResource],
+      outputResources: [CocoIndexRepositoryIndexResource],
+    },
+    handler: {
+      id: CocoIndexEnsureIndexedHandlerId,
+      exportName: "CocoIndexClient.ensureIndexed",
+      handler: (input) =>
+        Effect.gen(function* ensureCocoIndexRepositoryIndexed() {
+          const client = yield* CocoIndexClient
+          return yield* client.ensureIndexed(input)
+        }),
+      emitsReceipts: ["cocoindex-effect.repository-index.checked"],
+    },
+    alchemyDag: [
+      {
+        fromRecipeId: CocoIndexEnsureIndexedRecipeId,
+        toRecipeId: CocoIndexSearchAnchorsRecipeId,
+        resource: CocoIndexAnchorCardResource,
+        kind: "observes",
+        modes: ["read", "observe"],
+      },
+    ],
+  },
+})
+
+const CocoIndexSearchAnchorsAuthoring = recipe<
+  SearchAnchorsRequest,
+  ReadonlyArray<typeof AnchorCard.Type>,
+  CocoIndexError,
+  CocoIndexClient
+>({
+  modes: ["project", "check"],
+  title: "Normalize CocoIndex recall into AnchorCards",
+  input: SearchAnchorsRequest,
+  output: Schema.Array(AnchorCard),
+  run: (input) =>
+    Effect.gen(function* searchCocoIndexAnchors() {
+      const client = yield* CocoIndexClient
+      return yield* client.searchAnchors(input)
+    }),
+  runtime: {
+    id: CocoIndexSearchAnchorsRecipeId,
+    projectId: "cocoindex-effect",
+    nxTarget: "cocoindex-effect:test",
+    validationEvidence: ["cocoindex-effect:test", "cocoindex-effect:typecheck"],
+    io: {
+      inputSchema: SearchAnchorsRequest,
+      outputSchema: Schema.Array(AnchorCard),
+      inputResources: [CocoIndexRepositoryIndexResource],
+      outputResources: [CocoIndexAnchorCardResource],
+    },
+    handler: {
+      id: CocoIndexSearchAnchorsHandlerId,
+      exportName: "CocoIndexClient.searchAnchors",
+      handler: (input) =>
+        Effect.gen(function* searchCocoIndexAnchors() {
+          const client = yield* CocoIndexClient
+          return yield* client.searchAnchors(input)
+        }),
+      emitsReceipts: ["cocoindex-effect.anchor-card-report"],
+    },
+    alchemyDag: [
+      {
+        fromRecipeId: CocoIndexSearchAnchorsRecipeId,
+        toRecipeId: CocoIndexSearchSimilarAnchorsRecipeId,
+        resource: CocoIndexAnchorCardResource,
+        kind: "projects",
+        modes: ["project", "observe"],
+      },
+    ],
+  },
+})
+
+const CocoIndexSearchSimilarAnchorsAuthoring = recipe<
+  SearchSimilarAnchorsRequest,
+  ReadonlyArray<typeof AnchorCard.Type>,
+  CocoIndexError,
+  CocoIndexClient
+>({
+  modes: ["project", "check"],
+  title: "Find related AnchorCards through CocoIndex",
+  input: SearchSimilarAnchorsRequest,
+  output: Schema.Array(AnchorCard),
+  run: (input) =>
+    Effect.gen(function* searchSimilarCocoIndexAnchors() {
+      const client = yield* CocoIndexClient
+      return yield* client.searchSimilarAnchors(input)
+    }),
+  runtime: {
+    id: CocoIndexSearchSimilarAnchorsRecipeId,
+    projectId: "cocoindex-effect",
+    nxTarget: "cocoindex-effect:test",
+    validationEvidence: ["cocoindex-effect:test", "cocoindex-effect:typecheck"],
+    io: {
+      inputSchema: SearchSimilarAnchorsRequest,
+      outputSchema: Schema.Array(AnchorCard),
+      inputResources: [CocoIndexAnchorCardResource],
+      outputResources: [CocoIndexAnchorCardResource],
+    },
+    handler: {
+      id: CocoIndexSearchSimilarAnchorsHandlerId,
+      exportName: "CocoIndexClient.searchSimilarAnchors",
+      handler: (input) =>
+        Effect.gen(function* searchSimilarCocoIndexAnchors() {
+          const client = yield* CocoIndexClient
+          return yield* client.searchSimilarAnchors(input)
+        }),
+      emitsReceipts: ["cocoindex-effect.anchor-card-report"],
+    },
+  },
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const cocoIndexEnsureIndexedRecipe = defineProjectionRecipe({
+  ...lowerRecipeAuthoringFact(CocoIndexEnsureIndexedAuthoring, {
+    packageId: "cocoindex-effect",
+    projectId: "cocoindex-effect",
+    exportName: "cocoIndexEnsureIndexedRecipe",
+  }),
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const cocoIndexSearchAnchorsRecipe = defineProjectionRecipe({
+  ...lowerRecipeAuthoringFact(CocoIndexSearchAnchorsAuthoring, {
+    packageId: "cocoindex-effect",
+    projectId: "cocoindex-effect",
+    exportName: "cocoIndexSearchAnchorsRecipe",
+  }),
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const cocoIndexSearchSimilarAnchorsRecipe = defineProjectionRecipe({
+  ...lowerRecipeAuthoringFact(CocoIndexSearchSimilarAnchorsAuthoring, {
+    packageId: "cocoindex-effect",
+    projectId: "cocoindex-effect",
+    exportName: "cocoIndexSearchSimilarAnchorsRecipe",
+  }),
+})
+
+export const CocoIndexEnsureIndexedHandler =
+  cocoIndexEnsureIndexedRecipe.handler!
+export const CocoIndexSearchAnchorsHandler =
+  cocoIndexSearchAnchorsRecipe.handler!
+export const CocoIndexSearchSimilarAnchorsHandler =
+  cocoIndexSearchSimilarAnchorsRecipe.handler!
+
+export const CocoIndexClientLiveRecipes = [
+  cocoIndexEnsureIndexedRecipe,
+  cocoIndexSearchAnchorsRecipe,
+  cocoIndexSearchSimilarAnchorsRecipe,
+] as const

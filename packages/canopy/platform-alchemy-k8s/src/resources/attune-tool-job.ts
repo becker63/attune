@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+import {
+  K8sResourceModuleCatalogResource,
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport,
+  PlatformAlchemyK8sProjectId,
+  PlatformAlchemyK8sResourceRegistryRecipeId,
+  k8sResourceModuleReport,
+} from "./common.js"
+
 import type { KubernetesObject, PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
 import { BudgetPolicy, type BudgetPolicyRequired } from "./budget-policy.js"
 import { attuneLabels, dnsLabel, mergeResourceSets, resourceSet, type ArtifactReference } from "./common.js"
@@ -108,3 +123,56 @@ export const AttuneToolJob = {
     ])
   },
 } as const
+
+
+export const AttuneToolJobResourceRecipeId = "platform-alchemy-k8s.attune-tool-job-resource" as const
+const AttuneToolJobResourceHandlerId = "platform-alchemy-k8s.attune-tool-job-resource.handler" as const
+const AttuneToolJobResourceSourcePath = "packages/canopy/platform-alchemy-k8s/src/resources/attune-tool-job.ts" as const
+
+export const AttuneToolJobResourceHandler = defineRecipeHandler<
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport
+>({
+  id: AttuneToolJobResourceHandlerId,
+  recipeId: AttuneToolJobResourceRecipeId,
+  sourcePath: AttuneToolJobResourceSourcePath,
+  exportName: "AttuneToolJob",
+  handler: () =>
+    Effect.succeed(k8sResourceModuleReport({
+      recipeId: AttuneToolJobResourceRecipeId,
+      sourcePath: AttuneToolJobResourceSourcePath,
+      exportName: "AttuneToolJob",
+      moduleKind: "attune tool job Kubernetes resource factory",
+    })) as never,
+  emitsReceipts: [`platform-alchemy-k8s.attune-tool-job-resource.projected`],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttuneToolJobResourceRecipe = defineProjectionRecipe({
+  id: AttuneToolJobResourceRecipeId,
+  projectId: PlatformAlchemyK8sProjectId,
+  title: "Declare attune tool job Kubernetes resource factory",
+  inputSchema: K8sResourceModuleRecipeInput as never,
+  outputSchema: K8sResourceModuleReport as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [AttuneToolJobResourceSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test", "platform-alchemy-k8s:typecheck"],
+  io: {
+    inputSchema: K8sResourceModuleRecipeInput as never,
+    outputSchema: K8sResourceModuleReport as never,
+    inputResources: [K8sResourceModuleCatalogResource],
+    outputResources: [K8sResourceModuleCatalogResource],
+  },
+  handler: AttuneToolJobResourceHandler,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: PlatformAlchemyK8sResourceRegistryRecipeId,
+      toRecipeId: AttuneToolJobResourceRecipeId,
+      resource: K8sResourceModuleCatalogResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }),
+  ],
+})
+
+export const AttuneToolJobResourceRecipes = [AttuneToolJobResourceRecipe] as const

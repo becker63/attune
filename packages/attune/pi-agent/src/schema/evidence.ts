@@ -1,4 +1,5 @@
-import { Schema as S } from "effect"
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
 
 export const EvidenceResult = S.Literals([
   "supported",
@@ -34,3 +35,26 @@ export const EvidenceFixture = S.Struct({
   claims: S.Array(EvidenceMatrixEntry),
 })
 export type EvidenceFixture = typeof EvidenceFixture.Type
+
+export const evidenceSchemaModule = (): readonly string[] => [
+  "EvidenceResult",
+  "EvidenceMatrixEntry",
+  "EvidenceMatrix",
+  "EvidenceFixture",
+]
+
+export const AttunePiEvidenceSchemaHandler = defineRecipeHandler<
+  void,
+  readonly string[]
+>({
+  id: "attune-pi-agent.schema.evidence.handler",
+  recipeId: "attune-pi-agent.schema-catalog",
+  sourcePath: "packages/attune/pi-agent/src/schema/evidence.ts",
+  exportName: "evidenceSchemaModule",
+  emitsReceipts: ["attune-pi-agent.schema.evidence.projected"],
+  handler: () => Effect.succeed(evidenceSchemaModule()),
+})
+
+export const AttunePiEvidenceSchemaRecipeModule = [
+  AttunePiEvidenceSchemaHandler,
+] as const

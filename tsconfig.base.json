@@ -33,8 +33,7 @@
       "@attune/tend-reporting": ["./packages/tend/reporting/src/index.ts"],
       "@attune/tend-token-audit": ["./packages/tend/token-audit/src/index.ts"],
       "joern-effect": ["./packages/attune/joern-effect/src/index.ts"],
-      "@attune/joern-effect-properties": ["./packages/attune/joern-effect-properties/src/index.ts"],
-      "@attune/nx": ["./packages/attune/nx/src/index.ts"]
+      "@attune/joern-effect-properties": ["./packages/attune/joern-effect-properties/src/index.ts"]
     }
   }
 }

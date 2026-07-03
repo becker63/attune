@@ -1,3 +1,6 @@
+import { defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
 export interface GeneratorTree {
   exists(path: string): boolean
   read(path: string, encoding?: "utf-8"): string | null | Buffer
@@ -36,3 +39,21 @@ export const writeTextIfChanged = (tree: GeneratorTree, path: string, content: s
 
   tree.write(path, next)
 }
+
+export const JoinPathInput = Schema.Array(Schema.String)
+
+export const AttunePiGeneratorJoinPathHandler = defineRecipeHandler<
+  readonly string[],
+  string
+>({
+  id: "attune-pi-agent.generator-join-path.handler",
+  recipeId: "attune-pi-agent.generator-artifacts",
+  sourcePath: "packages/attune/pi-agent/src/generators/internal/tree.ts",
+  exportName: "joinPath",
+  emitsReceipts: ["attune-pi-agent.generator-path.normalized"],
+  handler: (parts) => Effect.succeed(joinPath(...parts)),
+})
+
+export const AttunePiGeneratorTreeRecipeModule = [
+  AttunePiGeneratorJoinPathHandler,
+] as const

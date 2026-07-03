@@ -12,10 +12,12 @@ import {
 
 describe("FoldKit activity helpers", () => {
   it("declares receipt-to-report projection as a FoldKit recipe", () => {
-    expect(FoldKitReportRecipes.map((recipe) => recipe.id)).toEqual([
+    expect(FoldKitReportRecipes.map((recipe) => recipe.id)).toContain(
       "attune-foldkit.recipe-receipts-report",
-    ])
-    expect(FoldKitReportRecipes[0]?.nxTarget).toBe("attune-foldkit:test")
+    )
+    expect(FoldKitReportRecipes.map((recipe) => recipe.sourcePath)).toContain(
+      "packages/attune/foldkit/src/activity.ts",
+    )
   })
 
   it("derives threads from fixture items", () => {

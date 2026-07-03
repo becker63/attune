@@ -1,69 +1,111 @@
-import { defineRecipe } from "@attune/framework-protocol"
-import { Schema } from "effect"
+import { defineRecipePackage } from "@attune/framework-protocol"
 
-export const FrameworkTestingHarnessInput = Schema.Struct({
-  projectId: Schema.String,
-  symbolIds: Schema.Array(Schema.String),
-  runId: Schema.String,
-})
-export type FrameworkTestingHarnessInput = typeof FrameworkTestingHarnessInput.Type
-
-export const FrameworkTestingObservationOutput = Schema.Struct({
-  observationCount: Schema.Number,
-  coveragePointCount: Schema.Number,
-  replayMetadataCount: Schema.Number,
-})
-export type FrameworkTestingObservationOutput = typeof FrameworkTestingObservationOutput.Type
-
-export const FrameworkTestingWorkerInput = Schema.Struct({
-  projectId: Schema.String,
-  propertyId: Schema.String,
-  seed: Schema.Number,
-  shardIndex: Schema.Number,
-  shardTotal: Schema.Number,
-})
-export type FrameworkTestingWorkerInput = typeof FrameworkTestingWorkerInput.Type
-
-export const FrameworkTestingWorkerOutput = Schema.Struct({
-  workerId: Schema.String,
-  randomSource: Schema.Literals(["worker", "inline"] as const),
-  preservesShrinking: Schema.Boolean,
-})
-export type FrameworkTestingWorkerOutput = typeof FrameworkTestingWorkerOutput.Type
+import { FrameworkTestingAtomGraphObserverRecipes } from "./atom-graph-observer.js"
+import { FrameworkTestingCoverageGuidedRerunRecipes } from "./coverage-guided-fuzzer.js"
+import { FrameworkTestingFastCheckRecipes } from "./fastcheck.js"
+import { FrameworkTestingObservationProducerRecipes } from "./observation-producer.js"
+import { FrameworkTestingProgramHarnessRecipes } from "./program-harness.js"
+import {
+  FrameworkTestingPackageKind,
+  FrameworkTestingProjectId,
+  FrameworkTestingRecipeContractRecipes,
+  FrameworkTestingSourceRoot,
+} from "./recipe-contracts.js"
+import { FrameworkTestingReplayMetadataRecipes } from "./replay-metadata.js"
+import { FrameworkTestingSymbolMapRecipes } from "./symbol-map.js"
+import { FrameworkTestingTestRecipes } from "./test-recipes.js"
+import { FrameworkTestingWorkerReplayMetadataRecipes } from "./worker-metadata.js"
 
 export const FrameworkTestingRecipes = [
-  defineRecipe({
-    id: "framework-testing.program-harness-observations",
-    projectId: "framework-testing",
-    title: "Produce program harness observations",
-    inputSchema: FrameworkTestingHarnessInput,
-    outputSchema: FrameworkTestingObservationOutput,
-    nxTarget: "framework-testing:test",
-    sourcePath: "packages/trellis/testing/src/recipes.ts",
-    allowedFiles: ["packages/trellis/testing/**"],
-    validationEvidence: ["framework-testing:test"],
-  }),
-  defineRecipe({
-    id: "framework-testing.coverage-guided-rerun",
-    projectId: "framework-testing",
-    title: "Plan coverage-guided property reruns",
-    inputSchema: FrameworkTestingHarnessInput,
-    outputSchema: FrameworkTestingObservationOutput,
-    dependencies: [{ recipeId: "framework-testing.program-harness-observations" }],
-    nxTarget: "framework-testing:test",
-    sourcePath: "packages/trellis/testing/src/recipes.ts",
-    allowedFiles: ["packages/trellis/testing/**"],
-    validationEvidence: ["framework-testing:test"],
-  }),
-  defineRecipe({
-    id: "framework-testing.worker-replay-metadata",
-    projectId: "framework-testing",
-    title: "Normalize worker replay metadata",
-    inputSchema: FrameworkTestingWorkerInput,
-    outputSchema: FrameworkTestingWorkerOutput,
-    nxTarget: "framework-testing:test",
-    sourcePath: "packages/trellis/testing/src/recipes.ts",
-    allowedFiles: ["packages/trellis/testing/**"],
-    validationEvidence: ["framework-testing:test"],
-  }),
+  ...FrameworkTestingRecipeContractRecipes,
+  ...FrameworkTestingAtomGraphObserverRecipes,
+  ...FrameworkTestingCoverageGuidedRerunRecipes,
+  ...FrameworkTestingFastCheckRecipes,
+  ...FrameworkTestingObservationProducerRecipes,
+  ...FrameworkTestingProgramHarnessRecipes,
+  ...FrameworkTestingReplayMetadataRecipes,
+  ...FrameworkTestingSymbolMapRecipes,
+  ...FrameworkTestingWorkerReplayMetadataRecipes,
+  ...FrameworkTestingTestRecipes,
 ] as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingRecipePackage = defineRecipePackage({
+  packageId: FrameworkTestingProjectId,
+  kind: FrameworkTestingPackageKind,
+  title: "Trellis framework testing and observation recipes",
+  sourceRoot: FrameworkTestingSourceRoot,
+  recipes: FrameworkTestingRecipes,
+  ownership: [
+    {
+      id: "testing-recipe-contracts",
+      title: "Shared testing recipe contract schemas",
+      files: ["packages/trellis/testing/src/recipe-contracts.ts"],
+      recipeIds: FrameworkTestingRecipeContractRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-package-barrel",
+      title: "Framework testing package barrel",
+      files: ["packages/trellis/testing/src/index.ts"],
+      recipeIds: FrameworkTestingRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-atom-graph-observer",
+      title: "Atom graph observation helpers",
+      files: ["packages/trellis/testing/src/atom-graph-observer.ts"],
+      recipeIds: FrameworkTestingAtomGraphObserverRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-coverage-guided-rerun",
+      title: "Coverage-guided property rerun helpers",
+      files: ["packages/trellis/testing/src/coverage-guided-fuzzer.ts"],
+      recipeIds: FrameworkTestingCoverageGuidedRerunRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-fastcheck-property-evidence",
+      title: "FastCheck property evidence helpers",
+      files: ["packages/trellis/testing/src/fastcheck.ts"],
+      recipeIds: FrameworkTestingFastCheckRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-observation-producer",
+      title: "Observation producer helpers",
+      files: ["packages/trellis/testing/src/observation-producer.ts"],
+      recipeIds: FrameworkTestingObservationProducerRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-program-harness",
+      title: "Program harness observation helpers",
+      files: ["packages/trellis/testing/src/program-harness.ts"],
+      recipeIds: FrameworkTestingProgramHarnessRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-replay-metadata",
+      title: "Replay and counterexample metadata helpers",
+      files: ["packages/trellis/testing/src/replay-metadata.ts"],
+      recipeIds: FrameworkTestingReplayMetadataRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-symbol-map",
+      title: "Exact symbol map coverage helpers",
+      files: ["packages/trellis/testing/src/symbol-map.ts"],
+      recipeIds: FrameworkTestingSymbolMapRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-worker-replay-metadata",
+      title: "Worker replay metadata helpers",
+      files: ["packages/trellis/testing/src/worker-metadata.ts"],
+      recipeIds: FrameworkTestingWorkerReplayMetadataRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "testing-test-suite",
+      title: "Framework testing package tests",
+      files: [
+        "packages/trellis/testing/src/test-recipes.ts",
+        "packages/trellis/testing/test/**",
+        "packages/trellis/testing/vitest.config.ts",
+      ],
+      recipeIds: FrameworkTestingTestRecipes.map((recipe) => recipe.id),
+    },
+  ],
+})

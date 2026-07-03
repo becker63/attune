@@ -9,9 +9,13 @@ import {
   TouchedViewsSchema,
   type DecodedPackageContract,
 } from "../project-facts/index.js"
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
 import { diagnosticRequirementId, type ProgramDiagnosticRequirement } from "../diagnostic-obligations/index.js"
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 import { AttuneProtocolWaiverSchema, decodeProtocolWaivers } from "../waivers/index.js"
 
 export const ProgramCoverageExpectationSchema = Schema.Struct({
@@ -103,7 +107,7 @@ const stableHash = (input: string): string => {
   ].join("")
 }
 
-export const schemaDescriptorFromProjectFacts = (
+export const schemaDescriptorFromLegacyPackageFacts = (
   source: ProgramSchemaDescriptorSource,
 ): ProgramSchemaDescriptor => {
   const decoded: DecodedPackageContract = Schema.decodeUnknownSync(PackageContractSchema)(source.contract)
@@ -137,7 +141,7 @@ export const schemaDescriptorFromProjectFacts = (
   }
 }
 
-export const decodeProjectFactsCompatibility = (
+export const decodeLegacyPackageFactsCompatibility = (
   contract: unknown,
 ): DecodedPackageContract =>
   Schema.decodeUnknownSync(PackageContractSchema)(contract)
@@ -208,4 +212,93 @@ export const deriveDiagnosticRequirements = (
       reason: `Project ${descriptor.projectId} must keep generated artifacts fresh for schema descriptor ${descriptor.descriptorHash}.`,
     },
   ]
+}
+
+export const SchemaDescriptorRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+})
+export type SchemaDescriptorRecipeInput = typeof SchemaDescriptorRecipeInput.Type
+
+export const SchemaDescriptorRecipeOutput = Schema.Struct({
+  sourcePath: Schema.String,
+  emitsSchemaDescriptor: Schema.Boolean,
+  emitsDiagnosticRequirements: Schema.Boolean,
+})
+export type SchemaDescriptorRecipeOutput = typeof SchemaDescriptorRecipeOutput.Type
+
+export const summarizeSchemaDescriptorSurface = (
+  input: SchemaDescriptorRecipeInput,
+): SchemaDescriptorRecipeOutput => ({
+  sourcePath: input.sourcePath,
+  emitsSchemaDescriptor: true,
+  emitsDiagnosticRequirements: true,
+})
+
+export const SchemaDescriptorRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+  const SchemaDescriptorRecipeId =
+    "framework-protocol.schema-descriptors.surface" as const
+  const SchemaDescriptorSourcePath =
+    "packages/trellis/protocol/src/schema-descriptors/index.ts" as const
+// @attune-packet-target generated-runtime-projection eligible
+  const SchemaDescriptorSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.schema-descriptors.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: SchemaDescriptorRecipeInput,
+    stateSchema: SchemaDescriptorRecipeInput,
+    modes: ["read"],
+    consumedBy: [SchemaDescriptorRecipeId],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const SchemaDescriptorResource = helpers.defineAlchemyResource({
+    id: "framework-protocol.schema-descriptors.resource",
+    kind: "schema",
+    alchemyType: "attune:resource:ProgramSchemaDescriptorSurface",
+    addressSchema: SchemaDescriptorRecipeInput,
+    stateSchema: SchemaDescriptorRecipeOutput,
+    modes: ["project", "read"],
+    ownerRecipeId: SchemaDescriptorRecipeId,
+    producedBy: [SchemaDescriptorRecipeId],
+  })
+  const SchemaDescriptorHandler = helpers.defineRecipeHandler<
+    SchemaDescriptorRecipeInput,
+    SchemaDescriptorRecipeOutput,
+    never,
+    never
+  >({
+    id: "framework-protocol.schema-descriptors.surface.handler",
+    recipeId: SchemaDescriptorRecipeId,
+    sourcePath: SchemaDescriptorSourcePath,
+    exportName: "summarizeSchemaDescriptorSurface",
+    emitsReceipts: ["framework-protocol.schema-descriptors.surface"],
+    handler: (input) => Effect.succeed(summarizeSchemaDescriptorSurface(input)),
+  })
+
+  return [
+    helpers.defineSchemaRecipe({
+      id: SchemaDescriptorRecipeId,
+      projectId: "framework-protocol",
+      title: "Project legacy package facts into schema descriptors",
+      inputSchema: SchemaDescriptorRecipeInput,
+      outputSchema: SchemaDescriptorRecipeOutput,
+      io: {
+        inputSchema: SchemaDescriptorRecipeInput,
+        outputSchema: SchemaDescriptorRecipeOutput,
+        inputResources: [SchemaDescriptorSource],
+        outputResources: [SchemaDescriptorResource],
+      },
+      handler: SchemaDescriptorHandler,
+      alchemyDag: [{
+        fromRecipeId: "framework-protocol.root",
+        toRecipeId: SchemaDescriptorRecipeId,
+        resource: "framework-protocol.schema-descriptors.resource",
+        kind: "projects",
+        modes: ["project", "read"],
+      }],
+      allowedFiles: [SchemaDescriptorSourcePath],
+      validationEvidence: ["framework-protocol:typecheck"],
+    }),
+  ] as const
 }

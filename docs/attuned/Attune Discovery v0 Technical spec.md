@@ -407,15 +407,11 @@ packages/
       DevToolsAdapterNotes.md
       index.ts
 
-  attune-nx/
-    src/generators/
-      effect-service/
-      event/
-      decision/
-      projection/
-      atom-family/
-      derived-atom/
-      score-feature/
+  trellis/nx/
+    src/
+      recipe and packet-owned Nx target projections
+      repair plan materialization
+      generated/cache artifact descriptors
       decision-packet-field/
       foldkit-scene-atom/
       joern-template/
@@ -2377,38 +2373,35 @@ Nx generators are central. They replace much of the need for Fork in v0.
 ### 16.1 Generator philosophy
 
 ```txt
-Without generators:
+Without packetized repair:
   Agent must infer architecture.
 
-With generators:
-  Agent runs repo-native verbs and fills typed TODOs.
+With packetized repair:
+  Agent follows diagnostics into grouped packets, runs Nx repair/check
+  targets, and promotes only after the judge accepts receipts.
 ```
 
-### 16.2 Initial generator set
+### 16.2 Initial repair surface set
 
 ```txt
-@attune/nx:effect-service
-@attune/nx:event
-@attune/nx:decision
-@attune/nx:projection
-@attune/nx:atom-family
-@attune/nx:derived-atom
-@attune/nx:score-feature
-@attune/nx:decision-packet-field
-@attune/nx:foldkit-scene-atom
-@attune/nx:joern-template
-@attune/nx:sync-effect-layers
+workspace:check
+workspace:repair
+workspace:packetized-architecture-judge
+<project>:check
+<project>:repair
+<project>:typecheck
+<project>:test
 ```
 
 ### 16.3 `effect-service`
 
-Command:
+Repair shape:
 
-```bash
-nx g @attune/nx:effect-service discovery-memory MotifReadModel
-```
+The language service emits a packet for a missing Effect service boundary.
+The project repair target creates or updates the local Recipe/ManagedRecipe,
+Effect service, Layer binding, tests, and receipt projection surfaces.
 
-Generates:
+Expected authored files:
 
 ```txt
 src/MotifReadModel.ts
@@ -2419,11 +2412,7 @@ src/index.ts
 
 ### 16.4 `event`
 
-Command:
-
-```bash
-nx g @attune/nx:event discovery evidence.scored --runScoped --primaryKey evidencePacketId
-```
+Repair shape:
 
 Updates:
 
@@ -2438,11 +2427,7 @@ ViewKeys.ts if needed
 
 ### 16.5 `decision`
 
-Command:
-
-```bash
-nx g @attune/nx:decision discovery run_joern_template
-```
+Repair shape:
 
 Generates/updates:
 
@@ -2456,15 +2441,7 @@ handler test
 
 ### 16.6 `atom-family`
 
-Command:
-
-```bash
-nx g @attune/nx:atom-family discovery-views recentEvidence \
-  --key runId \
-  --reactivity evidence \
-  --service MotifReadModel \
-  --method listRecentEvidence
-```
+Repair shape:
 
 Generates:
 
@@ -2484,34 +2461,18 @@ export const recentEvidenceAtom = Atom.family((runId: RunId) =>
 
 ### 16.7 `derived-atom`
 
-Command:
-
-```bash
-nx g @attune/nx:derived-atom discovery-views runScoreFeatures \
-  --key runId \
-  --depends activeFamilies,queuedHypotheses,recentEvidence
-```
-
-Generates a file with dependency skeleton and TODO calculation. It should not add `Atom.withReactivity` unless explicitly generating a base atom.
+The packetized repair path creates a file with dependency skeleton and TODO
+calculation. It should not add `Atom.withReactivity` unless explicitly
+materializing a base atom.
 
 ### 16.8 `decision-packet-field`
 
-Command:
-
-```bash
-nx g @attune/nx:decision-packet-field deterministicRecommendation \
-  --depends recommendedNextActionAtom
-```
-
-Updates `DecisionPacket` type and `decisionPacketAtom`.
+The packetized repair path updates the `DecisionPacket` type and
+`decisionPacketAtom`.
 
 ### 16.9 `joern-template`
 
-Command:
-
-```bash
-nx g @attune/nx:joern-template source_to_sink_flow
-```
+Repair shape:
 
 Generates:
 

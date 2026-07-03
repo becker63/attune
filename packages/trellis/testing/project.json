@@ -6,60 +6,65 @@
   "sourceRoot": "packages/trellis/testing/src",
   "targets": {
     "typecheck": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "tool": "typescript",
-        "action": "check",
-        "parameters": {
-          "classic": true,
-          "tsconfig": "tsconfig.json"
+        "command": "cd packages/trellis/testing && pnpm exec tsc --noEmit -p tsconfig.json"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "typecheck",
+          "action": "typecheck",
+          "recipeId": "framework-testing.typecheck",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "test": {
-      "executor": "@attune/nx:package-check",
+      "executor": "nx:run-commands",
       "options": {
-        "dryRun": false,
-        "checks": [
-          "test"
-        ]
+        "command": "cd packages/trellis/testing && pnpm exec vitest run"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "test",
+          "action": "test",
+          "recipeId": "framework-testing.test",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Project check surface for Recipe/ManagedRecipe substrate diagnostics."
+        "description": "Project check surface for Recipe/ManagedRecipe substrate diagnostics.",
+        "attune": {
+          "tier": "public",
+          "surface": "check",
+          "action": "check",
+          "recipeId": "framework-testing.check",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "targetProject": "framework-testing",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:recipe-substrate-check"
-          ]
-        },
-        "dryRun": false
+        "command": "pnpm exec nx run workspace:recipe-substrate-check"
       }
     },
     "repair": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
-        "description": "Project repair surface for safe Recipe/ManagedRecipe repair materialization."
+        "description": "Project repair surface for safe Recipe/ManagedRecipe repair materialization.",
+        "attune": {
+          "tier": "public",
+          "surface": "repair",
+          "action": "repair",
+          "recipeId": "framework-testing.repair",
+          "projectionId": "framework.projection.nx-target"
+        }
       },
       "options": {
-        "targetProject": "framework-testing",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:repair"
-          ]
-        },
-        "dryRun": false
+        "command": "pnpm exec nx run workspace:repair"
       }
     }
   },

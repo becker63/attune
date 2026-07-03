@@ -1,6 +1,5 @@
 import { Effect, Schema } from "effect"
 import { describe, expect, it } from "vitest"
-import { defineRecipe } from "@attune/framework-protocol"
 import {
   MeasurementBaselineSessionSelectionPayloadSchema,
   MeasurementAgentMetricsSummaryPayloadSchema,
@@ -30,6 +29,7 @@ import {
   MeasurementLegacySubstrateAuditPayloadSchema,
   MeasurementMigrationReadinessSummaryPayloadSchema,
   MeasurementMicroExperimentSummaryPayloadSchema,
+  MeasurementObservationRecipe,
   MeasurementRecipeSpineCoveragePayloadSchema,
   MeasurementReportProjectionPayloadSchema,
   MeasurementTraceInventorySummaryPayloadSchema,
@@ -54,6 +54,9 @@ const outputSummary = {
   sha256: "2689367b205c16ce836ea2af1ca243e63d45fc130b5a7abcb825aafa821d4a4e",
   redacted: false,
 } as const
+
+const commandObservationCapability = "commandObservation" as const
+const safeAutofixRisk = "safe" as const
 
 const historicalSession = {
   sessionId: "sha256:baseline-session",
@@ -111,7 +114,7 @@ describe("MeasurementObservation payload schemas", () => {
       plugins: [{
         name: "@attune/tend-opencode",
         loaded: true,
-        capability: "commandObservation",
+        capability: commandObservationCapability,
       }],
       upstream: {
         available: true,
@@ -453,7 +456,7 @@ describe("MeasurementObservation payload schemas", () => {
       reviewRequiredFixCount: 0,
       affectedFileCount: 3,
       affectedPackageCount: 2,
-      risk: "safe",
+      risk: safeAutofixRisk,
       rank: 1,
       rankingInputs: {
         diagnosticCount: 12,
@@ -1124,17 +1127,7 @@ describe("MeasurementObservation payload schemas", () => {
     const observedAt = "2026-06-29T00:00:00.000Z"
     const benchmarkRunId = "effect-packet-postgres-projection-test"
     const measurementSessionId = `measurement:${benchmarkRunId}`
-    const recipe = defineRecipe({
-      id: "framework-runtime.measurement-observation-test",
-      projectId: "framework-runtime",
-      title: "Measurement observation Postgres projection smoke",
-      inputSchema: Schema.Unknown,
-      outputSchema: Schema.Unknown,
-      nxTarget: "framework-runtime:test",
-      sourcePath: "packages/trellis/runtime/test/measurement-observation.test.ts",
-      allowedFiles: ["packages/trellis/runtime/**"],
-      validationEvidence: ["framework-runtime:test"],
-    })
+    const recipe = MeasurementObservationRecipe
     const observation = createMeasurementObservation({
       observationId: "measurement-observation-test:target-status:postgres-projection",
       kind: "measurement.benchmark.target-status.summary",

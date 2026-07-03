@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+import {
+  K8sResourceModuleCatalogResource,
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport,
+  PlatformAlchemyK8sProjectId,
+  PlatformAlchemyK8sResourceRegistryRecipeId,
+  k8sResourceModuleReport,
+} from "./common.js"
+
 import type { KubernetesObject, PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
 import { attuneLabels, dnsLabel, resourceSet } from "./common.js"
 
@@ -150,3 +165,56 @@ export const LocalPostgres = {
     return resourceSet(`postgres:${props.namespace}:${name}`, [secret, service, statefulSet])
   },
 } as const
+
+
+export const LocalPostgresResourceRecipeId = "platform-alchemy-k8s.postgres-resource" as const
+const LocalPostgresResourceHandlerId = "platform-alchemy-k8s.postgres-resource.handler" as const
+const LocalPostgresResourceSourcePath = "packages/canopy/platform-alchemy-k8s/src/resources/postgres.ts" as const
+
+export const LocalPostgresResourceHandler = defineRecipeHandler<
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport
+>({
+  id: LocalPostgresResourceHandlerId,
+  recipeId: LocalPostgresResourceRecipeId,
+  sourcePath: LocalPostgresResourceSourcePath,
+  exportName: "LocalPostgres",
+  handler: () =>
+    Effect.succeed(k8sResourceModuleReport({
+      recipeId: LocalPostgresResourceRecipeId,
+      sourcePath: LocalPostgresResourceSourcePath,
+      exportName: "LocalPostgres",
+      moduleKind: "local postgres Kubernetes resource factory",
+    })) as never,
+  emitsReceipts: [`platform-alchemy-k8s.postgres-resource.projected`],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const LocalPostgresResourceRecipe = defineProjectionRecipe({
+  id: LocalPostgresResourceRecipeId,
+  projectId: PlatformAlchemyK8sProjectId,
+  title: "Declare local postgres Kubernetes resource factory",
+  inputSchema: K8sResourceModuleRecipeInput as never,
+  outputSchema: K8sResourceModuleReport as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [LocalPostgresResourceSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test", "platform-alchemy-k8s:typecheck"],
+  io: {
+    inputSchema: K8sResourceModuleRecipeInput as never,
+    outputSchema: K8sResourceModuleReport as never,
+    inputResources: [K8sResourceModuleCatalogResource],
+    outputResources: [K8sResourceModuleCatalogResource],
+  },
+  handler: LocalPostgresResourceHandler,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: PlatformAlchemyK8sResourceRegistryRecipeId,
+      toRecipeId: LocalPostgresResourceRecipeId,
+      resource: K8sResourceModuleCatalogResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }),
+  ],
+})
+
+export const LocalPostgresResourceRecipes = [LocalPostgresResourceRecipe] as const

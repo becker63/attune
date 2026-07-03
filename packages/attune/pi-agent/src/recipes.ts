@@ -1,92 +1,128 @@
-import { RecipeReceiptSchema, defineRecipe } from "@attune/framework-protocol"
-import { Schema as S } from "effect"
+import { defineRecipePackage } from "@attune/framework-protocol"
 
-import {
-  EvidenceMatrix,
-  ImplementationSpec,
-  PermissionCheck,
-  PermissionProfile,
-} from "./schema/index.js"
+import { AttunePiArtifactRecipes } from "./artifacts/index.js"
+import { AttunePiCommandRecipes } from "./commands/index.js"
+import { AttunePiDocumentationRecipes } from "./documentation-recipes.js"
+import { AttunePiExtensionRecipes } from "./pi-extension.js"
+import { AttunePiGeneratorConfigRecipes } from "./generator-config-recipes.js"
+import { AttunePiGeneratorRecipes } from "./generators/index.js"
+import { AttunePiConversationRecipes } from "./pi/index.js"
+import { AttunePiPermissionRecipes } from "./permissions/index.js"
+import { AttunePiSchemaRecipes } from "./schema/index.js"
+import { AttunePiTestRecipes } from "./test-recipes.js"
 
-export const PiGeneratorArtifact = S.Struct({
-  generatorName: S.String,
-  outputPath: S.String,
-  deterministic: S.Boolean,
-  reviewRequired: S.Boolean,
-})
-export type PiGeneratorArtifact = typeof PiGeneratorArtifact.Type
-
-export const PiCommandSurface = S.Struct({
-  commandName: S.String,
-  recipeId: S.String,
-  evidenceRequired: S.Boolean,
-})
-export type PiCommandSurface = typeof PiCommandSurface.Type
+export { PiCommandSurface } from "./commands/index.js"
+export { PiGeneratorArtifact } from "./generators/renderers.js"
 
 export const AttunePiAgentRecipes = [
-  defineRecipe({
-    id: "attune-pi-agent.implementation-spec",
-    projectId: "attune-pi-agent",
-    title: "Decode Pi implementation specs into bounded recipe inputs",
-    inputSchema: ImplementationSpec,
-    outputSchema: ImplementationSpec,
-    nxTarget: "attune-pi-agent:test",
-    sourcePath: "packages/attune/pi-agent/src/recipes.ts",
-    allowedFiles: ["packages/attune/pi-agent/src/schema/**", "packages/attune/pi-agent/src/pi/**"],
-    validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:typecheck"],
-  }),
-  defineRecipe({
-    id: "attune-pi-agent.permission-profile",
-    projectId: "attune-pi-agent",
-    title: "Classify Pi permission decisions before command execution",
-    inputSchema: PermissionProfile,
-    outputSchema: PermissionCheck,
-    dependencies: [{ recipeId: "attune-pi-agent.implementation-spec" }],
-    nxTarget: "attune-pi-agent:test",
-    sourcePath: "packages/attune/pi-agent/src/recipes.ts",
-    allowedFiles: ["packages/attune/pi-agent/src/permissions/**", "packages/attune/pi-agent/src/schema/**"],
-    validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:proof"],
-  }),
-  defineRecipe({
-    id: "attune-pi-agent.evidence-matrix",
-    projectId: "attune-pi-agent",
-    title: "Render evidence matrices from recipe receipts and Pi claims",
-    inputSchema: EvidenceMatrix,
-    outputSchema: S.Struct({
-      receipt: RecipeReceiptSchema,
-      matrix: EvidenceMatrix,
-    }),
-    dependencies: [{ recipeId: "attune-pi-agent.implementation-spec" }],
-    nxTarget: "attune-pi-agent:test",
-    sourcePath: "packages/attune/pi-agent/src/recipes.ts",
-    allowedFiles: ["packages/attune/pi-agent/src/artifacts/**", "packages/attune/pi-agent/src/schema/**"],
-    validationEvidence: ["attune-pi-agent:test"],
-  }),
-  defineRecipe({
-    id: "attune-pi-agent.generator-artifacts",
-    projectId: "attune-pi-agent",
-    title: "Generate deterministic Pi spec, permission, obligation, and task artifacts",
-    inputSchema: S.Array(PiGeneratorArtifact),
-    outputSchema: S.Array(PiGeneratorArtifact),
-    dependencies: [{ recipeId: "attune-pi-agent.evidence-matrix" }],
-    nxTarget: "attune-pi-agent:test",
-    sourcePath: "packages/attune/pi-agent/src/recipes.ts",
-    allowedFiles: ["packages/attune/pi-agent/src/generators/**", "packages/attune/pi-agent/generators.json"],
-    validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:build"],
-  }),
-  defineRecipe({
-    id: "attune-pi-agent.command-surface",
-    projectId: "attune-pi-agent",
-    title: "Expose Pi commands as evidence-first recipe workflow surfaces",
-    inputSchema: S.Array(PiCommandSurface),
-    outputSchema: S.Array(PiCommandSurface),
-    dependencies: [
-      { recipeId: "attune-pi-agent.permission-profile" },
-      { recipeId: "attune-pi-agent.generator-artifacts" },
-    ],
-    nxTarget: "attune-pi-agent:test",
-    sourcePath: "packages/attune/pi-agent/src/recipes.ts",
-    allowedFiles: ["packages/attune/pi-agent/src/commands/**", "packages/attune/pi-agent/src/index.ts"],
-    validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:typecheck"],
-  }),
+  ...AttunePiSchemaRecipes,
+  ...AttunePiConversationRecipes,
+  ...AttunePiPermissionRecipes,
+  ...AttunePiArtifactRecipes,
+  ...AttunePiGeneratorConfigRecipes,
+  ...AttunePiGeneratorRecipes,
+  ...AttunePiCommandRecipes,
+  ...AttunePiExtensionRecipes,
+  ...AttunePiDocumentationRecipes,
+  ...AttunePiTestRecipes,
 ] as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiAgentRecipePackage = defineRecipePackage({
+  packageId: "attune-pi-agent",
+  kind: "agent-extension",
+  title: "Pi agent permission, evidence, generator, and command recipes",
+  sourceRoot: "packages/attune/pi-agent/src",
+  recipes: AttunePiAgentRecipes,
+  ownership: [
+    {
+      id: "pi-schema-catalog",
+      title: "Pi schema and implementation-spec source",
+      files: ["packages/attune/pi-agent/src/schema/**"],
+      recipeIds: AttunePiSchemaRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-root-public-api-catalog",
+      title: "Pi public API barrel",
+      files: ["packages/attune/pi-agent/src/index.ts"],
+      recipeIds: AttunePiAgentRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-artifact-recipe-catalog",
+      title: "Pi artifact recipe catalog",
+      files: ["packages/attune/pi-agent/src/artifacts/index.ts"],
+      recipeIds: AttunePiArtifactRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-conversation-and-command-surface",
+      title: "Pi conversation adapters, command handlers, and extension entrypoint",
+      files: [
+        "packages/attune/pi-agent/src/commands/**",
+        "packages/attune/pi-agent/src/pi/**",
+        "packages/attune/pi-agent/src/pi-extension.ts",
+        "packages/attune/pi-agent/src/index.ts",
+      ],
+      recipeIds: [
+        ...AttunePiConversationRecipes,
+        ...AttunePiCommandRecipes,
+        ...AttunePiExtensionRecipes,
+      ].map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-conversation-recipe-catalog",
+      title: "Pi conversation recipe catalog",
+      files: ["packages/attune/pi-agent/src/pi/index.ts"],
+      recipeIds: AttunePiConversationRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-permission-policy",
+      title: "Pi deny-first permission profile and permission decision source",
+      files: [
+        "packages/attune/pi-agent/src/permissions/**",
+        "packages/attune/pi-agent/src/schema/permission-profile.ts",
+      ],
+      recipeIds: AttunePiPermissionRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-permission-recipe-catalog",
+      title: "Pi permission recipe catalog",
+      files: ["packages/attune/pi-agent/src/permissions/index.ts"],
+      recipeIds: AttunePiPermissionRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-evidence-and-run-artifacts",
+      title: "Evidence matrix reports and local run artifact projections",
+      files: [
+        "packages/attune/pi-agent/src/artifacts/**",
+        ".attune-runs/**",
+      ],
+      recipeIds: AttunePiArtifactRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-generators-and-config",
+      title: "Pi generator config, renderers, and generator entrypoints",
+      files: [
+        "packages/attune/pi-agent/generators.json",
+        "packages/attune/pi-agent/src/generators/**",
+      ],
+      recipeIds: [
+        ...AttunePiGeneratorConfigRecipes,
+        ...AttunePiGeneratorRecipes,
+      ].map((recipe) => recipe.id),
+    },
+    {
+      id: "pi-docs-tests-and-fixtures",
+      title: "Pi docs, tests, and implementation-spec fixtures",
+      files: [
+        "packages/attune/pi-agent/docs/**",
+        "packages/attune/pi-agent/src/fixtures/**",
+        "packages/attune/pi-agent/test/**",
+        "packages/attune/pi-agent/vitest.config.ts",
+      ],
+      recipeIds: [
+        ...AttunePiDocumentationRecipes,
+        ...AttunePiTestRecipes,
+      ].map((recipe) => recipe.id),
+    },
+  ],
+})

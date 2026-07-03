@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+import {
+  K8sResourceModuleCatalogResource,
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport,
+  PlatformAlchemyK8sProjectId,
+  PlatformAlchemyK8sResourceRegistryRecipeId,
+  k8sResourceModuleReport,
+} from "./common.js"
+
 import type { PlatformResourceSet } from "../provider/alchemy-k8s-provider.js"
 import { BudgetPolicy } from "./budget-policy.js"
 import { mergeResourceSets, resourceSet } from "./common.js"
@@ -59,3 +74,56 @@ export const JoernQuery = {
       }),
     ]),
 } as const
+
+
+export const JoernQueryResourceRecipeId = "platform-alchemy-k8s.joern-query-resource" as const
+const JoernQueryResourceHandlerId = "platform-alchemy-k8s.joern-query-resource.handler" as const
+const JoernQueryResourceSourcePath = "packages/canopy/platform-alchemy-k8s/src/resources/joern-query.ts" as const
+
+export const JoernQueryResourceHandler = defineRecipeHandler<
+  K8sResourceModuleRecipeInput,
+  K8sResourceModuleReport
+>({
+  id: JoernQueryResourceHandlerId,
+  recipeId: JoernQueryResourceRecipeId,
+  sourcePath: JoernQueryResourceSourcePath,
+  exportName: "JoernQuery",
+  handler: () =>
+    Effect.succeed(k8sResourceModuleReport({
+      recipeId: JoernQueryResourceRecipeId,
+      sourcePath: JoernQueryResourceSourcePath,
+      exportName: "JoernQuery",
+      moduleKind: "joern query Kubernetes resource factory",
+    })) as never,
+  emitsReceipts: [`platform-alchemy-k8s.joern-query-resource.projected`],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernQueryResourceRecipe = defineProjectionRecipe({
+  id: JoernQueryResourceRecipeId,
+  projectId: PlatformAlchemyK8sProjectId,
+  title: "Declare joern query Kubernetes resource factory",
+  inputSchema: K8sResourceModuleRecipeInput as never,
+  outputSchema: K8sResourceModuleReport as never,
+  nxTarget: "platform-alchemy-k8s:test",
+  allowedFiles: [JoernQueryResourceSourcePath],
+  validationEvidence: ["platform-alchemy-k8s:test", "platform-alchemy-k8s:typecheck"],
+  io: {
+    inputSchema: K8sResourceModuleRecipeInput as never,
+    outputSchema: K8sResourceModuleReport as never,
+    inputResources: [K8sResourceModuleCatalogResource],
+    outputResources: [K8sResourceModuleCatalogResource],
+  },
+  handler: JoernQueryResourceHandler,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: PlatformAlchemyK8sResourceRegistryRecipeId,
+      toRecipeId: JoernQueryResourceRecipeId,
+      resource: K8sResourceModuleCatalogResource,
+      kind: "projects",
+      modes: ["project", "read"],
+    }),
+  ],
+})
+
+export const JoernQueryResourceRecipes = [JoernQueryResourceRecipe] as const

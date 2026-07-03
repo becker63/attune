@@ -1,3 +1,20 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+
+import {
+  FrameworkTestingProjectId,
+  FrameworkTestingSourceRecipeInput,
+  FrameworkTestingSourceRecipeOutput,
+  FrameworkTestingTestTarget,
+  FrameworkTestingTypecheckTarget,
+  frameworkTestingSourceSummary,
+} from "./recipe-contracts.js"
+
 export type SymbolId = string
 
 export type SymbolTuple = readonly {
@@ -178,3 +195,81 @@ export const symbolHandler = <
   registry: SymbolHandlerRegistry<Handlers>,
   symbolId: Symbol,
 ): Handlers[Symbol] => registry.handlers[symbolId]
+
+export const FrameworkTestingSymbolMapRecipeId = "framework-testing.symbol-map" as const
+export const FrameworkTestingSymbolMapSourcePath = "packages/trellis/testing/src/symbol-map.ts" as const
+
+export const describeFrameworkTestingSymbolMap = (
+  input: FrameworkTestingSourceRecipeInput,
+): FrameworkTestingSourceRecipeOutput =>
+  frameworkTestingSourceSummary(input, "symbol-map", {
+    observationCount: input.symbolIds.length,
+  })
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingSymbolMapSourceResource = defineAlchemyResource({
+  id: "framework-testing.symbol-map.source",
+  kind: "file",
+  alchemyType: "attune:resource:FrameworkTestingSymbolMapSource",
+  addressSchema: FrameworkTestingSourceRecipeInput,
+  stateSchema: FrameworkTestingSourceRecipeInput,
+  modes: ["read"],
+  consumedBy: [FrameworkTestingSymbolMapRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingSymbolMapReportResource = defineAlchemyResource({
+  id: "framework-testing.symbol-map.report",
+  kind: "report",
+  alchemyType: "attune:resource:FrameworkTestingSymbolMapReport",
+  addressSchema: FrameworkTestingSourceRecipeInput,
+  stateSchema: FrameworkTestingSourceRecipeOutput,
+  modes: ["project", "read"],
+  ownerRecipeId: FrameworkTestingSymbolMapRecipeId,
+  producedBy: [FrameworkTestingSymbolMapRecipeId],
+})
+
+export const FrameworkTestingSymbolMapHandler = defineRecipeHandler<
+  FrameworkTestingSourceRecipeInput,
+  FrameworkTestingSourceRecipeOutput,
+  never,
+  never
+>({
+  id: "framework-testing.symbol-map.handler",
+  recipeId: FrameworkTestingSymbolMapRecipeId,
+  sourcePath: FrameworkTestingSymbolMapSourcePath,
+  exportName: "describeFrameworkTestingSymbolMap",
+  emitsReceipts: ["framework-testing.symbol-map.report"],
+  handler: (input) => Effect.succeed(describeFrameworkTestingSymbolMap(input)),
+})
+
+export const FrameworkTestingSymbolMapDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "framework-testing.symbol-map.source",
+  toRecipeId: FrameworkTestingSymbolMapRecipeId,
+  resource: FrameworkTestingSymbolMapReportResource,
+  kind: "projects",
+  modes: ["read", "project"],
+  validationTargets: [FrameworkTestingTestTarget],
+})
+
+export const FrameworkTestingSymbolMapRecipes = [
+// @attune-packet-target generated-runtime-projection eligible
+  defineProjectionRecipe({
+    id: FrameworkTestingSymbolMapRecipeId,
+    projectId: FrameworkTestingProjectId,
+    title: "Own exact symbol map coverage helpers",
+    inputSchema: FrameworkTestingSourceRecipeInput,
+    outputSchema: FrameworkTestingSourceRecipeOutput,
+    io: {
+      inputSchema: FrameworkTestingSourceRecipeInput,
+      outputSchema: FrameworkTestingSourceRecipeOutput,
+      inputResources: [FrameworkTestingSymbolMapSourceResource],
+      outputResources: [FrameworkTestingSymbolMapReportResource],
+    },
+    handler: FrameworkTestingSymbolMapHandler,
+    alchemyDag: [FrameworkTestingSymbolMapDagEdge],
+    nxTarget: FrameworkTestingTestTarget,
+    allowedFiles: [FrameworkTestingSymbolMapSourcePath],
+    validationEvidence: [FrameworkTestingTestTarget, FrameworkTestingTypecheckTarget],
+  }),
+] as const

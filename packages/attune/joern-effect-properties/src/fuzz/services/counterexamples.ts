@@ -1,3 +1,4 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
 import { Context, Effect, Layer, Schema } from "effect"
 import {
   CounterexampleCandidate,
@@ -72,3 +73,79 @@ export const CounterexampleStoreInMemory = (
 
 export const CounterexampleStoreLive: Layer.Layer<CounterexampleStore> =
   CounterexampleStoreInMemory()
+
+const JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeId = "joern-effect-properties.fuzz.services.counterexamples" as const
+const JoernEffectPropertiesFuzzServicesCounterexamplesLocalResourceId = "joern-effect-properties.fuzz.services.counterexamples.resource" as const
+const JoernEffectPropertiesFuzzServicesCounterexamplesLocalHandlerId = "joern-effect-properties.fuzz.services.counterexamples.handler" as const
+const JoernEffectPropertiesFuzzServicesCounterexamplesLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/services/counterexamples.ts" as const
+const JoernEffectPropertiesFuzzServicesCounterexamplesLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesCounterexamplesLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeInput = typeof JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesCounterexamplesLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeOutput = typeof JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzServicesCounterexamplesLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzServicesCounterexamplesLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeId, JoernEffectPropertiesFuzzServicesCounterexamplesLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzServicesCounterexamplesLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeInput,
+  JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzServicesCounterexamplesLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzServicesCounterexamplesLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.services.counterexamples.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/services/counterexamples.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzServicesCounterexamplesLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzServicesCounterexamplesLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzServicesCounterexamplesLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzServicesCounterexamplesLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzServicesCounterexamplesLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzServicesCounterexamplesLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipes = [JoernEffectPropertiesFuzzServicesCounterexamplesLocalRecipe] as const

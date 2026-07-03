@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { TendReportRecipes, renderTendTokenReport } from "../src/index.js"
+import { renderTendTokenReport } from "../src/index.js"
+import { TendReportRecipes } from "../src/recipes.js"
 
 describe("@attune/tend-reporting", () => {
   it("renders a report from receipt and token data", () => {
@@ -32,7 +33,14 @@ describe("@attune/tend-reporting", () => {
       },
     })
 
-    expect(TendReportRecipes[0]?.id).toBe("tend-reporting.token-report")
+    expect(TendReportRecipes.map((recipe) => recipe.id)).toEqual([
+      "tend-reporting.token-report-renderer",
+      "tend-reporting.markdown-view",
+      "tend-reporting.test-suite",
+    ])
+    expect(
+      TendReportRecipes.some((recipe) => recipe.sourcePath === "packages/tend/reporting/src/recipes.ts"),
+    ).toBe(false)
     expect(report.markdown).toContain("OpenRTK saved tokens: 750")
     expect(report.markdown).toContain("Magic Context dropped tokens: 200")
   })

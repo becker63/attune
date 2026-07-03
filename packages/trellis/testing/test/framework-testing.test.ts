@@ -99,11 +99,30 @@ describe("@attune/framework-testing", () => {
     )
 
     expect(records.map((record) => record.recipeId)).toEqual([
-      "framework-testing.program-harness-observations",
+      "framework-testing.recipe-contracts",
+      "framework-testing.atom-graph-observer",
       "framework-testing.coverage-guided-rerun",
+      "framework-testing.fastcheck-property-evidence",
+      "framework-testing.observation-producer",
+      "framework-testing.program-harness-observations",
+      "framework-testing.replay-metadata",
+      "framework-testing.symbol-map",
       "framework-testing.worker-replay-metadata",
+      "framework-testing.test-suite",
     ])
-    expect(records.every((record) => record.sourcePath === "packages/trellis/testing/src/recipes.ts")).toBe(true)
+    expect(records.map((record) => record.sourcePath)).toEqual([
+      "packages/trellis/testing/src/recipe-contracts.ts",
+      "packages/trellis/testing/src/atom-graph-observer.ts",
+      "packages/trellis/testing/src/coverage-guided-fuzzer.ts",
+      "packages/trellis/testing/src/fastcheck.ts",
+      "packages/trellis/testing/src/observation-producer.ts",
+      "packages/trellis/testing/src/program-harness.ts",
+      "packages/trellis/testing/src/replay-metadata.ts",
+      "packages/trellis/testing/src/symbol-map.ts",
+      "packages/trellis/testing/src/worker-metadata.ts",
+      "packages/trellis/testing/src/test-recipes.ts",
+    ])
+    expect(records.some((record) => record.sourcePath === "packages/trellis/testing/src/recipes.ts")).toBe(false)
   })
 
   it("defines symbol handler registries and observation producers for generated harnesses", () => {

@@ -1,4 +1,5 @@
-import { Effect } from "effect"
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 import { loadAxiomConfig, makeAxiomClient } from "../../events.js"
 
 export type QueryFeedbackEntry = Readonly<{
@@ -104,3 +105,79 @@ export const loadQueryFeedbackSnapshot = (
 
     return await cachedSnapshot
   })
+
+const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeId = "joern-effect-properties.fuzz.services.query-feedback" as const
+const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalResourceId = "joern-effect-properties.fuzz.services.query-feedback.resource" as const
+const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalHandlerId = "joern-effect-properties.fuzz.services.query-feedback.handler" as const
+const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/services/queryFeedback.ts" as const
+const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesQueryFeedbackLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeInput = typeof JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesQueryFeedbackLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeOutput = typeof JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeId, JoernEffectPropertiesFuzzServicesQueryFeedbackLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeInput,
+  JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.services.query-feedback.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/services/queryFeedback.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzServicesQueryFeedbackLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzServicesQueryFeedbackLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzServicesQueryFeedbackLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzServicesQueryFeedbackLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipes = [JoernEffectPropertiesFuzzServicesQueryFeedbackLocalRecipe] as const

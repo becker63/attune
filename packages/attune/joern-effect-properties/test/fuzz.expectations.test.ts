@@ -8,6 +8,8 @@ import {
   summarizeQueryRows,
 } from "../src/fuzz/index.js"
 
+const expectationTags = (values: readonly string[]): readonly string[] => values
+
 const sourceFile = {
   path: "src/view.tsx",
   role: "component",
@@ -22,7 +24,7 @@ const sourceFile = {
     "}",
   ].join("\n"),
   syntaxFlavor: "tsx",
-  tags: ["tsx", "expectation-bearing"],
+  tags: expectationTags(["tsx", "expectation-bearing"]),
 } satisfies ProjectFile
 
 describe("fuzz expectation-bearing cases", () => {

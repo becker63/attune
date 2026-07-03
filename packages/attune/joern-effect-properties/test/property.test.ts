@@ -39,6 +39,8 @@ import {
 
 vi.setConfig({ testTimeout: 240_000 })
 
+const propertyFindingClassification = "finding" as const
+
 type TestEvidenceGraph = {
   readonly nodes: readonly {
     readonly id: string
@@ -554,7 +556,7 @@ describe("property-based query behavior", () => {
         const classified = new ClassifiedCase({
           classification: {
             bestEngine: "joern",
-            classification: "finding",
+            classification: propertyFindingClassification,
             reliability: "stable",
           },
           comparison: new OracleComparison({

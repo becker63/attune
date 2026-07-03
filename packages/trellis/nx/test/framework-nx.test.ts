@@ -4,13 +4,16 @@ import {
   AttuneRepairPlanSchema,
   FrameworkNxActionPlanSchema,
   FrameworkNxRecipePublicTargetSchema,
-  FrameworkNxRecipes,
+  FrameworkNxRecipePublicTargetsRecipe,
+  FrameworkNxRecipeRepairPlanRecipe,
+  FrameworkNxTestTarget,
   atomProjectionEdgeAction,
   createDescriptorHashRecord,
   createFrameworkMaterializationPlan,
   createGeneratedArtifact,
   createGeneratedArtifactRecord,
   detectCheckedInReportOutputs,
+  frameworkRepairTargets,
   frameworkDiagnosticsAction,
   frameworkNxActionPlanFromRecipe,
   frameworkNxPublicTargetsFromRecipe,
@@ -25,14 +28,16 @@ import {
   schemaObservationsAction,
   type FrameworkNxGeneratedArtifactKind,
 } from "../src/index.js"
+import { FrameworkNxRecipes } from "../src/recipes.js"
 import {
-  defineRecipe,
   type ProgramSchemaDescriptor,
   type RecipeDiagnostic,
   type RecipeDefinition,
   RecipeRecordView,
   type RecipeRepair,
 } from "@attune/framework-protocol"
+
+const safeRecipeRepairRisk = "safe" as const
 
 const descriptor: ProgramSchemaDescriptor = {
   schemaDescriptorId: "attune/package/demo",
@@ -67,11 +72,19 @@ describe("@attune/framework-nx", () => {
     )
 
     expect(records.map((record) => record.recipeId)).toEqual([
+      "framework-nx.source-surface",
       "framework-nx.recipe-public-targets",
       "framework-nx.recipe-repair-plan",
       "framework-nx.materialization-plan",
+      "framework-nx.test-suite",
     ])
-    expect(records.every((record) => record.sourcePath === "packages/trellis/nx/src/recipes.ts")).toBe(true)
+    expect(records.map((record) => record.sourcePath)).toEqual([
+      "packages/trellis/nx/src/index.ts",
+      "packages/trellis/nx/src/index.ts",
+      "packages/trellis/nx/src/index.ts",
+      "packages/trellis/nx/src/index.ts",
+      "packages/trellis/nx/src/test-recipes.ts",
+    ])
   })
 
   it("describes deterministic Nx actions for language-service code actions", () => {
@@ -97,8 +110,8 @@ describe("@attune/framework-nx", () => {
       "@attune/framework-nx:schema-observations",
     )
     expect(frameworkDiagnosticsAction("demo", "packages/demo/src/attune.package.ts")).toMatchObject({
-      generatorOrTarget: "workspace:check",
-      validationTarget: "workspace:check",
+      generatorOrTarget: frameworkRepairTargets.workspaceCheck,
+      validationTarget: frameworkRepairTargets.workspaceCheck,
     })
   })
 
@@ -240,105 +253,82 @@ describe("@attune/framework-nx", () => {
   })
 
   it("projects Recipes into public Nx action and repair plans", () => {
-    const recipe = defineRecipe({
-      id: "workspace.policy-fast",
-      projectId: "workspace",
-      title: "Workspace policy",
-      inputSchema: Schema.Struct({}),
-      outputSchema: Schema.Struct({ ok: Schema.Boolean }),
-      nxTarget: "workspace:policy-fast",
-      sourcePath: "packages/trellis/nx/src/index.ts",
-      allowedFiles: ["packages/trellis/nx/**"],
-      validationEvidence: ["workspace:policy-fast"],
-    })
+    const recipe = FrameworkNxRecipePublicTargetsRecipe
+    const nxTarget = recipe.nxTarget ?? "framework-nx:test"
     const action = frameworkNxActionPlanFromRecipe(recipe)
     const publicTargets = frameworkNxPublicTargetsFromRecipe(recipe)
     const repair: RecipeRepair = {
-      repairId: "recipe-repair:workspace.policy-fast:planned",
+      repairId: `recipe-repair:${recipe.id}:planned`,
       recipeId: recipe.id,
-      title: "Run policy repair",
+      title: "Run framework Nx projection repair",
       kind: "nx-target",
-      nxTarget: "workspace:policy-fast",
-      allowedFiles: ["packages/trellis/nx/**"],
-      risk: "safe",
-      evidenceRequirements: ["workspace:policy-fast"],
+      nxTarget,
+      allowedFiles: [...(recipe.allowedFiles ?? [])],
+      risk: safeRecipeRepairRisk,
+      evidenceRequirements: [...(recipe.validationEvidence ?? [nxTarget])],
     }
 
     expect(Schema.decodeUnknownSync(FrameworkNxActionPlanSchema)(action)).toMatchObject({
-      actionId: "attune.recipe.workspace.policy-fast",
-      projectId: "workspace",
-      generatorOrTarget: "workspace:policy-fast",
-      validationTarget: "workspace:policy-fast",
+      actionId: "attune.recipe.framework-nx.recipe-public-targets",
+      projectId: "framework-nx",
+      generatorOrTarget: FrameworkNxTestTarget,
+      validationTarget: FrameworkNxTestTarget,
     })
     expect(publicTargets.map((target) => target.kind)).toEqual(["check", "repair", "proof", "report"])
     expect(Schema.decodeUnknownSync(FrameworkNxRecipePublicTargetSchema)(publicTargets[0])).toMatchObject({
-      recipeId: "workspace.policy-fast",
+      recipeId: "framework-nx.recipe-public-targets",
       kind: "check",
-      target: "workspace:policy-fast",
-      command: "nx run workspace:policy-fast",
+      target: "framework-nx:test",
+      command: "nx run framework-nx:test",
     })
     expect(publicTargets[0]?.targetConfiguration).toMatchObject({
-      executor: "@attune/nx:toolchain",
+      executor: "nx:run-commands",
       metadata: {
         attune: {
           surface: "check",
-          recipeId: "workspace.policy-fast",
+          recipeId: "framework-nx.recipe-public-targets",
         },
       },
       options: {
-        tool: "workspace",
-        action: "check",
-        toolId: "nx-targets",
-        parameters: {
-          targets: ["workspace:policy-fast"],
-        },
+        command: "pnpm exec nx run framework-nx:test",
       },
     })
     expect(Schema.decodeUnknownSync(AttuneRepairPlanSchema)(
       repairPlanFromRecipeRepair(recipe, repair),
     )).toMatchObject({
-      diagnosticId: "recipe-repair:workspace.policy-fast:planned",
-      target: "workspace:policy-fast",
-      command: "nx run workspace:policy-fast",
-      route: "recipe:workspace.policy-fast",
+      diagnosticId: "recipe-repair:framework-nx.recipe-public-targets:planned",
+      target: "framework-nx:test",
+      command: "nx run framework-nx:test",
+      route: "recipe:framework-nx.recipe-public-targets",
       repairKind: "nx-target",
       changes: [{
-        path: "packages/trellis/nx/**",
+        path: "packages/trellis/nx/src/index.ts",
         kind: "update",
         generated: false,
       }],
-      validateAfter: ["workspace:policy-fast"],
+      validateAfter: ["framework-nx:test"],
     })
   })
 
   it("projects recipe diagnostics into recipe-backed repair plans", () => {
-    const recipe = defineRecipe({
-      id: "attune-nx.generator-shapes",
-      projectId: "attune-nx",
-      inputSchema: Schema.Struct({}),
-      outputSchema: Schema.Struct({ ok: Schema.Boolean }),
-      nxTarget: "attune-nx:repair",
-      sourcePath: "packages/attune/nx/src/attune.package.ts",
-      allowedFiles: ["packages/attune/nx/src/**"],
-      validationEvidence: ["attune-nx:check", "attune-nx:typecheck"],
-    })
+    const recipe = FrameworkNxRecipeRepairPlanRecipe
     const diagnostic: RecipeDiagnostic = {
-      diagnosticId: "diagnostic:attune-nx:recipe-stale",
+      diagnosticId: "diagnostic:framework-nx:recipe-stale",
       recipeId: recipe.id,
       code: "attune/recipe/stale",
       severity: "warning",
       message: "Recipe output is stale.",
-      sourcePath: "packages/attune/nx/src/attune.package.ts",
+      sourcePath: recipe.sourcePath ?? "packages/trellis/nx/src/index.ts",
     }
 
     expect(repairPlansFromRecipeDiagnostic(recipe, diagnostic)).toEqual([
       expect.objectContaining({
         diagnosticId: diagnostic.diagnosticId,
         safety: "safe",
-        target: "attune-nx:repair",
-        route: "recipe:attune-nx.generator-shapes",
+        target: "framework-nx:test",
+        route: "recipe:framework-nx.recipe-repair-plan",
         repairKind: "nx-target",
-        validateAfter: ["attune-nx:check", "attune-nx:typecheck"],
+        validateAfter: ["framework-nx:test"],
       }),
     ])
   })

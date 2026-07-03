@@ -1,5 +1,13 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
+import {
+  defineAlchemyResource,
+  defineInvocationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  type RecipeInvocation,
+} from "@attune/framework-protocol"
+import { Context, Effect, Layer, Schema } from "effect"
 import type {
   ExtensionAPI,
   ExtensionCommandContext,
@@ -9,6 +17,7 @@ import type {
 
 export const ATTUNE_SPEC_COMMAND = "attune-spec"
 
+const orientationCommandRecipeId = "attune-pi-agent.orientation-command"
 const orientationWidgetKey = "attune-orientation"
 const attuneGuideSentinel = "Attune Codex Agent Guide"
 const requiredOrientationDocs = [
@@ -24,6 +33,46 @@ const requiredOrientationDocs = [
 const optionalOrientationDocs = [
   "packages/attune/pi-agent/docs/spec-falsification-evidence-loop.md",
 ] as const
+
+export const AttunePiOrientationInput = Schema.Struct({
+  cwd: Schema.String,
+  source: Schema.String,
+  userPrompt: Schema.optional(Schema.String),
+})
+export type AttunePiOrientationInput = typeof AttunePiOrientationInput.Type
+
+export const AttunePiOrientationOutput = Schema.Struct({
+  attuneRoot: Schema.NullOr(Schema.String),
+  queued: Schema.Boolean,
+  prompt: Schema.optional(Schema.String),
+})
+export type AttunePiOrientationOutput = typeof AttunePiOrientationOutput.Type
+
+export interface AttunePiOrientationService {
+  readonly orient: (
+    input: AttunePiOrientationInput,
+  ) => Effect.Effect<AttunePiOrientationOutput>
+}
+
+export class AttunePiOrientationServices extends Context.Service<
+  AttunePiOrientationServices,
+  AttunePiOrientationService
+>()("attune-pi-agent/OrientationServices") {}
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiOrientationWorkflowResource = defineAlchemyResource({
+  id: "attune-pi-agent.orientation-command.workflow-target",
+  kind: "workflow-target",
+  alchemyType: "attune:resource:WorkflowTarget",
+  ownerRecipeId: orientationCommandRecipeId,
+  consumedBy: [orientationCommandRecipeId],
+  producedBy: [orientationCommandRecipeId],
+  addressFields: ["cwd", "source"],
+  addressSchema: AttunePiOrientationInput,
+  stateSchema: AttunePiOrientationOutput,
+  modes: ["invoke", "project", "observe"],
+  programmaticResourceExport: "AttunePiOrientationServices",
+})
 
 export default function attunePiAgentExtension(pi: ExtensionAPI): void {
   const orientedSessionIds = new Set<string>()
@@ -83,6 +132,42 @@ export const runAttuneSpecCommand = async (
     userPrompt: args.trim(),
   })
 }
+
+export const orientAttuneSession = (
+  input: AttunePiOrientationInput,
+): AttunePiOrientationOutput => {
+  const attuneRoot = findAttuneRoot(input.cwd)
+
+  if (attuneRoot === undefined) {
+    return {
+      attuneRoot: null,
+      queued: false,
+    }
+  }
+
+  return {
+    attuneRoot,
+    queued: true,
+    prompt: formatAttuneOrientationPrompt(attuneRoot, {
+      source: input.source,
+      ...(input.userPrompt === undefined ? {} : { userPrompt: input.userPrompt }),
+    }),
+  }
+}
+
+export const attunePiOrientationInvocation = (
+  input: AttunePiOrientationInput,
+): RecipeInvocation => ({
+  recipeId: orientationCommandRecipeId,
+  action: "report",
+  input,
+  source: {
+    surface: "cli",
+    projectId: "attune-pi-agent",
+    target: "/attune-spec",
+    cwd: input.cwd,
+  },
+})
 
 export const findAttuneRoot = (cwd: string): string | undefined => {
   let current = path.resolve(cwd)
@@ -264,3 +349,64 @@ const readTextFile = (filePath: string): string => {
     return ""
   }
 }
+
+export const AttunePiOrientationLive = Layer.succeed(AttunePiOrientationServices, {
+  orient: (input) => Effect.sync(() => orientAttuneSession(input)),
+})
+
+export const AttunePiOrientationLayer = defineRecipeLayer({
+  id: "attune-pi-agent.orientation-command.layer",
+  sourcePath: "packages/attune/pi-agent/src/pi-extension.ts",
+  exportName: "AttunePiOrientationLive",
+  layer: AttunePiOrientationLive,
+  provides: [{
+    id: "attune-pi-agent.orientation-command.services",
+    service: AttunePiOrientationServices,
+  }],
+})
+
+export const AttunePiOrientationCommandRecipe = defineInvocationRecipe({
+  id: "attune-pi-agent.orientation-command",
+  projectId: "attune-pi-agent",
+  title: "Queue Attune Pi orientation guardrails as a recipe invocation",
+  inputSchema: AttunePiOrientationInput,
+  outputSchema: AttunePiOrientationOutput,
+  nxTarget: "attune-pi-agent:test",
+  entrypoints: ["packages/attune/pi-agent/src/pi-extension.ts"],
+  allowedFiles: [
+    "packages/attune/pi-agent/src/pi-extension.ts",
+    "AGENTS.md",
+    "docs/platform/codex-cloud-environment.md",
+    "docs/platform/autonomous-codex-workstation.md",
+    "docs/attuned/**",
+  ],
+  validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:typecheck"],
+  io: {
+    inputSchema: AttunePiOrientationInput,
+    outputSchema: AttunePiOrientationOutput,
+    inputResources: [AttunePiOrientationWorkflowResource],
+    outputResources: [AttunePiOrientationWorkflowResource],
+  },
+  handler: defineRecipeHandler<
+    AttunePiOrientationInput,
+    AttunePiOrientationOutput,
+    never,
+    AttunePiOrientationServices
+  >({
+    id: "attune-pi-agent.orientation-command.handler",
+    recipeId: orientationCommandRecipeId,
+    sourcePath: "packages/attune/pi-agent/src/pi-extension.ts",
+    exportName: "orientAttuneSession",
+    layer: AttunePiOrientationLayer,
+    emitsReceipts: ["attune-pi-agent.orientation.queued"],
+    handler: (input) =>
+      Effect.gen(function* orientPiSession() {
+        const services = yield* AttunePiOrientationServices
+        return yield* services.orient(input)
+      }),
+  }),
+})
+
+export const AttunePiExtensionRecipes = [
+  AttunePiOrientationCommandRecipe,
+] as const

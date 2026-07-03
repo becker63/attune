@@ -1,6 +1,7 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler, defineRecipeLayer } from "@attune/framework-protocol"
 import { mkdir, writeFile } from "node:fs/promises"
 import { join } from "node:path"
-import { Effect } from "effect"
+import { Effect, Layer, Schema } from "effect"
 import { format } from "prettier"
 import { CodeBlockWriter, Project, QuoteKind } from "ts-morph"
 import type { NormalizedProperty, NormalizedSchema } from "./types.js"
@@ -406,3 +407,92 @@ export const emitGenerated = (
       ),
     )
   })
+
+const JoernEffectPureCodegenEmitGeneratedLocalRecipeId = "joern-effect.pure.codegen.emit-generated" as const
+const JoernEffectPureCodegenEmitGeneratedLocalResourceId = "joern-effect.pure.codegen.emit-generated.resource" as const
+const JoernEffectPureCodegenEmitGeneratedLocalHandlerId = "joern-effect.pure.codegen.emit-generated.handler" as const
+const JoernEffectPureCodegenEmitGeneratedLocalLayerId = "joern-effect.pure.codegen.emit-generated.layer" as const
+const JoernEffectPureCodegenEmitGeneratedLocalSourcePath = "packages/attune/joern-effect/src/pure/codegen/emitGenerated.ts" as const
+const JoernEffectPureCodegenEmitGeneratedLocalSourceSurfaceRecipeId = "joern-effect.source-surface" as const
+
+export const JoernEffectPureCodegenEmitGeneratedLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPureCodegenEmitGeneratedLocalSourcePath),
+})
+export type JoernEffectPureCodegenEmitGeneratedLocalRecipeInput = typeof JoernEffectPureCodegenEmitGeneratedLocalRecipeInput.Type
+
+export const JoernEffectPureCodegenEmitGeneratedLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPureCodegenEmitGeneratedLocalSourcePath),
+})
+export type JoernEffectPureCodegenEmitGeneratedLocalRecipeOutput = typeof JoernEffectPureCodegenEmitGeneratedLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPureCodegenEmitGeneratedLocalResource = defineAlchemyResource({
+  id: JoernEffectPureCodegenEmitGeneratedLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPureCodegenEmitGeneratedLocalRecipeId,
+  producedBy: [JoernEffectPureCodegenEmitGeneratedLocalRecipeId],
+  consumedBy: [JoernEffectPureCodegenEmitGeneratedLocalRecipeId, JoernEffectPureCodegenEmitGeneratedLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPureCodegenEmitGeneratedLocalRecipeInput as never,
+  stateSchema: JoernEffectPureCodegenEmitGeneratedLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPureCodegenEmitGeneratedLocalLayer = defineRecipeLayer({
+  id: JoernEffectPureCodegenEmitGeneratedLocalLayerId,
+  sourcePath: JoernEffectPureCodegenEmitGeneratedLocalSourcePath,
+  exportName: "JoernEffectPureCodegenEmitGeneratedLocalLayer",
+  layer: Layer.empty as never,
+  provides: [{
+    id: "filesystem",
+    service: "Effect.Platform.FileSystem",
+  }],
+})
+
+export const JoernEffectPureCodegenEmitGeneratedLocalHandler = defineRecipeHandler<
+  JoernEffectPureCodegenEmitGeneratedLocalRecipeInput,
+  JoernEffectPureCodegenEmitGeneratedLocalRecipeOutput
+>({
+  id: JoernEffectPureCodegenEmitGeneratedLocalHandlerId,
+  recipeId: JoernEffectPureCodegenEmitGeneratedLocalRecipeId,
+  sourcePath: JoernEffectPureCodegenEmitGeneratedLocalSourcePath,
+  exportName: "JoernEffectPureCodegenEmitGeneratedLocalRecipes",
+  layer: JoernEffectPureCodegenEmitGeneratedLocalLayer,
+  emitsReceipts: ["joern-effect.pure.codegen.emit-generated.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPureCodegenEmitGeneratedLocalRecipe = defineRecipe({
+  id: JoernEffectPureCodegenEmitGeneratedLocalRecipeId,
+  projectId: "joern-effect",
+  title: "Express src/pure/codegen/emitGenerated.ts as a file-local recipe",
+  inputSchema: JoernEffectPureCodegenEmitGeneratedLocalRecipeInput as never,
+  outputSchema: JoernEffectPureCodegenEmitGeneratedLocalRecipeOutput as never,
+  nxTarget: "joern-effect:typecheck",
+  allowedFiles: [JoernEffectPureCodegenEmitGeneratedLocalSourcePath],
+  validationEvidence: ["joern-effect:typecheck"],
+  io: {
+    inputSchema: JoernEffectPureCodegenEmitGeneratedLocalRecipeInput as never,
+    outputSchema: JoernEffectPureCodegenEmitGeneratedLocalRecipeOutput as never,
+    inputResources: [JoernEffectPureCodegenEmitGeneratedLocalResource],
+    outputResources: [JoernEffectPureCodegenEmitGeneratedLocalResource],
+  },
+  handler: JoernEffectPureCodegenEmitGeneratedLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPureCodegenEmitGeneratedLocalRecipeId,
+      toRecipeId: JoernEffectPureCodegenEmitGeneratedLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPureCodegenEmitGeneratedLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPureCodegenEmitGeneratedLocalRecipes = [JoernEffectPureCodegenEmitGeneratedLocalRecipe] as const

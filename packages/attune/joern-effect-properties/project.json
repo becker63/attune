@@ -4,185 +4,136 @@
   "sourceRoot": "packages/attune/joern-effect-properties/src",
   "targets": {
     "build": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "outputs": [
         "{projectRoot}/dist"
       ],
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "typescript",
-        "action": "build",
-        "toolId": "tsc",
-        "parameters": {
-          "tsconfig": "tsconfig.json"
-        },
-        "dryRun": false
+        "command": "cd packages/attune/joern-effect-properties && pnpm exec tsc -p tsconfig.json"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "build",
+          "action": "build",
+          "recipeId": "joern-effect-properties.build",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "typecheck": {
-      "executor": "@attune/nx:package-check",
+      "executor": "nx:run-commands",
       "options": {
-        "targetProject": "joern-effect-properties",
-        "checks": [
-          "typecheck"
-        ],
-        "dryRun": false
+        "command": "cd packages/attune/joern-effect-properties && pnpm exec tsgo --noEmit"
+      },
+      "metadata": {
+        "attune": {
+          "tier": "public",
+          "surface": "typecheck",
+          "action": "typecheck",
+          "recipeId": "joern-effect-properties.typecheck",
+          "projectionId": "framework.projection.nx-target"
+        }
       }
     },
     "test": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "worker-fuzz",
-        "action": "test",
-        "toolId": "property-vitest",
-        "parameters": {
-          "nixDevShell": true,
-          "recipeId": "joern-effect-properties.property-validation-worker"
-        },
-        "resourceTier": "standard",
-        "timeoutSeconds": 240,
-        "workerBudget": {
-          "maxWorkers": 1,
-          "shardCount": 1,
-          "shardIndex": 0,
-          "seedRange": {
-            "start": 1,
-            "end": 1000
-          }
-        },
-        "evidenceOutputs": [
-          ".attune/cache/property-evidence/joern-effect-properties"
-        ],
-        "dryRun": false
+        "command": "cd packages/attune/joern-effect-properties && ATTUNE_RECIPE_ID=joern-effect-properties.property-validation-worker nix develop --command pnpm exec tsx src/fuzz/cli/PropertyVitestCli.ts"
       },
       "metadata": {
         "attune": {
           "worker": {
             "isolationLevel": "file",
             "randomSource": "main-thread"
-          }
+          },
+          "tier": "public",
+          "surface": "test",
+          "action": "test",
+          "recipeId": "joern-effect-properties.test",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "attune:repair-symbol-registry": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for symbol registry. Public agents should prefer joern-effect-properties:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "symbol-registry",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-symbol-registry",
+          "recipeId": "joern-effect-properties.attune.repair-symbol-registry",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "joern-effect-properties",
-          "kind": "symbol-registry"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/joern-effect-properties/attune-symbol-registry.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project joern-effect-properties --kind symbol-registry --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/attune-symbol-registry.ts"
       ]
     },
     "attune:repair-property-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for property observations. Public agents should prefer joern-effect-properties:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "property-observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-property-observations",
+          "recipeId": "joern-effect-properties.attune.repair-property-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "joern-effect-properties",
-          "kind": "property-observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/joern-effect-properties/attune-property-observations.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project joern-effect-properties --kind property-observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/attune-property-observations.ts"
       ]
     },
     "attune:repair-schema-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for schema observations. Public agents should prefer joern-effect-properties:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "schema-observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-schema-observations",
+          "recipeId": "joern-effect-properties.attune.repair-schema-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "joern-effect-properties",
-          "kind": "schema-observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/joern-effect-properties/attune-schema-observations.ts"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project joern-effect-properties --kind schema-observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/attune-schema-observations.ts"
       ]
     },
     "attune:repair-observations": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for observation scaffold. Public agents should prefer joern-effect-properties:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "observations",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-observations",
+          "recipeId": "joern-effect-properties.attune.repair-observations",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "joern-effect-properties",
-          "kind": "observations"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/joern-effect-properties/attune-observation-scaffold.ts"
-        ],
-        "evidenceOutputs": [
-          ".attune/cache/observations/joern-effect-properties/observation-scaffold.json"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project joern-effect-properties --kind observations --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/attune-observation-scaffold.ts",
@@ -190,110 +141,70 @@
       ]
     },
     "attune:repair-artifact-freshness": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Internal Attune Framework repair for artifact freshness. Public agents should prefer joern-effect-properties:repair unless a diagnostic names this target.",
         "attune": {
           "tier": "internal",
           "surface": "repair",
           "repairKind": "artifact-freshness",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair-artifact-freshness",
+          "recipeId": "joern-effect-properties.attune.repair-artifact-freshness",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "architecture",
-        "action": "generate",
-        "toolId": "recipe-repair",
-        "parameters": {
-          "allSafe": true,
-          "project": "joern-effect-properties",
-          "kind": "artifact-freshness"
-        },
-        "dryRun": false,
-        "outputs": [
-          ".attune/cache/generated/joern-effect-properties/artifact-freshness.json"
-        ]
+        "command": "pnpm exec tsx packages/trellis/architecture/src/recipe-repair-cli.ts --project joern-effect-properties --kind artifact-freshness --all-safe"
       },
       "outputs": [
         "{workspaceRoot}/.attune/cache/generated/joern-effect-properties/artifact-freshness.json"
       ]
     },
     "check": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Public Attune Framework project check surface. Runs workspace diagnostics through the stable check verb.",
         "attune": {
           "tier": "public",
-          "surface": "check"
+          "surface": "check",
+          "action": "check",
+          "recipeId": "joern-effect-properties.check",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "workspace:recipe-substrate-check"
-          ]
-        },
-        "dryRun": false
+        "command": "pnpm exec nx run workspace:recipe-substrate-check"
       }
     },
     "repair": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "metadata": {
         "description": "Public Attune Framework project repair surface. Applies safe deterministic repairs through the stable repair verb when available.",
         "attune": {
           "tier": "public",
           "surface": "repair",
-          "safeOnly": true
+          "safeOnly": true,
+          "action": "repair",
+          "recipeId": "joern-effect-properties.repair",
+          "projectionId": "framework.projection.nx-target"
         }
       },
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "workspace",
-        "action": "check",
-        "toolId": "nx-targets",
-        "parameters": {
-          "targets": [
-            "joern-effect-properties:attune:repair-symbol-registry",
-            "joern-effect-properties:attune:repair-property-observations",
-            "joern-effect-properties:attune:repair-schema-observations",
-            "joern-effect-properties:attune:repair-observations",
-            "joern-effect-properties:attune:repair-artifact-freshness"
-          ]
-        },
-        "dryRun": false
+        "commands": [
+          "pnpm exec nx run joern-effect-properties:attune:repair-symbol-registry",
+          "pnpm exec nx run joern-effect-properties:attune:repair-property-observations",
+          "pnpm exec nx run joern-effect-properties:attune:repair-schema-observations",
+          "pnpm exec nx run joern-effect-properties:attune:repair-observations",
+          "pnpm exec nx run joern-effect-properties:attune:repair-artifact-freshness"
+        ],
+        "parallel": false
       }
     },
     "proof": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "worker-fuzz",
-        "action": "test",
-        "toolId": "property-vitest",
-        "parameters": {
-          "nixDevShell": true,
-          "recipeId": "joern-effect-properties.property-validation-worker"
-        },
-        "resourceTier": "standard",
-        "timeoutSeconds": 240,
-        "workerBudget": {
-          "maxWorkers": 1,
-          "shardCount": 1,
-          "shardIndex": 0,
-          "seedRange": {
-            "start": 1,
-            "end": 1000
-          }
-        },
-        "evidenceOutputs": [
-          ".attune/cache/property-evidence/joern-effect-properties"
-        ],
-        "dryRun": false
+        "command": "cd packages/attune/joern-effect-properties && ATTUNE_RECIPE_ID=joern-effect-properties.property-validation-worker nix develop --command pnpm exec tsx src/fuzz/cli/PropertyVitestCli.ts"
       },
       "metadata": {
         "attune": {
@@ -302,46 +213,39 @@
             "randomSource": "main-thread"
           },
           "tier": "public",
-          "surface": "proof"
+          "surface": "proof",
+          "action": "proof",
+          "recipeId": "joern-effect-properties.proof",
+          "projectionId": "framework.projection.nx-target"
         }
       }
     },
     "fuzz": {
-      "executor": "@attune/nx:toolchain",
+      "executor": "nx:run-commands",
       "options": {
-        "targetProject": "joern-effect-properties",
-        "tool": "worker-fuzz",
-        "action": "fuzz",
-        "toolId": "fuzzer:smoke",
-        "parameters": {
-          "preset": "smoke",
-          "nixDevShell": true,
-          "recipeId": "joern-effect-properties.worker-fuzzer"
-        },
-        "resourceTier": "standard",
-        "timeoutSeconds": 120,
-        "workerBudget": {
-          "maxWorkers": 1,
-          "shardCount": 1,
-          "shardIndex": 0,
-          "seedRange": {
-            "start": 1,
-            "end": 1000
-          }
-        },
-        "evidenceOutputs": [
-          ".attune/cache/property-evidence/joern-effect-properties/fuzz-smoke.json"
-        ],
-        "dryRun": false
+        "command": "cd packages/attune/joern-effect-properties && ATTUNE_RECIPE_ID=joern-effect-properties.worker-fuzzer nix develop --command pnpm exec tsx src/fuzz/cli/FuzzerCli.ts --preset smoke"
       },
       "metadata": {
         "attune": {
           "worker": {
             "isolationLevel": "file",
-            "randomSource": "main-thread"
+            "randomSource": "main-thread",
+            "workers": 1,
+            "timeoutSeconds": 120,
+            "seedRange": "smoke",
+            "shard": {
+              "id": 0,
+              "count": 1
+            },
+            "shardId": 0,
+            "shardCount": 1,
+            "shardIndex": 0
           },
           "tier": "public",
-          "surface": "fuzz"
+          "surface": "fuzz",
+          "action": "fuzz",
+          "recipeId": "joern-effect-properties.fuzz",
+          "projectionId": "framework.projection.nx-target"
         },
         "description": "Recipe-backed smoke fuzzer surface; longer campaigns are recipe parameters, not public Nx aliases."
       }

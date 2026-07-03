@@ -57,7 +57,7 @@ describe("attuned discovery", () => {
       "attuned-discovery.report",
     ])
     expect(AttuneDiscoveryRecipes.at(-1)?.outputSchema).toBe(WorkbenchSnapshot)
-    expect(AttuneDiscoveryRecipes.at(-1)?.sourcePath).toBe("packages/attune/discovery/src/recipes.ts")
+    expect(AttuneDiscoveryRecipes.at(-1)?.sourcePath).toBe("packages/attune/discovery/src/index.ts")
     expect(AttuneDiscoveryRecipes.at(-1)?.dependencies).toEqual([
       { recipeId: "attuned-discovery.deterministic-rule" },
     ])

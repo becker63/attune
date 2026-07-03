@@ -1,5 +1,9 @@
-import { Schema } from "effect"
-import { defineRecipe } from "@attune/framework-protocol"
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 import {
   TendCommandObservationSchema,
   TendMagicContextDecisionSchema,
@@ -12,6 +16,13 @@ import {
   type TendToolCall,
   type TendValidationObservation,
 } from "@attune/tend-core"
+
+export const TendTokenAuditTypecheckValidationTargets = ["tend-token-audit:typecheck"] as const
+export const TendTokenAuditMetricsRecipeId = "tend-token-audit.metrics" as const
+export const TendTokenAuditCompressionRecipeId = "tend-token-audit.compression" as const
+export const TendTokenAuditTestSuiteRecipeId = "tend-token-audit.test-suite" as const
+const tendTokenAuditMetricsHandlerId = "tend-token-audit.metrics.handler" as const
+const tendTokenAuditCompressionHandlerId = "tend-token-audit.compression.handler" as const
 
 export const TendTokenMetricsSchema = Schema.Struct({
   tokensPerAcceptedRepair: Schema.Number,
@@ -65,19 +76,133 @@ export const computeTendTokenMetrics = (
   }
 }
 
-export const TendTokenAuditRecipes = [
-  defineRecipe({
-    id: "tend-token-audit.metrics",
-    projectId: "tend-token-audit",
-    title: "Compute Tend token and compression metrics",
-    inputSchema: TendTokenAuditInputSchema,
-    outputSchema: TendTokenMetricsSchema,
-    nxTarget: "tend-token-audit:test",
-    sourcePath: "packages/tend/token-audit/src/index.ts",
-    allowedFiles: ["packages/tend/token-audit/**"],
-    validationEvidence: ["tend-token-audit:test", "tend-token-audit:typecheck"],
-  }),
-] as const
 
 const ratio = (numerator: number, denominator: number): number =>
   denominator === 0 ? 0 : numerator / denominator
+
+export const TendTokenAuditAddress = Schema.Struct({
+  packageRoot: Schema.Literal("packages/tend/token-audit"),
+  recipeId: Schema.String,
+})
+export type TendTokenAuditAddress = typeof TendTokenAuditAddress.Type
+
+export const TendTokenAuditTestReport = Schema.Struct({
+  recipeId: Schema.String,
+  receiptLinked: Schema.Boolean,
+})
+export type TendTokenAuditTestReport = typeof TendTokenAuditTestReport.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendTokenAuditPackageResource = defineAlchemyResource({
+  id: "tend-token-audit.package-root",
+  kind: "directory",
+  alchemyType: "attune:resource:Directory",
+  consumedBy: [
+    TendTokenAuditMetricsRecipeId,
+    TendTokenAuditCompressionRecipeId,
+    TendTokenAuditTestSuiteRecipeId,
+  ],
+  addressSchema: TendTokenAuditAddress,
+  stateSchema: Schema.Struct({
+    sourceRoot: Schema.Literal("packages/tend/token-audit/src"),
+    packageId: Schema.Literal("tend-token-audit"),
+  }),
+  modes: ["read"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendTokenAuditEventBundleResource = defineAlchemyResource({
+  id: "tend-token-audit.event-bundle",
+  kind: "observation-stream",
+  alchemyType: "attune:resource:ObservationStream",
+  consumedBy: [TendTokenAuditMetricsRecipeId, TendTokenAuditCompressionRecipeId],
+  addressSchema: TendTokenAuditAddress,
+  stateSchema: TendTokenAuditInputSchema,
+  modes: ["read", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendTokenMetricsResource = defineAlchemyResource({
+  id: "tend-token-audit.metrics-report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  producedBy: [TendTokenAuditMetricsRecipeId, TendTokenAuditCompressionRecipeId],
+  addressSchema: TendTokenAuditAddress,
+  stateSchema: TendTokenMetricsSchema,
+  modes: ["project", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const TendTokenAuditTestReportResource = defineAlchemyResource({
+  id: "tend-token-audit.test-report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  producedBy: [TendTokenAuditTestSuiteRecipeId],
+  addressSchema: TendTokenAuditAddress,
+  stateSchema: TendTokenAuditTestReport,
+  modes: ["check", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const tendTokenAuditMetricsRecipe = defineProjectionRecipe({
+  id: TendTokenAuditMetricsRecipeId,
+  title: "Summarize Tend token metrics with recipe receipt linkage",
+  inputSchema: TendTokenAuditInputSchema,
+  outputSchema: TendTokenMetricsSchema,
+  allowedFiles: [
+    "packages/tend/token-audit/src/index.ts",
+    "packages/tend/token-audit/vitest.config.ts",
+  ],
+  validationEvidence: ["tend-token-audit:typecheck"],
+  io: {
+    inputSchema: TendTokenAuditInputSchema,
+    outputSchema: TendTokenMetricsSchema,
+    inputResources: [TendTokenAuditEventBundleResource],
+    outputResources: [TendTokenMetricsResource],
+  },
+  handler: defineRecipeHandler<typeof TendTokenAuditInputSchema.Type, typeof TendTokenMetricsSchema.Type>({
+    id: tendTokenAuditMetricsHandlerId,
+    recipeId: TendTokenAuditMetricsRecipeId,
+    sourcePath: "packages/tend/token-audit/src/index.ts",
+    exportName: "computeTendTokenMetrics",
+    handler: (input) => Effect.succeed(computeTendTokenMetrics(input)),
+    emitsReceipts: ["tend-token-audit.metrics-report"],
+  }),
+  alchemyDag: [{
+    fromRecipeId: TendTokenAuditMetricsRecipeId,
+    toRecipeId: TendTokenAuditCompressionRecipeId,
+    resource: TendTokenMetricsResource,
+    kind: "projects",
+    modes: ["project", "observe"],
+    validationTargets: TendTokenAuditTypecheckValidationTargets,
+  }],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const tendTokenAuditCompressionRecipe = defineProjectionRecipe({
+  id: TendTokenAuditCompressionRecipeId,
+  title: "Project Tend compression metrics from receipt-linked token audits",
+  inputSchema: TendTokenAuditInputSchema,
+  outputSchema: TendTokenMetricsSchema,
+  allowedFiles: ["packages/tend/token-audit/src/index.ts"],
+  validationEvidence: ["tend-token-audit:typecheck"],
+  io: {
+    inputSchema: TendTokenAuditInputSchema,
+    outputSchema: TendTokenMetricsSchema,
+    inputResources: [TendTokenAuditEventBundleResource],
+    outputResources: [TendTokenMetricsResource],
+  },
+  handler: defineRecipeHandler<typeof TendTokenAuditInputSchema.Type, typeof TendTokenMetricsSchema.Type>({
+    id: tendTokenAuditCompressionHandlerId,
+    recipeId: TendTokenAuditCompressionRecipeId,
+    sourcePath: "packages/tend/token-audit/src/index.ts",
+    exportName: "computeTendTokenMetrics",
+    handler: (input) => Effect.succeed(computeTendTokenMetrics(input)),
+    emitsReceipts: ["tend-token-audit.compression-report"],
+  }),
+})
+
+export const TendTokenAuditProductionRecipes = [
+  tendTokenAuditMetricsRecipe,
+  tendTokenAuditCompressionRecipe,
+] as const

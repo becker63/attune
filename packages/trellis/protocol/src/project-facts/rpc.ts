@@ -1,14 +1,20 @@
-import { Schema } from "effect"
+import { Effect, Schema } from "effect"
 
-import type {
-  AttunePackageContract,
-  AttuneOperationContract,
-  InputOf,
-  OperationById,
-  OperationIds,
-  OutputOf,
-  PackageIdOf,
+import {
+  PackageContractSchema,
+  type DecodedPackageContract,
+  type AttunePackageContract,
+  type AttuneOperationContract,
+  type InputOf,
+  type OperationById,
+  type OperationIds,
+  type OutputOf,
+  type PackageIdOf,
 } from "./core.js"
+import type {
+  AnyRecipeDefinition,
+  FrameworkProtocolRecipeHelpers,
+} from "../recipes/index.js"
 
 export const ProgramObservationRpcControlIds = [
   "reset",
@@ -321,4 +327,83 @@ const controlRpcDescriptor = (
     }),
   }
   return Schema.decodeUnknownSync(RpcDescriptorSchema)(descriptor)
+}
+
+export const ProjectFactsRpcRecipeInput = Schema.Struct({
+  sourcePath: Schema.String,
+  contract: PackageContractSchema,
+})
+export type ProjectFactsRpcRecipeInput = typeof ProjectFactsRpcRecipeInput.Type
+
+export const projectProgramObservationRpcGroup = (
+  input: ProjectFactsRpcRecipeInput,
+): ProgramObservationRpcGroupDescriptor => {
+  const contract = input.contract as DecodedPackageContract & AttunePackageContract
+  return Schema.decodeUnknownSync(ProgramObservationRpcGroupDescriptorSchema)(
+    defineProgramObservationRpcGroup(contract),
+  )
+}
+
+export const ProjectFactsRpcRecipes = (
+  helpers: FrameworkProtocolRecipeHelpers,
+): readonly AnyRecipeDefinition[] => {
+// @attune-packet-target generated-runtime-projection eligible
+  const RpcSource = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.rpc.source",
+    kind: "file",
+    alchemyType: "attune:resource:ProtocolSourceFile",
+    addressSchema: ProjectFactsRpcRecipeInput,
+    stateSchema: ProjectFactsRpcRecipeInput,
+    modes: ["read"],
+    consumedBy: ["framework-protocol.project-facts.rpc-descriptors"],
+  })
+// @attune-packet-target generated-runtime-projection eligible
+  const RpcDescriptorGroup = helpers.defineAlchemyResource({
+    id: "framework-protocol.project-facts.rpc.descriptor-group",
+    kind: "schema",
+    alchemyType: "attune:resource:ProgramObservationRpcGroup",
+    addressSchema: ProjectFactsRpcRecipeInput,
+    stateSchema: ProgramObservationRpcGroupDescriptorSchema,
+    modes: ["project", "read"],
+    ownerRecipeId: "framework-protocol.project-facts.rpc-descriptors",
+    producedBy: ["framework-protocol.project-facts.rpc-descriptors"],
+  })
+  const RpcHandler = helpers.defineRecipeHandler<ProjectFactsRpcRecipeInput, ProgramObservationRpcGroupDescriptor, never, never>({
+    id: "framework-protocol.project-facts.rpc-descriptors.handler",
+    recipeId: "framework-protocol.project-facts.rpc-descriptors",
+    sourcePath: "packages/trellis/protocol/src/project-facts/rpc.ts",
+    exportName: "projectProgramObservationRpcGroup",
+    emitsReceipts: ["project-facts.rpc-descriptor-group"],
+    handler: (input) => Effect.succeed(projectProgramObservationRpcGroup(input)),
+  })
+  const RpcDagEdge = helpers.defineAlchemyRecipeDagEdge({
+    fromRecipeId: "framework-protocol.project-facts.rpc.source",
+    toRecipeId: "framework-protocol.project-facts.rpc-descriptors",
+    resource: "framework-protocol.project-facts.rpc.descriptor-group",
+    kind: "projects",
+    modes: ["read", "project"],
+  })
+
+  return [
+// @attune-packet-target generated-runtime-projection eligible
+    helpers.defineProjectionRecipe({
+      id: "framework-protocol.project-facts.rpc-descriptors",
+      projectId: "framework-protocol",
+      title: "Project package contracts into program observation RPC descriptors",
+      inputSchema: ProjectFactsRpcRecipeInput,
+      outputSchema: ProgramObservationRpcGroupDescriptorSchema,
+      io: {
+        inputSchema: ProjectFactsRpcRecipeInput,
+        outputSchema: ProgramObservationRpcGroupDescriptorSchema,
+        inputResources: [RpcSource],
+        outputResources: [RpcDescriptorGroup],
+      },
+      handler: RpcHandler,
+      alchemyDag: [RpcDagEdge],
+      nxTarget: "framework-protocol:test",
+      outputs: ["ProgramObservationRpcGroupDescriptor"],
+      allowedFiles: ["packages/trellis/protocol/src/project-facts/rpc.ts"],
+      validationEvidence: ["framework-protocol:test", "framework-protocol:typecheck"],
+    }),
+  ] as const
 }

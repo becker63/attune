@@ -2,12 +2,55 @@ import { execFile } from "node:child_process"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import { promisify } from "node:util"
-import { Effect } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
+import {
+  defineAlchemyResource,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  defineToolchainRecipe,
+} from "@attune/framework-protocol"
 import { EnvVars, readEnv } from "../../edge/runtime/env.js"
 import { JoernSchemaExtractionError } from "../../edge/runtime/errors.js"
 import type { RawSchema } from "./types.js"
 
 const execFileAsync = promisify(execFile)
+const joernSchemaExtractionRecipeId = "joern-effect.codegen.extract-schema"
+const joernGeneratedSchemaModulesRecipeId = "joern-effect.codegen.schema-modules"
+const joernSchemaExtractionSourcePath = "packages/attune/joern-effect/src/pure/codegen/extractSchema.ts"
+
+export const JoernSchemaExtractionInputSchema = Schema.Struct({
+  defaultSchemaPath: Schema.optional(Schema.String),
+})
+export type JoernSchemaExtractionInput = typeof JoernSchemaExtractionInputSchema.Type
+
+export const RawJoernSchemaShape = Schema.Struct({
+  version: Schema.optional(Schema.String),
+  nodes: Schema.optional(Schema.Array(Schema.Unknown)),
+  nodeTypes: Schema.optional(Schema.Array(Schema.Unknown)),
+  properties: Schema.optional(Schema.Array(Schema.Unknown)),
+  edges: Schema.optional(Schema.Array(Schema.Unknown)),
+})
+
+export const JoernSchemaExtractionOutputSchema = Schema.Struct({
+  schema: RawJoernSchemaShape,
+})
+export type JoernSchemaExtractionOutput = typeof JoernSchemaExtractionOutputSchema.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernSchemaExtractionResource = defineAlchemyResource({
+  id: "joern-effect.codegen.extract-schema.resource",
+  kind: "schema",
+  alchemyType: "attune:resource:Schema",
+  ownerRecipeId: joernSchemaExtractionRecipeId,
+  producedBy: [joernSchemaExtractionRecipeId],
+  consumedBy: [joernSchemaExtractionRecipeId, joernGeneratedSchemaModulesRecipeId],
+  addressFields: ["defaultSchemaPath"],
+  addressSchema: JoernSchemaExtractionInputSchema as never,
+  stateSchema: JoernSchemaExtractionOutputSchema as never,
+  modes: ["read", "project", "check"],
+  programmaticResourceExport: "JoernSchemaExtractionLive",
+  programmaticBridgeSourcePath: joernSchemaExtractionSourcePath,
+})
 
 const parseRawSchema = (text: string): RawSchema => JSON.parse(text)
 
@@ -66,3 +109,85 @@ export const extractSchema = (
     }),
   )
 }
+
+export interface JoernSchemaExtractionService {
+  readonly extract: (
+    input: JoernSchemaExtractionInput,
+  ) => Effect.Effect<JoernSchemaExtractionOutput, JoernSchemaExtractionError>
+}
+
+export class JoernSchemaExtraction extends Context.Tag("joern-effect/SchemaExtraction")<
+  JoernSchemaExtraction,
+  JoernSchemaExtractionService
+>() {}
+
+export const extractJoernSchemaForRecipe = (
+  input: JoernSchemaExtractionInput,
+): Effect.Effect<JoernSchemaExtractionOutput, JoernSchemaExtractionError> =>
+  extractSchema(input.defaultSchemaPath).pipe(
+    Effect.map((schema) => ({ schema })),
+  )
+
+export const JoernSchemaExtractionLive = Layer.succeed(JoernSchemaExtraction, {
+  extract: extractJoernSchemaForRecipe,
+})
+
+export const JoernSchemaExtractionLayer = defineRecipeLayer({
+  id: "joern-effect.codegen.extract-schema.layer",
+  sourcePath: joernSchemaExtractionSourcePath,
+  exportName: "JoernSchemaExtractionLive",
+  layer: JoernSchemaExtractionLive as never,
+  provides: [{
+    id: "joern-effect.codegen.extract-schema.service",
+    service: JoernSchemaExtraction as never,
+  }],
+})
+
+export const extractJoernSchemaViaLayer = (
+  input: JoernSchemaExtractionInput,
+): Effect.Effect<JoernSchemaExtractionOutput, JoernSchemaExtractionError, JoernSchemaExtraction> =>
+  Effect.gen(function* extractJoernSchemaViaLayerBody() {
+    const extraction = yield* JoernSchemaExtraction
+    return yield* extraction.extract(input)
+  })
+
+export const JoernSchemaExtractionHandler = defineRecipeHandler<
+  JoernSchemaExtractionInput,
+  JoernSchemaExtractionOutput,
+  JoernSchemaExtractionError,
+  JoernSchemaExtraction
+>({
+  id: "joern-effect.codegen.extract-schema.handler",
+  recipeId: joernSchemaExtractionRecipeId,
+  sourcePath: joernSchemaExtractionSourcePath,
+  exportName: "extractJoernSchemaViaLayer",
+  layer: JoernSchemaExtractionLayer,
+  emitsReceipts: ["joern.codegen.schema.extracted"],
+  handler: (input) => extractJoernSchemaViaLayer(input) as never,
+})
+
+export const JoernSchemaExtractionRecipe = defineToolchainRecipe({
+  id: joernSchemaExtractionRecipeId,
+  projectId: "joern-effect",
+  title: "Extract Joern CPG schema from file or CodePropertyGraph toolchain",
+  inputSchema: JoernSchemaExtractionInputSchema as never,
+  outputSchema: JoernSchemaExtractionOutputSchema as never,
+  allowedFiles: [joernSchemaExtractionSourcePath],
+  validationEvidence: ["joern-effect:generate", "joern-effect:test"],
+  io: {
+    inputSchema: JoernSchemaExtractionInputSchema as never,
+    outputSchema: JoernSchemaExtractionOutputSchema as never,
+    inputResources: [JoernSchemaExtractionResource],
+    outputResources: [JoernSchemaExtractionResource],
+  },
+  handler: JoernSchemaExtractionHandler,
+  alchemyDag: [{
+    fromRecipeId: joernSchemaExtractionRecipeId,
+    toRecipeId: joernGeneratedSchemaModulesRecipeId,
+    resource: JoernSchemaExtractionResource,
+    kind: "projects",
+    modes: ["read", "project", "check"],
+  }],
+})
+
+export const JoernSchemaExtractionRecipes = [JoernSchemaExtractionRecipe] as const

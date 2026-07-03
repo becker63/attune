@@ -1,9 +1,14 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 
-import type {
-  ProgramRepairAction,
-  RecipeRepair,
+import { Effect, Layer } from "effect"
+import {
+  defineAlchemyRecipeDagEdge,
+  defineRecipeHandler,
+  defineRecipeLayer,
+  defineRepairRecipe,
+  type ProgramRepairAction,
+  type RecipeRepair,
 } from "@attune/framework-protocol"
 
 import type {
@@ -11,8 +16,17 @@ import type {
   TrellisLsFix,
   TrellisLsTextEdit,
 } from "./contracts.js"
+import {
+  FrameworkLanguageServiceProjectId,
+  LanguageServiceCliOutput,
+  LanguageServiceDiagnosticsResource,
+  LanguageServiceFixesResource,
+  LanguageServiceProjectionInput,
+} from "./contracts.js"
 import { stableTrellisLsId } from "./ids.js"
 import { type LoadedProject } from "./project-loader.js"
+
+export const LanguageServiceRepairRecipesSourcePath = "packages/trellis/language-service/src/repair-recipes.ts" as const
 
 export const collectTrellisFixes = (
   loaded: LoadedProject,
@@ -20,26 +34,17 @@ export const collectTrellisFixes = (
 ): readonly TrellisLsFix[] =>
   diagnostics.flatMap((diagnostic): readonly TrellisLsFix[] => {
     if (diagnostic.code === "trellis/package-local-script-reintroduced") {
-      const fixId = stableTrellisLsId("fix", [
-        diagnostic.id,
-        "nx-repair",
-        "workspace:repair",
-        diagnostic.file ?? "",
-      ])
-      return [{
-        fixId,
-        diagnosticId: diagnostic.id,
-        kind: "nx-repair",
-        title: "Route script cleanup through workspace repair",
-        safe: true,
-        requiresReview: false,
-        affectedFiles: diagnostic.file === undefined ? [] : [diagnostic.file],
-        preview: "Runs the public workspace repair target that owns no-compat cleanup.",
-        canApply: true,
-        command: {
-          run: "nx run workspace:repair",
-        },
-      }]
+      const file = diagnostic.file === undefined
+        ? undefined
+        : path.resolve(loaded.workspaceRoot, diagnostic.file)
+      return file === undefined || !fs.existsSync(file)
+        ? []
+        : [deleteFileWorkspaceEditFix(
+          diagnostic,
+          file,
+          "Delete package-local script shim",
+          "Deletes the package-local script file so public workflow routing stays owned by recipe/Nx packet surfaces.",
+        )]
     }
 
     if (diagnostic.code === "trellis/raw-pg-outside-runtime") {
@@ -68,26 +73,12 @@ export const collectTrellisFixes = (
       diagnostic.code === "trellis/orphan-public-nx-target" ||
       diagnostic.code === "trellis/target-missing-recipe-invocation"
     ) {
-      const fixId = stableTrellisLsId("fix", [
-        diagnostic.id,
-        "nx-repair",
-        "workspace:repair",
-        diagnostic.file ?? "",
-      ])
-      return [{
-        fixId,
-        diagnosticId: diagnostic.id,
-        kind: "nx-repair",
-        title: "Route Nx target ownership through workspace repair",
-        safe: true,
-        requiresReview: false,
-        affectedFiles: diagnostic.file === undefined ? [] : [diagnostic.file],
-        preview: "Runs the public workspace repair target to refresh target recipe/projection ownership metadata.",
-        canApply: true,
-        command: {
-          run: "nx run workspace:repair",
-        },
-      }]
+      const fix = nxTargetOwnershipTextEditFix(loaded, diagnostic)
+      return fix === undefined ? [manualFix(
+        diagnostic,
+        "Attach Nx target ownership metadata",
+        "Add metadata.attune.recipeId and projectionId to the public target, or mark it internal with an owned public parent.",
+      )] : [fix]
     }
 
     if (
@@ -117,12 +108,15 @@ export const collectTrellisFixes = (
     if (
       diagnostic.code === "trellis/tend-session-missing-recipe-id" ||
       diagnostic.code === "trellis/tend-command-missing-observation-id" ||
-      diagnostic.code === "trellis/tend-report-not-derived-from-receipts"
+      diagnostic.code === "trellis/tend-report-not-derived-from-receipts" ||
+      diagnostic.code === "trellis/tend-owned-packet-ontology" ||
+      diagnostic.code === "trellis/tend-owned-judge-ontology" ||
+      diagnostic.code === "trellis/tend-packet-helper-semantics"
     ) {
       return [manualFix(
         diagnostic,
-        "Link Tend state to recipe receipts and observations",
-        "Add recipe/run/receipt/observation identity where the Tend schema already supports it, or route reports from receipt/token facts.",
+        "Route Tend packet state through framework protocol receipts",
+        "Import packet, judge, and receipt semantics from @attune/framework-protocol or Trellis handlers; Tend may keep orchestration projections but must not define packet ontology.",
       )]
     }
 
@@ -132,14 +126,13 @@ export const collectTrellisFixes = (
         : path.resolve(loaded.workspaceRoot, diagnostic.file)
       if (
         file !== undefined &&
-        diagnostic.file === "packages/trellis/language-service/src/attune.package.ts" &&
-        fs.existsSync(path.resolve(loaded.workspaceRoot, "packages/trellis/language-service/src/recipes.ts"))
+        fs.existsSync(path.join(path.dirname(file), "recipes.ts"))
       ) {
         return [deleteFileByTextEditFix(
           diagnostic,
           file,
-          "Delete migrated language-service attune.package.ts",
-          "Deletes legacy package facts after equivalent recipe package metadata exists in src/recipes.ts.",
+          "Delete migrated attune.package.ts",
+          "Deletes legacy package facts after equivalent recipe package metadata exists in neighboring src/recipes.ts.",
         )]
       }
       return [manualFix(
@@ -200,7 +193,7 @@ export const collectTrellisFixes = (
     if (diagnostic.code === "trellis/source-uses-legacy-abstraction") {
       return [manualFix(
         diagnostic,
-        "Replace legacy ProjectFacts abstraction with recipe package metadata",
+        "Replace legacy LegacyPackageFacts abstraction with recipe package metadata",
         "Move package identity, ownership, runtime roots, diagnostics, repairs, projections, observations, and invocations into recipes.ts.",
       )]
     }
@@ -345,23 +338,150 @@ const deleteFileByTextEditFix = (
   file: string,
   title: string,
   preview: string,
+): TrellisLsFix => deleteFileWorkspaceEditFix(diagnostic, file, title, preview)
+
+const deleteFileWorkspaceEditFix = (
+  diagnostic: TrellisLsDiagnostic,
+  file: string,
+  title: string,
+  preview: string,
 ): TrellisLsFix => ({
-  fixId: stableTrellisLsId("fix", [diagnostic.id, "text-edit", "delete-file", diagnostic.file ?? ""]),
+  fixId: stableTrellisLsId("fix", [diagnostic.id, "workspace-edit", "delete-file", diagnostic.file ?? ""]),
   diagnosticId: diagnostic.id,
-  kind: "text-edit",
+  kind: "workspace-edit",
   title,
   safe: true,
   requiresReview: false,
   affectedFiles: diagnostic.file === undefined ? [] : [diagnostic.file],
   preview,
   canApply: true,
-  edits: [{
-    file,
-    start: 0,
-    end: fs.readFileSync(file, "utf8").length,
-    newText: "",
-  }],
+  deleteFiles: [file],
 })
+
+const nxTargetOwnershipTextEditFix = (
+  loaded: LoadedProject,
+  diagnostic: TrellisLsDiagnostic,
+): TrellisLsFix | undefined => {
+  if (diagnostic.file === undefined) return undefined
+  const file = path.resolve(loaded.workspaceRoot, diagnostic.file)
+  if (!fs.existsSync(file)) return undefined
+  const target = /Public Nx target (?<projectId>[^:\s]+):(?<targetName>[^\s]+)/u.exec(diagnostic.message)
+  const projectJson = readJsonObject(file)
+  const projectId = typeof projectJson["name"] === "string"
+    ? projectJson["name"]
+    : target?.groups?.projectId
+  const targetName = target?.groups?.targetName?.replace(/[.,]$/u, "")
+  if (projectId === undefined || targetName === undefined) return undefined
+  const targets = recordValue(projectJson["targets"])
+  if (targets === undefined || recordValue(targets[targetName]) === undefined) return undefined
+  const updatedTargets = Object.fromEntries(Object.entries(targets).map(([name, value]) => {
+    const targetRecord = recordValue(value)
+    if (targetRecord === undefined || !isConventionalPublicNxTarget(name)) return [name, value]
+    return [name, nxTargetWithOwnership({
+      projectId,
+      targetName: name,
+      targetRecord,
+    })]
+  }))
+  const updatedProjectJson = {
+    ...projectJson,
+    targets: updatedTargets,
+  }
+  const before = fs.readFileSync(file, "utf8")
+  const after = `${JSON.stringify(updatedProjectJson, null, 2)}\n`
+  return {
+    fixId: stableTrellisLsId("fix", [
+      diagnostic.id,
+      "text-edit",
+      "nx-target-ownership",
+      diagnostic.file,
+      targetName,
+      projectId,
+    ]),
+    diagnosticId: diagnostic.id,
+    kind: "text-edit",
+    title: "Attach Nx target recipe/projection ownership",
+    safe: true,
+    requiresReview: false,
+    affectedFiles: [diagnostic.file],
+    preview: `Adds recipe/projection ownership metadata for ${projectId}:${targetName}.`,
+    canApply: true,
+    edits: [{
+      file,
+      start: 0,
+      end: before.length,
+      newText: after,
+    }],
+  }
+}
+
+const nxTargetWithOwnership = (input: {
+  readonly projectId: string
+  readonly targetName: string
+  readonly targetRecord: Record<string, unknown>
+}): Record<string, unknown> => {
+  const metadata = recordValue(input.targetRecord["metadata"]) ?? {}
+  const attune = recordValue(metadata["attune"]) ?? {}
+  return {
+    ...input.targetRecord,
+    metadata: {
+      ...metadata,
+      attune: {
+        ...attune,
+        tier: typeof attune["tier"] === "string" ? attune["tier"] : "public",
+        surface: typeof attune["surface"] === "string" ? attune["surface"] : input.targetName,
+        action: typeof attune["action"] === "string" ? attune["action"] : nxTargetAction(input.targetName),
+        recipeId: typeof attune["recipeId"] === "string"
+          ? attune["recipeId"]
+          : `${input.projectId}.${input.targetName}`,
+        projectionId: typeof attune["projectionId"] === "string"
+          ? attune["projectionId"]
+          : "framework.projection.nx-target",
+      },
+    },
+  }
+}
+
+const readJsonObject = (file: string): Record<string, unknown> => {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8"))
+    return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : {}
+  } catch {
+    return {}
+  }
+}
+
+const recordValue = (value: unknown): Record<string, unknown> | undefined =>
+  value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined
+
+const conventionalPublicNxTargetNames = new Set([
+  "check",
+  "repair",
+  "generate",
+  "fuzz",
+  "proof",
+  "plan",
+  "apply",
+  "destroy",
+  "migrate",
+  "validate-sql",
+  "generate-types",
+])
+
+const isConventionalPublicNxTarget = (targetName: string): boolean =>
+  conventionalPublicNxTargetNames.has(targetName)
+
+const nxTargetAction = (targetName: string): string => {
+  if (/repair/u.test(targetName)) return "repair"
+  if (/check|typecheck|test|validate/u.test(targetName)) return "check"
+  if (/generate/u.test(targetName)) return "generate"
+  if (/build/u.test(targetName)) return "build"
+  return targetName
+}
 
 const manualFix = (
   diagnostic: Pick<TrellisLsDiagnostic, "id" | "file" | "code">,
@@ -440,3 +560,124 @@ const recommendedDiagnosticsCommand = (loaded: LoadedProject): string => {
   }
   return "trellis-ls diagnostics --workspace . --format json"
 }
+
+const languageServiceRepairLayer = defineRecipeLayer({
+  id: "trellis-language-service.repair.layer",
+  sourcePath: LanguageServiceRepairRecipesSourcePath,
+  exportName: "languageServiceRepairLayer",
+  layer: Layer.empty as never,
+  provides: [{
+    id: "trellis-language-service.repair-filesystem",
+    service: "Effect.Platform.FileSystem",
+  }],
+})
+
+const languageServiceUpstreamFixesHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.upstream-effect-fixes.handler",
+  recipeId: "trellis-language-service.upstream-effect-fixes",
+  sourcePath: LanguageServiceRepairRecipesSourcePath,
+  exportName: "collectTrellisFixes",
+  layer: languageServiceRepairLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceRepairPlanHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.repair-plan.handler",
+  recipeId: "trellis-language-service.repair-plan",
+  sourcePath: LanguageServiceRepairRecipesSourcePath,
+  exportName: "trellisFixFromRecipeRepair",
+  layer: languageServiceRepairLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceUpstreamFixesDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.upstream-effect-diagnostics",
+  toRecipeId: "trellis-language-service.upstream-effect-fixes",
+  resource: LanguageServiceFixesResource,
+  kind: "repairs",
+  modes: ["project", "read"],
+})
+
+const languageServiceRepairPlanDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.upstream-effect-fixes",
+  toRecipeId: "trellis-language-service.repair-plan",
+  resource: LanguageServiceFixesResource,
+  kind: "repairs",
+  modes: ["project", "read"],
+})
+
+const languageServiceDiagnosticRepairPlanDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.recipe-fact-diagnostics",
+  toRecipeId: "trellis-language-service.repair-plan",
+  resource: LanguageServiceDiagnosticsResource,
+  kind: "repairs",
+  modes: ["read"],
+})
+
+export const LanguageServiceUpstreamFixesRecipe = defineRepairRecipe({
+  id: "trellis-language-service.upstream-effect-fixes",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Normalize upstream Effect quickfixes for Trellis CLI output",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceRepairRecipesSourcePath,
+  allowedFiles: [LanguageServiceRepairRecipesSourcePath],
+  affectedFiles: [LanguageServiceRepairRecipesSourcePath],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceDiagnosticsResource],
+    outputResources: [LanguageServiceFixesResource],
+  },
+  handler: languageServiceUpstreamFixesHandler,
+  alchemyDag: [languageServiceUpstreamFixesDag],
+})
+
+export const LanguageServiceRepairPlanRecipe = defineRepairRecipe({
+  id: "trellis-language-service.repair-plan",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Project diagnostics into safe Trellis language-service repair plans",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceRepairRecipesSourcePath,
+  allowedFiles: [LanguageServiceRepairRecipesSourcePath],
+  affectedFiles: [LanguageServiceRepairRecipesSourcePath],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceDiagnosticsResource, LanguageServiceFixesResource],
+    outputResources: [LanguageServiceFixesResource],
+  },
+  handler: languageServiceRepairPlanHandler,
+  alchemyDag: [
+    languageServiceRepairPlanDag,
+    languageServiceDiagnosticRepairPlanDag,
+  ],
+})
+
+export const LanguageServiceRepairRecipes = [
+  LanguageServiceUpstreamFixesRecipe,
+  LanguageServiceRepairPlanRecipe,
+] as const

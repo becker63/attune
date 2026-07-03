@@ -28,6 +28,7 @@ import {
   runDiagnosticsCommand,
   runFastPathCommand,
   runFixesCommand,
+  runJudgeCommand,
   runPacketsCommand,
   trellisFixFromProgramRepairAction,
   trellisFixFromRecipeRepair,
@@ -37,9 +38,12 @@ import {
   TrellisLsDiagnosticsOutputSchema,
   TrellisLsFastPathOutputSchema,
   TrellisLsFixesOutputSchema,
+  TrellisLsJudgeOutputSchema,
   collectUpstreamEffectDiagnosticInventory,
   upstreamEffectSource,
 } from "../src/index.js"
+import { analyzeFileAccounting } from "../src/file-accounting.js"
+import { analyzeSourceExpression } from "../src/source-expression.js"
 import type { LoadedProject } from "../src/project-loader.js"
 
 const packageRoot = path.resolve(
@@ -127,13 +131,15 @@ const makeEffectProfilesFixture = (): {
 const makeScriptFixture = (): {
   readonly root: string
   readonly project: string
+  readonly scriptFile: string
 } => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-script-"))
   fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
   fs.writeFileSync(path.join(root, "package.json"), "{\"type\":\"module\"}\n")
   fs.mkdirSync(path.join(root, "packages", "demo", "scripts"), { recursive: true })
   fs.mkdirSync(path.join(root, "src"), { recursive: true })
-  fs.writeFileSync(path.join(root, "packages", "demo", "scripts", "legacy.ts"), "export {}\n")
+  const scriptFile = path.join(root, "packages", "demo", "scripts", "legacy.ts")
+  fs.writeFileSync(scriptFile, "export {}\n")
   fs.writeFileSync(path.join(root, "src", "index.ts"), "export {}\n")
   const project = path.join(root, "tsconfig.json")
   fs.writeFileSync(project, JSON.stringify({
@@ -146,7 +152,7 @@ const makeScriptFixture = (): {
     },
     include: ["src/**/*.ts"],
   }, null, 2))
-  return { root, project }
+  return { root, project, scriptFile }
 }
 
 const makeRawPostgresFixture = (): {
@@ -182,9 +188,9 @@ const makeRecipeOnlyFixture = (): {
   fs.mkdirSync(path.join(root, "packages", "trellis", "language-service", "src"), { recursive: true })
   const attunePackage = path.join(root, "packages", "trellis", "language-service", "src", "attune.package.ts")
   fs.writeFileSync(attunePackage, [
-    "const defineAttuneProjectFacts = (value: unknown) => value",
-    "export const ProjectRuntimeRoots = {}",
-    "export const ProjectFacts = defineAttuneProjectFacts({ id: \"framework-language-service\" })",
+    "const defineAttuneLegacyPackageFacts = (value: unknown) => value",
+    "export const LegacyPackageRuntimeRoots = {}",
+    "export const LegacyPackageFacts = defineAttuneLegacyPackageFacts({ id: \"framework-language-service\" })",
     "",
   ].join("\n"))
   fs.writeFileSync(
@@ -212,6 +218,710 @@ const makeRecipeOwnershipFixture = (): LoadedProject => {
     workspaceRoot: root,
     workspacePath: root,
     fileNames: [cli, diagnostics, unowned],
+  }
+}
+
+const makeBroadFileAccountingFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-file-accounting-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src"), { recursive: true })
+  fs.mkdirSync(path.join(root, "packages", "demo", "src", "feature"), { recursive: true })
+  const recipes = path.join(root, "packages", "demo", "src", "recipes.ts")
+  const cli = path.join(root, "packages", "demo", "src", "cli.ts")
+  const regular = path.join(root, "packages", "demo", "src", "regular.ts")
+  const focused = path.join(root, "packages", "demo", "src", "feature", "owned.ts")
+  fs.writeFileSync(cli, "export const run = () => undefined\n")
+  fs.writeFileSync(regular, "export const value = 1\n")
+  fs.writeFileSync(focused, "export const owned = 1\n")
+  fs.writeFileSync(recipes, [
+    "const defineRecipe = (recipe: unknown) => recipe",
+    "const defineRecipePackage = (recipePackage: unknown) => recipePackage",
+    "export const DemoRecipes = [",
+    "  defineRecipe({",
+    "    id: \"demo.generic\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    allowedFiles: [\"packages/demo/src/**\"],",
+    "  }),",
+    "  defineRecipe({",
+    "    id: \"demo.feature\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    allowedFiles: [\"packages/demo/src/feature/**\"],",
+    "  }),",
+    "]",
+    "export const DemoRecipePackage = defineRecipePackage({",
+    "  packageId: \"demo\",",
+    "  sourceRoot: \"packages/demo/src\",",
+    "  recipes: DemoRecipes,",
+    "  ownership: [{",
+    "    id: \"broad-source\",",
+    "    files: [\"packages/demo/src/**\"],",
+    "    recipeIds: [\"demo.generic\"],",
+    "  }],",
+    "})",
+    "",
+  ].join("\n"))
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [recipes, cli, regular, focused],
+  }
+}
+
+const makeGeneratedFileAccountingFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-generated-accounting-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src", "generated"), { recursive: true })
+  const recipes = path.join(root, "packages", "demo", "src", "recipes.ts")
+  const generated = path.join(root, "packages", "demo", "src", "generated", "widget.ts")
+  fs.writeFileSync(generated, [
+    "// @generated by recipe demo.generate-widget",
+    "export const widget = 1",
+    "",
+  ].join("\n"))
+  fs.writeFileSync(recipes, [
+    "const defineProjectionRecipe = (recipe: unknown) => recipe",
+    "const defineRecipePackage = (recipePackage: unknown) => recipePackage",
+    "export const DemoRecipes = [",
+    "  defineProjectionRecipe({",
+    "    id: \"demo.generate-widget\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    outputs: [\"packages/demo/src/generated/widget.ts\"],",
+    "  }),",
+    "]",
+    "export const DemoRecipePackage = defineRecipePackage({",
+    "  packageId: \"demo\",",
+    "  sourceRoot: \"packages/demo/src\",",
+    "  recipes: DemoRecipes,",
+    "})",
+    "",
+  ].join("\n"))
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [recipes, generated],
+  }
+}
+
+const makeDeletedTrackedFileAccountingFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-deleted-tracked-accounting-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src"), { recursive: true })
+  const recipes = path.join(root, "packages", "demo", "src", "recipes.ts")
+  const deleted = path.join(root, "packages", "demo", "src", "deleted.ts")
+  fs.writeFileSync(recipes, "export const DemoRecipes = []\n")
+  fs.writeFileSync(deleted, "export const deleted = 1\n")
+  childProcess.execFileSync("git", ["init"], { cwd: root, stdio: "ignore" })
+  childProcess.execFileSync("git", [
+    "add",
+    "packages/demo/src/recipes.ts",
+    "packages/demo/src/deleted.ts",
+  ], { cwd: root, stdio: "ignore" })
+  fs.unlinkSync(deleted)
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [recipes],
+  }
+}
+
+const makeAmbiguousFileAccountingFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-ambiguous-accounting-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src", "feature"), { recursive: true })
+  const recipes = path.join(root, "packages", "demo", "src", "recipes.ts")
+  const owned = path.join(root, "packages", "demo", "src", "feature", "owned.ts")
+  fs.writeFileSync(owned, "export const owned = 1\n")
+  fs.writeFileSync(recipes, [
+    "const defineRecipe = (recipe: unknown) => recipe",
+    "const defineRecipePackage = (recipePackage: unknown) => recipePackage",
+    "export const DemoRecipes = [",
+    "  defineRecipe({",
+    "    id: \"demo.feature-a\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    allowedFiles: [\"packages/demo/src/feature/*.ts\"],",
+    "  }),",
+    "  defineRecipe({",
+    "    id: \"demo.feature-b\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    allowedFiles: [\"packages/demo/src/feature/owned.*\"],",
+    "  }),",
+    "]",
+    "export const DemoRecipePackage = defineRecipePackage({",
+    "  packageId: \"demo\",",
+    "  sourceRoot: \"packages/demo/src\",",
+    "  recipes: DemoRecipes,",
+    "})",
+    "",
+  ].join("\n"))
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [recipes, owned],
+  }
+}
+
+const makeWorkspaceRoleFileAccountingFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-workspace-role-accounting-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src"), { recursive: true })
+  fs.mkdirSync(path.join(root, "docs"), { recursive: true })
+  fs.mkdirSync(path.join(root, "openspec", "changes", "demo"), { recursive: true })
+  fs.mkdirSync(path.join(root, "nix"), { recursive: true })
+  const recipes = path.join(root, "packages", "demo", "src", "recipes.ts")
+  const doc = path.join(root, "docs", "README.md")
+  const spec = path.join(root, "openspec", "changes", "demo", "proposal.md")
+  const nix = path.join(root, "nix", "demo.nix")
+  fs.writeFileSync(doc, "# Demo\n")
+  fs.writeFileSync(spec, "# Proposal\n")
+  fs.writeFileSync(nix, "{ pkgs }: pkgs.hello\n")
+  fs.writeFileSync(recipes, [
+    "const defineDocumentationRecipe = (recipe: unknown) => recipe",
+    "const defineOpenSpecChangeRecipe = (recipe: unknown) => recipe",
+    "const defineToolchainRecipe = (recipe: unknown) => recipe",
+    "const defineRecipePackage = (recipePackage: unknown) => recipePackage",
+    "export const DemoRecipes = [",
+    "  defineDocumentationRecipe({",
+    "    id: \"demo.docs\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    allowedFiles: [\"docs/**\"],",
+    "  }),",
+    "  defineOpenSpecChangeRecipe({",
+    "    id: \"demo.openspec\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    allowedFiles: [\"openspec/**\"],",
+    "  }),",
+    "  defineToolchainRecipe({",
+    "    id: \"demo.nix\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    allowedFiles: [\"nix/**\"],",
+    "  }),",
+    "]",
+    "export const DemoRecipePackage = defineRecipePackage({",
+    "  packageId: \"demo\",",
+    "  sourceRoot: \"packages/demo/src\",",
+    "  recipes: DemoRecipes,",
+    "})",
+    "",
+  ].join("\n"))
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [recipes, doc, spec, nix],
+  }
+}
+
+const makeSourceExpressionFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-source-expression-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.writeFileSync(path.join(root, "package.json"), "{\"type\":\"module\"}\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src"), { recursive: true })
+  const recipes = path.join(root, "packages", "demo", "src", "recipes.ts")
+  const pure = path.join(root, "packages", "demo", "src", "pure.ts")
+  const sideEffect = path.join(root, "packages", "demo", "src", "side-effect.ts")
+  const orphanPure = path.join(root, "packages", "demo", "src", "orphan-pure.ts")
+  fs.writeFileSync(pure, "export const render = () => ({ generatedFiles: [], contentHash: \"hash\" })\n")
+  fs.writeFileSync(sideEffect, "import * as fs from \"node:fs\"\nexport const read = () => fs.readFileSync(\"demo\", \"utf8\")\n")
+  fs.writeFileSync(orphanPure, "export const value = 1\n")
+  fs.writeFileSync(recipes, [
+    "import { Effect, Layer, Schema } from \"effect\"",
+    "import { render } from \"./pure.js\"",
+    "const defineRecipe = (recipe: unknown) => recipe",
+    "const defineProjectionRecipe = (recipe: unknown) => recipe",
+    "const defineAlchemyResource = (resource: unknown) => resource",
+    "const defineRecipeHandler = (handler: unknown) => handler",
+    "const defineRecipeLayer = (layer: unknown) => layer",
+    "const PackageRoot = defineAlchemyResource({",
+    "  id: \"demo.package-root\",",
+    "  kind: \"directory\",",
+    "  alchemyType: \"attune:resource:Directory\",",
+    "  modes: [\"read\"],",
+    "  consumedBy: [\"demo.typed\"],",
+    "})",
+    "const Generated = defineAlchemyResource({",
+    "  id: \"demo.generated\",",
+    "  kind: \"generated-directory\",",
+    "  alchemyType: \"attune:resource:GeneratedDirectory\",",
+    "  modes: [\"project\", \"read\"],",
+    "  producedBy: [\"demo.typed\"],",
+    "})",
+    "const DemoLayer = defineRecipeLayer({",
+    "  id: \"demo.layer\",",
+    "  sourcePath: \"packages/demo/src/recipes.ts\",",
+    "  exportName: \"DemoLayer\",",
+    "  layer: Layer.empty,",
+    "  provides: [],",
+    "})",
+    "export const stringOnly = defineRecipe({",
+    "  id: \"demo.string-only\",",
+    "  inputSchema: Schema.String,",
+    "  outputSchema: Schema.String,",
+    "  allowedFiles: [\"packages/demo/src/orphan-pure.ts\"],",
+    "})",
+    "export const typed = defineProjectionRecipe({",
+    "  id: \"demo.typed\",",
+    "  inputSchema: Schema.String,",
+    "  outputSchema: Schema.Struct({ generatedFiles: Schema.Array(Schema.String), contentHash: Schema.String }),",
+    "  io: {",
+    "    inputSchema: Schema.String,",
+    "    outputSchema: Schema.Struct({ generatedFiles: Schema.Array(Schema.String), contentHash: Schema.String }),",
+    "    inputResources: [PackageRoot],",
+    "    outputResources: [Generated],",
+    "  },",
+    "  handler: defineRecipeHandler({",
+    "    id: \"demo.typed.handler\",",
+    "    recipeId: \"demo.typed\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    exportName: \"typedHandler\",",
+    "    layer: DemoLayer,",
+    "    handler: () => Effect.succeed(render()),",
+    "  }),",
+    "})",
+    "",
+  ].join("\n"))
+  const project = path.join(root, "tsconfig.json")
+  fs.writeFileSync(project, JSON.stringify({
+    compilerOptions: {
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
+      target: "ES2023",
+      strict: true,
+      skipLibCheck: true,
+    },
+    include: ["packages/**/*.ts"],
+  }, null, 2))
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [recipes, pure, sideEffect, orphanPure],
+  }
+}
+
+const makeUntrackedGeneratedSourceExpressionFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-source-expression-generated-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.writeFileSync(path.join(root, "package.json"), "{\"type\":\"module\"}\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src", "generated"), { recursive: true })
+  const source = path.join(root, "packages", "demo", "src", "index.ts")
+  const generated = path.join(root, "packages", "demo", "src", "generated", "widget.ts")
+  fs.writeFileSync(source, "export const value = 1\n")
+  fs.writeFileSync(generated, [
+    "// @generated by recipe demo.generated-widget",
+    "import { Effect } from \"effect\"",
+    "export const generatedWidget = Effect.succeed(1)",
+    "",
+  ].join("\n"))
+  const project = path.join(root, "tsconfig.json")
+  fs.writeFileSync(project, JSON.stringify({
+    compilerOptions: {
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
+      target: "ES2023",
+      strict: true,
+      skipLibCheck: true,
+      noEmit: true,
+    },
+    include: ["packages/**/*.ts"],
+  }, null, 2))
+  childProcess.execFileSync("git", ["init"], { cwd: root, stdio: "ignore" })
+  childProcess.execFileSync("git", ["add", "package.json", "pnpm-workspace.yaml", "tsconfig.json", "packages/demo/src/index.ts"], {
+    cwd: root,
+    stdio: "ignore",
+  })
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [source, generated],
+  }
+}
+
+const makeAggregateOnlyLocalRecipeFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-local-expression-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.writeFileSync(path.join(root, "package.json"), "{\"type\":\"module\"}\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src"), { recursive: true })
+  const recipes = path.join(root, "packages", "demo", "src", "recipes.ts")
+  const worker = path.join(root, "packages", "demo", "src", "worker.ts")
+  fs.writeFileSync(worker, [
+    "export interface WorkerInput { readonly value: string }",
+    "export interface WorkerOutput { readonly value: string }",
+    "export const renderWorker = (input: WorkerInput): WorkerOutput => ({",
+    "  value: input.value.toUpperCase(),",
+    "})",
+    "",
+  ].join("\n"))
+  fs.writeFileSync(recipes, [
+    "import { Effect, Schema } from \"effect\"",
+    "import { renderWorker } from \"./worker.js\"",
+    "const defineProjectionRecipe = (recipe: unknown) => recipe",
+    "const defineAlchemyResource = (resource: unknown) => resource",
+    "const defineRecipeHandler = (handler: unknown) => handler",
+    "const WorkerInput = Schema.Struct({ value: Schema.String })",
+    "const WorkerOutput = Schema.Struct({ value: Schema.String })",
+    "const Request = defineAlchemyResource({",
+    "  id: \"demo.request\",",
+    "  kind: \"configuration\",",
+    "  alchemyType: \"attune:resource:Configuration\",",
+    "  modes: [\"read\"],",
+    "  consumedBy: [\"demo.source\"],",
+    "})",
+    "const Intermediate = defineAlchemyResource({",
+    "  id: \"demo.intermediate\",",
+    "  kind: \"report\",",
+    "  alchemyType: \"attune:resource:Report\",",
+    "  modes: [\"project\", \"read\"],",
+    "  producedBy: [\"demo.source\"],",
+    "  consumedBy: [\"demo.worker\"],",
+    "})",
+    "const Result = defineAlchemyResource({",
+    "  id: \"demo.result\",",
+    "  kind: \"report\",",
+    "  alchemyType: \"attune:resource:Report\",",
+    "  modes: [\"project\", \"read\"],",
+    "  producedBy: [\"demo.worker\"],",
+    "})",
+    "export const sourceRecipe = defineProjectionRecipe({",
+    "  id: \"demo.source\",",
+    "  inputSchema: WorkerInput,",
+    "  outputSchema: WorkerOutput,",
+    "  sourcePath: \"packages/demo/src/recipes.ts\",",
+    "  io: {",
+    "    inputSchema: WorkerInput,",
+    "    outputSchema: WorkerOutput,",
+    "    inputResources: [Request],",
+    "    outputResources: [Intermediate],",
+    "  },",
+    "  handler: defineRecipeHandler({",
+    "    id: \"demo.source.handler\",",
+    "    recipeId: \"demo.source\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    exportName: \"sourceRecipe\",",
+    "    handler: (input: typeof WorkerInput.Type) => Effect.succeed(renderWorker(input)),",
+    "  }),",
+    "  alchemyDag: [{",
+    "    fromRecipeId: \"demo.source\",",
+    "    toRecipeId: \"demo.worker\",",
+    "    resource: Intermediate,",
+    "    kind: \"projects\",",
+    "    modes: [\"project\"],",
+    "    validationTargets: [\"demo:test\"],",
+    "  }],",
+    "})",
+    "export const workerRecipe = defineProjectionRecipe({",
+    "  id: \"demo.worker\",",
+    "  inputSchema: WorkerInput,",
+    "  outputSchema: WorkerOutput,",
+    "  sourcePath: \"packages/demo/src/recipes.ts\",",
+    "  io: {",
+    "    inputSchema: WorkerInput,",
+    "    outputSchema: WorkerOutput,",
+    "    inputResources: [Intermediate],",
+    "    outputResources: [Result],",
+    "  },",
+    "  handler: defineRecipeHandler({",
+    "    id: \"demo.worker.handler\",",
+    "    recipeId: \"demo.worker\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    exportName: \"workerRecipe\",",
+    "    handler: (input: typeof WorkerInput.Type) => Effect.succeed(renderWorker(input)),",
+    "  }),",
+    "})",
+    "",
+  ].join("\n"))
+  const project = path.join(root, "tsconfig.json")
+  fs.writeFileSync(project, JSON.stringify({
+    compilerOptions: {
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
+      target: "ES2023",
+      strict: true,
+      skipLibCheck: true,
+      noEmit: true,
+    },
+    include: ["packages/**/*.ts"],
+  }, null, 2))
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [recipes, worker],
+  }
+}
+
+const makeNestedRecipeDagFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-nested-dag-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.writeFileSync(path.join(root, "package.json"), "{\"type\":\"module\"}\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src"), { recursive: true })
+  const recipes = path.join(root, "packages", "demo", "src", "recipes.ts")
+  fs.writeFileSync(recipes, [
+    "import { Effect, Schema } from \"effect\"",
+    "const defineManagedRecipe = (recipe: unknown) => recipe",
+    "const defineProjectionRecipe = (recipe: unknown) => recipe",
+    "const defineAlchemyResource = (resource: unknown) => resource",
+    "const defineRecipeHandler = (handler: unknown) => handler",
+    "const DemoInput = Schema.Struct({ value: Schema.String })",
+    "const DemoOutput = Schema.Struct({ value: Schema.String })",
+    "const MissingFlow = { id: \"demo.missing-flow\" }",
+    "const Flow = defineAlchemyResource({",
+    "  id: \"demo.flow\",",
+    "  kind: \"report\",",
+    "  alchemyType: \"attune:resource:Report\",",
+    "  ownerRecipeId: \"demo.parent\",",
+    "  producedBy: [\"demo.parent\"],",
+    "  consumedBy: [\"demo.cycle\"],",
+    "  addressSchema: DemoInput,",
+    "  stateSchema: DemoOutput,",
+    "  modes: [\"project\", \"read\"],",
+    "})",
+    "const StaticKubernetes = defineAlchemyResource({",
+    "  id: \"demo.static-kubernetes\",",
+    "  kind: \"kubernetes-object-set\",",
+    "  alchemyType: \"attune:resource:KubernetesObjectSet\",",
+    "  ownerRecipeId: \"demo.managed\",",
+    "  producedBy: [\"demo.managed\"],",
+    "  consumedBy: [\"demo.managed\"],",
+    "  addressSchema: DemoInput,",
+    "  stateSchema: DemoOutput,",
+    "  modes: [\"read\", \"write\"],",
+    "})",
+    "export const parentRecipe = defineProjectionRecipe({",
+    "  id: \"demo.parent\",",
+    "  capability: \"manual-dag-group\",",
+    "  inputSchema: DemoInput,",
+    "  outputSchema: DemoOutput,",
+    "  sourcePath: \"packages/demo/src/recipes.ts\",",
+    "  dependencies: [{ recipeId: \"demo.child\" }],",
+    "  io: {",
+    "    inputSchema: DemoInput,",
+    "    outputSchema: DemoOutput,",
+    "    inputResources: [Flow],",
+    "    outputResources: [Flow],",
+    "  },",
+    "  handler: defineRecipeHandler({",
+    "    id: \"demo.parent.handler\",",
+    "    recipeId: \"demo.parent\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    exportName: \"parentRecipe\",",
+    "    handler: () => Effect.succeed({ value: \"parent\" }),",
+    "  }),",
+    "  alchemyDag: [{",
+    "    fromRecipeId: \"demo.parent\",",
+    "    toRecipeId: \"demo.cycle\",",
+    "    resource: Flow,",
+    "    kind: \"projects\",",
+    "    modes: [\"project\"],",
+    "  }, {",
+    "    fromRecipeId: \"demo.cycle\",",
+    "    toRecipeId: \"demo.parent\",",
+    "    resource: Flow,",
+    "    kind: \"observes\",",
+    "    modes: [\"observe\"],",
+    "  }, {",
+    "    fromRecipeId: \"demo.parent\",",
+    "    toRecipeId: \"demo.untyped\",",
+    "    resource: MissingFlow,",
+    "    kind: \"validates\",",
+    "    modes: [\"check\"],",
+    "  }],",
+    "})",
+    "export const childRecipe = defineProjectionRecipe({",
+    "  id: \"demo.child\",",
+    "  inputSchema: DemoInput,",
+    "  outputSchema: DemoOutput,",
+    "  sourcePath: \"packages/demo/src/recipes.ts\",",
+    "  io: {",
+    "    inputSchema: DemoInput,",
+    "    outputSchema: DemoOutput,",
+    "    inputResources: [Flow],",
+    "    outputResources: [Flow],",
+    "  },",
+    "  handler: defineRecipeHandler({",
+    "    id: \"demo.child.handler\",",
+    "    recipeId: \"demo.child\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    exportName: \"childRecipe\",",
+    "    handler: () => Effect.succeed({ value: \"child\" }),",
+    "  }),",
+    "})",
+    "export const cycleRecipe = defineProjectionRecipe({",
+    "  id: \"demo.cycle\",",
+    "  inputSchema: DemoInput,",
+    "  outputSchema: DemoOutput,",
+    "  sourcePath: \"packages/demo/src/recipes.ts\",",
+    "  io: {",
+    "    inputSchema: DemoInput,",
+    "    outputSchema: DemoOutput,",
+    "    inputResources: [Flow],",
+    "    outputResources: [Flow],",
+    "  },",
+    "  handler: defineRecipeHandler({",
+    "    id: \"demo.cycle.handler\",",
+    "    recipeId: \"demo.cycle\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    exportName: \"cycleRecipe\",",
+    "    handler: () => Effect.succeed({ value: \"cycle\" }),",
+    "  }),",
+    "})",
+    "export const managedRecipe = defineManagedRecipe({",
+    "  id: \"demo.managed\",",
+    "  inputSchema: DemoInput,",
+    "  outputSchema: DemoOutput,",
+    "  sourcePath: \"packages/demo/src/recipes.ts\",",
+    "  io: {",
+    "    inputSchema: DemoInput,",
+    "    outputSchema: DemoOutput,",
+    "    inputResources: [StaticKubernetes],",
+    "    outputResources: [StaticKubernetes],",
+    "  },",
+    "  alchemy: { resource: StaticKubernetes },",
+    "  lifecycle: { read: () => Effect.succeed({ value: \"managed\" }) },",
+    "  handler: defineRecipeHandler({",
+    "    id: \"demo.managed.handler\",",
+    "    recipeId: \"demo.managed\",",
+    "    sourcePath: \"packages/demo/src/recipes.ts\",",
+    "    exportName: \"managedRecipe\",",
+    "    handler: () => Effect.succeed({ value: \"managed\" }),",
+    "  }),",
+    "})",
+    "",
+  ].join("\n"))
+  const project = path.join(root, "tsconfig.json")
+  fs.writeFileSync(project, JSON.stringify({
+    compilerOptions: {
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
+      target: "ES2023",
+      strict: true,
+      skipLibCheck: true,
+      noEmit: true,
+    },
+    include: ["packages/**/*.ts"],
+  }, null, 2))
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [recipes],
+  }
+}
+
+const makeImportedRecipeIdDagFixture = (): LoadedProject => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "trellis-ls-imported-dag-"))
+  fs.writeFileSync(path.join(root, "pnpm-workspace.yaml"), "packages: []\n")
+  fs.writeFileSync(path.join(root, "package.json"), "{\"type\":\"module\"}\n")
+  fs.mkdirSync(path.join(root, "packages", "demo", "src"), { recursive: true })
+  const parent = path.join(root, "packages", "demo", "src", "parent.ts")
+  const child = path.join(root, "packages", "demo", "src", "child.ts")
+  fs.writeFileSync(child, [
+    "import { Effect, Schema } from \"effect\"",
+    "const defineProjectionRecipe = (recipe: unknown) => recipe",
+    "const defineAlchemyResource = (resource: unknown) => resource",
+    "const defineRecipeHandler = (handler: unknown) => handler",
+    "export const ChildRecipeId = \"demo.child\" as const",
+    "const ChildSourcePath = \"packages/demo/src/child.ts\" as const",
+    "const ChildInput = Schema.Struct({ value: Schema.String })",
+    "const ChildOutput = Schema.Struct({ value: Schema.String })",
+    "const ChildInputResource = defineAlchemyResource({",
+    "  id: \"demo.child.input\",",
+    "  kind: \"configuration\",",
+    "  ownerRecipeId: ChildRecipeId,",
+    "  consumedBy: [ChildRecipeId],",
+    "  addressSchema: ChildInput,",
+    "  stateSchema: ChildOutput,",
+    "  modes: [\"read\"],",
+    "})",
+    "export const ChildOutputResource = defineAlchemyResource({",
+    "  id: \"demo.child.output\",",
+    "  kind: \"report\",",
+    "  ownerRecipeId: ChildRecipeId,",
+    "  producedBy: [ChildRecipeId],",
+    "  addressSchema: ChildInput,",
+    "  stateSchema: ChildOutput,",
+    "  modes: [\"project\", \"read\"],",
+    "})",
+    "const ChildHandler = defineRecipeHandler({",
+    "  id: \"demo.child.handler\",",
+    "  recipeId: ChildRecipeId,",
+    "  sourcePath: ChildSourcePath,",
+    "  handler: () => Effect.succeed({ value: \"child\" }),",
+    "})",
+    "export const ChildRecipe = defineProjectionRecipe({",
+    "  id: ChildRecipeId,",
+    "  inputSchema: ChildInput,",
+    "  outputSchema: ChildOutput,",
+    "  sourcePath: ChildSourcePath,",
+    "  io: {",
+    "    inputSchema: ChildInput,",
+    "    outputSchema: ChildOutput,",
+    "    inputResources: [ChildInputResource],",
+    "    outputResources: [ChildOutputResource],",
+    "  },",
+    "  handler: ChildHandler,",
+    "})",
+    "",
+  ].join("\n"))
+  fs.writeFileSync(parent, [
+    "import { Effect, Schema } from \"effect\"",
+    "import { ChildOutputResource, ChildRecipeId } from \"./child.js\"",
+    "const defineProjectionRecipe = (recipe: unknown) => recipe",
+    "const defineAlchemyResource = (resource: unknown) => resource",
+    "const defineRecipeHandler = (handler: unknown) => handler",
+    "const ParentRecipeId = \"demo.parent\" as const",
+    "const ParentSourcePath = \"packages/demo/src/parent.ts\" as const",
+    "const ParentInput = Schema.Struct({ value: Schema.String })",
+    "const ParentOutput = Schema.Struct({ value: Schema.String })",
+    "const ParentInputResource = defineAlchemyResource({",
+    "  id: \"demo.parent.input\",",
+    "  kind: \"configuration\",",
+    "  ownerRecipeId: ParentRecipeId,",
+    "  consumedBy: [ParentRecipeId],",
+    "  addressSchema: ParentInput,",
+    "  stateSchema: ParentOutput,",
+    "  modes: [\"read\"],",
+    "})",
+    "const ParentHandler = defineRecipeHandler({",
+    "  id: \"demo.parent.handler\",",
+    "  recipeId: ParentRecipeId,",
+    "  sourcePath: ParentSourcePath,",
+    "  handler: () => Effect.succeed({ value: \"parent\" }),",
+    "})",
+    "export const ParentRecipe = defineProjectionRecipe({",
+    "  id: ParentRecipeId,",
+    "  inputSchema: ParentInput,",
+    "  outputSchema: ParentOutput,",
+    "  sourcePath: ParentSourcePath,",
+    "  dependencies: [{ recipeId: ChildRecipeId }],",
+    "  io: {",
+    "    inputSchema: ParentInput,",
+    "    outputSchema: ParentOutput,",
+    "    inputResources: [ParentInputResource],",
+    "    outputResources: [ChildOutputResource],",
+    "  },",
+    "  handler: ParentHandler,",
+    "  alchemyDag: [{",
+    "    fromRecipeId: ParentRecipeId,",
+    "    toRecipeId: ChildRecipeId,",
+    "    resource: ChildOutputResource,",
+    "    kind: \"projects\",",
+    "    modes: [\"project\"],",
+    "  }],",
+    "})",
+    "",
+  ].join("\n"))
+  const project = path.join(root, "tsconfig.json")
+  fs.writeFileSync(project, JSON.stringify({
+    compilerOptions: {
+      module: "NodeNext",
+      moduleResolution: "NodeNext",
+      target: "ES2023",
+      strict: true,
+      skipLibCheck: true,
+      noEmit: true,
+    },
+    include: ["packages/**/*.ts"],
+  }, null, 2))
+  return {
+    workspaceRoot: root,
+    workspacePath: root,
+    fileNames: [parent, child],
   }
 }
 
@@ -260,6 +970,9 @@ const makeTrellisArchitectureDiagnosticsFixture = (): LoadedProject => {
     "export const session = { id: \"s1\" }",
     "export const command = { id: \"c1\" }",
     "export const report = { id: \"r1\" }",
+    "export interface BenchmarkTargetDiagnosticPacket { packetId: string }",
+    "export const hiddenJudge = { finalJudge: true }",
+    "export const targetDiagnosticPacketFromSelectedPackets = () => ({ packetId: \"p1\" })",
     "",
   ].join("\n"))
   return {
@@ -523,6 +1236,94 @@ describe("trellis-ls CLI core", () => {
       "medium",
       "final",
     ])
+  })
+
+  it("projects Trellis architecture diagnostics into core workflow packets", () => {
+    const loaded = makeTrellisArchitectureDiagnosticsFixture()
+    const output = Schema.decodeUnknownSync(TrellisLsPacketsOutputSchema)(
+      runPacketsCommand({
+        cwd: loaded.workspaceRoot,
+        workspace: ".",
+        source: "trellis",
+        profile: "recipe-only-source",
+        format: "json",
+      }).output,
+    )
+    const orphanTargetPacket = output.packets.find((packet) =>
+      packet.code === "trellis/orphan-public-nx-target"
+    )
+
+    expect(output.packetCount).toBeGreaterThanOrEqual(1)
+    expect(orphanTargetPacket).toMatchObject({
+      source: "trellis",
+      corePacket: {
+        recipeId: "trellis-language-service.architecture-migration-packet",
+        ruleIds: ["attune/nx-targets-are-projections-not-source-truth"],
+        policy: {
+          repair: {
+            preferCutWhenBehaviorPreserved: true,
+          },
+          privacy: {
+            storeRawPrompt: false,
+            storeRawTrace: false,
+            storeFullSource: false,
+            storeRawCommandOutput: false,
+            storePatchText: false,
+            storeRawDiff: false,
+            boundedContextOnly: true,
+          },
+        },
+      },
+    })
+    expect(orphanTargetPacket?.corePacket.targets.some((target) =>
+      target.subject.kind === "project-target"
+    )).toBe(true)
+  })
+
+  it("judges Trellis architecture packets before promotion", () => {
+    const loaded = makeTrellisArchitectureDiagnosticsFixture()
+    const packet = runPacketsCommand({
+      cwd: loaded.workspaceRoot,
+      workspace: ".",
+      source: "trellis",
+      profile: "recipe-only-source",
+      format: "json",
+    }).output.packets.find((candidate) =>
+      candidate.code === "trellis/orphan-public-nx-target"
+    )
+    expect(packet).toBeDefined()
+    const packetId = packet?.packetId
+    if (packetId === undefined) {
+      throw new Error("expected orphan public Nx target packet")
+    }
+
+    const output = Schema.decodeUnknownSync(TrellisLsJudgeOutputSchema)(
+      runJudgeCommand({
+        cwd: loaded.workspaceRoot,
+        workspace: ".",
+        source: "trellis",
+        profile: "recipe-only-source",
+        packetId,
+        format: "json",
+      }).output,
+    )
+
+    expect(output.command).toBe("judge")
+    expect(output.judge).toMatchObject({
+      judgeId: "judge:trellis-language-service:architecture-migration",
+      recipeId: "trellis-language-service.architecture-migration-judge",
+      ciBlocking: true,
+    })
+    expect(output.packetIds).toEqual([packetId])
+    expect(output.selectedTargetOracles[0]).toMatchObject({
+      packetId,
+      selectedRemainingCount: expect.any(Number),
+    })
+    expect(output.judgment).toMatchObject({
+      status: "fail",
+      promotionAllowed: false,
+      blockerPacketIds: [packet?.packetId],
+    })
   })
 
   it("supports packet fixes, diff apply, write apply, and packet check", () => {
@@ -989,8 +1790,20 @@ describe("trellis-ls CLI core", () => {
     expect(output.diagnosticCodes).toContain("effect/floatingEffect")
   })
 
-  it("serializes public Nx repair fixes for no-compat script diagnostics", () => {
+  it("derives deterministic delete apply and fastpath for no-compat script packets", () => {
     const fixture = makeScriptFixture()
+    const packets = Schema.decodeUnknownSync(TrellisLsPacketsOutputSchema)(
+      runPacketsCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        source: "trellis",
+        profile: "recipe-only-source",
+        format: "json",
+      }).output,
+    )
+    const packet = packets.packets.find((candidate) =>
+      candidate.code === "trellis/package-local-script-reintroduced"
+    )!
     const fixes = Schema.decodeUnknownSync(TrellisLsFixesOutputSchema)(
       runFixesCommand({
         cwd: fixture.root,
@@ -1000,13 +1813,52 @@ describe("trellis-ls CLI core", () => {
     )
 
     expect(fixes.fixes).toContainEqual(expect.objectContaining({
-      kind: "nx-repair",
+      kind: "workspace-edit",
       safe: true,
       requiresReview: false,
-      command: {
-        run: "nx run workspace:repair",
-      },
+      deleteFiles: [fixture.scriptFile],
     }))
+    expect(packets.packets).toContainEqual(expect.objectContaining({
+      source: "trellis",
+      code: "trellis/package-local-script-reintroduced",
+      corePacket: expect.objectContaining({
+        ruleIds: ["attune/package-local-scripts-are-not-public-workflow-surfaces"],
+        policy: expect.objectContaining({
+          repair: expect.objectContaining({
+            preferCutWhenBehaviorPreserved: true,
+          }),
+        }),
+      }),
+    }))
+
+    const diff = Schema.decodeUnknownSync(TrellisLsApplyOutputSchema)(
+      runApplyCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        profile: "recipe-only-source",
+        packetId: packet.packetId,
+        mode: "diff",
+        format: "json",
+      }).output,
+    )
+    expect(diff.diff).toContain("+++ /dev/null")
+    expect(fs.existsSync(fixture.scriptFile)).toBe(true)
+
+    const fastpath = Schema.decodeUnknownSync(TrellisLsFastPathOutputSchema)(
+      runFastPathCommand({
+        cwd: fixture.root,
+        project: "tsconfig.json",
+        source: "trellis",
+        profile: "recipe-only-source",
+        packetId: packet.packetId,
+        mode: "write",
+        format: "json",
+      }).output,
+    )
+    expect(fastpath.source).toBe("trellis")
+    expect(fastpath.applied).toBe(true)
+    expect(fastpath.validationStatus).toBe("cleared")
+    expect(fs.existsSync(fixture.scriptFile)).toBe(false)
   })
 
   it("refuses manual raw Postgres boundary fixes", () => {
@@ -1050,9 +1902,6 @@ describe("trellis-ls CLI core", () => {
       file: "packages/trellis/language-service/src/attune.package.ts",
       severity: "error",
     })
-    expect(diagnostics.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
-      "trellis/source-uses-legacy-abstraction",
-    )
 
     const fixes = runFixesCommand({
       cwd: fixture.root,
@@ -1063,11 +1912,12 @@ describe("trellis-ls CLI core", () => {
       format: "json",
     }).output
     expect(fixes.fixes[0]).toMatchObject({
-      kind: "text-edit",
+      kind: "workspace-edit",
       safe: true,
       requiresReview: false,
       canApply: true,
-      title: "Delete migrated language-service attune.package.ts",
+      title: "Delete migrated attune.package.ts",
+      deleteFiles: [fixture.attunePackage],
     })
 
     const before = fs.readFileSync(fixture.attunePackage, "utf8")
@@ -1082,7 +1932,7 @@ describe("trellis-ls CLI core", () => {
 
     expect(diff.applied).toBe(false)
     expect(diff.refused).toBe(false)
-    expect(diff.diff).toContain("-export const ProjectFacts")
+    expect(diff.diff).toContain("-export const LegacyPackageFacts")
     expect(fs.readFileSync(fixture.attunePackage, "utf8")).toBe(before)
   })
 
@@ -1128,6 +1978,424 @@ describe("trellis-ls CLI core", () => {
     ]))
   })
 
+  it("does not count broad source-tree ownership as strict file accounting", () => {
+    const loaded = makeBroadFileAccountingFixture()
+    const analysis = analyzeFileAccounting(loaded)
+    const cliTarget = analysis.targets.find((target) => target.path === "packages/demo/src/cli.ts")
+    const regularTarget = analysis.targets.find((target) => target.path === "packages/demo/src/regular.ts")
+    const focusedTarget = analysis.targets.find((target) => target.path === "packages/demo/src/feature/owned.ts")
+
+    expect(cliTarget).toMatchObject({
+      currentOwner: expect.any(String),
+      expectedOwnerKind: "invocation",
+      missingOrAmbiguousOwnershipReason: expect.stringContaining("generic ownership needs specialization"),
+    })
+    expect(regularTarget).toMatchObject({
+      currentOwner: expect.any(String),
+      expectedOwnerKind: "Recipe",
+      missingOrAmbiguousOwnershipReason: expect.stringContaining("broad package/source ownership is bootstrap-only"),
+    })
+    expect(focusedTarget).toMatchObject({
+      currentOwner: "demo.feature",
+      expectedOwnerKind: "Recipe",
+    })
+    expect(focusedTarget?.missingOrAmbiguousOwnershipReason).toBeUndefined()
+    expect(analysis.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
+      "trellis/workflow-not-invocation-recipe",
+    )
+    expect(analysis.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
+      "trellis/source-file-unowned-by-recipe",
+    )
+    expect(analysis.oracle.accountedFiles).toBeLessThan(analysis.oracle.trackedFiles)
+    expect(analysis.oracle.unaccountedFiles).toBeGreaterThan(0)
+    expect(analysis.oracle.promotionAllowed).toBe(false)
+  })
+
+  it("does not count tracked generated code as complete even when projection-owned", () => {
+    const loaded = makeGeneratedFileAccountingFixture()
+    const analysis = analyzeFileAccounting(loaded)
+    const generatedTarget = analysis.targets.find((target) =>
+      target.path === "packages/demo/src/generated/widget.ts"
+    )
+
+    expect(generatedTarget).toMatchObject({
+      currentOwner: "demo.generate-widget",
+      expectedOwnerKind: "ProjectionRecipe",
+      missingOrAmbiguousOwnershipReason: expect.stringContaining("tracked generated code must leave source control"),
+    })
+    expect(analysis.oracle.trackedGeneratedCodeFiles).toBe(1)
+    expect(analysis.oracle.trackedGeneratedArtifactFiles).toBe(0)
+    expect(analysis.diagnostics.map((diagnostic) => diagnostic.code)).toContain("trellis/generated-code-tracked")
+    expect(analysis.oracle.accountedFiles).toBeLessThan(analysis.oracle.trackedFiles)
+    expect(analysis.oracle.promotionAllowed).toBe(false)
+  })
+
+  it("keeps deleted-but-tracked files in repository inventory", () => {
+    const loaded = makeDeletedTrackedFileAccountingFixture()
+    const analysis = analyzeFileAccounting(loaded)
+    const deletedTarget = analysis.targets.find((target) =>
+      target.path === "packages/demo/src/deleted.ts"
+    )
+
+    expect(analysis.snapshot.trackedFileCount).toBe(2)
+    expect(deletedTarget).toMatchObject({
+      fileRole: "source",
+      expectedOwnerKind: "Recipe",
+      missingOrAmbiguousOwnershipReason: expect.stringContaining("missing Recipe ownership"),
+    })
+    expect(analysis.oracle.trackedFiles).toBe(2)
+    expect(analysis.oracle.unownedSourceFiles).toBeGreaterThanOrEqual(1)
+    expect(analysis.diagnostics.map((diagnostic) => diagnostic.file)).toContain(
+      "packages/demo/src/deleted.ts",
+    )
+    expect(analysis.oracle.promotionAllowed).toBe(false)
+  })
+
+  it("reports ambiguous focused recipe ownership and groups packets by repair shape", () => {
+    const loaded = makeAmbiguousFileAccountingFixture()
+    const analysis = analyzeFileAccounting(loaded)
+    const ambiguousTarget = analysis.targets.find((target) =>
+      target.path === "packages/demo/src/feature/owned.ts"
+    )
+    const ambiguousDiagnostic = analysis.diagnostics.find((diagnostic) =>
+      diagnostic.file === "packages/demo/src/feature/owned.ts"
+    )
+
+    expect(ambiguousTarget).toMatchObject({
+      currentOwner: "demo.feature-a",
+      missingOrAmbiguousOwnershipReason: expect.stringContaining("ambiguous ownership"),
+    })
+    expect(analysis.oracle.ambiguousFiles).toBe(1)
+    expect(ambiguousDiagnostic).toMatchObject({
+      code: "trellis/file-unowned-by-recipe",
+      tags: expect.arrayContaining([
+        "repair-recipe:trellis-language-service.file-accounting.file-unowned-by-recipe",
+        "validation-target:workspace:packetized-architecture-judge",
+        "blast-radius:package",
+      ]),
+    })
+    expect(ambiguousDiagnostic?.tags.some((tag) =>
+      tag.startsWith("packet-group:packages/demo|source|Recipe|trellis-language-service.file-accounting.file-unowned-by-recipe|workspace:packetized-architecture-judge|")
+    )).toBe(true)
+    expect(analysis.oracle.promotionAllowed).toBe(false)
+  })
+
+  it("counts specialized non-source wildcard ownership as final accounting", () => {
+    const loaded = makeWorkspaceRoleFileAccountingFixture()
+    const analysis = analyzeFileAccounting(loaded)
+    const roleTargets = [
+      "docs/README.md",
+      "openspec/changes/demo/proposal.md",
+      "nix/demo.nix",
+    ].map((file) => analysis.targets.find((target) => target.path === file))
+
+    expect(roleTargets).toEqual([
+      expect.objectContaining({ currentOwner: "demo.docs" }),
+      expect.objectContaining({ currentOwner: "demo.openspec" }),
+      expect.objectContaining({ currentOwner: "demo.nix" }),
+    ])
+    expect(roleTargets.every((target) => target?.missingOrAmbiguousOwnershipReason === undefined)).toBe(true)
+    expect(analysis.diagnostics.map((diagnostic) => diagnostic.file)).not.toEqual(expect.arrayContaining([
+      "docs/README.md",
+      "openspec/changes/demo/proposal.md",
+      "nix/demo.nix",
+    ]))
+  })
+
+  it("derives source-expression failures from typed recipe, handler, Layer, and side-effect facts", () => {
+    const loaded = makeSourceExpressionFixture()
+    const analysis = analyzeSourceExpression(loaded, {
+      packetCount: 0,
+      missingJudgments: 0,
+    })
+    const diagnosticCodes = analysis.diagnostics.map((diagnostic) => diagnostic.code)
+
+    expect(analysis.snapshot.sourceFileCount).toBeGreaterThanOrEqual(4)
+    expect(analysis.snapshot.typedAlchemyResourceCount).toBe(2)
+    expect(analysis.snapshot.handlerBindingCount).toBe(1)
+    expect(analysis.oracle.stringOnlyIoRecipes).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.recipesMissingTypedHandlers).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.sideEffectsOutsideEffectRequirements).toBe(1)
+    expect(analysis.oracle.pureModulesUnreachableFromRecipe).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.recipeHandlersNotDagBound).toBeGreaterThanOrEqual(1)
+    expect(diagnosticCodes).toEqual(expect.arrayContaining([
+      "trellis/recipe-has-string-only-io",
+      "trellis/recipe-missing-typed-handler",
+      "trellis/side-effect-outside-effect-requirement",
+      "trellis/pure-module-not-reachable-from-recipe",
+      "trellis/recipe-handler-not-dag-bound",
+    ]))
+    expect(analysis.oracle.promotionAllowed).toBe(false)
+  })
+
+  it("does not require file-local recipes for untracked generated TypeScript outputs", () => {
+    const loaded = makeUntrackedGeneratedSourceExpressionFixture()
+    const analysis = analyzeSourceExpression(loaded, {
+      packetCount: 0,
+      missingJudgments: 0,
+    })
+    const diagnosticFiles = analysis.diagnostics.map((diagnostic) => diagnostic.file)
+
+    expect(analysis.snapshot.sourceFileCount).toBe(1)
+    expect(diagnosticFiles).toContain("packages/demo/src/index.ts")
+    expect(diagnosticFiles).not.toContain("packages/demo/src/generated/widget.ts")
+    expect(analysis.targets.map((target) => target.path)).not.toContain(
+      "packages/demo/src/generated/widget.ts",
+    )
+  })
+
+  it("fails aggregate-only recipe catalogs even when typed IO and DAG counters pass", () => {
+    const loaded = makeAggregateOnlyLocalRecipeFixture()
+    const analysis = analyzeSourceExpression(loaded, {
+      packetCount: 0,
+      missingJudgments: 0,
+    })
+    const diagnosticCodes = analysis.diagnostics.map((diagnostic) => diagnostic.code)
+
+    expect(analysis.oracle.recipesMissingAlchemyResourceIo).toBe(0)
+    expect(analysis.oracle.recipesMissingTypedHandlers).toBe(0)
+    expect(analysis.oracle.recipesNotInAlchemyDag).toBe(0)
+    expect(analysis.oracle.recipeDependenciesNotAlchemyDag).toBe(0)
+    expect(analysis.oracle.alchemyDagEdgesMissingResources).toBe(0)
+    expect(analysis.oracle.nestedRecipesMissingTypedContracts).toBe(0)
+    expect(analysis.oracle.recipeDagCycles).toBe(0)
+    expect(analysis.oracle.sourceFilesMissingLocalRecipes).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.sourceFilesMissingLocalHandlers).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.sourceFilesMissingRecipeModules).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.aggregateRecipesOwningSourceFiles).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.packageCatalogsMissingLocalModules).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.semanticGroupingStringsUsedAsAuthority).toBeGreaterThanOrEqual(1)
+    expect(diagnosticCodes).toEqual(expect.arrayContaining([
+      "trellis/source-file-missing-local-recipe",
+      "trellis/source-file-missing-local-handler",
+      "trellis/source-file-missing-recipe-module",
+      "trellis/aggregate-recipe-owns-source-file",
+      "trellis/package-catalog-missing-local-module",
+      "trellis/semantic-grouping-string-authority",
+    ]))
+    expect(analysis.oracle.promotionAllowed).toBe(false)
+  })
+
+  it("fails dependency-only, missing-resource, static-provider, cyclic, and string-heavy DAG expression", () => {
+    const loaded = makeNestedRecipeDagFixture()
+    const analysis = analyzeSourceExpression(loaded, {
+      packetCount: 0,
+      missingJudgments: 0,
+    })
+    const diagnosticCodes = analysis.diagnostics.map((diagnostic) => diagnostic.code)
+
+    expect(analysis.oracle.recipeDependenciesNotAlchemyDag).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.alchemyDagEdgesMissingResources).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.alchemyResourcesNotProgrammatic).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.nestedRecipesMissingTypedContracts).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.recipeDagCycles).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.stringIdsNotInferred).toBeGreaterThanOrEqual(1)
+    expect(analysis.oracle.semanticGroupingStringsUsedAsAuthority).toBeGreaterThanOrEqual(1)
+    expect(diagnosticCodes).toEqual(expect.arrayContaining([
+      "trellis/recipe-dependency-not-alchemy-dag",
+      "trellis/alchemy-dag-edge-missing-resource",
+      "trellis/alchemy-resource-not-programmatic",
+      "trellis/nested-recipe-missing-typed-contract",
+      "trellis/recipe-dag-cycle",
+      "trellis/string-id-not-inferred",
+      "trellis/semantic-grouping-string-authority",
+    ]))
+    expect(analysis.oracle.promotionAllowed).toBe(false)
+  })
+
+  it("resolves imported const recipe IDs in dependencies and nested DAG edges", () => {
+    const loaded = makeImportedRecipeIdDagFixture()
+    const analysis = analyzeSourceExpression(loaded, {
+      packetCount: 0,
+      missingJudgments: 0,
+    })
+
+    expect(analysis.oracle.recipeDependenciesNotAlchemyDag).toBe(0)
+    expect(analysis.oracle.alchemyDagEdgesMissingResources).toBe(0)
+    expect(analysis.oracle.nestedRecipesMissingTypedContracts).toBe(0)
+    expect(analysis.diagnostics.map((diagnostic) => diagnostic.code)).not.toEqual(expect.arrayContaining([
+      "trellis/recipe-dependency-not-alchemy-dag",
+      "trellis/alchemy-dag-edge-missing-resource",
+      "trellis/nested-recipe-missing-typed-contract",
+    ]))
+  })
+
+  it("packetizes aggregate-only catalogs as file-local recipe and aggregate packets", () => {
+    const loaded = makeAggregateOnlyLocalRecipeFixture()
+    const output = Schema.decodeUnknownSync(TrellisLsPacketsOutputSchema)(
+      runPacketsCommand({
+        cwd: loaded.workspaceRoot,
+        workspace: ".",
+        source: "trellis",
+        profile: "recipe-only-source",
+        format: "json",
+      }).output,
+    )
+    const localRecipePacket = output.packets.find((packet) =>
+      packet.code === "trellis/source-file-missing-local-recipe"
+    )
+    const localHandlerPacket = output.packets.find((packet) =>
+      packet.code === "trellis/source-file-missing-local-handler"
+    )
+    const aggregatePacket = output.packets.find((packet) =>
+      packet.code === "trellis/aggregate-recipe-owns-source-file"
+    )
+    const recipeModulePacket = output.packets.find((packet) =>
+      packet.code === "trellis/source-file-missing-recipe-module"
+    )
+    const catalogModulePacket = output.packets.find((packet) =>
+      packet.code === "trellis/package-catalog-missing-local-module"
+    )
+    const semanticGroupingPacket = output.packets.find((packet) =>
+      packet.code === "trellis/semantic-grouping-string-authority"
+    )
+
+    expect(localRecipePacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "file-local-recipe",
+      path: "packages/demo/src/worker.ts",
+      packageRootId: "packages/demo",
+    })
+    expect(localHandlerPacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "file-local-handler",
+      path: "packages/demo/src/worker.ts",
+      packageRootId: "packages/demo",
+    })
+    expect(aggregatePacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "recipe-aggregate",
+      path: "packages/demo/src/recipes.ts",
+      packageRootId: "packages/demo",
+    })
+    expect(recipeModulePacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "recipe-module",
+      path: "packages/demo/src/worker.ts",
+      packageRootId: "packages/demo",
+    })
+    expect(catalogModulePacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "package-catalog",
+      path: "packages/demo/src/recipes.ts",
+      packageRootId: "packages/demo",
+    })
+    expect(recipeModulePacket?.corePacket.targets[0]?.identity.code).toBe(
+      "trellis/source-file-missing-recipe-module",
+    )
+    expect(semanticGroupingPacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "semantic-grouping",
+      path: "packages/demo/src/recipes.ts",
+      packageRootId: "packages/demo",
+    })
+  })
+
+  it("packetizes nested DAG and typed-inference failures as grouped implementation packets", () => {
+    const loaded = makeNestedRecipeDagFixture()
+    const output = Schema.decodeUnknownSync(TrellisLsPacketsOutputSchema)(
+      runPacketsCommand({
+        cwd: loaded.workspaceRoot,
+        workspace: ".",
+        source: "trellis",
+        profile: "recipe-only-source",
+        format: "json",
+      }).output,
+    )
+    const dependencyPacket = output.packets.find((packet) =>
+      packet.code === "trellis/recipe-dependency-not-alchemy-dag"
+    )
+    const missingResourcePacket = output.packets.find((packet) =>
+      packet.code === "trellis/alchemy-dag-edge-missing-resource"
+    )
+    const programmaticPacket = output.packets.find((packet) =>
+      packet.code === "trellis/alchemy-resource-not-programmatic"
+    )
+    const nestedContractPacket = output.packets.find((packet) =>
+      packet.code === "trellis/nested-recipe-missing-typed-contract"
+    )
+    const cyclePacket = output.packets.find((packet) =>
+      packet.code === "trellis/recipe-dag-cycle"
+    )
+    const stringInferencePacket = output.packets.find((packet) =>
+      packet.code === "trellis/string-id-not-inferred"
+    )
+    const semanticGroupingPacket = output.packets.find((packet) =>
+      packet.code === "trellis/semantic-grouping-string-authority"
+    )
+
+    expect(dependencyPacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "alchemy-dag-edge",
+      fromRecipeId: "demo.parent",
+      toRecipeId: "demo.child",
+    })
+    expect(missingResourcePacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "alchemy-dag-edge",
+      fromRecipeId: "demo.parent",
+      resourceId: "unknown-resource",
+    })
+    expect(programmaticPacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "programmatic-alchemy-resource",
+      resourceId: "demo.static-kubernetes",
+    })
+    expect(nestedContractPacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "nested-recipe",
+      recipeId: "demo.untyped",
+    })
+    expect(cyclePacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "recipe-dag",
+    })
+    expect(stringInferencePacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "recipe-dag",
+      recipeId: "demo.parent",
+    })
+    expect(semanticGroupingPacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "semantic-grouping",
+      path: "packages/demo/src/recipes.ts",
+      packageRootId: "packages/demo",
+    })
+  })
+
+  it("projects source-expression diagnostics into grouped Trellis packets", () => {
+    const loaded = makeSourceExpressionFixture()
+    const output = Schema.decodeUnknownSync(TrellisLsPacketsOutputSchema)(
+      runPacketsCommand({
+        cwd: loaded.workspaceRoot,
+        workspace: ".",
+        source: "trellis",
+        profile: "recipe-only-source",
+        format: "json",
+      }).output,
+    )
+    const recipeIoPacket = output.packets.find((packet) =>
+      packet.code === "trellis/recipe-has-string-only-io"
+    )
+    const sideEffectPacket = output.packets.find((packet) =>
+      packet.code === "trellis/side-effect-outside-effect-requirement"
+    )
+    const handlerDagPacket = output.packets.find((packet) =>
+      packet.code === "trellis/recipe-handler-not-dag-bound"
+    )
+
+    expect(recipeIoPacket).toMatchObject({
+      corePacket: {
+        recipeId: "trellis-language-service.source-expression-packet",
+        targets: [
+          expect.objectContaining({
+            subject: { kind: "recipe-io", recipeId: "demo.string-only" },
+          }),
+        ],
+      },
+      ruleName: "attune/recipes-use-typed-alchemy-resource-io",
+    })
+    expect(sideEffectPacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "effect-service-requirement",
+      requirementId: "filesystem",
+    })
+    expect(sideEffectPacket?.corePacket.targets[0]?.identity.code).toBe(
+      "trellis/side-effect-outside-effect-requirement",
+    )
+    expect(handlerDagPacket?.corePacket.targets[0]?.subject).toMatchObject({
+      kind: "recipe-handler-dag",
+      recipeId: "demo.typed",
+      handlerId: "demo.typed.handler",
+    })
+  })
+
   it("exposes oxlint-era architecture invariants as Trellis diagnostic recipes", () => {
     const loaded = makeTrellisArchitectureDiagnosticsFixture()
     const diagnostics = collectTrellisDiagnostics(loaded, { recipePackages: [] })
@@ -1144,9 +2412,8 @@ describe("trellis-ls CLI core", () => {
       "trellis/alchemy-provenance-missing",
       "trellis/private-ledger-without-recipe-linkage",
       "trellis/operation-missing-receipt",
-      "trellis/tend-session-missing-recipe-id",
-      "trellis/tend-command-missing-observation-id",
-      "trellis/tend-report-not-derived-from-receipts",
+      "trellis/tend-owned-packet-ontology",
+      "trellis/tend-owned-judge-ontology",
     ]))
 
     const fixes = collectTrellisFixes(loaded, diagnostics)
@@ -1157,10 +2424,9 @@ describe("trellis-ls CLI core", () => {
         requiresReview: true,
       }),
       expect.objectContaining({
-        kind: "nx-repair",
-        title: "Route Nx target ownership through workspace repair",
+        kind: "text-edit",
+        title: "Attach Nx target recipe/projection ownership",
         safe: true,
-        command: { run: "nx run workspace:repair" },
       }),
       expect.objectContaining({
         kind: "manual",
@@ -1174,7 +2440,7 @@ describe("trellis-ls CLI core", () => {
       }),
       expect.objectContaining({
         kind: "manual",
-        title: "Link Tend state to recipe receipts and observations",
+        title: "Route Tend packet state through framework protocol receipts",
         requiresReview: true,
       }),
     ]))
@@ -1362,7 +2628,7 @@ describe("trellis-ls CLI core", () => {
         title: "Run internal generator",
         kind: "nx-generator",
         options: {
-          internalGenerator: "@attune/nx:private-generator",
+          internalGenerator: "@attune/framework-nx:private-generator",
         },
       },
     })

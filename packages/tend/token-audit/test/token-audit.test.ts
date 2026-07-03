@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest"
-import { TendTokenAuditRecipes, computeTendTokenMetrics } from "../src/index.js"
+import { computeTendTokenMetrics } from "../src/index.js"
+import { TendTokenAuditRecipes } from "../src/recipes.js"
+
+const runtimeTestValidationTarget = "framework-runtime:test" as const
 
 describe("@attune/tend-token-audit", () => {
   it("computes token, OpenRTK, and Magic Context metrics", () => {
-    expect(TendTokenAuditRecipes[0]?.id).toBe("tend-token-audit.metrics")
+    expect(TendTokenAuditRecipes.map((recipe) => recipe.id)).toEqual([
+      "tend-token-audit.metrics",
+      "tend-token-audit.compression",
+      "tend-token-audit.test-suite",
+    ])
+    expect(TendTokenAuditRecipes.some((recipe) => recipe.sourcePath === "packages/tend/token-audit/src/recipes.ts"))
+      .toBe(false)
     expect(computeTendTokenMetrics({
       toolCalls: [
         {
@@ -34,7 +43,7 @@ describe("@attune/tend-token-audit", () => {
       validations: [{
         validationObservationId: "validation-1",
         sessionId: "session-1",
-        validationTarget: "framework-runtime:test",
+        validationTarget: runtimeTestValidationTarget,
         status: "succeeded",
         occurredAt: "2026-06-28T00:00:03.000Z",
         tokens: { totalTokens: 100 },

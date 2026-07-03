@@ -1,11 +1,85 @@
+import {
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
+
 import { defaultAttunePiPermissionProfile } from "../permissions/default-profile.js"
 import type { PermissionProfile } from "../schema/permission-profile.js"
 import { toNames } from "./internal/names.js"
+
+const generatorArtifactsRecipeId = "attune-pi-agent.generator-artifacts"
+const specGeneratorRecipeId = "attune-pi-agent.spec-generator"
+const permissionPolicyGeneratorRecipeId = "attune-pi-agent.permission-policy-generator"
+const testObligationGeneratorRecipeId = "attune-pi-agent.test-obligation-generator"
+const taskplaneTaskGeneratorRecipeId = "attune-pi-agent.taskplane-task-generator"
 
 export interface NamedGeneratorInput {
   readonly name: string
   readonly directory?: string
 }
+
+export const NamedGeneratorInputSchema = Schema.Struct({
+  name: Schema.String,
+  directory: Schema.optional(Schema.String),
+})
+
+export const namedGeneratorInputFromSchema = (
+  input: typeof NamedGeneratorInputSchema.Type,
+): NamedGeneratorInput => ({
+  name: input.name,
+  ...(input.directory === undefined ? {} : { directory: input.directory }),
+})
+
+export const PiGeneratorArtifact = Schema.Struct({
+  generatorName: Schema.String,
+  outputPath: Schema.String,
+  deterministic: Schema.Boolean,
+  reviewRequired: Schema.Boolean,
+})
+export type PiGeneratorArtifact = typeof PiGeneratorArtifact.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiGeneratorInputResource = defineAlchemyResource({
+  id: "attune-pi-agent.generator-input.resource",
+  kind: "schema",
+  alchemyType: "attune:resource:Schema",
+  ownerRecipeId: generatorArtifactsRecipeId,
+  consumedBy: [
+    generatorArtifactsRecipeId,
+    specGeneratorRecipeId,
+    permissionPolicyGeneratorRecipeId,
+    testObligationGeneratorRecipeId,
+    taskplaneTaskGeneratorRecipeId,
+  ],
+  addressFields: ["name", "directory"],
+  addressSchema: NamedGeneratorInputSchema,
+  stateSchema: NamedGeneratorInputSchema,
+  modes: ["read"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiGeneratorArtifactResource = defineAlchemyResource({
+  id: "attune-pi-agent.generator-artifact.resource",
+  kind: "generated-directory",
+  alchemyType: "attune:resource:GeneratedDirectory",
+  programmaticResourceExport: "AttunePiGeneratorArtifactResource",
+  ownerRecipeId: generatorArtifactsRecipeId,
+  producedBy: [
+    generatorArtifactsRecipeId,
+    specGeneratorRecipeId,
+    permissionPolicyGeneratorRecipeId,
+    testObligationGeneratorRecipeId,
+    taskplaneTaskGeneratorRecipeId,
+  ],
+  addressFields: ["outputPath"],
+  addressSchema: Schema.Struct({
+    outputPath: Schema.String,
+  }),
+  stateSchema: Schema.Array(PiGeneratorArtifact),
+  modes: ["project", "write", "observe"],
+})
 
 export const stableJson = (value: unknown): string =>
   `${JSON.stringify(sortJson(value), null, 2)}\n`
@@ -117,3 +191,101 @@ const sortJson = (value: unknown): unknown => {
 
   return value
 }
+
+export const piGeneratorArtifacts = (
+  input: NamedGeneratorInput,
+): PiGeneratorArtifact[] => {
+  const names = toNames(input.name)
+
+  return [
+    {
+      generatorName: "spec",
+      outputPath: `${input.directory ?? "specs/pi-agent"}/${names.fileName}.implementation-spec.json`,
+      deterministic: true,
+      reviewRequired: true,
+    },
+    {
+      generatorName: "permission-policy",
+      outputPath: `${input.directory ?? "policies/pi-agent"}/${names.fileName}.pi-policy.json`,
+      deterministic: true,
+      reviewRequired: true,
+    },
+    {
+      generatorName: "test-obligation",
+      outputPath: `${input.directory ?? "obligations/pi-agent"}/${names.fileName}.test-obligation.json`,
+      deterministic: true,
+      reviewRequired: false,
+    },
+    {
+      generatorName: "taskplane-task",
+      outputPath: `${input.directory ?? "taskplane/pi-agent"}/${names.fileName}.taskplane-task.json`,
+      deterministic: true,
+      reviewRequired: true,
+    },
+  ]
+}
+
+// @attune-packet-target generated-runtime-projection eligible
+export const AttunePiGeneratorArtifactsRecipe = defineProjectionRecipe({
+  id: "attune-pi-agent.generator-artifacts",
+  title: "Generate deterministic Pi spec, permission, obligation, and task artifact plans",
+  inputSchema: NamedGeneratorInputSchema,
+  outputSchema: Schema.Array(PiGeneratorArtifact),
+  nxTarget: "attune-pi-agent:test",
+  allowedFiles: [
+    "packages/attune/pi-agent/src/generators/**",
+    "packages/attune/pi-agent/generators.json",
+  ],
+  validationEvidence: ["attune-pi-agent:test", "attune-pi-agent:build"],
+  io: {
+    inputSchema: NamedGeneratorInputSchema,
+    outputSchema: Schema.Array(PiGeneratorArtifact),
+    inputResources: [AttunePiGeneratorInputResource],
+    outputResources: [AttunePiGeneratorArtifactResource],
+  },
+  handler: defineRecipeHandler<
+    typeof NamedGeneratorInputSchema.Type,
+    PiGeneratorArtifact[]
+  >({
+    id: "attune-pi-agent.generator-artifacts.handler",
+    recipeId: generatorArtifactsRecipeId,
+    sourcePath: "packages/attune/pi-agent/src/generators/renderers.ts",
+    exportName: "piGeneratorArtifacts",
+    emitsReceipts: ["attune-pi-agent.generator-artifacts.projected"],
+    handler: (input) => Effect.succeed(piGeneratorArtifacts(namedGeneratorInputFromSchema(input))),
+  }),
+  alchemyDag: [
+    {
+      fromRecipeId: generatorArtifactsRecipeId,
+      toRecipeId: specGeneratorRecipeId,
+      resource: AttunePiGeneratorArtifactResource,
+      kind: "projects",
+      modes: ["project", "write"],
+    },
+    {
+      fromRecipeId: generatorArtifactsRecipeId,
+      toRecipeId: permissionPolicyGeneratorRecipeId,
+      resource: AttunePiGeneratorArtifactResource,
+      kind: "projects",
+      modes: ["project", "write"],
+    },
+    {
+      fromRecipeId: generatorArtifactsRecipeId,
+      toRecipeId: testObligationGeneratorRecipeId,
+      resource: AttunePiGeneratorArtifactResource,
+      kind: "projects",
+      modes: ["project", "write"],
+    },
+    {
+      fromRecipeId: generatorArtifactsRecipeId,
+      toRecipeId: taskplaneTaskGeneratorRecipeId,
+      resource: AttunePiGeneratorArtifactResource,
+      kind: "projects",
+      modes: ["project", "write"],
+    },
+  ],
+})
+
+export const AttunePiGeneratorRendererRecipes = [
+  AttunePiGeneratorArtifactsRecipe,
+] as const

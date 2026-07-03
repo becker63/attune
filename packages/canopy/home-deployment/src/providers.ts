@@ -1,8 +1,21 @@
 import { spawnSync } from "node:child_process"
 
+import {
+  defineAlchemyResource,
+  defineObservationRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
 import { Context, Effect, Layer, Schema } from "effect"
 
-import type { CommandPlan, PlannedResource } from "./model.ts"
+import {
+  CanopyDeployPlan,
+  CanopyDeployPlanResource,
+  canopyNixosBootstrapCommandPlanRecipeId,
+  canopyObservedStateRecipeId,
+  type CommandPlan,
+  type PlannedResource,
+} from "./model.ts"
+import { NixosBootstrapCommandPlanResource } from "./internal/bootstrap/NixosBootstrapCommandPlan.ts"
 
 export const PlatformProviderMode = Schema.Literals(["Live", "DryRun", "Test"])
 export type PlatformProviderMode = typeof PlatformProviderMode.Type
@@ -30,6 +43,12 @@ export const ProviderTransitionResult = Schema.Struct({
   blockers: Schema.Array(Schema.String),
 })
 export type ProviderTransitionResult = typeof ProviderTransitionResult.Type
+
+export const CanopyObservedState = Schema.Struct({
+  evidence: Schema.Array(ProviderEvidence),
+  ready: Schema.Boolean,
+})
+export type CanopyObservedState = typeof CanopyObservedState.Type
 
 export interface ManualProof {
   readonly gateId: string
@@ -371,7 +390,7 @@ const observeExistingLive = (
   resource: PlannedResource,
 ): Effect.Effect<ProviderTransitionResult | undefined> => {
   if (mode !== "Live" || resource.observeCommand === undefined) {
-    return Effect.succeed(undefined)
+    return Effect.void as Effect.Effect<ProviderTransitionResult | undefined>
   }
 
   return runLiveCommand(provider, resource, false, resource.observeCommand).pipe(
@@ -601,3 +620,64 @@ export const runProviderTransition = (
       return providers.journal.runSmoke(resource)
   }
 }
+
+export const CanopyObservedStateAddress = Schema.Struct({
+  target: Schema.String,
+})
+export type CanopyObservedStateAddress = typeof CanopyObservedStateAddress.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const CanopyObservedStateResource = defineAlchemyResource({
+  id: "canopy.observed-state.resource",
+  kind: "observation-stream",
+  alchemyType: "attune:canopy:ObservedState",
+  ownerRecipeId: "canopy.observed-state",
+  producedBy: ["canopy.observed-state"],
+  consumedBy: ["canopy.home-deployment"],
+  addressFields: ["target"],
+  addressSchema: CanopyObservedStateAddress as never,
+  stateSchema: CanopyObservedState as never,
+  modes: ["observe", "read"],
+})
+
+export const observeCanopyProviderState = (plan: CanopyDeployPlan): CanopyObservedState => ({
+  evidence: plan.evidenceRequirements.map((requirement) =>
+    providerEvidence(`canopy:observed-state:${requirement}`, `Evidence requirement ${requirement}`)),
+  ready: plan.commands.length > 0,
+})
+
+export const CanopyObservedStateHandler = defineRecipeHandler<CanopyDeployPlan, CanopyObservedState>({
+  id: "canopy.observed-state.handler",
+  recipeId: canopyObservedStateRecipeId,
+  sourcePath: "packages/canopy/home-deployment/src/providers.ts",
+  exportName: "observeCanopyProviderState",
+  handler: (input) => Effect.succeed(observeCanopyProviderState(input)) as never,
+  emitsReceipts: ["canopy.observed-state.observed"],
+})
+
+export const CanopyObservedStateRecipe = defineObservationRecipe({
+  id: canopyObservedStateRecipeId,
+  projectId: "home-deployment",
+  title: "Observe Canopy provider state",
+  inputSchema: CanopyDeployPlan as never,
+  outputSchema: CanopyObservedState as never,
+  nxTarget: "home-deployment:test",
+  allowedFiles: ["packages/canopy/home-deployment/src/providers.ts"],
+  validationEvidence: ["home-deployment:test"],
+  io: {
+    inputSchema: CanopyDeployPlan as never,
+    outputSchema: CanopyObservedState as never,
+    inputResources: [CanopyDeployPlanResource, NixosBootstrapCommandPlanResource],
+    outputResources: [CanopyObservedStateResource],
+  },
+  handler: CanopyObservedStateHandler,
+  alchemyDag: [{
+    fromRecipeId: canopyNixosBootstrapCommandPlanRecipeId,
+    toRecipeId: canopyObservedStateRecipeId,
+    resource: NixosBootstrapCommandPlanResource,
+    kind: "observes",
+    modes: ["observe", "read"],
+  }],
+})
+
+export const HomeDeploymentProviderRecipes = [CanopyObservedStateRecipe] as const

@@ -1,3 +1,11 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect, Schema as S } from "effect"
+
 type DiscoveryBudget = Readonly<{
   joernRunsRemaining: number
   anchorSearchesRemaining: number
@@ -137,6 +145,93 @@ export type ReadModelSnapshot = Readonly<{
   reviewQueue: ReadonlyArray<ReviewItem>
   metrics: ReadonlyArray<RunMetrics>
 }>
+
+const ReadModelRecipeId = "attuned-discovery.read-model"
+const ReadModelSourcePath = "packages/attune/discovery/src/memory/read-model.ts"
+
+const ReadModelInput = S.Struct({
+  runId: S.String,
+})
+
+const ReadModelSnapshotSchema = S.Struct({
+  runs: S.Array(S.Unknown),
+  decisions: S.Array(S.Unknown),
+  anchors: S.Array(S.Unknown),
+  anchorSearches: S.Array(S.Unknown),
+  families: S.Array(S.Unknown),
+  hypotheses: S.Array(S.Unknown),
+  evidence: S.Array(S.Unknown),
+  ruleCandidates: S.Array(S.Unknown),
+  reviewQueue: S.Array(S.Unknown),
+  metrics: S.Array(S.Unknown),
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const ReadModelInputResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.read-model-input",
+  kind: "observation-stream",
+  alchemyType: "attuned-discovery/read-model-input",
+  addressSchema: ReadModelInput,
+  stateSchema: ReadModelInput,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: ReadModelRecipeId,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+const ReadModelSnapshotResource = defineAlchemyResource({
+  id: "attuned-discovery.resource.read-model-snapshot",
+  kind: "report",
+  alchemyType: "attuned-discovery/read-model-snapshot",
+  addressSchema: ReadModelInput,
+  stateSchema: ReadModelSnapshotSchema,
+  modes: ["read", "project", "observe"],
+  ownerRecipeId: ReadModelRecipeId,
+})
+
+const ReadModelHandler = defineRecipeHandler<
+  typeof ReadModelInput.Type,
+  typeof ReadModelSnapshotSchema.Type,
+  never,
+  never
+>({
+  id: "attuned-discovery.read-model.handler",
+  recipeId: ReadModelRecipeId,
+  sourcePath: ReadModelSourcePath,
+  exportName: "makeInMemoryMotifReadModel",
+  handler: () => Effect.succeed(makeInMemoryMotifReadModel().snapshot()),
+})
+
+const ReadModelDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ReadModelRecipeId,
+  toRecipeId: "attuned-discovery.repo-snapshot",
+  resource: ReadModelInputResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+})
+
+export const AttuneDiscoveryReadModelRecipe = defineRecipe({
+  id: ReadModelRecipeId,
+  projectId: "attuned-discovery",
+  title: "Project discovery events into the in-memory read model",
+  inputSchema: ReadModelInput,
+  outputSchema: ReadModelSnapshotSchema,
+  dependencies: [{ recipeId: "attuned-discovery.repo-snapshot" }],
+  nxTarget: "attuned-discovery:test",
+  allowedFiles: [ReadModelSourcePath],
+  validationEvidence: ["attuned-discovery:test", "attuned-discovery:typecheck"],
+  io: {
+    inputSchema: ReadModelInput,
+    outputSchema: ReadModelSnapshotSchema,
+    inputResources: [ReadModelInputResource],
+    outputResources: [ReadModelSnapshotResource],
+  },
+  handler: ReadModelHandler,
+  alchemyDag: [ReadModelDagEdge],
+})
+
+export const AttuneDiscoveryReadModelRecipes = [
+  AttuneDiscoveryReadModelRecipe,
+] as const
 
 export type MotifReadModel = Readonly<{
   getRun: (runId: string) => DiscoveryRun

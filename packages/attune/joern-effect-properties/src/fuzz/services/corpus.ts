@@ -1,3 +1,4 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
 import { Context, Effect, Layer, Schema } from "effect"
 import { CounterexampleStore } from "./counterexamples.js"
 import type { CounterexampleCandidate } from "../domain/model.js"
@@ -20,6 +21,8 @@ const slug = (value: string): string =>
 
 const extensionFor = (syntaxFlavor: CounterexampleCandidate["syntaxFlavor"]): string =>
   syntaxFlavor
+
+const semanticProjectTags = (values: readonly string[]): readonly string[] => values
 
 const counterexampleSeedId = (
   candidate: CounterexampleCandidate,
@@ -51,21 +54,21 @@ export const semanticProjectSeedFromCounterexampleCandidate = (
         role: "entrypoint",
         source: candidate.source,
         syntaxFlavor: candidate.syntaxFlavor,
-        tags: [
+        tags: semanticProjectTags([
           "counterexample",
           candidate.failureClass,
           ...candidate.mutators.map((mutator) => mutator.kind),
-        ],
+        ]),
       },
     ],
     id,
     origin: "promoted-counterexample",
-    tags: [
+    tags: semanticProjectTags([
       "promoted-counterexample",
       candidate.failureClass,
       candidate.syntaxFlavor,
       ...candidate.mutators.map((mutator) => mutator.kind),
-    ],
+    ]),
     title: candidate.title ?? `Semantic promoted ${candidate.failureClass} counterexample`,
   })
 }
@@ -78,14 +81,14 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/handler.js",
         role: "entrypoint",
         syntaxFlavor: "js",
-        tags: ["js", "source-sink-flow"],
+        tags: semanticProjectTags(["js", "source-sink-flow"]),
         source:
           "export function handler(input) {\n  const command = input.body.command\n  return sink(command)\n}\nfunction sink(value) { return value }\n",
       },
     ],
     id: "semantic-curated-js-source-sink",
     origin: "curated",
-    tags: ["js", "source-sink-flow"],
+    tags: semanticProjectTags(["js", "source-sink-flow"]),
     title: "JavaScript source to sink flow",
   },
   {
@@ -95,14 +98,14 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/decode.ts",
         role: "entrypoint",
         syntaxFlavor: "ts",
-        tags: ["ts", "generic-decode", "source-sink-flow"],
+        tags: semanticProjectTags(["ts", "generic-decode", "source-sink-flow"]),
         source:
           "declare function sink(value: unknown): unknown\nfunction decode<T>(value: T): T { return value }\nexport function handler(input: { readonly body: { readonly command?: string } }) {\n  const command = decode(input.body.command)\n  return sink(command)\n}\n",
       },
     ],
     id: "semantic-curated-ts-generic-decode",
     origin: "curated",
-    tags: ["ts", "generic-decode", "source-sink-flow"],
+    tags: semanticProjectTags(["ts", "generic-decode", "source-sink-flow"]),
     title: "TypeScript generic decode before sink",
   },
   {
@@ -112,14 +115,14 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/view.jsx",
         role: "component",
         syntaxFlavor: "jsx",
-        tags: ["jsx", "jsx-prop-flow", "source-sink-flow"],
+        tags: semanticProjectTags(["jsx", "jsx-prop-flow", "source-sink-flow"]),
         source:
           "function sink(value) { return value }\nfunction View(props) { return <span>{props.value}</span> }\nexport function handler(input) {\n  const rendered = <View value={input.body.command} />\n  return sink(rendered.props.value)\n}\n",
       },
     ],
     id: "semantic-curated-jsx-prop-flow",
     origin: "curated",
-    tags: ["jsx", "jsx-prop-flow", "source-sink-flow"],
+    tags: semanticProjectTags(["jsx", "jsx-prop-flow", "source-sink-flow"]),
     title: "JSX prop flow to sink",
   },
   {
@@ -129,14 +132,14 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/view.tsx",
         role: "component",
         syntaxFlavor: "tsx",
-        tags: ["tsx", "jsx-prop-flow", "source-sink-flow"],
+        tags: semanticProjectTags(["tsx", "jsx-prop-flow", "source-sink-flow"]),
         source:
           "declare function sink(value: unknown): unknown\ntype ViewProps = { readonly value: unknown }\nfunction View(props: ViewProps) { return <span>{props.value}</span> }\nexport function handler(input: { readonly body: { readonly command: string } }) {\n  const rendered = <View value={input.body.command} />\n  return sink(rendered.props.value)\n}\n",
       },
     ],
     id: "semantic-curated-tsx-component-flow",
     origin: "curated",
-    tags: ["tsx", "jsx-prop-flow", "source-sink-flow"],
+    tags: semanticProjectTags(["tsx", "jsx-prop-flow", "source-sink-flow"]),
     title: "TSX component prop flow",
   },
   {
@@ -146,7 +149,7 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/index.ts",
         role: "entrypoint",
         syntaxFlavor: "ts",
-        tags: ["ts", "modules", "import-export"],
+        tags: semanticProjectTags(["ts", "modules", "import-export"]),
         source:
           "import { normalizeCommand } from './normalize'\nexport { normalizeCommand }\nexport function handler(input: { readonly body: { readonly command: string } }) {\n  return normalizeCommand(input.body.command)\n}\n",
       },
@@ -154,14 +157,14 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/normalize.ts",
         role: "module",
         syntaxFlavor: "ts",
-        tags: ["ts", "modules", "import-export"],
+        tags: semanticProjectTags(["ts", "modules", "import-export"]),
         source:
           "export const normalizeCommand = (command: string): string => command.trim().toLowerCase()\nexport default normalizeCommand\n",
       },
     ],
     id: "semantic-curated-ts-modules-import-export",
     origin: "curated",
-    tags: ["ts", "modules", "import-export"],
+    tags: semanticProjectTags(["ts", "modules", "import-export"]),
     title: "TypeScript module import/export project",
   },
   {
@@ -171,14 +174,14 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/async-flow.ts",
         role: "entrypoint",
         syntaxFlavor: "ts",
-        tags: ["ts", "async-flow", "source-sink-flow"],
+        tags: semanticProjectTags(["ts", "async-flow", "source-sink-flow"]),
         source:
           "declare function sink(value: unknown): unknown\nasync function loadCommand(input: { readonly body: { readonly command: string } }): Promise<string> {\n  return await Promise.resolve(input.body.command)\n}\nexport async function handler(input: { readonly body: { readonly command: string } }) {\n  const command = await loadCommand(input)\n  return sink(command)\n}\n",
       },
     ],
     id: "semantic-curated-ts-async-flow",
     origin: "curated",
-    tags: ["ts", "async-flow", "source-sink-flow"],
+    tags: semanticProjectTags(["ts", "async-flow", "source-sink-flow"]),
     title: "TypeScript async source flow",
   },
   {
@@ -188,14 +191,14 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/controller.ts",
         role: "entrypoint",
         syntaxFlavor: "ts",
-        tags: ["ts", "class-method", "source-sink-flow"],
+        tags: semanticProjectTags(["ts", "class-method", "source-sink-flow"]),
         source:
           "declare function sink(value: unknown): unknown\nclass Controller {\n  handle(command: string): unknown {\n    return sink(command)\n  }\n}\nexport function handler(input: { readonly body: { readonly command: string } }) {\n  return new Controller().handle(input.body.command)\n}\n",
       },
     ],
     id: "semantic-curated-ts-class-method",
     origin: "curated",
-    tags: ["ts", "class-method", "source-sink-flow"],
+    tags: semanticProjectTags(["ts", "class-method", "source-sink-flow"]),
     title: "TypeScript class method flow",
   },
   {
@@ -205,14 +208,14 @@ export const curatedSemanticProjectSeeds: readonly SemanticProjectSeedType[] = d
         path: "src/destructure.js",
         role: "entrypoint",
         syntaxFlavor: "js",
-        tags: ["js", "object-destructuring", "source-sink-flow"],
+        tags: semanticProjectTags(["js", "object-destructuring", "source-sink-flow"]),
         source:
           "function sink(value) { return value }\nexport function handler({ body: { command } }) {\n  const payload = { command, seen: true }\n  return sink(payload.command)\n}\n",
       },
     ],
     id: "semantic-curated-js-object-destructuring",
     origin: "curated",
-    tags: ["js", "object-destructuring", "source-sink-flow"],
+    tags: semanticProjectTags(["js", "object-destructuring", "source-sink-flow"]),
     title: "JavaScript object destructuring flow",
   },
 ])
@@ -264,3 +267,79 @@ export const ProjectCorpusStore = SemanticCorpusStore
 export const makeInMemoryProjectCorpusStore = makeInMemorySemanticCorpusStore
 export const ProjectCorpusStoreLive = SemanticCorpusStoreLive
 export const ProjectCorpusStoreWithCounterexamplesLive = SemanticCorpusStoreWithCounterexamplesLive
+
+const JoernEffectPropertiesFuzzServicesCorpusLocalRecipeId = "joern-effect-properties.fuzz.services.corpus" as const
+const JoernEffectPropertiesFuzzServicesCorpusLocalResourceId = "joern-effect-properties.fuzz.services.corpus.resource" as const
+const JoernEffectPropertiesFuzzServicesCorpusLocalHandlerId = "joern-effect-properties.fuzz.services.corpus.handler" as const
+const JoernEffectPropertiesFuzzServicesCorpusLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/services/corpus.ts" as const
+const JoernEffectPropertiesFuzzServicesCorpusLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzServicesCorpusLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesCorpusLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesCorpusLocalRecipeInput = typeof JoernEffectPropertiesFuzzServicesCorpusLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzServicesCorpusLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesCorpusLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesCorpusLocalRecipeOutput = typeof JoernEffectPropertiesFuzzServicesCorpusLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzServicesCorpusLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzServicesCorpusLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzServicesCorpusLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzServicesCorpusLocalRecipeId, JoernEffectPropertiesFuzzServicesCorpusLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzServicesCorpusLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzServicesCorpusLocalRecipeInput,
+  JoernEffectPropertiesFuzzServicesCorpusLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzServicesCorpusLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzServicesCorpusLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzServicesCorpusLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.services.corpus.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzServicesCorpusLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/services/corpus.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzServicesCorpusLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzServicesCorpusLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzServicesCorpusLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzServicesCorpusLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzServicesCorpusLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzServicesCorpusLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzServicesCorpusLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzServicesCorpusLocalRecipes = [JoernEffectPropertiesFuzzServicesCorpusLocalRecipe] as const

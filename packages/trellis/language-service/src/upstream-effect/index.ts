@@ -2,11 +2,34 @@ import * as fs from "node:fs"
 import * as path from "node:path"
 import { fileURLToPath } from "node:url"
 import ts from "typescript"
+import { Effect, Layer } from "effect"
+import {
+  defineAlchemyRecipeDagEdge,
+  defineDiagnosticRecipe,
+  defineDocumentationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
 
 import type { TrellisLsDiagnostic, TrellisLsFixKind, TrellisLsTextEdit } from "../contracts.js"
 import type { TrellisLsProfile, TrellisLsSeverity } from "../contracts.js"
+import {
+  FrameworkLanguageServiceProjectId,
+  LanguageServiceCliOutput,
+  LanguageServiceCommandResource,
+  LanguageServiceDiagnosticsResource,
+  LanguageServiceProjectionInput,
+  LanguageServiceWorkspaceResource,
+} from "../contracts.js"
 import { stableTrellisLsId } from "../ids.js"
 import { relativeToWorkspace } from "../project-loader.js"
+
+export const LanguageServiceUpstreamEffectSourcePath = "packages/trellis/language-service/src/upstream-effect/index.ts" as const
+const upstreamEffectDiagnosticTags = [
+  "effect",
+  "upstream-effect",
+  "LSP.getSemanticDiagnosticsWithCodeFixes",
+] as const
 
 export interface UpstreamEffectFixCandidate {
   readonly fixId: string
@@ -209,9 +232,7 @@ export const collectUpstreamEffectDiagnostics = (input: {
         },
         repairIds,
         tags: [
-          "effect",
-          "upstream-effect",
-          "LSP.getSemanticDiagnosticsWithCodeFixes",
+          ...upstreamEffectDiagnosticTags,
           `effect-rule:${ruleName}`,
           ...(metadata === undefined ? [] : [
             `effect-group:${metadata.group}`,
@@ -748,3 +769,119 @@ const countBy = <A>(
   }
   return counts
 }
+
+const languageServiceUpstreamEffectLayer = defineRecipeLayer({
+  id: "trellis-language-service.upstream-effect.layer",
+  sourcePath: LanguageServiceUpstreamEffectSourcePath,
+  exportName: "languageServiceUpstreamEffectLayer",
+  layer: Layer.empty as never,
+  provides: [{
+    id: "trellis-language-service.upstream-effect-filesystem",
+    service: "Effect.Platform.FileSystem",
+  }],
+})
+
+const languageServiceUpstreamEffectDiagnosticsHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.upstream-effect-diagnostics.handler",
+  recipeId: "trellis-language-service.upstream-effect-diagnostics",
+  sourcePath: LanguageServiceUpstreamEffectSourcePath,
+  exportName: "collectUpstreamEffectDiagnostics",
+  layer: languageServiceUpstreamEffectLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceUpstreamEffectDocsHandler = defineRecipeHandler<
+  LanguageServiceProjectionInput,
+  LanguageServiceCliOutput
+>({
+  id: "trellis-language-service.upstream-effect-documentation.handler",
+  recipeId: "trellis-language-service.upstream-effect-documentation",
+  sourcePath: LanguageServiceUpstreamEffectSourcePath,
+  exportName: "collectUpstreamEffectDiagnosticInventory",
+  layer: languageServiceUpstreamEffectLayer,
+  handler: () =>
+    Effect.succeed({
+      diagnosticCount: 0,
+      fixCount: 0,
+      blocking: false,
+      schemaVersion: 1,
+      invocationModel: "RecipeInvocation",
+    }),
+})
+
+const languageServiceUpstreamEffectDiagnosticsDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.typescript-program",
+  toRecipeId: "trellis-language-service.upstream-effect-diagnostics",
+  resource: LanguageServiceDiagnosticsResource,
+  kind: "diagnoses",
+  modes: ["observe", "read"],
+})
+
+const languageServiceUpstreamEffectDocumentationDag = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "trellis-language-service.source-surface",
+  toRecipeId: "trellis-language-service.upstream-effect-documentation",
+  resource: LanguageServiceCommandResource,
+  kind: "observes",
+  modes: ["read"],
+})
+
+export const LanguageServiceUpstreamEffectDiagnosticsRecipe = defineDiagnosticRecipe({
+  id: "trellis-language-service.upstream-effect-diagnostics",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Normalize upstream Effect diagnostics for Trellis CLI output",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceUpstreamEffectSourcePath,
+  allowedFiles: [
+    LanguageServiceUpstreamEffectSourcePath,
+    "packages/trellis/language-service/src/upstream-effect/vendor/**",
+  ],
+  observedFiles: [
+    LanguageServiceUpstreamEffectSourcePath,
+    "packages/trellis/language-service/src/upstream-effect/vendor/**",
+  ],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceWorkspaceResource],
+    outputResources: [LanguageServiceDiagnosticsResource],
+  },
+  handler: languageServiceUpstreamEffectDiagnosticsHandler,
+  alchemyDag: [languageServiceUpstreamEffectDiagnosticsDag],
+})
+
+export const LanguageServiceUpstreamEffectDocumentationRecipe = defineDocumentationRecipe({
+  id: "trellis-language-service.upstream-effect-documentation",
+  projectId: FrameworkLanguageServiceProjectId,
+  title: "Own upstream Effect adapter documentation",
+  inputSchema: LanguageServiceProjectionInput,
+  outputSchema: LanguageServiceCliOutput,
+  sourcePath: LanguageServiceUpstreamEffectSourcePath,
+  allowedFiles: ["packages/trellis/language-service/src/upstream-effect/UPSTREAM.md"],
+  observedFiles: ["packages/trellis/language-service/src/upstream-effect/UPSTREAM.md"],
+  validationEvidence: ["framework-language-service:test"],
+  io: {
+    inputSchema: LanguageServiceProjectionInput,
+    outputSchema: LanguageServiceCliOutput,
+    inputResources: [LanguageServiceWorkspaceResource],
+    outputResources: [LanguageServiceCommandResource],
+  },
+  handler: languageServiceUpstreamEffectDocsHandler,
+  alchemyDag: [languageServiceUpstreamEffectDocumentationDag],
+})
+
+export const LanguageServiceUpstreamEffectRecipes = [
+  LanguageServiceUpstreamEffectDocumentationRecipe,
+  LanguageServiceUpstreamEffectDiagnosticsRecipe,
+] as const

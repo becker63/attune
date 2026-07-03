@@ -1,6 +1,15 @@
 import { execFileSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineInvocationRecipe,
+  defineRecipeHandler,
+  defineRecipeLayer,
+} from "@attune/framework-protocol"
+import { Effect, Layer, Schema } from "effect"
+
 type PullRequestRef = {
   readonly repo: string
   readonly number: number
@@ -113,3 +122,107 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exitCode = 1
   })
 }
+
+export const ArchitecturePrCompletionAuditRecipeId =
+  "attune-architecture.pr-completion-audit" as const
+const ArchitectureWorkspacePolicyRecipeId = "attune-architecture.workspace-policy" as const
+const ArchitecturePrCompletionAuditSourcePath =
+  "packages/trellis/architecture/src/internal/checks/PrCompletionAuditCli.ts" as const
+
+const ArchitecturePrCompletionAuditInput = Schema.Struct({
+  workspaceRoot: Schema.String,
+  recipeId: Schema.String,
+})
+type ArchitecturePrCompletionAuditInput = typeof ArchitecturePrCompletionAuditInput.Type
+
+const ArchitecturePrCompletionAuditOutput = Schema.Struct({
+  scriptPath: Schema.String,
+  invocationModel: Schema.Literal("RecipeInvocation"),
+  validationTargetHandles: Schema.Array(Schema.String),
+})
+type ArchitecturePrCompletionAuditOutput = typeof ArchitecturePrCompletionAuditOutput.Type
+
+export const projectPrCompletionAuditInvocation = (
+  _input: ArchitecturePrCompletionAuditInput,
+): ArchitecturePrCompletionAuditOutput => ({
+  scriptPath: ArchitecturePrCompletionAuditSourcePath,
+  invocationModel: "RecipeInvocation",
+  validationTargetHandles: ["workspace:policy-fast"],
+})
+
+export const ArchitecturePrCompletionAuditRuntimeLayer = defineRecipeLayer({
+  id: "attune-architecture.pr-completion-audit.runtime.layer",
+  sourcePath: ArchitecturePrCompletionAuditSourcePath,
+  exportName: "runPrCompletionAudit",
+  layer: Layer.empty as never,
+  provides: [
+    { id: "process", service: "node:child_process" },
+    { id: "network", service: "github-api" },
+  ],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitecturePrCompletionAuditInputResource = defineAlchemyResource({
+  id: "attune-architecture.pr-completion-audit.input",
+  kind: "configuration",
+  alchemyType: "attune:resource:Configuration",
+  consumedBy: [ArchitecturePrCompletionAuditRecipeId],
+  addressSchema: ArchitecturePrCompletionAuditInput,
+  stateSchema: Schema.Struct({
+    provider: Schema.Literal("github"),
+  }),
+  modes: ["read", "external"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const ArchitecturePrCompletionAuditReportResource = defineAlchemyResource({
+  id: "attune-architecture.pr-completion-audit.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: ArchitecturePrCompletionAuditRecipeId,
+  producedBy: [ArchitecturePrCompletionAuditRecipeId],
+  consumedBy: [ArchitectureWorkspacePolicyRecipeId],
+  addressSchema: ArchitecturePrCompletionAuditInput,
+  stateSchema: ArchitecturePrCompletionAuditOutput,
+  modes: ["project", "observe"],
+})
+
+export const ArchitecturePrCompletionAuditDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: ArchitecturePrCompletionAuditRecipeId,
+  toRecipeId: ArchitectureWorkspacePolicyRecipeId,
+  resource: ArchitecturePrCompletionAuditReportResource,
+  kind: "invokes",
+  modes: ["invoke", "observe"],
+})
+
+export const ArchitecturePrCompletionAuditRecipe = defineInvocationRecipe({
+  id: "attune-architecture.pr-completion-audit",
+  projectId: "attune-architecture",
+  title: "Verify PR completion state through a recipe-backed Codex audit",
+  inputSchema: ArchitecturePrCompletionAuditInput,
+  outputSchema: ArchitecturePrCompletionAuditOutput,
+  nxTarget: "workspace:policy-fast",
+  entrypoints: [ArchitecturePrCompletionAuditSourcePath],
+  allowedFiles: [ArchitecturePrCompletionAuditSourcePath, "project.json"],
+  validationEvidence: ["workspace:policy-fast"],
+  io: {
+    inputSchema: ArchitecturePrCompletionAuditInput,
+    outputSchema: ArchitecturePrCompletionAuditOutput,
+    inputResources: [ArchitecturePrCompletionAuditInputResource],
+    outputResources: [ArchitecturePrCompletionAuditReportResource],
+  },
+  handler: defineRecipeHandler<ArchitecturePrCompletionAuditInput, ArchitecturePrCompletionAuditOutput>({
+    id: "attune-architecture.pr-completion-audit.handler",
+    recipeId: ArchitecturePrCompletionAuditRecipeId,
+    sourcePath: ArchitecturePrCompletionAuditSourcePath,
+    exportName: "projectPrCompletionAuditInvocation",
+    handler: (input) => Effect.succeed(projectPrCompletionAuditInvocation(input)),
+    layer: ArchitecturePrCompletionAuditRuntimeLayer,
+    emitsReceipts: ["attune-architecture.pr-completion-audit.projected"],
+  }),
+  alchemyDag: [ArchitecturePrCompletionAuditDagEdge],
+})
+
+export const ArchitecturePrCompletionAuditRecipes = [
+  ArchitecturePrCompletionAuditRecipe,
+] as const

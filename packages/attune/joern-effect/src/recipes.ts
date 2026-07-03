@@ -1,178 +1,146 @@
-import { defineExternalSchemaRecipe } from "@attune/framework-protocol"
-import { Schema } from "effect"
+import { defineRecipePackage } from "@attune/framework-protocol"
 
+import { JoernEdgeRuntimeRecipes } from "./edge/index.js"
 import {
-  JoernTemplateExecutorRunInput,
-  JoernTemplateExecutorRunOutput,
-} from "./joern/joern-template-executor.js"
-import { DangerousCallEvidence } from "./joern/templates/dangerous-call.js"
+  JoernGenerationCliInvocationRecipe,
+  JoernGenerationSurfaceRecipes,
+} from "./internal/generation/JoernGenerationCli.js"
+import { JoernReadmeRenderRecipes } from "./internal/generation/JoernReadme.js"
+import { JoernTemplateExecutorRecipes } from "./joern/joern-template-executor.js"
+import { DangerousCallObservationRecipes } from "./joern/templates/dangerous-call.js"
+import { JoernSchemaExtractionRecipes } from "./pure/codegen/extractSchema.js"
+import { JoernCodegenRecipes } from "./pure/codegen/generate.js"
+import { JoernSourceSurfaceRecipes } from "./index-recipes.js"
+import { JoernTestRecipes } from "./test-recipes.js"
+import { JoernEffectEdgeIndexLocalRecipes } from "./edge/index.js"
+import { JoernEffectJoernIndexLocalRecipes } from "./joern/index.js"
+import { JoernEffectJoernTemplatesIndexLocalRecipes } from "./joern/templates/index.js"
+import { JoernEffectPureBuilderPropertyLocalRecipes } from "./pure/builder/property.js"
+import { JoernEffectPureBuilderRawLocalRecipes } from "./pure/builder/raw.js"
+import { JoernEffectPureBuilderSelectLocalRecipes } from "./pure/builder/select.js"
+import { JoernEffectPureBuilderTraversalLocalRecipes } from "./pure/builder/traversal.js"
+import { JoernEffectPureBuilderTraversalAstLocalRecipes } from "./pure/builder/traversalAst.js"
+import { JoernEffectPureCodegenEmitGeneratedLocalRecipes } from "./pure/codegen/emitGenerated.js"
+import { JoernEffectPureCodegenNormalizeSchemaLocalRecipes } from "./pure/codegen/normalizeSchema.js"
+import { JoernEffectPureCodegenTypesLocalRecipes } from "./pure/codegen/types.js"
+import { JoernEffectPureIndexLocalRecipes } from "./pure/index.js"
+import { JoernEffectPureProgramCpgProgramLocalRecipes } from "./pure/program/CpgProgram.js"
+import { JoernEffectPureProgramCpgProgramBuilderLocalRecipes } from "./pure/program/CpgProgramBuilder.js"
+import { JoernEffectPureProgramEvidenceLocalRecipes } from "./pure/program/Evidence.js"
+import { JoernEffectPureProgramModelLocalRecipes } from "./pure/program/model.js"
 
-export const JoernObservationPacket = Schema.Struct({
-  templateId: Schema.String,
-  evidence: DangerousCallEvidence,
-  receiptId: Schema.optional(Schema.String),
-})
-export type JoernObservationPacket = typeof JoernObservationPacket.Type
 
-export const JoernCodegenInput = Schema.Struct({
-  schemaPath: Schema.String,
-  joernVersion: Schema.String,
-  codepropertygraphVersion: Schema.String,
-})
-export type JoernCodegenInput = typeof JoernCodegenInput.Type
-
-export const JoernGeneratedArtifactSet = Schema.Struct({
-  generatorTarget: Schema.String,
-  sourceSchema: Schema.String,
-  generatedFiles: Schema.Array(Schema.String),
-})
-export type JoernGeneratedArtifactSet = typeof JoernGeneratedArtifactSet.Type
+export const JoernEffectLocalSourceRecipes = [
+  ...JoernEffectEdgeIndexLocalRecipes,
+  ...JoernEffectJoernIndexLocalRecipes,
+  ...JoernEffectJoernTemplatesIndexLocalRecipes,
+  ...JoernEffectPureBuilderPropertyLocalRecipes,
+  ...JoernEffectPureBuilderRawLocalRecipes,
+  ...JoernEffectPureBuilderSelectLocalRecipes,
+  ...JoernEffectPureBuilderTraversalLocalRecipes,
+  ...JoernEffectPureBuilderTraversalAstLocalRecipes,
+  ...JoernEffectPureCodegenEmitGeneratedLocalRecipes,
+  ...JoernEffectPureCodegenNormalizeSchemaLocalRecipes,
+  ...JoernEffectPureCodegenTypesLocalRecipes,
+  ...JoernEffectPureIndexLocalRecipes,
+  ...JoernEffectPureProgramCpgProgramLocalRecipes,
+  ...JoernEffectPureProgramCpgProgramBuilderLocalRecipes,
+  ...JoernEffectPureProgramEvidenceLocalRecipes,
+  ...JoernEffectPureProgramModelLocalRecipes,
+] as const
 
 export const JoernProofRecipes = [
-  defineExternalSchemaRecipe({
-    id: "joern-effect.generated-bindings",
-    projectId: "joern-effect",
-    title: "Run Joern schema, DSL, template, arbitrary, and README generation stages",
-    inputSchema: JoernCodegenInput,
-    outputSchema: JoernGeneratedArtifactSet,
-    nxTarget: "joern-effect:generate",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: [
-      "packages/attune/joern-effect/schema/**",
-      "packages/attune/joern-effect/src/internal/generation/**",
-      "packages/attune/joern-effect/src/pure/codegen/**",
-      "packages/attune/joern-effect/src/pure/generated/**",
-      "packages/attune/joern-effect/src/internal/generated/**",
-      "packages/attune/joern-effect/src/generated/**",
-      "packages/attune/joern-effect/README.md",
-      "packages/attune/joern-effect/project.json",
-    ],
-    validationEvidence: ["joern-effect:generate", "joern-effect:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "joern-effect.extract-cpg-schema",
-    projectId: "joern-effect",
-    title: "Extract Joern CPG schema from the Nix-built Joern toolchain",
-    inputSchema: JoernCodegenInput,
-    outputSchema: JoernGeneratedArtifactSet,
-    dependencies: [{ recipeId: "joern-effect.generated-bindings" }],
-    nxTarget: "joern-effect:generate",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: [
-      "packages/attune/joern-effect/schema/**",
-      "packages/attune/joern-effect/src/internal/generation/**",
-      "packages/attune/joern-effect/project.json",
-      "flake.nix",
-    ],
-    validationEvidence: ["joern-effect:generate", "joern-effect:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "joern-effect.generated-schema-modules",
-    projectId: "joern-effect",
-    title: "Generate Joern schema, node, property, and traversal modules",
-    inputSchema: JoernCodegenInput,
-    outputSchema: JoernGeneratedArtifactSet,
-    dependencies: [{ recipeId: "joern-effect.extract-cpg-schema" }],
-    nxTarget: "joern-effect:generate",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: [
-      "packages/attune/joern-effect/src/pure/codegen/**",
-      "packages/attune/joern-effect/src/pure/generated/**",
-      "packages/attune/joern-effect/schema/**",
-    ],
-    validationEvidence: ["joern-effect:generate", "joern-effect:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "joern-effect.generated-template-registry",
-    projectId: "joern-effect",
-    title: "Generate Joern proof template registry",
-    inputSchema: JoernCodegenInput,
-    outputSchema: JoernGeneratedArtifactSet,
-    dependencies: [{ recipeId: "joern-effect.generated-schema-modules" }],
-    nxTarget: "joern-effect:generate",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: [
-      "packages/attune/joern-effect/src/joern/templates/**",
-      "packages/attune/nx/src/generators/sync-joern-templates/**",
-    ],
-    validationEvidence: ["joern-effect:generate", "joern-effect:test", "attune-nx:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "joern-effect.generated-template-bindings",
-    projectId: "joern-effect",
-    title: "Generate Joern template binding and evidence modules",
-    inputSchema: JoernCodegenInput,
-    outputSchema: JoernGeneratedArtifactSet,
-    dependencies: [{ recipeId: "joern-effect.generated-template-registry" }],
-    nxTarget: "joern-effect:generate",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: [
-      "packages/attune/joern-effect/src/generated/**",
-      "packages/attune/joern-effect/src/joern/templates/**",
-    ],
-    validationEvidence: ["joern-effect:generate", "joern-effect:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "joern-effect.generated-fast-check-arbitraries",
-    projectId: "joern-effect",
-    title: "Generate FastCheck arbitraries from Joern Effect schemas",
-    inputSchema: JoernCodegenInput,
-    outputSchema: JoernGeneratedArtifactSet,
-    dependencies: [{ recipeId: "joern-effect.generated-schema-modules" }],
-    nxTarget: "joern-effect:generate",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: [
-      "packages/attune/joern-effect/src/internal/generated/**",
-      "packages/attune/joern-effect/src/pure/codegen/**",
-    ],
-    validationEvidence: ["joern-effect:generate", "joern-effect:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "joern-effect.generated-surface-check",
-    projectId: "joern-effect",
-    title: "Validate generated Joern schema, DSL, templates, arbitraries, and README",
-    inputSchema: JoernCodegenInput,
-    outputSchema: JoernGeneratedArtifactSet,
-    dependencies: [
-      { recipeId: "joern-effect.generated-template-bindings" },
-      { recipeId: "joern-effect.generated-fast-check-arbitraries" },
-    ],
-    nxTarget: "joern-effect:generate",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: [
-      "packages/attune/joern-effect/src/pure/generated/**",
-      "packages/attune/joern-effect/src/internal/generated/**",
-      "packages/attune/joern-effect/src/generated/**",
-      "packages/attune/joern-effect/src/joern/templates/**",
-      "packages/attune/joern-effect/README.md",
-    ],
-    validationEvidence: ["joern-effect:generate", "joern-effect:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "joern-effect.proof-template",
-    projectId: "joern-effect",
-    title: "Render bounded Joern proof template",
-    inputSchema: JoernTemplateExecutorRunInput,
-    outputSchema: JoernTemplateExecutorRunOutput,
-    dependencies: [
-      { recipeId: "joern-effect.generated-surface-check" },
-      { recipeId: "joern-effect.generated-template-registry" },
-    ],
-    nxTarget: "joern-effect:test",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: ["packages/attune/joern-effect/src/**"],
-    validationEvidence: ["joern-effect:test"],
-  }),
-  defineExternalSchemaRecipe({
-    id: "joern-effect.observation-packet",
-    projectId: "joern-effect",
-    title: "Normalize Joern proof output into observation packet",
-    inputSchema: DangerousCallEvidence,
-    outputSchema: JoernObservationPacket,
-    dependencies: [{ recipeId: "joern-effect.proof-template" }],
-    nxTarget: "joern-effect:test",
-    sourcePath: "packages/attune/joern-effect/src/recipes.ts",
-    allowedFiles: ["packages/attune/joern-effect/src/**"],
-    validationEvidence: ["joern-effect:test"],
-  }),
+  ...JoernEdgeRuntimeRecipes,
+  ...JoernSchemaExtractionRecipes,
+  ...JoernCodegenRecipes,
+  ...JoernReadmeRenderRecipes,
+  ...JoernSourceSurfaceRecipes,
+  JoernGenerationCliInvocationRecipe,
+  ...JoernTestRecipes,
+  ...JoernGenerationSurfaceRecipes,
+  ...JoernTemplateExecutorRecipes,
+  ...DangerousCallObservationRecipes,
 ] as const
+
+export const JoernEffectPackageRecipes = [
+  ...JoernProofRecipes,
+  ...JoernEffectLocalSourceRecipes,
+] as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectRecipePackage = defineRecipePackage({
+  packageId: "joern-effect",
+  kind: "joern-runtime-and-dsl",
+  title: "Joern Effect runtime, generated binding, proof, and observation recipes",
+  sourceRoot: "packages/attune/joern-effect/src",
+  recipes: JoernEffectPackageRecipes,
+  ownership: [
+    {
+      id: "joern-runtime-source-surface",
+      title: "Joern runtime, public barrels, and test ownership",
+      files: [
+        "packages/attune/joern-effect/src/index.ts",
+        "packages/attune/joern-effect/src/index-recipes.ts",
+        "packages/attune/joern-effect/src/edge/index.ts",
+        "packages/attune/joern-effect/src/joern/index.ts",
+        "packages/attune/joern-effect/src/pure/index.ts",
+        "packages/attune/joern-effect/src/test-recipes.ts",
+        "packages/attune/joern-effect/test/**",
+        "packages/attune/joern-effect/vitest.config.ts",
+      ],
+      recipeIds: [
+        ...JoernSourceSurfaceRecipes,
+        ...JoernEffectLocalSourceRecipes,
+        ...JoernTestRecipes,
+      ].map((recipe) => recipe.id),
+    },
+    {
+      id: "joern-edge-runtime",
+      title: "Joern Effect runtime and managed server/client resources",
+      files: ["packages/attune/joern-effect/src/edge/**"],
+      recipeIds: JoernEdgeRuntimeRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "joern-generation-pipeline",
+      title: "Joern schema, generated binding, and README projection pipeline",
+      files: [
+        "packages/attune/joern-effect/schema/**",
+        "packages/attune/joern-effect/src/internal/generation/**",
+        "packages/attune/joern-effect/src/pure/codegen/**",
+        "packages/attune/joern-effect/src/pure/generated/**",
+        "packages/attune/joern-effect/src/internal/generated/**",
+        "packages/attune/joern-effect/src/generated/**",
+        "packages/attune/joern-effect/README.md",
+        "packages/attune/joern-effect/project.json",
+      ],
+      recipeIds: [
+        ...JoernSchemaExtractionRecipes,
+        ...JoernCodegenRecipes,
+        ...JoernReadmeRenderRecipes,
+        JoernGenerationCliInvocationRecipe,
+        ...JoernGenerationSurfaceRecipes,
+      ].map((recipe) => recipe.id),
+    },
+    {
+      id: "joern-pure-dsl-and-examples",
+      title: "Joern pure DSL, program model, and example source surfaces",
+      files: [
+        "packages/attune/joern-effect/examples/**",
+        "packages/attune/joern-effect/src/pure/builder/**",
+        "packages/attune/joern-effect/src/pure/program/**",
+      ],
+      recipeIds: JoernSourceSurfaceRecipes.map((recipe) => recipe.id),
+    },
+    {
+      id: "joern-proof-template-pipeline",
+      title: "Joern proof template rendering and observation packet projection",
+      files: [
+        "packages/attune/joern-effect/src/joern/**",
+      ],
+      recipeIds: [
+        ...JoernTemplateExecutorRecipes,
+        ...DangerousCallObservationRecipes,
+      ].map((recipe) => recipe.id),
+    },
+  ],
+})

@@ -1,3 +1,18 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
+
+import {
+  FrameworkTestingProjectId,
+  FrameworkTestingTestTarget,
+  FrameworkTestingTypecheckTarget,
+  FrameworkTestingWorkerInput,
+  FrameworkTestingWorkerOutput,
+} from "./recipe-contracts.js"
 import type { PropertyTier, RandomSource, ReplayMetadata, WorkerIsolationLevel } from "./replay-metadata.js"
 
 export type WorkerResourceTier = PropertyTier
@@ -253,3 +268,82 @@ export const mergeWorkerEvidenceRecords = (
       (left.counterexamplePath ?? "").localeCompare(right.counterexamplePath ?? ""),
     ].find((comparison) => comparison !== 0) ?? 0,
   )
+
+export const FrameworkTestingWorkerReplayMetadataRecipeId = "framework-testing.worker-replay-metadata" as const
+export const FrameworkTestingWorkerMetadataSourcePath = "packages/trellis/testing/src/worker-metadata.ts" as const
+
+export const describeFrameworkTestingWorkerReplayMetadata = (
+  input: FrameworkTestingWorkerInput,
+): FrameworkTestingWorkerOutput => ({
+  workerId: `${input.projectId}:${input.propertyId}:shard-${input.shardIndex}-of-${input.shardTotal}`,
+  randomSource: input.shardTotal > 1 ? "worker" : "inline",
+  preservesShrinking: input.shardTotal <= 1,
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingWorkerReplayInputResource = defineAlchemyResource({
+  id: "framework-testing.worker-replay.input",
+  kind: "schema",
+  alchemyType: "attune:resource:FrameworkTestingWorkerInput",
+  addressSchema: FrameworkTestingWorkerInput,
+  stateSchema: FrameworkTestingWorkerInput,
+  modes: ["read"],
+  consumedBy: [FrameworkTestingWorkerReplayMetadataRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingWorkerReplayMetadataResource = defineAlchemyResource({
+  id: "framework-testing.worker-replay.metadata",
+  kind: "report",
+  alchemyType: "attune:resource:FrameworkTestingWorkerReplayMetadata",
+  addressSchema: FrameworkTestingWorkerInput,
+  stateSchema: FrameworkTestingWorkerOutput,
+  modes: ["project", "read"],
+  ownerRecipeId: FrameworkTestingWorkerReplayMetadataRecipeId,
+  producedBy: [FrameworkTestingWorkerReplayMetadataRecipeId],
+})
+
+export const FrameworkTestingWorkerReplayMetadataHandler = defineRecipeHandler<
+  FrameworkTestingWorkerInput,
+  FrameworkTestingWorkerOutput,
+  never,
+  never
+>({
+  id: "framework-testing.worker-replay-metadata.handler",
+  recipeId: FrameworkTestingWorkerReplayMetadataRecipeId,
+  sourcePath: FrameworkTestingWorkerMetadataSourcePath,
+  exportName: "describeFrameworkTestingWorkerReplayMetadata",
+  emitsReceipts: ["framework-testing.worker-replay.metadata"],
+  handler: (input) => Effect.succeed(describeFrameworkTestingWorkerReplayMetadata(input)),
+})
+
+export const FrameworkTestingWorkerReplayMetadataDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "framework-testing.worker-replay.input",
+  toRecipeId: FrameworkTestingWorkerReplayMetadataRecipeId,
+  resource: FrameworkTestingWorkerReplayMetadataResource,
+  kind: "projects",
+  modes: ["read", "project"],
+  validationTargets: [FrameworkTestingTestTarget],
+})
+
+export const FrameworkTestingWorkerReplayMetadataRecipes = [
+// @attune-packet-target generated-runtime-projection eligible
+  defineProjectionRecipe({
+    id: FrameworkTestingWorkerReplayMetadataRecipeId,
+    projectId: FrameworkTestingProjectId,
+    title: "Normalize worker replay metadata",
+    inputSchema: FrameworkTestingWorkerInput,
+    outputSchema: FrameworkTestingWorkerOutput,
+    io: {
+      inputSchema: FrameworkTestingWorkerInput,
+      outputSchema: FrameworkTestingWorkerOutput,
+      inputResources: [FrameworkTestingWorkerReplayInputResource],
+      outputResources: [FrameworkTestingWorkerReplayMetadataResource],
+    },
+    handler: FrameworkTestingWorkerReplayMetadataHandler,
+    alchemyDag: [FrameworkTestingWorkerReplayMetadataDagEdge],
+    nxTarget: FrameworkTestingTestTarget,
+    allowedFiles: [FrameworkTestingWorkerMetadataSourcePath],
+    validationEvidence: [FrameworkTestingTestTarget, FrameworkTestingTypecheckTarget],
+  }),
+] as const

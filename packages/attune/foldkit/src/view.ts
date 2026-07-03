@@ -1,3 +1,10 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineProjectionRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
+import { Effect } from "effect"
 import { type Document, type Html, html } from "foldkit/html"
 
 import type {
@@ -33,6 +40,19 @@ import {
   SelectedThread,
 } from "./message.js"
 import type { Model } from "./model.js"
+import { FoldKitModelResource } from "./model.js"
+import {
+  FoldKitMainRecipeId,
+  FoldKitPackageSourceResource,
+  FoldKitProjectId,
+  FoldKitSourceAddress,
+  FoldKitSourceReport,
+  FoldKitTestTarget,
+  FoldKitTypecheckTarget,
+  FoldKitViewRecipeId,
+  foldKitSourceReport,
+} from "./schema.js"
+import { FoldKitUpdateResource } from "./update.js"
 
 type IconName =
   | "arrow-left"
@@ -2030,3 +2050,79 @@ const formatTime = (iso: string): string =>
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(iso))
+
+export const FoldKitViewSourcePath =
+  "packages/attune/foldkit/src/view.ts" as const
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitViewResource = defineAlchemyResource({
+  id: "attune-foldkit.view-renderer.report",
+  kind: "report",
+  alchemyType: "attune:resource:Report",
+  ownerRecipeId: FoldKitViewRecipeId,
+  producedBy: [FoldKitViewRecipeId],
+  consumedBy: [FoldKitMainRecipeId],
+  addressSchema: FoldKitSourceAddress,
+  stateSchema: FoldKitSourceReport,
+  modes: ["read", "project", "observe"],
+})
+
+export const describeFoldKitViewRenderer = (): FoldKitSourceReport =>
+  foldKitSourceReport({
+    recipeId: FoldKitViewRecipeId,
+    sourcePath: FoldKitViewSourcePath,
+    surface: "FoldKit HTML document renderer and route component views",
+    exportedSymbols: [
+      "view",
+      "discoverRouteView",
+      "workbenchRouteView",
+      "findingsRouteView",
+      "simpleRouteView",
+    ],
+  })
+
+export const FoldKitViewHandler = defineRecipeHandler<
+  FoldKitSourceAddress,
+  FoldKitSourceReport
+>({
+  id: "attune-foldkit.view-renderer.handler",
+  recipeId: FoldKitViewRecipeId,
+  sourcePath: FoldKitViewSourcePath,
+  exportName: "describeFoldKitViewRenderer",
+  handler: () => Effect.succeed(describeFoldKitViewRenderer()),
+  emitsReceipts: ["attune-foldkit.view-renderer.report"],
+})
+
+export const FoldKitViewDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: FoldKitViewRecipeId,
+  toRecipeId: FoldKitMainRecipeId,
+  resource: FoldKitViewResource,
+  kind: "projects",
+  modes: ["read", "project", "observe"],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FoldKitViewRecipe = defineProjectionRecipe({
+  id: FoldKitViewRecipeId,
+  projectId: FoldKitProjectId,
+  title: "Render FoldKit model state into HTML documents",
+  inputSchema: FoldKitSourceAddress,
+  outputSchema: FoldKitSourceReport,
+  nxTarget: FoldKitTestTarget,
+  allowedFiles: [FoldKitViewSourcePath],
+  validationEvidence: [FoldKitTypecheckTarget, FoldKitTestTarget],
+  io: {
+    inputSchema: FoldKitSourceAddress,
+    outputSchema: FoldKitSourceReport,
+    inputResources: [
+      FoldKitPackageSourceResource,
+      FoldKitModelResource,
+      FoldKitUpdateResource,
+    ],
+    outputResources: [FoldKitViewResource],
+  },
+  handler: FoldKitViewHandler,
+  alchemyDag: [FoldKitViewDagEdge],
+})
+
+export const FoldKitViewRecipes = [FoldKitViewRecipe] as const

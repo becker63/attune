@@ -16,6 +16,10 @@
       "types": "./src/recipes/index.ts",
       "import": "./src/recipes/index.ts"
     },
+    "./packets": {
+      "types": "./src/packets/index.ts",
+      "import": "./src/packets/index.ts"
+    },
     "./package.json": "./package.json"
   },
   "dependencies": {

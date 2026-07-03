@@ -1,3 +1,5 @@
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Effect, Schema } from "effect"
 import { createHash } from "node:crypto"
 import type {
   NormalizedEdge,
@@ -172,3 +174,79 @@ export const normalizeSchema = (raw: RawSchema): NormalizedSchema => {
     version: raw.version ?? "unknown",
   }
 }
+
+const JoernEffectPureCodegenNormalizeSchemaLocalRecipeId = "joern-effect.pure.codegen.normalize-schema" as const
+const JoernEffectPureCodegenNormalizeSchemaLocalResourceId = "joern-effect.pure.codegen.normalize-schema.resource" as const
+const JoernEffectPureCodegenNormalizeSchemaLocalHandlerId = "joern-effect.pure.codegen.normalize-schema.handler" as const
+const JoernEffectPureCodegenNormalizeSchemaLocalSourcePath = "packages/attune/joern-effect/src/pure/codegen/normalizeSchema.ts" as const
+const JoernEffectPureCodegenNormalizeSchemaLocalSourceSurfaceRecipeId = "joern-effect.source-surface" as const
+
+export const JoernEffectPureCodegenNormalizeSchemaLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPureCodegenNormalizeSchemaLocalSourcePath),
+})
+export type JoernEffectPureCodegenNormalizeSchemaLocalRecipeInput = typeof JoernEffectPureCodegenNormalizeSchemaLocalRecipeInput.Type
+
+export const JoernEffectPureCodegenNormalizeSchemaLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPureCodegenNormalizeSchemaLocalSourcePath),
+})
+export type JoernEffectPureCodegenNormalizeSchemaLocalRecipeOutput = typeof JoernEffectPureCodegenNormalizeSchemaLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPureCodegenNormalizeSchemaLocalResource = defineAlchemyResource({
+  id: JoernEffectPureCodegenNormalizeSchemaLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPureCodegenNormalizeSchemaLocalRecipeId,
+  producedBy: [JoernEffectPureCodegenNormalizeSchemaLocalRecipeId],
+  consumedBy: [JoernEffectPureCodegenNormalizeSchemaLocalRecipeId, JoernEffectPureCodegenNormalizeSchemaLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPureCodegenNormalizeSchemaLocalRecipeInput as never,
+  stateSchema: JoernEffectPureCodegenNormalizeSchemaLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPureCodegenNormalizeSchemaLocalHandler = defineRecipeHandler<
+  JoernEffectPureCodegenNormalizeSchemaLocalRecipeInput,
+  JoernEffectPureCodegenNormalizeSchemaLocalRecipeOutput
+>({
+  id: JoernEffectPureCodegenNormalizeSchemaLocalHandlerId,
+  recipeId: JoernEffectPureCodegenNormalizeSchemaLocalRecipeId,
+  sourcePath: JoernEffectPureCodegenNormalizeSchemaLocalSourcePath,
+  exportName: "JoernEffectPureCodegenNormalizeSchemaLocalRecipes",
+  emitsReceipts: ["joern-effect.pure.codegen.normalize-schema.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPureCodegenNormalizeSchemaLocalRecipe = defineRecipe({
+  id: JoernEffectPureCodegenNormalizeSchemaLocalRecipeId,
+  projectId: "joern-effect",
+  title: "Express src/pure/codegen/normalizeSchema.ts as a file-local recipe",
+  inputSchema: JoernEffectPureCodegenNormalizeSchemaLocalRecipeInput as never,
+  outputSchema: JoernEffectPureCodegenNormalizeSchemaLocalRecipeOutput as never,
+  nxTarget: "joern-effect:typecheck",
+  allowedFiles: [JoernEffectPureCodegenNormalizeSchemaLocalSourcePath],
+  validationEvidence: ["joern-effect:typecheck"],
+  io: {
+    inputSchema: JoernEffectPureCodegenNormalizeSchemaLocalRecipeInput as never,
+    outputSchema: JoernEffectPureCodegenNormalizeSchemaLocalRecipeOutput as never,
+    inputResources: [JoernEffectPureCodegenNormalizeSchemaLocalResource],
+    outputResources: [JoernEffectPureCodegenNormalizeSchemaLocalResource],
+  },
+  handler: JoernEffectPureCodegenNormalizeSchemaLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPureCodegenNormalizeSchemaLocalRecipeId,
+      toRecipeId: JoernEffectPureCodegenNormalizeSchemaLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPureCodegenNormalizeSchemaLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPureCodegenNormalizeSchemaLocalRecipes = [JoernEffectPureCodegenNormalizeSchemaLocalRecipe] as const

@@ -1,4 +1,5 @@
-import { Data } from "effect"
+import { defineAlchemyRecipeDagEdge, defineAlchemyResource, defineRecipe, defineRecipeHandler } from "@attune/framework-protocol"
+import { Data, Effect, Schema } from "effect"
 import type { FuzzCase, FuzzExpectation, ProjectFile } from "../domain/model.js"
 
 export type QueryObservationSummary = Readonly<{
@@ -223,3 +224,79 @@ export const assertFuzzExpectations = (
     throw new FuzzExpectationMismatchError({ failures, queryResults: results })
   }
 }
+
+const JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeId = "joern-effect-properties.fuzz.services.expectations" as const
+const JoernEffectPropertiesFuzzServicesExpectationsLocalResourceId = "joern-effect-properties.fuzz.services.expectations.resource" as const
+const JoernEffectPropertiesFuzzServicesExpectationsLocalHandlerId = "joern-effect-properties.fuzz.services.expectations.handler" as const
+const JoernEffectPropertiesFuzzServicesExpectationsLocalSourcePath = "packages/attune/joern-effect-properties/src/fuzz/services/expectations.ts" as const
+const JoernEffectPropertiesFuzzServicesExpectationsLocalSourceSurfaceRecipeId = "joern-effect-properties.source-surface" as const
+
+export const JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeInput = Schema.Struct({
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesExpectationsLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeInput = typeof JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeInput.Type
+
+export const JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeOutput = Schema.Struct({
+  expressed: Schema.Boolean,
+  path: Schema.Literal(JoernEffectPropertiesFuzzServicesExpectationsLocalSourcePath),
+})
+export type JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeOutput = typeof JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeOutput.Type
+
+// @attune-packet-target generated-runtime-projection eligible
+export const JoernEffectPropertiesFuzzServicesExpectationsLocalResource = defineAlchemyResource({
+  id: JoernEffectPropertiesFuzzServicesExpectationsLocalResourceId,
+  kind: "file",
+  alchemyType: "attune:resource:File",
+  ownerRecipeId: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeId,
+  producedBy: [JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeId],
+  consumedBy: [JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeId, JoernEffectPropertiesFuzzServicesExpectationsLocalSourceSurfaceRecipeId],
+  addressFields: ["path"],
+  addressSchema: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeInput as never,
+  stateSchema: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeOutput as never,
+  modes: ["read", "check"],
+})
+
+export const JoernEffectPropertiesFuzzServicesExpectationsLocalHandler = defineRecipeHandler<
+  JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeInput,
+  JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeOutput
+>({
+  id: JoernEffectPropertiesFuzzServicesExpectationsLocalHandlerId,
+  recipeId: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeId,
+  sourcePath: JoernEffectPropertiesFuzzServicesExpectationsLocalSourcePath,
+  exportName: "JoernEffectPropertiesFuzzServicesExpectationsLocalRecipes",
+  emitsReceipts: ["joern-effect-properties.fuzz.services.expectations.expressed"],
+  handler: (input) =>
+    Effect.succeed({
+      expressed: true,
+      path: input.path,
+    }) as never,
+})
+
+export const JoernEffectPropertiesFuzzServicesExpectationsLocalRecipe = defineRecipe({
+  id: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeId,
+  projectId: "joern-effect-properties",
+  title: "Express src/fuzz/services/expectations.ts as a file-local recipe",
+  inputSchema: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeInput as never,
+  outputSchema: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeOutput as never,
+  nxTarget: "joern-effect-properties:typecheck",
+  allowedFiles: [JoernEffectPropertiesFuzzServicesExpectationsLocalSourcePath],
+  validationEvidence: ["joern-effect-properties:typecheck"],
+  io: {
+    inputSchema: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeInput as never,
+    outputSchema: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeOutput as never,
+    inputResources: [JoernEffectPropertiesFuzzServicesExpectationsLocalResource],
+    outputResources: [JoernEffectPropertiesFuzzServicesExpectationsLocalResource],
+  },
+  handler: JoernEffectPropertiesFuzzServicesExpectationsLocalHandler as never,
+  alchemyDag: [
+    defineAlchemyRecipeDagEdge({
+      fromRecipeId: JoernEffectPropertiesFuzzServicesExpectationsLocalRecipeId,
+      toRecipeId: JoernEffectPropertiesFuzzServicesExpectationsLocalSourceSurfaceRecipeId,
+      resource: JoernEffectPropertiesFuzzServicesExpectationsLocalResource,
+      kind: "validates",
+      modes: ["read", "check"],
+    }),
+  ],
+})
+
+export const JoernEffectPropertiesFuzzServicesExpectationsLocalRecipes = [JoernEffectPropertiesFuzzServicesExpectationsLocalRecipe] as const

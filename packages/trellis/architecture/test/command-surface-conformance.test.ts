@@ -190,7 +190,7 @@ describe("command surface conformance", () => {
     const result = checkCommandSurfaceConformance({
       files: [{
         path: "docs/attuned/example.md",
-        content: "Run nx generate @attune/nx:effect-service to fix the package.",
+        content: "Run nx generate @attune/framework-nx:effect-service-boundary to fix the package.",
       }],
     })
 
@@ -202,16 +202,18 @@ describe("command surface conformance", () => {
   })
 
   it("allows raw bootstrap or inside-dev-shell details when classified internal", () => {
+    const bootstrapClassification = "bootstrap" as const
+    const internalClassification = "internal" as const
     const result = checkCommandSurfaceConformance({
       files: [
         {
           path: "docs/platform/bootstrap.md",
-          classification: "bootstrap",
+          classification: bootstrapClassification,
           content: "Bootstrap may use nix only to install the workspace substrate.",
         },
         {
           path: "docs/platform/internal.md",
-          classification: "internal",
+          classification: internalClassification,
           content: "Inside the dev shell, pnpm exec nx is an implementation detail.",
         },
       ],

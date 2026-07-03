@@ -1,4 +1,11 @@
+import {
+  defineAlchemyRecipeDagEdge,
+  defineAlchemyResource,
+  defineTestRecipe,
+  defineRecipeHandler,
+} from "@attune/framework-protocol"
 import { Schema } from "effect"
+import { Effect } from "effect"
 import fc from "fast-check"
 
 import {
@@ -16,6 +23,14 @@ import {
   type PropertyTier,
   type RandomSource,
 } from "./replay-metadata.js"
+import {
+  FrameworkTestingProjectId,
+  FrameworkTestingSourceRecipeInput,
+  FrameworkTestingSourceRecipeOutput,
+  FrameworkTestingTestTarget,
+  FrameworkTestingTypecheckTarget,
+  frameworkTestingSourceSummary,
+} from "./recipe-contracts.js"
 import type { WorkerEvidenceMetadata } from "./worker-metadata.js"
 
 export type ArbitrarySource = Readonly<
@@ -47,7 +62,7 @@ export type MeasuredFilterMetadata = Readonly<{
   readonly reason: string
   readonly rejectionCount: number
   readonly acceptanceRate: number
-  readonly classification: "schema-refinement" | "operation-precondition" | "corpus-replay-guard" | "temporary-workaround"
+  readonly filterKind: "schema-refinement" | "operation-precondition" | "corpus-replay-guard" | "temporary-workaround"
 }>
 
 export type PropertyCaseContext<Input> = Readonly<{
@@ -317,3 +332,82 @@ export const checkFastCheckProperty = async <Input, Output = unknown>(
     ...(counterexample === undefined ? {} : { counterexample }),
   }
 }
+
+export const FrameworkTestingFastCheckRecipeId = "framework-testing.fastcheck-property-evidence" as const
+export const FrameworkTestingFastCheckSourcePath = "packages/trellis/testing/src/fastcheck.ts" as const
+
+export const describeFrameworkTestingFastCheck = (
+  input: FrameworkTestingSourceRecipeInput,
+): FrameworkTestingSourceRecipeOutput =>
+  frameworkTestingSourceSummary(input, "fastcheck-property-evidence", {
+    observationCount: input.symbolIds.length,
+    replayMetadataCount: input.symbolIds.length,
+  })
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingFastCheckSourceResource = defineAlchemyResource({
+  id: "framework-testing.fastcheck.source",
+  kind: "file",
+  alchemyType: "attune:resource:FrameworkTestingFastCheckSource",
+  addressSchema: FrameworkTestingSourceRecipeInput,
+  stateSchema: FrameworkTestingSourceRecipeInput,
+  modes: ["read"],
+  consumedBy: [FrameworkTestingFastCheckRecipeId],
+})
+
+// @attune-packet-target generated-runtime-projection eligible
+export const FrameworkTestingFastCheckEvidenceResource = defineAlchemyResource({
+  id: "framework-testing.fastcheck.evidence",
+  kind: "report",
+  alchemyType: "attune:resource:FrameworkTestingFastCheckEvidence",
+  addressSchema: FrameworkTestingSourceRecipeInput,
+  stateSchema: FrameworkTestingSourceRecipeOutput,
+  modes: ["check", "read"],
+  ownerRecipeId: FrameworkTestingFastCheckRecipeId,
+  producedBy: [FrameworkTestingFastCheckRecipeId],
+})
+
+export const FrameworkTestingFastCheckHandler = defineRecipeHandler<
+  FrameworkTestingSourceRecipeInput,
+  FrameworkTestingSourceRecipeOutput,
+  never,
+  never
+>({
+  id: "framework-testing.fastcheck-property-evidence.handler",
+  recipeId: FrameworkTestingFastCheckRecipeId,
+  sourcePath: FrameworkTestingFastCheckSourcePath,
+  exportName: "describeFrameworkTestingFastCheck",
+  emitsReceipts: ["framework-testing.fastcheck.evidence"],
+  handler: (input) => Effect.succeed(describeFrameworkTestingFastCheck(input)),
+})
+
+export const FrameworkTestingFastCheckDagEdge = defineAlchemyRecipeDagEdge({
+  fromRecipeId: "framework-testing.fastcheck.source",
+  toRecipeId: FrameworkTestingFastCheckRecipeId,
+  resource: FrameworkTestingFastCheckEvidenceResource,
+  kind: "validates",
+  modes: ["read", "check"],
+  validationTargets: [FrameworkTestingTestTarget],
+})
+
+export const FrameworkTestingFastCheckRecipes = [
+// @attune-packet-target generated-runtime-projection eligible
+  defineTestRecipe({
+    id: FrameworkTestingFastCheckRecipeId,
+    projectId: FrameworkTestingProjectId,
+    title: "Own FastCheck property evidence helpers",
+    inputSchema: FrameworkTestingSourceRecipeInput,
+    outputSchema: FrameworkTestingSourceRecipeOutput,
+    io: {
+      inputSchema: FrameworkTestingSourceRecipeInput,
+      outputSchema: FrameworkTestingSourceRecipeOutput,
+      inputResources: [FrameworkTestingFastCheckSourceResource],
+      outputResources: [FrameworkTestingFastCheckEvidenceResource],
+    },
+    handler: FrameworkTestingFastCheckHandler,
+    alchemyDag: [FrameworkTestingFastCheckDagEdge],
+    nxTarget: FrameworkTestingTestTarget,
+    allowedFiles: [FrameworkTestingFastCheckSourcePath],
+    validationEvidence: [FrameworkTestingTestTarget, FrameworkTestingTypecheckTarget],
+  }),
+] as const
