@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Discovery event shape name, for example 'EvidenceRecorded'."
+    },
+    "directory": {
+      "type": "string",
+      "default": "src/discovery/events",
+      "description": "Directory where the event module should be written."
+    },
+    "export": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to add the generated module to the directory barrel."
+    },
+    "eventType": {
+      "type": "string",
+      "description": "Durable EventLog event type literal. Defaults to the generated file name."
+    },
+    "viewKey": {
+      "type": "string",
+      "description": "Durable Reactivity ViewKey announced by the projection handler."
+    }
+  },
+  "required": ["name"]
+}

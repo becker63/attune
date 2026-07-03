@@ -1,0 +1,33 @@
+{
+  "name": "@attune/nx",
+  "version": "0.0.0",
+  "description": "Attune workspace Nx generators and source-shape helpers.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json",
+    "./generators.json": "./generators.json",
+    "./executors.json": "./executors.json"
+  },
+  "generators": "./generators.json",
+  "executors": "./executors.json",
+  "files": [
+    "dist",
+    "generators.json",
+    "executors.json",
+    "src/generators/**/schema.json",
+    "src/executors/**/schema.json"
+  ],
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@attune/framework-protocol": "workspace:*",
+    "effect": "4.0.0-beta.78"
+  }
+}
