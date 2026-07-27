@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "**/.nx/**",
+    "**/coverage/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "flake.lock",
+    "packages/effect-joern/schema/**",
+    "pnpm-lock.yaml"
+  ],
+  "printWidth": 80,
+  "sortImports": true
+}

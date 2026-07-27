@@ -1,73 +1,68 @@
 # Attune
 
-Attune is the unified workspace for the current product, Joern integration, Nx
-tooling, Nix runtime, and imported migration sources.
+Attune is a clean-slate Nx monorepo for Effect-native program analysis
+libraries. This branch keeps the repository's Git ancestry while replacing the
+working tree completely; no earlier Attune implementation is carried forward.
 
-This repository is now the single tracking point for work that was previously
-spread across local directories and GitHub repos. Imported repositories are kept
-as ordinary files under `imports/` during migration. They are not submodules,
-and their nested `.git` directories are intentionally excluded.
+The first package is [`effect-joern`](./packages/effect-joern), a
+platform-neutral Effect v4 interface and generated TypeScript query DSL for
+Joern.
 
-## North Star
+## Toolchain
 
-The architectural canon lives in `docs/attuned/`.
+One root toolchain applies to every package:
 
-Attune's direction is:
+- Nx 23 for task orchestration and caching
+- the Go-native TypeScript 7 compiler
+- Oxlint with type-aware `tsgolint`
+- Oxfmt for TypeScript, JSON, Markdown, and YAML
+- tsdown and Rolldown for Oxc-powered ESM builds and package checks
+- Vitest 4 for tests
 
-- Effect owns execution, resource lifetimes, and external boundaries.
-- EventLog records what happened.
-- Drizzle materializes durable facts.
-- Reactivity announces which facts changed.
-- Atoms derive current state and decision packets.
-- CocoIndex recalls candidate relationships.
-- `joern-effect` proves code relationships through typed templates, generated
-  schemas, and safe query rendering.
-- Nx orchestrates repo entrypoints. Nix supplies reproducible toolchains,
-  containers, and runtime closures.
+All JavaScript tools are exact versions in the root manifest and pnpm lockfile.
+Packages consume that shared toolchain instead of choosing their own compiler,
+linter, formatter, or bundler.
 
-## Workspace Layout
+## Workflows
 
-- `packages/joern-effect` - generated Joern TypeScript/Effect SDK and DSL.
-- `packages/joern-effect-properties` - Effect-based semantic fuzzer and Joern
-  property workbench.
-- `packages/attune-nx` - local Nx generator/workspace tooling.
-- `nix/` - flake toolchains, Joern runtime closure, nix2container, and Arion
-  runtime definitions.
-- `docs/` - active project docs and migration reports.
-- `openspec/` - OpenSpec change proposals and specs.
-- `imports/` - tracked migration snapshots from previous local and GitHub repos.
-
-See `IMPORTS.md` for import provenance.
-
-## Tooling
-
-Common commands:
+Enter the pinned development environment and install the locked dependencies:
 
 ```bash
-nx run workspace:attune-check
-nx run workspace:attune-repair
-nx run workspace:policy-fast
-nx run <project>:typecheck
-nx run <project>:test
+nix develop
+pnpm install --frozen-lockfile
 ```
 
-Nx is the public workflow surface. Nix supplies the reproducible tools behind
-those targets. A normal package's Attune surface should be
-`src/attune.package.ts`; generated framework consequences belong to Nx repair,
-framework services, ProtocolStore projections, or gitignored cache. See
-`docs/attuned/Attune Framework Operating Surface.md` and
-`docs/platform/nx-nix-workflow.md`.
-
-Container-backed fuzzing and proof pressure are exposed through Nx targets
-backed by the Nix/Arion runtime:
+Run the complete workspace check:
 
 ```bash
-nx run workspace:policy-proof-pressure
-nx run joern-effect-properties:fuzz:container
-nx run joern-effect-properties:fuzz:nightly:container
-nx run joern-effect-properties:fuzz:dsl-four-hour:container
+pnpm check
 ```
 
-Runtime traces should go to OpenTelemetry/Axiom or container logs. Local
-generated trace files, JSONL artifacts, reports, workspaces, and secrets are not
-tracked.
+The check regenerates checked-in sources, verifies formatting, runs type-aware
+linting and TypeScript 7, tests the packages, builds them, and audits their
+published boundaries. Individual targets can be run with Nx:
+
+```bash
+pnpm nx run joern-effect:test
+pnpm nx run joern-effect:build
+pnpm nx graph
+```
+
+## Nix
+
+`flake.lock` pins nixpkgs. The flake exposes the Node and pnpm versions used by
+the workspace, the built `effect-joern` package, Joern, astgen, and the CPG
+schema sources:
+
+```bash
+nix build
+nix build .#joern
+nix build .#astgen
+nix flake check
+```
+
+Joern `4.0.555`, CPG schema `1.7.70`, and astgen `3.46.0` are pinned in
+[`nix/joern.nix`](./nix/joern.nix). Astgen selects an upstream native binary
+for `aarch64-linux` or `x86_64-linux`; no QEMU or x86 execution is used on ARM.
+The library itself contains no architecture-specific implementation and leaves
+runtime services to Effect platform providers.

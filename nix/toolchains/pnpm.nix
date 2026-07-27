@@ -1,5 +1,0 @@
-{ pkgs }:
-
-{
-  pnpm = pkgs.pnpm;
-}

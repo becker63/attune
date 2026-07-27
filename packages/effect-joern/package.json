@@ -1,0 +1,58 @@
+{
+  "name": "joern-effect",
+  "version": "0.1.0",
+  "description": "Platform-neutral Effect bindings and a generated TypeScript query DSL for Joern.",
+  "keywords": [
+    "cpg",
+    "cpgql",
+    "effect",
+    "joern",
+    "static-analysis"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/becker63/attune.git",
+    "directory": "packages/effect-joern"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "generate": "node scripts/generate.ts",
+    "package:check": "tsc -p test/consumer/tsconfig.json && node test/consumer/smoke.mjs && node scripts/checkPackage.ts",
+    "prepack": "tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.0.0-beta.101",
+    "effect": "4.0.0-beta.101",
+    "ioredis": "5.7.0"
+  },
+  "peerDependencies": {
+    "effect": "4.0.0-beta.101"
+  },
+  "nx": {
+    "tags": [
+      "type:library",
+      "scope:joern",
+      "platform:neutral",
+      "publishable"
+    ]
+  }
+}

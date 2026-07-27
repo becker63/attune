@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/.nx/**",
+    "**/coverage/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "packages/effect-joern/schema/**"
+  ],
+  "options": {
+    "typeAware": true
+  },
+  "overrides": [
+    {
+      "files": ["packages/effect-joern/src/**/*.ts"],
+      "rules": {
+        "no-restricted-globals": [
+          "error",
+          "Buffer",
+          "__dirname",
+          "__filename",
+          "process"
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "message": "Published effect-joern source must use Effect platform services.",
+                "name": "@effect/platform-node"
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@effect/platform-node/*", "node:*"],
+                "message": "Published effect-joern source must remain platform-neutral."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "plugins": ["import", "oxc", "typescript", "vitest"]
+}

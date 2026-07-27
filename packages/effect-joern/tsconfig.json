@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "types": ["node", "vitest/globals"],
+    "paths": {
+      "joern-effect": ["./src/index.ts"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "test/**/*.ts",
+    "examples/**/*.ts",
+    "tsdown.config.ts",
+    "vitest.config.ts"
+  ]
+}
