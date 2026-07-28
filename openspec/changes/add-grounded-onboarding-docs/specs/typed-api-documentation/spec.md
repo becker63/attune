@@ -3,9 +3,9 @@
 ### Requirement: Lifecycle documentation in exported types
 
 The system SHALL provide TSDoc for exported lifecycle capabilities, services,
-tagged errors, and tool descriptors. Documentation SHALL explain the proof a
-capability carries, a legal transition's preconditions and guarantees, an
-error's recovery decision, or an operation boundary; it SHALL NOT merely
+tagged errors, and `Operation` definitions. Documentation SHALL explain the
+proof a capability carries, a legal transition's preconditions and guarantees,
+an error's recovery decision, or an operation boundary; it SHALL NOT merely
 repeat the TypeScript signature.
 
 #### Scenario: Reader hovers an active investigation type

@@ -20,7 +20,8 @@ available as the future shared runtime for agent provenance.
 - Make the investigation lifecycle and tool nouns visible in the MCP source
   layout without changing the published MCP contract.
 - Express lifecycle safety through schema-derived brands, stateful capability
-  handles, typed operation descriptors, narrow Effect errors, and type tests.
+  handles, an Effect Tool/Toolkit-backed `Operation` facade, narrow Effect
+  errors, exhaustive `Effect.Match` branches, and type tests.
 - Produce a deterministic API manifest and static reference from source and
   TSDoc using the TypeScript 7-compatible toolchain.
 - Produce reviewable onboarding prose from one exact manifest revision, with
@@ -32,6 +33,10 @@ available as the future shared runtime for agent provenance.
 
 - Replacing the MCP protocol, changing its eight tools, or changing generated
   contract-schema semantics.
+- Adding `@effect/rpc`, a general-purpose advanced-type library, or a second
+  schema authority beside the installed Effect Tool/Toolkit APIs.
+- Building a generic protocol-definition DSL before a second protocol requires
+  one.
 - Treating generated prose as an authority over source, schemas, or tests.
 - Building a general-purpose documentation CMS, search platform, or a complete
   TypeDoc replacement.
@@ -44,7 +49,8 @@ available as the future shared runtime for agent provenance.
 
 ## Decisions
 
-### 1. Center the application around an investigation lifecycle service
+### 1. Center the application around an investigation lifecycle service and an
+Effect Tool/Toolkit-backed `Operation` facade
 
 The source will be organized as `server`, `investigation`, `tools`, `platform`,
 and `contract`. `investigation` owns materialization, active execution,
@@ -56,20 +62,45 @@ are issued by one service instance, and are constructed only at the validation
 boundary. Each MCP request reconstructs active permission from persisted
 manifest, exact-HEAD, and finalization evidence; an exact terminal retry is
 looked up durably before that acquisition so a later snapshot does not break
-idempotency. A generic operation registry derives wire and capability-domain
-input, result, receipt identity and correlation, writer policy, and expected
-errors. The generic service boundary preserves the descriptor-specific
-relationships; callers do not supply duplicate type arguments and do not
-receive a widened union of all tool results.
+idempotency.
 
-Registry admission reapplies the complete descriptor relation instead of
-trusting structural resemblance. Generic calls use distributive,
-descriptor-keyed tuples/specifications so a union-valued operation selector
-cannot be paired with the input or implementation payload of only one branch.
-Descriptor admission also proves that the durable engine can synthesize every
-failed or cancelled result as a bare terminal receipt; a result schema cannot
-require failure-only payload fields that the engine does not own.
-Negative type tests make those non-widening guarantees executable.
+Effect Tool and Toolkit are the sole schema and typed-handler authority. Each
+tool remains one Effect Tool carrying its parameter, success, failure,
+dependency, handler, and result relationships; the Toolkit derives the typed
+handler collection and MCP contract. `Operation.define` wraps that existing
+Tool with Attune-only execution metadata: access, a closed transition
+(`materialize`, `preserve`, or `finalize`), receipt identity, and the durable
+receipt/correlation facts it needs. The MCP server remains an adapter over the
+Toolkit, so published tool names and generated schemas do not change.
+
+This decision relies on the installed Effect abstractions rather than an added
+type-level framework: [Tool](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/unstable/ai/Tool.ts),
+[Toolkit](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/unstable/ai/Toolkit.ts),
+[Types](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/Types.ts),
+and [Match](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/Match.ts).
+
+`Operation.define<const D extends OperationShape>(definition: D &
+Validate<D>): Operation<D>` infers from one definition object. Its public
+projection vocabulary is limited to `Operation.Input`, `Operation.Result`,
+and `Operation.Error` (plus the explicit receipt projection required by the
+durable service). Receipt relations, terminalizability, correlation selection,
+union distribution, and handler wiring remain private implementation details.
+The legacy nine-parameter `ToolOperation`, its duplicate registry, public wire
+projection aliases, and handler-map aliases are removed as the facade takes
+over; only irreducible Attune lifecycle/receipt facts remain.
+
+Use `Effect.Types` only for local simplification, exact-property, and variance
+helpers, and use `Effect.Match` for exhaustive runtime lifecycle branching.
+Continue to use `expect-type` and native `@ts-expect-error` tests under the
+repository's actual TypeScript compiler. Do not add `ts-pattern`,
+`hkt-toolbelt`, HOTScript, ArkType, TypeBox, or TSTyche; `type-fest` is allowed
+only for a clearly cosmetic gap in Effect's utilities.
+
+First migrate `maude_run` and one operation conditional on an active
+investigation. Their migration must preserve frozen MCP schema snapshots,
+receipt semantics, capability provenance, and positive/negative type tests.
+After that proof, migrate the remaining operations. Do not introduce
+`@effect/rpc` or a generic protocol-definition DSL in this change.
 
 After a durable invocation has been accepted, cancellation may request that
 owned native work stop, but it cannot detach terminalization. The activity
@@ -96,8 +127,9 @@ state transitions).
 
 ### 2. Use source TSDoc and compile-time examples as the documentation source
 
-Exported lifecycle types, services, tagged errors, and tool descriptors receive
-TSDoc that explains the proof, transition, recovery decision, or tool boundary.
+Exported lifecycle types, services, tagged errors, and `Operation` definitions
+receive TSDoc that explains the proof, transition, recovery decision, or tool
+boundary.
 `expect-type` tests compile examples and prohibited transitions. Oxc's JSDoc
 plugin and a `ts-morph` coverage audit enforce the policy.
 

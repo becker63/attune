@@ -9,7 +9,11 @@ kept mechanically current or traceable to the code it describes.
 ## What Changes
 
 - Add a documented, noun-oriented MCP source layout centered on the
-  investigation lifecycle and typed operation descriptors.
+  investigation lifecycle and an Effect Tool/Toolkit-backed `Operation`
+  facade.
+- Consolidate the duplicated operation schemas, descriptors, and registry on
+  the installed Effect Tool/Toolkit APIs; retain only Attune-specific lifecycle
+  and receipt metadata behind the facade.
 - Add TSDoc and type-level documentation conventions for exported lifecycle
   capabilities, services, errors, and operations, enforced by automated checks.
 - Generate a deterministic, versioned API manifest and static type reference
@@ -43,7 +47,7 @@ kept mechanically current or traceable to the code it describes.
 ## Impact
 
 - Affects `packages/attune-mcp` source organization, public type documentation,
-  tests, package scripts, and README.
+  operation-contract facade and adapters, tests, package scripts, and README.
 - Adds a TypeScript/`ts-morph` documentation-manifest generator and an interim
   static reference renderer; TypeDoc remains a future-compatible renderer, not
   a dependency while it lacks TypeScript 7 support.

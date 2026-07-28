@@ -32,76 +32,110 @@ only the validated workspace boundary SHALL construct an active capability.
   operation execution API
 - **THEN** the type-checking test suite rejects the transition
 
-### Requirement: Typed operation registry
+### Requirement: Effect Tool/Toolkit-backed operation facade
 
-The system SHALL describe each tool operation through a typed descriptor that
-binds its name, input, success result, terminal receipt, error union, and
-writer policy. Handler and MCP registration code SHALL derive operation typing
-from the descriptor rather than casting operation input through an untyped JSON
-value.
+The system SHALL use the installed Effect Tool and Toolkit APIs as the sole
+schema and typed-handler authority. Each supported MCP tool SHALL have one
+Effect Tool that binds its parameters, success result, expected failure, and
+handler requirements; the Attune Toolkit SHALL derive the typed handler
+collection and MCP contract from those Tools.
 
-#### Scenario: New operation descriptor is registered
+Each Tool SHALL be wrapped by one inferred `Operation` facade that carries only
+Attune-owned execution metadata: access, a closed lifecycle transition
+(`materialize`, `preserve`, or `finalize`), receipt identity, writer policy,
+and durable correlation facts. The MCP server SHALL remain an adapter over the
+Toolkit and SHALL preserve the published MCP tool names and generated
+contract-schema behavior.
 
-- **WHEN** an implementer adds a tool operation descriptor
-- **THEN** its input/result/receipt types and writer policy are available to
-  the application service and registration adapter without a handwritten
-  duplicate handler signature
+#### Scenario: New operation is added through one Effect Tool
+
+- **WHEN** an implementer defines an Effect Tool and wraps it with
+  `Operation.define`
+- **THEN** its parameters, result, expected failures, handler requirements,
+  MCP contract, and Attune execution metadata are derived without a second
+  schema definition or handwritten duplicate handler signature
 
 ### Requirement: Generic operation type relationships
 
-The system SHALL expose generic type relationships that preserve an operation's
-specific input, success result, terminal receipt, error union, and writer policy
-through the investigation service and registration boundaries. A generic
-operation helper SHALL infer those types from a descriptor without callers
-supplying duplicate type arguments or widening to a common untyped result.
-Every public projection and helper SHALL distribute over descriptor unions
-while preserving each selector/input/result/receipt/error/policy branch; a
-union descriptor SHALL never collapse branded receipt fields to `never` or
-permit cross-branch pairing.
-Descriptor admission SHALL also prove that the durable invocation engine can
-construct every failed and cancelled result using its terminal receipt alone;
-an operation SHALL NOT require failure-only result fields that the engine
-cannot synthesize.
+The system SHALL expose generic type relationships that preserve an
+operation's specific Tool parameters, success result, expected error union,
+and Attune-owned terminal receipt/writer-policy facts through the investigation
+service and MCP adapter. `Operation.define<const D extends OperationShape>(
+definition: D & Validate<D>): Operation<D>` SHALL infer those relationships
+from one definition object without callers supplying duplicate type arguments
+or widening to a common untyped result.
+
+The public projection vocabulary SHALL be limited to `Operation.Input`,
+`Operation.Result`, `Operation.Error`, and the explicit receipt projection
+required by the durable service. Receipt relations, terminalizability,
+correlation selection, union distribution, and handler wiring SHALL remain
+private implementation details. Public helpers SHALL distribute over operation
+unions while preserving each input/result/error/receipt/policy branch; a union
+SHALL never collapse branded receipt fields to `never` or permit cross-branch
+pairing.
+
+The operation facade SHALL prove that the durable invocation engine can
+construct every failed or cancelled terminal result using its receipt alone; an
+operation SHALL NOT require failure-only result fields that the engine cannot
+synthesize.
 
 #### Scenario: Generic execution retains a Maude result type
 
 - **WHEN** a caller executes the Maude operation through the generic
   investigation service
-- **THEN** TypeScript infers the Maude input, result, receipt, and expected
+- **THEN** TypeScript infers the Maude payload, result, receipt, and expected
   error types rather than the union of every tool operation's types
 
 #### Scenario: Registry type relation regresses
 
-- **WHEN** a registry or service change widens an operation-specific input,
-  result, receipt, error, or writer-policy type
+- **WHEN** an operation facade or service change widens an operation-specific
+  input, result, receipt, error, or writer-policy type
 - **THEN** an `expect-type` test fails before the change is accepted
 
-#### Scenario: Union selector is paired with one branch's input
+#### Scenario: Union operation is paired with one branch's input
 
-- **WHEN** a caller supplies a union-valued operation name or descriptor but
-  supplies the input or implementation payload for only one possible operation
+- **WHEN** a caller supplies a union-valued operation but supplies the input or
+  implementation payload for only one possible operation
 - **THEN** TypeScript rejects the call instead of widening the descriptor
   relationship
 
-#### Scenario: Structural descriptor bypasses its factory
+#### Scenario: Structural operation bypasses the Effect Tool facade
 
-- **WHEN** a registry entry resembles a tool operation but violates the
-  descriptor's receipt, correlation, policy, or lifecycle-input relation
-- **THEN** registry admission rejects it even if it was assembled by spreading
-  another descriptor
+- **WHEN** a registration entry resembles an operation but is not defined from
+  an Effect Tool through `Operation.define`
+- **THEN** the adapter rejects it rather than accepting a structurally
+  assembled parallel operation contract
 
 #### Scenario: Valid correlated operation union is projected
 
-- **WHEN** a generic caller carries a union of complete operation descriptors
-- **THEN** input, result, receipt, handler, recovery, writer-policy, and service
-  output types distribute to the exact union of correlated branches
+- **WHEN** a generic caller carries a union of complete operation definitions
+- **THEN** payload, result, receipt, handler, recovery, writer-policy, and
+  service output types distribute to the exact union of correlated branches
 
 #### Scenario: Failure result requires an implementation-owned field
 
-- **WHEN** a descriptor adds a required field beside a failed or cancelled
+- **WHEN** an operation adds a required field beside a failed or cancelled
   receipt
-- **THEN** descriptor and registry admission reject it before the runtime can
-  accept an invocation that it cannot terminalize
+- **THEN** the operation facade rejects it before the runtime can accept an
+  invocation that it cannot terminalize
+
+### Requirement: Effect-native type and match utilities
+
+The implementation SHALL use `Effect.Types` for local type simplification,
+exact-property, and variance helpers only where they reduce a private helper's
+complexity. It SHALL use `Effect.Match` for exhaustive runtime branching on
+lifecycle transitions and terminal statuses. It SHALL retain `expect-type` and
+native `@ts-expect-error` assertions under the repository TypeScript compiler.
+
+The implementation SHALL NOT add `@effect/rpc`, `ts-pattern`, `hkt-toolbelt`,
+HOTScript, ArkType, TypeBox, or TSTyche for this model. `type-fest` MAY be
+introduced only for a clearly cosmetic utility absent from Effect.
+
+#### Scenario: Lifecycle branch gains a state
+
+- **WHEN** a lifecycle transition or terminal status is added
+- **THEN** the corresponding `Effect.Match` branch fails compilation or tests
+  until it handles the new case exhaustively
 
 ### Requirement: Cancellation-safe durable terminalization
 

@@ -4,15 +4,21 @@
 - [x] 1.2 Remove empty source placeholders and create `server`, `investigation`, `tools`, `platform`, and `contract` module boundaries while retaining compatibility exports and preserving the generated MCP contract schema.
 - [x] 1.3 Extract materialization, active execution, receipts, artifacts, and finalization behind an `InvestigationService` Effect service.
 - [x] 1.4 Introduce state-branded investigation and snapshot capabilities that can be constructed only after workspace validation.
-- [x] 1.5 Define the generic tool-operation descriptor and derive operation input, result, receipt, expected error, and writer policy from it without caller-supplied duplicate type arguments.
+- [x] 1.5 Define the generic tool-operation descriptor and derive operation input, result, receipt, expected error, and writer policy from it without caller-supplied duplicate type arguments. Superseded as the public model by tasks 1.10–1.15.
 - [x] 1.6 Move repository, Joern, Maude, property, and ast-grep implementations one at a time into visible `tools/<noun>` modules and preserve MCP behavior.
 - [x] 1.7 Replace broad input casts and duplicate handler signatures with operation-derived types and narrow tagged error unions.
 - [x] 1.8 Add `expect-type` contracts for operation-specific inference, non-widening input/result/receipt/error/writer relationships, and allowed/forbidden lifecycle transitions.
 - [x] 1.9 Add integration tests for receipt behavior, containment, locks, cancellation, non-detached terminalization, and runtime enforcement of lifecycle boundaries.
+- [ ] 1.10 Curate the supported MCP exports around `Operation`, `Investigation<State>`, and `InvestigationService`; move legacy proof machinery behind internal module boundaries.
+- [ ] 1.11 Introduce `Operation.define`, backed by the existing Effect Tool, with one inferred definition object and private validation for receipt, terminalization, correlation, and lifecycle relations.
+- [ ] 1.12 Derive the Attune Toolkit, MCP contract, handler collection, operation projections, and deterministic documentation from the Effect Tool/`Operation` definition rather than duplicated schemas or a parallel registry.
+- [ ] 1.13 Migrate `maude_run` and one operation that requires an active investigation to the facade; prove frozen MCP schema snapshots, receipt semantics, capability provenance, and positive/negative type tests remain unchanged.
+- [ ] 1.14 Migrate the remaining operations only after task 1.13 succeeds; delete the nine-parameter `ToolOperation`, duplicate registry, duplicate result alias, public wire projections, and handler-map aliases except for irreducible Attune lifecycle/receipt facts.
+- [ ] 1.15 Use `Effect.Types` in private type helpers and `Effect.Match` for exhaustive lifecycle/terminal runtime branching; extend `expect-type`, native `@ts-expect-error`, and integration tests to prove inference, restrictions, durable terminalization, and MCP-contract compatibility without adding the rejected libraries.
 
 ## 2. Source documentation policy and checks
 
-- [x] 2.1 Add TSDoc to exported lifecycle capabilities, investigation service methods, tagged errors, and tool descriptors using the proof/transition/recovery/boundary policy.
+- [x] 2.1 Add TSDoc to exported lifecycle capabilities, investigation service methods, tagged errors, and `Operation` definitions using the proof/transition/recovery/boundary policy.
 - [x] 2.2 Add module-level reading-order comments to lifecycle and tool-noun modules.
 - [x] 2.3 Add executable `expect-type` examples for documented lifecycle paths and `@ts-expect-error` checks for forbidden transitions.
 - [x] 2.4 Enable and configure Oxc JSDoc validation for the documented export policy.

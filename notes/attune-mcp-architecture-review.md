@@ -56,6 +56,63 @@ with this map and name `investigation/service.ts` as the application entry
 point; the MCP schema then becomes an adapter, not the first thing a reader
 must discover.
 
+## Contract framework decision: consolidate on Effect Tool and Toolkit
+
+Do not add `@effect/rpc` or another general-purpose advanced-type library.
+`attune-mcp` already has the right contract framework in Effect Tool and
+Toolkit: the eight MCP tools are defined in `v0/contracts.ts`, while the same
+facts are repeated by the nine-parameter `ToolOperation` descriptor and the
+separate operation registry. This duplication, not insufficient TypeScript
+power, is the source of most of the extra nouns.
+
+The intended foundation is the Effect source already represented in this
+workspace: [Tool](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/unstable/ai/Tool.ts),
+[Toolkit](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/unstable/ai/Toolkit.ts),
+[Types](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/Types.ts),
+and [Match](https://github.com/Effect-TS/effect/blob/main/packages/effect/src/Match.ts).
+
+Expose three core concepts at the package boundary: `Operation`,
+`Investigation<State>`, and `InvestigationService`. `Operation.define` SHALL
+wrap one Effect Tool with Attune-specific lifecycle and receipt metadata. The
+Tool/Toolkit remains the single schema authority and continues to derive the
+MCP contract and typed handler collection; the operation metadata drives the
+lifecycle and durable receipt engine.
+
+```ts
+const MaudeRun = Operation.define({
+  tool: MaudeRunTool,
+  execution: { access: "read", transition: "preserve", receipt: ["maude", "run"] },
+});
+
+type Input = Operation.Input<typeof MaudeRun>;
+type Result = Operation.Result<typeof MaudeRun>;
+type Error = Operation.Error<typeof MaudeRun>;
+```
+
+`Operation.define<const D extends OperationShape>(definition: D &
+Validate<D>): Operation<D>` SHALL infer from one definition object. Receipt
+relations, terminalizability, correlation selection, and union distribution
+may remain as conditional types, but they SHALL be private implementation
+machinery rather than exported vocabulary. `OperationResultOf` and other
+duplicate aliases SHALL be removed.
+
+Use the Effect APIs already present in the dependency graph: `Effect.Types`
+for local type simplification, exact-property, and variance helpers as needed;
+`Effect.Match` for exhaustive runtime lifecycle branching; and `expect-type`
+plus native `@ts-expect-error` tests for compiler-checked contracts. Do not add
+`ts-pattern`, `hkt-toolbelt`, HOTScript, ArkType, TypeBox, or TSTyche for this
+work. `type-fest` is allowed only for a clearly cosmetic utility that Effect
+does not already provide. Retain
+[`expect-type`](https://github.com/mmkal/expect-type), rather than adopting
+TSTyche before it supports the repository compiler line.
+
+Keep the existing MCP adapter, receipt engine, capability provenance checks,
+frozen MCP schema snapshots, and positive/negative type tests. First prove the
+facade with `maude_run` and one conditionally available operation; then migrate
+the remaining operations only after that path preserves schema snapshots and
+lifecycle safety. Do not build a generic `Protocol.define({ states,
+operations })` framework until a second protocol demonstrates the need.
+
 ## What should the larger abstraction be?
 
 **Q: Is an `AttuneHandlers` record enough?**
@@ -71,11 +128,11 @@ interface InvestigationService {
   readonly materialize: (
     input: MaterializeInput,
   ) => Effect.Effect<MaterializedInvestigation, AttuneFailure>;
-  readonly execute: <T extends ToolOperation>(
+  readonly execute: <T extends Operation.Any>(
     investigation: ActiveInvestigation,
     operation: T,
-    input: InputOf<T>,
-  ) => Effect.Effect<ReceiptOf<T>, OperationErrorOf<T>>;
+    input: Operation.Input<T>,
+  ) => Effect.Effect<Operation.Receipt<T>, Operation.Error<T>>;
   readonly finalize: (
     investigation: ActiveInvestigation,
   ) => Effect.Effect<FinalizedInvestigation, AttuneFailure>;
@@ -83,8 +140,9 @@ interface InvestigationService {
 ```
 
 The MCP handlers decode schemas, acquire the appropriate investigation handle,
-call this service, and encode its result. Tool implementations become typed
-operation descriptors instead of hidden branches in a broad handler module.
+call this service, and encode its result. Tool implementations become inferred
+operations backed by Effect Tools instead of hidden branches in a broad handler
+module.
 
 ## How far should TypeScript/Effect typing go?
 
@@ -99,17 +157,20 @@ facts runtime-validated.
    read-only `Snapshot`. Only active handles may execute or promote; only
    active handles may finalize. Handles are created only by the workspace
    loader after its checks have completed.
-3. Describe each tool with a generic `ToolOperation` registry:
-   `name`, input schema, success value schema, error union, and whether it is
-   a writer. Derive `InputOf`, `ResultOf`, `ReceiptOf`, and MCP registration
-   from that registry. This removes casts such as `input as unknown as Json`.
+3. Describe each tool once through Effect Tool and wrap it in an inferred
+   `Operation` facade containing its lifecycle and receipt metadata. Derive
+   `Operation.Input`, `Operation.Result`, `Operation.Error`, the Toolkit,
+   MCP registration, and documentation from that definition. This removes
+   casts such as `input as unknown as Json` without duplicating schemas.
 4. Use narrow error unions per operation (`GitFailure | InvalidPath | ...`),
    then convert to the public `AttuneFailure` at the contract boundary. Do not
    promise compile-time validation for symlink resolution, hashes, or subprocess
    outcomes.
-5. Use `expect-type` tests to pin the forbidden transitions and inferred
-   operation input/result pairs. Keep Vitest integration tests for actual locks,
-   process cleanup, and filesystem containment.
+5. Use `Effect.Match` for exhaustive runtime lifecycle branching and
+   `expect-type` tests to pin forbidden transitions and inferred operation
+   input/result pairs. Keep native `@ts-expect-error` checks and Vitest
+   integration tests for actual locks, process cleanup, and filesystem
+   containment.
 
 ## Effect conventions worth adopting
 
