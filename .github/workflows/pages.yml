@@ -46,7 +46,7 @@ jobs:
         run: |
           pnpm exec oxfmt --check .
           pnpm lint
-          pnpm --filter attune-mcp typecheck
+          pnpm exec nx run attune-mcp:typecheck
           pnpm --filter attune-mcp test
           pnpm --filter attune-mcp schema:check
           pnpm --filter attune-docs run audit
