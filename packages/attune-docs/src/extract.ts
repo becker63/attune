@@ -33,7 +33,6 @@ import {
   type DocumentationText,
   type LifecycleRelation,
   type LifecycleRelationKind,
-  type PageExample,
   type SourceSpan,
   type TypeParameterDoc,
 } from "./model.ts";
@@ -206,7 +205,16 @@ const parsedDocs = (docs: readonly JSDoc[]): ParsedDocs => {
 };
 
 const docsFor = (nodes: readonly MorphNode[]): ParsedDocs =>
-  parsedDocs(nodes.flatMap(jsDocsFor));
+  parsedDocs(
+    nodes
+      .flatMap(jsDocsFor)
+      .filter(
+        (doc) =>
+          !doc
+            .getTags()
+            .some((tag) => tag.getTagName() === "packageDocumentation"),
+      ),
+  );
 
 const typeParameters = (
   nodes: readonly MorphNode[],
@@ -216,6 +224,17 @@ const typeParameters = (
   for (const tag of tags.filter((candidate) =>
     ["template", "typeParam"].includes(candidate.getTagName()),
   )) {
+    const template = tag as JSDocTag & {
+      readonly getTypeParameters?: () => readonly TypeParameterDeclaration[];
+    };
+    const declared = template
+      .getTypeParameters?.()
+      .map((parameter) => parameter.getName());
+    if (declared !== undefined && declared.length > 0) {
+      const description = tagComment(tag).replace(/^-\s*/u, "");
+      for (const name of declared) descriptions.set(name, description);
+      continue;
+    }
     const [name, ...description] = tagComment(tag).split(/\s+/u);
     if (name !== undefined) {
       descriptions.set(name, description.join(" ").replace(/^-\s*/u, ""));
@@ -228,18 +247,23 @@ const typeParameters = (
       };
       return typed.getTypeParameters?.() ?? [];
     })
-    .map((parameter) => ({
-      name: parameter.getName(),
-      ...(parameter.getConstraint() === undefined
-        ? {}
-        : { constraint: parameter.getConstraint()!.getText() }),
-      ...(parameter.getDefault() === undefined
-        ? {}
-        : { default: parameter.getDefault()!.getText() }),
-      ...(descriptions.get(parameter.getName()) === undefined
-        ? {}
-        : { description: descriptions.get(parameter.getName())! }),
-    }));
+    .map((parameter) => {
+      const name = parameter.getName();
+      const description = descriptions.get(name)?.trim();
+      if (description === undefined || description.length === 0) {
+        throw new Error(`Type parameter "${name}" requires documentation.`);
+      }
+      return {
+        name,
+        description,
+        ...(parameter.getConstraint() === undefined
+          ? {}
+          : { constraint: parameter.getConstraint()!.getText() }),
+        ...(parameter.getDefault() === undefined
+          ? {}
+          : { default: parameter.getDefault()!.getText() }),
+      };
+    });
 };
 
 const signature = (node: MorphNode, name?: string): string => {
@@ -304,6 +328,7 @@ const provenance = (
 const relationTarget = (comment: string): string =>
   (
     /^\{@link\s+([^|\s}]+)/u.exec(comment)?.[1] ??
+    /^`([^`]+)`/u.exec(comment)?.[1] ??
     comment.split(/\r?\n|\||\s+-\s+|\s{2,}/u)[0]!
   ).trim();
 
@@ -339,6 +364,8 @@ const examplePrograms = (
       throw new Error(`${id} has an @example without a TypeScript fence.`);
     }
     return matches.map((match, index) => {
+      const title = match[1]?.trim();
+      if (!title) throw new Error(`${id} has an untitled @example.`);
       const code = (match[2] ?? "")
         .split(/\r?\n/u)
         .map((line) => line.replace(/^\s*\*\s?/u, ""))
@@ -351,7 +378,7 @@ const examplePrograms = (
       ].map((candidate) => candidate[1]!);
       return {
         id: `${id}/example/${index + 1}`,
-        title: match[1]?.trim() ?? `Example ${index + 1}`,
+        title,
         code,
         files: files.length === 0 ? ["index.ts"] : files,
         principal,
@@ -365,60 +392,6 @@ const examplePrograms = (
       };
     });
   });
-
-const containsIdentifier = (code: string, principal: string): boolean =>
-  new RegExp(`\\b${principal.replaceAll("$", String.raw`\\$`)}\\b`, "u").test(
-    code,
-  );
-
-const symbolExample = (
-  symbolName: string,
-  kind: ApiSymbolKind,
-  packageName: string,
-  examples: readonly ApiExample[],
-  source: SourceSpan,
-): PageExample => {
-  const authored = examples.find((example) =>
-    containsIdentifier(example.code, symbolName),
-  );
-  if (authored !== undefined) {
-    return {
-      code: authored.code,
-      principal: symbolName,
-      source: authored.source,
-      sourceExampleId: authored.id,
-    };
-  }
-  const code =
-    kind === "interface" || kind === "type"
-      ? `import type { ${symbolName} } from ${JSON.stringify(packageName)};\ntype Current = ${symbolName};`
-      : `import { ${symbolName} } from ${JSON.stringify(packageName)};\nconst current = ${symbolName};`;
-  return { code, principal: symbolName, source };
-};
-
-const memberExample = (
-  owner: string,
-  member: string,
-  examples: readonly ApiExample[],
-  source: SourceSpan,
-  summary: string,
-): PageExample => {
-  const authored = examples.find((example) =>
-    containsIdentifier(example.code, member),
-  );
-  return authored === undefined
-    ? {
-        code: `interface ${owner}Page {\n  /** ${summary.replaceAll("*/", "* /")} */\n  readonly ${member}: unknown;\n}\ndeclare const api: ${owner}Page;\napi.${member};`,
-        principal: member,
-        source,
-      }
-    : {
-        code: authored.code,
-        principal: member,
-        source: authored.source,
-        sourceExampleId: authored.id,
-      };
-};
 
 const visibleMembers = (nodes: readonly MorphNode[]): readonly MorphNode[] =>
   nodes.flatMap((node) => {
@@ -443,7 +416,6 @@ const visibleMembers = (nodes: readonly MorphNode[]): readonly MorphNode[] =>
 
 const members = (
   owner: string,
-  ownerSlug: string,
   sourceNodes: readonly MorphNode[],
   declarationNodes: readonly MorphNode[],
   packageName: string,
@@ -470,7 +442,6 @@ const members = (
   return [...sourceByName].map(([name, nodes]) => {
     const docs = docsFor(nodes);
     const memberId = `${packageName}#${owner}.${name}`;
-    const source = span(nodes[0]!, base, ref);
     const examples = examplePrograms(docs.docs, name, memberId, base, ref);
     const declared = declarationByName.get(name) ?? nodes;
     const memberSignature = declared.map((node) => signature(node)).join("\n");
@@ -482,16 +453,10 @@ const members = (
       kind: nodeKind(nodes[0]!),
       signature: memberSignature,
       documentation: docs.text,
+      typeParameters: typeParameters(nodes, docs.tags),
       examples,
       relations: relations(docs.tags, base, ref),
       provenance: provenance(nodes, docs.docs, base, ref),
-      pageExample: memberExample(
-        owner,
-        name,
-        examples,
-        source,
-        docs.text.summary,
-      ),
     };
   });
 };
@@ -580,21 +545,18 @@ const assertSpans = async (manifest: ApiManifest): Promise<void> => {
     manifest.package.provenance.tsdoc,
     manifest.package.provenance.declaration,
     manifest.package.provenance.implementation,
-    manifest.package.pageExample.source,
     ...manifest.package.examples.map((example) => example.source),
     ...manifest.package.relations.map((relation) => relation.source),
     ...manifest.symbols.flatMap((symbol) => [
       symbol.provenance.tsdoc,
       symbol.provenance.declaration,
       symbol.provenance.implementation,
-      symbol.pageExample.source,
       ...symbol.examples.map((example) => example.source),
       ...symbol.relations.map((relation) => relation.source),
       ...symbol.members.flatMap((member) => [
         member.provenance.tsdoc,
         member.provenance.declaration,
         member.provenance.implementation,
-        member.pageExample.source,
         ...member.examples.map((example) => example.source),
         ...member.relations.map((relation) => relation.source),
       ]),
@@ -692,7 +654,6 @@ export const extractApiManifest = async (
     const declarationNodes = declared.get(exportName) ?? sourceNodes;
     const docs = docsFor(sourceNodes);
     const id = `${packageName}#${exportName}`;
-    const symbolSource = span(sourceNodes[0]!, remote, sourceRef);
     const examples = examplePrograms(
       docs.docs,
       exportName,
@@ -715,7 +676,6 @@ export const extractApiManifest = async (
       typeParameters: typeParameters(sourceNodes, docs.tags),
       members: members(
         exportName,
-        slug(exportName),
         sourceNodes,
         declarationNodes,
         packageName,
@@ -725,13 +685,6 @@ export const extractApiManifest = async (
       examples,
       relations: relations(docs.tags, remote, sourceRef),
       provenance: provenance(sourceNodes, docs.docs, remote, sourceRef),
-      pageExample: symbolExample(
-        exportName,
-        nodeKind(sourceNodes[0]!),
-        packageName,
-        examples,
-        symbolSource,
-      ),
     });
   }
   const duplicates = symbols.filter(
@@ -779,21 +732,6 @@ export const extractApiManifest = async (
     packageDoc === undefined
       ? fileSpan(entry, remote, sourceRef)
       : span(packageDoc, remote, sourceRef);
-  const packagePage =
-    packageExamples[0] === undefined
-      ? symbolExample(
-          resolvedSymbols[0]?.exportName ?? "unknown",
-          resolvedSymbols[0]?.kind ?? "type",
-          packageName,
-          [],
-          packageSource,
-        )
-      : {
-          code: packageExamples[0].code,
-          principal: packageExamples[0].principal,
-          source: packageExamples[0].source,
-          sourceExampleId: packageExamples[0].id,
-        };
   const dirty =
     options.sourceRevision === undefined &&
     git(["status", "--porcelain", "--", packageRelative(packageRoot)]) !== "";
@@ -818,7 +756,6 @@ export const extractApiManifest = async (
       examples: packageExamples,
       relations: relations(packageDocs.tags, remote, sourceRef).map(resolve),
       provenance: packageProvenance,
-      pageExample: packagePage,
     },
     source: {
       revision: sourceRevision,

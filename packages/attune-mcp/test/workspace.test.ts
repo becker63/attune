@@ -6,7 +6,7 @@ import {
   mkdir,
   readFile,
   readdir,
-  rm,
+  realpath,
   writeFile,
 } from "node:fs/promises";
 import * as Path from "node:path";
@@ -21,6 +21,7 @@ import {
   type InvestigationManifest,
   type MountedWorkspace,
 } from "../src/investigation/workspace.js";
+import { runBufferedCommand } from "../src/platform/process.js";
 import {
   fixtureRuntimeConfig,
   readJson,
@@ -58,10 +59,7 @@ class LocalMountWorkspaceStore extends WorkspaceStore {
       ? await readJson<InvestigationManifest>(
           Path.join(artifactsPath, "investigation.json"),
         )
-      : ({
-          investigationId: id,
-          baseKey: binding.baseKey,
-        } as InvestigationManifest);
+      : (binding as InvestigationManifest);
     return await use({
       mountPath,
       repositoryPath,
@@ -75,7 +73,7 @@ const createRepository = async (
   root: string,
   name: string,
   contents: string,
-): Promise<string> => {
+) => {
   const repository = Path.join(root, name);
   await mkdir(repository, { recursive: true });
   git(repository, "init", "-q");
@@ -87,30 +85,22 @@ const createRepository = async (
   return repository;
 };
 
-const blockingAgentFs = async (
-  root: string,
-): Promise<{
-  readonly executable: string;
-  readonly entered: string;
-  readonly release: string;
-}> => {
+const blockingAgentFs = async (root: string) => {
   const executable = Path.join(root, "fake-agentfs.mjs");
   const entered = Path.join(root, "agentfs-entered");
   const release = Path.join(root, "agentfs-release");
   await writeFile(
     executable,
     [
-      "#!/usr/bin/env node",
+      `#!${process.execPath}`,
       'import { existsSync, mkdirSync, writeFileSync } from "node:fs";',
-      'import { dirname, join } from "node:path";',
-      'import { fileURLToPath } from "node:url";',
-      "const root = dirname(fileURLToPath(import.meta.url));",
+      'import { join } from "node:path";',
       'if (process.argv[2] !== "init") process.exit(64);',
       "const id = process.argv.at(-1);",
       'mkdirSync(join(process.cwd(), ".agentfs"), { recursive: true });',
       'writeFileSync(join(process.cwd(), ".agentfs", id + ".db"), "capsule\\n");',
-      'writeFileSync(join(root, "agentfs-entered"), id + "\\n");',
-      'while (!existsSync(join(root, "agentfs-release"))) {',
+      `writeFileSync(${JSON.stringify(entered)}, id + "\\n");`,
+      `while (!existsSync(${JSON.stringify(release)})) {`,
       "  await new Promise((resolve) => setTimeout(resolve, 10));",
       "}",
     ].join("\n"),
@@ -119,41 +109,8 @@ const blockingAgentFs = async (
   return { executable, entered, release };
 };
 
-const waitForFile = async (path: string): Promise<void> => {
-  for (let attempt = 0; attempt < 200; attempt += 1) {
-    try {
-      await access(path);
-      return;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    }
-  }
-  throw new Error(`timed out waiting for ${path}`);
-};
-
-const makePublishedBasesRemovable = async (home: string): Promise<void> => {
-  try {
-    for (const entry of await readdir(Path.join(home, "bases"))) {
-      await chmod(Path.join(home, "bases", entry), 0o700);
-    }
-  } catch {
-    // A failed materialization may not have published the bases directory.
-  }
-};
-
-const expectPublishedIdentity = async (
-  home: string,
-  investigationId: InvestigationId,
-  baseKey: string,
-): Promise<void> => {
-  for (const [directory, entry] of [
-    ["capsules", `${investigationId}.db`],
-    ["bindings", `${investigationId}.json`],
-    ["bases", baseKey],
-  ] as const) {
-    expect(await readdir(Path.join(home, directory))).toEqual([entry]);
-  }
-};
+const waitForFile = (path: string) =>
+  vi.waitFor(() => access(path), { interval: 10, timeout: 2_000 });
 
 describe("narrow real Git seam", () => {
   it("uses clean full commits for checkpoints and isolated analysis", async () => {
@@ -163,11 +120,17 @@ describe("narrow real Git seam", () => {
       const store = new WorkspaceStore(config(root));
 
       expect(await normalizeRemote(repository)).toBe(
-        await import("node:fs/promises").then(({ realpath }) =>
-          realpath(repository),
-        ),
+        await realpath(repository),
       );
       expect(await store.head(repository)).toBe(first);
+      await expect(
+        store.checkpoint(
+          repository,
+          "b".repeat(40) as FullGitCommit,
+          "require-clean",
+          undefined,
+        ),
+      ).rejects.toMatchObject({ code: "StaleSnapshot" });
       expect(
         await store.checkpoint(repository, first, "require-clean", undefined),
       ).toEqual({ snapshotId: first, createdCommit: false });
@@ -193,77 +156,43 @@ describe("narrow real Git seam", () => {
       ).toContain("new.txt");
 
       const isolated = await store.isolatedCheckout(repository, first);
-      try {
-        expect(
-          await readFile(Path.join(isolated.repository, "value.txt"), "utf8"),
-        ).toBe("first\n");
-        expect(await store.head(isolated.repository)).toBe(first);
-        expect(await store.dirty(isolated.repository)).toBe(false);
-      } finally {
-        await rm(isolated.root, { recursive: true, force: true });
-      }
+      expect(
+        await readFile(Path.join(isolated.repository, "value.txt"), "utf8"),
+      ).toBe("first\n");
+      expect(await store.head(isolated.repository)).toBe(first);
+      expect(await store.dirty(isolated.repository)).toBe(false);
     });
   });
 
-  it("rejects stale checkpoint expectations", async () => {
-    await withTemporaryDirectory("attune-stale-", async (root) => {
-      const repository = await createRepository(root, "repository", "a");
+  it("cancels commands before spawn and force-kills after spawn", async () => {
+    await withTemporaryDirectory("attune-cancel-command-", async (root) => {
+      const preAborted = new AbortController();
+      preAborted.abort();
       await expect(
-        new WorkspaceStore(config(root)).checkpoint(
-          repository,
-          "b".repeat(40) as FullGitCommit,
-          "require-clean",
-          undefined,
+        runBufferedCommand(
+          Path.join(root, "must-not-be-spawned"),
+          [],
+          root,
+          preAborted.signal,
         ),
-      ).rejects.toMatchObject({ code: "StaleSnapshot" });
-    });
-  });
-
-  it("does not spawn a command for an already-aborted request", async () => {
-    await withTemporaryDirectory("attune-pre-aborted-", async (root) => {
-      const executable = Path.join(root, "observable-git.mjs");
-      const marker = Path.join(root, "spawned");
-      await writeFile(
-        executable,
-        [
-          "#!/usr/bin/env node",
-          'import { writeFileSync } from "node:fs";',
-          `writeFileSync(${JSON.stringify(marker)}, "spawned\\n");`,
-        ].join("\n"),
-      );
-      await chmod(executable, 0o755);
-      const controller = new AbortController();
-      controller.abort();
-      await expect(
-        new WorkspaceStore({
-          ...config(root),
-          git: executable,
-        }).head(root, controller.signal),
       ).rejects.toMatchObject({ code: "Cancelled" });
-      await expect(access(marker)).rejects.toMatchObject({ code: "ENOENT" });
-    });
-  });
 
-  it("force-kills a command that ignores cancellation", async () => {
-    await withTemporaryDirectory("attune-force-kill-", async (root) => {
-      const executable = Path.join(root, "stubborn-git.mjs");
       const marker = Path.join(root, "spawned");
-      await writeFile(
-        executable,
-        [
-          "#!/usr/bin/env node",
-          'import { writeFileSync } from "node:fs";',
-          `writeFileSync(${JSON.stringify(marker)}, "spawned\\n");`,
-          'process.on("SIGTERM", () => undefined);',
-          "setInterval(() => undefined, 1_000);",
-        ].join("\n"),
-      );
-      await chmod(executable, 0o755);
       const controller = new AbortController();
-      const running = new WorkspaceStore({
-        ...config(root),
-        git: executable,
-      }).head(root, controller.signal);
+      const running = runBufferedCommand(
+        process.execPath,
+        [
+          "-e",
+          [
+            'import { writeFileSync } from "node:fs";',
+            `writeFileSync(${JSON.stringify(marker)}, "spawned\\n");`,
+            'process.on("SIGTERM", () => undefined);',
+            "setInterval(() => undefined, 1_000);",
+          ].join("\n"),
+        ],
+        root,
+        controller.signal,
+      );
       await waitForFile(marker);
       controller.abort();
       await expect(running).rejects.toMatchObject({ code: "Cancelled" });
@@ -274,102 +203,85 @@ describe("narrow real Git seam", () => {
 describe("materialization identity publication", () => {
   const investigationId = "01K33333333333333333333333" as InvestigationId;
 
-  it("publishes one coherent identity for concurrent matching requests", async () => {
-    await withTemporaryDirectory("attune-identity-same-", async (root) => {
-      const home = Path.join(root, "runtime");
-      await mkdir(home);
-      try {
-        const remote = await createRepository(root, "remote", "same\n");
-        const agentFs = await blockingAgentFs(root);
-        const store = new LocalMountWorkspaceStore({
-          ...config(home),
-          agentFs: agentFs.executable,
-        });
-        const input = {
-          investigationId,
-          remote,
-          revision: "HEAD",
-        } as const;
+  it.each([
+    ["matching", "same", "remote", "same\n", false],
+    ["conflicting", "conflict", "first-remote", "first\n", true],
+  ] as const)(
+    "serializes concurrent %s identity requests",
+    async (_kind, fixture, repositoryName, contents, conflicts) => {
+      await withTemporaryDirectory(
+        `attune-identity-${fixture}-`,
+        async (root) => {
+          const home = Path.join(root, "runtime");
+          try {
+            const repository = (name: string, value: string) =>
+              createRepository(root, name, value);
+            const firstRemote = await repository(repositoryName, contents);
+            const contenderRemote = conflicts
+              ? await repository("conflicting-remote", "conflicting\n")
+              : firstRemote;
+            const agentFs = await blockingAgentFs(root);
+            const store = new LocalMountWorkspaceStore({
+              ...config(home),
+              agentFs: agentFs.executable,
+            });
+            const materialize = (remote: string) =>
+              store.materialize({ investigationId, remote, revision: "HEAD" });
+            const winner = materialize(firstRemote);
+            await waitForFile(agentFs.entered);
+            let contenderSettled = false;
+            const contender = materialize(contenderRemote)
+              .then(
+                (value) => ({ status: "succeeded" as const, value }),
+                (cause: unknown) => ({ status: "failed" as const, cause }),
+              )
+              .finally(() => {
+                contenderSettled = true;
+              });
+            await new Promise((resolve) => setTimeout(resolve, 25));
+            try {
+              expect(contenderSettled).toBe(false);
+            } finally {
+              await writeFile(agentFs.release, "release\n");
+            }
 
-        const first = store.materialize(input);
-        await waitForFile(agentFs.entered);
-        let secondSettled = false;
-        const second = store.materialize(input).finally(() => {
-          secondSettled = true;
-        });
-        await new Promise((resolve) => setTimeout(resolve, 25));
-        try {
-          expect(secondSettled).toBe(false);
-        } finally {
-          await writeFile(agentFs.release, "release\n");
-        }
-
-        const [left, right] = await Promise.all([first, second]);
-        expect(left).toEqual(right);
-        const binding = await store.binding(investigationId);
-        const baseManifest = await readJson<{
-          readonly baseKey: string;
-          readonly resolvedCommit: string;
-        }>(Path.join(home, "bases", binding.baseKey, "base-manifest.json"));
-        expect(baseManifest).toMatchObject({
-          baseKey: binding.baseKey,
-          resolvedCommit: left.resolvedCommit,
-        });
-        expect(left.manifest.baseKey).toBe(binding.baseKey);
-        await expectPublishedIdentity(home, investigationId, binding.baseKey);
-      } finally {
-        await makePublishedBasesRemovable(home);
-      }
-    });
-  });
-
-  it("makes the first locked repository binding the deterministic winner", async () => {
-    await withTemporaryDirectory("attune-identity-conflict-", async (root) => {
-      const home = Path.join(root, "runtime");
-      await mkdir(home);
-      try {
-        const [firstRemote, conflictingRemote] = await Promise.all([
-          createRepository(root, "first-remote", "first\n"),
-          createRepository(root, "conflicting-remote", "conflicting\n"),
-        ]);
-        const agentFs = await blockingAgentFs(root);
-        const store = new LocalMountWorkspaceStore({
-          ...config(home),
-          agentFs: agentFs.executable,
-        });
-
-        const winner = store.materialize({
-          investigationId,
-          remote: firstRemote,
-          revision: "HEAD",
-        });
-        await waitForFile(agentFs.entered);
-        const loser = store.materialize({
-          investigationId,
-          remote: conflictingRemote,
-          revision: "HEAD",
-        });
-        const loserOutcome = loser.then(
-          (value) => ({ status: "succeeded" as const, value }),
-          (cause: unknown) => ({ status: "failed" as const, cause }),
-        );
-        await writeFile(agentFs.release, "release\n");
-
-        const published = await winner;
-        expect(await loserOutcome).toMatchObject({
-          status: "failed",
-          cause: { code: "IdentityConflict" },
-        });
-        const binding = await store.binding(investigationId);
-        expect(published.manifest).toMatchObject({
-          investigationId,
-          normalizedRemote: await normalizeRemote(firstRemote),
-          baseKey: binding.baseKey,
-        });
-        await expectPublishedIdentity(home, investigationId, binding.baseKey);
-      } finally {
-        await makePublishedBasesRemovable(home);
-      }
-    });
-  });
+            const [published, outcome] = await Promise.all([winner, contender]);
+            const identityConflict = expect.objectContaining({
+              code: "IdentityConflict",
+            });
+            expect(outcome).toEqual(
+              conflicts
+                ? { status: "failed", cause: identityConflict }
+                : { status: "succeeded", value: published },
+            );
+            const binding = await store.binding(investigationId);
+            const baseManifest = await readJson(
+              Path.join(home, "bases", binding.baseKey, "base-manifest.json"),
+            );
+            expect(baseManifest).toMatchObject({
+              baseKey: binding.baseKey,
+              resolvedCommit: published.resolvedCommit,
+            });
+            expect(published.manifest).toMatchObject({
+              investigationId,
+              normalizedRemote: await normalizeRemote(firstRemote),
+              baseKey: binding.baseKey,
+            });
+            for (const [directory, entry] of [
+              ["capsules", `${investigationId}.db`],
+              ["bindings", `${investigationId}.json`],
+              ["bases", binding.baseKey],
+            ] as const)
+              expect(await readdir(Path.join(home, directory))).toEqual([
+                entry,
+              ]);
+          } finally {
+            const bases = Path.join(home, "bases");
+            for (const entry of await readdir(bases).catch(() => []))
+              await chmod(Path.join(bases, entry), 0o700);
+          }
+        },
+      );
+    },
+  );
 });

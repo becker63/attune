@@ -19,12 +19,20 @@ import {
  * Install this value at the protocol boundary. Application callers should use
  * {@link Attune}; operation projections and execution metadata remain private.
  *
- * @example
+ * @example Read the closed operation names
  * ```ts
  * // @filename: toolkit.ts
  * import { AttuneToolkit } from "attune-mcp";
  * // ---cut---
  * type OperationName = keyof typeof AttuneToolkit.tools;
+ * ```
+ *
+ * @example Infer one exact wire request
+ * ```ts
+ * import { AttuneToolkit } from "attune-mcp";
+ * // ---cut-before---
+ * type MaterializeInput =
+ *   typeof AttuneToolkit.tools.repository_materialize.parametersSchema.Type;
  * ```
  */
 export const AttuneToolkit = Toolkit.make(

@@ -3,9 +3,7 @@ import { mkdir } from "node:fs/promises";
 import * as Path from "node:path";
 
 import { fail, type RuntimeConfig } from "./core.js";
-
-const isAborted = (signal: AbortSignal | undefined): boolean =>
-  signal?.aborted === true;
+import { isAborted } from "./process.js";
 
 export const withOsLock = async <A>(
   config: RuntimeConfig,

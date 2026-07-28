@@ -97,7 +97,14 @@ describe("small mechanical core", () => {
         },
         controller.signal,
       );
-      setTimeout(() => controller.abort(), 50);
+      await vi.waitFor(
+        async () =>
+          expect(
+            await readFile(Path.join(directory, "stdout.txt"), "utf8"),
+          ).toBe("ready"),
+        { timeout: 2_000 },
+      );
+      controller.abort();
       expect((await running).termination).toBe("cancelled");
       expect(await readFile(Path.join(directory, "stdout.txt"), "utf8")).toBe(
         "ready",

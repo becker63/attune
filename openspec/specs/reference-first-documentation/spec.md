@@ -68,13 +68,15 @@ published.
 ### Requirement: Source-grounded page completeness
 
 Every generated API page SHALL contain only source-supported narrative, type,
-example, relationship, recovery, and provenance sections and SHALL have no
-generic placeholder demonstration.
+example, relationship, recovery, and provenance sections, SHALL render a
+narrative sequence of at least three source-authored checked examples, and
+SHALL have no generic placeholder demonstration.
 
 #### Scenario: Every page is independently useful
 
 - **WHEN** any generated package, symbol, or member page is opened directly
-- **THEN** it contains a page-specific checked example or typed scene
+- **THEN** it contains multiple checked scenes including examples owned by that
+  package, symbol, or member
 - **AND** its related links and provenance resolve
 
 #### Scenario: Removed guide concepts leave no residue

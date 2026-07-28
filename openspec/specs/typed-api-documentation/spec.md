@@ -10,12 +10,15 @@ Define source TSDoc and executable example coverage with isolated Shiki and Twos
 
 The system SHALL provide narrative TSDoc for `Attune`, `Investigation`,
 `AttuneReceipt`, `AttuneToolkit`, `InvestigationLifecycleError`, and
-`AttuneToolFailure`, plus every explicit public `Attune` member. Documentation
-SHALL explain when a concept enters the lifecycle, the proof or evidence it
-carries, a legal transition's preconditions and guarantees, an error's recovery
-decision, parameters, returns, and related public concepts. It SHALL NOT merely
-repeat a signature or reintroduce registry, projection, factory, capability
-alias, guide-process, or per-tool descriptor nouns.
+`AttuneToolFailure`, plus every explicit public `Attune` member and
+`Investigation` property. Documentation SHALL explain when a concept enters the
+lifecycle, the proof or evidence it carries, a legal transition's preconditions
+and guarantees, an error's recovery decision, parameters, returns, type
+parameters, failures, and related public concepts. Each root concept and member
+SHALL provide a concise summary, substantive `@remarks`, and multiple compact
+executable scenes. Documentation SHALL NOT merely repeat a signature or
+reintroduce registry, projection, factory, capability alias, guide-process, or
+per-tool descriptor nouns.
 
 #### Scenario: Reader hovers an active investigation type
 
@@ -69,14 +72,14 @@ package's supported TypeScript toolchain remains independent.
 
 ### Requirement: A type hover on every emitted page
 
-Every emitted HTML page SHALL contain at least one
-Shiki/Twoslash-highlighted TypeScript expression with real type information.
-Every package, symbol, and service-member reference page SHALL own a checked
-highlight whose principal identifier is that page's declaration or member and
-whose hover links to its API destination and immutable source. Hover links
-SHALL be keyboard focusable, hover boxes SHALL expose an accessible label, and
-copied code SHALL remain the exact displayed post-cut source rather than
-including hidden setup or tooltip text.
+Every emitted HTML page SHALL contain at least three source-backed
+Shiki/Twoslash-highlighted TypeScript scenes with real type information. Every
+package, symbol, and service-member reference page SHALL include checked scenes
+owned by that page's declaration or member, and every public identifier hover
+SHALL link to its own API destination and immutable source. Hover links SHALL be
+keyboard focusable, hover boxes SHALL expose an accessible label, and copied
+code SHALL remain the exact displayed post-cut source rather than including
+hidden setup or tooltip text.
 
 #### Scenario: Render the complete static site
 

@@ -40,7 +40,9 @@ for source analysis. Each manifest SHALL identify the source revision,
 declaration digest, and source digest and include stable package, symbol, and
 member ids; source-ordered signatures and TSDoc; complete source examples;
 explicit lifecycle relations; and exact TSDoc, declaration, implementation,
-and example spans with immutable GitHub URLs.
+and example spans with immutable GitHub URLs. Version 4 manifests SHALL retain
+ordered source example collections directly and SHALL contain no generated
+page-example fallback.
 
 #### Scenario: Source export changes
 

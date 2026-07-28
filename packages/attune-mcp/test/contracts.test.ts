@@ -30,68 +30,73 @@ type ContractBundle = JsonObject & {
 const bundle = (): ContractBundle =>
   generateContractBundle() as unknown as ContractBundle;
 
+const isRecord = (value: unknown): value is JsonObject =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
 const record = (value: unknown): JsonObject => {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new TypeError("expected JSON object");
-  }
+  if (!isRecord(value)) throw new TypeError("expected JSON object");
   return value as JsonObject;
 };
 
 const localTarget = (contract: ContractBundle, reference: unknown): unknown => {
-  if (typeof reference !== "string" || !reference.startsWith("#/$defs/")) {
-    throw new TypeError(
-      `invalid local definition reference ${String(reference)}`,
-    );
-  }
-  const name = reference.slice("#/$defs/".length);
-  if (name === "" || name.includes("/")) {
-    throw new TypeError(`invalid local definition reference ${reference}`);
-  }
+  const prefix = "#/$defs/";
+  const label = String(reference);
+  const name =
+    typeof reference === "string" && reference.startsWith(prefix)
+      ? reference.slice(prefix.length)
+      : "";
+  if (name === "" || name.includes("/"))
+    throw new TypeError(`invalid local definition reference ${label}`);
   const target = contract.$defs[name];
-  if (target === undefined) {
-    throw new TypeError(`unresolved local definition reference ${reference}`);
-  }
+  if (target === undefined)
+    throw new TypeError(`unresolved local definition reference ${label}`);
   return target;
 };
 
+const contractFile = (name: string): string =>
+  fileURLToPath(new URL(`../../../contracts/${name}`, import.meta.url));
+
 const normalizeCompatibility = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(normalizeCompatibility);
-  if (typeof value !== "object" || value === null) return value;
+  if (!isRecord(value)) return value;
   const normalized = Object.fromEntries(
     Object.entries(value)
       .filter(([key]) => key !== "description")
       .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
       .map(([key, item]) => [key, normalizeCompatibility(item)]),
   );
-  if (Array.isArray(normalized.allOf)) {
-    const fragments = normalized.allOf.filter(
+  if (!Array.isArray(normalized.allOf)) return normalized;
+  const fragments = normalized.allOf.filter(
+    (item) => !isRecord(item) || Object.keys(item).length > 0,
+  );
+  if (
+    fragments.every(
       (item) =>
-        typeof item !== "object" ||
-        item === null ||
-        Array.isArray(item) ||
-        Object.keys(item).length > 0,
-    );
-    if (
-      fragments.every(
-        (item) =>
-          typeof item === "object" &&
-          item !== null &&
-          !Array.isArray(item) &&
-          !("$ref" in item) &&
-          !("anyOf" in item) &&
-          !("oneOf" in item),
-      )
-    ) {
-      delete normalized.allOf;
-      for (const fragment of fragments) {
-        Object.assign(normalized, fragment);
-      }
-    } else {
-      normalized.allOf = fragments;
-    }
+        isRecord(item) &&
+        !("$ref" in item) &&
+        !("anyOf" in item) &&
+        !("oneOf" in item),
+    )
+  ) {
+    delete normalized.allOf;
+    for (const fragment of fragments) Object.assign(normalized, fragment);
+  } else {
+    normalized.allOf = fragments;
   }
   return normalized;
 };
+
+const expectedTools = [
+  ["repository_materialize", "RepositoryMaterialize"],
+  ["repository_checkpoint", "RepositoryCheckpoint"],
+  ["joern_query", "JoernQuery"],
+  ["maude_run", "MaudeRun"],
+  ["property_run", "PropertyRun"],
+  ["ast_grep_run", "AstGrepRun"],
+  ["artifact_promote", "ArtifactPromote"],
+  ["investigation_finalize", "InvestigationFinalize"],
+] as const;
+const expectedResources = ["Artifact", "Contracts", "Investigation", "Receipt"];
 
 describe("frozen capability ABI", () => {
   it("keeps the built root declaration at exactly six concepts", async () => {
@@ -108,39 +113,32 @@ describe("frozen capability ABI", () => {
   });
 
   it("publishes exactly eight mechanical tools", () => {
-    expect(Object.keys(AttuneToolkit.tools)).toEqual([
-      "repository_materialize",
-      "repository_checkpoint",
-      "joern_query",
-      "maude_run",
-      "property_run",
-      "ast_grep_run",
-      "artifact_promote",
-      "investigation_finalize",
-    ]);
+    expect(Object.keys(AttuneToolkit.tools)).toEqual(
+      expectedTools.map(([name]) => name),
+    );
     expect(JSON.stringify(generateContractBundle())).not.toContain(
       "joern_reindex",
     );
   });
 
   it("keeps identities and paths narrow", () => {
-    expect(
-      Schema.decodeUnknownSync(InvestigationId)("01K00000000000000000000000"),
-    ).toBe("01K00000000000000000000000");
-    expect(Schema.decodeUnknownSync(InvocationId)("activegraph:event-1")).toBe(
-      "activegraph:event-1",
-    );
-    expect(
-      Schema.decodeUnknownSync(RepositoryRelativePath)("rules/a.yml"),
-    ).toBe("rules/a.yml");
-    expect(() =>
-      Schema.decodeUnknownSync(RepositoryRelativePath)("../outside"),
-    ).toThrow(/repository-relative/u);
-    expect(() =>
-      Schema.decodeUnknownSync(ArtifactUri)(
+    const valid = [
+      [InvestigationId, "01K00000000000000000000000"],
+      [InvocationId, "activegraph:event-1"],
+      [RepositoryRelativePath, "rules/a.yml"],
+    ] as const;
+    for (const [schema, value] of valid)
+      expect(Schema.decodeUnknownSync(schema)(value)).toBe(value);
+    const invalid = [
+      [RepositoryRelativePath, "../outside", /repository-relative/u],
+      [
+        ArtifactUri,
         "attune://investigations/01K00000000000000000000000/artifacts/maude/call-1/../secret",
-      ),
-    ).toThrow(/artifact URI/u);
+        /artifact URI/u,
+      ],
+    ] as const;
+    for (const [schema, value, message] of invalid)
+      expect(() => Schema.decodeUnknownSync(schema)(value)).toThrow(message);
   });
 
   it("accepts opaque unknown references without an ontology", () => {
@@ -156,17 +154,9 @@ describe("frozen capability ABI", () => {
   });
 
   it("matches the checked-in deterministic contract bytes", async () => {
-    const contractUrl = new URL(
-      "../../../contracts/attune-tools.schema.json",
-      import.meta.url,
-    );
-    const digestUrl = new URL(
-      "../../../contracts/attune-tools.sha256",
-      import.meta.url,
-    );
     const [checkedIn, digest] = await Promise.all([
-      readFile(fileURLToPath(contractUrl), "utf8"),
-      readFile(fileURLToPath(digestUrl), "utf8"),
+      readFile(contractFile("attune-tools.schema.json"), "utf8"),
+      readFile(contractFile("attune-tools.sha256"), "utf8"),
     ]);
     expect(checkedIn).toBe(stringifyContractBundle());
     expect(digest.trim()).toBe(
@@ -188,7 +178,7 @@ describe("frozen capability ABI", () => {
         for (const item of value) visit(item);
         return;
       }
-      if (typeof value !== "object" || value === null) return;
+      if (!isRecord(value)) return;
       for (const [key, item] of Object.entries(value)) {
         if (key === "$ref") localTarget(contract, item);
         visit(item);
@@ -200,43 +190,21 @@ describe("frozen capability ABI", () => {
   it("maps every public tool and resource to stable definitions", () => {
     const contract = bundle();
     const tools = contract["x-attune"].tools;
-    const expectedTools = {
-      artifact_promote: ["ArtifactPromoteInput", "ArtifactPromoteResult"],
-      ast_grep_run: ["AstGrepRunInput", "AstGrepRunResult"],
-      investigation_finalize: [
-        "InvestigationFinalizeInput",
-        "InvestigationFinalizeResult",
-      ],
-      joern_query: ["JoernQueryInput", "JoernQueryResult"],
-      maude_run: ["MaudeRunInput", "MaudeRunResult"],
-      property_run: ["PropertyRunInput", "PropertyRunResult"],
-      repository_checkpoint: [
-        "RepositoryCheckpointInput",
-        "RepositoryCheckpointResult",
-      ],
-      repository_materialize: [
-        "RepositoryMaterializeInput",
-        "RepositoryMaterializeResult",
-      ],
-    } as const;
-    expect(Object.keys(tools)).toEqual(Object.keys(expectedTools));
-    for (const [name, [input, result]] of Object.entries(expectedTools)) {
+    expect(Object.keys(tools)).toEqual(
+      expectedTools.map(([name]) => name).sort(),
+    );
+    for (const [name, model] of expectedTools) {
       const mapping = record(tools[name]);
-      expect(record(mapping.input).$ref).toBe(`#/$defs/${input}`);
-      expect(record(mapping.result).$ref).toBe(`#/$defs/${result}`);
+      expect(record(mapping.input).$ref).toBe(`#/$defs/${model}Input`);
+      expect(record(mapping.result).$ref).toBe(`#/$defs/${model}Result`);
       expect(record(mapping.failure).$ref).toBe("#/$defs/AttuneToolFailure");
     }
 
-    expect(Object.keys(contract["x-attune"].resources)).toEqual([
-      "artifact",
-      "contracts",
-      "investigation",
-      "receipt",
-    ]);
-    expect(contract.$defs).toHaveProperty("ArtifactResourceParameters");
-    expect(contract.$defs).toHaveProperty("ContractsResourceParameters");
-    expect(contract.$defs).toHaveProperty("InvestigationResourceParameters");
-    expect(contract.$defs).toHaveProperty("ReceiptResourceParameters");
+    expect(Object.keys(contract["x-attune"].resources)).toEqual(
+      expectedResources.map((name) => name.toLowerCase()),
+    );
+    for (const name of expectedResources)
+      expect(contract.$defs).toHaveProperty(`${name}ResourceParameters`);
   });
 
   it("retains the explicitly unconstrained Joern summary", () => {
@@ -246,15 +214,15 @@ describe("frozen capability ABI", () => {
     if (!Array.isArray(result.anyOf)) {
       throw new TypeError("Joern result is not a union");
     }
-    const success = record(result.anyOf[0]);
-    const properties = record(success.properties);
+    const properties = record(record(result.anyOf[0]).properties);
     expect(properties.summary).toEqual({});
   });
 
   it("places portable refinements where standard generators retain them", () => {
     const contract = bundle();
-    const input = record(contract.$defs.ArtifactPromoteInput);
-    const properties = record(input.properties);
+    const properties = record(
+      record(contract.$defs.ArtifactPromoteInput).properties,
+    );
     expect(record(properties.expectedSnapshot)).toMatchObject({
       maxLength: 64,
       minLength: 1,

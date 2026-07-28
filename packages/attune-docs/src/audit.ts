@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { isDeepStrictEqual } from "node:util";
 
 import type {
+  ApiExample,
   ApiManifest,
   DocumentationDiagnostic,
   DocumentationPolicy,
@@ -158,7 +159,7 @@ export const readDocumentationPolicy = async (
   JSON.parse(await readFile(path, "utf8")) as DocumentationPolicy;
 
 const documented = (summary: string, remarks: string): boolean =>
-  summary.trim().length > 0 || remarks.trim().length > 0;
+  summary.trim().length > 0 && remarks.trim().length > 0;
 
 const validSpan = (span: SourceSpan | undefined): boolean =>
   span !== undefined &&
@@ -167,6 +168,11 @@ const validSpan = (span: SourceSpan | undefined): boolean =>
   span.line >= 1 &&
   span.endLine >= span.line &&
   /^[a-f0-9]{64}$/u.test(span.digest);
+
+const containsPrincipal = (example: ApiExample, principal: string): boolean =>
+  (example.code.match(/[$A-Z_a-z][$\w]*/gu) ?? []).some(
+    (identifier) => identifier === principal,
+  );
 
 export const auditManifest = (
   manifest: ApiManifest,
@@ -178,6 +184,41 @@ export const auditManifest = (
     symbolId: string,
     message: string,
   ) => diagnostics.push({ code, severity: "error", symbolId, message });
+  const requireExamples = (
+    symbolId: string,
+    label: string,
+    examples: readonly ApiExample[],
+    principal: string,
+    minimum: number,
+  ): void => {
+    if (examples.length < minimum) {
+      add(
+        "missing-example",
+        symbolId,
+        `${label} needs at least ${minimum} source @example program${minimum === 1 ? "" : "s"}; found ${examples.length}.`,
+      );
+    }
+    const wrongPrincipal = examples.filter(
+      (example) => example.principal !== principal,
+    );
+    if (wrongPrincipal.length > 0) {
+      add(
+        "missing-example",
+        symbolId,
+        `${label} has source examples owned by the wrong principal; expected ${principal}.`,
+      );
+    }
+    const missingPrincipal = examples.filter(
+      (example) => !containsPrincipal(example, principal),
+    );
+    if (missingPrincipal.length > 0) {
+      add(
+        "missing-example",
+        symbolId,
+        `${label} has source examples that do not contain ${principal}.`,
+      );
+    }
+  };
 
   if (
     policy.publicNames !== undefined &&
@@ -192,8 +233,17 @@ export const auditManifest = (
       `Root exports must be ${policy.publicNames.join(", ")} in source order.`,
     );
   }
-  if (!documented(manifest.package.documentation.summary, "")) {
-    add("missing-documentation", "package", "Package TSDoc is required.");
+  if (
+    !documented(
+      manifest.package.documentation.summary,
+      manifest.package.documentation.remarks,
+    )
+  ) {
+    add(
+      "missing-documentation",
+      "package",
+      "Package TSDoc needs a summary and @remarks.",
+    );
   }
   for (const rule of policy.requiredDocumentation) {
     const matches = manifest.symbols.filter((symbol) =>
@@ -213,6 +263,16 @@ export const auditManifest = (
   const allowed = new Set(
     policy.allowedRelationTargets.map((target) => target.toLowerCase()),
   );
+  const packagePrincipal = manifest.symbols[0]?.exportName;
+  if (packagePrincipal !== undefined) {
+    requireExamples(
+      "package",
+      "The package reference",
+      manifest.package.examples,
+      packagePrincipal,
+      3,
+    );
+  }
   for (const symbol of manifest.symbols) {
     if (
       !documented(symbol.documentation.summary, symbol.documentation.remarks)
@@ -220,7 +280,7 @@ export const auditManifest = (
       add(
         "missing-documentation",
         symbol.id,
-        `${symbol.exportName} needs source TSDoc.`,
+        `${symbol.exportName} needs a source TSDoc summary and @remarks.`,
       );
     }
     if (!validSpan(symbol.provenance.declaration)) {
@@ -230,13 +290,13 @@ export const auditManifest = (
         "Declaration provenance is invalid.",
       );
     }
-    if (symbol.pageExample.principal !== symbol.exportName) {
-      add(
-        "missing-example",
-        symbol.id,
-        "The symbol page example must identify its own export.",
-      );
-    }
+    requireExamples(
+      symbol.id,
+      symbol.exportName,
+      symbol.examples,
+      symbol.exportName,
+      2,
+    );
     for (const member of symbol.members) {
       if (
         !documented(member.documentation.summary, member.documentation.remarks)
@@ -244,16 +304,16 @@ export const auditManifest = (
         add(
           "missing-documentation",
           member.id,
-          `${symbol.exportName}.${member.name} needs source TSDoc.`,
+          `${symbol.exportName}.${member.name} needs a source TSDoc summary and @remarks.`,
         );
       }
-      if (member.pageExample.principal !== member.name) {
-        add(
-          "missing-example",
-          member.id,
-          "The member page example must identify its own member.",
-        );
-      }
+      requireExamples(
+        member.id,
+        `${symbol.exportName}.${member.name}`,
+        member.examples,
+        member.name,
+        2,
+      );
     }
     for (const relation of [
       ...symbol.relations,

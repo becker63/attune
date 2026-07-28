@@ -1,7 +1,7 @@
 import MarkdownIt from "markdown-it";
 
 import { renderCodeBlock } from "./highlight.ts";
-import { escapeHtml, layout, renderCheckedExample, withBase } from "./html.ts";
+import { escapeHtml, layout, renderCheckedExamples } from "./html.ts";
 import type { ApiManifest } from "./model.ts";
 import type { StaticPage } from "./static-pages.ts";
 
@@ -39,15 +39,7 @@ export const renderStaticPage = (
   manifest: ApiManifest,
   basePath: string,
 ): string => {
-  const example = manifest.package.pageExample;
-  const principal = manifest.symbols.find(
-    (symbol) => symbol.exportName === example.principal,
-  );
-  if (principal === undefined) {
-    throw new Error(
-      `Package example principal "${example.principal}" has no API page.`,
-    );
-  }
+  const principal = manifest.symbols[0]?.exportName ?? manifest.package.name;
   return layout({
     basePath,
     title: page.title,
@@ -56,11 +48,13 @@ export const renderStaticPage = (
     pageId: `experiment:${page.slug}`,
     manifest,
     staticPages: [page],
-    body: `<article class="static-publication">${markdown.render(page.markdown)}</article>${renderCheckedExample(
+    body: `<article class="static-publication">${markdown.render(page.markdown)}</article>${renderCheckedExamples(
       `experiment:${page.slug}`,
-      example,
+      principal,
+      manifest.package.examples,
+      manifest.package.examples,
       manifest,
-      withBase(basePath, `api/${principal.slug}.html`),
+      basePath,
     )}`,
   });
 };

@@ -77,22 +77,19 @@ const flattenPortableAllOf = (value: JsonValue): JsonValue => {
     if (!isJsonObject(fragment)) return normalized;
     for (const [key, entry] of Object.entries(fragment)) {
       const existing = merged[key];
-      if (existing === undefined) {
-        merged[key] = entry;
-      } else if (JSON.stringify(existing) !== JSON.stringify(entry)) {
+      if (
+        existing !== undefined &&
+        JSON.stringify(existing) !== JSON.stringify(entry)
+      ) {
         return normalized;
       }
+      merged[key] = entry;
     }
   }
   return merged;
 };
 
-const effectDocument = (
-  schema: Schema.Top,
-): {
-  readonly definitions: JsonObject;
-  readonly schema: JsonObject;
-} => {
+const effectDocument = (schema: Schema.Top) => {
   const value = sorted(
     flattenPortableAllOf(sorted(Schema.toJsonSchemaDocument(schema))),
   );
@@ -103,15 +100,10 @@ const effectDocument = (
   ) {
     throw new TypeError("Effect emitted an invalid JSON Schema document");
   }
-  return {
-    definitions: value.definitions,
-    schema: value.schema,
-  };
+  return { definitions: value.definitions, schema: value.schema };
 };
 
-const definitionRef = (name: string): JsonObject => ({
-  $ref: `#/$defs/${name}`,
-});
+const definitionRef = (name: string) => ({ $ref: `#/$defs/${name}` });
 
 const resourceContracts = {
   artifact: {
@@ -148,42 +140,15 @@ const resourceContracts = {
 } as const;
 
 const toolContractNames = {
-  artifact_promote: {
-    input: "ArtifactPromoteInput",
-    result: "ArtifactPromoteResult",
-  },
-  ast_grep_run: {
-    input: "AstGrepRunInput",
-    result: "AstGrepRunResult",
-  },
-  investigation_finalize: {
-    input: "InvestigationFinalizeInput",
-    result: "InvestigationFinalizeResult",
-  },
-  joern_query: {
-    input: "JoernQueryInput",
-    result: "JoernQueryResult",
-  },
-  maude_run: {
-    input: "MaudeRunInput",
-    result: "MaudeRunResult",
-  },
-  property_run: {
-    input: "PropertyRunInput",
-    result: "PropertyRunResult",
-  },
-  repository_checkpoint: {
-    input: "RepositoryCheckpointInput",
-    result: "RepositoryCheckpointResult",
-  },
-  repository_materialize: {
-    input: "RepositoryMaterializeInput",
-    result: "RepositoryMaterializeResult",
-  },
-} as const satisfies Record<
-  AttuneOperationName,
-  { readonly input: string; readonly result: string }
->;
+  artifact_promote: "ArtifactPromote",
+  ast_grep_run: "AstGrepRun",
+  investigation_finalize: "InvestigationFinalize",
+  joern_query: "JoernQuery",
+  maude_run: "MaudeRun",
+  property_run: "PropertyRun",
+  repository_checkpoint: "RepositoryCheckpoint",
+  repository_materialize: "RepositoryMaterialize",
+} as const satisfies Record<AttuneOperationName, string>;
 
 const MODEL_CATALOG = "AttuneContractModelCatalog";
 
@@ -193,13 +158,13 @@ export const generateContractBundle = (): JsonValue => {
   const mergeDefinition = (name: string, schema: JsonValue): void => {
     const normalized = sorted(schema);
     const existing = definitions[name];
-    if (existing === undefined) {
-      definitions[name] = normalized;
-      return;
-    }
-    if (JSON.stringify(existing) !== JSON.stringify(normalized)) {
+    if (
+      existing !== undefined &&
+      JSON.stringify(existing) !== JSON.stringify(normalized)
+    ) {
       throw new TypeError(`conflicting JSON Schema definition ${name}`);
     }
+    definitions[name] = normalized;
   };
 
   const importSchema = (schema: Schema.Top, rootName: string): JsonObject => {
@@ -208,10 +173,8 @@ export const generateContractBundle = (): JsonValue => {
       mergeDefinition(name, definition);
     }
 
-    const rootRef = generated.schema.$ref;
     if (
-      typeof rootRef === "string" &&
-      rootRef === `#/$defs/${rootName}` &&
+      generated.schema.$ref === `#/$defs/${rootName}` &&
       definitions[rootName] !== undefined
     ) {
       return definitionRef(rootName);
@@ -227,11 +190,11 @@ export const generateContractBundle = (): JsonValue => {
     AttuneToolkit.tools,
   ) as AttuneOperationName[]) {
     const tool = AttuneToolkit.tools[name];
-    const names = toolContractNames[name];
+    const model = toolContractNames[name];
     tools[name] = {
       failure,
-      input: importSchema(tool.parametersSchema, names.input),
-      result: importSchema(tool.successSchema, names.result),
+      input: importSchema(tool.parametersSchema, `${model}Input`),
+      result: importSchema(tool.successSchema, `${model}Result`),
     };
   }
 

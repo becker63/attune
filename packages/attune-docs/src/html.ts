@@ -1,14 +1,20 @@
 import { renderCodeBlock } from "./highlight.ts";
 import type {
+  ApiExample,
   ApiManifest,
   ApiMember,
   ApiSymbol,
   DocumentationText,
   LifecycleRelation,
-  PageExample,
   SourceSpan,
+  TypeParameterDoc,
 } from "./model.ts";
 import type { StaticPage } from "./static-pages.ts";
+
+export const MIN_CHECKED_EXAMPLES_PER_PAGE = 3;
+
+const requestsEmittedFile = (code: string): boolean =>
+  /^\s*\/\/\s*@show(?:Emit|EmittedFile)\b/mu.test(code);
 
 export const escapeHtml = (value: string): string =>
   value
@@ -185,29 +191,97 @@ const provenance = (value: {
 }): string =>
   `<section class="provenance"><h2>Source</h2><ul>${value.tsdoc === undefined ? "" : `<li>${spanLink("TSDoc", value.tsdoc)}</li>`}<li>${spanLink("Declaration", value.declaration)}</li><li>${spanLink("Implementation", value.implementation)}</li></ul></section>`;
 
-export const renderCheckedExample = (
+export const renderCheckedExamples = (
   pageId: string,
-  example: PageExample,
+  pagePrincipal: string,
+  examples: readonly ApiExample[],
+  ownedExamples: readonly ApiExample[],
   manifest: ApiManifest,
-  apiHref: string,
-): string =>
-  `<section class="page-example" data-page-example="${escapeHtml(pageId)}" data-page-principal="${escapeHtml(example.principal)}"><h2>Checked example</h2>${renderCodeBlock(
-    example.code,
-    {
-      label: `${example.principal} · TypeScript`,
-      twoslash: {
-        idPrefix: pageId,
-        identifiers: [
-          {
-            target: example.principal,
-            apiHref,
-            sourceHref: example.source.url,
+  basePath: string,
+): string => {
+  if (examples.length < MIN_CHECKED_EXAMPLES_PER_PAGE) {
+    throw new Error(
+      `${pageId} has ${examples.length} checked examples; expected at least ${MIN_CHECKED_EXAMPLES_PER_PAGE}.`,
+    );
+  }
+  const renderedIds = new Set(examples.map((example) => example.id));
+  if (
+    !ownedExamples.some(
+      (example) =>
+        renderedIds.has(example.id) &&
+        example.principal === pagePrincipal &&
+        !requestsEmittedFile(example.code),
+    )
+  ) {
+    throw new Error(
+      `${pageId} has no hover-bearing source example for its own principal "${pagePrincipal}".`,
+    );
+  }
+
+  const candidates = [
+    ...manifest.symbols.map((symbol) => ({
+      apiHref: withBase(basePath, `api/${symbol.slug}.html`),
+      apiLabel: `${symbol.exportName} reference`,
+      sourceHref:
+        symbol.provenance.tsdoc?.url ?? symbol.provenance.declaration.url,
+      target: symbol.exportName,
+      documentation: symbol.documentation.summary,
+    })),
+    ...manifest.symbols.flatMap((symbol) =>
+      symbol.members.map((member) => ({
+        apiHref: withBase(basePath, `api/${symbol.slug}/${member.slug}.html`),
+        apiLabel: `${symbol.exportName}.${member.name} reference`,
+        sourceHref:
+          member.provenance.tsdoc?.url ?? member.provenance.declaration.url,
+        target: member.name,
+        documentation: member.documentation.summary,
+      })),
+    ),
+  ];
+
+  return `<section class="example-sequence" data-page-examples="${escapeHtml(pageId)}" data-page-principal="${escapeHtml(pagePrincipal)}"><h2>Examples</h2>${examples
+    .map((example, index) => {
+      const identifiers = candidates.filter(
+        (candidate, candidateIndex) =>
+          new RegExp(
+            `\\b${candidate.target.replaceAll("$", String.raw`\\$`)}\\b`,
+            "u",
+          ).test(example.code) &&
+          candidates.findIndex((other) => other.target === candidate.target) ===
+            candidateIndex,
+      );
+      const emitted = requestsEmittedFile(example.code);
+      const id = `${pageId}:example:${index + 1}`;
+      return `<article class="page-example" id="${escapeHtml(id)}" data-page-example="${escapeHtml(pageId)}" data-example-id="${escapeHtml(example.id)}" data-example-principal="${escapeHtml(example.principal)}"><h3>${escapeHtml(example.title)}</h3>${renderCodeBlock(
+        example.code,
+        {
+          labelPrefix: example.principal,
+          twoslash: {
+            idPrefix: id,
+            identifiers,
+            requiredTargets: emitted ? [] : [example.principal],
           },
-        ],
-        requiredTargets: [example.principal],
-      },
-    },
-  )}<p class="source-link">${spanLink("Example source", example.source)}</p></section>`;
+        },
+      )}<p class="source-link">${spanLink("Example source", example.source)}</p></article>`;
+    })
+    .join("")}</section>`;
+};
+
+const checkedExamples = (
+  owned: readonly ApiExample[],
+  context: readonly ApiExample[],
+): readonly ApiExample[] => {
+  const examples = [...owned];
+  const ids = new Set(examples.map((example) => example.id));
+  for (const example of context) {
+    if (examples.length >= MIN_CHECKED_EXAMPLES_PER_PAGE) break;
+    if (!ids.has(example.id)) {
+      examples.push(example);
+      ids.add(example.id);
+    }
+  }
+  return examples;
+};
 
 const documentation = (
   docs: DocumentationText,
@@ -223,6 +297,20 @@ const documentation = (
       ? ""
       : `<section><h2>Failures</h2><ul>${docs.failures.map((failure) => `<li>${inline(failure, manifest, basePath)}</li>`).join("")}</ul></section>`
   }`;
+
+const typeParameters = (
+  parameters: readonly TypeParameterDoc[],
+  manifest: ApiManifest,
+  basePath: string,
+): string =>
+  parameters.length === 0
+    ? ""
+    : `<section><h2>Type parameters</h2><dl>${parameters
+        .map(
+          (parameter) =>
+            `<div><dt><code>${escapeHtml(parameter.name)}</code>${parameter.constraint === undefined ? "" : ` extends <code>${escapeHtml(parameter.constraint)}</code>`}${parameter.default === undefined ? "" : ` = <code>${escapeHtml(parameter.default)}</code>`}</dt><dd>${inline(parameter.description, manifest, basePath)}</dd></div>`,
+        )
+        .join("")}</dl></section>`;
 
 const relations = (
   entries: readonly LifecycleRelation[],
@@ -253,19 +341,13 @@ export const renderPackageReference = (
     basePath,
   )}
   ${prose(manifest.package.documentation.remarks, manifest, basePath)}
-  ${renderCheckedExample(
+  ${renderCheckedExamples(
     `package:${manifest.package.name}`,
-    manifest.package.pageExample,
+    manifest.symbols[0]?.exportName ?? manifest.package.name,
+    manifest.package.examples,
+    manifest.package.examples,
     manifest,
-    withBase(
-      basePath,
-      `api/${
-        manifest.symbols.find(
-          (symbol) =>
-            symbol.exportName === manifest.package.pageExample.principal,
-        )?.slug ?? manifest.symbols[0]?.slug
-      }.html`,
-    ),
+    basePath,
   )}
   <section><h2>Public API</h2><ol class="symbol-list">${manifest.symbols
     .map(
@@ -301,16 +383,19 @@ export const renderApiSymbol = (
     manifest,
     basePath,
   )}
-  ${renderCheckedExample(
+  ${renderCheckedExamples(
     symbol.id,
-    symbol.pageExample,
+    symbol.exportName,
+    checkedExamples(symbol.examples, manifest.package.examples),
+    symbol.examples,
     manifest,
-    withBase(basePath, `api/${symbol.slug}.html`),
+    basePath,
   )}
   <section><h2>Declaration</h2>${renderCodeBlock(symbol.declaration, {
     label: "Declaration",
     sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
   })}</section>
+  ${typeParameters(symbol.typeParameters, manifest, basePath)}
   ${documentation(symbol.documentation, manifest, basePath)}
   ${
     symbol.members.length === 0
@@ -341,16 +426,19 @@ export const renderApiMember = (
   const title = `${symbol.exportName}.${member.name}`;
   const body = `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="${escapeHtml(withBase(basePath))}">${escapeHtml(manifest.package.name)}</a><span>/</span><a href="${href(basePath, symbol)}">${escapeHtml(symbol.exportName)}</a><span>/</span><span>${escapeHtml(member.name)}</span></nav>
   ${header(title, member.documentation.summary, "member", manifest, basePath)}
-  ${renderCheckedExample(
+  ${renderCheckedExamples(
     member.id,
-    member.pageExample,
+    member.name,
+    checkedExamples(member.examples, symbol.examples),
+    member.examples,
     manifest,
-    withBase(basePath, `api/${symbol.slug}/${member.slug}.html`),
+    basePath,
   )}
   <section><h2>Signature</h2>${renderCodeBlock(member.signature, {
     label: "Member signature",
     sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
   })}</section>
+  ${typeParameters(member.typeParameters, manifest, basePath)}
   ${documentation(member.documentation, manifest, basePath)}
   ${relations(member.relations, manifest, basePath)}
   ${provenance(member.provenance)}`;
@@ -371,15 +459,7 @@ export const renderNotFound = (
   staticPages: readonly StaticPage[],
   basePath: string,
 ): string => {
-  const example = manifest.package.pageExample;
-  const principal = manifest.symbols.find(
-    (symbol) => symbol.exportName === example.principal,
-  );
-  if (principal === undefined) {
-    throw new Error(
-      `Package example principal "${example.principal}" has no API page.`,
-    );
-  }
+  const principal = manifest.symbols[0]?.exportName ?? manifest.package.name;
   return layout({
     basePath,
     title: "Page not found",
@@ -388,11 +468,13 @@ export const renderNotFound = (
     pageId: "not-found",
     manifest,
     staticPages,
-    body: `${header("Page not found", "That reference path does not exist.")}<p><a href="${escapeHtml(withBase(basePath))}">Return to ${escapeHtml(manifest.package.name)}</a></p>${renderCheckedExample(
+    body: `${header("Page not found", "That reference path does not exist.")}<p><a href="${escapeHtml(withBase(basePath))}">Return to ${escapeHtml(manifest.package.name)}</a></p>${renderCheckedExamples(
       "not-found",
-      example,
+      principal,
+      manifest.package.examples,
+      manifest.package.examples,
       manifest,
-      withBase(basePath, `api/${principal.slug}.html`),
+      basePath,
     )}`,
   });
 };

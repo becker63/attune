@@ -1,5 +1,3 @@
-import { spawn } from "node:child_process";
-import { once } from "node:events";
 import {
   chmod,
   lstat,
@@ -35,88 +33,11 @@ import {
   writeNew,
 } from "../platform/core.js";
 import { withOsLock } from "../platform/lock.js";
-
-const isAborted = (signal: AbortSignal | undefined): boolean =>
-  signal?.aborted === true;
-
-const terminator = (child: ReturnType<typeof spawn>) => {
-  let force: NodeJS.Timeout | undefined;
-  const terminate = () => {
-    if (child.exitCode !== null || child.signalCode !== null) return;
-    child.kill("SIGTERM");
-    force ??= setTimeout(() => child.kill("SIGKILL"), 2_000);
-    force.unref();
-  };
-  return {
-    terminate,
-    clear: () => {
-      if (force !== undefined) clearTimeout(force);
-    },
-  };
-};
-
-const aborts = (signal: AbortSignal | undefined, cancel: () => void) => {
-  signal?.addEventListener("abort", cancel, { once: true });
-  if (isAborted(signal)) cancel();
-  return () => signal?.removeEventListener("abort", cancel);
-};
-
-const command = async (
-  executable: string,
-  args: readonly string[],
-  cwd: string,
-  signal?: AbortSignal,
-) => {
-  if (isAborted(signal))
-    throw fail("Cancelled", "command cancelled before spawn");
-  const child = spawn(executable, [...args], {
-    cwd,
-    env: {
-      ...process.env,
-      GIT_OPTIONAL_LOCKS: "0",
-      LANG: "C.UTF-8",
-      LC_ALL: "C.UTF-8",
-    },
-    shell: false,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  let stdout = Buffer.alloc(0);
-  let stderr = Buffer.alloc(0);
-  let limited = false;
-  const termination = terminator(child);
-  const append = (current: Buffer, value: Buffer | string) => {
-    const next = Buffer.concat([
-      current,
-      Buffer.isBuffer(value) ? value : Buffer.from(value),
-    ]);
-    if (next.byteLength > 16 * 1024 * 1024) {
-      limited = true;
-      termination.terminate();
-      return next.subarray(0, 16 * 1024 * 1024);
-    }
-    return next;
-  };
-  child.stdout.on("data", (chunk: Buffer) => (stdout = append(stdout, chunk)));
-  child.stderr.on("data", (chunk: Buffer) => (stderr = append(stderr, chunk)));
-  const stopListening = aborts(signal, termination.terminate);
-  try {
-    const code = await new Promise<number>((resolve, reject) => {
-      child.once("error", reject);
-      child.once("close", (exitCode) => resolve(exitCode ?? 128));
-    });
-    if (isAborted(signal)) throw fail("Cancelled", "command cancelled");
-    if (limited)
-      throw fail("ResourceLimited", "command output exceeded 16 MiB");
-    return {
-      code,
-      stdout: stdout.toString("utf8"),
-      stderr: stderr.toString("utf8"),
-    };
-  } finally {
-    stopListening();
-    termination.clear();
-  }
-};
+import {
+  isAborted,
+  runBufferedCommand as command,
+  spawnManaged,
+} from "../platform/process.js";
 
 const git = async (
   config: RuntimeConfig,
@@ -536,22 +457,22 @@ export class WorkspaceStore {
       }
       if (isAborted(signal))
         throw fail("Cancelled", "mount cancelled before spawn");
-      const mount = spawn(
+      const managed = spawnManaged(
         this.config.agentFs,
         ["mount", "--foreground", capsule, mountPath],
         {
           cwd: Path.join(this.config.home, "mounts"),
-          env: {
+          environment: {
             HOME: Path.join(this.config.home, "mounts"),
             LANG: "C",
             LC_ALL: "C",
             PATH: `${Path.dirname(this.config.fusermount)}:/usr/bin:/bin`,
             TMPDIR: Path.join(this.config.home, "mounts"),
           },
-          shell: false,
-          stdio: ["ignore", "pipe", "pipe"],
         },
+        signal,
       );
+      const { child: mount } = managed;
       let output = "";
       const collect = (chunk: Buffer) =>
         (output = `${output}${chunk.toString("utf8")}`.slice(-16_384));
@@ -559,8 +480,6 @@ export class WorkspaceStore {
       mount.stderr.on("data", collect);
       let mountError: unknown;
       mount.once("error", (cause) => (mountError = cause));
-      const termination = terminator(mount);
-      const stopListening = aborts(signal, termination.terminate);
       try {
         const deadline = Date.now() + 15_000;
         while ((await mountedSource(mountPath)) !== `agentfs:${capsule}`) {
@@ -624,7 +543,7 @@ export class WorkspaceStore {
         // The abort signal governs mount acquisition. Once `use` begins, its
         // native Promise must drain against a stable mount before final
         // unmounting in this scope's `finally`.
-        stopListening();
+        managed.stopAbort();
         return await use({
           mountPath,
           repositoryPath,
@@ -632,7 +551,7 @@ export class WorkspaceStore {
           manifest,
         });
       } finally {
-        stopListening();
+        managed.stopAbort();
         const unmount = async () => {
           if ((await mountedSource(mountPath)) === undefined) return;
           await command(
@@ -642,10 +561,8 @@ export class WorkspaceStore {
           ).catch(() => undefined);
         };
         await unmount();
-        termination.terminate();
-        if (mount.exitCode === null && mount.signalCode === null)
-          await once(mount, "close").catch(() => undefined);
-        termination.clear();
+        managed.terminate();
+        await managed.wait.catch(() => undefined);
         await unmount();
       }
     });

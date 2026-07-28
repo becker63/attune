@@ -16,9 +16,11 @@ AttuneToolFailure;
 ```
 
 The package page is the site root. Each public symbol and member then gets its
-own page, exact source links, and a page-specific Shiki + Twoslash example with
-type hovers. Independent experiment publications remain available beside the
-reference.
+own page, exact source links, and source-authored Shiki + Twoslash examples with
+type hovers. The manifest does not synthesize missing examples: package TSDoc
+owns at least three programs, every symbol owns at least two, and every member
+owns at least two. Independent experiment publications remain available beside
+the reference.
 
 ## Build and check
 
@@ -51,31 +53,54 @@ pnpm --filter attune-docs run build -- \
 labelled `local:<sha>:<digest>` so previews remain useful; a published build can
 set `DOCS_SOURCE_COMMIT=<40-character-sha>`, which must match the source ref.
 
-## Source contract
+## Editorial contract
 
-Write public documentation where the type is defined:
+Write the whole learning path where the public type is defined. Start with the
+promise made to a caller, place it in the investigation lifecycle, and name the
+evidence or authority it carries. Use `@remarks` for the reason behind a rule,
+not an implementation tour. Document every type parameter, parameter, return,
+recoverable failure, public method, and public property.
+
+Keep the vocabulary closed around the six root exports above. Infer requests
+and results from `Attune` methods instead of publishing another layer of aliases.
+Every export and public member owns at least two titled, executable examples.
+Examples use the real declaration bundle, hide supporting setup with Twoslash
+cuts, and leave the smallest useful typed expression visible.
+
+For example:
 
 ````ts
 /**
- * Materialize an investigation from one request.
+ * Materializes an exact repository revision and issues its initial proof.
  *
- * @param request - The request to inspect.
- * @returns An investigation with a stable identifier.
- * @throws {@link AttuneToolFailure} when a required tool fails.
- * @example
+ * @remarks
+ * This is the only transition that creates an investigation identity.
+ *
+ * @param input - The unchanged materialization wire request.
+ * @returns A materialized proof, or the terminal rejected result.
+ * @throws `AttuneToolFailure` when the invocation cannot be accepted.
+ *
+ * @example Infer the request from the service
  * ```ts
- * import { Attune } from "attune-mcp";
- *
+ * import type { Attune } from "attune-mcp";
  * declare const attune: Attune;
- * attune.materialize({ prompt: "Trace the request" });
+ * declare const input: Parameters<Attune["materialize"]>[0];
+ * // ---cut-before---
+ * const attempt = attune.materialize(input);
  * ```
  */
 ````
 
 The extractor keeps complete `@example` programs, including multi-file
-`@filename` sections and cut directives. Every recorded TSDoc, declaration,
-implementation, relation, and example span includes half-open byte offsets, a
-digest of those exact bytes, line coordinates, and an immutable GitHub link.
+`@filename` sections, intentional `@errors`, emitted-file selections, and cut
+directives. It rejects validation-bypass directives. Every recorded TSDoc,
+declaration, implementation, relation, and example span includes half-open byte
+offsets, a digest of those exact bytes, line coordinates, and an immutable
+GitHub link.
+
+Strict examples reject `@noCheck`, `@noErrorValidation`, `@noErrors`, and
+`@noErrorsCutted`; use an explicit `@errors` assertion to teach an intentional
+illegal program.
 
 `docs-policy.json` closes the public surface and enforces its source order.
 `schema/api-manifest.schema.json` closes the emitted manifest. Run

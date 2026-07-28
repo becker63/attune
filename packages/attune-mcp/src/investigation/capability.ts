@@ -14,7 +14,7 @@ declare const InvestigationCapabilityBrand: unique symbol;
  * and revocation, so a type assertion grants no authority.
  *
  * @typeParam State - The lifecycle permission carried by this proof.
- * @example
+ * @example Read the active permission
  * ```ts
  * // @filename: state.ts
  * import type { Investigation } from "attune-mcp";
@@ -22,13 +22,94 @@ declare const InvestigationCapabilityBrand: unique symbol;
  * declare const active: Investigation<"active">;
  * active.state;
  * ```
+ *
+ * @example Reject a forged proof
+ * ```ts
+ * import type { Investigation } from "attune-mcp";
+ * declare const id: Investigation<"active">["investigationId"];
+ * declare const snapshot: Investigation<"active">["snapshot"];
+ * // @errors: 2741
+ * // ---cut-before---
+ * const forged: Investigation<"active"> = {
+ *   investigationId: id, snapshot, state: "active"
+ * };
+ * ```
  */
 export interface Investigation<State extends InvestigationState> {
-  /** Stable identity shared by every state of the investigation. */
+  /**
+   * Stable identity shared by every state of the investigation.
+   *
+   * @remarks
+   * Transitions replace the proof but never its investigation identity.
+   *
+   * @example Read the stable identity
+   * ```ts
+   * import type { Investigation } from "attune-mcp";
+   * // ---cut-before---
+   * declare const active: Investigation<"active">;
+   * const id = active.investigationId;
+   * ```
+   *
+   * @example Compare identities across transitions
+   * ```ts
+   * import type { Investigation } from "attune-mcp";
+   * declare const before: Investigation<"materialized">;
+   * declare const after: Investigation<"active">;
+   * // ---cut-before---
+   * const same = before.investigationId === after.investigationId;
+   * ```
+   */
   readonly investigationId: InvestigationId;
-  /** Exact repository snapshot and the permission it carries. */
+  /**
+   * Exact repository snapshot and the permission it carries.
+   *
+   * @remarks
+   * The commit and lifecycle state travel together as immutable evidence.
+   *
+   * @example Read the exact commit
+   * ```ts
+   * import type { Investigation } from "attune-mcp";
+   * // ---cut-before---
+   * declare const active: Investigation<"active">;
+   * const commit = active.snapshot.id;
+   * ```
+   *
+   * @example Compare proof and receipt snapshots
+   * ```ts
+   * import type { AttuneReceipt, Investigation } from "attune-mcp";
+   * declare const active: Investigation<"active">;
+   * // ---cut-before---
+   * declare const receipt: AttuneReceipt;
+   * const same = receipt.status === "succeeded" &&
+   *   receipt.snapshotId === active.snapshot.id;
+   * ```
+   */
   readonly snapshot: Readonly<{ id: FullGitCommit; state: State }>;
-  /** Discriminant used to narrow the legal lifecycle operation. */
+  /**
+   * Discriminant used to narrow the legal lifecycle operation.
+   *
+   * @remarks
+   * Narrow a union on this field before choosing the next service method.
+   *
+   * @example Preserve the literal state
+   * ```ts
+   * import type { Investigation } from "attune-mcp";
+   * // ---cut-before---
+   * declare const active: Investigation<"active">;
+   * const phase = active.state;
+   * ```
+   *
+   * @example Narrow before activation
+   * ```ts
+   * import { Attune, type Investigation } from "attune-mcp";
+   * declare const current:
+   *   Investigation<"materialized"> | Investigation<"active">;
+   * // ---cut-before---
+   * if (current.state === "materialized") {
+   *   Attune.use((attune) => attune.activate(current));
+   * }
+   * ```
+   */
   readonly state: State;
   readonly [InvestigationCapabilityBrand]: State;
 }

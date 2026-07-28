@@ -53,6 +53,8 @@ type TwoslashTransformer = ReturnType<
 export interface TwoslashIdentifierLink {
   /** Identifier text reported by the TypeScript language service. */
   readonly target: string;
+  /** Canonical declaration summary required before attaching destinations. */
+  readonly documentation: string;
   /** API page or member anchor for the identifier. */
   readonly apiHref: string;
   /** Immutable source span, when the declaration has one. */
@@ -95,6 +97,7 @@ export interface TwoslashSessionOptions {
 export interface TwoslashSession {
   readonly transformer: TwoslashTransformer;
   assertValid: () => void;
+  visibleLanguage: () => "javascript" | "json" | "typescript";
   visibleCode: () => string;
 }
 
@@ -132,6 +135,23 @@ const assertLink = (link: TwoslashIdentifierLink): void => {
       `Twoslash identifier "${link.target}" has no API destination.`,
     );
   }
+  if (link.documentation.trim().length === 0) {
+    throw new Error(
+      `Twoslash identifier "${link.target}" has no declaration documentation.`,
+    );
+  }
+};
+
+const validationBypassDirective =
+  /^[\t ]*\/\/[\t ]*@(noCheck|noErrorValidation|noErrors|noErrorsCutted)(?::[^\r\n]*)?[\t ]*$/mu;
+
+const assertStrictSourceDirectives = (code: string, idPrefix: string): void => {
+  const match = validationBypassDirective.exec(code);
+  if (match === null) return;
+
+  throw new Error(
+    `Strict Twoslash example "${idPrefix}" cannot use validation-bypass directive @${match[1]}.`,
+  );
 };
 
 const hoverDocumentation = (docs: string): string => {
@@ -150,7 +170,7 @@ const hoverDocumentation = (docs: string): string => {
   return lines
     .join("\n")
     .replace(
-      /\{@link\s+([^|\s}]+)(?:\s*\|\s*([^}]+))?\}/gu,
+      /\{@link\s+([^|\s}]+)(?:\s*\|\s*([^}]+?))?\s*\}/gu,
       (_match, target: string, label: string | undefined) =>
         label?.trim() || target,
     )
@@ -158,6 +178,23 @@ const hoverDocumentation = (docs: string): string => {
     .replace(/\n{3,}/gu, "\n\n")
     .trim();
 };
+
+const normalizedProse = (value: string): string =>
+  value.replaceAll(/\s+/gu, " ").trim();
+
+const hoverTags = new Set([
+  "deprecated",
+  "param",
+  "produces",
+  "requires",
+  "return",
+  "returns",
+  "see",
+  "template",
+  "throws",
+  "transitionsTo",
+  "typeParam",
+]);
 
 const hoverPresentation = <
   Info extends {
@@ -173,13 +210,7 @@ const hoverPresentation = <
       .map(([, value]) => value ?? "") ?? [];
   const docs = hoverDocumentation([info.docs ?? "", ...remarks].join("\n\n"));
   const tags = info.tags
-    ?.filter(
-      ([name]) =>
-        name !== "remarks" &&
-        name !== "example" &&
-        name !== "filename" &&
-        name !== "packageDocumentation",
-    )
+    ?.filter(([name]) => hoverTags.has(name))
     .map(
       ([name, value]) =>
         [name, value === undefined ? undefined : hoverDocumentation(value)] as [
@@ -253,11 +284,14 @@ export const createTwoslashSession = (
     }
   }
 
+  const hovered = new Set<string>();
   const seen = new Set<string>();
   const documented = new Set<string>();
+  const mismatched = new Map<string, string>();
   const occurrences = new Map<string, number>();
   let output: TwoslashShikiReturn | undefined;
   const run: TwoslashShikiFunction = (code, lang, executeOptions) => {
+    assertStrictSourceDirectives(code, options.idPrefix);
     output = twoslasher(code, lang, executeOptions);
     return output;
   };
@@ -280,7 +314,24 @@ export const createTwoslashSession = (
         node,
       );
       const link = links.get(info.target);
-      if (link === undefined) return rendered;
+      if (link !== undefined) {
+        hovered.add(info.target);
+        if (info.docs?.trim()) documented.add(info.target);
+      }
+      if (link === undefined) {
+        return rendered;
+      }
+      const observedDocumentation = normalizedProse(
+        hoverDocumentation(info.docs ?? ""),
+      );
+      if (
+        !observedDocumentation.includes(
+          normalizedProse(hoverDocumentation(link.documentation)),
+        )
+      ) {
+        mismatched.set(info.target, observedDocumentation);
+        return rendered;
+      }
 
       const element = rendered as MutableElement;
       if (element.type !== "element" || element.children === undefined) {
@@ -301,7 +352,6 @@ export const createTwoslashSession = (
       }
 
       seen.add(info.target);
-      if (info.docs?.trim()) documented.add(info.target);
       const occurrence = (occurrences.get(info.target) ?? 0) + 1;
       occurrences.set(info.target, occurrence);
       const popupId = `${stableIdPart(options.idPrefix)}-${stableIdPart(info.target)}-${occurrence}`;
@@ -405,7 +455,7 @@ export const createTwoslashSession = (
         );
       }
       for (const target of required) {
-        if (!seen.has(target)) {
+        if (!hovered.has(target)) {
           throw new Error(
             `Required Twoslash identifier "${target}" has no visible compiler hover.`,
           );
@@ -415,7 +465,22 @@ export const createTwoslashSession = (
             `Required Twoslash identifier "${target}" has no source TSDoc.`,
           );
         }
+        if (!seen.has(target)) {
+          throw new Error(
+            `Required Twoslash identifier "${target}" does not match its declaration documentation; observed "${mismatched.get(target) ?? ""}".`,
+          );
+        }
       }
+    },
+    visibleLanguage: () => {
+      if (output === undefined) {
+        throw new Error(
+          `Twoslash example "${options.idPrefix}" was not type-checked.`,
+        );
+      }
+      if (output.meta?.extension === "js") return "javascript";
+      if (output.meta?.extension === "json") return "json";
+      return "typescript";
     },
     visibleCode: () => {
       if (output === undefined) {

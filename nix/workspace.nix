@@ -128,8 +128,8 @@ let
         runHook preBuild
         ${buildEnvironment}
         pnpm nx run attune-mcp:typecheck
-        pnpm --filter attune-mcp exec vitest run --maxWorkers=1
         pnpm nx run attune-mcp:build
+        pnpm --filter attune-mcp exec vitest run --maxWorkers=1
         pnpm --filter attune-mcp run schema:check
         pnpm --filter attune-mcp run smoke
         pnpm --filter attune-mcp run stdio:check

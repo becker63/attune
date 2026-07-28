@@ -101,7 +101,7 @@ const htmlBelow = async (root: string): Promise<readonly string[]> => {
 
 describe("reference extraction", () => {
   test("preserves package, symbol, and member lifecycle order", () => {
-    expect(manifest.schemaVersion).toBe("3.0.0");
+    expect(manifest.schemaVersion).toBe("4.0.0");
     expect(manifest.package.documentation.summary).toContain(
       "small lifecycle package",
     );
@@ -109,6 +109,14 @@ describe("reference extraction", () => {
       "Investigation",
       "Attune",
       "ExampleFailure",
+    ]);
+    expect(manifest.symbols[0]?.typeParameters).toEqual([
+      {
+        default: '"active"',
+        description: "State carried by the capability.",
+        constraint: "string",
+        name: "State",
+      },
     ]);
     const attune = manifest.symbols[1]!;
     expect(attune.members.map((member) => member.name)).toEqual([
@@ -123,21 +131,56 @@ describe("reference extraction", () => {
         },
       ],
       returns: "A materialized investigation.",
-      failures: ["ExampleFailure when the revision cannot be read."],
+      failures: ["`ExampleFailure` when the revision cannot be read."],
     });
+    expect(attune.members[0]?.typeParameters).toEqual([
+      {
+        constraint: "string",
+        description: "Revision identifier supplied by the caller.",
+        name: "Revision",
+      },
+    ]);
+    expect(attune.members[0]?.relations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "throws",
+          target: "ExampleFailure",
+          targetSymbolId: "fixture#ExampleFailure",
+        }),
+      ]),
+    );
   });
 
   test("extracts complete multi-file and cut-bearing example programs", () => {
-    const example = manifest.package.examples[0]!;
-    expect(example.files).toEqual(["model.ts", "index.ts"]);
-    expect(example.code).toContain("// ---cut-before---");
-    expect(example.code).toContain("// ---cut-after---");
-    expect(example.code).toContain("import type { Investigation }");
-    expect(example.code).not.toContain("```");
-    expect(manifest.package.pageExample).toMatchObject({
-      principal: "Investigation",
-      sourceExampleId: example.id,
-    });
+    const examples = manifest.package.examples;
+    expect(
+      manifest.symbols.map((symbol) => [
+        symbol.exportName,
+        symbol.examples.length,
+      ]),
+    ).toEqual([
+      ["Investigation", 2],
+      ["Attune", 2],
+      ["ExampleFailure", 2],
+    ]);
+    expect(examples.map((example) => example.title)).toEqual([
+      "A complete multi-file program",
+      "Narrow a materialized capability",
+      "Hide unrelated capability work",
+    ]);
+    expect(examples[0]!.files).toEqual(["model.ts", "index.ts"]);
+    expect(examples[0]!.code).toContain("// ---cut-before---");
+    expect(examples[0]!.code).toContain("// ---cut-after---");
+    expect(examples[0]!.code).toContain("import type { Investigation }");
+    expect(examples[1]!.code).toContain("// ---cut-before---");
+    expect(examples[2]!.code).toContain("// ---cut-start---");
+    expect(examples[2]!.code).toContain("// ---cut-end---");
+    expect(
+      examples.every((example) => example.principal === "Investigation"),
+    ).toBe(true);
+    expect(examples.every((example) => !example.code.includes("```"))).toBe(
+      true,
+    );
   });
 
   test("records exact local spans, immutable links, and merged provenance", async () => {
@@ -174,7 +217,12 @@ describe("reference extraction", () => {
     ).resolves.toBeUndefined();
   });
 
-  test("audits closed export inventory and page-owned examples", () => {
+  test("audits closed exports and source-owned example floors", () => {
+    expect(
+      manifest.diagnostics.filter(
+        (diagnostic) => diagnostic.code === "missing-example",
+      ),
+    ).toEqual([]);
     const diagnostics = auditManifest(manifest, {
       ...policy,
       publicNames: ["Attune"],
@@ -189,14 +237,88 @@ describe("reference extraction", () => {
     );
     expect(
       manifest.symbols.every(
-        (symbol) => symbol.pageExample.principal === symbol.exportName,
+        (symbol) =>
+          symbol.examples.length >= 2 &&
+          symbol.examples.every(
+            (example) => example.principal === symbol.exportName,
+          ),
       ),
     ).toBe(true);
     expect(
       manifest.symbols
         .flatMap((symbol) => symbol.members)
-        .every((member) => member.pageExample.principal === member.name),
+        .every(
+          (member) =>
+            member.examples.length >= 2 &&
+            member.examples.every(
+              (example) => example.principal === member.name,
+            ),
+        ),
     ).toBe(true);
+    expect("pageExample" in manifest.package).toBe(false);
+
+    const attune = manifest.symbols[1]!;
+    const materialize = attune.members[0]!;
+    const missingSources: ApiManifest = {
+      ...manifest,
+      package: {
+        ...manifest.package,
+        examples: manifest.package.examples.slice(0, 2),
+      },
+      symbols: manifest.symbols.map((symbol) =>
+        symbol.id === attune.id
+          ? {
+              ...symbol,
+              examples: symbol.examples.slice(0, 1),
+              members: symbol.members.map((member) =>
+                member.id === materialize.id
+                  ? { ...member, examples: [] }
+                  : member,
+              ),
+            }
+          : symbol,
+      ),
+    };
+    expect(auditManifest(missingSources, policy)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "missing-example",
+          symbolId: "package",
+        }),
+        expect.objectContaining({
+          code: "missing-example",
+          symbolId: attune.id,
+        }),
+        expect.objectContaining({
+          code: "missing-example",
+          symbolId: materialize.id,
+        }),
+      ]),
+    );
+
+    const wrongPrincipal: ApiManifest = {
+      ...manifest,
+      symbols: manifest.symbols.map((symbol) =>
+        symbol.id === attune.id
+          ? {
+              ...symbol,
+              examples: symbol.examples.map((example, index) =>
+                index === 0
+                  ? { ...example, principal: "Investigation" }
+                  : example,
+              ),
+            }
+          : symbol,
+      ),
+    };
+    expect(auditManifest(wrongPrincipal, policy)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "missing-example",
+          symbolId: attune.id,
+        }),
+      ]),
+    );
   });
 
   test("keeps TypeDoc compatibility explicit", () => {
@@ -213,6 +335,8 @@ describe("reference rendering", () => {
     const html = renderPackageReference(manifest, pages, "/attune/");
     expect(html).toContain('data-page-id="package:fixture"');
     expect(html).toContain('data-page-principal="Investigation"');
+    expect(html.match(/class="page-example"/gu)).toHaveLength(3);
+    expect(html.match(/class="code-block checked-code"/gu)).toHaveLength(3);
     expect(html).toContain("twoslash-hover");
     expect(html.indexOf(">Investigation<")).toBeLessThan(
       html.indexOf(">Attune<"),
@@ -225,6 +349,8 @@ describe("reference rendering", () => {
       const html = renderApiSymbol(symbol, manifest, pages, "/attune/");
       expect(html).toContain(`data-page-id="${symbol.id}"`);
       expect(html).toContain(`data-page-principal="${symbol.exportName}"`);
+      expect(html.match(/class="page-example"/gu)).toHaveLength(3);
+      expect(html.match(/class="code-block checked-code"/gu)).toHaveLength(3);
       expect(html).toContain("twoslash-hover");
       expect(html).toContain(symbol.provenance.declaration.url);
       for (const member of symbol.members) {
@@ -237,10 +363,57 @@ describe("reference rendering", () => {
         );
         expect(memberHtml).toContain(`data-page-id="${member.id}"`);
         expect(memberHtml).toContain(`data-page-principal="${member.name}"`);
+        expect(memberHtml.match(/class="page-example"/gu)).toHaveLength(3);
+        expect(
+          memberHtml.match(/class="code-block checked-code"/gu),
+        ).toHaveLength(3);
         expect(memberHtml).toContain("twoslash-hover");
         expect(memberHtml).toContain(member.provenance.declaration.url);
       }
     }
+    const investigation = manifest.symbols.find(
+      (symbol) => symbol.exportName === "Investigation",
+    )!;
+    const investigationHtml = renderApiSymbol(
+      investigation,
+      manifest,
+      pages,
+      "/attune/",
+    );
+    expect(investigationHtml).toContain("<h2>Type parameters</h2>");
+    expect(investigationHtml).toContain("State carried by the capability.");
+
+    const attune = manifest.symbols.find(
+      (symbol) => symbol.exportName === "Attune",
+    )!;
+    const materialize = attune.members.find(
+      (member) => member.name === "materialize",
+    )!;
+    const materializeHtml = renderApiMember(
+      materialize,
+      attune,
+      manifest,
+      pages,
+      "/attune/",
+    );
+    expect(materializeHtml).toContain("<h2>Type parameters</h2>");
+    expect(materializeHtml).toContain(
+      "Revision identifier supplied by the caller.",
+    );
+  });
+
+  test("requires a hover-bearing example owned by the page", () => {
+    const symbol = manifest.symbols[0]!;
+    const emitted = {
+      ...symbol,
+      examples: symbol.examples.map((example) => ({
+        ...example,
+        code: `// @showEmit\n${example.code}`,
+      })),
+    };
+    expect(() => renderApiSymbol(emitted, manifest, pages, "/attune/")).toThrow(
+      /no hover-bearing source example/u,
+    );
   });
 
   test("emits only reference routes plus independent evidence pages", async () => {
@@ -275,6 +448,14 @@ describe("reference rendering", () => {
       expect(html).toContain("twoslash-api-link");
       expect(html).toContain("twoslash-source-link");
       expect(html).toContain("Twoslash TypeScript");
+      expect(
+        html.match(/class="page-example"/gu)?.length,
+      ).toBeGreaterThanOrEqual(3);
+      expect(html.match(/data-example-id=/gu)?.length).toBeGreaterThanOrEqual(
+        3,
+      );
+      expect(html).not.toMatch(/interface\s+\w+Page\b/u);
+      expect(html).not.toContain("readonly materialize: unknown");
       expect(html).not.toMatch(/NotFoundPage|ExperimentPage/u);
     }
   });

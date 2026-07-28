@@ -13,6 +13,9 @@ import {
 
 const declarationPackages = {
   "attune-mcp": "packages/attune-mcp/dist/index.d.mts",
+  effect: "packages/attune-mcp/node_modules/effect/dist/index.d.ts",
+  "effect/unstable/ai":
+    "packages/attune-mcp/node_modules/effect/dist/unstable/ai/index.d.ts",
 } as const;
 
 /**

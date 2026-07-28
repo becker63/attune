@@ -9,6 +9,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   API_MANIFEST_SCHEMA_VERSION,
+  type ApiExample,
   type ApiManifest,
   type DocumentationText,
   type SourceSpan,
@@ -49,28 +50,92 @@ const materializeSource = source(
   103,
 );
 const packageExampleSource = source("packages/attune-mcp/src/index.ts", 4, 13);
-const packageExample = {
-  code: `/** Coordinates a typed investigation lifecycle. */
+const example = (
+  id: string,
+  title: string,
+  code: string,
+  principal: string,
+  exampleSource: SourceSpan,
+): ApiExample => ({
+  code,
+  files: ["index.ts"],
+  id,
+  principal,
+  source: exampleSource,
+  title,
+});
+const packageExamples = [
+  example(
+    "package/example/1",
+    "Start an investigation",
+    `/** Coordinates a typed investigation lifecycle. */
 interface Attune {
   readonly materialize: () => void;
 }
 // ---cut-before---
 declare const attune: Attune;
 attune.materialize();`,
-  principal: "Attune",
-  source: packageExampleSource,
-} as const;
-const memberExample = {
-  code: `interface Attune {
+    "Attune",
+    packageExampleSource,
+  ),
+  example(
+    "package/example/2",
+    "Keep the service typed",
+    `/** Coordinates a typed investigation lifecycle. */
+interface Attune {
+  readonly materialize: () => void;
+}
+declare const attune: Attune;
+// ---cut-before---
+const service: Attune = attune;`,
+    "Attune",
+    packageExampleSource,
+  ),
+  example(
+    "package/example/3",
+    "Hide unrelated setup",
+    `/** Coordinates a typed investigation lifecycle. */
+interface Attune {
+  readonly materialize: () => void;
+}
+declare const attune: Attune;
+// ---cut-start---
+attune.materialize();
+// ---cut-end---
+type Service = Attune;`,
+    "Attune",
+    packageExampleSource,
+  ),
+] as const;
+const symbolExamples = packageExamples.slice(0, 2);
+const memberExamples = [
+  example(
+    "attune.materialize/example/1",
+    "Materialize a snapshot",
+    `interface Attune {
   /** Creates a materialized investigation workspace. */
   readonly materialize: () => void;
 }
 declare const attune: Attune;
 // ---cut-before---
 attune.materialize();`,
-  principal: "materialize",
-  source: materializeSource,
-} as const;
+    "materialize",
+    materializeSource,
+  ),
+  example(
+    "attune.materialize/example/2",
+    "Retain the operation",
+    `interface Attune {
+  /** Creates a materialized investigation workspace. */
+  readonly materialize: () => void;
+}
+declare const attune: Attune;
+// ---cut-before---
+const materialize = attune.materialize;`,
+    "materialize",
+    materializeSource,
+  ),
+] as const;
 
 const manifest: ApiManifest = {
   declaration: {
@@ -92,9 +157,8 @@ const manifest: ApiManifest = {
       "Start with {@link Attune}, then follow its documented lifecycle methods.",
     ),
     entryPoint: "packages/attune-mcp/src/index.ts",
-    examples: [],
+    examples: packageExamples,
     name: "attune-mcp",
-    pageExample: packageExample,
     provenance: {
       declaration: attuneSource,
       implementation: attuneSource,
@@ -113,10 +177,10 @@ const manifest: ApiManifest = {
     {
       declaration: "export interface Attune",
       documentation: docs(
-        "Coordinates the legal investigation lifecycle.",
+        "Coordinates a typed investigation lifecycle.",
         "Use the methods in source order.",
       ),
-      examples: [],
+      examples: symbolExamples,
       exportName: "Attune",
       id: "attune",
       kind: "interface",
@@ -128,11 +192,10 @@ const manifest: ApiManifest = {
             "",
             "A capability ready for activation.",
           ),
-          examples: [],
+          examples: memberExamples,
           id: "attune.materialize",
           kind: "function",
           name: "materialize",
-          pageExample: memberExample,
           provenance: {
             declaration: materializeSource,
             implementation: materializeSource,
@@ -141,9 +204,9 @@ const manifest: ApiManifest = {
           relations: [],
           signature: "readonly materialize: () => void",
           slug: "materialize",
+          typeParameters: [],
         },
       ],
-      pageExample: packageExample,
       provenance: {
         declaration: attuneSource,
         implementation: attuneSource,
@@ -256,11 +319,17 @@ test("links a checked identifier to its API and immutable source", async ({
 
   const response = await page.goto(origin);
   expect(response?.ok()).toBe(true);
-  const example = page.locator(".page-example");
-  const identifier = example.locator(".twoslash-identifier-link", {
-    hasText: "Attune",
-  });
-  const popup = example.locator(".twoslash-popup-container");
+  const examples = page.locator(".page-example");
+  await expect(examples).toHaveCount(3);
+  const example = examples.first();
+  const identifier = example
+    .locator(".twoslash-identifier-link", {
+      hasText: "Attune",
+    })
+    .first();
+  const popupId = await identifier.getAttribute("aria-describedby");
+  expect(popupId).not.toBeNull();
+  const popup = example.locator(`[id="${popupId}"]`);
 
   await identifier.focus();
   await expect(identifier).toHaveAttribute(
@@ -277,7 +346,7 @@ test("links a checked identifier to its API and immutable source", async ({
   );
   await expect(popup.locator(".twoslash-source-link")).toHaveAttribute(
     "href",
-    packageExampleSource.url,
+    attuneSource.url,
   );
 
   await page.keyboard.press("Escape");
@@ -308,10 +377,17 @@ test("links a checked identifier to its API and immutable source", async ({
   await identifier.focus();
   await popup.locator(".twoslash-api-link").click();
   await expect(page).toHaveURL(`${origin}/api/attune.html`);
-  const symbolExample = page.locator(".page-example");
-  await symbolExample.locator(".twoslash-identifier-link").focus();
-  const symbolSource = symbolExample.locator(".twoslash-source-link").first();
+  const symbolExample = page.locator(".page-example").first();
+  const symbolIdentifier = symbolExample
+    .locator(".twoslash-identifier-link", { hasText: "Attune" })
+    .first();
+  await symbolIdentifier.focus();
+  const symbolPopupId = await symbolIdentifier.getAttribute("aria-describedby");
+  expect(symbolPopupId).not.toBeNull();
+  const symbolSource = symbolExample
+    .locator(`[id="${symbolPopupId}"]`)
+    .locator(".twoslash-source-link");
   await symbolSource.click();
-  await expect(page).toHaveURL(packageExampleSource.url);
+  await expect(page).toHaveURL(attuneSource.url);
   await expect(page).toHaveTitle("Immutable source fixture");
 });

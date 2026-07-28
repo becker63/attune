@@ -20,7 +20,7 @@ import {
   makeInvestigationService,
   makeMcpHandlers,
   WorkspaceStore,
-} from "../dist/index.mjs";
+} from "../dist/golden.mjs";
 
 const execute = promisify(execFile);
 const root = await mkdtemp(resolve(tmpdir(), "attune-golden-"));
@@ -207,7 +207,7 @@ try {
     references,
   };
   const materialized = await successful(
-    handlers.repositoryMaterialize(materializeInput),
+    handlers.repository_materialize(materializeInput),
     "materialize",
   );
   invariant(materialized.resolvedCommit === firstCommit, "tag was not peeled");
@@ -234,7 +234,7 @@ try {
   });
 
   const joern = await successful(
-    handlers.joernQuery({
+    handlers.joern_query({
       investigationId: id,
       invocationId: "joern-1",
       expectedSnapshot: snapshot,
@@ -265,8 +265,8 @@ try {
     timeoutMilliseconds: 30_000,
   };
   const [maude, maudeDuplicate] = await Promise.all([
-    successful(handlers.maudeRun(maudeInput), "maude"),
-    successful(handlers.maudeRun(maudeInput), "maude duplicate"),
+    successful(handlers.maude_run(maudeInput), "maude"),
+    successful(handlers.maude_run(maudeInput), "maude duplicate"),
   ]);
   invariant(
     canonicalJson(maude) === canonicalJson(maudeDuplicate),
@@ -278,7 +278,7 @@ try {
     ...maudeInput,
     commands: "reduce in ONCE : fresh .\n",
   };
-  await rejectsWith(handlers.maudeRun(changedMaude), "InvocationConflict");
+  await rejectsWith(handlers.maude_run(changedMaude), "InvocationConflict");
 
   const incomplete = {
     ...maudeInput,
@@ -292,7 +292,7 @@ try {
       `${canonicalJson(incomplete)}\n`,
     );
   });
-  await rejectsWith(handlers.maudeRun(incomplete), "InvocationIncomplete");
+  await rejectsWith(handlers.maude_run(incomplete), "InvocationIncomplete");
 
   const propertySource = `
     import fc from "fast-check"
@@ -302,7 +302,7 @@ try {
     )
   `;
   const property = await successful(
-    handlers.propertyRun({
+    handlers.property_run({
       investigationId: id,
       invocationId: "property-1",
       expectedSnapshot: snapshot,
@@ -319,7 +319,7 @@ try {
   invariant(property.outcome === "counterexample", "property did not falsify");
   invariant((property.numShrinks ?? 0) > 0, "counterexample was not shrunk");
   const replay = await successful(
-    handlers.propertyRun({
+    handlers.property_run({
       investigationId: id,
       invocationId: "property-replay",
       expectedSnapshot: snapshot,
@@ -341,7 +341,7 @@ try {
 
   for (const mode of ["test", "scan", "apply"]) {
     const result = await successful(
-      handlers.astGrepRun({
+      handlers.ast_grep_run({
         investigationId: id,
         invocationId: `ast-${mode}`,
         expectedSnapshot: snapshot,
@@ -362,7 +362,7 @@ try {
     }
   }
   const checkpoint = await successful(
-    handlers.repositoryCheckpoint({
+    handlers.repository_checkpoint({
       investigationId: id,
       invocationId: "checkpoint-1",
       expectedSnapshot: snapshot,
@@ -376,7 +376,7 @@ try {
 
   const moduleArtifact = artifact(maude.receipt, "module.maude");
   const promotion = await successful(
-    handlers.artifactPromote({
+    handlers.artifact_promote({
       investigationId: id,
       invocationId: "promote-1",
       expectedSnapshot: snapshot,
@@ -391,7 +391,7 @@ try {
     "new-file promotion patch is empty",
   );
   const promoted = await successful(
-    handlers.repositoryCheckpoint({
+    handlers.repository_checkpoint({
       investigationId: id,
       invocationId: "checkpoint-2",
       expectedSnapshot: snapshot,
@@ -405,7 +405,7 @@ try {
 
   const resumedHandlers = makeMcpHandlers(makeInvestigationService(config));
   const materializedRetry = await successful(
-    resumedHandlers.repositoryMaterialize(materializeInput),
+    resumedHandlers.repository_materialize(materializeInput),
     "materialize retry",
   );
   invariant(
@@ -413,7 +413,7 @@ try {
     "bootstrap retry changed",
   );
   await successful(
-    resumedHandlers.repositoryCheckpoint({
+    resumedHandlers.repository_checkpoint({
       investigationId: id,
       invocationId: "resume-check",
       expectedSnapshot: snapshot,
@@ -443,10 +443,12 @@ try {
       timeoutMilliseconds: 30_000,
     },
   };
-  const slowPromise = Effect.runPromise(resumedHandlers.propertyRun(slowInput));
+  const slowPromise = Effect.runPromise(
+    resumedHandlers.property_run(slowInput),
+  );
   await poll(marker);
   const finalizePromise = Effect.runPromise(
-    resumedHandlers.investigationFinalize({
+    resumedHandlers.investigation_finalize({
       investigationId: id,
       invocationId: "finalize-1",
       expectedSnapshot: snapshot,
@@ -454,19 +456,25 @@ try {
     }),
   );
   const [slow, finalized] = await Promise.all([slowPromise, finalizePromise]);
-  invariant(slow.receipt.status === "succeeded", "accepted property failed");
-  invariant(finalized.receipt.status === "succeeded", "finalization failed");
+  invariant(
+    slow.receipt.status === "succeeded",
+    `accepted property failed: ${JSON.stringify(slow.receipt)}`,
+  );
+  invariant(
+    finalized.receipt.status === "succeeded",
+    `finalization failed: ${JSON.stringify(finalized.receipt)}`,
+  );
   invariant(
     slow.receipt.completedAt <= finalized.receipt.completedAt,
     "finalization did not wait",
   );
   const slowRetry = await successful(
-    resumedHandlers.propertyRun(slowInput),
+    resumedHandlers.property_run(slowInput),
     "post-finalization retry",
   );
   invariant(canonicalJson(slowRetry) === canonicalJson(slow), "retry changed");
   await rejectsWith(
-    resumedHandlers.maudeRun({
+    resumedHandlers.maude_run({
       ...maudeInput,
       invocationId: "maude-after-finalize",
       expectedSnapshot: snapshot,

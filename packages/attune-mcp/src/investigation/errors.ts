@@ -28,7 +28,7 @@ export const InvestigationLifecycleFailureReason = Schema.Literals([
  * `ValidationFailed` means the persisted workspace no longer proves the
  * materialized capability.
  *
- * @example
+ * @example Construct a state mismatch
  * ```ts
  * // @filename: lifecycle-error.ts
  * import { InvestigationLifecycleError } from "attune-mcp";
@@ -37,6 +37,14 @@ export const InvestigationLifecycleFailureReason = Schema.Literals([
  *   reason: "StateMismatch",
  *   message: "an active proof is required",
  * });
+ * ```
+ *
+ * @example Branch on the recovery reason
+ * ```ts
+ * import type { InvestigationLifecycleError } from "attune-mcp";
+ * // ---cut-before---
+ * declare const failure: InvestigationLifecycleError;
+ * const reload = failure.reason === "ValidationFailed";
  * ```
  */
 export class InvestigationLifecycleError extends Schema.TaggedErrorClass<InvestigationLifecycleError>()(

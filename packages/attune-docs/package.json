@@ -28,9 +28,7 @@
   },
   "nx": {
     "implicitDependencies": [
-      "attune-activegraph",
-      "attune-mcp",
-      "joern-effect"
+      "attune-mcp"
     ],
     "tags": [
       "type:documentation",
@@ -41,7 +39,12 @@
       "experiments:verify": {
         "cache": true,
         "dependsOn": [
-          "^research:schema"
+          {
+            "projects": [
+              "attune-activegraph"
+            ],
+            "target": "research:schema"
+          }
         ],
         "inputs": [
           "{projectRoot}/content/experiments/**/*",

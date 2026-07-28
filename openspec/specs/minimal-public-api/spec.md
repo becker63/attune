@@ -68,7 +68,9 @@ rules.
 ### Requirement: Public concepts are source documented
 
 Every root concept and every public `Attune` member SHALL have reviewed TSDoc
-that explains caller meaning rather than implementation vocabulary.
+that explains caller meaning rather than implementation vocabulary. Every
+`Investigation` property SHALL explain the evidence it carries, and every root
+concept and public member SHALL own multiple checked source examples.
 
 #### Scenario: Documentation completeness is checked
 

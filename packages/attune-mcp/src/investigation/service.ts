@@ -84,7 +84,7 @@ type InvestigationValidationRequest = InvestigationBoundInput & {
  * rejected boundaries fail with {@link AttuneToolFailure}, while invalid proof
  * use fails with {@link InvestigationLifecycleError}.
  *
- * @example
+ * @example Infer a request in a second file
  * ```ts
  * // @filename: inputs.ts
  * import type { Attune } from "attune-mcp";
@@ -96,14 +96,43 @@ type InvestigationValidationRequest = InvestigationBoundInput & {
  * const program = Attune.use((attune) =>
  *   attune.materialize(input.materialize));
  * ```
+ *
+ * @example Move a materialized proof to active
+ * ```ts
+ * import { Attune, type Investigation } from "attune-mcp";
+ * declare const materialized: Investigation<"materialized">;
+ * // ---cut-before---
+ * const activation = Attune.use((attune) => attune.activate(materialized));
+ * ```
  */
 export interface Attune {
   /**
    * Materializes an exact repository revision and issues its initial proof.
+   *
+   * @remarks
+   * This is the only transition that creates an investigation identity.
+   *
    * @param input - The unchanged `repository_materialize` wire request.
    * @returns A materialized proof on success, or the terminal rejected result.
-   * @throws {@link AttuneToolFailure} when the invocation cannot be accepted.
+   * @throws `AttuneToolFailure` when the invocation cannot be accepted.
    * @produces materialized
+   *
+   * @example Infer the wire request from the method
+   * ```ts
+   * import type { Attune } from "attune-mcp";
+   * declare const attune: Attune;
+   * declare const input: Parameters<Attune["materialize"]>[0];
+   * // ---cut-before---
+   * const attempt = attune.materialize(input);
+   * ```
+   *
+   * @example Start through the Effect service key
+   * ```ts
+   * import { Attune } from "attune-mcp";
+   * declare const input: Parameters<Attune["materialize"]>[0];
+   * // ---cut-before---
+   * const attempt = Attune.use((attune) => attune.materialize(input));
+   * ```
    */
   materialize(
     input: AttuneOperationWireInput<"repository_materialize">,
@@ -113,11 +142,33 @@ export interface Attune {
   >;
   /**
    * Revalidates a materialized snapshot and grants active permission.
+   *
+   * @remarks
+   * Activation consumes the materialized proof; carry only the returned proof.
+   *
    * @param investigation - The proof returned by successful materialization.
    * @returns A fresh active proof for preserving operations.
-   * @throws {@link AttuneToolFailure} or {@link InvestigationLifecycleError}.
+   * @throws `AttuneToolFailure` when durable workspace validation fails.
+   * @throws `InvestigationLifecycleError` when the proof is invalid or stale.
    * @requires materialized
    * @produces active
+   *
+   * @example Activate the materialized snapshot
+   * ```ts
+   * import { Attune, type Investigation } from "attune-mcp";
+   * declare const materialized: Investigation<"materialized">;
+   * // ---cut-before---
+   * const active = Attune.use((attune) => attune.activate(materialized));
+   * ```
+   *
+   * @example Reject a finalized proof at compile time
+   * ```ts
+   * import { Attune, type Investigation } from "attune-mcp";
+   * declare const finalized: Investigation<"finalized">;
+   * // @errors: 2345
+   * // ---cut-before---
+   * Attune.use((attune) => attune.activate(finalized));
+   * ```
    */
   activate(
     investigation: Investigation<"materialized">,
@@ -127,10 +178,37 @@ export interface Attune {
   >;
   /**
    * Reacquires active permission after a process restart.
+   *
+   * @remarks
+   * Supply the persisted identity and exact expected commit; both are rechecked.
+   *
    * @param input - Persisted investigation identity and expected snapshot.
    * @returns An active proof after validating durable state.
-   * @throws {@link AttuneToolFailure} or {@link InvestigationLifecycleError}.
+   * @throws `AttuneToolFailure` when durable workspace inspection fails.
+   * @throws `InvestigationLifecycleError` when persisted evidence disagrees.
    * @produces active
+   *
+   * @example Rebuild the request from the last proof
+   * ```ts
+   * import { Attune, type Investigation } from "attune-mcp";
+   * declare const previous: Investigation<"active">;
+   * const input = { investigationId: previous.investigationId,
+   *   expectedSnapshot: previous.snapshot.id };
+   * // ---cut-before---
+   * const active = Attune.use((attune) => attune.acquireActive(input));
+   * ```
+   *
+   * @example Load persisted input from another module
+   * ```ts
+   * // @filename: persisted.ts
+   * import type { Attune } from "attune-mcp";
+   * export declare const input: Parameters<Attune["acquireActive"]>[0];
+   * // @filename: restart.ts
+   * import { Attune } from "attune-mcp";
+   * import { input } from "./persisted.js";
+   * // ---cut-before---
+   * const active = Attune.use((attune) => attune.acquireActive(input));
+   * ```
    */
   acquireActive(
     input: InvestigationBoundInput,
@@ -140,13 +218,45 @@ export interface Attune {
   >;
   /**
    * Runs one preserving operation against an active snapshot.
+   *
+   * @remarks
+   * The operation name selects its request and result while the proof supplies
+   * investigation identity. Replace the input proof with the returned one.
+   *
+   * @typeParam Name - The closed preserving operation selected for this call.
    * @param investigation - Current active proof; it is consumed on transition.
    * @param name - One registered operation whose transition is `preserve`.
    * @param input - Caller fields; identity and snapshot come from the proof.
    * @returns The result, receipt, and active proof to carry forward.
-   * @throws {@link InvestigationLifecycleError} or the operation failure type.
+   * @throws `InvestigationLifecycleError` when active authority is invalid.
+   * @throws `AttuneToolFailure` when the selected boundary rejects the call.
    * @requires active
    * @produces active
+   *
+   * @example Derive one operation input from the closed toolkit
+   * ```ts
+   * // @filename: input.ts
+   * import { AttuneToolkit } from "attune-mcp";
+   * type Wire = typeof AttuneToolkit.tools.maude_run.parametersSchema.Type;
+   * export declare const input: Omit<Wire, "investigationId" | "expectedSnapshot">;
+   * // @filename: run.ts
+   * import { Attune, type Investigation } from "attune-mcp";
+   * import { input } from "./input.js";
+   * declare const active: Investigation<"active">;
+   * // ---cut-before---
+   * const run = Attune.use((attune) => attune.execute(active, "maude_run", input));
+   * ```
+   *
+   * @example Reject finalized authority
+   * ```ts
+   * import { Attune, AttuneToolkit, type Investigation } from "attune-mcp";
+   * type Wire = typeof AttuneToolkit.tools.maude_run.parametersSchema.Type;
+   * declare const input: Omit<Wire, "investigationId" | "expectedSnapshot">;
+   * declare const finalized: Investigation<"finalized">;
+   * // @errors: 2345
+   * // ---cut-before---
+   * Attune.use((attune) => attune.execute(finalized, "maude_run", input));
+   * ```
    */
   execute<Name extends PreservingAttuneOperationName>(
     investigation: Investigation<"active">,
@@ -158,12 +268,37 @@ export interface Attune {
   >;
   /**
    * Finalizes an active investigation at its exact clean snapshot.
+   *
+   * @remarks
+   * A rejected terminal result returns an active proof so the caller may repair
+   * the repository and try again.
+   *
    * @param investigation - Current active proof.
    * @param input - Finalization policy fields; identity comes from the proof.
    * @returns Finalized evidence, or the still-active proof after rejection.
-   * @throws {@link AttuneToolFailure} or {@link InvestigationLifecycleError}.
+   * @throws `AttuneToolFailure` when finalization cannot cross the boundary.
+   * @throws `InvestigationLifecycleError` when active authority is invalid.
    * @requires active
    * @produces finalized
+   *
+   * @example Finalize active authority
+   * ```ts
+   * import { Attune, type Investigation } from "attune-mcp";
+   * declare const active: Investigation<"active">;
+   * declare const input: Parameters<Attune["finalize"]>[1];
+   * // ---cut-before---
+   * const terminal = Attune.use((attune) => attune.finalize(active, input));
+   * ```
+   *
+   * @example Reject a materialized proof at compile time
+   * ```ts
+   * import { Attune, type Investigation } from "attune-mcp";
+   * declare const materialized: Investigation<"materialized">;
+   * declare const input: Parameters<Attune["finalize"]>[1];
+   * // @errors: 2345
+   * // ---cut-before---
+   * Attune.use((attune) => attune.finalize(materialized, input));
+   * ```
    */
   finalize(
     investigation: Investigation<"active">,
@@ -174,10 +309,39 @@ export interface Attune {
   >;
   /**
    * Reads a durable terminal result after an interrupted caller exchange.
+   *
+   * @remarks
+   * Recovery is a correlated read: reuse the exact wire input from the lost
+   * exchange and handle `undefined` as “no durable terminal result”.
+   *
+   * @typeParam Name - The closed terminal operation being correlated.
    * @param name - Registered non-materializing operation.
    * @param input - Original wire input used to correlate the receipt.
    * @returns The verified result, or `undefined` when none is durable.
-   * @throws {@link InvestigationLifecycleError} or the operation failure type.
+   * @throws `InvestigationLifecycleError` when correlation evidence disagrees.
+   * @throws `AttuneToolFailure` when the selected lookup boundary fails.
+   *
+   * @example Recover a preserving operation
+   * ```ts
+   * import { Attune, AttuneToolkit } from "attune-mcp";
+   * type Input = typeof AttuneToolkit.tools.maude_run.parametersSchema.Type;
+   * declare const input: Input;
+   * // ---cut-before---
+   * const recovered = Attune.use((attune) =>
+   *   attune.recoverTerminal("maude_run", input));
+   * ```
+   *
+   * @example Exclude materialization from terminal lookup
+   * ```ts
+   * import { Attune, AttuneToolkit } from "attune-mcp";
+   * type Input =
+   *   typeof AttuneToolkit.tools.repository_materialize.parametersSchema.Type;
+   * declare const input: Input;
+   * // @errors: 2345
+   * // ---cut-before---
+   * Attune.use((attune) =>
+   *   attune.recoverTerminal("repository_materialize", input));
+   * ```
    */
   recoverTerminal<Name extends ActiveAttuneOperationName>(
     name: Name,

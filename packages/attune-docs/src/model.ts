@@ -1,4 +1,4 @@
-export const API_MANIFEST_SCHEMA_VERSION = "3.0.0" as const;
+export const API_MANIFEST_SCHEMA_VERSION = "4.0.0" as const;
 
 export type ApiSymbolKind =
   | "class"
@@ -44,7 +44,7 @@ export interface TypeParameterDoc {
   readonly name: string;
   readonly constraint?: string;
   readonly default?: string;
-  readonly description?: string;
+  readonly description: string;
 }
 
 /** A complete source-authored TypeScript program extracted from `@example`. */
@@ -55,14 +55,6 @@ export interface ApiExample {
   readonly files: readonly string[];
   readonly principal: string;
   readonly source: SourceSpan;
-}
-
-/** The checked block owned by one generated package, symbol, or member page. */
-export interface PageExample {
-  readonly code: string;
-  readonly principal: string;
-  readonly source: SourceSpan;
-  readonly sourceExampleId?: string;
 }
 
 export interface LifecycleRelation {
@@ -86,10 +78,10 @@ export interface ApiMember {
   readonly kind: ApiSymbolKind;
   readonly signature: string;
   readonly documentation: DocumentationText;
+  readonly typeParameters: readonly TypeParameterDoc[];
   readonly examples: readonly ApiExample[];
   readonly relations: readonly LifecycleRelation[];
   readonly provenance: ApiProvenance;
-  readonly pageExample: PageExample;
 }
 
 export interface ApiSymbol {
@@ -105,7 +97,6 @@ export interface ApiSymbol {
   readonly examples: readonly ApiExample[];
   readonly relations: readonly LifecycleRelation[];
   readonly provenance: ApiProvenance;
-  readonly pageExample: PageExample;
 }
 
 export interface ApiPackage {
@@ -115,7 +106,6 @@ export interface ApiPackage {
   readonly examples: readonly ApiExample[];
   readonly relations: readonly LifecycleRelation[];
   readonly provenance: ApiProvenance;
-  readonly pageExample: PageExample;
 }
 
 export interface DocumentationDiagnostic {

@@ -94,7 +94,7 @@ export const propertyRun = (
         ) as {
           readonly failed: boolean;
           readonly seed?: number;
-          readonly counterexamplePath?: string;
+          readonly counterexamplePath?: string | null;
           readonly numRuns?: number;
           readonly numShrinks?: number;
         };
@@ -106,7 +106,7 @@ export const propertyRun = (
               ? ("counterexample" as const)
               : ("no-counterexample" as const),
             ...(details.seed === undefined ? {} : { seed: details.seed }),
-            ...(details.counterexamplePath === undefined
+            ...(typeof details.counterexamplePath !== "string"
               ? {}
               : { counterexamplePath: details.counterexamplePath }),
             ...(details.numRuns === undefined

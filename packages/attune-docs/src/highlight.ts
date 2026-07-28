@@ -9,7 +9,7 @@ import {
 } from "./twoslash.ts";
 
 const highlighter = await createHighlighter({
-  langs: ["typescript", "json", "bash", "markdown"],
+  langs: ["typescript", "javascript", "json", "bash", "markdown"],
   themes: ["github-light-default"],
 });
 
@@ -22,6 +22,8 @@ const escapeAttribute = (value: string): string =>
 
 const languages = {
   bash: "bash",
+  javascript: "javascript",
+  js: "javascript",
   json: "json",
   markdown: "markdown",
   md: "markdown",
@@ -35,6 +37,8 @@ const languageName = (language: BundledLanguage): string => {
   switch (language) {
     case "typescript":
       return "TypeScript";
+    case "javascript":
+      return "JavaScript";
     case "json":
       return "JSON";
     case "bash":
@@ -132,6 +136,7 @@ const accessibleTwoslash: ShikiTransformer = {
 export interface CodeBlockOptions {
   readonly language?: keyof typeof languages;
   readonly label?: string;
+  readonly labelPrefix?: string;
   readonly sourceCheckedBy?: string;
   /**
    * Opt into a strict, isolated Twoslash render.
@@ -177,6 +182,7 @@ export const renderCodeBlock = (
           ],
   });
   session?.assertValid();
+  const visibleLanguage = session?.visibleLanguage() ?? language;
   const visibleSource = session?.visibleCode() ?? source;
   const hasHoverTypes = highlighted.includes("twoslash-hover");
   const checkedBy =
@@ -193,9 +199,14 @@ export const renderCodeBlock = (
       ? ['<span class="code-status hover-types">Hover types</span>']
       : []),
   ].join("");
-  return `<div class="code-block${session === undefined ? "" : " checked-code"}" data-language="${escapeAttribute(language)}">
+  const label =
+    options.label ??
+    (options.labelPrefix === undefined
+      ? languageName(visibleLanguage)
+      : `${options.labelPrefix} · ${languageName(visibleLanguage)}`);
+  return `<div class="code-block${session === undefined ? "" : " checked-code"}" data-language="${escapeAttribute(visibleLanguage)}">
     <div class="code-toolbar">
-      <span class="code-language">${escapeAttribute(options.label ?? languageName(language))}</span>
+      <span class="code-language">${escapeAttribute(label)}</span>
       <span class="code-meta">${status}</span>
       <button type="button" class="copy-code" data-copy-code data-code="${escapeAttribute(visibleSource)}">Copy</button>
     </div>

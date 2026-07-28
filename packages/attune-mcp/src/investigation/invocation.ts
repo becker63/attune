@@ -51,6 +51,10 @@ import {
 } from "./workspace.js";
 
 const BootstrapAllocation = Schema.Struct({ investigationId: InvestigationId });
+const contractMismatch = (
+  message: string,
+  details?: Parameters<typeof fail>[2],
+) => fail("ContractMismatch", message, details);
 
 function assertBootstrapAllocation(
   input: { readonly investigationId?: InvestigationId | undefined },
@@ -62,14 +66,10 @@ function assertBootstrapAllocation(
     !Schema.is(BootstrapAllocation)(candidate) ||
     Object.keys(candidate).length !== 1
   ) {
-    throw fail(
-      "ContractMismatch",
-      "persisted materialization allocation is invalid",
-      {
-        observed: boundedFailureText(candidate, 8_192),
-        path,
-      },
-    );
+    throw contractMismatch("persisted materialization allocation is invalid", {
+      observed: boundedFailureText(candidate, 8_192),
+      path,
+    });
   }
   const observed = [
     input.investigationId,
@@ -78,13 +78,8 @@ function assertBootstrapAllocation(
       ? Reflect.get(result, "investigationId")
       : undefined,
   ].filter((investigationId) => investigationId !== undefined);
-  if (
-    observed.some(
-      (investigationId) => investigationId !== candidate.investigationId,
-    )
-  ) {
-    throw fail(
-      "ContractMismatch",
+  if (observed.some((id) => id !== candidate.investigationId)) {
+    throw contractMismatch(
       "persisted materialization allocation disagrees with request or terminal result",
       { expected: candidate.investigationId, observed: observed.join(",") },
     );
@@ -121,10 +116,10 @@ interface InvocationSpec<Name extends ActiveAttuneOperationName> {
 
 const boundedFailureText = (value: unknown, maximum: number): string => {
   const text = value instanceof Error ? value.message : String(value);
-  const nonEmpty =
-    text.length === 0 ? "operation failed without error details" : text;
-  return nonEmpty.slice(0, maximum);
+  return (text || "operation failed without error details").slice(0, maximum);
 };
+
+const jsonLine = (value: unknown): string => `${canonicalJson(value)}\n`;
 
 const normalizedFailureData = (
   cause: unknown,
@@ -149,6 +144,9 @@ const normalizedFailureData = (
   };
 };
 
+const toolFailure = (cause: unknown, fallback: FailureCode) =>
+  new AttuneToolFailure(normalizedFailureData(cause, fallback));
+
 const attempt = <A>(
   run: () => Promise<A>,
   signal: AbortSignal,
@@ -164,11 +162,13 @@ const attempt = <A>(
     ],
   );
 
+type ReceiptBase = Omit<
+  FailedReceipt,
+  "status" | "failure" | "snapshotId" | "completedAt"
+>;
+
 const receiptFailure = (
-  base: Omit<
-    FailedReceipt,
-    "status" | "failure" | "snapshotId" | "completedAt"
-  >,
+  base: ReceiptBase,
   failure: AttuneFailure,
   snapshot: FullGitCommit | undefined,
   completedAt: string,
@@ -185,8 +185,6 @@ const receiptFailure = (
     : { ...terminal, status: "failed" };
 };
 
-type ReceiptBase = Parameters<typeof receiptFailure>[0];
-
 const invocationDirectory = (
   workspace: MountedWorkspace,
   tool: ToolName,
@@ -201,10 +199,7 @@ const acceptRequest = async (
   await mkdir(Path.dirname(directory), { recursive: true, mode: 0o700 });
   await mkdir(directory, { recursive: false, mode: 0o700 });
   await writeNew(Path.join(directory, "request.json"), requestBytes);
-  await writeNew(
-    Path.join(directory, "references.json"),
-    `${canonicalJson(references)}\n`,
-  );
+  await writeNew(Path.join(directory, "references.json"), jsonLine(references));
 };
 
 const resultReceipt = (result: unknown): unknown =>
@@ -218,43 +213,28 @@ const readAcceptedTerminal = async (
   bootstrap = false,
 ): Promise<unknown> => {
   if (!(await fileExists(directory))) return undefined;
-  const incomplete = bootstrap
-    ? "materialization is incomplete"
-    : "invocation is incomplete";
+  const incomplete = `${bootstrap ? "materialization" : "invocation"} is incomplete`;
   const requestPath = Path.join(directory, "request.json");
-  if (!(await fileExists(requestPath))) {
+  if (!(await fileExists(requestPath)))
     throw fail("InvocationIncomplete", incomplete);
-  }
   if ((await readFile(requestPath, "utf8")) !== requestBytes) {
     throw fail(
       "InvocationConflict",
-      bootstrap
-        ? "bootstrap invocation has another input"
-        : "invocation identifier has another input",
+      `${bootstrap ? "bootstrap invocation" : "invocation identifier"} has another input`,
     );
   }
-  const receiptPath = Path.join(directory, "receipt.json");
-  const resultPath = Path.join(directory, "result.json");
-  const terminalExists = await Promise.all([
-    fileExists(receiptPath),
-    fileExists(resultPath),
-  ]);
-  if (terminalExists.includes(false)) {
+  const paths = ["receipt", "result"].map((name) =>
+    Path.join(directory, `${name}.json`),
+  );
+  if ((await Promise.all(paths.map(fileExists))).includes(false))
     throw fail("InvocationIncomplete", incomplete);
-  }
-  const [receipt, result] = await Promise.all([
-    readJson<unknown>(receiptPath),
-    readJson<unknown>(resultPath),
-  ]);
+  const [receipt, result] = await Promise.all(paths.map(readJson<unknown>));
   const embedded = resultReceipt(result);
   if (
     embedded === undefined ||
     canonicalJson(embedded) !== canonicalJson(receipt)
   ) {
-    throw fail(
-      "ContractMismatch",
-      "persisted result and detached receipt disagree",
-    );
+    throw contractMismatch("persisted result and detached receipt disagree");
   }
   return result;
 };
@@ -263,13 +243,10 @@ const writeTerminal = async (
   directory: string,
   result: { readonly receipt: AttuneReceipt },
 ): Promise<void> => {
-  await writeNew(
-    Path.join(directory, "result.json"),
-    `${canonicalJson(result)}\n`,
-  );
+  await writeNew(Path.join(directory, "result.json"), jsonLine(result));
   await writeNew(
     Path.join(directory, "receipt.json"),
-    `${canonicalJson(result.receipt)}\n`,
+    jsonLine(result.receipt),
   );
 };
 
@@ -351,12 +328,7 @@ const lockedInvocation = <A>(
             cause.name === "AbortError");
         resume(
           Effect.fail(
-            new AttuneToolFailure(
-              normalizedFailureData(
-                cause,
-                cancelled ? "Cancelled" : "AgentFsFailure",
-              ),
-            ),
+            toolFailure(cause, cancelled ? "Cancelled" : "AgentFsFailure"),
           ),
         );
       },
@@ -378,14 +350,15 @@ export class InvocationEngine {
   execute<Name extends ActiveAttuneOperationName>(
     spec: InvocationSpec<Name>,
   ): Effect.Effect<AttuneOperationResult<Name>, AttuneOperationError<Name>> {
-    const requestBytes = `${canonicalJson(spec.input)}\n`;
-    const tool = ATTUNE_OPERATIONS[spec.name].receipt[0];
-    const operation = resolveInvocationOperation(spec.name, spec.input);
-    const writerMode = resolveWriterMode(spec.name, spec.input);
-    const lockKey = `invocation-${spec.input.investigationId}-${tool}-${spec.input.invocationId}`;
+    const { input, name } = spec;
+    const requestBytes = jsonLine(input);
+    const tool = ATTUNE_OPERATIONS[name].receipt[0];
+    const operation = resolveInvocationOperation(name, input);
+    const writerMode = resolveWriterMode(name, input);
+    const lockKey = `invocation-${input.investigationId}-${tool}-${input.invocationId}`;
     const lookup = (workspace: MountedWorkspace) =>
       readAcceptedTerminal(
-        invocationDirectory(workspace, tool, spec.input.invocationId),
+        invocationDirectory(workspace, tool, input.invocationId),
         requestBytes,
       );
     const execution = lockedInvocation(
@@ -393,21 +366,20 @@ export class InvocationEngine {
       lockKey,
       async (signal) => {
         const existing = await this.workspaces.withMount(
-          spec.input.investigationId,
+          input.investigationId,
           signal,
           lookup,
         );
         if (existing !== undefined) return existing;
 
         return await this.workspaces.withMount(
-          spec.input.investigationId,
+          input.investigationId,
           signal,
           async (workspace) => {
             const retry = await lookup(workspace);
             if (retry !== undefined) return retry;
-            if (workspace.manifest.finalizedAt !== undefined) {
+            if (workspace.manifest.finalizedAt !== undefined)
               throw fail("Finalized", "investigation is finalized");
-            }
             const perform = () =>
               this.acceptAndRun(
                 spec,
@@ -420,7 +392,7 @@ export class InvocationEngine {
               ? await perform()
               : await withOsLock(
                   this.config,
-                  `writer-${spec.input.investigationId}`,
+                  `writer-${input.investigationId}`,
                   signal,
                   perform,
                 );
@@ -429,12 +401,11 @@ export class InvocationEngine {
       },
       true,
     );
+    const gate = this.gate(input.investigationId);
     const activity = (
-      writerMode === "exclusive-writer"
-        ? this.gate(spec.input.investigationId).exclusive
-        : this.gate(spec.input.investigationId).shared
+      writerMode === "exclusive-writer" ? gate.exclusive : gate.shared
     )(execution);
-    return validateOperationResult(spec.name, spec.input, activity);
+    return validateOperationResult(name, input, activity);
   }
 
   private async acceptAndRun<Name extends ActiveAttuneOperationName>(
@@ -444,13 +415,10 @@ export class InvocationEngine {
     operation: string,
     signal: AbortSignal,
   ): Promise<unknown> {
-    const tool = ATTUNE_OPERATIONS[spec.name].receipt[0];
-    const directory = invocationDirectory(
-      workspace,
-      tool,
-      spec.input.invocationId,
-    );
-    await acceptRequest(directory, requestBytes, spec.input.references);
+    const { input, name } = spec;
+    const tool = ATTUNE_OPERATIONS[name].receipt[0];
+    const directory = invocationDirectory(workspace, tool, input.invocationId);
+    await acceptRequest(directory, requestBytes, input.references);
     const artifacts: Array<{
       readonly path: string;
       readonly complete: boolean;
@@ -483,9 +451,9 @@ export class InvocationEngine {
     const references = await Promise.all(
       artifacts.map(({ path, complete }) =>
         artifactReference(
-          spec.input.investigationId,
+          input.investigationId,
           tool,
-          spec.input.invocationId,
+          input.invocationId,
           directory,
           path,
           complete,
@@ -495,8 +463,8 @@ export class InvocationEngine {
     const completedAt = new Date().toISOString();
     const base = {
       schemaVersion: 1 as const,
-      invocationId: spec.input.invocationId,
-      investigationId: spec.input.investigationId,
+      invocationId: input.invocationId,
+      investigationId: input.investigationId,
       tool,
       operation,
       inputDigest: sha256(requestBytes),
@@ -505,8 +473,8 @@ export class InvocationEngine {
       startedAt,
     };
     const result = await validateTerminal(
-      spec.name,
-      spec.input,
+      name,
+      input,
       base,
       completedAt,
       signal,
@@ -518,7 +486,7 @@ export class InvocationEngine {
         code: "ProcessExitFailure",
         message: "operation returned no terminal value",
       },
-      `${spec.name} produced an invalid terminal result`,
+      `${name} produced an invalid terminal result`,
       snapshot,
     );
     await writeTerminal(directory, result);
@@ -533,7 +501,7 @@ export class InvocationEngine {
     AttuneOperationResult<Name> | undefined,
     AttuneOperationError<Name>
   > {
-    const requestBytes = `${canonicalJson(input)}\n`;
+    const requestBytes = jsonLine(input);
     const tool = ATTUNE_OPERATIONS[name].receipt[0];
     const lockKey = `invocation-${input.investigationId}-${tool}-${input.invocationId}`;
     const lookup = Effect.tryPromise({
@@ -549,8 +517,7 @@ export class InvocationEngine {
               ),
           ),
         ),
-      catch: (cause) =>
-        new AttuneToolFailure(normalizedFailureData(cause, "AgentFsFailure")),
+      catch: (cause) => toolFailure(cause, "AgentFsFailure"),
     });
     return Effect.flatMap(lookup, (result) =>
       result === undefined
@@ -565,7 +532,7 @@ export class InvocationEngine {
   materialize(
     input: AttuneOperationWireInput<"repository_materialize">,
   ): Effect.Effect<RepositoryMaterializeResult, ReturnType<typeof fail>> {
-    const requestBytes = `${canonicalJson(input)}\n`;
+    const requestBytes = jsonLine(input);
     const inputDigest = sha256(requestBytes);
     const directory = Path.join(
       this.config.home,
@@ -589,9 +556,8 @@ export class InvocationEngine {
           true,
         );
         if (replay !== undefined) {
-          if (!(await fileExists(allocationPath))) {
+          if (!(await fileExists(allocationPath)))
             throw fail("InvocationIncomplete", "materialization is incomplete");
-          }
           const allocation = await readJson<unknown>(allocationPath);
           const validated = await Effect.runPromise(
             validateOperationResult(
@@ -611,7 +577,7 @@ export class InvocationEngine {
         await acceptRequest(directory, requestBytes, input.references);
         const allocated = input.investigationId ?? allocateInvestigationId();
         const allocation = { investigationId: allocated } as const;
-        await writeNew(allocationPath, `${canonicalJson(allocation)}\n`);
+        await writeNew(allocationPath, jsonLine(allocation));
         const startedAt = new Date().toISOString();
         const [materialized, failure] = await attempt(
           () =>

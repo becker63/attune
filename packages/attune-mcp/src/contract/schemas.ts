@@ -171,7 +171,7 @@ export type AttuneFailure = typeof AttuneFailure.Type;
  * invocation identity, unavailable workspace state, or a closed contract
  * mismatch. Callers should branch on `code` rather than parse `message`.
  *
- * @example
+ * @example Construct a rejected boundary
  * ```ts
  * // @filename: tool-error.ts
  * import { AttuneToolFailure } from "attune-mcp";
@@ -180,6 +180,14 @@ export type AttuneFailure = typeof AttuneFailure.Type;
  *   code: "StaleSnapshot",
  *   message: "the repository advanced",
  * });
+ * ```
+ *
+ * @example Branch on the stable failure code
+ * ```ts
+ * import type { AttuneToolFailure } from "attune-mcp";
+ * // ---cut-before---
+ * declare const failure: AttuneToolFailure;
+ * const refresh = failure.code === "StaleSnapshot";
  * ```
  */
 export class AttuneToolFailure extends Schema.TaggedErrorClass<AttuneToolFailure>()(
@@ -241,13 +249,23 @@ export type CancelledReceipt = typeof CancelledReceipt.Type;
  * input and toolchain digests, artifact references, and the correlated
  * investigation snapshot needed to reproduce or recover work.
  *
- * @example
+ * @example Narrow terminal status
  * ```ts
  * // @filename: receipt.ts
  * import type { AttuneReceipt } from "attune-mcp";
  * // ---cut---
  * declare const receipt: AttuneReceipt;
  * const completed = receipt.status === "succeeded";
+ * ```
+ *
+ * @example Read success or failure evidence
+ * ```ts
+ * import type { AttuneReceipt } from "attune-mcp";
+ * // ---cut-before---
+ * declare const receipt: AttuneReceipt;
+ * const evidence = receipt.status === "succeeded"
+ *   ? receipt.snapshotId
+ *   : receipt.failure.code;
  * ```
  */
 export const AttuneReceipt = Schema.Union([

@@ -19,6 +19,7 @@ export default defineConfig({
   },
   entry: {
     "contract-bundle": "src/contract/bundle.ts",
+    golden: "src/server/golden.ts",
     index: "src/index.ts",
     main: "src/server/main.ts",
     "property-runner": "src/tools/property/runner.ts",

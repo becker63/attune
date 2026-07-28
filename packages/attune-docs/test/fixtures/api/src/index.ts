@@ -7,7 +7,7 @@
  * @example A complete multi-file program
  * ```ts
  * // @filename: model.ts
- * /** A state-indexed fixture capability. *\/
+ * /** A capability whose type records the current lifecycle state. *\/
  * export interface Investigation<State extends string> {
  *   readonly state: State;
  * }
@@ -19,27 +19,90 @@
  * // ---cut-after---
  * ```
  *
+ * @example Narrow a materialized capability
+ * ```ts
+ * /** A capability whose type records the current lifecycle state. *\/
+ * interface Investigation<State extends string> {
+ *   readonly state: State;
+ * }
+ * // ---cut-before---
+ * declare const materialized: Investigation<"materialized">;
+ * const phase: Investigation<"materialized">["state"] = materialized.state;
+ * ```
+ *
+ * @example Hide unrelated capability work
+ * ```ts
+ * /** A capability whose type records the current lifecycle state. *\/
+ * interface Investigation<State extends string> {
+ *   readonly state: State;
+ * }
+ * // ---cut-start---
+ * declare const active: Investigation<"active">;
+ * active.state;
+ * // ---cut-end---
+ * type FinalizedState = Investigation<"finalized">["state"];
+ * ```
+ *
  * @packageDocumentation
  */
 
 /**
  * A capability whose type records the current lifecycle state.
  *
+ * @remarks
+ * The type argument keeps the carried permission visible to callers.
+ *
  * @template State - State carried by the capability.
  * @transitionsTo Attune
  *
  * @example Inspect a capability
  * ```ts
- * /** A state-indexed fixture capability. *\/
+ * /** A capability whose type records the current lifecycle state. *\/
  * interface Investigation<State extends string> {
  *   readonly state: State;
  * }
  * const active: Investigation<"active"> = { state: "active" };
  * active.state;
  * ```
+ *
+ * @example Name the carried state
+ * ```ts
+ * /** A capability whose type records the current lifecycle state. *\/
+ * interface Investigation<State extends string> {
+ *   readonly state: State;
+ * }
+ * type ActiveState = Investigation<"active">["state"];
+ * ```
  */
 export interface Investigation<State extends string = "active"> {
-  /** State carried by this capability. */
+  /**
+   * State carried by this capability.
+   *
+   * @remarks
+   * Preserve the literal so the next legal transition remains visible.
+   *
+   * @example Read the state
+   * ```ts
+   * interface Investigation {
+   *   /** State carried by this capability. *\/
+   *   readonly state: "active";
+   * }
+   * declare const investigation: Investigation;
+   * // ---cut-before---
+   * investigation.state;
+   * ```
+   *
+   * @example Preserve the literal state
+   * ```ts
+   * interface Investigation {
+   *   /** State carried by this capability. *\/
+   *   readonly state: "active";
+   * }
+   * declare const investigation: Investigation;
+   * // ---cut-before---
+   * const phase = investigation.state;
+   * ```
+   */
   readonly state: State;
 }
 
@@ -52,7 +115,7 @@ export interface Investigation<State extends string = "active"> {
  *
  * @example Construct a documented service
  * ```ts
- * /** Fixture lifecycle service. *\/
+ * /** Lifecycle operations in the order callers use them. *\/
  * interface Attune {
  *   materialize(input: string): { readonly state: "materialized" };
  * }
@@ -61,30 +124,60 @@ export interface Investigation<State extends string = "active"> {
  * };
  * api.materialize("main");
  * ```
+ *
+ * @example Observe the first transition
+ * ```ts
+ * /** Lifecycle operations in the order callers use them. *\/
+ * interface Attune {
+ *   materialize(input: string): { readonly state: "materialized" };
+ * }
+ * declare const attune: Attune;
+ * const materialized = attune.materialize("main");
+ * ```
  */
 export interface Attune {
   /**
    * Materialize a revision into a state-indexed capability.
    *
+   * @remarks
+   * This is the fixture lifecycle's only identity-creating transition.
+   *
+   * @typeParam Revision - Revision identifier supplied by the caller.
    * @param input - Revision requested by the caller.
    * @returns A materialized investigation.
-   * @throws ExampleFailure when the revision cannot be read.
+   * @throws `ExampleFailure` when the revision cannot be read.
    * @produces Investigation
    *
    * @example Materialize a revision
    * ```ts
    * interface Attune {
-   *   /** Materialize a fixture revision. *\/
+   *   /** Materialize a revision into a state-indexed capability. *\/
    *   materialize(input: string): { readonly state: "materialized" };
    * }
    * declare const api: Attune;
    * api.materialize("main");
    * ```
+   *
+   * @example Keep the materialized result
+   * ```ts
+   * interface Attune {
+   *   /** Materialize a revision into a state-indexed capability. *\/
+   *   materialize(input: string): { readonly state: "materialized" };
+   * }
+   * declare const api: Attune;
+   * // ---cut-before---
+   * const materialized = api.materialize("next");
+   * ```
    */
-  materialize(input: string): Investigation<"materialized">;
+  materialize<Revision extends string>(
+    input: Revision,
+  ): Investigation<"materialized">;
 
   /**
    * Finalize an active capability.
+   *
+   * @remarks
+   * Finalization consumes active authority and returns terminal evidence.
    *
    * @param investigation - Active capability to finalize.
    * @returns Finalized evidence.
@@ -92,11 +185,23 @@ export interface Attune {
    * @example Finalize the capability
    * ```ts
    * interface Attune {
-   *   /** Finalize an active fixture. *\/
+   *   /** Finalize an active capability. *\/
    *   finalize(value: { readonly state: "active" }): { readonly state: "finalized" };
    * }
    * declare const api: Attune;
    * api.finalize({ state: "active" });
+   * ```
+   *
+   * @example Inspect final state
+   * ```ts
+   * interface Attune {
+   *   /** Finalize an active capability. *\/
+   *   finalize(value: { readonly state: "active" }): { readonly state: "finalized" };
+   * }
+   * declare const api: Attune;
+   * // ---cut-before---
+   * const finalized = api.finalize({ state: "active" });
+   * finalized.state;
    * ```
    */
   finalize(investigation: Investigation<"active">): Investigation<"finalized">;
@@ -113,16 +218,58 @@ export const Attune = {
 /**
  * A recoverable public fixture failure.
  *
+ * @remarks
+ * Callers may retain its stable message while deciding whether to retry.
+ *
  * @example Catch the public failure
  * ```ts
- * /** Recoverable fixture failure. *\/
+ * /** A recoverable public fixture failure. *\/
  * class ExampleFailure extends Error {}
  * const failure = new ExampleFailure("retry");
  * failure.message;
  * ```
+ *
+ * @example Preserve the recovery message
+ * ```ts
+ * /** A recoverable public fixture failure. *\/
+ * class ExampleFailure extends Error {}
+ * declare const failure: ExampleFailure;
+ * const message = failure.message;
+ * ```
  */
 export class ExampleFailure extends Error {
-  /** Explain the caller recovery decision. */
+  /**
+   * Explain the caller recovery decision.
+   *
+   * @remarks
+   * The explanation remains caller-facing and omits private diagnostics.
+   *
+   * @example Explain recovery
+   * ```ts
+   * class ExampleFailure extends Error {
+   *   /** Explain the caller recovery decision. *\/
+   *   explain(): string {
+   *     return this.message;
+   *   }
+   * }
+   * declare const failure: ExampleFailure;
+   * // ---cut-before---
+   * failure.explain();
+   * ```
+   *
+   * @example Reuse the explanation
+   * ```ts
+   * class ExampleFailure extends Error {
+   *   /** Explain the caller recovery decision. *\/
+   *   explain(): string {
+   *     return this.message;
+   *   }
+   * }
+   * declare const failure: ExampleFailure;
+   * // ---cut-before---
+   * const explanation = failure.explain();
+   * ```
+   */
   explain(): string {
     return this.message;
   }
