@@ -180,7 +180,10 @@ const hoverDocumentation = (docs: string): string => {
 };
 
 const normalizedProse = (value: string): string =>
-  value.replaceAll(/\s+/gu, " ").trim();
+  value
+    .replaceAll(/\s+/gu, " ")
+    .replace(/\s+([,.;:!?])/gu, "$1")
+    .trim();
 
 const hoverTags = new Set([
   "deprecated",

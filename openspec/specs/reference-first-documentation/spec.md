@@ -70,7 +70,11 @@ published.
 Every generated API page SHALL contain only source-supported narrative, type,
 example, relationship, recovery, and provenance sections, SHALL render a
 narrative sequence of at least three source-authored checked examples, and
-SHALL have no generic placeholder demonstration.
+SHALL have no generic placeholder demonstration. Every page SHALL use the same
+ordered structured output and enough source-authored prose to explain the
+subject's lifecycle role, caller decision, evidence, and next related type.
+Mechanically derived prose MAY connect recorded source facts, but SHALL NOT
+invent behavior or replace the source TSDoc narrative.
 
 #### Scenario: Every page is independently useful
 
@@ -78,6 +82,15 @@ SHALL have no generic placeholder demonstration.
 - **THEN** it contains multiple checked scenes including examples owned by that
   package, symbol, or member
 - **AND** its related links and provenance resolve
+
+#### Scenario: Pages are compared structurally
+
+- **WHEN** a fast test inspects every emitted HTML document
+- **THEN** each document has the same ordered story, shape, examples,
+  related-types, and source sections
+- **AND** every heading contains a link to the real public type or member
+  expression that gives that section meaning
+- **AND** navigation category labels are not represented as untyped headings
 
 #### Scenario: Removed guide concepts leave no residue
 
@@ -87,6 +100,28 @@ SHALL have no generic placeholder demonstration.
   concepts are absent
 - **AND** the ordinary MCP bridge and Python experiment publication remain
   available
+
+### Requirement: Source-backed typed inputs and outputs
+
+Every callable reference SHALL show its inputs and output as compact TypeScript
+declarations derived from the exact source parameter and return nodes. Each
+input SHALL preserve its complete declaration spelling, including optional or
+rest syntax, and link to that immutable parameter span. Each return SHALL link
+to its exact immutable annotation span, and each referenced local public type
+SHALL link to both its API reference and immutable declaration. Private
+supporting aliases MAY link to source but SHALL NOT become new root concepts.
+Non-callable pages SHALL explicitly explain that caller inputs and callable
+outputs do not apply.
+
+#### Scenario: Reader inspects a method contract
+
+- **WHEN** a reader opens a public `Attune` member
+- **THEN** each input is shown in source order with its TSDoc explanation,
+  exact type declaration, checked hover information, and provenance links
+- **AND** the return is shown with the same declaration, hover, and provenance
+  guarantees
+- **AND** a generic method is instantiated before `Parameters` or `ReturnType`
+  is projected so its operation-specific correlation is not widened to `any`
 
 ### Requirement: Publication builds current dependencies
 

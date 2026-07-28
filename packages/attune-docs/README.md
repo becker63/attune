@@ -22,6 +22,13 @@ owns at least three programs, every symbol owns at least two, and every member
 owns at least two. Independent experiment publications remain available beside
 the reference.
 
+Every emitted document uses one ordered story: narrative, shape, examples,
+related types, and source. Every heading is anchored by a real public type or
+member expression. Callable pages show each input and output separately with
+its exact source type, immutable annotation link, referenced declarations, and
+a compact checked Twoslash lens. These generated contract lenses supplement,
+but never count as, source-owned examples.
+
 ## Build and check
 
 Run commands from the workspace root:
@@ -58,14 +65,26 @@ set `DOCS_SOURCE_COMMIT=<40-character-sha>`, which must match the source ref.
 Write the whole learning path where the public type is defined. Start with the
 promise made to a caller, place it in the investigation lifecycle, and name the
 evidence or authority it carries. Use `@remarks` for the reason behind a rule,
-not an implementation tour. Document every type parameter, parameter, return,
-recoverable failure, public method, and public property.
+not an implementation tour. Give every root concept and member a
+multi-paragraph narrative that links the type before it and the type after it.
+Document every type parameter, parameter, return, recoverable failure, public
+method, and public property; describe the caller decision and guarantee rather
+than merely restating the annotation.
 
 Keep the vocabulary closed around the six root exports above. Infer requests
 and results from `Attune` methods instead of publishing another layer of aliases.
 Every export and public member owns at least two titled, executable examples.
 Examples use the real declaration bundle, hide supporting setup with Twoslash
 cuts, and leave the smallest useful typed expression visible.
+
+The manifest records each symbol's usable public type expression, every
+parameter's exact declaration and span, and every return annotation directly
+from the TypeScript AST rather than recovering them from rendered signatures.
+Keep annotations explicit enough to read: public type references link to their
+API page and immutable declaration, while private aliases link only to source.
+For generic methods, instantiate a representative operation before applying
+`Parameters` or `ReturnType`; an uninstantiated generic projection can erase
+the correlation the page is meant to teach.
 
 For example:
 

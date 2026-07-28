@@ -40,9 +40,14 @@ for source analysis. Each manifest SHALL identify the source revision,
 declaration digest, and source digest and include stable package, symbol, and
 member ids; source-ordered signatures and TSDoc; complete source examples;
 explicit lifecycle relations; and exact TSDoc, declaration, implementation,
-and example spans with immutable GitHub URLs. Version 4 manifests SHALL retain
-ordered source example collections directly and SHALL contain no generated
-page-example fallback.
+and example spans with immutable GitHub URLs. Version 5 manifests SHALL retain
+ordered source example collections directly, SHALL contain no generated
+page-example fallback, and SHALL model every public member's source-ordered
+call signatures. Every public symbol SHALL carry the real TypeScript type
+expression used by headings and checked shape scenes. Each input SHALL preserve
+its complete parameter declaration and span; each input and output type use
+SHALL also preserve its exact source spelling and annotation span plus the
+declaration spans and public API identities of the type names it references.
 
 #### Scenario: Source export changes
 
@@ -57,15 +62,26 @@ page-example fallback.
 The system SHALL render its learning path exclusively from the source-backed
 API manifest. The package reference SHALL be the site root and SHALL link to
 six symbol pages and explicit service-member anchors in lifecycle order. The
-reference SHALL provide signatures, narrative TSDoc, checked examples, linked
-type hovers, recovery information, relations, and exact source provenance, and
-SHALL not use language-model prose, guide drafts, or approvals as build input.
+reference SHALL provide narrative TSDoc, compact checked type scenes, checked
+examples, linked type hovers, typed inputs and outputs, recovery information,
+relations, and exact source provenance, and SHALL not use language-model prose,
+guide drafts, or approvals as build input. Package, symbol, member, evidence,
+and not-found documents SHALL be projections of one structured output with the
+same ordered story, shape, examples, related-types, and source sections.
 
 #### Scenario: Reference is rendered from a manifest
 
 - **WHEN** a valid API manifest is supplied to the reference renderer
 - **THEN** the renderer emits a browsable static reference whose displayed
   package, symbols, members, examples, and source revision match the manifest
+
+#### Scenario: Any reference page is opened directly
+
+- **WHEN** the renderer projects a package, symbol, member, evidence, or
+  not-found document
+- **THEN** it emits the same complete ordered section structure
+- **AND** represents inapplicable inputs, outputs, failures, or relations as
+  explicit source-grounded facts instead of omitting their sections
 
 ### Requirement: Reproducible static Pages publication
 

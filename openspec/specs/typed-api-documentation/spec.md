@@ -15,7 +15,8 @@ The system SHALL provide narrative TSDoc for `Attune`, `Investigation`,
 lifecycle, the proof or evidence it carries, a legal transition's preconditions
 and guarantees, an error's recovery decision, parameters, returns, type
 parameters, failures, and related public concepts. Each root concept and member
-SHALL provide a concise summary, substantive `@remarks`, and multiple compact
+SHALL provide a concise summary, a multi-paragraph narrative `@remarks` with
+resolved links to related public types or members, and multiple compact
 executable scenes. Documentation SHALL NOT merely repeat a signature or
 reintroduce registry, projection, factory, capability alias, guide-process, or
 per-tool descriptor nouns.
@@ -45,9 +46,12 @@ fail the test suite.
 ### Requirement: Documentation coverage audit
 
 The system SHALL run a TypeScript-aware documentation audit over supported
-exports. The audit SHALL report undocumented required declarations and missing
-lifecycle relation metadata, and CI SHALL fail when the configured policy is
-not met.
+exports. The audit SHALL report undocumented required declarations, missing
+lifecycle relation metadata, mismatches between documented and declared
+parameters, missing callable return documentation, unresolved local type-use
+provenance, malformed failure tags, invalid public type expressions, and
+unknown public member kinds. CI SHALL fail when the configured policy is not
+met.
 
 #### Scenario: Required exported service lacks documentation
 
@@ -79,7 +83,10 @@ owned by that page's declaration or member, and every public identifier hover
 SHALL link to its own API destination and immutable source. Hover links SHALL be
 keyboard focusable, hover boxes SHALL expose an accessible label, and copied
 code SHALL remain the exact displayed post-cut source rather than including
-hidden setup or tooltip text.
+hidden setup or tooltip text. In addition, every callable member SHALL include
+separate checked input and output type lenses that use Twoslash cut directives;
+these mechanically derived lenses SHALL NOT count as source-owned page
+examples.
 
 #### Scenario: Render the complete static site
 
@@ -97,3 +104,12 @@ hidden setup or tooltip text.
 - **AND** the API and source links are followable
 - **AND** the code-copy control writes the displayed source
 - **AND** the suite does not create one browser case per page
+
+#### Scenario: Fast structure and contract property
+
+- **WHEN** Vitest loads every emitted page in a lightweight DOM
+- **THEN** it verifies one uniform section order and a real type link in every
+  heading
+- **AND** every declared input and output has a checked hover plus API and
+  immutable source destinations
+- **AND** every page still has the required source-owned example sequence

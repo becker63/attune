@@ -1,9 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { isDeepStrictEqual } from "node:util";
 
+import { ts } from "ts-morph";
+
 import type {
   ApiExample,
   ApiManifest,
+  ApiTypeReference,
   DocumentationDiagnostic,
   DocumentationPolicy,
   SourceSpan,
@@ -260,6 +263,61 @@ export const auditManifest = (
   const known = new Set(
     manifest.symbols.flatMap((symbol) => [symbol.id, symbol.exportName]),
   );
+  const requireType = (
+    symbolId: string,
+    label: string,
+    type: ApiTypeReference | undefined,
+  ): void => {
+    if (
+      type === undefined ||
+      type.text.trim().length === 0 ||
+      !validSpan(type.source)
+    ) {
+      add(
+        "missing-provenance",
+        symbolId,
+        `${label} needs exact source-backed type syntax.`,
+      );
+      return;
+    }
+    for (const reference of type.references) {
+      if (!validSpan(reference.source)) {
+        add(
+          "missing-provenance",
+          symbolId,
+          `${label} has an invalid declaration reference for ${reference.name}.`,
+        );
+      }
+      if (
+        reference.targetSymbolId !== undefined &&
+        !known.has(reference.targetSymbolId)
+      ) {
+        add(
+          "missing-provenance",
+          symbolId,
+          `${label} references unknown public symbol ${reference.targetSymbolId}.`,
+        );
+      }
+    }
+    for (const symbol of manifest.symbols) {
+      const escapedName = symbol.exportName.replace(
+        /[.*+?^${}()|[\]\\]/gu,
+        String.raw`\$&`,
+      );
+      if (
+        new RegExp(String.raw`\b${escapedName}\b`, "u").test(type.text) &&
+        !type.references.some(
+          (reference) => reference.targetSymbolId === symbol.id,
+        )
+      ) {
+        add(
+          "missing-provenance",
+          symbolId,
+          `${label} uses public type ${symbol.exportName} without its resolved declaration provenance.`,
+        );
+      }
+    }
+  };
   const allowed = new Set(
     policy.allowedRelationTargets.map((target) => target.toLowerCase()),
   );
@@ -274,6 +332,23 @@ export const auditManifest = (
     );
   }
   for (const symbol of manifest.symbols) {
+    const typeExpressionDiagnostics =
+      ts.transpileModule(`type __AttuneSubject = ${symbol.typeExpression};`, {
+        compilerOptions: { target: ts.ScriptTarget.ESNext },
+        reportDiagnostics: true,
+      }).diagnostics ?? [];
+    if (
+      symbol.typeExpression.trim().length === 0 ||
+      typeExpressionDiagnostics.some(
+        (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
+      )
+    ) {
+      add(
+        "missing-provenance",
+        symbol.id,
+        `${symbol.exportName} needs a syntactically valid public type expression.`,
+      );
+    }
     if (
       !documented(symbol.documentation.summary, symbol.documentation.remarks)
     ) {
@@ -298,22 +373,107 @@ export const auditManifest = (
       2,
     );
     for (const member of symbol.members) {
+      const label = `${symbol.exportName}.${member.name}`;
       if (
         !documented(member.documentation.summary, member.documentation.remarks)
       ) {
         add(
           "missing-documentation",
           member.id,
-          `${symbol.exportName}.${member.name} needs a source TSDoc summary and @remarks.`,
+          `${label} needs a source TSDoc summary and @remarks.`,
         );
       }
-      requireExamples(
-        member.id,
-        `${symbol.exportName}.${member.name}`,
-        member.examples,
-        member.name,
-        2,
-      );
+      if (member.kind === "unknown") {
+        add(
+          "missing-documentation",
+          member.id,
+          `${label} has an unknown member kind.`,
+        );
+      }
+      if (member.callSignatures.length > 0) {
+        if (member.kind !== "function") {
+          add(
+            "missing-documentation",
+            member.id,
+            `${label} has call signatures but is not classified as a function.`,
+          );
+        }
+        if (member.valueType !== undefined) {
+          add(
+            "missing-documentation",
+            member.id,
+            `${label} cannot have both call signatures and a value type.`,
+          );
+        }
+        if (member.documentation.returns.trim().length === 0) {
+          add(
+            "missing-documentation",
+            member.id,
+            `${label} needs source @returns documentation.`,
+          );
+        }
+        const documentedParameters = member.documentation.parameters.map(
+          (parameter) => parameter.name,
+        );
+        member.callSignatures.forEach((callable, signatureIndex) => {
+          const declaredParameters = callable.parameters.map(
+            (parameter) => parameter.name,
+          );
+          if (!isDeepStrictEqual(documentedParameters, declaredParameters)) {
+            add(
+              "missing-documentation",
+              member.id,
+              `${label} signature ${signatureIndex + 1} parameters (${declaredParameters.join(", ")}) do not match its @param tags (${documentedParameters.join(", ")}).`,
+            );
+          }
+          callable.parameters.forEach((parameter, parameterIndex) => {
+            if (parameter.index !== parameterIndex) {
+              add(
+                "missing-provenance",
+                member.id,
+                `${label} parameter ${parameter.name} has a noncanonical index.`,
+              );
+            }
+            if (
+              parameter.declaration.trim().length === 0 ||
+              !validSpan(parameter.source)
+            ) {
+              add(
+                "missing-provenance",
+                member.id,
+                `${label} parameter ${parameter.name} needs an exact source-backed declaration.`,
+              );
+            }
+            requireType(
+              member.id,
+              `${label} parameter ${parameter.name}`,
+              parameter.type,
+            );
+          });
+          requireType(member.id, `${label} return`, callable.returns);
+        });
+        const documentedFailures = member.documentation.failures.length;
+        const failureRelations = member.relations.filter(
+          (relation) => relation.kind === "throws",
+        ).length;
+        if (documentedFailures !== failureRelations) {
+          add(
+            "missing-documentation",
+            member.id,
+            `${label} has ${documentedFailures} parsed @throws descriptions but ${failureRelations} typed failure relations.`,
+          );
+        }
+      } else if (member.kind === "function") {
+        add(
+          "missing-provenance",
+          member.id,
+          `${label} needs a structured call signature.`,
+        );
+      }
+      if (member.kind === "variable") {
+        requireType(member.id, `${label} value`, member.valueType);
+      }
+      requireExamples(member.id, label, member.examples, member.name, 2);
     }
     for (const relation of [
       ...symbol.relations,

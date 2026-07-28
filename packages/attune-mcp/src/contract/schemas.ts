@@ -163,14 +163,14 @@ export const AttuneFailure = Schema.Struct(FailureFields).annotate({
 export type AttuneFailure = typeof AttuneFailure.Type;
 
 /**
- * Tagged Effect failure returned when an invocation cannot be accepted.
+ * Tagged Effect failure returned when an invocation cannot enter its tool boundary.
  *
  * @remarks
- * Accepted native-tool failures normally become terminal receipt values.
- * This error channel is reserved for boundary failures such as conflicting
- * invocation identity, unavailable workspace state, or a closed contract
- * mismatch. Callers should branch on `code` rather than parse `message`.
+ * {@link AttuneToolFailure} is reserved for boundary rejection: conflicting invocation identity, unavailable workspace state, process admission failure, or a value that violates the closed {@link AttuneToolkit} contract. The operation has not produced trustworthy accepted evidence merely because an exception object exists.
  *
+ * Native failures after acceptance normally become failed or cancelled {@link AttuneReceipt} values, preserving their input digest, toolchain digest, artifacts, and terminal status as data. This separation lets {@link Attune.execute} return reproducible failure evidence without collapsing every native outcome into the Effect error channel.
+ *
+ * Branch on `code`, use bounded `expected`, `observed`, and `path` evidence when present, and never parse `message` as protocol. Invalid {@link Investigation} use is instead an {@link InvestigationLifecycleError}; an interrupted accepted exchange should be checked with {@link Attune.recoverTerminal}.
  * @example Construct a rejected boundary
  * ```ts
  * // @filename: tool-error.ts
@@ -242,13 +242,14 @@ export const CancelledReceipt = Schema.Struct({
 export type CancelledReceipt = typeof CancelledReceipt.Type;
 
 /**
- * Durable evidence for one accepted operation.
+ * Durable, correlated evidence for one operation accepted by {@link Attune}.
  *
  * @remarks
- * Narrow `status` before reading success or failure fields. Receipts retain
- * input and toolchain digests, artifact references, and the correlated
- * investigation snapshot needed to reproduce or recover work.
+ * Narrow `status` before reading terminal fields: `"succeeded"` always contains the exact resulting snapshot, while `"failed"` and `"cancelled"` contain structured failure evidence and may lack a resulting commit. Every branch remains ordinary {@link AttuneReceipt} data rather than an untyped native exception.
  *
+ * The receipt binds invocation identity, {@link Investigation.investigationId}, operation name, input digest, toolchain digest, timestamps, and artifact references. When a snapshot exists it can be compared with {@link Investigation.snapshot}, making reproduced or promoted evidence traceable to one exact repository state.
+ *
+ * {@link Attune.execute} returns the correlated receipt with its result and active proof, replacing that proof only after a succeeded snapshot transition. If the caller loses that exchange after acceptance, {@link Attune.recoverTerminal} validates the persisted receipt before returning it; {@link AttuneToolFailure} still represents rejection before trustworthy terminal evidence exists.
  * @example Narrow terminal status
  * ```ts
  * // @filename: receipt.ts

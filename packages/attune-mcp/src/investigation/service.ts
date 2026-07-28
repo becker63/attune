@@ -74,16 +74,14 @@ type InvestigationValidationRequest = InvestigationBoundInput & {
 };
 
 /**
- * Performs the complete investigation lifecycle without exposing transport
- * identities or runtime implementation objects.
+ * Performs the complete typed lifecycle from repository revision to durable evidence.
  *
  * @remarks
- * Methods appear in lifecycle order. Carry the returned {@link Investigation}
- * into the next call and replace an active proof with the one returned by
- * `execute`. Native failures remain in results and {@link AttuneReceipt};
- * rejected boundaries fail with {@link AttuneToolFailure}, while invalid proof
- * use fails with {@link InvestigationLifecycleError}.
+ * Read the members in lifecycle order: {@link Attune.materialize} binds an exact revision, {@link Attune.activate} validates its first proof, preserving calls go through {@link Attune.execute}, and {@link Attune.finalize} closes the investigation. {@link Attune.acquireActive} is the restart path, not an alternate way to create authority.
  *
+ * Every state-changing member accepts or returns an {@link Investigation} whose state parameter names the next legal operation. Treat the value as consumed even though JavaScript cannot enforce linear ownership: after {@link Attune.execute} or a transition, discard the older proof and carry only the newly returned one.
+ *
+ * Accepted native outcomes remain data in {@link AttuneReceipt}; they do not escape as arbitrary exceptions. {@link AttuneToolFailure} represents a call rejected at the typed tool boundary, {@link InvestigationLifecycleError} represents invalid capability use, and {@link Attune.recoverTerminal} reads a correlated result when the caller lost the original exchange.
  * @example Infer a request in a second file
  * ```ts
  * // @filename: inputs.ts
@@ -107,14 +105,17 @@ type InvestigationValidationRequest = InvestigationBoundInput & {
  */
 export interface Attune {
   /**
-   * Materializes an exact repository revision and issues its initial proof.
+   * Materializes one exact repository revision and issues the initial lifecycle proof.
    *
    * @remarks
-   * This is the only transition that creates an investigation identity.
+   * {@link Attune.materialize} is the sole identity-creating transition. Its input is exactly the repository materialization contract exposed by {@link AttuneToolkit}; the caller supplies a remote, a revision, a stable invocation identity, and optional references without manufacturing lifecycle fields.
    *
-   * @param input - The unchanged `repository_materialize` wire request.
-   * @returns A materialized proof on success, or the terminal rejected result.
-   * @throws `AttuneToolFailure` when the invocation cannot be accepted.
+   * A successful result carries an {@link Investigation} in the `"materialized"` state, tied to the resolved full commit rather than a moving branch name. A terminal native rejection instead carries an {@link AttuneReceipt} and no proof, so rejected work cannot be activated accidentally.
+   *
+   * Continue only through {@link Attune.activate}. {@link AttuneToolFailure} means the invocation could not be accepted or correlated at the boundary; it is distinct from a failed terminal receipt, which is reproducible evidence returned as ordinary result data.
+   * @param input - The exact materialization request inferred from {@link Attune.materialize}; unlike later operations, it contains no pre-existing {@link Investigation}.
+   * @returns A discriminated result containing either a new materialized {@link Investigation} and success evidence, or a rejected {@link AttuneReceipt} with no granted authority.
+   * @throws Boundary rejection raises {@link AttuneToolFailure} when the invocation identity, workspace boundary, or materialization contract cannot be accepted safely.
    * @produces materialized
    *
    * @example Infer the wire request from the method
@@ -141,15 +142,18 @@ export interface Attune {
     AttuneOperationError<"repository_materialize">
   >;
   /**
-   * Revalidates a materialized snapshot and grants active permission.
+   * Revalidates a materialized snapshot and grants active-operation permission.
    *
    * @remarks
-   * Activation consumes the materialized proof; carry only the returned proof.
+   * {@link Attune.activate} accepts only the {@link Investigation} returned by successful {@link Attune.materialize}. The `"materialized"` state records that the repository exists at an exact commit but has not yet been revalidated as the clean active workspace used by analysis operations.
    *
-   * @param investigation - The proof returned by successful materialization.
-   * @returns A fresh active proof for preserving operations.
-   * @throws `AttuneToolFailure` when durable workspace validation fails.
-   * @throws `InvestigationLifecycleError` when the proof is invalid or stale.
+   * Runtime validation checks issuer provenance, revocation, persisted investigation identity, the current full Git commit, and initial cleanliness. On success the input proof is revoked and a fresh {@link Investigation} in the `"active"` state becomes the only value that should reach {@link Attune.execute} or {@link Attune.finalize}.
+   *
+   * A stale or forged proof fails with {@link InvestigationLifecycleError}; a durable workspace inspection failure uses {@link AttuneToolFailure}. Neither outcome grants active authority, and retrying should begin by correcting the evidence rather than asserting a different TypeScript state.
+   * @param investigation - The genuine materialized {@link Investigation} issued by {@link Attune.materialize}; the transition consumes it.
+   * @returns A fresh active {@link Investigation} that may be passed to {@link Attune.execute} or {@link Attune.finalize}.
+   * @throws Boundary inspection raises {@link AttuneToolFailure} when the persisted workspace cannot be inspected or validated safely.
+   * @throws Invalid authority raises {@link InvestigationLifecycleError} when capability provenance, lifecycle state, identity, snapshot, or revocation evidence disagrees.
    * @requires materialized
    * @produces active
    *
@@ -177,15 +181,18 @@ export interface Attune {
     AttuneToolFailure | InvestigationLifecycleError
   >;
   /**
-   * Reacquires active permission after a process restart.
+   * Reacquires active permission from persisted identity and snapshot evidence.
    *
    * @remarks
-   * Supply the persisted identity and exact expected commit; both are rechecked.
+   * {@link Attune.acquireActive} is the restart counterpart to {@link Attune.activate}. It accepts the persisted {@link Investigation.investigationId} and exact {@link Investigation.snapshot} commit because the in-memory branded proof cannot and should not be serialized across processes.
    *
-   * @param input - Persisted investigation identity and expected snapshot.
-   * @returns An active proof after validating durable state.
-   * @throws `AttuneToolFailure` when durable workspace inspection fails.
-   * @throws `InvestigationLifecycleError` when persisted evidence disagrees.
+   * Reacquisition inspects durable state, confirms that the investigation has not been finalized, and compares the requested snapshot with the repository head before issuing a new active {@link Investigation}. Supplying an identity alone is never enough to recover authority.
+   *
+   * Use the returned proof with {@link Attune.execute} or {@link Attune.finalize}, and replace it after each subsequent transition. {@link AttuneToolFailure} reports an inspection boundary failure, while {@link InvestigationLifecycleError} reports durable evidence that disagrees with the requested identity or snapshot.
+   * @param input - The persisted {@link Investigation.investigationId} and exact {@link Investigation.snapshot} commit expected after restart.
+   * @returns A newly issued active {@link Investigation} after the durable workspace and lifecycle record agree.
+   * @throws Boundary inspection raises {@link AttuneToolFailure} when the durable workspace cannot be mounted or inspected.
+   * @throws Invalid authority raises {@link InvestigationLifecycleError} when the persisted identity, commit, or finalization evidence does not match the request.
    * @produces active
    *
    * @example Rebuild the request from the last proof
@@ -217,19 +224,21 @@ export interface Attune {
     AttuneToolFailure | InvestigationLifecycleError
   >;
   /**
-   * Runs one preserving operation against an active snapshot.
+   * Runs one closed preserving operation against an active investigation snapshot.
    *
    * @remarks
-   * The operation name selects its request and result while the proof supplies
-   * investigation identity. Replace the input proof with the returned one.
+   * The `Name` argument selects one preserving entry in {@link AttuneToolkit}, and that selection determines both the `input` type and the native result type. The active {@link Investigation} supplies identity and expected snapshot fields, so application callers describe only operation-specific intent.
    *
-   * @typeParam Name - The closed preserving operation selected for this call.
-   * @param investigation - Current active proof; it is consumed on transition.
-   * @param name - One registered operation whose transition is `preserve`.
-   * @param input - Caller fields; identity and snapshot come from the proof.
-   * @returns The result, receipt, and active proof to carry forward.
-   * @throws `InvestigationLifecycleError` when active authority is invalid.
-   * @throws `AttuneToolFailure` when the selected boundary rejects the call.
+   * Every accepted call returns its result, correlated {@link AttuneReceipt}, and an active {@link Investigation}. A succeeded receipt replaces the proof at the new snapshot; a failed or cancelled receipt returns the still-valid original proof because no repository transition was accepted.
+   *
+   * {@link InvestigationLifecycleError} prevents stale, forged, revoked, or non-active authority from crossing the boundary. {@link AttuneToolFailure} rejects an invalid selected call; after an interrupted accepted exchange, use {@link Attune.recoverTerminal} with the original wire identity instead of running the operation again.
+   * @typeParam Name - The preserving {@link AttuneToolkit} operation whose request, result, receipt, and failure types are selected for this call.
+   * @param investigation - The current active {@link Investigation}; a succeeded operation consumes and replaces it, while failed or cancelled terminal evidence leaves it valid.
+   * @param name - One closed {@link AttuneToolkit} operation whose lifecycle transition is `preserve`.
+   * @param input - Operation-specific caller fields; {@link Attune.execute} derives investigation identity and expected snapshot from the proof.
+   * @returns The selected result, correlated {@link AttuneReceipt}, and active {@link Investigation}: replaced after success or retained after failed or cancelled evidence.
+   * @throws Invalid authority raises {@link InvestigationLifecycleError} when active permission is forged, stale, revoked, or in the wrong lifecycle state.
+   * @throws Boundary rejection raises {@link AttuneToolFailure} when the selected operation or its boundary contract rejects the call before accepted execution.
    * @requires active
    * @produces active
    *
@@ -267,17 +276,19 @@ export interface Attune {
     AttuneOperationError<Name> | InvestigationLifecycleError
   >;
   /**
-   * Finalizes an active investigation at its exact clean snapshot.
+   * Finalizes an active investigation only at its exact clean snapshot.
    *
    * @remarks
-   * A rejected terminal result returns an active proof so the caller may repair
-   * the repository and try again.
+   * {@link Attune.finalize} consumes an active {@link Investigation} and checks the same exact identity and full commit carried by its proof. Finalization is exclusive: it records terminal lifecycle evidence only when the repository satisfies the selected clean-snapshot policy.
    *
-   * @param investigation - Current active proof.
-   * @param input - Finalization policy fields; identity comes from the proof.
-   * @returns Finalized evidence, or the still-active proof after rejection.
-   * @throws `AttuneToolFailure` when finalization cannot cross the boundary.
-   * @throws `InvestigationLifecycleError` when active authority is invalid.
+   * The returned discriminant tells the caller what authority remains. `"finalized"` carries an {@link Investigation} that cannot enter preserving methods; `"active"` accompanies a rejected terminal {@link AttuneReceipt} and retains the original active proof so the caller can repair the repository deliberately.
+   *
+   * Continue with no operation after successful finalization. After a rejected result, carry only the returned active proof into {@link Attune.execute} or a later {@link Attune.finalize}; boundary rejection uses {@link AttuneToolFailure}, while invalid proof use remains an {@link InvestigationLifecycleError}.
+   * @param investigation - The current active {@link Investigation}, consumed only when finalization succeeds and otherwise returned for deliberate repair.
+   * @param input - Finalization policy fields only; {@link Attune.finalize} supplies identity and exact snapshot from the proof.
+   * @returns Finalized {@link Investigation} evidence on success, or a rejected {@link AttuneReceipt} plus the retained active proof when repair remains legal.
+   * @throws Boundary rejection raises {@link AttuneToolFailure} when finalization cannot be accepted or correlated at the tool boundary.
+   * @throws Invalid authority raises {@link InvestigationLifecycleError} when active capability provenance, identity, snapshot, revocation, or state disagrees.
    * @requires active
    * @produces finalized
    *
@@ -308,18 +319,20 @@ export interface Attune {
     AttuneToolFailure | InvestigationLifecycleError
   >;
   /**
-   * Reads a durable terminal result after an interrupted caller exchange.
+   * Reads a correlated durable terminal result after an interrupted exchange.
    *
    * @remarks
-   * Recovery is a correlated read: reuse the exact wire input from the lost
-   * exchange and handle `undefined` as “no durable terminal result”.
+   * {@link Attune.recoverTerminal} is a read, not a retry. Supply the same active operation name and exact wire input used by the interrupted call so persisted invocation identity, investigation identity, expected snapshot, input digest, and {@link AttuneReceipt} can be correlated.
    *
-   * @typeParam Name - The closed terminal operation being correlated.
-   * @param name - Registered non-materializing operation.
-   * @param input - Original wire input used to correlate the receipt.
-   * @returns The verified result, or `undefined` when none is durable.
-   * @throws `InvestigationLifecycleError` when correlation evidence disagrees.
-   * @throws `AttuneToolFailure` when the selected lookup boundary fails.
+   * A verified result is the same terminal contract selected by {@link AttuneToolkit}; `undefined` means no durable terminal result exists for that correlation key. Recovery issues no {@link Investigation}, changes no lifecycle state, and never converts absence into synthetic success.
+   *
+   * Materialization is deliberately excluded because it creates investigation identity rather than consuming an established one. {@link InvestigationLifecycleError} reports contradictory correlation evidence, {@link AttuneToolFailure} reports lookup-boundary failure, and callers should resume with a separately reacquired proof through {@link Attune.acquireActive}.
+   * @typeParam Name - The non-materializing {@link AttuneToolkit} operation whose durable terminal contract is being correlated.
+   * @param name - The same registered operation name passed to the interrupted {@link Attune.execute} or {@link Attune.finalize} exchange.
+   * @param input - The original complete wire input whose identities and digest correlate the persisted {@link AttuneReceipt}.
+   * @returns The verified operation result containing its {@link AttuneReceipt}, or `undefined` when no durable terminal result exists.
+   * @throws Invalid correlation raises {@link InvestigationLifecycleError} when persisted identity, snapshot, operation, or digest evidence contradicts the request.
+   * @throws Boundary lookup raises {@link AttuneToolFailure} when the selected durable lookup cannot complete.
    *
    * @example Recover a preserving operation
    * ```ts

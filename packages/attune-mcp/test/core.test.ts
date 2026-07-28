@@ -23,6 +23,8 @@ const INVOCATION = "test-1" as InvocationId;
 
 const config = (home: string, outputLimitBytes = 1024) =>
   fixtureRuntimeConfig(home, { outputLimitBytes, inlineLimitBytes: 64 });
+const output = (directory: string, stream: "stderr" | "stdout") =>
+  readFile(Path.join(directory, `${stream}.txt`), "utf8");
 
 describe("small mechanical core", () => {
   it("canonicalizes recursively and allocates branded identities", () => {
@@ -98,17 +100,12 @@ describe("small mechanical core", () => {
         controller.signal,
       );
       await vi.waitFor(
-        async () =>
-          expect(
-            await readFile(Path.join(directory, "stdout.txt"), "utf8"),
-          ).toBe("ready"),
+        async () => expect(await output(directory, "stdout")).toBe("ready"),
         { timeout: 2_000 },
       );
       controller.abort();
       expect((await running).termination).toBe("cancelled");
-      expect(await readFile(Path.join(directory, "stdout.txt"), "utf8")).toBe(
-        "ready",
-      );
+      expect(await output(directory, "stdout")).toBe("ready");
     });
   });
 
@@ -129,12 +126,8 @@ describe("small mechanical core", () => {
         controller.signal,
       );
       expect(result.termination).toBe("cancelled");
-      expect(await readFile(Path.join(directory, "stdout.txt"), "utf8")).toBe(
-        "",
-      );
-      expect(await readFile(Path.join(directory, "stderr.txt"), "utf8")).toBe(
-        "",
-      );
+      expect(await output(directory, "stdout")).toBe("");
+      expect(await output(directory, "stderr")).toBe("");
     });
   });
 

@@ -369,7 +369,7 @@ token.value;
             {
               apiHref: "/api/attune.html",
               documentation:
-                "Performs the complete investigation lifecycle without exposing transport identities or runtime implementation objects.",
+                "Performs the complete typed lifecycle from repository revision to durable evidence.",
               target: "Attune",
             },
           ],
@@ -380,11 +380,36 @@ token.value;
 
     expect(html).toContain('data-twoslash-target="Attune"');
     expect(html).toContain(
-      "Performs the complete investigation lifecycle without exposing transport",
+      "Performs the complete typed lifecycle from repository revision to durable evidence",
     );
     expect(html).not.toContain("@remarks");
     expect(html).not.toContain("@example");
     expect(html).toContain('data-code="const attune = Attune.make();"');
+  });
+
+  it("matches linked TSDoc when compiler display inserts punctuation space", () => {
+    const html = renderCodeBlock(
+      `interface Attune {}
+/** Durable evidence accepted by {@link Attune}. */
+interface Receipt { readonly status: "accepted" }
+// ---cut-before---
+declare const receipt: Receipt;`,
+      {
+        twoslash: {
+          idPrefix: "linked-doc-punctuation",
+          identifiers: [
+            {
+              apiHref: "/api/receipt.html",
+              documentation: "Durable evidence accepted by {@link Attune}.",
+              target: "Receipt",
+            },
+          ],
+          requiredTargets: ["Receipt"],
+        },
+      },
+    );
+
+    expect(html).toContain('data-twoslash-target="Receipt"');
   });
 
   it("resolves Effect types used by source-authored lifecycle examples", () => {

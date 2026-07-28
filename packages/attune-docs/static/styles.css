@@ -230,11 +230,12 @@ pre code {
   margin-bottom: 18px;
 }
 
-.nav-section h2 {
+.nav-label {
   margin: 0 8px 5px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 650;
+  line-height: 1.4;
 }
 
 .nav-section > a,
@@ -604,6 +605,81 @@ tr:last-child td {
 .source-link {
   margin-top: 18px;
   font-size: 13px;
+}
+
+.type-heading a {
+  text-decoration-thickness: 1px;
+}
+
+.type-heading span {
+  color: var(--text);
+}
+
+.reference-shape > h3 {
+  margin-top: 30px;
+  padding-top: 4px;
+}
+
+.contract {
+  max-width: 820px;
+  padding: 18px 0 24px;
+  border-top: 1px solid var(--border);
+}
+
+.contract + .contract {
+  margin-top: 2px;
+}
+
+.contract-name {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.type-declaration {
+  display: block;
+  max-width: 100%;
+  margin: 12px 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.type-references {
+  margin: 12px 0 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+ul.type-references {
+  padding-left: 24px;
+}
+
+.not-applicable {
+  padding-left: 14px;
+  color: var(--muted);
+  border-left: 2px solid var(--border-strong);
+}
+
+.value-contract {
+  padding: 16px 0 4px;
+  border-top: 1px solid var(--border);
+}
+
+.failure-list li + li {
+  margin-top: 8px;
+}
+
+.static-publication {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.artifact-heading {
+  margin-top: 28px;
 }
 
 .example-sequence {

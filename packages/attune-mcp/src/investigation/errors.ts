@@ -18,16 +18,14 @@ export const InvestigationLifecycleFailureReason = Schema.Literals([
 ]);
 
 /**
- * A typed failure raised before an operation crosses the investigation
- * boundary.
+ * Typed evidence that an operation did not cross the investigation boundary.
  *
  * @remarks
- * `UnrecognizedCapability`, `UnrecognizedOperation`, and `StateMismatch` are
- * programming errors. `IdentityMismatch` and `SnapshotMismatch` mean the
- * caller combined input from a different investigation or revision.
- * `ValidationFailed` means the persisted workspace no longer proves the
- * materialized capability.
+ * `UnrecognizedCapability`, `UnrecognizedOperation`, and `StateMismatch` report invalid use of {@link Investigation} authority: the proof is forged or revoked, the selected member is outside {@link AttuneToolkit}, or {@link Investigation.state} cannot enter the requested {@link Attune} transition.
  *
+ * `IdentityMismatch` and `SnapshotMismatch` mean the caller combined evidence from different investigations or commits. Reload {@link Investigation.investigationId} and {@link Investigation.snapshot} together, then use {@link Attune.acquireActive} only when durable state still agrees.
+ *
+ * `ValidationFailed` means the persisted workspace no longer proves the requested capability. This failure is distinct from {@link AttuneToolFailure}, which rejects a tool invocation boundary, and from a failed {@link AttuneReceipt}, which records an accepted native operation's terminal outcome.
  * @example Construct a state mismatch
  * ```ts
  * // @filename: lifecycle-error.ts

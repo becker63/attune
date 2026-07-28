@@ -1,4 +1,4 @@
-export const API_MANIFEST_SCHEMA_VERSION = "4.0.0" as const;
+export const API_MANIFEST_SCHEMA_VERSION = "5.0.0" as const;
 
 export type ApiSymbolKind =
   | "class"
@@ -70,6 +70,33 @@ export interface ApiProvenance {
   readonly implementation: SourceSpan;
 }
 
+/** One identifier in a type expression and the declaration it resolves to. */
+export interface ApiTypeReferenceTarget {
+  readonly name: string;
+  readonly source: SourceSpan;
+  readonly targetSymbolId?: string;
+}
+
+/** Exact source-authored type syntax plus its locally resolved declarations. */
+export interface ApiTypeReference {
+  readonly text: string;
+  readonly source: SourceSpan;
+  readonly references: readonly ApiTypeReferenceTarget[];
+}
+
+export interface ApiCallParameter {
+  readonly index: number;
+  readonly name: string;
+  readonly declaration: string;
+  readonly source: SourceSpan;
+  readonly type: ApiTypeReference;
+}
+
+export interface ApiCallSignature {
+  readonly parameters: readonly ApiCallParameter[];
+  readonly returns: ApiTypeReference;
+}
+
 export interface ApiMember {
   readonly id: string;
   readonly name: string;
@@ -77,6 +104,8 @@ export interface ApiMember {
   readonly anchor: string;
   readonly kind: ApiSymbolKind;
   readonly signature: string;
+  readonly callSignatures: readonly ApiCallSignature[];
+  readonly valueType?: ApiTypeReference;
   readonly documentation: DocumentationText;
   readonly typeParameters: readonly TypeParameterDoc[];
   readonly examples: readonly ApiExample[];
@@ -87,6 +116,7 @@ export interface ApiMember {
 export interface ApiSymbol {
   readonly id: string;
   readonly exportName: string;
+  readonly typeExpression: string;
   readonly slug: string;
   readonly kind: ApiSymbolKind;
   readonly declaration: string;

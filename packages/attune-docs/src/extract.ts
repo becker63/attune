@@ -23,12 +23,14 @@ import {
 import { digest, digestValue } from "./canonical.ts";
 import {
   API_MANIFEST_SCHEMA_VERSION,
+  type ApiCallSignature,
   type ApiExample,
   type ApiManifest,
   type ApiMember,
   type ApiProvenance,
   type ApiSymbol,
   type ApiSymbolKind,
+  type ApiTypeReference,
   type DocumentationPolicy,
   type DocumentationText,
   type LifecycleRelation,
@@ -70,7 +72,11 @@ const slug = (name: string): string =>
 const nodeKind = (node: MorphNode): ApiSymbolKind => {
   if (Node.isClassDeclaration(node)) return "class";
   if (Node.isEnumDeclaration(node)) return "enum";
-  if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
+  if (
+    Node.isFunctionDeclaration(node) ||
+    Node.isMethodDeclaration(node) ||
+    Node.isMethodSignature(node)
+  ) {
     return "function";
   }
   if (Node.isInterfaceDeclaration(node)) return "interface";
@@ -84,6 +90,24 @@ const nodeKind = (node: MorphNode): ApiSymbolKind => {
     return "variable";
   }
   return "unknown";
+};
+
+const typeExpression = (
+  exportName: string,
+  nodes: readonly MorphNode[],
+  parameters: readonly TypeParameterDoc[],
+): string => {
+  const hasTypeDeclaration = nodes.some(
+    (node) =>
+      Node.isClassDeclaration(node) ||
+      Node.isEnumDeclaration(node) ||
+      Node.isInterfaceDeclaration(node) ||
+      Node.isTypeAliasDeclaration(node),
+  );
+  if (!hasTypeDeclaration) return `typeof ${exportName}`;
+  return parameters.length === 0
+    ? exportName
+    : `${exportName}<${parameters.map((parameter) => parameter.name).join(", ")}>`;
 };
 
 const repositoryUrl = (
@@ -171,6 +195,14 @@ interface ParsedDocs {
 
 const parsedDocs = (docs: readonly JSDoc[]): ParsedDocs => {
   const tags = docs.flatMap((doc) => doc.getTags());
+  const malformedFailure = tags.find(
+    (tag) => tag.getTagName() === "throws" && tagComment(tag) === "",
+  );
+  if (malformedFailure !== undefined) {
+    throw new Error(
+      `${malformedFailure.getSourceFile().getBaseName()}:${malformedFailure.getStartLineNumber()} @throws must begin with prose or a code identifier before an inline link.`,
+    );
+  }
   const tagged = (names: readonly string[]): readonly string[] =>
     tags
       .filter((tag) => names.includes(tag.getTagName()))
@@ -240,7 +272,7 @@ const typeParameters = (
       descriptions.set(name, description.join(" ").replace(/^-\s*/u, ""));
     }
   }
-  return nodes
+  const parameters = nodes
     .flatMap((node) => {
       const typed = node as MorphNode & {
         readonly getTypeParameters?: () => readonly TypeParameterDeclaration[];
@@ -264,6 +296,20 @@ const typeParameters = (
           : { default: parameter.getDefault()!.getText() }),
       };
     });
+  const unique = new Map<string, TypeParameterDoc>();
+  for (const parameter of parameters) {
+    const existing = unique.get(parameter.name);
+    if (
+      existing !== undefined &&
+      JSON.stringify(existing) !== JSON.stringify(parameter)
+    ) {
+      throw new Error(
+        `Merged type parameter "${parameter.name}" has incompatible declarations.`,
+      );
+    }
+    unique.set(parameter.name, parameter);
+  }
+  return [...unique.values()];
 };
 
 const signature = (node: MorphNode, name?: string): string => {
@@ -325,9 +371,137 @@ const provenance = (
   };
 };
 
+const sourceSpanKey = (source: SourceSpan): string =>
+  `${source.path}\u0000${source.start}\u0000${source.end}`;
+
+const typeReference = (
+  node: MorphNode,
+  packageRoot: string,
+  base: string,
+  ref: string,
+): ApiTypeReference => {
+  const root = Path.resolve(packageRoot);
+  const local = (path: string): boolean => {
+    const resolved = Path.resolve(path);
+    return resolved === root || resolved.startsWith(`${root}${Path.sep}`);
+  };
+  const identifiers = [
+    ...(Node.isIdentifier(node) ? [node] : []),
+    ...node.getDescendantsOfKind(ts.SyntaxKind.Identifier),
+  ].filter((identifier) => {
+    const parent = identifier.getParent();
+    if (
+      parent === undefined ||
+      (!Node.isPropertyDeclaration(parent) &&
+        !Node.isPropertySignature(parent) &&
+        !Node.isParameterDeclaration(parent) &&
+        !Node.isMethodDeclaration(parent) &&
+        !Node.isMethodSignature(parent) &&
+        !Node.isTypeParameterDeclaration(parent))
+    ) {
+      return true;
+    }
+    return parent.getNameNode() !== identifier;
+  });
+  const references = new Map<string, ApiTypeReference["references"][number]>();
+  for (const identifier of identifiers) {
+    let symbol = identifier.getSymbol();
+    for (let depth = 0; symbol !== undefined && depth < 16; depth += 1) {
+      const aliased = symbol.getAliasedSymbol();
+      if (aliased === undefined || aliased === symbol) break;
+      symbol = aliased;
+    }
+    for (const declaration of symbol?.getDeclarations() ?? []) {
+      if (!local(declaration.getSourceFile().getFilePath())) continue;
+      const source = span(declaration, base, ref);
+      const target = {
+        name: identifier.getText(),
+        source,
+      };
+      references.set(`${target.name}\u0000${sourceSpanKey(source)}`, target);
+    }
+  }
+  return {
+    text: node.getText(),
+    source: span(node, base, ref),
+    references: [...references.values()].sort(
+      (left, right) =>
+        left.source.path.localeCompare(right.source.path) ||
+        left.source.start - right.source.start ||
+        left.source.end - right.source.end ||
+        left.name.localeCompare(right.name),
+    ),
+  };
+};
+
+const callSignature = (
+  node: MorphNode,
+  packageRoot: string,
+  base: string,
+  ref: string,
+): ApiCallSignature | undefined => {
+  if (
+    !Node.isMethodDeclaration(node) &&
+    !Node.isMethodSignature(node) &&
+    !Node.isFunctionDeclaration(node)
+  ) {
+    return undefined;
+  }
+  const returns = node.getReturnTypeNode();
+  if (returns === undefined) {
+    throw new Error(
+      `${node.getSourceFile().getBaseName()}:${node.getStartLineNumber()} requires an explicit return type.`,
+    );
+  }
+  return {
+    parameters: node.getParameters().map((parameter, index) => {
+      const type = parameter.getTypeNode();
+      if (type === undefined) {
+        throw new Error(
+          `${node.getSourceFile().getBaseName()}:${parameter.getStartLineNumber()} parameter "${parameter.getName()}" requires an explicit type.`,
+        );
+      }
+      return {
+        index,
+        name: parameter.getName(),
+        declaration: parameter.getText(),
+        source: span(parameter, base, ref),
+        type: typeReference(type, packageRoot, base, ref),
+      };
+    }),
+    returns: typeReference(returns, packageRoot, base, ref),
+  };
+};
+
+const valueType = (
+  nodes: readonly MorphNode[],
+  packageRoot: string,
+  base: string,
+  ref: string,
+): ApiTypeReference | undefined => {
+  const values = nodes.filter(
+    (node) =>
+      Node.isPropertyDeclaration(node) || Node.isPropertySignature(node),
+  );
+  if (values.length === 0) return undefined;
+  const types = values.map((node) => {
+    const type = node.getTypeNode();
+    if (type === undefined) {
+      throw new Error(
+        `${node.getSourceFile().getBaseName()}:${node.getStartLineNumber()} property requires an explicit type.`,
+      );
+    }
+    return typeReference(type, packageRoot, base, ref);
+  });
+  if (types.some((type) => type.text !== types[0]!.text)) {
+    throw new Error("Merged property declarations disagree on their type.");
+  }
+  return types[0];
+};
+
 const relationTarget = (comment: string): string =>
   (
-    /^\{@link\s+([^|\s}]+)/u.exec(comment)?.[1] ??
+    /\{@link\s+([^|\s}]+)/u.exec(comment)?.[1] ??
     /^`([^`]+)`/u.exec(comment)?.[1] ??
     comment.split(/\r?\n|\||\s+-\s+|\s{2,}/u)[0]!
   ).trim();
@@ -419,6 +593,7 @@ const members = (
   sourceNodes: readonly MorphNode[],
   declarationNodes: readonly MorphNode[],
   packageName: string,
+  packageRoot: string,
   base: string,
   ref: string,
 ): readonly ApiMember[] => {
@@ -445,6 +620,14 @@ const members = (
     const examples = examplePrograms(docs.docs, name, memberId, base, ref);
     const declared = declarationByName.get(name) ?? nodes;
     const memberSignature = declared.map((node) => signature(node)).join("\n");
+    const callSignatures = nodes.flatMap((node) => {
+      const callable = callSignature(node, packageRoot, base, ref);
+      return callable === undefined ? [] : [callable];
+    });
+    const propertyType = valueType(nodes, packageRoot, base, ref);
+    if (callSignatures.length > 0 && propertyType !== undefined) {
+      throw new Error(`${memberId} cannot be both callable and a property.`);
+    }
     return {
       id: memberId,
       name,
@@ -452,6 +635,8 @@ const members = (
       anchor: `member-${slug(name)}`,
       kind: nodeKind(nodes[0]!),
       signature: memberSignature,
+      callSignatures,
+      ...(propertyType === undefined ? {} : { valueType: propertyType }),
       documentation: docs.text,
       typeParameters: typeParameters(nodes, docs.tags),
       examples,
@@ -541,6 +726,12 @@ const buildDeclarations = (): void => {
 };
 
 const assertSpans = async (manifest: ApiManifest): Promise<void> => {
+  const typeSpans = (
+    type: ApiTypeReference | undefined,
+  ): readonly SourceSpan[] =>
+    type === undefined
+      ? []
+      : [type.source, ...type.references.map((reference) => reference.source)];
   const spans = [
     manifest.package.provenance.tsdoc,
     manifest.package.provenance.declaration,
@@ -559,6 +750,14 @@ const assertSpans = async (manifest: ApiManifest): Promise<void> => {
         member.provenance.implementation,
         ...member.examples.map((example) => example.source),
         ...member.relations.map((relation) => relation.source),
+        ...typeSpans(member.valueType),
+        ...member.callSignatures.flatMap((callable) => [
+          ...callable.parameters.flatMap((parameter) => [
+            parameter.source,
+            ...typeSpans(parameter.type),
+          ]),
+          ...typeSpans(callable.returns),
+        ]),
       ]),
     ]),
   ].filter((value): value is SourceSpan => value !== undefined);
@@ -646,6 +845,7 @@ export const extractApiManifest = async (
   const declared = declarationEntry.getExportedDeclarations();
 
   const symbols: ApiSymbol[] = [];
+  const publicDeclarationIds = new Map<string, string>();
   for (const exportName of sourceOrder(entry, exported)) {
     const sourceNodes = (exported.get(exportName) ?? []).filter((node) =>
       node.getSourceFile().getFilePath().startsWith(packageRoot),
@@ -654,6 +854,13 @@ export const extractApiManifest = async (
     const declarationNodes = declared.get(exportName) ?? sourceNodes;
     const docs = docsFor(sourceNodes);
     const id = `${packageName}#${exportName}`;
+    const symbolTypeParameters = typeParameters(sourceNodes, docs.tags);
+    for (const node of sourceNodes) {
+      publicDeclarationIds.set(
+        sourceSpanKey(span(node, remote, sourceRef)),
+        id,
+      );
+    }
     const examples = examplePrograms(
       docs.docs,
       exportName,
@@ -664,6 +871,11 @@ export const extractApiManifest = async (
     symbols.push({
       id,
       exportName,
+      typeExpression: typeExpression(
+        exportName,
+        sourceNodes,
+        symbolTypeParameters,
+      ),
       slug: slug(exportName),
       kind: nodeKind(sourceNodes[0]!),
       declaration: declarationNodes
@@ -673,12 +885,13 @@ export const extractApiManifest = async (
         .map((node) => signature(node, exportName))
         .join("\n\n"),
       documentation: docs.text,
-      typeParameters: typeParameters(sourceNodes, docs.tags),
+      typeParameters: symbolTypeParameters,
       members: members(
         exportName,
         sourceNodes,
         declarationNodes,
         packageName,
+        packageRoot,
         remote,
         sourceRef,
       ),
@@ -707,12 +920,33 @@ export const extractApiManifest = async (
       ? relation
       : { ...relation, targetSymbolId: target.id };
   };
+  const resolveTypeReference = (type: ApiTypeReference): ApiTypeReference => ({
+    ...type,
+    references: type.references.map((reference) => {
+      const targetSymbolId = publicDeclarationIds.get(
+        sourceSpanKey(reference.source),
+      );
+      return targetSymbolId === undefined
+        ? reference
+        : { ...reference, targetSymbolId };
+    }),
+  });
   const resolvedSymbols = symbols.map((symbol) => ({
     ...symbol,
     relations: symbol.relations.map(resolve),
     members: symbol.members.map((member) => ({
       ...member,
       relations: member.relations.map(resolve),
+      callSignatures: member.callSignatures.map((callable) => ({
+        parameters: callable.parameters.map((parameter) => ({
+          ...parameter,
+          type: resolveTypeReference(parameter.type),
+        })),
+        returns: resolveTypeReference(callable.returns),
+      })),
+      ...(member.valueType === undefined
+        ? {}
+        : { valueType: resolveTypeReference(member.valueType) }),
     })),
   }));
   const packageDoc = entry

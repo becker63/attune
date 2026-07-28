@@ -14,7 +14,7 @@
     "diagnostics"
   ],
   "properties": {
-    "schemaVersion": { "const": "4.0.0" },
+    "schemaVersion": { "const": "5.0.0" },
     "package": { "$ref": "#/$defs/package" },
     "source": { "$ref": "#/$defs/manifestSource" },
     "declaration": { "$ref": "#/$defs/declarationBuild" },
@@ -154,6 +154,55 @@
         "description": { "type": "string", "minLength": 1 }
       }
     },
+    "typeReferenceTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/span" },
+        "targetSymbolId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "typeReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "source", "references"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/span" },
+        "references": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/typeReferenceTarget" }
+        }
+      }
+    },
+    "callParameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "name", "declaration", "source", "type"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "name": { "type": "string", "minLength": 1 },
+        "declaration": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/span" },
+        "type": { "$ref": "#/$defs/typeReference" }
+      }
+    },
+    "callSignature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameters", "returns"],
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/callParameter" }
+        },
+        "returns": { "$ref": "#/$defs/typeReference" }
+      }
+    },
     "member": {
       "type": "object",
       "additionalProperties": false,
@@ -164,6 +213,7 @@
         "anchor",
         "kind",
         "signature",
+        "callSignatures",
         "documentation",
         "typeParameters",
         "examples",
@@ -177,6 +227,12 @@
         "anchor": { "type": "string", "minLength": 1 },
         "kind": { "$ref": "#/$defs/symbolKind" },
         "signature": { "type": "string", "minLength": 1 },
+        "callSignatures": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/callSignature" }
+        },
+        "valueType": { "$ref": "#/$defs/typeReference" },
         "documentation": { "$ref": "#/$defs/documentation" },
         "typeParameters": {
           "type": "array",
@@ -203,6 +259,7 @@
       "required": [
         "id",
         "exportName",
+        "typeExpression",
         "slug",
         "kind",
         "declaration",
@@ -217,6 +274,7 @@
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "exportName": { "type": "string", "minLength": 1 },
+        "typeExpression": { "type": "string", "minLength": 1 },
         "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
         "kind": { "$ref": "#/$defs/symbolKind" },
         "declaration": { "type": "string", "minLength": 1 },

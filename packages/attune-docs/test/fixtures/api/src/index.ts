@@ -145,7 +145,7 @@ export interface Attune {
    * @typeParam Revision - Revision identifier supplied by the caller.
    * @param input - Revision requested by the caller.
    * @returns A materialized investigation.
-   * @throws `ExampleFailure` when the revision cannot be read.
+   * @throws Boundary rejection raises {@link ExampleFailure} when the revision cannot be read.
    * @produces Investigation
    *
    * @example Materialize a revision
@@ -180,6 +180,7 @@ export interface Attune {
    * Finalization consumes active authority and returns terminal evidence.
    *
    * @param investigation - Active capability to finalize.
+   * @param note - Optional source-owned note retained by the caller.
    * @returns Finalized evidence.
    *
    * @example Finalize the capability
@@ -204,7 +205,10 @@ export interface Attune {
    * finalized.state;
    * ```
    */
-  finalize(investigation: Investigation<"active">): Investigation<"finalized">;
+  finalize(
+    investigation: Investigation<"active">,
+    note?: string,
+  ): Investigation<"finalized">;
 }
 
 /** Construct the fixture lifecycle service. */
@@ -243,6 +247,8 @@ export class ExampleFailure extends Error {
    *
    * @remarks
    * The explanation remains caller-facing and omits private diagnostics.
+   *
+   * @returns The stable caller-facing recovery explanation.
    *
    * @example Explain recovery
    * ```ts

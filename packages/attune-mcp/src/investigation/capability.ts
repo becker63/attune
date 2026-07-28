@@ -6,14 +6,15 @@ export type InvestigationState = "materialized" | "active" | "finalized";
 declare const InvestigationCapabilityBrand: unique symbol;
 
 /**
- * Proof that {@link Attune} issued for one investigation and Git snapshot.
+ * Unforgeable lifecycle proof issued by {@link Attune} for one exact Git snapshot.
  *
  * @remarks
- * `State` records the only transition the holder may attempt. The private brand
- * rejects object literals, while the issuing service checks runtime provenance
- * and revocation, so a type assertion grants no authority.
+ * `State` makes the next legal service transition visible: materialized proofs enter {@link Attune.activate}, active proofs enter {@link Attune.execute} or {@link Attune.finalize}, and finalized proofs are evidence rather than authority. {@link Investigation.state} narrows unions to that permission.
  *
- * @typeParam State - The lifecycle permission carried by this proof.
+ * {@link Investigation.investigationId} remains stable across transitions while {@link Investigation.snapshot} binds the proof to an exact full commit and lifecycle state. Together they let {@link AttuneReceipt} evidence be correlated without treating a branch name or mutable working directory as authority.
+ *
+ * A private brand rejects structural object literals, and the issuing {@link Attune} service also checks runtime provenance, revocation, identity, and snapshot evidence. A type assertion can silence TypeScript but cannot create a usable proof; always carry the replacement returned by the latest transition.
+ * @typeParam State - The lifecycle permission exposed by {@link Investigation.state} and accepted by the corresponding {@link Attune} member.
  * @example Read the active permission
  * ```ts
  * // @filename: state.ts
@@ -37,11 +38,14 @@ declare const InvestigationCapabilityBrand: unique symbol;
  */
 export interface Investigation<State extends InvestigationState> {
   /**
-   * Stable identity shared by every state of the investigation.
+   * Stable investigation identity shared by every lifecycle state and receipt.
    *
    * @remarks
-   * Transitions replace the proof but never its investigation identity.
+   * {@link Investigation.investigationId} is created by {@link Attune.materialize} and remains unchanged when {@link Attune.activate}, {@link Attune.execute}, or {@link Attune.finalize} replaces the surrounding proof. It identifies the investigation, not a particular invocation or lifecycle state.
    *
+   * Persist this value with {@link Investigation.snapshot} when a process may restart; {@link Attune.acquireActive} requires both before it will reconstruct active authority. Identity by itself is intentionally insufficient because the repository may have advanced or the investigation may already be finalized.
+   *
+   * Every {@link AttuneReceipt} carries the same identity so recovered tool evidence can be correlated to its investigation. A mismatch produces {@link InvestigationLifecycleError} rather than silently attaching work from another repository lifecycle.
    * @example Read the stable identity
    * ```ts
    * import type { Investigation } from "attune-mcp";
@@ -61,11 +65,14 @@ export interface Investigation<State extends InvestigationState> {
    */
   readonly investigationId: InvestigationId;
   /**
-   * Exact repository snapshot and the permission it carries.
+   * Exact repository commit paired with the lifecycle permission it carries.
    *
    * @remarks
-   * The commit and lifecycle state travel together as immutable evidence.
+   * {@link Investigation.snapshot} keeps the full Git commit and the generic lifecycle state together as immutable evidence. {@link Attune.execute} and {@link Attune.finalize} derive their expected snapshot from this proof instead of trusting duplicate caller fields.
    *
+   * The commit is exact rather than symbolic: moving branches and abbreviated hashes cannot change what the proof authorizes. Successful {@link AttuneReceipt} values can therefore be compared with the proof snapshot when deciding whether evidence belongs to the current investigation state.
+   *
+   * After a restart, persist the snapshot beside {@link Investigation.investigationId} and pass both through {@link Attune.acquireActive}. If durable repository state disagrees, {@link InvestigationLifecycleError} prevents stale authority from being reconstructed.
    * @example Read the exact commit
    * ```ts
    * import type { Investigation } from "attune-mcp";
@@ -86,11 +93,14 @@ export interface Investigation<State extends InvestigationState> {
    */
   readonly snapshot: Readonly<{ id: FullGitCommit; state: State }>;
   /**
-   * Discriminant used to narrow the legal lifecycle operation.
+   * Literal discriminant that narrows the next legal {@link Attune} operation.
    *
    * @remarks
-   * Narrow a union on this field before choosing the next service method.
+   * {@link Investigation.state} mirrors the `State` type parameter at runtime, so narrowing `"materialized"` selects {@link Attune.activate}, narrowing `"active"` selects {@link Attune.execute} or {@link Attune.finalize}, and `"finalized"` selects no further state-changing operation.
    *
+   * The discriminant improves ordinary control flow but does not replace provenance checks. A forged object with the right string still fails inside {@link Attune} with {@link InvestigationLifecycleError}; only the private issuer can bind state, identity, snapshot, and revocation evidence.
+   *
+   * Always inspect the newest proof returned by a transition. Preserving execution returns another active {@link Investigation}, rejected finalization can also return active authority, and successful finalization returns terminal evidence whose state prevents accidental reuse.
    * @example Preserve the literal state
    * ```ts
    * import type { Investigation } from "attune-mcp";

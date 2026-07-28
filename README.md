@@ -29,8 +29,10 @@ installs the same closed schema at the MCP boundary. The two errors distinguish
 an invalid transition from a rejected tool call.
 
 The reference is generated from these declarations and their TSDoc. Every page
-has a Shiki + Twoslash example, so readers can hover the real checked types and
-follow immutable links back to their source.
+uses the same narrative, shape, examples, related-types, and source sequence;
+every heading points back to a real public type. Callable pages show each input
+and output with its exact source annotation, checked Shiki + Twoslash hover, API
+destination, and immutable declaration link.
 
 ## Repository
 

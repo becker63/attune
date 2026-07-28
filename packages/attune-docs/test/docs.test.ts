@@ -1,4 +1,5 @@
 import {
+  cp,
   mkdir,
   mkdtemp,
   readFile,
@@ -10,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import * as Path from "node:path";
 
+import { Window } from "happy-dom";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import { assertApiManifestSchema, auditManifest } from "../src/audit.ts";
@@ -101,7 +103,7 @@ const htmlBelow = async (root: string): Promise<readonly string[]> => {
 
 describe("reference extraction", () => {
   test("preserves package, symbol, and member lifecycle order", () => {
-    expect(manifest.schemaVersion).toBe("4.0.0");
+    expect(manifest.schemaVersion).toBe("5.0.0");
     expect(manifest.package.documentation.summary).toContain(
       "small lifecycle package",
     );
@@ -109,6 +111,16 @@ describe("reference extraction", () => {
       "Investigation",
       "Attune",
       "ExampleFailure",
+    ]);
+    expect(
+      manifest.symbols.map((symbol) => [
+        symbol.exportName,
+        symbol.typeExpression,
+      ]),
+    ).toEqual([
+      ["Investigation", "Investigation<State>"],
+      ["Attune", "Attune"],
+      ["ExampleFailure", "ExampleFailure"],
     ]);
     expect(manifest.symbols[0]?.typeParameters).toEqual([
       {
@@ -131,7 +143,9 @@ describe("reference extraction", () => {
         },
       ],
       returns: "A materialized investigation.",
-      failures: ["`ExampleFailure` when the revision cannot be read."],
+      failures: [
+        "Boundary rejection raises {@link ExampleFailure} when the revision cannot be read.",
+      ],
     });
     expect(attune.members[0]?.typeParameters).toEqual([
       {
@@ -140,6 +154,44 @@ describe("reference extraction", () => {
         name: "Revision",
       },
     ]);
+    expect(attune.members[0]).toMatchObject({
+      kind: "function",
+      callSignatures: [
+        {
+          parameters: [
+            {
+              index: 0,
+              name: "input",
+              declaration: "input: Revision",
+              type: { text: "Revision" },
+            },
+          ],
+          returns: { text: 'Investigation<"materialized">' },
+        },
+      ],
+    });
+    expect(attune.members[0]?.callSignatures[0]?.returns.references).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "Investigation",
+          targetSymbolId: "fixture#Investigation",
+        }),
+      ]),
+    );
+    expect(manifest.symbols[0]?.members[0]).toMatchObject({
+      callSignatures: [],
+      valueType: { text: "State" },
+    });
+    expect(attune.members[1]?.callSignatures[0]?.parameters[1]).toMatchObject({
+      declaration: "note?: string",
+      name: "note",
+      type: { text: "string" },
+    });
+    expect(
+      manifest.symbols
+        .flatMap((symbol) => symbol.members)
+        .some((member) => member.kind === "unknown"),
+    ).toBe(false);
     expect(attune.members[0]?.relations).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -192,6 +244,14 @@ describe("reference extraction", () => {
       verifySpan(attune.provenance.declaration),
       verifySpan(attune.provenance.implementation),
       verifySpan(attune.members[0]!.examples[0]!.source),
+      verifySpan(
+        attune.members[0]!.callSignatures[0]!.parameters[0]!.type.source,
+      ),
+      verifySpan(attune.members[0]!.callSignatures[0]!.parameters[0]!.source),
+      verifySpan(attune.members[0]!.callSignatures[0]!.returns.source),
+      ...attune.members[0]!.callSignatures[0]!.returns.references.map(
+        (reference) => verifySpan(reference.source),
+      ),
     ]);
     expect(attune.provenance.declaration.digest).not.toBe(
       attune.provenance.implementation.digest,
@@ -215,6 +275,33 @@ describe("reference extraction", () => {
     await expect(
       assertApiManifestSchema(manifest, schemaPath),
     ).resolves.toBeUndefined();
+  });
+
+  test("rejects a throws tag that begins with an inline link", async () => {
+    const malformedRoot = await mkdtemp(
+      Path.join(Path.dirname(fixtureRoot), "malformed-"),
+    );
+    outputs.push(malformedRoot);
+    await cp(fixtureRoot, malformedRoot, { recursive: true });
+    const entryPoint = Path.join(malformedRoot, "src", "index.ts");
+    const source = await readFile(entryPoint, "utf8");
+    await writeFile(
+      entryPoint,
+      source.replace(
+        "Boundary rejection raises {@link ExampleFailure}",
+        "{@link ExampleFailure}",
+      ),
+    );
+    await expect(
+      extractFixture({
+        declarationEntryPoint: entryPoint,
+        entryPoint,
+        packageRoot: malformedRoot,
+        tsConfigPath: Path.join(malformedRoot, "tsconfig.json"),
+      }),
+    ).rejects.toThrow(
+      "@throws must begin with prose or a code identifier before an inline link",
+    );
   });
 
   test("audits closed exports and source-owned example floors", () => {
@@ -319,6 +406,115 @@ describe("reference extraction", () => {
         }),
       ]),
     );
+
+    const untypedNarrative: ApiManifest = {
+      ...manifest,
+      symbols: manifest.symbols.map((symbol) =>
+        symbol.id === attune.id
+          ? {
+              ...symbol,
+              members: symbol.members.map((member) =>
+                member.id === materialize.id
+                  ? {
+                      ...member,
+                      documentation: {
+                        ...member.documentation,
+                        parameters: [
+                          {
+                            description: "Wrong source tag.",
+                            name: "revision",
+                          },
+                        ],
+                        returns: "",
+                      },
+                    }
+                  : member,
+              ),
+            }
+          : symbol,
+      ),
+    };
+    expect(
+      auditManifest(untypedNarrative, policy).map(
+        (diagnostic) => diagnostic.message,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("needs source @returns documentation"),
+        expect.stringContaining("do not match its @param tags"),
+      ]),
+    );
+
+    const lostFailureTag: ApiManifest = {
+      ...manifest,
+      symbols: manifest.symbols.map((symbol) =>
+        symbol.id === attune.id
+          ? {
+              ...symbol,
+              members: symbol.members.map((member) =>
+                member.id === materialize.id
+                  ? {
+                      ...member,
+                      documentation: {
+                        ...member.documentation,
+                        failures: [],
+                      },
+                    }
+                  : member,
+              ),
+            }
+          : symbol,
+      ),
+    };
+    expect(
+      auditManifest(lostFailureTag, policy).map(
+        (diagnostic) => diagnostic.message,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "parsed @throws descriptions but 1 typed failure relations",
+        ),
+      ]),
+    );
+
+    const lostTypeTarget: ApiManifest = {
+      ...manifest,
+      symbols: manifest.symbols.map((symbol) =>
+        symbol.id === attune.id
+          ? {
+              ...symbol,
+              members: symbol.members.map((member) =>
+                member.id === materialize.id
+                  ? {
+                      ...member,
+                      callSignatures: member.callSignatures.map(
+                        (signature) => ({
+                          ...signature,
+                          returns: {
+                            ...signature.returns,
+                            references: [],
+                          },
+                        }),
+                      ),
+                    }
+                  : member,
+              ),
+            }
+          : symbol,
+      ),
+    };
+    expect(
+      auditManifest(lostTypeTarget, policy).map(
+        (diagnostic) => diagnostic.message,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "uses public type Investigation without its resolved declaration provenance",
+        ),
+      ]),
+    );
   });
 
   test("keeps TypeDoc compatibility explicit", () => {
@@ -336,7 +532,9 @@ describe("reference rendering", () => {
     expect(html).toContain('data-page-id="package:fixture"');
     expect(html).toContain('data-page-principal="Investigation"');
     expect(html.match(/class="page-example"/gu)).toHaveLength(3);
-    expect(html.match(/class="code-block checked-code"/gu)).toHaveLength(3);
+    expect(
+      html.match(/class="code-block checked-code"/gu)?.length,
+    ).toBeGreaterThanOrEqual(3);
     expect(html).toContain("twoslash-hover");
     expect(html.indexOf(">Investigation<")).toBeLessThan(
       html.indexOf(">Attune<"),
@@ -350,7 +548,9 @@ describe("reference rendering", () => {
       expect(html).toContain(`data-page-id="${symbol.id}"`);
       expect(html).toContain(`data-page-principal="${symbol.exportName}"`);
       expect(html.match(/class="page-example"/gu)).toHaveLength(3);
-      expect(html.match(/class="code-block checked-code"/gu)).toHaveLength(3);
+      expect(
+        html.match(/class="code-block checked-code"/gu)?.length,
+      ).toBeGreaterThanOrEqual(3);
       expect(html).toContain("twoslash-hover");
       expect(html).toContain(symbol.provenance.declaration.url);
       for (const member of symbol.members) {
@@ -365,10 +565,24 @@ describe("reference rendering", () => {
         expect(memberHtml).toContain(`data-page-principal="${member.name}"`);
         expect(memberHtml.match(/class="page-example"/gu)).toHaveLength(3);
         expect(
-          memberHtml.match(/class="code-block checked-code"/gu),
-        ).toHaveLength(3);
+          memberHtml.match(/class="code-block checked-code"/gu)?.length,
+        ).toBeGreaterThanOrEqual(3);
         expect(memberHtml).toContain("twoslash-hover");
         expect(memberHtml).toContain(member.provenance.declaration.url);
+        const window = new Window();
+        window.document.write(memberHtml);
+        expect(
+          window.document.querySelectorAll('[data-contract-kind="input"]'),
+        ).toHaveLength(
+          member.callSignatures.reduce(
+            (total, callable) => total + callable.parameters.length,
+            0,
+          ),
+        );
+        expect(
+          window.document.querySelectorAll('[data-contract-kind="output"]'),
+        ).toHaveLength(member.callSignatures.length);
+        window.close();
       }
     }
     const investigation = manifest.symbols.find(
@@ -380,7 +594,6 @@ describe("reference rendering", () => {
       pages,
       "/attune/",
     );
-    expect(investigationHtml).toContain("<h2>Type parameters</h2>");
     expect(investigationHtml).toContain("State carried by the capability.");
 
     const attune = manifest.symbols.find(
@@ -396,9 +609,11 @@ describe("reference rendering", () => {
       pages,
       "/attune/",
     );
-    expect(materializeHtml).toContain("<h2>Type parameters</h2>");
     expect(materializeHtml).toContain(
       "Revision identifier supplied by the caller.",
+    );
+    expect(materializeHtml).toContain(
+      "typeof attune.materialize&lt;&quot;maude_run&quot;&gt;",
     );
   });
 
@@ -443,6 +658,51 @@ describe("reference rendering", () => {
     ).resolves.toBeDefined();
     for (const path of await htmlBelow(output)) {
       const html = await readFile(path, "utf8");
+      const window = new Window();
+      window.document.write(html);
+      const sections = [
+        ...window.document.querySelectorAll("main > section[data-section]"),
+      ].map((section) => section.getAttribute("data-section"));
+      expect({
+        page: Path.relative(output, path),
+        sections,
+      }).toEqual({
+        page: Path.relative(output, path),
+        sections: ["story", "shape", "examples", "related", "source"],
+      });
+      for (const heading of window.document.querySelectorAll(
+        "h1, h2, h3, h4, h5, h6",
+      )) {
+        expect({
+          heading: heading.textContent,
+          page: Path.relative(output, path),
+          typeLinked: heading.querySelector("a[data-type-reference]") !== null,
+        }).toMatchObject({ typeLinked: true });
+      }
+      for (const contract of window.document.querySelectorAll(
+        '[data-contract-kind="input"], [data-contract-kind="output"]',
+      )) {
+        expect(
+          contract.querySelector("[data-type-declaration]"),
+        ).not.toBeNull();
+        expect(contract.querySelector("a[data-type-source]")).not.toBeNull();
+        expect(
+          contract.querySelector("[data-type-lens] .twoslash-hover"),
+        ).not.toBeNull();
+        expect(
+          contract.querySelector("[data-type-lens]")?.textContent,
+        ).not.toMatch(/\b(?:any|unknown)\b/u);
+      }
+      const narrativeWords = [
+        ...window.document.querySelectorAll("[data-prose]"),
+      ]
+        .map((node) => node.textContent ?? "")
+        .join(" ")
+        .trim()
+        .split(/\s+/u)
+        .filter(Boolean);
+      expect(narrativeWords.length).toBeGreaterThanOrEqual(120);
+      window.close();
       expect(html).toContain("data-page-example");
       expect(html).toContain("twoslash-linked");
       expect(html).toContain("twoslash-api-link");

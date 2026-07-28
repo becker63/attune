@@ -194,9 +194,8 @@ const activate = async (
   service: ReturnType<typeof makeInvestigationServiceFromHandlers>,
 ) => {
   const materialized = await run(service.materialize(materializeInput));
-  if (materialized.status !== "materialized") {
+  if (materialized.status !== "materialized")
     throw new Error("fixture materialization was rejected");
-  }
   return run(service.activate(materialized.investigation));
 };
 
@@ -306,9 +305,7 @@ describe("typed investigation lifecycle service", () => {
       const service = makeInvestigationServiceFromHandlers(
         handlers({
           finalizationAfterPersistence,
-          onFinalizationPersisted: () => {
-            persistedFinalization = true;
-          },
+          onFinalizationPersisted: () => void (persistedFinalization = true),
         }),
         () =>
           Effect.succeed(persistedFinalization ? finalizedManifest : manifest),
@@ -362,9 +359,8 @@ describe("typed investigation lifecycle service", () => {
     const dirty = persistedValidator(snapshot, true);
     const service = makeService({}, dirty);
     const materialized = await run(service.materialize(materializeInput));
-    if (materialized.status !== "materialized") {
+    if (materialized.status !== "materialized")
       throw new Error("fixture materialization was rejected");
-    }
     await expectRejection(service.activate(materialized.investigation), {
       code: "DirtyRepository",
     });

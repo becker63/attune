@@ -13,12 +13,14 @@ import {
   type AttuneReceipt,
 } from "../contract/schemas.js";
 /**
- * The eight-operation Effect Toolkit and sole MCP schema authority.
+ * Closed eight-operation schema authority installed at the MCP boundary.
  *
  * @remarks
- * Install this value at the protocol boundary. Application callers should use
- * {@link Attune}; operation projections and execution metadata remain private.
+ * {@link AttuneToolkit} owns the exact parameter, success, and failure schemas for repository materialization, checkpointing, Joern, Maude, property testing, ast-grep, artifact promotion, and investigation finalization. Installing this one value keeps protocol discovery and runtime decoding on the same closed operation set.
  *
+ * Application code should use {@link Attune}: infer materialization input from {@link Attune.materialize}, infer preserving inputs and results from {@link Attune.execute}, and infer terminal policy from {@link Attune.finalize}. The service adds and verifies {@link Investigation} identity and snapshot authority that raw transport schemas cannot provide.
+ *
+ * Each accepted operation produces a correlated {@link AttuneReceipt}; boundary rejection uses {@link AttuneToolFailure}, and invalid lifecycle authority uses {@link InvestigationLifecycleError}. Registry metadata remains private so adding transport machinery does not add another public application noun.
  * @example Read the closed operation names
  * ```ts
  * // @filename: toolkit.ts

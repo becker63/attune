@@ -45,7 +45,10 @@ highlights. Every API page's sequence SHALL include its own principal public
 identifier with compiler-derived type information, source documentation, a
 static API/member destination, and source provenance. Every other public
 identifier referenced by a scene SHALL receive its own matching destinations
-rather than inheriting the page principal's links.
+rather than inheriting the page principal's links. Compact mechanically derived
+input and output lenses MAY add more checked highlights, but SHALL be rendered
+outside the source-owned page-example sequence and SHALL use cut directives so
+only the contract being explained remains visible.
 
 #### Scenario: Identifier hover links to its API
 
@@ -97,6 +100,8 @@ in a focused Playwright journey.
 - **THEN** every page has at least three source-backed checked highlights
 - **AND** every required identifier hover has documentation and a resolvable
   destination
+- **AND** every callable input and output lens retains its checked type hover
+  and exact type-use source link
 - **AND** no synthetic `unknown` member lens can satisfy coverage
 
 #### Scenario: Browser journey proves interaction

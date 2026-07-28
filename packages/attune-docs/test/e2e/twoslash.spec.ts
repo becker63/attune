@@ -158,7 +158,7 @@ const manifest: ApiManifest = {
     ),
     entryPoint: "packages/attune-mcp/src/index.ts",
     examples: packageExamples,
-    name: "attune-mcp",
+    name: "fixture",
     provenance: {
       declaration: attuneSource,
       implementation: attuneSource,
@@ -184,17 +184,48 @@ const manifest: ApiManifest = {
       exportName: "Attune",
       id: "attune",
       kind: "interface",
+      typeExpression: "Attune",
       members: [
         {
           anchor: "materialize",
-          documentation: docs(
-            "Creates a materialized investigation workspace.",
-            "",
-            "A capability ready for activation.",
-          ),
+          documentation: {
+            ...docs(
+              "Creates a materialized investigation workspace.",
+              "The input selects the snapshot and the output records the transition.",
+              "A capability ready for activation.",
+            ),
+            parameters: [
+              {
+                description: "The source materialization request.",
+                name: "input",
+              },
+            ],
+          },
           examples: memberExamples,
           id: "attune.materialize",
           kind: "function",
+          callSignatures: [
+            {
+              parameters: [
+                {
+                  declaration: "input: string",
+                  index: 0,
+                  name: "input",
+                  source: materializeSource,
+                  type: {
+                    references: [],
+                    source: materializeSource,
+                    text: "string",
+                  },
+                },
+              ],
+              returns: {
+                references: [],
+                source: materializeSource,
+                text: "void",
+              },
+            },
+          ],
           name: "materialize",
           provenance: {
             declaration: materializeSource,
@@ -202,7 +233,7 @@ const manifest: ApiManifest = {
             tsdoc: materializeSource,
           },
           relations: [],
-          signature: "readonly materialize: () => void",
+          signature: "readonly materialize: (input: string) => void",
           slug: "materialize",
           typeParameters: [],
         },
@@ -377,6 +408,53 @@ test("links a checked identifier to its API and immutable source", async ({
   await identifier.focus();
   await popup.locator(".twoslash-api-link").click();
   await expect(page).toHaveURL(`${origin}/api/attune.html`);
+
+  await page.goto(`${origin}/api/attune/materialize.html`);
+  for (const kind of ["input", "output"] as const) {
+    const contract = page.locator(`[data-contract-kind="${kind}"]`);
+    await expect(contract).toHaveCount(1);
+    await expect(contract.locator("[data-type-declaration]")).not.toBeEmpty();
+    await expect(contract.locator("a[data-type-source]")).toHaveAttribute(
+      "href",
+      materializeSource.url,
+    );
+    const inferred =
+      kind === "input" ? "type Input = string" : "type Output = void";
+    const inferencePopups = await contract
+      .locator(".twoslash-popup-container")
+      .allTextContents();
+    expect(
+      inferencePopups.some((text) =>
+        text.replace(/\s+/gu, " ").trim().includes(inferred),
+      ),
+    ).toBe(true);
+    await expect(
+      contract.locator(
+        `[data-twoslash-target="${kind === "input" ? "Input" : "Output"}"]`,
+      ),
+    ).toHaveCount(1);
+    await expect(contract).not.toContainText(/\b(?:any|unknown)\b/u);
+    const contractIdentifier = contract
+      .locator(
+        '[data-type-lens] .twoslash-hover[data-twoslash-target="materialize"] .twoslash-identifier-link',
+      )
+      .first();
+    await contractIdentifier.focus();
+    const contractPopupId =
+      await contractIdentifier.getAttribute("aria-describedby");
+    expect(contractPopupId).not.toBeNull();
+    const contractPopup = contract.locator(`[id="${contractPopupId}"]`);
+    await expect(contractPopup).toHaveCSS("opacity", "1");
+    await expect(contractPopup.locator(".twoslash-api-link")).toHaveAttribute(
+      "href",
+      "/api/attune/materialize.html",
+    );
+    await expect(
+      contractPopup.locator(".twoslash-source-link"),
+    ).toHaveAttribute("href", materializeSource.url);
+  }
+
+  await page.goto(`${origin}/api/attune.html`);
   const symbolExample = page.locator(".page-example").first();
   const symbolIdentifier = symbolExample
     .locator(".twoslash-identifier-link", { hasText: "Attune" })

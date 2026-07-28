@@ -1,16 +1,12 @@
 /**
- * Reproducible repository investigations as one typed lifecycle.
+ * Reproducible repository investigations expressed through six public types.
  *
  * @remarks
- * Begin with {@link Attune}, carry its {@link Investigation} proof through each
- * transition, inspect the resulting {@link AttuneReceipt}, and use
- * {@link AttuneToolkit} only when installing the MCP schema boundary. Operation
- * projections and runtime registries are deliberately private; infer inputs and
- * results from the service methods that consume them.
+ * Begin with {@link Attune.materialize}, carry the returned {@link Investigation} through {@link Attune.activate}, and use that active proof with {@link Attune.execute} or {@link Attune.finalize}. Each method makes the legal lifecycle state visible in its parameter and return types, so the service contract itself is the shortest complete guide.
  *
- * Infer requests from the {@link Attune} method that accepts them. Reach for
- * {@link AttuneToolkit} only when the protocol needs the complete wire schema.
+ * Infer application inputs and outputs from the corresponding {@link Attune} member instead of importing another vocabulary of request and result aliases. {@link AttuneToolkit} exists for the MCP transport boundary, where the same closed operation schemas must be installed; it is not a parallel application API.
  *
+ * Accepted work leaves durable {@link AttuneReceipt} evidence. A rejected call fails with {@link AttuneToolFailure} when it never safely crosses the tool boundary, or with {@link InvestigationLifecycleError} when its proof, identity, snapshot, or transition is invalid. {@link Attune.recoverTerminal} reconnects an interrupted caller to already-durable terminal evidence without repeating the operation.
  * @example Construct the lifecycle service
  * ```ts
  * // @filename: lifecycle.ts
