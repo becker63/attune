@@ -116,3 +116,13 @@ tasks below implement only the Effect MCP capability boundary.
 - [x] 10.8 Prove opaque unknown references and missing semantic relationships do not block mechanical execution.
 - [x] 10.9 Run strict OpenSpec validation, monorepo checks, MCP contract checks, and `nix flake check`.
 - [x] 10.10 Add an automated `scc` check over the complete V0 TypeScript tree, including `joern-effect` and generated code; report the 10,000-line target and fail at 15,000 with no package exclusion.
+
+## 11. Consolidate the fixed ABI and consumer products
+
+- [x] 11.1 Fold the related ActiveGraph bridge, onboarding, and run-zero researchbench requirements into this change and retire their superseded proposal directories in the participating worktrees.
+- [ ] 11.2 Replace the generic `Operation.define`/arbitrary-registry/correlation type algebra with the literal eight-operation keyed model; delete compatibility exports and duplicate proof scaffolding while preserving durable runtime checks.
+- [x] 11.3 Add the versioned structured `effect-joern` DSL compiler and MCP input route, retain canonical structured and emitted-query artifacts, and preserve raw CPGQL as a first-class escape hatch.
+- [x] 11.4 Regenerate the frozen contract and implement the generated Python models plus the eight explicit ActiveGraph bridge methods against it.
+- [x] 11.5 Import and simplify the run-zero researchbench so its campaigns, evaluators, manifests, reports, and static docs products consume the fixed bridge without duplicating Effect mechanics; leave live campaign execution unrun.
+- [ ] 11.6 Replace retired type-only tests with table-driven registry, keyed-inference, structured-DSL, contract-drift, Python, and docs tests. Prove the MCP source-plus-test tree is at most 8,000 handwritten TypeScript lines.
+- [ ] 11.7 Run strict OpenSpec validation and the affected TypeScript, Python, contract, docs, and LOC checks; record the final measurement and explicitly report any deferred live campaign.

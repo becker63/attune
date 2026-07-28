@@ -1,5 +1,48 @@
 ## Context
 
+## Super-change consolidation and deletion decisions
+
+This design is the authority for the related ActiveGraph bridge, grounded
+onboarding, and researchbench work. The source changes are folded here in this
+order: the closed Effect/MCP ABI, generated Python consumption, then the
+consumer-side researchbench and static publication path. No source change may
+retain an independent competing model after this change lands.
+
+The TypeScript reduction is a product decision, not a formatting target. From
+the cleanup baseline `c65a76c6f8fabf57c06d23a87096073a56301ba4`, the combined
+handwritten `packages/attune-mcp/src` and `test` tree is 11,285 physical lines.
+The main implementation target is at most 8,000 lines (a net cut of at least
+3,285); `effect-joern` remains intact except for the small reusable structured
+DSL compiler needed by MCP.
+
+The approved cuts are:
+
+1. Delete the public/general `Operation.define` facade, arbitrary operation
+   registry constructor, dependent field-name/correlation type algebra, and
+   compatibility aliases. Replace them with one literal eight-entry registry,
+   keyed input/result/error/receipt/writer projections, and bounded runtime
+   validation of those eight descriptors.
+2. Delete duplicate descriptor-level correlation proof tests and type-only
+   scaffolding that restate Effect Tool schemas. Retain one table-driven
+   registry validation suite plus focused type tests proving keyed inference and
+   rejected unsupported names.
+3. Delete any MCP-local structured-CPGQL serializer. `effect-joern` owns the
+   JSON form, validation against generated starters/properties/steps, and the
+   canonical CPGQL emitter; MCP only decodes, retains, and invokes it.
+4. Delete compatibility imports and module shims whose only job is to preserve
+   the old `v0`/generic operation layout. Preserve the eight wire names,
+   durable receipts, AgentFS/commit checks, exact retry behavior, and real
+   native fixtures.
+5. Do not cut the generated DSL, raw CPGQL escape hatch, durable terminal
+   receipt path, AgentFS remount behavior, native cancellation path, or
+   positive/negative lifecycle coverage. Those are product capabilities, not
+   incidental LOC.
+
+The Python implementation is deliberately a consumer. It imports generated
+models and calls explicit named bridge methods; it must not mirror the deleted
+TypeScript operation algebra, re-serialize Joern, or recreate durable receipt
+logic. Its production budget remains 2,200 handwritten lines.
+
 The repository is an Nx monorepo with a shared TypeScript/Oxc/Vitest toolchain,
 an exact Effect 4 beta pin, and Nix outputs for native `aarch64-linux` and
 `x86_64-linux`. Its existing Joern library has three names:

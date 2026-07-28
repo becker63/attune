@@ -1,0 +1,55 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "decided_at": {
+      "title": "Decided At",
+      "type": "string"
+    },
+    "decision": {
+      "const": "approved",
+      "default": "approved",
+      "title": "Decision",
+      "type": "string"
+    },
+    "decision_id": {
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "evidence_digest": {
+      "title": "Evidence Digest",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "exporter_version": {
+      "title": "Exporter Version",
+      "type": "string"
+    },
+    "manifest_digest": {
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "report_digest": {
+      "title": "Report Digest",
+      "type": "string"
+    },
+    "reviewer": {
+      "title": "Reviewer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "manifest_digest",
+    "report_digest",
+    "evidence_digest",
+    "exporter_version",
+    "reviewer",
+    "decision_id",
+    "decided_at"
+  ],
+  "title": "Approval",
+  "type": "object"
+}

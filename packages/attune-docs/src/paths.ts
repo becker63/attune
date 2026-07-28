@@ -12,6 +12,7 @@ export const paths = {
   mcp: Path.resolve(packageDirectory, "..", "attune-mcp"),
   policy: Path.join(packageDirectory, "docs-policy.json"),
   content: Path.join(packageDirectory, "content", "guides"),
+  staticPages: Path.join(packageDirectory, "content", "experiments"),
   approvals: Path.join(packageDirectory, "content", "approvals"),
   schema: Path.join(packageDirectory, "schema"),
   static: Path.join(packageDirectory, "static"),

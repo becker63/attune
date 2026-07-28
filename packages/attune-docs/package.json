@@ -9,6 +9,7 @@
     "build": "pnpm run audit && node --experimental-strip-types ./src/cli.ts build",
     "guides:validate": "node --experimental-strip-types ./src/cli.ts guides:validate",
     "guides:approve": "node --experimental-strip-types ./src/cli.ts guides:approve",
+    "experiments:verify": "node --experimental-strip-types ./src/cli.ts experiments:verify",
     "manifest": "node --experimental-strip-types ./src/cli.ts manifest",
     "probe:typedoc": "node ./scripts/probe-typedoc.mjs",
     "test": "vitest run",
@@ -33,6 +34,15 @@
       "platform:node"
     ],
     "targets": {
+      "experiments:verify": {
+        "cache": true,
+        "dependsOn": ["^research:schema"],
+        "inputs": [
+          "{projectRoot}/content/experiments/**/*",
+          "{projectRoot}/schema/experiment-*.schema.json",
+          "{projectRoot}/src/static-pages.ts"
+        ]
+      },
       "build": {
         "cache": false,
         "dependsOn": [],

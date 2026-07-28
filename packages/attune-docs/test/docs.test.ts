@@ -1,10 +1,12 @@
 import {
+  mkdir,
   mkdtemp,
   readFile,
   readdir,
   rm,
   stat,
   symlink,
+  writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as Path from "node:path";
@@ -47,6 +49,7 @@ import {
   validatePublicationTraceBinding,
   validateTraceExport,
 } from "../src/traces.ts";
+import { discoverStaticPages } from "../src/static-pages.ts";
 
 const fixtureRoot = Path.join(import.meta.dirname, "fixtures", "api");
 const policy: DocumentationPolicy = {
@@ -135,6 +138,12 @@ const approveFixture = (
 };
 
 const traceAddress = (value: unknown): string => `sha256:${digestValue(value)}`;
+
+const publicationDigest = (value: Record<string, unknown>, field: string): string => {
+  const copy = { ...value };
+  delete copy[field];
+  return `sha256:${digestValue(copy)}`;
+};
 
 const traceEdgeId = (source: string, target: string, type: string): string =>
   traceAddress({ source, target, type });
@@ -2153,6 +2162,31 @@ describe("static publication", () => {
     expect(collisionEntries).toHaveLength(2);
     expect(new Set(collisionEntries.map((entry) => entry.href)).size).toBe(2);
   });
+});
+
+test("discovers a closed Python-generated static publication page", async () => {
+  const root = await mkdtemp(Path.join(tmpdir(), "attune-experiment-"));
+  temporaryDirectories.push(root);
+  const page = Path.join(root, "fixture");
+  await mkdir(page);
+  const manifest = { experiment_id: "fixture", value: 1 };
+  const report = { experiment_id: "fixture", title: "Fixture experiment" };
+  const approval = { manifest_digest: publicationDigest(manifest, "manifest_digest"), report_digest: publicationDigest(report, "report_digest") };
+  const publication = {
+    manifest_digest: publicationDigest(manifest, "manifest_digest"),
+    report_digest: publicationDigest(report, "report_digest"),
+    approval_digest: publicationDigest(approval, "approval_digest"),
+  };
+  await Promise.all([
+    writeFile(Path.join(page, "manifest.json"), JSON.stringify(manifest)),
+    writeFile(Path.join(page, "report.json"), JSON.stringify(report)),
+    writeFile(Path.join(page, "approval.json"), JSON.stringify(approval)),
+    writeFile(Path.join(page, "publication.json"), JSON.stringify(publication)),
+    writeFile(Path.join(page, "index.md"), "# Fixture experiment\n"),
+  ]);
+  await expect(discoverStaticPages(root)).resolves.toEqual([
+    { slug: "fixture", title: "Fixture experiment", markdown: "# Fixture experiment\n" },
+  ]);
 });
 
 test("records the current TypeDoc compatibility blocker", () => {

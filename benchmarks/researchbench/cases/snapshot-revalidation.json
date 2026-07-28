@@ -1,0 +1,5 @@
+{
+  "id": "snapshot-revalidation",
+  "evaluator": "snapshot-revalidation-v1",
+  "question": "Find writer-authority snapshot revalidation gaps."
+}

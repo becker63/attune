@@ -33,6 +33,7 @@ import type {
 import { parseEvidenceManifest } from "./parse.ts";
 import { paths } from "./paths.ts";
 import { validatePublicationTraceBinding } from "./traces.ts";
+import type { StaticPage } from "./static-pages.ts";
 
 export const resolveOutputPath = (root: string, relative: string): string => {
   if (
@@ -151,6 +152,7 @@ const searchIndex = (
   manifest: ApiManifest,
   repository: RepositoryMap,
   guides: readonly ProseDraft[],
+  staticPages: readonly StaticPage[],
   basePath: string,
 ) => [
   {
@@ -173,6 +175,13 @@ const searchIndex = (
     summary: guide.summary,
     href: `${basePath}guides/${guide.slug}.html`,
     keywords: guide.sections.map((section) => section.heading).join(" "),
+  })),
+  ...staticPages.map((page) => ({
+    title: page.title,
+    kind: "page",
+    summary: "Approved static publication page.",
+    href: `${basePath}experiments/${page.slug}.html`,
+    keywords: "experiment publication",
   })),
   ...manifest.symbols.map((symbol) => ({
     title: symbol.exportName,
@@ -197,6 +206,7 @@ export const buildSite = async (
   guides: readonly ProseDraft[],
   options: SiteBuildOptions,
   traces: readonly TraceArtifact[] = [],
+  staticPages: readonly StaticPage[] = [],
 ): Promise<void> => {
   assertUnique(
     guides.map((guide) => guide.id),
@@ -337,7 +347,7 @@ export const buildSite = async (
     write(
       options.outputDirectory,
       "search-index.json",
-      prettyJson(searchIndex(manifest, repository, guides, options.basePath)),
+      prettyJson(searchIndex(manifest, repository, guides, staticPages, options.basePath)),
     ),
     write(options.outputDirectory, ".nojekyll", ""),
   ]);
@@ -350,6 +360,16 @@ export const buildSite = async (
         renderApiSymbol(symbol, manifest, guides, options.basePath),
       ),
     ),
+  );
+  await Promise.all(
+    staticPages.flatMap((page) => [
+      write(options.outputDirectory, `experiments/${page.slug}.md`, page.markdown),
+      write(
+        options.outputDirectory,
+        `experiments/${page.slug}.html`,
+        `<!doctype html><meta charset="utf-8"><title>${page.title}</title><pre>${page.markdown.replaceAll("&", "&amp;").replaceAll("<", "&lt;")}</pre>`,
+      ),
+    ]),
   );
   await Promise.all(
     guides.flatMap((guide) => [

@@ -1,0 +1,597 @@
+{
+  "$defs": {
+    "Aggregate": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted_count": {
+          "title": "Accepted Count",
+          "type": "integer"
+        },
+        "arm_id": {
+          "title": "Arm Id",
+          "type": "string"
+        },
+        "case_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Case Id"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "metrics": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Metrics",
+          "type": "object"
+        }
+      },
+      "required": [
+        "arm_id",
+        "count",
+        "accepted_count",
+        "metrics"
+      ],
+      "title": "Aggregate",
+      "type": "object"
+    },
+    "CapabilityProfile": {
+      "enum": [
+        "conventional",
+        "attune"
+      ],
+      "title": "CapabilityProfile",
+      "type": "string"
+    },
+    "Case": {
+      "additionalProperties": false,
+      "properties": {
+        "evaluator": {
+          "minLength": 1,
+          "title": "Evaluator",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "public_description": {
+          "minLength": 1,
+          "title": "Public Description",
+          "type": "string"
+        },
+        "question": {
+          "minLength": 1,
+          "title": "Question",
+          "type": "string"
+        },
+        "repository": {
+          "minLength": 1,
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "repository",
+        "revision",
+        "question",
+        "evaluator",
+        "public_description"
+      ],
+      "title": "Case",
+      "type": "object"
+    },
+    "Evaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "evaluator": {
+          "title": "Evaluator",
+          "type": "string"
+        },
+        "fixture_digest": {
+          "title": "Fixture Digest",
+          "type": "string"
+        },
+        "scores": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Scores",
+          "type": "object"
+        }
+      },
+      "required": [
+        "evaluator",
+        "fixture_digest",
+        "scores",
+        "accepted"
+      ],
+      "title": "Evaluation",
+      "type": "object"
+    },
+    "PriorState": {
+      "enum": [
+        "cold",
+        "prose",
+        "motif-packet",
+        "enshrined"
+      ],
+      "title": "PriorState",
+      "type": "string"
+    },
+    "ResearchBenchSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "aggregate_budget": {
+          "$ref": "#/$defs/ResearchBudget"
+        },
+        "cache_policy": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Cache Policy",
+          "type": "array"
+        },
+        "campaign_id": {
+          "minLength": 1,
+          "title": "Campaign Id",
+          "type": "string"
+        },
+        "capability_profile": {
+          "$ref": "#/$defs/CapabilityProfile"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "common_tool_digest": {
+          "default": "unconfigured",
+          "title": "Common Tool Digest",
+          "type": "string"
+        },
+        "model_configuration_digest": {
+          "default": "unconfigured",
+          "title": "Model Configuration Digest",
+          "type": "string"
+        },
+        "prior_artifact_digest": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prior Artifact Digest"
+        },
+        "prior_state": {
+          "$ref": "#/$defs/PriorState"
+        },
+        "prompt_digest": {
+          "default": "unconfigured",
+          "title": "Prompt Digest",
+          "type": "string"
+        },
+        "topology": {
+          "$ref": "#/$defs/Topology"
+        }
+      },
+      "required": [
+        "topology",
+        "capability_profile",
+        "prior_state",
+        "case_id",
+        "campaign_id",
+        "aggregate_budget"
+      ],
+      "title": "ResearchBenchSettings",
+      "type": "object"
+    },
+    "ResearchBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "completion_tokens": {
+          "minimum": 0,
+          "title": "Completion Tokens",
+          "type": "integer"
+        },
+        "model_calls": {
+          "minimum": 0,
+          "title": "Model Calls",
+          "type": "integer"
+        },
+        "prompt_tokens": {
+          "minimum": 0,
+          "title": "Prompt Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "prompt_tokens",
+        "completion_tokens",
+        "model_calls"
+      ],
+      "title": "ResearchBudget",
+      "type": "object"
+    },
+    "RunStatus": {
+      "enum": [
+        "completed",
+        "failed",
+        "cancelled",
+        "rejected",
+        "incomplete"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    },
+    "Topology": {
+      "enum": [
+        "single",
+        "swarm"
+      ],
+      "title": "Topology",
+      "type": "string"
+    },
+    "TrialMetrics": {
+      "additionalProperties": false,
+      "properties": {
+        "completion_tokens": {
+          "default": 0,
+          "title": "Completion Tokens",
+          "type": "integer"
+        },
+        "concurrent_branches": {
+          "default": false,
+          "title": "Concurrent Branches",
+          "type": "boolean"
+        },
+        "conflicting_claims": {
+          "default": 0,
+          "title": "Conflicting Claims",
+          "type": "integer"
+        },
+        "discovery_milliseconds": {
+          "default": 0,
+          "title": "Discovery Milliseconds",
+          "type": "integer"
+        },
+        "duplicated_experiments": {
+          "default": 0,
+          "title": "Duplicated Experiments",
+          "type": "integer"
+        },
+        "gross_milliseconds": {
+          "default": 0,
+          "title": "Gross Milliseconds",
+          "type": "integer"
+        },
+        "model_calls": {
+          "default": 0,
+          "title": "Model Calls",
+          "type": "integer"
+        },
+        "model_milliseconds": {
+          "default": 0,
+          "title": "Model Milliseconds",
+          "type": "integer"
+        },
+        "native_milliseconds": {
+          "default": 0,
+          "title": "Native Milliseconds",
+          "type": "integer"
+        },
+        "prompt_tokens": {
+          "default": 0,
+          "title": "Prompt Tokens",
+          "type": "integer"
+        },
+        "provider_cost": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Cost"
+        },
+        "repeated_reads": {
+          "default": 0,
+          "title": "Repeated Reads",
+          "type": "integer"
+        },
+        "synthesis_tokens": {
+          "default": 0,
+          "title": "Synthesis Tokens",
+          "type": "integer"
+        },
+        "tool_calls": {
+          "default": 0,
+          "title": "Tool Calls",
+          "type": "integer"
+        },
+        "tool_failures": {
+          "default": 0,
+          "title": "Tool Failures",
+          "type": "integer"
+        }
+      },
+      "title": "TrialMetrics",
+      "type": "object"
+    },
+    "TrialRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "arm_id": {
+          "title": "Arm Id",
+          "type": "string"
+        },
+        "artifact_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "cache_labels": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Cache Labels",
+          "type": "array"
+        },
+        "case_id": {
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evaluation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Evaluation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "failure_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failure Code"
+        },
+        "final_snapshot": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Final Snapshot"
+        },
+        "investigation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Investigation Id"
+        },
+        "metrics": {
+          "$ref": "#/$defs/TrialMetrics"
+        },
+        "receipt_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Receipt Refs",
+          "type": "array"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "seed": {
+          "title": "Seed",
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/$defs/ResearchBenchSettings"
+        },
+        "status": {
+          "$ref": "#/$defs/RunStatus"
+        },
+        "trace_address": {
+          "title": "Trace Address",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "arm_id",
+        "case_id",
+        "seed",
+        "status",
+        "settings",
+        "trace_address",
+        "metrics"
+      ],
+      "title": "TrialRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "aggregates": {
+      "items": {
+        "$ref": "#/$defs/Aggregate"
+      },
+      "title": "Aggregates",
+      "type": "array"
+    },
+    "amortization": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Amortization"
+    },
+    "arms": {
+      "items": {
+        "$ref": "#/$defs/ResearchBenchSettings"
+      },
+      "title": "Arms",
+      "type": "array"
+    },
+    "benchmark_pack_digest": {
+      "title": "Benchmark Pack Digest",
+      "type": "string"
+    },
+    "campaign_id": {
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/Case"
+      },
+      "title": "Cases",
+      "type": "array"
+    },
+    "comparisons": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Comparisons",
+      "type": "object"
+    },
+    "evaluator_digest": {
+      "title": "Evaluator Digest",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "research_questions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Research Questions",
+      "type": "array"
+    },
+    "runs": {
+      "items": {
+        "$ref": "#/$defs/TrialRecord"
+      },
+      "title": "Runs",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_revision": {
+      "title": "Source Revision",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "campaign_id",
+    "title",
+    "research_questions",
+    "source_revision",
+    "benchmark_pack_digest",
+    "evaluator_digest",
+    "arms",
+    "cases",
+    "runs",
+    "aggregates",
+    "comparisons"
+  ],
+  "title": "Manifest",
+  "type": "object"
+}

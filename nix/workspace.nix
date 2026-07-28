@@ -309,6 +309,8 @@ let
         mkdir -p "$HOME" "$RUFF_CACHE_DIR"
         cd "${src}/python/attune-activegraph"
         python scripts/generate_contract_models.py check
+        python scripts/research_schema.py check
+        python scripts/research_budget.py
         ruff format --check .
         ruff check .
         basedpyright

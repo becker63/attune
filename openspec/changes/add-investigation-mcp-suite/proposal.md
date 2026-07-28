@@ -1,5 +1,20 @@
 ## Why
 
+## Super-change authority
+
+This is the single active Attune consolidation change. It supersedes the
+related work formerly proposed as `add-activegraph-harness`,
+`add-grounded-onboarding-docs`, and
+`add-attune-researchbench-and-experiment-reports` in the `cleanup` and
+`run-zero` worktrees. Their requirements are incorporated here before their
+proposal directories are retired; unrelated historical experiments in other
+worktrees are explicitly outside this consolidation.
+
+The ordering is intentional: first reduce and freeze the eight-capability
+TypeScript ABI, then generate and consume that ABI from Python, then layer the
+researchbench and static reporting products on top. Python never becomes an
+alternative execution or receipt authority.
+
 Attune needs a small, authoritative service boundary for repository-backed
 architectural experiments. It does not need its own agent runtime, event-sourced
 research graph, workflow engine, replay system, provenance ontology, or
@@ -59,6 +74,17 @@ The durable division is:
   boundary; no Python or ActiveGraph runtime is added in this change.
 - Pin the MCP server, AgentFS, Joern, Maude, fast-check, ast-grep, Node, and
   supporting tools with Nix on `aarch64-linux` and `x86_64-linux`.
+- Replace the generic TypeScript operation-definition and correlation type
+  algebra with a closed, eight-key operation model. The model exposes keyed
+  projections for only the published capabilities and has no public extension
+  seam or compatibility facade for a ninth tool.
+- Accept a versioned, JSON-serializable `effect-joern` traversal/select form in
+  `joern_query`, retaining it and its generated CPGQL beside the existing raw
+  CPGQL route. The compiler and validation live in `effect-joern`, not in MCP.
+- Generate Python Pydantic models and eight explicit ActiveGraph/MCP wrappers
+  from the frozen contract, then add the small researchbench, hidden evaluator,
+  motif, manifest, approval, and static-publication products that consume
+  those wrappers.
 
 The V0 mechanics are intentionally limited to:
 
@@ -90,6 +116,14 @@ The V0 mechanics are intentionally limited to:
   properties and retain structured fast-check counterexample evidence.
 - `ast-grep-lowering`: Test, scan, and optionally apply repository-native
   ast-grep rules against explicit commits.
+- `cross-language-contracts`: Generate the Python boundary from the frozen
+  Effect contract and verify its digest before use.
+- `activegraph-capability-bridge`: Expose the fixed eight capabilities to
+  ActiveGraph without copying lifecycle, receipt, or replay behavior.
+- `research-benchmark-runtime`, `mcp-discovery-evaluation`,
+  `motif-amortization`, `hidden-research-evaluation`, and
+  `grounded-experiment-reports`: Run and publish bounded, reproducible
+  consumer-side research without moving execution authority from Effect.
 
 ### Modified Capabilities
 
@@ -150,3 +184,5 @@ and unaware of MCP, AgentFS, ActiveGraph, Maude, fast-check, or ast-grep.
   cleanup.
 - Submodule materialization, cross-machine AgentFS rebinding, cloud execution,
   multi-agent orchestration, or distributed scheduling.
+- Compatibility exports, adapters, or type tests retained solely for the
+  retired generic `Operation.define` and arbitrary-operation correlation model.
