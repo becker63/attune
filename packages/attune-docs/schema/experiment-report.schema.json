@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "Certainty": {
+      "enum": [
+        "measured",
+        "inference",
+        "speculation"
+      ],
+      "title": "Certainty",
+      "type": "string"
+    },
+    "ReportClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Artifact Refs",
+          "type": "array"
+        },
+        "certainty": {
+          "$ref": "#/$defs/Certainty"
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "enum": [
+                "higher",
+                "lower"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Direction"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "limitation_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Limitation Refs",
+          "type": "array"
+        },
+        "metric_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Metric Refs",
+          "type": "array"
+        },
+        "run_refs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Run Refs",
+          "type": "array"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "certainty"
+      ],
+      "title": "ReportClaim",
+      "type": "object"
+    },
+    "ReportSection": {
+      "additionalProperties": false,
+      "properties": {
+        "claims": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReportClaim"
+          },
+          "title": "Claims",
+          "type": "array"
+        },
+        "heading": {
+          "title": "Heading",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "prose": {
+          "title": "Prose",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "heading",
+        "prose"
+      ],
+      "title": "ReportSection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "abstract": {
+      "title": "Abstract",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "manifest_digest": {
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "next_experiments": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Next Experiments",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/ReportSection"
+      },
+      "title": "Sections",
+      "type": "array"
+    },
+    "threats_to_validity": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Threats To Validity",
+      "type": "array"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "unresolved_questions": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Unresolved Questions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "manifest_digest",
+    "title",
+    "abstract",
+    "sections",
+    "limitations",
+    "threats_to_validity"
+  ],
+  "title": "Report",
+  "type": "object"
+}

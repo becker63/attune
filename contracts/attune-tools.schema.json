@@ -366,6 +366,9 @@
           "$ref": "#/$defs/JoernQueryResult"
         },
         {
+          "$ref": "#/$defs/JoernStructuredDsl"
+        },
+        {
           "$ref": "#/$defs/MaudeRunInput"
         },
         {
@@ -899,9 +902,26 @@
       "additionalProperties": false,
       "properties": {
         "cpgql": {
-          "maxLength": 2097152,
-          "minLength": 1,
-          "type": "string"
+          "anyOf": [
+            {
+              "maxLength": 2097152,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dsl": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JoernStructuredDsl"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "expectedSnapshot": {
           "maxLength": 64,
@@ -968,7 +988,6 @@
         "references",
         "investigationId",
         "expectedSnapshot",
-        "cpgql",
         "frontend",
         "importOptions",
         "outputFormat",
@@ -1026,6 +1045,49 @@
           "type": "object"
         }
       ]
+    },
+    "JoernStructuredDsl": {
+      "additionalProperties": false,
+      "properties": {
+        "cpgSchemaHash": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "cpgSchemaVersion": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "segments": {
+          "maxItems": 512,
+          "type": "array"
+        },
+        "select": {
+          "additionalProperties": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxProperties": 64,
+          "type": "object"
+        },
+        "version": {
+          "enum": [
+            1
+          ],
+          "type": "number"
+        }
+      },
+      "required": [
+        "version",
+        "cpgSchemaVersion",
+        "cpgSchemaHash",
+        "segments",
+        "select"
+      ],
+      "type": "object"
     },
     "MaudeRunInput": {
       "additionalProperties": false,

@@ -2,7 +2,7 @@
  * This module narrows the generic investigation model into one native tool.
  * Read from the local runtime helpers, through `executeTypedQuery<A>` (which
  * preserves a Joern query's result type), to `joernQuery`, where the shared
- * operation descriptor and invocation engine enforce lifecycle boundaries.
+ * closed registry and invocation engine enforce lifecycle boundaries.
  */
 import { rm } from "node:fs/promises";
 import { createServer } from "node:net";
@@ -13,24 +13,28 @@ import { Effect, Layer } from "effect";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import {
   Joern,
+  compileSerializedQuery,
   makeHttpTransport,
   scopedJoernServer,
   type JoernQueryDiagnosticResponse,
   type JoernServerOutputTails,
   type Query,
+  type SerializedQuery,
 } from "joern-effect";
 
-import type { JoernQueryInput, JoernQueryResult } from "../../v0/contracts.js";
+import type {
+  JoernQueryInput,
+  JoernQueryResult,
+} from "../../contract/schemas.js";
+import { InvocationEngine } from "../../investigation/invocation.js";
+import { WorkspaceStore } from "../../investigation/workspace.js";
 import {
   canonicalJson,
   fail,
   sha256,
   type Json,
   type RuntimeConfig,
-} from "../../v0/core.js";
-import { InvocationEngine } from "../../v0/invocation.js";
-import { WorkspaceStore } from "../../v0/workspace.js";
-import { JoernQueryOperation } from "./operation.js";
+} from "../../platform/core.js";
 
 const freePort = async (): Promise<number> =>
   await new Promise<number>((resolve, reject) => {
@@ -67,7 +71,8 @@ const joernLayer = (
 const executeRawQuery = async (
   config: RuntimeConfig,
   repository: string,
-  input: JoernQueryInput,
+  input: Pick<JoernQueryInput, "frontend" | "timeoutMilliseconds">,
+  cpgql: string,
   port: number,
   signal?: AbortSignal,
 ): Promise<{
@@ -90,7 +95,7 @@ const executeRawQuery = async (
       );
       const diagnostic = yield* transport.executeDiagnostic(
         server.baseUrl,
-        input.cpgql,
+        cpgql,
       );
       return {
         diagnostic,
@@ -140,16 +145,25 @@ export const joernQuery = (
   input: JoernQueryInput,
 ): Effect.Effect<JoernQueryResult, ReturnType<typeof fail>> =>
   engine.execute({
-    descriptor: JoernQueryOperation,
+    name: "joern_query",
     input,
     run: async (context) => {
+      const cpgql =
+        input.cpgql ??
+        compileSerializedQuery(input.dsl as unknown as SerializedQuery);
       await workspaces.assertExactClean(
         context.workspace.repositoryPath,
         input.expectedSnapshot,
         context.signal,
       );
       context.setSnapshot(input.expectedSnapshot);
-      await context.writeArtifact("query.cpgql", input.cpgql);
+      if (input.dsl !== undefined) {
+        await context.writeArtifact(
+          "query.dsl.json",
+          `${canonicalJson(input.dsl)}\n`,
+        );
+      }
+      await context.writeArtifact("query.cpgql", cpgql);
       const cpgId = sha256(
         canonicalJson({
           snapshotId: input.expectedSnapshot,
@@ -182,6 +196,7 @@ export const joernQuery = (
             config,
             checkout.repository,
             input,
+            cpgql,
             port,
             context.signal,
           );

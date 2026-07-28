@@ -2,8 +2,8 @@
   "schemaVersion": "1.0.0",
   "id": "guide.choosing-a-tool",
   "slug": "choosing-a-tool",
-  "title": "Choosing a tool noun",
-  "summary": "Pick the operation by the kind of evidence you need, then follow its typed descriptor into the lifecycle.",
+  "title": "Choosing a tool",
+  "summary": "Pick one of the eight Toolkit operations by the evidence or transition you need.",
   "audience": "A research-agent author or contributor deciding which Attune capability should perform a step.",
   "sections": [
     {
@@ -12,21 +12,15 @@
       "claims": [
         {
           "id": "tools.repository",
-          "text": "Use repository materialization to establish an exact base and repository checkpoint to turn an intentional workspace change into the next snapshot. These are lifecycle operations, not general Git wrappers.",
+          "text": "Use `repository_materialize` to establish the investigation, then `repository_checkpoint` when an intentional workspace change should become the next snapshot.",
           "certainty": "direct",
           "evidence": [
             {
-              "symbol": [
-                "RepositoryMaterializeOperation",
-                "RepositoryMaterializeTool"
-              ],
-              "facts": ["signature"]
+              "symbol": "ATTUNE_OPERATIONS",
+              "facts": ["signature", "source"]
             },
             {
-              "symbol": [
-                "RepositoryCheckpointOperation",
-                "RepositoryCheckpointTool"
-              ],
+              "symbol": "AttuneToolkit",
               "facts": ["signature"]
             }
           ]
@@ -39,15 +33,15 @@
       "claims": [
         {
           "id": "tools.joern",
-          "text": "Use Joern when the question is about code-property-graph structure. The operation accepts either the typed query projection or an explicit raw query with a result schema at the lower library boundary.",
+          "text": "Use `joern_query` when the question is about code-property-graph structure. Its Toolkit contract keeps the request and result inside the same named operation.",
           "certainty": "direct",
           "evidence": [
             {
-              "symbol": ["JoernQueryOperation", "JoernQueryTool"],
+              "symbol": "AttuneToolkit",
               "facts": ["signature", "source"]
             },
             {
-              "symbol": "JoernQueryInput",
+              "symbol": "AttuneOperationResult",
               "facts": ["signature"]
             }
           ]
@@ -60,30 +54,30 @@
       "claims": [
         {
           "id": "tools.maude",
-          "text": "Use Maude to retain a formal module and command result as native evidence. Its request is scoped to the investigation rather than treated as a free-standing shell command.",
+          "text": "Use `maude_run` when a formal module and command result should be retained as evidence for the active investigation.",
           "certainty": "direct",
           "evidence": [
             {
-              "symbol": ["MaudeRunOperation", "MaudeRunTool"],
+              "symbol": "AttuneToolkit",
               "facts": ["signature"]
             },
             {
-              "symbol": "MaudeRunInput",
+              "symbol": "ATTUNE_OPERATIONS",
               "facts": ["signature"]
             }
           ]
         },
         {
           "id": "tools.property",
-          "text": "Use the property runner when an executable invariant should be tested and minimized. Seed, path, run counts, and counterexample data remain part of the typed result.",
+          "text": "Use `property_run` when an executable invariant should be tested. Its result remains selected by the operation name rather than widened to every tool result.",
           "certainty": "direct",
           "evidence": [
             {
-              "symbol": ["PropertyRunOperation", "PropertyRunTool"],
+              "symbol": "AttuneOperationName",
               "facts": ["signature"]
             },
             {
-              "symbol": "PropertyRunResult",
+              "symbol": "AttuneOperationResult",
               "facts": ["signature"]
             }
           ]
@@ -96,15 +90,15 @@
       "claims": [
         {
           "id": "tools.ast-grep",
-          "text": "Use ast-grep when a structural rule should be scanned or rewritten. Writer policy remains explicit, so a rewrite is distinguishable from a read-only scan in both the type and lifecycle layers.",
+          "text": "Use `ast_grep_run` when a structural rule should be scanned or rewritten. The registry keeps its writer policy and lifecycle transition explicit.",
           "certainty": "direct",
           "evidence": [
             {
-              "symbol": ["AstGrepRunOperation", "AstGrepRunTool"],
-              "facts": ["signature"]
+              "symbol": "ATTUNE_OPERATIONS",
+              "facts": ["signature", "source"]
             },
             {
-              "symbol": "AstGrepRunInput",
+              "symbol": "AttuneOperationInput",
               "facts": ["signature"]
             }
           ]

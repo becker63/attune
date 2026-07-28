@@ -10,11 +10,10 @@ import type {
   RepositoryCheckpointResult,
   RepositoryMaterializeInput,
   RepositoryMaterializeResult,
-} from "../../v0/contracts.js";
-import { fail } from "../../v0/core.js";
-import { InvocationEngine } from "../../v0/invocation.js";
-import { WorkspaceStore } from "../../v0/workspace.js";
-import { RepositoryCheckpointOperation } from "./operation.js";
+} from "../../contract/schemas.js";
+import { InvocationEngine } from "../../investigation/invocation.js";
+import { WorkspaceStore } from "../../investigation/workspace.js";
+import { fail } from "../../platform/core.js";
 
 /** Materializes the exact revision described by a repository wire request. */
 export const repositoryMaterialize = (
@@ -38,7 +37,7 @@ export const repositoryCheckpoint = (
   input: RepositoryCheckpointInput,
 ): Effect.Effect<RepositoryCheckpointResult, ReturnType<typeof fail>> =>
   engine.execute({
-    descriptor: RepositoryCheckpointOperation,
+    name: "repository_checkpoint",
     input,
     run: async (context) => {
       const checkpoint = await workspaces.checkpoint(

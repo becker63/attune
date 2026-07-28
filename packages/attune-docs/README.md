@@ -3,7 +3,7 @@
 This package compiles Attune's documentation into a fully static GitHub Pages
 artifact. The lower layer is mechanical: `ts-morph` loads the supported
 `attune-mcp` entry with the repository TypeScript configuration and emits
-stable symbols, signatures, TSDoc, source locations, members, descriptor-owned
+stable symbols, signatures, TSDoc, source locations, members, registry-owned
 lifecycle relations, and content-addressed facts. The upper layer validates
 evidence-cited narrative drafts and renders onboarding Markdown and HTML.
 The workspace TypeScript 7 compiler validates the source project before
@@ -62,11 +62,11 @@ invalidation takes precedence.
 
 ## Documentation policy
 
-`docs-policy.json` deliberately targets lifecycle capabilities, operation
-descriptors, and public recoverable errors instead of requiring comments on
-every helper. Descriptor metadata is authoritative for `requires`, `produces`,
-and transitions. TSDoc relations improve hovers and navigation but cannot make
-the machine audit pass.
+`docs-policy.json` deliberately targets lifecycle capabilities, the Toolkit and
+closed operation registry, and public recoverable errors instead of requiring
+comments on every helper. `ATTUNE_OPERATIONS` is authoritative for lifecycle
+transitions. TSDoc relations improve hovers and navigation but cannot make the
+machine audit pass.
 
 TypeDoc remains the preferred future reference renderer. Run
 `pnpm --filter attune-docs probe:typedoc` to repeat the compatibility probe;

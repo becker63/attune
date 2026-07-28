@@ -11,11 +11,10 @@ import type {
   ArtifactPromoteInput,
   ArtifactPromoteResult,
   ArtifactReference,
-} from "../../v0/contracts.js";
-import { containedRegularFile, fail, sha256 } from "../../v0/core.js";
-import { InvocationEngine } from "../../v0/invocation.js";
-import { WorkspaceStore } from "../../v0/workspace.js";
-import { ArtifactPromoteOperation } from "./operation.js";
+} from "../../contract/schemas.js";
+import { InvocationEngine } from "../../investigation/invocation.js";
+import { WorkspaceStore } from "../../investigation/workspace.js";
+import { containedRegularFile, fail, sha256 } from "../../platform/core.js";
 
 const parseArtifactUri = (
   investigationId: string,
@@ -51,7 +50,7 @@ export const artifactPromote = (
   input: ArtifactPromoteInput,
 ): Effect.Effect<ArtifactPromoteResult, ReturnType<typeof fail>> =>
   engine.execute({
-    descriptor: ArtifactPromoteOperation,
+    name: "artifact_promote",
     input,
     run: async (context) => {
       await workspaces.assertExactClean(

@@ -1,0 +1,62 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "activegraph_publication_address": {
+      "title": "Activegraph Publication Address",
+      "type": "string"
+    },
+    "approval_digest": {
+      "title": "Approval Digest",
+      "type": "string"
+    },
+    "evidence_digest": {
+      "title": "Evidence Digest",
+      "type": "string"
+    },
+    "experiment_id": {
+      "title": "Experiment Id",
+      "type": "string"
+    },
+    "exporter_version": {
+      "title": "Exporter Version",
+      "type": "string"
+    },
+    "manifest_digest": {
+      "title": "Manifest Digest",
+      "type": "string"
+    },
+    "prior_revision": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Prior Revision"
+    },
+    "report_digest": {
+      "title": "Report Digest",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "experiment_id",
+    "manifest_digest",
+    "report_digest",
+    "evidence_digest",
+    "approval_digest",
+    "activegraph_publication_address",
+    "exporter_version"
+  ],
+  "title": "PublicationBundle",
+  "type": "object"
+}

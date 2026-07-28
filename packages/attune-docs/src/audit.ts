@@ -263,7 +263,7 @@ export const auditManifest = (
       if (
         !symbol.relations.some(
           (relation) =>
-            relation.source === "descriptor" &&
+            relation.source === "registry" &&
             rule.anyOf.includes(relation.kind),
         )
       ) {
@@ -271,7 +271,7 @@ export const auditManifest = (
           code: "missing-relation",
           severity: "error",
           symbolId: symbol.id,
-          message: `${symbol.exportName} matches policy “${rule.name}” but its descriptor declares none of ${rule.anyOf.join(", ")}. TSDoc relation tags are explanatory and do not satisfy this rule. ${rule.rationale}`,
+          message: `${symbol.exportName} matches policy “${rule.name}” but its registry entries declare none of ${rule.anyOf.join(", ")}. TSDoc relation tags are explanatory and do not satisfy this rule. ${rule.rationale}`,
         });
       }
     }

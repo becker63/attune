@@ -11,42 +11,28 @@ export interface Investigation<State extends string = "active"> {
 /** An active capability that may execute another operation. */
 export type ActiveInvestigation = Investigation<"active">;
 
-/**
- * A fixture operation with descriptor-owned lifecycle metadata.
- */
-export const ExampleOperation = {
-  name: "example",
-  lifecycle: {
-    requires: "active",
-    produces: "active",
-    transition: "preserve",
-  },
-} as const;
-
-const sharedLifecycle = {
-  requires: "active",
-  produces: "active",
+const preservingEntry = {
   transition: "preserve",
 } as const;
 
-const spreadDescriptor = {
-  lifecycle: sharedLifecycle,
-  writer: "exclusive",
-} as const;
-
-/** A descriptor assembled from typed constants and an object spread. */
-export const SpreadOperation = {
-  ...spreadDescriptor,
-  name: "spread",
+/** The closed fixture registry and its machine-authoritative transitions. */
+export const ATTUNE_OPERATIONS = {
+  example: {
+    transition: "materialize",
+  },
+  spread: {
+    ...preservingEntry,
+  },
+  finish: {
+    transition: "finalize",
+  },
 } as const;
 
 /**
- * A non-descriptor whose text must never be mistaken for lifecycle metadata.
+ * Unrelated text that must never be mistaken for registry metadata.
  */
-export const CommentOnlyOperation = {
-  name: "comment-only",
-  note: `lifecycle: { requires: "active" }`,
-  // lifecycle: { produces: "active", transition: "preserve" }
+export const CommentOnlyMetadata = {
+  note: `ATTUNE_OPERATIONS: { example: { transition: "preserve" } }`,
 } as const;
 
 /** A public failure that tells the caller to correct the fixture input. */

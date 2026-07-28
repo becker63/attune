@@ -2,5 +2,5 @@
 
 from typing import Final
 
-CONTRACT_SHA256: Final = "8d4218f703678647caffbb3d27697c53558685dd883312d156ce8af6b2d9e341"
+CONTRACT_SHA256: Final = "b72b575b40f9067a40c1eaae6c55707e291de2fd5134910be544fdadba239fd3"
 CONTRACT_RESOURCE_URI: Final = "attune://contracts"

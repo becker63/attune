@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, writeFile } from "node:fs/promises";
 import * as Path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { withTemporaryDirectory } from "./fixtures.js";
 
 const runner = fileURLToPath(
   new URL("../dist/property-runner.mjs", import.meta.url),
@@ -42,8 +43,6 @@ const execute = async (root: string, source: string, parameters: object) => {
 
 describe("fixed native fast-check boundary", () => {
   it("shrinks and replays a native TypeScript property", async () => {
-    const firstRoot = await mkdtemp(Path.join(tmpdir(), "attune-property-"));
-    const replayRoot = await mkdtemp(Path.join(tmpdir(), "attune-replay-"));
     const source = `
       import fc from "fast-check"
       export default fc.property(
@@ -51,36 +50,32 @@ describe("fixed native fast-check boundary", () => {
         (value) => value < 2,
       )
     `;
-    try {
-      const first = await execute(firstRoot, source, {
-        numRuns: 100,
-        seed: 424242,
+    await withTemporaryDirectory("attune-property-", async (firstRoot) => {
+      await withTemporaryDirectory("attune-replay-", async (replayRoot) => {
+        const first = await execute(firstRoot, source, {
+          numRuns: 100,
+          seed: 424242,
+        });
+        expect(first.failed).toBe(true);
+        expect(first.numShrinks).toBeGreaterThan(0);
+        expect(
+          JSON.parse(
+            await readFile(Path.join(firstRoot, "counterexample.json"), "utf8"),
+          ),
+        ).toEqual([2]);
+        const replay = await execute(replayRoot, source, {
+          numRuns: 100,
+          seed: first.seed,
+          path: first.counterexamplePath,
+        });
+        expect(replay.failed).toBe(true);
+        expect(replay.seed).toBe(first.seed);
       });
-      expect(first.failed).toBe(true);
-      expect(first.numShrinks).toBeGreaterThan(0);
-      expect(
-        JSON.parse(
-          await readFile(Path.join(firstRoot, "counterexample.json"), "utf8"),
-        ),
-      ).toEqual([2]);
-      const replay = await execute(replayRoot, source, {
-        numRuns: 100,
-        seed: first.seed,
-        path: first.counterexamplePath,
-      });
-      expect(replay.failed).toBe(true);
-      expect(replay.seed).toBe(first.seed);
-    } finally {
-      await Promise.all([
-        rm(firstRoot, { recursive: true, force: true }),
-        rm(replayRoot, { recursive: true, force: true }),
-      ]);
-    }
+    });
   });
 
   it("accepts a native asynchronous property without an Attune DSL", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-async-property-"));
-    try {
+    await withTemporaryDirectory("attune-async-property-", async (root) => {
       const details = await execute(
         root,
         `
@@ -93,8 +88,6 @@ describe("fixed native fast-check boundary", () => {
         { numRuns: 20, seed: 7 },
       );
       expect(details.failed).toBe(false);
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 });

@@ -1,5 +1,11 @@
 import { Schema } from "effect";
-import { cpg, prop, raw } from "joern-effect";
+import {
+  compileSerializedQuery,
+  cpg,
+  generatedSchema,
+  prop,
+  raw,
+} from "joern-effect";
 import { vi } from "vitest";
 
 vi.setConfig({ testTimeout: 30_000 });
@@ -62,5 +68,36 @@ describe("query builder", () => {
     expect(query.cpgql).toContain('.name("password")');
     expect(query.cpgql).toContain(".lineNumber(42)");
     expect(query.cpgql).toContain(".dedup.take(10)");
+  });
+
+  it("compiles a versioned JSON traversal through the generated emitter", () => {
+    expect(
+      compileSerializedQuery({
+        version: 1,
+        cpgSchemaVersion: generatedSchema.version,
+        cpgSchemaHash: generatedSchema.hash,
+        segments: [
+          { kind: "starter", name: "call" },
+          {
+            kind: "filter",
+            name: "name",
+            value: { regex: "exec|spawn", flags: "i" },
+          },
+        ],
+        select: { code: "code", line: "lineNumber" },
+      }),
+    ).toContain('cpg.call.name("(?i)exec|spawn")');
+  });
+
+  it("rejects names outside the pinned generated schema", () => {
+    expect(() =>
+      compileSerializedQuery({
+        version: 1,
+        cpgSchemaVersion: generatedSchema.version,
+        cpgSchemaHash: generatedSchema.hash,
+        segments: [{ kind: "starter", name: "tsxOnly" }],
+        select: { code: "code" },
+      }),
+    ).toThrow("unknown or misplaced starter tsxOnly");
   });
 });

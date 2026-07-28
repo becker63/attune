@@ -1,4 +1,4 @@
-export const API_MANIFEST_SCHEMA_VERSION = "1.0.0" as const;
+export const API_MANIFEST_SCHEMA_VERSION = "2.0.0" as const;
 export const PROSE_DRAFT_SCHEMA_VERSION = "1.0.0" as const;
 
 export type ApiSymbolKind =
@@ -43,7 +43,7 @@ export interface LifecycleRelation {
   readonly kind: LifecycleRelationKind;
   readonly target: string;
   readonly targetSymbolId?: string;
-  readonly source: "tsdoc" | "descriptor";
+  readonly source: "tsdoc" | "registry";
 }
 
 export interface ApiFact {

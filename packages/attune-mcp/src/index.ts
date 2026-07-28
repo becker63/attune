@@ -1,15 +1,23 @@
-/**
- * Supported Attune MCP package entry point.
- *
- * @remarks
- * This intentionally small file exposes the repository's noun-oriented
- * contract, investigation, platform, server, and tool boundaries. The `v0`
- * directory remains an implementation-compatibility layer; contributors
- * should begin with `investigation/service.ts` or the relevant `tools/<noun>`
- * module instead of treating protocol registration as the application model.
- */
-export * from "./contract/index.js";
-export * from "./investigation/index.js";
-export * from "./platform/index.js";
-export * from "./server/index.js";
-export * from "./tools/index.js";
+/** The complete public model: one Toolkit, one registry, and one service. */
+export { AttuneToolkit, ATTUNE_OPERATIONS } from "./tools/registry.js";
+export type {
+  AttuneOperationError,
+  AttuneOperationInput,
+  AttuneOperationName,
+  AttuneOperationReceipt,
+  AttuneOperationResult,
+  AttuneOperationWireInput,
+  AttuneOperationWriter,
+} from "./tools/registry.js";
+export {
+  InvestigationService,
+  makeInvestigationService,
+} from "./investigation/service.js";
+export type { InvestigationServiceApi } from "./investigation/service.js";
+export type {
+  ActiveInvestigation,
+  FinalizedInvestigation,
+  MaterializedInvestigationCapability,
+} from "./investigation/capability.js";
+export { InvestigationLifecycleError } from "./investigation/errors.js";
+export { AttuneToolFailure } from "./contract/schemas.js";

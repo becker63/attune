@@ -4,56 +4,33 @@ import {
   chmod,
   cp,
   mkdir,
-  mkdtemp,
   readFile,
   readdir,
   rm,
   writeFile,
 } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import * as Path from "node:path";
-import { fileURLToPath } from "node:url";
 
+import type {
+  FullGitCommit,
+  InvestigationId,
+} from "../src/contract/schemas.js";
 import {
   normalizeRemote,
-  sha256,
   WorkspaceStore,
-  type FullGitCommit,
-  type InvestigationId,
   type InvestigationManifest,
   type MountedWorkspace,
-  type RuntimeConfig,
-} from "attune-mcp";
+} from "../src/investigation/workspace.js";
+import {
+  fixtureRuntimeConfig,
+  readJson,
+  withTemporaryDirectory,
+} from "./fixtures.js";
 
 const git = (cwd: string, ...args: string[]): string =>
   execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 
-const config = (home: string): RuntimeConfig => ({
-  home,
-  agentFs: "agentfs",
-  fusermount: "fusermount3",
-  git: "git",
-  node: process.execPath,
-  joern: "joern",
-  maude: "maude",
-  astGrep: "ast-grep",
-  flock: "flock",
-  lockHolder: fileURLToPath(
-    new URL("../dist/lock-holder.mjs", import.meta.url),
-  ),
-  propertyRunner: fileURLToPath(
-    new URL("../dist/property-runner.mjs", import.meta.url),
-  ),
-  contractBundle: fileURLToPath(
-    new URL("../../../contracts/attune-tools.schema.json", import.meta.url),
-  ),
-  contractDigest: fileURLToPath(
-    new URL("../../../contracts/attune-tools.sha256", import.meta.url),
-  ),
-  toolchainDigest: sha256("test"),
-  outputLimitBytes: 1024,
-  inlineLimitBytes: 256,
-});
+const config = fixtureRuntimeConfig;
 
 class LocalMountWorkspaceStore extends WorkspaceStore {
   override async withMount<A>(
@@ -78,12 +55,9 @@ class LocalMountWorkspaceStore extends WorkspaceStore {
     }
     await mkdir(artifactsPath, { recursive: true });
     const manifest = requireManifest
-      ? (JSON.parse(
-          await readFile(
-            Path.join(artifactsPath, "investigation.json"),
-            "utf8",
-          ),
-        ) as InvestigationManifest)
+      ? await readJson<InvestigationManifest>(
+          Path.join(artifactsPath, "investigation.json"),
+        )
       : ({
           investigationId: id,
           baseKey: binding.baseKey,
@@ -167,18 +141,24 @@ const makePublishedBasesRemovable = async (home: string): Promise<void> => {
   }
 };
 
+const expectPublishedIdentity = async (
+  home: string,
+  investigationId: InvestigationId,
+  baseKey: string,
+): Promise<void> => {
+  for (const [directory, entry] of [
+    ["capsules", `${investigationId}.db`],
+    ["bindings", `${investigationId}.json`],
+    ["bases", baseKey],
+  ] as const) {
+    expect(await readdir(Path.join(home, directory))).toEqual([entry]);
+  }
+};
+
 describe("narrow real Git seam", () => {
   it("uses clean full commits for checkpoints and isolated analysis", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-git-"));
-    const repository = Path.join(root, "repository");
-    await import("node:fs/promises").then(({ mkdir }) => mkdir(repository));
-    try {
-      git(repository, "init", "-q");
-      git(repository, "config", "user.name", "Fixture");
-      git(repository, "config", "user.email", "fixture@example.invalid");
-      await writeFile(Path.join(repository, "value.txt"), "first\n");
-      git(repository, "add", "value.txt");
-      git(repository, "commit", "-qm", "first");
+    await withTemporaryDirectory("attune-git-", async (root) => {
+      const repository = await createRepository(root, "repository", "first\n");
       const first = git(repository, "rev-parse", "HEAD") as FullGitCommit;
       const store = new WorkspaceStore(config(root));
 
@@ -222,38 +202,27 @@ describe("narrow real Git seam", () => {
       } finally {
         await rm(isolated.root, { recursive: true, force: true });
       }
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 
   it("rejects stale checkpoint expectations", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-stale-"));
-    try {
-      git(root, "init", "-q");
-      git(root, "config", "user.name", "Fixture");
-      git(root, "config", "user.email", "fixture@example.invalid");
-      await writeFile(Path.join(root, "a.txt"), "a");
-      git(root, "add", "a.txt");
-      git(root, "commit", "-qm", "a");
+    await withTemporaryDirectory("attune-stale-", async (root) => {
+      const repository = await createRepository(root, "repository", "a");
       await expect(
         new WorkspaceStore(config(root)).checkpoint(
-          root,
+          repository,
           "b".repeat(40) as FullGitCommit,
           "require-clean",
           undefined,
         ),
       ).rejects.toMatchObject({ code: "StaleSnapshot" });
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 
   it("does not spawn a command for an already-aborted request", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-pre-aborted-"));
-    const executable = Path.join(root, "observable-git.mjs");
-    const marker = Path.join(root, "spawned");
-    try {
+    await withTemporaryDirectory("attune-pre-aborted-", async (root) => {
+      const executable = Path.join(root, "observable-git.mjs");
+      const marker = Path.join(root, "spawned");
       await writeFile(
         executable,
         [
@@ -272,16 +241,13 @@ describe("narrow real Git seam", () => {
         }).head(root, controller.signal),
       ).rejects.toMatchObject({ code: "Cancelled" });
       await expect(access(marker)).rejects.toMatchObject({ code: "ENOENT" });
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 
   it("force-kills a command that ignores cancellation", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-force-kill-"));
-    const executable = Path.join(root, "stubborn-git.mjs");
-    const marker = Path.join(root, "spawned");
-    try {
+    await withTemporaryDirectory("attune-force-kill-", async (root) => {
+      const executable = Path.join(root, "stubborn-git.mjs");
+      const marker = Path.join(root, "spawned");
       await writeFile(
         executable,
         [
@@ -301,9 +267,7 @@ describe("narrow real Git seam", () => {
       await waitForFile(marker);
       controller.abort();
       await expect(running).rejects.toMatchObject({ code: "Cancelled" });
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 });
 
@@ -311,121 +275,101 @@ describe("materialization identity publication", () => {
   const investigationId = "01K33333333333333333333333" as InvestigationId;
 
   it("publishes one coherent identity for concurrent matching requests", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-identity-same-"));
-    const home = Path.join(root, "runtime");
-    await mkdir(home);
-    try {
-      const remote = await createRepository(root, "remote", "same\n");
-      const agentFs = await blockingAgentFs(root);
-      const store = new LocalMountWorkspaceStore({
-        ...config(home),
-        agentFs: agentFs.executable,
-      });
-      const input = {
-        investigationId,
-        remote,
-        revision: "HEAD",
-      } as const;
-
-      const first = store.materialize(input);
-      await waitForFile(agentFs.entered);
-      let secondSettled = false;
-      const second = store.materialize(input).finally(() => {
-        secondSettled = true;
-      });
-      await new Promise((resolve) => setTimeout(resolve, 25));
+    await withTemporaryDirectory("attune-identity-same-", async (root) => {
+      const home = Path.join(root, "runtime");
+      await mkdir(home);
       try {
-        expect(secondSettled).toBe(false);
-      } finally {
-        await writeFile(agentFs.release, "release\n");
-      }
+        const remote = await createRepository(root, "remote", "same\n");
+        const agentFs = await blockingAgentFs(root);
+        const store = new LocalMountWorkspaceStore({
+          ...config(home),
+          agentFs: agentFs.executable,
+        });
+        const input = {
+          investigationId,
+          remote,
+          revision: "HEAD",
+        } as const;
 
-      const [left, right] = await Promise.all([first, second]);
-      expect(left).toEqual(right);
-      const binding = await store.binding(investigationId);
-      const baseManifest = JSON.parse(
-        await readFile(
-          Path.join(home, "bases", binding.baseKey, "base-manifest.json"),
-          "utf8",
-        ),
-      ) as { readonly baseKey: string; readonly resolvedCommit: string };
-      expect(baseManifest).toMatchObject({
-        baseKey: binding.baseKey,
-        resolvedCommit: left.resolvedCommit,
-      });
-      expect(left.manifest.baseKey).toBe(binding.baseKey);
-      expect(await readdir(Path.join(home, "capsules"))).toEqual([
-        `${investigationId}.db`,
-      ]);
-      expect(await readdir(Path.join(home, "bindings"))).toEqual([
-        `${investigationId}.json`,
-      ]);
-      expect(await readdir(Path.join(home, "bases"))).toEqual([
-        binding.baseKey,
-      ]);
-    } finally {
-      await makePublishedBasesRemovable(home);
-      await rm(root, { recursive: true, force: true });
-    }
+        const first = store.materialize(input);
+        await waitForFile(agentFs.entered);
+        let secondSettled = false;
+        const second = store.materialize(input).finally(() => {
+          secondSettled = true;
+        });
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        try {
+          expect(secondSettled).toBe(false);
+        } finally {
+          await writeFile(agentFs.release, "release\n");
+        }
+
+        const [left, right] = await Promise.all([first, second]);
+        expect(left).toEqual(right);
+        const binding = await store.binding(investigationId);
+        const baseManifest = await readJson<{
+          readonly baseKey: string;
+          readonly resolvedCommit: string;
+        }>(Path.join(home, "bases", binding.baseKey, "base-manifest.json"));
+        expect(baseManifest).toMatchObject({
+          baseKey: binding.baseKey,
+          resolvedCommit: left.resolvedCommit,
+        });
+        expect(left.manifest.baseKey).toBe(binding.baseKey);
+        await expectPublishedIdentity(home, investigationId, binding.baseKey);
+      } finally {
+        await makePublishedBasesRemovable(home);
+      }
+    });
   });
 
   it("makes the first locked repository binding the deterministic winner", async () => {
-    const root = await mkdtemp(
-      Path.join(tmpdir(), "attune-identity-conflict-"),
-    );
-    const home = Path.join(root, "runtime");
-    await mkdir(home);
-    try {
-      const [firstRemote, conflictingRemote] = await Promise.all([
-        createRepository(root, "first-remote", "first\n"),
-        createRepository(root, "conflicting-remote", "conflicting\n"),
-      ]);
-      const agentFs = await blockingAgentFs(root);
-      const store = new LocalMountWorkspaceStore({
-        ...config(home),
-        agentFs: agentFs.executable,
-      });
+    await withTemporaryDirectory("attune-identity-conflict-", async (root) => {
+      const home = Path.join(root, "runtime");
+      await mkdir(home);
+      try {
+        const [firstRemote, conflictingRemote] = await Promise.all([
+          createRepository(root, "first-remote", "first\n"),
+          createRepository(root, "conflicting-remote", "conflicting\n"),
+        ]);
+        const agentFs = await blockingAgentFs(root);
+        const store = new LocalMountWorkspaceStore({
+          ...config(home),
+          agentFs: agentFs.executable,
+        });
 
-      const winner = store.materialize({
-        investigationId,
-        remote: firstRemote,
-        revision: "HEAD",
-      });
-      await waitForFile(agentFs.entered);
-      const loser = store.materialize({
-        investigationId,
-        remote: conflictingRemote,
-        revision: "HEAD",
-      });
-      const loserOutcome = loser.then(
-        (value) => ({ status: "succeeded" as const, value }),
-        (cause: unknown) => ({ status: "failed" as const, cause }),
-      );
-      await writeFile(agentFs.release, "release\n");
+        const winner = store.materialize({
+          investigationId,
+          remote: firstRemote,
+          revision: "HEAD",
+        });
+        await waitForFile(agentFs.entered);
+        const loser = store.materialize({
+          investigationId,
+          remote: conflictingRemote,
+          revision: "HEAD",
+        });
+        const loserOutcome = loser.then(
+          (value) => ({ status: "succeeded" as const, value }),
+          (cause: unknown) => ({ status: "failed" as const, cause }),
+        );
+        await writeFile(agentFs.release, "release\n");
 
-      const published = await winner;
-      expect(await loserOutcome).toMatchObject({
-        status: "failed",
-        cause: { code: "IdentityConflict" },
-      });
-      const binding = await store.binding(investigationId);
-      expect(published.manifest).toMatchObject({
-        investigationId,
-        normalizedRemote: await normalizeRemote(firstRemote),
-        baseKey: binding.baseKey,
-      });
-      expect(await readdir(Path.join(home, "capsules"))).toEqual([
-        `${investigationId}.db`,
-      ]);
-      expect(await readdir(Path.join(home, "bindings"))).toEqual([
-        `${investigationId}.json`,
-      ]);
-      expect(await readdir(Path.join(home, "bases"))).toEqual([
-        binding.baseKey,
-      ]);
-    } finally {
-      await makePublishedBasesRemovable(home);
-      await rm(root, { recursive: true, force: true });
-    }
+        const published = await winner;
+        expect(await loserOutcome).toMatchObject({
+          status: "failed",
+          cause: { code: "IdentityConflict" },
+        });
+        const binding = await store.binding(investigationId);
+        expect(published.manifest).toMatchObject({
+          investigationId,
+          normalizedRemote: await normalizeRemote(firstRemote),
+          baseKey: binding.baseKey,
+        });
+        await expectPublishedIdentity(home, investigationId, binding.baseKey);
+      } finally {
+        await makePublishedBasesRemovable(home);
+      }
+    });
   });
 });

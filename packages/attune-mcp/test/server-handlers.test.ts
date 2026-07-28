@@ -1,55 +1,41 @@
-import {
-  AttuneToolFailure,
-  canonicalJson,
-  makeInvestigationServiceFromHandlers,
-  makeMcpHandlers,
-  sha256,
-  type AttuneHandlers,
-  type AttuneTerminalLookups,
-  type FullGitCommit,
-  type InvestigationId,
-  type InvestigationManifest,
-  type InvestigationValidator,
-  type InvocationId,
-  type OperationResultOf,
-  type RepositoryCheckpointInput,
-  RepositoryCheckpointOperation,
-} from "attune-mcp";
 import { Effect } from "effect";
 
-const investigationId = "01K00000000000000000000000" as InvestigationId;
-const initialSnapshot = "a".repeat(40) as FullGitCommit;
-const advancedSnapshot = "b".repeat(40) as FullGitCommit;
-const timestamp = new Date(0).toISOString();
+import {
+  AttuneToolFailure,
+  type InvocationId,
+  type RepositoryCheckpointInput,
+} from "../src/contract/schemas.js";
+import {
+  makeInvestigationServiceFromHandlers,
+  type InvestigationValidator,
+} from "../src/investigation/service.js";
+import { canonicalJson } from "../src/platform/core.js";
+import { makeMcpHandlers } from "../src/server/handlers.js";
+import type {
+  AttuneOperationHandlers,
+  AttuneOperationResult,
+  AttuneTerminalLookups,
+} from "../src/tools/registry.js";
+import {
+  FIXTURE_INVESTIGATION_ID as investigationId,
+  FIXTURE_NEXT_SNAPSHOT as advancedSnapshot,
+  FIXTURE_SNAPSHOT as initialSnapshot,
+  fixtureManifest,
+  fixtureReceiptBase,
+} from "./fixtures.js";
 
-const manifest: InvestigationManifest = {
-  schemaVersion: 1,
-  investigationId,
-  normalizedRemote: "/fixture",
-  requestedRevision: "main",
-  resolvedCommit: initialSnapshot,
-  baseKey: sha256("server-handler-base"),
-  branch: `attune/${investigationId}`,
-  toolchainDigest: sha256("server-handler-toolchain"),
-  createdAt: timestamp,
-};
+const manifest = fixtureManifest();
 
 const terminalResult = (
   input: RepositoryCheckpointInput,
-): OperationResultOf<typeof RepositoryCheckpointOperation> => ({
+): AttuneOperationResult<"repository_checkpoint"> => ({
   snapshotId: advancedSnapshot,
   createdCommit: true,
   receipt: {
-    schemaVersion: 1,
-    invocationId: input.invocationId,
-    investigationId: input.investigationId,
-    tool: "repository",
-    operation: "checkpoint",
-    inputDigest: sha256(`${canonicalJson(input)}\n`),
-    toolchainDigest: manifest.toolchainDigest,
-    artifacts: [],
-    startedAt: timestamp,
-    completedAt: timestamp,
+    ...fixtureReceiptBase(input, "repository", "checkpoint", {
+      investigationId: input.investigationId,
+      toolchainDigest: manifest.toolchainDigest,
+    }),
     status: "succeeded",
     snapshotId: advancedSnapshot,
   },
@@ -62,24 +48,24 @@ describe("MCP durable terminal recovery", () => {
     let executions = 0;
     const terminals = new Map<
       string,
-      OperationResultOf<typeof RepositoryCheckpointOperation>
+      AttuneOperationResult<"repository_checkpoint">
     >();
     const unused = () => Effect.die("unexpected handler");
-    const handlers: AttuneHandlers = {
-      repositoryMaterialize: unused,
-      repositoryCheckpoint: (input) => {
+    const handlers: AttuneOperationHandlers = {
+      repository_materialize: unused,
+      repository_checkpoint: (input) => {
         executions += 1;
         const result = terminalResult(input);
         terminals.set(canonicalJson(input), result);
         head = advancedSnapshot;
         return Effect.succeed(result);
       },
-      joernQuery: unused,
-      maudeRun: unused,
-      propertyRun: unused,
-      astGrepRun: unused,
-      artifactPromote: unused,
-      investigationFinalize: unused,
+      joern_query: unused,
+      maude_run: unused,
+      property_run: unused,
+      ast_grep_run: unused,
+      artifact_promote: unused,
+      investigation_finalize: unused,
     };
     const validate: InvestigationValidator = (request) => {
       if (finalized) {
@@ -124,7 +110,7 @@ describe("MCP durable terminal recovery", () => {
     } as const;
 
     const first = await Effect.runPromise(
-      makeHandlers().repositoryCheckpoint(input),
+      makeHandlers().repository_checkpoint(input),
     );
     expect(first.receipt.status).toBe("succeeded");
     expect(head).toBe(advancedSnapshot);
@@ -134,13 +120,13 @@ describe("MCP durable terminal recovery", () => {
     // call. Durable lookup still returns the exact terminal result before the
     // stale old snapshot can be rejected by active-capability acquisition.
     expect(
-      await Effect.runPromise(makeHandlers().repositoryCheckpoint(input)),
+      await Effect.runPromise(makeHandlers().repository_checkpoint(input)),
     ).toEqual(first);
     expect(executions).toBe(1);
 
     await expect(
       Effect.runPromise(
-        makeHandlers().repositoryCheckpoint({
+        makeHandlers().repository_checkpoint({
           ...input,
           invocationId: "checkpoint-not-accepted" as InvocationId,
         }),
@@ -150,11 +136,11 @@ describe("MCP durable terminal recovery", () => {
 
     finalized = true;
     expect(
-      await Effect.runPromise(makeHandlers().repositoryCheckpoint(input)),
+      await Effect.runPromise(makeHandlers().repository_checkpoint(input)),
     ).toEqual(first);
     await expect(
       Effect.runPromise(
-        makeHandlers().repositoryCheckpoint({
+        makeHandlers().repository_checkpoint({
           ...input,
           expectedSnapshot: advancedSnapshot,
           invocationId: "checkpoint-after-finalization" as InvocationId,

@@ -1,0 +1,5 @@
+{
+  "id": "cancellation-terminalization",
+  "evaluator": "cancellation-terminalization-v1",
+  "question": "Find cancellation-safe terminalization gaps."
+}

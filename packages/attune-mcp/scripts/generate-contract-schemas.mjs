@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
-import { stringifyContractBundle } from "../dist/index.mjs";
+import { stringifyContractBundle } from "../dist/contract-bundle.mjs";
 
 const directory = new URL("../../../contracts/", import.meta.url);
 const bundlePath = new URL("attune-tools.schema.json", directory);

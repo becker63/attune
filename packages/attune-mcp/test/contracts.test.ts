@@ -2,18 +2,21 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
+import { Schema } from "effect";
+import { Tool } from "effect/unstable/ai";
+
+import {
+  generateContractBundle,
+  stringifyContractBundle,
+} from "../src/contract/bundle.js";
 import {
   ArtifactUri,
-  AttuneToolkit,
   FreeFormReferences,
-  generateContractBundle,
   InvestigationId,
   InvocationId,
   RepositoryRelativePath,
-  stringifyContractBundle,
-} from "attune-mcp";
-import { Schema } from "effect";
-import { Tool } from "effect/unstable/ai";
+} from "../src/contract/schemas.js";
+import { AttuneToolkit } from "../src/tools/registry.js";
 
 type JsonObject = { readonly [key: string]: unknown };
 type ContractBundle = JsonObject & {

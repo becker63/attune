@@ -1,0 +1,6 @@
+{
+  "targets": ["checkpoint-held-out", "finalize-held-out"],
+  "priorStates": ["cold", "prose", "motif-packet"],
+  "seeds": ["1", "2"],
+  "expectedRuns": 12
+}

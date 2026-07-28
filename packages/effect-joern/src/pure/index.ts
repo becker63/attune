@@ -5,4 +5,12 @@ export { cpg } from "./generated/cpg.js";
 export { nodes } from "./generated/nodes.js";
 export { prop } from "./generated/prop.js";
 export { generatedSchema } from "./generated/schema.js";
+export {
+  compileSerializedQuery,
+  type SerializedPattern,
+  type SerializedQuery,
+  type SerializedRepeatModifier,
+  type SerializedTraversalSegment,
+  type SerializedValue,
+} from "./serialized.js";
 export type { TraversalSegment } from "./builder/traversal.js";

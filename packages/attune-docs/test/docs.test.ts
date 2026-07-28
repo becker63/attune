@@ -1,10 +1,12 @@
 import {
+  mkdir,
   mkdtemp,
   readFile,
   readdir,
   rm,
   stat,
   symlink,
+  writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as Path from "node:path";
@@ -43,6 +45,7 @@ import {
   parseProseDraft,
 } from "../src/parse.ts";
 import { buildSite, resolveOutputPath } from "../src/site.ts";
+import { discoverStaticPages } from "../src/static-pages.ts";
 import {
   validatePublicationTraceBinding,
   validateTraceExport,
@@ -54,7 +57,7 @@ const policy: DocumentationPolicy = {
     {
       name: "fixture-docs",
       exportNamePattern:
-        "^(Investigation|ActiveInvestigation|ExampleOperation|ExampleFailure)$",
+        "^(Investigation|ActiveInvestigation|ATTUNE_OPERATIONS|ExampleFailure)$",
       minMatches: 4,
       rationale: "The fixture surface is intentionally documented.",
     },
@@ -62,13 +65,13 @@ const policy: DocumentationPolicy = {
   requiredRelations: [
     {
       name: "fixture-lifecycle",
-      exportNamePattern: "^ExampleOperation$",
+      exportNamePattern: "^ATTUNE_OPERATIONS$",
       minMatches: 1,
-      anyOf: ["requires", "produces", "transitionsTo"],
-      rationale: "The fixture operation has descriptor metadata.",
+      anyOf: ["transitionsTo"],
+      rationale: "The fixture registry has transition metadata.",
     },
   ],
-  allowedRelationTargets: ["active", "preserve"],
+  allowedRelationTargets: ["finalize", "materialize", "preserve"],
 };
 
 const extractFixture = (
@@ -135,6 +138,15 @@ const approveFixture = (
 };
 
 const traceAddress = (value: unknown): string => `sha256:${digestValue(value)}`;
+
+const publicationDigest = (
+  value: Record<string, unknown>,
+  field: string,
+): string => {
+  const copy = { ...value };
+  delete copy[field];
+  return `sha256:${digestValue(copy)}`;
+};
 
 const traceEdgeId = (source: string, target: string, type: string): string =>
   traceAddress({ source, target, type });
@@ -556,7 +568,7 @@ afterEach(async () => {
 });
 
 describe("deterministic API manifest", () => {
-  test("extracts stable symbols, documentation, and descriptor authority", async () => {
+  test("extracts stable symbols, documentation, and registry authority", async () => {
     const first = await extractFixture();
     const second = await extractFixture();
 
@@ -565,11 +577,11 @@ describe("deterministic API manifest", () => {
     const failure = first.symbols.find(
       (symbol) => symbol.exportName === "ExampleFailure",
     )!;
-    const spread = first.symbols.find(
-      (symbol) => symbol.exportName === "SpreadOperation",
+    const registry = first.symbols.find(
+      (symbol) => symbol.exportName === "ATTUNE_OPERATIONS",
     )!;
     const commentOnly = first.symbols.find(
-      (symbol) => symbol.exportName === "CommentOnlyOperation",
+      (symbol) => symbol.exportName === "CommentOnlyMetadata",
     )!;
     expect(failure.members.map((member) => member.name)).toContain("explain");
     expect(failure.members.map((member) => member.name)).not.toEqual(
@@ -581,13 +593,17 @@ describe("deterministic API manifest", () => {
       ]),
     );
     expect(
-      spread.relations
-        .filter((relation) => relation.source === "descriptor")
+      registry.relations
+        .filter((relation) => relation.source === "registry")
         .map((relation) => `${relation.kind}:${relation.target}`),
-    ).toEqual(["produces:active", "requires:active", "transitionsTo:preserve"]);
+    ).toEqual([
+      "transitionsTo:finalize",
+      "transitionsTo:materialize",
+      "transitionsTo:preserve",
+    ]);
     expect(
       commentOnly.relations.filter(
-        (relation) => relation.source === "descriptor",
+        (relation) => relation.source === "registry",
       ),
     ).toEqual([]);
     expect(
@@ -595,67 +611,57 @@ describe("deterministic API manifest", () => {
         id: symbol.id,
         kind: symbol.kind,
         documented: symbol.summary.length > 0,
-        descriptorRelations: symbol.relations
-          .filter((relation) => relation.source === "descriptor")
+        registryRelations: symbol.relations
+          .filter((relation) => relation.source === "registry")
           .map((relation) => `${relation.kind}:${relation.target}`),
       })),
     ).toMatchInlineSnapshot(`
       [
         {
-          "descriptorRelations": [],
           "documented": true,
           "id": "fixture#ActiveInvestigation",
           "kind": "type",
+          "registryRelations": [],
         },
         {
-          "descriptorRelations": [],
           "documented": true,
           "id": "fixture#artifactReference",
           "kind": "variable",
+          "registryRelations": [],
         },
         {
-          "descriptorRelations": [],
           "documented": true,
           "id": "fixture#ArtifactReference",
           "kind": "interface",
+          "registryRelations": [],
         },
         {
-          "descriptorRelations": [],
           "documented": true,
-          "id": "fixture#CommentOnlyOperation",
+          "id": "fixture#ATTUNE_OPERATIONS",
           "kind": "variable",
+          "registryRelations": [
+            "transitionsTo:finalize",
+            "transitionsTo:materialize",
+            "transitionsTo:preserve",
+          ],
         },
         {
-          "descriptorRelations": [],
+          "documented": true,
+          "id": "fixture#CommentOnlyMetadata",
+          "kind": "variable",
+          "registryRelations": [],
+        },
+        {
           "documented": true,
           "id": "fixture#ExampleFailure",
           "kind": "class",
+          "registryRelations": [],
         },
         {
-          "descriptorRelations": [
-            "produces:active",
-            "requires:active",
-            "transitionsTo:preserve",
-          ],
-          "documented": true,
-          "id": "fixture#ExampleOperation",
-          "kind": "variable",
-        },
-        {
-          "descriptorRelations": [],
           "documented": true,
           "id": "fixture#Investigation",
           "kind": "interface",
-        },
-        {
-          "descriptorRelations": [
-            "produces:active",
-            "requires:active",
-            "transitionsTo:preserve",
-          ],
-          "documented": true,
-          "id": "fixture#SpreadOperation",
-          "kind": "variable",
+          "registryRelations": [],
         },
       ]
     `);
@@ -693,7 +699,7 @@ describe("deterministic API manifest", () => {
   test("keeps API reference render bytes stable", async () => {
     const manifest = await extractFixture();
     const symbol = manifest.symbols.find(
-      (candidate) => candidate.exportName === "ExampleOperation",
+      (candidate) => candidate.exportName === "ATTUNE_OPERATIONS",
     )!;
     const index = renderApiIndex(manifest, [], "/attune/");
     const symbolPage = renderApiSymbol(symbol, manifest, [], "/attune/");
@@ -705,8 +711,8 @@ describe("deterministic API manifest", () => {
       symbol: digest(symbolPage),
     }).toMatchInlineSnapshot(`
       {
-        "index": "6001069b9d29c5ca52834ceaf45aa44d7f9f050e8b9ed61e5021724a34caa6eb",
-        "symbol": "c2f1642d36d7176935052971e9655447cd55cc30e4d891b101d5221dc858876d",
+        "index": "050b2e2e595ebd569ec4f9f4843c8cd88a79b9b2f191cdc7e6cfdf6a2775cdcb",
+        "symbol": "a848921a13694a6c021e6909a48334e39cce6d7deaaa9f28185a5d16998085ec",
       }
     `);
   });
@@ -725,10 +731,10 @@ describe("deterministic API manifest", () => {
       requiredRelations: [
         {
           name: "operation-cardinality",
-          exportNamePattern: "^(Example|Spread)Operation$",
-          minMatches: 3,
-          anyOf: ["requires"],
-          rationale: "All expected operations must remain present.",
+          exportNamePattern: "^ATTUNE_OPERATIONS$",
+          minMatches: 2,
+          anyOf: ["transitionsTo"],
+          rationale: "The closed registry must remain present.",
         },
       ],
       allowedRelationTargets: [],
@@ -1305,14 +1311,38 @@ describe("static publication", () => {
       [draft],
       { basePath: "/attune/", outputDirectory: output },
       [traceArtifact],
+      [
+        {
+          slug: "fixture-experiment",
+          title: "Fixture experiment",
+          markdown: `# Fixture experiment
+
+| Metric | Value |
+| --- | ---: |
+| Samples | 3 |
+
+\`\`\`ts
+type Observation = { readonly samples: number };
+\`\`\`
+`,
+        },
+      ],
     );
 
-    const [html, markdown, traceHtml, traceJson] = await Promise.all([
-      readFile(Path.join(output, "guides", "fixture.html"), "utf8"),
-      readFile(Path.join(output, "guides", "fixture.md"), "utf8"),
-      readFile(Path.join(output, "traces", "fixture.html"), "utf8"),
-      readFile(Path.join(output, "traces", "examples", "fixture.json"), "utf8"),
-    ]);
+    const [html, markdown, traceHtml, traceJson, experimentHtml] =
+      await Promise.all([
+        readFile(Path.join(output, "guides", "fixture.html"), "utf8"),
+        readFile(Path.join(output, "guides", "fixture.md"), "utf8"),
+        readFile(Path.join(output, "traces", "fixture.html"), "utf8"),
+        readFile(
+          Path.join(output, "traces", "examples", "fixture.json"),
+          "utf8",
+        ),
+        readFile(
+          Path.join(output, "experiments", "fixture-experiment.html"),
+          "utf8",
+        ),
+      ]);
     expect(html).toContain('href="/attune/api/active-investigation.html"');
     expect(html).toContain('src="/attune/assets/site.js"');
     expect(markdown).toContain("### Grounded in");
@@ -1323,13 +1353,38 @@ describe("static publication", () => {
     expect(traceHtml).not.toContain(" · current");
     expect(traceHtml).not.toContain(" · stale");
     expect(traceJson).toContain('"provenance_kind": "content"');
+    expect(experimentHtml).toContain("<table>");
+    expect(experimentHtml).toContain("Fixture experiment");
+    expect(experimentHtml).toContain("twoslash-hover");
     await expect(stat(Path.join(output, ".nojekyll"))).resolves.toBeDefined();
+    await expect(
+      stat(Path.join(output, "assets", "twoslash.css")),
+    ).resolves.toBeDefined();
     await expect(
       stat(Path.join(output, "schemas", "prose-draft.schema.json")),
     ).resolves.toBeDefined();
     await expect(
       stat(Path.join(output, "schemas", "guide-approval.schema.json")),
     ).resolves.toBeDefined();
+
+    const pending = [output];
+    const renderedPages: string[] = [];
+    while (pending.length > 0) {
+      const directory = pending.pop()!;
+      for (const entry of await readdir(directory, { withFileTypes: true })) {
+        const path = Path.join(directory, entry.name);
+        if (entry.isDirectory()) pending.push(path);
+        else if (entry.name.endsWith(".html")) renderedPages.push(path);
+      }
+    }
+    expect(renderedPages.length).toBeGreaterThan(5);
+    for (const page of renderedPages) {
+      const rendered = await readFile(page, "utf8");
+      expect(
+        rendered,
+        `${Path.relative(output, page)} has a Shiki/Twoslash type lens`,
+      ).toContain("twoslash-hover");
+    }
 
     const evidence: EvidenceManifest = {
       schemaVersion: "1.0.0",
@@ -1376,7 +1431,7 @@ describe("static publication", () => {
           claims: [
             {
               ...draft.sections[0]!.claims[0]!,
-              text: "![tracking](https://example.test/pixel) **trusted**",
+              text: "![tracking](https://example.test/pixel) **trusted** `ActiveInvestigation`",
             },
           ],
         },
@@ -1396,6 +1451,7 @@ describe("static publication", () => {
     expect(markdown).toContain(
       String.raw`\!\[tracking\]\(https\:\/\/example\.test\/pixel\) \*\*trusted\*\*`,
     );
+    expect(markdown).toContain("` ActiveInvestigation `");
   });
 
   test("rejects publication traces that are not bound to the exact build", async () => {
@@ -2153,6 +2209,38 @@ describe("static publication", () => {
     expect(collisionEntries).toHaveLength(2);
     expect(new Set(collisionEntries.map((entry) => entry.href)).size).toBe(2);
   });
+});
+
+test("discovers a closed Python-generated static publication page", async () => {
+  const root = await mkdtemp(Path.join(tmpdir(), "attune-experiment-"));
+  temporaryDirectories.push(root);
+  const page = Path.join(root, "fixture");
+  await mkdir(page);
+  const manifest = { experiment_id: "fixture", value: 1 };
+  const report = { experiment_id: "fixture", title: "Fixture experiment" };
+  const approval = {
+    manifest_digest: publicationDigest(manifest, "manifest_digest"),
+    report_digest: publicationDigest(report, "report_digest"),
+  };
+  const publication = {
+    manifest_digest: publicationDigest(manifest, "manifest_digest"),
+    report_digest: publicationDigest(report, "report_digest"),
+    approval_digest: publicationDigest(approval, "approval_digest"),
+  };
+  await Promise.all([
+    writeFile(Path.join(page, "manifest.json"), JSON.stringify(manifest)),
+    writeFile(Path.join(page, "report.json"), JSON.stringify(report)),
+    writeFile(Path.join(page, "approval.json"), JSON.stringify(approval)),
+    writeFile(Path.join(page, "publication.json"), JSON.stringify(publication)),
+    writeFile(Path.join(page, "index.md"), "# Fixture experiment\n"),
+  ]);
+  await expect(discoverStaticPages(root)).resolves.toEqual([
+    {
+      slug: "fixture",
+      title: "Fixture experiment",
+      markdown: "# Fixture experiment\n",
+    },
+  ]);
 });
 
 test("records the current TypeDoc compatibility blocker", () => {

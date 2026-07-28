@@ -1,5 +1,48 @@
 ## Context
 
+## Super-change consolidation and deletion decisions
+
+This design is the authority for the related ActiveGraph bridge, grounded
+onboarding, and researchbench work. The source changes are folded here in this
+order: the closed Effect/MCP ABI, generated Python consumption, then the
+consumer-side researchbench and static publication path. No source change may
+retain an independent competing model after this change lands.
+
+The TypeScript reduction is a product decision, not a formatting target. From
+the cleanup baseline `c65a76c6f8fabf57c06d23a87096073a56301ba4`, the combined
+handwritten `packages/attune-mcp/src` and `test` tree is 11,285 physical lines.
+The main implementation target is at most 8,000 lines (a net cut of at least
+3,285); `effect-joern` remains intact except for the small reusable structured
+DSL compiler needed by MCP.
+
+The approved cuts are:
+
+1. Delete the public/general `Operation.define` facade, arbitrary operation
+   registry constructor, dependent field-name/correlation type algebra, and
+   compatibility aliases. Replace them with one literal eight-entry registry,
+   keyed input/result/error/receipt/writer projections, and bounded runtime
+   validation of those eight entries.
+2. Delete duplicate registry-level correlation proof tests and type-only
+   scaffolding that restate Effect Tool schemas. Retain one table-driven
+   registry validation suite plus focused type tests proving keyed inference and
+   rejected unsupported names.
+3. Delete any MCP-local structured-CPGQL serializer. `effect-joern` owns the
+   JSON form, validation against generated starters/properties/steps, and the
+   canonical CPGQL emitter; MCP only decodes, retains, and invokes it.
+4. Delete compatibility imports and module shims whose only job is to preserve
+   the old `v0`/generic operation layout. Preserve the eight wire names,
+   durable receipts, AgentFS/commit checks, exact retry behavior, and real
+   native fixtures.
+5. Do not cut the generated DSL, raw CPGQL escape hatch, durable terminal
+   receipt path, AgentFS remount behavior, native cancellation path, or
+   positive/negative lifecycle coverage. Those are product capabilities, not
+   incidental LOC.
+
+The Python implementation is deliberately a consumer. It imports generated
+models and calls explicit named bridge methods; it must not mirror the deleted
+TypeScript operation algebra, re-serialize Joern, or recreate durable receipt
+logic. Its production budget remains 2,200 handwritten lines.
+
 The repository is an Nx monorepo with a shared TypeScript/Oxc/Vitest toolchain,
 an exact Effect 4 beta pin, and Nix outputs for native `aarch64-linux` and
 `x86_64-linux`. Its existing Joern library has three names:
@@ -103,8 +146,8 @@ service buses.
 
 ## Goals
 
-- Make the Effect MCP server the single capability ABI used by both future
-  ActiveGraph packs and commodity MCP clients.
+- Make the Effect MCP server the single capability ABI used by the included
+  ActiveGraph bridge and researchbench as well as commodity MCP clients.
 - Materialize one requested revision as one exact Git commit.
 - Create one resumable AgentFS investigation with stable `/repo` and
   `/artifacts` namespaces.
@@ -118,9 +161,11 @@ service buses.
   cancellation and cleanup.
 - Promote caller-selected native artifacts into Git without deciding what they
   mean or whether they are good.
-- Emit deterministic JSON Schema contracts and a digest suitable for future
-  Pydantic model generation.
+- Emit deterministic JSON Schema contracts and a digest, then generate the
+  included Pydantic models and eight explicit Python wrappers from them.
 - Keep the implementation small enough to remain a capability service.
+- Publish the resulting small root API and reviewed onboarding products with an
+  isolated Shiki/Twoslash renderer.
 
 ## Non-Goals
 
@@ -130,8 +175,10 @@ service buses.
   AgentFS tool-audit mirroring, or terminal-state repair.
 - Semantic reference validation, a closed reference-role vocabulary, or
   cross-snapshot meaning inference.
-- ActiveGraph, Python, Pydantic generation, model training, corpus construction,
-  or developer-oracle endpoints in this change.
+- ActiveGraph events, Python behavior execution, Pydantic validation, or
+  research policy inside the TypeScript MCP service or its executable Nix
+  closure. They remain included consumer products on the Python side.
+- Model training, live campaign execution, or developer-oracle endpoints.
 - Dirty-tree snapshots, untracked-file snapshots, or a second filesystem
   manifest pretending to be Git history.
 - Submodule support in V0.
@@ -143,7 +190,7 @@ service buses.
 ## System Overview
 
 ```text
-              future research harness              developer harnesses
+               included researchbench              developer harnesses
                   Python / ActiveGraph             Codex / Claude / Pi
                            │                                │
                            └──────── MCP + JSON Schema ─────┘
@@ -172,9 +219,10 @@ service buses.
                                                     and ast-grep
 ```
 
-The Python side is intentionally absent from the V0 implementation. The JSON
-Schema bundle is the seam that allows it to be added later without changing the
-mechanical service.
+The Python side is intentionally absent from the TypeScript MCP runtime, not
+from this change. The frozen JSON Schema bundle is the one-way seam consumed by
+the included generated Pydantic models, explicit ActiveGraph bridge, and
+researchbench without changing mechanical service authority.
 
 ## Authority Boundaries
 
@@ -183,7 +231,7 @@ mechanical service.
 | Repository history and promoted artifacts                             | Git                         |
 | Investigation delta and complete native tool artifacts                | AgentFS                     |
 | Tool execution, input identity, terminal receipts, cancellation       | Effect                      |
-| Semantic lineage, hypotheses, alternatives, replay, forks, evaluation | ActiveGraph, later          |
+| Semantic lineage, hypotheses, alternatives, replay, forks, evaluation | ActiveGraph/Python consumer |
 | Executable dependency closure                                         | Nix                         |
 | Cross-language capability contract                                    | MCP + generated JSON Schema |
 
@@ -204,10 +252,10 @@ The MCP server exposes imperative, typed capabilities. It does not decide which
 tool runs next, react to evidence, schedule refinement, retry failed theories,
 construct a corpus, or promote a model.
 
-Future ActiveGraph behaviors may call these tools and create semantic objects
-and relations from their receipts. A commodity MCP client may call the same
-tools directly. Neither client receives privileged filesystem or process
-access.
+The included ActiveGraph bridge and researchbench behaviors call these tools
+and create consumer-owned semantic objects and relations from their receipts.
+A commodity MCP client may call the same tools directly. Neither client
+receives privileged filesystem or process access.
 
 ### 2. A repository snapshot is a clean Git commit
 
@@ -440,8 +488,8 @@ Typical values may be:
 - a human label;
 - an external evaluation identifier.
 
-ActiveGraph will later own typed semantic relations around the receipt. Direct
-MCP clients may use notes informally.
+The included ActiveGraph/Python consumer owns typed semantic relations around
+the receipt. Direct MCP clients may use notes informally.
 
 ### 8. Native tools remain shallow adapters
 
@@ -574,7 +622,7 @@ The bundle is canonical JSON with deterministic tool ordering and contains the
 complete public input/output/failure surface. A check fails when Effect schemas
 change without regenerating the bundle.
 
-Future integration, outside this change, will:
+The included cross-language build is:
 
 ```text
 Effect Schema
@@ -583,15 +631,15 @@ checked-in JSON Schema bundle + digest
       ↓
 generated Pydantic models
       ↓
-generated ActiveGraph tool wrappers
+eight explicit ActiveGraph tool wrappers
       ↓
 one long-lived Python MCP client session
 ```
 
-The future wrapper compares its expected schema digest with the live MCP
-service and fails before a run on mismatch. Production wrappers are generated
-from the checked-in bundle, not dynamically invented from an arbitrary
-`tools/list` response.
+The bridge compares its expected schema digest with the live MCP service and
+fails before a run on mismatch. Production wrappers are generated from the
+checked-in bundle, not dynamically invented from an arbitrary `tools/list`
+response.
 
 ### 15. Nix owns executable reality
 
@@ -613,52 +661,36 @@ then injects it into every receipt. Invocation handling does not traverse or
 rehash Nix closures. Mutable AgentFS databases, repository views, artifacts,
 mounts, and locks remain outside the Nix store.
 
-ActiveGraph and Python are not added to the V0 closure. They will receive their
-own exact Python/uv/Nix pin when the generated wrapper change is proposed.
+ActiveGraph and Python are not added to the TypeScript MCP executable closure.
+Their exact Python/uv/Nix pin belongs to the included consumer build, which
+depends one-way on the frozen MCP contract and launches the host-native MCP
+server rather than embedding its runtime.
 
 ### 16. Size is an architectural acceptance criterion
 
-The accounting boundary is every `.ts` and `.tsx` file in `joern-effect`,
-`attune-mcp`, the current property package, and any TypeScript package or script
-introduced by this change, including generated TypeScript, tests, scripts, and
-configuration. Only dependency and build-output directories such as
-`node_modules` and `dist` are excluded.
+The primary accounting boundary is every handwritten `.ts` file under
+`packages/attune-mcp/src` and `packages/attune-mcp/test`. Generated output,
+dependencies, build output, and documentation are excluded. The command and
+file list used for the result are recorded with the final validation.
 
-The 2026-07-27 baseline from `scc` is 75,324 TypeScript code lines and 81,821
-physical lines:
+At cleanup baseline commit
+`c65a76c6f8fabf57c06d23a87096073a56301ba4`, that boundary contains 11,285
+physical lines. This change accepts at most 8,000 physical lines, a required
+net cut of at least 3,285 lines. The reduction must delete duplicate operation,
+descriptor, compatibility, correlation, handler-map, and proof scaffolding; it
+must not hide code in generated files or remove durable receipt, retry,
+cancellation, AgentFS, contract, or lifecycle evidence.
 
-| Current surface                                              | `scc` code lines |
-| ------------------------------------------------------------ | ---------------: |
-| `attune-mcp` production                                      |           37,919 |
-| `attune-mcp` tests                                           |           27,261 |
-| property package production                                  |            3,949 |
-| property package tests                                       |            1,884 |
-| `joern-effect`, including generated code, tests, and scripts |            4,203 |
-| remaining `attune-mcp` / property TypeScript configuration   |              108 |
-| Total                                                        |           75,324 |
+The complete `joern-effect` package remains independently measured and intact
+apart from the reusable structured-query compiler. Broader `scc` inventories
+remain useful diagnostics, but they are not substitutes for this package-level
+physical-line acceptance gate.
 
-That is evidence that framework responsibilities leaked into the service.
-
-The budget is:
-
-| Surface                                                | Target code lines |
-| ------------------------------------------------------ | ----------------: |
-| Complete existing `joern-effect` package               |             4,250 |
-| `attune-mcp` production, including the property runner |             3,750 |
-| `attune-mcp` tests and configuration                   |             2,000 |
-| Total target                                           |            10,000 |
-| Hard acceptance ceiling                                | fewer than 15,000 |
-
-Crossing 10,000 lines triggers an immediate responsibility review and a
-written explanation in this design. Reaching 15,000 lines fails this change's
-acceptance criteria unless the user explicitly approves a new OpenSpec
-revision.
-
-The 10,000-line target requires removing about 87% of the current TypeScript;
-the 15,000-line ceiling still requires removing about 80%. This is a surgical
-reduction of the existing repository, not a new empty-package implementation:
-the proven native seams remain, while most surrounding orchestration is
-deleted or collapsed.
+The second simplicity gate is the supported `attune-mcp` package entry: at most
+twenty named exports, centered on one Toolkit, one closed registry, and one
+service. Per-tool descriptor constants, implementation handlers,
+compatibility maps, stores, engines, platform helpers, and recursive barrels
+are not public onboarding concepts.
 
 The dependency-aware cut map for the superseded implementation is:
 
@@ -671,13 +703,13 @@ The dependency-aware cut map for the superseded implementation is:
 | MCP tool schemas, stdio registration, JSON Schema emission, resource registration, and contract conformance checks                                                       | **Keep and simplify**    | Eight tools, four read-only resource families, one frozen contract bundle, and no harness dependency.                                         |
 | Real fixture repositories and native tool smoke knowledge                                                                                                                | **Keep and consolidate** | Focused adapter smokes plus one golden investigation; tests of deleted abstractions do not survive.                                           |
 | `runtime/run-store.ts`, `run-reconciliation.ts`, `run-audit-reconciliation.ts`, `process-owner-registry.ts`, lifecycle-bearing `domain/runs.ts`, and corresponding tests | **Delete**               | One immutable terminal receipt written by the common invocation helper; an accepted request without a receipt is simply incomplete.           |
-| `domain/provenance.ts`, semantic reference validation, snapshot relationship classification, tool-specific correlation documents, and DAG tests                          | **Delete**               | Bounded opaque `{ ref, note? }` values retained byte-for-byte and interpreted only by the agent or future ActiveGraph harness.                |
+| `domain/provenance.ts`, semantic reference validation, snapshot relationship classification, tool-specific correlation documents, and DAG tests                          | **Delete**               | Bounded opaque `{ ref, note? }` values retained byte-for-byte and interpreted only by the agent or included ActiveGraph consumer.             |
 | AgentFS tool-audit mirroring, audit backfill, custom SQL-adjacent lifecycle policy, owner reconciliation, and finalized-copy reader framework                            | **Delete**               | AgentFS holds the overlay and artifact bytes; Attune stores only its small mechanical manifest and receipts.                                  |
 | `repository/snapshot.ts`, `frozen-snapshot.ts`, Git object pools, submodule workers/protocols, and dirty/untracked visibility machinery                                  | **Delete**               | A clean full Git commit is the sole analysis snapshot; each native tool receives an isolated exact-commit checkout.                           |
 | `property/configured-adapters.ts`, property services/host buses, `packages/properties` DSL/service registry, and replay-authority tests                                  | **Delete**               | A fixed child runner loads an ordinary TypeScript module whose default export is a native fast-check property and records `fc.check` details. |
 | Per-tool `application.ts` orchestration that duplicates prepare/audit/execute/reconcile/promote phases                                                                   | **Collapse**             | Thin Joern, Maude, fast-check, and ast-grep adapters call the same invocation and process helpers.                                            |
 | Public `joern_reindex`, Joern session-registry framework, per-tool promotion APIs, promotion eligibility policy, and provenance sidecars                                 | **Delete**               | `joern_query` owns only snapshot-compatible execution; one generic `artifact_promote` copies selected native bytes.                           |
-| Hostile-code sandbox claims, bubblewrap/property service closures, ActiveGraph/Python/Pydantic/model-training code, and an Attune agent loop                             | **Delete or do not add** | Trusted-local bounded execution only; future ActiveGraph integration consumes MCP plus frozen JSON Schema.                                    |
+| Hostile-code sandbox claims, bubblewrap/property service closures, ActiveGraph/Python/Pydantic/model-training code inside the MCP runtime, and an Attune agent loop      | **Delete or do not add** | Trusted-local bounded execution only; included Python products consume MCP plus frozen JSON Schema from outside the TypeScript service.       |
 
 A safe deletion order follows the dependency direction: first replace the
 shared schemas and invocation/process seams, then convert Maude, ast-grep,
@@ -763,7 +795,8 @@ tool failure channel.
     "invocationId": "string",
     "investigationId": "string",
     "expectedSnapshot": "full Git commit",
-    "cpgql": "string",
+    "cpgql": "string (mutually exclusive with dsl)",
+    "dsl": "versioned StructuredJoernQuery (mutually exclusive with cpgql)",
     "frontend": "auto | jssrc",
     "importOptions": "object",
     "outputFormat": "text | json",
@@ -1010,6 +1043,8 @@ contract. Such a claim requires a separate security change.
 
 - Effect schema encode/decode.
 - Deterministic JSON Schema bundle and digest.
+- One table-driven exact-key/Tool/correlation/terminalizability check for the
+  closed registry, plus focused keyed-inference tests.
 - Canonical input digest.
 - invocation replay, conflict, and incomplete detection.
 - path containment.
@@ -1045,6 +1080,19 @@ contract. Such a claim requires a separate security change.
 The test asserts mechanical identity and retained bytes. It does not assert that
 the Joern observation truly supports the Maude theory or that the ast-grep rule
 correctly expresses it; that judgment belongs to the research harness.
+
+### Consumer and documentation checks
+
+- Regenerate Python models from the frozen contract and fail on checked-in
+  drift; type-check and test all eight explicit bridge methods.
+- Validate researchbench fixtures, manifests, evaluators, report projection,
+  approval binding, and static experiment bundles without launching a live
+  campaign.
+- Audit the supported TypeScript entry and fail above twenty named exports.
+- Render every emitted static page with at least one real Shiki/Twoslash type
+  hover and verify that all-pages property in the fast DOM test suite.
+- Run one focused browser test that exercises the rendered hover and copy
+  behavior; do not multiply browser cases by page count.
 
 ## Migration from the Superseded V0 Implementation
 
@@ -1088,8 +1136,10 @@ discarded. No migration format is introduced.
 
 ## Risks and Trade-offs
 
-- **ActiveGraph integration is future work.** The schema bundle is designed for
-  it, but V0 proves only the MCP boundary.
+- **Live campaigns are deferred.** The generated bridge, researchbench,
+  evaluators, manifests, reports, and static publication products are included
+  and checked structurally, but this merge does not spend model budget or
+  publish empirical claims from a live campaign.
 - **A request without a receipt is ambiguous.** The service reports it as
   incomplete and does not invent recovery history. A later design may add
   operation-specific reconciliation if real investigations require it.
@@ -1107,12 +1157,11 @@ discarded. No migration format is introduced.
 
 ## Deferred Questions
 
-1. Exact Python MCP SDK version, ActiveGraph version, uv lock, and Nix packaging.
-2. Generated-Pydantic tool wrapper layout.
-3. ActiveGraph object and relation vocabulary for the first research pack.
-4. Whether finalized AgentFS capsules are copied, synchronized, or archived.
-5. Whether later hostile-code execution warrants containers, seccomp, or a
+1. Whether finalized AgentFS capsules are copied, synchronized, or archived.
+2. Whether later hostile-code execution warrants containers, seccomp, or a
    remote executor.
-6. Whether real investigations justify submodules or dirty-tree snapshots.
-7. Whether future developer-oracle endpoints belong in this MCP server or a
+3. Whether real investigations justify submodules or dirty-tree snapshots.
+4. Whether future developer-oracle endpoints belong in this MCP server or a
    separate package.
+5. Which separately authorized live campaign should run first after the
+   structural merge and evaluator calibration are reviewed.

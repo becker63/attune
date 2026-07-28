@@ -141,3 +141,28 @@ sidebar?.querySelectorAll("a").forEach((link) => {
     }
   });
 });
+
+document.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (
+    !(target instanceof HTMLButtonElement) ||
+    !target.matches("[data-copy-code]")
+  ) {
+    return;
+  }
+  const source = target.dataset.code;
+  if (source === undefined) return;
+  try {
+    await navigator.clipboard.writeText(source);
+    const previous = target.textContent;
+    target.textContent = "Copied";
+    target.dataset.copyState = "copied";
+    window.setTimeout(() => {
+      target.textContent = previous;
+      delete target.dataset.copyState;
+    }, 1_500);
+  } catch {
+    target.textContent = "Copy failed";
+    target.dataset.copyState = "failed";
+  }
+});

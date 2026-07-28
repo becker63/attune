@@ -1,3 +1,4 @@
+import { renderCodeBlock } from "./highlight.ts";
 import type {
   ApiManifest,
   ApiSymbol,
@@ -80,14 +81,25 @@ const groupSymbols = (
   return groups;
 };
 
-const renderInline = (value: string): string =>
+const renderInline = (
+  value: string,
+  manifest?: ApiManifest,
+  basePath = "/",
+): string =>
   value
     .split(/(`[^`]+`)/gu)
-    .map((part) =>
-      part.startsWith("`") && part.endsWith("`")
-        ? `<code>${escapeHtml(part.slice(1, -1))}</code>`
-        : escapeHtml(part),
-    )
+    .map((part) => {
+      if (!part.startsWith("`") || !part.endsWith("`")) {
+        return escapeHtml(part);
+      }
+      const code = part.slice(1, -1);
+      const symbol = manifest?.symbols.find(
+        (candidate) => candidate.exportName === code || candidate.id === code,
+      );
+      return symbol === undefined
+        ? `<code class="inline-code">${escapeHtml(code)}</code>`
+        : `<a class="inline-type" href="${symbolHref(basePath, symbol)}"><code>${escapeHtml(code)}</code></a>`;
+    })
     .join("");
 
 interface LayoutOptions {
@@ -144,6 +156,10 @@ export const layout = (options: LayoutOptions): string => {
   );
   const shortRevision =
     revision.length > 18 ? `${revision.slice(0, 12)}…` : revision;
+  const pageType = renderCodeBlock(
+    `type DocumentationPage = {\n  readonly sourceRevision: ${JSON.stringify(options.manifest.source.revision)};\n};`,
+    { label: "Page type" },
+  );
   return `<!doctype html>
 <html lang="en" data-base-path="${escapeHtml(normalizeBasePath(options.basePath))}">
   <head>
@@ -152,6 +168,7 @@ export const layout = (options: LayoutOptions): string => {
     <meta name="description" content="${escapeHtml(options.description)}">
     <title>${escapeHtml(options.title)} · Attune docs</title>
     <link rel="stylesheet" href="${escapeHtml(withBase(options.basePath, "assets/styles.css"))}">
+    <link rel="stylesheet" href="${escapeHtml(withBase(options.basePath, "assets/twoslash.css"))}">
     <script type="module" src="${escapeHtml(withBase(options.basePath, "assets/site.js"))}"></script>
   </head>
   <body>
@@ -192,6 +209,11 @@ export const layout = (options: LayoutOptions): string => {
     </aside>
     <main id="content" class="content">
       ${options.body}
+      <details class="page-type-lens">
+        <summary>Type-checked page metadata</summary>
+        <p>Hover the underlined identifiers to inspect the generated TypeScript model for this page.</p>
+        ${pageType}
+      </details>
     </main>
   </body>
 </html>
@@ -355,7 +377,7 @@ export const renderGuide = (
         ${section.claims
           .map(
             (claim) => `<div class="claim" id="${escapeHtml(claim.id)}">
-              <p>${renderInline(claim.text)}${claim.certainty === "inference" ? ' <span class="certainty">Inference</span>' : ""}</p>
+              <p>${renderInline(claim.text, manifest, basePath)}${claim.certainty === "inference" ? ' <span class="certainty">Inference</span>' : ""}</p>
               <a class="trace-link" data-trace-hook="activegraph" data-claim-id="${escapeHtml(claim.id)}" data-run-id="${escapeHtml(draft.provenance.runId ?? "")}" href="${escapeHtml(withBase(basePath, `traces/${draft.slug}.html#${claim.id}`))}">Why this is here</a>
             </div>`,
           )
@@ -403,7 +425,7 @@ export const renderApiIndex = (
   ${
     manifest.diagnostics.length === 0
       ? ""
-      : `<div class="diagnostic-summary"><strong>${manifest.diagnostics.length} documentation policy issue${manifest.diagnostics.length === 1 ? "" : "s"}</strong><p>The reference remains readable while the separate audit command reports missing TSDoc or descriptor metadata.</p></div>`
+      : `<div class="diagnostic-summary"><strong>${manifest.diagnostics.length} documentation policy issue${manifest.diagnostics.length === 1 ? "" : "s"}</strong><p>The reference remains readable while the separate audit command reports missing TSDoc or registry metadata.</p></div>`
   }
   ${[...groups.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
@@ -451,8 +473,8 @@ export const renderApiSymbol = (
   guides: readonly ProseDraft[],
   basePath: string,
 ): string => {
-  const descriptorRelations = symbol.relations.filter(
-    (relation) => relation.source === "descriptor",
+  const registryRelations = symbol.relations.filter(
+    (relation) => relation.source === "registry",
   );
   const tsdocRelations = symbol.relations.filter(
     (relation) => relation.source === "tsdoc",
@@ -466,14 +488,20 @@ export const renderApiSymbol = (
   <p class="source-link"><a href="${escapeHtml(symbol.source.url)}">${escapeHtml(symbol.source.path)}:${symbol.source.line}</a></p>
   <section>
     <h2>Declaration</h2>
-    <pre class="signature"><code>${escapeHtml(symbol.declaration)}</code></pre>
+    ${renderCodeBlock(symbol.declaration, {
+      label: "Declaration",
+      sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
+    })}
     ${
       symbol.signature === symbol.declaration
         ? ""
         : `<details class="full-signature">
       <summary>Full inferred type</summary>
       <p>The exact compiler projection is available here when you need every inferred detail.</p>
-      <pre><code>${escapeHtml(symbol.signature)}</code></pre>
+      ${renderCodeBlock(symbol.signature, {
+        label: "Inferred type",
+        sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
+      })}
     </details>`
     }
   </section>
@@ -482,7 +510,10 @@ export const renderApiSymbol = (
       ? ""
       : `<section><h2>Remarks</h2><div class="prose">${symbol.remarks
           .split(/\n{2,}/u)
-          .map((paragraph) => `<p>${renderInline(paragraph)}</p>`)
+          .map(
+            (paragraph) =>
+              `<p>${renderInline(paragraph, manifest, basePath)}</p>`,
+          )
           .join("")}</div></section>`
   }
   ${
@@ -500,12 +531,12 @@ export const renderApiSymbol = (
       ? ""
       : `<section><h2>Lifecycle relations</h2>
         ${
-          descriptorRelations.length === 0
+          registryRelations.length === 0
             ? ""
-            : `<p>Descriptor metadata is the machine-authoritative lifecycle record.</p><div class="relation-list">${descriptorRelations
+            : `<p>The closed operation registry is the machine-authoritative lifecycle record.</p><div class="relation-list">${registryRelations
                 .map(
                   (relation) =>
-                    `<div><code>${escapeHtml(relation.kind)}</code>${relationTargetHtml(relation, manifest, basePath)}<span>descriptor</span></div>`,
+                    `<div><code>${escapeHtml(relation.kind)}</code>${relationTargetHtml(relation, manifest, basePath)}<span>registry</span></div>`,
                 )
                 .join("")}</div>`
         }
@@ -528,8 +559,11 @@ export const renderApiSymbol = (
           .map(
             (member) => `<article id="member-${escapeHtml(member.name)}">
               <h3><code>${escapeHtml(member.name)}</code></h3>
-              ${member.summary.length === 0 ? "" : `<p>${renderInline(member.summary)}</p>`}
-              <pre><code>${escapeHtml(member.signature)}</code></pre>
+              ${member.summary.length === 0 ? "" : `<p>${renderInline(member.summary, manifest, basePath)}</p>`}
+              ${renderCodeBlock(member.signature, {
+                label: "Member",
+                sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
+              })}
             </article>`,
           )
           .join("")}</div></section>`
@@ -537,7 +571,13 @@ export const renderApiSymbol = (
   ${
     symbol.examples.length === 0
       ? ""
-      : `<section><h2>Examples</h2>${symbol.examples.map((example) => `<pre><code>${escapeHtml(example)}</code></pre>`).join("")}</section>`
+      : `<section><h2>Examples</h2>${symbol.examples
+          .map((example) =>
+            renderCodeBlock(example, {
+              label: "TypeScript example",
+            }),
+          )
+          .join("")}</section>`
   }
   <footer class="fact-record"><p>${symbol.facts.length} deterministic facts · source digest <code>${escapeHtml(manifest.source.digest.slice(0, 16))}</code></p></footer>`;
   return layout({
@@ -607,7 +647,7 @@ export const renderTracePage = (
         claim,
       ) => `<section class="trace-claim" id="${escapeHtml(claim.id)}" data-activegraph-run-id="${escapeHtml(draft.provenance.runId ?? "")}" data-claim-id="${escapeHtml(claim.id)}">
         <h2>${escapeHtml(claim.id)}</h2>
-        <p>${renderInline(claim.text)}</p>
+        <p>${renderInline(claim.text, manifest, basePath)}</p>
         <div class="table-wrap"><table><thead><tr><th>Symbol</th><th>Facts</th></tr></thead><tbody>${claim.evidence
           .map((evidence) => {
             const symbol = symbols.get(evidence.symbolId);

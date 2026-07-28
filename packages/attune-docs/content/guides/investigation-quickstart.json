@@ -12,30 +12,34 @@
       "claims": [
         {
           "id": "quickstart.materialize.input",
-          "text": "Begin with repository materialization. The request names the remote, revision, invocation, and optional investigation identity; the runtime resolves that request into an investigation instead of letting later tools operate on an arbitrary path.",
-          "certainty": "direct",
+          "text": "Begin with `repository_materialize`. Select its wire input from the Toolkit name, then let the service establish the materialized capability.",
+          "certainty": "inference",
           "evidence": [
             {
-              "symbol": "RepositoryMaterializeInput",
+              "symbol": "AttuneOperationWireInput",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "InvestigationServiceApi",
               "facts": ["signature"]
             }
           ]
         },
         {
           "id": "quickstart.materialize.result",
-          "text": "Keep the returned investigation and snapshot identities together. They are the stable coordinates used by later operations and by receipt inspection.",
-          "certainty": "direct",
+          "text": "Activate the materialized capability before executing another operation. The active capability is the service's public proof that execution may continue.",
+          "certainty": "inference",
           "evidence": [
             {
-              "symbol": [
-                "ActiveInvestigation",
-                "MaterializedInvestigation",
-                "RepositoryMaterializeResult"
-              ],
+              "symbol": "MaterializedInvestigationCapability",
               "facts": ["signature", "source"]
             },
             {
-              "symbol": "RepositoryMaterializeResult",
+              "symbol": "ActiveInvestigation",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "InvestigationServiceApi",
               "facts": ["signature"]
             }
           ]
@@ -48,30 +52,34 @@
       "claims": [
         {
           "id": "quickstart.execute.service",
-          "text": "Operations run through the investigation service boundary. An operation-specific request retains its own input and result relationship instead of widening into a generic JSON handler.",
+          "text": "Operations run through the investigation service. The selected name keeps its input and result related without exposing a generic JSON handler.",
           "certainty": "direct",
           "evidence": [
             {
-              "symbol": ["InvestigationService", "AttuneHandlers"],
+              "symbol": "InvestigationService",
               "facts": ["signature"]
             },
             {
-              "symbol": ["ToolOperation", "JoernQueryInput"],
+              "symbol": "AttuneOperationInput",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "AttuneOperationResult",
               "facts": ["signature"]
             }
           ]
         },
         {
           "id": "quickstart.execute.receipt",
-          "text": "Treat the terminal receipt as durable evidence of what ran. Success, failure, and cancellation remain distinct outcomes, and retained artifacts point back to the invocation that produced them.",
-          "certainty": "direct",
+          "text": "Treat the operation receipt as the typed evidence returned for the selected operation, and handle its recoverable error at the same keyed boundary.",
+          "certainty": "inference",
           "evidence": [
             {
-              "symbol": "AttuneReceipt",
+              "symbol": "AttuneOperationReceipt",
               "facts": ["signature"]
             },
             {
-              "symbol": "ArtifactReference",
+              "symbol": "AttuneOperationError",
               "facts": ["signature"]
             }
           ]
@@ -84,18 +92,19 @@
       "claims": [
         {
           "id": "quickstart.finalize.transition",
-          "text": "Finalization is a lifecycle transition, not filesystem cleanup by convention. It closes the active investigation boundary and returns the final manifest for inspection.",
-          "certainty": "direct",
+          "text": "Finalize deliberately through the service. The registry marks `investigation_finalize` as the terminal transition, and the result carries finalized capability evidence.",
+          "certainty": "inference",
           "evidence": [
             {
-              "symbol": [
-                "InvestigationFinalizeOperation",
-                "InvestigationFinalizeTool"
-              ],
+              "symbol": "ATTUNE_OPERATIONS",
+              "facts": ["signature", "source"]
+            },
+            {
+              "symbol": "FinalizedInvestigation",
               "facts": ["signature"]
             },
             {
-              "symbol": "InvestigationFinalizeResult",
+              "symbol": "InvestigationServiceApi",
               "facts": ["signature"]
             }
           ]

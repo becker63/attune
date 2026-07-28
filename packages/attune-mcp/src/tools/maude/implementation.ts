@@ -6,16 +6,15 @@ import { rm } from "node:fs/promises";
 
 import { Effect } from "effect";
 
+import type { MaudeRunInput, MaudeRunResult } from "../../contract/schemas.js";
+import { InvocationEngine } from "../../investigation/invocation.js";
+import { WorkspaceStore } from "../../investigation/workspace.js";
+import { fail, type RuntimeConfig } from "../../platform/core.js";
 import {
   requireSuccessfulProcess,
   retainProcessEvidence,
 } from "../../platform/native-process.js";
-import type { MaudeRunInput, MaudeRunResult } from "../../v0/contracts.js";
-import { fail, type RuntimeConfig } from "../../v0/core.js";
-import { InvocationEngine } from "../../v0/invocation.js";
-import { runProcess } from "../../v0/process.js";
-import { WorkspaceStore } from "../../v0/workspace.js";
-import { MaudeRunOperation } from "./operation.js";
+import { runProcess } from "../../platform/process.js";
 
 /** Runs exact Maude source and commands against an isolated snapshot. */
 export const maudeRun = (
@@ -25,7 +24,7 @@ export const maudeRun = (
   input: MaudeRunInput,
 ): Effect.Effect<MaudeRunResult, ReturnType<typeof fail>> =>
   engine.execute({
-    descriptor: MaudeRunOperation,
+    name: "maude_run",
     input,
     run: async (context) => {
       await workspaces.assertExactClean(

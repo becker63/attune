@@ -15,6 +15,7 @@ import { parseProseDraft } from "./parse.ts";
 import { paths } from "./paths.ts";
 import { collectRepositoryMap } from "./repository.ts";
 import { buildSite } from "./site.ts";
+import { discoverStaticPages } from "./static-pages.ts";
 import { readTraceExports } from "./traces.ts";
 
 const command = process.argv[2] ?? "build";
@@ -136,6 +137,12 @@ const main = async (): Promise<void> => {
     return;
   }
 
+  if (command === "experiments:verify") {
+    const pages = await discoverStaticPages(paths.staticPages);
+    process.stdout.write(`${pages.length} static publication pages valid.\n`);
+    return;
+  }
+
   if (command === "guides:approve") {
     const reviewer = argument("--reviewer");
     const decisionId = argument("--decision-id");
@@ -197,6 +204,7 @@ const main = async (): Promise<void> => {
       sourceRef: manifest.source.ref,
       repositoryUrl: manifest.source.repositoryUrl,
     });
+    const staticPages = await discoverStaticPages(paths.staticPages);
     await buildSite(
       manifest,
       repository,
@@ -210,6 +218,7 @@ const main = async (): Promise<void> => {
           process.env.DOCS_PUBLICATION_REVISION ?? manifest.source.ref,
       },
       traces,
+      staticPages,
     );
     process.stdout.write(
       `Built ${guides.length} guides and ${manifest.symbols.length} API pages at ${Path.relative(paths.repository, output)} (base ${basePath}).\n`,
@@ -218,7 +227,7 @@ const main = async (): Promise<void> => {
   }
 
   throw new Error(
-    `Unknown command ${command}. Expected build, manifest, audit, guides:validate, or guides:approve.`,
+    `Unknown command ${command}. Expected build, manifest, audit, guides:validate, guides:approve, or experiments:verify.`,
   );
 };
 

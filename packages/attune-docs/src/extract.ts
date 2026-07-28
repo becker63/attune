@@ -327,24 +327,17 @@ const extractRelations = (
       ),
     ];
   };
-  const fields = [
-    ["requires", "requires"],
-    ["produces", "produces"],
-    ["transition", "transitionsTo"],
-  ] as const satisfies readonly [string, LifecycleRelationKind][];
-
   for (const declaration of declarations.filter(Node.isVariableDeclaration)) {
-    const lifecycleSymbol = declaration.getType().getProperty("lifecycle");
-    if (lifecycleSymbol === undefined) continue;
-    const lifecycleType = lifecycleSymbol.getTypeAtLocation(declaration);
-    for (const [field, kind] of fields) {
-      const fieldSymbol = lifecycleType.getProperty(field);
-      if (fieldSymbol === undefined) continue;
-      const targets = literalStrings(
-        fieldSymbol.getTypeAtLocation(declaration),
-      );
-      if (targets.length !== 1) continue;
-      relations.push({ kind, target: targets[0]!, source: "descriptor" });
+    if (declaration.getName() !== "ATTUNE_OPERATIONS") continue;
+    for (const operation of declaration.getType().getProperties()) {
+      const operationType = operation.getTypeAtLocation(declaration);
+      const transition = operationType.getProperty("transition");
+      if (transition === undefined) continue;
+      for (const target of literalStrings(
+        transition.getTypeAtLocation(declaration),
+      )) {
+        relations.push({ kind: "transitionsTo", target, source: "registry" });
+      }
     }
   }
 

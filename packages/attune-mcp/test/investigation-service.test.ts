@@ -1,44 +1,55 @@
+import { Effect } from "effect";
+
 import {
-  ATTUNE_OPERATIONS,
   AttuneToolFailure,
-  canonicalJson,
-  makeInvestigationServiceFromHandlers,
-  makePersistedInvestigationValidator,
-  sha256,
-  type ActiveInvestigation,
-  type AttuneHandlers,
   type CancelledReceipt,
   type FailedReceipt,
   type FullGitCommit,
-  type InvestigationId,
-  type InvestigationManifest,
   type InvocationId,
   type SucceededReceipt,
   type ToolName,
-} from "attune-mcp";
-import { Effect } from "effect";
+} from "../src/contract/schemas.js";
+import type { ActiveInvestigation } from "../src/investigation/capability.js";
+import {
+  makeInvestigationServiceFromHandlers,
+  makePersistedInvestigationValidator,
+  type InvestigationValidator,
+} from "../src/investigation/service.js";
+import { sha256 } from "../src/platform/core.js";
+import type { AttuneOperationHandlers } from "../src/tools/registry.js";
+import {
+  FIXTURE_INVESTIGATION_ID as investigationId,
+  FIXTURE_NEXT_SNAPSHOT as nextSnapshot,
+  FIXTURE_SNAPSHOT as snapshot,
+  FIXTURE_TIMESTAMP as timestamp,
+  fixtureManifest,
+  fixtureReceiptBase,
+} from "./fixtures.js";
 
-const investigationId = "01K00000000000000000000000" as InvestigationId;
-const snapshot = "a".repeat(40) as FullGitCommit;
-const nextSnapshot = "b".repeat(40) as FullGitCommit;
 const invocationId = "lifecycle-1" as InvocationId;
-const timestamp = new Date(0).toISOString();
+const toolchainDigest = sha256("typed-lifecycle-test");
+const run = Effect.runPromise;
 
-const receiptBase = (
-  tool: ToolName,
-  operation: string,
-  input: { readonly invocationId: InvocationId },
-) => ({
-  schemaVersion: 1 as const,
-  invocationId: input.invocationId,
-  investigationId,
-  tool,
-  operation,
-  inputDigest: sha256(`${canonicalJson(input)}\n`),
-  toolchainDigest: sha256("typed-lifecycle-test"),
-  artifacts: [],
-  startedAt: timestamp,
+const input = (id: string) => ({
+  invocationId: id as InvocationId,
+  references: [],
 });
+
+const expectRejection = (
+  effect: Effect.Effect<unknown, unknown>,
+  expected: object,
+) => expect(run(effect)).rejects.toMatchObject(expected);
+
+const expectLifecycleRejection = (
+  effect: Effect.Effect<unknown, unknown>,
+  reason: "StateMismatch" | "UnrecognizedCapability" | "UnrecognizedOperation",
+  observed?: string,
+) =>
+  expectRejection(effect, {
+    _tag: "InvestigationLifecycleError",
+    reason,
+    ...(observed === undefined ? {} : { observed }),
+  });
 
 const receipt = (
   tool: ToolName,
@@ -46,70 +57,51 @@ const receipt = (
   input: { readonly invocationId: InvocationId },
   at: FullGitCommit = snapshot,
 ): SucceededReceipt => ({
-  ...receiptBase(tool, operation, input),
-  completedAt: timestamp,
+  ...fixtureReceiptBase(input, tool, operation, {
+    investigationId,
+    toolchainDigest,
+  }),
   status: "succeeded",
   snapshotId: at,
 });
 
-const failedReceipt = (
+type FailureReceipt<Status extends "failed" | "cancelled"> =
+  Status extends "failed" ? FailedReceipt : CancelledReceipt;
+
+const failureReceipt = <const Status extends "failed" | "cancelled">(
+  status: Status,
   tool: ToolName,
   operation: string,
   input: { readonly invocationId: InvocationId },
-): FailedReceipt => ({
-  ...receiptBase(tool, operation, input),
-  completedAt: timestamp,
-  status: "failed",
-  snapshotId: snapshot,
-  failure: {
-    code: "ProcessExitFailure",
-    message: "fixture terminal failure",
-  },
-});
+): FailureReceipt<Status> =>
+  ({
+    ...receipt(tool, operation, input),
+    status,
+    failure: {
+      code: status === "failed" ? "ProcessExitFailure" : "Cancelled",
+      message: `fixture terminal ${status === "failed" ? "failure" : "cancellation"}`,
+    },
+  }) as FailureReceipt<Status>;
 
-const cancelledReceipt = (
-  tool: ToolName,
-  operation: string,
-  input: { readonly invocationId: InvocationId },
-): CancelledReceipt => ({
-  ...receiptBase(tool, operation, input),
-  completedAt: timestamp,
-  status: "cancelled",
-  snapshotId: snapshot,
-  failure: {
-    code: "Cancelled",
-    message: "fixture terminal cancellation",
-  },
-});
-
-const manifest: InvestigationManifest = {
-  schemaVersion: 1,
-  investigationId,
-  normalizedRemote: "/fixture",
-  requestedRevision: "main",
-  resolvedCommit: snapshot,
-  baseKey: sha256("base"),
-  branch: `attune/${investigationId}`,
-  toolchainDigest: sha256("typed-lifecycle-test"),
-  createdAt: timestamp,
-};
-
+const manifest = fixtureManifest({ toolchainDigest });
 const unused = () => Effect.die("unused handler");
+type FinalizationFailure = "cancelled" | "effect-failure" | "interrupted";
+const finalizationFailure = new AttuneToolFailure({
+  code: "FinalizationFailure",
+  message: "fixture failed after persisting finalization",
+});
 
 interface HandlerOptions {
   readonly checkpointSnapshot?: FullGitCommit;
   readonly onCheckpointPersisted?: (snapshot: FullGitCommit) => void;
-  readonly finalizationAfterPersistence?:
-    | "cancelled"
-    | "effect-failure"
-    | "interrupted";
+  readonly finalizationAfterPersistence?: FinalizationFailure;
   readonly onFinalizationPersisted?: () => void;
   readonly maudeEffectFailure?: AttuneToolFailure;
   readonly maudeTerminalFailure?: boolean;
 }
 
-const handlers = (options: HandlerOptions = {}): AttuneHandlers => ({
-  repositoryMaterialize: (input) =>
+const handlers = (options: HandlerOptions = {}): AttuneOperationHandlers => ({
+  repository_materialize: (input) =>
     Effect.succeed({
       investigationId,
       requestedRevision: input.revision,
@@ -117,7 +109,7 @@ const handlers = (options: HandlerOptions = {}): AttuneHandlers => ({
       branch: `attune/${investigationId}`,
       receipt: receipt("repository", "materialize", input),
     }),
-  repositoryCheckpoint: (input) => {
+  repository_checkpoint: (input) => {
     const at = options.checkpointSnapshot ?? input.expectedSnapshot;
     options.onCheckpointPersisted?.(at);
     return Effect.succeed({
@@ -126,14 +118,14 @@ const handlers = (options: HandlerOptions = {}): AttuneHandlers => ({
       receipt: receipt("repository", "checkpoint", input, at),
     });
   },
-  joernQuery: unused,
-  maudeRun: (input) => {
+  joern_query: unused,
+  maude_run: (input) => {
     if (options.maudeEffectFailure !== undefined) {
       return Effect.fail(options.maudeEffectFailure);
     }
     if (options.maudeTerminalFailure === true) {
       return Effect.succeed({
-        receipt: failedReceipt("maude", "run", input),
+        receipt: failureReceipt("failed", "maude", "run", input),
       });
     }
     return Effect.succeed({
@@ -144,27 +136,20 @@ const handlers = (options: HandlerOptions = {}): AttuneHandlers => ({
       receipt: receipt("maude", "run", input),
     });
   },
-  propertyRun: unused,
-  astGrepRun: unused,
-  artifactPromote: unused,
-  investigationFinalize: (input) => {
-    if (options.finalizationAfterPersistence !== undefined) {
-      options.onFinalizationPersisted?.();
-    }
+  property_run: unused,
+  ast_grep_run: unused,
+  artifact_promote: unused,
+  investigation_finalize: (input) => {
+    options.onFinalizationPersisted?.();
     if (options.finalizationAfterPersistence === "effect-failure") {
-      return Effect.fail(
-        new AttuneToolFailure({
-          code: "FinalizationFailure",
-          message: "fixture failed after persisting finalization",
-        }),
-      );
+      return Effect.fail(finalizationFailure);
     }
     if (options.finalizationAfterPersistence === "interrupted") {
       return Effect.interrupt;
     }
     if (options.finalizationAfterPersistence === "cancelled") {
       return Effect.succeed({
-        receipt: cancelledReceipt("repository", "finalize", input),
+        receipt: failureReceipt("cancelled", "repository", "finalize", input),
       });
     }
     return Effect.succeed({
@@ -175,16 +160,31 @@ const handlers = (options: HandlerOptions = {}): AttuneHandlers => ({
   },
 });
 
+const makeService = (
+  options: HandlerOptions = {},
+  validate: InvestigationValidator = () => Effect.succeed(manifest),
+) => makeInvestigationServiceFromHandlers(handlers(options), validate);
+
+const persistedValidator = (
+  head: FullGitCommit | (() => FullGitCommit),
+  dirty: boolean,
+) =>
+  makePersistedInvestigationValidator({
+    inspect: async () => ({
+      manifest,
+      head: typeof head === "function" ? head() : head,
+      dirty,
+    }),
+  });
+
 const materializeInput = {
-  invocationId,
-  references: [],
+  ...input(invocationId),
   remote: "/fixture",
   revision: "main",
 } as const;
 
 const maudeInput = {
-  invocationId,
-  references: [],
+  ...input(invocationId),
   moduleSource: "fmod TEST is endfm",
   commands: "reduce true .",
   timeoutMilliseconds: 1_000,
@@ -193,79 +193,70 @@ const maudeInput = {
 const activate = async (
   service: ReturnType<typeof makeInvestigationServiceFromHandlers>,
 ) => {
-  const materialized = await Effect.runPromise(
-    service.materialize(materializeInput),
-  );
+  const materialized = await run(service.materialize(materializeInput));
   if (materialized.status !== "materialized") {
     throw new Error("fixture materialization was rejected");
   }
-  return await Effect.runPromise(service.activate(materialized.investigation));
+  return run(service.activate(materialized.investigation));
 };
 
 describe("typed investigation lifecycle service", () => {
   it("validates materialization, rotates active permission, and finalizes", async () => {
-    const service = makeInvestigationServiceFromHandlers(handlers(), () =>
-      Effect.succeed(manifest),
-    );
+    const service = makeService();
     const active = await activate(service);
-    const executed = await Effect.runPromise(
+    const executed = await run(
       service.execute(active, "maude_run", maudeInput),
     );
-    expect(executed.receipt).toMatchObject({
-      status: "succeeded",
-      tool: "maude",
-      operation: "run",
+    expect(executed).toMatchObject({
+      receipt: {
+        status: "succeeded",
+        tool: "maude",
+        operation: "run",
+      },
+      result: {
+        stdoutTail: "result",
+        receipt: { status: "succeeded" },
+      },
     });
-    expect(executed.result).toMatchObject({
-      stdoutTail: "result",
-      receipt: { status: "succeeded" },
-    });
-
-    await expect(
-      Effect.runPromise(service.execute(active, "maude_run", maudeInput)),
-    ).rejects.toMatchObject({
-      _tag: "InvestigationLifecycleError",
-      reason: "StateMismatch",
-    });
-
-    const finalized = await Effect.runPromise(
-      service.finalize(executed.investigation, {
-        invocationId: "finalize-1" as InvocationId,
-        references: [],
-      }),
+    await expectLifecycleRejection(
+      service.execute(active, "maude_run", maudeInput),
+      "StateMismatch",
+    );
+    const finalized = await run(
+      service.finalize(executed.investigation, input("finalize-1")),
     );
     expect(finalized.status).toBe("finalized");
 
     // Reuse the original active capability, not a cast of finalized evidence.
-    await expect(
-      Effect.runPromise(
-        service.execute(executed.investigation, "maude_run", maudeInput),
-      ),
-    ).rejects.toMatchObject({
-      _tag: "InvestigationLifecycleError",
-      reason: "StateMismatch",
-    });
+    await expectLifecycleRejection(
+      service.execute(executed.investigation, "maude_run", maudeInput),
+      "StateMismatch",
+    );
   });
 
-  it("rejects forged capabilities at runtime", async () => {
-    const service = makeInvestigationServiceFromHandlers(handlers(), () =>
-      Effect.succeed(manifest),
+  it.each([
+    [
+      "a forged",
+      async () =>
+        ({
+          investigationId,
+          state: "active",
+          snapshot: { id: snapshot, state: "active" },
+        }) as ActiveInvestigation,
+    ],
+    ["another service's genuine", () => activate(makeService())],
+  ])("rejects %s capability", async (_kind, capability) => {
+    expect.hasAssertions();
+    const service = makeService();
+    await expectLifecycleRejection(
+      service.execute(await capability(), "maude_run", maudeInput),
+      "UnrecognizedCapability",
     );
-    const forged = {
-      investigationId,
-      state: "active",
-      snapshot: { id: snapshot, state: "active" },
-    } as ActiveInvestigation;
-
-    await expect(
-      Effect.runPromise(service.execute(forged, "maude_run", maudeInput)),
-    ).rejects.toMatchObject({ reason: "UnrecognizedCapability" });
   });
 
   it("rejects asserted unknown and wrong-lifecycle operation selectors", async () => {
-    const service = makeInvestigationServiceFromHandlers(handlers(), () =>
-      Effect.succeed(manifest),
-    );
+    expect.hasAssertions();
+    const service = makeService();
     const active = await activate(service);
     const unsafeExecute = service.execute as unknown as (
       investigation: ActiveInvestigation,
@@ -287,49 +278,31 @@ describe("typed investigation lifecycle service", () => {
       "investigation_finalize",
       "not_an_operation",
     ]) {
-      await expect(
-        Effect.runPromise(unsafeExecute(active, name, maudeInput)),
-      ).rejects.toMatchObject({
-        _tag: "InvestigationLifecycleError",
-        reason: "UnrecognizedOperation",
-        observed: name,
-      });
+      await expectLifecycleRejection(
+        unsafeExecute(active, name, maudeInput),
+        "UnrecognizedOperation",
+        name,
+      );
     }
 
     for (const name of ["repository_materialize", "not_an_operation"]) {
-      await expect(
-        Effect.runPromise(unsafeRecover(name, wireInput)),
-      ).rejects.toMatchObject({
-        _tag: "InvestigationLifecycleError",
-        reason: "UnrecognizedOperation",
-        observed: name,
-      });
+      await expectLifecycleRejection(
+        unsafeRecover(name, wireInput),
+        "UnrecognizedOperation",
+        name,
+      );
     }
-  });
-
-  it("rejects a genuine capability issued by another service instance", async () => {
-    const serviceA = makeInvestigationServiceFromHandlers(handlers(), () =>
-      Effect.succeed(manifest),
-    );
-    const serviceB = makeInvestigationServiceFromHandlers(handlers(), () =>
-      Effect.succeed(manifest),
-    );
-    const capabilityFromA = await activate(serviceA);
-
-    await expect(
-      Effect.runPromise(
-        serviceB.execute(capabilityFromA, "maude_run", maudeInput),
-      ),
-    ).rejects.toMatchObject({
-      _tag: "InvestigationLifecycleError",
-      reason: "UnrecognizedCapability",
-    });
   });
 
   it.each(["effect-failure", "interrupted", "cancelled"] as const)(
     "revokes active permission when finalization persisted before %s",
     async (finalizationAfterPersistence) => {
       let persistedFinalization = false;
+      const finalizedManifest = {
+        ...manifest,
+        finalizedAt: timestamp,
+        finalSnapshot: snapshot,
+      };
       const service = makeInvestigationServiceFromHandlers(
         handlers({
           finalizationAfterPersistence,
@@ -338,189 +311,110 @@ describe("typed investigation lifecycle service", () => {
           },
         }),
         () =>
-          Effect.succeed(
-            persistedFinalization
-              ? {
-                  ...manifest,
-                  finalizedAt: timestamp,
-                  finalSnapshot: snapshot,
-                }
-              : manifest,
-          ),
+          Effect.succeed(persistedFinalization ? finalizedManifest : manifest),
       );
       const active = await activate(service);
 
       const finalizationExit = await Effect.runPromiseExit(
-        service.finalize(active, {
-          invocationId:
-            `finalize-${finalizationAfterPersistence}` as InvocationId,
-          references: [],
-        }),
+        service.finalize(
+          active,
+          input(`finalize-${finalizationAfterPersistence}`),
+        ),
       );
       expect(finalizationExit._tag).toBe("Failure");
 
-      await expect(
-        Effect.runPromise(service.execute(active, "maude_run", maudeInput)),
-      ).rejects.toMatchObject({
-        _tag: "InvestigationLifecycleError",
-        reason: "StateMismatch",
-      });
+      await expectLifecycleRejection(
+        service.execute(active, "maude_run", maudeInput),
+        "StateMismatch",
+      );
     },
   );
 
-  it("turns undeclared implementation failures into ContractMismatch", async () => {
-    const service = makeInvestigationServiceFromHandlers(
-      handlers({
-        maudeEffectFailure: new AttuneToolFailure({
-          code: "PromotionRejected",
-          message: "not a declared Maude failure",
-        }),
+  it("preserves failures admitted by the Toolkit failure schema", async () => {
+    expect.hasAssertions();
+    const service = makeService({
+      maudeEffectFailure: new AttuneToolFailure({
+        code: "PromotionRejected",
+        message: "shared typed failure",
       }),
-      () => Effect.succeed(manifest),
-    );
+    });
     const active = await activate(service);
 
-    await expect(
-      Effect.runPromise(service.execute(active, "maude_run", maudeInput)),
-    ).rejects.toMatchObject({
+    await expectRejection(service.execute(active, "maude_run", maudeInput), {
       _tag: "AttuneToolFailure",
-      code: "ContractMismatch",
-      observed: "PromotionRejected",
+      code: "PromotionRejected",
+      message: "shared typed failure",
     });
   });
 
   it("rejects stale and dirty initial activation from persisted evidence", async () => {
-    const stale = makePersistedInvestigationValidator({
-      inspect: async () => ({
-        manifest,
-        head: nextSnapshot,
-        dirty: false,
+    expect.hasAssertions();
+    const stale = persistedValidator(nextSnapshot, false);
+    await expectRejection(
+      stale({
+        investigationId,
+        expectedSnapshot: snapshot,
+        requireClean: true,
       }),
-    });
-    await expect(
-      Effect.runPromise(
-        stale({
-          investigationId,
-          expectedSnapshot: snapshot,
-          requireClean: true,
-        }),
-      ),
-    ).rejects.toMatchObject({ code: "StaleSnapshot" });
-
-    const dirty = makePersistedInvestigationValidator({
-      inspect: async () => ({
-        manifest,
-        head: snapshot,
-        dirty: true,
-      }),
-    });
-    const service = makeInvestigationServiceFromHandlers(handlers(), dirty);
-    const materialized = await Effect.runPromise(
-      service.materialize(materializeInput),
+      { code: "StaleSnapshot" },
     );
+
+    const dirty = persistedValidator(snapshot, true);
+    const service = makeService({}, dirty);
+    const materialized = await run(service.materialize(materializeInput));
     if (materialized.status !== "materialized") {
       throw new Error("fixture materialization was rejected");
     }
-    await expect(
-      Effect.runPromise(service.activate(materialized.investigation)),
-    ).rejects.toMatchObject({ code: "DirtyRepository" });
+    await expectRejection(service.activate(materialized.investigation), {
+      code: "DirtyRepository",
+    });
   });
 
   it("acquires a dirty current workspace for checkpoint and revokes old permission", async () => {
     let persistedHead = snapshot;
-    const validator = makePersistedInvestigationValidator({
-      inspect: async () => ({
-        manifest,
-        head: persistedHead,
-        dirty: true,
-      }),
-    });
-    const service = makeInvestigationServiceFromHandlers(
-      handlers({
+    const service = makeService(
+      {
         checkpointSnapshot: nextSnapshot,
         onCheckpointPersisted: (head) => {
           persistedHead = head;
         },
-      }),
-      validator,
+      },
+      persistedValidator(() => persistedHead, true),
     );
-    const active = await Effect.runPromise(
+    const active = await run(
       service.acquireActive({
         investigationId,
         expectedSnapshot: snapshot,
       }),
     );
-    const checkpointed = await Effect.runPromise(
+    const checkpointed = await run(
       service.execute(active, "repository_checkpoint", {
-        invocationId: "checkpoint-1" as InvocationId,
-        references: [],
+        ...input("checkpoint-1"),
         policy: "commit",
         message: "checkpoint dirty writer output",
       }),
     );
     expect(checkpointed.investigation.snapshot.id).toBe(nextSnapshot);
 
-    await expect(
-      Effect.runPromise(
-        service.execute(active, "repository_checkpoint", {
-          invocationId: "checkpoint-2" as InvocationId,
-          references: [],
-          policy: "commit",
-        }),
-      ),
-    ).rejects.toMatchObject({ reason: "StateMismatch" });
+    await expectLifecycleRejection(
+      service.execute(active, "repository_checkpoint", {
+        ...input("checkpoint-2"),
+        policy: "commit",
+      }),
+      "StateMismatch",
+    );
   });
 
   it("preserves active permission after a failed terminal receipt", async () => {
-    const service = makeInvestigationServiceFromHandlers(
-      handlers({ maudeTerminalFailure: true }),
-      () => Effect.succeed(manifest),
-    );
+    const service = makeService({ maudeTerminalFailure: true });
     const active = await activate(service);
-    const failed = await Effect.runPromise(
-      service.execute(active, "maude_run", maudeInput),
-    );
+    const failed = await run(service.execute(active, "maude_run", maudeInput));
     expect(failed.receipt.status).toBe("failed");
     expect(failed.investigation).toBe(active);
 
-    const finalized = await Effect.runPromise(
-      service.finalize(active, {
-        invocationId: "finalize-after-failure" as InvocationId,
-        references: [],
-      }),
+    const finalized = await run(
+      service.finalize(active, input("finalize-after-failure")),
     );
     expect(finalized.status).toBe("finalized");
-  });
-
-  it("keeps the registry noun-oriented and lifecycle metadata explicit", () => {
-    expect(Object.keys(ATTUNE_OPERATIONS)).toEqual([
-      "repository_materialize",
-      "repository_checkpoint",
-      "joern_query",
-      "maude_run",
-      "property_run",
-      "ast_grep_run",
-      "artifact_promote",
-      "investigation_finalize",
-    ]);
-    expect(ATTUNE_OPERATIONS.repository_materialize.lifecycle).toEqual({
-      requires: "none",
-      produces: "materialized",
-      transition: "materialize",
-    });
-    expect(ATTUNE_OPERATIONS.maude_run.writerPolicy).toEqual({
-      kind: "static",
-      mode: "reader",
-    });
-    expect(ATTUNE_OPERATIONS.ast_grep_run.writerPolicy).toEqual({
-      kind: "input-discriminant",
-      field: "mode",
-      cases: { apply: "writer" },
-      defaultMode: "reader",
-    });
-    expect(ATTUNE_OPERATIONS.investigation_finalize.writerPolicy).toEqual({
-      kind: "static",
-      mode: "exclusive-writer",
-    });
   });
 });

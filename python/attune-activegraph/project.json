@@ -39,6 +39,31 @@
         "command": "uv run --locked python scripts/generate_contract_models.py check"
       }
     },
+    "research:schema": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked python scripts/research_schema.py check"
+      }
+    },
+    "research:budget": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked python scripts/research_budget.py"
+      }
+    },
+    "research:fixtures": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["research:schema", "research:budget"],
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked pytest tests/research"
+      }
+    },
     "format": {
       "executor": "nx:run-commands",
       "cache": false,
@@ -75,7 +100,7 @@
     "test": {
       "executor": "nx:run-commands",
       "cache": true,
-      "dependsOn": ["contracts:check"],
+      "dependsOn": ["contracts:check", "research:schema", "research:budget"],
       "outputs": ["{projectRoot}/.pytest_cache"],
       "options": {
         "cwd": "python/attune-activegraph",

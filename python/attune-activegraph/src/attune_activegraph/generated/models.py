@@ -8,6 +8,7 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel as _BaseModel
 from pydantic import ConfigDict, Field, RootModel, StrictBool, StrictInt, StrictStr
 from pydantic.experimental.missing_sentinel import MISSING
+from typing_extensions import TypeAliasType
 
 
 class BaseModel(_BaseModel):
@@ -341,6 +342,10 @@ class ContractsResourceParameters(BaseModel):
     )
 
 
+class Cpgql(RootModel[StrictStr]):
+    root: Annotated[StrictStr, Field(max_length=2097152, min_length=1)]
+
+
 class Expected(RootModel[StrictStr]):
     root: Annotated[StrictStr, Field(max_length=8192)]
 
@@ -532,7 +537,8 @@ class JoernQueryInput(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    cpgql: Annotated[StrictStr, Field(max_length=2097152, min_length=1)]
+    cpgql: Cpgql | None | MISSING = MISSING
+    dsl: JoernStructuredDsl | None | MISSING = MISSING
     expected_snapshot: Annotated[
         StrictStr,
         Field(
@@ -592,6 +598,24 @@ class JoernQueryResult1(BaseModel):
 
 class JoernQueryResult(RootModel[JoernQueryResult1 | InvestigationFinalizeResult2]):
     root: JoernQueryResult1 | InvestigationFinalizeResult2
+
+
+class JoernStructuredDsl(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    cpg_schema_hash: Annotated[
+        StrictStr,
+        Field(
+            alias="cpgSchemaHash", max_length=64, min_length=1, pattern="^[0-9a-f]{64}$"
+        ),
+    ]
+    cpg_schema_version: Annotated[
+        StrictStr, Field(alias="cpgSchemaVersion", max_length=256, min_length=1)
+    ]
+    segments: Annotated[list[Any], Field(max_length=512)]
+    select: Annotated[dict[str, SelectAdditionalProperty], Field(max_length=64)]
+    version: Literal[1]
 
 
 class MaudeRunInput(BaseModel):
@@ -893,6 +917,12 @@ class Seed(RootModel[StrictInt]):
     root: Annotated[StrictInt, Field(ge=-2147483648, le=2147483647)]
 
 
+SelectAdditionalProperty = TypeAliasType(
+    "SelectAdditionalProperty",
+    Annotated[StrictStr, Field(max_length=256, min_length=1)],
+)
+
+
 class SnapshotId(RootModel[StrictStr]):
     root: Annotated[
         StrictStr,
@@ -986,6 +1016,7 @@ class AttuneContractModelCatalog(
         | InvestigationResourceParameters
         | JoernQueryInput
         | JoernQueryResult
+        | JoernStructuredDsl
         | MaudeRunInput
         | MaudeRunResult
         | PropertyRunInput
@@ -1016,6 +1047,7 @@ class AttuneContractModelCatalog(
         | InvestigationResourceParameters
         | JoernQueryInput
         | JoernQueryResult
+        | JoernStructuredDsl
         | MaudeRunInput
         | MaudeRunResult
         | PropertyRunInput

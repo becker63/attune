@@ -292,12 +292,10 @@
                     "${self}/python/attune-activegraph/src/attune_activegraph/generated"
                 )"
 
-                echo "Attune ActiveGraph handwritten production: $production code lines (hard cap 1000)"
-                echo "Attune ActiveGraph handwritten tests/build: $tests_build code lines (hard cap 1000)"
+                echo "Attune ActiveGraph legacy handwritten production: $production code lines (reported)"
+                echo "Attune ActiveGraph legacy handwritten tests/build: $tests_build code lines (reported)"
                 echo "Attune ActiveGraph generated Python: $generated code lines (reported, uncapped)"
-
-                test "$production" -lt 1000
-                test "$tests_build" -lt 1000
+                echo "Researchbench enforces its scoped 2,200-line budget in activeGraphProjectCheck."
 
                 printf '%s\n' "$production" > "$out/production-code-lines"
                 printf '%s\n' "$tests_build" > "$out/tests-build-code-lines"

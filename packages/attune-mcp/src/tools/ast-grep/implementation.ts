@@ -8,23 +8,22 @@ import * as Path from "node:path";
 import { Effect } from "effect";
 import { parse as parseYaml } from "yaml";
 
-import {
-  requireSuccessfulProcess,
-  retainProcessEvidence,
-} from "../../platform/native-process.js";
 import type {
   AstGrepRunInput,
   AstGrepRunResult,
   RepositoryRelativePath,
-} from "../../v0/contracts.js";
-import { contained, fail, type RuntimeConfig } from "../../v0/core.js";
+} from "../../contract/schemas.js";
 import {
   type InvocationContext,
   InvocationEngine,
-} from "../../v0/invocation.js";
-import { runProcess } from "../../v0/process.js";
-import { WorkspaceStore } from "../../v0/workspace.js";
-import { AstGrepRunOperation } from "./operation.js";
+} from "../../investigation/invocation.js";
+import { WorkspaceStore } from "../../investigation/workspace.js";
+import { contained, fail, type RuntimeConfig } from "../../platform/core.js";
+import {
+  requireSuccessfulProcess,
+  retainProcessEvidence,
+} from "../../platform/native-process.js";
+import { runProcess } from "../../platform/process.js";
 
 const retainAstGrepInputs = async (
   context: InvocationContext,
@@ -76,7 +75,7 @@ export const astGrepRun = (
   input: AstGrepRunInput,
 ): Effect.Effect<AstGrepRunResult, ReturnType<typeof fail>> =>
   engine.execute({
-    descriptor: AstGrepRunOperation,
+    name: "ast_grep_run",
     input,
     run: async (context) => {
       await workspaces.assertExactClean(

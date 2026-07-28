@@ -1,51 +1,28 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import * as Path from "node:path";
-import { fileURLToPath } from "node:url";
 
+import { Effect } from "effect";
+
+import type { InvocationId } from "../src/contract/schemas.js";
 import {
   allocateInvestigationId,
   artifactReference,
   canonicalJson,
   contained,
   makeActivityGates,
-  runProcess,
   sha256,
-  type InvestigationId,
-  type InvocationId,
-  type RuntimeConfig,
-} from "attune-mcp";
-import { Effect } from "effect";
+} from "../src/platform/core.js";
+import { runProcess } from "../src/platform/process.js";
+import {
+  FIXTURE_INVESTIGATION_ID as INVESTIGATION,
+  fixtureRuntimeConfig,
+  withTemporaryDirectory,
+} from "./fixtures.js";
 
-const INVESTIGATION = "01K00000000000000000000000" as InvestigationId;
 const INVOCATION = "test-1" as InvocationId;
 
-const config = (home: string, outputLimitBytes = 1024): RuntimeConfig => ({
-  home,
-  agentFs: "agentfs",
-  fusermount: "fusermount3",
-  git: "git",
-  node: process.execPath,
-  joern: "joern",
-  maude: "maude",
-  astGrep: "ast-grep",
-  flock: "flock",
-  lockHolder: fileURLToPath(
-    new URL("../dist/lock-holder.mjs", import.meta.url),
-  ),
-  propertyRunner: fileURLToPath(
-    new URL("../dist/property-runner.mjs", import.meta.url),
-  ),
-  contractBundle: fileURLToPath(
-    new URL("../../../contracts/attune-tools.schema.json", import.meta.url),
-  ),
-  contractDigest: fileURLToPath(
-    new URL("../../../contracts/attune-tools.sha256", import.meta.url),
-  ),
-  toolchainDigest: sha256("test"),
-  outputLimitBytes,
-  inlineLimitBytes: 64,
-});
+const config = (home: string, outputLimitBytes = 1024) =>
+  fixtureRuntimeConfig(home, { outputLimitBytes, inlineLimitBytes: 64 });
 
 describe("small mechanical core", () => {
   it("canonicalizes recursively and allocates branded identities", () => {
@@ -62,8 +39,7 @@ describe("small mechanical core", () => {
   });
 
   it("hashes honest artifact metadata", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-artifact-"));
-    try {
+    await withTemporaryDirectory("attune-artifact-", async (root) => {
       await writeFile(Path.join(root, "value.txt"), "exact");
       const reference = await artifactReference(
         INVESTIGATION,
@@ -75,14 +51,11 @@ describe("small mechanical core", () => {
       expect(reference.bytes).toBe(5);
       expect(reference.complete).toBe(true);
       expect(reference.sha256).toBe(sha256("exact"));
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 
   it("captures bounded native output without a shell", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-process-"));
-    try {
+    await withTemporaryDirectory("attune-process-", async (root) => {
       const directory = Path.join(root, "run");
       await mkdir(directory);
       const result = await runProcess(config(root, 32), {
@@ -102,14 +75,11 @@ describe("small mechanical core", () => {
       expect(
         (await readFile(Path.join(directory, "stdout.txt"))).byteLength,
       ).toBe(32);
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 
   it("interrupts a process tree and preserves captured output", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-cancel-"));
-    try {
+    await withTemporaryDirectory("attune-cancel-", async (root) => {
       const controller = new AbortController();
       const directory = Path.join(root, "run");
       await mkdir(directory);
@@ -132,14 +102,11 @@ describe("small mechanical core", () => {
       expect(await readFile(Path.join(directory, "stdout.txt"), "utf8")).toBe(
         "ready",
       );
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 
   it("does not spawn a process for an already-aborted request", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-pre-cancel-"));
-    try {
+    await withTemporaryDirectory("attune-pre-cancel-", async (root) => {
       const controller = new AbortController();
       controller.abort();
       const directory = Path.join(root, "run");
@@ -161,9 +128,7 @@ describe("small mechanical core", () => {
       expect(await readFile(Path.join(directory, "stderr.txt"), "utf8")).toBe(
         "",
       );
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   });
 
   it("makes finalization wait for accepted shared activity", async () => {

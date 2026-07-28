@@ -7,11 +7,13 @@ import { Effect } from "effect";
 import type {
   InvestigationFinalizeInput,
   InvestigationFinalizeResult,
-} from "../../v0/contracts.js";
-import { fail } from "../../v0/core.js";
-import { finalizedManifest, InvocationEngine } from "../../v0/invocation.js";
-import { WorkspaceStore } from "../../v0/workspace.js";
-import { InvestigationFinalizeOperation } from "./operation.js";
+} from "../../contract/schemas.js";
+import {
+  finalizedManifest,
+  InvocationEngine,
+} from "../../investigation/invocation.js";
+import { WorkspaceStore } from "../../investigation/workspace.js";
+import { fail } from "../../platform/core.js";
 
 /** Finalizes one exact clean snapshot after accepted shared work completes. */
 export const investigationFinalize = (
@@ -20,7 +22,7 @@ export const investigationFinalize = (
   input: InvestigationFinalizeInput,
 ): Effect.Effect<InvestigationFinalizeResult, ReturnType<typeof fail>> =>
   engine.execute({
-    descriptor: InvestigationFinalizeOperation,
+    name: "investigation_finalize",
     input,
     run: async (context) => {
       await workspaces.assertExactClean(

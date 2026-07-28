@@ -7,19 +7,22 @@ import * as Path from "node:path";
 
 import { Effect } from "effect";
 
+import type {
+  PropertyRunInput,
+  PropertyRunResult,
+} from "../../contract/schemas.js";
+import { InvocationEngine } from "../../investigation/invocation.js";
+import { WorkspaceStore } from "../../investigation/workspace.js";
+import {
+  canonicalJson,
+  fail,
+  type RuntimeConfig,
+} from "../../platform/core.js";
 import {
   requireSuccessfulProcess,
   retainProcessEvidence,
 } from "../../platform/native-process.js";
-import type {
-  PropertyRunInput,
-  PropertyRunResult,
-} from "../../v0/contracts.js";
-import { canonicalJson, fail, type RuntimeConfig } from "../../v0/core.js";
-import { InvocationEngine } from "../../v0/invocation.js";
-import { runProcess } from "../../v0/process.js";
-import { WorkspaceStore } from "../../v0/workspace.js";
-import { PropertyRunOperation } from "./operation.js";
+import { runProcess } from "../../platform/process.js";
 
 /** Runs a bounded repository-local property against an isolated snapshot. */
 export const propertyRun = (
@@ -29,7 +32,7 @@ export const propertyRun = (
   input: PropertyRunInput,
 ): Effect.Effect<PropertyRunResult, ReturnType<typeof fail>> =>
   engine.execute({
-    descriptor: PropertyRunOperation,
+    name: "property_run",
     input,
     run: async (context) => {
       await workspaces.assertExactClean(

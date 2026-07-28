@@ -4,9 +4,9 @@
  * @internal
  */
 
-import { canonicalJson, fail } from "../v0/core.js";
-import type { InvocationContext } from "../v0/invocation.js";
-import type { ProcessResult } from "../v0/process.js";
+import type { InvocationContext } from "../investigation/invocation.js";
+import { canonicalJson, fail } from "./core.js";
+import type { ProcessResult } from "./process.js";
 
 /** Retains bounded stdout, stderr, and process metadata as invocation evidence. */
 export const retainProcessEvidence = async (

@@ -1,58 +1,48 @@
 import { spawn } from "node:child_process";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as Path from "node:path";
-import { fileURLToPath } from "node:url";
 
-import {
-  canonicalJson,
-  InvestigationFinalizeOperation,
-  InvocationEngine,
-  MaudeRunOperation,
-  RepositoryCheckpointOperation,
-  sha256,
-  type ActivityGate,
-  type FullGitCommit,
-  type InvestigationId,
-  type InvestigationManifest,
-  type InvocationId,
-  type MountedWorkspace,
-  type RuntimeConfig,
-  type WorkspaceStore,
-} from "attune-mcp";
 import { Effect, Fiber, Schema } from "effect";
 
-import { withOsLock } from "../src/v0/lock.js";
+import {
+  type InvestigationId,
+  type InvocationId,
+} from "../src/contract/schemas.js";
+import { InvocationEngine } from "../src/investigation/invocation.js";
+import type {
+  InvestigationManifest,
+  MountedWorkspace,
+  WorkspaceStore,
+} from "../src/investigation/workspace.js";
+import {
+  sha256,
+  type ActivityGate,
+  type RuntimeConfig,
+} from "../src/platform/core.js";
+import { withOsLock } from "../src/platform/lock.js";
+import { AttuneToolkit } from "../src/tools/registry.js";
+import {
+  FIXTURE_INVESTIGATION_ID as id,
+  FIXTURE_SNAPSHOT as snapshot,
+  fixtureManifest,
+  fixtureRuntimeConfig,
+  readJson,
+  writeCanonicalJson,
+} from "./fixtures.js";
 
-const id = "01K00000000000000000000000" as InvestigationId;
-const snapshot = "a".repeat(40) as FullGitCommit;
+const makeConfig = fixtureRuntimeConfig;
 
-const makeConfig = (home: string): RuntimeConfig => ({
-  home,
-  agentFs: "agentfs",
-  fusermount: "fusermount3",
-  git: "git",
-  node: process.execPath,
-  joern: "joern",
-  maude: "maude",
-  astGrep: "ast-grep",
-  flock: "flock",
-  lockHolder: fileURLToPath(
-    new URL("../dist/lock-holder.mjs", import.meta.url),
-  ),
-  propertyRunner: fileURLToPath(
-    new URL("../dist/property-runner.mjs", import.meta.url),
-  ),
-  contractBundle: fileURLToPath(
-    new URL("../../../contracts/attune-tools.schema.json", import.meta.url),
-  ),
-  contractDigest: fileURLToPath(
-    new URL("../../../contracts/attune-tools.sha256", import.meta.url),
-  ),
-  toolchainDigest: sha256("test-toolchain"),
-  outputLimitBytes: 1024,
-  inlineLimitBytes: 256,
-});
+const maudeInput = (invocationId: InvocationId, moduleSource: string) =>
+  ({
+    investigationId: id,
+    invocationId,
+    expectedSnapshot: snapshot,
+    references: [],
+    moduleSource,
+    commands: "reduce true .",
+    timeoutMilliseconds: 1_000,
+  }) as const;
 
 const deferred = () => {
   let resolve!: () => void;
@@ -90,26 +80,14 @@ describe("idempotent receipt boundary", () => {
   let engine: InvocationEngine;
 
   beforeEach(async () => {
-    home = await import("node:fs/promises").then(({ mkdtemp }) =>
-      mkdtemp(Path.join(tmpdir(), "attune-invocation-")),
-    );
+    home = await mkdtemp(Path.join(tmpdir(), "attune-invocation-"));
     const repositoryPath = Path.join(home, "repo");
     const artifactsPath = Path.join(home, "artifacts");
     await Promise.all([
       mkdir(repositoryPath, { recursive: true }),
       mkdir(artifactsPath, { recursive: true }),
     ]);
-    manifest = {
-      schemaVersion: 1,
-      investigationId: id,
-      normalizedRemote: "/fixture",
-      requestedRevision: "main",
-      resolvedCommit: snapshot,
-      baseKey: sha256("base"),
-      branch: `attune/${id}`,
-      toolchainDigest: sha256("test-toolchain"),
-      createdAt: new Date(0).toISOString(),
-    };
+    manifest = fixtureManifest();
     workspace = {
       mountPath: home,
       repositoryPath,
@@ -136,16 +114,8 @@ describe("idempotent receipt boundary", () => {
     increment: () => void,
   ) =>
     engine.execute({
-      descriptor: MaudeRunOperation,
-      input: {
-        investigationId: id,
-        invocationId,
-        expectedSnapshot: snapshot,
-        references: [],
-        moduleSource: value,
-        commands: "reduce true .",
-        timeoutMilliseconds: 1_000,
-      },
+      name: "maude_run",
+      input: maudeInput(invocationId, value),
       run: async (context) => {
         increment();
         context.setSnapshot(snapshot);
@@ -163,6 +133,41 @@ describe("idempotent receipt boundary", () => {
       },
     });
 
+  const bootstrap = () => {
+    let materializations = 0;
+    const store = {
+      initialize: async () => undefined,
+      materialize: async () => {
+        materializations += 1;
+        return {
+          investigationId: id,
+          requestedRevision: "main",
+          resolvedCommit: snapshot,
+          branch: `attune/${id}`,
+          manifest,
+        };
+      },
+      withMount: async <A>(
+        _id: InvestigationId,
+        _signal: AbortSignal | undefined,
+        use: (mounted: MountedWorkspace) => Promise<A>,
+      ): Promise<A> => await use({ ...workspace, manifest }),
+    } as unknown as WorkspaceStore;
+    return {
+      engine: new InvocationEngine(makeConfig(home), store),
+      materializations: () => materializations,
+    };
+  };
+
+  const artifactFile = (
+    tool: string,
+    invocationId: InvocationId,
+    file: string,
+  ) => Path.join(workspace.artifactsPath, tool, invocationId, file);
+
+  const bootstrapFile = (invocationId: InvocationId, file: string) =>
+    Path.join(home, "bootstrap", "repository_materialize", invocationId, file);
+
   it("serializes concurrent duplicates and returns the original receipt", async () => {
     let executions = 0;
     const invocationId = "duplicate-1" as InvocationId;
@@ -173,9 +178,10 @@ describe("idempotent receipt boundary", () => {
     expect(executions).toBe(1);
     expect(left).toEqual(right);
     const directory = Path.join(workspace.artifactsPath, "maude", invocationId);
-    expect(
-      JSON.parse(await readFile(Path.join(directory, "receipt.json"), "utf8")),
-    ).toMatchObject({ status: "succeeded", snapshotId: snapshot });
+    expect(await readJson(Path.join(directory, "receipt.json"))).toMatchObject({
+      status: "succeeded",
+      snapshotId: snapshot,
+    });
     expect(await readFile(Path.join(directory, "native.txt"), "utf8")).toBe(
       "exact",
     );
@@ -193,21 +199,10 @@ describe("idempotent receipt boundary", () => {
     expect(executions).toBe(1);
 
     const incompleteId = "incomplete-1" as InvocationId;
-    const input = {
-      investigationId: id,
-      invocationId: incompleteId,
-      expectedSnapshot: snapshot,
-      references: [],
-      moduleSource: "lost",
-      commands: "reduce true .",
-      timeoutMilliseconds: 1_000,
-    };
+    const input = maudeInput(incompleteId, "lost");
     const directory = Path.join(workspace.artifactsPath, "maude", incompleteId);
     await mkdir(directory, { recursive: true });
-    await writeFile(
-      Path.join(directory, "request.json"),
-      `${canonicalJson(input)}\n`,
-    );
+    await writeCanonicalJson(Path.join(directory, "request.json"), input);
     await expect(
       Effect.runPromise(operation(incompleteId, "lost", () => executions++)),
     ).rejects.toMatchObject({ code: "InvocationIncomplete" });
@@ -245,33 +240,20 @@ describe("idempotent receipt boundary", () => {
   it("rejects divergence between the embedded and detached receipt", async () => {
     let executions = 0;
     const invocationId = "detached-receipt-tamper" as InvocationId;
-    const input = {
-      investigationId: id,
-      invocationId,
-      expectedSnapshot: snapshot,
-      references: [],
-      moduleSource: "evidence",
-      commands: "reduce true .",
-      timeoutMilliseconds: 1_000,
-    } as const;
+    const input = maudeInput(invocationId, "evidence");
     await Effect.runPromise(
       operation(invocationId, input.moduleSource, () => executions++),
     );
 
-    const receiptPath = Path.join(
-      workspace.artifactsPath,
-      "maude",
-      invocationId,
-      "receipt.json",
-    );
-    const receipt = JSON.parse(await readFile(receiptPath, "utf8")) as object;
-    await writeFile(
-      receiptPath,
-      `${canonicalJson({ ...receipt, inputDigest: sha256("tampered") })}\n`,
-    );
+    const receiptPath = artifactFile("maude", invocationId, "receipt.json");
+    const receipt = await readJson<object>(receiptPath);
+    await writeCanonicalJson(receiptPath, {
+      ...receipt,
+      inputDigest: sha256("tampered"),
+    });
 
     await expect(
-      Effect.runPromise(engine.lookupTerminal(MaudeRunOperation, input)),
+      Effect.runPromise(engine.lookupTerminal("maude_run", input)),
     ).rejects.toMatchObject({
       code: "ContractMismatch",
       message: "persisted result and detached receipt disagree",
@@ -287,7 +269,7 @@ describe("idempotent receipt boundary", () => {
     let sharedEntered = false;
     let interruptCompleted = false;
     const exclusive = engine.execute({
-      descriptor: InvestigationFinalizeOperation,
+      name: "investigation_finalize",
       input: {
         investigationId: id,
         invocationId,
@@ -332,17 +314,9 @@ describe("idempotent receipt boundary", () => {
     await Effect.runPromise(Fiber.join(sharedFiber));
     expect(sharedEntered).toBe(true);
 
-    const receipt = JSON.parse(
-      await readFile(
-        Path.join(
-          workspace.artifactsPath,
-          "repository",
-          invocationId,
-          "receipt.json",
-        ),
-        "utf8",
-      ),
-    ) as { readonly status: string };
+    const receipt = await readJson<{ readonly status: string }>(
+      artifactFile("repository", invocationId, "receipt.json"),
+    );
     expect(receipt.status).toBe("cancelled");
   });
 
@@ -355,7 +329,7 @@ describe("idempotent receipt boundary", () => {
     const release = deferred();
     let receiptAtSecondEntry: unknown;
     const first = engine.execute({
-      descriptor: RepositoryCheckpointOperation,
+      name: "repository_checkpoint",
       input: {
         investigationId: id,
         invocationId: firstId,
@@ -374,7 +348,7 @@ describe("idempotent receipt boundary", () => {
       },
     });
     const second = engine.execute({
-      descriptor: RepositoryCheckpointOperation,
+      name: "repository_checkpoint",
       input: {
         investigationId: id,
         invocationId: secondId,
@@ -383,16 +357,8 @@ describe("idempotent receipt boundary", () => {
         policy: "require-clean",
       },
       run: async (context) => {
-        receiptAtSecondEntry = JSON.parse(
-          await readFile(
-            Path.join(
-              workspace.artifactsPath,
-              "repository",
-              firstId,
-              "receipt.json",
-            ),
-            "utf8",
-          ),
+        receiptAtSecondEntry = await readJson(
+          artifactFile("repository", firstId, "receipt.json"),
         );
         context.setSnapshot(snapshot);
         return {
@@ -476,19 +442,11 @@ describe("idempotent receipt boundary", () => {
 
   it("publishes and replays a valid ContractMismatch for malformed payloads", async () => {
     const invocationId = "malformed-payload" as InvocationId;
-    const input = {
-      investigationId: id,
-      invocationId,
-      expectedSnapshot: snapshot,
-      references: [],
-      moduleSource: "malformed",
-      commands: "reduce true .",
-      timeoutMilliseconds: 1_000,
-    } as const;
+    const input = maudeInput(invocationId, "malformed");
     let executions = 0;
     const first = await Effect.runPromise(
       engine.execute({
-        descriptor: MaudeRunOperation,
+        name: "maude_run",
         input,
         run: (async () => {
           executions += 1;
@@ -506,21 +464,23 @@ describe("idempotent receipt boundary", () => {
       status: "failed",
       failure: { code: "ContractMismatch" },
     });
-    expect(Schema.is(MaudeRunOperation.result)(first)).toBe(true);
+    expect(Schema.is(AttuneToolkit.tools.maude_run.successSchema)(first)).toBe(
+      true,
+    );
 
     const directory = Path.join(workspace.artifactsPath, "maude", invocationId);
-    const persistedResult = JSON.parse(
-      await readFile(Path.join(directory, "result.json"), "utf8"),
-    ) as unknown;
-    const persistedReceipt = JSON.parse(
-      await readFile(Path.join(directory, "receipt.json"), "utf8"),
-    ) as unknown;
-    expect(Schema.is(MaudeRunOperation.result)(persistedResult)).toBe(true);
+    const persistedResult = await readJson(Path.join(directory, "result.json"));
+    const persistedReceipt = await readJson(
+      Path.join(directory, "receipt.json"),
+    );
+    expect(
+      Schema.is(AttuneToolkit.tools.maude_run.successSchema)(persistedResult),
+    ).toBe(true);
     expect(persistedResult).toMatchObject({ receipt: persistedReceipt });
 
     const replay = await Effect.runPromise(
       engine.execute({
-        descriptor: MaudeRunOperation,
+        name: "maude_run",
         input,
         run: async () => {
           executions += 1;
@@ -543,16 +503,8 @@ describe("idempotent receipt boundary", () => {
     const invocationId = "malformed-tagged-failure" as InvocationId;
     const result = await Effect.runPromise(
       engine.execute({
-        descriptor: MaudeRunOperation,
-        input: {
-          investigationId: id,
-          invocationId,
-          expectedSnapshot: snapshot,
-          references: [],
-          moduleSource: "malformed",
-          commands: "reduce true .",
-          timeoutMilliseconds: 1_000,
-        },
+        name: "maude_run",
+        input: maudeInput(invocationId, "malformed"),
         run: async () => {
           throw {
             _tag: "AttuneToolFailure",
@@ -569,33 +521,14 @@ describe("idempotent receipt boundary", () => {
         message: "operation threw a malformed AttuneToolFailure",
       },
     });
-    expect(Schema.is(MaudeRunOperation.result)(result)).toBe(true);
+    expect(Schema.is(AttuneToolkit.tools.maude_run.successSchema)(result)).toBe(
+      true,
+    );
   });
 
   it("validates detached bootstrap receipts before replay", async () => {
-    let materializations = 0;
-    const bootstrapStore = {
-      initialize: async () => undefined,
-      materialize: async () => {
-        materializations += 1;
-        return {
-          investigationId: id,
-          requestedRevision: "main",
-          resolvedCommit: snapshot,
-          branch: `attune/${id}`,
-          manifest,
-        };
-      },
-      withMount: async <A>(
-        _id: InvestigationId,
-        _signal: AbortSignal | undefined,
-        use: (mounted: MountedWorkspace) => Promise<A>,
-      ): Promise<A> => await use({ ...workspace, manifest }),
-    } as unknown as WorkspaceStore;
-    const bootstrapEngine = new InvocationEngine(
-      makeConfig(home),
-      bootstrapStore,
-    );
+    const fixture = bootstrap();
+    const bootstrapEngine = fixture.engine;
     const invocationId = "bootstrap-receipt-tamper" as InvocationId;
     const input = {
       invocationId,
@@ -606,18 +539,12 @@ describe("idempotent receipt boundary", () => {
     } as const;
     await Effect.runPromise(bootstrapEngine.materialize(input));
 
-    const receiptPath = Path.join(
-      home,
-      "bootstrap",
-      "repository_materialize",
-      invocationId,
-      "receipt.json",
-    );
-    const receipt = JSON.parse(await readFile(receiptPath, "utf8")) as object;
-    await writeFile(
-      receiptPath,
-      `${canonicalJson({ ...receipt, inputDigest: sha256("tampered") })}\n`,
-    );
+    const receiptPath = bootstrapFile(invocationId, "receipt.json");
+    const receipt = await readJson<object>(receiptPath);
+    await writeCanonicalJson(receiptPath, {
+      ...receipt,
+      inputDigest: sha256("tampered"),
+    });
 
     await expect(
       Effect.runPromise(bootstrapEngine.materialize(input)),
@@ -626,26 +553,20 @@ describe("idempotent receipt boundary", () => {
       message: "persisted result and detached receipt disagree",
     });
 
-    const resultPath = Path.join(
-      home,
-      "bootstrap",
-      "repository_materialize",
-      invocationId,
-      "result.json",
-    );
-    const result = JSON.parse(await readFile(resultPath, "utf8")) as {
+    const resultPath = bootstrapFile(invocationId, "result.json");
+    const result = await readJson<{
       readonly receipt: object;
-    };
+    }>(resultPath);
     const correlatedTamper = {
       ...result.receipt,
       operation: "checkpoint",
     };
     await Promise.all([
-      writeFile(receiptPath, `${canonicalJson(correlatedTamper)}\n`),
-      writeFile(
-        resultPath,
-        `${canonicalJson({ ...result, receipt: correlatedTamper })}\n`,
-      ),
+      writeCanonicalJson(receiptPath, correlatedTamper),
+      writeCanonicalJson(resultPath, {
+        ...result,
+        receipt: correlatedTamper,
+      }),
     ]);
     await expect(
       Effect.runPromise(bootstrapEngine.materialize(input)),
@@ -654,33 +575,12 @@ describe("idempotent receipt boundary", () => {
       message:
         "repository_materialize returned a receipt that does not correlate with its request and result",
     });
-    expect(materializations).toBe(1);
+    expect(fixture.materializations()).toBe(1);
   });
 
   it("validates the persisted allocation before bootstrap replay", async () => {
-    let materializations = 0;
-    const bootstrapStore = {
-      initialize: async () => undefined,
-      materialize: async () => {
-        materializations += 1;
-        return {
-          investigationId: id,
-          requestedRevision: "main",
-          resolvedCommit: snapshot,
-          branch: `attune/${id}`,
-          manifest,
-        };
-      },
-      withMount: async <A>(
-        _id: InvestigationId,
-        _signal: AbortSignal | undefined,
-        use: (mounted: MountedWorkspace) => Promise<A>,
-      ): Promise<A> => await use({ ...workspace, manifest }),
-    } as unknown as WorkspaceStore;
-    const bootstrapEngine = new InvocationEngine(
-      makeConfig(home),
-      bootstrapStore,
-    );
+    const fixture = bootstrap();
+    const bootstrapEngine = fixture.engine;
     const invocationId = "bootstrap-allocation-tamper" as InvocationId;
     const input = {
       invocationId,
@@ -691,19 +591,10 @@ describe("idempotent receipt boundary", () => {
     } as const;
     await Effect.runPromise(bootstrapEngine.materialize(input));
 
-    const allocationPath = Path.join(
-      home,
-      "bootstrap",
-      "repository_materialize",
-      invocationId,
-      "allocation.json",
-    );
-    await writeFile(
-      allocationPath,
-      `${canonicalJson({
-        investigationId: "01K22222222222222222222222",
-      })}\n`,
-    );
+    const allocationPath = bootstrapFile(invocationId, "allocation.json");
+    await writeCanonicalJson(allocationPath, {
+      investigationId: "01K22222222222222222222222",
+    });
     await expect(
       Effect.runPromise(bootstrapEngine.materialize(input)),
     ).rejects.toMatchObject({
@@ -712,16 +603,15 @@ describe("idempotent receipt boundary", () => {
         "persisted materialization allocation disagrees with request or terminal result",
     });
 
-    await writeFile(
-      allocationPath,
-      `${canonicalJson({ investigationId: "invalid" })}\n`,
-    );
+    await writeCanonicalJson(allocationPath, {
+      investigationId: "invalid",
+    });
     await expect(
       Effect.runPromise(bootstrapEngine.materialize(input)),
     ).rejects.toMatchObject({
       code: "ContractMismatch",
       message: "persisted materialization allocation is invalid",
     });
-    expect(materializations).toBe(1);
+    expect(fixture.materializations()).toBe(1);
   });
 });

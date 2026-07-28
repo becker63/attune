@@ -13,7 +13,7 @@
     "diagnostics"
   ],
   "properties": {
-    "schemaVersion": { "const": "1.0.0" },
+    "schemaVersion": { "const": "2.0.0" },
     "package": { "$ref": "#/$defs/package" },
     "source": { "$ref": "#/$defs/manifestSource" },
     "generator": { "$ref": "#/$defs/generator" },
@@ -116,7 +116,7 @@
         },
         "target": { "type": "string", "minLength": 1 },
         "targetSymbolId": { "type": "string", "minLength": 1 },
-        "source": { "enum": ["tsdoc", "descriptor"] }
+        "source": { "enum": ["tsdoc", "registry"] }
       }
     },
     "fact": {

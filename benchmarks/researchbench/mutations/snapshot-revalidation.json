@@ -1,0 +1,11 @@
+{
+  "fixtureVersion": "snapshot-revalidation-v1",
+  "hiddenControls": [
+    "post-lock-revalidation-removed",
+    "wrong-snapshot-compared",
+    "writer-authority-reacquired",
+    "read-only-decoy",
+    "ignored-snapshot-result",
+    "indirect-helper-revalidation"
+  ]
+}

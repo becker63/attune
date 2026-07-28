@@ -24,6 +24,16 @@ const markdownCode = (value: string): string => {
   return `${fence} ${text} ${fence}`;
 };
 
+const markdownInline = (value: string): string =>
+  value
+    .split(/(`[^`]+`)/gu)
+    .map((part) =>
+      part.startsWith("`") && part.endsWith("`")
+        ? markdownCode(part.slice(1, -1))
+        : markdownText(part),
+    )
+    .join("");
+
 const frontmatterString = (value: string): string =>
   JSON.stringify(value)
     .replaceAll("\u2028", String.raw`\u2028`)
@@ -48,9 +58,9 @@ export const renderGuideMarkdown = (
     "",
     `# ${markdownText(draft.title)}`,
     "",
-    markdownText(draft.summary),
+    markdownInline(draft.summary),
     "",
-    `**For:** ${markdownText(draft.audience)}`,
+    `**For:** ${markdownInline(draft.audience)}`,
     "",
   ];
 
@@ -58,7 +68,7 @@ export const renderGuideMarkdown = (
     lines.push(`## ${markdownText(section.heading)}`, "");
     for (const claim of section.claims) {
       lines.push(
-        `${markdownText(claim.text)}${claim.certainty === "inference" ? " *(inference)*" : ""}`,
+        `${markdownInline(claim.text)}${claim.certainty === "inference" ? " *(inference)*" : ""}`,
         "",
       );
     }

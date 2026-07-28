@@ -3,7 +3,7 @@
   "id": "guide.investigation-lifecycle",
   "slug": "investigation-lifecycle",
   "title": "Investigation lifecycle",
-  "summary": "Read the runtime as a sequence of capabilities, operations, receipts, and one terminal transition.",
+  "summary": "Read the runtime as three capabilities, eight Toolkit operations, and one terminal transition.",
   "audience": "A contributor changing workspace, execution, receipt, artifact, or finalization behavior.",
   "sections": [
     {
@@ -12,37 +12,38 @@
       "claims": [
         {
           "id": "lifecycle.capabilities",
-          "text": "The lifecycle model distinguishes materialized, active, and finalized investigations. The state parameter is proof carried by the value: execution consumes the active capability, while finalization ends those permissions.",
+          "text": "The public lifecycle has materialized, active, and finalized capabilities. The service activates materialized work, executes against an active capability, and returns finalized evidence at the terminal transition.",
           "certainty": "direct",
           "evidence": [
             {
-              "symbol": ["Investigation", "MaterializedInvestigation"],
+              "symbol": "MaterializedInvestigationCapability",
               "facts": ["signature"]
             },
             {
-              "symbol": ["ActiveInvestigation", "MaterializedInvestigation"],
+              "symbol": "ActiveInvestigation",
               "facts": ["signature"]
             },
             {
-              "symbol": [
-                "FinalizedInvestigation",
-                "InvestigationFinalizeResult"
-              ],
+              "symbol": "FinalizedInvestigation",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "InvestigationServiceApi",
               "facts": ["signature"]
             }
           ]
         },
         {
           "id": "lifecycle.snapshot",
-          "text": "A snapshot is part of the capability boundary rather than an incidental string. Writer operations advance it intentionally; readers state which snapshot they expect.",
-          "certainty": "direct",
+          "text": "Operation input remains keyed by the selected Toolkit name, while the service requires an active capability for execution and finalization.",
+          "certainty": "inference",
           "evidence": [
             {
-              "symbol": ["InvestigationSnapshot", "FullGitCommit"],
+              "symbol": "AttuneOperationInput",
               "facts": ["signature"]
             },
             {
-              "symbol": "RepositoryCheckpointInput",
+              "symbol": "InvestigationServiceApi",
               "facts": ["signature"]
             }
           ]
@@ -55,38 +56,38 @@
       "claims": [
         {
           "id": "lifecycle.receipts.union",
-          "text": "Receipts form a closed outcome union: succeeded, failed, or cancelled. Callers can branch on the outcome without interpreting subprocess logs or guessing whether a retry already committed evidence.",
+          "text": "Each Toolkit name selects its own result, receipt, and recoverable error types. Callers retain that relationship through the service boundary.",
           "certainty": "direct",
           "evidence": [
             {
-              "symbol": "AttuneReceipt",
+              "symbol": "AttuneOperationResult",
               "facts": ["signature"]
             },
             {
-              "symbol": "SucceededReceipt",
+              "symbol": "AttuneOperationReceipt",
               "facts": ["signature"]
             },
             {
-              "symbol": "FailedReceipt",
+              "symbol": "AttuneOperationError",
               "facts": ["signature"]
             },
             {
-              "symbol": "CancelledReceipt",
+              "symbol": "InvestigationServiceApi",
               "facts": ["signature"]
             }
           ]
         },
         {
           "id": "lifecycle.receipts.artifacts",
-          "text": "Artifact references retain URI, media type, digest, byte count, and completeness. Promotion rechecks that retained evidence before bytes cross back into the repository.",
-          "certainty": "direct",
+          "text": "The public failure boundary remains explicit: Toolkit failures are selected by operation name, while lifecycle failures describe invalid service transitions.",
+          "certainty": "inference",
           "evidence": [
             {
-              "symbol": "ArtifactReference",
+              "symbol": "AttuneToolFailure",
               "facts": ["signature"]
             },
             {
-              "symbol": "ArtifactPromoteInput",
+              "symbol": "InvestigationLifecycleError",
               "facts": ["signature"]
             }
           ]
@@ -95,19 +96,23 @@
     },
     {
       "id": "ownership",
-      "heading": "The service owns transitions; tools own adaptation",
+      "heading": "The service owns transitions",
       "claims": [
         {
           "id": "lifecycle.service",
-          "text": "The investigation service is the application boundary. Tool descriptors bind a noun-specific request to that lifecycle, and the MCP server adapts the resulting operations to protocol calls.",
+          "text": "The investigation service is the application boundary. The Toolkit supplies wire contracts, and the closed registry maps their names to execution transitions.",
           "certainty": "inference",
           "evidence": [
             {
-              "symbol": ["InvestigationService", "AttuneHandlers"],
+              "symbol": "InvestigationService",
               "facts": ["signature", "source"]
             },
             {
-              "symbol": ["ToolOperation", "AttuneToolkit"],
+              "symbol": "AttuneToolkit",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "ATTUNE_OPERATIONS",
               "facts": ["signature"]
             }
           ]

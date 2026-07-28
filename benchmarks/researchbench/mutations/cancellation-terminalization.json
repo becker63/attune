@@ -1,0 +1,11 @@
+{
+  "fixtureVersion": "cancellation-terminalization-v1",
+  "hiddenControls": [
+    "activity-release-before-receipt",
+    "writer-release-before-terminal-result",
+    "workspace-unmount-while-draining",
+    "finalize-during-cancellation",
+    "receipt-before-validation",
+    "detached-cleanup"
+  ]
+}

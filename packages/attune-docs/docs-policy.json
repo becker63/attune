@@ -7,14 +7,14 @@
       "rationale": "State capabilities and their service are the primary onboarding path."
     },
     {
-      "name": "operation-descriptors",
-      "exportNamePattern": "(Operation|ToolOperation)$",
+      "name": "toolkit-and-registry",
+      "exportNamePattern": "^(AttuneToolkit|ATTUNE_OPERATIONS)$",
       "minMatches": 1,
-      "rationale": "Operation descriptors explain the boundary between MCP input and investigation execution."
+      "rationale": "The Toolkit and closed registry define the boundary between MCP input and investigation execution."
     },
     {
       "name": "recoverable-errors",
-      "exportNamePattern": "^[A-Z].*(Error|Failure)$",
+      "exportNamePattern": "^(InvestigationLifecycleError|AttuneToolFailure)$",
       "minMatches": 1,
       "rationale": "Public failures must explain the caller's recovery decision."
     }
@@ -22,10 +22,10 @@
   "requiredRelations": [
     {
       "name": "lifecycle-transitions",
-      "exportNamePattern": "^(RepositoryMaterialize|RepositoryCheckpoint|JoernQuery|MaudeRun|PropertyRun|AstGrepRun|ArtifactPromote|InvestigationFinalize)Operation$",
-      "minMatches": 8,
-      "anyOf": ["requires", "produces", "transitionsTo"],
-      "rationale": "Executable lifecycle boundaries must point to the capability they consume or produce."
+      "exportNamePattern": "^ATTUNE_OPERATIONS$",
+      "minMatches": 1,
+      "anyOf": ["transitionsTo"],
+      "rationale": "The closed registry must expose the lifecycle transitions selected by its entries."
     }
   ],
   "allowedRelationTargets": [

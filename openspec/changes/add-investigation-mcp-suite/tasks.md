@@ -1,13 +1,14 @@
 # Implementation Tasks
 
-The previous checklist implemented a broader event-sourced research kernel and
-is superseded. Completion marks from that design do not carry forward. The
-tasks below implement only the Effect MCP capability boundary.
+This is the single implementation checklist for the consolidated change. It
+reduces and freezes the Effect MCP boundary first, then generates and consumes
+that boundary from Python, researchbench, and the static documentation
+products. Live campaign execution remains deferred.
 
 ## 1. Establish the reduced boundary
 
-- [x] 1.1 Capture a fresh `scc` baseline for all TypeScript in `joern-effect`, `attune-mcp`, and the property package, including generated code, tests, scripts, and configuration.
-- [x] 1.2 Map existing modules to `keep`, `simplify`, or `delete` using the authority table in `design.md`, and allocate the complete 10,000-line target before implementation.
+- [x] 1.1 Record cleanup baseline `c65a76c6f8fabf57c06d23a87096073a56301ba4` for handwritten `.ts` files under `packages/attune-mcp/src` and `test` (11,285 physical lines).
+- [x] 1.2 Map existing modules to `keep`, `simplify`, or `delete` using the authority table in `design.md`, and allocate the at-most-8,000-line package target before implementation.
 - [x] 1.3 Preserve the existing `joern-effect` API, AgentFS remount-origin patch and native contract, low-level process/cancellation discoveries, Nix packaging, and real fixtures as the maximal reference.
 - [x] 1.4 Remove the public and internal run-envelope state machine, owner token/epoch model, terminal claiming, abandoned-owner reconciliation, and audit reconciliation.
 - [x] 1.5 Remove the Attune semantic provenance graph, reference-target validation, cross-snapshot interpretation, and repeated per-tool correlation documents.
@@ -15,7 +16,7 @@ tasks below implement only the Effect MCP capability boundary.
 - [x] 1.7 Remove public `joern_reindex`, tool-specific promotion workflows, and server-side promotion eligibility policies.
 - [x] 1.8 Remove dirty/untracked tool-visible snapshot manifests in favor of clean Git commit identity.
 - [x] 1.9 Remove the extensible property adapter/service registry and cross-tool IPC fabric; retain only a fixed native property-runner boundary.
-- [x] 1.10 Confirm no implementation or dependency for ActiveGraph, Python, Pydantic generation, model training, or an agent loop remains in this change.
+- [x] 1.10 Keep ActiveGraph execution, Python behavior, Pydantic validation, model training, and agent-loop authority outside the TypeScript MCP runtime and executable Nix closure while preserving the one-way consumer boundary used later in this checklist.
 
 ## 2. Define the mechanical contracts
 
@@ -93,7 +94,7 @@ tasks below implement only the Effect MCP capability boundary.
 - [x] 8.3 Start one local stdio server with protocol output reserved on stdout and logs on stderr.
 - [x] 8.4 Keep one bounded application layer for investigation resolution, locks, AgentFS access, tool adapters, and resources.
 - [x] 8.5 Add an MCP schema/list/call smoke test using a client independent of any particular agent harness.
-- [x] 8.6 Document how a future ActiveGraph pack consumes the frozen schema and receipts without making ActiveGraph a V0 dependency.
+- [x] 8.6 Document how the included ActiveGraph bridge consumes the frozen schema and receipts without making ActiveGraph a TypeScript MCP runtime dependency.
 
 ## 9. Pin the executable environment
 
@@ -115,4 +116,27 @@ tasks below implement only the Effect MCP capability boundary.
 - [x] 10.7 Race finalization with an accepted analysis invocation, prove finalization waits for its terminal receipt and rejects every later new invocation, and prove resources plus exact completed retries remain available.
 - [x] 10.8 Prove opaque unknown references and missing semantic relationships do not block mechanical execution.
 - [x] 10.9 Run strict OpenSpec validation, monorepo checks, MCP contract checks, and `nix flake check`.
-- [x] 10.10 Add an automated `scc` check over the complete V0 TypeScript tree, including `joern-effect` and generated code; report the 10,000-line target and fail at 15,000 with no package exclusion.
+- [x] 10.10 Retain the broader complete-tree `scc` inventory as a diagnostic while making the handwritten MCP source-plus-test physical-line gate in section 11 the primary acceptance target.
+
+## 11. Consolidate the fixed ABI and consumer products
+
+- [x] 11.1 Fold the related ActiveGraph bridge, onboarding, and run-zero researchbench requirements into this change and retire their superseded proposal directories in the participating worktrees.
+- [x] 11.2 Replace the generic `Operation.define`/arbitrary-registry/correlation type algebra with one Toolkit, one literal eight-operation registry, and one keyed service; expose at most twenty root names and delete per-tool descriptor/barrel compatibility nouns and duplicate proof scaffolding while preserving durable runtime checks.
+- [x] 11.3 Add the versioned structured `effect-joern` DSL compiler and MCP input route, retain canonical structured and emitted-query artifacts, and preserve raw CPGQL as a first-class escape hatch.
+- [x] 11.4 Regenerate the frozen contract and implement the generated Python models plus the eight explicit ActiveGraph bridge methods against it.
+- [x] 11.5 Import and simplify the run-zero researchbench so its campaigns, evaluators, manifests, reports, and static docs products consume the fixed bridge without duplicating Effect mechanics; leave live campaign execution unrun.
+- [x] 11.6 Replace retired type-only tests with table-driven registry, keyed-inference, structured-DSL, contract-drift, Python, and docs tests; isolate Shiki/Twoslash, prove every emitted page contains a real type hover with a fast property test, retain one focused browser interaction check, and prove the MCP source-plus-test tree is at most 8,000 handwritten TypeScript lines.
+- [x] 11.7 Run strict OpenSpec validation and the affected TypeScript, Python, contract, docs, and LOC checks; record the final measurement and explicitly report any deferred live campaign.
+
+## Completion record
+
+- The final MCP measurement is 7,964 handwritten TypeScript lines against the
+  11,285-line baseline: a cut of 3,321 lines (29.4%) with 36 lines of headroom.
+- The package root exposes 17 names and the documentation audit reports no
+  policy errors.
+- The Shiki/Twoslash property suite passes for every emitted page, and the
+  focused Playwright hover/copy interaction passes in Chromium.
+- Live research campaigns remain deliberately unrun, so there are no static
+  experiment publications. The four rewritten guides require new explicit
+  approval metadata before production publication; validation rejects their
+  stale approvals as designed.

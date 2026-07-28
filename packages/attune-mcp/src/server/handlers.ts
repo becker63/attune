@@ -1,26 +1,21 @@
-/**
- * Frozen MCP wire handlers adapted to the typed investigation service.
- *
- * @remarks
- * Every active request reconstructs permission from persisted identity. Wire
- * inputs never carry brands, capabilities, or process-local cache tokens.
- */
-
 import { Effect } from "effect";
 
+import { AttuneToolFailure } from "../contract/schemas.js";
 import type { ActiveInvestigation } from "../investigation/capability.js";
 import type { InvestigationLifecycleError } from "../investigation/errors.js";
+import type { InvestigationBoundInput } from "../investigation/operation.js";
 import type { InvestigationServiceApi } from "../investigation/service.js";
-import {
-  AttuneToolFailure,
-  type InvestigationId,
-  type FullGitCommit,
-} from "../v0/contracts.js";
-import type { AttuneHandlers } from "../v0/service.js";
+import type {
+  AttuneOperationHandlers,
+  AttuneOperationInput,
+  AttuneOperationResult,
+  AttuneOperationWireInput,
+  PreservingAttuneOperationName,
+} from "../tools/registry.js";
 
-const asToolFailure = (
-  cause: AttuneToolFailure | InvestigationLifecycleError,
-): AttuneToolFailure =>
+type BoundaryError = AttuneToolFailure | InvestigationLifecycleError;
+
+const asToolFailure = (cause: BoundaryError): AttuneToolFailure =>
   cause instanceof AttuneToolFailure
     ? cause
     : new AttuneToolFailure({
@@ -32,17 +27,9 @@ const asToolFailure = (
 
 const withRequestCapability = <A>(
   service: InvestigationServiceApi,
-  identity: {
-    readonly investigationId: InvestigationId;
-    readonly expectedSnapshot: FullGitCommit;
-  },
-  run: (
-    investigation: ActiveInvestigation,
-  ) => Effect.Effect<A, AttuneToolFailure | InvestigationLifecycleError>,
-  recover: () => Effect.Effect<
-    A | undefined,
-    AttuneToolFailure | InvestigationLifecycleError
-  >,
+  identity: InvestigationBoundInput,
+  run: (investigation: ActiveInvestigation) => Effect.Effect<A, BoundaryError>,
+  recover: () => Effect.Effect<A | undefined, BoundaryError>,
 ): Effect.Effect<A, AttuneToolFailure> =>
   recover().pipe(
     Effect.mapError(asToolFailure),
@@ -55,92 +42,51 @@ const withRequestCapability = <A>(
     ),
   );
 
+const executeActive = <Name extends PreservingAttuneOperationName>(
+  service: InvestigationServiceApi,
+  name: Name,
+  wireInput: AttuneOperationWireInput<Name>,
+): Effect.Effect<AttuneOperationResult<Name>, AttuneToolFailure> => {
+  const { investigationId, expectedSnapshot, ...input } = wireInput;
+  const execute = service.execute as unknown as (
+    investigation: ActiveInvestigation,
+    operation: Name,
+    operationInput: AttuneOperationInput<Name>,
+  ) => Effect.Effect<
+    { readonly result: AttuneOperationResult<Name> },
+    BoundaryError
+  >;
+  const recover = service.recoverTerminal as unknown as (
+    operation: Name,
+    operationInput: AttuneOperationWireInput<Name>,
+  ) => Effect.Effect<AttuneOperationResult<Name> | undefined, BoundaryError>;
+  return withRequestCapability(
+    service,
+    { investigationId, expectedSnapshot },
+    (investigation) =>
+      execute(investigation, name, input as AttuneOperationInput<Name>).pipe(
+        Effect.map((execution) => execution.result),
+      ),
+    () => recover(name, wireInput),
+  );
+};
+
 /** Adapts the application service to the unchanged eight-tool MCP contract. */
 export const makeMcpHandlers = (
   service: InvestigationServiceApi,
-): AttuneHandlers => ({
-  repositoryMaterialize: (input) =>
+): AttuneOperationHandlers => ({
+  repository_materialize: (input) =>
     service.materialize(input).pipe(Effect.map((outcome) => outcome.result)),
+  repository_checkpoint: (input) =>
+    executeActive(service, "repository_checkpoint", input),
+  joern_query: (input) => executeActive(service, "joern_query", input),
+  maude_run: (input) => executeActive(service, "maude_run", input),
+  property_run: (input) => executeActive(service, "property_run", input),
+  ast_grep_run: (input) => executeActive(service, "ast_grep_run", input),
+  artifact_promote: (input) =>
+    executeActive(service, "artifact_promote", input),
 
-  repositoryCheckpoint: (wireInput) => {
-    const { investigationId, expectedSnapshot, ...input } = wireInput;
-    return withRequestCapability(
-      service,
-      { investigationId, expectedSnapshot },
-      (investigation) =>
-        service
-          .execute(investigation, "repository_checkpoint", input)
-          .pipe(Effect.map((execution) => execution.result)),
-      () => service.recoverTerminal("repository_checkpoint", wireInput),
-    );
-  },
-
-  joernQuery: (wireInput) => {
-    const { investigationId, expectedSnapshot, ...input } = wireInput;
-    return withRequestCapability(
-      service,
-      { investigationId, expectedSnapshot },
-      (investigation) =>
-        service
-          .execute(investigation, "joern_query", input)
-          .pipe(Effect.map((execution) => execution.result)),
-      () => service.recoverTerminal("joern_query", wireInput),
-    );
-  },
-
-  maudeRun: (wireInput) => {
-    const { investigationId, expectedSnapshot, ...input } = wireInput;
-    return withRequestCapability(
-      service,
-      { investigationId, expectedSnapshot },
-      (investigation) =>
-        service
-          .execute(investigation, "maude_run", input)
-          .pipe(Effect.map((execution) => execution.result)),
-      () => service.recoverTerminal("maude_run", wireInput),
-    );
-  },
-
-  propertyRun: (wireInput) => {
-    const { investigationId, expectedSnapshot, ...input } = wireInput;
-    return withRequestCapability(
-      service,
-      { investigationId, expectedSnapshot },
-      (investigation) =>
-        service
-          .execute(investigation, "property_run", input)
-          .pipe(Effect.map((execution) => execution.result)),
-      () => service.recoverTerminal("property_run", wireInput),
-    );
-  },
-
-  astGrepRun: (wireInput) => {
-    const { investigationId, expectedSnapshot, ...input } = wireInput;
-    return withRequestCapability(
-      service,
-      { investigationId, expectedSnapshot },
-      (investigation) =>
-        service
-          .execute(investigation, "ast_grep_run", input)
-          .pipe(Effect.map((execution) => execution.result)),
-      () => service.recoverTerminal("ast_grep_run", wireInput),
-    );
-  },
-
-  artifactPromote: (wireInput) => {
-    const { investigationId, expectedSnapshot, ...input } = wireInput;
-    return withRequestCapability(
-      service,
-      { investigationId, expectedSnapshot },
-      (investigation) =>
-        service
-          .execute(investigation, "artifact_promote", input)
-          .pipe(Effect.map((execution) => execution.result)),
-      () => service.recoverTerminal("artifact_promote", wireInput),
-    );
-  },
-
-  investigationFinalize: (wireInput) => {
+  investigation_finalize: (wireInput) => {
     const { investigationId, expectedSnapshot, ...input } = wireInput;
     return withRequestCapability(
       service,

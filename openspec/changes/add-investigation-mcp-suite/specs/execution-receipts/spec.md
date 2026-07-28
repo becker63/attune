@@ -23,11 +23,11 @@ The system SHALL define MCP request, response, receipt, resource, and typed fail
 - **THEN** the checked-in schema bundle and digest SHALL change deterministically
 - **AND** validation SHALL fail if generated contract artifacts are stale
 
-#### Scenario: Future non-TypeScript client
+#### Scenario: Included non-TypeScript client
 
-- **WHEN** a future ActiveGraph pack or another client integrates with Attune
+- **WHEN** the included ActiveGraph bridge or another client integrates with Attune
 - **THEN** it SHALL be able to generate or validate client models from the checked-in JSON Schema
-- **AND** this V0 SHALL NOT require a Python runtime
+- **AND** the TypeScript MCP runtime SHALL NOT require a Python runtime
 
 ### Requirement: Caller-stable invocation identity
 

@@ -1,133 +1,161 @@
-/**
- * The operation registry is the typed join between noun descriptors and the
- * existing V0 implementations. Descriptors remain pure data; this adapter is
- * the only place that pairs them with legacy handler names.
- *
- */
-
 import type { Effect } from "effect";
+import { Toolkit, Tool } from "effect/unstable/ai";
 
 import {
-  defineOperationRegistry,
-  type CapabilityOperationHandler,
-  type OperationError,
-  type OperationHandlers,
-  type OperationResultOf,
-  type OperationWireInput,
-} from "../investigation/operation.js";
-import {
-  ArtifactPromoteOperation,
-  makeArtifactPromoteHandler,
-} from "./artifact/operation.js";
-import {
-  AstGrepRunOperation,
-  makeAstGrepRunHandler,
-} from "./ast-grep/operation.js";
-import {
-  InvestigationFinalizeOperation,
-  makeInvestigationFinalizeHandler,
-} from "./investigation/operation.js";
-import {
-  JoernQueryOperation,
-  makeJoernQueryHandler,
-} from "./joern/operation.js";
-import { MaudeRunOperation, makeMaudeRunHandler } from "./maude/operation.js";
-import {
-  makePropertyRunHandler,
-  PropertyRunOperation,
-} from "./property/operation.js";
-import {
-  makeRepositoryCheckpointHandler,
-  RepositoryCheckpointOperation,
-  RepositoryMaterializeOperation,
-} from "./repository/operation.js";
+  ArtifactPromoteTool,
+  AstGrepRunTool,
+  InvestigationFinalizeTool,
+  JoernQueryTool,
+  MaudeRunTool,
+  PropertyRunTool,
+  RepositoryCheckpointTool,
+  RepositoryMaterializeTool,
+  type AttuneReceipt,
+} from "../contract/schemas.js";
+/** The Effect Toolkit is the sole schema and handler authority. */
+export const AttuneToolkit = Toolkit.make(
+  RepositoryMaterializeTool,
+  RepositoryCheckpointTool,
+  JoernQueryTool,
+  MaudeRunTool,
+  PropertyRunTool,
+  AstGrepRunTool,
+  ArtifactPromoteTool,
+  InvestigationFinalizeTool,
+);
 
-/**
- * The complete operation registry exposed by the supported MCP entry point.
- *
- * @remarks
- * Keys deliberately match descriptor names and the frozen MCP contract. Adding
- * an operation therefore requires one descriptor and one derived handler
- * mapping; input and output signatures are never handwritten again.
- */
-export const ATTUNE_OPERATIONS = defineOperationRegistry({
-  repository_materialize: RepositoryMaterializeOperation,
-  repository_checkpoint: RepositoryCheckpointOperation,
-  joern_query: JoernQueryOperation,
-  maude_run: MaudeRunOperation,
-  property_run: PropertyRunOperation,
-  ast_grep_run: AstGrepRunOperation,
-  artifact_promote: ArtifactPromoteOperation,
-  investigation_finalize: InvestigationFinalizeOperation,
-} as const);
+export type AttuneOperationName = keyof typeof AttuneToolkit.tools;
+type AttuneTool<Name extends AttuneOperationName> =
+  (typeof AttuneToolkit.tools)[Name];
+type Writer = "reader" | "writer" | "exclusive-writer" | "ast-grep-mode";
+type Transition = "materialize" | "preserve" | "finalize";
+type Correlation =
+  | "materialize"
+  | "checkpoint"
+  | "preserve-snapshot"
+  | "artifact-before"
+  | "finalize";
+type Metadata<ToolDefinition extends Tool.Any> = {
+  readonly tool: ToolDefinition;
+  readonly transition: Transition;
+  readonly writer: Writer;
+  readonly receipt: readonly [
+    tool: AttuneReceipt["tool"],
+    operation: string | { readonly input: "mode" },
+  ];
+  readonly correlation: Correlation;
+};
 
-/** Union of all registered Attune operation descriptors. */
-export type AttuneOperation =
-  (typeof ATTUNE_OPERATIONS)[keyof typeof ATTUNE_OPERATIONS];
+type ClosedRegistry = {
+  readonly [Name in AttuneOperationName]: Metadata<AttuneTool<Name>>;
+};
 
-/** Handler map whose signatures are derived from {@link ATTUNE_OPERATIONS}. */
-export type AttuneOperationHandlers = OperationHandlers<
-  typeof ATTUNE_OPERATIONS
->;
+/** Closed execution metadata for the eight product operations. */
+export const ATTUNE_OPERATIONS = {
+  repository_materialize: {
+    tool: RepositoryMaterializeTool,
+    transition: "materialize",
+    writer: "exclusive-writer",
+    receipt: ["repository", "materialize"],
+    correlation: "materialize",
+  },
+  repository_checkpoint: {
+    tool: RepositoryCheckpointTool,
+    transition: "preserve",
+    writer: "writer",
+    receipt: ["repository", "checkpoint"],
+    correlation: "checkpoint",
+  },
+  joern_query: {
+    tool: JoernQueryTool,
+    transition: "preserve",
+    writer: "reader",
+    receipt: ["joern", "query"],
+    correlation: "preserve-snapshot",
+  },
+  maude_run: {
+    tool: MaudeRunTool,
+    transition: "preserve",
+    writer: "reader",
+    receipt: ["maude", "run"],
+    correlation: "preserve-snapshot",
+  },
+  property_run: {
+    tool: PropertyRunTool,
+    transition: "preserve",
+    writer: "reader",
+    receipt: ["property", "run"],
+    correlation: "preserve-snapshot",
+  },
+  ast_grep_run: {
+    tool: AstGrepRunTool,
+    transition: "preserve",
+    writer: "ast-grep-mode",
+    receipt: ["ast-grep", { input: "mode" }],
+    correlation: "preserve-snapshot",
+  },
+  artifact_promote: {
+    tool: ArtifactPromoteTool,
+    transition: "preserve",
+    writer: "writer",
+    receipt: ["artifact", "promote"],
+    correlation: "artifact-before",
+  },
+  investigation_finalize: {
+    tool: InvestigationFinalizeTool,
+    transition: "finalize",
+    writer: "exclusive-writer",
+    receipt: ["repository", "finalize"],
+    correlation: "finalize",
+  },
+} as const satisfies ClosedRegistry;
 
-/** Registry names whose operations consume an active capability. */
+export type AttuneOperationWireInput<Name extends AttuneOperationName> =
+  Tool.Parameters<AttuneTool<Name>>;
+export type AttuneOperationInput<Name extends AttuneOperationName> =
+  (typeof ATTUNE_OPERATIONS)[Name]["transition"] extends "materialize"
+    ? AttuneOperationWireInput<Name>
+    : Omit<
+        AttuneOperationWireInput<Name>,
+        "investigationId" | "expectedSnapshot"
+      >;
+export type AttuneOperationResult<Name extends AttuneOperationName> =
+  Tool.Success<AttuneTool<Name>>;
+export type AttuneOperationError<Name extends AttuneOperationName> =
+  Tool.Failure<AttuneTool<Name>>;
+export type AttuneOperationReceipt<Name extends AttuneOperationName> = Extract<
+  AttuneOperationResult<Name>,
+  { readonly receipt: unknown }
+>["receipt"] &
+  AttuneReceipt;
+export type AttuneOperationWriter<Name extends AttuneOperationName> =
+  (typeof ATTUNE_OPERATIONS)[Name]["writer"];
+
 export type ActiveAttuneOperationName = {
-  readonly [Name in keyof typeof ATTUNE_OPERATIONS]: (typeof ATTUNE_OPERATIONS)[Name]["lifecycle"]["requires"] extends "active"
-    ? Name
-    : never;
-}[keyof typeof ATTUNE_OPERATIONS];
+  readonly [Name in AttuneOperationName]: (typeof ATTUNE_OPERATIONS)[Name]["transition"] extends "materialize"
+    ? never
+    : Name;
+}[AttuneOperationName];
 
-/** Registry names whose successful operation returns another active state. */
 export type PreservingAttuneOperationName = {
-  readonly [Name in ActiveAttuneOperationName]: (typeof ATTUNE_OPERATIONS)[Name]["lifecycle"]["produces"] extends "active"
+  readonly [Name in ActiveAttuneOperationName]: (typeof ATTUNE_OPERATIONS)[Name]["transition"] extends "preserve"
     ? Name
     : never;
 }[ActiveAttuneOperationName];
 
-/** Capability-domain handlers derived from active registry entries. */
-export type AttuneCapabilityHandlers = {
-  readonly [Name in ActiveAttuneOperationName]: CapabilityOperationHandler<
-    (typeof ATTUNE_OPERATIONS)[Name]
-  >;
+export type AttuneOperationHandler<Name extends AttuneOperationName> = (
+  input: AttuneOperationWireInput<Name>,
+) => Effect.Effect<AttuneOperationResult<Name>, AttuneOperationError<Name>>;
+
+export type AttuneOperationHandlers = {
+  readonly [Name in AttuneOperationName]: AttuneOperationHandler<Name>;
 };
 
-/**
- * Lookup-only durable recovery functions for active operation invocations.
- *
- * @remarks
- * A lookup has no implementation callback and therefore cannot accept or
- * start new work. Its signatures remain coupled to the registry descriptor
- * selected by each key.
- */
 export type AttuneTerminalLookups = {
   readonly [Name in ActiveAttuneOperationName]: (
-    input: OperationWireInput<(typeof ATTUNE_OPERATIONS)[Name]>,
+    input: AttuneOperationWireInput<Name>,
   ) => Effect.Effect<
-    OperationResultOf<(typeof ATTUNE_OPERATIONS)[Name]> | undefined,
-    OperationError<(typeof ATTUNE_OPERATIONS)[Name]>
+    AttuneOperationResult<Name> | undefined,
+    AttuneOperationError<Name>
   >;
 };
-
-/**
- * Builds the capability-domain registry from noun-owned adapters.
- *
- * @remarks
- * This is deliberately keyed by descriptor name. Generic dispatch therefore
- * retains the relationship between a name, its domain input, and its result
- * without comparing cloned descriptor objects or asserting handler identity.
- */
-export const makeAttuneCapabilityHandlers = (
-  handlers: AttuneOperationHandlers,
-): AttuneCapabilityHandlers => ({
-  repository_checkpoint: makeRepositoryCheckpointHandler(
-    handlers.repository_checkpoint,
-  ),
-  joern_query: makeJoernQueryHandler(handlers.joern_query),
-  maude_run: makeMaudeRunHandler(handlers.maude_run),
-  property_run: makePropertyRunHandler(handlers.property_run),
-  ast_grep_run: makeAstGrepRunHandler(handlers.ast_grep_run),
-  artifact_promote: makeArtifactPromoteHandler(handlers.artifact_promote),
-  investigation_finalize: makeInvestigationFinalizeHandler(
-    handlers.investigation_finalize,
-  ),
-});
