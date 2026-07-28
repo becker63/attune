@@ -6,7 +6,7 @@ import {
   type FullGitCommit,
   type InvestigationId,
 } from "../contract/schemas.js";
-import { canonicalJson, sha256 } from "../platform/core.js";
+import { canonicalJson, fail, sha256 } from "../platform/core.js";
 import {
   ATTUNE_OPERATIONS,
   AttuneToolkit,
@@ -16,8 +16,6 @@ import {
   type AttuneOperationResult,
   type AttuneOperationWireInput,
 } from "../tools/registry.js";
-
-export type WriterMode = "reader" | "writer" | "exclusive-writer";
 
 export interface InvestigationBoundInput {
   readonly investigationId: InvestigationId;
@@ -39,7 +37,7 @@ export const operationReceipt = <Name extends AttuneOperationName>(
 export const resolveWriterMode = <Name extends AttuneOperationName>(
   name: Name,
   input: AttuneOperationWireInput<Name>,
-): WriterMode =>
+) =>
   Match.value(ATTUNE_OPERATIONS[name].writer).pipe(
     Match.when("ast-grep-mode", () =>
       field(input, "mode") === "apply" ? "writer" : "reader",
@@ -55,11 +53,11 @@ export const resolveInvocationOperation = <Name extends AttuneOperationName>(
   if (typeof operation === "string") return operation;
   const value = field(input, operation.input);
   if (typeof value === "string") return value;
-  throw new AttuneToolFailure({
-    code: "ContractMismatch",
-    message: `${name} receipt operation field is not a string`,
-    observed: String(value),
-  });
+  throw fail(
+    "ContractMismatch",
+    `${name} receipt operation field is not a string`,
+    { observed: String(value) },
+  );
 };
 
 export const isAttuneReceipt = (value: unknown): value is AttuneReceipt =>
@@ -129,23 +127,22 @@ export const validateOperationResult = <
     Schema.decodeUnknownEffect(AttuneToolkit.tools[name].successSchema)(
       candidate,
     ).pipe(
-      Effect.mapError(
-        (cause) =>
-          new AttuneToolFailure({
-            code: "ContractMismatch",
-            message: `${name} returned a result that violates its schema`,
-            observed: String(cause),
-          }),
+      Effect.mapError((cause) =>
+        fail(
+          "ContractMismatch",
+          `${name} returned a result that violates its schema`,
+          { observed: String(cause) },
+        ),
       ),
       Effect.flatMap((decoded) => {
         const result = record(decoded);
         const receipt = result?.receipt;
         if (!isAttuneReceipt(receipt)) {
           return Effect.fail(
-            new AttuneToolFailure({
-              code: "ContractMismatch",
-              message: `${name} returned an invalid terminal receipt`,
-            }),
+            fail(
+              "ContractMismatch",
+              `${name} returned an invalid terminal receipt`,
+            ),
           );
         }
         const valid =
@@ -158,10 +155,10 @@ export const validateOperationResult = <
         return valid
           ? Effect.succeed(decoded as AttuneOperationResult<Name>)
           : Effect.fail(
-              new AttuneToolFailure({
-                code: "ContractMismatch",
-                message: `${name} returned a receipt that does not correlate with its request and result`,
-              }),
+              fail(
+                "ContractMismatch",
+                `${name} returned a receipt that does not correlate with its request and result`,
+              ),
             );
       }),
     ),

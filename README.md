@@ -1,25 +1,47 @@
 # Attune
 
-Attune is an Effect-native investigation system for reproducible program
-analysis. Its mechanical tools run behind a typed MCP boundary; ActiveGraph
-adds replay-safe research and documentation provenance without replacing that
-authority.
+Attune runs reproducible program investigations. Agents choose the question;
+an Effect-native lifecycle records exactly which repository snapshot and native
+tool produced each result.
 
-Read the repository map, investigation lifecycle, contributor guides, and
-generated API reference at
+Read the generated API reference at
 **[becker63.github.io/attune](https://becker63.github.io/attune/)**.
 
-## System map
+## One lifecycle
+
+The `attune-mcp` root tells the whole TypeScript story with six exports, in the
+order a reader needs them:
+
+```ts
+import {
+  Attune,
+  type Investigation,
+  AttuneReceipt,
+  AttuneToolkit,
+  InvestigationLifecycleError,
+  AttuneToolFailure,
+} from "attune-mcp";
+```
+
+`Attune` moves an `Investigation<State>` through materialize, activate, execute,
+finalize, and recovery. `AttuneReceipt` records accepted work. `AttuneToolkit`
+installs the same closed schema at the MCP boundary. The two errors distinguish
+an invalid transition from a rejected tool call.
+
+The reference is generated from these declarations and their TSDoc. Every page
+has a Shiki + Twoslash example, so readers can hover the real checked types and
+follow immutable links back to their source.
+
+## Repository
 
 - [`effect-joern`](./packages/effect-joern) is the platform-neutral Effect v4
   interface and generated TypeScript query DSL for Joern.
-- [`attune-mcp`](./packages/attune-mcp) owns the typed investigation lifecycle,
-  eight mechanical MCP operations, receipts, artifacts, workspace safety, and
-  the authoritative Effect schemas.
+- [`attune-mcp`](./packages/attune-mcp) owns the lifecycle, eight native
+  operations, durable receipts, workspace safety, and the Effect schemas.
 - [`attune-activegraph`](./python/attune-activegraph) projects the frozen MCP
-  contract into strict Python models and exposes replay-safe ActiveGraph tools.
+  contract into strict Python models and exposes replay-safe research tools.
 - [`attune-docs`](./packages/attune-docs) deterministically extracts the current
-  type surface and publishes grounded onboarding and API reference pages.
+  declarations, TSDoc, examples, and source links into the API reference.
 - [`contracts`](./contracts) contains generated cross-language contract bytes
   and their exact digest; [`nix`](./nix) pins the executable runtime.
 
@@ -55,7 +77,7 @@ pnpm check
 
 The check regenerates checked-in sources, verifies formatting, runs type-aware
 linting and TypeScript 7, tests the packages, builds them, and audits their
-published boundaries. Individual targets can be run with Nx:
+published boundaries. Run an individual target with Nx:
 
 ```bash
 pnpm nx run joern-effect:test

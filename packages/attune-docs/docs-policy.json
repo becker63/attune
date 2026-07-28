@@ -1,41 +1,24 @@
 {
+  "publicNames": [
+    "Attune",
+    "Investigation",
+    "AttuneReceipt",
+    "AttuneToolkit",
+    "InvestigationLifecycleError",
+    "AttuneToolFailure"
+  ],
   "requiredDocumentation": [
     {
-      "name": "lifecycle-capabilities",
-      "exportNamePattern": "^(Investigation|MaterializedInvestigation|MaterializedInvestigationCapability|ActiveInvestigation|FinalizedInvestigation|InvestigationSnapshot|InvestigationService|InvestigationServiceApi)$",
-      "minMatches": 1,
-      "rationale": "State capabilities and their service are the primary onboarding path."
-    },
-    {
-      "name": "toolkit-and-registry",
-      "exportNamePattern": "^(AttuneToolkit|ATTUNE_OPERATIONS)$",
-      "minMatches": 1,
-      "rationale": "The Toolkit and closed registry define the boundary between MCP input and investigation execution."
-    },
-    {
-      "name": "recoverable-errors",
-      "exportNamePattern": "^(InvestigationLifecycleError|AttuneToolFailure)$",
-      "minMatches": 1,
-      "rationale": "Public failures must explain the caller's recovery decision."
-    }
-  ],
-  "requiredRelations": [
-    {
-      "name": "lifecycle-transitions",
-      "exportNamePattern": "^ATTUNE_OPERATIONS$",
-      "minMatches": 1,
-      "anyOf": ["transitionsTo"],
-      "rationale": "The closed registry must expose the lifecycle transitions selected by its entries."
+      "name": "closed-public-api",
+      "exportNamePattern": "^(Attune|Investigation|AttuneReceipt|AttuneToolkit|InvestigationLifecycleError|AttuneToolFailure)$",
+      "minMatches": 6,
+      "rationale": "Every caller-held concept is part of the complete reference-first learning path."
     }
   ],
   "allowedRelationTargets": [
     "active",
-    "finalize",
     "finalized",
-    "materialize",
     "materialized",
-    "none",
-    "preserve",
     "terminal receipt"
   ]
 }

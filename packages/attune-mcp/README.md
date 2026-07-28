@@ -3,15 +3,16 @@
 `attune-mcp` is Attune's small, local capability service. Agents decide what
 to investigate; this package guarantees what mechanical experiment ran.
 
-Its public TypeScript model has three parts:
+Its public TypeScript story follows one lifecycle:
 
-- `AttuneToolkit` owns the eight MCP schemas and handler types.
-- `ATTUNE_OPERATIONS` adds the closed lifecycle, receipt, writer, and durable
-  correlation facts that Attune needs.
-- `InvestigationService` accepts only state-valid investigation capabilities.
+- `Attune` materializes, activates, executes, finalizes, and recovers work.
+- `Investigation<State>` proves which transition is legal at one exact snapshot.
+- `AttuneReceipt` retains reproducible evidence for accepted work.
+- `AttuneToolkit` installs the same eight schemas at the MCP boundary.
 
-There is no extensible operation framework, handler compatibility layer, or
-second schema model.
+The two exported errors distinguish lifecycle misuse from rejected tool
+boundaries. Operation projections and registry facts remain implementation
+details; callers infer inputs and results from the `Attune` methods.
 
 ## The eight operations
 
@@ -50,8 +51,8 @@ src/
 
 The executable type narrative is
 [`test/lifecycle.test-d.ts`](test/lifecycle.test-d.ts). It proves that the
-Toolkit-keyed input/result relationships stay exact and that a finalized
-capability cannot authorize new work:
+factory exposes the documented service and that a finalized investigation
+cannot authorize new work:
 
 ```sh
 pnpm --filter attune-mcp typecheck
@@ -82,9 +83,10 @@ research IR.
 `AttuneToolkit`. The Python ActiveGraph bridge consumes that frozen contract
 instead of recreating the TypeScript type model.
 
-The static API reference and onboarding site live in `packages/attune-docs`.
-Every emitted page contains a Shiki + Twoslash type-checked example; a fast
-all-pages test checks that invariant, while one focused browser test verifies a
+The static API reference lives in `packages/attune-docs`. It is generated from
+the six root declarations, their member-level TSDoc, and exact source
+provenance. Every emitted page contains its own Shiki + Twoslash type-checked
+example; fast tests cover every page, while one focused browser test verifies a
 real hover and copy interaction.
 
 This is a trusted-local service, not a hostile-code sandbox. It uses explicit

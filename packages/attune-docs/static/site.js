@@ -60,7 +60,7 @@ const showResults = (query) => {
   );
   if (matches.length === 0) {
     const empty = document.createElement("span");
-    empty.textContent = "No matching symbols or guides.";
+    empty.textContent = "No matching API entries.";
     empty.style.padding = "10px 12px";
     results.append(empty);
   }
@@ -109,6 +109,12 @@ document.addEventListener("keydown", (event) => {
     search.focus();
   }
   if (event.key === "Escape") {
+    if (
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement.closest(".twoslash-linked") !== null
+    ) {
+      document.activeElement.blur();
+    }
     hideResults();
     sidebar?.classList.remove("is-open");
     menu?.setAttribute("aria-expanded", "false");

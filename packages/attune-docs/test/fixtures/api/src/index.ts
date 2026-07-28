@@ -1,43 +1,128 @@
 /**
- * A capability whose state records which lifecycle operations remain legal.
+ * A small lifecycle package used to exercise reference extraction.
  *
- * @template State - Current lifecycle state carried by the capability.
+ * @remarks
+ * Read the capability, then the service, then the recoverable failure.
+ *
+ * @example A complete multi-file program
+ * ```ts
+ * // @filename: model.ts
+ * /** A state-indexed fixture capability. *\/
+ * export interface Investigation<State extends string> {
+ *   readonly state: State;
+ * }
+ * // @filename: index.ts
+ * import type { Investigation } from "./model.js";
+ * // ---cut-before---
+ * const active: Investigation<"active"> = { state: "active" };
+ * active.state;
+ * // ---cut-after---
+ * ```
+ *
+ * @packageDocumentation
+ */
+
+/**
+ * A capability whose type records the current lifecycle state.
+ *
+ * @template State - State carried by the capability.
+ * @transitionsTo Attune
+ *
+ * @example Inspect a capability
+ * ```ts
+ * /** A state-indexed fixture capability. *\/
+ * interface Investigation<State extends string> {
+ *   readonly state: State;
+ * }
+ * const active: Investigation<"active"> = { state: "active" };
+ * active.state;
+ * ```
  */
 export interface Investigation<State extends string = "active"> {
-  readonly id: string;
+  /** State carried by this capability. */
   readonly state: State;
 }
 
-/** An active capability that may execute another operation. */
-export type ActiveInvestigation = Investigation<"active">;
+/**
+ * Lifecycle operations in the order callers use them.
+ *
+ * @remarks
+ * The same-name value constructs the service while this interface documents
+ * each public operation.
+ *
+ * @example Construct a documented service
+ * ```ts
+ * /** Fixture lifecycle service. *\/
+ * interface Attune {
+ *   materialize(input: string): { readonly state: "materialized" };
+ * }
+ * const api: Attune = {
+ *   materialize: () => ({ state: "materialized" }),
+ * };
+ * api.materialize("main");
+ * ```
+ */
+export interface Attune {
+  /**
+   * Materialize a revision into a state-indexed capability.
+   *
+   * @param input - Revision requested by the caller.
+   * @returns A materialized investigation.
+   * @throws ExampleFailure when the revision cannot be read.
+   * @produces Investigation
+   *
+   * @example Materialize a revision
+   * ```ts
+   * interface Attune {
+   *   /** Materialize a fixture revision. *\/
+   *   materialize(input: string): { readonly state: "materialized" };
+   * }
+   * declare const api: Attune;
+   * api.materialize("main");
+   * ```
+   */
+  materialize(input: string): Investigation<"materialized">;
 
-const preservingEntry = {
-  transition: "preserve",
-} as const;
+  /**
+   * Finalize an active capability.
+   *
+   * @param investigation - Active capability to finalize.
+   * @returns Finalized evidence.
+   *
+   * @example Finalize the capability
+   * ```ts
+   * interface Attune {
+   *   /** Finalize an active fixture. *\/
+   *   finalize(value: { readonly state: "active" }): { readonly state: "finalized" };
+   * }
+   * declare const api: Attune;
+   * api.finalize({ state: "active" });
+   * ```
+   */
+  finalize(investigation: Investigation<"active">): Investigation<"finalized">;
+}
 
-/** The closed fixture registry and its machine-authoritative transitions. */
-export const ATTUNE_OPERATIONS = {
-  example: {
-    transition: "materialize",
-  },
-  spread: {
-    ...preservingEntry,
-  },
-  finish: {
-    transition: "finalize",
-  },
+/** Construct the fixture lifecycle service. */
+export const Attune = {
+  make: (): Attune => ({
+    materialize: () => ({ state: "materialized" }),
+    finalize: () => ({ state: "finalized" }),
+  }),
 } as const;
 
 /**
- * Unrelated text that must never be mistaken for registry metadata.
+ * A recoverable public fixture failure.
+ *
+ * @example Catch the public failure
+ * ```ts
+ * /** Recoverable fixture failure. *\/
+ * class ExampleFailure extends Error {}
+ * const failure = new ExampleFailure("retry");
+ * failure.message;
+ * ```
  */
-export const CommentOnlyMetadata = {
-  note: `ATTUNE_OPERATIONS: { example: { transition: "preserve" } }`,
-} as const;
-
-/** A public failure that tells the caller to correct the fixture input. */
 export class ExampleFailure extends Error {
-  /** Explain the public recovery decision. */
+  /** Explain the caller recovery decision. */
   explain(): string {
     return this.message;
   }
@@ -45,28 +130,4 @@ export class ExampleFailure extends Error {
   private internalDiagnostic(): string {
     return "private";
   }
-
-  protected recoverInternally(): void {
-    void this.internalDiagnostic();
-  }
-
-  #secretState(): string {
-    return "secret";
-  }
-
-  /** Exercise the private fixture members without exposing them. */
-  protected inspectInternals(): string {
-    this.recoverInternally();
-    return this.#secretState();
-  }
 }
-
-/** A type whose name intentionally collides under naïve kebab-case slugs. */
-export interface ArtifactReference {
-  readonly uri: string;
-}
-
-/** A value whose name intentionally collides under naïve kebab-case slugs. */
-export const artifactReference = {
-  kind: "fixture",
-} as const;

@@ -580,7 +580,7 @@ tr:last-child td {
 .symbol-list li {
   display: grid;
   padding: 12px 4px;
-  grid-template-columns: minmax(180px, 0.35fr) 1fr;
+  grid-template-columns: minmax(230px, 0.42fr) 1fr;
   gap: 20px;
   border-bottom: 1px solid var(--border);
 }
@@ -649,23 +649,22 @@ tr:last-child td {
 
 .code-status {
   display: inline-flex;
-  padding: 1px 6px;
   align-items: center;
-  border: 1px solid var(--border);
-  border-radius: 999px;
   white-space: nowrap;
+}
+
+.code-status + .code-status::before {
+  margin-right: 5px;
+  color: var(--border-strong);
+  content: "·";
 }
 
 .code-status.source-checked {
   color: #315b38;
-  background: #edf5ed;
-  border-color: #bad2bd;
 }
 
 .code-status.hover-types {
   color: #65501e;
-  background: #f8f1d9;
-  border-color: #dccb8d;
 }
 
 .copy-code {
@@ -688,10 +687,15 @@ tr:last-child td {
   max-height: 520px;
   margin: 0;
   padding: 17px 18px;
-  overflow: visible;
+  overflow: auto;
   border: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+.code-block.checked-code pre.attune-code {
+  max-height: none;
+  overflow: visible;
 }
 
 .code-block pre.attune-code code {
@@ -721,7 +725,22 @@ tr:last-child td {
   cursor: help;
 }
 
+.twoslash .twoslash-linked {
+  cursor: pointer;
+}
+
+.twoslash .twoslash-identifier-link {
+  color: inherit;
+  text-decoration: none;
+}
+
 .twoslash .twoslash-trigger:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #8f5830;
+  outline-offset: 2px;
+}
+
+.twoslash .twoslash-identifier-link:focus-visible {
   border-radius: 2px;
   outline: 2px solid #8f5830;
   outline-offset: 2px;
@@ -752,6 +771,22 @@ tr:last-child td {
 .twoslash .twoslash-popup-docs {
   line-height: 1.5;
   white-space: normal;
+}
+
+.twoslash .twoslash-popup-links {
+  display: flex;
+  padding-top: 8px;
+  gap: 14px;
+  border-top: 1px solid var(--border);
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.twoslash .twoslash-popup-links a {
+  color: var(--accent-dark);
+  font-weight: 650;
+  text-decoration-thickness: 1px;
 }
 
 .full-signature {
@@ -894,31 +929,6 @@ tr:last-child td {
 
 .static-publication blockquote > :last-child {
   margin-bottom: 0;
-}
-
-.page-type-lens {
-  max-width: 820px;
-  margin-top: 52px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-
-.page-type-lens > summary {
-  width: fit-content;
-  color: var(--accent-dark);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.page-type-lens > p {
-  margin: 8px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.page-type-lens .code-block {
-  max-width: 680px;
 }
 
 @media (max-width: 860px) {

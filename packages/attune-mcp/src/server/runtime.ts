@@ -16,16 +16,9 @@ import {
   repositoryMaterialize,
 } from "../tools/repository/implementation.js";
 
-export interface AttuneRuntime {
-  readonly handlers: AttuneOperationHandlers;
-  readonly terminalLookups: AttuneTerminalLookups;
-  readonly workspaces: WorkspaceStore;
-}
-
-/** Compose the eight Toolkit handlers around one durable engine. */
 export const makeAttuneRuntime = (
   config: RuntimeConfig = loadRuntimeConfig(),
-): AttuneRuntime => {
+) => {
   const workspaces = new WorkspaceStore(config);
   const engine = new InvocationEngine(config, workspaces);
   const handlers: AttuneOperationHandlers = {

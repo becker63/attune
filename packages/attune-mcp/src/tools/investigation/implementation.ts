@@ -1,7 +1,3 @@
-/**
- * Finalization behavior owned by the investigation domain module.
- */
-
 import { Effect } from "effect";
 
 import type {

@@ -7,15 +7,154 @@ import * as Path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-import { extractApiManifest } from "../../src/extract.ts";
-import type { DocumentationPolicy, RepositoryMap } from "../../src/model.ts";
+import {
+  API_MANIFEST_SCHEMA_VERSION,
+  type ApiManifest,
+  type DocumentationText,
+  type SourceSpan,
+} from "../../src/model.ts";
 import { buildSite } from "../../src/site.ts";
 
-const fixtureRoot = Path.resolve(import.meta.dirname, "..", "fixtures", "api");
-const policy: DocumentationPolicy = {
-  allowedRelationTargets: ["active", "preserve"],
-  requiredDocumentation: [],
-  requiredRelations: [],
+const revision = "0123456789abcdef0123456789abcdef01234567";
+const repositoryUrl = "https://github.com/example/attune";
+
+const source = (path: string, line: number, endLine = line): SourceSpan => ({
+  column: 1,
+  digest: "a".repeat(64),
+  end: 120,
+  endColumn: 1,
+  endLine,
+  line,
+  path,
+  start: 0,
+  url: `${repositoryUrl}/blob/${revision}/${path}#L${line}${endLine === line ? "" : `-L${endLine}`}`,
+});
+
+const docs = (
+  summary: string,
+  remarks = "",
+  returns = "",
+): DocumentationText => ({
+  failures: [],
+  parameters: [],
+  remarks,
+  returns,
+  summary,
+});
+
+const attuneSource = source("packages/attune-mcp/src/index.ts", 18, 44);
+const materializeSource = source(
+  "packages/attune-mcp/src/investigation/service.ts",
+  91,
+  103,
+);
+const packageExampleSource = source("packages/attune-mcp/src/index.ts", 4, 13);
+const packageExample = {
+  code: `/** Coordinates a typed investigation lifecycle. */
+interface Attune {
+  readonly materialize: () => void;
+}
+// ---cut-before---
+declare const attune: Attune;
+attune.materialize();`,
+  principal: "Attune",
+  source: packageExampleSource,
+} as const;
+const memberExample = {
+  code: `interface Attune {
+  /** Creates a materialized investigation workspace. */
+  readonly materialize: () => void;
+}
+declare const attune: Attune;
+// ---cut-before---
+attune.materialize();`,
+  principal: "materialize",
+  source: materializeSource,
+} as const;
+
+const manifest: ApiManifest = {
+  declaration: {
+    digest: "b".repeat(64),
+    path: "packages/attune-mcp/dist/index.d.mts",
+    sourceDigest: "c".repeat(64),
+  },
+  diagnostics: [],
+  generator: {
+    name: "attune-docs",
+    tsMorphCompilerVersion: "7.0.2",
+    tsMorphVersion: "28.0.0",
+    typescriptVersion: "7.0.2",
+    version: "0.0.0",
+  },
+  package: {
+    documentation: docs(
+      "A small, lifecycle-ordered investigation API.",
+      "Start with {@link Attune}, then follow its documented lifecycle methods.",
+    ),
+    entryPoint: "packages/attune-mcp/src/index.ts",
+    examples: [],
+    name: "attune-mcp",
+    pageExample: packageExample,
+    provenance: {
+      declaration: attuneSource,
+      implementation: attuneSource,
+      tsdoc: source("packages/attune-mcp/src/index.ts", 1, 13),
+    },
+    relations: [],
+  },
+  schemaVersion: API_MANIFEST_SCHEMA_VERSION,
+  source: {
+    digest: "d".repeat(64),
+    ref: revision,
+    repositoryUrl,
+    revision: `git:${revision}`,
+  },
+  symbols: [
+    {
+      declaration: "export interface Attune",
+      documentation: docs(
+        "Coordinates the legal investigation lifecycle.",
+        "Use the methods in source order.",
+      ),
+      examples: [],
+      exportName: "Attune",
+      id: "attune",
+      kind: "interface",
+      members: [
+        {
+          anchor: "materialize",
+          documentation: docs(
+            "Creates a materialized investigation workspace.",
+            "",
+            "A capability ready for activation.",
+          ),
+          examples: [],
+          id: "attune.materialize",
+          kind: "function",
+          name: "materialize",
+          pageExample: memberExample,
+          provenance: {
+            declaration: materializeSource,
+            implementation: materializeSource,
+            tsdoc: materializeSource,
+          },
+          relations: [],
+          signature: "readonly materialize: () => void",
+          slug: "materialize",
+        },
+      ],
+      pageExample: packageExample,
+      provenance: {
+        declaration: attuneSource,
+        implementation: attuneSource,
+        tsdoc: attuneSource,
+      },
+      relations: [],
+      signature: "interface Attune",
+      slug: "attune",
+      typeParameters: [],
+    },
+  ],
 };
 
 let outputDirectory = "";
@@ -51,13 +190,10 @@ const listen = async (
             : extension === ".js"
               ? "text/javascript; charset=utf-8"
               : "application/octet-stream";
-      const bytes = await readFile(target);
       response.writeHead(200, { "content-type": contentType });
-      response.end(bytes);
+      response.end(await readFile(target));
     } catch {
-      if (!response.headersSent) {
-        response.writeHead(404);
-      }
+      if (!response.headersSent) response.writeHead(404);
       response.end("not found");
     }
   });
@@ -76,24 +212,10 @@ const listen = async (
 };
 
 test.beforeAll(async () => {
-  const manifest = await extractApiManifest({
-    entryPoint: Path.join(fixtureRoot, "src", "index.ts"),
-    packageName: "fixture",
-    packageRoot: fixtureRoot,
-    policy,
-    repositoryUrl: "https://example.test/repository",
-    sourceRef: "fixture-ref",
-    sourceRevision: "fixture-revision",
-    tsConfigPath: Path.join(fixtureRoot, "tsconfig.json"),
-  });
-  const repository: RepositoryMap = {
-    areas: [],
-    revision: manifest.source.revision,
-  };
   outputDirectory = await mkdtemp(
     Path.join(tmpdir(), "attune-docs-playwright-"),
   );
-  await buildSite(manifest, repository, [], {
+  await buildSite(manifest, {
     basePath: "/",
     outputDirectory,
     siteUrl: "https://example.test/",
@@ -117,54 +239,58 @@ test.afterAll(async () => {
   }
 });
 
-test("renders and opens a Shiki/Twoslash hover", async ({ context, page }) => {
+test("links a checked identifier to its API and immutable source", async ({
+  context,
+  page,
+}) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"], {
     origin,
   });
-  const response = await page.goto(`${origin}/api/investigation.html`);
+  await page.route(`${repositoryUrl}/**`, async (route) => {
+    await route.fulfill({
+      body: "<!doctype html><title>Immutable source fixture</title>",
+      contentType: "text/html",
+      status: 200,
+    });
+  });
+
+  const response = await page.goto(origin);
   expect(response?.ok()).toBe(true);
-  await expect(page.locator("main#content")).toBeVisible();
-  await expect(page.locator("pre.shiki.attune-code").first()).toBeVisible();
-  await expect(
-    page.locator("pre.shiki .line span[style*='color']").first(),
-  ).toBeVisible();
+  const example = page.locator(".page-example");
+  const identifier = example.locator(".twoslash-identifier-link", {
+    hasText: "Attune",
+  });
+  const popup = example.locator(".twoslash-popup-container");
 
-  const lens = page.locator(".page-type-lens");
-  await lens.locator("summary").click();
-  const hover = lens.locator(".twoslash-hover").first();
-  await expect(hover).toBeVisible();
-  const popup = hover.locator(".twoslash-popup-container");
-  await hover.focus();
-  await expect(hover).toHaveAttribute("aria-label", "Show inferred type");
-  await expect(popup).toHaveCSS("opacity", "1");
-  await page.mouse.move(0, 0);
-  await lens.locator("summary").focus();
-  await expect(popup).toHaveCSS("opacity", "0");
-
-  const hoverBox = await hover.boundingBox();
-  expect(hoverBox).not.toBeNull();
-  await page.mouse.move(
-    hoverBox!.x + Math.min(4, hoverBox!.width / 2),
-    hoverBox!.y + hoverBox!.height / 2,
+  await identifier.focus();
+  await expect(identifier).toHaveAttribute(
+    "aria-label",
+    "Open API reference for Attune",
   );
   await expect(popup).toHaveCSS("opacity", "1");
-  await expect(popup).toContainText("DocumentationPage");
-  const popupBox = await popup.boundingBox();
-  expect(popupBox).not.toBeNull();
-  expect(
-    await page.evaluate(
-      ({ x, y }) =>
-        document
-          .elementFromPoint(x, y)
-          ?.closest(".twoslash-popup-container") !== null,
-      {
-        x: popupBox!.x + popupBox!.width / 2,
-        y: popupBox!.y + popupBox!.height / 2,
-      },
-    ),
-  ).toBe(true);
+  await expect(popup).toContainText(
+    "Coordinates a typed investigation lifecycle.",
+  );
+  await expect(popup.locator(".twoslash-api-link")).toHaveAttribute(
+    "href",
+    "/api/attune.html",
+  );
+  await expect(popup.locator(".twoslash-source-link")).toHaveAttribute(
+    "href",
+    packageExampleSource.url,
+  );
 
-  const copy = lens.locator("[data-copy-code]");
+  await page.keyboard.press("Escape");
+  await expect(popup).toHaveCSS("opacity", "0");
+  const identifierBox = await identifier.boundingBox();
+  expect(identifierBox).not.toBeNull();
+  await page.mouse.move(
+    identifierBox!.x + identifierBox!.width / 2,
+    identifierBox!.y + identifierBox!.height / 2,
+  );
+  await expect(popup).toHaveCSS("opacity", "1");
+
+  const copy = example.locator("[data-copy-code]");
   await copy.click();
   await expect(copy).toHaveText("Copied");
   await expect
@@ -177,5 +303,15 @@ test("renders and opens a Shiki/Twoslash hover", async ({ context, page }) => {
         ).clipboard.readText(),
       ),
     )
-    .toContain("type DocumentationPage");
+    .toBe("declare const attune: Attune;\nattune.materialize();");
+
+  await identifier.focus();
+  await popup.locator(".twoslash-api-link").click();
+  await expect(page).toHaveURL(`${origin}/api/attune.html`);
+  const symbolExample = page.locator(".page-example");
+  await symbolExample.locator(".twoslash-identifier-link").focus();
+  const symbolSource = symbolExample.locator(".twoslash-source-link").first();
+  await symbolSource.click();
+  await expect(page).toHaveURL(packageExampleSource.url);
+  await expect(page).toHaveTitle("Immutable source fixture");
 });

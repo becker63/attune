@@ -18,7 +18,8 @@
       "files": [
         "packages/attune-mcp/src/**/*.ts",
         "packages/attune-docs/src/**/*.ts",
-        "packages/attune-docs/scripts/**/*.ts"
+        "packages/attune-docs/scripts/**/*.ts",
+        "packages/attune-docs/test/fixtures/**/*.ts"
       ],
       "rules": {
         "jsdoc/check-tag-names": [
@@ -28,6 +29,7 @@
               "remarks",
               "example",
               "typeParam",
+              "packageDocumentation",
               "internal",
               "lifecycle",
               "requires",

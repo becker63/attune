@@ -1,8 +1,3 @@
-/**
- * Repository materialization and checkpoint behavior owned by the repository
- * domain module.
- */
-
 import { Effect } from "effect";
 
 import type {

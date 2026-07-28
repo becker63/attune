@@ -1,8 +1,8 @@
 import MarkdownIt from "markdown-it";
 
 import { renderCodeBlock } from "./highlight.ts";
-import { escapeHtml, layout } from "./html.ts";
-import type { ApiManifest, ProseDraft } from "./model.ts";
+import { escapeHtml, layout, renderCheckedExample, withBase } from "./html.ts";
+import type { ApiManifest } from "./model.ts";
 import type { StaticPage } from "./static-pages.ts";
 
 const markdown = new MarkdownIt({
@@ -37,15 +37,30 @@ markdown.renderer.rules.fence = (tokens, index) => {
 export const renderStaticPage = (
   page: StaticPage,
   manifest: ApiManifest,
-  guides: readonly ProseDraft[],
   basePath: string,
-): string =>
-  layout({
+): string => {
+  const example = manifest.package.pageExample;
+  const principal = manifest.symbols.find(
+    (symbol) => symbol.exportName === example.principal,
+  );
+  if (principal === undefined) {
+    throw new Error(
+      `Package example principal "${example.principal}" has no API page.`,
+    );
+  }
+  return layout({
     basePath,
     title: page.title,
     description: `Approved static publication: ${page.title}.`,
     currentPath: `experiments/${page.slug}.html`,
+    pageId: `experiment:${page.slug}`,
     manifest,
-    guides,
-    body: `<article class="static-publication">${markdown.render(page.markdown)}</article>`,
+    staticPages: [page],
+    body: `<article class="static-publication">${markdown.render(page.markdown)}</article>${renderCheckedExample(
+      `experiment:${page.slug}`,
+      example,
+      manifest,
+      withBase(basePath, `api/${principal.slug}.html`),
+    )}`,
   });
+};

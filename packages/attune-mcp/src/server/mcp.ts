@@ -3,10 +3,7 @@ import { Context, Effect, Layer, Logger } from "effect";
 import { McpServer } from "effect/unstable/ai";
 import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
 
-import {
-  InvestigationService,
-  makeInvestigationService,
-} from "../investigation/service.js";
+import { Attune } from "../investigation/service.js";
 import { WorkspaceStore } from "../investigation/workspace.js";
 import type { RuntimeConfig } from "../platform/core.js";
 import { AttuneToolkit } from "../tools/registry.js";
@@ -14,7 +11,7 @@ import { makeMcpHandlers } from "./handlers.js";
 import { makeResourceRegistration } from "./resources.js";
 
 const ToolHandlers = Layer.unwrap(
-  Effect.map(InvestigationService, (service) =>
+  Effect.map(Attune, (service) =>
     AttuneToolkit.toLayer(makeMcpHandlers(service)),
   ),
 );
@@ -26,10 +23,7 @@ const StdioProtocol = RpcServer.layerProtocolStdio.pipe(
 );
 
 export const makeAttuneServerLive = (config: RuntimeConfig) => {
-  const services = Layer.succeed(
-    InvestigationService,
-    makeInvestigationService(config),
-  );
+  const services = Layer.succeed(Attune, Attune.make(config));
   const resources = makeResourceRegistration(
     config,
     new WorkspaceStore(config),

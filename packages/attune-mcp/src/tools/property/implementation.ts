@@ -1,7 +1,3 @@
-/**
- * Native fast-check execution owned by the property domain module.
- */
-
 import { copyFile, readFile, rm } from "node:fs/promises";
 import * as Path from "node:path";
 

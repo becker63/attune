@@ -1,7 +1,3 @@
-/**
- * Retained-artifact promotion owned by the artifact domain module.
- */
-
 import { copyFile, lstat, mkdir, readFile, realpath } from "node:fs/promises";
 import * as Path from "node:path";
 

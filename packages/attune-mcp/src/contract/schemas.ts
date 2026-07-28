@@ -170,6 +170,17 @@ export type AttuneFailure = typeof AttuneFailure.Type;
  * This error channel is reserved for boundary failures such as conflicting
  * invocation identity, unavailable workspace state, or a closed contract
  * mismatch. Callers should branch on `code` rather than parse `message`.
+ *
+ * @example
+ * ```ts
+ * // @filename: tool-error.ts
+ * import { AttuneToolFailure } from "attune-mcp";
+ * // ---cut---
+ * const failure = new AttuneToolFailure({
+ *   code: "StaleSnapshot",
+ *   message: "the repository advanced",
+ * });
+ * ```
  */
 export class AttuneToolFailure extends Schema.TaggedErrorClass<AttuneToolFailure>()(
   "AttuneToolFailure",
@@ -222,6 +233,23 @@ export const CancelledReceipt = Schema.Struct({
 }).annotate({ identifier: "CancelledReceipt" });
 export type CancelledReceipt = typeof CancelledReceipt.Type;
 
+/**
+ * Durable evidence for one accepted operation.
+ *
+ * @remarks
+ * Narrow `status` before reading success or failure fields. Receipts retain
+ * input and toolchain digests, artifact references, and the correlated
+ * investigation snapshot needed to reproduce or recover work.
+ *
+ * @example
+ * ```ts
+ * // @filename: receipt.ts
+ * import type { AttuneReceipt } from "attune-mcp";
+ * // ---cut---
+ * declare const receipt: AttuneReceipt;
+ * const completed = receipt.status === "succeeded";
+ * ```
+ */
 export const AttuneReceipt = Schema.Union([
   SucceededReceipt,
   FailedReceipt,
@@ -285,7 +313,6 @@ export const JoernStructuredDsl = Schema.Struct({
     Schema.isMaxProperties(64),
   ),
 }).annotate({ identifier: "JoernStructuredDsl" });
-export type JoernStructuredDsl = typeof JoernStructuredDsl.Type;
 
 export const JoernQueryInput = Schema.Struct({
   ...InvestigationCommon,

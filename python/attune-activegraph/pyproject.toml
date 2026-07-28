@@ -21,7 +21,6 @@ attune-activegraph-smoke = "attune_activegraph.smoke:main"
 
 [project.entry-points."activegraph.packs"]
 attune_effect_tools = "attune_activegraph.pack:pack"
-attune_documentation_provenance = "attune_activegraph.provenance:provenance_pack"
 
 [dependency-groups]
 dev = [

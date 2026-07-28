@@ -1,11 +1,11 @@
 import { Context, Effect } from "effect";
 
+import { AttuneToolFailure, type FullGitCommit } from "../contract/schemas.js";
 import {
-  AttuneToolFailure,
-  type FullGitCommit,
-  type FailureCode,
-} from "../contract/schemas.js";
-import { loadRuntimeConfig, type RuntimeConfig } from "../platform/core.js";
+  fail,
+  loadRuntimeConfig,
+  type RuntimeConfig,
+} from "../platform/core.js";
 import { makeAttuneRuntime } from "../server/runtime.js";
 import {
   ATTUNE_OPERATIONS,
@@ -15,6 +15,7 @@ import {
   type AttuneOperationHandlers,
   type AttuneOperationInput,
   type AttuneOperationName,
+  type AttuneOperationReceipt,
   type AttuneOperationResult,
   type AttuneOperationWireInput,
   type AttuneTerminalLookups,
@@ -22,7 +23,6 @@ import {
 } from "../tools/registry.js";
 import {
   makeInvestigationCapabilityIssuer,
-  type ActiveInvestigation,
   type Investigation,
   type InvestigationState,
 } from "./capability.js";
@@ -38,10 +38,155 @@ type SuccessfulResult<Name extends AttuneOperationName> = Extract<
   AttuneOperationResult<Name>,
   { readonly receipt: { readonly status: "succeeded" } }
 >;
+type UnsuccessfulResult<Name extends AttuneOperationName> = Exclude<
+  AttuneOperationResult<Name>,
+  SuccessfulResult<Name>
+>;
+type Materialization =
+  | {
+      readonly status: "materialized";
+      readonly investigation: Investigation<"materialized">;
+      readonly result: SuccessfulResult<"repository_materialize">;
+    }
+  | {
+      readonly status: "rejected";
+      readonly result: UnsuccessfulResult<"repository_materialize">;
+    };
+type Execution<Name extends PreservingAttuneOperationName> = {
+  readonly investigation: Investigation<"active">;
+  readonly result: AttuneOperationResult<Name>;
+  readonly receipt: AttuneOperationReceipt<Name>;
+};
+type Finalization =
+  | {
+      readonly status: "finalized";
+      readonly investigation: Investigation<"finalized">;
+      readonly result: SuccessfulResult<"investigation_finalize">;
+    }
+  | {
+      readonly status: "active";
+      readonly investigation: Investigation<"active">;
+      readonly result: UnsuccessfulResult<"investigation_finalize">;
+    };
 
 type InvestigationValidationRequest = InvestigationBoundInput & {
   readonly requireClean: boolean;
 };
+
+/**
+ * Performs the complete investigation lifecycle without exposing transport
+ * identities or runtime implementation objects.
+ *
+ * @remarks
+ * Methods appear in lifecycle order. Carry the returned {@link Investigation}
+ * into the next call and replace an active proof with the one returned by
+ * `execute`. Native failures remain in results and {@link AttuneReceipt};
+ * rejected boundaries fail with {@link AttuneToolFailure}, while invalid proof
+ * use fails with {@link InvestigationLifecycleError}.
+ *
+ * @example
+ * ```ts
+ * // @filename: inputs.ts
+ * import type { Attune } from "attune-mcp";
+ * export declare const materialize: Parameters<Attune["materialize"]>[0];
+ * // @filename: lifecycle.ts
+ * import { Attune } from "attune-mcp";
+ * import * as input from "./inputs.js";
+ * // ---cut---
+ * const program = Attune.use((attune) =>
+ *   attune.materialize(input.materialize));
+ * ```
+ */
+export interface Attune {
+  /**
+   * Materializes an exact repository revision and issues its initial proof.
+   * @param input - The unchanged `repository_materialize` wire request.
+   * @returns A materialized proof on success, or the terminal rejected result.
+   * @throws {@link AttuneToolFailure} when the invocation cannot be accepted.
+   * @produces materialized
+   */
+  materialize(
+    input: AttuneOperationWireInput<"repository_materialize">,
+  ): Effect.Effect<
+    Materialization,
+    AttuneOperationError<"repository_materialize">
+  >;
+  /**
+   * Revalidates a materialized snapshot and grants active permission.
+   * @param investigation - The proof returned by successful materialization.
+   * @returns A fresh active proof for preserving operations.
+   * @throws {@link AttuneToolFailure} or {@link InvestigationLifecycleError}.
+   * @requires materialized
+   * @produces active
+   */
+  activate(
+    investigation: Investigation<"materialized">,
+  ): Effect.Effect<
+    Investigation<"active">,
+    AttuneToolFailure | InvestigationLifecycleError
+  >;
+  /**
+   * Reacquires active permission after a process restart.
+   * @param input - Persisted investigation identity and expected snapshot.
+   * @returns An active proof after validating durable state.
+   * @throws {@link AttuneToolFailure} or {@link InvestigationLifecycleError}.
+   * @produces active
+   */
+  acquireActive(
+    input: InvestigationBoundInput,
+  ): Effect.Effect<
+    Investigation<"active">,
+    AttuneToolFailure | InvestigationLifecycleError
+  >;
+  /**
+   * Runs one preserving operation against an active snapshot.
+   * @param investigation - Current active proof; it is consumed on transition.
+   * @param name - One registered operation whose transition is `preserve`.
+   * @param input - Caller fields; identity and snapshot come from the proof.
+   * @returns The result, receipt, and active proof to carry forward.
+   * @throws {@link InvestigationLifecycleError} or the operation failure type.
+   * @requires active
+   * @produces active
+   */
+  execute<Name extends PreservingAttuneOperationName>(
+    investigation: Investigation<"active">,
+    name: Name,
+    input: AttuneOperationInput<Name>,
+  ): Effect.Effect<
+    Execution<Name>,
+    AttuneOperationError<Name> | InvestigationLifecycleError
+  >;
+  /**
+   * Finalizes an active investigation at its exact clean snapshot.
+   * @param investigation - Current active proof.
+   * @param input - Finalization policy fields; identity comes from the proof.
+   * @returns Finalized evidence, or the still-active proof after rejection.
+   * @throws {@link AttuneToolFailure} or {@link InvestigationLifecycleError}.
+   * @requires active
+   * @produces finalized
+   */
+  finalize(
+    investigation: Investigation<"active">,
+    input: AttuneOperationInput<"investigation_finalize">,
+  ): Effect.Effect<
+    Finalization,
+    AttuneToolFailure | InvestigationLifecycleError
+  >;
+  /**
+   * Reads a durable terminal result after an interrupted caller exchange.
+   * @param name - Registered non-materializing operation.
+   * @param input - Original wire input used to correlate the receipt.
+   * @returns The verified result, or `undefined` when none is durable.
+   * @throws {@link InvestigationLifecycleError} or the operation failure type.
+   */
+  recoverTerminal<Name extends ActiveAttuneOperationName>(
+    name: Name,
+    input: AttuneOperationWireInput<Name>,
+  ): Effect.Effect<
+    AttuneOperationResult<Name> | undefined,
+    AttuneOperationError<Name> | InvestigationLifecycleError
+  >;
+}
 
 export type InvestigationValidator = (
   request: InvestigationValidationRequest,
@@ -52,12 +197,6 @@ export type InvestigationValidator = (
 
 const messageOf = (cause: unknown) =>
   cause instanceof Error ? cause.message : String(cause);
-
-const toolFailure = (
-  code: FailureCode,
-  message: string,
-  details: { readonly expected?: string; readonly observed?: string } = {},
-) => new AttuneToolFailure({ code, message, ...details });
 
 export const makePersistedInvestigationValidator =
   (inspector: {
@@ -79,7 +218,7 @@ export const makePersistedInvestigationValidator =
         );
         const failure =
           manifest.investigationId !== request.investigationId
-            ? toolFailure(
+            ? fail(
                 "IdentityConflict",
                 "persisted manifest belongs to another investigation",
                 {
@@ -88,15 +227,15 @@ export const makePersistedInvestigationValidator =
                 },
               )
             : manifest.finalizedAt !== undefined
-              ? toolFailure("Finalized", "investigation is finalized")
+              ? fail("Finalized", "investigation is finalized")
               : head !== request.expectedSnapshot
-                ? toolFailure(
+                ? fail(
                     "StaleSnapshot",
                     "repository HEAD does not match expected snapshot",
                     { expected: request.expectedSnapshot, observed: head },
                   )
                 : request.requireClean && dirty
-                  ? toolFailure(
+                  ? fail(
                       "DirtyRepository",
                       "initial activation requires a clean repository",
                     )
@@ -173,7 +312,7 @@ export const makeInvestigationServiceFromHandlers = (
   wireHandlers: AttuneOperationHandlers,
   validate: InvestigationValidator,
   terminalLookups: Partial<AttuneTerminalLookups> = {},
-) => {
+): Attune => {
   const issuer = makeInvestigationCapabilityIssuer();
 
   const validatedManifest = (request: InvestigationValidationRequest) =>
@@ -214,7 +353,7 @@ export const makeInvestigationServiceFromHandlers = (
     });
 
   const handleActive = <Name extends ActiveAttuneOperationName>(
-    investigation: ActiveInvestigation,
+    investigation: Investigation<"active">,
     name: Name,
     input: AttuneOperationInput<Name>,
   ): ReturnType<AttuneOperationHandler<Name>> => {
@@ -236,7 +375,7 @@ export const makeInvestigationServiceFromHandlers = (
   };
 
   const withActive = <Success, Error>(
-    investigation: ActiveInvestigation,
+    investigation: Investigation<"active">,
     use: (snapshotId: FullGitCommit) => Effect.Effect<Success, Error>,
   ): Effect.Effect<Success, Error | InvestigationLifecycleError> =>
     verifyCapability(investigation, "active").pipe(
@@ -245,7 +384,7 @@ export const makeInvestigationServiceFromHandlers = (
     );
 
   const confirmPersistedActive = (
-    investigation: ActiveInvestigation,
+    investigation: Investigation<"active">,
     expectedSnapshot: FullGitCommit,
   ): Effect.Effect<void, InvestigationLifecycleError> => {
     const request = {
@@ -273,7 +412,7 @@ export const makeInvestigationServiceFromHandlers = (
   };
 
   const preserveFailure =
-    (investigation: ActiveInvestigation, snapshotId: FullGitCommit) =>
+    (investigation: Investigation<"active">, snapshotId: FullGitCommit) =>
     <Error>(failure: Error) =>
       confirmPersistedActive(investigation, snapshotId).pipe(
         Effect.andThen(Effect.fail(failure)),
@@ -328,7 +467,7 @@ export const makeInvestigationServiceFromHandlers = (
     );
 
   const execute = <Name extends PreservingAttuneOperationName>(
-    investigation: ActiveInvestigation,
+    investigation: Investigation<"active">,
     name: Name,
     input: AttuneOperationInput<Name>,
   ) => {
@@ -360,7 +499,7 @@ export const makeInvestigationServiceFromHandlers = (
   };
 
   const finalize = (
-    investigation: ActiveInvestigation,
+    investigation: Investigation<"active">,
     input: AttuneOperationInput<"investigation_finalize">,
   ) =>
     withActive(investigation, (snapshotId) =>
@@ -415,20 +554,9 @@ export const makeInvestigationServiceFromHandlers = (
   };
 };
 
-/** The one typed application boundary for legal investigation transitions. */
-export type InvestigationServiceApi = ReturnType<
-  typeof makeInvestigationServiceFromHandlers
->;
-
-/** Effect service tag for the investigation application boundary. */
-export class InvestigationService extends Context.Service<
-  InvestigationService,
-  InvestigationServiceApi
->()("attune-mcp/InvestigationService") {}
-
 export const makeInvestigationService = (
   config: RuntimeConfig = loadRuntimeConfig(),
-): InvestigationServiceApi => {
+): Attune => {
   const runtime = makeAttuneRuntime(config);
   return makeInvestigationServiceFromHandlers(
     runtime.handlers,
@@ -436,3 +564,9 @@ export const makeInvestigationService = (
     runtime.terminalLookups,
   );
 };
+
+/** Effect service key with the normal production constructor at `Attune.make`. */
+export const Attune = Object.assign(
+  Context.Service<Attune>("attune-mcp/Attune"),
+  { make: makeInvestigationService },
+);

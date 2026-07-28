@@ -9,8 +9,7 @@
     "flake.lock",
     "packages/attune-docs/schema/experiment-*.schema.json",
     "packages/effect-joern/schema/**",
-    "pnpm-lock.yaml",
-    "python/attune-activegraph/examples/guide-trace.json"
+    "pnpm-lock.yaml"
   ],
   "printWidth": 80,
   "sortImports": true

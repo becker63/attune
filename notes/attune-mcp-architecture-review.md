@@ -1,43 +1,49 @@
-# Attune MCP architecture
+# Attune MCP: one lifecycle
 
-Status: implemented by
-[`add-investigation-mcp-suite`](../openspec/changes/add-investigation-mcp-suite/).
+Status: implemented.
 
 ## Decision
 
-The package has one closed product model:
+The package root exports six names:
 
-- `AttuneToolkit` defines the eight MCP schemas.
-- `ATTUNE_OPERATIONS` adds their execution facts.
-- `InvestigationService` enforces lifecycle transitions.
+- `Attune` performs every lifecycle transition.
+- `Investigation<State>` proves which transition is legal now.
+- `AttuneReceipt` records accepted work.
+- `AttuneToolkit` installs the closed MCP schema.
+- `InvestigationLifecycleError` reports invalid proof use.
+- `AttuneToolFailure` reports a rejected tool boundary.
 
-Those three values replace the former general operation framework, duplicate
-handler maps, per-tool descriptors, and compatibility barrels. The root module
-exports only the types needed to call the service safely.
+Callers infer request and result types from `Attune` methods. The package does
+not export its registry, handler maps, operation projections, state aliases, or
+runtime constructors.
 
 ```ts
-import {
-  ATTUNE_OPERATIONS,
-  AttuneToolkit,
-  InvestigationService,
-  type AttuneOperationInput,
-  type AttuneOperationResult,
-} from "attune-mcp";
+import { Attune, AttuneToolkit, type Investigation } from "attune-mcp";
+import type { Tool } from "effect/unstable/ai";
 
-type Input = AttuneOperationInput<"maude_run">;
-type Result = AttuneOperationResult<"maude_run">;
+type Active = Investigation<"active">;
+type MaudeInput = Omit<
+  Tool.Parameters<typeof AttuneToolkit.tools.maude_run>,
+  "investigationId" | "expectedSnapshot"
+>;
+
+declare const active: Active;
+const program = Attune.use((attune) =>
+  attune.execute(active, "maude_run", {} as MaudeInput),
+);
 ```
 
-The operation name is the correlation key. It selects the exact input, result,
-error, receipt, and artifact-writer types without another public abstraction.
-Attune does not expose an extension API for adding arbitrary operations.
+The operation name still selects its request, result, and receipt internally.
+That machinery does not need a second public vocabulary. Attune remains a
+closed service rather than an extension API for arbitrary operations.
 
 ## Read the code in this order
 
 ```text
 src/index.ts
-  → tools/registry.ts
   → investigation/service.ts
+  → investigation/capability.ts
+  → tools/registry.ts
   → tools/<tool>/implementation.ts
   → investigation/invocation.ts
 ```
@@ -55,10 +61,11 @@ have no local barrel or descriptor file.
 
 Types express facts that remain true across module boundaries:
 
-- a materialized or active capability may authorize work;
-- a finalized capability may not;
-- an operation name selects its own request and response types;
-- a receipt records the same operation that accepted the invocation.
+- a materialized investigation can become active;
+- only an active investigation can run or finalize;
+- a finalized investigation cannot authorize more work;
+- each method accepts and returns the right native shape;
+- a receipt identifies the operation that accepted the request.
 
 Filesystem containment, commit cleanliness, native process outcomes, and
 artifact durability remain runtime checks. Scope finalizers, locks, terminal
@@ -72,14 +79,14 @@ Runtime durability is covered by the adjacent Vitest suites.
 ## Documentation boundary
 
 Source types and TSDoc are authoritative. `packages/attune-docs` extracts a
-deterministic API manifest and renders the reference and four onboarding
-guides. Every page includes a Shiki + Twoslash example so a reader can inspect
-the checked type in place. Generated prose must cite manifest facts, match the
-current source revision, and receive a real review decision before publication.
+deterministic manifest and renders one reference. The package, six symbols, and
+their members each have a source-owned page with an exact declaration link.
+Every page includes a Shiki + Twoslash program, including multi-file examples
+and cut directives where setup would distract from the type being explained.
 
-The static counts report surface size; they are not a claim that onboarding is
-successful. Live discovery and comprehension campaigns remain the evidence for
-that question.
+The extractor rejects missing TSDoc, stale declaration output, invalid links,
+and examples that do not type-check. The reference therefore reports what this
+revision proves without maintaining a parallel prose model.
 
 ## Deliberate limits
 

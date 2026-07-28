@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import * as Path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,7 +9,7 @@ import {
   type JSDoc,
   type JSDocTag,
   type Node as MorphNode,
-  type Type,
+  type SourceFile,
   type TypeParameterDeclaration,
   ts,
 } from "ts-morph";
@@ -23,32 +23,30 @@ import {
 import { digest, digestValue } from "./canonical.ts";
 import {
   API_MANIFEST_SCHEMA_VERSION,
-  type ApiFact,
+  type ApiExample,
   type ApiManifest,
   type ApiMember,
+  type ApiProvenance,
   type ApiSymbol,
   type ApiSymbolKind,
   type DocumentationPolicy,
+  type DocumentationText,
   type LifecycleRelation,
   type LifecycleRelationKind,
-  type SourceLocation,
+  type PageExample,
+  type SourceSpan,
   type TypeParameterDoc,
 } from "./model.ts";
 import { paths } from "./paths.ts";
 
-const RELATION_TAGS: Readonly<
-  Record<string, LifecycleRelationKind | undefined>
-> = {
+const RELATIONS: Readonly<Record<string, LifecycleRelationKind | undefined>> = {
   produces: "produces",
   requires: "requires",
   throws: "throws",
   transitionsTo: "transitionsTo",
 };
 
-const getGitValue = (
-  arguments_: readonly string[],
-  fallback: string,
-): string => {
+const git = (arguments_: readonly string[], fallback = ""): string => {
   try {
     return execFileSync("git", arguments_, {
       cwd: paths.repository,
@@ -60,35 +58,10 @@ const getGitValue = (
   }
 };
 
-const validateWithTypeScriptSeven = (tsConfigPath: string): void => {
-  const packagePath = fileURLToPath(
-    import.meta.resolve("typescript/package.json"),
-  );
-  const compiler = Path.join(Path.dirname(packagePath), "bin", "tsc");
-  try {
-    execFileSync(process.execPath, [compiler, "--noEmit", "-p", tsConfigPath], {
-      cwd: paths.repository,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-  } catch (cause) {
-    const output =
-      typeof cause === "object" &&
-      cause !== null &&
-      "stderr" in cause &&
-      typeof cause.stderr === "string"
-        ? cause.stderr
-        : String(cause);
-    throw new Error(
-      `TypeScript ${TypeScript.version} rejected the documentation source project:\n${output}`,
-    );
-  }
-};
+const packageRelative = (path: string): string =>
+  Path.relative(paths.repository, path).replaceAll(Path.sep, "/");
 
-const packageRelative = (absolutePath: string): string =>
-  Path.relative(paths.repository, absolutePath).replaceAll(Path.sep, "/");
-
-const symbolSlug = (name: string): string =>
+const slug = (name: string): string =>
   name
     .replace(/([a-z\d])([A-Z])/gu, "$1-$2")
     .replace(/[^a-zA-Z\d]+/gu, "-")
@@ -114,21 +87,66 @@ const nodeKind = (node: MorphNode): ApiSymbolKind => {
   return "unknown";
 };
 
+const repositoryUrl = (
+  base: string,
+  ref: string,
+  path: string,
+  line: number,
+  endLine: number,
+): string =>
+  `${base}/blob/${ref}/${path}#L${line}${endLine === line ? "" : `-L${endLine}`}`;
+
+const spanRange = (
+  file: SourceFile,
+  start: number,
+  end: number,
+  base: string,
+  ref: string,
+): SourceSpan => {
+  const startPosition = file.getLineAndColumnAtPos(start);
+  const endPosition = file.getLineAndColumnAtPos(end);
+  const path = packageRelative(file.getFilePath());
+  return {
+    path,
+    start,
+    end,
+    line: startPosition.line,
+    column: startPosition.column,
+    endLine: endPosition.line,
+    endColumn: endPosition.column,
+    digest: digest(file.getFullText().slice(start, end)),
+    url: repositoryUrl(base, ref, path, startPosition.line, endPosition.line),
+  };
+};
+
+const span = (node: MorphNode, base: string, ref: string): SourceSpan =>
+  spanRange(node.getSourceFile(), node.getStart(), node.getEnd(), base, ref);
+
+const fileSpan = (file: SourceFile, base: string, ref: string): SourceSpan => {
+  const text = file.getFullText();
+  const path = packageRelative(file.getFilePath());
+  const end = file.getLineAndColumnAtPos(text.length);
+  return {
+    path,
+    start: 0,
+    end: text.length,
+    line: 1,
+    column: 1,
+    endLine: end.line,
+    endColumn: end.column,
+    digest: digest(text),
+    url: repositoryUrl(base, ref, path, 1, end.line),
+  };
+};
+
 const jsDocsFor = (node: MorphNode): readonly JSDoc[] => {
-  if (
-    Node.isVariableDeclaration(node) &&
-    node.getVariableStatement() !== undefined
-  ) {
-    return node.getVariableStatement()!.getJsDocs();
+  if (Node.isVariableDeclaration(node)) {
+    return node.getVariableStatement()?.getJsDocs() ?? [];
   }
-  if ("getJsDocs" in node) {
-    return (
-      node as MorphNode & {
-        readonly getJsDocs: () => readonly JSDoc[];
-      }
-    ).getJsDocs();
-  }
-  return [];
+  const documented = node as MorphNode & {
+    readonly getJsDocs?: () => readonly JSDoc[];
+  };
+  return documented.getJsDocs?.() ?? [];
 };
 
 const tagComment = (tag: JSDocTag): string => {
@@ -136,128 +154,62 @@ const tagComment = (tag: JSDocTag): string => {
     readonly getCommentText?: () => string | undefined;
     readonly getComment?: () => string | readonly MorphNode[] | undefined;
   };
-  const text = candidate.getCommentText?.() ?? candidate.getComment?.();
-  if (typeof text === "string") return text.trim();
-  if (Array.isArray(text)) {
-    return (text as readonly (MorphNode | undefined)[])
-      .map((part) => part?.getText() ?? "")
-      .join("")
-      .trim();
-  }
-  return "";
+  const value = candidate.getCommentText?.() ?? candidate.getComment?.();
+  if (typeof value === "string") return value.trim();
+  return Array.isArray(value)
+    ? value
+        .map((part) => part?.getText() ?? "")
+        .join("")
+        .trim()
+    : "";
 };
 
-const docsText = (
-  declarations: readonly MorphNode[],
-): {
-  readonly summary: string;
-  readonly remarks: string;
-  readonly examples: readonly string[];
+interface ParsedDocs {
+  readonly text: DocumentationText;
+  readonly docs: readonly JSDoc[];
   readonly tags: readonly JSDocTag[];
-} => {
-  const docs = declarations.flatMap(jsDocsFor);
-  const descriptions = docs
-    .map((doc) => doc.getDescription().trim())
-    .filter(Boolean);
+}
+
+const parsedDocs = (docs: readonly JSDoc[]): ParsedDocs => {
   const tags = docs.flatMap((doc) => doc.getTags());
-  const remarks = tags
-    .filter((tag) => tag.getTagName() === "remarks")
-    .map(tagComment)
-    .filter(Boolean);
-  const examples = tags
-    .filter((tag) => tag.getTagName() === "example")
-    .map(tagComment)
-    .filter(Boolean);
+  const tagged = (names: readonly string[]): readonly string[] =>
+    tags
+      .filter((tag) => names.includes(tag.getTagName()))
+      .map(tagComment)
+      .filter(Boolean);
+  const parameters = tags
+    .filter((tag) => tag.getTagName() === "param")
+    .map((tag) => {
+      const named = tag as JSDocTag & { readonly getName?: () => string };
+      const name = named.getName?.() ?? tagComment(tag).split(/\s+/u)[0] ?? "";
+      const description = tagComment(tag)
+        .replace(new RegExp(`^${name}\\s*-?\\s*`, "u"), "")
+        .replace(/^-\s*/u, "")
+        .trim();
+      return { name, description };
+    })
+    .filter((parameter) => parameter.name !== "");
   return {
-    summary: descriptions[0] ?? "",
-    remarks: remarks.join("\n\n"),
-    examples,
+    text: {
+      summary:
+        docs
+          .map((doc) => doc.getDescription().trim())
+          .find((description) => description !== "") ?? "",
+      remarks: tagged(["remarks"]).join("\n\n"),
+      parameters,
+      returns: tagged(["return", "returns"]).join("\n\n"),
+      failures: tagged(["throws"]),
+    },
+    docs,
     tags,
   };
 };
 
-const sourceLocation = (
-  node: MorphNode,
-  repositoryUrl: string,
-  sourceRef: string,
-): SourceLocation => {
-  const path = packageRelative(node.getSourceFile().getFilePath());
-  const line = node.getStartLineNumber();
-  const endLine = node.getEndLineNumber();
-  return {
-    path,
-    line,
-    endLine,
-    url: `${repositoryUrl}/blob/${sourceRef}/${path}#L${line}`,
-  };
-};
+const docsFor = (nodes: readonly MorphNode[]): ParsedDocs =>
+  parsedDocs(nodes.flatMap(jsDocsFor));
 
-const declarationSignature = (node: MorphNode, exportName: string): string => {
-  if (Node.isVariableDeclaration(node)) {
-    const typeNode = node.getTypeNode();
-    const typeText =
-      typeNode?.getText() ??
-      node
-        .getType()
-        .getText(
-          node,
-          ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope |
-            ts.TypeFormatFlags.NoTruncation,
-        );
-    const declarationKind =
-      node.getVariableStatement()?.getDeclarationKind() ?? "const";
-    return `export ${declarationKind} ${exportName}: ${typeText};`;
-  }
-  if (Node.isFunctionDeclaration(node)) {
-    const body = node.getBody();
-    const text = node.getText();
-    if (body === undefined) return text;
-    return `${text.slice(0, body.getStart() - node.getStart()).trimEnd()};`;
-  }
-  if (Node.isClassDeclaration(node)) {
-    const typeParameters = node
-      .getTypeParameters()
-      .map((parameter) => parameter.getText())
-      .join(", ");
-    const extended = node.getExtends();
-    const heritage = [
-      ...(extended === undefined ? [] : [`extends ${extended.getText()}`]),
-      ...(node.getImplements().length > 0
-        ? [
-            `implements ${node
-              .getImplements()
-              .map((item) => item.getText())
-              .join(", ")}`,
-          ]
-        : []),
-    ].join(" ");
-    return `export class ${exportName}${typeParameters.length > 0 ? `<${typeParameters}>` : ""}${heritage.length > 0 ? ` ${heritage}` : ""}`;
-  }
-  return node.getText().trim();
-};
-
-const sourceDeclaration = (node: MorphNode, exportName: string): string => {
-  if (Node.isVariableDeclaration(node)) {
-    return (
-      node.getVariableStatement()?.getText().trim() ??
-      declarationSignature(node, exportName)
-    );
-  }
-  return declarationSignature(node, exportName);
-};
-
-const memberSignature = (node: MorphNode): string => {
-  if (Node.isMethodDeclaration(node)) {
-    const body = node.getBody();
-    const text = node.getText();
-    if (body === undefined) return text;
-    return `${text.slice(0, body.getStart() - node.getStart()).trimEnd()};`;
-  }
-  return node.getText().trim();
-};
-
-const typeParameterDocs = (
-  declarations: readonly MorphNode[],
+const typeParameters = (
+  nodes: readonly MorphNode[],
   tags: readonly JSDocTag[],
 ): readonly TypeParameterDoc[] => {
   const descriptions = new Map<string, string>();
@@ -269,223 +221,406 @@ const typeParameterDocs = (
       descriptions.set(name, description.join(" ").replace(/^-\s*/u, ""));
     }
   }
-  const parameters = declarations.flatMap((declaration) => {
-    if ("getTypeParameters" in declaration) {
-      return (
-        declaration as MorphNode & {
-          readonly getTypeParameters: () => readonly TypeParameterDeclaration[];
-        }
-      ).getTypeParameters();
-    }
-    return [];
-  });
-  return parameters.map((parameter) => ({
-    name: parameter.getName(),
-    ...(parameter.getConstraint() === undefined
-      ? {}
-      : { constraint: parameter.getConstraint()!.getText() }),
-    ...(parameter.getDefault() === undefined
-      ? {}
-      : { default: parameter.getDefault()!.getText() }),
-    ...(descriptions.get(parameter.getName()) === undefined
-      ? {}
-      : { description: descriptions.get(parameter.getName())! }),
-  }));
+  return nodes
+    .flatMap((node) => {
+      const typed = node as MorphNode & {
+        readonly getTypeParameters?: () => readonly TypeParameterDeclaration[];
+      };
+      return typed.getTypeParameters?.() ?? [];
+    })
+    .map((parameter) => ({
+      name: parameter.getName(),
+      ...(parameter.getConstraint() === undefined
+        ? {}
+        : { constraint: parameter.getConstraint()!.getText() }),
+      ...(parameter.getDefault() === undefined
+        ? {}
+        : { default: parameter.getDefault()!.getText() }),
+      ...(descriptions.get(parameter.getName()) === undefined
+        ? {}
+        : { description: descriptions.get(parameter.getName())! }),
+    }));
+};
+
+const signature = (node: MorphNode, name?: string): string => {
+  if (Node.isVariableDeclaration(node)) {
+    const type =
+      node.getTypeNode()?.getText() ??
+      node
+        .getType()
+        .getText(
+          node,
+          ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope |
+            ts.TypeFormatFlags.NoTruncation,
+        );
+    return `export const ${name ?? node.getName()}: ${type};`;
+  }
+  if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
+    const body = node.getBody();
+    const text = node.getText();
+    return body === undefined
+      ? text
+      : `${text.slice(0, body.getStart() - node.getStart()).trimEnd()};`;
+  }
+  return node.getText().trim();
+};
+
+const implementation = (node: MorphNode): MorphNode => {
+  if (Node.isVariableDeclaration(node)) return node.getInitializer() ?? node;
+  if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
+    return node.getBody() ?? node;
+  }
+  return node;
+};
+
+const provenance = (
+  nodes: readonly MorphNode[],
+  docs: readonly JSDoc[],
+  base: string,
+  ref: string,
+): ApiProvenance => {
+  const declaration =
+    nodes.find(
+      (node) =>
+        Node.isInterfaceDeclaration(node) ||
+        Node.isTypeAliasDeclaration(node) ||
+        Node.isClassDeclaration(node),
+    ) ?? nodes[0]!;
+  const implemented =
+    nodes.find(
+      (node) =>
+        (Node.isVariableDeclaration(node) &&
+          node.getInitializer() !== undefined) ||
+        ((Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) &&
+          node.getBody() !== undefined),
+    ) ?? declaration;
+  return {
+    ...(docs[0] === undefined ? {} : { tsdoc: span(docs[0], base, ref) }),
+    declaration: span(declaration, base, ref),
+    implementation: span(implementation(implemented), base, ref),
+  };
 };
 
 const relationTarget = (comment: string): string =>
-  comment
-    .replace(/^\{@link\s+/u, "")
-    .replace(/\}$/u, "")
-    .split(/\r?\n/u)[0]!
-    .split("|")[0]!
-    .trim()
-    .split(/\s+-\s+|\s{2,}/u)[0]!
-    .trim();
+  (
+    /^\{@link\s+([^|\s}]+)/u.exec(comment)?.[1] ??
+    comment.split(/\r?\n|\||\s+-\s+|\s{2,}/u)[0]!
+  ).trim();
 
-const extractRelations = (
-  declarations: readonly MorphNode[],
+const relations = (
   tags: readonly JSDocTag[],
-): readonly LifecycleRelation[] => {
-  const relations: LifecycleRelation[] = [];
-  for (const tag of tags) {
-    const kind = RELATION_TAGS[tag.getTagName()];
+  base: string,
+  ref: string,
+): readonly LifecycleRelation[] =>
+  tags.flatMap((tag) => {
+    const kind = RELATIONS[tag.getTagName()];
     const target = relationTarget(tagComment(tag));
-    if (kind !== undefined && target.length > 0) {
-      relations.push({ kind, target, source: "tsdoc" });
-    }
-  }
+    return kind === undefined || target === ""
+      ? []
+      : [{ kind, target, source: span(tag, base, ref) }];
+  });
 
-  const literalStrings = (type: Type): readonly string[] => {
-    const candidates = type.isUnion() ? type.getUnionTypes() : [type];
-    return [
-      ...new Set(
-        candidates.flatMap((candidate) => {
-          const value = candidate.getLiteralValue();
-          return typeof value === "string" ? [value] : [];
-        }),
+const examplePrograms = (
+  docs: readonly JSDoc[],
+  principal: string,
+  id: string,
+  base: string,
+  ref: string,
+): readonly ApiExample[] =>
+  docs.flatMap((doc) => {
+    const raw = doc.getText();
+    const declaredExamples = [...raw.matchAll(/@example\b/gu)].length;
+    const matches = [
+      ...raw.matchAll(
+        /@example(?:[ \t]+([^\r\n]*))?\r?\n[ \t]*\*[ \t]*```(?:ts|typescript)(?:[ \t]+[^\r\n]*)?\r?\n([\s\S]*?)\r?\n[ \t]*\*[ \t]*```/gu,
       ),
     ];
-  };
-  for (const declaration of declarations.filter(Node.isVariableDeclaration)) {
-    if (declaration.getName() !== "ATTUNE_OPERATIONS") continue;
-    for (const operation of declaration.getType().getProperties()) {
-      const operationType = operation.getTypeAtLocation(declaration);
-      const transition = operationType.getProperty("transition");
-      if (transition === undefined) continue;
-      for (const target of literalStrings(
-        transition.getTypeAtLocation(declaration),
-      )) {
-        relations.push({ kind: "transitionsTo", target, source: "registry" });
-      }
+    if (matches.length !== declaredExamples) {
+      throw new Error(`${id} has an @example without a TypeScript fence.`);
     }
-  }
+    return matches.map((match, index) => {
+      const code = (match[2] ?? "")
+        .split(/\r?\n/u)
+        .map((line) => line.replace(/^\s*\*\s?/u, ""))
+        .join("\n")
+        .replaceAll(String.raw`*\/`, "*/")
+        .replace(/\s+$/u, "");
+      if (code === "") throw new Error(`${id} has an empty @example fence.`);
+      const files = [
+        ...code.matchAll(/^\s*\/\/\s*@filename(?::|\s)\s*(\S+)\s*$/gmu),
+      ].map((candidate) => candidate[1]!);
+      return {
+        id: `${id}/example/${index + 1}`,
+        title: match[1]?.trim() ?? `Example ${index + 1}`,
+        code,
+        files: files.length === 0 ? ["index.ts"] : files,
+        principal,
+        source: spanRange(
+          doc.getSourceFile(),
+          doc.getStart() + match.index!,
+          doc.getStart() + match.index! + match[0].length,
+          base,
+          ref,
+        ),
+      };
+    });
+  });
 
-  return relations
-    .filter(
-      (relation, index, source) =>
-        source.findIndex(
-          (candidate) =>
-            candidate.kind === relation.kind &&
-            candidate.target === relation.target &&
-            candidate.source === relation.source,
-        ) === index,
-    )
-    .sort((left, right) =>
-      `${left.kind}:${left.target}`.localeCompare(
-        `${right.kind}:${right.target}`,
-      ),
-    );
+const containsIdentifier = (code: string, principal: string): boolean =>
+  new RegExp(`\\b${principal.replaceAll("$", String.raw`\\$`)}\\b`, "u").test(
+    code,
+  );
+
+const symbolExample = (
+  symbolName: string,
+  kind: ApiSymbolKind,
+  packageName: string,
+  examples: readonly ApiExample[],
+  source: SourceSpan,
+): PageExample => {
+  const authored = examples.find((example) =>
+    containsIdentifier(example.code, symbolName),
+  );
+  if (authored !== undefined) {
+    return {
+      code: authored.code,
+      principal: symbolName,
+      source: authored.source,
+      sourceExampleId: authored.id,
+    };
+  }
+  const code =
+    kind === "interface" || kind === "type"
+      ? `import type { ${symbolName} } from ${JSON.stringify(packageName)};\ntype Current = ${symbolName};`
+      : `import { ${symbolName} } from ${JSON.stringify(packageName)};\nconst current = ${symbolName};`;
+  return { code, principal: symbolName, source };
 };
 
-const extractMembers = (
-  declarations: readonly MorphNode[],
-  repositoryUrl: string,
-  sourceRef: string,
-): readonly ApiMember[] => {
-  const members: ApiMember[] = [];
-  for (const declaration of declarations) {
-    if (!("getMembers" in declaration)) continue;
-    const candidates = (
-      declaration as MorphNode & {
-        readonly getMembers: () => readonly MorphNode[];
+const memberExample = (
+  owner: string,
+  member: string,
+  examples: readonly ApiExample[],
+  source: SourceSpan,
+  summary: string,
+): PageExample => {
+  const authored = examples.find((example) =>
+    containsIdentifier(example.code, member),
+  );
+  return authored === undefined
+    ? {
+        code: `interface ${owner}Page {\n  /** ${summary.replaceAll("*/", "* /")} */\n  readonly ${member}: unknown;\n}\ndeclare const api: ${owner}Page;\napi.${member};`,
+        principal: member,
+        source,
       }
-    ).getMembers();
-    for (const member of candidates) {
+    : {
+        code: authored.code,
+        principal: member,
+        source: authored.source,
+        sourceExampleId: authored.id,
+      };
+};
+
+const visibleMembers = (nodes: readonly MorphNode[]): readonly MorphNode[] =>
+  nodes.flatMap((node) => {
+    const membered = node as MorphNode & {
+      readonly getMembers?: () => readonly MorphNode[];
+    };
+    return (membered.getMembers?.() ?? []).filter((member) => {
       const named = member as MorphNode & {
         readonly getName?: () => string;
-      };
-      const name = named.getName?.();
-      if (name === undefined || name.length === 0) continue;
-      const modifierAware = member as MorphNode & {
         readonly hasModifier?: (kind: ts.SyntaxKind) => boolean;
       };
-      if (
-        name.startsWith("#") ||
-        modifierAware.hasModifier?.(ts.SyntaxKind.PrivateKeyword) === true ||
-        modifierAware.hasModifier?.(ts.SyntaxKind.ProtectedKeyword) === true
-      ) {
-        continue;
-      }
-      members.push({
+      const name = named.getName?.() ?? "";
+      return (
+        name !== "" &&
+        !name.startsWith("#") &&
+        !name.startsWith("[") &&
+        named.hasModifier?.(ts.SyntaxKind.PrivateKeyword) !== true &&
+        named.hasModifier?.(ts.SyntaxKind.ProtectedKeyword) !== true
+      );
+    });
+  });
+
+const members = (
+  owner: string,
+  ownerSlug: string,
+  sourceNodes: readonly MorphNode[],
+  declarationNodes: readonly MorphNode[],
+  packageName: string,
+  base: string,
+  ref: string,
+): readonly ApiMember[] => {
+  const sourceByName = new Map<string, MorphNode[]>();
+  for (const member of visibleMembers(sourceNodes)) {
+    const name = (
+      member as MorphNode & { readonly getName: () => string }
+    ).getName();
+    sourceByName.set(name, [...(sourceByName.get(name) ?? []), member]);
+  }
+  const declarationByName = new Map<string, MorphNode[]>();
+  for (const member of visibleMembers(declarationNodes)) {
+    const name = (
+      member as MorphNode & { readonly getName: () => string }
+    ).getName();
+    declarationByName.set(name, [
+      ...(declarationByName.get(name) ?? []),
+      member,
+    ]);
+  }
+  return [...sourceByName].map(([name, nodes]) => {
+    const docs = docsFor(nodes);
+    const memberId = `${packageName}#${owner}.${name}`;
+    const source = span(nodes[0]!, base, ref);
+    const examples = examplePrograms(docs.docs, name, memberId, base, ref);
+    const declared = declarationByName.get(name) ?? nodes;
+    const memberSignature = declared.map((node) => signature(node)).join("\n");
+    return {
+      id: memberId,
+      name,
+      slug: slug(name),
+      anchor: `member-${slug(name)}`,
+      kind: nodeKind(nodes[0]!),
+      signature: memberSignature,
+      documentation: docs.text,
+      examples,
+      relations: relations(docs.tags, base, ref),
+      provenance: provenance(nodes, docs.docs, base, ref),
+      pageExample: memberExample(
+        owner,
         name,
-        kind: nodeKind(member),
-        signature: memberSignature(member),
-        summary: docsText([member]).summary,
-        source: sourceLocation(member, repositoryUrl, sourceRef),
-      });
+        examples,
+        source,
+        docs.text.summary,
+      ),
+    };
+  });
+};
+
+const sourceOrder = (
+  entry: SourceFile,
+  exported: ReadonlyMap<string, readonly MorphNode[]>,
+): readonly string[] => {
+  const names: string[] = [];
+  for (const declaration of entry.getExportDeclarations()) {
+    for (const specifier of declaration.getNamedExports()) {
+      names.push(
+        specifier.getAliasNode()?.getText() ??
+          specifier.getNameNode().getText(),
+      );
     }
   }
-  return members.sort((left, right) => left.name.localeCompare(right.name));
+  return [...new Set([...names, ...exported.keys()])];
 };
 
-const buildFacts = (
-  symbolId: string,
-  declaration: string,
-  signature: string,
-  summary: string,
-  remarks: string,
-  members: readonly ApiMember[],
-  relations: readonly LifecycleRelation[],
-  source: SourceLocation,
-): readonly ApiFact[] => {
-  const facts: ApiFact[] = [
-    {
-      id: `${symbolId}/declaration`,
-      kind: "declaration",
-      digest: digest(declaration),
-      value: declaration,
-    },
-    {
-      id: `${symbolId}/signature`,
-      kind: "signature",
-      digest: digest(signature),
-      value: signature,
-    },
-    {
-      id: `${symbolId}/source`,
-      kind: "source",
-      // A deploy ref changes when the documentation commit is created. Keep
-      // source evidence semantic so that an identical path/span is not made
-      // stale merely because its clickable URL now targets the final SHA.
-      digest: digestValue({
-        path: source.path,
-        line: source.line,
-        endLine: source.endLine,
-      }),
-      value: `${source.path}:${source.line}`,
-    },
-  ];
-  const documentation = [summary, remarks].filter(Boolean).join("\n\n");
-  if (documentation.length > 0) {
-    facts.push({
-      id: `${symbolId}/documentation`,
-      kind: "documentation",
-      digest: digest(documentation),
-      value: documentation,
-    });
-  }
-  for (const member of members) {
-    const { url: _, ...semanticSource } = member.source;
-    facts.push({
-      id: `${symbolId}/member/${symbolSlug(member.name)}`,
-      kind: "member",
-      digest: digestValue({ ...member, source: semanticSource }),
-      value: member.signature,
-    });
-  }
-  for (const relation of relations) {
-    facts.push({
-      id: `${symbolId}/relation/${relation.source}/${relation.kind}/${symbolSlug(relation.target)}`,
-      kind: "relation",
-      digest: digestValue(relation),
-      value: `${relation.kind}:${relation.target}`,
-    });
-  }
-  return facts.sort((left, right) => left.id.localeCompare(right.id));
-};
-
-const sourceDigest = async (
-  project: Project,
-  packageRoot: string,
-): Promise<string> => {
-  const source = await Promise.all(
-    project
-      .getSourceFiles()
-      .filter((file) => file.getFilePath().startsWith(packageRoot))
-      .sort((left, right) =>
-        left.getFilePath().localeCompare(right.getFilePath()),
-      )
-      .map(async (file) => ({
-        path: packageRelative(file.getFilePath()),
-        bytes: await readFile(file.getFilePath(), "utf8"),
-      })),
+const sourceDigest = async (project: Project, root: string): Promise<string> =>
+  digestValue(
+    await Promise.all(
+      project
+        .getSourceFiles()
+        .filter((file) => file.getFilePath().startsWith(root))
+        .sort((left, right) =>
+          left.getFilePath().localeCompare(right.getFilePath()),
+        )
+        .map(async (file) => ({
+          path: packageRelative(file.getFilePath()),
+          bytes: await readFile(file.getFilePath(), "utf8"),
+        })),
+    ),
   );
-  return digestValue(source);
+
+const validateProject = (tsConfigPath: string): void => {
+  const compiler = Path.join(
+    Path.dirname(fileURLToPath(import.meta.resolve("typescript/package.json"))),
+    "bin",
+    "tsc",
+  );
+  try {
+    execFileSync(process.execPath, [compiler, "--noEmit", "-p", tsConfigPath], {
+      cwd: paths.repository,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch (cause) {
+    const stderr =
+      typeof cause === "object" &&
+      cause !== null &&
+      "stderr" in cause &&
+      typeof cause.stderr === "string"
+        ? cause.stderr
+        : String(cause);
+    throw new Error(
+      `TypeScript ${TypeScript.version} rejected the documentation project:\n${stderr}`,
+    );
+  }
+};
+
+const buildDeclarations = (): void => {
+  try {
+    execFileSync("pnpm", ["--filter", "attune-mcp...", "build"], {
+      cwd: paths.repository,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch (cause) {
+    const stderr =
+      typeof cause === "object" &&
+      cause !== null &&
+      "stderr" in cause &&
+      typeof cause.stderr === "string"
+        ? cause.stderr
+        : String(cause);
+    throw new Error(
+      `Failed to build current attune-mcp declarations:\n${stderr}`,
+    );
+  }
+};
+
+const assertSpans = async (manifest: ApiManifest): Promise<void> => {
+  const spans = [
+    manifest.package.provenance.tsdoc,
+    manifest.package.provenance.declaration,
+    manifest.package.provenance.implementation,
+    manifest.package.pageExample.source,
+    ...manifest.package.examples.map((example) => example.source),
+    ...manifest.package.relations.map((relation) => relation.source),
+    ...manifest.symbols.flatMap((symbol) => [
+      symbol.provenance.tsdoc,
+      symbol.provenance.declaration,
+      symbol.provenance.implementation,
+      symbol.pageExample.source,
+      ...symbol.examples.map((example) => example.source),
+      ...symbol.relations.map((relation) => relation.source),
+      ...symbol.members.flatMap((member) => [
+        member.provenance.tsdoc,
+        member.provenance.declaration,
+        member.provenance.implementation,
+        member.pageExample.source,
+        ...member.examples.map((example) => example.source),
+        ...member.relations.map((relation) => relation.source),
+      ]),
+    ]),
+  ].filter((value): value is SourceSpan => value !== undefined);
+  for (const source of spans) {
+    const path = Path.resolve(paths.repository, source.path);
+    if (!path.startsWith(`${Path.resolve(paths.repository)}${Path.sep}`)) {
+      throw new Error(`Source span escapes the repository: ${source.path}`);
+    }
+    await access(path);
+    const bytes = await readFile(path, "utf8");
+    if (
+      source.end > bytes.length ||
+      digest(bytes.slice(source.start, source.end)) !== source.digest
+    ) {
+      throw new Error(`Stale source span: ${source.path}:${source.line}`);
+    }
+  }
 };
 
 export interface ExtractManifestOptions {
+  readonly buildUpstream?: boolean;
+  readonly declarationEntryPoint?: string;
   readonly entryPoint?: string;
+  readonly expectedDeclarationDigest?: string;
   readonly packageName?: string;
   readonly packageRoot?: string;
   readonly policy?: DocumentationPolicy;
@@ -498,139 +633,203 @@ export interface ExtractManifestOptions {
 export const extractApiManifest = async (
   options: ExtractManifestOptions = {},
 ): Promise<ApiManifest> => {
-  const tsConfigPath =
-    options.tsConfigPath ?? Path.join(paths.mcp, "tsconfig.json");
   const packageRoot = options.packageRoot ?? paths.mcp;
   const entryPoint =
-    options.entryPoint ?? Path.join(paths.mcp, "src", "index.ts");
+    options.entryPoint ?? Path.join(packageRoot, "src", "index.ts");
+  const declarationEntryPoint =
+    options.declarationEntryPoint ??
+    (options.entryPoint === undefined
+      ? Path.join(packageRoot, "dist", "index.d.mts")
+      : entryPoint);
+  const tsConfigPath =
+    options.tsConfigPath ?? Path.join(packageRoot, "tsconfig.json");
   const packageName = options.packageName ?? "attune-mcp";
-  const repositoryUrl =
-    options.repositoryUrl ?? "https://github.com/becker63/attune";
+  const remote = options.repositoryUrl ?? "https://github.com/becker63/attune";
   const sourceRef =
     options.sourceRef ??
     process.env.DOCS_SOURCE_REF ??
-    getGitValue(["rev-parse", "HEAD"], "main");
+    git(["rev-parse", "HEAD"], "main");
 
+  if (options.buildUpstream ?? options.entryPoint === undefined) {
+    buildDeclarations();
+  }
+  validateProject(tsConfigPath);
   const project = new Project({
     tsConfigFilePath: tsConfigPath,
     skipAddingFilesFromTsConfig: false,
   });
   const entry = project.getSourceFile(entryPoint);
-  if (entry === undefined) {
-    throw new Error(`Supported API entry point not found: ${entryPoint}`);
-  }
-  validateWithTypeScriptSeven(tsConfigPath);
+  if (entry === undefined)
+    throw new Error(`API entry point not found: ${entryPoint}`);
   const contentDigest = await sourceDigest(project, packageRoot);
-  const sourceRevision =
-    options.sourceRevision ??
-    process.env.DOCS_SOURCE_REVISION ??
-    `sha256:${contentDigest}`;
-
-  const exported = entry.getExportedDeclarations();
-  const symbols: ApiSymbol[] = [];
-  for (const [exportName, sourceDeclarations] of [...exported.entries()].sort(
-    ([left], [right]) => left.localeCompare(right),
-  )) {
-    const declarations = sourceDeclarations.filter((declaration) =>
-      declaration.getSourceFile().getFilePath().startsWith(packageRoot),
+  const declarationBytes = await readFile(declarationEntryPoint, "utf8");
+  const declarationDigest = digest(declarationBytes);
+  if (
+    options.expectedDeclarationDigest !== undefined &&
+    options.expectedDeclarationDigest !== declarationDigest
+  ) {
+    throw new Error(
+      `Stale declaration digest: expected ${options.expectedDeclarationDigest}, received ${declarationDigest}.`,
     );
-    if (declarations.length === 0) continue;
-    const docs = docsText(declarations);
-    const signature = declarations
-      .map((declaration) => declarationSignature(declaration, exportName))
-      .filter((value, index, source) => source.indexOf(value) === index)
-      .join("\n\n");
-    const declaration = declarations
-      .map((declarationNode) => sourceDeclaration(declarationNode, exportName))
-      .filter((value, index, source) => source.indexOf(value) === index)
-      .join("\n\n");
-    const source = sourceLocation(declarations[0]!, repositoryUrl, sourceRef);
-    const members = extractMembers(declarations, repositoryUrl, sourceRef);
-    const memberTags = declarations.flatMap((declaration) => {
-      if (!("getMembers" in declaration)) return [];
-      return (
-        declaration as MorphNode & {
-          readonly getMembers: () => readonly MorphNode[];
-        }
-      )
-        .getMembers()
-        .flatMap((member) => docsText([member]).tags);
-    });
-    const relations = extractRelations(declarations, [
-      ...docs.tags,
-      ...memberTags,
-    ]);
+  }
+  const declarationProject = new Project({
+    compilerOptions: { skipLibCheck: true },
+    skipAddingFilesFromTsConfig: true,
+  });
+  const declarationEntry =
+    declarationEntryPoint === entryPoint
+      ? entry
+      : declarationProject.addSourceFileAtPath(declarationEntryPoint);
+  const exported = entry.getExportedDeclarations();
+  const declared = declarationEntry.getExportedDeclarations();
+
+  const symbols: ApiSymbol[] = [];
+  for (const exportName of sourceOrder(entry, exported)) {
+    const sourceNodes = (exported.get(exportName) ?? []).filter((node) =>
+      node.getSourceFile().getFilePath().startsWith(packageRoot),
+    );
+    if (sourceNodes.length === 0) continue;
+    const declarationNodes = declared.get(exportName) ?? sourceNodes;
+    const docs = docsFor(sourceNodes);
     const id = `${packageName}#${exportName}`;
+    const symbolSource = span(sourceNodes[0]!, remote, sourceRef);
+    const examples = examplePrograms(
+      docs.docs,
+      exportName,
+      id,
+      remote,
+      sourceRef,
+    );
     symbols.push({
       id,
       exportName,
-      slug: symbolSlug(exportName),
-      kind: nodeKind(declarations[0]!),
-      declaration,
-      signature,
-      summary: docs.summary,
-      remarks: docs.remarks,
-      examples: docs.examples,
-      typeParameters: typeParameterDocs(declarations, docs.tags),
-      members,
-      relations,
-      source,
-      facts: buildFacts(
-        id,
-        declaration,
-        signature,
-        docs.summary,
-        docs.remarks,
-        members,
-        relations,
-        source,
+      slug: slug(exportName),
+      kind: nodeKind(sourceNodes[0]!),
+      declaration: declarationNodes
+        .map((node) => signature(node, exportName))
+        .join("\n\n"),
+      signature: declarationNodes
+        .map((node) => signature(node, exportName))
+        .join("\n\n"),
+      documentation: docs.text,
+      typeParameters: typeParameters(sourceNodes, docs.tags),
+      members: members(
+        exportName,
+        slug(exportName),
+        sourceNodes,
+        declarationNodes,
+        packageName,
+        remote,
+        sourceRef,
+      ),
+      examples,
+      relations: relations(docs.tags, remote, sourceRef),
+      provenance: provenance(sourceNodes, docs.docs, remote, sourceRef),
+      pageExample: symbolExample(
+        exportName,
+        nodeKind(sourceNodes[0]!),
+        packageName,
+        examples,
+        symbolSource,
       ),
     });
   }
-
-  const symbolsByBaseSlug = new Map<string, ApiSymbol[]>();
-  for (const symbol of symbols) {
-    const group = symbolsByBaseSlug.get(symbol.slug) ?? [];
-    group.push(symbol);
-    symbolsByBaseSlug.set(symbol.slug, group);
-  }
-  const uniqueSymbols = symbols.map((symbol) => {
-    const collisions = symbolsByBaseSlug.get(symbol.slug) ?? [];
-    return collisions.length < 2
-      ? symbol
-      : { ...symbol, slug: `${symbol.slug}-${digest(symbol.id).slice(0, 8)}` };
-  });
-  if (
-    new Set(uniqueSymbols.map((symbol) => symbol.slug)).size !== symbols.length
-  ) {
-    throw new Error("Stable symbol slug generation produced a collision.");
+  const duplicates = symbols.filter(
+    (symbol, index) =>
+      symbols.findIndex((candidate) => candidate.slug === symbol.slug) !==
+      index,
+  );
+  if (duplicates.length > 0) {
+    throw new Error(
+      `Public names collide as documentation slugs: ${duplicates.map((symbol) => symbol.exportName).join(", ")}`,
+    );
   }
 
-  const resolvedSymbols = uniqueSymbols.map((symbol) => ({
+  const resolve = (relation: LifecycleRelation): LifecycleRelation => {
+    const targetName = relationTarget(relation.target).replaceAll("`", "");
+    const target = symbols.find(
+      (symbol) => symbol.exportName === targetName || symbol.id === targetName,
+    );
+    return target === undefined
+      ? relation
+      : { ...relation, targetSymbolId: target.id };
+  };
+  const resolvedSymbols = symbols.map((symbol) => ({
     ...symbol,
-    relations: symbol.relations.map((relation) => {
-      const targetName = relationTarget(relation.target).replaceAll("`", "");
-      const target = uniqueSymbols.find(
-        (candidate) =>
-          candidate.exportName === targetName || candidate.id === targetName,
-      );
-      return target === undefined
-        ? relation
-        : { ...relation, targetSymbolId: target.id };
-    }),
+    relations: symbol.relations.map(resolve),
+    members: symbol.members.map((member) => ({
+      ...member,
+      relations: member.relations.map(resolve),
+    })),
   }));
-
-  const manifestWithoutDiagnostics: ApiManifest = {
+  const packageDoc = entry
+    .getDescendantsOfKind(ts.SyntaxKind.JSDoc)
+    .find((doc) =>
+      doc.getTags().some((tag) => tag.getTagName() === "packageDocumentation"),
+    );
+  const packageDocs = parsedDocs(packageDoc === undefined ? [] : [packageDoc]);
+  const packageExamples = examplePrograms(
+    packageDocs.docs,
+    resolvedSymbols[0]?.exportName ?? packageName,
+    `package:${packageName}`,
+    remote,
+    sourceRef,
+  );
+  const packageSource =
+    packageDoc === undefined
+      ? fileSpan(entry, remote, sourceRef)
+      : span(packageDoc, remote, sourceRef);
+  const packagePage =
+    packageExamples[0] === undefined
+      ? symbolExample(
+          resolvedSymbols[0]?.exportName ?? "unknown",
+          resolvedSymbols[0]?.kind ?? "type",
+          packageName,
+          [],
+          packageSource,
+        )
+      : {
+          code: packageExamples[0].code,
+          principal: packageExamples[0].principal,
+          source: packageExamples[0].source,
+          sourceExampleId: packageExamples[0].id,
+        };
+  const dirty =
+    options.sourceRevision === undefined &&
+    git(["status", "--porcelain", "--", packageRelative(packageRoot)]) !== "";
+  const sourceRevision =
+    options.sourceRevision ??
+    (dirty
+      ? `local:${sourceRef}:${contentDigest.slice(0, 12)}`
+      : `git:${sourceRef}`);
+  const packageProvenance: ApiProvenance = {
+    ...(packageDoc === undefined
+      ? {}
+      : { tsdoc: span(packageDoc, remote, sourceRef) }),
+    declaration: packageSource,
+    implementation: packageSource,
+  };
+  const base: ApiManifest = {
     schemaVersion: API_MANIFEST_SCHEMA_VERSION,
     package: {
       name: packageName,
       entryPoint: packageRelative(entryPoint),
+      documentation: packageDocs.text,
+      examples: packageExamples,
+      relations: relations(packageDocs.tags, remote, sourceRef).map(resolve),
+      provenance: packageProvenance,
+      pageExample: packagePage,
     },
     source: {
       revision: sourceRevision,
       ref: sourceRef,
       digest: contentDigest,
-      repositoryUrl,
+      repositoryUrl: remote,
+    },
+    declaration: {
+      path: packageRelative(declarationEntryPoint),
+      digest: declarationDigest,
+      sourceDigest: contentDigest,
     },
     generator: {
       name: "attune-docs",
@@ -644,10 +843,8 @@ export const extractApiManifest = async (
   };
   const policy =
     options.policy ?? (await readDocumentationPolicy(paths.policy));
-  const manifest: ApiManifest = {
-    ...manifestWithoutDiagnostics,
-    diagnostics: auditManifest(manifestWithoutDiagnostics, policy),
-  };
+  const manifest = { ...base, diagnostics: auditManifest(base, policy) };
+  await assertSpans(manifest);
   await assertApiManifestSchema(
     manifest,
     Path.join(paths.schema, "api-manifest.schema.json"),

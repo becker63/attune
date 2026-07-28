@@ -1,9 +1,3 @@
-/**
- * This module narrows the generic investigation model into one native tool.
- * Read from the local runtime helpers, through `executeTypedQuery<A>` (which
- * preserves a Joern query's result type), to `joernQuery`, where the shared
- * closed registry and invocation engine enforce lifecycle boundaries.
- */
 import { rm } from "node:fs/promises";
 import { createServer } from "node:net";
 
@@ -12,13 +6,11 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import { Effect, Layer } from "effect";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import {
-  Joern,
   compileSerializedQuery,
   makeHttpTransport,
   scopedJoernServer,
   type JoernQueryDiagnosticResponse,
   type JoernServerOutputTails,
-  type Query,
   type SerializedQuery,
 } from "joern-effect";
 
@@ -52,21 +44,6 @@ const freePort = async (): Promise<number> =>
   });
 
 const nodeLayer = Layer.merge(NodeServices.layer, NodeHttpClient.layerNodeHttp);
-
-const joernLayer = (
-  config: RuntimeConfig,
-  repository: string,
-  frontend: "auto" | "jssrc",
-  port: number,
-  timeoutMilliseconds: number,
-) =>
-  Joern.layer({
-    repoPath: repository,
-    command: config.joern,
-    frontend,
-    port,
-    readinessTimeoutMs: Math.min(timeoutMilliseconds, 120_000),
-  }).pipe(Layer.provide(nodeLayer));
 
 const executeRawQuery = async (
   config: RuntimeConfig,
@@ -107,35 +84,6 @@ const executeRawQuery = async (
     Effect.timeout(`${input.timeoutMilliseconds} millis`),
   );
   return await Effect.runPromise(program, { signal });
-};
-
-export const executeTypedQuery = async <A>(
-  config: RuntimeConfig,
-  repository: string,
-  query: Query<A>,
-  options: {
-    readonly frontend: "auto" | "jssrc";
-    readonly timeoutMilliseconds: number;
-    readonly signal?: AbortSignal;
-  },
-): Promise<A> => {
-  const port = await freePort();
-  const program = Effect.gen(function* () {
-    const joern = yield* Joern;
-    return yield* joern.query(query);
-  }).pipe(
-    Effect.provide(
-      joernLayer(
-        config,
-        repository,
-        options.frontend,
-        port,
-        options.timeoutMilliseconds,
-      ),
-    ),
-    Effect.timeout(`${options.timeoutMilliseconds} millis`),
-  );
-  return await Effect.runPromise(program, { signal: options.signal });
 };
 
 export const joernQuery = (

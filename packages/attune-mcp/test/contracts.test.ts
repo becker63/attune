@@ -94,6 +94,19 @@ const normalizeCompatibility = (value: unknown): unknown => {
 };
 
 describe("frozen capability ABI", () => {
+  it("keeps the built root declaration at exactly six concepts", async () => {
+    const path = fileURLToPath(new URL("../dist/index.d.mts", import.meta.url));
+    const declaration = await readFile(path, "utf8");
+    expect(declaration.match(/^export /gmu)).toHaveLength(1);
+    const list = declaration.match(/^export \{ ([^}]*) \};$/mu)?.[1] ?? "";
+    const names = list
+      .split(",")
+      .map((name) => name.trim().replace(/^type /u, ""));
+    expect(names.sort().join(",")).toBe(
+      "Attune,AttuneReceipt,AttuneToolFailure,AttuneToolkit,Investigation,InvestigationLifecycleError",
+    );
+  });
+
   it("publishes exactly eight mechanical tools", () => {
     expect(Object.keys(AttuneToolkit.tools)).toEqual([
       "repository_materialize",

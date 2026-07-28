@@ -1,7 +1,12 @@
 import { createHighlighter, type BundledLanguage } from "shiki";
 import type { ShikiTransformer } from "shiki/core";
 
-import { twoslashTransformer } from "./twoslash.ts";
+import {
+  createTwoslashSession,
+  twoslashTransformer,
+  twoslashTypeScriptVersion,
+  type TwoslashSessionOptions,
+} from "./twoslash.ts";
 
 const highlighter = await createHighlighter({
   langs: ["typescript", "json", "bash", "markdown"],
@@ -65,11 +70,39 @@ const accessibleTwoslash: ShikiTransformer = {
             : [];
       if (node.tagName === "span" && classes.includes("twoslash-hover")) {
         if (node.properties !== undefined) {
-          node.properties.class = [...classes, "twoslash-trigger"].join(" ");
+          node.properties.class = [
+            ...new Set([...classes, "twoslash-trigger"]),
+          ].join(" ");
           delete node.properties.className;
-          node.properties.tabIndex = 0;
-          node.properties.role = "button";
-          node.properties.ariaLabel = "Show inferred type";
+          if (!classes.includes("twoslash-linked")) {
+            node.properties.tabIndex = 0;
+            node.properties.role = "button";
+            node.properties.ariaLabel = "Show inferred type";
+          }
+        }
+        const identifierLink = node.children.find((child) => {
+          if (typeof child !== "object" || child === null) return false;
+          return (
+            (
+              child as {
+                readonly tagName?: string;
+              }
+            ).tagName === "a"
+          );
+        }) as
+          | {
+              properties?: Record<string, unknown>;
+            }
+          | undefined;
+        if (
+          classes.includes("twoslash-linked") &&
+          identifierLink?.properties !== undefined
+        ) {
+          const target = node.properties?.dataTwoslashTarget;
+          identifierLink.properties.ariaLabel =
+            typeof target === "string"
+              ? `Open API reference for ${target}`
+              : "Open API reference";
         }
         const popup = node.children.findIndex((child) => {
           if (typeof child !== "object" || child === null) return false;
@@ -100,6 +133,13 @@ export interface CodeBlockOptions {
   readonly language?: keyof typeof languages;
   readonly label?: string;
   readonly sourceCheckedBy?: string;
+  /**
+   * Opt into a strict, isolated Twoslash render.
+   *
+   * Ordinary snippets remain best-effort; source `@example` programs pass
+   * this metadata and fail the build on diagnostics or missing linked docs.
+   */
+  readonly twoslash?: TwoslashSessionOptions;
 }
 
 /** Render a static Shiki block, adding Twoslash hovers for valid TypeScript. */
@@ -108,13 +148,17 @@ export const renderCodeBlock = (
   options: CodeBlockOptions = {},
 ): string => {
   const language = languages[options.language ?? "typescript"];
+  const session =
+    language === "typescript" && options.twoslash !== undefined
+      ? createTwoslashSession(options.twoslash)
+      : undefined;
   const highlighted = highlighter.codeToHtml(source, {
     lang: language,
     theme: "github-light-default",
     transformers:
       language === "typescript"
         ? [
-            twoslashTransformer,
+            session?.transformer ?? twoslashTransformer,
             accessibleTwoslash,
             {
               name: "attune-code-block",
@@ -132,22 +176,28 @@ export const renderCodeBlock = (
             },
           ],
   });
+  session?.assertValid();
+  const visibleSource = session?.visibleCode() ?? source;
   const hasHoverTypes = highlighted.includes("twoslash-hover");
+  const checkedBy =
+    session === undefined
+      ? options.sourceCheckedBy
+      : `Twoslash TypeScript ${twoslashTypeScriptVersion} checked`;
   const status = [
-    ...(options.sourceCheckedBy === undefined
+    ...(checkedBy === undefined
       ? []
       : [
-          `<span class="code-status source-checked" title="${escapeAttribute(options.sourceCheckedBy)}">${escapeAttribute(options.sourceCheckedBy)}</span>`,
+          `<span class="code-status source-checked" title="${escapeAttribute(checkedBy)}">${escapeAttribute(checkedBy)}</span>`,
         ]),
     ...(hasHoverTypes
       ? ['<span class="code-status hover-types">Hover types</span>']
       : []),
   ].join("");
-  return `<div class="code-block" data-language="${escapeAttribute(language)}">
+  return `<div class="code-block${session === undefined ? "" : " checked-code"}" data-language="${escapeAttribute(language)}">
     <div class="code-toolbar">
       <span class="code-language">${escapeAttribute(options.label ?? languageName(language))}</span>
       <span class="code-meta">${status}</span>
-      <button type="button" class="copy-code" data-copy-code data-code="${escapeAttribute(source)}">Copy</button>
+      <button type="button" class="copy-code" data-copy-code data-code="${escapeAttribute(visibleSource)}">Copy</button>
     </div>
     ${highlighted}
   </div>`;

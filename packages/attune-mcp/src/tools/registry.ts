@@ -12,7 +12,21 @@ import {
   RepositoryMaterializeTool,
   type AttuneReceipt,
 } from "../contract/schemas.js";
-/** The Effect Toolkit is the sole schema and handler authority. */
+/**
+ * The eight-operation Effect Toolkit and sole MCP schema authority.
+ *
+ * @remarks
+ * Install this value at the protocol boundary. Application callers should use
+ * {@link Attune}; operation projections and execution metadata remain private.
+ *
+ * @example
+ * ```ts
+ * // @filename: toolkit.ts
+ * import { AttuneToolkit } from "attune-mcp";
+ * // ---cut---
+ * type OperationName = keyof typeof AttuneToolkit.tools;
+ * ```
+ */
 export const AttuneToolkit = Toolkit.make(
   RepositoryMaterializeTool,
   RepositoryCheckpointTool,
@@ -50,7 +64,6 @@ type ClosedRegistry = {
   readonly [Name in AttuneOperationName]: Metadata<AttuneTool<Name>>;
 };
 
-/** Closed execution metadata for the eight product operations. */
 export const ATTUNE_OPERATIONS = {
   repository_materialize: {
     tool: RepositoryMaterializeTool,
@@ -128,9 +141,6 @@ export type AttuneOperationReceipt<Name extends AttuneOperationName> = Extract<
   { readonly receipt: unknown }
 >["receipt"] &
   AttuneReceipt;
-export type AttuneOperationWriter<Name extends AttuneOperationName> =
-  (typeof ATTUNE_OPERATIONS)[Name]["writer"];
-
 export type ActiveAttuneOperationName = {
   readonly [Name in AttuneOperationName]: (typeof ATTUNE_OPERATIONS)[Name]["transition"] extends "materialize"
     ? never

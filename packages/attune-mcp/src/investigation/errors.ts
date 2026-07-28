@@ -1,9 +1,3 @@
-/**
- * Lifecycle failures are read from the broad reason vocabulary into the
- * structured error below. The tag identifies this boundary to Effect, while
- * `reason` lets callers exhaustively decide whether to refresh a capability,
- * correct an identity, or surface invalid persisted state.
- */
 import { Schema } from "effect";
 
 /**
@@ -33,6 +27,17 @@ export const InvestigationLifecycleFailureReason = Schema.Literals([
  * caller combined input from a different investigation or revision.
  * `ValidationFailed` means the persisted workspace no longer proves the
  * materialized capability.
+ *
+ * @example
+ * ```ts
+ * // @filename: lifecycle-error.ts
+ * import { InvestigationLifecycleError } from "attune-mcp";
+ * // ---cut---
+ * const failure = new InvestigationLifecycleError({
+ *   reason: "StateMismatch",
+ *   message: "an active proof is required",
+ * });
+ * ```
  */
 export class InvestigationLifecycleError extends Schema.TaggedErrorClass<InvestigationLifecycleError>()(
   "InvestigationLifecycleError",

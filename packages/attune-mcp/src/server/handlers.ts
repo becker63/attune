@@ -1,10 +1,11 @@
 import { Effect } from "effect";
 
 import { AttuneToolFailure } from "../contract/schemas.js";
-import type { ActiveInvestigation } from "../investigation/capability.js";
+import type { Investigation } from "../investigation/capability.js";
 import type { InvestigationLifecycleError } from "../investigation/errors.js";
 import type { InvestigationBoundInput } from "../investigation/operation.js";
-import type { InvestigationServiceApi } from "../investigation/service.js";
+import type { Attune } from "../investigation/service.js";
+import { fail } from "../platform/core.js";
 import type {
   AttuneOperationHandlers,
   AttuneOperationInput,
@@ -18,17 +19,21 @@ type BoundaryError = AttuneToolFailure | InvestigationLifecycleError;
 const asToolFailure = (cause: BoundaryError): AttuneToolFailure =>
   cause instanceof AttuneToolFailure
     ? cause
-    : new AttuneToolFailure({
-        code: "ContractMismatch",
-        message: `investigation lifecycle rejected MCP request: ${cause.message}`,
-        ...(cause.expected === undefined ? {} : { expected: cause.expected }),
-        ...(cause.observed === undefined ? {} : { observed: cause.observed }),
-      });
+    : fail(
+        "ContractMismatch",
+        `investigation lifecycle rejected MCP request: ${cause.message}`,
+        {
+          ...(cause.expected === undefined ? {} : { expected: cause.expected }),
+          ...(cause.observed === undefined ? {} : { observed: cause.observed }),
+        },
+      );
 
 const withRequestCapability = <A>(
-  service: InvestigationServiceApi,
+  service: Attune,
   identity: InvestigationBoundInput,
-  run: (investigation: ActiveInvestigation) => Effect.Effect<A, BoundaryError>,
+  run: (
+    investigation: Investigation<"active">,
+  ) => Effect.Effect<A, BoundaryError>,
   recover: () => Effect.Effect<A | undefined, BoundaryError>,
 ): Effect.Effect<A, AttuneToolFailure> =>
   recover().pipe(
@@ -43,20 +48,20 @@ const withRequestCapability = <A>(
   );
 
 const executeActive = <Name extends PreservingAttuneOperationName>(
-  service: InvestigationServiceApi,
+  service: Attune,
   name: Name,
   wireInput: AttuneOperationWireInput<Name>,
 ): Effect.Effect<AttuneOperationResult<Name>, AttuneToolFailure> => {
   const { investigationId, expectedSnapshot, ...input } = wireInput;
-  const execute = service.execute as unknown as (
-    investigation: ActiveInvestigation,
+  const execute = service.execute.bind(service) as unknown as (
+    investigation: Investigation<"active">,
     operation: Name,
     operationInput: AttuneOperationInput<Name>,
   ) => Effect.Effect<
     { readonly result: AttuneOperationResult<Name> },
     BoundaryError
   >;
-  const recover = service.recoverTerminal as unknown as (
+  const recover = service.recoverTerminal.bind(service) as unknown as (
     operation: Name,
     operationInput: AttuneOperationWireInput<Name>,
   ) => Effect.Effect<AttuneOperationResult<Name> | undefined, BoundaryError>;
@@ -71,10 +76,7 @@ const executeActive = <Name extends PreservingAttuneOperationName>(
   );
 };
 
-/** Adapts the application service to the unchanged eight-tool MCP contract. */
-export const makeMcpHandlers = (
-  service: InvestigationServiceApi,
-): AttuneOperationHandlers => ({
+export const makeMcpHandlers = (service: Attune): AttuneOperationHandlers => ({
   repository_materialize: (input) =>
     service.materialize(input).pipe(Effect.map((outcome) => outcome.result)),
   repository_checkpoint: (input) =>

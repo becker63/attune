@@ -9,7 +9,7 @@ import {
   type SucceededReceipt,
   type ToolName,
 } from "../src/contract/schemas.js";
-import type { ActiveInvestigation } from "../src/investigation/capability.js";
+import type { Investigation } from "../src/investigation/capability.js";
 import {
   makeInvestigationServiceFromHandlers,
   makePersistedInvestigationValidator,
@@ -242,7 +242,7 @@ describe("typed investigation lifecycle service", () => {
           investigationId,
           state: "active",
           snapshot: { id: snapshot, state: "active" },
-        }) as ActiveInvestigation,
+        }) as Investigation<"active">,
     ],
     ["another service's genuine", () => activate(makeService())],
   ])("rejects %s capability", async (_kind, capability) => {
@@ -258,12 +258,12 @@ describe("typed investigation lifecycle service", () => {
     expect.hasAssertions();
     const service = makeService();
     const active = await activate(service);
-    const unsafeExecute = service.execute as unknown as (
-      investigation: ActiveInvestigation,
+    const unsafeExecute = service.execute.bind(service) as unknown as (
+      investigation: Investigation<"active">,
       name: string,
       input: unknown,
     ) => Effect.Effect<unknown, unknown>;
-    const unsafeRecover = service.recoverTerminal as unknown as (
+    const unsafeRecover = service.recoverTerminal.bind(service) as unknown as (
       name: string,
       input: unknown,
     ) => Effect.Effect<unknown, unknown>;

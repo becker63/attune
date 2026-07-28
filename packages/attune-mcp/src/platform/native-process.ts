@@ -1,9 +1,3 @@
-/**
- * Shared evidence and failure normalization for native process operations.
- *
- * @internal
- */
-
 import type { InvocationContext } from "../investigation/invocation.js";
 import { canonicalJson, fail } from "./core.js";
 import type { ProcessResult } from "./process.js";

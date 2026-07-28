@@ -1,7 +1,3 @@
-/**
- * Native ast-grep execution owned by the ast-grep domain module.
- */
-
 import { readFile, rm } from "node:fs/promises";
 import * as Path from "node:path";
 

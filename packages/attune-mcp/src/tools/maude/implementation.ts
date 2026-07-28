@@ -1,7 +1,3 @@
-/**
- * Native Maude execution owned by the Maude domain module.
- */
-
 import { rm } from "node:fs/promises";
 
 import { Effect } from "effect";

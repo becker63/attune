@@ -2,13 +2,11 @@
   "name": "attune-docs",
   "version": "0.0.0",
   "private": true,
-  "description": "Deterministic API reference and grounded onboarding site for Attune.",
+  "description": "Deterministic source-backed API reference for Attune.",
   "type": "module",
   "scripts": {
     "audit": "node --experimental-strip-types ./src/cli.ts audit",
     "build": "pnpm run audit && node --experimental-strip-types ./src/cli.ts build",
-    "guides:validate": "node --experimental-strip-types ./src/cli.ts guides:validate",
-    "guides:approve": "node --experimental-strip-types ./src/cli.ts guides:approve",
     "experiments:verify": "node --experimental-strip-types ./src/cli.ts experiments:verify",
     "manifest": "node --experimental-strip-types ./src/cli.ts manifest",
     "probe:typedoc": "node ./scripts/probe-typedoc.mjs",
@@ -53,7 +51,9 @@
       },
       "build": {
         "cache": false,
-        "dependsOn": [],
+        "dependsOn": [
+          "^build"
+        ],
         "outputs": [
           "{projectRoot}/dist"
         ]

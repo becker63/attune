@@ -9,7 +9,6 @@ import {
   rename,
   stat,
   unlink,
-  writeFile,
 } from "node:fs/promises";
 import * as Path from "node:path";
 
@@ -328,5 +327,3 @@ export const ensureRuntimeDirectories = async (
     });
   }
 };
-
-export const writeText = writeFile;

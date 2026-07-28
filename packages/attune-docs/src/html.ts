@@ -1,11 +1,14 @@
 import { renderCodeBlock } from "./highlight.ts";
 import type {
   ApiManifest,
+  ApiMember,
   ApiSymbol,
-  ProseDraft,
-  RepositoryMap,
-  TraceArtifact,
+  DocumentationText,
+  LifecycleRelation,
+  PageExample,
+  SourceSpan,
 } from "./model.ts";
+import type { StaticPage } from "./static-pages.ts";
 
 export const escapeHtml = (value: string): string =>
   value
@@ -18,88 +21,73 @@ export const escapeHtml = (value: string): string =>
 export const normalizeBasePath = (value: string): string => {
   const trimmed = value.trim();
   if (trimmed === "" || trimmed === "/") return "/";
-
-  const path = trimmed.replace(/^\/+|\/+$/gu, "");
-  const segments = path.split("/");
-  const unsafe = segments.some(
-    (segment) =>
-      segment === "" ||
-      segment === "." ||
-      segment === ".." ||
-      !/^[a-zA-Z0-9._~-]+$/u.test(segment),
-  );
-  if (unsafe) {
+  const segments = trimmed.replace(/^\/+|\/+$/gu, "").split("/");
+  if (
+    segments.some(
+      (segment) =>
+        segment === "" ||
+        segment === "." ||
+        segment === ".." ||
+        !/^[a-zA-Z0-9._~-]+$/u.test(segment),
+    )
+  ) {
     throw new Error(`Unsafe documentation base path: ${JSON.stringify(value)}`);
   }
-
   return `/${segments.join("/")}/`;
 };
 
 export const withBase = (basePath: string, path = ""): string =>
   `${normalizeBasePath(basePath)}${path.replace(/^\/+/u, "")}`;
 
-const symbolHref = (basePath: string, symbol: ApiSymbol): string =>
+const href = (basePath: string, symbol: ApiSymbol): string =>
   escapeHtml(withBase(basePath, `api/${symbol.slug}.html`));
 
-const sourceModule = (symbol: ApiSymbol): string => {
-  const pathSegments = symbol.source.path.replaceAll("\\", "/").split("/");
-  const sourceIndex = pathSegments.lastIndexOf("src");
-  const sourceSegments =
-    sourceIndex === -1 ? pathSegments : pathSegments.slice(sourceIndex + 1);
-  const fileName = sourceSegments.at(-1) ?? symbol.source.path;
-  const moduleName = fileName.replace(/\.tsx?$/u, "");
-  const directories = sourceSegments.slice(0, -1);
+const memberHref = (
+  basePath: string,
+  symbol: ApiSymbol,
+  member: ApiMember,
+): string =>
+  escapeHtml(withBase(basePath, `api/${symbol.slug}/${member.slug}.html`));
 
-  if (directories[0] === "tools") {
-    const toolName =
-      directories[1] ?? (moduleName === "index" ? undefined : moduleName);
-    return toolName === undefined ? "tools" : `tools / ${toolName}`;
-  }
-
-  if (moduleName !== "index") {
-    return [...directories, moduleName].join(" / ");
-  }
-
-  return directories.join(" / ") || moduleName;
-};
-
-const groupSymbols = (
-  symbols: readonly ApiSymbol[],
-): ReadonlyMap<string, readonly ApiSymbol[]> => {
-  const groups = new Map<string, ApiSymbol[]>();
-  for (const symbol of symbols) {
-    const moduleName = sourceModule(symbol);
-    const group = groups.get(moduleName) ?? [];
-    group.push(symbol);
-    groups.set(moduleName, group);
-  }
-  for (const group of groups.values()) {
-    group.sort((left, right) =>
-      left.exportName.localeCompare(right.exportName),
-    );
-  }
-  return groups;
-};
-
-const renderInline = (
+const inline = (
   value: string,
-  manifest?: ApiManifest,
-  basePath = "/",
+  manifest: ApiManifest,
+  basePath: string,
 ): string =>
   value
-    .split(/(`[^`]+`)/gu)
+    .split(/(\{@link\s+[^}]+\}|`[^`]+`)/gu)
     .map((part) => {
-      if (!part.startsWith("`") || !part.endsWith("`")) {
-        return escapeHtml(part);
-      }
-      const code = part.slice(1, -1);
-      const symbol = manifest?.symbols.find(
-        (candidate) => candidate.exportName === code || candidate.id === code,
+      const linked = /^\{@link\s+([^|\s}]+)(?:\s*\|[^}]*)?\}$/u.exec(part);
+      const code =
+        linked?.[1] ??
+        (part.startsWith("`") && part.endsWith("`")
+          ? part.slice(1, -1)
+          : undefined);
+      if (code === undefined) return escapeHtml(part);
+      const [symbolName, memberName] = code.split(/[.#]/u);
+      const symbol = manifest.symbols.find(
+        (candidate) =>
+          candidate.exportName === symbolName || candidate.id === code,
       );
-      return symbol === undefined
-        ? `<code class="inline-code">${escapeHtml(code)}</code>`
-        : `<a class="inline-type" href="${symbolHref(basePath, symbol)}"><code>${escapeHtml(code)}</code></a>`;
+      if (symbol === undefined) {
+        return `<code class="inline-code">${escapeHtml(code)}</code>`;
+      }
+      const member = symbol.members.find(
+        (candidate) => candidate.name === memberName,
+      );
+      const destination =
+        member === undefined
+          ? href(basePath, symbol)
+          : memberHref(basePath, symbol, member);
+      return `<a class="inline-type" href="${destination}"><code>${escapeHtml(code)}</code></a>`;
     })
+    .join("");
+
+const prose = (text: string, manifest: ApiManifest, basePath: string): string =>
+  text
+    .split(/\n{2,}/u)
+    .filter(Boolean)
+    .map((paragraph) => `<p>${inline(paragraph, manifest, basePath)}</p>`)
     .join("");
 
 interface LayoutOptions {
@@ -107,66 +95,24 @@ interface LayoutOptions {
   readonly title: string;
   readonly description: string;
   readonly currentPath: string;
+  readonly pageId: string;
   readonly manifest: ApiManifest;
-  readonly guides: readonly ProseDraft[];
+  readonly staticPages: readonly StaticPage[];
   readonly body: string;
 }
-
-const guideNavigation = (
-  basePath: string,
-  guides: readonly ProseDraft[],
-  currentPath: string,
-): string =>
-  guides
-    .map((guide) => {
-      const path = `guides/${guide.slug}.html`;
-      const current = path === currentPath;
-      return `<a href="${escapeHtml(withBase(basePath, path))}"${current ? ' aria-current="page"' : ""}>${escapeHtml(guide.title)}</a>`;
-    })
-    .join("");
-
-const symbolNavigation = (
-  basePath: string,
-  symbols: readonly ApiSymbol[],
-  currentPath: string,
-): string => {
-  const groups = groupSymbols(symbols);
-  return [...groups.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(
-      ([moduleName, entries]) => `<details>
-        <summary>${escapeHtml(moduleName)} <span>${entries.length}</span></summary>
-        <div class="nav-symbols">
-          ${entries
-            .map((symbol) => {
-              const path = `api/${symbol.slug}.html`;
-              return `<a href="${symbolHref(basePath, symbol)}"${path === currentPath ? ' aria-current="page"' : ""}>${escapeHtml(symbol.exportName)}</a>`;
-            })
-            .join("")}
-        </div>
-      </details>`,
-    )
-    .join("");
-};
 
 export const layout = (options: LayoutOptions): string => {
   const revision = options.manifest.source.revision.replace(
     /^(?:git|sha256):/u,
     "",
   );
-  const shortRevision =
-    revision.length > 18 ? `${revision.slice(0, 12)}…` : revision;
-  const pageType = renderCodeBlock(
-    `type DocumentationPage = {\n  readonly sourceRevision: ${JSON.stringify(options.manifest.source.revision)};\n};`,
-    { label: "Page type" },
-  );
   return `<!doctype html>
-<html lang="en" data-base-path="${escapeHtml(normalizeBasePath(options.basePath))}">
+<html lang="en" data-base-path="${escapeHtml(normalizeBasePath(options.basePath))}" data-page-id="${escapeHtml(options.pageId)}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="${escapeHtml(options.description)}">
-    <title>${escapeHtml(options.title)} · Attune docs</title>
+    <title>${escapeHtml(options.title)} · Attune reference</title>
     <link rel="stylesheet" href="${escapeHtml(withBase(options.basePath, "assets/styles.css"))}">
     <link rel="stylesheet" href="${escapeHtml(withBase(options.basePath, "assets/twoslash.css"))}">
     <script type="module" src="${escapeHtml(withBase(options.basePath, "assets/site.js"))}"></script>
@@ -175,513 +121,278 @@ export const layout = (options: LayoutOptions): string => {
     <a class="skip-link" href="#content">Skip to content</a>
     <header class="mobile-header">
       <button type="button" class="menu-button" aria-controls="docs-sidebar" aria-expanded="false">Menu</button>
-      <a href="${escapeHtml(withBase(options.basePath))}">Attune docs</a>
+      <a href="${escapeHtml(withBase(options.basePath))}">Attune reference</a>
     </header>
     <aside class="sidebar" id="docs-sidebar">
       <div class="site-name">
-        <a href="${escapeHtml(withBase(options.basePath))}">Attune</a>
-        <span>Repository guide</span>
+        <a href="${escapeHtml(withBase(options.basePath))}">attune-mcp</a>
+        <span>API reference</span>
       </div>
       <div class="search">
-        <label for="doc-search">Search documentation</label>
-        <input id="doc-search" type="search" autocomplete="off" placeholder="Search symbols and guides">
+        <label for="doc-search">Search reference</label>
+        <input id="doc-search" type="search" autocomplete="off" placeholder="Search symbols and members">
         <div id="search-results" class="search-results" hidden></div>
       </div>
-      <nav aria-label="Documentation">
+      <nav aria-label="API reference">
         <div class="nav-section">
-          <h2>Repository</h2>
-          <a href="${escapeHtml(withBase(options.basePath))}"${options.currentPath === "" ? ' aria-current="page"' : ""}>Overview and package map</a>
-        </div>
-        <div class="nav-section">
-          <h2>Onboarding</h2>
-          ${guideNavigation(options.basePath, options.guides, options.currentPath)}
+          <h2>Package</h2>
+          <a href="${escapeHtml(withBase(options.basePath))}"${options.currentPath === "" ? ' aria-current="page"' : ""}>${escapeHtml(options.manifest.package.name)}</a>
         </div>
         <div class="nav-section api-navigation">
-          <h2>API reference</h2>
-          <a href="${escapeHtml(withBase(options.basePath, "api/index.html"))}"${options.currentPath === "api/index.html" ? ' aria-current="page"' : ""}>All exports</a>
-          ${symbolNavigation(options.basePath, options.manifest.symbols, options.currentPath)}
+          <h2>Public API</h2>
+          ${options.manifest.symbols
+            .map((symbol) => {
+              const path = `api/${symbol.slug}.html`;
+              return `<a href="${href(options.basePath, symbol)}"${path === options.currentPath ? ' aria-current="page"' : ""}>${escapeHtml(symbol.exportName)}</a>${symbol.members.length === 0 ? "" : `<div class="nav-symbols">${symbol.members.map((member) => `<a href="${memberHref(options.basePath, symbol, member)}"${`api/${symbol.slug}/${member.slug}.html` === options.currentPath ? ' aria-current="page"' : ""}>${escapeHtml(member.name)}</a>`).join("")}</div>`}`;
+            })
+            .join("")}
         </div>
+        ${
+          options.staticPages.length === 0
+            ? ""
+            : `<div class="nav-section"><h2>Evidence</h2>${options.staticPages.map((page) => `<a href="${escapeHtml(withBase(options.basePath, `experiments/${page.slug}.html`))}">${escapeHtml(page.title)}</a>`).join("")}</div>`
+        }
       </nav>
       <div class="revision">
         <span>Source revision</span>
-        <code title="${escapeHtml(options.manifest.source.revision)}">${escapeHtml(shortRevision)}</code>
+        <code title="${escapeHtml(options.manifest.source.revision)}">${escapeHtml(revision.length > 16 ? `${revision.slice(0, 12)}…` : revision)}</code>
       </div>
     </aside>
     <main id="content" class="content">
       ${options.body}
-      <details class="page-type-lens">
-        <summary>Type-checked page metadata</summary>
-        <p>Hover the underlined identifiers to inspect the generated TypeScript model for this page.</p>
-        ${pageType}
-      </details>
     </main>
   </body>
 </html>
 `;
 };
 
-const pageHeader = (
+const header = (
   title: string,
   summary: string,
-  meta?: string,
-): string => `<header class="page-header">
-  ${meta === undefined ? "" : `<p class="page-meta">${escapeHtml(meta)}</p>`}
-  <h1>${escapeHtml(title)}</h1>
-  <p>${escapeHtml(summary)}</p>
-</header>`;
+  kind?: string,
+  manifest?: ApiManifest,
+  basePath?: string,
+): string =>
+  `<header class="page-header">${kind === undefined ? "" : `<p class="page-meta">${escapeHtml(kind)}</p>`}<h1>${escapeHtml(title)}</h1><p>${manifest === undefined || basePath === undefined ? escapeHtml(summary) : inline(summary, manifest, basePath)}</p></header>`;
 
-export const renderRepositoryOverview = (
+const spanLink = (label: string, span: SourceSpan): string =>
+  `<a href="${escapeHtml(span.url)}">${escapeHtml(label)} <code>${escapeHtml(span.path)}:${span.line}${span.endLine === span.line ? "" : `-${span.endLine}`}</code></a>`;
+
+const provenance = (value: {
+  readonly tsdoc?: SourceSpan;
+  readonly declaration: SourceSpan;
+  readonly implementation: SourceSpan;
+}): string =>
+  `<section class="provenance"><h2>Source</h2><ul>${value.tsdoc === undefined ? "" : `<li>${spanLink("TSDoc", value.tsdoc)}</li>`}<li>${spanLink("Declaration", value.declaration)}</li><li>${spanLink("Implementation", value.implementation)}</li></ul></section>`;
+
+export const renderCheckedExample = (
+  pageId: string,
+  example: PageExample,
   manifest: ApiManifest,
-  repository: RepositoryMap,
-  guides: readonly ProseDraft[],
-  basePath: string,
-): string => {
-  const byId = new Map(repository.areas.map((area) => [area.id, area]));
-  const guideOrder = [
-    "investigation-quickstart",
-    "investigation-lifecycle",
-    "choosing-a-tool",
-    "changing-a-tool-safely",
-  ];
-  const readingGuides = [...guides].sort(
-    (left, right) =>
-      (guideOrder.indexOf(left.slug) === -1
-        ? guideOrder.length
-        : guideOrder.indexOf(left.slug)) -
-      (guideOrder.indexOf(right.slug) === -1
-        ? guideOrder.length
-        : guideOrder.indexOf(right.slug)),
-  );
-  const row = (from: string, relation: string, to: string) => {
-    const source = byId.get(from);
-    const target = byId.get(to);
-    if (source === undefined || target === undefined) return "";
-    return `<tr><td><a href="#${escapeHtml(source.id)}">${escapeHtml(source.name)}</a></td><td>${escapeHtml(relation)}</td><td><a href="#${escapeHtml(target.id)}">${escapeHtml(target.name)}</a></td></tr>`;
-  };
-  const body = `${pageHeader(
-    "Attune repository",
-    "A typed, reproducible investigation runtime: Effect owns mechanical truth, ActiveGraph owns traceable research, and this site keeps the path between them visible.",
-  )}
-  <section>
-    <h2>Start reading</h2>
-    <ol class="reading-path">
-      ${readingGuides
-        .map(
-          (guide) =>
-            `<li><a href="${escapeHtml(withBase(basePath, `guides/${guide.slug}.html`))}">${escapeHtml(guide.title)}</a><span>${escapeHtml(guide.summary)}</span></li>`,
-        )
-        .join("")}
-    </ol>
-  </section>
-  <section>
-    <h2>How the pieces connect</h2>
-    <p>The arrows below are ownership boundaries. They are the shortest reliable route through the repository when a change crosses packages.</p>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Source</th><th>Relationship</th><th>Consumer</th></tr></thead>
-        <tbody>
-          ${row("effect-joern", "provides typed analysis to", "attune-mcp")}
-          ${row("attune-mcp", "generates", "contracts")}
-          ${row("contracts", "projects into", "activegraph")}
-          ${row("attune-mcp", "feeds mechanical facts to", "docs")}
-          ${row("activegraph", "records trace hooks for", "docs")}
-          ${row("nix", "pins executable reality for", "attune-mcp")}
-          ${row("openspec", "records intended changes to", "attune-mcp")}
-        </tbody>
-      </table>
-    </div>
-  </section>
-  <section>
-    <h2>Package map</h2>
-    <div class="package-map">
-      ${repository.areas
-        .map(
-          (area) => `<article id="${escapeHtml(area.id)}">
-            <h3><a href="${escapeHtml(area.sourceUrl)}">${escapeHtml(area.name)}</a></h3>
-            <p class="path"><code>${escapeHtml(area.path)}</code></p>
-            <p><strong>${escapeHtml(area.role)}</strong></p>
-            <p>${escapeHtml(area.details)}</p>
-            <p class="connections">Connects to: ${area.connectsTo
-              .map((id) => {
-                const target = byId.get(id);
-                return target === undefined
-                  ? escapeHtml(id)
-                  : `<a href="#${escapeHtml(target.id)}">${escapeHtml(target.name)}</a>`;
-              })
-              .join(", ")}</p>
-          </article>`,
-        )
-        .join("")}
-    </div>
-  </section>
-  <section>
-    <h2>Mechanical reference</h2>
-    <p>The API reference is generated from <code>${escapeHtml(manifest.package.entryPoint)}</code> at <code>${escapeHtml(manifest.source.revision)}</code>. It contains ${manifest.symbols.length} exported symbols and does not use model-written prose.</p>
-    <p><a class="text-action" href="${escapeHtml(withBase(basePath, "api/index.html"))}">Browse all exported symbols →</a></p>
-  </section>`;
-  return layout({
-    basePath,
-    title: "Repository overview",
-    description:
-      "Architecture map and onboarding path for the Attune repository.",
-    currentPath: "",
-    manifest,
-    guides,
-    body,
-  });
-};
+  apiHref: string,
+): string =>
+  `<section class="page-example" data-page-example="${escapeHtml(pageId)}" data-page-principal="${escapeHtml(example.principal)}"><h2>Checked example</h2>${renderCodeBlock(
+    example.code,
+    {
+      label: `${example.principal} · TypeScript`,
+      twoslash: {
+        idPrefix: pageId,
+        identifiers: [
+          {
+            target: example.principal,
+            apiHref,
+            sourceHref: example.source.url,
+          },
+        ],
+        requiredTargets: [example.principal],
+      },
+    },
+  )}<p class="source-link">${spanLink("Example source", example.source)}</p></section>`;
 
-const evidenceForSection = (
-  section: ProseDraft["sections"][number],
+const documentation = (
+  docs: DocumentationText,
   manifest: ApiManifest,
   basePath: string,
-): string => {
-  const symbols = new Map(
-    manifest.symbols.map((symbol) => [symbol.id, symbol]),
-  );
-  const cited = [
-    ...new Set(
-      section.claims.flatMap((claim) =>
-        claim.evidence.map((reference) => reference.symbolId),
-      ),
-    ),
-  ];
-  if (cited.length === 0) return "";
-  return `<div class="grounding">
-    <h3>Grounded in</h3>
-    <ul>${cited
-      .map((id) => {
-        const symbol = symbols.get(id);
-        return symbol === undefined
-          ? `<li><code>${escapeHtml(id)}</code></li>`
-          : `<li><a href="${symbolHref(basePath, symbol)}">${escapeHtml(symbol.exportName)}</a><span>${escapeHtml(symbol.kind)}</span></li>`;
-      })
-      .join("")}</ul>
-  </div>`;
-};
-
-export const renderGuide = (
-  draft: ProseDraft,
-  manifest: ApiManifest,
-  allGuides: readonly ProseDraft[],
-  basePath: string,
-): string => {
-  const guideBySlug = new Map(allGuides.map((guide) => [guide.slug, guide]));
-  const body = `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="${escapeHtml(withBase(basePath))}">Repository</a><span>/</span><span>Onboarding</span></nav>
-  ${pageHeader(draft.title, draft.summary)}
-  <p class="audience"><strong>For:</strong> ${escapeHtml(draft.audience)}</p>
-  ${draft.sections
-    .map(
-      (section) => `<section id="${escapeHtml(section.id)}">
-        <h2>${escapeHtml(section.heading)}</h2>
-        ${section.claims
-          .map(
-            (claim) => `<div class="claim" id="${escapeHtml(claim.id)}">
-              <p>${renderInline(claim.text, manifest, basePath)}${claim.certainty === "inference" ? ' <span class="certainty">Inference</span>' : ""}</p>
-              <a class="trace-link" data-trace-hook="activegraph" data-claim-id="${escapeHtml(claim.id)}" data-run-id="${escapeHtml(draft.provenance.runId ?? "")}" href="${escapeHtml(withBase(basePath, `traces/${draft.slug}.html#${claim.id}`))}">Why this is here</a>
-            </div>`,
-          )
-          .join("")}
-        ${evidenceForSection(section, manifest, basePath)}
-      </section>`,
-    )
-    .join("")}
-  <section class="next-pages">
-    <h2>Continue reading</h2>
-    <ul>${draft.nextPages
-      .map((slug) => {
-        const guide = guideBySlug.get(slug);
-        return guide === undefined
-          ? ""
-          : `<li><a href="${escapeHtml(withBase(basePath, `guides/${guide.slug}.html`))}">${escapeHtml(guide.title)}</a><span>${escapeHtml(guide.summary)}</span></li>`;
-      })
-      .join("")}</ul>
-  </section>
-  <footer class="review-record">
-    <p>Grounded against <code>${escapeHtml(draft.sourceRevision)}</code> · review <code>${escapeHtml(draft.review.decisionId)}</code></p>
-  </footer>`;
-  return layout({
-    basePath,
-    title: draft.title,
-    description: draft.summary,
-    currentPath: `guides/${draft.slug}.html`,
-    manifest,
-    guides: allGuides,
-    body,
-  });
-};
-
-export const renderApiIndex = (
-  manifest: ApiManifest,
-  guides: readonly ProseDraft[],
-  basePath: string,
-): string => {
-  const groups = groupSymbols(manifest.symbols);
-  const body = `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="${escapeHtml(withBase(basePath))}">Repository</a><span>/</span><span>API reference</span></nav>
-  ${pageHeader(
-    "API reference",
-    `A deterministic projection of ${manifest.symbols.length} exports from the supported attune-mcp entry point.`,
-  )}
-  ${
-    manifest.diagnostics.length === 0
+): string =>
+  `${docs.remarks === "" ? "" : `<section><h2>Remarks</h2>${prose(docs.remarks, manifest, basePath)}</section>`}${
+    docs.parameters.length === 0
       ? ""
-      : `<div class="diagnostic-summary"><strong>${manifest.diagnostics.length} documentation policy issue${manifest.diagnostics.length === 1 ? "" : "s"}</strong><p>The reference remains readable while the separate audit command reports missing TSDoc or registry metadata.</p></div>`
-  }
-  ${[...groups.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(
-      ([moduleName, symbols]) => `<section>
-        <h2>${escapeHtml(moduleName)}</h2>
-        <ul class="symbol-list">
-          ${symbols
-            .map(
-              (symbol) =>
-                `<li><a href="${symbolHref(basePath, symbol)}"><code>${escapeHtml(symbol.exportName)}</code></a><span>${escapeHtml(symbol.summary || "Exact signature and source location.")}</span></li>`,
-            )
-            .join("")}
-        </ul>
-      </section>`,
-    )
-    .join("")}`;
-  return layout({
-    basePath,
-    title: "API reference",
-    description: "Mechanical TypeScript API reference for attune-mcp.",
-    currentPath: "api/index.html",
-    manifest,
-    guides,
-    body,
-  });
-};
+      : `<section><h2>Parameters</h2><dl>${docs.parameters.map((parameter) => `<div><dt><code>${escapeHtml(parameter.name)}</code></dt><dd>${inline(parameter.description, manifest, basePath)}</dd></div>`).join("")}</dl></section>`
+  }${docs.returns === "" ? "" : `<section><h2>Returns</h2>${prose(docs.returns, manifest, basePath)}</section>`}${
+    docs.failures.length === 0
+      ? ""
+      : `<section><h2>Failures</h2><ul>${docs.failures.map((failure) => `<li>${inline(failure, manifest, basePath)}</li>`).join("")}</ul></section>`
+  }`;
 
-const relationTargetHtml = (
-  relation: ApiSymbol["relations"][number],
+const relations = (
+  entries: readonly LifecycleRelation[],
   manifest: ApiManifest,
   basePath: string,
+): string =>
+  entries.length === 0
+    ? ""
+    : `<section><h2>Related API</h2><ul>${entries
+        .map((relation) => {
+          const target = manifest.symbols.find(
+            (symbol) => symbol.id === relation.targetSymbolId,
+          );
+          return `<li><code>${escapeHtml(relation.kind)}</code> ${target === undefined ? `<code>${escapeHtml(relation.target)}</code>` : `<a href="${href(basePath, target)}"><code>${escapeHtml(target.exportName)}</code></a>`}</li>`;
+        })
+        .join("")}</ul></section>`;
+
+export const renderPackageReference = (
+  manifest: ApiManifest,
+  staticPages: readonly StaticPage[],
+  basePath: string,
 ): string => {
-  const target = manifest.symbols.find(
-    (symbol) => symbol.id === relation.targetSymbolId,
-  );
-  return target === undefined
-    ? `<code>${escapeHtml(relation.target)}</code>`
-    : `<a href="${symbolHref(basePath, target)}"><code>${escapeHtml(target.exportName)}</code></a>`;
+  const body = `${header(
+    manifest.package.name,
+    manifest.package.documentation.summary,
+    "package",
+    manifest,
+    basePath,
+  )}
+  ${prose(manifest.package.documentation.remarks, manifest, basePath)}
+  ${renderCheckedExample(
+    `package:${manifest.package.name}`,
+    manifest.package.pageExample,
+    manifest,
+    withBase(
+      basePath,
+      `api/${
+        manifest.symbols.find(
+          (symbol) =>
+            symbol.exportName === manifest.package.pageExample.principal,
+        )?.slug ?? manifest.symbols[0]?.slug
+      }.html`,
+    ),
+  )}
+  <section><h2>Public API</h2><ol class="symbol-list">${manifest.symbols
+    .map(
+      (symbol) =>
+        `<li><a href="${href(basePath, symbol)}"><code>${escapeHtml(symbol.exportName)}</code></a><span>${inline(symbol.documentation.summary, manifest, basePath)}</span></li>`,
+    )
+    .join("")}</ol></section>
+  ${relations(manifest.package.relations, manifest, basePath)}
+  ${provenance(manifest.package.provenance)}`;
+  return layout({
+    basePath,
+    title: manifest.package.name,
+    description: manifest.package.documentation.summary,
+    currentPath: "",
+    pageId: `package:${manifest.package.name}`,
+    manifest,
+    staticPages,
+    body,
+  });
 };
 
 export const renderApiSymbol = (
   symbol: ApiSymbol,
   manifest: ApiManifest,
-  guides: readonly ProseDraft[],
+  staticPages: readonly StaticPage[],
   basePath: string,
 ): string => {
-  const registryRelations = symbol.relations.filter(
-    (relation) => relation.source === "registry",
-  );
-  const tsdocRelations = symbol.relations.filter(
-    (relation) => relation.source === "tsdoc",
-  );
-  const body = `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="${escapeHtml(withBase(basePath))}">Repository</a><span>/</span><a href="${escapeHtml(withBase(basePath, "api/index.html"))}">API reference</a><span>/</span><span>${escapeHtml(symbol.exportName)}</span></nav>
-  ${pageHeader(
+  const body = `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="${escapeHtml(withBase(basePath))}">${escapeHtml(manifest.package.name)}</a><span>/</span><span>${escapeHtml(symbol.exportName)}</span></nav>
+  ${header(
     symbol.exportName,
-    symbol.summary || "Exported API symbol.",
+    symbol.documentation.summary,
     symbol.kind,
+    manifest,
+    basePath,
   )}
-  <p class="source-link"><a href="${escapeHtml(symbol.source.url)}">${escapeHtml(symbol.source.path)}:${symbol.source.line}</a></p>
-  <section>
-    <h2>Declaration</h2>
-    ${renderCodeBlock(symbol.declaration, {
-      label: "Declaration",
-      sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
-    })}
-    ${
-      symbol.signature === symbol.declaration
-        ? ""
-        : `<details class="full-signature">
-      <summary>Full inferred type</summary>
-      <p>The exact compiler projection is available here when you need every inferred detail.</p>
-      ${renderCodeBlock(symbol.signature, {
-        label: "Inferred type",
-        sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
-      })}
-    </details>`
-    }
-  </section>
-  ${
-    symbol.remarks.length === 0
-      ? ""
-      : `<section><h2>Remarks</h2><div class="prose">${symbol.remarks
-          .split(/\n{2,}/u)
-          .map(
-            (paragraph) =>
-              `<p>${renderInline(paragraph, manifest, basePath)}</p>`,
-          )
-          .join("")}</div></section>`
-  }
-  ${
-    symbol.typeParameters.length === 0
-      ? ""
-      : `<section><h2>Type parameters</h2><div class="table-wrap"><table><thead><tr><th>Name</th><th>Constraint</th><th>Default</th><th>Description</th></tr></thead><tbody>${symbol.typeParameters
-          .map(
-            (parameter) =>
-              `<tr><td><code>${escapeHtml(parameter.name)}</code></td><td>${escapeHtml(parameter.constraint ?? "—")}</td><td>${escapeHtml(parameter.default ?? "—")}</td><td>${escapeHtml(parameter.description ?? "—")}</td></tr>`,
-          )
-          .join("")}</tbody></table></div></section>`
-  }
-  ${
-    symbol.relations.length === 0
-      ? ""
-      : `<section><h2>Lifecycle relations</h2>
-        ${
-          registryRelations.length === 0
-            ? ""
-            : `<p>The closed operation registry is the machine-authoritative lifecycle record.</p><div class="relation-list">${registryRelations
-                .map(
-                  (relation) =>
-                    `<div><code>${escapeHtml(relation.kind)}</code>${relationTargetHtml(relation, manifest, basePath)}<span>registry</span></div>`,
-                )
-                .join("")}</div>`
-        }
-        ${
-          tsdocRelations.length === 0
-            ? ""
-            : `<h3>Explanatory TSDoc links</h3><div class="relation-list advisory">${tsdocRelations
-                .map(
-                  (relation) =>
-                    `<div><code>${escapeHtml(relation.kind)}</code>${relationTargetHtml(relation, manifest, basePath)}<span>TSDoc</span></div>`,
-                )
-                .join("")}</div>`
-        }
-      </section>`
-  }
+  ${renderCheckedExample(
+    symbol.id,
+    symbol.pageExample,
+    manifest,
+    withBase(basePath, `api/${symbol.slug}.html`),
+  )}
+  <section><h2>Declaration</h2>${renderCodeBlock(symbol.declaration, {
+    label: "Declaration",
+    sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
+  })}</section>
+  ${documentation(symbol.documentation, manifest, basePath)}
   ${
     symbol.members.length === 0
       ? ""
-      : `<section><h2>Members</h2><div class="members">${symbol.members
-          .map(
-            (member) => `<article id="member-${escapeHtml(member.name)}">
-              <h3><code>${escapeHtml(member.name)}</code></h3>
-              ${member.summary.length === 0 ? "" : `<p>${renderInline(member.summary, manifest, basePath)}</p>`}
-              ${renderCodeBlock(member.signature, {
-                label: "Member",
-                sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
-              })}
-            </article>`,
-          )
-          .join("")}</div></section>`
+      : `<section><h2>Members</h2><ol class="symbol-list">${symbol.members.map((member) => `<li><a href="${memberHref(basePath, symbol, member)}"><code>${escapeHtml(member.name)}</code></a><span>${escapeHtml(member.documentation.summary)}</span></li>`).join("")}</ol></section>`
   }
-  ${
-    symbol.examples.length === 0
-      ? ""
-      : `<section><h2>Examples</h2>${symbol.examples
-          .map((example) =>
-            renderCodeBlock(example, {
-              label: "TypeScript example",
-            }),
-          )
-          .join("")}</section>`
-  }
-  <footer class="fact-record"><p>${symbol.facts.length} deterministic facts · source digest <code>${escapeHtml(manifest.source.digest.slice(0, 16))}</code></p></footer>`;
+  ${relations(symbol.relations, manifest, basePath)}
+  ${provenance(symbol.provenance)}`;
   return layout({
     basePath,
     title: symbol.exportName,
-    description: symbol.summary || `${symbol.exportName} API reference.`,
+    description: symbol.documentation.summary,
     currentPath: `api/${symbol.slug}.html`,
+    pageId: symbol.id,
     manifest,
-    guides,
+    staticPages,
     body,
   });
 };
 
-export const renderTracePage = (
-  draft: ProseDraft,
+export const renderApiMember = (
+  member: ApiMember,
+  symbol: ApiSymbol,
   manifest: ApiManifest,
-  allGuides: readonly ProseDraft[],
+  staticPages: readonly StaticPage[],
   basePath: string,
-  traceArtifact?: TraceArtifact,
 ): string => {
-  const symbols = new Map(
-    manifest.symbols.map((symbol) => [symbol.id, symbol]),
-  );
-  const body = `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="${escapeHtml(withBase(basePath))}">Repository</a><span>/</span><a href="${escapeHtml(withBase(basePath, `guides/${draft.slug}.html`))}">${escapeHtml(draft.title)}</a><span>/</span><span>Evidence trace</span></nav>
-  ${pageHeader(
-    `${draft.title}: evidence trace`,
-    "Static content provenance for every claim on this guide. ActiveGraph may attach execution and approval records to the exposed trace hooks.",
+  const title = `${symbol.exportName}.${member.name}`;
+  const body = `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="${escapeHtml(withBase(basePath))}">${escapeHtml(manifest.package.name)}</a><span>/</span><a href="${href(basePath, symbol)}">${escapeHtml(symbol.exportName)}</a><span>/</span><span>${escapeHtml(member.name)}</span></nav>
+  ${header(title, member.documentation.summary, "member", manifest, basePath)}
+  ${renderCheckedExample(
+    member.id,
+    member.pageExample,
+    manifest,
+    withBase(basePath, `api/${symbol.slug}/${member.slug}.html`),
   )}
-  <dl class="trace-meta">
-    <div><dt>Manifest revision</dt><dd><code>${escapeHtml(draft.sourceRevision)}</code></dd></div>
-    <div><dt>Manifest digest</dt><dd><code>${escapeHtml(draft.sourceDigest)}</code></dd></div>
-    <div><dt>Documentation run</dt><dd><code>${escapeHtml(draft.provenance.runId ?? "maintainer-authored")}</code></dd></div>
-    <div><dt>Review decision</dt><dd><code>${escapeHtml(draft.review.decisionId)}</code></dd></div>
-  </dl>
-  ${
-    traceArtifact === undefined
-      ? `<section><h2>ActiveGraph trace</h2><p>No exported runtime trace is attached to this guide revision. The content evidence below is still complete and the page remains fully static.</p></section>`
-      : traceArtifact.kind === "representative"
-        ? `<section class="representative-trace">
-        <h2>Representative ActiveGraph trace</h2>
-        <p><strong>Representative example—not this guide’s publication trace.</strong> It demonstrates the static export shape only; the claim evidence below remains the source of truth for this page.</p>
-        <p>Example run <code>${escapeHtml(traceArtifact.trace.activegraph_run_id)}</code> · ${traceArtifact.trace.nodes.length} nodes · ${traceArtifact.trace.edges.length} edges</p>
-        <div class="table-wrap"><table><thead><tr><th>From</th><th>Edge</th><th>To</th><th>Provenance</th></tr></thead><tbody>${traceArtifact.trace.edges
-          .map(
-            (edge) =>
-              `<tr><td><code>${escapeHtml(edge.source)}</code></td><td>${escapeHtml(edge.type)}</td><td><code>${escapeHtml(edge.target)}</code></td><td>${escapeHtml(edge.provenance_kind)}</td></tr>`,
-          )
-          .join("")}</tbody></table></div>
-        <p><a href="${escapeHtml(withBase(basePath, `traces/examples/${draft.slug}.json`))}">Open the representative TraceExport JSON</a></p>
-      </section>`
-        : `<section>
-        <h2>Publication trace</h2>
-        <p>Run <code>${escapeHtml(traceArtifact.trace.activegraph_run_id)}</code> · ${traceArtifact.trace.stale ? "stale" : "current"} · ${traceArtifact.trace.nodes.length} nodes · ${traceArtifact.trace.edges.length} edges</p>
-        <div class="table-wrap"><table><thead><tr><th>From</th><th>Edge</th><th>To</th><th>Provenance</th></tr></thead><tbody>${traceArtifact.trace.edges
-          .map(
-            (edge) =>
-              `<tr><td><code>${escapeHtml(edge.source)}</code></td><td>${escapeHtml(edge.type)}</td><td><code>${escapeHtml(edge.target)}</code></td><td>${escapeHtml(edge.provenance_kind)}</td></tr>`,
-          )
-          .join("")}</tbody></table></div>
-        <p><a href="${escapeHtml(withBase(basePath, `traces/data/${draft.slug}.json`))}">Open the bound publication TraceExport JSON</a></p>
-      </section>`
-  }
-  ${draft.sections
-    .flatMap((section) => section.claims)
-    .map(
-      (
-        claim,
-      ) => `<section class="trace-claim" id="${escapeHtml(claim.id)}" data-activegraph-run-id="${escapeHtml(draft.provenance.runId ?? "")}" data-claim-id="${escapeHtml(claim.id)}">
-        <h2>${escapeHtml(claim.id)}</h2>
-        <p>${renderInline(claim.text, manifest, basePath)}</p>
-        <div class="table-wrap"><table><thead><tr><th>Symbol</th><th>Facts</th></tr></thead><tbody>${claim.evidence
-          .map((evidence) => {
-            const symbol = symbols.get(evidence.symbolId);
-            return `<tr><td>${symbol === undefined ? `<code>${escapeHtml(evidence.symbolId)}</code>` : `<a href="${symbolHref(basePath, symbol)}"><code>${escapeHtml(symbol.exportName)}</code></a>`}</td><td>${evidence.facts.map((fact) => `<code title="${escapeHtml(fact.digest)}">${escapeHtml(fact.id.split("/").slice(-1)[0] ?? fact.id)}</code>`).join(" ")}</td></tr>`;
-          })
-          .join("")}</tbody></table></div>
-      </section>`,
-    )
-    .join("")}`;
+  <section><h2>Signature</h2>${renderCodeBlock(member.signature, {
+    label: "Member signature",
+    sourceCheckedBy: `TypeScript ${manifest.generator.typescriptVersion} checked`,
+  })}</section>
+  ${documentation(member.documentation, manifest, basePath)}
+  ${relations(member.relations, manifest, basePath)}
+  ${provenance(member.provenance)}`;
   return layout({
     basePath,
-    title: `${draft.title}: evidence trace`,
-    description: `Content provenance for ${draft.title}.`,
-    currentPath: `traces/${draft.slug}.html`,
+    title,
+    description: member.documentation.summary,
+    currentPath: `api/${symbol.slug}/${member.slug}.html`,
+    pageId: member.id,
     manifest,
-    guides: allGuides,
+    staticPages,
     body,
   });
 };
 
 export const renderNotFound = (
   manifest: ApiManifest,
-  guides: readonly ProseDraft[],
+  staticPages: readonly StaticPage[],
   basePath: string,
-): string =>
-  layout({
+): string => {
+  const example = manifest.package.pageExample;
+  const principal = manifest.symbols.find(
+    (symbol) => symbol.exportName === example.principal,
+  );
+  if (principal === undefined) {
+    throw new Error(
+      `Package example principal "${example.principal}" has no API page.`,
+    );
+  }
+  return layout({
     basePath,
     title: "Page not found",
-    description: "The requested Attune documentation page does not exist.",
+    description: "The requested reference page does not exist.",
     currentPath: "404.html",
+    pageId: "not-found",
     manifest,
-    guides,
-    body: `${pageHeader(
-      "Page not found",
-      "That documentation path does not exist in this revision.",
-    )}<p><a class="text-action" href="${escapeHtml(withBase(basePath))}">Return to the repository overview →</a></p>`,
+    staticPages,
+    body: `${header("Page not found", "That reference path does not exist.")}<p><a href="${escapeHtml(withBase(basePath))}">Return to ${escapeHtml(manifest.package.name)}</a></p>${renderCheckedExample(
+      "not-found",
+      example,
+      manifest,
+      withBase(basePath, `api/${principal.slug}.html`),
+    )}`,
   });
+};

@@ -64,8 +64,8 @@ jobs:
       - name: Build documentation
         env:
           DOCS_BASE_PATH: /attune/
-          DOCS_PUBLICATION_REVISION: ${{ github.sha }}
           DOCS_SITE_URL: https://becker63.github.io/attune/
+          DOCS_SOURCE_COMMIT: ${{ github.sha }}
           DOCS_SOURCE_REF: ${{ github.sha }}
         run: pnpm --filter attune-docs build
 
