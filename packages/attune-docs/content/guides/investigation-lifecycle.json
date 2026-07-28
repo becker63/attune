@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "guide.investigation-lifecycle",
+  "slug": "investigation-lifecycle",
+  "title": "Investigation lifecycle",
+  "summary": "Read the runtime as a sequence of capabilities, operations, receipts, and one terminal transition.",
+  "audience": "A contributor changing workspace, execution, receipt, artifact, or finalization behavior.",
+  "sections": [
+    {
+      "id": "capabilities",
+      "heading": "Capabilities make legal states visible",
+      "claims": [
+        {
+          "id": "lifecycle.capabilities",
+          "text": "The lifecycle model distinguishes materialized, active, and finalized investigations. The state parameter is proof carried by the value: execution consumes the active capability, while finalization ends those permissions.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["Investigation", "MaterializedInvestigation"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": ["ActiveInvestigation", "MaterializedInvestigation"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": [
+                "FinalizedInvestigation",
+                "InvestigationFinalizeResult"
+              ],
+              "facts": ["signature"]
+            }
+          ]
+        },
+        {
+          "id": "lifecycle.snapshot",
+          "text": "A snapshot is part of the capability boundary rather than an incidental string. Writer operations advance it intentionally; readers state which snapshot they expect.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["InvestigationSnapshot", "FullGitCommit"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "RepositoryCheckpointInput",
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "receipts",
+      "heading": "Every accepted invocation becomes terminal evidence",
+      "claims": [
+        {
+          "id": "lifecycle.receipts.union",
+          "text": "Receipts form a closed outcome union: succeeded, failed, or cancelled. Callers can branch on the outcome without interpreting subprocess logs or guessing whether a retry already committed evidence.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": "AttuneReceipt",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "SucceededReceipt",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "FailedReceipt",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "CancelledReceipt",
+              "facts": ["signature"]
+            }
+          ]
+        },
+        {
+          "id": "lifecycle.receipts.artifacts",
+          "text": "Artifact references retain URI, media type, digest, byte count, and completeness. Promotion rechecks that retained evidence before bytes cross back into the repository.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": "ArtifactReference",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "ArtifactPromoteInput",
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ownership",
+      "heading": "The service owns transitions; tools own adaptation",
+      "claims": [
+        {
+          "id": "lifecycle.service",
+          "text": "The investigation service is the application boundary. Tool descriptors bind a noun-specific request to that lifecycle, and the MCP server adapts the resulting operations to protocol calls.",
+          "certainty": "inference",
+          "evidence": [
+            {
+              "symbol": ["InvestigationService", "AttuneHandlers"],
+              "facts": ["signature", "source"]
+            },
+            {
+              "symbol": ["ToolOperation", "AttuneToolkit"],
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nextPages": ["choosing-a-tool", "changing-a-tool-safely"],
+  "unresolvedQuestions": [],
+  "provenance": {
+    "kind": "maintainer-authored"
+  }
+}

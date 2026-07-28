@@ -1,0 +1,1791 @@
+{
+  "$defs": {
+    "ArtifactPromoteInput": {
+      "additionalProperties": false,
+      "properties": {
+        "artifactUri": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "pattern": "^attune:\\/\\/investigations\\/[0-9A-HJKMNP-TV-Z]{26}\\/artifacts\\/(?:repository|joern|maude|property|ast-grep|artifact)\\/[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?\\/[A-Za-z0-9._~!$&'()*+,;=:@/-]+$",
+          "type": "string"
+        },
+        "destinationPath": {
+          "maxLength": 4096,
+          "type": "string"
+        },
+        "expectedSnapshot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/FreeFormReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        }
+      },
+      "required": [
+        "invocationId",
+        "references",
+        "investigationId",
+        "expectedSnapshot",
+        "artifactUri",
+        "destinationPath"
+      ],
+      "type": "object"
+    },
+    "ArtifactPromoteResult": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "beforeSnapshot": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            },
+            "destinationPath": {
+              "maxLength": 4096,
+              "type": "string"
+            },
+            "receipt": {
+              "$ref": "#/$defs/SucceededReceipt"
+            },
+            "workingTreeChanged": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "beforeSnapshot",
+            "destinationPath",
+            "workingTreeChanged",
+            "receipt"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "receipt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FailedReceipt"
+                },
+                {
+                  "$ref": "#/$defs/CancelledReceipt"
+                }
+              ]
+            }
+          },
+          "required": [
+            "receipt"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ArtifactReference": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "mediaType": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9!#$&^_.+-]+\\/[A-Za-z0-9!#$&^_.+-]+(?:\\s*;\\s*charset=[A-Za-z0-9._-]+)?$",
+          "type": "string"
+        },
+        "sha256": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "uri": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "pattern": "^attune:\\/\\/investigations\\/[0-9A-HJKMNP-TV-Z]{26}\\/artifacts\\/(?:repository|joern|maude|property|ast-grep|artifact)\\/[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?\\/[A-Za-z0-9._~!$&'()*+,;=:@/-]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "mediaType",
+        "sha256",
+        "bytes",
+        "complete"
+      ],
+      "type": "object"
+    },
+    "ArtifactResourceParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "tool": {
+          "enum": [
+            "repository",
+            "joern",
+            "maude",
+            "property",
+            "ast-grep",
+            "artifact"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "investigationId",
+        "tool",
+        "invocationId",
+        "path"
+      ],
+      "type": "object"
+    },
+    "AstGrepRunInput": {
+      "additionalProperties": false,
+      "properties": {
+        "configPath": {
+          "maxLength": 4096,
+          "type": "string"
+        },
+        "expectedSnapshot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "test",
+            "scan",
+            "apply"
+          ],
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/FreeFormReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "rulePaths": {
+          "items": {
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "maxItems": 1024,
+          "type": "array"
+        },
+        "timeoutMilliseconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 1200000,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "invocationId",
+        "references",
+        "investigationId",
+        "expectedSnapshot",
+        "mode",
+        "configPath",
+        "rulePaths",
+        "timeoutMilliseconds"
+      ],
+      "type": "object"
+    },
+    "AstGrepRunResult": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "changedFiles": {
+              "items": {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "findingCount": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mode": {
+              "enum": [
+                "test",
+                "scan",
+                "apply"
+              ],
+              "type": "string"
+            },
+            "receipt": {
+              "$ref": "#/$defs/SucceededReceipt"
+            },
+            "snapshotId": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "snapshotId",
+            "mode",
+            "changedFiles",
+            "receipt"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "receipt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FailedReceipt"
+                },
+                {
+                  "$ref": "#/$defs/CancelledReceipt"
+                }
+              ]
+            }
+          },
+          "required": [
+            "receipt"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "AttuneContractModelCatalog": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactPromoteInput"
+        },
+        {
+          "$ref": "#/$defs/ArtifactPromoteResult"
+        },
+        {
+          "$ref": "#/$defs/ArtifactReference"
+        },
+        {
+          "$ref": "#/$defs/ArtifactResourceParameters"
+        },
+        {
+          "$ref": "#/$defs/AstGrepRunInput"
+        },
+        {
+          "$ref": "#/$defs/AstGrepRunResult"
+        },
+        {
+          "$ref": "#/$defs/AttuneFailure"
+        },
+        {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        {
+          "$ref": "#/$defs/CancelledReceipt"
+        },
+        {
+          "$ref": "#/$defs/ContractsResourceParameters"
+        },
+        {
+          "$ref": "#/$defs/FailedReceipt"
+        },
+        {
+          "$ref": "#/$defs/FreeFormReference"
+        },
+        {
+          "$ref": "#/$defs/InvestigationFinalizeInput"
+        },
+        {
+          "$ref": "#/$defs/InvestigationFinalizeResult"
+        },
+        {
+          "$ref": "#/$defs/InvestigationResourceParameters"
+        },
+        {
+          "$ref": "#/$defs/JoernQueryInput"
+        },
+        {
+          "$ref": "#/$defs/JoernQueryResult"
+        },
+        {
+          "$ref": "#/$defs/MaudeRunInput"
+        },
+        {
+          "$ref": "#/$defs/MaudeRunResult"
+        },
+        {
+          "$ref": "#/$defs/PropertyRunInput"
+        },
+        {
+          "$ref": "#/$defs/PropertyRunResult"
+        },
+        {
+          "$ref": "#/$defs/ReceiptResourceParameters"
+        },
+        {
+          "$ref": "#/$defs/RepositoryCheckpointInput"
+        },
+        {
+          "$ref": "#/$defs/RepositoryCheckpointResult"
+        },
+        {
+          "$ref": "#/$defs/RepositoryMaterializeInput"
+        },
+        {
+          "$ref": "#/$defs/RepositoryMaterializeResult"
+        },
+        {
+          "$ref": "#/$defs/SucceededReceipt"
+        }
+      ],
+      "title": "Attune MCP model catalog"
+    },
+    "AttuneFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "InvalidIdentity",
+            "UnknownInvestigation",
+            "IdentityConflict",
+            "InvocationConflict",
+            "InvocationIncomplete",
+            "StaleSnapshot",
+            "DirtyRepository",
+            "InvalidPath",
+            "GitFailure",
+            "GitlinkUnsupported",
+            "AgentFsFailure",
+            "ProcessSpawnFailure",
+            "ProcessExitFailure",
+            "ParseFailure",
+            "DecodeFailure",
+            "TimedOut",
+            "ResourceLimited",
+            "Cancelled",
+            "ArtifactMissing",
+            "ArtifactChanged",
+            "PromotionRejected",
+            "Finalized",
+            "FinalizationFailure",
+            "ResourceTooLarge",
+            "ContractMismatch"
+          ],
+          "type": "string"
+        },
+        "expected": {
+          "anyOf": [
+            {
+              "maxLength": 8192,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "maxLength": 16384,
+          "minLength": 1,
+          "type": "string"
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "maxLength": 8192,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "path": {
+          "anyOf": [
+            {
+              "maxLength": 8192,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "AttuneToolFailure": {
+      "additionalProperties": false,
+      "properties": {
+        "_tag": {
+          "enum": [
+            "AttuneToolFailure"
+          ],
+          "type": "string"
+        },
+        "code": {
+          "enum": [
+            "InvalidIdentity",
+            "UnknownInvestigation",
+            "IdentityConflict",
+            "InvocationConflict",
+            "InvocationIncomplete",
+            "StaleSnapshot",
+            "DirtyRepository",
+            "InvalidPath",
+            "GitFailure",
+            "GitlinkUnsupported",
+            "AgentFsFailure",
+            "ProcessSpawnFailure",
+            "ProcessExitFailure",
+            "ParseFailure",
+            "DecodeFailure",
+            "TimedOut",
+            "ResourceLimited",
+            "Cancelled",
+            "ArtifactMissing",
+            "ArtifactChanged",
+            "PromotionRejected",
+            "Finalized",
+            "FinalizationFailure",
+            "ResourceTooLarge",
+            "ContractMismatch"
+          ],
+          "type": "string"
+        },
+        "expected": {
+          "anyOf": [
+            {
+              "maxLength": 8192,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "maxLength": 16384,
+          "minLength": 1,
+          "type": "string"
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "maxLength": 8192,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "path": {
+          "anyOf": [
+            {
+              "maxLength": 8192,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "_tag",
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "CancelledReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "completedAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$",
+          "type": "string"
+        },
+        "failure": {
+          "$ref": "#/$defs/AttuneFailure"
+        },
+        "inputDigest": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "operation": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "schemaVersion": {
+          "enum": [
+            1
+          ],
+          "type": "number"
+        },
+        "snapshotId": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "startedAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "cancelled"
+          ],
+          "type": "string"
+        },
+        "tool": {
+          "enum": [
+            "repository",
+            "joern",
+            "maude",
+            "property",
+            "ast-grep",
+            "artifact"
+          ],
+          "type": "string"
+        },
+        "toolchainDigest": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "invocationId",
+        "investigationId",
+        "tool",
+        "operation",
+        "inputDigest",
+        "toolchainDigest",
+        "artifacts",
+        "startedAt",
+        "completedAt",
+        "status",
+        "failure"
+      ],
+      "type": "object"
+    },
+    "ContractsResourceParameters": {
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "FailedReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "completedAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$",
+          "type": "string"
+        },
+        "failure": {
+          "$ref": "#/$defs/AttuneFailure"
+        },
+        "inputDigest": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "operation": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "schemaVersion": {
+          "enum": [
+            1
+          ],
+          "type": "number"
+        },
+        "snapshotId": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "startedAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "failed"
+          ],
+          "type": "string"
+        },
+        "tool": {
+          "enum": [
+            "repository",
+            "joern",
+            "maude",
+            "property",
+            "ast-grep",
+            "artifact"
+          ],
+          "type": "string"
+        },
+        "toolchainDigest": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "invocationId",
+        "investigationId",
+        "tool",
+        "operation",
+        "inputDigest",
+        "toolchainDigest",
+        "artifacts",
+        "startedAt",
+        "completedAt",
+        "status",
+        "failure"
+      ],
+      "type": "object"
+    },
+    "FreeFormReference": {
+      "additionalProperties": false,
+      "properties": {
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 65536,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ref": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "type": "object"
+    },
+    "InvestigationFinalizeInput": {
+      "additionalProperties": false,
+      "properties": {
+        "expectedSnapshot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/FreeFormReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        }
+      },
+      "required": [
+        "invocationId",
+        "references",
+        "investigationId",
+        "expectedSnapshot"
+      ],
+      "type": "object"
+    },
+    "InvestigationFinalizeResult": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "finalSnapshot": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            },
+            "finalizedAt": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$",
+              "type": "string"
+            },
+            "receipt": {
+              "$ref": "#/$defs/SucceededReceipt"
+            }
+          },
+          "required": [
+            "finalSnapshot",
+            "finalizedAt",
+            "receipt"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "receipt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FailedReceipt"
+                },
+                {
+                  "$ref": "#/$defs/CancelledReceipt"
+                }
+              ]
+            }
+          },
+          "required": [
+            "receipt"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "InvestigationResourceParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "investigationId"
+      ],
+      "type": "object"
+    },
+    "JoernQueryInput": {
+      "additionalProperties": false,
+      "properties": {
+        "cpgql": {
+          "maxLength": 2097152,
+          "minLength": 1,
+          "type": "string"
+        },
+        "expectedSnapshot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "type": "string"
+        },
+        "frontend": {
+          "enum": [
+            "auto",
+            "jssrc"
+          ],
+          "type": "string"
+        },
+        "importOptions": {
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": {
+              "enum": [
+                1
+              ],
+              "type": "number"
+            }
+          },
+          "required": [
+            "schemaVersion"
+          ],
+          "type": "object"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "outputFormat": {
+          "enum": [
+            "text",
+            "json"
+          ],
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/FreeFormReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "timeoutMilliseconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 1200000,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "invocationId",
+        "references",
+        "investigationId",
+        "expectedSnapshot",
+        "cpgql",
+        "frontend",
+        "importOptions",
+        "outputFormat",
+        "timeoutMilliseconds"
+      ],
+      "type": "object"
+    },
+    "JoernQueryResult": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "cpgId": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "receipt": {
+              "$ref": "#/$defs/SucceededReceipt"
+            },
+            "snapshotId": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            },
+            "summary": {}
+          },
+          "required": [
+            "snapshotId",
+            "cpgId",
+            "summary",
+            "receipt"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "receipt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FailedReceipt"
+                },
+                {
+                  "$ref": "#/$defs/CancelledReceipt"
+                }
+              ]
+            }
+          },
+          "required": [
+            "receipt"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "MaudeRunInput": {
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "maxLength": 262144,
+          "minLength": 1,
+          "type": "string"
+        },
+        "expectedSnapshot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "moduleSource": {
+          "maxLength": 2097152,
+          "minLength": 1,
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/FreeFormReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "timeoutMilliseconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 1200000,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "invocationId",
+        "references",
+        "investigationId",
+        "expectedSnapshot",
+        "moduleSource",
+        "commands",
+        "timeoutMilliseconds"
+      ],
+      "type": "object"
+    },
+    "MaudeRunResult": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "exitCode": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "receipt": {
+              "$ref": "#/$defs/SucceededReceipt"
+            },
+            "snapshotId": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            },
+            "stderrTail": {
+              "maxLength": 65536,
+              "type": "string"
+            },
+            "stdoutTail": {
+              "maxLength": 65536,
+              "type": "string"
+            }
+          },
+          "required": [
+            "snapshotId",
+            "stdoutTail",
+            "stderrTail",
+            "receipt"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "receipt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FailedReceipt"
+                },
+                {
+                  "$ref": "#/$defs/CancelledReceipt"
+                }
+              ]
+            }
+          },
+          "required": [
+            "receipt"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "PropertyRunInput": {
+      "additionalProperties": false,
+      "properties": {
+        "expectedSnapshot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": false,
+          "properties": {
+            "numRuns": {
+              "exclusiveMinimum": 0,
+              "maximum": 100000,
+              "type": "integer"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "maxLength": 4096,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": -2147483648,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "timeoutMilliseconds": {
+              "exclusiveMinimum": 0,
+              "maximum": 1200000,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "numRuns",
+            "timeoutMilliseconds"
+          ],
+          "type": "object"
+        },
+        "propertySource": {
+          "maxLength": 2097152,
+          "minLength": 1,
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/FreeFormReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        }
+      },
+      "required": [
+        "invocationId",
+        "references",
+        "investigationId",
+        "expectedSnapshot",
+        "propertySource",
+        "parameters"
+      ],
+      "type": "object"
+    },
+    "PropertyRunResult": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "counterexamplePath": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "numRuns": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "numShrinks": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "outcome": {
+              "enum": [
+                "no-counterexample",
+                "counterexample"
+              ],
+              "type": "string"
+            },
+            "receipt": {
+              "$ref": "#/$defs/SucceededReceipt"
+            },
+            "seed": {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": -2147483648,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "snapshotId": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "snapshotId",
+            "outcome",
+            "receipt"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "receipt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FailedReceipt"
+                },
+                {
+                  "$ref": "#/$defs/CancelledReceipt"
+                }
+              ]
+            }
+          },
+          "required": [
+            "receipt"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ReceiptResourceParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "tool": {
+          "enum": [
+            "repository",
+            "joern",
+            "maude",
+            "property",
+            "ast-grep",
+            "artifact"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "investigationId",
+        "tool",
+        "invocationId"
+      ],
+      "type": "object"
+    },
+    "RepositoryCheckpointInput": {
+      "additionalProperties": false,
+      "properties": {
+        "expectedSnapshot": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "maxLength": 16384,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "policy": {
+          "enum": [
+            "require-clean",
+            "commit"
+          ],
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/FreeFormReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        }
+      },
+      "required": [
+        "invocationId",
+        "references",
+        "investigationId",
+        "expectedSnapshot",
+        "policy"
+      ],
+      "type": "object"
+    },
+    "RepositoryCheckpointResult": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "createdCommit": {
+              "type": "boolean"
+            },
+            "receipt": {
+              "$ref": "#/$defs/SucceededReceipt"
+            },
+            "snapshotId": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "snapshotId",
+            "createdCommit",
+            "receipt"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "receipt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FailedReceipt"
+                },
+                {
+                  "$ref": "#/$defs/CancelledReceipt"
+                }
+              ]
+            }
+          },
+          "required": [
+            "receipt"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "RepositoryMaterializeInput": {
+      "additionalProperties": false,
+      "properties": {
+        "investigationId": {
+          "anyOf": [
+            {
+              "maxLength": 26,
+              "minLength": 1,
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "references": {
+          "items": {
+            "$ref": "#/$defs/FreeFormReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "remote": {
+          "maxLength": 8192,
+          "minLength": 1,
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "invocationId",
+        "references",
+        "remote",
+        "revision"
+      ],
+      "type": "object"
+    },
+    "RepositoryMaterializeResult": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "branch": {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "investigationId": {
+              "maxLength": 26,
+              "minLength": 1,
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            "receipt": {
+              "$ref": "#/$defs/SucceededReceipt"
+            },
+            "requestedRevision": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "type": "string"
+            },
+            "resolvedCommit": {
+              "maxLength": 64,
+              "minLength": 1,
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "investigationId",
+            "requestedRevision",
+            "resolvedCommit",
+            "branch",
+            "receipt"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "receipt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FailedReceipt"
+                },
+                {
+                  "$ref": "#/$defs/CancelledReceipt"
+                }
+              ]
+            }
+          },
+          "required": [
+            "receipt"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "SucceededReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ArtifactReference"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "completedAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$",
+          "type": "string"
+        },
+        "inputDigest": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "investigationId": {
+          "maxLength": 26,
+          "minLength": 1,
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "invocationId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "operation": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "schemaVersion": {
+          "enum": [
+            1
+          ],
+          "type": "number"
+        },
+        "snapshotId": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+          "type": "string"
+        },
+        "startedAt": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z$",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "succeeded"
+          ],
+          "type": "string"
+        },
+        "tool": {
+          "enum": [
+            "repository",
+            "joern",
+            "maude",
+            "property",
+            "ast-grep",
+            "artifact"
+          ],
+          "type": "string"
+        },
+        "toolchainDigest": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "invocationId",
+        "investigationId",
+        "tool",
+        "operation",
+        "inputDigest",
+        "toolchainDigest",
+        "artifacts",
+        "startedAt",
+        "completedAt",
+        "status",
+        "snapshotId"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://attune.dev/contracts/attune-tools.schema.json",
+  "$ref": "#/$defs/AttuneContractModelCatalog",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Attune MCP capability contract",
+  "x-attune": {
+    "resources": {
+      "artifact": {
+        "parameters": {
+          "$ref": "#/$defs/ArtifactResourceParameters"
+        },
+        "uriTemplate": "attune://investigations/{investigationId}/artifacts/{tool}/{invocationId}/{+path}"
+      },
+      "contracts": {
+        "parameters": {
+          "$ref": "#/$defs/ContractsResourceParameters"
+        },
+        "uriTemplate": "attune://contracts"
+      },
+      "investigation": {
+        "parameters": {
+          "$ref": "#/$defs/InvestigationResourceParameters"
+        },
+        "uriTemplate": "attune://investigations/{investigationId}"
+      },
+      "receipt": {
+        "parameters": {
+          "$ref": "#/$defs/ReceiptResourceParameters"
+        },
+        "uriTemplate": "attune://investigations/{investigationId}/receipts/{tool}/{invocationId}"
+      }
+    },
+    "schemaVersion": 1,
+    "tools": {
+      "artifact_promote": {
+        "failure": {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        "input": {
+          "$ref": "#/$defs/ArtifactPromoteInput"
+        },
+        "result": {
+          "$ref": "#/$defs/ArtifactPromoteResult"
+        }
+      },
+      "ast_grep_run": {
+        "failure": {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        "input": {
+          "$ref": "#/$defs/AstGrepRunInput"
+        },
+        "result": {
+          "$ref": "#/$defs/AstGrepRunResult"
+        }
+      },
+      "investigation_finalize": {
+        "failure": {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        "input": {
+          "$ref": "#/$defs/InvestigationFinalizeInput"
+        },
+        "result": {
+          "$ref": "#/$defs/InvestigationFinalizeResult"
+        }
+      },
+      "joern_query": {
+        "failure": {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        "input": {
+          "$ref": "#/$defs/JoernQueryInput"
+        },
+        "result": {
+          "$ref": "#/$defs/JoernQueryResult"
+        }
+      },
+      "maude_run": {
+        "failure": {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        "input": {
+          "$ref": "#/$defs/MaudeRunInput"
+        },
+        "result": {
+          "$ref": "#/$defs/MaudeRunResult"
+        }
+      },
+      "property_run": {
+        "failure": {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        "input": {
+          "$ref": "#/$defs/PropertyRunInput"
+        },
+        "result": {
+          "$ref": "#/$defs/PropertyRunResult"
+        }
+      },
+      "repository_checkpoint": {
+        "failure": {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        "input": {
+          "$ref": "#/$defs/RepositoryCheckpointInput"
+        },
+        "result": {
+          "$ref": "#/$defs/RepositoryCheckpointResult"
+        }
+      },
+      "repository_materialize": {
+        "failure": {
+          "$ref": "#/$defs/AttuneToolFailure"
+        },
+        "input": {
+          "$ref": "#/$defs/RepositoryMaterializeInput"
+        },
+        "result": {
+          "$ref": "#/$defs/RepositoryMaterializeResult"
+        }
+      }
+    }
+  }
+}

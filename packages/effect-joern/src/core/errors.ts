@@ -1,7 +1,15 @@
 import { Data } from "effect";
 
+import type { JoernQueryDiagnosticResponse } from "./transport.js";
+
 const snippet = (value: string, max = 400): string =>
   value.length <= max ? value : `${value.slice(0, max)}...`;
+
+export interface JoernServerOutputTails {
+  readonly limitBytesPerStream: number;
+  readonly stdoutTail: string;
+  readonly stderrTail: string;
+}
 
 export class JoernError extends Data.TaggedError("JoernError")<{
   readonly message: string;
@@ -14,6 +22,10 @@ export class JoernHttpError extends Data.TaggedError("JoernHttpError")<{
   readonly status: number;
   readonly body: string;
   readonly query?: string;
+  readonly diagnostic?: JoernQueryDiagnosticResponse;
+  readonly responseComplete?: boolean;
+  readonly responseLimitBytes?: number;
+  readonly responseBytesObserved?: number;
 }> {
   get bodySnippet(): string {
     return snippet(this.body);
@@ -62,5 +74,6 @@ export class JoernImportError extends Data.TaggedError("JoernImportError")<{
   readonly message: string;
   readonly repoPath: string;
   readonly baseUrl: string;
+  readonly serverOutput?: JoernServerOutputTails;
   readonly cause?: unknown;
 }> {}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Attune Investigation"
+  short_description: "Run reproducible architectural investigations"
+  default_prompt: "Use $attune-investigation to investigate this repository claim through evidence, theory, falsification, and lowering."

@@ -1,0 +1,4 @@
+# Narrative evidence and deployment changes require an Attune maintainer.
+/packages/attune-docs/content/ @becker63
+/packages/attune-docs/docs-policy.json @becker63
+/.github/workflows/pages.yml @becker63

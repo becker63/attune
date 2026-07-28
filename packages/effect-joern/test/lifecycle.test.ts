@@ -26,6 +26,8 @@ const process = (
   options: {
     readonly exitCode?: ChildProcessSpawner.ChildProcessHandle["exitCode"];
     readonly kill?: ChildProcessSpawner.ChildProcessHandle["kill"];
+    readonly stderr?: string;
+    readonly stdout?: string;
   } = {},
 ): ChildProcessSpawner.ChildProcessHandle =>
   ChildProcessSpawner.makeHandle({
@@ -36,9 +38,15 @@ const process = (
     isRunning: Effect.succeed(true),
     kill: options.kill ?? (() => Effect.void),
     pid: ChildProcessSpawner.ProcessId(12_345),
-    stderr: Stream.empty,
+    stderr:
+      options.stderr === undefined
+        ? Stream.empty
+        : Stream.make(Buffer.from(options.stderr)),
     stdin: Sink.drain,
-    stdout: Stream.empty,
+    stdout:
+      options.stdout === undefined
+        ? Stream.empty
+        : Stream.make(Buffer.from(options.stdout)),
     unref: Effect.succeed(Effect.void),
   });
 
@@ -285,5 +293,93 @@ describe("joern lifecycle", () => {
     }
     expect(startedCommand.options.killSignal).toBe("SIGTERM");
     expect(startedCommand.options.forceKillAfter).toBe("2 seconds");
+  });
+
+  it("exposes bounded server output tails without changing server identity", async () => {
+    const server = await runScoped(
+      Effect.gen(function* () {
+        const acquired = yield* scopedJoernServer(
+          {
+            command: executable,
+            port,
+            repoPath: "/work/example",
+            readinessIntervalMs: 1,
+            readinessTimeoutMs: 50,
+            skipInitialImport: true,
+          },
+          transport({
+            ready: () => Effect.sleep("1 millis").pipe(Effect.as(true)),
+          }),
+        );
+        yield* Effect.yieldNow;
+        return {
+          baseUrl: acquired.baseUrl,
+          output: yield* acquired.outputTails,
+          projectName: acquired.projectName,
+          repoPath: acquired.repoPath,
+        };
+      }),
+      () =>
+        Effect.succeed(
+          process({
+            stderr: "server stderr",
+            stdout: "server stdout",
+          }),
+        ),
+    );
+
+    expect(server.baseUrl).toBe(`http://127.0.0.1:${port}`);
+    expect(server.repoPath).toBe("/work/example");
+    expect(server.projectName).toMatch(/^example-[a-f0-9]{8}$/u);
+    expect(server.output).toStrictEqual({
+      limitBytesPerStream: 64 * 1024,
+      stderrTail: "server stderr",
+      stdoutTail: "server stdout",
+    });
+  });
+
+  it("attaches available server tails to import failures", async () => {
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        scopedJoernServer(
+          {
+            command: executable,
+            port,
+            repoPath: "/work/example",
+            readinessIntervalMs: 1,
+            readinessTimeoutMs: 50,
+          },
+          transport({
+            importCode: () => Effect.fail(new Error("import failed") as never),
+            ready: () => Effect.sleep("1 millis").pipe(Effect.as(true)),
+          }),
+        ),
+      ).pipe(
+        Effect.provide(
+          spawnerLayer(() =>
+            Effect.succeed(
+              process({
+                stderr: "import diagnostic",
+                stdout: "server banner",
+              }),
+            ),
+          ),
+        ),
+        Effect.provide(Path.layer),
+        Effect.result,
+      ),
+    );
+
+    if (!Result.isFailure(result)) {
+      throw new Error("Expected repository import to fail");
+    }
+    expect(result.failure).toMatchObject({
+      _tag: "JoernImportError",
+      serverOutput: {
+        limitBytesPerStream: 64 * 1024,
+        stderrTail: "import diagnostic",
+        stdoutTail: "server banner",
+      },
+    });
   });
 });

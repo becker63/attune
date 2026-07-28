@@ -62,6 +62,11 @@ let
   };
   joernRuntimePath = pkgs.lib.makeBinPath [
     astgen
+    pkgs.coreutils
+    pkgs.findutils
+    pkgs.gawk
+    pkgs.gnugrep
+    pkgs.gnused
     pkgs.gzip
     pkgs.jdk21
   ];

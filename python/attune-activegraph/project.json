@@ -1,0 +1,105 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "attune-activegraph",
+  "projectType": "library",
+  "sourceRoot": "python/attune-activegraph/src",
+  "tags": ["type:application", "scope:attune", "platform:python"],
+  "targets": {
+    "contracts:generate": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked python scripts/generate_contract_models.py generate"
+      },
+      "outputs": [
+        "{projectRoot}/src/attune_activegraph/generated/models.py",
+        "{projectRoot}/src/attune_activegraph/generated/contract.py"
+      ]
+    },
+    "contracts:check": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": [
+        {
+          "projects": ["attune-mcp"],
+          "target": "schema:check"
+        }
+      ],
+      "inputs": [
+        "{projectRoot}/pyproject.toml",
+        "{projectRoot}/uv.lock",
+        "{projectRoot}/scripts/generate_contract_models.py",
+        "{projectRoot}/src/attune_activegraph/generated/**/*",
+        "{workspaceRoot}/contracts/attune-tools.schema.json",
+        "{workspaceRoot}/contracts/attune-tools.sha256"
+      ],
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked python scripts/generate_contract_models.py check"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked ruff format ."
+      }
+    },
+    "format:check": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked ruff format --check ."
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked ruff check ."
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["contracts:check"],
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked basedpyright"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["contracts:check"],
+      "outputs": ["{projectRoot}/.pytest_cache"],
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked pytest"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["contracts:check"],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv build"
+      }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": ["build", "contracts:check"],
+      "options": {
+        "cwd": "python/attune-activegraph",
+        "command": "uv run --locked python -c \"from activegraph.packs import clear_discovery_cache, discover; clear_discovery_cache(); packs = {item.name: item.pack for item in discover()}; assert packs['attune_effect_tools'].version.startswith('0.0.0+contract.')\""
+      }
+    }
+  }
+}

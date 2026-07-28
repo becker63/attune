@@ -12,6 +12,6 @@ export default defineConfig({
     exclude: ["node_modules/**", "dist/**"],
     globals: true,
     include: ["test/**/*.test.ts"],
-    maxWorkers: 2,
+    maxWorkers: 1,
   },
 });

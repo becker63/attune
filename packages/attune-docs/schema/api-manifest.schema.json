@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://becker63.github.io/attune/schemas/api-manifest.schema.json",
+  "title": "Attune deterministic API manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "package",
+    "source",
+    "generator",
+    "symbols",
+    "diagnostics"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "package": { "$ref": "#/$defs/package" },
+    "source": { "$ref": "#/$defs/manifestSource" },
+    "generator": { "$ref": "#/$defs/generator" },
+    "symbols": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/symbol" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "entryPoint"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "entryPoint": { "type": "string", "minLength": 1 }
+      }
+    },
+    "manifestSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "ref", "digest", "repositoryUrl"],
+      "properties": {
+        "revision": { "type": "string", "minLength": 1 },
+        "ref": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/digest" },
+        "repositoryUrl": { "type": "string", "format": "uri" }
+      }
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "typescriptVersion",
+        "tsMorphVersion",
+        "tsMorphCompilerVersion"
+      ],
+      "properties": {
+        "name": { "const": "attune-docs" },
+        "version": { "type": "string", "minLength": 1 },
+        "typescriptVersion": { "type": "string", "minLength": 1 },
+        "tsMorphVersion": { "type": "string", "minLength": 1 },
+        "tsMorphCompilerVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sourceLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line", "endLine", "url"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "endLine": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "typeParameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "constraint": { "type": "string" },
+        "default": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "signature", "summary", "source"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "kind": { "$ref": "#/$defs/symbolKind" },
+        "signature": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string" },
+        "source": { "$ref": "#/$defs/sourceLocation" }
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "target", "source"],
+      "properties": {
+        "kind": {
+          "enum": ["requires", "produces", "transitionsTo", "throws"]
+        },
+        "target": { "type": "string", "minLength": 1 },
+        "targetSymbolId": { "type": "string", "minLength": 1 },
+        "source": { "enum": ["tsdoc", "descriptor"] }
+      }
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "digest", "value"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": [
+            "declaration",
+            "documentation",
+            "member",
+            "relation",
+            "signature",
+            "source"
+          ]
+        },
+        "digest": { "$ref": "#/$defs/digest" },
+        "value": { "type": "string" }
+      }
+    },
+    "symbolKind": {
+      "enum": [
+        "class",
+        "enum",
+        "function",
+        "interface",
+        "namespace",
+        "type",
+        "variable",
+        "unknown"
+      ]
+    },
+    "symbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "exportName",
+        "slug",
+        "kind",
+        "declaration",
+        "signature",
+        "summary",
+        "remarks",
+        "examples",
+        "typeParameters",
+        "members",
+        "relations",
+        "source",
+        "facts"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "exportName": { "type": "string", "minLength": 1 },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "kind": { "$ref": "#/$defs/symbolKind" },
+        "declaration": { "type": "string", "minLength": 1 },
+        "signature": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string" },
+        "remarks": { "type": "string" },
+        "examples": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "typeParameters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/typeParameter" }
+        },
+        "members": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/member" }
+        },
+        "relations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/relation" }
+        },
+        "source": { "$ref": "#/$defs/sourceLocation" },
+        "facts": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/fact" }
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "symbolId", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "invalid-relation",
+            "missing-documentation",
+            "missing-relation"
+          ]
+        },
+        "severity": { "enum": ["error", "warning"] },
+        "symbolId": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://becker63.github.io/attune/schemas/guide-approval.schema.json",
+  "title": "Attune persisted guide approval",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "guideId",
+    "status",
+    "reviewer",
+    "decisionId",
+    "decidedAt",
+    "sourceRevision",
+    "manifestDigest",
+    "draftDigest",
+    "evidenceDigest"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "guideId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+    },
+    "status": { "const": "approved" },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "decisionId": { "type": "string", "minLength": 1 },
+    "decidedAt": { "type": "string", "format": "date-time" },
+    "sourceRevision": { "type": "string", "minLength": 1 },
+    "manifestDigest": { "$ref": "#/$defs/digest" },
+    "draftDigest": { "$ref": "#/$defs/digest" },
+    "evidenceDigest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

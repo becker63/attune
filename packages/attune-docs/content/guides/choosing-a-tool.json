@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "guide.choosing-a-tool",
+  "slug": "choosing-a-tool",
+  "title": "Choosing a tool noun",
+  "summary": "Pick the operation by the kind of evidence you need, then follow its typed descriptor into the lifecycle.",
+  "audience": "A research-agent author or contributor deciding which Attune capability should perform a step.",
+  "sections": [
+    {
+      "id": "repository",
+      "heading": "Repository establishes and advances the subject",
+      "claims": [
+        {
+          "id": "tools.repository",
+          "text": "Use repository materialization to establish an exact base and repository checkpoint to turn an intentional workspace change into the next snapshot. These are lifecycle operations, not general Git wrappers.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": [
+                "RepositoryMaterializeOperation",
+                "RepositoryMaterializeTool"
+              ],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": [
+                "RepositoryCheckpointOperation",
+                "RepositoryCheckpointTool"
+              ],
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "analysis",
+      "heading": "Joern observes structure",
+      "claims": [
+        {
+          "id": "tools.joern",
+          "text": "Use Joern when the question is about code-property-graph structure. The operation accepts either the typed query projection or an explicit raw query with a result schema at the lower library boundary.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["JoernQueryOperation", "JoernQueryTool"],
+              "facts": ["signature", "source"]
+            },
+            {
+              "symbol": "JoernQueryInput",
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "formal-and-falsifiable",
+      "heading": "Maude formalizes; properties falsify",
+      "claims": [
+        {
+          "id": "tools.maude",
+          "text": "Use Maude to retain a formal module and command result as native evidence. Its request is scoped to the investigation rather than treated as a free-standing shell command.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["MaudeRunOperation", "MaudeRunTool"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "MaudeRunInput",
+              "facts": ["signature"]
+            }
+          ]
+        },
+        {
+          "id": "tools.property",
+          "text": "Use the property runner when an executable invariant should be tested and minimized. Seed, path, run counts, and counterexample data remain part of the typed result.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["PropertyRunOperation", "PropertyRunTool"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "PropertyRunResult",
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "enforcement",
+      "heading": "ast-grep enshrines a structural finding",
+      "claims": [
+        {
+          "id": "tools.ast-grep",
+          "text": "Use ast-grep when a structural rule should be scanned or rewritten. Writer policy remains explicit, so a rewrite is distinguishable from a read-only scan in both the type and lifecycle layers.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["AstGrepRunOperation", "AstGrepRunTool"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "AstGrepRunInput",
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nextPages": ["changing-a-tool-safely", "investigation-lifecycle"],
+  "unresolvedQuestions": [],
+  "provenance": {
+    "kind": "maintainer-authored"
+  }
+}

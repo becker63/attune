@@ -9,6 +9,7 @@ import {
   JoernImportError,
   JoernServerStartError,
   JoernServerTimeoutError,
+  type JoernServerOutputTails,
 } from "./errors.js";
 import type { JoernImportFrontend, JoernTransport } from "./transport.js";
 
@@ -34,11 +35,12 @@ export type JoernLayerError =
 
 export type JoernServer = {
   readonly baseUrl: string;
+  readonly outputTails: Effect.Effect<JoernServerOutputTails>;
   readonly repoPath: string;
   readonly projectName: string;
 };
 
-type StartedJoernServer = JoernServer & {
+type StartedJoernServer = Omit<JoernServer, "outputTails"> & {
   readonly args: readonly string[];
   readonly command: string;
   readonly port: number;
@@ -49,6 +51,17 @@ type StartedJoernServer = JoernServer & {
 
 const appendOutput = (current: string, chunk: string): string =>
   `${current}${chunk}`.slice(-outputLimit);
+
+const readOutputTails = (
+  started: StartedJoernServer,
+): Effect.Effect<JoernServerOutputTails> =>
+  Effect.all([Ref.get(started.stdout), Ref.get(started.stderr)]).pipe(
+    Effect.map(([stdoutTail, stderrTail]) => ({
+      limitBytesPerStream: outputLimit,
+      stderrTail,
+      stdoutTail,
+    })),
+  );
 
 const drainOutput = (
   stream: Stream.Stream<Uint8Array, PlatformError.PlatformError>,
@@ -162,10 +175,7 @@ const earlyExit = (
   cause: unknown,
 ): Effect.Effect<never, JoernServerStartError> =>
   Effect.gen(function* earlyExitBody() {
-    const [stdout, stderr] = yield* Effect.all([
-      Ref.get(started.stdout),
-      Ref.get(started.stderr),
-    ]);
+    const output = yield* readOutputTails(started);
 
     return yield* Effect.fail(
       new JoernServerStartError({
@@ -174,8 +184,8 @@ const earlyExit = (
         command: started.command,
         message: "Joern server process exited before becoming ready",
         port: started.port,
-        stderr,
-        stdout,
+        stderr: output.stderrTail,
+        stdout: output.stdoutTail,
       }),
     );
   });
@@ -217,18 +227,15 @@ const waitUntilReady = (
     );
     if (Option.isSome(result)) return;
 
-    const [stdout, stderr] = yield* Effect.all([
-      Ref.get(started.stdout),
-      Ref.get(started.stderr),
-    ]);
+    const output = yield* readOutputTails(started);
     return yield* Effect.fail(
       new JoernServerTimeoutError({
         args: started.args,
         command: started.command,
         message: "Timed out waiting for Joern server readiness",
         port: config.port,
-        stderr,
-        stdout,
+        stderr: output.stderrTail,
+        stdout: output.stdoutTail,
         timeoutMs: timeout,
       }),
     );
@@ -254,20 +261,27 @@ const initializeJoernServer = (
           config.frontend,
         )
         .pipe(
-          Effect.mapError(
-            (cause) =>
-              new JoernImportError({
-                baseUrl: started.baseUrl,
-                cause,
-                message: "Joern repository import failed",
-                repoPath: started.repoPath,
-              }),
+          Effect.catch((cause) =>
+            readOutputTails(started).pipe(
+              Effect.flatMap((serverOutput) =>
+                Effect.fail(
+                  new JoernImportError({
+                    baseUrl: started.baseUrl,
+                    cause,
+                    message: "Joern repository import failed",
+                    repoPath: started.repoPath,
+                    serverOutput,
+                  }),
+                ),
+              ),
+            ),
           ),
         );
     }
 
     return {
       baseUrl: started.baseUrl,
+      outputTails: readOutputTails(started),
       projectName: started.projectName,
       repoPath: started.repoPath,
     };

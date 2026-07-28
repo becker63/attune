@@ -5,9 +5,11 @@
     "**/coverage/**",
     "**/dist/**",
     "**/node_modules/**",
+    "contracts/attune-tools.schema.json",
     "flake.lock",
     "packages/effect-joern/schema/**",
-    "pnpm-lock.yaml"
+    "pnpm-lock.yaml",
+    "python/attune-activegraph/examples/guide-trace.json"
   ],
   "printWidth": 80,
   "sortImports": true

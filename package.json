@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "nx run-many -t generate && nx run attune:format:check && nx run attune:lint && nx run-many -t typecheck && nx run-many -t test && nx run-many -t build && nx run-many -t package:check",
-    "format": "oxfmt . && nixfmt flake.nix nix/joern.nix",
-    "format:check": "oxfmt --check . && nixfmt --check flake.nix nix/joern.nix",
+    "check": "pnpm check:typescript && nx run-many -t contracts:check format:check lint typecheck test build smoke --projects=attune-activegraph",
+    "check:typescript": "nx run-many -t generate --exclude=attune-activegraph && nx run attune:format:check && nx run attune:lint && nx run-many -t typecheck --exclude=attune-activegraph && nx run-many -t test --exclude=attune-activegraph && nx run-many -t build --exclude=attune-activegraph && nx run-many -t smoke --exclude=attune-activegraph && nx run-many -t package:check --exclude=attune-activegraph",
+    "format": "oxfmt . && nixfmt flake.nix nix/agentfs.nix nix/joern.nix nix/workspace.nix",
+    "format:check": "oxfmt --check . && nixfmt --check flake.nix nix/agentfs.nix nix/joern.nix nix/workspace.nix",
     "graph": "nx graph",
     "lint": "oxlint --type-aware --deny-warnings .",
     "lint:fix": "oxlint --type-aware --deny-warnings --fix ."

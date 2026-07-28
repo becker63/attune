@@ -1,12 +1,27 @@
 # Attune
 
-Attune is a clean-slate Nx monorepo for Effect-native program analysis
-libraries. This branch keeps the repository's Git ancestry while replacing the
-working tree completely; no earlier Attune implementation is carried forward.
+Attune is an Effect-native investigation system for reproducible program
+analysis. Its mechanical tools run behind a typed MCP boundary; ActiveGraph
+adds replay-safe research and documentation provenance without replacing that
+authority.
 
-The first package is [`effect-joern`](./packages/effect-joern), a
-platform-neutral Effect v4 interface and generated TypeScript query DSL for
-Joern.
+Read the repository map, investigation lifecycle, contributor guides, and
+generated API reference at
+**[becker63.github.io/attune](https://becker63.github.io/attune/)**.
+
+## System map
+
+- [`effect-joern`](./packages/effect-joern) is the platform-neutral Effect v4
+  interface and generated TypeScript query DSL for Joern.
+- [`attune-mcp`](./packages/attune-mcp) owns the typed investigation lifecycle,
+  eight mechanical MCP operations, receipts, artifacts, workspace safety, and
+  the authoritative Effect schemas.
+- [`attune-activegraph`](./python/attune-activegraph) projects the frozen MCP
+  contract into strict Python models and exposes replay-safe ActiveGraph tools.
+- [`attune-docs`](./packages/attune-docs) deterministically extracts the current
+  type surface and publishes grounded onboarding and API reference pages.
+- [`contracts`](./contracts) contains generated cross-language contract bytes
+  and their exact digest; [`nix`](./nix) pins the executable runtime.
 
 ## Toolchain
 
@@ -51,8 +66,8 @@ pnpm nx graph
 ## Nix
 
 `flake.lock` pins nixpkgs. The flake exposes the Node and pnpm versions used by
-the workspace, the built `effect-joern` package, Joern, astgen, and the CPG
-schema sources:
+the workspace; the built `effect-joern`, `attune-mcp`, `attune-activegraph`,
+and `attune-lab` packages; Joern; astgen; and the CPG schema sources:
 
 ```bash
 nix build

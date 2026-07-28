@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "guideId": "guide.changing-a-tool-safely",
+  "status": "approved",
+  "reviewer": "becker63",
+  "decisionId": "user-authorized-final-onboarding-publication-2026-07-27",
+  "decidedAt": "2026-07-28T04:21:06Z",
+  "sourceRevision": "sha256:d96297d8668760727a27733dc98a6ebc5a15f83c2c96e468907a4da3e2b1ad17",
+  "manifestDigest": "584ef851e52104a3dd7ab898f76789b2946df8f3e10c8fedf6e856e7c73e5451",
+  "draftDigest": "6e35505a21ea7ae36a8b38e309e065ea7ad2a48429712e7e7663300944b50e54",
+  "evidenceDigest": "49b674ba278c8f09b06a6230cfc98b3e79928eada6b07fd58a5301dbd6ff305d"
+}

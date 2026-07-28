@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "guide.changing-a-tool-safely",
+  "slug": "changing-a-tool-safely",
+  "title": "Changing a tool safely",
+  "summary": "Change one typed descriptor, follow its derived relationships, and verify every generated projection.",
+  "audience": "A contributor adding a tool operation or changing the input, result, receipt, error, or writer policy of an existing one.",
+  "sections": [
+    {
+      "id": "descriptor",
+      "heading": "Begin at the descriptor",
+      "claims": [
+        {
+          "id": "change.descriptor",
+          "text": "The operation descriptor is the machine authority for its name, input, result, receipt, error, writer policy, and lifecycle relation. Change that boundary before adapting handlers or protocol registration.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["ToolOperation", "AttuneToolkit"],
+              "facts": ["signature", "source"]
+            },
+            {
+              "symbol": ["ATTUNE_OPERATIONS", "TOOL_CONTRACTS"],
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inference",
+      "heading": "Keep operation relationships inferred",
+      "claims": [
+        {
+          "id": "change.inference",
+          "text": "Callers should infer an operation's input, result, receipt, error, and writer policy from the descriptor. If a change requires callers to repeat those type arguments or returns a union of every operation, the generic boundary has widened.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["OperationInput", "RepositoryMaterializeInput"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": ["OperationResult", "RepositoryMaterializeResult"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": ["OperationReceipt", "AttuneReceipt"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": ["OperationError", "AttuneToolFailure"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": ["OperationWriterPolicy", "RepositoryCheckpointInput"],
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "projections",
+      "heading": "Verify projections and evidence",
+      "claims": [
+        {
+          "id": "change.contract",
+          "text": "Regenerate and compare the compound JSON Schema whenever an Effect contract changes. The checked-in digest is consumed by the Python ActiveGraph bridge before its first tool call.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": "generateContractBundle",
+              "facts": ["signature", "source"]
+            },
+            {
+              "symbol": "TOOL_CONTRACTS",
+              "facts": ["signature"]
+            }
+          ]
+        },
+        {
+          "id": "change.docs",
+          "text": "Regenerate this manifest and revalidate only guides that cite changed facts. A prose-agent run is traceable execution, while the descriptor, source signature, and reviewed evidence remain the factual support.",
+          "certainty": "inference",
+          "evidence": [
+            {
+              "symbol": ["ToolOperation", "AttuneToolkit"],
+              "facts": ["signature", "source"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nextPages": ["investigation-quickstart", "investigation-lifecycle"],
+  "unresolvedQuestions": [],
+  "provenance": {
+    "kind": "maintainer-authored"
+  }
+}

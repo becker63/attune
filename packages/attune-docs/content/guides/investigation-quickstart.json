@@ -1,0 +1,111 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "guide.investigation-quickstart",
+  "slug": "investigation-quickstart",
+  "title": "Investigation quickstart",
+  "summary": "Follow one repository from an exact revision through typed work, terminal evidence, and finalization.",
+  "audience": "A contributor making their first change to Attune or calling its MCP tools for the first time.",
+  "sections": [
+    {
+      "id": "materialize",
+      "heading": "Materialize an exact repository",
+      "claims": [
+        {
+          "id": "quickstart.materialize.input",
+          "text": "Begin with repository materialization. The request names the remote, revision, invocation, and optional investigation identity; the runtime resolves that request into an investigation instead of letting later tools operate on an arbitrary path.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": "RepositoryMaterializeInput",
+              "facts": ["signature"]
+            }
+          ]
+        },
+        {
+          "id": "quickstart.materialize.result",
+          "text": "Keep the returned investigation and snapshot identities together. They are the stable coordinates used by later operations and by receipt inspection.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": [
+                "ActiveInvestigation",
+                "MaterializedInvestigation",
+                "RepositoryMaterializeResult"
+              ],
+              "facts": ["signature", "source"]
+            },
+            {
+              "symbol": "RepositoryMaterializeResult",
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "execute",
+      "heading": "Execute against the expected snapshot",
+      "claims": [
+        {
+          "id": "quickstart.execute.service",
+          "text": "Operations run through the investigation service boundary. An operation-specific request retains its own input and result relationship instead of widening into a generic JSON handler.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": ["InvestigationService", "AttuneHandlers"],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": ["ToolOperation", "JoernQueryInput"],
+              "facts": ["signature"]
+            }
+          ]
+        },
+        {
+          "id": "quickstart.execute.receipt",
+          "text": "Treat the terminal receipt as durable evidence of what ran. Success, failure, and cancellation remain distinct outcomes, and retained artifacts point back to the invocation that produced them.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": "AttuneReceipt",
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "ArtifactReference",
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finalize",
+      "heading": "Finalize deliberately",
+      "claims": [
+        {
+          "id": "quickstart.finalize.transition",
+          "text": "Finalization is a lifecycle transition, not filesystem cleanup by convention. It closes the active investigation boundary and returns the final manifest for inspection.",
+          "certainty": "direct",
+          "evidence": [
+            {
+              "symbol": [
+                "InvestigationFinalizeOperation",
+                "InvestigationFinalizeTool"
+              ],
+              "facts": ["signature"]
+            },
+            {
+              "symbol": "InvestigationFinalizeResult",
+              "facts": ["signature"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nextPages": ["investigation-lifecycle", "choosing-a-tool"],
+  "unresolvedQuestions": [],
+  "provenance": {
+    "kind": "maintainer-authored"
+  }
+}

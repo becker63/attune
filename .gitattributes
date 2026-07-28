@@ -1,0 +1,2 @@
+# Unified-diff context rows use a mandatory single-space prefix.
+nix/patches/*.patch whitespace=-blank-at-eol

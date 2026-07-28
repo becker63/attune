@@ -1,0 +1,154 @@
+diff --git a/sdk/rust/src/filesystem/overlayfs.rs b/sdk/rust/src/filesystem/overlayfs.rs
+index c319a59..7777f8e 100644
+--- a/sdk/rust/src/filesystem/overlayfs.rs
++++ b/sdk/rust/src/filesystem/overlayfs.rs
+@@ -382,6 +382,26 @@ impl OverlayFS {
+         self.origin_map.read().unwrap().get(&delta_ino).copied()
+     }
+ 
++    /// Resolve a persisted base origin only when it still names the same path
++    /// in the current HostFS session.
++    ///
++    /// HostFS inode numbers are allocated in lookup order and are not stable
++    /// across remounts. An origin persisted by a previous session can therefore
++    /// collide with an unrelated path in the current session. Reusing that
++    /// mapping would expose two paths as one FUSE inode.
++    fn get_live_origin_overlay_ino(&self, base_ino: i64, path: &str) -> Option<i64> {
++        let overlay_ino = self
++            .reverse_map
++            .read()
++            .unwrap()
++            .get(&(Layer::Base, base_ino))
++            .copied()?;
++        let inode_map = self.inode_map.read().unwrap();
++        let info = inode_map.get(&overlay_ino)?;
++        (info.layer == Layer::Base && info.underlying_ino == base_ino && info.path == path)
++            .then_some(overlay_ino)
++    }
++
+     /// Promote an overlay inode from base layer to delta layer.
+     ///
+     /// When a directory that was originally looked up from base gets a
+@@ -659,13 +679,11 @@ impl FileSystem for OverlayFS {
+             // Origin mapping: reuse an existing Base overlay inode for stable
+             // numbering within a session.  After remount the base_ino stored in
+             // the mapping may be stale (the new HostFS has a fresh inode cache),
+-            // so only use it when the reverse_map already contains a live entry.
++            // so only use it when the reverse_map contains the same live path.
+             // Otherwise keep the Delta overlay inode — the downstream code
+             // already walks base from root when the parent is tagged Delta.
+             if let Some(base_ino) = self.get_origin_ino(stats.ino) {
+-                let reverse = self.reverse_map.read().unwrap();
+-                if let Some(existing_ino) = reverse.get(&(Layer::Base, base_ino)).copied() {
+-                    drop(reverse);
++                if let Some(existing_ino) = self.get_live_origin_overlay_ino(base_ino, &path) {
+                     self.refresh_overlay_mapping(existing_ino, Layer::Delta, delta_ino, &path);
+                     stats.ino = existing_ino;
+                 } else {
+@@ -878,18 +896,24 @@ impl FileSystem for OverlayFS {
+                         continue;
+                     }
+ 
+-                    // Check for origin mapping
+-                    if let Some(base_ino) = self.get_origin_ino(entry.stats.ino) {
+-                        entry.stats.ino =
+-                            self.get_or_create_overlay_ino(Layer::Base, base_ino, &entry_path);
+-                    } else {
+-                        let overlay_ino = self.get_or_create_overlay_ino(
+-                            Layer::Delta,
+-                            entry.stats.ino,
+-                            &entry_path,
+-                        );
+-                        entry.stats.ino = overlay_ino;
+-                    }
++                    let delta_ino = entry.stats.ino;
++                    entry.stats.ino = self
++                        .get_origin_ino(delta_ino)
++                        .and_then(|base_ino| {
++                            self.get_live_origin_overlay_ino(base_ino, &entry_path)
++                        })
++                        .map(|existing_ino| {
++                            self.refresh_overlay_mapping(
++                                existing_ino,
++                                Layer::Delta,
++                                delta_ino,
++                                &entry_path,
++                            );
++                            existing_ino
++                        })
++                        .unwrap_or_else(|| {
++                            self.get_or_create_overlay_ino(Layer::Delta, delta_ino, &entry_path)
++                        });
+ 
+                     entries_map.insert(entry.name.clone(), entry);
+                 }
+@@ -2201,6 +2225,69 @@ mod tests {
+         Ok(())
+     }
+ 
++    /// Persisted origin inode numbers are local to one HostFS session. A
++    /// different lookup order after remount must not alias an unrelated base
++    /// directory with a copied-up directory such as `.git`.
++    #[tokio::test]
++    async fn test_overlay_remount_rejects_stale_origin_inode_collision() -> Result<()> {
++        let base_dir = tempdir()?;
++        std::fs::create_dir(base_dir.path().join(".git"))?;
++        std::fs::write(base_dir.path().join(".git/HEAD"), b"ref: refs/heads/main\n")?;
++        std::fs::create_dir(base_dir.path().join("modules"))?;
++        std::fs::create_dir(base_dir.path().join("modules/refund-policy"))?;
++
++        let delta_dir = tempdir()?;
++        let db_path = delta_dir.path().join("delta.db");
++
++        // Session 1: `.git` receives the first HostFS inode and is copied up.
++        let base = Arc::new(HostFS::new(base_dir.path())?);
++        let delta = AgentFS::new(db_path.to_str().unwrap()).await?;
++        let overlay = OverlayFS::new(base, delta);
++        overlay.init(base_dir.path().to_str().unwrap()).await?;
++
++        let git = overlay.lookup(ROOT_INO, ".git").await?.unwrap();
++        let (_lock_stats, lock) = overlay
++            .create_file(git.ino, "index.lock", DEFAULT_FILE_MODE, 0, 0)
++            .await?;
++        lock.pwrite(0, b"lock").await?;
++        drop(lock);
++        drop(overlay);
++
++        // Session 2: force `modules` to receive the same session-local HostFS
++        // inode that `.git` had in session 1, then merge base and delta entries.
++        let base = Arc::new(HostFS::new(base_dir.path())?);
++        let delta = AgentFS::new(db_path.to_str().unwrap()).await?;
++        let overlay = OverlayFS::new(base, delta);
++        overlay.init(base_dir.path().to_str().unwrap()).await?;
++
++        let modules_lookup = overlay.lookup(ROOT_INO, "modules").await?.unwrap();
++        let entries = overlay.readdir_plus(ROOT_INO).await?.unwrap();
++        let git = entries.iter().find(|entry| entry.name == ".git").unwrap();
++        let modules = entries
++            .iter()
++            .find(|entry| entry.name == "modules")
++            .unwrap();
++
++        assert_eq!(modules.stats.ino, modules_lookup.ino);
++        assert_ne!(
++            git.stats.ino, modules.stats.ino,
++            "copied-up .git and base modules must remain distinct after remount"
++        );
++        assert!(
++            overlay.lookup(git.stats.ino, "HEAD").await?.is_some(),
++            ".git must still resolve its own base entries"
++        );
++        assert!(
++            overlay
++                .lookup(modules.stats.ino, "refund-policy")
++                .await?
++                .is_some(),
++            "modules must not resolve through the copied-up .git inode"
++        );
++
++        Ok(())
++    }
++
+     /// Test unlink of a BASE file after the parent directory has been promoted
+     /// from Base to Delta layer.
+     ///

@@ -1,0 +1,10 @@
+.venv/
+.attune-runtime/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.basedpyright/
+.coverage
+build/
+dist/
+*.egg-info/

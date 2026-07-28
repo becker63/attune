@@ -15,6 +15,31 @@
   },
   "overrides": [
     {
+      "files": [
+        "packages/attune-mcp/src/**/*.ts",
+        "packages/attune-docs/src/**/*.ts",
+        "packages/attune-docs/scripts/**/*.ts"
+      ],
+      "rules": {
+        "jsdoc/check-tag-names": [
+          "error",
+          {
+            "definedTags": [
+              "remarks",
+              "example",
+              "typeParam",
+              "internal",
+              "lifecycle",
+              "requires",
+              "produces",
+              "transitionsTo"
+            ],
+            "typed": true
+          }
+        ]
+      }
+    },
+    {
       "files": ["packages/effect-joern/src/**/*.ts"],
       "rules": {
         "no-restricted-globals": [
@@ -44,5 +69,5 @@
       }
     }
   ],
-  "plugins": ["import", "oxc", "typescript", "vitest"]
+  "plugins": ["import", "jsdoc", "oxc", "typescript", "vitest"]
 }
