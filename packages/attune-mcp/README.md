@@ -83,11 +83,11 @@ research IR.
 `AttuneToolkit`. The Python ActiveGraph bridge consumes that frozen contract
 instead of recreating the TypeScript type model.
 
-The static API reference lives in `packages/attune-docs`. It is generated from
-the six root declarations, their member-level TSDoc, and exact source
-provenance. Every emitted page contains its own Shiki + Twoslash type-checked
-example; fast tests cover every page, while one focused browser test verifies a
-real hover and copy interaction.
+The static API reference lives in `packages/attune-docs`. It compiles every
+production declaration and its TSDoc into one source-ordered type document.
+The opening investigation is checked by TypeScript-Go, and compiler-resolved
+links provide native click-to-definition and browser-Back navigation. There is
+no Twoslash package, route tree, search index, or browser runtime.
 
 This is a trusted-local service, not a hostile-code sandbox. It uses explicit
 executables and argument arrays, bounded output, timeouts, process-tree

@@ -5,18 +5,12 @@ import { pathToFileURL } from "node:url";
 import fc from "fast-check";
 
 const [propertyPath, parametersPath, outputDirectory] = process.argv.slice(2);
-if (
-  propertyPath === undefined ||
-  parametersPath === undefined ||
-  outputDirectory === undefined
-) {
-  throw new Error(
-    "usage: property-runner <property.ts> <parameters.json> <output>",
-  );
+if (propertyPath === undefined || parametersPath === undefined || outputDirectory === undefined) {
+  throw new Error("usage: property-runner <property.ts> <parameters.json> <output>");
 }
 
-const require = createRequire(import.meta.url);
-const allowed = new Map([
+/** Module resolver rooted at the trusted property runner. */ const require = createRequire(import.meta.url);
+/** Imports permitted inside an authored property module. */ const allowed = new Map([
   ["fast-check", pathToFileURL(require.resolve("fast-check")).href],
   ["effect", pathToFileURL(require.resolve("effect")).href],
 ]);
@@ -29,37 +23,38 @@ registerHooks({
   },
 });
 
-const imported = (await import(pathToFileURL(propertyPath).href)) as {
+/** Dynamically loaded property module. */ const imported = (await import(
+  pathToFileURL(propertyPath).href
+)) as {
   readonly default?: unknown;
 };
-if (
-  typeof imported.default !== "object" ||
-  imported.default === null ||
-  !("run" in imported.default)
-) {
-  throw new TypeError(
-    "property module default export must be a native fast-check property",
-  );
+if (typeof imported.default !== "object" || imported.default === null || !("run" in imported.default)) {
+  throw new TypeError("property module default export must be a native fast-check property");
 }
 
-const parameters = JSON.parse(await readFile(parametersPath, "utf8")) as {
+/** Reproducibility parameters supplied to fast-check. */ const parameters = JSON.parse(
+  await readFile(parametersPath, "utf8"),
+) as {
   readonly numRuns: number;
   readonly seed?: number;
   readonly path?: string;
 };
-const details = await fc.check(
+/** Native fast-check execution details. */ const details = await fc.check(
   imported.default as fc.IRawProperty<unknown>,
   parameters,
 );
-const report = await fc.asyncDefaultReportMessage(details);
-let counterexample: unknown = details.counterexample;
-let counterexampleJson: string | undefined;
+/** Human-readable fast-check report. */ const report = await fc.asyncDefaultReportMessage(details);
+/** Counterexample retained when JSON encoding succeeds. */ let counterexample: unknown =
+  details.counterexample;
+/** JSON form of the retained counterexample when representable. */ let counterexampleJson:
+  | string
+  | undefined;
 try {
   counterexampleJson = JSON.stringify(counterexample);
 } catch {
   counterexample = undefined;
 }
-const scalar = {
+/** Stable scalar execution summary written for the parent invocation. */ const scalar = {
   failed: details.failed,
   interrupted: details.interrupted,
   numRuns: details.numRuns,
@@ -69,14 +64,9 @@ const scalar = {
   counterexamplePath: details.counterexamplePath,
   error: "error" in details ? details.error : undefined,
   executionSummary:
-    details.executionSummary === undefined
-      ? undefined
-      : fc.stringify(details.executionSummary),
+    details.executionSummary === undefined ? undefined : fc.stringify(details.executionSummary),
 };
-await writeFile(
-  `${outputDirectory}/run-details.json`,
-  `${JSON.stringify(scalar, null, 2)}\n`,
-);
+await writeFile(`${outputDirectory}/run-details.json`, `${JSON.stringify(scalar, null, 2)}\n`);
 await writeFile(`${outputDirectory}/report.txt`, `${report ?? ""}\n`);
 if (details.failed) {
   await writeFile(

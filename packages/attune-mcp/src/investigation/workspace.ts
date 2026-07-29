@@ -13,11 +13,7 @@ import {
 import * as Path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type {
-  FullGitCommit,
-  InvestigationId,
-  Sha256Digest,
-} from "../contract/schemas.js";
+import type { FullGitCommit, InvestigationId, Sha256Digest } from "../contract/schemas.js";
 import {
   allocateInvestigationId,
   canonicalJson,
@@ -33,96 +29,114 @@ import {
   writeNew,
 } from "../platform/core.js";
 import { withOsLock } from "../platform/lock.js";
-import {
-  isAborted,
-  runBufferedCommand as command,
-  spawnManaged,
-} from "../platform/process.js";
+import { isAborted, runBufferedCommand as command, spawnManaged } from "../platform/process.js";
 
+/**
+ * Runs Git and normalizes failure plus output whitespace. @param config - Runtime Git selection. @param cwd -
+ * Working directory. @param args - Exact argument vector. @param signal - Optional cancellation. @param raw -
+ * Whether to preserve output whitespace. @returns The command output.
+ */
 const git = async (
   config: RuntimeConfig,
   cwd: string,
   args: readonly string[],
   signal?: AbortSignal,
-  raw = false,
-) => {
+  raw: boolean = false,
+): Promise<string> => {
   const result = await command(config.git, args, cwd, signal);
   if (result.code !== 0)
     throw fail(
       "GitFailure",
-      `git ${args[0] ?? "command"} failed: ${
-        result.stderr.trim() || result.stdout.trim()
-      }`,
+      `git ${args[0] ?? "command"} failed: ${result.stderr.trim() || result.stdout.trim()}`,
     );
   return raw ? result.stdout : result.stdout.trim();
 };
 
-export const normalizeRemote = async (remote: string) => {
+/**
+ * Normalizes a local path or supported Git URL. @remarks Credentials, fragments, queries, and unstable path
+ * spellings are rejected before identity hashing. @param remote - Authored repository location. @returns Its
+ * canonical location.
+ */
+export const normalizeRemote = async (remote: string): Promise<string> => {
   if (remote.includes("\0") || remote.trim() !== remote || remote.length === 0)
     throw fail("InvalidPath", "repository remote is not canonical");
-  if (Path.isAbsolute(remote) || remote.startsWith("."))
-    return await realpath(Path.resolve(remote));
+  if (Path.isAbsolute(remote) || remote.startsWith(".")) return await realpath(Path.resolve(remote));
   const url = new URL(remote);
   if (!["https:", "ssh:", "file:"].includes(url.protocol))
     throw fail("InvalidPath", `unsupported Git URL scheme ${url.protocol}`);
   if (url.username !== "" || url.password !== "" || url.search || url.hash)
-    throw fail(
-      "InvalidPath",
-      "Git URL credentials, queries, and fragments are forbidden",
-    );
+    throw fail("InvalidPath", "Git URL credentials, queries, and fragments are forbidden");
   if (url.protocol === "file:") return await realpath(url.pathname);
   url.hostname = url.hostname.toLowerCase();
   url.pathname = url.pathname.replace(/(?:\.git)?\/+$/u, "");
   return url.toString();
 };
 
+/**
+ * Persists the repository and lifecycle evidence bound to an investigation.
+ *
+ * @remarks
+ *   The manifest connects user intent, exact commit, immutable base, toolchain, and optional finalization.
+ */
 export interface InvestigationManifest {
-  readonly schemaVersion: 1;
-  readonly investigationId: InvestigationId;
-  readonly normalizedRemote: string;
-  readonly requestedRevision: string;
-  readonly resolvedCommit: FullGitCommit;
-  readonly baseKey: Sha256Digest;
-  readonly branch: string;
-  readonly toolchainDigest: Sha256Digest;
-  readonly createdAt: string;
-  readonly finalizedAt?: string;
-  readonly finalSnapshot?: FullGitCommit;
+  /** Manifest schema version. */ readonly schemaVersion: 1;
+  /** Stable investigation identity. */ readonly investigationId: InvestigationId;
+  /** Canonical repository location. */ readonly normalizedRemote: string;
+  /** Revision requested by the caller. */ readonly requestedRevision: string;
+  /** Exact resolved commit. */ readonly resolvedCommit: FullGitCommit;
+  /** Digest of the immutable base policy. */ readonly baseKey: Sha256Digest;
+  /** Investigation branch name. */ readonly branch: string;
+  /** Executable-selection digest. */ readonly toolchainDigest: Sha256Digest;
+  /** Creation timestamp. */ readonly createdAt: string;
+  /** Finalization timestamp when closed. */ readonly finalizedAt?: string;
+  /** Exact final snapshot when closed. */ readonly finalSnapshot?: FullGitCommit;
 }
 
-type Binding = Pick<
+/** Minimal durable mapping from investigation identity to immutable base. */ type Binding = Pick<
   InvestigationManifest,
   "schemaVersion" | "investigationId" | "baseKey"
 >;
 
+/**
+ * Presents one mounted investigation namespace to owned work. @remarks Repository bytes, artifacts, and
+ * manifest share one mount lifetime and identity check.
+ */
 export interface MountedWorkspace {
-  readonly mountPath: string;
-  readonly repositoryPath: string;
-  readonly artifactsPath: string;
-  readonly manifest: InvestigationManifest;
+  /** AgentFS mount root. */ readonly mountPath: string;
+  /** Mounted repository path. */ readonly repositoryPath: string;
+  /** Mounted artifact path. */ readonly artifactsPath: string;
+  /** Validated investigation manifest. */ readonly manifest: InvestigationManifest;
 }
 
+/**
+ * Decodes Linux mountinfo octal escapes. @param value - Encoded field. @returns Decoded field text.
+ */
 const decodeMountField = (value: string): string =>
-  value.replace(/\\([0-7]{3})/gu, (_, octal: string) =>
-    String.fromCharCode(Number.parseInt(octal, 8)),
-  );
+  value.replace(/\\([0-7]{3})/gu, (_, octal: string) => String.fromCharCode(Number.parseInt(octal, 8)));
 
-const mountedSource = async (mountPath: string) => {
+/**
+ * Finds the filesystem source currently owning a mount path. @param mountPath - Canonical mount path.
+ *
+ * @returns The mounted source when present.
+ */
+const mountedSource = async (mountPath: string): Promise<string | undefined> => {
   const text = await readFile("/proc/self/mountinfo", "utf8");
   for (const line of text.split("\n")) {
     const [before, after] = line.split(" - ");
     if (before === undefined || after === undefined) continue;
     const left = before.split(" ");
     const right = after.split(" ");
-    if (decodeMountField(left[4] ?? "") === mountPath)
-      return decodeMountField(right[1] ?? "");
+    if (decodeMountField(left[4] ?? "") === mountPath) return decodeMountField(right[1] ?? "");
   }
   return undefined;
 };
 
-const wait = async (milliseconds: number, signal?: AbortSignal) => {
-  if (isAborted(signal))
-    throw fail("Cancelled", "mount wait cancelled before sleeping");
+/**
+ * Waits with cancellation-aware failure normalization. @param milliseconds - Delay duration. @param signal -
+ * Optional cancellation. @returns A promise completed after the delay.
+ */
+const wait = async (milliseconds: number, signal?: AbortSignal): Promise<void> => {
+  if (isAborted(signal)) throw fail("Cancelled", "mount wait cancelled before sleeping");
   try {
     await delay(milliseconds, undefined, { signal });
   } catch (cause) {
@@ -131,8 +145,21 @@ const wait = async (milliseconds: number, signal?: AbortSignal) => {
   }
 };
 
-const jsonLine = (value: unknown) => `${canonicalJson(value)}\n`;
-const materialized = (manifest: InvestigationManifest) => ({
+/**
+ * Encodes canonical newline-delimited JSON. @param value - Value to encode.
+ *
+ * @returns Canonical JSON plus newline.
+ */
+const jsonLine = (value: unknown): string => `${canonicalJson(value)}\n`;
+/**
+ * Projects materialization evidence from a manifest. @param manifest - Current manifest. @returns The
+ * caller-facing materialization fields.
+ */
+const materialized = (
+  manifest: InvestigationManifest,
+): Pick<InvestigationManifest, "investigationId" | "requestedRevision" | "resolvedCommit" | "branch"> & {
+  readonly manifest: InvestigationManifest;
+} => ({
   investigationId: manifest.investigationId,
   requestedRevision: manifest.requestedRevision,
   resolvedCommit: manifest.resolvedCommit,
@@ -140,59 +167,69 @@ const materialized = (manifest: InvestigationManifest) => ({
   manifest,
 });
 
+/**
+ * Owns immutable bases, investigation bindings, capsules, and mounted workspaces. @remarks Every operation
+ * crosses one store so repository identity and mount lifetime remain mechanically checked.
+ */
 export class WorkspaceStore {
+  /**
+   * Creates a workspace store. @remarks The supplied configuration fixes all filesystem and executable
+   * boundaries. @param config - Runtime configuration.
+   */
   constructor(readonly config: RuntimeConfig) {}
 
-  private basePath = (key: Sha256Digest) =>
+  /** Resolves an immutable base path. @param key - Base digest. */ private basePath = (key: Sha256Digest) =>
     Path.join(this.config.home, "bases", key);
-  private capsulePath = (id: InvestigationId) =>
-    Path.join(this.config.home, "capsules", `${id}.db`);
-  private bindingPath = (id: InvestigationId) =>
-    Path.join(this.config.home, "bindings", `${id}.json`);
+  /** Resolves an investigation capsule path. @param id - Investigation identity. */ private capsulePath = (
+    id: InvestigationId,
+  ) => Path.join(this.config.home, "capsules", `${id}.db`);
+  /** Resolves an investigation binding path. @param id - Investigation identity. */ private bindingPath = (
+    id: InvestigationId,
+  ) => Path.join(this.config.home, "bindings", `${id}.json`);
 
+  /**
+   * Runs Git through the store configuration. @param cwd - Working directory.
+   *
+   * @param args - Argument vector. @param signal - Optional cancellation.
+   * @param raw - Whether to preserve whitespace. @returns The normalized command output.
+   */
   private git(
     cwd: string,
     args: readonly string[],
     signal?: AbortSignal,
-    raw = false,
-  ) {
+    raw: boolean = false,
+  ): Promise<string> {
     return git(this.config, cwd, args, signal, raw);
   }
 
-  async initialize() {
+  /**
+   * Initializes private runtime directories. @remarks Creation is idempotent and precedes any investigation
+   * mutation. @returns A promise completed after initialization.
+   */
+  async initialize(): Promise<void> {
     await ensureRuntimeDirectories(this.config);
   }
 
-  private async resolveCommit(
-    clone: string,
-    revision: string,
-    signal?: AbortSignal,
-  ) {
-    for (const candidate of [
-      `${revision}^{commit}`,
-      `origin/${revision}^{commit}`,
-    ]) {
-      const result = await command(
-        this.config.git,
-        ["rev-parse", "--verify", candidate],
-        clone,
-        signal,
-      );
+  /**
+   * Resolves a requested revision to an exact commit. @param clone - Clone path. @param revision - Authored
+   * revision. @param signal - Optional cancellation.
+   */
+  private async resolveCommit(clone: string, revision: string, signal?: AbortSignal) {
+    for (const candidate of [`${revision}^{commit}`, `origin/${revision}^{commit}`]) {
+      const result = await command(this.config.git, ["rev-parse", "--verify", candidate], clone, signal);
       const value = result.stdout.trim();
       if (result.code === 0 && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(value)) {
         return value as FullGitCommit;
       }
     }
-    throw fail(
-      "GitFailure",
-      `revision does not resolve to a commit: ${revision}`,
-    );
+    throw fail("GitFailure", `revision does not resolve to a commit: ${revision}`);
   }
 
-  private async validateBase(
-    baseKey: Sha256Digest,
-    expectedCommit?: FullGitCommit,
-  ) {
+  /**
+   * Revalidates immutable base metadata and Git state. @param baseKey - Expected base digest. @param
+   * expectedCommit - Optional expected commit.
+   */
+  private async validateBase(baseKey: Sha256Digest, expectedCommit?: FullGitCommit) {
     const base = this.basePath(baseKey);
     const metadata = await readJson<{
       readonly baseKey: Sha256Digest;
@@ -200,13 +237,9 @@ export class WorkspaceStore {
     }>(Path.join(base, "base-manifest.json"));
     if (
       metadata.baseKey !== baseKey ||
-      (expectedCommit !== undefined &&
-        metadata.resolvedCommit !== expectedCommit)
+      (expectedCommit !== undefined && metadata.resolvedCommit !== expectedCommit)
     )
-      throw fail(
-        "IdentityConflict",
-        "immutable base manifest does not match binding",
-      );
+      throw fail("IdentityConflict", "immutable base manifest does not match binding");
     const repository = Path.join(base, "repo");
     const [head, dirty] = await Promise.all([
       this.git(repository, ["rev-parse", "HEAD"]),
@@ -217,6 +250,11 @@ export class WorkspaceStore {
     return base;
   }
 
+  /**
+   * Publishes or reuses one immutable prepared base. @param preparedRoot - Prepared base root. @param
+   * normalizedRemote - Canonical remote. @param requestedRevision - Authored revision. @param resolvedCommit
+   * - Exact commit. @param signal - Optional cancellation.
+   */
   private async publishBase(
     preparedRoot: string,
     normalizedRemote: string,
@@ -233,52 +271,52 @@ export class WorkspaceStore {
       }),
     );
     const destination = this.basePath(baseKey);
-    return await withOsLock(
-      this.config,
-      `base-${baseKey}`,
-      signal,
-      async () => {
-        if (await fileExists(destination)) {
-          await rm(preparedRoot, { recursive: true, force: true });
-          await this.validateBase(baseKey, resolvedCommit);
-          return baseKey;
-        }
-        await writeNew(
-          Path.join(preparedRoot, "base-manifest.json"),
-          jsonLine({
-            schemaVersion: 1,
-            baseKey,
-            normalizedRemote,
-            requestedRevision,
-            resolvedCommit,
-          }),
-        );
-        await rename(preparedRoot, destination);
-        await chmod(destination, 0o555);
+    return await withOsLock(this.config, `base-${baseKey}`, signal, async () => {
+      if (await fileExists(destination)) {
+        await rm(preparedRoot, { recursive: true, force: true });
+        await this.validateBase(baseKey, resolvedCommit);
         return baseKey;
-      },
-    );
+      }
+      await writeNew(
+        Path.join(preparedRoot, "base-manifest.json"),
+        jsonLine({
+          schemaVersion: 1,
+          baseKey,
+          normalizedRemote,
+          requestedRevision,
+          resolvedCommit,
+        }),
+      );
+      await rename(preparedRoot, destination);
+      await chmod(destination, 0o555);
+      return baseKey;
+    });
   }
 
+  /**
+   * Requires one regular nonsymlink capsule file. @param source - Candidate path. @param invalid - Failure
+   * explanation.
+   */
   private async assertCapsuleFile(source: string, invalid: string) {
     const metadata = await lstat(source);
-    if (!metadata.isFile() || metadata.isSymbolicLink())
-      throw fail("AgentFsFailure", invalid);
+    if (!metadata.isFile() || metadata.isSymbolicLink()) throw fail("AgentFsFailure", invalid);
   }
 
+  /**
+   * Publishes one capsule file with private permissions. @param source - Prepared file. @param destination -
+   * Final path.
+   */
   private async moveCapsuleFile(source: string, destination: string) {
     await chmod(source, 0o600);
     await rename(source, destination);
   }
 
-  private async createCapsule(
-    id: InvestigationId,
-    basePath: string,
-    signal?: AbortSignal,
-  ) {
-    await using temporary = await mkdtempDisposable(
-      Path.join(this.config.home, "scratch", `agentfs-${id}-`),
-    );
+  /**
+   * Creates an AgentFS capsule from an immutable base. @param id - Investigation identity. @param basePath -
+   * Immutable base path. @param signal - Optional cancellation.
+   */
+  private async createCapsule(id: InvestigationId, basePath: string, signal?: AbortSignal) {
+    await using temporary = await mkdtempDisposable(Path.join(this.config.home, "scratch", `agentfs-${id}-`));
     const result = await command(
       this.config.agentFs,
       ["init", "--base", basePath, id],
@@ -286,29 +324,25 @@ export class WorkspaceStore {
       signal,
     );
     if (result.code !== 0)
-      throw fail(
-        "AgentFsFailure",
-        `AgentFS init failed: ${result.stderr.trim() || result.stdout.trim()}`,
-      );
+      throw fail("AgentFsFailure", `AgentFS init failed: ${result.stderr.trim() || result.stdout.trim()}`);
     const source = Path.join(temporary.path, ".agentfs", `${id}.db`);
     const destination = this.capsulePath(id);
-    await this.assertCapsuleFile(
-      source,
-      "AgentFS did not create one regular capsule",
-    );
+    await this.assertCapsuleFile(source, "AgentFS did not create one regular capsule");
     for (const suffix of ["-wal", "-shm"] as const) {
       const companion = `${source}${suffix}`;
       if (!(await fileExists(companion))) continue;
-      await this.assertCapsuleFile(
-        companion,
-        `AgentFS created an invalid SQLite ${suffix} companion`,
-      );
+      await this.assertCapsuleFile(companion, `AgentFS created an invalid SQLite ${suffix} companion`);
       await this.moveCapsuleFile(companion, `${destination}${suffix}`);
     }
     // Publish main last so WAL/SHM companions cannot trail the logical DB.
     await this.moveCapsuleFile(source, destination);
   }
 
+  /**
+   * Materializes or replays one investigation workspace. @remarks Remote and revision resolve once to an
+   * immutable base, then a private capsule and binding preserve authority. @param input - Repository and
+   * optional identity request. @param signal - Optional cancellation. @returns The materialization evidence.
+   */
   async materialize(
     input: {
       readonly remote: string;
@@ -316,130 +350,98 @@ export class WorkspaceStore {
       readonly investigationId?: InvestigationId;
     },
     signal?: AbortSignal,
-  ) {
+  ): Promise<ReturnType<typeof materialized>> {
     await this.initialize();
     const { remote, revision } = input;
     const id = input.investigationId ?? allocateInvestigationId();
-    return await withOsLock(
-      this.config,
-      `materialize-${id}`,
-      signal,
-      async () => {
-        if (await fileExists(this.bindingPath(id))) {
-          const existing = await this.readManifest(id, signal);
-          const normalized = await normalizeRemote(remote);
-          if (
-            existing.normalizedRemote !== normalized ||
-            existing.requestedRevision !== revision
-          )
-            throw fail(
-              "IdentityConflict",
-              "investigation is bound to another repository",
-            );
-          return materialized(existing);
-        }
+    return await withOsLock(this.config, `materialize-${id}`, signal, async () => {
+      if (await fileExists(this.bindingPath(id))) {
+        const existing = await this.readManifest(id, signal);
+        const normalized = await normalizeRemote(remote);
+        if (existing.normalizedRemote !== normalized || existing.requestedRevision !== revision)
+          throw fail("IdentityConflict", "investigation is bound to another repository");
+        return materialized(existing);
+      }
 
-        const normalizedRemote = await normalizeRemote(remote);
-        await using temporary = await mkdtempDisposable(
-          Path.join(this.config.home, "scratch", `base-${id}-`),
-        );
-        const preparing = temporary.path;
-        const root = Path.join(preparing, "root");
-        const repository = Path.join(root, "repo");
-        await mkdir(Path.join(root, "artifacts"), {
-          recursive: true,
-          mode: 0o700,
-        });
-        await this.git(
-          preparing,
-          ["clone", "--no-checkout", normalizedRemote, repository],
-          signal,
-        );
-        const resolvedCommit = await this.resolveCommit(
-          repository,
-          revision,
-          signal,
-        );
-        const tree = await this.git(
-          repository,
-          ["ls-tree", "-r", resolvedCommit],
-          signal,
-        );
-        if (tree.split("\n").some((line) => line.startsWith("160000 ")))
-          throw fail("GitlinkUnsupported", "submodules are unsupported in V0");
-        await this.git(
-          repository,
-          ["checkout", "--detach", resolvedCommit],
-          signal,
-        );
-        const baseKey = await this.publishBase(
-          root,
-          normalizedRemote,
-          revision,
-          resolvedCommit,
-          signal,
-        );
-        await this.createCapsule(id, this.basePath(baseKey), signal);
-        const branch = `attune/${id}`;
-        const manifest: InvestigationManifest = {
+      const normalizedRemote = await normalizeRemote(remote);
+      await using temporary = await mkdtempDisposable(Path.join(this.config.home, "scratch", `base-${id}-`));
+      const preparing = temporary.path;
+      const root = Path.join(preparing, "root");
+      const repository = Path.join(root, "repo");
+      await mkdir(Path.join(root, "artifacts"), {
+        recursive: true,
+        mode: 0o700,
+      });
+      await this.git(preparing, ["clone", "--no-checkout", normalizedRemote, repository], signal);
+      const resolvedCommit = await this.resolveCommit(repository, revision, signal);
+      const tree = await this.git(repository, ["ls-tree", "-r", resolvedCommit], signal);
+      if (tree.split("\n").some((line) => line.startsWith("160000 ")))
+        throw fail("GitlinkUnsupported", "submodules are unsupported in V0");
+      await this.git(repository, ["checkout", "--detach", resolvedCommit], signal);
+      const baseKey = await this.publishBase(root, normalizedRemote, revision, resolvedCommit, signal);
+      await this.createCapsule(id, this.basePath(baseKey), signal);
+      const branch = `attune/${id}`;
+      const manifest: InvestigationManifest = {
+        schemaVersion: 1,
+        investigationId: id,
+        normalizedRemote,
+        requestedRevision: revision,
+        resolvedCommit,
+        baseKey,
+        branch,
+        toolchainDigest: this.config.toolchainDigest,
+        createdAt: new Date().toISOString(),
+      };
+      await writeNew(
+        this.bindingPath(id),
+        jsonLine({
           schemaVersion: 1,
           investigationId: id,
-          normalizedRemote,
-          requestedRevision: revision,
-          resolvedCommit,
           baseKey,
-          branch,
-          toolchainDigest: this.config.toolchainDigest,
-          createdAt: new Date().toISOString(),
-        };
-        await writeNew(
-          this.bindingPath(id),
-          jsonLine({
-            schemaVersion: 1,
-            investigationId: id,
-            baseKey,
-          }),
-        );
-        await this.withMount(
-          id,
-          signal,
-          async ({ repositoryPath, artifactsPath }) => {
-            await this.git(
-              repositoryPath,
-              ["checkout", "-B", branch, resolvedCommit],
-              signal,
-            );
-            await writeNew(
-              Path.join(artifactsPath, "investigation.json"),
-              jsonLine(manifest),
-            );
-          },
-          false,
-        );
-        return materialized(manifest);
-      },
-    );
+        }),
+      );
+      await this.withMount(
+        id,
+        signal,
+        async ({ repositoryPath, artifactsPath }) => {
+          await this.git(repositoryPath, ["checkout", "-B", branch, resolvedCommit], signal);
+          await writeNew(Path.join(artifactsPath, "investigation.json"), jsonLine(manifest));
+        },
+        false,
+      );
+      return materialized(manifest);
+    });
   }
 
-  async binding(id: InvestigationId) {
+  /**
+   * Reads and validates one investigation binding. @remarks The referenced immutable base is rechecked before
+   * the binding is trusted. @param id - Investigation identity. @returns The validated binding.
+   */
+  async binding(id: InvestigationId): Promise<Binding> {
     try {
       const binding = await readJson<Binding>(this.bindingPath(id));
       if (binding.investigationId !== id) throw new Error("identity mismatch");
       await this.validateBase(binding.baseKey);
       return binding;
     } catch (cause) {
-      if (isNodeError(cause, "ENOENT"))
-        throw fail("UnknownInvestigation", `unknown investigation ${id}`);
+      if (isNodeError(cause, "ENOENT")) throw fail("UnknownInvestigation", `unknown investigation ${id}`);
       throw cause;
     }
   }
 
+  /**
+   * Runs work inside one validated AgentFS mount. @remarks Acquisition is cancellable, use drains against a
+   * stable mount, and unmount completes before release. @typeParam A - Work result. @param id - Investigation
+   * identity. @param signal - Optional cancellation. @param use - Work receiving the mounted workspace.
+   *
+   * @param requireManifest - Whether the full manifest must exist. @returns The work result.
+   */
   async withMount<A>(
     id: InvestigationId,
     signal: AbortSignal | undefined,
     use: (workspace: MountedWorkspace) => Promise<A>,
-    requireManifest = true,
-  ) {
+    requireManifest: boolean = true,
+  ): Promise<A> {
     return await withOsLock(this.config, `mount-${id}`, signal, async () => {
       const binding = await this.binding(id);
       const capsule = await realpath(this.capsulePath(id));
@@ -449,14 +451,9 @@ export class WorkspaceStore {
       if (existing !== undefined) {
         if (existing !== `agentfs:${capsule}`)
           throw fail("AgentFsFailure", "foreign filesystem owns mount path");
-        await command(
-          this.config.fusermount,
-          ["-u", mountPath],
-          this.config.home,
-        );
+        await command(this.config.fusermount, ["-u", mountPath], this.config.home);
       }
-      if (isAborted(signal))
-        throw fail("Cancelled", "mount cancelled before spawn");
+      if (isAborted(signal)) throw fail("Cancelled", "mount cancelled before spawn");
       const managed = spawnManaged(
         this.config.agentFs,
         ["mount", "--foreground", capsule, mountPath],
@@ -474,8 +471,7 @@ export class WorkspaceStore {
       );
       const { child: mount } = managed;
       let output = "";
-      const collect = (chunk: Buffer) =>
-        (output = `${output}${chunk.toString("utf8")}`.slice(-16_384));
+      const collect = (chunk: Buffer) => (output = `${output}${chunk.toString("utf8")}`.slice(-16_384));
       mount.stdout.on("data", collect);
       mount.stderr.on("data", collect);
       let mountError: unknown;
@@ -485,15 +481,9 @@ export class WorkspaceStore {
         while ((await mountedSource(mountPath)) !== `agentfs:${capsule}`) {
           if (mountError !== undefined) throw mountError;
           if (mount.exitCode !== null || mount.signalCode !== null)
-            throw fail(
-              "AgentFsFailure",
-              `AgentFS mount exited early: ${output}`,
-            );
+            throw fail("AgentFsFailure", `AgentFS mount exited early: ${output}`);
           if (Date.now() > deadline)
-            throw fail(
-              "AgentFsFailure",
-              `AgentFS mount readiness timed out: ${output}`,
-            );
+            throw fail("AgentFsFailure", `AgentFS mount readiness timed out: ${output}`);
           await wait(50, signal);
         }
         const repositoryPath = contained(await realpath(mountPath), "repo");
@@ -502,25 +492,15 @@ export class WorkspaceStore {
         const isDirectory = async (path: string) => {
           try {
             if ((await stat(path)).isDirectory()) return true;
-            throw fail(
-              "AgentFsFailure",
-              "mounted namespace is not a directory",
-            );
+            throw fail("AgentFsFailure", "mounted namespace is not a directory");
           } catch (cause) {
             if (isNodeError(cause, "ENOENT")) return false;
             throw cause;
           }
         };
-        while (
-          !(
-            await Promise.all([repositoryPath, artifactsPath].map(isDirectory))
-          ).every(Boolean)
-        ) {
+        while (!(await Promise.all([repositoryPath, artifactsPath].map(isDirectory))).every(Boolean)) {
           if (Date.now() > namespaceDeadline)
-            throw fail(
-              "AgentFsFailure",
-              "mounted namespaces did not become ready",
-            );
+            throw fail("AgentFsFailure", "mounted namespaces did not become ready");
           await wait(50, signal);
         }
         const manifestPath = Path.join(artifactsPath, "investigation.json");
@@ -530,16 +510,9 @@ export class WorkspaceStore {
               investigationId: id,
               baseKey: binding.baseKey,
             } as InvestigationManifest);
-        if (
-          manifest.investigationId !== id ||
-          manifest.baseKey !== binding.baseKey
-        )
-          throw fail(
-            "IdentityConflict",
-            "capsule manifest does not match binding",
-          );
-        if (isAborted(signal))
-          throw fail("Cancelled", "mount cancelled before workspace use");
+        if (manifest.investigationId !== id || manifest.baseKey !== binding.baseKey)
+          throw fail("IdentityConflict", "capsule manifest does not match binding");
+        if (isAborted(signal)) throw fail("Cancelled", "mount cancelled before workspace use");
         // The abort signal governs mount acquisition. Once `use` begins, its
         // native Promise must drain against a stable mount before final
         // unmounting in this scope's `finally`.
@@ -554,11 +527,7 @@ export class WorkspaceStore {
         managed.stopAbort();
         const unmount = async () => {
           if ((await mountedSource(mountPath)) === undefined) return;
-          await command(
-            this.config.fusermount,
-            ["-u", mountPath],
-            this.config.home,
-          ).catch(() => undefined);
+          await command(this.config.fusermount, ["-u", mountPath], this.config.home).catch(() => undefined);
         };
         await unmount();
         managed.terminate();
@@ -568,59 +537,81 @@ export class WorkspaceStore {
     });
   }
 
-  async readManifest(id: InvestigationId, signal?: AbortSignal) {
+  /**
+   * Reads one validated investigation manifest. @remarks Mount identity is checked before manifest evidence
+   * leaves the store. @param id - Investigation identity. @param signal - Optional cancellation. @returns The
+   * manifest.
+   */
+  async readManifest(id: InvestigationId, signal?: AbortSignal): Promise<InvestigationManifest> {
     return await this.withMount(id, signal, async ({ manifest }) => manifest);
   }
 
-  async head(repositoryPath: string, signal?: AbortSignal) {
-    return (await this.git(
-      repositoryPath,
-      ["rev-parse", "HEAD"],
-      signal,
-    )) as FullGitCommit;
+  /**
+   * Reads the exact repository HEAD. @remarks Git failure remains a normalized tool failure. @param
+   * repositoryPath - Repository root. @param signal - Optional cancellation. @returns The full commit.
+   */
+  async head(repositoryPath: string, signal?: AbortSignal): Promise<FullGitCommit> {
+    return (await this.git(repositoryPath, ["rev-parse", "HEAD"], signal)) as FullGitCommit;
   }
 
-  async dirty(repositoryPath: string, signal?: AbortSignal) {
+  /**
+   * Tests whether tracked or untracked repository state differs. @remarks The full porcelain view prevents
+   * hidden working-tree mutation. @param repositoryPath - Repository root. @param signal - Optional
+   * cancellation.
+   *
+   * @returns Whether the tree is dirty.
+   */
+  async dirty(repositoryPath: string, signal?: AbortSignal): Promise<boolean> {
     return (
-      (await this.git(
-        repositoryPath,
-        ["status", "--porcelain", "--untracked-files=all"],
-        signal,
-      )) !== ""
+      (await this.git(repositoryPath, ["status", "--porcelain", "--untracked-files=all"], signal)) !== ""
     );
   }
 
-  private async assertHead(
-    repositoryPath: string,
-    expected: FullGitCommit,
-    signal?: AbortSignal,
-  ) {
+  /**
+   * Requires repository HEAD to match caller authority. @param repositoryPath - Repository root. @param
+   * expected - Expected commit. @param signal - Optional cancellation.
+   */
+  private async assertHead(repositoryPath: string, expected: FullGitCommit, signal?: AbortSignal) {
     const observed = await this.head(repositoryPath, signal);
     if (observed !== expected)
-      throw fail(
-        "StaleSnapshot",
-        "repository HEAD does not match expected snapshot",
-        { expected, observed },
-      );
+      throw fail("StaleSnapshot", "repository HEAD does not match expected snapshot", { expected, observed });
   }
 
+  /**
+   * Requires exact HEAD and a clean working tree. @remarks Stateful tools call this immediately before
+   * trusting or changing repository bytes. @param repositoryPath - Repository root. @param expected -
+   * Expected commit. @param signal - Optional cancellation. @returns A promise completed when authority is
+   * current.
+   */
   async assertExactClean(
     repositoryPath: string,
     expected: FullGitCommit,
     signal?: AbortSignal,
-  ) {
+  ): Promise<void> {
     await this.assertHead(repositoryPath, expected, signal);
     if (await this.dirty(repositoryPath, signal))
       throw fail("DirtyRepository", "repository working tree must be clean");
   }
 
+  /**
+   * Checkpoints current repository state under an explicit policy. @remarks Dirty state either fails or
+   * becomes one deterministic commit after expected HEAD is checked. @param repositoryPath - Repository
+   * root.
+   *
+   * @param expected - Expected commit. @param policy - Clean-only or commit policy. @param message - Optional
+   *   commit message. @param signal - Optional cancellation.
+   * @returns The resulting snapshot and commit flag.
+   */
   async checkpoint(
     repositoryPath: string,
     expected: FullGitCommit,
     policy: "require-clean" | "commit",
     message: string | undefined,
     signal?: AbortSignal,
-  ) {
+  ): Promise<{
+    readonly snapshotId: FullGitCommit;
+    readonly createdCommit: boolean;
+  }> {
     await this.assertHead(repositoryPath, expected, signal);
     const dirty = await this.dirty(repositoryPath, signal);
     if (dirty && policy === "require-clean")
@@ -647,21 +638,22 @@ export class WorkspaceStore {
     };
   }
 
+  /**
+   * Creates an isolated detached checkout at one commit. @remarks Failure cleans the temporary root before
+   * propagating. @param repositoryPath - Source repository. @param commit - Exact commit. @param signal -
+   * Optional cancellation. @returns The disposable root and checkout path.
+   */
   async isolatedCheckout(
     repositoryPath: string,
     commit: FullGitCommit,
     signal?: AbortSignal,
-  ) {
+  ): Promise<{ readonly root: string; readonly repository: string }> {
     const scratch = Path.join(this.config.home, "scratch");
     await mkdir(scratch, { recursive: true, mode: 0o700 });
     const root = await mkdtemp(Path.join(scratch, "checkout-"));
     const repository = Path.join(root, "repo");
     try {
-      await this.git(
-        root,
-        ["clone", "--no-local", "--no-checkout", repositoryPath, repository],
-        signal,
-      );
+      await this.git(root, ["clone", "--no-local", "--no-checkout", repositoryPath, repository], signal);
       await this.git(repository, ["checkout", "--detach", commit], signal);
       return { root, repository };
     } catch (cause) {
@@ -670,56 +662,61 @@ export class WorkspaceStore {
     }
   }
 
-  async replaceManifest(
-    workspace: MountedWorkspace,
-    manifest: InvestigationManifest,
-  ) {
-    await writeAtomic(
-      Path.join(workspace.artifactsPath, "investigation.json"),
-      jsonLine(manifest),
-    );
+  /**
+   * Atomically replaces mounted manifest evidence. @remarks The workspace mount fixes the artifact namespace
+   * receiving the replacement. @param workspace - Mounted workspace. @param manifest - Complete replacement
+   * manifest.
+   *
+   * @returns A promise completed after atomic rename.
+   */
+  async replaceManifest(workspace: MountedWorkspace, manifest: InvestigationManifest): Promise<void> {
+    await writeAtomic(Path.join(workspace.artifactsPath, "investigation.json"), jsonLine(manifest));
   }
 
-  async gitOutput(
-    repository: string,
-    args: readonly string[],
-    signal?: AbortSignal,
-  ) {
+  /**
+   * Runs Git and trims output. @remarks The store configuration and failure normalization remain
+   * authoritative. @param repository - Working directory.
+   *
+   * @param args - Argument vector. @param signal - Optional cancellation.
+   * @returns Trimmed output.
+   */
+  async gitOutput(repository: string, args: readonly string[], signal?: AbortSignal): Promise<string> {
     return await this.git(repository, args, signal);
   }
 
-  async gitRaw(
-    repository: string,
-    args: readonly string[],
-    signal?: AbortSignal,
-  ) {
+  /**
+   * Runs Git while preserving output whitespace. @remarks Binary patch callers use the exact returned
+   * bytes-as-text. @param repository - Working directory. @param args - Argument vector. @param signal -
+   * Optional cancellation. @returns Raw output.
+   */
+  async gitRaw(repository: string, args: readonly string[], signal?: AbortSignal): Promise<string> {
     return await this.git(repository, args, signal, true);
   }
 
-  async newFilePatch(repository: string, path: string, signal?: AbortSignal) {
+  /**
+   * Produces a binary-safe patch for one new file. @remarks Git's expected one-status diff is accepted while
+   * other failures remain visible. @param repository - Repository root. @param path - New file path. @param
+   * signal - Optional cancellation. @returns The patch text.
+   */
+  async newFilePatch(repository: string, path: string, signal?: AbortSignal): Promise<string> {
     const result = await command(
       this.config.git,
-      [
-        "diff",
-        "--binary",
-        "--no-ext-diff",
-        "--no-index",
-        "--",
-        "/dev/null",
-        path,
-      ],
+      ["diff", "--binary", "--no-ext-diff", "--no-index", "--", "/dev/null", path],
       repository,
       signal,
     );
     if (result.code !== 0 && result.code !== 1)
-      throw fail(
-        "GitFailure",
-        `git diff failed: ${result.stderr.trim() || result.stdout.trim()}`,
-      );
+      throw fail("GitFailure", `git diff failed: ${result.stderr.trim() || result.stdout.trim()}`);
     return result.stdout;
   }
 
-  async isIgnored(repository: string, path: string, signal?: AbortSignal) {
+  /**
+   * Tests whether Git ignores one path. @remarks Only Git's documented zero/one statuses become booleans.
+   *
+   * @param repository - Repository root. @param path - Candidate path. @param signal - Optional cancellation.
+   * @returns Whether the path is ignored.
+   */
+  async isIgnored(repository: string, path: string, signal?: AbortSignal): Promise<boolean> {
     const result = await command(
       this.config.git,
       ["check-ignore", "--quiet", "--", path],
@@ -728,11 +725,6 @@ export class WorkspaceStore {
     );
     if (result.code === 0) return true;
     if (result.code === 1) return false;
-    throw fail(
-      "GitFailure",
-      `git check-ignore failed: ${
-        result.stderr.trim() || result.stdout.trim()
-      }`,
-    );
+    throw fail("GitFailure", `git check-ignore failed: ${result.stderr.trim() || result.stdout.trim()}`);
   }
 }

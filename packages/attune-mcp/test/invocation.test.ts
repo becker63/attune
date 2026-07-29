@@ -5,24 +5,14 @@ import * as Path from "node:path";
 
 import { Effect, Fiber, Schema } from "effect";
 
-import {
-  type InvestigationId,
-  type InvocationId,
-} from "../src/contract/schemas.js";
-import {
-  type InvocationContext,
-  InvocationEngine,
-} from "../src/investigation/invocation.js";
+import { type InvestigationId, type InvocationId } from "../src/contract/schemas.js";
+import { type InvocationContext, InvocationEngine } from "../src/investigation/invocation.js";
 import type {
   InvestigationManifest,
   MountedWorkspace,
   WorkspaceStore,
 } from "../src/investigation/workspace.js";
-import {
-  sha256,
-  type ActivityGate,
-  type RuntimeConfig,
-} from "../src/platform/core.js";
+import { sha256, type ActivityGate, type RuntimeConfig } from "../src/platform/core.js";
 import { withOsLock } from "../src/platform/lock.js";
 import { AttuneToolkit } from "../src/tools/registry.js";
 import {
@@ -37,10 +27,8 @@ import {
 const makeConfig = fixtureRuntimeConfig;
 const run = Effect.runPromise;
 
-const rejects = <A, E>(
-  effect: Effect.Effect<A, E>,
-  expected: object,
-): Promise<void> => expect(run(effect)).rejects.toMatchObject(expected);
+const rejects = <A, E>(effect: Effect.Effect<A, E>, expected: object): Promise<void> =>
+  expect(run(effect)).rejects.toMatchObject(expected);
 
 const invocationInput = (invocationId: InvocationId) =>
   ({
@@ -73,8 +61,7 @@ const materializeInput = (invocationId: InvocationId) =>
 type InvocationRun = Parameters<InvocationEngine["execute"]>[0]["run"];
 
 const isMaudeResult = Schema.is(AttuneToolkit.tools.maude_run.successSchema);
-const expectValidMaude = (value: unknown): void =>
-  expect(isMaudeResult(value)).toBe(true);
+const expectValidMaude = (value: unknown): void => expect(isMaudeResult(value)).toBe(true);
 
 const tamperDigest = async (path: string): Promise<void> => {
   const value = await readJson<object>(path);
@@ -112,10 +99,7 @@ const drainingRun = () => {
   };
 };
 
-const canAcquireLock = async (
-  config: RuntimeConfig,
-  lockPath: string,
-): Promise<boolean> =>
+const canAcquireLock = async (config: RuntimeConfig, lockPath: string): Promise<boolean> =>
   await new Promise<boolean>((resolve, reject) => {
     const args = ["-x", "-n", lockPath, config.node, "-e", "process.exit(0)"];
     const child = spawn(config.flock, args, { shell: false, stdio: "ignore" });
@@ -154,30 +138,25 @@ describe("idempotent receipt boundary", () => {
 
   afterEach(() => rm(home, { recursive: true, force: true }));
 
-  const maudeOperation = (
-    input: ReturnType<typeof maudeInput>,
-    execute: InvocationRun,
-  ) => engine.execute({ name: "maude_run", input, run: execute } as never);
+  const maudeOperation = (input: ReturnType<typeof maudeInput>, execute: InvocationRun) =>
+    engine.execute({ name: "maude_run", input, run: execute } as never);
 
   const operation = (invocationId: InvocationId, value: string) =>
-    maudeOperation(
-      maudeInput(invocationId, value),
-      async (context: InvocationContext) => {
-        executions += 1;
-        context.setSnapshot(snapshot);
-        await context.writeArtifact("native.txt", value);
-        await new Promise((resolve) => setTimeout(resolve, 20));
-        return {
+    maudeOperation(maudeInput(invocationId, value), async (context: InvocationContext) => {
+      executions += 1;
+      context.setSnapshot(snapshot);
+      await context.writeArtifact("native.txt", value);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return {
+        snapshotId: snapshot,
+        value: {
           snapshotId: snapshot,
-          value: {
-            snapshotId: snapshot,
-            exitCode: 0,
-            stdoutTail: value,
-            stderrTail: "",
-          },
-        };
-      },
-    );
+          exitCode: 0,
+          stdoutTail: value,
+          stderrTail: "",
+        },
+      };
+    });
 
   const bootstrap = () => {
     let materializations = 0;
@@ -201,11 +180,8 @@ describe("idempotent receipt boundary", () => {
     };
   };
 
-  const artifactFile = (
-    tool: string,
-    invocationId: InvocationId,
-    file: string,
-  ) => Path.join(workspace.artifactsPath, tool, invocationId, file);
+  const artifactFile = (tool: string, invocationId: InvocationId, file: string) =>
+    Path.join(workspace.artifactsPath, tool, invocationId, file);
 
   const bootstrapFile = (invocationId: InvocationId, file: string) =>
     Path.join(home, "bootstrap", "repository_materialize", invocationId, file);
@@ -214,14 +190,11 @@ describe("idempotent receipt boundary", () => {
     detached: "persisted result and detached receipt disagree",
     correlated:
       "repository_materialize returned a receipt that does not correlate with its request and result",
-    allocation:
-      "persisted materialization allocation disagrees with request or terminal result",
+    allocation: "persisted materialization allocation disagrees with request or terminal result",
     malformed: "persisted materialization allocation is invalid",
   } as const;
 
-  const bootstrapReplay = async (
-    kind: keyof typeof bootstrapFailures,
-  ): Promise<number> => {
+  const bootstrapReplay = async (kind: keyof typeof bootstrapFailures): Promise<number> => {
     const invocationId = `bootstrap-${kind}` as InvocationId;
     const fixture = bootstrap();
     const input = materializeInput(invocationId);
@@ -238,8 +211,7 @@ describe("idempotent receipt boundary", () => {
       ]);
     } else {
       await writeCanonicalJson(file("allocation.json"), {
-        investigationId:
-          kind === "allocation" ? "01K22222222222222222222222" : "invalid",
+        investigationId: kind === "allocation" ? "01K22222222222222222222222" : "invalid",
       });
     }
     await rejects(fixture.engine.materialize(input), {
@@ -262,9 +234,7 @@ describe("idempotent receipt boundary", () => {
       status: "succeeded",
       snapshotId: snapshot,
     });
-    expect(await readFile(Path.join(directory, "native.txt"), "utf8")).toBe(
-      "exact",
-    );
+    expect(await readFile(Path.join(directory, "native.txt"), "utf8")).toBe("exact");
   });
 
   it("rejects changed input and observed incompleteness without replay", async () => {
@@ -334,9 +304,7 @@ describe("idempotent receipt boundary", () => {
     });
     await draining.cancelled.promise;
 
-    const gateFor = Reflect.get(engine, "gate") as (
-      investigationId: InvestigationId,
-    ) => ActivityGate;
+    const gateFor = Reflect.get(engine, "gate") as (investigationId: InvestigationId) => ActivityGate;
     const sharedFiber = Effect.runFork(
       gateFor(id).shared(
         Effect.sync(() => {
@@ -373,9 +341,7 @@ describe("idempotent receipt boundary", () => {
       name: "repository_checkpoint",
       input: checkpointInput(secondId),
       run: async (context) => {
-        receiptAtSecondEntry = await readJson(
-          artifactFile("repository", firstId, "receipt.json"),
-        );
+        receiptAtSecondEntry = await readJson(artifactFile("repository", firstId, "receipt.json"));
         context.setSnapshot(snapshot);
         return {
           snapshotId: snapshot,
@@ -432,9 +398,7 @@ describe("idempotent receipt boundary", () => {
 
     const directory = Path.join(workspace.artifactsPath, "maude", invocationId);
     const persistedResult = await readJson(Path.join(directory, "result.json"));
-    const persistedReceipt = await readJson(
-      Path.join(directory, "receipt.json"),
-    );
+    const persistedReceipt = await readJson(Path.join(directory, "receipt.json"));
     expectValidMaude(persistedResult);
     expect(persistedResult).toMatchObject({ receipt: persistedReceipt });
 
@@ -465,16 +429,10 @@ describe("idempotent receipt boundary", () => {
   });
 
   it("validates detached bootstrap receipts before replay", async () => {
-    expect([
-      await bootstrapReplay("detached"),
-      await bootstrapReplay("correlated"),
-    ]).toEqual([1, 1]);
+    expect([await bootstrapReplay("detached"), await bootstrapReplay("correlated")]).toEqual([1, 1]);
   });
 
   it("validates the persisted allocation before bootstrap replay", async () => {
-    expect([
-      await bootstrapReplay("allocation"),
-      await bootstrapReplay("malformed"),
-    ]).toEqual([1, 1]);
+    expect([await bootstrapReplay("allocation"), await bootstrapReplay("malformed")]).toEqual([1, 1]);
   });
 });

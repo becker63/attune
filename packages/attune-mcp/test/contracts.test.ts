@@ -5,10 +5,7 @@ import { fileURLToPath } from "node:url";
 import { Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
 
-import {
-  generateContractBundle,
-  stringifyContractBundle,
-} from "../src/contract/bundle.js";
+import { generateContractBundle, stringifyContractBundle } from "../src/contract/bundle.js";
 import {
   ArtifactUri,
   FreeFormReferences,
@@ -27,8 +24,7 @@ type ContractBundle = JsonObject & {
   };
 };
 
-const bundle = (): ContractBundle =>
-  generateContractBundle() as unknown as ContractBundle;
+const bundle = (): ContractBundle => generateContractBundle() as unknown as ContractBundle;
 
 const isRecord = (value: unknown): value is JsonObject =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -42,14 +38,10 @@ const localTarget = (contract: ContractBundle, reference: unknown): unknown => {
   const prefix = "#/$defs/";
   const label = String(reference);
   const name =
-    typeof reference === "string" && reference.startsWith(prefix)
-      ? reference.slice(prefix.length)
-      : "";
-  if (name === "" || name.includes("/"))
-    throw new TypeError(`invalid local definition reference ${label}`);
+    typeof reference === "string" && reference.startsWith(prefix) ? reference.slice(prefix.length) : "";
+  if (name === "" || name.includes("/")) throw new TypeError(`invalid local definition reference ${label}`);
   const target = contract.$defs[name];
-  if (target === undefined)
-    throw new TypeError(`unresolved local definition reference ${label}`);
+  if (target === undefined) throw new TypeError(`unresolved local definition reference ${label}`);
   return target;
 };
 
@@ -66,17 +58,9 @@ const normalizeCompatibility = (value: unknown): unknown => {
       .map(([key, item]) => [key, normalizeCompatibility(item)]),
   );
   if (!Array.isArray(normalized.allOf)) return normalized;
-  const fragments = normalized.allOf.filter(
-    (item) => !isRecord(item) || Object.keys(item).length > 0,
-  );
+  const fragments = normalized.allOf.filter((item) => !isRecord(item) || Object.keys(item).length > 0);
   if (
-    fragments.every(
-      (item) =>
-        isRecord(item) &&
-        !("$ref" in item) &&
-        !("anyOf" in item) &&
-        !("oneOf" in item),
-    )
+    fragments.every((item) => isRecord(item) && !("$ref" in item) && !("anyOf" in item) && !("oneOf" in item))
   ) {
     delete normalized.allOf;
     for (const fragment of fragments) Object.assign(normalized, fragment);
@@ -104,21 +88,15 @@ describe("frozen capability ABI", () => {
     const declaration = await readFile(path, "utf8");
     expect(declaration.match(/^export /gmu)).toHaveLength(1);
     const list = declaration.match(/^export \{ ([^}]*) \};$/mu)?.[1] ?? "";
-    const names = list
-      .split(",")
-      .map((name) => name.trim().replace(/^type /u, ""));
+    const names = list.split(",").map((name) => name.trim().replace(/^type /u, ""));
     expect(names.sort().join(",")).toBe(
       "Attune,AttuneReceipt,AttuneToolFailure,AttuneToolkit,Investigation,InvestigationLifecycleError",
     );
   });
 
   it("publishes exactly eight mechanical tools", () => {
-    expect(Object.keys(AttuneToolkit.tools)).toEqual(
-      expectedTools.map(([name]) => name),
-    );
-    expect(JSON.stringify(generateContractBundle())).not.toContain(
-      "joern_reindex",
-    );
+    expect(Object.keys(AttuneToolkit.tools)).toEqual(expectedTools.map(([name]) => name));
+    expect(JSON.stringify(generateContractBundle())).not.toContain("joern_reindex");
   });
 
   it("keeps identities and paths narrow", () => {
@@ -127,8 +105,7 @@ describe("frozen capability ABI", () => {
       [InvocationId, "activegraph:event-1"],
       [RepositoryRelativePath, "rules/a.yml"],
     ] as const;
-    for (const [schema, value] of valid)
-      expect(Schema.decodeUnknownSync(schema)(value)).toBe(value);
+    for (const [schema, value] of valid) expect(Schema.decodeUnknownSync(schema)(value)).toBe(value);
     const invalid = [
       [RepositoryRelativePath, "../outside", /repository-relative/u],
       [
@@ -159,16 +136,12 @@ describe("frozen capability ABI", () => {
       readFile(contractFile("attune-tools.sha256"), "utf8"),
     ]);
     expect(checkedIn).toBe(stringifyContractBundle());
-    expect(digest.trim()).toBe(
-      createHash("sha256").update(checkedIn).digest("hex"),
-    );
+    expect(digest.trim()).toBe(createHash("sha256").update(checkedIn).digest("hex"));
   });
 
   it("exports one self-contained Draft 2020-12 compound schema", () => {
     const contract = bundle();
-    expect(contract.$schema).toBe(
-      "https://json-schema.org/draft/2020-12/schema",
-    );
+    expect(contract.$schema).toBe("https://json-schema.org/draft/2020-12/schema");
     expect(contract.$ref).toBe("#/$defs/AttuneContractModelCatalog");
     expect(contract).not.toHaveProperty("definitions");
     expect(contract).not.toHaveProperty("dialect");
@@ -190,9 +163,7 @@ describe("frozen capability ABI", () => {
   it("maps every public tool and resource to stable definitions", () => {
     const contract = bundle();
     const tools = contract["x-attune"].tools;
-    expect(Object.keys(tools)).toEqual(
-      expectedTools.map(([name]) => name).sort(),
-    );
+    expect(Object.keys(tools)).toEqual(expectedTools.map(([name]) => name).sort());
     for (const [name, model] of expectedTools) {
       const mapping = record(tools[name]);
       expect(record(mapping.input).$ref).toBe(`#/$defs/${model}Input`);
@@ -203,8 +174,7 @@ describe("frozen capability ABI", () => {
     expect(Object.keys(contract["x-attune"].resources)).toEqual(
       expectedResources.map((name) => name.toLowerCase()),
     );
-    for (const name of expectedResources)
-      expect(contract.$defs).toHaveProperty(`${name}ResourceParameters`);
+    for (const name of expectedResources) expect(contract.$defs).toHaveProperty(`${name}ResourceParameters`);
   });
 
   it("retains the explicitly unconstrained Joern summary", () => {
@@ -220,9 +190,7 @@ describe("frozen capability ABI", () => {
 
   it("places portable refinements where standard generators retain them", () => {
     const contract = bundle();
-    const properties = record(
-      record(contract.$defs.ArtifactPromoteInput).properties,
-    );
+    const properties = record(record(contract.$defs.ArtifactPromoteInput).properties);
     expect(record(properties.expectedSnapshot)).toMatchObject({
       maxLength: 64,
       minLength: 1,
@@ -251,12 +219,8 @@ describe("frozen capability ABI", () => {
         },
         liveInput.$ref,
       );
-      expect(normalizeCompatibility(frozenInput)).toEqual(
-        normalizeCompatibility(liveRoot),
-      );
-      for (const [definitionName, definition] of Object.entries(
-        liveDefinitions,
-      )) {
+      expect(normalizeCompatibility(frozenInput)).toEqual(normalizeCompatibility(liveRoot));
+      for (const [definitionName, definition] of Object.entries(liveDefinitions)) {
         expect(normalizeCompatibility(contract.$defs[definitionName])).toEqual(
           normalizeCompatibility(definition),
         );

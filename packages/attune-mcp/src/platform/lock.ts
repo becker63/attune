@@ -5,6 +5,13 @@ import * as Path from "node:path";
 import { fail, type RuntimeConfig } from "./core.js";
 import { isAborted } from "./process.js";
 
+/**
+ * Runs work while holding one process-visible exclusive lock. @remarks Cancellation may stop acquisition, but
+ * acquired work drains before the holder is released. @typeParam A - Body result. @param config - Lock
+ * executable and runtime root. @param key - Stable lock identity. @param signal - Optional cancellation.
+ *
+ * @param body - Work protected by the lock. @returns The body result.
+ */
 export const withOsLock = async <A>(
   config: RuntimeConfig,
   key: string,
@@ -20,11 +27,10 @@ export const withOsLock = async <A>(
     throw fail("Cancelled", "lock wait cancelled before acquisition");
   }
   const lockPath = Path.join(directory, `${key}.lock`);
-  const child = spawn(
-    config.flock,
-    ["--exclusive", lockPath, config.node, config.lockHolder],
-    { shell: false, stdio: ["pipe", "pipe", "pipe"] },
-  );
+  const child = spawn(config.flock, ["--exclusive", lockPath, config.node, config.lockHolder], {
+    shell: false,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
   let stderr = "";
   child.stderr.setEncoding("utf8");
   child.stderr.on("data", (chunk: string) => {

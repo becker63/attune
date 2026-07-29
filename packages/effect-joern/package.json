@@ -33,6 +33,7 @@
   "scripts": {
     "build": "tsdown",
     "generate": "node scripts/generate.ts",
+    "generated-check": "node scripts/checkGenerated.ts",
     "package:check": "tsc -p test/consumer/tsconfig.json && node test/consumer/smoke.mjs && node scripts/checkPackage.ts",
     "prepack": "tsdown",
     "test": "vitest run",
@@ -53,6 +54,36 @@
       "scope:joern",
       "platform:neutral",
       "publishable"
-    ]
+    ],
+    "targets": {
+      "build": {
+        "dependsOn": [
+          "generated-check",
+          "^build"
+        ]
+      },
+      "generated-check": {
+        "cache": true,
+        "inputs": [
+          "{projectRoot}/package.json",
+          "{projectRoot}/schema/**/*",
+          "{projectRoot}/scripts/codegen/**/*",
+          "{projectRoot}/scripts/checkGenerated.ts",
+          "{projectRoot}/src/pure/generated/**/*",
+          "{workspaceRoot}/.oxfmtrc.json",
+          "{workspaceRoot}/pnpm-lock.yaml"
+        ]
+      },
+      "test": {
+        "dependsOn": [
+          "generated-check"
+        ]
+      },
+      "typecheck": {
+        "dependsOn": [
+          "generated-check"
+        ]
+      }
+    }
   }
 }

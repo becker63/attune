@@ -10,37 +10,32 @@ import { AttuneToolkit } from "../tools/registry.js";
 import { makeMcpHandlers } from "./handlers.js";
 import { makeResourceRegistration } from "./resources.js";
 
-const ToolHandlers = Layer.unwrap(
-  Effect.map(Attune, (service) =>
-    AttuneToolkit.toLayer(makeMcpHandlers(service)),
-  ),
+/** Layer that installs the closed Attune handler registry. */ const ToolHandlers = Layer.unwrap(
+  Effect.map(Attune, (service) => AttuneToolkit.toLayer(makeMcpHandlers(service))),
 );
 
-const StdioProtocol = RpcServer.layerProtocolStdio.pipe(
-  Layer.provide(RpcSerialization.layerNdJsonRpc()),
-  Layer.provide(NodeStdio.layer),
-  Layer.provide(Layer.succeed(Logger.LogToStderr)(true)),
-);
-
-export const makeAttuneServerLive = (config: RuntimeConfig) => {
-  const services = Layer.succeed(Attune, Attune.make(config));
-  const resources = makeResourceRegistration(
-    config,
-    new WorkspaceStore(config),
+/** Newline-delimited JSON-RPC protocol over process stdio. */ const StdioProtocol =
+  RpcServer.layerProtocolStdio.pipe(
+    Layer.provide(RpcSerialization.layerNdJsonRpc()),
+    Layer.provide(NodeStdio.layer),
+    Layer.provide(Layer.succeed(Logger.LogToStderr)(true)),
   );
+
+/**
+ * Builds the complete MCP server layer. @remarks Startup verifies the exact tool/resource inventory before
+ * serving stdio requests. @param config - Runtime boundary configuration. @returns The live server layer.
+ */
+export const makeAttuneServerLive = (config: RuntimeConfig): Layer.Layer<never, never, never> => {
+  const services = Layer.succeed(Attune, Attune.make(config));
+  const resources = makeResourceRegistration(config, new WorkspaceStore(config));
   const registration = Layer.merge(
-    McpServer.toolkit(AttuneToolkit).pipe(
-      Layer.provide(ToolHandlers),
-      Layer.provide(services),
-    ),
+    McpServer.toolkit(AttuneToolkit).pipe(Layer.provide(ToolHandlers), Layer.provide(services)),
     resources,
   );
 
   return Layer.effectDiscard(
     Effect.gen(function* () {
-      const registered = yield* Layer.build(
-        registration.pipe(Layer.provideMerge(McpServer.McpServer.layer)),
-      );
+      const registered = yield* Layer.build(registration.pipe(Layer.provideMerge(McpServer.McpServer.layer)));
       const server = Context.get(registered, McpServer.McpServer);
       if (
         server.tools.length !== 8 ||
@@ -49,9 +44,7 @@ export const makeAttuneServerLive = (config: RuntimeConfig) => {
       ) {
         return yield* Effect.die(
           new Error(
-            `incomplete MCP registry: tools=${String(
-              server.tools.length,
-            )}, templates=${String(
+            `incomplete MCP registry: tools=${String(server.tools.length)}, templates=${String(
               server.resourceTemplates.length,
             )}, resources=${String(server.resources.length)}`,
           ),

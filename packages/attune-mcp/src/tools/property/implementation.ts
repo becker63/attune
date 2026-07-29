@@ -3,30 +3,29 @@ import * as Path from "node:path";
 
 import { Effect } from "effect";
 
-import type {
-  PropertyRunInput,
-  PropertyRunResult,
-} from "../../contract/schemas.js";
+import type { AttuneToolFailure, PropertyRunInput, PropertyRunResult } from "../../contract/schemas.js";
 import { InvocationEngine } from "../../investigation/invocation.js";
 import { WorkspaceStore } from "../../investigation/workspace.js";
-import {
-  canonicalJson,
-  fail,
-  type RuntimeConfig,
-} from "../../platform/core.js";
-import {
-  requireSuccessfulProcess,
-  retainProcessEvidence,
-} from "../../platform/native-process.js";
+import { canonicalJson, type RuntimeConfig } from "../../platform/core.js";
+import { requireSuccessfulProcess, retainProcessEvidence } from "../../platform/native-process.js";
 import { runProcess } from "../../platform/process.js";
 
-/** Runs a bounded repository-local property against an isolated snapshot. */
+/**
+ * Runs a bounded repository-local property against an isolated snapshot.
+ *
+ * @remarks
+ *   Replay parameters, process evidence, and any counterexample are retained without changing the owned
+ *   repository. @param engine - Invocation engine that records terminal evidence. @param config - Runtime and
+ *   runner configuration. @param workspaces - Store that owns the isolated checkout.
+ * @param input - Property source, parameters, and snapshot. @returns The outcome and replay evidence.
+ * @failure {@link AttuneToolFailure} - Correct the property or native runner boundary before retrying.
+ */
 export const propertyRun = (
   engine: InvocationEngine,
   config: RuntimeConfig,
   workspaces: WorkspaceStore,
   input: PropertyRunInput,
-): Effect.Effect<PropertyRunResult, ReturnType<typeof fail>> =>
+): Effect.Effect<PropertyRunResult, AttuneToolFailure> =>
   engine.execute({
     name: "property_run",
     input,
@@ -48,24 +47,13 @@ export const propertyRun = (
         context.signal,
       );
       try {
-        const executableProperty = Path.join(
-          checkout.repository,
-          ".attune-property.ts",
-        );
-        await copyFile(
-          Path.join(context.directory, "property.ts"),
-          executableProperty,
-        );
+        const executableProperty = Path.join(checkout.repository, ".attune-property.ts");
+        await copyFile(Path.join(context.directory, "property.ts"), executableProperty);
         const result = await runProcess(
           config,
           {
             command: config.node,
-            args: [
-              config.propertyRunner,
-              executableProperty,
-              parametersPath,
-              context.directory,
-            ],
+            args: [config.propertyRunner, executableProperty, parametersPath, context.directory],
             cwd: checkout.repository,
             artifactDirectory: context.directory,
             timeoutMilliseconds: input.parameters.timeoutMilliseconds,
@@ -73,11 +61,7 @@ export const propertyRun = (
           context.signal,
         );
         await retainProcessEvidence(context, result);
-        for (const path of [
-          "run-details.json",
-          "report.txt",
-          "counterexample.json",
-        ]) {
+        for (const path of ["run-details.json", "report.txt", "counterexample.json"]) {
           try {
             await readFile(Path.join(context.directory, path));
             context.retainArtifact(path);
@@ -87,10 +71,7 @@ export const propertyRun = (
         }
         requireSuccessfulProcess(result);
         const details = JSON.parse(
-          await readFile(
-            Path.join(context.directory, "run-details.json"),
-            "utf8",
-          ),
+          await readFile(Path.join(context.directory, "run-details.json"), "utf8"),
         ) as {
           readonly failed: boolean;
           readonly seed?: number;
@@ -102,19 +83,13 @@ export const propertyRun = (
           snapshotId: input.expectedSnapshot,
           value: {
             snapshotId: input.expectedSnapshot,
-            outcome: details.failed
-              ? ("counterexample" as const)
-              : ("no-counterexample" as const),
+            outcome: details.failed ? ("counterexample" as const) : ("no-counterexample" as const),
             ...(details.seed === undefined ? {} : { seed: details.seed }),
             ...(typeof details.counterexamplePath !== "string"
               ? {}
               : { counterexamplePath: details.counterexamplePath }),
-            ...(details.numRuns === undefined
-              ? {}
-              : { numRuns: details.numRuns }),
-            ...(details.numShrinks === undefined
-              ? {}
-              : { numShrinks: details.numShrinks }),
+            ...(details.numRuns === undefined ? {} : { numRuns: details.numRuns }),
+            ...(details.numShrinks === undefined ? {} : { numShrinks: details.numShrinks }),
           },
         };
       } finally {

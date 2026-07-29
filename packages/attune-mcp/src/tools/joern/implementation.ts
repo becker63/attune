@@ -14,28 +14,21 @@ import {
   type SerializedQuery,
 } from "joern-effect";
 
-import type {
-  JoernQueryInput,
-  JoernQueryResult,
-} from "../../contract/schemas.js";
+import type { AttuneToolFailure, JoernQueryInput, JoernQueryResult } from "../../contract/schemas.js";
 import { InvocationEngine } from "../../investigation/invocation.js";
 import { WorkspaceStore } from "../../investigation/workspace.js";
-import {
-  canonicalJson,
-  fail,
-  sha256,
-  type Json,
-  type RuntimeConfig,
-} from "../../platform/core.js";
+import { canonicalJson, fail, sha256, type Json, type RuntimeConfig } from "../../platform/core.js";
 
+/**
+ * Allocates a loopback port for one scoped Joern server. @returns An available loopback port.
+ */
 const freePort = async (): Promise<number> =>
   await new Promise<number>((resolve, reject) => {
     const server = createServer();
     server.once("error", reject);
     server.listen(0, "127.0.0.1", () => {
       const address = server.address();
-      const port =
-        typeof address === "object" && address !== null ? address.port : 0;
+      const port = typeof address === "object" && address !== null ? address.port : 0;
       server.close((cause) => {
         if (cause !== undefined) reject(cause);
         else resolve(port);
@@ -43,8 +36,19 @@ const freePort = async (): Promise<number> =>
     });
   });
 
-const nodeLayer = Layer.merge(NodeServices.layer, NodeHttpClient.layerNodeHttp);
+/** Node services required by the scoped Joern transport. */ const nodeLayer = Layer.merge(
+  NodeServices.layer,
+  NodeHttpClient.layerNodeHttp,
+);
 
+/**
+ * Executes one compiled query through a scoped Joern server. @param config - Runtime executable
+ * configuration. @param repository - Isolated repository.
+ *
+ * @param input - Frontend and timeout controls. @param cpgql - Compiled query.
+ * @param port - Reserved loopback port. @param signal - Optional cancellation.
+ * @returns The diagnostic response and bounded server output.
+ */
 const executeRawQuery = async (
   config: RuntimeConfig,
   repository: string,
@@ -70,35 +74,36 @@ const executeRawQuery = async (
         },
         transport,
       );
-      const diagnostic = yield* transport.executeDiagnostic(
-        server.baseUrl,
-        cpgql,
-      );
+      const diagnostic = yield* transport.executeDiagnostic(server.baseUrl, cpgql);
       return {
         diagnostic,
         serverOutput: yield* server.outputTails,
       };
     }),
-  ).pipe(
-    Effect.provide(nodeLayer),
-    Effect.timeout(`${input.timeoutMilliseconds} millis`),
-  );
+  ).pipe(Effect.provide(nodeLayer), Effect.timeout(`${input.timeoutMilliseconds} millis`));
   return await Effect.runPromise(program, { signal });
 };
 
+/**
+ * Runs one Joern query against an exact isolated snapshot. @remarks Query, environment, diagnostics, and
+ * bounded output are retained as correlated evidence. @param engine - Invocation engine that records terminal
+ * evidence.
+ *
+ * @param config - Runtime and Joern configuration. @param workspaces - Store that owns the isolated checkout.
+ * @param input - Query, frontend, format, and snapshot. @returns The query summary and CPG identity.
+ * @failure {@link AttuneToolFailure} - Repair the query, Joern process, or repository boundary before retrying.
+ */
 export const joernQuery = (
   engine: InvocationEngine,
   config: RuntimeConfig,
   workspaces: WorkspaceStore,
   input: JoernQueryInput,
-): Effect.Effect<JoernQueryResult, ReturnType<typeof fail>> =>
+): Effect.Effect<JoernQueryResult, AttuneToolFailure> =>
   engine.execute({
     name: "joern_query",
     input,
     run: async (context) => {
-      const cpgql =
-        input.cpgql ??
-        compileSerializedQuery(input.dsl as unknown as SerializedQuery);
+      const cpgql = input.cpgql ?? compileSerializedQuery(input.dsl as unknown as SerializedQuery);
       await workspaces.assertExactClean(
         context.workspace.repositoryPath,
         input.expectedSnapshot,
@@ -106,10 +111,7 @@ export const joernQuery = (
       );
       context.setSnapshot(input.expectedSnapshot);
       if (input.dsl !== undefined) {
-        await context.writeArtifact(
-          "query.dsl.json",
-          `${canonicalJson(input.dsl)}\n`,
-        );
+        await context.writeArtifact("query.dsl.json", `${canonicalJson(input.dsl)}\n`);
       }
       await context.writeArtifact("query.cpgql", cpgql);
       const cpgId = sha256(
@@ -140,14 +142,7 @@ export const joernQuery = (
         const port = await freePort();
         let executed: Awaited<ReturnType<typeof executeRawQuery>>;
         try {
-          executed = await executeRawQuery(
-            config,
-            checkout.repository,
-            input,
-            cpgql,
-            port,
-            context.signal,
-          );
+          executed = await executeRawQuery(config, checkout.repository, input, cpgql, port, context.signal);
         } catch (cause) {
           await context.writeArtifact(
             "joern-error.json",
@@ -164,23 +159,14 @@ export const joernQuery = (
             })}\n`,
           );
           throw fail(
-            typeof cause === "object" &&
-              cause !== null &&
-              "_tag" in cause &&
-              cause._tag === "TimeoutError"
+            typeof cause === "object" && cause !== null && "_tag" in cause && cause._tag === "TimeoutError"
               ? "TimedOut"
               : "ProcessExitFailure",
             cause instanceof Error ? cause.message : String(cause),
           );
         }
-        await context.writeArtifact(
-          "joern-response.json",
-          executed.diagnostic.responseBody,
-        );
-        await context.writeArtifact(
-          "joern-diagnostic.json",
-          `${canonicalJson(executed.diagnostic)}\n`,
-        );
+        await context.writeArtifact("joern-response.json", executed.diagnostic.responseBody);
+        await context.writeArtifact("joern-diagnostic.json", `${canonicalJson(executed.diagnostic)}\n`);
         await context.writeArtifact(
           "joern-server-output.json",
           `${canonicalJson(executed.serverOutput)}\n`,
@@ -189,19 +175,14 @@ export const joernQuery = (
         if (!executed.diagnostic.success) {
           throw fail(
             "ProcessExitFailure",
-            executed.diagnostic.stderr ??
-              executed.diagnostic.stdout ??
-              "Joern rejected the query",
+            executed.diagnostic.stderr ?? executed.diagnostic.stdout ?? "Joern rejected the query",
           );
         }
         const output = executed.diagnostic.result;
         if (output === undefined) {
           throw fail("DecodeFailure", "Joern response had no query result");
         }
-        const outputPath =
-          input.outputFormat === "json"
-            ? "joern-output.json"
-            : "joern-output.txt";
+        const outputPath = input.outputFormat === "json" ? "joern-output.json" : "joern-output.txt";
         await context.writeArtifact(outputPath, output);
         let summary: Json;
         if (Buffer.byteLength(output) > config.inlineLimitBytes) {

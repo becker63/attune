@@ -3,11 +3,7 @@ import { Effect, Schema } from "effect";
 import type { InvocationId } from "../src/contract/schemas.js";
 import { validateOperationResult } from "../src/investigation/operation.js";
 import { sha256 } from "../src/platform/core.js";
-import {
-  ATTUNE_OPERATIONS,
-  AttuneToolkit,
-  type AttuneOperationWireInput,
-} from "../src/tools/registry.js";
+import { ATTUNE_OPERATIONS, AttuneToolkit, type AttuneOperationWireInput } from "../src/tools/registry.js";
 import {
   FIXTURE_INVESTIGATION_ID as investigationId,
   FIXTURE_SNAPSHOT as snapshot,
@@ -47,9 +43,7 @@ const validResult = () =>
     },
   }) as const;
 const validateMaude = (candidate: unknown) =>
-  Effect.runPromise(
-    validateOperationResult("maude_run", input, Effect.succeed(candidate)),
-  );
+  Effect.runPromise(validateOperationResult("maude_run", input, Effect.succeed(candidate)));
 describe("closed operation correlation", () => {
   it("binds exactly eight Toolkit tools to the closed registry", () => {
     expect(Object.keys(AttuneToolkit.tools)).toEqual(names);
@@ -76,10 +70,7 @@ describe("closed operation correlation", () => {
             },
           },
         };
-        expect(
-          Schema.is(AttuneToolkit.tools[name].successSchema)(terminal),
-          `${name}:${status}`,
-        ).toBe(true);
+        expect(Schema.is(AttuneToolkit.tools[name].successSchema)(terminal), `${name}:${status}`).toBe(true);
       }
     }
   });
@@ -141,11 +132,9 @@ describe("closed operation correlation", () => {
         },
       };
       const outcome = await Effect.runPromise(
-        validateOperationResult(
-          "repository_materialize",
-          request,
-          Effect.succeed(result),
-        ).pipe(Effect.result),
+        validateOperationResult("repository_materialize", request, Effect.succeed(result)).pipe(
+          Effect.result,
+        ),
       );
       expect(outcome).toMatchObject(
         accepted

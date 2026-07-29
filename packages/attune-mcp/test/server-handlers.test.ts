@@ -46,10 +46,7 @@ describe("MCP durable terminal recovery", () => {
     let head = initialSnapshot;
     let finalized = false;
     let executions = 0;
-    const terminals = new Map<
-      string,
-      AttuneOperationResult<"repository_checkpoint">
-    >();
+    const terminals = new Map<string, AttuneOperationResult<"repository_checkpoint">>();
     const unused = () => Effect.die("unexpected handler");
     const handlers: AttuneOperationHandlers = {
       repository_materialize: unused,
@@ -89,17 +86,10 @@ describe("MCP durable terminal recovery", () => {
       return Effect.succeed(manifest);
     };
     const terminalLookups = {
-      repository_checkpoint: (input) =>
-        Effect.succeed(terminals.get(canonicalJson(input))),
+      repository_checkpoint: (input) => Effect.succeed(terminals.get(canonicalJson(input))),
     } satisfies Partial<AttuneTerminalLookups>;
     const makeHandlers = () =>
-      makeMcpHandlers(
-        makeInvestigationServiceFromHandlers(
-          handlers,
-          validate,
-          terminalLookups,
-        ),
-      );
+      makeMcpHandlers(makeInvestigationServiceFromHandlers(handlers, validate, terminalLookups));
     const input = {
       investigationId,
       expectedSnapshot: initialSnapshot,
@@ -109,9 +99,7 @@ describe("MCP durable terminal recovery", () => {
       message: "advance once",
     } as const;
 
-    const first = await Effect.runPromise(
-      makeHandlers().repository_checkpoint(input),
-    );
+    const first = await Effect.runPromise(makeHandlers().repository_checkpoint(input));
     expect(first.receipt.status).toBe("succeeded");
     expect(head).toBe(advancedSnapshot);
     expect(executions).toBe(1);
@@ -119,9 +107,7 @@ describe("MCP durable terminal recovery", () => {
     // A new service instance has no process-local capability from the first
     // call. Durable lookup still returns the exact terminal result before the
     // stale old snapshot can be rejected by active-capability acquisition.
-    expect(
-      await Effect.runPromise(makeHandlers().repository_checkpoint(input)),
-    ).toEqual(first);
+    expect(await Effect.runPromise(makeHandlers().repository_checkpoint(input))).toEqual(first);
     expect(executions).toBe(1);
 
     await expect(
@@ -135,9 +121,7 @@ describe("MCP durable terminal recovery", () => {
     expect(executions).toBe(1);
 
     finalized = true;
-    expect(
-      await Effect.runPromise(makeHandlers().repository_checkpoint(input)),
-    ).toEqual(first);
+    expect(await Effect.runPromise(makeHandlers().repository_checkpoint(input))).toEqual(first);
     await expect(
       Effect.runPromise(
         makeHandlers().repository_checkpoint({

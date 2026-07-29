@@ -1,3 +1,6 @@
+/**
+ * Identity and size evidence for the pinned generated Joern CPG schema.
+ */
 export const generatedSchema = {
   edgeCount: 34,
   hash: "cbfc43bb1af7fb2e8e6901fd4ad5e807055e07f9167ba735061cd122b6aad390",

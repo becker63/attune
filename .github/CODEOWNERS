@@ -1,4 +1,20 @@
-# Narrative evidence and deployment changes require an Attune maintainer.
-/packages/attune-docs/content/ @becker63
-/packages/attune-docs/docs-policy.json @becker63
+# Public narrative, compiler, presentation, and publication changes require
+# documentation-editorial and architecture review from the designated owner.
+/packages/attune-mcp/src/index.ts @becker63
+/packages/attune-mcp/src/investigation/capability.ts @becker63
+/packages/attune-mcp/src/investigation/errors.ts @becker63
+/packages/attune-mcp/src/investigation/service.ts @becker63
+/packages/attune-mcp/src/contract/schemas.ts @becker63
+/packages/attune-mcp/src/tools/registry.ts @becker63
+/packages/attune-docs/ @becker63
+/tooling/oxlint/ @becker63
+/oxlint.config.ts @becker63
+/tsdoc.json @becker63
+/.oxfmtrc.json @becker63
+/package.json @becker63
+/pnpm-lock.yaml @becker63
+/nx.json @becker63
+/README.md @becker63
+/packages/attune-mcp/README.md @becker63
 /.github/workflows/pages.yml @becker63
+/.github/CODEOWNERS @becker63

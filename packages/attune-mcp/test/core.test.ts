@@ -43,13 +43,7 @@ describe("small mechanical core", () => {
   it("hashes honest artifact metadata", async () => {
     await withTemporaryDirectory("attune-artifact-", async (root) => {
       await writeFile(Path.join(root, "value.txt"), "exact");
-      const reference = await artifactReference(
-        INVESTIGATION,
-        "maude",
-        INVOCATION,
-        root,
-        "value.txt",
-      );
+      const reference = await artifactReference(INVESTIGATION, "maude", INVOCATION, root, "value.txt");
       expect(reference.bytes).toBe(5);
       expect(reference.complete).toBe(true);
       expect(reference.sha256).toBe(sha256("exact"));
@@ -69,14 +63,9 @@ describe("small mechanical core", () => {
       });
       expect(result.termination).toBe("resource-limited");
       expect(result.command).toBe(process.execPath);
-      expect(result.args).toEqual([
-        "-e",
-        "process.stdout.write('x'.repeat(128))",
-      ]);
+      expect(result.args).toEqual(["-e", "process.stdout.write('x'.repeat(128))"]);
       expect(result.stdoutComplete).toBe(false);
-      expect(
-        (await readFile(Path.join(directory, "stdout.txt"))).byteLength,
-      ).toBe(32);
+      expect((await readFile(Path.join(directory, "stdout.txt"))).byteLength).toBe(32);
     });
   });
 
@@ -89,20 +78,16 @@ describe("small mechanical core", () => {
         config(root),
         {
           command: process.execPath,
-          args: [
-            "-e",
-            "process.stdout.write('ready');setInterval(()=>{},1000)",
-          ],
+          args: ["-e", "process.stdout.write('ready');setInterval(()=>{},1000)"],
           cwd: root,
           artifactDirectory: directory,
           timeoutMilliseconds: 10_000,
         },
         controller.signal,
       );
-      await vi.waitFor(
-        async () => expect(await output(directory, "stdout")).toBe("ready"),
-        { timeout: 2_000 },
-      );
+      await vi.waitFor(async () => expect(await output(directory, "stdout")).toBe("ready"), {
+        timeout: 2_000,
+      });
       controller.abort();
       expect((await running).termination).toBe("cancelled");
       expect(await output(directory, "stdout")).toBe("ready");
@@ -138,12 +123,8 @@ describe("small mechanical core", () => {
       Effect.tap(() => Effect.sync(() => events.push("shared"))),
       gate.shared,
     );
-    const exclusive = Effect.sync(() => events.push("exclusive")).pipe(
-      gate.exclusive,
-    );
-    await Effect.runPromise(
-      Effect.all([shared, exclusive], { concurrency: "unbounded" }),
-    );
+    const exclusive = Effect.sync(() => events.push("exclusive")).pipe(gate.exclusive);
+    await Effect.runPromise(Effect.all([shared, exclusive], { concurrency: "unbounded" }));
     expect(events).toEqual(["shared", "exclusive"]);
   });
 });

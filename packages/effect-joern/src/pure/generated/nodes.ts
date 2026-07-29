@@ -1,3 +1,6 @@
+/**
+ * Normalized Joern node definitions generated from the pinned CPG schema.
+ */
 export const nodes = [
   {
     name: "ANNOTATION",

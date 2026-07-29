@@ -78,15 +78,18 @@ Runtime durability is covered by the adjacent Vitest suites.
 
 ## Documentation boundary
 
-Source types and TSDoc are authoritative. `packages/attune-docs` extracts a
-deterministic manifest and renders one reference. The package, six symbols, and
-their members each have a source-owned page with an exact declaration link.
-Every page includes a Shiki + Twoslash program, including multi-file examples
-and cut directives where setup would distract from the type being explained.
+Source types and TSDoc are authoritative. `packages/attune-docs` compiles every
+production declaration into one static type document: an Elm-like lifecycle
+guide followed by the remaining repository graph. The opening program is the
+single running investigation; exact identifiers in signatures, prose, and
+visible example source link to canonical declarations and immutable source.
 
-The extractor rejects missing TSDoc, stale declaration output, invalid links,
-and examples that do not type-check. The reference therefore reports what this
-revision proves without maintaining a parallel prose model.
+The root `attune/tsdoc` rule rejects incomplete authored comments immediately.
+The repository compiler then rejects missing declarations, unresolved links,
+generated drift, and examples that do not type-check. Shiki renders static
+syntax only. Native fragments, `:target`, browser Back, and browser Find supply
+navigation without a manifest, route tree, hover payload, Twoslash package, or
+client JavaScript.
 
 ## Deliberate limits
 

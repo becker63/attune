@@ -48,7 +48,7 @@
           src = self;
           agentfs = agentFsFor system;
           joernTools = joernToolsFor system;
-          pnpmHash = "sha256-HdX8QJdNA+lB8w29K/Rkb4kWixS7zcW1pPbVgOuQ+iM=";
+          pnpmHash = "sha256-4TU2bCgNvVjTO7bEpL4UTRahmwxUBCtDJ1QdfN7vtXM=";
           inherit
             pyproject-build-systems
             pyproject-nix

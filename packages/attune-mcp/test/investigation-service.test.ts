@@ -35,10 +35,8 @@ const input = (id: string) => ({
   references: [],
 });
 
-const expectRejection = (
-  effect: Effect.Effect<unknown, unknown>,
-  expected: object,
-) => expect(run(effect)).rejects.toMatchObject(expected);
+const expectRejection = (effect: Effect.Effect<unknown, unknown>, expected: object) =>
+  expect(run(effect)).rejects.toMatchObject(expected);
 
 const expectLifecycleRejection = (
   effect: Effect.Effect<unknown, unknown>,
@@ -65,8 +63,9 @@ const receipt = (
   snapshotId: at,
 });
 
-type FailureReceipt<Status extends "failed" | "cancelled"> =
-  Status extends "failed" ? FailedReceipt : CancelledReceipt;
+type FailureReceipt<Status extends "failed" | "cancelled"> = Status extends "failed"
+  ? FailedReceipt
+  : CancelledReceipt;
 
 const failureReceipt = <const Status extends "failed" | "cancelled">(
   status: Status,
@@ -165,10 +164,7 @@ const makeService = (
   validate: InvestigationValidator = () => Effect.succeed(manifest),
 ) => makeInvestigationServiceFromHandlers(handlers(options), validate);
 
-const persistedValidator = (
-  head: FullGitCommit | (() => FullGitCommit),
-  dirty: boolean,
-) =>
+const persistedValidator = (head: FullGitCommit | (() => FullGitCommit), dirty: boolean) =>
   makePersistedInvestigationValidator({
     inspect: async () => ({
       manifest,
@@ -190,12 +186,9 @@ const maudeInput = {
   timeoutMilliseconds: 1_000,
 } as const;
 
-const activate = async (
-  service: ReturnType<typeof makeInvestigationServiceFromHandlers>,
-) => {
+const activate = async (service: ReturnType<typeof makeInvestigationServiceFromHandlers>) => {
   const materialized = await run(service.materialize(materializeInput));
-  if (materialized.status !== "materialized")
-    throw new Error("fixture materialization was rejected");
+  if (materialized.status !== "materialized") throw new Error("fixture materialization was rejected");
   return run(service.activate(materialized.investigation));
 };
 
@@ -203,9 +196,7 @@ describe("typed investigation lifecycle service", () => {
   it("validates materialization, rotates active permission, and finalizes", async () => {
     const service = makeService();
     const active = await activate(service);
-    const executed = await run(
-      service.execute(active, "maude_run", maudeInput),
-    );
+    const executed = await run(service.execute(active, "maude_run", maudeInput));
     expect(executed).toMatchObject({
       receipt: {
         status: "succeeded",
@@ -217,13 +208,8 @@ describe("typed investigation lifecycle service", () => {
         receipt: { status: "succeeded" },
       },
     });
-    await expectLifecycleRejection(
-      service.execute(active, "maude_run", maudeInput),
-      "StateMismatch",
-    );
-    const finalized = await run(
-      service.finalize(executed.investigation, input("finalize-1")),
-    );
+    await expectLifecycleRejection(service.execute(active, "maude_run", maudeInput), "StateMismatch");
+    const finalized = await run(service.finalize(executed.investigation, input("finalize-1")));
     expect(finalized.status).toBe("finalized");
 
     // Reuse the original active capability, not a cast of finalized evidence.
@@ -272,24 +258,12 @@ describe("typed investigation lifecycle service", () => {
       expectedSnapshot: snapshot,
     };
 
-    for (const name of [
-      "repository_materialize",
-      "investigation_finalize",
-      "not_an_operation",
-    ]) {
-      await expectLifecycleRejection(
-        unsafeExecute(active, name, maudeInput),
-        "UnrecognizedOperation",
-        name,
-      );
+    for (const name of ["repository_materialize", "investigation_finalize", "not_an_operation"]) {
+      await expectLifecycleRejection(unsafeExecute(active, name, maudeInput), "UnrecognizedOperation", name);
     }
 
     for (const name of ["repository_materialize", "not_an_operation"]) {
-      await expectLifecycleRejection(
-        unsafeRecover(name, wireInput),
-        "UnrecognizedOperation",
-        name,
-      );
+      await expectLifecycleRejection(unsafeRecover(name, wireInput), "UnrecognizedOperation", name);
     }
   });
 
@@ -307,23 +281,16 @@ describe("typed investigation lifecycle service", () => {
           finalizationAfterPersistence,
           onFinalizationPersisted: () => void (persistedFinalization = true),
         }),
-        () =>
-          Effect.succeed(persistedFinalization ? finalizedManifest : manifest),
+        () => Effect.succeed(persistedFinalization ? finalizedManifest : manifest),
       );
       const active = await activate(service);
 
       const finalizationExit = await Effect.runPromiseExit(
-        service.finalize(
-          active,
-          input(`finalize-${finalizationAfterPersistence}`),
-        ),
+        service.finalize(active, input(`finalize-${finalizationAfterPersistence}`)),
       );
       expect(finalizationExit._tag).toBe("Failure");
 
-      await expectLifecycleRejection(
-        service.execute(active, "maude_run", maudeInput),
-        "StateMismatch",
-      );
+      await expectLifecycleRejection(service.execute(active, "maude_run", maudeInput), "StateMismatch");
     },
   );
 
@@ -359,8 +326,7 @@ describe("typed investigation lifecycle service", () => {
     const dirty = persistedValidator(snapshot, true);
     const service = makeService({}, dirty);
     const materialized = await run(service.materialize(materializeInput));
-    if (materialized.status !== "materialized")
-      throw new Error("fixture materialization was rejected");
+    if (materialized.status !== "materialized") throw new Error("fixture materialization was rejected");
     await expectRejection(service.activate(materialized.investigation), {
       code: "DirtyRepository",
     });
@@ -408,9 +374,7 @@ describe("typed investigation lifecycle service", () => {
     expect(failed.receipt.status).toBe("failed");
     expect(failed.investigation).toBe(active);
 
-    const finalized = await run(
-      service.finalize(active, input("finalize-after-failure")),
-    );
+    const finalized = await run(service.finalize(active, input("finalize-after-failure")));
     expect(finalized.status).toBe("finalized");
   });
 });

@@ -102,6 +102,12 @@ export const renderProp = (schema: NormalizedSchema): string => {
     namedImports: ["property"],
   });
   file.addStatements((writer) => {
+    writer.newLine();
+    writeJsDoc(writer, [
+      "Typed property selectors generated from the pinned Joern CPG schema.",
+      "",
+      "Each member preserves its CPG name, cardinality, owners, and runtime schema.",
+    ]);
     writer.writeLine("export const prop = {");
     writer.indent(() => {
       for (const property of schema.properties) {
@@ -141,18 +147,23 @@ export const renderProp = (schema: NormalizedSchema): string => {
 export const renderNodes = (schema: NormalizedSchema): string => {
   const p = project();
   const file = p.createSourceFile("nodes.ts");
-  file.addStatements(
-    `export const nodes = ${JSON.stringify(
-      schema.nodes.map((node) => ({
-        name: node.name,
-        properties: node.properties,
-        starterName: node.starterName,
-        ...(node.comment === undefined ? {} : { comment: node.comment }),
-      })),
-      null,
-      2,
-    )} as const`,
-  );
+  file.addStatements((writer) => {
+    writeJsDoc(writer, [
+      "Normalized Joern node definitions generated from the pinned CPG schema.",
+    ]);
+    writer.write(
+      `export const nodes = ${JSON.stringify(
+        schema.nodes.map((node) => ({
+          name: node.name,
+          properties: node.properties,
+          starterName: node.starterName,
+          ...(node.comment === undefined ? {} : { comment: node.comment }),
+        })),
+        null,
+        2,
+      )} as const`,
+    );
+  });
   return file.getFullText();
 };
 
@@ -174,6 +185,10 @@ export const renderCpg = (schema: NormalizedSchema): string => {
     }
   }
   file.addStatements((writer) => {
+    writer.newLine();
+    writeJsDoc(writer, [
+      "Typed traversal starters generated from the pinned Joern CPG schema.",
+    ]);
     writer.writeLine("export const cpg = {");
     writer.indent(() => {
       for (const name of [...starters].sort()) {
@@ -193,19 +208,24 @@ export const renderCpg = (schema: NormalizedSchema): string => {
 export const renderSchema = (schema: NormalizedSchema): string => {
   const p = project();
   const file = p.createSourceFile("schema.ts");
-  file.addStatements(
-    `export const generatedSchema = ${JSON.stringify(
-      {
-        edgeCount: schema.edges.length,
-        hash: schema.hash,
-        nodeCount: schema.nodes.length,
-        propertyCount: schema.properties.length,
-        version: schema.version,
-      },
-      null,
-      2,
-    )} as const`,
-  );
+  file.addStatements((writer) => {
+    writeJsDoc(writer, [
+      "Identity and size evidence for the pinned generated Joern CPG schema.",
+    ]);
+    writer.write(
+      `export const generatedSchema = ${JSON.stringify(
+        {
+          edgeCount: schema.edges.length,
+          hash: schema.hash,
+          nodeCount: schema.nodes.length,
+          propertyCount: schema.properties.length,
+          version: schema.version,
+        },
+        null,
+        2,
+      )} as const`,
+    );
+  });
   return file.getFullText();
 };
 
@@ -231,10 +251,17 @@ export const emitGenerated = (
           catch: (cause) => new Error(String(cause)),
           try: async () => {
             const path = join(outDir, name);
-            const { code } = await format(path, source, {
+            const options = {
+              jsdoc: {
+                commentLineStrategy: "keep",
+                keepUnparsableExampleIndent: true,
+                lineWrappingStyle: "greedy",
+              },
               printWidth: 80,
               sortImports: true,
-            });
+            } as const;
+            const first = await format(path, source, options);
+            const { code } = await format(path, first.code, options);
             await writeFile(path, code);
           },
         }),

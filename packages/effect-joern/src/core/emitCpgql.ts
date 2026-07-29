@@ -4,6 +4,15 @@ import type {
   TraversalSegment,
 } from "../pure/builder/traversalAst.js";
 
+/**
+ * Escapes a JavaScript string for a Scala string literal.
+ *
+ * @remarks
+ *   Backslashes are escaped before quotes and control characters, preventing a
+ *   caller value from changing the surrounding generated expression.
+ * @param value - Untrusted literal content.
+ * @returns Content safe to place between Scala double quotes.
+ */
 export const escapeScalaString = (value: string): string =>
   value
     .replaceAll("\\", "\\\\")
@@ -12,6 +21,14 @@ export const escapeScalaString = (value: string): string =>
     .replaceAll("\r", "\\r")
     .replaceAll("\t", "\\t");
 
+/**
+ * Converts a string or JavaScript regular expression to Joern regex syntax.
+ *
+ * @remarks
+ *   Only flags understood by Joern's inline regex form are retained.
+ * @param pattern - Literal pattern or regular expression.
+ * @returns Joern-compatible pattern text with supported inline flags.
+ */
 export const patternToJoernRegex = (pattern: string | RegExp): string => {
   if (typeof pattern === "string") return pattern;
 
@@ -22,6 +39,12 @@ export const patternToJoernRegex = (pattern: string | RegExp): string => {
   return flags.length > 0 ? `(?${flags})${pattern.source}` : pattern.source;
 };
 
+/**
+ * Emits one traversal filter value as CPGQL.
+ *
+ * @param value - Typed filter value to encode.
+ * @returns CPGQL literal text.
+ */
 function emitValue(value: FilterValue): string {
   if (value instanceof RegExp) {
     return `"${escapeScalaString(patternToJoernRegex(value))}"`;
@@ -38,9 +61,16 @@ function emitValue(value: FilterValue): string {
   return String(value);
 }
 
+/**
+ * Emits a traversal nested inside a Joern lambda.
+ *
+ * @param segments - Nested traversal segments.
+ * @param parameter - Lambda parameter used for a leading `_` variable.
+ * @returns CPGQL traversal text.
+ */
 function emitLambdaTraversal(
   segments: readonly TraversalSegment[],
-  parameter = "_",
+  parameter: string = "_",
 ): string {
   const [first, ...rest] = segments;
   if (first?.kind === "variable" && first.name === "_") {
@@ -49,6 +79,12 @@ function emitLambdaTraversal(
   return emitTraversal(segments);
 }
 
+/**
+ * Emits an optional repeat bound.
+ *
+ * @param modifier - Until or maximum-depth bound.
+ * @returns CPGQL suffix for the repeat operation.
+ */
 function emitRepeatModifier(
   modifier: Extract<TraversalSegment, { readonly kind: "repeat" }>["modifier"],
 ): string {
@@ -63,6 +99,12 @@ function emitRepeatModifier(
   }
 }
 
+/**
+ * Emits one normalized traversal segment.
+ *
+ * @param segment - Segment selected by the pure query builder.
+ * @returns CPGQL for that segment.
+ */
 function emitSegment(segment: TraversalSegment): string {
   switch (segment.kind) {
     case "starter":
@@ -92,10 +134,29 @@ function emitSegment(segment: TraversalSegment): string {
   }
 }
 
+/**
+ * Emits a complete ordered traversal.
+ *
+ * @remarks
+ *   Segment rendering is deterministic so the same typed traversal has stable
+ *   CPGQL bytes for tests, diagnostics, and transport.
+ * @param segments - Normalized traversal program.
+ * @returns Complete CPGQL traversal text.
+ */
 export function emitTraversal(segments: readonly TraversalSegment[]): string {
   return segments.map(emitSegment).join("");
 }
 
+/**
+ * Emits a traversal whose selected properties become a JSON object.
+ *
+ * @remarks
+ *   Property-owned imports and expressions remain correlated with their aliases
+ *   before the result is serialized through Joern's `toJson`.
+ * @param segments - Traversal that selects each source node.
+ * @param selection - Alias-to-property selection contract.
+ * @returns Complete CPGQL including required imports.
+ */
 export const emitSelect = (
   segments: readonly TraversalSegment[],
   selection: Selection,

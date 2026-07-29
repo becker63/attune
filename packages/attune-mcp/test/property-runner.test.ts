@@ -5,22 +5,16 @@ import { fileURLToPath } from "node:url";
 
 import { withTemporaryDirectory } from "./fixtures.js";
 
-const runner = fileURLToPath(
-  new URL("../dist/property-runner.mjs", import.meta.url),
-);
+const runner = fileURLToPath(new URL("../dist/property-runner.mjs", import.meta.url));
 
 const execute = async (root: string, source: string, parameters: object) => {
   const property = Path.join(root, "property.ts");
   const parametersPath = Path.join(root, "parameters.json");
-  await Promise.all([
-    writeFile(property, source),
-    writeFile(parametersPath, JSON.stringify(parameters)),
-  ]);
-  const child = spawn(
-    process.execPath,
-    [runner, property, parametersPath, root],
-    { shell: false, stdio: ["ignore", "pipe", "pipe"] },
-  );
+  await Promise.all([writeFile(property, source), writeFile(parametersPath, JSON.stringify(parameters))]);
+  const child = spawn(process.execPath, [runner, property, parametersPath, root], {
+    shell: false,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
   let stderr = "";
   child.stderr.setEncoding("utf8");
   child.stderr.on("data", (chunk) => {
@@ -31,9 +25,7 @@ const execute = async (root: string, source: string, parameters: object) => {
     child.once("close", (value) => resolve(value ?? 128));
   });
   if (code !== 0) throw new Error(stderr);
-  return JSON.parse(
-    await readFile(Path.join(root, "run-details.json"), "utf8"),
-  ) as {
+  return JSON.parse(await readFile(Path.join(root, "run-details.json"), "utf8")) as {
     readonly failed: boolean;
     readonly seed: number;
     readonly counterexamplePath: string;
@@ -58,11 +50,7 @@ describe("fixed native fast-check boundary", () => {
         });
         expect(first.failed).toBe(true);
         expect(first.numShrinks).toBeGreaterThan(0);
-        expect(
-          JSON.parse(
-            await readFile(Path.join(firstRoot, "counterexample.json"), "utf8"),
-          ),
-        ).toEqual([2]);
+        expect(JSON.parse(await readFile(Path.join(firstRoot, "counterexample.json"), "utf8"))).toEqual([2]);
         const replay = await execute(replayRoot, source, {
           numRuns: 100,
           seed: first.seed,

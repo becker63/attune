@@ -12,7 +12,9 @@
     ],
     "sharedGlobals": [
       "{workspaceRoot}/.oxfmtrc.json",
-      "{workspaceRoot}/.oxlintrc.json",
+      "{workspaceRoot}/oxlint.config.ts",
+      "{workspaceRoot}/tooling/oxlint/attune.ts",
+      "{workspaceRoot}/tsdoc.json",
       "{workspaceRoot}/nx.json",
       "{workspaceRoot}/package.json",
       "{workspaceRoot}/pnpm-lock.yaml",
@@ -23,23 +25,9 @@
   "targetDefaults": {
     "build": {
       "cache": true,
-      "dependsOn": ["generate", "^build"],
+      "dependsOn": ["^build"],
       "inputs": ["production", "^production"],
       "outputs": ["{projectRoot}/dist"]
-    },
-    "generate": {
-      "cache": true,
-      "inputs": [
-        "{projectRoot}/package.json",
-        "{projectRoot}/schema/**/*",
-        "{projectRoot}/scripts/**/*",
-        "{workspaceRoot}/.oxfmtrc.json",
-        "{workspaceRoot}/package.json",
-        "{workspaceRoot}/pnpm-lock.yaml",
-        "{workspaceRoot}/pnpm-workspace.yaml",
-        "{workspaceRoot}/tsconfig.base.json"
-      ],
-      "outputs": ["{projectRoot}/src/pure/generated"]
     },
     "package:check": {
       "cache": true,
@@ -53,13 +41,11 @@
     },
     "test": {
       "cache": true,
-      "dependsOn": ["generate"],
       "inputs": ["default", "^production"],
       "outputs": ["{projectRoot}/coverage"]
     },
     "typecheck": {
       "cache": true,
-      "dependsOn": ["generate"],
       "inputs": ["default", "^production"]
     }
   },

@@ -11,6 +11,44 @@
     "packages/effect-joern/schema/**",
     "pnpm-lock.yaml"
   ],
+  "jsdoc": {
+    "commentLineStrategy": "keep",
+    "keepUnparsableExampleIndent": true,
+    "lineWrappingStyle": "greedy"
+  },
+  "overrides": [
+    {
+      "files": [
+        "packages/attune-mcp/src/**/*.ts",
+        "packages/attune-mcp/test/**/*.ts"
+      ],
+      "options": {
+        "printWidth": 110
+      }
+    },
+    {
+      "files": [
+        "oxlint.config.ts",
+        "packages/attune-docs/src/docs.ts",
+        "packages/attune-docs/src/main.ts",
+        "packages/attune-docs/src/read.ts",
+        "tooling/oxlint/attune.ts"
+      ],
+      "options": {
+        "printWidth": 120
+      }
+    },
+    {
+      "files": [
+        "packages/attune-mcp/src/index.ts",
+        "tooling/oxlint/fixtures/invalid.ts",
+        "tooling/oxlint/fixtures/valid.ts"
+      ],
+      "options": {
+        "jsdoc": false
+      }
+    }
+  ],
   "printWidth": 80,
   "sortImports": true
 }

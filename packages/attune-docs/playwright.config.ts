@@ -22,7 +22,8 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   fullyParallel: false,
   reporter: "line",
-  testDir: "./test/e2e",
+  testDir: "./test",
+  testMatch: "e2e.spec.ts",
   timeout: 30_000,
   use: {
     browserName: "chromium",

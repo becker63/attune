@@ -10,20 +10,14 @@ import {
   type ToolName,
 } from "../src/contract/schemas.js";
 import type { InvestigationManifest } from "../src/investigation/workspace.js";
-import {
-  canonicalJson,
-  sha256,
-  type RuntimeConfig,
-} from "../src/platform/core.js";
+import { canonicalJson, sha256, type RuntimeConfig } from "../src/platform/core.js";
 
-export const FIXTURE_INVESTIGATION_ID =
-  "01K00000000000000000000000" as InvestigationId;
+export const FIXTURE_INVESTIGATION_ID = "01K00000000000000000000000" as InvestigationId;
 export const FIXTURE_SNAPSHOT = "a".repeat(40) as FullGitCommit;
 export const FIXTURE_NEXT_SNAPSHOT = "b".repeat(40) as FullGitCommit;
 export const FIXTURE_TIMESTAMP = new Date(0).toISOString();
 
-const fixturePath = (relative: string) =>
-  fileURLToPath(new URL(relative, import.meta.url));
+const fixturePath = (relative: string) => fileURLToPath(new URL(relative, import.meta.url));
 
 export const fixtureRuntimeConfig = (
   home: string,
@@ -48,9 +42,7 @@ export const fixtureRuntimeConfig = (
   ...overrides,
 });
 
-export const fixtureManifest = (
-  overrides: Partial<InvestigationManifest> = {},
-): InvestigationManifest => ({
+export const fixtureManifest = (overrides: Partial<InvestigationManifest> = {}): InvestigationManifest => ({
   schemaVersion: 1,
   investigationId: FIXTURE_INVESTIGATION_ID,
   normalizedRemote: "/fixture",
@@ -87,10 +79,8 @@ export const fixtureReceiptBase = (
 export const readJson = async <A = unknown>(path: string): Promise<A> =>
   JSON.parse(await readFile(path, "utf8")) as A;
 
-export const writeCanonicalJson = async (
-  path: string,
-  value: unknown,
-): Promise<void> => await writeFile(path, `${canonicalJson(value)}\n`);
+export const writeCanonicalJson = async (path: string, value: unknown): Promise<void> =>
+  await writeFile(path, `${canonicalJson(value)}\n`);
 
 export const withTemporaryDirectory = async <A>(
   prefix: string,

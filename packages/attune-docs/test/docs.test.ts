@@ -1,811 +1,981 @@
-import {
-  cp,
-  mkdir,
-  mkdtemp,
-  readFile,
-  readdir,
-  rm,
-  stat,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as Path from "node:path";
 
-import { Window } from "happy-dom";
+import type {
+  Code,
+  Data,
+  Heading,
+  Link,
+  Paragraph,
+  PhrasingContent,
+  Root,
+  RootContent,
+} from "mdast";
+import { createHighlighter, type Highlighter } from "shiki";
+import { VFile } from "vfile";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
-import { assertApiManifestSchema, auditManifest } from "../src/audit.ts";
-import { apiManifestDigest, canonicalJson, digest } from "../src/canonical.ts";
-import { assessTypeDocCompatibility } from "../src/compatibility.ts";
-import { extractApiManifest } from "../src/extract.ts";
 import {
-  normalizeBasePath,
-  renderApiMember,
-  renderApiSymbol,
-  renderPackageReference,
-} from "../src/html.ts";
-import type {
-  ApiManifest,
-  DocumentationPolicy,
-  SourceSpan,
-} from "../src/model.ts";
-import { buildSite, resolveOutputPath } from "../src/site.ts";
-import { discoverStaticPages, type StaticPage } from "../src/static-pages.ts";
+  compileDocumentation,
+  type DocumentationOptions,
+} from "../src/docs.ts";
+import { createDocumentationLanguage } from "../src/main.ts";
+import { read } from "../src/read.ts";
 
-const fixtureRoot = Path.join(import.meta.dirname, "fixtures", "api");
-const schemaPath = Path.join(
-  import.meta.dirname,
-  "..",
-  "schema",
-  "api-manifest.schema.json",
-);
-const policy: DocumentationPolicy = {
-  requiredDocumentation: [
-    {
-      name: "fixture-api",
-      exportNamePattern: "^(Investigation|Attune|ExampleFailure)$",
-      minMatches: 3,
-      rationale: "The complete fixture API is documented.",
-    },
-  ],
-  allowedRelationTargets: [],
+const revision = "0123456789abcdef0123456789abcdef01234567";
+const sourceRoot =
+  "https://github.com/example/attune/blob/" + revision + "/packages/";
+
+const data = (attune: Record<string, unknown>): Data =>
+  ({ attune }) as unknown as Data;
+
+const heading = (
+  depth: Heading["depth"],
+  label: string,
+  id: string,
+  source = false,
+): Heading => ({
+  type: "heading",
+  depth,
+  data: data({
+    id,
+    ...(source
+      ? {
+          role: id.startsWith("Attune.") ? "member" : "declaration",
+          sourcePath: `packages/attune-mcp/src/${id}.ts`,
+          sourceRange: { start: 0, end: 80, lineStart: 1, lineEnd: 4 },
+          sourceHref: `${sourceRoot}attune-mcp/src/${id}.ts#L1-L4`,
+        }
+      : {}),
+  }),
+  children: [{ type: "text", value: label }],
+});
+
+const paragraph = (...children: PhrasingContent[]): Paragraph => ({
+  type: "paragraph",
+  children,
+});
+
+const reference = (label: string, url: string): Link => ({
+  type: "link",
+  url,
+  children: [{ type: "text", value: label }],
+});
+
+const resolved = (source: string, needle: string, href: string, from = 0) => {
+  const start = source.indexOf(needle, from);
+  if (start < 0) throw new Error(`Fixture lacks ${needle}`);
+  return { start, end: start + needle.length, href };
 };
 
-const extractFixture = (
-  overrides: Partial<Parameters<typeof extractApiManifest>[0]> = {},
-) =>
-  extractApiManifest({
-    buildUpstream: false,
-    declarationEntryPoint: Path.join(fixtureRoot, "src", "index.ts"),
-    entryPoint: Path.join(fixtureRoot, "src", "index.ts"),
-    packageName: "fixture",
-    packageRoot: fixtureRoot,
-    policy,
-    repositoryUrl: "https://example.test/repository",
-    sourceRef: "0123456789abcdef0123456789abcdef01234567",
-    sourceRevision: "fixture-revision",
-    tsConfigPath: Path.join(fixtureRoot, "tsconfig.json"),
-    ...overrides,
-  });
+const signature = (value: string, links: readonly unknown[] = []): Code => ({
+  type: "code",
+  lang: "typescript",
+  value,
+  data: data({ role: "signature", checked: true, links }),
+});
 
-let manifest: ApiManifest;
-const outputs: string[] = [];
+const source = `declare const attune: Attune
+const program = Effect.gen(function* () {
+
+const materialized = yield* attune.materialize({
+  remote,
+  revision: "main",
+})
+if (materialized.status === "rejected") {
+  return yield* Effect.fail(materialized.error)
+}
+
+const active: Investigation<"active"> =
+  yield* attune.activate(materialized.investigation)
+const execution = yield* attune.execute(active, "joern_query", query)
+const receipt: AttuneReceipt = execution.receipt
+
+if (execution.receipt.status === "succeeded") {
+  yield* inspect(receipt)
+}
+
+return yield* attune.finalize(execution.investigation, {
+  disposition: "accepted",
+})
+})`;
+
+const resolvedMember = (name: string, href: string) => {
+  const match = resolved(source, `.${name}`, href);
+  return { ...match, start: match.start + 1 };
+};
+
+const exampleLinks = [
+  resolved(source, "Attune", "#Attune"),
+  resolvedMember("materialize", "#Attune.materialize"),
+  resolved(source, "Investigation", "#Investigation"),
+  resolvedMember("activate", "#Attune.activate"),
+  resolvedMember("execute", "#Attune.execute"),
+  resolved(source, "AttuneReceipt", "#AttuneReceipt"),
+  resolvedMember("finalize", "#Attune.finalize"),
+] as const;
+
+const example: Code = {
+  type: "code",
+  lang: "typescript",
+  value: source,
+  data: data({ role: "example", checked: true, links: exampleLinks }),
+};
+
+const declaration = (
+  depth: Heading["depth"],
+  label: string,
+  id: string,
+  value: string,
+  links: readonly unknown[] = [],
+): RootContent[] => [heading(depth, label, id, true), signature(value, links)];
+
+const fixture = (): Root => ({
+  type: "root",
+  children: [
+    heading(1, "Attune", "top"),
+    paragraph({
+      type: "text",
+      value:
+        "Attune materializes an exact repository state, issues typed authority to operate on it, and preserves every accepted operation as a durable receipt.",
+    }),
+    heading(2, "The model", "the-model"),
+    paragraph({
+      type: "text",
+      value:
+        "Investigation carries authority. Attune changes or uses it. A receipt preserves evidence.",
+    }),
+    {
+      type: "code",
+      lang: "text",
+      value: `materialized
+     │ activate
+     ▼
+   active ───── execute ─────▶ receipt
+     │                           │
+     │ finalize                  │ inspect
+     ▼                           ▼
+ finalized                durable evidence`,
+    },
+    heading(2, "A complete investigation", "complete-investigation"),
+    paragraph({
+      type: "text",
+      value: "One program carries the same authority through the lifecycle.",
+    }),
+    example,
+    ...declaration(
+      2,
+      "Investigation<State>",
+      "Investigation",
+      "export interface Investigation<State extends InvestigationState> {}",
+    ),
+    paragraph(
+      { type: "text", value: "Follow the active authority in " },
+      reference("the complete investigation", "#complete-investigation"),
+      { type: "text", value: "." },
+    ),
+    ...declaration(2, "Attune", "Attune", "export interface Attune {}"),
+    paragraph(
+      { type: "text", value: "The lifecycle is exercised by " },
+      reference("the complete investigation", "#complete-investigation"),
+      { type: "text", value: "." },
+    ),
+    ...declaration(
+      3,
+      "Attune.materialize",
+      "Attune.materialize",
+      "materialize(input: MaterializeInput): Effect.Effect<Materialized>",
+    ),
+    ...declaration(
+      3,
+      "Attune.activate",
+      "Attune.activate",
+      'activate(value: Investigation<"materialized">): Effect.Effect<Investigation<"active">>',
+    ),
+    ...declaration(
+      3,
+      "Attune.acquireActive",
+      "Attune.acquireActive",
+      'acquireActive(id: string): Effect.Effect<Investigation<"active">>',
+    ),
+    ...declaration(
+      3,
+      "Attune.execute",
+      "Attune.execute",
+      'execute(value: Investigation<"active">): Effect.Effect<AttuneReceipt>',
+    ),
+    ...declaration(
+      3,
+      "Attune.finalize",
+      "Attune.finalize",
+      'finalize(value: Investigation<"active">): Effect.Effect<Investigation<"finalized">>',
+    ),
+    ...declaration(
+      3,
+      "Attune.recoverTerminal",
+      "Attune.recoverTerminal",
+      "recoverTerminal(receipt: AttuneReceipt): Effect.Effect<AttuneReceipt>",
+    ),
+    ...declaration(
+      2,
+      "AttuneReceipt",
+      "AttuneReceipt",
+      "export interface AttuneReceipt {}",
+    ),
+    paragraph(
+      { type: "text", value: "Inspect the evidence produced in " },
+      reference("the complete investigation", "#complete-investigation"),
+      { type: "text", value: "." },
+    ),
+    heading(2, "Failures", "failures"),
+    ...declaration(
+      3,
+      "InvestigationLifecycleError",
+      "InvestigationLifecycleError",
+      "export class InvestigationLifecycleError extends Error {}",
+    ),
+    ...declaration(
+      3,
+      "AttuneToolFailure",
+      "AttuneToolFailure",
+      "export class AttuneToolFailure extends Error {}",
+    ),
+    ...declaration(
+      2,
+      "AttuneToolkit",
+      "AttuneToolkit",
+      "export interface AttuneToolkit {}",
+    ),
+    heading(2, "Repository", "repository"),
+    paragraph({
+      type: "text",
+      value: "attune-mcp · src/internal.ts",
+    }),
+    ...declaration(
+      3,
+      "makeInvestigation",
+      "attune-mcp--src-internal--makeInvestigation",
+      "const makeInvestigation = (): Investigation => ({})",
+    ),
+  ],
+});
+
+let highlighter: Highlighter;
+let options: DocumentationOptions;
 
 beforeAll(async () => {
-  manifest = await extractFixture();
+  highlighter = await createHighlighter({
+    langs: ["typescript", "javascript", "text"],
+    themes: ["github-light-default"],
+  });
+  options = {
+    highlighter,
+    language: { resolve: async () => undefined },
+    metadata: {
+      revision,
+      typescriptVersion: "7.0.2",
+      tsgoVersion: "0.24.3",
+      languageServiceVersion: "0.87.1",
+    },
+  };
 });
 
-afterAll(async () => {
-  await Promise.all(
-    outputs.map((directory) => rm(directory, { force: true, recursive: true })),
-  );
+afterAll(() => {
+  highlighter.dispose();
 });
 
-const verifySpan = async (source: SourceSpan): Promise<void> => {
-  const path = Path.resolve(import.meta.dirname, "..", "..", "..", source.path);
-  const bytes = await readFile(path, "utf8");
-  expect(digest(bytes.slice(source.start, source.end))).toBe(source.digest);
-  expect(source.url).toContain(
-    `#L${source.line}${source.endLine === source.line ? "" : `-L${source.endLine}`}`,
-  );
-};
-
-const htmlBelow = async (root: string): Promise<readonly string[]> => {
-  const files: string[] = [];
-  for (const name of await readdir(root)) {
-    const path = Path.join(root, name);
-    if ((await stat(path)).isDirectory())
-      files.push(...(await htmlBelow(path)));
-    else if (path.endsWith(".html")) files.push(path);
-  }
-  return files;
-};
-
-describe("reference extraction", () => {
-  test("preserves package, symbol, and member lifecycle order", () => {
-    expect(manifest.schemaVersion).toBe("5.0.0");
-    expect(manifest.package.documentation.summary).toContain(
-      "small lifecycle package",
+describe("single type document", () => {
+  test("uses the real compiler for definitions, diagnostics, cuts, unicode, and failure channels", async () => {
+    const repository = Path.resolve(import.meta.dirname, "../../..");
+    const production = await read(repository, revision);
+    const productionHeadings = production.children.filter(
+      (node): node is Heading => node.type === "heading",
     );
-    expect(manifest.symbols.map((symbol) => symbol.exportName)).toEqual([
-      "Investigation",
-      "Attune",
-      "ExampleFailure",
-    ]);
-    expect(
-      manifest.symbols.map((symbol) => [
-        symbol.exportName,
-        symbol.typeExpression,
-      ]),
-    ).toEqual([
-      ["Investigation", "Investigation<State>"],
-      ["Attune", "Attune"],
-      ["ExampleFailure", "ExampleFailure"],
-    ]);
-    expect(manifest.symbols[0]?.typeParameters).toEqual([
-      {
-        default: '"active"',
-        description: "State carried by the capability.",
-        constraint: "string",
-        name: "State",
-      },
-    ]);
-    const attune = manifest.symbols[1]!;
-    expect(attune.members.map((member) => member.name)).toEqual([
-      "materialize",
-      "finalize",
-    ]);
-    expect(attune.members[0]?.documentation).toMatchObject({
-      parameters: [
+    const sourcePath = "packages/attune-docs/test/fixtures/resolver.ts";
+    const fixtureSource = await readFile(
+      Path.join(repository, sourcePath),
+      "utf8",
+    );
+    const range = (text: string) => {
+      const start = fixtureSource.indexOf(text);
+      if (start < 0) throw new Error(`Resolver fixture lacks ${text}`);
+      return {
+        start,
+        end: start + text.length,
+        lineStart: fixtureSource.slice(0, start).split("\n").length,
+        lineEnd: fixtureSource.slice(0, start + text.length).split("\n").length,
+      };
+    };
+    const target =
+      "export interface ResolverTarget {\n  readonly value: string;\n}";
+    const defaulted =
+      "defaulted(input: ResolverTarget): Effect.Effect<ResolverTarget>;";
+    const generic = `readonly generic: <E>(
+    input: ResolverTarget,
+  ) => Effect.Effect<ResolverTarget, E>;`;
+    const sourceHeading = (
+      label: string,
+      id: string,
+      text: string,
+    ): Heading => ({
+      type: "heading",
+      depth: 3,
+      children: [{ type: "text", value: label }],
+      data: data({
+        id,
+        role: "member",
+        sourcePath,
+        sourceRange: range(text),
+        definitionRanges: [
+          {
+            sourcePath,
+            sourceRange: range(
+              label.includes(".")
+                ? label.slice(label.lastIndexOf(".") + 1)
+                : label,
+            ),
+          },
+        ],
+      }),
+    });
+    const sourceCode = (ownerId: string, text: string): Code => {
+      const owned = range(text);
+      return {
+        type: "code",
+        lang: "ts",
+        value: text,
+        data: data({
+          role: "signature",
+          ownerId,
+          callable: true,
+          sourcePath,
+          sourceRange: owned,
+          intervals: [[0, text.length, owned.start, owned.end]],
+        }),
+      };
+    };
+    const exampleSource = `// @filename: setup.ts
+export const emoji = "😀é"
+// ---cut---
+// @filename: visible.ts
+import type { Investigation } from "attune-mcp"
+import { emoji } from "./setup.js"
+const unicode = "😀é"
+declare const active: Investigation<"active">
+// @errors: 2322
+const bad: string = 1
+active.state
+emoji`;
+    const semanticTree = (failure: boolean): Root => ({
+      type: "root",
+      children: [
+        ...structuredClone(productionHeadings),
+        sourceHeading("ResolverTarget", "ResolverTarget", target),
+        sourceHeading("Attune.defaulted", "Attune.defaulted", defaulted),
+        sourceCode("Attune.defaulted", defaulted),
+        sourceHeading("Attune.generic", "Attune.generic", generic),
+        sourceCode("Attune.generic", generic),
+        ...(failure
+          ? [
+              paragraph({
+                type: "link",
+                url: "tsdoc:failure:E",
+                children: [{ type: "text", value: "E" }],
+                data: data({
+                  role: "reference",
+                  ownerId: "Attune.generic",
+                  packageName: "attune-docs",
+                  reference: "E",
+                  referenceKind: "failure",
+                  explanation: "Handle the caller-selected failure.",
+                  sourcePath,
+                  sourceRange: range(generic),
+                }),
+              }),
+            ]
+          : []),
         {
-          name: "input",
-          description: "Revision requested by the caller.",
+          type: "code",
+          lang: "ts",
+          value: exampleSource,
+          data: data({
+            role: "example",
+            sourcePath,
+            sourceRange: range(target),
+          }),
         },
       ],
-      returns: "A materialized investigation.",
-      failures: [
-        "Boundary rejection raises {@link ExampleFailure} when the revision cannot be read.",
+    });
+    const inheritDirectory = await mkdtemp(
+      Path.join(repository, "packages/attune-mcp/src/.inherit-doc-test-"),
+    );
+    const inheritPath = Path.join(inheritDirectory, "inherit.ts");
+    const inheritSourcePath = Path.relative(repository, inheritPath).replaceAll(
+      Path.sep,
+      "/",
+    );
+    const contract = `export interface InheritContract<A> {
+  inherited<T>(input: T, context: A): readonly [T, A];
+  cycle(input: string): string;
+}`;
+    const implementation = `export class InheritImplementation<A> implements InheritContract<A> {
+  inherited<T>(input: T, context: A): readonly [T, A] { return [input, context]; }
+  cycle(input: string): string { return input; }
+}`;
+    const narrowContract = `export interface NarrowContract {
+  inherited(input: string): string;
+}`;
+    const narrowImplementation = `export class NarrowImplementation implements NarrowContract {
+  inherited(input: string): "fixed" { void input; return "fixed"; }
+}`;
+    const renamedImplementation = `export class RenamedImplementation<A> implements InheritContract<A> {
+  inherited<T>(value: T, context: A): readonly [T, A] { return [value, context]; }
+  cycle(input: string): string { return input; }
+}`;
+    const detached = `export class DetachedImplementation<A> {
+  inherited<T>(input: T, context: A): readonly [T, A] { const result = [input, context] as const; return result; }
+}`;
+    const inheritSource = [
+      contract,
+      implementation,
+      narrowContract,
+      narrowImplementation,
+      renamedImplementation,
+      detached,
+      "",
+    ].join("\n");
+    await writeFile(inheritPath, inheritSource);
+    const inheritRange = (text: string) => {
+      const start = inheritSource.indexOf(text);
+      if (start < 0) throw new Error(`Inheritance fixture lacks ${text}`);
+      return {
+        start,
+        end: start + text.length,
+        lineStart: inheritSource.slice(0, start).split("\n").length,
+        lineEnd: inheritSource.slice(0, start + text.length).split("\n").length,
+      };
+    };
+    const inheritHeading = (
+      label: string,
+      id: string,
+      text: string,
+    ): Heading => ({
+      type: "heading",
+      depth: id.includes(".") ? 4 : 3,
+      children: [{ type: "text", value: label }],
+      data: data({
+        id,
+        role: id.includes(".") ? "member" : "declaration",
+        sourcePath: inheritSourcePath,
+        sourceRange: inheritRange(text),
+        definitionRanges: [
+          { sourcePath: inheritSourcePath, sourceRange: inheritRange(text) },
+        ],
+      }),
+    });
+    const inheritLink = (
+      ownerId: string,
+      reference: string,
+      ownerText: string,
+    ): Paragraph =>
+      paragraph({
+        type: "link",
+        url: `tsdoc:inherit:${reference}`,
+        children: [{ type: "text", value: reference }],
+        data: data({
+          role: "reference",
+          ownerId,
+          packageName: "attune-mcp",
+          reference,
+          referenceKind: "inherit",
+          sourcePath: inheritSourcePath,
+          sourceRange: inheritRange(ownerText),
+        }),
+      });
+    const declarations = [
+      ["InheritContract", "InheritContract", contract],
+      [
+        "InheritContract.inherited",
+        "InheritContract.inherited",
+        contract.split("\n")[1]!.trim(),
+      ],
+      [
+        "InheritContract.cycle",
+        "InheritContract.cycle",
+        contract.split("\n")[2]!.trim(),
+      ],
+      [
+        "InheritImplementation",
+        "attune-mcp--InheritImplementation",
+        implementation,
+      ],
+      [
+        "InheritImplementation.inherited",
+        "attune-mcp--InheritImplementation.inherited",
+        implementation.split("\n")[1]!.trim(),
+      ],
+      ["NarrowContract", "NarrowContract", narrowContract],
+      [
+        "NarrowContract.inherited",
+        "NarrowContract.inherited",
+        narrowContract.split("\n")[1]!.trim(),
+      ],
+      [
+        "NarrowImplementation",
+        "attune-mcp--NarrowImplementation",
+        narrowImplementation,
+      ],
+      [
+        "NarrowImplementation.inherited",
+        "attune-mcp--NarrowImplementation.inherited",
+        narrowImplementation.split("\n")[1]!.trim(),
+      ],
+      [
+        "RenamedImplementation",
+        "attune-mcp--RenamedImplementation",
+        renamedImplementation,
+      ],
+      [
+        "RenamedImplementation.inherited",
+        "attune-mcp--RenamedImplementation.inherited",
+        renamedImplementation.split("\n")[1]!.trim(),
+      ],
+      [
+        "DetachedImplementation",
+        "attune-mcp--DetachedImplementation",
+        detached,
+      ],
+      [
+        "DetachedImplementation.inherited",
+        "attune-mcp--DetachedImplementation.inherited",
+        detached.split("\n")[1]!.trim(),
+      ],
+    ] as const;
+    const inherited = (
+      ownerId: string,
+      target: string,
+      ownerText: string,
+    ): Root => ({
+      type: "root",
+      children: [
+        ...declarations.map(([label, id, text]) =>
+          inheritHeading(label, id, text),
+        ),
+        inheritLink(ownerId, target, ownerText),
       ],
     });
-    expect(attune.members[0]?.typeParameters).toEqual([
-      {
-        constraint: "string",
-        description: "Revision identifier supplied by the caller.",
-        name: "Revision",
-      },
-    ]);
-    expect(attune.members[0]).toMatchObject({
-      kind: "function",
-      callSignatures: [
-        {
-          parameters: [
+    const server = await createDocumentationLanguage(repository);
+    try {
+      const tree = semanticTree(true);
+      const file = new VFile({ path: "index.html" });
+      await server.language.resolve(tree, file);
+      expect(file.messages.map(String)).toEqual([]);
+      const codes = tree.children.filter(
+        (node): node is Code => node.type === "code",
+      );
+      expect(codes.every((code) => code.data?.attune?.checked)).toBe(true);
+      expect(codes[0]!.data?.attune?.links).toContainEqual(
+        expect.objectContaining({ href: "#ResolverTarget" }),
+      );
+      expect(codes[1]!.data?.attune?.links).toContainEqual(
+        expect.objectContaining({ href: "#Attune.generic" }),
+      );
+      const renderedExample = codes[2]!;
+      expect(renderedExample.value).toContain("// @filename: visible.ts");
+      expect(renderedExample.value).toContain('"😀é"');
+      expect(renderedExample.value).not.toMatch(/---cut|@errors/u);
+      expect(renderedExample.data?.attune?.links).toContainEqual(
+        expect.objectContaining({ href: "#Investigation" }),
+      );
+      expect(
+        renderedExample.data?.attune?.links?.some(
+          (link) =>
+            renderedExample.value.slice(link.start, link.end) === "emoji",
+        ),
+      ).toBe(false);
+
+      const drift = semanticTree(false);
+      const driftFile = new VFile({ path: "index.html" });
+      await server.language.resolve(drift, driftFile);
+      expect(driftFile.messages.map((message) => message.reason)).toContain(
+        "Attune.generic error channel #Attune.generic does not match @failure none",
+      );
+
+      for (const [example, reason] of [
+        [
+          `import type { Investigation } from "attune-mcp"
+// @errors: 2344
+declare const invalid: Investigation<"bogus">`,
+          'Investigation state "bogus" is not canonical',
+        ],
+        [
+          `interface Investigation<State> { readonly state: State }
+declare const shadow: Investigation<"active">`,
+          "Investigation lifecycle reference does not resolve to #Investigation",
+        ],
+      ] as const) {
+        const lifecycleTree: Root = {
+          type: "root",
+          children: [
+            ...structuredClone(productionHeadings),
             {
-              index: 0,
-              name: "input",
-              declaration: "input: Revision",
-              type: { text: "Revision" },
+              type: "code",
+              lang: "ts",
+              value: example,
+              data: data({ role: "example", sourcePath }),
             },
           ],
-          returns: { text: 'Investigation<"materialized">' },
-        },
-      ],
-    });
-    expect(attune.members[0]?.callSignatures[0]?.returns.references).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          name: "Investigation",
-          targetSymbolId: "fixture#Investigation",
-        }),
-      ]),
-    );
-    expect(manifest.symbols[0]?.members[0]).toMatchObject({
-      callSignatures: [],
-      valueType: { text: "State" },
-    });
-    expect(attune.members[1]?.callSignatures[0]?.parameters[1]).toMatchObject({
-      declaration: "note?: string",
-      name: "note",
-      type: { text: "string" },
-    });
-    expect(
-      manifest.symbols
-        .flatMap((symbol) => symbol.members)
-        .some((member) => member.kind === "unknown"),
-    ).toBe(false);
-    expect(attune.members[0]?.relations).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          kind: "throws",
-          target: "ExampleFailure",
-          targetSymbolId: "fixture#ExampleFailure",
-        }),
-      ]),
-    );
-  });
-
-  test("extracts complete multi-file and cut-bearing example programs", () => {
-    const examples = manifest.package.examples;
-    expect(
-      manifest.symbols.map((symbol) => [
-        symbol.exportName,
-        symbol.examples.length,
-      ]),
-    ).toEqual([
-      ["Investigation", 2],
-      ["Attune", 2],
-      ["ExampleFailure", 2],
-    ]);
-    expect(examples.map((example) => example.title)).toEqual([
-      "A complete multi-file program",
-      "Narrow a materialized capability",
-      "Hide unrelated capability work",
-    ]);
-    expect(examples[0]!.files).toEqual(["model.ts", "index.ts"]);
-    expect(examples[0]!.code).toContain("// ---cut-before---");
-    expect(examples[0]!.code).toContain("// ---cut-after---");
-    expect(examples[0]!.code).toContain("import type { Investigation }");
-    expect(examples[1]!.code).toContain("// ---cut-before---");
-    expect(examples[2]!.code).toContain("// ---cut-start---");
-    expect(examples[2]!.code).toContain("// ---cut-end---");
-    expect(
-      examples.every((example) => example.principal === "Investigation"),
-    ).toBe(true);
-    expect(examples.every((example) => !example.code.includes("```"))).toBe(
-      true,
-    );
-  });
-
-  test("records exact local spans, immutable links, and merged provenance", async () => {
-    const attune = manifest.symbols.find(
-      (symbol) => symbol.exportName === "Attune",
-    )!;
-    await Promise.all([
-      verifySpan(manifest.package.provenance.tsdoc!),
-      verifySpan(attune.provenance.declaration),
-      verifySpan(attune.provenance.implementation),
-      verifySpan(attune.members[0]!.examples[0]!.source),
-      verifySpan(
-        attune.members[0]!.callSignatures[0]!.parameters[0]!.type.source,
-      ),
-      verifySpan(attune.members[0]!.callSignatures[0]!.parameters[0]!.source),
-      verifySpan(attune.members[0]!.callSignatures[0]!.returns.source),
-      ...attune.members[0]!.callSignatures[0]!.returns.references.map(
-        (reference) => verifySpan(reference.source),
-      ),
-    ]);
-    expect(attune.provenance.declaration.digest).not.toBe(
-      attune.provenance.implementation.digest,
-    );
-    expect(attune.provenance.declaration.path).toBe(
-      attune.provenance.implementation.path,
-    );
-  });
-
-  test("binds extraction to the current declaration digest", async () => {
-    expect(manifest.declaration.sourceDigest).toBe(manifest.source.digest);
-    expect(manifest.declaration.digest).toMatch(/^[a-f0-9]{64}$/u);
-    await expect(
-      extractFixture({ expectedDeclarationDigest: "0".repeat(64) }),
-    ).rejects.toThrow("Stale declaration digest");
-  });
-
-  test("produces deterministic manifests and schema-valid records", async () => {
-    const second = await extractFixture();
-    expect(apiManifestDigest(second)).toBe(apiManifestDigest(manifest));
-    await expect(
-      assertApiManifestSchema(manifest, schemaPath),
-    ).resolves.toBeUndefined();
-  });
-
-  test("rejects a throws tag that begins with an inline link", async () => {
-    const malformedRoot = await mkdtemp(
-      Path.join(Path.dirname(fixtureRoot), "malformed-"),
-    );
-    outputs.push(malformedRoot);
-    await cp(fixtureRoot, malformedRoot, { recursive: true });
-    const entryPoint = Path.join(malformedRoot, "src", "index.ts");
-    const source = await readFile(entryPoint, "utf8");
-    await writeFile(
-      entryPoint,
-      source.replace(
-        "Boundary rejection raises {@link ExampleFailure}",
-        "{@link ExampleFailure}",
-      ),
-    );
-    await expect(
-      extractFixture({
-        declarationEntryPoint: entryPoint,
-        entryPoint,
-        packageRoot: malformedRoot,
-        tsConfigPath: Path.join(malformedRoot, "tsconfig.json"),
-      }),
-    ).rejects.toThrow(
-      "@throws must begin with prose or a code identifier before an inline link",
-    );
-  });
-
-  test("audits closed exports and source-owned example floors", () => {
-    expect(
-      manifest.diagnostics.filter(
-        (diagnostic) => diagnostic.code === "missing-example",
-      ),
-    ).toEqual([]);
-    const diagnostics = auditManifest(manifest, {
-      ...policy,
-      publicNames: ["Attune"],
-    });
-    expect(diagnostics).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: "missing-documentation",
-          symbolId: "package",
-        }),
-      ]),
-    );
-    expect(
-      manifest.symbols.every(
-        (symbol) =>
-          symbol.examples.length >= 2 &&
-          symbol.examples.every(
-            (example) => example.principal === symbol.exportName,
-          ),
-      ),
-    ).toBe(true);
-    expect(
-      manifest.symbols
-        .flatMap((symbol) => symbol.members)
-        .every(
-          (member) =>
-            member.examples.length >= 2 &&
-            member.examples.every(
-              (example) => example.principal === member.name,
-            ),
-        ),
-    ).toBe(true);
-    expect("pageExample" in manifest.package).toBe(false);
-
-    const attune = manifest.symbols[1]!;
-    const materialize = attune.members[0]!;
-    const missingSources: ApiManifest = {
-      ...manifest,
-      package: {
-        ...manifest.package,
-        examples: manifest.package.examples.slice(0, 2),
-      },
-      symbols: manifest.symbols.map((symbol) =>
-        symbol.id === attune.id
-          ? {
-              ...symbol,
-              examples: symbol.examples.slice(0, 1),
-              members: symbol.members.map((member) =>
-                member.id === materialize.id
-                  ? { ...member, examples: [] }
-                  : member,
-              ),
-            }
-          : symbol,
-      ),
-    };
-    expect(auditManifest(missingSources, policy)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: "missing-example",
-          symbolId: "package",
-        }),
-        expect.objectContaining({
-          code: "missing-example",
-          symbolId: attune.id,
-        }),
-        expect.objectContaining({
-          code: "missing-example",
-          symbolId: materialize.id,
-        }),
-      ]),
-    );
-
-    const wrongPrincipal: ApiManifest = {
-      ...manifest,
-      symbols: manifest.symbols.map((symbol) =>
-        symbol.id === attune.id
-          ? {
-              ...symbol,
-              examples: symbol.examples.map((example, index) =>
-                index === 0
-                  ? { ...example, principal: "Investigation" }
-                  : example,
-              ),
-            }
-          : symbol,
-      ),
-    };
-    expect(auditManifest(wrongPrincipal, policy)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: "missing-example",
-          symbolId: attune.id,
-        }),
-      ]),
-    );
-
-    const untypedNarrative: ApiManifest = {
-      ...manifest,
-      symbols: manifest.symbols.map((symbol) =>
-        symbol.id === attune.id
-          ? {
-              ...symbol,
-              members: symbol.members.map((member) =>
-                member.id === materialize.id
-                  ? {
-                      ...member,
-                      documentation: {
-                        ...member.documentation,
-                        parameters: [
-                          {
-                            description: "Wrong source tag.",
-                            name: "revision",
-                          },
-                        ],
-                        returns: "",
-                      },
-                    }
-                  : member,
-              ),
-            }
-          : symbol,
-      ),
-    };
-    expect(
-      auditManifest(untypedNarrative, policy).map(
-        (diagnostic) => diagnostic.message,
-      ),
-    ).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining("needs source @returns documentation"),
-        expect.stringContaining("do not match its @param tags"),
-      ]),
-    );
-
-    const lostFailureTag: ApiManifest = {
-      ...manifest,
-      symbols: manifest.symbols.map((symbol) =>
-        symbol.id === attune.id
-          ? {
-              ...symbol,
-              members: symbol.members.map((member) =>
-                member.id === materialize.id
-                  ? {
-                      ...member,
-                      documentation: {
-                        ...member.documentation,
-                        failures: [],
-                      },
-                    }
-                  : member,
-              ),
-            }
-          : symbol,
-      ),
-    };
-    expect(
-      auditManifest(lostFailureTag, policy).map(
-        (diagnostic) => diagnostic.message,
-      ),
-    ).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining(
-          "parsed @throws descriptions but 1 typed failure relations",
-        ),
-      ]),
-    );
-
-    const lostTypeTarget: ApiManifest = {
-      ...manifest,
-      symbols: manifest.symbols.map((symbol) =>
-        symbol.id === attune.id
-          ? {
-              ...symbol,
-              members: symbol.members.map((member) =>
-                member.id === materialize.id
-                  ? {
-                      ...member,
-                      callSignatures: member.callSignatures.map(
-                        (signature) => ({
-                          ...signature,
-                          returns: {
-                            ...signature.returns,
-                            references: [],
-                          },
-                        }),
-                      ),
-                    }
-                  : member,
-              ),
-            }
-          : symbol,
-      ),
-    };
-    expect(
-      auditManifest(lostTypeTarget, policy).map(
-        (diagnostic) => diagnostic.message,
-      ),
-    ).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining(
-          "uses public type Investigation without its resolved declaration provenance",
-        ),
-      ]),
-    );
-  });
-
-  test("keeps TypeDoc compatibility explicit", () => {
-    expect(assessTypeDocCompatibility("0.28.0", "7.0.2")).toMatchObject({
-      compatible: false,
-    });
-  });
-});
-
-describe("reference rendering", () => {
-  const pages: readonly StaticPage[] = [];
-
-  test("makes the package reference root and removes parallel learning routes", () => {
-    const html = renderPackageReference(manifest, pages, "/attune/");
-    expect(html).toContain('data-page-id="package:fixture"');
-    expect(html).toContain('data-page-principal="Investigation"');
-    expect(html.match(/class="page-example"/gu)).toHaveLength(3);
-    expect(
-      html.match(/class="code-block checked-code"/gu)?.length,
-    ).toBeGreaterThanOrEqual(3);
-    expect(html).toContain("twoslash-hover");
-    expect(html.indexOf(">Investigation<")).toBeLessThan(
-      html.indexOf(">Attune<"),
-    );
-    expect(html).not.toMatch(/Onboarding|DocumentationPage/u);
-  });
-
-  test("gives every symbol and member its own checked principal and source", () => {
-    for (const symbol of manifest.symbols) {
-      const html = renderApiSymbol(symbol, manifest, pages, "/attune/");
-      expect(html).toContain(`data-page-id="${symbol.id}"`);
-      expect(html).toContain(`data-page-principal="${symbol.exportName}"`);
-      expect(html.match(/class="page-example"/gu)).toHaveLength(3);
-      expect(
-        html.match(/class="code-block checked-code"/gu)?.length,
-      ).toBeGreaterThanOrEqual(3);
-      expect(html).toContain("twoslash-hover");
-      expect(html).toContain(symbol.provenance.declaration.url);
-      for (const member of symbol.members) {
-        const memberHtml = renderApiMember(
-          member,
-          symbol,
-          manifest,
-          pages,
-          "/attune/",
-        );
-        expect(memberHtml).toContain(`data-page-id="${member.id}"`);
-        expect(memberHtml).toContain(`data-page-principal="${member.name}"`);
-        expect(memberHtml.match(/class="page-example"/gu)).toHaveLength(3);
+        };
+        const lifecycleFile = new VFile({ path: "index.html" });
+        await server.language.resolve(lifecycleTree, lifecycleFile);
         expect(
-          memberHtml.match(/class="code-block checked-code"/gu)?.length,
-        ).toBeGreaterThanOrEqual(3);
-        expect(memberHtml).toContain("twoslash-hover");
-        expect(memberHtml).toContain(member.provenance.declaration.url);
-        const window = new Window();
-        window.document.write(memberHtml);
-        expect(
-          window.document.querySelectorAll('[data-contract-kind="input"]'),
-        ).toHaveLength(
-          member.callSignatures.reduce(
-            (total, callable) => total + callable.parameters.length,
-            0,
-          ),
-        );
-        expect(
-          window.document.querySelectorAll('[data-contract-kind="output"]'),
-        ).toHaveLength(member.callSignatures.length);
-        window.close();
+          lifecycleFile.messages.map((message) => message.reason),
+        ).toContain(reason);
       }
-    }
-    const investigation = manifest.symbols.find(
-      (symbol) => symbol.exportName === "Investigation",
-    )!;
-    const investigationHtml = renderApiSymbol(
-      investigation,
-      manifest,
-      pages,
-      "/attune/",
-    );
-    expect(investigationHtml).toContain("State carried by the capability.");
 
-    const attune = manifest.symbols.find(
-      (symbol) => symbol.exportName === "Attune",
-    )!;
-    const materialize = attune.members.find(
-      (member) => member.name === "materialize",
-    )!;
-    const materializeHtml = renderApiMember(
-      materialize,
-      attune,
-      manifest,
-      pages,
-      "/attune/",
-    );
-    expect(materializeHtml).toContain(
-      "Revision identifier supplied by the caller.",
-    );
-    expect(materializeHtml).toContain(
-      "typeof attune.materialize&lt;&quot;maude_run&quot;&gt;",
-    );
-  });
-
-  test("requires a hover-bearing example owned by the page", () => {
-    const symbol = manifest.symbols[0]!;
-    const emitted = {
-      ...symbol,
-      examples: symbol.examples.map((example) => ({
-        ...example,
-        code: `// @showEmit\n${example.code}`,
-      })),
-    };
-    expect(() => renderApiSymbol(emitted, manifest, pages, "/attune/")).toThrow(
-      /no hover-bearing source example/u,
-    );
-  });
-
-  test("emits only reference routes plus independent evidence pages", async () => {
-    const output = await mkdtemp(Path.join(tmpdir(), "attune-reference-"));
-    outputs.push(output);
-    await buildSite(
-      manifest,
-      {
-        basePath: "/attune/",
-        outputDirectory: output,
-        siteUrl: "https://example.test/attune/",
-      },
-      [
+      const inheritanceCases = [
         {
-          slug: "fixture-evidence",
-          title: "Fixture evidence",
-          markdown: "# Fixture evidence\n\n```ts\ntype Evidence = true;\n```\n",
+          tree: inherited(
+            "attune-mcp--InheritImplementation.inherited",
+            "InheritContract.inherited",
+            implementation.split("\n")[1]!.trim(),
+          ),
+          reason: undefined,
         },
-      ],
-    );
-    await expect(stat(Path.join(output, "index.html"))).resolves.toBeDefined();
-    await expect(
-      stat(Path.join(output, "api", "attune", "materialize.html")),
-    ).resolves.toBeDefined();
-    await expect(
-      stat(Path.join(output, "experiments", "fixture-evidence.html")),
-    ).resolves.toBeDefined();
-    for (const path of await htmlBelow(output)) {
-      const html = await readFile(path, "utf8");
-      const window = new Window();
-      window.document.write(html);
-      const sections = [
-        ...window.document.querySelectorAll("main > section[data-section]"),
-      ].map((section) => section.getAttribute("data-section"));
-      expect({
-        page: Path.relative(output, path),
-        sections,
-      }).toEqual({
-        page: Path.relative(output, path),
-        sections: ["story", "shape", "examples", "related", "source"],
-      });
-      for (const heading of window.document.querySelectorAll(
-        "h1, h2, h3, h4, h5, h6",
-      )) {
-        expect({
-          heading: heading.textContent,
-          page: Path.relative(output, path),
-          typeLinked: heading.querySelector("a[data-type-reference]") !== null,
-        }).toMatchObject({ typeLinked: true });
+        {
+          tree: inherited(
+            "attune-mcp--NarrowImplementation.inherited",
+            "NarrowContract.inherited",
+            narrowImplementation.split("\n")[1]!.trim(),
+          ),
+          reason: "not bidirectionally assignable",
+        },
+        {
+          tree: inherited(
+            "attune-mcp--RenamedImplementation.inherited",
+            "InheritContract.inherited",
+            renamedImplementation.split("\n")[1]!.trim(),
+          ),
+          reason: "callable names do not match",
+        },
+        {
+          tree: inherited(
+            "attune-mcp--DetachedImplementation.inherited",
+            "InheritContract.inherited",
+            detached.split("\n")[1]!.trim(),
+          ),
+          reason: "has no explicit implements or override relation",
+        },
+        {
+          tree: inherited(
+            "InheritContract.inherited",
+            "InheritContract.inherited",
+            contract.split("\n")[1]!.trim(),
+          ),
+          reason: "Cyclic inheritDoc chain",
+        },
+        {
+          tree: inherited(
+            "attune-mcp--InheritImplementation.inherited",
+            "MissingContract.inherited",
+            implementation.split("\n")[1]!.trim(),
+          ),
+          reason: "has no canonical definition",
+        },
+      ] as const;
+      for (const testCase of inheritanceCases) {
+        const inheritanceFile = new VFile({ path: "index.html" });
+        await server.language.resolve(testCase.tree, inheritanceFile);
+        const reasons = inheritanceFile.messages.map(
+          (message) => message.reason,
+        );
+        const passed =
+          testCase.reason === undefined
+            ? reasons.length === 0
+            : reasons.some((reason) => reason.includes(testCase.reason));
+        expect(
+          passed,
+          `Expected ${testCase.reason ?? "no errors"}; received ${reasons.join("\n")}`,
+        ).toBe(true);
       }
-      for (const contract of window.document.querySelectorAll(
-        '[data-contract-kind="input"], [data-contract-kind="output"]',
-      )) {
-        expect(
-          contract.querySelector("[data-type-declaration]"),
-        ).not.toBeNull();
-        expect(contract.querySelector("a[data-type-source]")).not.toBeNull();
-        expect(
-          contract.querySelector("[data-type-lens] .twoslash-hover"),
-        ).not.toBeNull();
-        expect(
-          contract.querySelector("[data-type-lens]")?.textContent,
-        ).not.toMatch(/\b(?:any|unknown)\b/u);
-      }
-      const narrativeWords = [
-        ...window.document.querySelectorAll("[data-prose]"),
-      ]
-        .map((node) => node.textContent ?? "")
-        .join(" ")
-        .trim()
-        .split(/\s+/u)
-        .filter(Boolean);
-      expect(narrativeWords.length).toBeGreaterThanOrEqual(120);
-      window.close();
-      expect(html).toContain("data-page-example");
-      expect(html).toContain("twoslash-linked");
-      expect(html).toContain("twoslash-api-link");
-      expect(html).toContain("twoslash-source-link");
-      expect(html).toContain("Twoslash TypeScript");
-      expect(
-        html.match(/class="page-example"/gu)?.length,
-      ).toBeGreaterThanOrEqual(3);
-      expect(html.match(/data-example-id=/gu)?.length).toBeGreaterThanOrEqual(
-        3,
-      );
-      expect(html).not.toMatch(/interface\s+\w+Page\b/u);
-      expect(html).not.toContain("readonly materialize: unknown");
-      expect(html).not.toMatch(/NotFoundPage|ExperimentPage/u);
+    } finally {
+      await server.close();
+      await rm(inheritDirectory, { recursive: true, force: true });
     }
+  }, 60_000);
+
+  test("reads the real production universe into one deterministic guide", async () => {
+    const repository = Path.resolve(import.meta.dirname, "../../..");
+    const [first, second] = await Promise.all([
+      read(repository, revision),
+      read(repository, revision),
+    ]);
+    expect(second).toEqual(first);
+
+    const headings = first.children.filter(
+      (node): node is Heading => node.type === "heading",
+    );
+    expect(headings.slice(0, 17).map((node) => node.children[0])).toEqual(
+      [
+        "Attune",
+        "The model",
+        "A complete investigation",
+        "Investigation<State>",
+        "Attune",
+        "Attune.materialize",
+        "Attune.activate",
+        "Attune.acquireActive",
+        "Attune.execute",
+        "Attune.finalize",
+        "Attune.recoverTerminal",
+        "AttuneReceipt",
+        "Failures",
+        "InvestigationLifecycleError",
+        "AttuneToolFailure",
+        "AttuneToolkit",
+        "Repository",
+      ].map((value) => ({ type: "text", value })),
+    );
+
+    const codes = first.children.filter(
+      (node): node is Code => node.type === "code",
+    );
+    expect(headings).toHaveLength(541);
+    expect(codes).toHaveLength(538);
+    const examples = codes.filter(
+      (node) => node.data?.attune?.role === "example",
+    );
+    expect(examples).toHaveLength(1);
+    expect(examples[0]).toMatchObject({ lang: "ts" });
+    expect(examples[0]!.value).toContain("// @filename: inputs.ts");
+    expect(examples[0]!.value).toContain("// @filename: investigation.ts");
+    expect(examples[0]!.value).toContain("// ---cut---");
+    expect(examples[0]!.value).not.toContain("```");
+    expect(codes.filter((node) => node.lang === "text")).toHaveLength(1);
+
+    const ids = headings.map((node) => node.data?.attune?.id);
+    expect(ids.every((id) => typeof id === "string")).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(
+      headings.filter((node) =>
+        ["declaration", "member"].includes(node.data?.attune?.role ?? ""),
+      ),
+    ).toHaveLength(536);
+
+    const paths = new Set(
+      headings.flatMap((node) =>
+        node.data?.attune?.sourcePath === undefined
+          ? []
+          : [node.data.attune.sourcePath],
+      ),
+    );
+    expect(
+      [...paths].filter((path) => path.startsWith("packages/attune-mcp/")),
+    ).toHaveLength(26);
+    expect(
+      [...paths].filter((path) => path.startsWith("packages/effect-joern/")),
+    ).toHaveLength(17);
+    expect(
+      [...paths].filter((path) => path.includes("/pure/generated/")),
+    ).toHaveLength(4);
+  }, 15_000);
+
+  test("renders the exact guide spine and static definition links", async () => {
+    const { html } = await compileDocumentation(fixture(), options);
+    const ids = [...html.matchAll(/\sid="([^"]+)"/gu)].map((match) => match[1]);
+    const hrefs = [...html.matchAll(/<a\b[^>]*\shref="([^"]+)"/gu)].map(
+      (match) => match[1]!,
+    );
+
+    expect(html.match(/<h1\b/gu)).toHaveLength(1);
+    expect(html).toContain('<h1 id="top">Attune</h1>');
+    const chapterPositions = [
+      "the-model",
+      "complete-investigation",
+      "Investigation",
+      "Attune",
+      "AttuneReceipt",
+      "failures",
+      "AttuneToolkit",
+      "repository",
+    ].map((id) => html.indexOf(`id="${id}"`));
+    expect(chapterPositions.every((position) => position >= 0)).toBe(true);
+    expect(chapterPositions).toEqual(
+      [...chapterPositions].sort((left, right) => left - right),
+    );
+    expect(html.match(/data-language="text"/gu)).toHaveLength(1);
+    expect(html.match(/data-code-role="example"/gu)).toHaveLength(1);
+    expect(html).toContain('data-attune-checked="true"');
+    expect(html).toContain('href="#Investigation"');
+    expect(html).toContain('class="definition-link"');
+    expect(html).toContain(
+      '<meta name="description" content="Exact repository experiments with durable mechanical evidence.">',
+    );
+    expect(html.match(/<meta charset="utf-8">/gu)).toHaveLength(1);
+    expect(html).toContain('href="styles.css"');
+    expect(html).not.toMatch(/<script\b|card|search-index|sidebar/iu);
+
+    const local = hrefs
+      .filter((href) => href.startsWith("#"))
+      .map((href) => href.slice(1));
+    expect(local.every((target) => ids.includes(target))).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(
+      hrefs
+        .filter((href) => href.includes("/blob/"))
+        .every((href) => href.includes(`/blob/${revision}/`)),
+    ).toBe(true);
   });
 
-  test("rejects unsafe paths and mismatched publication revisions", async () => {
-    expect(() => resolveOutputPath("/tmp/reference", "../escape")).toThrow(
-      "escapes",
+  test("projects only the eight conceptual contents links", async () => {
+    const { html } = await compileDocumentation(fixture(), options);
+    const contents = /<nav class="contents"[^>]*>([\s\S]*?)<\/nav>/u.exec(
+      html,
+    )?.[1];
+    expect(contents).toBeDefined();
+    const links = [...(contents ?? "").matchAll(/\shref="([^"]+)"/gu)].map(
+      (match) => match[1],
     );
-    expect(() => normalizeBasePath("/../bad")).toThrow("Unsafe");
-    const output = await mkdtemp(Path.join(tmpdir(), "attune-publication-"));
-    outputs.push(output);
-    await expect(
-      buildSite(manifest, {
-        basePath: "/attune/",
-        outputDirectory: output,
-        sourceCommit: "f".repeat(40),
-        siteUrl: "https://example.test/attune/",
-      }),
-    ).rejects.toThrow("immutable extracted source revision");
+    expect(links).toEqual([
+      "#top",
+      "#the-model",
+      "#complete-investigation",
+      "#Investigation",
+      "#Attune",
+      "#AttuneReceipt",
+      "#failures",
+      "#AttuneToolkit",
+      "#repository",
+    ]);
+    expect(contents).not.toContain("Attune.execute");
+    expect(contents).not.toContain("AttuneToolFailure");
   });
-});
 
-describe("independent static evidence", () => {
-  const publicDigest = (
-    value: Readonly<Record<string, unknown>>,
-    field: string,
-  ): string => {
-    const copy = { ...value };
-    delete copy[field];
-    return `sha256:${digest(canonicalJson(copy))}`;
-  };
+  test("is byte deterministic", async () => {
+    const first = await compileDocumentation(fixture(), options);
+    const second = await compileDocumentation(fixture(), options);
+    expect(second.html).toBe(first.html);
+    expect(first.file.messages).toHaveLength(0);
+  });
 
-  test("keeps closed experiment publications independent of API prose", async () => {
-    const root = await mkdtemp(Path.join(tmpdir(), "attune-evidence-"));
-    outputs.push(root);
-    const directory = Path.join(root, "experiment");
-    await mkdir(directory);
-    const manifestRecord: Record<string, unknown> = {
-      experiment_id: "experiment",
-      manifest_digest: "",
-    };
-    manifestRecord.manifest_digest = publicDigest(
-      manifestRecord,
-      "manifest_digest",
+  test("keeps the technical-book stylesheet inside its hard boundary", async () => {
+    const styles = await readFile(
+      Path.resolve(import.meta.dirname, "..", "static", "styles.css"),
+      "utf8",
     );
-    const report: Record<string, unknown> = {
-      title: "Independent evidence",
-      report_digest: "",
-    };
-    report.report_digest = publicDigest(report, "report_digest");
-    const approval: Record<string, unknown> = {
-      manifest_digest: manifestRecord.manifest_digest,
-      report_digest: report.report_digest,
-      approval_digest: "",
-    };
-    approval.approval_digest = publicDigest(approval, "approval_digest");
-    const publication = {
-      schema_version: 1,
-      experiment_id: "experiment",
-      manifest_digest: manifestRecord.manifest_digest,
-      report_digest: report.report_digest,
-      evidence_digest: "sha256:evidence",
-      approval_digest: approval.approval_digest,
-      activegraph_publication_address: "sha256:publication",
-      exporter_version: "fixture",
-      prior_revision: null,
-      publication_digest: "sha256:bundle",
-    };
+    expect(styles.split("\n").length - 1).toBeLessThanOrEqual(350);
+    expect(styles).toMatch(/--prose:\s*46rem/u);
+    expect(styles).toMatch(/pre\.attune-code[\s\S]*overflow-x:\s*auto/u);
+    expect(styles).toContain("[data-attune-symbol]:target");
+    expect(styles).toContain("ui-monospace");
+    expect(styles).not.toMatch(/display:\s*grid|gradient\(|\.card\b/iu);
+  });
+
+  test("fails closed on unresolved and unsafe links", async () => {
+    const unresolved = fixture();
+    unresolved.children.push(
+      paragraph(reference("missing", "#MissingDeclaration")),
+    );
+    await expect(compileDocumentation(unresolved, options)).rejects.toThrow(
+      /no (?:canonical heading|target)/u,
+    );
+
+    const unsafe = fixture();
+    unsafe.children.push(paragraph(reference("unsafe", "javascript:alert(1)")));
+    await expect(compileDocumentation(unsafe, options)).rejects.toThrow(
+      /Unsafe link/u,
+    );
+
+    const escaped = fixture();
+    const declaration = escaped.children.find(
+      (node) =>
+        node.type === "heading" && node.data?.attune?.id === "Investigation",
+    );
+    if (declaration?.data?.attune !== undefined)
+      (
+        declaration.data.attune as unknown as Record<string, unknown>
+      ).sourcePath = "../escape.ts";
+    await expect(compileDocumentation(escaped, options)).rejects.toThrow(
+      /normalized immutable source/u,
+    );
+  });
+
+  test("proves the running program from syntax and resolved call sites", async () => {
+    const forged = fixture();
+    const example = forged.children.find(
+      (node): node is Code =>
+        node.type === "code" && node.data?.attune?.role === "example",
+    )!;
+    example.value =
+      example.value.replace(
+        "execution.investigation",
+        "materialized.investigation",
+      ) + "\n// .finalize(execution.investigation,";
+    await expect(compileDocumentation(forged, options)).rejects.toThrow(
+      /does not preserve its causal authority\/evidence program/u,
+    );
+  });
+
+  test("checks generated documentation and production roots excluded from authoring lint", async () => {
+    const repository = Path.resolve(import.meta.dirname, "../../..");
+    const generatedPackage = await mkdtemp(
+      Path.join(repository, "packages/docs-generated-test-"),
+    );
+    const generatedRoot = Path.join(generatedPackage, "src/generated");
+    await mkdir(generatedRoot, { recursive: true });
     await Promise.all([
       writeFile(
-        Path.join(directory, "manifest.json"),
-        JSON.stringify(manifestRecord),
-      ),
-      writeFile(Path.join(directory, "report.json"), JSON.stringify(report)),
-      writeFile(
-        Path.join(directory, "approval.json"),
-        JSON.stringify(approval),
+        Path.join(generatedPackage, "package.json"),
+        '{"name":"docs-generated-test"}\n',
       ),
       writeFile(
-        Path.join(directory, "publication.json"),
-        JSON.stringify(publication),
+        Path.join(generatedPackage, "tsconfig.build.json"),
+        '{"compilerOptions":{"module":"NodeNext","moduleResolution":"NodeNext","target":"ESNext","strict":true},"include":["src/**/*.ts"]}\n',
       ),
-      writeFile(Path.join(directory, "index.md"), "# Independent evidence\n"),
+      writeFile(
+        Path.join(generatedRoot, "broken.ts"),
+        `export const missingOwner = 1
+/** @remarks This declaration deliberately has no summary. */
+export const missingSummary = 2
+/** Preserve the supplied value. */
+export function missingTags<T>(input: T): T { return input }
+`,
+      ),
     ]);
-    await expect(discoverStaticPages(root)).resolves.toEqual([
-      {
-        slug: "experiment",
-        title: "Independent evidence",
-        markdown: "# Independent evidence\n",
-      },
+    try {
+      await expect(read(repository, revision)).rejects.toThrow(
+        /missingOwner needs exactly one generated documentation owner[\s\S]*missingSummary needs a generated summary[\s\S]*missingTags @param order must be input[\s\S]*missingTags @typeParam order must be T[\s\S]*missingTags needs generated @returns/u,
+      );
+    } finally {
+      await rm(generatedPackage, { recursive: true, force: true });
+    }
+
+    const outside = await mkdtemp(Path.join(tmpdir(), "attune-docs-outside-"));
+    const outsidePackage = await mkdtemp(
+      Path.join(repository, "packages/docs-root-test-"),
+    );
+    const outsideSource = Path.join(outside, "outside.ts");
+    await Promise.all([
+      writeFile(outsideSource, "export const escaped = true\n"),
+      writeFile(
+        Path.join(outsidePackage, "package.json"),
+        '{"name":"docs-root-test"}\n',
+      ),
+      writeFile(
+        Path.join(outsidePackage, "tsconfig.build.json"),
+        JSON.stringify({ compilerOptions: {}, files: [outsideSource] }),
+      ),
     ]);
+    try {
+      await expect(read(repository, revision)).rejects.toThrow(
+        /is outside repository/u,
+      );
+    } finally {
+      await Promise.all([
+        rm(outsidePackage, { recursive: true, force: true }),
+        rm(outside, { recursive: true, force: true }),
+      ]);
+    }
   });
 });

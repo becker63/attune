@@ -1,6 +1,5 @@
 dist/
 .tmp/
-blob-report/
 playwright-report/
 playwright/.cache/
 test-results/

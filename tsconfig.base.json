@@ -9,6 +9,19 @@
     "moduleResolution": "NodeNext",
     "noEmit": true,
     "noUncheckedIndexedAccess": true,
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "completions": false,
+        "diagnostics": true,
+        "diagnosticsName": true,
+        "goto": true,
+        "inlays": false,
+        "noExternal": true,
+        "quickinfo": true,
+        "refactors": false
+      }
+    ],
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,

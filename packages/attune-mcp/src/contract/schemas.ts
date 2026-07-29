@@ -1,20 +1,28 @@
 import { Schema } from "effect";
 import { Tool } from "effect/unstable/ai";
 
-const checked = (pattern: RegExp, expected: string, max: number) =>
-  Schema.String.check(
-    Schema.isNonEmpty(),
-    Schema.isMaxLength(max),
-    Schema.isPattern(pattern, { expected }),
-  );
+/**
+ * Builds a bounded patterned string schema. @param pattern - Accepted syntax.
+ *
+ * @param expected - Diagnostic expectation. @param max - Maximum length.
+ * @returns The checked string schema.
+ */
+const checked = (pattern: RegExp, expected: string, max: number): Schema.String =>
+  Schema.String.check(Schema.isNonEmpty(), Schema.isMaxLength(max), Schema.isPattern(pattern, { expected }));
 
-export const InvestigationId = checked(
-  /^[0-9A-HJKMNP-TV-Z]{26}$/u,
-  "an uppercase canonical ULID",
-  26,
-).pipe(Schema.brand("InvestigationId"));
+/**
+ * Validates a canonical investigation ULID. @remarks The brand prevents unrelated strings from crossing
+ * authority boundaries.
+ */
+export const InvestigationId = checked(/^[0-9A-HJKMNP-TV-Z]{26}$/u, "an uppercase canonical ULID", 26).pipe(
+  Schema.brand("InvestigationId"),
+);
 export type InvestigationId = typeof InvestigationId.Type;
 
+/**
+ * Validates a caller-stable invocation identity. @remarks Canonical bounded syntax makes durable replay paths
+ * unambiguous.
+ */
 export const InvocationId = checked(
   /^[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?$/u,
   "a caller-stable identifier using letters, numbers, dot, underscore, colon, or hyphen",
@@ -22,6 +30,10 @@ export const InvocationId = checked(
 ).pipe(Schema.brand("InvocationId"));
 export type InvocationId = typeof InvocationId.Type;
 
+/**
+ * Validates a full Git object identifier. @remarks Symbolic and abbreviated revisions cannot serve as
+ * snapshot evidence.
+ */
 export const FullGitCommit = checked(
   /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u,
   "a lowercase full Git commit identifier",
@@ -29,13 +41,19 @@ export const FullGitCommit = checked(
 ).pipe(Schema.brand("FullGitCommit"));
 export type FullGitCommit = typeof FullGitCommit.Type;
 
-export const Sha256Digest = checked(
-  /^[0-9a-f]{64}$/u,
-  "a lowercase SHA-256 digest",
-  64,
-).pipe(Schema.brand("Sha256Digest"));
+/**
+ * Validates a lowercase SHA-256 digest. @remarks Digests correlate exact inputs, artifacts, and toolchain
+ * selection.
+ */
+export const Sha256Digest = checked(/^[0-9a-f]{64}$/u, "a lowercase SHA-256 digest", 64).pipe(
+  Schema.brand("Sha256Digest"),
+);
 export type Sha256Digest = typeof Sha256Digest.Type;
 
+/**
+ * Tests portable repository-relative containment. @param path - Candidate POSIX path. @returns Whether it
+ * stays below its root.
+ */
 const relativePathIsContained = (path: string): boolean =>
   path.length > 0 &&
   !path.startsWith("/") &&
@@ -43,6 +61,10 @@ const relativePathIsContained = (path: string): boolean =>
   !path.includes("\0") &&
   path.split("/").every((part) => part !== "" && part !== "." && part !== "..");
 
+/**
+ * Validates a contained POSIX repository path. @remarks Absolute, backslash, null, empty, and traversal
+ * segments are rejected before filesystem access.
+ */
 export const RepositoryRelativePath = Schema.String.check(
   Schema.isMaxLength(4_096),
   Schema.makeFilter(relativePathIsContained, {
@@ -51,6 +73,10 @@ export const RepositoryRelativePath = Schema.String.check(
 ).pipe(Schema.brand("RepositoryRelativePath"));
 export type RepositoryRelativePath = typeof RepositoryRelativePath.Type;
 
+/**
+ * Validates one investigation-owned artifact URI. @remarks The URI carries exact investigation, tool,
+ * invocation, and contained path identity.
+ */
 export const ArtifactUri = checked(
   /^attune:\/\/investigations\/[0-9A-HJKMNP-TV-Z]{26}\/artifacts\/(?:repository|joern|maude|property|ast-grep|artifact)\/[A-Za-z0-9](?:[A-Za-z0-9._:-]{0,126}[A-Za-z0-9])?\/[A-Za-z0-9._~!$&'()*+,;=:@/-]+$/u,
   "a contained Attune artifact URI",
@@ -63,9 +89,7 @@ export const ArtifactUri = checked(
           .slice(uri.indexOf("/artifacts/") + 11)
           .split("/")
           .slice(2);
-        return (
-          path.length > 0 && path.every((part) => part !== "." && part !== "..")
-        );
+        return path.length > 0 && path.every((part) => part !== "." && part !== "..");
       },
       { expected: "an artifact URI without traversal segments" },
     ),
@@ -73,32 +97,47 @@ export const ArtifactUri = checked(
   .pipe(Schema.brand("ArtifactUri"));
 export type ArtifactUri = typeof ArtifactUri.Type;
 
-const boundedText = (max: number) =>
+/**
+ * Builds a nonempty bounded text schema. @param max - Maximum length. @returns The checked string schema.
+ */
+const boundedText = (max: number): Schema.String =>
   Schema.String.check(Schema.isNonEmpty(), Schema.isMaxLength(max));
-const PositiveInt = Schema.Number.check(
+/** Positive integer schema for execution bounds. */ const PositiveInt = Schema.Number.check(
   Schema.isInt(),
   Schema.isGreaterThan(0),
 );
-const NonNegativeInt = Schema.Number.check(
+/** Nonnegative integer schema for counts and byte sizes. */ const NonNegativeInt = Schema.Number.check(
   Schema.isInt(),
   Schema.isGreaterThanOrEqualTo(0),
 );
-const Timeout = PositiveInt.check(Schema.isLessThanOrEqualTo(1_200_000));
-const Timestamp = Schema.String.check(
+/** Bounded timeout in milliseconds. */ const Timeout = PositiveInt.check(
+  Schema.isLessThanOrEqualTo(1_200_000),
+);
+/** Canonical RFC 3339 UTC timestamp. */ const Timestamp = Schema.String.check(
   Schema.isPattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/u, {
     expected: "an RFC 3339 UTC timestamp",
   }),
 );
 
+/**
+ * Validates one bounded caller reference. @remarks References preserve caller context without granting
+ * filesystem or lifecycle authority.
+ */
 export const FreeFormReference = Schema.Struct({
   ref: boundedText(8_192),
   note: Schema.optional(Schema.String.check(Schema.isMaxLength(65_536))),
 }).annotate({ identifier: "FreeFormReference" });
 export type FreeFormReference = typeof FreeFormReference.Type;
-export const FreeFormReferences = Schema.Array(FreeFormReference).check(
-  Schema.isMaxLength(256),
-);
+/**
+ * Validates the bounded reference collection attached to a request. @remarks A finite list keeps receipt
+ * evidence predictable.
+ */
+export const FreeFormReferences = Schema.Array(FreeFormReference).check(Schema.isMaxLength(256));
 
+/**
+ * Validates content-addressed retained-artifact evidence. @remarks URI, media type, digest, byte count, and
+ * completeness travel together in receipts.
+ */
 export const ArtifactReference = Schema.Struct({
   uri: ArtifactUri,
   mediaType: checked(
@@ -112,6 +151,10 @@ export const ArtifactReference = Schema.Struct({
 }).annotate({ identifier: "ArtifactReference" });
 export type ArtifactReference = typeof ArtifactReference.Type;
 
+/**
+ * Enumerates stable tool-boundary recovery classifications. @remarks Callers branch on these codes rather
+ * than parsing native messages.
+ */
 export const FailureCode = Schema.Literals([
   "InvalidIdentity",
   "UnknownInvestigation",
@@ -141,7 +184,7 @@ export const FailureCode = Schema.Literals([
 ]);
 export type FailureCode = typeof FailureCode.Type;
 
-const FailureFields = {
+/** Shared bounded fields for public failures and receipt failure data. */ const FailureFields = {
   code: FailureCode,
   message: boundedText(16_384),
   expected: Schema.optional(Schema.String.check(Schema.isMaxLength(8_192))),
@@ -153,9 +196,8 @@ const FailureFields = {
  * Serializable failure details retained in failed and cancelled receipts.
  *
  * @remarks
- * `code` selects the caller's recovery decision; the optional expected,
- * observed, and path fields provide bounded evidence without exposing an
- * arbitrary native exception across the MCP contract.
+ *   `code` selects the caller's recovery decision; the optional expected, observed, and path fields provide
+ *   bounded evidence without exposing an arbitrary native exception across the MCP contract.
  */
 export const AttuneFailure = Schema.Struct(FailureFields).annotate({
   identifier: "AttuneFailure",
@@ -166,46 +208,30 @@ export type AttuneFailure = typeof AttuneFailure.Type;
  * Tagged Effect failure returned when an invocation cannot enter its tool boundary.
  *
  * @remarks
- * {@link AttuneToolFailure} is reserved for boundary rejection: conflicting invocation identity, unavailable workspace state, process admission failure, or a value that violates the closed {@link AttuneToolkit} contract. The operation has not produced trustworthy accepted evidence merely because an exception object exists.
- *
- * Native failures after acceptance normally become failed or cancelled {@link AttuneReceipt} values, preserving their input digest, toolchain digest, artifacts, and terminal status as data. This separation lets {@link Attune.execute} return reproducible failure evidence without collapsing every native outcome into the Effect error channel.
- *
- * Branch on `code`, use bounded `expected`, `observed`, and `path` evidence when present, and never parse `message` as protocol. Invalid {@link Investigation} use is instead an {@link InvestigationLifecycleError}; an interrupted accepted exchange should be checked with {@link Attune.recoverTerminal}.
- * @example Construct a rejected boundary
- * ```ts
- * // @filename: tool-error.ts
- * import { AttuneToolFailure } from "attune-mcp";
- * // ---cut---
- * const failure = new AttuneToolFailure({
- *   code: "StaleSnapshot",
- *   message: "the repository advanced",
- * });
- * ```
- *
- * @example Branch on the stable failure code
- * ```ts
- * import type { AttuneToolFailure } from "attune-mcp";
- * // ---cut-before---
- * declare const failure: AttuneToolFailure;
- * const refresh = failure.code === "StaleSnapshot";
- * ```
+ *   This failure is reserved for boundary rejection: conflicting invocation identity, unavailable workspace
+ *   state, process admission failure, or a value that violates the closed {@link AttuneToolkit} contract. The
+ *   operation has not produced trustworthy accepted evidence merely because an exception object exists.
+ *   Native failures after acceptance normally become failed or cancelled {@link AttuneReceipt} values,
+ *   preserving their input digest, toolchain digest, artifacts, and terminal status as data. This separation
+ *   lets {@link Attune.execute} return reproducible failure evidence without collapsing every native outcome
+ *   into the Effect error channel. Branch on `code`, use bounded `expected`, `observed`, and `path` evidence
+ *   when present, and never parse `message` as protocol. Invalid {@link Investigation} use is instead an
+ *   {@link InvestigationLifecycleError}; an interrupted accepted exchange should be checked with
+ *   {@link Attune.recoverTerminal}.
  */
 export class AttuneToolFailure extends Schema.TaggedErrorClass<AttuneToolFailure>()(
   "AttuneToolFailure",
   FailureFields,
 ) {}
 
-export const ToolName = Schema.Literals([
-  "repository",
-  "joern",
-  "maude",
-  "property",
-  "ast-grep",
-  "artifact",
-]);
+/**
+ * Enumerates durable receipt tool namespaces. @remarks Tool names remain smaller than operation names and own
+ * artifact URI paths.
+ */
+export const ToolName = Schema.Literals(["repository", "joern", "maude", "property", "ast-grep", "artifact"]);
 export type ToolName = typeof ToolName.Type;
 
-const ReceiptBase = {
+/** Common acceptance and correlation fields for every terminal receipt. */ const ReceiptBase = {
   schemaVersion: Schema.Literal(1),
   invocationId: InvocationId,
   investigationId: InvestigationId,
@@ -218,6 +244,9 @@ const ReceiptBase = {
   completedAt: Timestamp,
 } as const;
 
+/**
+ * Validates successful terminal evidence. @remarks Success always carries the exact resulting snapshot.
+ */
 export const SucceededReceipt = Schema.Struct({
   ...ReceiptBase,
   status: Schema.Literal("succeeded"),
@@ -225,6 +254,10 @@ export const SucceededReceipt = Schema.Struct({
 }).annotate({ identifier: "SucceededReceipt" });
 export type SucceededReceipt = typeof SucceededReceipt.Type;
 
+/**
+ * Validates failed terminal evidence. @remarks Failure preserves structured recovery data and an optional
+ * last snapshot.
+ */
 export const FailedReceipt = Schema.Struct({
   ...ReceiptBase,
   status: Schema.Literal("failed"),
@@ -233,6 +266,10 @@ export const FailedReceipt = Schema.Struct({
 }).annotate({ identifier: "FailedReceipt" });
 export type FailedReceipt = typeof FailedReceipt.Type;
 
+/**
+ * Validates cancelled terminal evidence. @remarks Cancellation remains durable accepted evidence rather than
+ * an absent result.
+ */
 export const CancelledReceipt = Schema.Struct({
   ...ReceiptBase,
   status: Schema.Literal("cancelled"),
@@ -245,56 +282,52 @@ export type CancelledReceipt = typeof CancelledReceipt.Type;
  * Durable, correlated evidence for one operation accepted by {@link Attune}.
  *
  * @remarks
- * Narrow `status` before reading terminal fields: `"succeeded"` always contains the exact resulting snapshot, while `"failed"` and `"cancelled"` contain structured failure evidence and may lack a resulting commit. Every branch remains ordinary {@link AttuneReceipt} data rather than an untyped native exception.
- *
- * The receipt binds invocation identity, {@link Investigation.investigationId}, operation name, input digest, toolchain digest, timestamps, and artifact references. When a snapshot exists it can be compared with {@link Investigation.snapshot}, making reproduced or promoted evidence traceable to one exact repository state.
- *
- * {@link Attune.execute} returns the correlated receipt with its result and active proof, replacing that proof only after a succeeded snapshot transition. If the caller loses that exchange after acceptance, {@link Attune.recoverTerminal} validates the persisted receipt before returning it; {@link AttuneToolFailure} still represents rejection before trustworthy terminal evidence exists.
- * @example Narrow terminal status
- * ```ts
- * // @filename: receipt.ts
- * import type { AttuneReceipt } from "attune-mcp";
- * // ---cut---
- * declare const receipt: AttuneReceipt;
- * const completed = receipt.status === "succeeded";
- * ```
- *
- * @example Read success or failure evidence
- * ```ts
- * import type { AttuneReceipt } from "attune-mcp";
- * // ---cut-before---
- * declare const receipt: AttuneReceipt;
- * const evidence = receipt.status === "succeeded"
- *   ? receipt.snapshotId
- *   : receipt.failure.code;
- * ```
+ *   Narrow `status` before reading terminal fields: `"succeeded"` always contains the exact resulting
+ *   snapshot, while `"failed"` and `"cancelled"` contain structured failure evidence and may lack a resulting
+ *   commit. Every branch remains ordinary {@link AttuneReceipt} data rather than an untyped native exception.
+ *   The receipt binds invocation identity, {@link Investigation.investigationId}, operation name, input
+ *   digest, toolchain digest, timestamps, and artifact references. When a snapshot exists it can be compared
+ *   with {@link Investigation.snapshot}, making reproduced or promoted evidence traceable to one exact
+ *   repository state. {@link Attune.execute} returns the correlated receipt with its result and active proof,
+ *   replacing that proof only after a succeeded snapshot transition. If the caller loses that exchange after
+ *   acceptance, {@link Attune.recoverTerminal} validates the persisted receipt before returning it;
+ *   {@link AttuneToolFailure} still represents rejection before trustworthy terminal evidence exists. The
+ *   [complete investigation](#complete-investigation) inspects this receipt before carrying the returned
+ *   authority into finalization.
  */
-export const AttuneReceipt = Schema.Union([
-  SucceededReceipt,
-  FailedReceipt,
-  CancelledReceipt,
-]).annotate({ identifier: "AttuneReceipt" });
+export const AttuneReceipt = Schema.Union([SucceededReceipt, FailedReceipt, CancelledReceipt]).annotate({
+  identifier: "AttuneReceipt",
+});
 export type AttuneReceipt = typeof AttuneReceipt.Type;
 
-const TerminalFailureResult = Schema.Struct({
+/** Shared result shape for failed and cancelled operations. */ const TerminalFailureResult = Schema.Struct({
   receipt: Schema.Union([FailedReceipt, CancelledReceipt]),
 });
-const accepted = <S extends Schema.Struct.Fields>(fields: S) =>
-  Schema.Union([
-    Schema.Struct({ ...fields, receipt: SucceededReceipt }),
-    TerminalFailureResult,
-  ]);
+/**
+ * Adds terminal receipt correlation to an operation result schema. @typeParam S - Successful result fields.
+ *
+ * @param fields - Successful fields excluding receipt. @returns The success-or-terminal-failure schema.
+ */
+const accepted = <S extends Schema.Struct.Fields>(
+  fields: S,
+): Schema.Union<
+  readonly [Schema.Struct<S & { readonly receipt: typeof SucceededReceipt }>, typeof TerminalFailureResult]
+> => Schema.Union([Schema.Struct({ ...fields, receipt: SucceededReceipt }), TerminalFailureResult]);
 
-const Common = {
+/** Request fields shared by every operation. */ const Common = {
   invocationId: InvocationId,
   references: FreeFormReferences,
 } as const;
-const InvestigationCommon = {
+/** Request fields requiring exact investigation authority. */ const InvestigationCommon = {
   ...Common,
   investigationId: InvestigationId,
   expectedSnapshot: FullGitCommit,
 } as const;
 
+/**
+ * Validates repository materialization requests. @remarks Materialization creates identity, so investigation
+ * identity is optional and no snapshot is yet supplied.
+ */
 export const RepositoryMaterializeInput = Schema.Struct({
   ...Common,
   remote: boundedText(8_192),
@@ -302,37 +335,54 @@ export const RepositoryMaterializeInput = Schema.Struct({
   investigationId: Schema.optional(InvestigationId),
 }).annotate({ identifier: "RepositoryMaterializeInput" });
 export type RepositoryMaterializeInput = typeof RepositoryMaterializeInput.Type;
+/**
+ * Validates materialization terminal results. @remarks Success grants exact repository and investigation
+ * evidence.
+ */
 export const RepositoryMaterializeResult = accepted({
   investigationId: InvestigationId,
   requestedRevision: boundedText(1_024),
   resolvedCommit: FullGitCommit,
   branch: boundedText(256),
 });
-export type RepositoryMaterializeResult =
-  typeof RepositoryMaterializeResult.Type;
+export type RepositoryMaterializeResult = typeof RepositoryMaterializeResult.Type;
 
+/**
+ * Validates repository checkpoint requests. @remarks Policy explicitly chooses clean verification or
+ * deterministic commit creation.
+ */
 export const RepositoryCheckpointInput = Schema.Struct({
   ...InvestigationCommon,
   policy: Schema.Literals(["require-clean", "commit"]),
   message: Schema.optional(boundedText(16_384)),
 }).annotate({ identifier: "RepositoryCheckpointInput" });
 export type RepositoryCheckpointInput = typeof RepositoryCheckpointInput.Type;
+/**
+ * Validates checkpoint terminal results. @remarks Success reports the exact resulting snapshot and whether a
+ * commit was created.
+ */
 export const RepositoryCheckpointResult = accepted({
   snapshotId: FullGitCommit,
   createdCommit: Schema.Boolean,
 });
 export type RepositoryCheckpointResult = typeof RepositoryCheckpointResult.Type;
 
+/**
+ * Validates the versioned structured Joern query form. @remarks Schema version and digest bind generated CPG
+ * vocabulary to exact query segments.
+ */
 export const JoernStructuredDsl = Schema.Struct({
   version: Schema.Literal(1),
   cpgSchemaVersion: boundedText(256),
   cpgSchemaHash: Sha256Digest,
   segments: Schema.Array(Schema.Json).check(Schema.isMaxLength(512)),
-  select: Schema.Record(boundedText(256), boundedText(256)).check(
-    Schema.isMaxProperties(64),
-  ),
+  select: Schema.Record(boundedText(256), boundedText(256)).check(Schema.isMaxProperties(64)),
 }).annotate({ identifier: "JoernStructuredDsl" });
 
+/**
+ * Validates Joern query requests. @remarks Exactly one raw or structured query is accepted against explicit
+ * snapshot and frontend settings.
+ */
 export const JoernQueryInput = Schema.Struct({
   ...InvestigationCommon,
   cpgql: Schema.optional(boundedText(2 * 1024 * 1024)),
@@ -343,13 +393,16 @@ export const JoernQueryInput = Schema.Struct({
   timeoutMilliseconds: Timeout,
 })
   .check(
-    Schema.makeFilter(
-      (input) => (input.cpgql === undefined) !== (input.dsl === undefined),
-      { expected: "exactly one of cpgql or dsl" },
-    ),
+    Schema.makeFilter((input) => (input.cpgql === undefined) !== (input.dsl === undefined), {
+      expected: "exactly one of cpgql or dsl",
+    }),
   )
   .annotate({ identifier: "JoernQueryInput" });
 export type JoernQueryInput = typeof JoernQueryInput.Type;
+/**
+ * Validates Joern terminal results. @remarks Success correlates summary output with snapshot and
+ * content-addressed CPG identity.
+ */
 export const JoernQueryResult = accepted({
   snapshotId: FullGitCommit,
   cpgId: Sha256Digest,
@@ -357,6 +410,10 @@ export const JoernQueryResult = accepted({
 });
 export type JoernQueryResult = typeof JoernQueryResult.Type;
 
+/**
+ * Validates bounded Maude execution requests. @remarks Exact module and command text are retained with
+ * snapshot and timeout authority.
+ */
 export const MaudeRunInput = Schema.Struct({
   ...InvestigationCommon,
   moduleSource: boundedText(2 * 1024 * 1024),
@@ -364,6 +421,10 @@ export const MaudeRunInput = Schema.Struct({
   timeoutMilliseconds: Timeout,
 }).annotate({ identifier: "MaudeRunInput" });
 export type MaudeRunInput = typeof MaudeRunInput.Type;
+/**
+ * Validates Maude terminal results. @remarks Success preserves bounded native output tails and process
+ * status.
+ */
 export const MaudeRunResult = accepted({
   snapshotId: FullGitCommit,
   exitCode: Schema.optional(Schema.Number.check(Schema.isInt())),
@@ -372,6 +433,10 @@ export const MaudeRunResult = accepted({
 });
 export type MaudeRunResult = typeof MaudeRunResult.Type;
 
+/**
+ * Validates bounded property-run requests. @remarks Seed, replay path, run count, and timeout make fast-check
+ * execution reproducible.
+ */
 export const PropertyRunInput = Schema.Struct({
   ...InvestigationCommon,
   propertySource: boundedText(2 * 1024 * 1024),
@@ -383,6 +448,10 @@ export const PropertyRunInput = Schema.Struct({
   }),
 }).annotate({ identifier: "PropertyRunInput" });
 export type PropertyRunInput = typeof PropertyRunInput.Type;
+/**
+ * Validates property-run terminal results. @remarks Success distinguishes no counterexample from retained
+ * replay evidence.
+ */
 export const PropertyRunResult = accepted({
   snapshotId: FullGitCommit,
   outcome: Schema.Literals(["no-counterexample", "counterexample"]),
@@ -393,16 +462,22 @@ export const PropertyRunResult = accepted({
 });
 export type PropertyRunResult = typeof PropertyRunResult.Type;
 
+/**
+ * Validates repository-native ast-grep requests. @remarks Mode, config, rule paths, snapshot, and timeout
+ * fully select the execution.
+ */
 export const AstGrepRunInput = Schema.Struct({
   ...InvestigationCommon,
   mode: Schema.Literals(["test", "scan", "apply"]),
   configPath: RepositoryRelativePath,
-  rulePaths: Schema.Array(RepositoryRelativePath).check(
-    Schema.isMaxLength(1_024),
-  ),
+  rulePaths: Schema.Array(RepositoryRelativePath).check(Schema.isMaxLength(1_024)),
   timeoutMilliseconds: Timeout,
 }).annotate({ identifier: "AstGrepRunInput" });
 export type AstGrepRunInput = typeof AstGrepRunInput.Type;
+/**
+ * Validates ast-grep terminal results. @remarks Success records findings or changed files against the exact
+ * snapshot.
+ */
 export const AstGrepRunResult = accepted({
   snapshotId: FullGitCommit,
   mode: Schema.Literals(["test", "scan", "apply"]),
@@ -411,12 +486,20 @@ export const AstGrepRunResult = accepted({
 });
 export type AstGrepRunResult = typeof AstGrepRunResult.Type;
 
+/**
+ * Validates artifact-promotion requests. @remarks Source evidence and destination containment are explicit
+ * under current snapshot authority.
+ */
 export const ArtifactPromoteInput = Schema.Struct({
   ...InvestigationCommon,
   artifactUri: ArtifactUri,
   destinationPath: RepositoryRelativePath,
 }).annotate({ identifier: "ArtifactPromoteInput" });
 export type ArtifactPromoteInput = typeof ArtifactPromoteInput.Type;
+/**
+ * Validates artifact-promotion terminal results. @remarks Success reports the prior snapshot, destination,
+ * and whether bytes changed.
+ */
 export const ArtifactPromoteResult = accepted({
   beforeSnapshot: FullGitCommit,
   destinationPath: RepositoryRelativePath,
@@ -424,22 +507,34 @@ export const ArtifactPromoteResult = accepted({
 });
 export type ArtifactPromoteResult = typeof ArtifactPromoteResult.Type;
 
-export const InvestigationFinalizeInput = Schema.Struct(
-  InvestigationCommon,
-).annotate({ identifier: "InvestigationFinalizeInput" });
+/**
+ * Validates finalization requests. @remarks Exact active investigation authority is the entire finalization
+ * input.
+ */
+export const InvestigationFinalizeInput = Schema.Struct(InvestigationCommon).annotate({
+  identifier: "InvestigationFinalizeInput",
+});
 export type InvestigationFinalizeInput = typeof InvestigationFinalizeInput.Type;
+/**
+ * Validates finalization terminal results. @remarks Success closes the investigation at one exact snapshot
+ * and timestamp.
+ */
 export const InvestigationFinalizeResult = accepted({
   finalSnapshot: FullGitCommit,
   finalizedAt: Timestamp,
 });
-export type InvestigationFinalizeResult =
-  typeof InvestigationFinalizeResult.Type;
+export type InvestigationFinalizeResult = typeof InvestigationFinalizeResult.Type;
 
-const makeTool = <
-  const Name extends string,
-  Parameters extends Schema.Top,
-  Success extends Schema.Top,
->(
+/**
+ * Builds one closed Effect tool contract. @typeParam Name - Operation name.
+ *
+ * @typeParam Parameters - Input schema. @typeParam Success - Result schema.
+ * @param name - Stable operation name. @param description - Caller-facing purpose. @param parameters - Input
+ *   schema. @param success - Success schema.
+ * @param options - Destructive, idempotent, and open-world annotations.
+ * @returns The annotated tool definition.
+ */
+const makeTool = <const Name extends string, Parameters extends Schema.Top, Success extends Schema.Top>(
   name: Name,
   description: string,
   parameters: Parameters,
@@ -449,7 +544,16 @@ const makeTool = <
     readonly idempotent: boolean;
     readonly openWorld: boolean;
   },
-) =>
+): Tool.Tool<
+  Name,
+  {
+    readonly parameters: Parameters;
+    readonly success: Success;
+    readonly failure: typeof AttuneToolFailure;
+    readonly failureMode: "return";
+  },
+  never
+> =>
   Tool.make(name, {
     description,
     parameters,
@@ -462,6 +566,10 @@ const makeTool = <
     .annotate(Tool.Idempotent, options.idempotent)
     .annotate(Tool.OpenWorld, options.openWorld);
 
+/**
+ * Defines the repository materialization tool. @remarks This is the sole operation that creates investigation
+ * authority.
+ */
 export const RepositoryMaterializeTool = makeTool(
   "repository_materialize",
   "Create or resume one exact repository-backed investigation.",
@@ -469,6 +577,10 @@ export const RepositoryMaterializeTool = makeTool(
   RepositoryMaterializeResult,
   { destructive: false, idempotent: true, openWorld: true },
 );
+/**
+ * Defines the repository checkpoint tool. @remarks The contract preserves current investigation authority
+ * while selecting snapshot policy.
+ */
 export const RepositoryCheckpointTool = makeTool(
   "repository_checkpoint",
   "Checkpoint the attached investigation branch at a clean Git commit.",
@@ -476,6 +588,9 @@ export const RepositoryCheckpointTool = makeTool(
   RepositoryCheckpointResult,
   { destructive: false, idempotent: true, openWorld: false },
 );
+/**
+ * Defines the Joern query tool. @remarks Query inputs remain correlated with their terminal CPG evidence.
+ */
 export const JoernQueryTool = makeTool(
   "joern_query",
   "Run native CPGQL through joern-effect against an exact commit.",
@@ -483,6 +598,9 @@ export const JoernQueryTool = makeTool(
   JoernQueryResult,
   { destructive: false, idempotent: true, openWorld: false },
 );
+/**
+ * Defines the Maude execution tool. @remarks Native inputs and bounded output share one terminal contract.
+ */
 export const MaudeRunTool = makeTool(
   "maude_run",
   "Run exact native Maude source and commands.",
@@ -490,6 +608,10 @@ export const MaudeRunTool = makeTool(
   MaudeRunResult,
   { destructive: false, idempotent: true, openWorld: false },
 );
+/**
+ * Defines the property execution tool. @remarks Reproducibility parameters and counterexample evidence remain
+ * schema checked.
+ */
 export const PropertyRunTool = makeTool(
   "property_run",
   "Run an ordinary TypeScript fast-check property and retain counterexamples.",
@@ -497,6 +619,10 @@ export const PropertyRunTool = makeTool(
   PropertyRunResult,
   { destructive: false, idempotent: true, openWorld: false },
 );
+/**
+ * Defines the ast-grep tool. @remarks One contract covers test, scan, and apply modes under explicit writer
+ * metadata.
+ */
 export const AstGrepRunTool = makeTool(
   "ast_grep_run",
   "Test, scan, or apply repository-native ast-grep rules.",
@@ -504,6 +630,10 @@ export const AstGrepRunTool = makeTool(
   AstGrepRunResult,
   { destructive: true, idempotent: true, openWorld: false },
 );
+/**
+ * Defines the artifact-promotion tool. @remarks Promotion is the explicit boundary from retained evidence to
+ * repository bytes.
+ */
 export const ArtifactPromoteTool = makeTool(
   "artifact_promote",
   "Copy one retained native artifact into the investigation repository.",
@@ -511,6 +641,10 @@ export const ArtifactPromoteTool = makeTool(
   ArtifactPromoteResult,
   { destructive: true, idempotent: true, openWorld: false },
 );
+/**
+ * Defines the investigation finalization tool. @remarks Finalization consumes active authority at an exact
+ * clean snapshot.
+ */
 export const InvestigationFinalizeTool = makeTool(
   "investigation_finalize",
   "Mechanically finalize one clean investigation.",

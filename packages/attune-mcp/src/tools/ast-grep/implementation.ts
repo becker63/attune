@@ -7,20 +7,22 @@ import { parse as parseYaml } from "yaml";
 import type {
   AstGrepRunInput,
   AstGrepRunResult,
+  AttuneToolFailure,
   RepositoryRelativePath,
 } from "../../contract/schemas.js";
-import {
-  type InvocationContext,
-  InvocationEngine,
-} from "../../investigation/invocation.js";
+import { type InvocationContext, InvocationEngine } from "../../investigation/invocation.js";
 import { WorkspaceStore } from "../../investigation/workspace.js";
-import { contained, fail, type RuntimeConfig } from "../../platform/core.js";
-import {
-  requireSuccessfulProcess,
-  retainProcessEvidence,
-} from "../../platform/native-process.js";
+import { contained, type RuntimeConfig } from "../../platform/core.js";
+import { requireSuccessfulProcess, retainProcessEvidence } from "../../platform/native-process.js";
 import { runProcess } from "../../platform/process.js";
 
+/**
+ * Retains the ast-grep configuration and selected rule inputs. @param context - Invocation evidence writer.
+ *
+ * @param workspaces - Store used to enumerate tracked test inputs. @param repository - Repository root
+ *   containing the inputs. @param configPath - Repository-relative ast-grep configuration.
+ * @param rulePaths - Repository-relative rule files. @returns A promise completed after retention.
+ */
 const retainAstGrepInputs = async (
   context: InvocationContext,
   workspaces: WorkspaceStore,
@@ -35,25 +37,21 @@ const retainAstGrepInputs = async (
   };
   for (const entry of document.testConfigs ?? []) {
     if (typeof entry.testDir !== "string") continue;
-    const relative = Path.posix.normalize(
-      Path.posix.join(Path.posix.dirname(configPath), entry.testDir),
-    );
+    const relative = Path.posix.normalize(Path.posix.join(Path.posix.dirname(configPath), entry.testDir));
     contained(repository, relative);
-    const tracked = await workspaces.gitRaw(
-      repository,
-      ["ls-files", "-z", "--", relative],
-      context.signal,
-    );
+    const tracked = await workspaces.gitRaw(repository, ["ls-files", "-z", "--", relative], context.signal);
     for (const path of tracked.split("\0").filter(Boolean)) selected.add(path);
   }
   for (const path of [...selected].sort()) {
-    await context.writeArtifact(
-      `inputs/${path}`,
-      await readFile(contained(repository, path)),
-    );
+    await context.writeArtifact(`inputs/${path}`, await readFile(contained(repository, path)));
   }
 };
 
+/**
+ * Counts and validates newline-delimited ast-grep findings. @param text - JSON Lines emitted by ast-grep.
+ *
+ * @returns The number of valid finding records.
+ */
 const findingsCount = (text: string): number => {
   let count = 0;
   for (const line of text.split("\n").filter(Boolean)) {
@@ -63,13 +61,21 @@ const findingsCount = (text: string): number => {
   return count;
 };
 
-/** Tests, scans, or applies repository-native ast-grep rules. */
+/**
+ * Tests, scans, or applies repository-native ast-grep rules. @remarks Work runs in isolation and applies a
+ * patch only after revalidating current authority.
+ *
+ * @param engine - Invocation engine that records terminal evidence. @param config - Runtime executable
+ *   configuration. @param workspaces - Store that owns checkouts and patch application. @param input - Mode,
+ *   rules, snapshot, and limits. @returns Findings or changed paths with evidence.
+ * @failure {@link AttuneToolFailure} - Repair rule input, process execution, or snapshot authority before retrying.
+ */
 export const astGrepRun = (
   engine: InvocationEngine,
   config: RuntimeConfig,
   workspaces: WorkspaceStore,
   input: AstGrepRunInput,
-): Effect.Effect<AstGrepRunResult, ReturnType<typeof fail>> =>
+): Effect.Effect<AstGrepRunResult, AttuneToolFailure> =>
   engine.execute({
     name: "ast_grep_run",
     input,
@@ -93,12 +99,7 @@ export const astGrepRun = (
           input.configPath,
           input.rulePaths,
         );
-        const common = [
-          "--config",
-          input.configPath,
-          "--color",
-          "never",
-        ] as const;
+        const common = ["--config", input.configPath, "--color", "never"] as const;
         const args =
           input.mode === "test"
             ? ["test", ...common]
@@ -120,9 +121,7 @@ export const astGrepRun = (
         requireSuccessfulProcess(result);
         let findingCount: number | undefined;
         if (input.mode === "scan") {
-          const findings = await readFile(
-            Path.join(context.directory, "stdout.txt"),
-          );
+          const findings = await readFile(Path.join(context.directory, "stdout.txt"));
           await context.writeArtifact("findings.jsonl", findings);
           findingCount = findingsCount(findings.toString("utf8"));
         }
@@ -131,9 +130,7 @@ export const astGrepRun = (
           ["diff", "--name-only", "-z"],
           context.signal,
         );
-        const changedFiles = changedRaw
-          .split("\0")
-          .filter(Boolean) as RepositoryRelativePath[];
+        const changedFiles = changedRaw.split("\0").filter(Boolean) as RepositoryRelativePath[];
         if (input.mode === "apply" && changedFiles.length > 0) {
           const patch = await workspaces.gitRaw(
             checkout.repository,

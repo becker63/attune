@@ -5,32 +5,46 @@ import type {
   RepositoryCheckpointResult,
   RepositoryMaterializeInput,
   RepositoryMaterializeResult,
+  AttuneToolFailure,
 } from "../../contract/schemas.js";
 import { InvocationEngine } from "../../investigation/invocation.js";
 import { WorkspaceStore } from "../../investigation/workspace.js";
-import { fail } from "../../platform/core.js";
 
-/** Materializes the exact revision described by a repository wire request. */
+/**
+ * Materializes the exact revision described by a repository request. @remarks The request resolves to
+ * immutable authority before stateful work is permitted. @param engine - Invocation engine that owns
+ * materialization.
+ *
+ * @param input - Remote, revision, identity, and references. @returns The materialized investigation and
+ *   evidence.
+ * @failure {@link AttuneToolFailure} - Correct repository identity or persistence before retrying.
+ */
 export const repositoryMaterialize = (
   engine: InvocationEngine,
   input: RepositoryMaterializeInput,
-): Effect.Effect<RepositoryMaterializeResult, ReturnType<typeof fail>> =>
+): Effect.Effect<RepositoryMaterializeResult, AttuneToolFailure> =>
   engine.materialize({
     invocationId: input.invocationId,
     remote: input.remote,
     revision: input.revision,
     references: input.references,
-    ...(input.investigationId === undefined
-      ? {}
-      : { investigationId: input.investigationId }),
+    ...(input.investigationId === undefined ? {} : { investigationId: input.investigationId }),
   });
 
-/** Checkpoints or commits the current workspace according to input policy. */
+/**
+ * Checkpoints or commits the current workspace according to policy. @remarks The expected snapshot is
+ * verified before recording the result as current evidence. @param engine - Invocation engine that records
+ * terminal evidence.
+ *
+ * @param workspaces - Store that performs the checkpoint. @param input - Expected snapshot and policy.
+ * @returns The resulting snapshot and checkpoint details.
+ * @failure {@link AttuneToolFailure} - Restore exact clean workspace authority before checkpointing again.
+ */
 export const repositoryCheckpoint = (
   engine: InvocationEngine,
   workspaces: WorkspaceStore,
   input: RepositoryCheckpointInput,
-): Effect.Effect<RepositoryCheckpointResult, ReturnType<typeof fail>> =>
+): Effect.Effect<RepositoryCheckpointResult, AttuneToolFailure> =>
   engine.execute({
     name: "repository_checkpoint",
     input,

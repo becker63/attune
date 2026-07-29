@@ -14,12 +14,12 @@ order a reader needs them:
 
 ```ts
 import {
-  Attune,
   type Investigation,
+  Attune,
   AttuneReceipt,
-  AttuneToolkit,
   InvestigationLifecycleError,
   AttuneToolFailure,
+  AttuneToolkit,
 } from "attune-mcp";
 ```
 
@@ -28,11 +28,11 @@ finalize, and recovery. `AttuneReceipt` records accepted work. `AttuneToolkit`
 installs the same closed schema at the MCP boundary. The two errors distinguish
 an invalid transition from a rejected tool call.
 
-The reference is generated from these declarations and their TSDoc. Every page
-uses the same narrative, shape, examples, related-types, and source sequence;
-every heading points back to a real public type. Callable pages show each input
-and output with its exact source annotation, checked Shiki + Twoslash hover, API
-destination, and immutable declaration link.
+The reference is one static technical guide generated from these declarations
+and their TSDoc. It teaches authority, action, and evidence through one checked
+investigation, then renders the remaining production type graph beneath the
+same document. Exact type occurrences link to canonical declarations and
+immutable source without client JavaScript.
 
 ## Repository
 
@@ -77,13 +77,16 @@ Run the complete workspace check:
 pnpm check
 ```
 
-The check regenerates checked-in sources, verifies formatting, runs type-aware
-linting and TypeScript 7, tests the packages, builds them, and audits their
-published boundaries. Run an individual target with Nx:
+The check verifies generated-source drift without mutating it, verifies
+formatting, runs type-aware linting and TypeScript 7, tests the packages, builds
+the runtime/package targets, and audits their published boundaries. The
+revision-bound documentation artifact is built separately from a clean commit.
+Run an individual target with Nx:
 
 ```bash
 pnpm nx run joern-effect:test
 pnpm nx run joern-effect:build
+pnpm nx run attune-docs:build
 pnpm nx graph
 ```
 
