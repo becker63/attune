@@ -32,6 +32,8 @@
         "packages/attune-docs/src/docs.ts",
         "packages/attune-docs/src/main.ts",
         "packages/attune-docs/src/read.ts",
+        "packages/attune-docs/src/tree.ts",
+        "packages/attune-docs/test/tree.test.ts",
         "tooling/oxlint/attune.ts"
       ],
       "options": {

@@ -1,6 +1,15 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as Path from "node:path";
+import { gzipSync } from "node:zlib";
 
 import type {
   Code,
@@ -20,7 +29,11 @@ import {
   compileDocumentation,
   type DocumentationOptions,
 } from "../src/docs.ts";
-import { createDocumentationLanguage } from "../src/main.ts";
+import {
+  bundleTreeRuntime,
+  createDocumentationLanguage,
+  replaceDirectory,
+} from "../src/main.ts";
 import { read } from "../src/read.ts";
 
 const revision = "0123456789abcdef0123456789abcdef01234567";
@@ -814,7 +827,47 @@ declare const shadow: Investigation<"active">`,
     );
     expect(html.match(/<meta charset="utf-8">/gu)).toHaveLength(1);
     expect(html).toContain('href="styles.css"');
-    expect(html).not.toMatch(/<script\b|card|search-index|sidebar/iu);
+    expect(html).not.toMatch(/card|search-index|sidebar/iu);
+
+    const summary =
+      "Attune materializes an exact repository state, issues typed authority to operate on it, and preserves every accepted operation as a durable receipt.";
+    const opening = /<div class="opening">([\s\S]*?)<h2 id="the-model">/u.exec(
+      html,
+    )?.[1];
+    const host =
+      /<div class="tree-flair" aria-hidden="true" data-tree-state="fallback">([\s\S]*?)<\/div>/u.exec(
+        opening ?? "",
+      )?.[1];
+    const fallback = /<pre class="tree-fallback">([\s\S]*?)<\/pre>/u.exec(
+      host ?? "",
+    )?.[1];
+    const art = (fallback ?? "").replace(/<[^>]+>/gu, "");
+    const rows = art.split("\n");
+    expect(opening).toContain(
+      `<div class="opening-copy"><h1 id="top">Attune</h1><p>${summary}</p></div>`,
+    );
+    expect(opening?.indexOf("opening-copy")).toBeLessThan(
+      opening?.indexOf("tree-flair") ?? -1,
+    );
+    expect(html.match(/class="tree-flair"/gu)).toHaveLength(1);
+    expect(html.match(/class="tree-fallback"/gu)).toHaveLength(1);
+    expect(html.match(/class="tree-canvas"/gu)).toHaveLength(1);
+    expect(host).toContain('<canvas class="tree-canvas"></canvas>');
+    expect(host).not.toMatch(/tabindex|<a\b|<button\b|<h[1-6]\b/iu);
+    expect(rows).toHaveLength(24);
+    expect(
+      rows.every((row) => row.length === 60 && /^[\x20-\x7e]+$/u.test(row)),
+    ).toBe(true);
+    expect(fallback).toContain('class="tree-wood"');
+    const hashes = art.match(/#/gu)?.length ?? 0;
+    expect(fallback?.match(/class="tree-accent"/gu)).toHaveLength(
+      Math.floor(hashes / 10),
+    );
+    expect(html.match(/<script\b/gu)).toHaveLength(1);
+    expect(html).toContain('<script src="tree.js" defer></script>');
+    expect(html).not.toMatch(
+      /<script[^>]+\b(?:type|async|integrity|crossorigin)=|<script[^>]*>[^<]+/iu,
+    );
 
     const local = hrefs
       .filter((href) => href.startsWith("#"))
@@ -859,6 +912,78 @@ declare const shadow: Investigation<"active">`,
     expect(first.file.messages).toHaveLength(0);
   });
 
+  test("preserves source line wrapping in the checked causal summary", async () => {
+    const wrapped = fixture();
+    const summary = wrapped.children[1];
+    if (summary?.type !== "paragraph" || summary.children[0]?.type !== "text")
+      throw new Error("Fixture opening drifted");
+    summary.children[0].value = summary.children[0].value.replace(
+      "authority to operate",
+      "authority to\noperate",
+    );
+    const { html } = await compileDocumentation(wrapped, options);
+    expect(html).toContain("authority to\noperate");
+    expect(html).toContain(
+      '<div class="opening-copy"><h1 id="top">Attune</h1><p>',
+    );
+  });
+
+  test("bundles one deterministic local tree runtime inside its hard boundary", async () => {
+    const repository = Path.resolve(import.meta.dirname, "../../..");
+    const [first, second, source] = await Promise.all([
+      bundleTreeRuntime(repository),
+      bundleTreeRuntime(repository),
+      readFile(
+        Path.join(repository, "packages/attune-docs/src/tree.ts"),
+        "utf8",
+      ),
+    ]);
+    expect(second).toBe(first);
+    expect(Buffer.byteLength(first)).toBeLessThanOrEqual(70 * 1024);
+    expect(gzipSync(first, { level: 9 }).byteLength).toBeLessThanOrEqual(
+      20 * 1024,
+    );
+    expect(source.trimEnd().split(/\r?\n/u).length).toBeLessThanOrEqual(450);
+    expect(first).not.toMatch(
+      /\bimport\s*\(|sourceMappingURL|https?:\/\/|fetch\s*\(|XMLHttpRequest|WebSocket/iu,
+    );
+    expect(first).not.toMatch(/(?:^|[;{}])\s*(?:import|export)\s/iu);
+  }, 30_000);
+
+  test("promotes staged documentation transactionally and restores on failure", async () => {
+    const parent = await mkdtemp(Path.join(tmpdir(), "attune-docs-publish-"));
+    const destination = Path.join(parent, "dist");
+    const staged = Path.join(parent, "staged");
+    try {
+      await Promise.all([mkdir(destination), mkdir(staged)]);
+      await Promise.all([
+        writeFile(Path.join(destination, "version"), "old"),
+        writeFile(Path.join(staged, "version"), "new"),
+      ]);
+      await replaceDirectory(staged, destination);
+      expect(await readFile(Path.join(destination, "version"), "utf8")).toBe(
+        "new",
+      );
+      expect(await readdir(parent)).toEqual(["dist"]);
+
+      await rename(destination, Path.join(parent, ".dist-backup"));
+      await mkdir(staged);
+      await writeFile(Path.join(staged, "version"), "broken");
+      await expect(
+        replaceDirectory(staged, destination, async (from, to) => {
+          if (from === staged) throw new Error("injected promotion failure");
+          await rename(from, to);
+        }),
+      ).rejects.toThrow("injected promotion failure");
+      expect(await readFile(Path.join(destination, "version"), "utf8")).toBe(
+        "new",
+      );
+      expect(await readdir(parent)).toEqual(["dist"]);
+    } finally {
+      await rm(parent, { recursive: true, force: true });
+    }
+  });
+
   test("keeps the technical-book stylesheet inside its hard boundary", async () => {
     const styles = await readFile(
       Path.resolve(import.meta.dirname, "..", "static", "styles.css"),
@@ -869,7 +994,28 @@ declare const shadow: Investigation<"active">`,
     expect(styles).toMatch(/pre\.attune-code[\s\S]*overflow-x:\s*auto/u);
     expect(styles).toContain("[data-attune-symbol]:target");
     expect(styles).toContain("ui-monospace");
-    expect(styles).not.toMatch(/display:\s*grid|gradient\(|\.card\b/iu);
+    expect(styles).toContain(
+      ".guide > :not(pre, .heading-row, table, .opening)",
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 68rem\)[\s\S]*\.opening \{[\s\S]*display:\s*flex/iu,
+    );
+    expect(styles).toMatch(
+      /\.tree-flair,[\s\S]*width:\s*60ch;\s*height:\s*24em/iu,
+    );
+    expect(styles).toMatch(
+      /\.tree-flair \{[\s\S]*display:\s*none;[\s\S]*pointer-events:\s*none;[\s\S]*user-select:\s*none/iu,
+    );
+    const treeStyles = styles.slice(
+      styles.indexOf(".tree-flair"),
+      styles.indexOf("\nh1,"),
+    );
+    expect(treeStyles).not.toMatch(
+      /\b(?:background|border|border-radius|outline|box-shadow|text-shadow|filter|backdrop-filter|mix-blend-mode|padding)\s*:/iu,
+    );
+    expect(styles).not.toMatch(
+      /display:\s*grid|gradient\(|\.card\b|@keyframes|animation:/iu,
+    );
   });
 
   test("fails closed on unresolved and unsafe links", async () => {
@@ -898,6 +1044,39 @@ declare const shadow: Investigation<"active">`,
       ).sourcePath = "../escape.ts";
     await expect(compileDocumentation(escaped, options)).rejects.toThrow(
       /normalized immutable source/u,
+    );
+  });
+
+  test("rejects source-authored runtime markup and assets", async () => {
+    const raw = fixture();
+    raw.children.push({
+      type: "html",
+      value:
+        '<script src="extra.js"></script><canvas onclick="evil()"></canvas>',
+    });
+    await expect(compileDocumentation(raw, options)).rejects.toThrow(
+      /Source-authored HTML is forbidden/u,
+    );
+
+    const image = fixture();
+    image.children.push({
+      type: "image",
+      url: "https://example.com/tree.png",
+      alt: "tree",
+    });
+    await expect(compileDocumentation(image, options)).rejects.toThrow(
+      /Source-authored runtime assets are forbidden/u,
+    );
+
+    const override = fixture();
+    const authored = paragraph({ type: "text", value: "attempted override" });
+    authored.data = {
+      hName: "canvas",
+      hProperties: { onClick: "evil()", tabIndex: 0 },
+    } as Data;
+    override.children.push(authored);
+    await expect(compileDocumentation(override, options)).rejects.toThrow(
+      /Source-authored HTML overrides are forbidden/u,
     );
   });
 

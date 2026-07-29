@@ -133,10 +133,81 @@ pre {
   padding: 4.5rem 0 8rem;
 }
 
-.guide > :not(pre, .heading-row, table) {
+.guide > :not(pre, .heading-row, table, .opening) {
   max-width: var(--prose);
 }
-
+.opening,
+.opening-copy {
+  max-width: var(--prose);
+}
+.tree-flair {
+  position: relative;
+  display: none;
+  flex: 0 0 auto;
+  font-family:
+    ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(0.64rem, 0.75vw, 0.74rem);
+  pointer-events: none;
+  user-select: none;
+}
+.tree-flair,
+.tree-fallback,
+.tree-canvas {
+  width: 60ch;
+  height: 24em;
+}
+.tree-fallback,
+.tree-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.tree-fallback {
+  margin: 0;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--muted) 62%, transparent);
+  line-height: 1;
+  white-space: pre;
+}
+.tree-wood {
+  color: color-mix(in srgb, var(--ink) 64%, transparent);
+}
+.tree-accent {
+  color: color-mix(in srgb, var(--accent) 58%, transparent);
+}
+.tree-canvas,
+.tree-flair:is(
+    [data-tree-state="running"],
+    [data-tree-state="paused"],
+    [data-tree-state="static"]
+  )
+  .tree-fallback {
+  visibility: hidden;
+}
+.tree-flair:is(
+    [data-tree-state="running"],
+    [data-tree-state="paused"],
+    [data-tree-state="static"]
+  )
+  .tree-canvas {
+  visibility: visible;
+}
+@media (min-width: 68rem) {
+  .opening {
+    display: flex;
+    width: 100%;
+    max-width: none;
+    align-items: flex-start;
+    gap: clamp(1.5rem, 3vw, 3rem);
+  }
+  .opening-copy {
+    flex: 1 1 var(--prose);
+    min-width: 0;
+  }
+  .tree-flair {
+    display: block;
+  }
+}
 h1,
 h2,
 h3,

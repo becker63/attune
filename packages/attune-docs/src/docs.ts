@@ -32,6 +32,14 @@ const required =
     " ",
   );
 const structural = new Set("top the-model complete-investigation failures repository".split(" "));
+const openingSummary =
+  "Attune materializes an exact repository state, issues typed authority to operate on it, and preserves every accepted operation as a durable receipt.";
+const treeRows = (
+  "\n                             .\n                      .   :  : .\n                .  :  *oo*** :   .\n             . :*o##oooooo**o*: .\n          . :*ooo#oo**::ooo###oo*:   ." +
+  "\n        .:*oo##oo*:..  :*ooo#@oooo*: .\n       :*ooo##o*:   .   :*oo#ooooo*:\n     .:*oo###oo*:  .:*:.  :*ooo##oo*:.\n    .:*oo#@oooo*::*oooo*:.:*oo###ooo*:.\n     :*oooo###oooo##ooo***ooo#oooooo*:" +
+  "\n       :*oo@##ooo###oooooooo###ooo*:.\n         :*oooooo#@oo*ooo##oooo*:\n            :**oo##oo*oo###o*:\n               :*oo\\Y/oo*:\n          \\       \\ \\|/ /       /\n             \\     \\Y|Y/     /" +
+  "\n                \\   \\|/   /\n                    |||\n                   /|||\\\n                 // ||| \\\\\n              ///   |||   \\\\\\\n           ////     /|\\     \\\\\\\\\n       /////       / | \\       \\\\\\\\\\"
+).split("\n");
 const data = (node: { readonly data?: unknown }): AttuneData =>
   (node.data as { readonly attune?: AttuneData } | undefined)?.attune ?? {};
 const textOf = (node: unknown): string => {
@@ -168,6 +176,14 @@ const checkDocumentation = lintRule<Root>("attune-docs:document", (tree, file) =
   const codes: Code[] = [];
   const links: Link[] = [];
   visit(tree, (node) => {
+    const override = node.data as
+      | { readonly hChildren?: unknown; readonly hName?: unknown; readonly hProperties?: unknown }
+      | undefined;
+    if (node.type === "html") report(file, "Source-authored HTML is forbidden", node);
+    if (node.type === "image" || node.type === "imageReference")
+      report(file, "Source-authored runtime assets are forbidden", node);
+    if (override !== undefined && ["hChildren", "hName", "hProperties"].some((key) => key in override))
+      report(file, "Source-authored HTML overrides are forbidden");
     if (node.type === "heading") headings.push(node);
     else if (node.type === "code") codes.push(node);
     else if (node.type === "link") links.push(node);
@@ -190,6 +206,18 @@ const checkDocumentation = lintRule<Root>("attune-docs:document", (tree, file) =
     }
   }
   if (headings.filter(({ depth }) => depth === 1).length !== 1) report(file, "The document needs exactly one h1");
+  const title = headings.find((heading) => data(heading).id === "top");
+  const titleIndex = title === undefined ? -1 : tree.children.indexOf(title);
+  if (
+    title === undefined ||
+    title.depth !== 1 ||
+    textOf(title) !== "Attune" ||
+    tree.children[titleIndex + 1]?.type !== "paragraph" ||
+    textOf(tree.children[titleIndex + 1])
+      .replace(/\s+/gu, " ")
+      .trim() !== openingSummary
+  )
+    report(file, "The opening title and causal summary must remain exact and adjacent");
   let previous = -1;
   for (const id of required) {
     const at = headings.findIndex((heading) => data(heading).id === id);
@@ -263,6 +291,23 @@ const element = (
   children: ElementContent[] = [],
 ): Element => ({ type: "element", tagName, properties, children });
 const text = (value: string): ElementContent => ({ type: "text", value });
+const treeFallback = (): Element =>
+  element(
+    "pre",
+    { className: ["tree-fallback"] },
+    treeRows
+      .map((row) => `         ${row}`.padEnd(60))
+      .join("\n")
+      .split(/([/\\|Y]+|@)/u)
+      .filter(Boolean)
+      .map((run) =>
+        run === "@"
+          ? element("span", { className: ["tree-accent"] }, [text("#")])
+          : /^[/\\|Y]+$/u.test(run)
+            ? element("span", { className: ["tree-wood"] }, [text(run)])
+            : text(run),
+      ),
+  );
 const anchor = (href: string, label: string, className?: string, properties = {}): Element =>
   element("a", { href, ...properties, ...(className === undefined ? {} : { className: [className] }) }, [text(label)]);
 const codeHandler =
@@ -329,7 +374,21 @@ const layout =
       }
     });
     if (body === undefined) throw new Error("rehype-document omitted body");
+    const content = body.children.filter((node): node is Element => node.type === "element");
+    const [title, summary, ...guide] = content;
+    if (
+      title?.type !== "element" ||
+      title.tagName !== "h1" ||
+      title.properties.id !== "top" ||
+      summary?.type !== "element" ||
+      summary.tagName !== "p"
+    )
+      throw new Error("The rendered opening is not the checked title and summary");
     const code = (value: string) => element("code", {}, [text(value)]);
+    const host = element("div", { className: ["tree-flair"], ariaHidden: "true", dataTreeState: "fallback" }, [
+      treeFallback(),
+      element("canvas", { className: ["tree-canvas"] }),
+    ]);
     body.children = [
       anchor("#main", "Skip to content", "skip-link"),
       element("nav", { className: ["contents"], ariaLabel: "Guide contents" }, [
@@ -351,7 +410,13 @@ const layout =
           ),
         ),
       ]),
-      element("main", { id: "main", className: ["guide"] }, body.children),
+      element("main", { id: "main", className: ["guide"] }, [
+        element("div", { className: ["opening"] }, [
+          element("div", { className: ["opening-copy"] }, [title, summary]),
+          host,
+        ]),
+        ...guide,
+      ]),
       element("footer", { className: ["site-footer"] }, [
         text(`Source ${metadata.revision} · TypeScript `),
         code(metadata.typescriptVersion),
@@ -360,6 +425,7 @@ const layout =
         text(" · @effect/language-service "),
         code(metadata.languageServiceVersion),
       ]),
+      element("script", { src: "tree.js", defer: true }),
     ];
     return tree;
   };
@@ -367,24 +433,35 @@ const layout =
 const schema: typeof defaultSchema = {
   ...defaultSchema,
   clobberPrefix: "",
-  tagNames: [...(defaultSchema.tagNames ?? []), ..."html head body title meta link main nav footer".split(" ")],
+  tagNames: [
+    ...(defaultSchema.tagNames ?? []),
+    ..."html head body title meta link main nav footer canvas script".split(" "),
+  ],
   attributes: {
     ...defaultSchema.attributes,
-    "*": [...((defaultSchema.attributes?.["*"] ?? []) as string[]), "className", "ariaLabel", "dataAttuneSymbol"],
+    "*": [
+      ...((defaultSchema.attributes?.["*"] ?? []) as string[]),
+      ..."className ariaHidden ariaLabel dataAttuneSymbol dataTreeState".split(" "),
+    ],
     meta: ["name", "content", "charSet"],
     link: ["rel", "href"],
     a: ["href", "rel", "className", "ariaLabel"],
     pre: ["style", "dataLanguage", "dataCodeRole", "dataAttuneChecked"],
     span: ["style"],
+    script: ["src", "defer"],
   },
-  protocols: { ...defaultSchema.protocols, href: ["http", "https"] },
+  protocols: { ...defaultSchema.protocols, href: ["http", "https"], src: ["http", "https"] },
 };
+const classed = (node: Element, name: string) =>
+  Array.isArray(node.properties.className) && node.properties.className.includes(name);
 const checkHtml: Plugin<[], HastRoot> = function () {
   return (tree, file) => {
     const ids = new Set<string>();
     const local: string[] = [];
+    const elements: Element[] = [];
     let charsets = 0;
     visit(tree, "element", (node) => {
+      elements.push(node);
       const id = node.properties.id;
       if (typeof id === "string") {
         if (ids.has(id)) report(file, `Sanitized HTML duplicates #${id}`);
@@ -396,10 +473,41 @@ const checkHtml: Plugin<[], HastRoot> = function () {
         if (href.startsWith("#")) local.push(href.slice(1));
       } else if (node.tagName === "link" && href !== "styles.css")
         report(file, "Sanitized HTML has an unexpected asset");
+      if ("audio embed iframe img object source track video".split(" ").includes(node.tagName))
+        report(file, "Sanitized HTML has an unexpected runtime asset");
       if (node.tagName === "meta" && node.properties.charSet === "utf-8") charsets += 1;
     });
     if (charsets !== 1) report(file, "Sanitized HTML needs exactly one UTF-8 charset");
     for (const target of local) if (!ids.has(target)) report(file, `Sanitized HTML link #${target} has no target`);
+    const one = (tag: string, name?: string) => {
+      const found = elements.filter((node) => node.tagName === tag && (name === undefined || classed(node, name)));
+      return found.length === 1 ? found[0] : undefined;
+    };
+    const opening = one("div", "opening");
+    const copy = one("div", "opening-copy");
+    const host = one("div", "tree-flair");
+    const fallback = one("pre", "tree-fallback");
+    const canvas = one("canvas", "tree-canvas");
+    const script = one("script");
+    const rows = fallback === undefined ? [] : textOf(fallback).split("\n");
+    if (
+      opening?.children.length !== 2 ||
+      opening.children[0] !== copy ||
+      opening.children[1] !== host ||
+      host?.children.length !== 2 ||
+      host.children[0] !== fallback ||
+      host.children[1] !== canvas ||
+      host.properties.ariaHidden !== "true" ||
+      host.properties.dataTreeState !== "fallback" ||
+      rows.length !== 24 ||
+      rows.some((row) => row.length !== 60 || !/^[\x20-\x7e]+$/u.test(row)) ||
+      canvas?.children.length !== 0 ||
+      script?.properties.src !== "tree.js" ||
+      script.properties.defer !== true ||
+      script.children.length !== 0 ||
+      Object.keys(script.properties).sort().join(" ") !== "defer src"
+    )
+      report(file, "Sanitized HTML needs the exact fixed tree shell and classic script");
   };
 };
 

@@ -3,8 +3,10 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { chmod, copyFile, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import * as Path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { gzipSync } from "node:zlib";
 
 import type { Code, Heading, Link, RootContent } from "mdast";
+import { rolldown } from "rolldown";
 import { createHighlighter } from "shiki";
 import { ts } from "ts-morph";
 import { visit } from "unist-util-visit";
@@ -37,6 +39,7 @@ type Visible = {
 };
 
 const repository = Path.resolve(import.meta.dirname, "../../..");
+const treeEntry = "\0attune-docs-tree";
 const identifiers = /[$_\p{ID_Start}][$_\u200c\u200d\p{ID_Continue}]*/gu;
 const run = (command: string, args: string[], cwd = repository) =>
   execFileSync(command, args, { cwd, encoding: "utf8" }).trim();
@@ -136,6 +139,82 @@ const pool = async <A>(values: readonly A[], use: (value: A) => Promise<void>) =
       while (next < values.length) await use(values[next++]!);
     }),
   );
+};
+
+const generateTreeRuntime = async (root: string) => {
+  const source = Path.join(root, "packages/attune-docs/src/tree.ts");
+  const build = await rolldown({
+    cwd: root,
+    input: treeEntry,
+    moduleTypes: { ".ts": "ts" },
+    platform: "browser",
+    plugins: [
+      {
+        name: "attune-docs-tree-entry",
+        resolveId: (id) => (id === treeEntry ? treeEntry : undefined),
+        load: (id) => (id === treeEntry ? `import ${JSON.stringify(source)};` : undefined),
+      },
+    ],
+    tsconfig: Path.join(root, "packages/attune-docs/tsconfig.browser.json"),
+  });
+  try {
+    const generated = await build.generate({
+      codeSplitting: false,
+      entryFileNames: "tree.js",
+      exports: "none",
+      format: "iife",
+      minify: true,
+      sourcemap: false,
+    });
+    if (generated.output.length !== 1 || generated.output[0].type !== "chunk")
+      throw new Error("Tree runtime must produce exactly one JavaScript chunk");
+    const chunk = generated.output[0];
+    if (
+      chunk.fileName !== "tree.js" ||
+      chunk.imports.length > 0 ||
+      chunk.dynamicImports.length > 0 ||
+      chunk.map !== null ||
+      chunk.exports.length > 0
+    )
+      throw new Error("Tree runtime emitted an import, export, source map, or unexpected name");
+    if (![...chunk.moduleIds].some((id) => /[/\\]ogl[/\\]/u.test(id)))
+      throw new Error("Tree runtime did not bundle OGL");
+    return chunk.code;
+  } finally {
+    await build.close();
+  }
+};
+
+export const bundleTreeRuntime = async (root = repository): Promise<string> => {
+  const first = await generateTreeRuntime(root);
+  const second = await generateTreeRuntime(root);
+  if (first !== second) throw new Error("Tree runtime is not byte-deterministic");
+  const raw = Buffer.byteLength(first);
+  const gzip = gzipSync(first, { level: 9 }).byteLength;
+  if (raw > 70 * 1024 || gzip > 20 * 1024)
+    throw new Error(`Tree runtime is ${raw} bytes raw and ${gzip} bytes gzip (limits 71680/20480)`);
+  return first;
+};
+
+export const replaceDirectory = async (staged: string, destination: string, move: typeof rename = rename) => {
+  const backup = Path.join(Path.dirname(destination), ".dist-backup");
+  if (existsSync(backup)) {
+    if (existsSync(destination)) await rm(backup, { recursive: true, force: true });
+    else await move(backup, destination);
+  }
+  const preserved = existsSync(destination);
+  try {
+    if (preserved) await move(destination, backup);
+    await move(staged, destination);
+    await rm(backup, { recursive: true, force: true });
+  } catch (cause) {
+    if (preserved && existsSync(backup)) {
+      await rm(destination, { recursive: true, force: true });
+      await move(backup, destination);
+    }
+    await rm(staged, { recursive: true, force: true });
+    throw cause;
+  }
 };
 
 const parseExample = (source: string): { readonly files: readonly Virtual[]; readonly visible: Visible } => {
@@ -969,13 +1048,14 @@ const assertFork = (root: string) => {
     throw new Error("Documentation publication requires a clean committed worktree");
   if (run("git", ["ls-files", "packages/attune-docs/dist"], root) !== "")
     throw new Error("Generated documentation may not be tracked");
-  const source = ["docs.ts", "main.ts", "read.ts"];
+  const serverSource = ["docs.ts", "main.ts", "read.ts"];
+  const source = [...serverSource, "tree.ts"];
   if (readdirSync(Path.join(root, "packages/attune-docs/src")).sort().join("\0") !== source.join("\0"))
     throw new Error("Documentation source inventory drifted");
   if (readdirSync(Path.join(root, "packages/attune-docs/static")).sort().join("\0") !== "styles.css")
     throw new Error("Documentation static inventory drifted");
   const allowed =
-    "packages/attune-docs/.gitignore packages/attune-docs/README.md packages/attune-docs/package.json packages/attune-docs/playwright.config.ts packages/attune-docs/schema/experiment-approval.schema.json packages/attune-docs/schema/experiment-manifest.schema.json packages/attune-docs/schema/experiment-publication.schema.json packages/attune-docs/schema/experiment-report.schema.json packages/attune-docs/src/docs.ts packages/attune-docs/src/main.ts packages/attune-docs/src/read.ts packages/attune-docs/static/styles.css packages/attune-docs/test/docs.test.ts packages/attune-docs/test/e2e.spec.ts packages/attune-docs/test/fixtures/resolver.ts packages/attune-docs/tsconfig.json packages/attune-docs/vitest.config.ts tooling/oxlint/attune.test.ts tooling/oxlint/attune.ts tooling/oxlint/fixtures/cli.config.ts tooling/oxlint/fixtures/invalid.ts tooling/oxlint/fixtures/nested/.oxlintrc.json tooling/oxlint/fixtures/nested/invalid.ts tooling/oxlint/fixtures/valid.ts"
+    "packages/attune-docs/.gitignore packages/attune-docs/README.md packages/attune-docs/package.json packages/attune-docs/playwright.config.ts packages/attune-docs/schema/experiment-approval.schema.json packages/attune-docs/schema/experiment-manifest.schema.json packages/attune-docs/schema/experiment-publication.schema.json packages/attune-docs/schema/experiment-report.schema.json packages/attune-docs/src/docs.ts packages/attune-docs/src/main.ts packages/attune-docs/src/read.ts packages/attune-docs/src/tree.ts packages/attune-docs/static/styles.css packages/attune-docs/test/docs.test.ts packages/attune-docs/test/e2e.spec.ts packages/attune-docs/test/fixtures/resolver.ts packages/attune-docs/test/tree.test.ts packages/attune-docs/tsconfig.browser.json packages/attune-docs/tsconfig.json packages/attune-docs/vitest.config.ts tooling/oxlint/attune.test.ts tooling/oxlint/attune.ts tooling/oxlint/fixtures/cli.config.ts tooling/oxlint/fixtures/invalid.ts tooling/oxlint/fixtures/nested/.oxlintrc.json tooling/oxlint/fixtures/nested/invalid.ts tooling/oxlint/fixtures/valid.ts"
       .split(" ")
       .sort();
   const tracked = run("git", ["ls-files", "packages/attune-docs", "tooling/oxlint"], root).split("\n").sort();
@@ -990,16 +1070,19 @@ const assertFork = (root: string) => {
   const production = [
     "oxlint.config.ts",
     "tooling/oxlint/attune.ts",
-    ...source.map((path) => `packages/attune-docs/src/${path}`),
+    ...serverSource.map((path) => `packages/attune-docs/src/${path}`),
   ];
   const total = production.reduce((sum, path) => sum + lines(load(root, path)), 0);
-  if (total > 2_500) throw new Error(`Documentation compiler is ${total} lines (limit 2500)`);
+  if (total > 2_700) throw new Error(`Documentation compiler is ${total} lines (limit 2700)`);
+  if (lines(load(root, "packages/attune-docs/src/tree.ts")) > 450)
+    throw new Error("Documentation browser/GLSL entry exceeds 450 lines");
   if (lines(load(root, "packages/attune-docs/static/styles.css")) > 350)
     throw new Error("Documentation CSS exceeds 350 lines");
+  return { browser: lines(load(root, "packages/attune-docs/src/tree.ts")), compiler: total };
 };
 
 export const main = async (root = repository) => {
-  await phase("read", async () => assertFork(root));
+  const budget = await phase("read", async () => assertFork(root));
   const revision = await phase("read", async () => run("git", ["rev-parse", "HEAD"], root));
   for (const name of ["DOCS_SOURCE_COMMIT", "DOCS_SOURCE_REF"] as const) {
     const expected = process.env[name];
@@ -1029,8 +1112,16 @@ export const main = async (root = repository) => {
     const first = await phase("compile", async () => compileDocumentation(await read(root, revision), options));
     const second = await phase("compile", async () => compileDocumentation(await read(root, revision), options));
     if (first.html !== second.html) throw new DocsError("compile", "Output is not byte-deterministic");
-    if (/<script\b|twoslash|hover|search-index|route-manifest/iu.test(first.html))
+    const scripts = [...first.html.matchAll(/<script\b([^>]*)><\/script>/giu)];
+    const attributes = scripts[0]?.[1]?.trim().split(/\s+/u).sort().join("\0");
+    if (
+      (first.html.match(/<script\b/giu) ?? []).length !== 1 ||
+      scripts.length !== 1 ||
+      attributes !== 'defer\0src="tree.js"' ||
+      /twoslash|hover|search-index|route-manifest/iu.test(first.html)
+    )
       throw new DocsError("compile", "Forbidden browser/runtime artifact");
+    const tree = await phase("compile", () => bundleTreeRuntime(root));
     await phase("write", async () => {
       const temporary = Path.join(root, "packages/attune-docs/.tmp", `dist-${process.pid}`);
       const destination = Path.join(root, "packages/attune-docs/dist");
@@ -1038,11 +1129,15 @@ export const main = async (root = repository) => {
       await mkdir(temporary, { recursive: true });
       await writeFile(Path.join(temporary, "index.html"), first.html);
       await copyFile(Path.join(root, "packages/attune-docs/static/styles.css"), Path.join(temporary, "styles.css"));
-      if (readdirSync(temporary).sort().join("\0") !== "index.html\0styles.css")
+      await writeFile(Path.join(temporary, "tree.js"), tree);
+      if (readdirSync(temporary).sort().join("\0") !== "index.html\0styles.css\0tree.js")
         throw new Error("Documentation output inventory drifted");
-      await rm(destination, { recursive: true, force: true });
-      await rename(temporary, destination);
+      await replaceDirectory(temporary, destination);
     });
+    process.stdout.write(
+      `attune-docs: ${budget.compiler}/2700 compiler lines, ${budget.browser}/450 browser lines, ` +
+        `${Buffer.byteLength(tree)}/71680 raw bundle bytes, ${gzipSync(tree, { level: 9 }).byteLength}/20480 gzip bytes\n`,
+    );
   } finally {
     try {
       if (server !== undefined) await phase("compile", () => server!.close());
