@@ -242,6 +242,33 @@ def test_wrapper_overwrites_invocation_id_and_calls_typed_client() -> None:
     assert invocation_id != "caller-value-is-ignored"
 
 
+def test_wrapper_forwards_opaque_interpretation_ledger_reference_unchanged() -> None:
+    caller = _FakeCaller()
+    tool = make_attune_tools(caller=caller, run_identity="durable-run-9")[3]
+    reference = {
+        "ref": f"ledger:sha256:{'b' * 64}",
+        "note": "payment replay abstraction",
+    }
+    args = MaudeRunArgs.model_validate(
+        {
+            "commands": "reduce in PAYMENT-RETRY : init .",
+            "expectedSnapshot": _SNAPSHOT,
+            "investigationId": _INVESTIGATION_ID,
+            "moduleSource": "mod PAYMENT-RETRY is endm",
+            "references": [reference],
+            "timeoutMilliseconds": 1_000,
+        }
+    )
+    body = cast("Callable[[MaudeRunArgs, ToolContext], BaseModel]", tool.fn)
+
+    body(args, _context())
+
+    assert len(caller.calls) == 1
+    call = caller.calls[0]
+    assert call.name == "maude_run"
+    assert call.arguments["references"] == [reference]
+
+
 def test_factory_rejects_empty_explicit_run_identity() -> None:
     with pytest.raises(ValueError, match="non-empty"):
         make_pack(caller=_FakeCaller(), run_identity=" ")

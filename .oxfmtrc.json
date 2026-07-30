@@ -19,6 +19,8 @@
   "overrides": [
     {
       "files": [
+        "packages/attune-guide/src/**/*.ts",
+        "packages/attune-guide/test/**/*.ts",
         "packages/attune-mcp/src/**/*.ts",
         "packages/attune-mcp/test/**/*.ts"
       ],
@@ -42,7 +44,7 @@
     },
     {
       "files": [
-        "packages/attune-mcp/src/index.ts",
+        "packages/attune-guide/src/index.ts",
         "tooling/oxlint/fixtures/invalid.ts",
         "tooling/oxlint/fixtures/valid.ts"
       ],

@@ -13,9 +13,18 @@ import { visit } from "unist-util-visit";
 type SourceRange = Readonly<{ start: number; end: number; lineStart: number; lineEnd: number }>;
 type DefinitionRange = Readonly<{ sourcePath: string; sourceRange: SourceRange }>;
 type ResolvedRange = Readonly<{ start: number; end: number; href: string }>;
+type ResolvedTarget = Readonly<{ start: number; end: number; id: string }>;
 type Interval = readonly [visibleStart: number, visibleEnd: number, sourceStart: number, sourceEnd: number];
 export type AttuneData = {
-  readonly role?: "declaration" | "member" | "signature" | "example" | "reference";
+  readonly role?:
+    | "declaration"
+    | "member"
+    | "signature"
+    | "example"
+    | "investigation"
+    | "activegraph-declaration"
+    | "artifact-layout"
+    | "reference";
   readonly id?: string;
   readonly ownerId?: string;
   readonly packageName?: string;
@@ -30,6 +39,7 @@ export type AttuneData = {
   readonly signatureDigest?: string;
   readonly documentationDigest?: string;
   readonly links?: readonly ResolvedRange[];
+  readonly targets?: readonly ResolvedTarget[];
   readonly checked?: true;
   readonly intervals?: readonly Interval[];
 };
@@ -360,7 +370,9 @@ const example = (block: TSDoc.DocBlock, docs: ParsedDoc, repository: string) => 
   const tree = section(block.content);
   tree.children.shift();
   const codes: Mdast.Code[] = [];
-  visit(tree, "code", (node) => codes.push(node));
+  visit(tree, "code", (node) => {
+    codes.push(node);
+  });
   if (title === "" || codes.length !== 1) throw new Error("Each @example requires one title and fenced program.");
   codes[0]!.data = { attune: { role: "example", ...origin(repository, docs.node) } };
   return { title, children: tree.children };
@@ -398,8 +410,7 @@ const documentation = (
   }
   for (const block of comment.customBlocks.filter(({ blockTag }) => blockTag.tagName === "@example")) {
     const rendered = example(block, docs, repository);
-    const anchor =
-      rendered.title === "A complete investigation" ? "complete-investigation" : slug(rendered.title).toLowerCase();
+    const anchor = slug(rendered.title).toLowerCase();
     output.push(
       chapter ? heading(2, rendered.title, { id: anchor }) : paragraph([bold(`Example: ${rendered.title}`)]),
       ...rendered.children,
@@ -456,11 +467,15 @@ export const read = async (repositoryRoot: string, revision: string): Promise<Md
   if (generated.length > 0) throw new Error(generated.join("\n"));
   const byNode = new Map<string, Decl>();
   for (const declaration of all) for (const facet of declaration.facets) byNode.set(key(facet), declaration);
-  const guide = inputs.find(({ name }) => name === "attune-mcp");
-  const entry = guide?.roots.find((file) => file.getFullText().includes("@packageDocumentation"));
-  if (guide === undefined || entry === undefined) throw new Error("The Attune package entry point is missing.");
-  const packageDocs = packageDoc(entry, parser);
-  const publicOrder = entry.getExportDeclarations().flatMap((exported) =>
+  const guide = inputs.find(({ name }) => name === "attune-guide");
+  const guideEntry = guide?.roots.find((file) => file.getFullText().includes("@packageDocumentation"));
+  const api = inputs.find(({ name }) => name === "attune-mcp");
+  const apiEntry = api?.roots.find((file) => Path.basename(file.getFilePath()) === "index.ts");
+  if (guide === undefined || guideEntry === undefined)
+    throw new Error("The Attune editorial guide entry point is missing.");
+  if (api === undefined || apiEntry === undefined) throw new Error("The Attune API entry point is missing.");
+  const packageDocs = packageDoc(guideEntry, parser);
+  const publicOrder = apiEntry.getExportDeclarations().flatMap((exported) =>
     exported.getNamedExports().map((specifier) => {
       const name = specifier.getAliasNode()?.getText() ?? specifier.getNameNode().getText();
       const targets = specifier
@@ -472,12 +487,57 @@ export const read = async (repositoryRoot: string, revision: string): Promise<Md
       return { name, declaration: targets[0]! };
     }),
   );
-  const children: Mdast.RootContent[] = [
-    heading(1, "Attune", { id: "top" }),
-    ...documentation(packageDocs, repository, guide.name, "top", true),
-  ];
-  const model = children.find((node) => node.type === "heading" && node.depth === 2);
-  if (model?.type === "heading") model.data = { attune: { id: "the-model" } };
+  const guideNodes = documentation(packageDocs, repository, api.name, "top", true);
+  for (const [index, node] of guideNodes.entries()) {
+    if (node.type !== "paragraph") continue;
+    const marker = node.children[0];
+    if (marker?.type !== "text" || marker.value !== "> ") continue;
+    guideNodes[index] = {
+      type: "blockquote",
+      children: [{ ...node, children: node.children.slice(1) }],
+    };
+  }
+  const children: Mdast.RootContent[] = [heading(1, "Attune", { id: "top" }), ...guideNodes];
+  const editorialHeadings = new Map<string, readonly [Mdast.Heading["depth"], string]>([
+    ["The thesis", [2, "the-thesis"]],
+    ["A living edge, a durable core", [3, "a-living-edge-a-durable-core"]],
+    ["The model", [2, "the-model"]],
+    ["Branches", [3, "branches"]],
+    ["Roots", [3, "roots"]],
+    ["Cuttings", [3, "cuttings"]],
+    ["ActiveGraph", [2, "activegraph"]],
+    ["The artifacts", [2, "the-artifacts"]],
+    ["The tools", [2, "the-tools"]],
+    ["The Packet", [2, "the-packet"]],
+  ]);
+  for (const node of children) {
+    if (node.type !== "heading" || node.children[0]?.type !== "text") continue;
+    const expected = editorialHeadings.get(node.children[0].value);
+    if (expected === undefined) continue;
+    const [depth, id] = expected;
+    if (node.depth !== depth) throw new Error(`Editorial heading ${node.children[0].value} must be h${depth}.`);
+    node.data = { attune: { id } };
+  }
+  let activeGraph = false;
+  let artifacts = false;
+  let tools = false;
+  for (const node of children) {
+    const id = node.type === "heading" ? node.data?.attune?.id : undefined;
+    if (id === "activegraph") activeGraph = true;
+    else if (id === "the-artifacts") {
+      activeGraph = false;
+      artifacts = true;
+    } else if (id === "the-tools") {
+      artifacts = false;
+      tools = true;
+    } else if (id === "the-packet") tools = false;
+    else if (activeGraph && node.type === "code" && node.lang === "python")
+      node.data = { attune: { role: "activegraph-declaration", ...origin(repository, packageDocs.node) } };
+    else if (artifacts && node.type === "code" && node.lang === "text")
+      node.data = { attune: { role: "artifact-layout", ...origin(repository, packageDocs.node) } };
+    else if (tools && node.type === "code" && node.lang === "ts")
+      node.data = { attune: { role: "investigation", ...origin(repository, packageDocs.node) } };
+  }
   const visited = new Set<Decl>();
   const render = renderer(repository, revision, parser);
   const emit = (declaration: Decl, depth: Mdast.Heading["depth"], id: string, title = id) =>

@@ -34,6 +34,9 @@ def digest(value: BaseModel | object) -> str:
     return f"sha256:{hashlib.sha256(canonical_bytes(value)).hexdigest()}"
 
 
+type NonEmptyText = Annotated[str, Field(min_length=1)]
+
+
 class Topology(StrEnum):
     SINGLE = "single"
     SWARM = "swarm"
@@ -129,6 +132,33 @@ class Evidence(Model):
     complete: bool = True
 
 
+class InterpretationLedger(Model):
+    """One explicit, model-authored decision between evidence forms."""
+
+    schema_version: Literal[1] = 1
+    case_id: NonEmptyText
+    question: NonEmptyText
+    source_refs: Annotated[tuple[NonEmptyText, ...], Field(min_length=1)]
+    retained: Annotated[tuple[NonEmptyText, ...], Field(min_length=1)]
+    omitted: tuple[NonEmptyText, ...] = ()
+    assumptions: tuple[NonEmptyText, ...] = ()
+    next_step: NonEmptyText
+    expected_discriminator: NonEmptyText
+    limitations: tuple[NonEmptyText, ...] = ()
+    supersedes: NonEmptyText | None = None
+
+    @computed_field
+    @property
+    def ledger_digest(self) -> str:
+        return digest(self.model_dump(exclude={"ledger_digest"}))
+
+
+class LedgerReference(Model):
+    """Opaque content address returned to the next capability call."""
+
+    ref: NonEmptyText
+
+
 class Lowering(Model):
     artifact_ref: str | None = None
     kind: Literal["ast-grep", "other"] | None = None
@@ -168,6 +198,7 @@ class Result(Model):
     non_falsifier_reason: str | None = None
     lowering: Lowering | None = None
     residual_uncertainty: tuple[str, ...] = ()
+    retained_ledger_refs: tuple[str, ...] = ()
     packet_candidate: bool = False
     final_state: ClaimState = ClaimState.UNRESOLVED
 
@@ -187,6 +218,7 @@ class Packet(Model):
     falsifiers: tuple[str, ...] = ()
     counterexamples: tuple[str, ...] = ()
     lowerings: tuple[Lowering, ...] = ()
+    ledgers: tuple[InterpretationLedger, ...] = ()
     unresolved_questions: tuple[str, ...] = ()
 
     @computed_field

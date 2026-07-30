@@ -1,5 +1,6 @@
 # Public narrative, compiler, presentation, and publication changes require
 # documentation-editorial and architecture review from the designated owner.
+/packages/attune-guide/ @becker63
 /packages/attune-mcp/src/index.ts @becker63
 /packages/attune-mcp/src/investigation/capability.ts @becker63
 /packages/attune-mcp/src/investigation/errors.ts @becker63

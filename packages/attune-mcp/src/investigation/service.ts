@@ -65,7 +65,9 @@ import { WorkspaceStore, type InvestigationManifest } from "./workspace.js";
   };
 
 /**
- * Performs the complete typed lifecycle from repository revision to durable evidence.
+ * {@link Attune} is the Effect service behind the MCP capabilities. It does not choose the next experiment or
+ * interpret a result; it executes the operation requested by ActiveGraph or another MCP client and preserves
+ * its mechanical outcome.
  *
  * @remarks
  *   Read the members in lifecycle order: {@link Attune.materialize} binds an exact revision,
@@ -78,8 +80,8 @@ import { WorkspaceStore, type InvestigationManifest } from "./workspace.js";
  *   {@link AttuneReceipt}; they do not escape as arbitrary exceptions. {@link AttuneToolFailure} represents a
  *   call rejected at the typed tool boundary, {@link InvestigationLifecycleError} represents invalid
  *   capability use, and {@link Attune.recoverTerminal} reads a correlated result when the caller lost the
- *   original exchange. Follow the [complete investigation](#complete-investigation) for the one
- *   materialize-to-finalize program used throughout this reference.
+ *   original exchange. Follow [the tools](#the-tools) for the generated MCP calls and evidence flow this
+ *   lifecycle controls.
  */
 export interface Attune {
   /**

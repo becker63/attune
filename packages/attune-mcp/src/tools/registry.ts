@@ -14,7 +14,8 @@ import {
   type AttuneToolFailure,
 } from "../contract/schemas.js";
 /**
- * Closed eight-operation schema authority installed at the MCP boundary.
+ * {@link AttuneToolkit} defines the stable capability boundary shared by the Effect service, MCP clients, and
+ * the generated ActiveGraph wrappers.
  *
  * @remarks
  *   The toolkit owns the exact parameter, success, and failure schemas for repository materialization,

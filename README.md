@@ -28,11 +28,12 @@ finalize, and recovery. `AttuneReceipt` records accepted work. `AttuneToolkit`
 installs the same closed schema at the MCP boundary. The two errors distinguish
 an invalid transition from a rejected tool call.
 
-The reference is one static technical guide generated from these declarations
-and their TSDoc. It teaches authority, action, and evidence through one checked
-investigation, then renders the remaining production type graph beneath the
-same document. Exact type occurrences link to canonical declarations and
-immutable source without client JavaScript.
+The reference is one static technical guide. Its long-form narrative,
+artifact layout, and compiler-backed investigation packet live in the
+dedicated `attune-guide` source package; its public schedule, signatures,
+declaration prose, and source links still come from the real `attune-mcp` API
+and the remaining production type graph. Exact type occurrences link to
+canonical declarations and immutable source without client JavaScript.
 
 ## Repository
 
@@ -40,10 +41,13 @@ immutable source without client JavaScript.
   interface and generated TypeScript query DSL for Joern.
 - [`attune-mcp`](./packages/attune-mcp) owns the lifecycle, eight native
   operations, durable receipts, workspace safety, and the Effect schemas.
+- [`attune-guide`](./packages/attune-guide) owns the publication's editorial
+  narrative, native investigation packet, and checked tool transcript without
+  joining the runtime API.
 - [`attune-activegraph`](./python/attune-activegraph) projects the frozen MCP
   contract into strict Python models and exposes replay-safe research tools.
-- [`attune-docs`](./packages/attune-docs) deterministically extracts the current
-  declarations, TSDoc, examples, and source links into the API reference.
+- [`attune-docs`](./packages/attune-docs) deterministically combines that guide
+  source with current declarations, TSDoc, checked code, and source links.
 - [`contracts`](./contracts) contains generated cross-language contract bytes
   and their exact digest; [`nix`](./nix) pins the executable runtime.
 

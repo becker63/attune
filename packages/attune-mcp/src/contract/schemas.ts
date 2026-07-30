@@ -279,7 +279,8 @@ export const CancelledReceipt = Schema.Struct({
 export type CancelledReceipt = typeof CancelledReceipt.Type;
 
 /**
- * Durable, correlated evidence for one operation accepted by {@link Attune}.
+ * An {@link AttuneReceipt} records how an accepted operation ended and identifies the evidence it produced. It
+ * proves that the work happened; it does not prove that the agent’s interpretation of that work is correct.
  *
  * @remarks
  *   Narrow `status` before reading terminal fields: `"succeeded"` always contains the exact resulting
@@ -291,9 +292,8 @@ export type CancelledReceipt = typeof CancelledReceipt.Type;
  *   repository state. {@link Attune.execute} returns the correlated receipt with its result and active proof,
  *   replacing that proof only after a succeeded snapshot transition. If the caller loses that exchange after
  *   acceptance, {@link Attune.recoverTerminal} validates the persisted receipt before returning it;
- *   {@link AttuneToolFailure} still represents rejection before trustworthy terminal evidence exists. The
- *   [complete investigation](#complete-investigation) inspects this receipt before carrying the returned
- *   authority into finalization.
+ *   {@link AttuneToolFailure} still represents rejection before trustworthy terminal evidence exists. [The
+ *   artifacts](#the-artifacts) shows the retained bytes and terminal envelope each receipt correlates.
  */
 export const AttuneReceipt = Schema.Union([SucceededReceipt, FailedReceipt, CancelledReceipt]).annotate({
   identifier: "AttuneReceipt",

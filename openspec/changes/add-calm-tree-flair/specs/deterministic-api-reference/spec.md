@@ -4,38 +4,174 @@
 
 The canonical API guide SHALL render exactly one decorative, procedural ASCII
 tree beside its opening copy. At a representative wide viewport, the tree
-SHALL appear to the right of the existing `h1#top` and causal-summary
-paragraph without changing their text, source order, prose measure, or heading
+SHALL appear to the right of the existing `h1#top` and source-authored
+three-item opening list without changing their text, source order, or heading
 semantics. The opening SHALL remain within the single semantic `<main>` flow
 and SHALL NOT acquire a card, panel, dashboard, marketing-hero treatment,
 background rectangle, frame, border, radius, shadow, caption, badge, or
-controls.
+controls. At a representative `1440 × 900` wide viewport, the shared tree box
+SHALL be approximately `1092.02 × 613.84px` without overlapping the opening
+copy or causing horizontal document overflow; the copy SHALL remain readable
+at approximately `271.19px` wide.
 
 The enhanced tree SHALL be a literal two-pass OGL/WebGL2 shader, not a CSS
 frame animation, prerecorded sequence, DOM-character animation, or
 shader-inspired approximation. One fragment-shader pass SHALL render a
 fixed-seed, aspect-corrected tree field into a character-cell-resolution OGL
-`RenderTarget`; a second fragment-shader pass SHALL quantize that field and
-draw independently authored masks from a fixed printable-ASCII glyph set. The
-field SHALL preserve an anchored trunk and roots while slow coherent wind
-moves branches and canopy, and every sampled phase SHALL remain recognizable
-as a tree without flashing or filling its rectangular extent with noise.
+`RenderTarget` of exactly `144 × 56`; a second fragment-shader pass SHALL
+quantize that field and analytically antialias independently authored masks
+from a fixed printable-ASCII glyph set directly into the canvas's
+native-density backing. The second pass SHALL NOT enlarge a low-resolution
+glyph image or use a font atlas, image texture, or asset. The field SHALL form
+a mature, balanced tree with a well-proportioned centered trunk, grounded root
+flare, visibly attached branches, and an attached crown whose occupied mass
+remains centered near the trunk axis without either side visually dominating.
 
-Only palette-matched glyph strokes SHALL be visible. Blank cells and pixels
-outside glyph strokes SHALL have zero alpha, visible fragments SHALL use
-premultiplied alpha, and neither shader SHALL paint the guide's paper color.
+The connected rooted silhouette SHALL retain its canonical field topology,
+primitive descriptors, and occupied cells. Physical desktop shaping SHALL be
+presentation-only: an exact 15-percent host-width increase followed by the
+same centered `scaleX(1.24)` on fallback and canvas. That presentation SHALL
+produce a visible silhouette aspect of approximately `1.626:1`, within about
+0.5 percent of the supplied `1.634:1` reference, without changing shader
+topology.
+
+The canonical static branch topology SHALL be an independently authored,
+deterministic adaptation of the
+[MIT-licensed](https://github.com/Ben-Edwards44/PyBonsai/blob/4e6546e6953f86b6a0494a85fd22714f11dc0e40/LICENSE)
+[PyBonsai `OffsetFibTree`](https://github.com/Ben-Edwards44/PyBonsai/blob/4e6546e6953f86b6a0494a85fd22714f11dc0e40/tree.py)
+construction. Starting from one rooted trunk, successive generated layers
+SHALL receive total child budgets from the Fibonacci progression
+`2, 3, 5, 8, ...`. The committed field SHALL render seven layer totals
+`1, 2, 3, 5, 8, 13, 21`, or 53 branch capsules; the next budget of 34 SHALL
+seed attached clusters instead of another capsule. Each budget SHALL be
+distributed as evenly as possible
+across the layer's parents, with any remainder assigned in one committed
+fixed-seed parent order. For a parent of length `L` with `n` children, child
+`i` SHALL originate at `(i + 1) * L / n`. Child directions SHALL alternate
+sign around the parent at approximately `40°` plus small committed
+deterministic jitter, and each rendered child length SHALL be `0.75 * L`.
+When the next recursive layer would exceed the committed depth, those evenly
+offset child-origin positions SHALL seed small, separated attached-leaf
+clusters instead of another capsule, keeping the crown airy.
+The implementation SHALL NOT copy PyBonsai source, install or execute Python,
+or add PyBonsai as a build or runtime dependency.
+
+Static topology, branch origins, angles, jitter, length ratios, and attached
+leaf-cluster seeds SHALL NOT depend on frame time. The implementation MAY
+encode the derived descriptors directly or construct them once during
+initialization. Animation SHALL be a separate stage consisting only of the
+one coherent rooted-tree bend and the deterministic detached leaves specified
+below.
+
+The rooted tree field SHALL sway only through the exact shared scalar bend
+`sqrt(smoothstep(0.055,0.90,y)) * (sin(t*.22)*.029 + sin(t*.083)*.010)`,
+where `y` is canonical rooted height and `t` is active shader time. The
+temporal value `treeSway(t)` SHALL mean
+`sin(t*.22)*.029 + sin(t*.083)*.010`; the field bend SHALL be the height
+weight times that value. The ground flare and lowest three grid rows SHALL
+remain exactly invariant with zero horizontal displacement. Immediately above
+those rows, the lower trunk and low branches SHALL visibly flex under the
+formula's continuous weight. The trunk, every branch, and every attached
+canopy lobe SHALL use that same coordinate transform, so attachments remain
+connected and the tree bends as one form above its grounded flare. At the
+known maximum-excursion phase, the crown's horizontal displacement from its
+`uTime = 0` position SHALL be about 4.5 character columns and no more than
+4.5.
+
+Time SHALL affect the rooted-tree field only through that one bend value and
+shared transform. The canonical tree primitives, fixed-noise samples, density,
+material, orientation descriptors, and glyph choices SHALL NOT receive
+independent time, phase, wind, warp, displacement, or churn; in particular,
+branches and canopy lobes SHALL NOT move independently. The first pass SHALL
+rerender on each admitted ordinary animated frame to apply the coherent bend.
+Reduced motion SHALL render only its stable `uTime = 0` form.
+
+The ASCII pass SHALL give the selected trunk and branch wood glyphs a coherent
+presentation lean by rotating their local mask coordinates by
+`sway * 2.2 * smoothstep(0.055,0.28,y)`, where `sway` SHALL equal
+`treeSway(t)`. The angle SHALL vary continuously with sway, change to the
+opposite sign at opposite sway phases, equal zero at `t = 0`, and remain at
+most about `0.086` radians (`5°`) in magnitude. The fixed root-flare sentinel
+SHALL be excluded. The lean SHALL affect trunk and branch strokes together;
+it SHALL NOT change their canonical orientation descriptors, selected glyphs,
+topology, occupied cells, color identity, or introduce another phase.
+
+In addition to the one coherent rooted-tree bend, animation SHALL include
+exactly eight sparse deterministic loose-leaf glyphs. Those leaves SHALL use
+fixed pairwise-distinct canopy-edge anchors and phase offsets, fixed seeds,
+glyphs, deterministic colors, and paths; SHALL visually detach and descend at
+a slow cadence. Each leaf's horizontal center in column space SHALL equal its
+fixed anchor plus `treeSway(t) * (144/1.25)` columns of shared drift plus its
+existing local flutter of no more than `1.9` columns. `treeSway(t)` SHALL be
+the field's same scalar, making the shared component reach the crown's
+approximately 4.5-column excursion. After that global component is
+compensated, local residual SHALL remain no more than two columns. Leaves
+SHALL NOT mutate the rooted field. They SHALL be the only independently moving
+shapes: once sampled states are evaluated in the canonical coordinates of the
+documented bend and leaf drift, any remaining animated footprint SHALL be
+contained within the previous or current glyph footprint of those eight loose
+leaves.
+
+Following PyBonsai's pinned
+[material ranges](https://github.com/Ben-Edwards44/PyBonsai/blob/4e6546e6953f86b6a0494a85fd22714f11dc0e40/tree.py)
+and
+[per-character selection](https://github.com/Ben-Edwards44/PyBonsai/blob/4e6546e6953f86b6a0494a85fd22714f11dc0e40/draw.py),
+each wood glyph SHALL independently select a source integer RGB with red in
+`200–255`, green in `150–255`, and blue fixed at `0`; each attached or detached
+leaf glyph SHALL select source red and blue fixed at `0` and green in
+`75–255`; and root-flare source glyphs SHALL use fixed `(255, 255, 0)`.
+Selection SHALL use committed deterministic hashes of canonical primitive/cell
+identity or loose-leaf slot identity.
+
+Before alpha, every displayed glyph SHALL then use the exact channel-wise
+color `0.60 × (41, 35, 30) + 0.40 × source`, where `(41, 35, 30)` is Attune
+`--ink` (`#29231e`). Neither source selection nor the ink mix SHALL depend on
+frame time or current screen position, so the dark-green/olive-gold per-glyph
+gradient follows the rooted bend and falling leaves without color shimmer.
+
+Only those dark ink-mixed glyph strokes SHALL be visible. Blank cells and
+pixels outside glyph strokes SHALL have zero alpha. The refined treatment MAY
+raise glyph alpha from the rejected light preview as needed for legibility,
+but visible fragments SHALL use premultiplied alpha no greater than `0.72`,
+and neither shader SHALL paint the guide's paper color.
 The ornament host, fallback, and canvas SHALL have transparent backgrounds
 and zero border, outline, radius, shadow, and padding. They SHALL expose no
 pointer interaction, selection behavior, visual canvas rectangle, demo
 chrome, remote font, image texture, or font-atlas asset.
 They SHALL use no filter, glow, backdrop filter, blend mode, or decorative
-pseudo-element. The common stable box SHALL use a 60-column by 24-row
-character grid and the guide's monospace stack. Muted low-to-medium-alpha
-leaf marks SHALL dominate; medium-alpha ink marks SHALL describe wood;
-accent marks SHALL be limited to the sparsest 10 percent of high-density
-canopy glyphs; and no glyph alpha SHALL exceed `0.72`. The fallback SHALL
-match the `uTime = 0` shader silhouette, grid, and material hierarchy closely
-enough that enhancement does not change the ornament's composition or box.
+pseudo-element, and SHALL use no CSS gradient or painted background. The
+common stable box SHALL present a 144-column by 56-row character field in
+exact `165.6ch × 56em` geometry, widening the 144-column presentation by
+exactly 15 percent while preserving its height. It SHALL use the guide's
+monospace stack and a wide-layout font size of
+`clamp(0.3978rem, calc(-0.3094rem + 1.105vw), 0.7072rem)`. Both fallback and
+canvas SHALL fill the host and use exact `transform: scaleX(1.24)` with
+`transform-origin: 50% 0`. The host SHALL use `overflow: hidden` to clip the
+centered transformed layers symmetrically. Those CSS rules SHALL change
+visible presentation aspect only, not the fallback source grid, first-pass
+field, or canonical tree topology.
+
+The wide composition SHALL use `--page: 87rem` and an opening gap of
+`clamp(1rem, 2vw, 2.25rem)`. Its `ch`/`em` geometry and shared presentation
+transform SHALL preserve shader/fallback alignment, while its `rem` endpoints
+and viewport-responsive middle term SHALL scale cleanly under browser zoom.
+At `1440 × 900`, the preferred term SHALL resolve to `10.9616px`
+(`0.6851rem`) at the default `16px` root size, the measured host SHALL be
+approximately `1092.02 × 613.84px`, and the opening copy SHALL remain readable
+at approximately `271.19px`. At `1024px`, the font SHALL resolve to
+`6.3648px` and the measured host SHALL be approximately
+`634.02 × 356.42px`. The `0.3978rem` floor and `64rem` eligibility query SHALL
+retain fit as the effective viewport narrows. At `1440px`, `1024px`, and a
+representative eligible viewport near `64rem`, the composition SHALL avoid
+ornament/copy overlap and horizontal document overflow. The fallback SHALL
+match the refined
+`uTime = 0` rooted silhouette, loose-leaf positions, grid, and material
+hierarchy closely enough that enhancement does not change the ornament's
+composition or box. It SHALL use a small fixed set of
+representative dark-green and olive-gold shade buckets precomputed from the
+same 60-percent ink mix, plus the mixed root-flare shade; its deterministic
+bucket assignment SHALL approximate the shader's initial distribution without
+a CSS gradient, background, frame, or one-off accent color.
 
 The renderer-owned `.tree-flair[aria-hidden="true"]` host SHALL contain one
 deterministic printable-ASCII `pre.tree-fallback` and one transparent
@@ -56,7 +192,7 @@ ID, caption, or semantic explanation. At the constrained-width layout it
 SHALL be `display: none`, reserve no gap, schedule no frame, and leave the
 opening in its existing narrow prose flow without horizontal document
 overflow. CSS and the runtime SHALL use the exact
-`(min-width: 68rem)` eligibility query, and an initially constrained load
+`(min-width: 64rem)` eligibility query, and an initially constrained load
 SHALL request no WebGL context. A page resized below that breakpoint after
 initialization SHALL release renderer-owned GPU resources and cancel work,
 although the browser MAY retain its already-created context object. At a wide
@@ -66,9 +202,16 @@ deterministic `uTime = 0` frame and SHALL schedule no continuous animation
 loop; if that frame cannot render, the fallback SHALL remain visible.
 
 At a wide animated viewport the runtime SHALL cap rendering at 30 frames per
-second, device-pixel ratio at 1.5, backing-store dimensions at no more than
-`640 × 512`, and total backing pixels at no more than 327,680. It SHALL keep
-at most one animation frame pending, reuse its render resources and typed
+second and define exact `PRESENTATION_X = 1.24`. It SHALL multiply effective
+device DPR by that presentation constant before applying exact independent
+limits of `MAX_DPR = 1.5`, `MAX_WIDTH = 1680`, `MAX_HEIGHT = 1088`, and
+`MAX_PIXELS = 1,900,000`, while keeping the first tree-field target exactly
+`144 × 56`. At the specified `1440 × 900` viewport, the final backing at DPR 1
+SHALL be the measured `1354 × 760`, providing about `9.40 × 13.57` backing
+pixels per field cell. At DPR 1.5 it SHALL be approximately `1638 × 919`, or
+about `11.375 × 16.41` backing pixels per field cell, within all four limits.
+At `1024px` and DPR 1 it SHALL be `786 × 441`. It SHALL
+keep at most one animation frame pending, reuse its render resources and typed
 data, and its authored runtime code SHALL perform no per-frame DOM write or
 allocation. It SHALL pause while the opening is outside the viewport or the
 document is hidden, exclude hidden wall time from the shader phase, and resume
@@ -84,17 +227,150 @@ runtime SHALL make no network request, dynamic import, route, search, content,
 or compiler-payload mutation. Determinism SHALL apply to committed inputs and
 the emitted HTML, CSS, and classic-IIFE bundle bytes; it SHALL NOT require
 pixel-identical GPU rasterization across conforming implementations.
+The project SHALL document a development-preview procedure that uses the exact
+production bundle, stylesheet, fallback, and opening markup to capture
+`uTime = 0`, the known maximum-bend phase, and representative falling-leaf
+phases at `1440 × 900`, `1024px`, and one larger wide viewport. Preview phase
+control and captures SHALL remain development-only and SHALL NOT add published
+controls, query behavior, debug branches, or assets. Documentation-editorial acceptance
+SHALL cover mature scale and balance, coherent root-anchored sway, connected
+attachments, the exact clipped host and shared centered 1.24 presentation
+scale with readable fit at `1440px`, `1024px`, and near the breakpoint,
+canvas/fallback parity, approximately `1.626:1` visible silhouette against the
+supplied `1.634:1` reference, unchanged canonical topology, three invariant
+ground rows, visible lower-structure flex,
+approximately 4.5-column crown travel, subtle same-sway wood-glyph lean with
+opposite phase signs and an unrotated root flare, eight distinct falling-leaf
+trajectories that inherit the tree's global drift while retaining bounded
+local flutter, fallback parity, browser-zoom integration, the PyBonsai-derived
+dark-green/olive-gold text gradient, exact Attune-ink mix, stable color
+identity, native-density glyph edges without visible low-resolution
+enlargement, crisp shader-analytic antialiasing at DPR 1 and DPR 1.5, and
+absence of a visible frame.
 
 #### Scenario: Capable wide browser runs the real shader
 
 - **WHEN** a representative wide browser supports WebGL2 and does not request
   reduced motion
 - **THEN** exactly one OGL renderer uses a cell-resolution render target and a
-  second ASCII glyph pass to render the flowing tree
+  second ASCII glyph pass to render the mature coherently bending tree and
+  exactly eight sparse falling leaves
+- **AND** the first target remains exactly `144 × 56` while the analytic
+  glyph-mask pass renders at the canvas's native backing density without a
+  font atlas, image asset, or CSS-upscaled intermediate
 - **AND** its stable transparent canvas is to the right of the unchanged title
   copy and becomes visible only after the first valid shader frame
-- **AND** the only visible marks are palette-matched ASCII glyph strokes with
-  no frame, panel, background rectangle, border, radius, shadow, or controls
+- **AND** the only visible marks are ASCII glyph strokes using the pinned
+  PyBonsai source ranges mixed 60 percent toward Attune ink, with no frame,
+  panel, CSS gradient, background rectangle, border, radius, shadow, or
+  controls
+
+#### Scenario: Presentation aspect matches the supplied tree
+
+- **WHEN** the ornament is measured at a `1440 × 900` viewport
+- **THEN** its transparent `165.6ch × 56em` box is approximately
+  `1092.02 × 613.84px`, its font is `10.9616px`, and the approximately
+  `271.19px` opening copy remains readable to its left without overlap or
+  overflow
+- **AND** its font uses
+  `clamp(0.3978rem, calc(-0.3094rem + 1.105vw), 0.7072rem)`, retaining the
+  smaller glyph scale and 56em height while the host is exactly 15 percent
+  wider than 144ch
+- **AND** at `1024px` its font is `6.3648px`, its host is approximately
+  `634.02 × 356.42px`, and the composition remains free of overlap or overflow
+  there or near eligible `64rem`
+- **AND** fallback and canvas both fill the host, use
+  `transform: scaleX(1.24)` from `50% 0`, and are symmetrically clipped by host
+  `overflow: hidden`
+- **AND** the mature rooted silhouette has a well-proportioned centered trunk,
+  grounded roots, attached branches, and a balanced crown
+- **AND** its visible silhouette aspect is approximately `1.626:1`, within
+  about 0.5 percent of the supplied `1.634:1` reference
+- **AND** the presentation changes no canonical shader topology, primitive
+  descriptor, occupied cell, motion formula, or color identity
+
+#### Scenario: Native-density glyph pass stays crisp
+
+- **WHEN** the approximately `1092.02 × 613.84px` ornament is rendered at the
+  specified `1440 × 900` viewport at DPR 1 and DPR 1.5
+- **THEN** exact `PRESENTATION_X = 1.24` multiplies effective device DPR before
+  capping, and DPR 1 uses the measured `1354 × 760` backing, providing about
+  `9.40 × 13.57` pixels per field cell
+- **AND** DPR 1.5 uses approximately `1638 × 919`, providing about
+  `11.375 × 16.41` pixels per field cell
+- **AND** at `1024px`, DPR 1 uses `786 × 441`
+- **AND** the first pass remains exactly `144 × 56` while the second pass
+  evaluates crisp shader-analytic antialiasing at final backing resolution
+- **AND** no font atlas, image texture, image asset, background, or frame is
+  introduced
+- **AND** larger viewports or DPR values remain within `MAX_WIDTH = 1680`,
+  `MAX_HEIGHT = 1088`, `MAX_PIXELS = 1,900,000`, and `MAX_DPR = 1.5`, while
+  reduced-motion, constrained, offscreen, hidden, failed, and lost states
+  retain their existing single-frame or paused behavior
+
+#### Scenario: Rooted tree bends coherently while loose leaves fall
+
+- **WHEN** the first-pass field and final canvas are sampled at `uTime = 0` and
+  the known maximum-excursion phase
+- **THEN** the ground flare and lowest three grid rows are identical, the
+  lower trunk and low branches visibly flex immediately above them, the crown
+  moves horizontally by about 4.5 columns and no more than 4.5, and every
+  connected-tree primitive follows the exact shared scalar bend
+- **AND** branches and canopy lobes remain attached, receive no independent
+  motion, and preserve their canonical noise, density, material, orientation
+  descriptors, glyph choices, and color-hash decisions under that transform
+- **AND** at `t = 0` wood presentation lean is zero and the root-flare sentinel
+  is unrotated; known positive and negative sway phases give trunk and branch
+  masks opposite lean signs through the exact same-sway formula, without
+  occupancy or topology changes
+- **AND** exactly eight deterministic loose leaves with pairwise-distinct
+  canopy-edge anchors and phases detach, descend slowly, retain their stable
+  colors, and place each horizontal center at its fixed anchor plus
+  `treeSway(t) * (144/1.25)` columns plus at most `1.9` columns of local flutter
+- **AND** their shared component follows the crown to about 4.5 columns, and
+  after compensating for that drift every at-most-two-column local residual
+  lies inside the previous or current footprint of those loose-leaf glyphs
+
+#### Scenario: Static geometry follows the OffsetFib construction
+
+- **WHEN** the canonical branch descriptors and `uTime = 0` field are inspected
+- **THEN** successive layer totals follow the Fibonacci child budgets and are
+  distributed evenly across their parents in the committed deterministic order
+- **AND** each child uses its evenly offset parent origin, alternating
+  approximately 40-degree direction with fixed jitter, and `0.75` length scale
+- **AND** over-depth child-origin positions seed separated attached-leaf
+  clusters instead of another capsule
+- **AND** frame time changes none of those geometry decisions, no upstream
+  source is copied, and no PyBonsai or Python dependency is present
+
+#### Scenario: Text colors follow the pinned PyBonsai treatment
+
+- **WHEN** rooted glyphs and loose leaves are sampled across representative
+  bend and falling phases
+- **THEN** every wood source sample has `R = 200–255`, `G = 150–255`, and
+  `B = 0`, every leaf source sample has `R = B = 0` and `G = 75–255`, and the
+  root-flare source has fixed RGB `(255, 255, 0)`
+- **AND** every displayed pre-alpha color equals
+  `0.60 × (41, 35, 30) + 0.40 × source`
+- **AND** canonical glyph and loose-leaf identities retain their deterministic
+  source and mixed colors across motion without time- or screen-coordinate
+  shimmer
+- **AND** glyph alpha may be raised for legibility but remains at most `0.72`,
+  while no CSS gradient, painted background, or frame appears
+- **AND** the initial fallback uses deterministic precomputed dark-green and
+  olive-gold buckets for the same mixed treatment
+
+#### Scenario: Tree remains elegant under browser zoom
+
+- **WHEN** the guide is inspected at representative browser zoom levels
+- **THEN** every level that still matches `(min-width: 64rem)` retains the
+  aligned clipped `165.6ch × 56em` presentation, shared centered
+  `scaleX(1.24)`, fallback/canvas parity, the intended physical composition,
+  and transparent unframed placement without unintended clipping, overlap, or
+  horizontal overflow,
+  including near the breakpoint when the opening copy wraps more
+- **AND** a zoom level that makes the effective viewport constrained hides the
+  ornament without reserving a gap or requesting new rendering work
 
 #### Scenario: Runtime support is absent
 
@@ -102,6 +378,8 @@ pixel-identical GPU rasterization across conforming implementations.
   is unavailable, or shader initialization, compilation, linking, or first
   rendering fails
 - **THEN** the fixed printable-ASCII fallback remains visible in the tree box
+- **AND** its representative material shade buckets preserve the initial
+  dark-green/olive-gold color hierarchy without a CSS gradient or background
 - **AND** no animation frame remains scheduled or uncaught runtime error
   escapes
 - **AND** the title, guide content, fragments, and native browser navigation
@@ -123,6 +401,9 @@ pixel-identical GPU rasterization across conforming implementations.
 - **THEN** the real shader renders one deterministic `uTime = 0` frame when
   WebGL2 is available
 - **AND** no continuous animation loop runs
+- **AND** the rooted tree and loose leaves remain in their static `uTime = 0`
+  composition
+- **AND** wood presentation lean and shared loose-leaf drift are both zero
 - **AND** the text fallback remains the failure presentation
 
 #### Scenario: Reader uses a constrained viewport
@@ -147,8 +428,8 @@ pixel-identical GPU rasterization across conforming implementations.
 - **WHEN** the sanitized opening markup is inspected
 - **THEN** the tree's common host has `aria-hidden="true"` and contains one
   fallback, one canvas, and no focusable or accessibility-exposed descendant
-- **AND** the title, causal summary, `The model`, and every later chapter retain
-  their existing text and document order
+- **AND** the title, opening list, `The thesis`, and every later chapter retain
+  their source-authored text and document order
 
 #### Scenario: Tree remains flair rather than evidence
 
@@ -162,9 +443,31 @@ pixel-identical GPU rasterization across conforming implementations.
 
 - **WHEN** two documentation compilations use the same committed source and
   locked tools
-- **THEN** `index.html`, `styles.css`, and `tree.js` are byte-identical
+- **THEN** `index.html`, `styles.css`, `tree.js`, `attune-serif.woff2`, and
+  `attune-mono.woff2` are byte-identical
 - **AND** no claim is made that conforming GPUs produce pixel-identical
   rasterization
+
+#### Scenario: Refined motion receives development preview and editorial review
+
+- **WHEN** the tree refinement is prepared for publication
+- **THEN** the exact production artifact is previewed at `uTime = 0`, maximum
+  bend, and representative falling-leaf phases at the specified `1440px`,
+  `1024px`, larger-wide, near-breakpoint, and browser-zoom viewports
+- **AND** untracked captures receive editorial acceptance for mature scale,
+  balance, the clipped `165.6ch × 56em` host and shared centered
+  `scaleX(1.24)` with readable fit at `1440px`, `1024px`, and near the
+  breakpoint, fallback/canvas parity, approximately `1.626:1` visible
+  silhouette against the supplied `1.634:1` reference, unchanged canonical
+  topology, three invariant ground rows, visible lower-trunk/low-branch
+  flex, approximately 4.5-column coherent crown sway, subtle reversing
+  trunk/branch glyph lean with an unrotated root flare, connected attachments,
+  eight distinct falling-leaf trajectories that share tree drift with bounded
+  local flutter, fallback parity, browser-zoom integration, the dark
+  PyBonsai-derived green/olive-gold text gradient, exact Attune-ink mix, stable
+  color identity, native-density glyph edges without visible low-resolution
+  enlargement, crisp shader-analytic antialiasing at DPR 1 and DPR 1.5, and
+  absence of visible canvas chrome
 
 ## MODIFIED Requirements
 
@@ -175,8 +478,16 @@ checked ordinary MDAST tree through transient HAST. It SHALL be one linear
 technical guide with exactly one `h1`, `Attune`, and this chapter order:
 
 ```text
+The thesis
+  A living edge, a durable core
 The model
-A complete investigation
+  Branches
+  Roots
+  Cuttings
+ActiveGraph
+The artifacts
+The tools
+The Packet
 Investigation<State>
 Attune
   materialize
@@ -193,26 +504,40 @@ AttuneToolkit
 Repository
 ```
 
-The title SHALL be `h1#top`. `The model`,
-`A complete investigation`, `Failures`, and `Repository` SHALL be structural
-`h2` headings with fragments `#the-model`, `#complete-investigation`,
-`#failures`, and `#repository`. `Investigation<State>`, `Attune`,
-`AttuneReceipt`, and `AttuneToolkit` SHALL be canonical `h2` declaration
-headings with their friendly type fragments; `Attune` members and both
-failure declarations SHALL be canonical `h3` headings. The title and four
-structural headings SHALL be the only non-symbol headings.
+The title SHALL be `h1#top`. `The thesis`, `The model`, `ActiveGraph`, `The
+artifacts`, `The tools`, `The Packet`, `Failures`, and `Repository` SHALL be
+structural `h2` headings with fragments `#the-thesis`, `#the-model`,
+`#activegraph`, `#the-artifacts`, `#the-tools`, `#the-packet`, `#failures`,
+and `#repository`. `A living edge, a durable core`, `Branches`, `Roots`, and
+`Cuttings` SHALL be source-authored conceptual `h3` headings with fragments
+`#a-living-edge-a-durable-core`, `#branches`, `#roots`, and `#cuttings`.
+`Investigation<State>`, `Attune`, `AttuneReceipt`, and `AttuneToolkit` SHALL
+be canonical `h2` declaration headings with their friendly type fragments;
+`Attune` members and both failure declarations SHALL be canonical symbol
+`h3` headings. The title, eight structural headings, and four conceptual
+headings SHALL be the only non-symbol headings.
+
+The title SHALL be followed by exactly one source-authored unordered list
+with three nonempty items. In order, those items SHALL introduce following
+the branches of an investigation, keeping accepted work rooted in exact state
+and evidence, and propagating surviving research into a later repository.
+The compiler SHALL validate that opening structure and its links without
+hard-coding the complete editorial wording.
+
+`The thesis`, `The model`, `ActiveGraph`, `The artifacts`, `The tools`, and
+`The Packet` SHALL precede the declaration reference in that order. `The
+artifacts` SHALL immediately precede `The tools`; the removed
+`A complete investigation` chapter and `#complete-investigation` fragment
+SHALL NOT be emitted or linked.
 
 The model SHALL introduce `Investigation`, `Attune`, and `AttuneReceipt` as
 authority, action, and evidence before any failure or toolkit boundary. The
-opening prose SHALL state one causal summary equivalent to: Attune
-materializes an exact repository state, issues typed authority to operate on
-it, and preserves every accepted operation as a durable receipt. Package
-TSDoc, ordered direct package reexports, and `Attune` member declaration order
-SHALL supply that symbol sequence. The compiler SHALL add only the fixed
-`Failures` and `Repository` structural boundaries. Package/file paths SHALL
-render as non-heading provenance labels beneath `Repository`, and every
-remaining eligible production declaration SHALL appear there exactly once in
-deterministic package/file/source order, not as a parallel top-level
+Package TSDoc, ordered direct package reexports, and `Attune` member
+declaration order SHALL supply that symbol sequence. The compiler SHALL add
+only the fixed `Failures` and `Repository` structural boundaries. Package/file
+paths SHALL render as non-heading provenance labels beneath `Repository`, and
+every remaining eligible production declaration SHALL appear there exactly
+once in deterministic package/file/source order, not as a parallel top-level
 information architecture.
 
 The build SHALL consume only committed TypeScript/TSDoc,
@@ -224,17 +549,16 @@ inputs.
 
 `The model` SHALL include exactly one source-authored `text` code fence,
 rendered once without custom metadata, Mermaid, an image, a diagram component,
-or JavaScript. `A complete investigation` SHALL include
-exactly one canonical checked running program, rendered once with a stable
-fragment. Its visible source SHALL contain compiler-resolved occurrences of
-`Attune`, `Investigation<"active">`, `AttuneReceipt`, and every lifecycle
-member it claims to demonstrate; setup hidden by cuts SHALL NOT satisfy that
-visible contract. Later public sections SHALL use source-authored ordinary
-CommonMark fragment links to `#complete-investigation` and reuse its vocabulary
-rather than repeat it. The compiler SHALL resolve and validate those links but
-SHALL NOT append a second projection of them.
-Additional checked examples MAY explain a distinct invalid-state, restart, or
-recovery decision but SHALL NOT form an independent tutorial context.
+or JavaScript. `The artifacts` SHALL include one additional source-authored
+`text` fence whose bytes describe the checked public filesystem layout rather
+than a competing lifecycle diagram. The compiler-backed TypeScript fences in
+`The tools` SHALL form one coherent checked transcript in visible source
+order. Every additional authored example SHALL remain compiler-checked as a
+complete virtual project before cuts are applied, but no package-level
+lifecycle `@example`, fixed example title, stable example fragment, or
+per-declaration example quota SHALL be required. An additional example MAY
+explain a distinct invalid-state, restart, or recovery decision but SHALL NOT
+recreate the removed chapter or form an independent tutorial context.
 
 Every declaration/member heading SHALL have a canonical fragment, real source
 span, and immutable revision-pinned source link. Every resolvable local type or
@@ -262,12 +586,13 @@ examples, or page-local documentation copies.
 
 The document SHALL use Shiki for static syntax highlighting, browser Find,
 fragments, browser Back, `scroll-margin-top`, and visible `:target` styling.
-One compact sticky contents list SHALL project only these existing chapter
-headings in order: `The model`, `A complete investigation`, `Investigation`,
-`Attune`, `AttuneReceipt`, `Failures`, `AttuneToolkit`, and `Repository`. It
-SHALL NOT list package/file provenance labels, `Attune` members, individual
-failures, or the remaining declaration/member hierarchy and SHALL NOT become
-a separately modeled sidebar.
+One compact sticky contents list SHALL project only these chapter headings in
+order: `The thesis`, `The model`, `ActiveGraph`, `The artifacts`, `The tools`,
+`The Packet`, `Investigation`, `Attune`, `AttuneReceipt`, `Failures`,
+`AttuneToolkit`, and `Repository`. It SHALL NOT list `A living edge, a durable
+core`, `Branches`, `Roots`, `Cuttings`, package/file provenance labels,
+`Attune` members, individual failures, or the remaining declaration/member
+hierarchy and SHALL NOT become a separately modeled sidebar.
 
 The visual structure SHALL be a quiet technical chapter: one primary reading
 column with a restrained prose measure; code that may widen or scroll to
@@ -306,11 +631,14 @@ aesthetic scores SHALL NOT substitute for owner judgment.
 The footer SHALL record the immutable source revision and exact TypeScript,
 `@effect/tsgo`, and `@effect/language-service` versions. The supported API
 artifact SHALL contain only `index.html`, `styles.css`, the self-contained
-`tree.js` shader bundle, and hosting metadata required by Pages. `index.html`
-SHALL reference `styles.css` and the deferred classic `tree.js` with relative
-base-path-safe URLs that also work from `file://`. No runtime asset SHALL use
-a remote URL, dynamic import, source map, image, font atlas, or additional
-script.
+`tree.js` shader bundle, `attune-serif.woff2`, `attune-mono.woff2`, and hosting
+metadata required by Pages. The tree change's historical three-file expansion
+remains the shader integration boundary; the later typography change adds
+exactly the two pinned local font files. `index.html` SHALL reference
+`styles.css` and the deferred classic `tree.js` with relative base-path-safe
+URLs that also work from `file://`, and the stylesheet SHALL reference both
+font files on the same basis. No runtime asset SHALL use a remote URL, dynamic
+import, source map, image, font atlas, or additional script.
 
 #### Scenario: Reader follows a type definition
 
@@ -334,13 +662,14 @@ script.
 - **AND** both errors are grouped under `Failures`
 - **AND** `AttuneToolkit` follows that group
 
-#### Scenario: Later sections return to one investigation
+#### Scenario: Authored examples retain compiler rigor
 
-- **WHEN** the checked package program contains resolved uses of several
-  lifecycle concepts and members
-- **THEN** it appears once under `A complete investigation`
-- **AND** those declaration sections refer to the canonical program rather
-  than cloning it or creating reverse occurrence identities
+- **WHEN** source TSDoc includes an authored example
+- **THEN** its complete virtual project is checked before visible cuts are
+  applied
+- **AND** its resolvable visible identifiers link to canonical definitions
+- **AND** publication requires no fixed package example title, anchor, or
+  example-bearing declaration set
 
 #### Scenario: Lifecycle diagram is rendered
 
@@ -360,7 +689,7 @@ script.
 #### Scenario: Contents stays conceptual
 
 - **WHEN** the sticky contents is inspected
-- **THEN** its links and order exactly match the eight guide-level headings
+- **THEN** its links and order exactly match the twelve guide-level headings
 - **AND** it contains no package, module, member, individual-error, or
   repository-declaration inventory
 
@@ -384,9 +713,11 @@ script.
 
 - **WHEN** the API build output is listed
 - **THEN** it contains one API HTML document, one stylesheet, one
-  self-contained `tree.js` shader bundle, and optional hosting metadata
+  self-contained `tree.js` shader bundle, the exact local
+  `attune-serif.woff2` and `attune-mono.woff2` files, and optional hosting
+  metadata
 - **AND** it contains no API JSON, additional JavaScript, route, search, hover,
-  source map, image, font atlas, or Twoslash artifact
+  source map, image, font atlas, additional font, or Twoslash artifact
 
 ### Requirement: Reproducible static Pages publication
 
@@ -408,7 +739,7 @@ TypeScript, `@effect/tsgo`, OGL, and Rolldown versions, the lockfile, Joern
 generator inputs, and approved experiment bundles only when independent
 experiment publication is enabled. Rebuilding the same revision with the same
 locked tools SHALL produce byte-identical API HTML, CSS, and classic-IIFE
-shader bundle bytes.
+shader bundle bytes plus byte-identical pinned serif and monospace font bytes.
 
 The published API content, native navigation, and initial static ASCII-tree
 fallback SHALL remain usable without JavaScript and without a server. The one
@@ -421,11 +752,11 @@ experiment namespace, experiment publication adapter, or experiment-only
 Markdown dependency is present.
 
 Pages SHALL validate every internal fragment and relative/base-path-safe
-stylesheet and script asset before upload, including direct loading from the
-repository Pages base path and `file://`. Deployment SHALL run only from an
-allowed repository branch. Every third-party workflow action SHALL be pinned
-to an immutable revision, and only the deploy job SHALL receive Pages-write
-and OIDC-token permissions.
+stylesheet, script, and font asset before upload, including direct loading
+from the repository Pages base path and `file://`. Deployment SHALL run only
+from an allowed repository branch. Every third-party workflow action SHALL be
+pinned to an immutable revision, and only the deploy job SHALL receive
+Pages-write and OIDC-token permissions.
 
 #### Scenario: Documentation revision is published
 
@@ -447,7 +778,8 @@ and OIDC-token permissions.
 #### Scenario: Same revision is rebuilt
 
 - **WHEN** two clean builds use the same sources and locked inputs
-- **THEN** `index.html`, `styles.css`, and `tree.js` are byte-identical
+- **THEN** `index.html`, `styles.css`, `tree.js`, `attune-serif.woff2`, and
+  `attune-mono.woff2` are byte-identical
 - **AND** cross-GPU pixel identity is not treated as an artifact-determinism
   requirement
 
@@ -456,15 +788,16 @@ and OIDC-token permissions.
 - **WHEN** the documentation publication inputs are selected for this change
 - **THEN** independent experiment publication is disabled
 - **AND** no experiment adapter, namespace, or output is created
-- **AND** API `index.html`, `styles.css`, and `tree.js` depend on no
-  experiment input
+- **AND** API `index.html`, `styles.css`, `tree.js`, `attune-serif.woff2`, and
+  `attune-mono.woff2` depend on no experiment input
 
 #### Scenario: Hybrid or stale artifact remains
 
 - **WHEN** publication finds tracked or staged `attune-docs` publication
   output, an old route/search artifact, manifest/snapshot, browser JavaScript
-  other than the exact generated `tree.js`, a second browser entry, source map,
-  or Twoslash output
+  other than the exact generated `tree.js`, a font other than the exact two
+  pinned publication fonts, a second browser entry, source map, or Twoslash
+  output
 - **THEN** publication fails instead of deploying a mixed architecture
 
 ### Requirement: Unified compiler resolution and checking
@@ -503,10 +836,10 @@ implementation SHALL NOT patch that gap with a manifest.
 
 The same disposable probe SHALL prove that the pinned TSDoc plus
 `remark-parse` bridge preserves the package's CommonMark model heading/list,
-plain-text diagram, declaration references, and canonical first-body-line
-complete-investigation example title as the exact ordinary nodes expected by
-the renderer. Failure SHALL block the clean fork rather than introduce a
-custom chapter AST, Markdown parser, or tag language.
+plain-text diagram, declaration references, and any authored example nodes as
+the exact ordinary nodes expected by the renderer. Failure SHALL block the
+clean fork rather than introduce a custom chapter AST, Markdown parser, or tag
+language.
 
 One asynchronous unified `resolve` transform SHALL enrich existing MDAST nodes
 with checked diagnostics and definition ranges. Source syntax SHALL identify
@@ -549,9 +882,8 @@ run at error severity and report defects as VFile messages. It SHALL verify
 exact production-root completeness,
 unique canonical IDs, local links, the inheritance contract above, supported
 Effect-error/`@failure` equality with nonempty explanations, checked examples,
-exactly one canonical package `@example` whose first body line is
-`A complete investigation`, exact public-section references to its one anchor,
-parseable generated TSDoc with
+absence of the removed `A complete investigation` chapter and stale
+`#complete-investigation` links, parseable generated TSDoc with
 applicable summary/callable-tag obligations and valid links after the upstream
 byte-drift gate, valid source spans/digests/revisions, and immutable source
 links. Those syntax obligations SHALL be applied in unified only to generated
@@ -559,21 +891,14 @@ declarations; handwritten declarations SHALL rely on the source rule rather
 than a duplicated audit.
 
 There SHALL be no deterministic example-bearing set or per-declaration
-example quota. The package's one running program SHALL be mandatory, checked
-as one complete project, rendered once, and resolve materialization,
-activation, execution, receipt inspection, and finalization in causal order.
-It SHALL narrow rejected materialization before activation, finalization SHALL
-use the current active authority returned by execution, and the program SHALL
-supply actual finalization input. Visible syntax SHALL annotate the activated
-value as `Investigation<"active">`, assign `execution.receipt` to
-`AttuneReceipt`, and read or branch on `execution.receipt.status`. The checker
-SHALL establish this contract from resolved visible offsets and exact syntax
-shapes, not a general dataflow model. Every additional authored example SHALL
-be checked. A focused invalid-state, restart, or recovery variation MAY be
-authored when it adds a distinct caller decision, but it SHALL reuse the
-running investigation's vocabulary rather than construct a parallel tutorial.
-Human editorial review, not unified, SHALL decide whether a focused variation
-is warranted.
+example quota. Every authored example SHALL be checked as one complete virtual
+project before cuts are applied, and definitions SHALL be remapped into its
+visible source. The checker SHALL establish any claimed state, member, or
+channel facts from resolved visible offsets and exact syntax shapes, not a
+general dataflow model. A focused invalid-state, restart, or recovery example
+MAY be authored when it adds a distinct caller decision, but it SHALL NOT
+recreate a mandatory package lifecycle tutorial. Human editorial review, not
+unified, SHALL decide whether a focused example is warranted.
 
 `check` SHALL NOT repeat the source rule's summary, `@param`, `@typeParam`,
 `@returns`, or local example-structure checks. Every semantic message SHALL be
@@ -636,16 +961,14 @@ serialized.
 - **AND** every visible local identifier link retains the correct canonical
   destination after source remapping
 
-#### Scenario: Running investigation supplies shared evidence
+#### Scenario: Authored lifecycle example is resolved
 
-- **WHEN** the canonical package program is resolved
-- **THEN** its lifecycle calls, receipt inspection, and post-execution active
-  authority occur in causal order
-- **AND** rejected materialization is narrowed and finalization input is
-  supplied
-- **AND** the visible program contains resolved `Attune`,
-  `Investigation<"active">`, `AttuneReceipt`, and demonstrated lifecycle-member
-  occurrences while `execution.receipt.status` is inspected
+- **WHEN** an authored example claims a lifecycle state, member, or Effect
+  channel
+- **THEN** the complete virtual project has exactly its expected diagnostics
+- **AND** the visible claimed occurrences resolve to their canonical
+  declarations after source remapping
+- **AND** no special package example title or chapter anchor is required
 
 #### Scenario: Focused invalid transition is authored
 
@@ -737,23 +1060,65 @@ Verification SHALL consist of four focused contracts:
 1. one `attune/tsdoc` valid/invalid matrix plus one real Oxlint CLI fixture;
 2. one representative unified fixture covering declaration order,
    diagnostics, definitions, Effect/lifecycle facts, inheritance, UTF-16,
-   cuts, generated TSDoc after byte drift, the running program's causal order,
-   visible core type/member links, and public-section references to its one
-   anchor;
+   cuts, generated TSDoc after byte drift, generic authored-example checking,
+   visible type/member links, and rejection of the removed chapter or stale
+   fragment;
 3. one fast HTML/client contract covering unique anchors, complete local
    links, immutable source links, checked-code markers, bounded source spans,
-   absent obsolete artifacts, exact chapter/contents order, one running
-   program, one lifecycle diagram, Repository containment, absent
+   absent obsolete artifacts, exact chapter/contents order, one coherent
+   compiler-backed tools transcript, one lifecycle diagram, Repository
+   containment, absent
    card/inventory structures, the exact sanitized fallback/canvas/script
-   shell, rejection of any additional runtime asset, exact three-file
-   inventory, bundle-size limits, and byte determinism; and
+   shell, rejection of any additional runtime asset, exact five-file
+   `index.html` / `styles.css` / `tree.js` / `attune-serif.woff2` /
+   `attune-mono.woff2` inventory, bundle-size limits, byte determinism, the
+   refined fallback
+   silhouette and unchanged canonical topology, the `87rem` page, clipped
+   `165.6ch × 56em` host, retained smaller font clamp, shared centered
+   `scaleX(1.24)` on fallback and canvas, approximately `1.626:1` visible
+   silhouette, expected `1440px` and `1024px` geometry, exact `144 × 56` field
+   target, exact
+   `MAX_WIDTH = 1680`, `MAX_HEIGHT = 1088`, `MAX_PIXELS = 1,900,000`, and
+   `MAX_DPR = 1.5` limits, native-density analytic ASCII output without a font
+   atlas, image asset, frame, or low-resolution intermediate,
+   deterministic offset-Fibonacci layer/parent/origin/angle/length/terminal-
+   cluster rules, absence of a copied source or Python/PyBonsai dependency,
+   the exact scalar bend and wood-mask-lean formulas, invariant ground
+   flare/lowest three rows, visible lower-trunk/low-branch flex, zero-time and
+   root-sentinel lean exclusions, fixed canonical orientation/glyph decisions,
+   opposite presentation-lean signs, and exactly eight loose-leaf definitions
+   with distinct anchors/phases, deterministic colors, shared
+   `treeSway(t) * (144/1.25)` drift, and bounded local flutter, plus the exact
+   wood/leaf/root source RGB ranges, deterministic canonical color hashes,
+   exact 60-percent `#29231e` mix, precomputed dark fallback buckets, `0.72`
+   alpha cap, and absence of a CSS gradient or painted background; and
 4. focused Playwright journeys covering a type link, URL fragment, computed
    `:target` style, browser Back, immutable source href without a live external
    navigation, wide WebGL shader success, JavaScript-disabled and unavailable-
    WebGL fallback, reduced-motion single-frame behavior, constrained-width
    no-context behavior, offscreen/hidden pause and resume, context loss and
-   restoration, transparent borderless computed styles, and unchanged guide
-   navigation.
+   restoration, transparent borderless computed styles, refined wide
+   `165.6ch × 56em` geometry, exact `10.9616px`/approximately
+   `1092.02 × 613.84px` geometry and `271.19px` readable copy at `1440px`,
+   exact `6.3648px`/approximately `634.02 × 356.42px` geometry at `1024px`,
+   no overlap/overflow and near-`64rem` fit, shared fallback/canvas
+   presentation and symmetric clipping, exact `PRESENTATION_X = 1.24`,
+   DPR-1 backing of `1354 × 760`, approximately `1638 × 919` DPR-1.5 backing,
+   `786 × 441` at `1024px` DPR 1, and corresponding about
+   `9.40 × 13.57` and about `11.375 × 16.41`
+   pixels-per-cell densities, exact backing-cap enforcement, crisp analytic
+   mask inspection without a font atlas or image asset, representative
+   browser-zoom behavior, invariant ground-flare/lowest-three-row samples,
+   visible lower-structure flex, unchanged canonical occupancy and stable
+   offset-Fibonacci branch descriptors across phases,
+   approximately 4.5-column coherent crown travel, zero-time/unrotated-root
+   wood lean and opposite lean signs at opposite sway phases with no canonical
+   descriptor change, exactly eight distinct deterministic leaf trajectories
+   whose shared component follows crown sway, stable in-range source and exact
+   ink-mixed per-glyph colors without shimmer, precomputed dark fallback
+   buckets, residual motion confined to the eight loose-leaf footprints with
+   at most two columns after global compensation, exact-bundle development
+   preview, and unchanged guide navigation.
 
 All server-side production TypeScript implementing `attune-docs`, the root
 `attune/tsdoc` plugin, and `oxlint.config.ts` root discovery/integrity guard
@@ -804,7 +1169,9 @@ opt-in, grandfathered exception, or partial mode SHALL exist.
 - **WHEN** the supported docs target executes from a clean committed worktree
 - **THEN** lint and current upstream/generated inputs pass before one checked
   HTML compilation and one deterministic client bundle
-- **AND** the exact three-file output and focused static/runtime journeys pass
+- **AND** the exact five-file `index.html`, `styles.css`, `tree.js`,
+  `attune-serif.woff2`, and `attune-mono.woff2` output and focused
+  static/runtime journeys pass
 - **AND** no unchecked render or client-bundle path is available
 
 #### Scenario: Dirty worktree requests a site build
@@ -850,7 +1217,9 @@ opt-in, grandfathered exception, or partial mode SHALL exist.
 
 #### Scenario: Browser definition journey works
 
-- **WHEN** Playwright clicks `Investigation` in the opening complete
-  investigation program
-- **THEN** the browser targets `#Investigation` with visible target styling
-- **AND** browser Back restores the original example use site
+- **WHEN** Playwright clicks the checked `joern_query` operation-name literal
+  in `The tools`
+- **THEN** the browser targets its canonical production definition with
+  visible target styling
+- **AND** browser Back restores `#the-tools` and the originating transcript
+  use site

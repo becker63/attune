@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 from activegraph import (  # pyright: ignore[reportMissingTypeStubs]
     LLMBehavior,
@@ -18,6 +18,7 @@ from activegraph.packs import llm_behavior  # pyright: ignore[reportMissingTypeS
 from attune_activegraph.pack import make_pack
 from attune_activegraph.tools import AttuneCaller
 
+from .ledger import make_interpretation_tool
 from .model import (
     CapabilityProfile,
     Case,
@@ -42,35 +43,53 @@ class InvestigationOutput(Model):
     case_id: str
     claim: Claim
     evidence: Evidence
+    relation: Literal["supports", "challenges"]
+    ledger_refs: tuple[str, ...] = ()
 
 
-def _case_id(graph: Any) -> str:
-    cases = [item for item in graph.objects() if item.type == "Case"]
-    if len(cases) != 1:
-        raise ValueError("research behavior needs exactly one Case object")
-    return str(cases[0].data["id"])
+def _case(event: Any) -> tuple[str, str]:
+    payload = cast("Mapping[str, object]", event.payload)
+    candidate = payload.get("object")
+    if not isinstance(candidate, Mapping):
+        raise ValueError("research behavior needs one triggering Case object")
+    item = cast("Mapping[str, object]", candidate)
+    if item.get("type") != "Case":
+        raise ValueError("research behavior needs one triggering Case object")
+    object_id = item.get("id")
+    candidate_data = item.get("data")
+    if not isinstance(object_id, str) or not isinstance(candidate_data, Mapping):
+        raise ValueError("research behavior received a malformed Case event")
+    data = cast("Mapping[str, object]", candidate_data)
+    case_id = data.get("id")
+    if not isinstance(case_id, str) or not case_id:
+        raise ValueError("research behavior received a Case without an id")
+    return object_id, case_id
 
 
 def _investigated(event: Any, graph: Any, _ctx: Any, output: InvestigationOutput) -> None:
-    if output.case_id != _case_id(graph):
+    case_object_id, case_id = _case(event)
+    if output.case_id != case_id:
         raise ValueError("investigation output must address the current case")
+    evidence_value = output.evidence.model_copy(
+        update={"refs": tuple(dict.fromkeys((*output.evidence.refs, *output.ledger_refs)))}
+    )
     claim = graph.add_object(
-        "Claim", output.claim.model_dump(mode="json"), actor="investigate", caused_by=event.id
+        "Claim",
+        output.claim.model_dump(mode="json"),
     )
     evidence = graph.add_object(
-        "Evidence", output.evidence.model_dump(mode="json"), actor="investigate", caused_by=event.id
+        "Evidence",
+        evidence_value.model_dump(mode="json"),
     )
-    case = next(item for item in graph.objects() if item.type == "Case")
-    graph.add_relation(claim.id, case.id, "addresses", actor="investigate", caused_by=event.id)
-    graph.add_relation(evidence.id, claim.id, "supports", actor="investigate", caused_by=event.id)
+    graph.add_relation(claim.id, case_object_id, "addresses")
+    graph.add_relation(evidence.id, claim.id, output.relation)
 
 
 def _synthesized(event: Any, graph: Any, _ctx: Any, output: Result) -> None:
-    if output.case_id != _case_id(graph):
+    _, case_id = _case(event)
+    if output.case_id != case_id:
         raise ValueError("result must address the current case")
-    graph.add_object(
-        "Result", output.model_dump(mode="json"), actor="synthesize", caused_by=event.id
-    )
+    graph.add_object("Result", output.model_dump(mode="json"))
 
 
 def _llm(
@@ -79,12 +98,12 @@ def _llm(
     decorate = llm_behavior(
         name=name,
         on=["object.created"],
-        where={"type": "Case"},
+        where={"object.type": "Case"},
         description="Produce bounded research records; never treat bounded tests as proof.",
         output_schema=output,
         creates=["Claim", "Evidence"] if name == "investigate" else ["Result"],
         tools=list(tools),
-        max_tool_turns=6,
+        max_tool_turns=16,
     )
     return decorate(handler)
 
@@ -102,7 +121,8 @@ def make_research_pack(
     attune: tuple[Tool, ...] = ()
     if settings.capability_profile is CapabilityProfile.ATTUNE:
         attune = make_pack(caller=caller, run_identity=run_identity).tools
-    tools = workspace + attune
+    interpretation = (make_interpretation_tool(settings.case_id),)
+    tools = workspace + interpretation + attune
     return Pack(
         name="attune_researchbench",
         version=f"{PACK_VERSION}+{digest(settings)[:19]}",

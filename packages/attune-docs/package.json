@@ -39,6 +39,7 @@
   },
   "nx": {
     "implicitDependencies": [
+      "attune-guide",
       "attune-mcp",
       "joern-effect"
     ],
@@ -51,6 +52,18 @@
       "build": {
         "cache": false,
         "dependsOn": [
+          {
+            "projects": [
+              "attune-guide"
+            ],
+            "target": "typecheck"
+          },
+          {
+            "projects": [
+              "attune-guide"
+            ],
+            "target": "test"
+          },
           {
             "projects": [
               "attune"

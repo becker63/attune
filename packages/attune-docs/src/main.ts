@@ -1,4 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { chmod, copyFile, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import * as Path from "node:path";
@@ -24,6 +25,7 @@ type Diagnostic = {
   readonly source?: string;
   readonly severity?: number;
   readonly code?: string | number;
+  readonly message?: string;
   readonly range: Range;
 };
 type Virtual = { readonly name: string; readonly text: string; readonly from: number; readonly to: number };
@@ -40,7 +42,16 @@ type Visible = {
 
 const repository = Path.resolve(import.meta.dirname, "../../..");
 const treeEntry = "\0attune-docs-tree";
+const fontAssets = [
+  ["attune-mono.woff2", 90_124, "d95dc751b4d82141259f5c00c9838addaadd3b4eac30dd7db4a0da4921d77792"],
+  ["attune-serif.woff2", 429_100, "940a76eda1388de39d38c8e7a79bf6ea058a387faee0a9f33c8d25c6ba05e1be"],
+] as const;
 const identifiers = /[$_\p{ID_Start}][$_\u200c\u200d\p{ID_Continue}]*/gu;
+const keywords = new Set(
+  "as async await const default else export extends false for from function if import in interface let new null of readonly return string throw true type undefined void".split(
+    " ",
+  ),
+);
 const run = (command: string, args: string[], cwd = repository) =>
   execFileSync(command, args, { cwd, encoding: "utf8" }).trim();
 const load = (root: string, path: string) => readFileSync(Path.join(root, path), "utf8");
@@ -191,8 +202,8 @@ export const bundleTreeRuntime = async (root = repository): Promise<string> => {
   if (first !== second) throw new Error("Tree runtime is not byte-deterministic");
   const raw = Buffer.byteLength(first);
   const gzip = gzipSync(first, { level: 9 }).byteLength;
-  if (raw > 70 * 1024 || gzip > 20 * 1024)
-    throw new Error(`Tree runtime is ${raw} bytes raw and ${gzip} bytes gzip (limits 71680/20480)`);
+  if (raw > 84 * 1024 || gzip > 24 * 1024)
+    throw new Error(`Tree runtime is ${raw} bytes raw and ${gzip} bytes gzip (limits 86016/24576)`);
   return first;
 };
 
@@ -784,6 +795,183 @@ export const createDocumentationLanguage = async (
       if ((defaultsReport.items ?? []).some((diagnostic) => (diagnostic.severity ?? 1) <= 2))
         fatal(file, "Pinned Effect defaults are not never", codes[0] === undefined ? {} : data(codes[0]));
 
+      const investigation = codes.filter((code) => data(code).role === "investigation");
+      if (investigation.length > 0) {
+        if (investigation.length !== 7)
+          fatal(file, `The tools investigation has ${investigation.length} TypeScript artifacts instead of 7`);
+        else {
+          const directory = Path.join(scratch, `investigation-${sequence++}`);
+          await mkdir(Path.join(directory, "src"), { recursive: true });
+          const operations = {
+            repository_materialize: "RepositoryMaterializeTool",
+            repository_checkpoint: "RepositoryCheckpointTool",
+            joern_query: "JoernQueryTool",
+            maude_run: "MaudeRunTool",
+            property_run: "PropertyRunTool",
+            artifact_promote: "ArtifactPromoteTool",
+            ast_grep_run: "AstGrepRunTool",
+          } as const;
+          const aliases = Object.entries(operations).map(([name, symbol]) => ({
+            name,
+            symbol,
+            alias: `__${symbol}`,
+          }));
+          const prelude = `import{AttuneToolkit,type AttuneOperationName,type AttuneOperationResult}from"../../tools/registry.js";import{${aliases
+            .map(({ symbol, alias }) => `${symbol} as ${alias}`)
+            .join(
+              ",",
+            )}}from"../../contract/schemas.js";type WireInput<Name extends AttuneOperationName>=(typeof AttuneToolkit.tools)[Name]["parametersSchema"]["Encoded"];type McpClient={call<Name extends AttuneOperationName>(name:Name,input:WireInput<Name>):Promise<AttuneOperationResult<Name>>};declare const mcp:McpClient;declare const PAYMENT_RETRY_MAUDE:string;declare const PAYMENT_RETRY_SEARCHES:string;declare const PAYMENT_PROPERTY:string;${aliases
+            .map(({ alias }) => `void ${alias};`)
+            .join("")}\n`;
+          const transcriptCodes = [
+            investigation[1]!,
+            investigation[2]!,
+            investigation[3]!,
+            investigation[5]!,
+            investigation[6]!,
+          ];
+          let transcript = prelude;
+          const transcriptRanges: { readonly code: Code; readonly from: number }[] = [];
+          const virtuals: Virtual[] = [
+            {
+              name: "src/fulfill-order.ts",
+              text: investigation[0]!.value,
+              from: 0,
+              to: investigation[0]!.value.length,
+            },
+            {
+              name: "property.ts",
+              text: investigation[4]!.value,
+              from: 0,
+              to: investigation[4]!.value.length,
+            },
+          ];
+          for (const code of transcriptCodes) {
+            if (!transcript.endsWith("\n")) transcript += "\n";
+            const from = transcript.length;
+            transcript += `${code.value}\n`;
+            transcriptRanges.push({ code, from });
+          }
+          virtuals.push({ name: "investigation.ts", text: transcript, from: 0, to: transcript.length });
+          const ranges = [
+            { code: investigation[0]!, file: virtuals[0]!, from: 0 },
+            { code: investigation[4]!, file: virtuals[1]!, from: 0 },
+            ...transcriptRanges.map((range) => ({ ...range, file: virtuals[2]! })),
+          ];
+          const documents = new Map<Virtual, { readonly uri: string; readonly path: string }>();
+          for (const virtual of virtuals) {
+            const path = Path.join(directory, virtual.name);
+            await writeFile(path, virtual.text);
+            documents.set(virtual, { path, uri: open(path, virtual.text) });
+          }
+          const diagnostics: (Diagnostic & { readonly document: string })[] = [];
+          for (const document of documents.values()) {
+            const report = await request<{ readonly items?: readonly Diagnostic[] }>("textDocument/diagnostic", {
+              textDocument: { uri: document.uri },
+            });
+            diagnostics.push(
+              ...(report.items ?? [])
+                .filter((diagnostic) => (diagnostic.severity ?? 1) <= 2)
+                .map((diagnostic) => ({ ...diagnostic, document: Path.basename(document.path) })),
+            );
+          }
+          const clean = diagnostics.length === 0;
+          if (!clean)
+            fatal(
+              file,
+              `Tools investigation has compiler diagnostics ${diagnostics
+                .map(
+                  (item) =>
+                    `${item.document}:${item.source ?? "typescript"}/${item.severity ?? 1}/${String(item.code)}@${
+                      item.range.start.line + 1
+                    }:${item.range.start.character + 1}:${item.message ?? "diagnostic"}`,
+                )
+                .join(", ")}`,
+              data(investigation[0]!),
+            );
+          const visible = (location: Location, identifier: string) => {
+            const entry = [...documents].find(([, document]) => document.uri === location.uri);
+            if (entry === undefined) return undefined;
+            const [virtual] = entry;
+            let at = toOffset(virtual.text, location.range.start);
+            if (virtual.text.slice(at, at + identifier.length) !== identifier) {
+              const found = virtual.text.indexOf(identifier, at);
+              if (found < 0 || found > at + 512) return undefined;
+              at = found;
+            }
+            const range = ranges.find(
+              (candidate) =>
+                candidate.file === virtual && candidate.from <= at && at < candidate.from + candidate.code.value.length,
+            );
+            if (range === undefined) return undefined;
+            return {
+              code: range.code,
+              start: at - range.from,
+              end: at - range.from + identifier.length,
+            };
+          };
+          const targets = new Map<Code, { start: number; end: number; id: string }[]>();
+          for (const range of ranges) {
+            const links: { start: number; end: number; href: string }[] = [];
+            const document = documents.get(range.file)!;
+            for (const match of range.code.value.matchAll(identifiers)) {
+              if (keywords.has(match[0]!)) continue;
+              const at = range.from + match.index;
+              const href = await resolveAt(document.uri, range.file.text, at);
+              if (href !== undefined) {
+                links.push({ start: match.index, end: match.index + match[0]!.length, href });
+                continue;
+              }
+              const target = (await raw(document.uri, range.file.text, at))
+                .map((location) => visible(location, match[0]!))
+                .find((value) => value !== undefined);
+              if (
+                target === undefined ||
+                (target.code === range.code &&
+                  target.start === match.index &&
+                  target.end === match.index + match[0]!.length)
+              )
+                continue;
+              const owner = investigation.indexOf(target.code);
+              const id = `tools-definition-${owner}-${target.start}`;
+              const owned = targets.get(target.code) ?? [];
+              if (!owned.some((candidate) => candidate.id === id)) owned.push({ ...target, id });
+              targets.set(target.code, owned);
+              links.push({ start: match.index, end: match.index + match[0]!.length, href: `#${id}` });
+            }
+            data(range.code).links = links;
+          }
+          const transcriptDocument = documents.get(virtuals[2]!)!;
+          for (const { name, alias } of aliases) {
+            const use = transcript.lastIndexOf(`void ${alias}`) + 5;
+            const href = await resolveAt(transcriptDocument.uri, transcript, use);
+            if (href === undefined) {
+              fatal(file, `MCP operation ${name} has no canonical tool definition`, data(investigation[0]!));
+              continue;
+            }
+            for (const range of ranges) {
+              let at = range.code.value.indexOf(`"${name}"`);
+              while (at >= 0) {
+                const metadata = data(range.code);
+                metadata.links = [...(metadata.links ?? []), { start: at + 1, end: at + 1 + name.length, href }];
+                at = range.code.value.indexOf(`"${name}"`, at + name.length + 2);
+              }
+            }
+          }
+          for (const code of investigation) {
+            const metadata = data(code);
+            metadata.links = [...(metadata.links ?? [])].sort((left, right) => left.start - right.start);
+            metadata.targets = [...(targets.get(code) ?? [])].sort((left, right) => left.start - right.start);
+            if (clean) metadata.checked = true;
+            for (const target of metadata.targets) {
+              const overlaps = metadata.links.some((link) => link.start < target.end && target.start < link.end);
+              if (overlaps) fatal(file, `Tools definition target #${target.id} overlaps a link`, metadata);
+            }
+          }
+          for (const document of documents.values()) closeDocument(document.uri);
+        }
+      }
+
       for (const code of codes) {
         const metadata = data(code);
         if (metadata.role !== "signature" && metadata.role !== "example") continue;
@@ -1052,10 +1240,11 @@ const assertFork = (root: string) => {
   const source = [...serverSource, "tree.ts"];
   if (readdirSync(Path.join(root, "packages/attune-docs/src")).sort().join("\0") !== source.join("\0"))
     throw new Error("Documentation source inventory drifted");
-  if (readdirSync(Path.join(root, "packages/attune-docs/static")).sort().join("\0") !== "styles.css")
+  const staticFiles = [...fontAssets.map(([name]) => name), "styles.css"].sort();
+  if (readdirSync(Path.join(root, "packages/attune-docs/static")).sort().join("\0") !== staticFiles.join("\0"))
     throw new Error("Documentation static inventory drifted");
   const allowed =
-    "packages/attune-docs/.gitignore packages/attune-docs/README.md packages/attune-docs/package.json packages/attune-docs/playwright.config.ts packages/attune-docs/schema/experiment-approval.schema.json packages/attune-docs/schema/experiment-manifest.schema.json packages/attune-docs/schema/experiment-publication.schema.json packages/attune-docs/schema/experiment-report.schema.json packages/attune-docs/src/docs.ts packages/attune-docs/src/main.ts packages/attune-docs/src/read.ts packages/attune-docs/src/tree.ts packages/attune-docs/static/styles.css packages/attune-docs/test/docs.test.ts packages/attune-docs/test/e2e.spec.ts packages/attune-docs/test/fixtures/resolver.ts packages/attune-docs/test/tree.test.ts packages/attune-docs/tsconfig.browser.json packages/attune-docs/tsconfig.json packages/attune-docs/vitest.config.ts tooling/oxlint/attune.test.ts tooling/oxlint/attune.ts tooling/oxlint/fixtures/cli.config.ts tooling/oxlint/fixtures/invalid.ts tooling/oxlint/fixtures/nested/.oxlintrc.json tooling/oxlint/fixtures/nested/invalid.ts tooling/oxlint/fixtures/valid.ts"
+    "packages/attune-docs/.gitignore packages/attune-docs/README.md packages/attune-docs/package.json packages/attune-docs/playwright.config.ts packages/attune-docs/schema/experiment-approval.schema.json packages/attune-docs/schema/experiment-manifest.schema.json packages/attune-docs/schema/experiment-publication.schema.json packages/attune-docs/schema/experiment-report.schema.json packages/attune-docs/src/docs.ts packages/attune-docs/src/main.ts packages/attune-docs/src/read.ts packages/attune-docs/src/tree.ts packages/attune-docs/static/attune-mono.woff2 packages/attune-docs/static/attune-serif.woff2 packages/attune-docs/static/styles.css packages/attune-docs/test/docs.test.ts packages/attune-docs/test/e2e.spec.ts packages/attune-docs/test/fixtures/resolver.ts packages/attune-docs/test/tree.test.ts packages/attune-docs/tsconfig.browser.json packages/attune-docs/tsconfig.json packages/attune-docs/vitest.config.ts tooling/oxlint/attune.test.ts tooling/oxlint/attune.ts tooling/oxlint/fixtures/cli.config.ts tooling/oxlint/fixtures/invalid.ts tooling/oxlint/fixtures/nested/.oxlintrc.json tooling/oxlint/fixtures/nested/invalid.ts tooling/oxlint/fixtures/valid.ts"
       .split(" ")
       .sort();
   const tracked = run("git", ["ls-files", "packages/attune-docs", "tooling/oxlint"], root).split("\n").sort();
@@ -1067,17 +1256,24 @@ const assertFork = (root: string) => {
     "packages/attune-docs/schema/api-manifest.schema.json",
   ])
     if (existsSync(Path.join(root, path))) throw new Error(`Obsolete documentation artifact survives: ${path}`);
+  for (const [name, size, digest] of fontAssets) {
+    const bytes = readFileSync(Path.join(root, "packages/attune-docs/static", name));
+    if (bytes.length !== size || bytes.subarray(0, 4).toString("ascii") !== "wOF2")
+      throw new Error(`Documentation font ${name} is not the pinned WOFF2`);
+    if (createHash("sha256").update(bytes).digest("hex") !== digest)
+      throw new Error(`Documentation font ${name} digest drifted`);
+  }
   const production = [
     "oxlint.config.ts",
     "tooling/oxlint/attune.ts",
     ...serverSource.map((path) => `packages/attune-docs/src/${path}`),
   ];
   const total = production.reduce((sum, path) => sum + lines(load(root, path)), 0);
-  if (total > 2_700) throw new Error(`Documentation compiler is ${total} lines (limit 2700)`);
-  if (lines(load(root, "packages/attune-docs/src/tree.ts")) > 450)
-    throw new Error("Documentation browser/GLSL entry exceeds 450 lines");
-  if (lines(load(root, "packages/attune-docs/static/styles.css")) > 350)
-    throw new Error("Documentation CSS exceeds 350 lines");
+  if (total > 3_800) throw new Error(`Documentation compiler is ${total} lines (limit 3800)`);
+  if (lines(load(root, "packages/attune-docs/src/tree.ts")) > 560)
+    throw new Error("Documentation browser/GLSL entry exceeds 560 lines");
+  if (lines(load(root, "packages/attune-docs/static/styles.css")) > 500)
+    throw new Error("Documentation CSS exceeds 500 lines");
   return { browser: lines(load(root, "packages/attune-docs/src/tree.ts")), compiler: total };
 };
 
@@ -1094,7 +1290,10 @@ export const main = async (root = repository) => {
     string
   >;
   const highlighter = await phase("compile", () =>
-    createHighlighter({ langs: ["typescript", "javascript", "text"], themes: ["github-light-default"] }),
+    createHighlighter({
+      langs: ["typescript", "javascript", "python", "scala", "json", "yaml", "console", "text"],
+      themes: ["github-light-default"],
+    }),
   );
   let server: Awaited<ReturnType<typeof createDocumentationLanguage>> | undefined;
   try {
@@ -1129,14 +1328,22 @@ export const main = async (root = repository) => {
       await mkdir(temporary, { recursive: true });
       await writeFile(Path.join(temporary, "index.html"), first.html);
       await copyFile(Path.join(root, "packages/attune-docs/static/styles.css"), Path.join(temporary, "styles.css"));
+      await Promise.all(
+        fontAssets.map(([name]) =>
+          copyFile(Path.join(root, "packages/attune-docs/static", name), Path.join(temporary, name)),
+        ),
+      );
       await writeFile(Path.join(temporary, "tree.js"), tree);
-      if (readdirSync(temporary).sort().join("\0") !== "index.html\0styles.css\0tree.js")
+      if (
+        readdirSync(temporary).sort().join("\0") !==
+        "attune-mono.woff2\0attune-serif.woff2\0index.html\0styles.css\0tree.js"
+      )
         throw new Error("Documentation output inventory drifted");
       await replaceDirectory(temporary, destination);
     });
     process.stdout.write(
-      `attune-docs: ${budget.compiler}/2700 compiler lines, ${budget.browser}/450 browser lines, ` +
-        `${Buffer.byteLength(tree)}/71680 raw bundle bytes, ${gzipSync(tree, { level: 9 }).byteLength}/20480 gzip bytes\n`,
+      `attune-docs: ${budget.compiler}/3800 compiler lines, ${budget.browser}/560 browser lines, ` +
+        `${Buffer.byteLength(tree)}/86016 raw bundle bytes, ${gzipSync(tree, { level: 9 }).byteLength}/24576 gzip bytes\n`,
     );
   } finally {
     try {

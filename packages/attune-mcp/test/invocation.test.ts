@@ -5,7 +5,7 @@ import * as Path from "node:path";
 
 import { Effect, Fiber, Schema } from "effect";
 
-import { type InvestigationId, type InvocationId } from "../src/contract/schemas.js";
+import { type FreeFormReference, type InvestigationId, type InvocationId } from "../src/contract/schemas.js";
 import { type InvocationContext, InvocationEngine } from "../src/investigation/invocation.js";
 import type {
   InvestigationManifest,
@@ -38,11 +38,16 @@ const invocationInput = (invocationId: InvocationId) =>
     references: [],
   }) as const;
 
-const maudeInput = (invocationId: InvocationId, moduleSource: string) =>
+const maudeInput = (
+  invocationId: InvocationId,
+  moduleSource: string,
+  references: readonly FreeFormReference[] = [],
+) =>
   ({
     ...invocationInput(invocationId),
     moduleSource,
     commands: "reduce true .",
+    references,
     timeoutMilliseconds: 1_000,
   }) as const;
 
@@ -235,6 +240,34 @@ describe("idempotent receipt boundary", () => {
       snapshotId: snapshot,
     });
     expect(await readFile(Path.join(directory, "native.txt"), "utf8")).toBe("exact");
+  });
+
+  it("persists an opaque interpretation-ledger reference and note verbatim", async () => {
+    const invocationId = "ledger-reference" as InvocationId;
+    const reference = {
+      ref: `ledger:sha256:${"b".repeat(64)}`,
+      note: "payment replay abstraction",
+    } satisfies FreeFormReference;
+    const input = maudeInput(invocationId, "mod PAYMENT-RETRY is endm", [reference]);
+
+    await run(
+      maudeOperation(input, async (context) => {
+        context.setSnapshot(snapshot);
+        return {
+          snapshotId: snapshot,
+          value: {
+            snapshotId: snapshot,
+            exitCode: 0,
+            stdoutTail: "result Bool: true",
+            stderrTail: "",
+          },
+        };
+      }),
+    );
+
+    const directory = Path.join(workspace.artifactsPath, "maude", invocationId);
+    expect(await readJson(Path.join(directory, "request.json"))).toEqual(input);
+    expect(await readJson(Path.join(directory, "references.json"))).toEqual([reference]);
   });
 
   it("rejects changed input and observed incompleteness without replay", async () => {

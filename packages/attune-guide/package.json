@@ -1,0 +1,51 @@
+{
+  "name": "attune-guide",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Source-owned editorial guide for the Attune documentation publication.",
+  "type": "module",
+  "scripts": {
+    "loc:check": "node ./scripts/check-loc.mjs",
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "pnpm run loc:check && tsc --noEmit -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "attune-mcp": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "vitest": "4.1.10"
+  },
+  "nx": {
+    "implicitDependencies": [
+      "attune-mcp"
+    ],
+    "tags": [
+      "type:documentation",
+      "scope:attune",
+      "platform:node"
+    ],
+    "targets": {
+      "test": {
+        "dependsOn": [
+          {
+            "projects": [
+              "attune-mcp"
+            ],
+            "target": "build"
+          }
+        ]
+      },
+      "typecheck": {
+        "dependsOn": [
+          {
+            "projects": [
+              "attune-mcp"
+            ],
+            "target": "build"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -10,7 +10,9 @@ export type InvestigationState = "materialized" | "active" | "finalized";
 /** Private structural brand carried only by issued capabilities. */ declare const InvestigationCapabilityBrand: unique symbol;
 
 /**
- * Unforgeable lifecycle proof issued by {@link Attune} for one exact Git snapshot.
+ * An {@link Investigation | `Investigation<State>`} is Attune’s proof that an operation belongs to one exact
+ * repository state. It is not the research question, the agent’s working memory, or a node in the ActiveGraph
+ * trace.
  *
  * @remarks
  *   `State` makes the next legal service transition visible: materialized proofs enter
@@ -22,8 +24,8 @@ export type InvestigationState = "materialized" | "active" | "finalized";
  *   directory as authority. A private brand rejects structural object literals, and the issuing
  *   {@link Attune} service also checks runtime provenance, revocation, identity, and snapshot evidence. A
  *   type assertion can silence TypeScript but cannot create a usable proof; always carry the replacement
- *   returned by the latest transition. The [complete investigation](#complete-investigation) shows the active
- *   proof being replaced after execution and carried into finalization.
+ *   returned by the latest transition. [The tools](#the-tools) shows the underlying receipt and
+ *   exact-snapshot succession that these capabilities make safe.
  * @typeParam State - The lifecycle permission exposed by {@link Investigation.state} and accepted by the
  *   corresponding {@link Attune} member.
  */

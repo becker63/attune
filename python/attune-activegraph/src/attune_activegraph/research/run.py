@@ -120,8 +120,25 @@ def cold_campaign() -> tuple[Trial, ...]:
 def prose_control(packet: Packet) -> str:
     """Export the bounded non-executable control and reject target-specific detail."""
 
+    ledger_semantics = tuple(
+        value
+        for ledger in packet.ledgers
+        for values in (
+            ledger.retained,
+            ledger.omitted,
+            ledger.assumptions,
+            ledger.limitations,
+        )
+        for value in values
+    )
     text = "\n".join(
-        (packet.claim, *packet.applicability, *packet.exclusion_cues, *packet.unresolved_questions)
+        (
+            packet.claim,
+            *packet.applicability,
+            *packet.exclusion_cues,
+            *packet.unresolved_questions,
+            *ledger_semantics,
+        )
     )
     prohibited = (
         *(query.retained_form for query in packet.joern_queries),

@@ -11,7 +11,7 @@ from pydantic import Field
 
 from attune_activegraph.typed_tool import typed_tool
 
-from .model import Model, digest
+from .model import InterpretationLedger, LedgerReference, Model, digest
 
 _DENIED = frozenset(
     {
@@ -90,7 +90,15 @@ def conventional_command_allowed(argv: Iterable[str]) -> None:
 def common_tool_digest() -> str:
     """Pin the audited capability surface in trial configuration."""
 
-    return digest(sorted(_ALLOWED))
+    return digest(
+        {
+            "commands": sorted(_ALLOWED),
+            "record_interpretation": {
+                "input": InterpretationLedger.model_json_schema(),
+                "output": LedgerReference.model_json_schema(),
+            },
+        }
+    )
 
 
 def make_workspace_tools(root: Path) -> tuple[Tool, ...]:

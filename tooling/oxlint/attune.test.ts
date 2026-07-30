@@ -176,8 +176,8 @@ describe("attune/tsdoc", () => {
 
 describe("root discovery and integrity", () => {
   it("uses exact disjoint handwritten and generated root equations", () => {
-    expect(readerRoots).toHaveLength(49);
-    expect(handwrittenRoots).toHaveLength(45);
+    expect(readerRoots).toHaveLength(50);
+    expect(handwrittenRoots).toHaveLength(46);
     expect(new Set([...handwrittenRoots, ...generatedRoots])).toEqual(
       new Set(readerRoots),
     );
@@ -240,7 +240,7 @@ describe("root discovery and integrity", () => {
 
   it("keeps the formatter exception equal to the fenced-TSDoc set", () => {
     const expected = [
-      "packages/attune-mcp/src/index.ts",
+      "packages/attune-guide/src/index.ts",
       "tooling/oxlint/fixtures/invalid.ts",
       "tooling/oxlint/fixtures/valid.ts",
     ];
