@@ -1,0 +1,13 @@
+package attune.boundary;
+
+import java.net.HttpURLConnection;
+
+/// An authored production boundary that substitutes a raw HTTP client for the
+/// approved SDK; the policy must reject it.
+final class Boundary {
+    private Boundary() {}
+
+    static Object open() throws Exception {
+        return HttpURLConnection.class;
+    }
+}

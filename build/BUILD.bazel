@@ -1,4 +1,13 @@
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
 exports_files([
     "flix.bzl",
+    "policy.bzl",
     "unshare_repository.bzl",
 ])

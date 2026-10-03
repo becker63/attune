@@ -1,0 +1,51 @@
+load("//build:flix.bzl", "flix_fatjar")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The compiled Flix policy evaluator. It is a private build tool and a private
+# audit program; the public interface stays `bazel test //...`.
+flix_fatjar(
+    name = "policy_jar",
+    srcs = [
+        "//src:policy",
+        "//src:policy_entry",
+    ],
+)
+
+java_library(
+    name = "policy_java",
+    srcs = [
+        "PolicyCheck.java",
+        "PolicyVerdict.java",
+    ],
+)
+
+# The minimal Java boundary: it prepares the declared or live inventory record
+# file and launches the compiled Flix evaluator. It decides no policy.
+java_binary(
+    name = "policy_check",
+    main_class = "attune.tools.policy.PolicyCheck",
+    runtime_deps = [":policy_java"],
+)
+
+# The separate local, read-only, uncached workspace audit. It is invoked
+# explicitly and therefore re-reads the live tree instead of any cached
+# inventory:
+#
+#   bazel run //tools/policy:workspace_audit -- --root <workspace>
+java_binary(
+    name = "workspace_audit",
+    data = [":policy_jar"],
+    jvm_flags = [
+        "-Dattune.policy.jar=$(rlocationpath :policy_jar)",
+        "-Dattune.mode=audit",
+    ],
+    main_class = "attune.tools.policy.PolicyCheck",
+    runtime_deps = [":policy_java"],
+)

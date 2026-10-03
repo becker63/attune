@@ -3,6 +3,11 @@
 # The public gate is `bazel test //...` through services.yaml. BuildBuddy is a
 # separate opt-in config so the ordinary gate never requires a credential.
 
+# The Bazel server is the largest single process this workspace starts, so its
+# heap is bounded explicitly rather than left at a fraction of host RAM.
+startup --host_jvm_args=-Xmx512m
+startup --host_jvm_args=-XX:MaxMetaspaceSize=256m
+
 build --enable_bzlmod
 
 # Pinned language and runtime versions (mission pins: Java 25).
@@ -11,11 +16,12 @@ build --tool_java_language_version=25
 build --java_runtime_version=remotejdk_25
 build --tool_java_runtime_version=remotejdk_25
 
-# The host has eight CPUs and a competing experiment with active swap; keep
-# local resource use bounded rather than saturating the machine.
-build --local_resources=cpu=4
-build --local_resources=memory=4096
-build --jobs=4
+# The host has eight CPUs, active swap and a competing experiment. The approved
+# budget is one local build job with bounded memory. The earlier four-job/4GiB
+# setting was not approved; it is corrected here rather than left implicit.
+build --local_resources=cpu=1
+build --local_resources=memory=1024
+build --jobs=1
 
 test --test_output=errors
 # `bazel test //...` is the ordinary gate; only test targets are built.

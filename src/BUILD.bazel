@@ -1,5 +1,11 @@
 package(default_visibility = ["//visibility:public"])
 
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
 # The shared nominal envelope. Flix owns world, File, Symbol, frontier and atom
 # identity; one vocabulary drives route validation and grammar display.
 filegroup(
@@ -8,4 +14,21 @@ filegroup(
         "Attune.flix",
         "Attune/Envelope.flix",
     ],
+)
+
+# The Flix-owned policy evaluator: the semantic library only, without an entry
+# point, so a test fixture can `use` it without a second `main`.
+filegroup(
+    name = "policy",
+    srcs = [
+        "Attune.flix",
+        "Attune/Policy.flix",
+    ],
+)
+
+# The root-module entry point of the compiled policy program, kept separate so
+# the evaluator library stays importable.
+filegroup(
+    name = "policy_entry",
+    srcs = ["PolicyMain.flix"],
 )

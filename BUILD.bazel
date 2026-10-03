@@ -1,4 +1,4 @@
-load("//build:flix.bzl", "flix_fatjar", "flix_reject", "isolated_jvm_test")
+load("//build:policy.bzl", "policy_check", "policy_verdict_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -8,6 +8,57 @@ java_binary(
     name = "flix",
     main_class = "ca.uwaterloo.flix.Main",
     runtime_deps = ["@flix_compiler//jar"],
+)
+
+# The declared authored-source population, minus the exact boundaries: the
+# read-only reference checkout, the external mission archive, the authored
+# negative fixtures (which exist to contain forbidden content deliberately) and
+# Bazel output. A glob cannot cross a Bazel package boundary, so every package
+# that carries authored source contributes its own `policy_files` filegroup.
+# `DESIGN.md` records which packages make up this declared population; a new
+# package must add its filegroup here so its source stays declared rather than
+# silently unowned.
+filegroup(
+    name = "policy_files",
+    srcs = glob(
+        [
+            "*.md",
+            "*.bzl",
+            "*.nix",
+            "*.lock",
+            "LICENSE",
+            "BUILD.bazel",
+            "MODULE.bazel",
+        ],
+        exclude = ["ATTUNE_V2_BOOTSTRAP_MISSION_ALL_IN_ONE.md"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "policy_sources",
+    srcs = [
+        ":policy_files",
+        "//build:policy_files",
+        "//src:policy_files",
+        "//test:policy_files",
+        "//test/policy:policy_files",
+        "//test/spine:policy_files",
+        "//tools:policy_files",
+        "//tools/policy:policy_files",
+    ],
+)
+
+# The hermetic declared-source policy check. It must accept the declared source;
+# the companion test only accepts the verdict the action actually recorded.
+policy_check(
+    name = "declared_source_policy",
+    srcs = [":policy_sources"],
+)
+
+policy_verdict_test(
+    name = "declared_source_policy_test",
+    evidence = ":declared_source_policy",
 )
 
 # One aggregated name for the ordinary gate. `bazel test //...` is the public
@@ -20,8 +71,20 @@ test_suite(
     ],
 )
 
+# The policy and counting surface of the same public gate.
+test_suite(
+    name = "policy_tests",
+    tests = [
+        ":declared_source_policy_test",
+        "//test/policy:count_law_test",
+        "//test/policy:policy_cases_test",
+    ],
+)
+
 exports_files([
     "LICENSE",
     "PROVENANCE.md",
     "README.md",
+    "AGENTS.md",
+    "DESIGN.md",
 ])

@@ -16,10 +16,14 @@ services.yaml: test
 
 | Surface | Target | Status |
 | --- | --- | --- |
-| Public gate | `bazel test //...` | passes (2 tests) |
+| Public gate | `bazel test //...` | passes (5 tests) |
 | Compiled Flix fixture | `//test/spine:positive_test` | passes in the isolated namespace |
 | Nominal compiler negative | `//test/spine:nominal_negative_test` | passes; the pinned compiler rejected `test/spine/nominal_negative/Main.flix` |
 | Manual false assertion | `//test/spine:false_assertion_test` | excluded from `//...`; fails with exit 3 when run directly |
+| Declared-source policy | `//:declared_source_policy_test` | passes; the Flix policy accepts the declared authored source |
+| Honest counting laws | `//test/policy:count_law_test` | passes; comment-only, trailing-comment, comment-like-string and Starlark-docstring cases execute |
+| Named policy negatives | `//test/policy:policy_cases_test` | passes; fifteen authored cases reach their exact verdict and rule |
+| Local workspace audit | `services.yaml: audit` | `bazel run //tools/policy:workspace_audit -- --root <workspace>`; read-only, uncached, accepts the live tree |
 | Fresh parent projection | `services.yaml: projection_test` | builds and tests from a tracked-file projection with no child, secret or archive |
 
 ## How a fixture reaches a verdict
@@ -64,6 +68,26 @@ element set is a different frontier even when the printed names match.
 - Observed evidence for the positive fixture: distinct network namespace,
   `uid=0`, interfaces `lo` only, no default route, socket connect denied.
 
+## Declared-source policy and the local audit
+
+Two surfaces share one Flix evaluator (`src/Attune/Policy.flix`, launched by the
+minimal Java boundary in `tools/policy/`):
+
+- `//:declared_source_policy` is hermetic: it reads only the declared inputs and
+  rejects forbidden executable suffixes, embedded shell actions, raw HTTP
+  substituted for the approved SDK, reference or unowned source, production
+  dependencies on test-only proposals, missing required documents and
+  undocumented public modules.
+- `bazel run //tools/policy:workspace_audit -- --root <workspace>` is separately
+  local, read-only and uncached. It re-reads the live tree, so a forbidden file
+  added after a green run, an orphaned source, a BUILD entry escaping its package
+  and a symbolic link leaving the workspace are all detected. It records `.env`
+  as metadata only and never reads it.
+
+The same evaluator counts code, comment, documentation and blank lines
+separately per role and language. `DESIGN.md` records the source map, the pins
+and licenses, and the measured counts.
+
 ## BuildBuddy
 
 `--config=buildbuddy` enables the existing BuildBuddy remote cache and BES.
@@ -77,12 +101,19 @@ BuildBuddy, so it never requires a credential.
 
 ```
 build/flix.bzl              Flix rules and the isolated JVM test macro
+build/policy.bzl            the hermetic declared-source policy rule
 build/unshare_repository.bzl declared pinned unshare tool and closure
 tools/spine/FlixTool.java   minimal Java compiler-process boundary
 tools/spine/IsolatedRun.java isolated runtime boundary and evidence checks
+tools/policy/PolicyCheck.java declared/live inventory and launch boundary
 src/Attune/Envelope.flix    shared nominal world/File/Symbol/frontier/atom envelope
+src/Attune/Policy.flix      compact source, dependency, comment and LOC policy
+src/PolicyMain.flix         the compiled policy program's entry point
 test/spine/                 positive, false-assertion and compiler-negative fixtures
+test/policy/                counting laws and twelve named policy cases
 PROVENANCE.md               pins, origins and licenses
+AGENTS.md                   repository policy for agents
+DESIGN.md                   source map, pins and measured counts
 ```
 
 ## Deferred

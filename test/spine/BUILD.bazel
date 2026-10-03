@@ -2,6 +2,12 @@ load("//build:flix.bzl", "flix_fatjar", "flix_reject", "isolated_jvm_test", "rec
 
 package(default_visibility = ["//visibility:public"])
 
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
 # Positive fixture: compiled with `build-fatjar`, then executed as a standalone
 # JVM inside the declared pinned user/network namespace.
 flix_fatjar(
