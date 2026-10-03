@@ -1,0 +1,11 @@
+package(default_visibility = ["//visibility:public"])
+
+# The shared nominal envelope. Flix owns world, File, Symbol, frontier and atom
+# identity; one vocabulary drives route validation and grammar display.
+filegroup(
+    name = "envelope",
+    srcs = [
+        "Attune.flix",
+        "Attune/Envelope.flix",
+    ],
+)

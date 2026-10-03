@@ -1,0 +1,50 @@
+load("//build:flix.bzl", "flix_fatjar", "flix_reject", "isolated_jvm_test", "recorded_verdict_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Positive fixture: compiled with `build-fatjar`, then executed as a standalone
+# JVM inside the declared pinned user/network namespace.
+flix_fatjar(
+    name = "positive_jar",
+    srcs = [
+        "positive/Main.flix",
+        "//src:envelope",
+    ],
+)
+
+isolated_jvm_test(
+    name = "positive_test",
+    jar = ":positive_jar",
+)
+
+# Manual negative fixture: a deliberately false assertion. It is excluded from
+# `bazel test //...` by the `manual` tag; running it directly must fail.
+flix_fatjar(
+    name = "false_assertion_jar",
+    srcs = [
+        "false_assertion/Main.flix",
+        "//src:envelope",
+    ],
+)
+
+isolated_jvm_test(
+    name = "false_assertion_test",
+    jar = ":false_assertion_jar",
+    tags = ["manual"],
+)
+
+# Compiler negative fixture: a File/Symbol domain mismatch must be rejected by
+# the pinned compiler in a prerequisite action.
+flix_reject(
+    name = "nominal_negative_check",
+    srcs = [
+        "nominal_negative/Main.flix",
+        "//src:envelope",
+    ],
+    expected = "Unable to unify the types",
+)
+
+recorded_verdict_test(
+    name = "nominal_negative_test",
+    evidence = ":nominal_negative_check",
+)

@@ -1,0 +1,32 @@
+module(
+    name = "attune",
+    version = "0.1.0",
+)
+
+# The pinned Flix compiler is a declared, checksummed engineering dependency.
+# It is a private build tool, never a public project verb.
+http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
+
+http_jar(
+    name = "flix_compiler",
+    sha256 = "b2ed2b7f49902e2dfe1b4f10e23d9a5cb085461e7e8c64909ca2b3abfa566e74",
+    urls = ["https://github.com/flix/flix/releases/download/v0.76.1/flix.jar"],
+)
+
+bazel_dep(name = "rules_java", version = "9.9.0")
+bazel_dep(name = "platforms", version = "1.1.0")
+
+# The declared isolation tool: pinned util-linux `unshare` and its runtime
+# closure, resolved from the Nix developer shell PATH (never a hardcoded
+# readiness cache path).
+local_unshare = use_repo_rule("//build:unshare_repository.bzl", "local_unshare")
+
+local_unshare(name = "unshare")
+
+# Existing BuildBuddy integration. The toolchain supplies the remote platform
+# labels; the ordinary `bazel test //...` gate does not use them.
+bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
+
+buildbuddy = use_extension("@toolchains_buildbuddy//:extensions.bzl", "buildbuddy")
+buildbuddy.platform(buildbuddy_container_image = "UBUNTU22_04_IMAGE")
+use_repo(buildbuddy, "buildbuddy_toolchain")

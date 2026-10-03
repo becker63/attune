@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Minimal Java boundary that launches the pinned Flix compiler in a declared
+# project directory. Flix resolves its project from the process working
+# directory, so Starlark cannot select the project with an argument alone.
+java_binary(
+    name = "flix_tool",
+    srcs = ["spine/FlixTool.java"],
+    main_class = "attune.tools.spine.FlixTool",
+)
+
+# The isolated runtime boundary: launch a compiled fat JAR behind the declared
+# pinned `unshare` user/network namespace, record kernel namespace evidence,
+# and accept a recorded negative compiler verdict.
+java_library(
+    name = "isolated_run",
+    srcs = [
+        "spine/IsolatedRun.java",
+        "spine/NegativeVerdict.java",
+        "spine/NetworkProbe.java",
+        "spine/Runfiles.java",
+    ],
+)

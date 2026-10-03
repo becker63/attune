@@ -1,0 +1,27 @@
+load("//build:flix.bzl", "flix_fatjar", "flix_reject", "isolated_jvm_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# The pinned Flix compiler as a private Bazel build tool. It is never a public
+# project verb; tests never invoke `flix run/test` at runtime.
+java_binary(
+    name = "flix",
+    main_class = "ca.uwaterloo.flix.Main",
+    runtime_deps = ["@flix_compiler//jar"],
+)
+
+# One aggregated name for the ordinary gate. `bazel test //...` is the public
+# interface; this suite exists so the spine can be selected by one label.
+test_suite(
+    name = "spine_tests",
+    tests = [
+        "//test/spine:positive_test",
+        "//test/spine:nominal_negative_test",
+    ],
+)
+
+exports_files([
+    "LICENSE",
+    "PROVENANCE.md",
+    "README.md",
+])

@@ -1,0 +1,15 @@
+# Local reference, never parent implementation or scientific input.
+/attuneflix/
+
+# Local secrets. Only an intentionally empty/example schema may be tracked.
+/.env
+/.env.*
+!/.env.example
+
+# External mission archive. Kept as a non-admitted external input: never
+# parent implementation source, a build action input, or a packaged asset.
+/ATTUNE_V2_BOOTSTRAP_MISSION_ALL_IN_ONE.md
+
+# Bazel convenience symlinks and generated output trees. The output base lives
+# outside the repository (services.yaml); these symlinks are not source.
+/bazel-*
