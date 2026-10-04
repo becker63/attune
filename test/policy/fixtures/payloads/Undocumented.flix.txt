@@ -1,3 +1,0 @@
-pub mod Attune.Undocumented {
-    pub def value(): Int32 = 1
-}

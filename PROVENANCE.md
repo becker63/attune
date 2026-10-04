@@ -36,9 +36,16 @@ Adapted boundary (replaced inherited `run_shell` actions with
 
 | Reference file | Reference blob | Adaptation |
 | --- | --- | --- |
-| `test/build/flix.bzl` | (read at HEAD) | Rewritten as `build/flix.bzl` |
+| `test/build/flix.bzl` | (read at HEAD) | Rewritten as `build/native.bzl` |
 | `MODULE.bazel` | `f7af4499b8fbecf0941b455570bd5b338ceaa0a6` | Trimmed to this feature's pins |
 | `flake.nix` | (read at HEAD) | Rewritten for the parent workspace |
+
+The reference resolves a Flix project from a synthesized `flix.toml` and runs a
+compiled fat JAR. The parent does not: `build/native.bzl` runs the pinned
+compiler's authentic native test engine over an explicit declared file list in
+an empty working directory, so no project resolution, no Bootstrap/Coursier
+dependency resolution and no fat-JAR entrypoint exists. `tools/boundary` keeps
+only the mechanical manifest, probe and launcher that route replaces.
 
 The shared nominal envelope (`src/Attune/Envelope.flix`) is new first-party
 Flix source; it is not copied from the reference.

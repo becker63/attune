@@ -1,3 +1,0 @@
-/// A read-only reference source that must never be admitted as parent source.
-pub mod Atlas {
-}

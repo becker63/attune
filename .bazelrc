@@ -26,6 +26,11 @@ build --jobs=1
 test --test_output=errors
 # `bazel test //...` is the ordinary gate; only test targets are built.
 test --build_tests_only
+# The live workspace audit re-reads the current tree on every invocation, so the
+# public gate must re-execute its tests instead of replaying a cached result. A
+# test that only replays a cached verdict could not notice a forbidden file that
+# was added after a green run.
+test --cache_test_results=no
 
 # aspect_tools_telemetry (pulled in transitively) reports usage unless
 # disabled; an empty value does NOT disable it, "-all" does.

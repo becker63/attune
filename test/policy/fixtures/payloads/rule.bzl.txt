@@ -1,3 +1,0 @@
-def _impl(ctx):
-    ctx.actions.run_shell(command = "echo authored embedded script")
-    return []

@@ -7,7 +7,7 @@ filegroup(
 )
 
 exports_files([
-    "flix.bzl",
-    "policy.bzl",
+    "native.bzl",
     "unshare_repository.bzl",
+    "workspace_root.bzl",
 ])

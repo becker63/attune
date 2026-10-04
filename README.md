@@ -1,10 +1,10 @@
 # Attune v2 bootstrap
 
 An independently buildable Attune v2 bootstrap: its own pinned Bazel, Flix,
-Java and Nix plumbing, a small shared nominal envelope, and a compiled Flix
-fixture that runs as a standalone JVM inside a real network-denied namespace.
-This repository has no dependency on the read-only `attuneflix/` reference
-checkout, on the mission archive, or on any credential.
+Java and Nix plumbing, a small shared nominal envelope, and an authentic native
+Flix test spine that runs inside a real network-denied namespace. This
+repository has no dependency on the read-only `attuneflix/` reference checkout,
+on the mission archive, or on any credential.
 
 ## What runs today
 
@@ -16,33 +16,41 @@ services.yaml: test
 
 | Surface | Target | Status |
 | --- | --- | --- |
-| Public gate | `bazel test //...` | passes (5 tests) |
-| Compiled Flix fixture | `//test/spine:positive_test` | passes in the isolated namespace |
-| Nominal compiler negative | `//test/spine:nominal_negative_test` | passes; the pinned compiler rejected `test/spine/nominal_negative/Main.flix` |
-| Manual false assertion | `//test/spine:false_assertion_test` | excluded from `//...`; fails with exit 3 when run directly |
-| Declared-source policy | `//:declared_source_policy_test` | passes; the Flix policy accepts the declared authored source |
-| Honest counting laws | `//test/policy:count_law_test` | passes; comment-only, trailing-comment, comment-like-string and Starlark-docstring cases execute |
-| Named policy negatives | `//test/policy:policy_cases_test` | passes; fifteen authored cases reach their exact verdict and rule |
-| Local workspace audit | `services.yaml: audit` | `bazel run //tools/policy:workspace_audit -- --root <workspace>`; read-only, uncached, accepts the live tree |
+| Public gate | `bazel test //...` | passes (7 tests) |
+| Shared envelope laws | `//test/spine:envelope_test` | passes; four native `@Test` laws over world, File/Symbol, frontier and atom identity |
+| Isolation boundary | `//test/spine:isolation_test` | passes; eight native `@Test` laws over the recorded kernel and environment facts, including a rejected unisolated host record and a missing-record fail-closed case |
+| Nominal compiler negative | `//test/spine:nominal_negative_test` | passes; the pinned compiler rejects the File/Symbol mix with `Unable to unify the types`, with no `main` |
+| Manual false assertion | `//test/spine:false_assertion_test` | tagged `manual`, so excluded from `//...`; fails with a real native assertion failure when run directly |
+| Honest counting laws | `//test/policy:count_law_test` | passes; eight native laws over comment-only, trailing-comment, comment-like-string and Starlark-docstring counting |
+| Named policy cases | `//test/policy:policy_cases_test` | passes; fourteen authored cases, defined in Flix, each reaching its exact verdict and rule |
+| Declared-source policy | `//test/policy:declared_source_policy_test` | passes; the Flix policy accepts exactly the declared authored population |
+| Live workspace audit | `//test/policy:workspace_audit_test` | passes; a normal, local, uncached test that re-reads the live root on every invocation |
 | Fresh parent projection | `services.yaml: projection_test` | builds and tests from a tracked-file projection with no child, secret or archive |
 
 ## How a fixture reaches a verdict
 
-1. **Compile in a prerequisite action.** `build/flix.bzl` `flix_fatjar` writes a
-   generated Flix project and runs the pinned compiler with `build-fatjar` via
-   `ctx.actions.run` and a minimal Java launcher (`tools/spine/FlixTool.java`),
-   because Flix resolves its project from the working directory.
-2. **Run compiled, not interpreted.** `isolated_jvm_test` launches the resulting
-   fat JAR with `unshare --user --map-root-user --net -- java -jar ...`. No
-   compiler, dependency resolver or fallback runs in the namespace.
-3. **Record real kernel evidence.** Before the fixture runs, a probe records the
-   namespace inodes, interfaces, routing table and a denied socket connect from
-   inside the same boundary. The test fails closed if isolation cannot be
-   established.
-4. **Keep negative verdicts honest.** `flix_reject` compiles an intentionally
-   invalid fixture and fails unless the pinned compiler rejects it with the
-   expected diagnostic; `recorded_verdict_test` accepts the recorded rejection,
-   so the ordinary suite stays green while the rejection is real.
+1. **Native tests are the only entrypoint.** Every first-party executable check
+   is a Flix `@Test` declaration in an explicit, declared file list. There is no
+   authored `main`, no per-case application, no custom test engine, no central
+   registry, no synthesized `flix.toml` project and no fat JAR.
+2. **Explicit files, authentic engine.** `build/native.bzl` compiles exactly the
+   named Flix sources with the pinned 0.76.1 compiler and runs the compiler's own
+   native test engine (`flix test <files>`). Flix resolves a project only from a
+   `flix.toml` in the working directory, and the launcher runs in an empty
+   working directory, so no project resolution and no Bootstrap/Coursier
+   dependency resolution can occur.
+3. **Run inside the declared namespace.** The engine runs under
+   `unshare --user --map-root-user --net` with a cleared, allowlisted
+   environment (`HOME`, `LANG`, `PATH`, plus the JDK's own `LD_LIBRARY_PATH`).
+   No compiler, dependency resolver or fallback runs outside the boundary.
+4. **Record real kernel evidence.** Before the engine starts, a probe records the
+   run and host network-namespace inodes, the effective uid, the interface list,
+   the routing table, a denied outbound socket connect and the environment keys.
+   The Flix-owned `Attune.Isolation` assertions decide whether that record is the
+   declared boundary; a missing record fails closed.
+5. **Keep negative verdicts honest.** `native_flix_reject_test` runs the pinned
+   compiler's `check` on an intentionally invalid fixture and fails unless the
+   compiler rejects it with the expected diagnostic and no `main` exists.
 
 ## The shared nominal envelope
 
@@ -62,31 +70,42 @@ element set is a different frontier even when the printed names match.
 - The declared tool is the pinned util-linux `unshare` and its runtime closure,
   resolved from the Nix developer shell by `build/unshare_repository.bzl` (no
   readiness cache path is hardcoded).
-- The isolated runtime receives a fresh allowlisted environment
-  (`HOME`, `LANG`, `PATH`, plus the JDK's own `LD_LIBRARY_PATH`) and no
+- The isolated runtime receives a fresh allowlisted environment and no
   application secret.
-- Observed evidence for the positive fixture: distinct network namespace,
-  `uid=0`, interfaces `lo` only, no default route, socket connect denied.
+- Observed evidence inside the boundary: a distinct network namespace from the
+  invoking process, `uid=0`, the `lo` interface only, no default route and a
+  denied outbound socket connect. `Attune.Isolation` owns those assertions, and
+  the isolation fixture also asserts that an unisolated host record and a missing
+  record are both rejected.
 
-## Declared-source policy and the local audit
+## Policy: one Flix evaluator, two surfaces
 
-Two surfaces share one Flix evaluator (`src/Attune/Policy.flix`, launched by the
-minimal Java boundary in `tools/policy/`):
+`src/Attune/Policy.flix` owns classification, inventory decisions, exclusions,
+secret and size decisions, honest counting, report formatting and the verdict.
+It has no entry point; the native test fixtures read it and assert its verdict.
+The only Java is the small mechanical boundary in `tools/boundary/`, which
+prepares a metadata manifest (path, measured kind, byte size, link target, never
+content) and launches the pinned engine.
 
-- `//:declared_source_policy` is hermetic: it reads only the declared inputs and
-  rejects forbidden executable suffixes, embedded shell actions, raw HTTP
-  substituted for the approved SDK, reference or unowned source, production
-  dependencies on test-only proposals, missing required documents and
-  undocumented public modules.
-- `bazel run //tools/policy:workspace_audit -- --root <workspace>` is separately
-  local, read-only and uncached. It re-reads the live tree, so a forbidden file
-  added after a green run, an orphaned source, a BUILD entry escaping its package
-  and a symbolic link leaving the workspace are all detected. It records `.env`
-  as metadata only and never reads it.
+- **Declared-source check (hermetic).** `//test/policy:declared_source_policy_test`
+  runs the evaluator over exactly the declared inputs. It rejects forbidden
+  executable suffixes, embedded shell actions, raw HTTP substituted for the
+  approved SDK, reference or unowned source, production dependencies on
+  test-only proposals, missing required documents and undocumented public
+  modules.
+- **Live workspace audit (read-only, uncached).** `//test/policy:workspace_audit_test`
+  is a normal test in the public gate, not an extra run verb. It is tagged
+  `local` and `no-cache`, and the gate sets `--cache_test_results=no`, so every
+  `bazel test //...` re-reads the current tree. A forbidden file added after a
+  green run, an orphaned source, a BUILD entry escaping its package and a
+  symbolic link leaving the workspace are all detected on the next invocation.
+  It records `.env` as metadata only and never reads it, and it never reads the
+  preserved `repomix-output.xml` user-work bundle.
 
 The same evaluator counts code, comment, documentation and blank lines
-separately per role and language. `DESIGN.md` records the source map, the pins
-and licenses, and the measured counts.
+separately per role and language, and prints the whole table on every run.
+`DESIGN.md` records the source map, the pins and licenses, and the measured
+counts.
 
 ## BuildBuddy
 
@@ -100,17 +119,15 @@ BuildBuddy, so it never requires a credential.
 ## Layout
 
 ```
-build/flix.bzl              Flix rules and the isolated JVM test macro
-build/policy.bzl            the hermetic declared-source policy rule
+build/native.bzl            native Flix test rules over explicit declared files
+build/workspace_root.bzl    the live workspace root, for the local audit test
 build/unshare_repository.bzl declared pinned unshare tool and closure
-tools/spine/FlixTool.java   minimal Java compiler-process boundary
-tools/spine/IsolatedRun.java isolated runtime boundary and evidence checks
-tools/policy/PolicyCheck.java declared/live inventory and launch boundary
+tools/boundary/             minimal mechanical Java: manifest, probe, launcher
 src/Attune/Envelope.flix    shared nominal world/File/Symbol/frontier/atom envelope
 src/Attune/Policy.flix      compact source, dependency, comment and LOC policy
-src/PolicyMain.flix         the compiled policy program's entry point
-test/spine/                 positive, false-assertion and compiler-negative fixtures
-test/policy/                counting laws and twelve named policy cases
+src/Attune/Isolation.flix   Flix-owned isolation assertions
+test/spine/                 envelope, isolation, false-assertion and compiler-negative fixtures
+test/policy/                counting laws, named cases, declared check and live audit
 PROVENANCE.md               pins, origins and licenses
 AGENTS.md                   repository policy for agents
 DESIGN.md                   source map, pins and measured counts
@@ -118,8 +135,8 @@ DESIGN.md                   source map, pins and measured counts
 
 ## Deferred
 
-This bootstrap establishes only the build spine and the shared envelope. Not
-yet implemented, and deliberately out of scope here:
+This bootstrap establishes only the build spine, the shared envelope and the
+policy surface. Not yet implemented, and deliberately out of scope here:
 
 - the retained native Grit frontends and Ruby dispatcher arm;
 - the canonical ASCII tree writer, route/proof/view projections;

@@ -16,8 +16,9 @@ filegroup(
     ],
 )
 
-# The Flix-owned policy evaluator: the semantic library only, without an entry
-# point, so a test fixture can `use` it without a second `main`.
+# The Flix-owned policy evaluator: classification, exclusions, secret and size
+# decisions, honest counting, report formatting and the verdict. It has no
+# entry point; a native test fixture reads it and asserts its verdict.
 filegroup(
     name = "policy",
     srcs = [
@@ -26,9 +27,11 @@ filegroup(
     ],
 )
 
-# The root-module entry point of the compiled policy program, kept separate so
-# the evaluator library stays importable.
+# The Flix-owned isolation assertions over the mechanical boundary record.
 filegroup(
-    name = "policy_entry",
-    srcs = ["PolicyMain.flix"],
+    name = "isolation",
+    srcs = [
+        "Attune.flix",
+        "Attune/Isolation.flix",
+    ],
 )

@@ -1,58 +1,58 @@
-load("//build:flix.bzl", "flix_fatjar", "isolated_jvm_test")
+load("//build:native.bzl", "native_flix_audit_test", "native_flix_declared_test", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
-# This package's contribution to the declared authored-source population. The
-# authored negative-fixture payloads are excluded: they deliberately contain
-# forbidden content, so they are never part of the declared population.
+# This package's contribution to the declared authored-source population.
 filegroup(
     name = "policy_files",
-    srcs = glob(
-        ["**"],
-        exclude = ["fixtures/**"],
-    ),
+    srcs = glob(["**"]),
 )
 
-# Authored negative-fixture payloads. They deliberately contain forbidden
-# content, so they are excluded from the declared source population and from the
-# live audit; only the case runner reads them.
-filegroup(
-    name = "fixture_payloads",
-    srcs = glob(["fixtures/payloads/**"]),
-)
-
-# The compiled counting-law fixture: it imports the policy's pure counting
-# functions and executes its assertions under the isolated runtime boundary.
-flix_fatjar(
-    name = "count_law_jar",
-    srcs = [
-        "CountLaw.flix",
-        "//src:policy",
-    ],
-)
-
-isolated_jvm_test(
+# The honest counting laws, executed as native Flix tests against the policy's
+# own pure counting functions.
+native_flix_test(
     name = "count_law_test",
-    jar = ":count_law_jar",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+        "CountLaw.flix",
+    ],
 )
 
-# The named policy cases. Each one materialises an authored workspace, runs the
-# real policy evaluation through the minimal Java boundary, and requires the
-# exact verdict and rule identifier.
-java_test(
+# The named policy cases, defined and evaluated in Flix.
+native_flix_test(
     name = "policy_cases_test",
-    size = "small",
-    srcs = ["PolicyCases.java"],
-    data = [
-        ":fixture_payloads",
-        "fixtures/payloads/deploy.sh.txt",
-        "//tools/policy:policy_jar",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+        "PolicyCases.flix",
     ],
-    jvm_flags = [
-        "-Dattune.policy.jar=$(rlocationpath //tools/policy:policy_jar)",
-        "-Dattune.fixtures=$(rlocationpath fixtures/payloads/deploy.sh.txt)",
+)
+
+# The hermetic declared-source policy over exactly the declared inputs.
+native_flix_declared_test(
+    name = "declared_source_policy_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+        "DeclaredPolicyLaw.flix",
     ],
-    main_class = "attune.tools.policy.PolicyCases",
-    use_testrunner = False,
-    deps = ["//tools/policy:policy_java"],
+    declared = "//:policy_sources",
+)
+
+# The live read-only uncached workspace audit, as a normal test in the public
+# gate. The target is local and uncached, so every `bazel test //...` re-reads
+# the current tree and a file added after a green run is seen next invocation.
+# It also depends on the declared population, so any change to the declared
+# inventory re-runs the audit that exists to find source no BUILD file admits.
+native_flix_audit_test(
+    name = "workspace_audit_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+        "AuditLaw.flix",
+    ],
+    workspace_root = "@local_workspace//:workspace_root.txt",
+    skip = ["attuneflix"],
+    data = ["//:policy_sources"],
 )

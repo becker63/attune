@@ -1,9 +1,8 @@
-load("//build:policy.bzl", "policy_check", "policy_verdict_test")
-
 package(default_visibility = ["//visibility:public"])
 
 # The pinned Flix compiler as a private Bazel build tool. It is never a public
-# project verb; tests never invoke `flix run/test` at runtime.
+# project verb; the native test launcher invokes its authentic test engine, not
+# `flix run` or a fat JAR.
 java_binary(
     name = "flix",
     main_class = "ca.uwaterloo.flix.Main",
@@ -11,13 +10,12 @@ java_binary(
 )
 
 # The declared authored-source population, minus the exact boundaries: the
-# read-only reference checkout, the external mission archive, the authored
-# negative fixtures (which exist to contain forbidden content deliberately) and
-# Bazel output. A glob cannot cross a Bazel package boundary, so every package
-# that carries authored source contributes its own `policy_files` filegroup.
-# `DESIGN.md` records which packages make up this declared population; a new
-# package must add its filegroup here so its source stays declared rather than
-# silently unowned.
+# read-only reference checkout, the external mission archive, Bazel output and
+# the preserved user-work bundle. A glob cannot cross a Bazel package boundary,
+# so every package that carries authored source contributes its own
+# `policy_files` filegroup. `DESIGN.md` records which packages make up this
+# declared population; a new package must add its filegroup here so its source
+# stays declared rather than silently unowned.
 filegroup(
     name = "policy_files",
     srcs = glob(
@@ -45,20 +43,8 @@ filegroup(
         "//test/policy:policy_files",
         "//test/spine:policy_files",
         "//tools:policy_files",
-        "//tools/policy:policy_files",
+        "//tools/boundary:policy_files",
     ],
-)
-
-# The hermetic declared-source policy check. It must accept the declared source;
-# the companion test only accepts the verdict the action actually recorded.
-policy_check(
-    name = "declared_source_policy",
-    srcs = [":policy_sources"],
-)
-
-policy_verdict_test(
-    name = "declared_source_policy_test",
-    evidence = ":declared_source_policy",
 )
 
 # One aggregated name for the ordinary gate. `bazel test //...` is the public
@@ -66,7 +52,8 @@ policy_verdict_test(
 test_suite(
     name = "spine_tests",
     tests = [
-        "//test/spine:positive_test",
+        "//test/spine:envelope_test",
+        "//test/spine:isolation_test",
         "//test/spine:nominal_negative_test",
     ],
 )
@@ -75,9 +62,10 @@ test_suite(
 test_suite(
     name = "policy_tests",
     tests = [
-        ":declared_source_policy_test",
         "//test/policy:count_law_test",
         "//test/policy:policy_cases_test",
+        "//test/policy:declared_source_policy_test",
+        "//test/policy:workspace_audit_test",
     ],
 )
 

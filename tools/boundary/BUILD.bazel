@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The minimal mechanical boundary for the native test targets. It prepares a
+# metadata manifest and launches the pinned compiler's native test engine inside
+# the declared `unshare` namespace. It owns no policy, classification, verdict,
+# fixture case or isolation assertion; those live in Flix.
+java_library(
+    name = "native_launch",
+    srcs = [
+        "BoundaryProbe.java",
+        "Manifest.java",
+        "NativeInner.java",
+        "NativeLaunch.java",
+        "Runfiles.java",
+    ],
+)

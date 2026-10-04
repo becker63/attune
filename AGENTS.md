@@ -24,8 +24,16 @@ The compact policy in `src/Attune/Policy.flix` is the executable statement of
 these rules; `bazel test //...` enforces it.
 
 - Authored source lives under `src/`, `test/`, `tools/` and `build/`.
-- First-party execution is Flix, minimal Java and Starlark only. Shell scripts,
-  shell actions, `run_shell`, shell genrules and Python runners are forbidden.
+- First-party execution is Flix, minimal Java and Starlark only. Authentic
+  native Flix `@Test` declarations over an explicit declared file list are the
+  only first-party executable entrypoint. Authored `main` functions, per-case
+  application mains, custom test engines, central registries and fat JARs are
+  forbidden, as are shell scripts, shell actions, `run_shell`, shell genrules
+  and Python runners.
+- Java keeps only the unavoidable mechanics (filesystem metadata, process
+  launch, runfiles resolution). Policy, classification, inventory and exclusion
+  decisions, secret and size decisions, verdict and report formatting, isolation
+  assertions and fixture cases live in Flix.
 - Production source (`src/`) must not substitute a raw HTTP client for an
   approved SDK, and must never depend on a test-only proposal module.
 - The only admitted foreign families are inherited pinned support, the one
@@ -40,8 +48,11 @@ A Bazel glob cannot cross a package boundary, so each package that carries
 authored source exports a `policy_files` filegroup and `//:policy_sources`
 aggregates them. A new package that adds authored source must add its filegroup
 to `//:policy_sources`; otherwise its source would be silently unowned. The
-separate local audit (`//tools/policy:workspace_audit`) walks the live tree and
-catches source that no BUILD file admits.
+separate local audit (`//test/policy:workspace_audit_test`) walks the live tree
+and catches source that no BUILD file admits. It runs as a normal test inside
+`bazel test //...`; the gate re-executes its tests
+(`test --cache_test_results=no`), so the audit re-reads the current tree on
+every invocation and never replays a stale verdict.
 
 ## Internal delegation
 

@@ -23,6 +23,12 @@ local_unshare = use_repo_rule("//build:unshare_repository.bzl", "local_unshare")
 
 local_unshare(name = "unshare")
 
+# The live root workspace path, recorded once so the local read-only audit test
+# can re-read the current tree instead of a declared or cached inventory.
+local_workspace = use_repo_rule("//build:workspace_root.bzl", "local_workspace")
+
+local_workspace(name = "local_workspace")
+
 # Existing BuildBuddy integration. The toolchain supplies the remote platform
 # labels; the ordinary `bazel test //...` gate does not use them.
 bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")

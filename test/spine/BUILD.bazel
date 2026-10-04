@@ -1,4 +1,4 @@
-load("//build:flix.bzl", "flix_fatjar", "flix_reject", "isolated_jvm_test", "recorded_verdict_test")
+load("//build:native.bzl", "native_flix_reject_test", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -8,49 +8,49 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-# Positive fixture: compiled with `build-fatjar`, then executed as a standalone
-# JVM inside the declared pinned user/network namespace.
-flix_fatjar(
-    name = "positive_jar",
+# Positive native fixture: explicit declared sources compiled and executed by
+# the pinned compiler's authentic native test engine inside the declared
+# pinned user/network namespace.
+native_flix_test(
+    name = "envelope_test",
     srcs = [
-        "positive/Main.flix",
-        "//src:envelope",
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "EnvelopeLaw.flix",
     ],
 )
 
-isolated_jvm_test(
-    name = "positive_test",
-    jar = ":positive_jar",
-)
-
-# Manual negative fixture: a deliberately false assertion. It is excluded from
-# `bazel test //...` by the `manual` tag; running it directly must fail.
-flix_fatjar(
-    name = "false_assertion_jar",
+# Isolation fixture: the Flix-owned assertions over the boundary record the
+# mechanical probe wrote from inside the same namespace.
+native_flix_test(
+    name = "isolation_test",
     srcs = [
-        "false_assertion/Main.flix",
-        "//src:envelope",
+        "//src:Attune.flix",
+        "//src:Attune/Isolation.flix",
+        "IsolationLaw.flix",
     ],
 )
 
-isolated_jvm_test(
+# Manual negative fixture: a deliberately false native assertion. It is excluded
+# from `bazel test //...` by the `manual` tag; running it directly must fail.
+native_flix_test(
     name = "false_assertion_test",
-    jar = ":false_assertion_jar",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "FalseAssertion.flix",
+    ],
     tags = ["manual"],
 )
 
 # Compiler negative fixture: a File/Symbol domain mismatch must be rejected by
-# the pinned compiler in a prerequisite action.
-flix_reject(
-    name = "nominal_negative_check",
+# the pinned compiler during `check`, with no `main` required.
+native_flix_reject_test(
+    name = "nominal_negative_test",
     srcs = [
-        "nominal_negative/Main.flix",
-        "//src:envelope",
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "NominalNegative.flix",
     ],
     expected = "Unable to unify the types",
-)
-
-recorded_verdict_test(
-    name = "nominal_negative_test",
-    evidence = ":nominal_negative_check",
 )

@@ -1,4 +1,4 @@
-package attune.tools.spine;
+package attune.tools.boundary;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -11,41 +11,43 @@ import java.util.List;
 import java.util.TreeSet;
 
 /**
- * Records kernel namespace and network-capability evidence from inside the
- * declared boundary. It is launched inside the pinned {@code unshare}
- * user/network namespace; it never contacts an application endpoint.
+ * Mechanical boundary evidence.
+ *
+ * <p>It runs inside the declared pinned {@code unshare} user/network namespace
+ * and records raw kernel facts: the run and host network-namespace identities,
+ * the effective uid, the interface list, whether a default route exists, whether
+ * an outbound socket connect is denied, and the environment keys. It never
+ * contacts an application endpoint and makes no isolation verdict; the
+ * Flix-owned isolation assertions read this record and decide whether the
+ * boundary is the declared one.
  */
-public final class NetworkProbe {
-    private NetworkProbe() {}
+final class BoundaryProbe {
+    private BoundaryProbe() {}
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("uid=" + uid());
-        System.out.println("netns=" + readLink("/proc/self/ns/net"));
-        System.out.println("userns=" + readLink("/proc/self/ns/user"));
-        System.out.println("dev=" + String.join(",", interfacesWithTraffic()));
-        System.out.println("default_route=" + (defaultRoute() ? "yes" : "no"));
-        System.out.println("connect_denied=" + (connectDenied() ? "true" : "false"));
-        System.out.println("env=" + String.join(",", envKeys()));
-        System.out.println("java_home=" + System.getProperty("java.home", ""));
-        System.out.println("ld_library_path=" + System.getenv().getOrDefault("LD_LIBRARY_PATH", ""));
+    static void write(Path output, String hostNetns) throws IOException {
+        List<String> lines = new ArrayList<>();
+        lines.add("host_netns=" + hostNetns);
+        lines.add("run_netns=" + readLink("/proc/self/ns/net"));
+        lines.add("uid=" + uid());
+        lines.add("dev=" + String.join(",", interfaces()));
+        lines.add("default_route=" + (defaultRoute() ? "yes" : "no"));
+        lines.add("connect_denied=" + (connectDenied() ? "true" : "false"));
+        lines.add("env=" + String.join(",", envKeys()));
+        Files.write(output, lines, StandardCharsets.UTF_8);
     }
 
     private static String uid() {
-        return Integer.toString(uidFromProc());
-    }
-
-    private static int uidFromProc() {
         try {
-            String status = Files.readString(Path.of("/proc/self/status"), StandardCharsets.UTF_8);
-            for (String line : status.split("\n")) {
+            for (String line : Files.readString(Path.of("/proc/self/status"), StandardCharsets.UTF_8)
+                    .split("\n")) {
                 if (line.startsWith("Uid:")) {
-                    return Integer.parseInt(line.split("\\s+")[1]);
+                    return line.split("\\s+")[1];
                 }
             }
         } catch (IOException | NumberFormatException ignored) {
             // Fall through to the shell-free default below.
         }
-        return -1;
+        return "-1";
     }
 
     private static String readLink(String path) {
@@ -56,7 +58,7 @@ public final class NetworkProbe {
         }
     }
 
-    private static List<String> interfacesWithTraffic() {
+    private static List<String> interfaces() {
         List<String> names = new ArrayList<>();
         try {
             for (String line : Files.readAllLines(Path.of("/proc/net/dev"))) {
@@ -81,7 +83,7 @@ public final class NetworkProbe {
                 }
             }
         } catch (IOException ignored) {
-            // Unreadable routing table means no usable host route.
+            // An unreadable routing table means no usable host route.
         }
         return false;
     }

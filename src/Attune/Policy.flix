@@ -3,46 +3,49 @@
 ///
 /// Flix owns every semantic decision: which authored languages and source roots
 /// are admitted, which executable suffixes and embedded scripts are forbidden in
-/// executable code, which documentation and comments are required, and how code,
-/// comment, documentation and blank lines are counted. The minimal Java boundary
-/// only walks directories, resolves runfiles paths, writes the inventory record
-/// file and launches this program; it decides nothing.
+/// executable code, which paths are secret, protected user work, reference
+/// source or an excluded boundary, which documentation and comments are
+/// required, and how code, comment, documentation and blank lines are counted.
+///
+/// The mechanical Java boundary only walks a directory or resolves declared
+/// runfiles entries and records each one's measured kind, byte size and resolved
+/// link target. It reads no file content and classifies nothing, so a secret or
+/// protected path is never opened there. This module decides which recorded
+/// entries it may read and how they classify, and it formats the report and the
+/// verdict.
 ///
 /// Two surfaces share this evaluator:
 ///
-/// - a hermetic declared-source check over the declared build inputs, and
-/// - a separately local, read-only, uncached workspace audit that walks the live
-///   tree and therefore sees files the declared inventory cannot see.
+/// - a hermetic declared-source check over exactly the declared build inputs, and
+/// - a live, read-only, uncached workspace audit that reads the current tree and
+///   therefore sees files no declared inventory can see.
 ///
-/// Secret paths are recorded as metadata only. The boundary never supplies a
-/// readable path for them, so no secret content reaches this evaluator.
+/// Secret paths and protected user work are recorded as metadata only: this
+/// evaluator never supplies a readable path for them, so no such content is
+/// loaded.
 pub mod Attune.Policy {
 
-    use Sys.Console
-    use Sys.Env
     use Fs.FileRead
 
     // ------------------------------------------------------------- inventory
 
-    /// How the boundary classified one walked entry.
-    pub enum Kind with Eq, ToString {
-        case File
-        case Symlink
-        case Secret
-        case Skipped
+    /// The mechanically measured kind of one entry. `Link` carries the resolved
+    /// absolute target, or the empty string when the link is dangling.
+    pub enum Measured with Eq, ToString {
+        case Regular
+        case Link(String)
     }
 
-    /// One inventory record: kind, flags, root-relative path, the absolute path
-    /// this evaluator may read, and the byte size reported as metadata.
-    pub enum Record with Eq {
-        case Record(Kind, List[String], String, String, Int32)
+    /// One inventory record: root-relative path, absolute path, measured kind
+    /// and the byte size reported as metadata.
+    pub enum Entry with Eq {
+        case Entry(String, String, Measured, Int32)
     }
 
-    pub def recordKind(r: Record): Kind = match r { case Record.Record(k, _, _, _, _) => k }
-    pub def recordFlags(r: Record): List[String] = match r { case Record.Record(_, f, _, _, _) => f }
-    pub def recordPath(r: Record): String = match r { case Record.Record(_, _, p, _, _) => p }
-    pub def recordRead(r: Record): String = match r { case Record.Record(_, _, _, t, _) => t }
-    pub def recordSize(r: Record): Int32 = match r { case Record.Record(_, _, _, _, s) => s }
+    pub def entryPath(e: Entry): String = match e { case Entry.Entry(p, _, _, _) => p }
+    pub def entryAbs(e: Entry): String = match e { case Entry.Entry(_, a, _, _) => a }
+    pub def entryMeasured(e: Entry): Measured = match e { case Entry.Entry(_, _, m, _) => m }
+    pub def entrySize(e: Entry): Int32 = match e { case Entry.Entry(_, _, _, s) => s }
 
     /// A first-party authored language, or the metadata bucket.
     pub enum Language with Eq, ToString {
@@ -130,16 +133,26 @@ pub mod Attune.Policy {
 
     // ------------------------------------------------------------ admission
 
-    /// Boundaries excluded from counting and scanning: the read-only reference
-    /// checkout, VCS and agent tooling, Bazel output symlinks, the external
-    /// mission archive, and the authored negative-fixture trees (which exist to
-    /// contain forbidden content deliberately).
+    /// Mechanically bounded boundaries: VCS and agent tooling, Bazel output
+    /// symlinks, the external mission archive, the authored negative-fixture
+    /// trees (which exist to contain forbidden content deliberately) and the
+    /// preserved user-work bundle. None of these is ever read.
     pub def isExcludedPath(path: String): Bool =
-        hasPrefix("attuneflix/", path) or hasPrefix(".git/", path) or hasPrefix(".factory/", path)
+        hasPrefix(".git/", path) or hasPrefix(".factory/", path)
             or hasPrefix("bazel-", path) or hasPrefix("test/policy/fixtures/", path)
             or path == "ATTUNE_V2_BOOTSTRAP_MISSION_ALL_IN_ONE.md"
+            or isProtectedUserWork(path)
 
-    /// True for the read-only reference checkout, which is never parent source.
+    /// The preserved user-work bundle is recorded as metadata only and never
+    /// read; it is neither parent source nor a build input.
+    pub def isProtectedUserWork(path: String): Bool = path == "repomix-output.xml"
+
+    /// A secret path stays metadata only: it is never read and never counted.
+    pub def isSecretPath(path: String): Bool =
+        let base = basename(path);
+        (base == ".env" or hasPrefix(".env.", base)) and base != ".env.example"
+
+    /// The read-only reference checkout, which is never parent source.
     pub def isReferencePath(path: String): Bool = hasPrefix("attuneflix/", path)
 
     /// The approved authored source roots.
@@ -387,7 +400,7 @@ pub mod Attune.Policy {
         }
 
     /// Every quoted literal in a document, used only for BUILD reference checks.
-    def quotedLiterals(s: String): List[String] = quoteFrom(s, 0, false, "", Nil)
+    pub def quotedLiterals(s: String): List[String] = quoteFrom(s, 0, false, "", Nil)
 
     def quoteFrom(s: String, i: Int32, inQ: Bool, cur: String, acc: List[String]): List[String] =
         if (i >= String.length(s)) List.reverse(acc)
@@ -402,37 +415,74 @@ pub mod Attune.Policy {
             }
         }
 
-    // ------------------------------------------------------------- records
+    // -------------------------------------------------------------- loading
 
-    def kindFrom(name: String): Kind =
-        if (name == "file") Kind.File
-        else if (name == "symlink") Kind.Symlink
-        else if (name == "secret") Kind.Secret
-        else Kind.Skipped
+    /// The manifest's declared root, or the empty string for a declared check.
+    pub def rootLine(lines: List[String]): String =
+        match lines {
+            case first :: _ =>
+                match String.split(regex = "\t", first) {
+                    case "root" :: rest => targetOf(rest)
+                    case _ => ""
+                }
+            case Nil => ""
+        }
 
-    def flagList(flags: String): List[String] =
-        List.filter(s -> not String.isEmpty(s), String.split(regex = ",", flags))
+    /// The optional fifth field. A `-` placeholder means "no target", which is
+    /// also what a dropped trailing empty field yields.
+    def targetOf(rest: List[String]): String =
+        match rest {
+            case t :: _ => if (t == "-") "" else t
+            case Nil => ""
+        }
+
+    def measuredOf(kind: String, target: String): Measured =
+        if (kind == "symlink") Measured.Link(target) else Measured.Regular
 
     def parseSize(s: String): Int32 = Option.getWithDefault(0, Int32.fromString(s))
 
-    pub def parseRecord(line: String): Option[Record] =
+    pub def parseEntry(line: String): Option[Entry] =
         match String.split(regex = "\t", line) {
-            case kind :: flags :: path :: read :: size :: Nil =>
-                Some(Record.Record(kindFrom(kind), flagList(flags), path, read, parseSize(size)))
+            case rel :: abs :: kind :: size :: rest =>
+                if (rel == "root") None
+                else Some(Entry.Entry(rel, abs, measuredOf(kind, targetOf(rest)), parseSize(size)))
             case _ => None
         }
 
-    /// Read every readable record. Secret, skipped and escaping-symlink records
-    /// carry no readable path, so their content is never loaded.
-    pub def load(records: List[Record]): List[(Record, String)] \ FileRead =
-        List.map(r -> (r, readText(r)), records)
+    /// The largest file the evaluator reads; anything larger stays metadata.
+    pub def maxTextBytes(): Int32 = 1048576
 
-    def readText(r: Record): String \ FileRead =
-        if (String.isEmpty(recordRead(r))) ""
-        else Result.getWithDefault("", FileRead.read(recordRead(r)))
+    /// True only for a regular, non-secret, non-protected, non-excluded,
+    /// non-reference entry within the size bound. This is the one place that
+    /// decides whether content may be read, so a secret or preserved user-work
+    /// path is never opened.
+    pub def readable(e: Entry): Bool =
+        let path = entryPath(e);
+        match entryMeasured(e) {
+            case Measured.Link(_) => false
+            case Measured.Regular =>
+                not (isSecretPath(path) or isExcludedPath(path) or isReferencePath(path))
+                    and entrySize(e) <= maxTextBytes()
+        }
 
-    def pairRecord(p: (Record, String)): Record = match p { case (r, _) => r }
-    def pairText(p: (Record, String)): String = match p { case (_, t) => t }
+    def readEntry(e: Entry): String \ FileRead =
+        if (readable(e)) Result.getWithDefault("", FileRead.read(entryAbs(e))) else ""
+
+    /// Read the manifest and the content of every readable entry it records.
+    /// The manifest itself carries no content, so this is the first read.
+    pub def readWorld(manifestPath: String): (String, List[(Entry, String)]) \ FileRead =
+        let text = Result.getWithDefault("", FileRead.read(manifestPath));
+        let lines = String.lines(text);
+        let entries = List.filterMap(parseEntry, lines);
+        (rootLine(lines), List.map(e -> (e, readEntry(e)), entries))
+
+    /// The same read as one IO action, so a native test can call it and still
+    /// assert with its own `Assert` effect at the top level.
+    pub def readWorldIO(manifestPath: String): (String, List[(Entry, String)]) \ IO =
+        FileRead.runWithIO(_unit -> readWorld(manifestPath))
+
+    def pairEntry(p: (Entry, String)): Entry = match p { case (e, _) => e }
+    def pairText(p: (Entry, String)): String = match p { case (_, t) => t }
 
     // ------------------------------------------------------------- findings
 
@@ -443,8 +493,6 @@ pub mod Attune.Policy {
     def requiredDocs(): List[String] =
         "README.md" :: "AGENTS.md" :: "DESIGN.md" :: "PROVENANCE.md" :: "LICENSE"
             :: "BUILD.bazel" :: "MODULE.bazel" :: Nil
-
-    def hasFlag(flags: List[String], flag: String): Bool = List.memberOf(flag, flags)
 
     def suffixFindings(path: String): List[Finding] =
         if (isForbiddenSuffix(path) and not isAdmittedForeign(path))
@@ -472,13 +520,14 @@ pub mod Attune.Policy {
         else if (isAdmittedForeign(path)) Nil
         else Finding.Finding("unapproved-root", path, "authored source outside the approved source roots") :: Nil
 
-    def fileFindings(r: Record, text: String): List[Finding] =
-        let path = recordPath(r);
-        if (recordKind(r) == Kind.Secret)
+    def fileFindings(e: Entry, text: String): List[Finding] =
+        let path = entryPath(e);
+        if (isSecretPath(path))
             if (String.isEmpty(text))
                 Nil
             else
                 Finding.Finding("secret-content", path, "a secret path must stay metadata only") :: Nil
+        else if (isProtectedUserWork(path)) Nil
         else if (isReferencePath(path))
             Finding.Finding("reference-source", path, "the read-only reference checkout is never parent source") :: Nil
         else if (isExcludedPath(path)) Nil
@@ -488,63 +537,69 @@ pub mod Attune.Policy {
             rootFindings(path) ::: suffixFindings(path) ::: contentFindings(path, lang, code)
         }
 
-    def buildTexts(loaded: List[(Record, String)]): List[String] =
-        List.filterMap(p -> if (isBuildFile(recordPath(pairRecord(p)))) Some(pairText(p)) else None, loaded)
+    def buildTexts(loaded: List[(Entry, String)]): List[String] =
+        List.filterMap(p -> if (isBuildFile(entryPath(pairEntry(p)))) Some(pairText(p)) else None, loaded)
 
     def isOrphanCandidate(path: String): Bool =
-        not isExcludedPath(path) and not isBuildFile(path)
+        not isExcludedPath(path) and not isReferencePath(path) and not isBuildFile(path)
             and (hasSuffix(".flix", path) or hasSuffix(".java", path) or hasSuffix(".bzl", path)
                  or hasSuffix(".grit", path) or hasSuffix(".rb", path))
 
-    def orphanFindings(loaded: List[(Record, String)]): List[Finding] =
+    def orphanFindings(loaded: List[(Entry, String)]): List[Finding] =
         let blob = List.join("\n", buildTexts(loaded));
         List.filterMap(p -> orphanOne(blob, p), loaded)
 
-    def orphanOne(blob: String, p: (Record, String)): Option[Finding] =
-        let path = recordPath(pairRecord(p));
+    def orphanOne(blob: String, p: (Entry, String)): Option[Finding] =
+        let path = entryPath(pairEntry(p));
         if (isOrphanCandidate(path) and not hasInfix(basename(path), blob))
             Some(Finding.Finding("orphaned-source", path, "no BUILD file in this workspace admits this source"))
         else None
 
-    def nestedBuildFindings(loaded: List[(Record, String)]): List[Finding] =
-        List.filterMap(p -> nestedOne(pairRecord(p), pairText(p)), loaded)
+    def nestedBuildFindings(loaded: List[(Entry, String)]): List[Finding] =
+        List.filterMap(p -> nestedOne(pairEntry(p), pairText(p)), loaded)
 
-    def nestedOne(r: Record, text: String): Option[Finding] =
-        let path = recordPath(r);
+    def nestedOne(e: Entry, text: String): Option[Finding] =
+        let path = entryPath(e);
         if (isBuildFile(path) and List.exists(l -> hasInfix("..", l), quotedLiterals(text)))
             Some(Finding.Finding("nested-build-escape", path, "a BUILD source entry escapes its own package directory"))
         else None
 
-    def symlinkFindings(loaded: List[(Record, String)]): List[Finding] =
-        List.filterMap(p -> symlinkOne(pairRecord(p)), loaded)
+    /// A symbolic link whose resolved target leaves the audited root escapes it.
+    def symlinkFindings(root: String, loaded: List[(Entry, String)]): List[Finding] =
+        List.filterMap(p -> symlinkOne(root, pairEntry(p)), loaded)
 
-    def symlinkOne(r: Record): Option[Finding] =
-        let path = recordPath(r);
-        if (recordKind(r) == Kind.Symlink and hasFlag(recordFlags(r), "escape"))
-            Some(Finding.Finding("symlink-escape", path, "a symbolic link resolves outside the audited workspace"))
-        else None
+    def symlinkOne(root: String, e: Entry): Option[Finding] =
+        let path = entryPath(e);
+        if (isExcludedPath(path) or isReferencePath(path)) None
+        else match entryMeasured(e) {
+            case Measured.Link(target) =>
+                let outside = String.isEmpty(target) or not (target == root or hasPrefix(root + "/", target));
+                if (outside) Some(Finding.Finding("symlink-escape", path, "a symbolic link resolves outside the audited workspace"))
+                else None
+            case Measured.Regular => None
+        }
 
-    def ignoredFindings(loaded: List[(Record, String)]): List[Finding] =
+    def ignoredFindings(loaded: List[(Entry, String)]): List[Finding] =
         let blob = List.join("\n", buildTexts(loaded));
         List.filterMap(p -> ignoredOne(blob, p), loaded)
 
-    def ignoredOne(blob: String, p: (Record, String)): Option[Finding] =
-        let r = pairRecord(p);
-        let path = recordPath(r);
+    def ignoredOne(blob: String, p: (Entry, String)): Option[Finding] =
+        let e = pairEntry(p);
+        let path = entryPath(e);
         let code = codeText(languageOf(path), pairText(p));
         let forbidden = isForbiddenSuffix(path) or containsAny(shellTokens() ::: httpTokens(), code);
         if (forbidden and not isAdmittedForeign(path) and not isExcludedPath(path)
-               and not hasInfix(basename(path), blob))
+               and not isReferencePath(path) and not hasInfix(basename(path), blob))
             Some(Finding.Finding("ignored-forbidden", path, "a forbidden file is present in the live workspace but no build admits it"))
         else None
 
-    def docFindings(loaded: List[(Record, String)]): List[Finding] =
-        let present = List.map(p -> recordPath(pairRecord(p)), loaded);
+    def docFindings(loaded: List[(Entry, String)]): List[Finding] =
+        let present = List.map(p -> entryPath(pairEntry(p)), loaded);
         let missing = List.filterMap(d -> if (List.memberOf(d, present)) None else Some(Finding.Finding("required-doc", d, "required core documentation is missing")), requiredDocs());
         missing ::: List.flatMap(p -> commentFindings(p), loaded)
 
-    def commentFindings(p: (Record, String)): List[Finding] =
-        let path = recordPath(pairRecord(p));
+    def commentFindings(p: (Entry, String)): List[Finding] =
+        let path = entryPath(pairEntry(p));
         if (hasPrefix("src/", path) and hasSuffix(".flix", path))
             checkPubMods(path, Nil, String.lines(pairText(p)), Nil)
         else Nil
@@ -581,24 +636,24 @@ pub mod Attune.Policy {
         Language.Flix :: Language.Java :: Language.Starlark :: Language.Grit :: Language.Ruby
             :: Language.Nix :: Language.Markdown :: Language.Other :: Nil
 
-    pub def rowOf(loaded: List[(Record, String)], role: Role, lang: Language): (Int32, Counts) =
+    pub def rowOf(loaded: List[(Entry, String)], role: Role, lang: Language): (Int32, Counts) =
         List.foldLeft((acc, p) -> addToRow(acc, p, role, lang), (0, zeroCounts()), loaded)
 
-    def addToRow(acc: (Int32, Counts), p: (Record, String), role: Role, lang: Language): (Int32, Counts) =
-        let path = recordPath(pairRecord(p));
-        if (recordKind(pairRecord(p)) == Kind.Secret or recordKind(pairRecord(p)) == Kind.Skipped)
+    def addToRow(acc: (Int32, Counts), p: (Entry, String), role: Role, lang: Language): (Int32, Counts) =
+        let e = pairEntry(p);
+        if (not readable(e))
             acc
-        else if (roleOf(path) == role and languageOf(path) == lang)
+        else if (roleOf(entryPath(e)) == role and languageOf(entryPath(e)) == lang)
             (rowFiles(acc) + 1, addCounts(rowCounts(acc), countLines(lang, pairText(p))))
         else acc
 
     def rowFiles(p: (Int32, Counts)): Int32 = match p { case (n, _) => n }
     def rowCounts(p: (Int32, Counts)): Counts = match p { case (_, c) => c }
 
-    pub def rows(loaded: List[(Record, String)]): List[(Role, Language, Int32, Counts)] =
+    pub def rows(loaded: List[(Entry, String)]): List[(Role, Language, Int32, Counts)] =
         List.flatMap(role -> List.map(lang -> (role, lang, rowFiles(rowOf(loaded, role, lang)), rowCounts(rowOf(loaded, role, lang))), languages()), roles())
 
-    pub def roleCode(loaded: List[(Record, String)], role: Role): Int32 =
+    pub def roleCode(loaded: List[(Entry, String)], role: Role): Int32 =
         List.foldLeft((acc, row) -> acc + rowCodeFor(row, role), 0, rows(loaded))
 
     def rowCodeFor(row: (Role, Language, Int32, Counts), role: Role): Int32 =
@@ -606,7 +661,17 @@ pub mod Attune.Policy {
             case (r, _, _, c) => if (r == role) codeOf(c) else 0
         }
 
-    def budgetFindings(loaded: List[(Record, String)]): List[Finding] =
+    /// Test-only proposal source is reported separately from ordinary tests, so
+    /// the two budgets are never silently merged.
+    pub def proposalCode(loaded: List[(Entry, String)]): Int32 =
+        List.foldLeft((acc, p) -> {
+            let path = entryPath(pairEntry(p));
+            if (hasPrefix("test/proposals/", path) and readable(pairEntry(p)))
+                acc + codeOf(countLines(languageOf(path), pairText(p)))
+            else acc
+        }, 0, loaded)
+
+    def budgetFindings(loaded: List[(Entry, String)]): List[Finding] =
         let shared = roleCode(loaded, Role.Shared);
         let test = roleCode(loaded, Role.Fixture);
         let overShared =
@@ -619,33 +684,34 @@ pub mod Attune.Policy {
             else Nil;
         overShared ::: overTest
 
-    pub def evaluate(mode: String, loaded: List[(Record, String)]): (List[Finding], List[(Role, Language, Int32, Counts)]) =
-        let perFile = List.flatMap(p -> fileFindings(pairRecord(p), pairText(p)), loaded);
+    pub def evaluate(mode: String, root: String, loaded: List[(Entry, String)]): (List[Finding], List[(Role, Language, Int32, Counts)]) =
+        let perFile = List.flatMap(p -> fileFindings(pairEntry(p), pairText(p)), loaded);
         let docs = docFindings(loaded);
-        let audit = if (mode == "audit") ignoredFindings(loaded) ::: orphanFindings(loaded) ::: nestedBuildFindings(loaded) ::: symlinkFindings(loaded) else Nil;
+        let audit = if (mode == "audit") ignoredFindings(loaded) ::: orphanFindings(loaded) ::: nestedBuildFindings(loaded) ::: symlinkFindings(root, loaded) else Nil;
         let findings = perFile ::: docs ::: audit;
         let complete = findings ::: budgetFindings(loaded);
         (complete, rows(loaded))
 
+    /// The single verdict string the report prints and the tests assert.
+    pub def verdictName(findings: List[Finding]): String =
+        if (List.isEmpty(findings)) "accept" else "reject"
+
     // ---------------------------------------------------------------- output
 
-    def printFinding(f: Finding): Unit \ Console =
-        Console.println("attune-policy-finding rule=" + ruleOf(f) + " path=" + pathOf(f) + " message=" + messageOf(f))
+    def findingLine(f: Finding): String =
+        "attune-policy-finding rule=" + ruleOf(f) + " path=" + pathOf(f) + " message=" + messageOf(f)
 
-    def printFindings(findings: List[Finding]): Unit \ Console =
-        List.forEach(f -> printFinding(f), findings)
-
-    def printRow(row: (Role, Language, Int32, Counts)): Unit \ Console =
+    def rowLine(row: (Role, Language, Int32, Counts)): Option[String] =
         match row {
             case (role, lang, files, c) =>
                 if (files > 0)
-                    Console.println("attune-policy-count role=" + roleName(role) + " language=" + langName(lang)
+                    Some("attune-policy-count role=" + roleName(role) + " language=" + langName(lang)
                         + " files=" + "${files}" + " code=" + "${codeOf(c)}" + " comment=" + "${commentOf(c)}"
                         + " doc=" + "${docOf(c)}" + " blank=" + "${blankOf(c)}")
-                else ()
+                else None
         }
 
-    def roleName(role: Role): String =
+    pub def roleName(role: Role): String =
         match role {
             case Role.Shared => "shared"
             case Role.Declarative => "declarative"
@@ -655,7 +721,7 @@ pub mod Attune.Policy {
             case Role.Excluded => "excluded"
         }
 
-    def langName(lang: Language): String =
+    pub def langName(lang: Language): String =
         match lang {
             case Language.Flix => "flix"
             case Language.Java => "java"
@@ -667,45 +733,18 @@ pub mod Attune.Policy {
             case Language.Other => "other"
         }
 
-    def printBudget(loaded: List[(Record, String)]): Unit \ Console =
-        Console.println("attune-policy-budget shared_code=" + "${roleCode(loaded, Role.Shared)}"
+    def budgetLine(loaded: List[(Entry, String)]): String =
+        "attune-policy-budget shared_code=" + "${roleCode(loaded, Role.Shared)}"
             + " shared_target=" + "${sharedTarget()}"
             + " proposal_code=" + "${proposalCode(loaded)}"
             + " proposal_line_target=" + "${proposalTarget()}"
             + " test_code=" + "${roleCode(loaded, Role.Fixture)}"
-            + " test_target=" + "${testTarget()}")
+            + " test_target=" + "${testTarget()}"
 
-    /// Test-only proposal source is reported separately from ordinary tests, so
-    /// the two budgets are never silently merged.
-    pub def proposalCode(loaded: List[(Record, String)]): Int32 =
-        List.foldLeft((acc, p) -> {
-            let path = recordPath(pairRecord(p));
-            if (hasPrefix("test/proposals/", path))
-                acc + codeOf(countLines(languageOf(path), pairText(p)))
-            else acc
-        }, 0, loaded)
-
-    // ------------------------------------------------------------------ entry
-
-    pub def check(): Unit \ IO =
-        Env.runWithIO(_unit1 -> Console.runWithIO(_unit2 -> FileRead.runWithIO(_unit3 -> runPolicy())))
-
-    def runPolicy(): Unit \ {Env, Console, FileRead} =
-        match Env.getArgs() {
-            case mode :: recordsPath :: Nil =>
-                let text = Result.getWithDefault("", FileRead.read(recordsPath));
-                let records = List.filterMap(parseRecord, String.lines(text));
-                let loaded = load(records);
-                let (findings, counts) = evaluate(mode, loaded);
-                printFindings(findings);
-                List.forEach(row -> printRow(row), counts);
-                printBudget(loaded);
-                if (List.isEmpty(findings))
-                    Console.println("attune-policy-verdict: accept")
-                else
-                    Console.println("attune-policy-verdict: reject")
-            case _ =>
-                Console.println("attune-policy-finding rule=usage path=- message=expected <declared|audit> <records>");
-                Console.println("attune-policy-verdict: reject")
-        }
+    /// The whole report as text: findings, the count table, the budgets and the
+    /// verdict. Formatting lives here; the mechanical test only prints it.
+    pub def renderReport(findings: List[Finding], counts: List[(Role, Language, Int32, Counts)], loaded: List[(Entry, String)]): String =
+        let rows = List.filterMap(rowLine, counts);
+        let tail = budgetLine(loaded) :: ("attune-policy-verdict: " + verdictName(findings)) :: Nil;
+        List.join("\n", List.map(findingLine, findings) ::: rows ::: tail)
 }

@@ -1,77 +1,85 @@
-use Attune.Policy
+use Attune.Policy.{Language, countLines, codeOf, commentOf, docOf, blankOf, codeText}
 
 /// Honest-count laws for the compact Attune policy.
 ///
-/// These are compiled with the policy's own pure counting functions and then
-/// executed under the isolated runtime, so the counting rules are enforced by
-/// real assertions rather than described in prose: a comment-only change cannot
-/// move the code count, a trailing comment or a comment-like string still
-/// counts as code, a recognised Starlark docstring is documentation, and a
-/// documented mention of a forbidden token is not embedded executable code.
-def main(): Unit \ {IO, Assert} = {
-    // Comment-only changes leave the code count unchanged.
+/// These run as native Flix tests against the policy's own pure counting
+/// functions, so the counting rules are enforced by real assertions rather than
+/// described in prose: a comment-only change cannot move the code count, a
+/// trailing comment or a comment-like string still counts as code, a recognised
+/// Starlark docstring is documentation, and a documented mention of a forbidden
+/// token is not embedded executable code.
+
+@Test
+def commentOnlyChangesLeaveCodeCountUnchanged(): Unit \ Assert = {
     let before = "let x = 1;\nlet y = 2;\n";
     let after = "// why x\nlet x = 1;\n/* why y */\nlet y = 2;\n";
-    Assert.assertEq(expected = 2, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, before)));
-    Assert.assertEq(expected = 2, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, after)));
-    Assert.assertEq(expected = 2, Attune.Policy.commentOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, after)));
+    Assert.assertEq(expected = 2, codeOf(countLines(Language.Flix, before)));
+    Assert.assertEq(expected = 2, codeOf(countLines(Language.Flix, after)));
+    Assert.assertEq(expected = 2, commentOf(countLines(Language.Flix, after)))
+}
 
-    // A trailing comment is code, not a comment-only line.
+@Test
+def trailingCommentAndCommentLikeStringStillCount(): Unit \ Assert = {
     let trailing = "let x = 1; // note\n";
-    Assert.assertEq(expected = 1, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, trailing)));
-    Assert.assertEq(expected = 0, Attune.Policy.commentOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, trailing)));
+    Assert.assertEq(expected = 1, codeOf(countLines(Language.Flix, trailing)));
+    Assert.assertEq(expected = 0, commentOf(countLines(Language.Flix, trailing)));
 
-    // A comment-like string is code.
     let stringy = "let url = \"a//b\";\n";
-    Assert.assertEq(expected = 1, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, stringy)));
-    Assert.assertEq(expected = 0, Attune.Policy.commentOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, stringy)));
+    Assert.assertEq(expected = 1, codeOf(countLines(Language.Flix, stringy)));
+    Assert.assertEq(expected = 0, commentOf(countLines(Language.Flix, stringy)))
+}
 
-    // A multi-line block comment is commented, not coded.
+@Test
+def blockCommentsAndJavadocAreNotCode(): Unit \ Assert = {
     let blocked = "/*\n * explanation\n */\n";
-    Assert.assertEq(expected = 0, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, blocked)));
-    Assert.assertEq(expected = 3, Attune.Policy.commentOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, blocked)));
+    Assert.assertEq(expected = 0, codeOf(countLines(Language.Flix, blocked)));
+    Assert.assertEq(expected = 3, commentOf(countLines(Language.Flix, blocked)));
 
-    // A Java javadoc block is documentation, not code.
     let javadoc = "/**\n * Documents a file.\n */\n";
-    Assert.assertEq(expected = 0, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Java, javadoc)));
-    Assert.assertEq(expected = 3, Attune.Policy.docOf(Attune.Policy.countLines(Attune.Policy.Language.Java, javadoc)));
+    Assert.assertEq(expected = 0, codeOf(countLines(Language.Java, javadoc)));
+    Assert.assertEq(expected = 3, docOf(countLines(Language.Java, javadoc)))
+}
 
-    // A recognised Starlark module docstring is documentation; a triple-quoted
-    // string used as a value stays code.
+@Test
+def starlarkDocstringsAreDocumentation(): Unit \ Assert = {
     let docstring = "\"\"\"A rule module.\nStill the docstring.\n\"\"\"\ndef f():\n    return 1\n";
-    Assert.assertEq(expected = 2, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Starlark, docstring)));
-    Assert.assertEq(expected = 3, Attune.Policy.docOf(Attune.Policy.countLines(Attune.Policy.Language.Starlark, docstring)));
+    Assert.assertEq(expected = 2, codeOf(countLines(Language.Starlark, docstring)));
+    Assert.assertEq(expected = 3, docOf(countLines(Language.Starlark, docstring)));
 
     let value = "x = \"\"\"value\nvalue\"\"\"\n";
-    Assert.assertEq(expected = 2, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Starlark, value)));
+    Assert.assertEq(expected = 2, codeOf(countLines(Language.Starlark, value)))
+}
 
-    // Blank lines are counted separately from code.
+@Test
+def blankLinesAreCountedSeparately(): Unit \ Assert = {
     let spaced = "let x = 1;\n\nlet y = 2;\n";
-    Assert.assertEq(expected = 2, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, spaced)));
-    Assert.assertEq(expected = 1, Attune.Policy.blankOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, spaced)));
+    Assert.assertEq(expected = 2, codeOf(countLines(Language.Flix, spaced)));
+    Assert.assertEq(expected = 1, blankOf(countLines(Language.Flix, spaced)))
+}
 
-    // Prose in a markdown file is documentation rather than code, and an
-    // apostrophe in it is not a string literal: an unbalanced quote must never
-    // silence the lines that follow it, because silencing them is how a count
-    // hides content instead of reporting it.
+@Test
+def markdownProseIsDocumentationNotCode(): Unit \ Assert = {
+    // An apostrophe in prose is not a string literal: an unbalanced quote must
+    // never silence the lines that follow it, because silencing them is how a
+    // count hides content instead of reporting it.
     let prose = "# Title\n\nIt's prose.\n\nMore prose.\n";
-    Assert.assertEq(expected = 0, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Markdown, prose)));
-    Assert.assertEq(expected = 3, Attune.Policy.docOf(Attune.Policy.countLines(Attune.Policy.Language.Markdown, prose)));
-    Assert.assertEq(expected = 2, Attune.Policy.blankOf(Attune.Policy.countLines(Attune.Policy.Language.Markdown, prose)));
+    Assert.assertEq(expected = 0, codeOf(countLines(Language.Markdown, prose)));
+    Assert.assertEq(expected = 3, docOf(countLines(Language.Markdown, prose)));
+    Assert.assertEq(expected = 2, blankOf(countLines(Language.Markdown, prose)))
+}
 
-    // A shell-style comment in a dotfile is a comment, not code, while the
-    // unbalanced apostrophes around it still leave every real line counted.
+@Test
+def dotfileCommentsAreCommentsNotCode(): Unit \ Assert = {
     let dotfile = "# one job only\nbuild --jobs=1\nkey = 'a\nkey = 'b\n";
-    Assert.assertEq(expected = 3, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Other, dotfile)));
-    Assert.assertEq(expected = 1, Attune.Policy.commentOf(Attune.Policy.countLines(Attune.Policy.Language.Other, dotfile)));
-    Assert.assertEq(expected = 0, Attune.Policy.blankOf(Attune.Policy.countLines(Attune.Policy.Language.Other, dotfile)));
+    Assert.assertEq(expected = 3, codeOf(countLines(Language.Other, dotfile)));
+    Assert.assertEq(expected = 1, commentOf(countLines(Language.Other, dotfile)));
+    Assert.assertEq(expected = 0, blankOf(countLines(Language.Other, dotfile)))
+}
 
-    // A documented mention of a forbidden token is not embedded executable
-    // code, so comment stripping is what keeps the content rule honest.
+@Test
+def documentedForbiddenTokenIsNotEmbeddedCode(): Unit \ Assert = {
     let token = "run" + "_" + "shell";
     let mention = "// " + token + " is forbidden here\nlet x = 1;\n";
-    Assert.assertFalse(String.contains(substr = token, Attune.Policy.codeText(Attune.Policy.Language.Flix, mention)));
-    Assert.assertEq(expected = 1, Attune.Policy.codeOf(Attune.Policy.countLines(Attune.Policy.Language.Flix, mention)));
-
-    println("policy-count-law-ok")
+    Assert.assertFalse(String.contains(substr = token, codeText(Language.Flix, mention)));
+    Assert.assertEq(expected = 1, codeOf(countLines(Language.Flix, mention)))
 }
