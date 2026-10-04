@@ -14,7 +14,31 @@ http_jar(
 )
 
 bazel_dep(name = "rules_java", version = "9.9.0")
+bazel_dep(name = "rules_jvm_external", version = "7.1")
 bazel_dep(name = "platforms", version = "1.1.0")
+
+# The approved typed JVM seams: the LangChain4j 1.18.1 SDK path (with its
+# pinned Jackson 2.22.1) and the Arrow 19.0.0 Dataset/Parquet codec. These are
+# declared engineering dependencies, never a live provider, dataset or
+# credential. They are resolved by the ordinary package-provisioning step; the
+# test actions themselves make no network call.
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "attune_maven",
+    artifacts = [
+        "com.fasterxml.jackson.core:jackson-databind:2.22.1",
+        "dev.langchain4j:langchain4j-core:1.18.1",
+        "dev.langchain4j:langchain4j-http-client:1.18.1",
+        "dev.langchain4j:langchain4j-http-client-jdk:1.18.1",
+        "dev.langchain4j:langchain4j-open-ai:1.18.1",
+        "org.apache.arrow:arrow-dataset:19.0.0",
+        "org.apache.arrow:arrow-memory-unsafe:19.0.0",
+        "org.slf4j:slf4j-nop:2.0.18",
+    ],
+    lock_file = "//:maven_install.json",
+    repositories = ["https://repo1.maven.org/maven2"],
+)
+use_repo(maven, "attune_maven")
 
 # The declared isolation tool: pinned util-linux `unshare` and its runtime
 # closure, resolved from the Nix developer shell PATH (never a hardcoded

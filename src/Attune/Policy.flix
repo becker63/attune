@@ -174,7 +174,8 @@ pub mod Attune.Policy {
     pub def isRootMetadata(path: String): Bool =
         path == "README.md" or path == "AGENTS.md" or path == "DESIGN.md" or path == "PROVENANCE.md"
             or path == "LICENSE" or path == "BUILD.bazel" or path == "MODULE.bazel"
-            or path == "MODULE.bazel.lock" or path == ".bazelrc" or path == ".bazelversion"
+            or path == "MODULE.bazel.lock" or path == "maven_install.json"
+            or path == ".bazelrc" or path == ".bazelversion"
             or path == ".gitignore" or path == ".bazelignore" or path == "flake.nix" or path == "flake.lock"
 
     pub def isBuildFile(path: String): Bool =

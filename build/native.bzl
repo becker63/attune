@@ -39,6 +39,47 @@ def native_flix_test(name, srcs, size = "small", tags = [], data = []):
     """Run explicit declared Flix `@Test` declarations in the pinned namespace."""
     _native_test(name, srcs, ["-Dattune.mode=native"], [], size, tags, data)
 
+def _java_jar_manifest_impl(ctx):
+    jars = depset(transitive = [
+        dependency[JavaInfo].transitive_runtime_jars
+        for dependency in ctx.attr.deps
+    ]).to_list()
+    out = ctx.actions.declare_file(ctx.label.name + ".jars.txt")
+    ctx.actions.write(out, "\n".join([jar.short_path for jar in jars]) + "\n")
+    return [DefaultInfo(
+        files = depset([out]),
+        runfiles = ctx.runfiles(files = jars),
+    )]
+
+java_jar_manifest = rule(
+    implementation = _java_jar_manifest_impl,
+    doc = "Write the transitive runtime jar runfiles paths of a Java dependency set.",
+    attrs = {"deps": attr.label_list(providers = [JavaInfo])},
+)
+
+def native_flix_java_test(name, srcs, java_deps, size = "small", tags = [], data = []):
+    """Run native Flix `@Test` declarations against explicit prepared JVM jars.
+
+    The declared Flix sources are compiled and executed by the pinned compiler's
+    authentic native test engine with the dependency jars passed explicitly as
+    the compiler's class path. No `flix.toml` project is synthesized and no
+    dependency resolver runs; this is the explicit source/dependency route.
+    """
+    manifest = name + "_jars"
+    java_jar_manifest(name = manifest, deps = java_deps)
+    _native_test(
+        name,
+        srcs,
+        [
+            "-Dattune.mode=java",
+            "-Dattune.jars=$(rlocationpath :%s)" % manifest,
+        ],
+        [":" + manifest],
+        size,
+        tags,
+        data,
+    )
+
 def native_flix_reject_test(name, srcs, expected, size = "small", tags = []):
     """Require the pinned compiler to reject an isolated invalid fixture.
 

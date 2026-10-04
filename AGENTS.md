@@ -17,6 +17,10 @@ repository-side policy an agent must follow while changing this tree.
 - No application provider, MCP or live model call. No scientific data.
 - One Bazel owner at a time. The output base is outside the workspace
   (`services.yaml`); never run `bazel clean` or touch global caches.
+- JVM dependencies are pinned: `MODULE.bazel` declares the exact Maven
+  coordinates and `maven_install.json` pins every transitive artifact by
+  SHA-256. Never resolve an unpinned coordinate at test time, and never let the
+  resolver run outside the declared install.
 
 ## Source policy
 

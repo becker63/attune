@@ -62,12 +62,33 @@ public final class NativeLaunch {
                     new LinkedHashSet<>(splitList(System.getProperty("attune.skip", ""))));
         }
 
+        if (mode.equals("java")) {
+            List<String> jars = jarPaths();
+            List<String> command = new ArrayList<>();
+            command.add(unshare.toString());
+            command.addAll(List.of("--user", "--map-root-user", "--net", "--"));
+            command.add(java.toString());
+            command.add("--add-opens=java.base/java.nio=ALL-UNNAMED");
+            command.add("--enable-native-access=ALL-UNNAMED");
+            command.add("-cp");
+            command.add(innerClasspath(jars));
+            command.add("attune.tools.boundary.NativeInner");
+            command.add(work.toString());
+            command.add(flixJar.toString());
+            command.add(hostNetns());
+            command.add("java");
+            command.add(Integer.toString(jars.size()));
+            command.addAll(jars);
+            command.addAll(tests);
+            return launch(command, work);
+        }
+
         List<String> command = new ArrayList<>();
         command.add(unshare.toString());
         command.addAll(List.of("--user", "--map-root-user", "--net", "--"));
         command.add(java.toString());
         command.add("-cp");
-        command.add(innerClasspath());
+        command.add(innerClasspath(List.of()));
         command.add("attune.tools.boundary.NativeInner");
         command.add(work.toString());
         command.add(flixJar.toString());
@@ -126,15 +147,28 @@ public final class NativeLaunch {
     }
 
     /// The outer classpath, made absolute so the in-namespace step can resolve it
-    /// after the working directory changes.
-    private static String innerClasspath() {
+    /// after the working directory changes, plus any prepared dependency jars.
+    private static String innerClasspath(List<String> extra) {
         List<String> parts = new ArrayList<>();
         for (String entry : System.getProperty("java.class.path", "").split(File.pathSeparator)) {
             if (!entry.isBlank()) {
                 parts.add(Path.of(entry).toAbsolutePath().toString());
             }
         }
+        parts.addAll(extra);
         return String.join(File.pathSeparator, parts);
+    }
+
+    /// The prepared dependency jars named by the declared jar manifest.
+    private static List<String> jarPaths() throws IOException {
+        Path manifest = Runfiles.resolve(require("attune.jars"));
+        List<String> jars = new ArrayList<>();
+        for (String line : Files.readAllLines(manifest, StandardCharsets.UTF_8)) {
+            if (!line.isBlank()) {
+                jars.add(Runfiles.resolve(line.trim()).toString());
+            }
+        }
+        return jars;
     }
 
     private static Path workDir() throws IOException {

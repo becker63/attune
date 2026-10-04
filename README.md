@@ -16,7 +16,7 @@ services.yaml: test
 
 | Surface | Target | Status |
 | --- | --- | --- |
-| Public gate | `bazel test //...` | passes (7 tests) |
+| Public gate | `bazel test //...` | passes (9 tests) |
 | Shared envelope laws | `//test/spine:envelope_test` | passes; four native `@Test` laws over world, File/Symbol, frontier and atom identity |
 | Isolation boundary | `//test/spine:isolation_test` | passes; eight native `@Test` laws over the recorded kernel and environment facts, including a rejected unisolated host record and a missing-record fail-closed case |
 | Nominal compiler negative | `//test/spine:nominal_negative_test` | passes; the pinned compiler rejects the File/Symbol mix with `Unable to unify the types`, with no `main` |
@@ -25,6 +25,9 @@ services.yaml: test
 | Named policy cases | `//test/policy:policy_cases_test` | passes; twenty-one authored cases, defined in Flix, each reaching its exact verdict and rule |
 | Declared-source policy | `//test/policy:declared_source_policy_test` | passes; the Flix policy accepts exactly the declared authored population |
 | Live workspace audit | `//test/policy:workspace_audit_test` | passes; a normal, local, uncached test that re-reads the live root on every invocation and prunes exactly the Flix-declared boundaries |
+| Typed inference seam | `//test/seam:inference_seam_test` | passes; five native `@Test` laws that drive the real LangChain4j request builders and response decoders through a recorded fake transport, keeping request identity and classified failures |
+| Typed Parquet seam | `//test/seam:parquet_seam_test` | passes; two native `@Test` laws that write and read a tiny authored Arrow table with exact schema and values and reject a wrong schema |
+| Manual false assertion (JVM route) | `//test/seam:false_assertion_java_test` | tagged `manual`, so excluded from `//...`; fails with a real native assertion failure when run directly, proving the JVM-backed route reports failures |
 | Fresh parent projection | `services.yaml: projection_test` | builds and tests from a tracked-file projection with no child, secret or archive |
 
 ## How a fixture reaches a verdict
@@ -51,6 +54,39 @@ services.yaml: test
 5. **Keep negative verdicts honest.** `native_flix_reject_test` runs the pinned
    compiler's `check` on an intentionally invalid fixture and fails unless the
    compiler rejects it with the expected diagnostic and no `main` exists.
+6. **Reach JVM libraries without project resolution.** For the two JVM-backed
+   seams, `native_flix_java_test` declares the exact dependency jars, and
+   `tools/boundary/NativeTester.java` hands the explicit Flix files and those
+   jars to the pinned compiler's own `Tester` through the compiler API. No
+   `flix.toml`, no Coursier resolution and no fat JAR are involved; the tests
+   still run inside the same network-denied namespace as every other fixture.
+
+## The typed JVM seams
+
+Two narrow seams connect the pinned JVM libraries to Flix under the `IO` effect.
+Each returns a versioned JSON envelope with an explicit `status`, so no
+exception crosses the language boundary.
+
+- **LangChain4j embedding and decision.** `test/seam/AttuneInference.java` builds
+  real `EmbeddingRequest` and `ChatCompletionRequest` objects and decodes the
+  provider payload with the approved SDK decoders. A private recorded transport
+  serves a caller-supplied body and raises the SDK's own `HttpException` for a
+  non-2xx status, so no socket opens and no provider, endpoint or credential is
+  used. The envelope keeps the request identity (`model`, inputs, messages), the
+  decoded vectors or choices, the token usage, and a classified `kind` that
+  separates a request error, a decode error, an HTTP status and a provider error.
+  A failed response and an empty successful response are distinct.
+- **Arrow Dataset Parquet.** `src/native/parquet/AttuneParquet.java` keeps the
+  real Arrow Dataset JNI write and read. `writeTable` and `readTable` return the
+  same envelope shape, with `kind` classified as `schema`, `io` or `native`, and
+  a wrong physical schema is rejected as `schema`.
+
+No production model evidence, credential or scientific corpus enters these
+tests: the fixtures are tiny authored literals. `test/seam/Seam.flix` is the
+small typed Flix view the fixtures assert against: it classifies an envelope as
+`Outcome.Decoded(kind)` or `Outcome.Rejected(kind)`, so a transport failure, a
+decode failure and a schema rejection are distinct typed values rather than an
+ad-hoc string search.
 
 ## The shared nominal envelope
 
@@ -134,12 +170,16 @@ BuildBuddy, so it never requires a credential.
 build/native.bzl            native Flix test rules over explicit declared files
 build/workspace_root.bzl    the live workspace root, for the local audit test
 build/unshare_repository.bzl declared pinned unshare tool and closure
-tools/boundary/             minimal mechanical Java: manifest, probe, launcher
+tools/boundary/             minimal mechanical Java: manifest, probe, launcher, JVM test runner
 src/Attune/Envelope.flix    shared nominal world/File/Symbol/frontier/atom envelope
 src/Attune/Policy.flix      compact source, dependency, comment and LOC policy
 src/Attune/Isolation.flix   Flix-owned isolation assertions
+src/native/parquet/         typed Arrow Dataset Parquet codec behind a JSON envelope
 test/spine/                 envelope, isolation, false-assertion and compiler-negative fixtures
 test/policy/                counting laws, named cases, declared check and live audit
+test/seam/                  typed LangChain4j and Arrow Parquet seam fixtures
+MODULE.bazel                pinned Bazel modules and the pinned Maven install
+maven_install.json          exact transitive Maven artifacts and their SHA-256
 PROVENANCE.md               pins, origins and licenses
 AGENTS.md                   repository policy for agents
 DESIGN.md                   source map, pins and measured counts
@@ -147,11 +187,11 @@ DESIGN.md                   source map, pins and measured counts
 
 ## Deferred
 
-This bootstrap establishes only the build spine, the shared envelope and the
-policy surface. Not yet implemented, and deliberately out of scope here:
+This bootstrap establishes the build spine, the shared envelope, the policy
+surface and the two typed JVM seams. Not yet implemented, and deliberately out
+of scope here:
 
 - the retained native Grit frontends and Ruby dispatcher arm;
 - the canonical ASCII tree writer, route/proof/view projections;
-- the typed LangChain4j and Arrow Parquet seams;
 - the test-only proposals P01-P10 and their independent reviews;
 - any topology selection, cache ownership, real dataset or model experiment.
