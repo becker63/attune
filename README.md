@@ -22,9 +22,9 @@ services.yaml: test
 | Nominal compiler negative | `//test/spine:nominal_negative_test` | passes; the pinned compiler rejects the File/Symbol mix with `Unable to unify the types`, with no `main` |
 | Manual false assertion | `//test/spine:false_assertion_test` | tagged `manual`, so excluded from `//...`; fails with a real native assertion failure when run directly |
 | Honest counting laws | `//test/policy:count_law_test` | passes; eight native laws over comment-only, trailing-comment, comment-like-string and Starlark-docstring counting |
-| Named policy cases | `//test/policy:policy_cases_test` | passes; fourteen authored cases, defined in Flix, each reaching its exact verdict and rule |
+| Named policy cases | `//test/policy:policy_cases_test` | passes; twenty-one authored cases, defined in Flix, each reaching its exact verdict and rule |
 | Declared-source policy | `//test/policy:declared_source_policy_test` | passes; the Flix policy accepts exactly the declared authored population |
-| Live workspace audit | `//test/policy:workspace_audit_test` | passes; a normal, local, uncached test that re-reads the live root on every invocation |
+| Live workspace audit | `//test/policy:workspace_audit_test` | passes; a normal, local, uncached test that re-reads the live root on every invocation and prunes exactly the Flix-declared boundaries |
 | Fresh parent projection | `services.yaml: projection_test` | builds and tests from a tracked-file projection with no child, secret or archive |
 
 ## How a fixture reaches a verdict
@@ -101,6 +101,18 @@ content) and launches the pinned engine.
   symbolic link leaving the workspace are all detected on the next invocation.
   It records `.env` as metadata only and never reads it, and it never reads the
   preserved `repomix-output.xml` user-work bundle.
+- **Exact pruning, Flix-owned.** The walk applies no generic hidden-name rule,
+  so an arbitrary hidden directory (for example `.hidden/`) is reported like any
+  other and its forbidden content cannot disappear. It never enters a symbolic
+  link, and it prunes only the exact top-level boundaries Flix declares (the
+  reference checkout, `.git` and `.factory`). The walk reports the boundary set
+  it pruned, and a native test asserts it equals the Flix declaration, so Java
+  can never silently prune more or less.
+- **Fail-closed size interpretation.** A size that is malformed, negative or
+  outside the Int32 range is `Unusable`: it is reported as an `unusable-size`
+  finding and is never readable, so metadata that cannot be interpreted honestly
+  can never admit a file (including a `>2GiB` one) to a whole-file read. Normal
+  files keep their honest sizes and counts.
 
 The same evaluator counts code, comment, documentation and blank lines
 separately per role and language, and prints the whole table on every run.

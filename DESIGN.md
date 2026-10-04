@@ -48,7 +48,11 @@ Excluded from both surfaces by name, never by omission: the read-only reference
 checkout `attuneflix/`, VCS and agent tooling (`.git/`, `.factory/`), the Bazel
 output symlinks (`bazel-*`), the external mission archive
 (`ATTUNE_V2_BOOTSTRAP_MISSION_ALL_IN_ONE.md`) and the preserved user-work bundle
-(`repomix-output.xml`). `.env` is recorded as metadata only and never read.
+(`repomix-output.xml`). `.env` is recorded as metadata only and never read. The
+live walk prunes exactly those top-level directory boundaries (`.git`,
+`.factory`, `attuneflix`) and applies no hidden-name heuristic, so an arbitrary
+hidden directory stays visible to the audit; it reports the exact set it pruned
+and a native test asserts that set equals the Flix declaration.
 
 ## Two policy surfaces
 
@@ -61,7 +65,12 @@ output symlinks (`bazel-*`), the external mission archive
   so every invocation re-reads the live tree: a forbidden file added after a
   green run, an orphaned source, a BUILD entry escaping its package and a
   symbolic link leaving the workspace are all detected. The audit reports `.env`
-  as metadata only and never reads it.
+  as metadata only and never reads it. It prunes only the exact top-level
+  boundaries Flix declares, with no hidden-name heuristic, so an arbitrary
+  hidden directory is visible; the walk reports the pruned set and a native test
+  asserts it equals the declaration. A malformed, negative or out-of-Int32-range
+  size is `Unusable`, reported as `unusable-size` and never readable, so it can
+  never admit a `>2GiB` file to a whole-file read.
 
 ## Pins, origins and licenses
 
@@ -98,17 +107,17 @@ audit rather than trust a copied number:
 
 | Role | Language | Files | Code | Comment | Doc | Blank |
 | --- | --- | --- | --- | --- | --- | --- |
-| shared | flix | 4 | 605 | 12 | 140 | 195 |
-| shared | java | 5 | 360 | 4 | 54 | 40 |
+| shared | flix | 4 | 636 | 12 | 169 | 201 |
+| shared | java | 5 | 359 | 8 | 58 | 40 |
 | shared | starlark | 3 | 160 | 2 | 45 | 27 |
-| declarative | starlark | 9 | 223 | 58 | 0 | 39 |
-| fixture | flix | 8 | 308 | 5 | 59 | 62 |
+| declarative | starlark | 9 | 223 | 63 | 0 | 39 |
+| fixture | flix | 8 | 365 | 8 | 63 | 71 |
 | metadata | nix | 1 | 117 | 26 | 0 | 16 |
-| metadata | markdown | 4 | 0 | 0 | 359 | 74 |
+| metadata | markdown | 4 | 0 | 0 | 381 | 74 |
 | metadata | other | 7 | 531 | 27 | 0 | 42 |
 
-Shared implementation code totals 1,125 against the 2,000-line target, test code
-308 against 2,400, and test-only proposal code 0 against 1,500. Only the shared
+Shared implementation code totals 1,155 against the 2,000-line target, test code
+365 against 2,400, and test-only proposal code 0 against 1,500. Only the shared
 and test rows feed the budget. Markdown prose is documentation and only
 genuinely empty lines are blank. The markdown row was measured by the audit on
 the run immediately before this table was finalized, so editing this table moves

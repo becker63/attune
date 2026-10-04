@@ -9,7 +9,7 @@ use Attune.Policy.verdictName
 
 @Test
 def declaredSourcePopulationIsAccepted(): Unit \ { Assert, IO } = {
-    let (root, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
+    let (root, _, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
     let (findings, counts) = Attune.Policy.evaluate("declared", root, loaded);
     println(Attune.Policy.renderReport(findings, counts, loaded));
     Assert.assertEq(expected = "accept", verdictName(findings))
@@ -17,7 +17,7 @@ def declaredSourcePopulationIsAccepted(): Unit \ { Assert, IO } = {
 
 @Test
 def declaredPopulationCarriesTheCoreDocuments(): Unit \ { Assert, IO } = {
-    let (_, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
+    let (_, _, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
     Assert.assertEq(expected = true, List.exists(p -> path(p) == "README.md", loaded));
     Assert.assertEq(expected = true, List.exists(p -> path(p) == "DESIGN.md", loaded));
     Assert.assertEq(expected = true, List.exists(p -> path(p) == "src/Attune/Policy.flix", loaded))

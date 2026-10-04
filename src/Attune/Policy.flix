@@ -36,16 +36,26 @@ pub mod Attune.Policy {
         case Link(String)
     }
 
+    /// A measured byte size. `Bytes` is a non-negative size in the Int32 range;
+    /// `Unusable` carries the raw metadata text of a malformed, negative or
+    /// out-of-range size. An unusable size is never readable, so metadata that
+    /// cannot be interpreted honestly can never admit a file to a whole-file
+    /// read (a `>2GiB` size must not silently collapse to zero).
+    pub enum Size with Eq, ToString {
+        case Bytes(Int32)
+        case Unusable(String)
+    }
+
     /// One inventory record: root-relative path, absolute path, measured kind
     /// and the byte size reported as metadata.
     pub enum Entry with Eq {
-        case Entry(String, String, Measured, Int32)
+        case Entry(String, String, Measured, Size)
     }
 
     pub def entryPath(e: Entry): String = match e { case Entry.Entry(p, _, _, _) => p }
     pub def entryAbs(e: Entry): String = match e { case Entry.Entry(_, a, _, _) => a }
     pub def entryMeasured(e: Entry): Measured = match e { case Entry.Entry(_, _, m, _) => m }
-    pub def entrySize(e: Entry): Int32 = match e { case Entry.Entry(_, _, _, s) => s }
+    pub def entrySize(e: Entry): Size = match e { case Entry.Entry(_, _, _, s) => s }
 
     /// A first-party authored language, or the metadata bucket.
     pub enum Language with Eq, ToString {
@@ -428,6 +438,15 @@ pub mod Attune.Policy {
             case Nil => ""
         }
 
+    /// The exact top-level directories the live audit must never enter: the
+    /// read-only reference checkout, VCS metadata and agent tooling. This is the
+    /// whole prune set. The mechanical walk applies no name heuristic, so an
+    /// arbitrary hidden directory (for example `.hidden/`) stays visible and its
+    /// forbidden content is found; a native test asserts the walk's reported
+    /// boundary set equals this declaration, so Java can never silently prune
+    /// more source than Flix intends.
+    pub def protectedBoundaryNames(): List[String] = ".factory" :: ".git" :: "attuneflix" :: Nil
+
     /// The optional fifth field. A `-` placeholder means "no target", which is
     /// also what a dropped trailing empty field yields.
     def targetOf(rest: List[String]): String =
@@ -436,10 +455,33 @@ pub mod Attune.Policy {
             case Nil => ""
         }
 
+    def taggedValue(tag: String, line: String): Option[String] =
+        match String.split(regex = "\t", line) {
+            case t :: value :: _ => if (t == tag) Some(value) else None
+            case _ => None
+        }
+
+    /// The exact boundary names the mechanical walk reported it pruned. The
+    /// audit test compares this against `protectedBoundaryNames`, so a
+    /// divergence between the declared policy and the walk fails the gate.
+    pub def boundariesOf(lines: List[String]): List[String] =
+        match List.filterMap(l -> taggedValue("boundaries", l), lines) {
+            case raw :: _ => if (String.isEmpty(raw) or raw == "-") Nil else String.split(regex = ",", raw)
+            case Nil => Nil
+        }
+
     def measuredOf(kind: String, target: String): Measured =
         if (kind == "symlink") Measured.Link(target) else Measured.Regular
 
-    def parseSize(s: String): Int32 = Option.getWithDefault(0, Int32.fromString(s))
+    /// Interpret one size field honestly and fail closed: a malformed,
+    /// negative or out-of-Int32-range value becomes `Unusable` and is never
+    /// treated as zero or readable. Only a genuine non-negative size becomes
+    /// `Bytes`.
+    pub def parseSize(s: String): Size =
+        match Int32.fromString(s) {
+            case Some(n) => if (n < 0) Size.Unusable(s) else Size.Bytes(n)
+            case None => Size.Unusable(s)
+        }
 
     pub def parseEntry(line: String): Option[Entry] =
         match String.split(regex = "\t", line) {
@@ -452,33 +494,45 @@ pub mod Attune.Policy {
     /// The largest file the evaluator reads; anything larger stays metadata.
     pub def maxTextBytes(): Int32 = 1048576
 
+    /// A size is within the bound only when it was interpreted honestly. An
+    /// unusable size fails closed, so malformed, negative or out-of-range
+    /// metadata is never admitted to a whole-file read.
+    def sizeAtMost(size: Size, limit: Int32): Bool =
+        match size {
+            case Size.Bytes(n) => n <= limit
+            case Size.Unusable(_) => false
+        }
+
     /// True only for a regular, non-secret, non-protected, non-excluded,
-    /// non-reference entry within the size bound. This is the one place that
-    /// decides whether content may be read, so a secret or preserved user-work
-    /// path is never opened.
+    /// non-reference entry with an honest size within the bound. This is the
+    /// one place that decides whether content may be read, so a secret or
+    /// preserved user-work path is never opened and an unusable size is never
+    /// read as a whole file.
     pub def readable(e: Entry): Bool =
         let path = entryPath(e);
         match entryMeasured(e) {
             case Measured.Link(_) => false
             case Measured.Regular =>
                 not (isSecretPath(path) or isExcludedPath(path) or isReferencePath(path))
-                    and entrySize(e) <= maxTextBytes()
+                    and sizeAtMost(entrySize(e), maxTextBytes())
         }
 
     def readEntry(e: Entry): String \ FileRead =
         if (readable(e)) Result.getWithDefault("", FileRead.read(entryAbs(e))) else ""
 
     /// Read the manifest and the content of every readable entry it records.
-    /// The manifest itself carries no content, so this is the first read.
-    pub def readWorld(manifestPath: String): (String, List[(Entry, String)]) \ FileRead =
+    /// The manifest itself carries no content, so this is the first read. The
+    /// boundary names the mechanical walk reported are returned alongside the
+    /// root and the loaded entries.
+    pub def readWorld(manifestPath: String): (String, List[String], List[(Entry, String)]) \ FileRead =
         let text = Result.getWithDefault("", FileRead.read(manifestPath));
         let lines = String.lines(text);
         let entries = List.filterMap(parseEntry, lines);
-        (rootLine(lines), List.map(e -> (e, readEntry(e)), entries))
+        (rootLine(lines), boundariesOf(lines), List.map(e -> (e, readEntry(e)), entries))
 
     /// The same read as one IO action, so a native test can call it and still
     /// assert with its own `Assert` effect at the top level.
-    pub def readWorldIO(manifestPath: String): (String, List[(Entry, String)]) \ IO =
+    pub def readWorldIO(manifestPath: String): (String, List[String], List[(Entry, String)]) \ IO =
         FileRead.runWithIO(_unit -> readWorld(manifestPath))
 
     def pairEntry(p: (Entry, String)): Entry = match p { case (e, _) => e }
@@ -520,6 +574,18 @@ pub mod Attune.Policy {
         else if (isAdmittedForeign(path)) Nil
         else Finding.Finding("unapproved-root", path, "authored source outside the approved source roots") :: Nil
 
+    /// A regular entry whose size metadata could not be interpreted honestly is
+    /// reported and never read: malformed, negative or out-of-range metadata is
+    /// a defect, not a zero-size file. The `readable` predicate already refuses
+    /// to open it, so no oversized whole-file read can occur.
+    def sizeFindings(e: Entry): List[Finding] =
+        let path = entryPath(e);
+        match entrySize(e) {
+            case Size.Bytes(_) => Nil
+            case Size.Unusable(_) =>
+                Finding.Finding("unusable-size", path, "size metadata is malformed, negative or out of range, so the content is never read") :: Nil
+        }
+
     def fileFindings(e: Entry, text: String): List[Finding] =
         let path = entryPath(e);
         if (isSecretPath(path))
@@ -534,7 +600,7 @@ pub mod Attune.Policy {
         else {
             let lang = languageOf(path);
             let code = codeText(lang, text);
-            rootFindings(path) ::: suffixFindings(path) ::: contentFindings(path, lang, code)
+            rootFindings(path) ::: suffixFindings(path) ::: contentFindings(path, lang, code) ::: sizeFindings(e)
         }
 
     def buildTexts(loaded: List[(Entry, String)]): List[String] =

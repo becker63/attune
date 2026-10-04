@@ -53,6 +53,11 @@ native_flix_audit_test(
         "AuditLaw.flix",
     ],
     workspace_root = "@local_workspace//:workspace_root.txt",
-    skip = ["attuneflix"],
+    # The exact top-level boundaries the walk must never enter: agent tooling,
+    # VCS metadata and the read-only reference checkout. There is no generic
+    # hidden-name rule, so an arbitrary hidden directory stays visible to the
+    # audit. The Flix audit test asserts this set equals the policy's own
+    # declaration, so the two cannot drift apart silently.
+    skip = [".factory", ".git", "attuneflix"],
     data = ["//:policy_sources"],
 )

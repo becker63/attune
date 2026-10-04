@@ -1,4 +1,4 @@
-use Attune.Policy.{Entry, Finding, Measured, ruleOf}
+use Attune.Policy.{Entry, Finding, Measured, Size, ruleOf}
 
 /// The named policy cases, owned by Flix.
 ///
@@ -10,10 +10,10 @@ use Attune.Policy.{Entry, Finding, Measured, ruleOf}
 /// live with the evaluator instead of in a Java case runner.
 
 def entry(path: String, text: String): (Entry, String) =
-    (Entry.Entry(path, "/w/" + path, Measured.Regular, String.length(text)), text)
+    (Entry.Entry(path, "/w/" + path, Measured.Regular, Size.Bytes(String.length(text))), text)
 
 def link(path: String, target: String): (Entry, String) =
-    (Entry.Entry(path, "/w/" + path, Measured.Link(target), 0), "")
+    (Entry.Entry(path, "/w/" + path, Measured.Link(target), Size.Bytes(0)), "")
 
 def pairPath(p: (Entry, String)): String = match p { case (e, _) => Attune.Policy.entryPath(e) }
 
@@ -141,4 +141,63 @@ def admittedForeignExceptionsStayAdmissible(): Unit \ Assert = {
 def aNewRustAlgorithmIsNotAnAdmittedException(): Unit \ Assert = {
     let loaded = entry("src/Attune/Codec.rs", "fn main() {}\n") :: green();
     Assert.assertEq(expected = true, hasRule("forbidden-suffix", "declared", "", loaded))
+}
+
+@Test
+def hiddenDirectorySourceIsVisibleToTheAudit(): Unit \ Assert = {
+    // A generic hidden-directory skip used to make this invisible. Only the
+    // exact declared boundaries may prune, so an arbitrary hidden directory is
+    // reported like any other and its forbidden content is found.
+    let loaded = entry(".hidden/evil.sh", scriptFixture()) :: green();
+    Assert.assertEq(expected = true, hasRule("forbidden-suffix", "audit", "/w", loaded));
+    Assert.assertEq(expected = true, hasRule("ignored-forbidden", "audit", "/w", loaded))
+}
+
+@Test
+def protectedBoundaryContentIsNotAnalysed(): Unit \ Assert = {
+    let loaded = entry(".git/hooks/evil.sh", scriptFixture()) :: green();
+    Assert.assertEq(expected = true, List.isEmpty(findings("audit", "/w", loaded)))
+}
+
+@Test
+def everyProtectedBoundaryIsCoveredByTheExclusionPolicy(): Unit \ Assert = {
+    let covered = b ->
+        Attune.Policy.isExcludedPath(b + "/") or Attune.Policy.isReferencePath(b + "/");
+    Assert.assertEq(expected = true,
+        not List.exists(b -> not covered(b), Attune.Policy.protectedBoundaryNames()))
+}
+
+@Test
+def sizeParsingFailsClosed(): Unit \ Assert = {
+    Assert.assertEq(expected = Size.Bytes(0), Attune.Policy.parseSize("0"));
+    Assert.assertEq(expected = Size.Bytes(2147483647), Attune.Policy.parseSize("2147483647"));
+    Assert.assertEq(expected = Size.Unusable("2147483648"), Attune.Policy.parseSize("2147483648"));
+    Assert.assertEq(expected = Size.Unusable("-1"), Attune.Policy.parseSize("-1"));
+    Assert.assertEq(expected = Size.Unusable("not-a-number"), Attune.Policy.parseSize("not-a-number"))
+}
+
+@Test
+def oversizedMetadataIsNeverReadable(): Unit \ Assert = {
+    let e = Entry.Entry("src/Attune/Big.flix", "/w/src/Attune/Big.flix", Measured.Regular,
+        Attune.Policy.parseSize("2147483648"));
+    Assert.assertEq(expected = false, Attune.Policy.readable(e));
+    let loaded = (e, "") :: green();
+    Assert.assertEq(expected = true, hasRule("unusable-size", "declared", "", loaded))
+}
+
+@Test
+def malformedAndNegativeSizesAreNeverReadable(): Unit \ Assert = {
+    let negative = Entry.Entry("src/Attune/Neg.flix", "/w/src/Attune/Neg.flix", Measured.Regular,
+        Attune.Policy.parseSize("-1"));
+    let malformed = Entry.Entry("src/Attune/Bad.flix", "/w/src/Attune/Bad.flix", Measured.Regular,
+        Attune.Policy.parseSize("nope"));
+    Assert.assertEq(expected = false, Attune.Policy.readable(negative));
+    Assert.assertEq(expected = false, Attune.Policy.readable(malformed))
+}
+
+@Test
+def aNormalSizeStaysReadableAndCounted(): Unit \ Assert = {
+    let e = Entry.Entry("src/Attune/Small.flix", "/w/src/Attune/Small.flix", Measured.Regular,
+        Attune.Policy.parseSize("12"));
+    Assert.assertEq(expected = true, Attune.Policy.readable(e))
 }

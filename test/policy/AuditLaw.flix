@@ -10,7 +10,7 @@ use Attune.Policy.verdictName
 
 @Test
 def liveWorkspaceIsAccepted(): Unit \ { Assert, IO } = {
-    let (root, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
+    let (root, _, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
     let (findings, counts) = Attune.Policy.evaluate("audit", root, loaded);
     println(Attune.Policy.renderReport(findings, counts, loaded));
     Assert.assertEq(expected = "accept", verdictName(findings))
@@ -18,11 +18,25 @@ def liveWorkspaceIsAccepted(): Unit \ { Assert, IO } = {
 
 @Test
 def auditReadsTheLiveRootNotARunfilesTree(): Unit \ { Assert, IO } = {
-    let (root, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
+    let (root, _, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
     Assert.assertEq(expected = true, not String.isEmpty(root));
     Assert.assertEq(expected = true, List.exists(p -> path(p) == "MODULE.bazel", loaded));
     Assert.assertEq(expected = true, List.exists(p -> path(p) == "src/Attune/Policy.flix", loaded))
 }
+
+/// The mechanical walk must prune exactly the boundaries Flix declares. If the
+/// walk ever pruned more (for example an arbitrary hidden directory) or less
+/// (entering the reference checkout), this test fails, so the prune decision is
+/// Flix-owned rather than a Java name heuristic.
+@Test
+def auditPrunesExactlyTheDeclaredBoundaries(): Unit \ { Assert, IO } = {
+    let (_, boundaries, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
+    Assert.assertEq(expected = Attune.Policy.protectedBoundaryNames(), boundaries);
+    Assert.assertEq(expected = true, not List.exists(p -> underBoundary(boundaries, path(p)), loaded))
+}
+
+def underBoundary(boundaries: List[String], p: String): Bool =
+    List.exists(b -> String.startsWith(prefix = b + "/", p), boundaries)
 
 def path(p: (Attune.Policy.Entry, String)): String =
     match p { case (e, _) => Attune.Policy.entryPath(e) }

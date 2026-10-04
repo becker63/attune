@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Mechanical filesystem metadata boundary.
@@ -20,10 +21,14 @@ import java.util.Set;
  * path is never opened here; the Flix-owned evaluator decides which recorded
  * entries it may read and how they classify.
  *
- * <p>The audit walk is bounded mechanically: it never descends into a symbolic
- * link, into a hidden directory (VCS and agent tooling) or into a top-level
- * directory the caller names as a boundary. Everything else is reported so the
- * live tree cannot hide behind a stale inventory.
+ * <p>The audit walk is bounded mechanically and applies no name heuristic: it
+ * never descends into a symbolic link, and it never enters the exact top-level
+ * directory names the caller names as designated protected boundaries (the
+ * reference checkout, VCS metadata and agent tooling). It deliberately applies
+ * no dot-prefix rule, so an arbitrary hidden directory is reported like any
+ * other directory and its forbidden content cannot disappear from the live
+ * audit. The walk records the exact boundary names it pruned so the Flix
+ * evaluator can verify them against its own declaration.
  */
 final class Manifest {
     private Manifest() {}
@@ -51,6 +56,9 @@ final class Manifest {
         records.sort(Comparator.naturalOrder());
         List<String> lines = new ArrayList<>();
         lines.add("root\t" + realRoot);
+        // The exact prune set, reported so the Flix evaluator can assert it
+        // equals the boundary names the policy declares; Java decides nothing.
+        lines.add("boundaries\t" + String.join(",", new TreeSet<>(skipTop)));
         lines.addAll(records);
         Files.write(output, lines, StandardCharsets.UTF_8);
     }
@@ -70,9 +78,8 @@ final class Manifest {
                     }
                     out.add(relative + "\t" + child.toAbsolutePath() + "\tsymlink\t0\t" + target);
                 } else if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
-                    if (name.startsWith(".")) {
-                        continue;
-                    }
+                    // No hidden-name heuristic: only the exact top-level
+                    // boundary names the caller designated are pruned.
                     if (root.relativize(child).getNameCount() == 1 && skipTop.contains(name)) {
                         continue;
                     }
