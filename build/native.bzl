@@ -57,24 +57,43 @@ java_jar_manifest = rule(
     attrs = {"deps": attr.label_list(providers = [JavaInfo])},
 )
 
-def native_flix_java_test(name, srcs, java_deps, size = "small", tags = [], data = []):
+def native_flix_java_test(name, srcs, java_deps, declared_files = [], native_libs = [], size = "small", tags = [], data = []):
     """Run native Flix `@Test` declarations against explicit prepared JVM jars.
 
     The declared Flix sources are compiled and executed by the pinned compiler's
     authentic native test engine with the dependency jars passed explicitly as
     the compiler's class path. No `flix.toml` project is synthesized and no
     dependency resolver runs; this is the explicit source/dependency route.
+
+    `declared_files` names the data files the fixture may read, by their
+    workspace-relative paths, and `native_libs` the prepared shared libraries it
+    may load. Both are declared inputs: the launcher resolves them and binds the
+    names on JVM properties, so no fixture reaches for a path of its own.
     """
     manifest = name + "_jars"
     java_jar_manifest(name = manifest, deps = java_deps)
+    flags = [
+        "-Dattune.mode=java",
+        "-Dattune.jars=$(rlocationpath :%s)" % manifest,
+    ]
+    extra_data = [":" + manifest]
+    if declared_files:
+        files_manifest = name + "_declared"
+        declared_manifest(name = files_manifest, srcs = declared_files)
+        flags.append("-Dattune.fixtures=$(rlocationpath :%s)" % files_manifest)
+        extra_data.append(":" + files_manifest)
+        # The declared files themselves are data too: the launcher resolves each
+        # one inside the runfiles tree, so the fixture reads exactly the bytes
+        # the build declared rather than a path of its own.
+        extra_data.extend(declared_files)
+    if native_libs:
+        flags.append("-Dattune.libs=" + _rlocation(native_libs))
+        extra_data.extend(native_libs)
     _native_test(
         name,
         srcs,
-        [
-            "-Dattune.mode=java",
-            "-Dattune.jars=$(rlocationpath :%s)" % manifest,
-        ],
-        [":" + manifest],
+        flags,
+        extra_data,
         size,
         tags,
         data,

@@ -1,0 +1,74 @@
+engine marzano(0.1)
+language ruby
+
+// @dialect ruby
+// Ruby sources (`.rb`) are parsed by the pinned upstream `tree-sitter-ruby`
+// grammar (ABI 14) that the frozen Grit closure already carries. Grit returns
+// syntax matches plus logged source values; Attune assigns repository
+// identities, resolves and admits edges, and derives inverse relations one
+// layer above this frontend.
+
+// @syntax source
+//
+// Calls between source-level callables.
+//
+// Ruby writes the same call three ways, and the frontend names all three,
+// because the pinned grammar stores the called method in a different field for
+// each form and a bare method name has no range of its own in the other two:
+//
+//   Pricing.total_cents(items)      receiver call, method in `_call_method`
+//   cents.divmod(100)               receiver call, method in `_call_method`
+//   items.sum { |item| item }       receiver call with a block
+//   format("Thanks, %s", customer)  bare call, method in `call_variable`
+//   puts "y"                        bare command, method under the first name
+//
+// The match is the whole call expression and the logged value is the called
+// method name:
+//
+//   total_cents
+//   divmod
+//   sum
+//   format
+//   puts
+//
+// The receiver a call site names is still recoverable, because the exact text
+// between the match start and the logged method is the receiver and its
+// separator:
+//
+//   Pricing.total_cents(items)   -> "Pricing."
+//   Shop::Pricing.total_cents(x) -> "Shop::Pricing."
+//   items.sum { |item| item }    -> "items."
+//   self.render(x)               -> "self."
+//   format("Thanks, %s")         -> ""
+//
+// Attune's Flix resolver resolves a call only when that receiver is a constant
+// path that names exactly one declared class-level method. Anything else stays
+// explicitly unresolved: a receiver that carries a lowercase letter, such as
+// `items` or `Receipt.new`, is dynamic dispatch, and a constant path with no
+// single declaration is an unknown or ambiguous symbol.
+//
+// Module loading is deliberately excluded by the logged method name, because
+// `require_relative` and friends load a file rather than calling a repository
+// symbol, and the imports frontend owns that relation.
+//
+// @example A constant-qualified call records its method name.
+// module Shop
+//   module Receipt
+//     def self.render(items)
+//       Pricing.total_cents(items)
+//     end
+//   end
+// end
+// @end
+
+or {
+  call(_call_method = identifier() as $method) as $call,
+  call(call_variable = identifier() as $method) as $call,
+  command_call() as $command where { $command <: contains identifier() as $method }
+} as $call where {
+  $method <: not r"^require$",
+  $method <: not r"^require_relative$",
+  $method <: not r"^load$",
+  $method <: not r"^autoload$",
+  log(message="call", variable=$method)
+}

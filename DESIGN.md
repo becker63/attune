@@ -18,10 +18,18 @@ per-file adaptation record; this file is the source map that points at it.
 | Typed Arrow Dataset Parquet codec | `src/native/parquet/AttuneParquet.java` | shared Java |
 | Typed LangChain4j inference seam (recorded fake transport) | `test/seam/AttuneInference.java` | fixture Java |
 | Mechanical manifest, boundary probe and launcher | `tools/boundary/*.java` | shared Java |
+| One content-addressed Grit closure rule | `build/grit_repository.bzl` | shared Starlark |
+| Maintained defines/imports/calls entry-point inventory | `src/grit/{defines,imports,calls}/*.grit` | shared Grit |
+| Typed fact envelope over the native boundary | `src/Attune/Grit.flix` | shared Flix |
+| Conservative identity, resolution and admission with derived inverses | `src/Attune/Repository.flix` | shared Flix |
+| Hand-written FFM binding and canonical-record facade | `src/native/grit/*.java` | shared Java |
+| Inherited pinned native closure, ABI shim and grammar patches | `support/grit/**` | inherited support |
+| Carried Flix syntax/highlighting assets and language-server declaration | `zed/**` | inherited support |
 | Native envelope, isolation and compiler-negative fixtures | `test/spine/*.flix` | fixtures |
 | Counting laws, named policy cases, declared check and live audit | `test/policy/*.flix` | fixtures |
 | Inference and Parquet seam fixtures | `test/seam/*.flix` | fixtures |
 | Narrow typed Flix view over the seam envelopes | `test/seam/Seam.flix` | fixtures |
+| Grit frontend, Ruby shop and pin-correspondence fixtures | `test/grit/*.flix`, `test/grit/fixtures/**` | fixtures |
 | Root documentation | `README.md`, `AGENTS.md`, `DESIGN.md`, `PROVENANCE.md`, `LICENSE` | metadata |
 
 There is no policy program entry point and no Java case runner. Authentic native
@@ -41,11 +49,18 @@ The hermetic policy check consumes `//:policy_sources`, which aggregates one
 | Package | Contributes |
 | --- | --- |
 | `//` | root metadata: `README.md`, `AGENTS.md`, `DESIGN.md`, `PROVENANCE.md`, `LICENSE`, `BUILD.bazel`, `MODULE.bazel`, locks and `flake.*` |
-| `//build` | the Starlark rules |
-| `//src` | the shared Flix envelope, the policy evaluator and the isolation assertions |
+| `//build` | the Starlark rules, including the one Grit closure rule |
+| `//src` | the shared Flix envelope, the policy evaluator, the isolation assertions, the typed Grit envelope and the conservative admission |
+| `//src/grit` | the maintained `defines`/`imports`/`calls` entry-point inventory and its index |
+| `//src/native/grit` | the hand-written FFM binding and canonical-record facade |
 | `//src/native/parquet` | the typed Arrow Dataset Parquet codec |
-| `//test`, `//test/spine`, `//test/policy`, `//test/seam` | the fixtures and their laws |
+| `//support/grit` | the inherited pinned native closure, ABI shim, header and grammar patches |
+| `//test`, `//test/spine`, `//test/policy`, `//test/seam`, `//test/grit` | the fixtures and their laws |
 | `//tools`, `//tools/boundary` | the minimal Java boundary |
+
+The carried Zed assets under `zed/` are not a Bazel package: they are admitted
+inherited support, declared once in `//:zed_assets` for the pin-correspondence
+fixture and never compiled or executed.
 
 A Bazel glob cannot cross a package boundary, so a new package that carries
 authored source must add its filegroup to `//:policy_sources`. The separate
@@ -104,6 +119,11 @@ adaptation record.
 | Maven lock | `maven_install.json` | `rules_jvm_external` resolution of the exact coordinates and SHA-256 of every transitive artifact | n/a |
 | util-linux `unshare` | 2.42.x | `nixpkgs` developer shell, resolved by `//build:unshare_repository.bzl` | GPL-2.0 |
 | nixpkgs | `20b1ddd1aa5ace70c9468305030aa4f9ef79671b` | `flake.lock` | MIT |
+| Grit closure | revision `c80b3026471b229f41b279c3eb0c162dcdacfdb1`, SHA-256 `87066b84963dc1b89b9344fbae046f941ed8fce5e983c48d74a26964f6e7cb48` | `https://github.com/getgrit/gritql`, materialized by `//build:grit_repository.bzl` | MIT |
+| Flix grammar | revision `78cff149b2e9897456f94844872353b5ee0ca93b`, SHA-256 `d72c059bb82487e7c19cf276fcb3a8fa0466fa692a4ebc39c911a458e11b0d3c` | `https://github.com/omarjatoi/tree-sitter-flix`, shared with the Zed extension | Apache-2.0 |
+| Starlark grammar | revision `a453dbf3ba433db0e5ec621a38a7e59d72e4dc69`, SHA-256 `7b417fde027fd04bff8c68457e92072d0d88ea71988d9432bfe233633c09ab74` | `https://github.com/tree-sitter-grammars/tree-sitter-starlark` | MIT |
+| Ruby, Java, JavaScript and TypeScript parsers | inside the Grit closure revision above (Ruby is ABI 14, 0.20.1) | `tree-sitter/tree-sitter-{ruby,java,javascript,typescript}` via the closure | MIT |
+| `tree-sitter` runtime crate | 0.20.10 | `crates.io`, pinned by `support/grit/cargo-bazel-lock.json` | MIT |
 
 ## Resource budget
 
@@ -121,28 +141,43 @@ audit rather than trust a copied number:
 
 | Role | Language | Files | Code | Comment | Doc | Blank |
 | --- | --- | --- | --- | --- | --- | --- |
-| shared | flix | 4 | 637 | 12 | 169 | 201 |
-| shared | java | 7 | 747 | 11 | 90 | 81 |
-| shared | starlark | 3 | 191 | 2 | 52 | 30 |
-| declarative | starlark | 11 | 309 | 85 | 0 | 49 |
-| fixture | flix | 12 | 460 | 8 | 100 | 90 |
-| fixture | java | 1 | 197 | 0 | 25 | 23 |
+| shared | flix | 6 | 1101 | 21 | 297 | 437 |
+| shared | java | 9 | 953 | 19 | 137 | 104 |
+| shared | starlark | 4 | 609 | 20 | 69 | 400 |
+| shared | grit | 24 | 368 | 1514 | 0 | 100 |
+| shared | markdown | 1 | 0 | 0 | 65 | 10 |
+| declarative | starlark | 16 | 528 | 150 | 0 | 79 |
+| fixture | flix | 13 | 753 | 8 | 162 | 125 |
+| fixture | java | 2 | 235 | 0 | 41 | 28 |
+| fixture | ruby | 10 | 80 | 23 | 0 | 16 |
+| support | other | 15 | 22271 | 44 | 0 | 250 |
 | metadata | nix | 1 | 117 | 26 | 0 | 16 |
-| metadata | markdown | 4 | 0 | 0 | 449 | 78 |
-| metadata | other | 8 | 1391 | 27 | 0 | 42 |
+| metadata | markdown | 4 | 0 | 0 | 548 | 89 |
+| metadata | other | 8 | 1660 | 27 | 0 | 42 |
 
-Shared implementation code totals 1,575 against the 2,000-line target, test code
-657 against 2,400, and test-only proposal code 0 against 1,500. Only the shared
-and test rows feed the budget. Markdown prose is documentation and only
-genuinely empty lines are blank. The markdown row was measured by the audit on
-the run immediately before this table was finalized, so editing this table moves
-only that row; re-run the audit for the current number. The `other` row is
-`LICENSE`, the root locks (`MODULE.bazel.lock`, `maven_install.json`) and the root
-dotfiles that no package-local glob can see; its comment column is the `#`
-comments in `.bazelrc`, `.gitignore` and `.bazelignore`, and its code column is
-the remaining non-blank text lines, since that bucket has no code structure of
-its own. No maintained Grit query exists yet, so its row is absent rather than
-invented.
+Shared implementation code totals 3,031 against the reviewed 3,200-line target,
+test code 1,068 against 2,400, and test-only proposal code 0 against 1,500. Only
+the shared and test rows feed the budget. The shared target was raised from the
+pre-implementation aim of 2,000 by one reviewed gate change in
+`src/Attune/Policy.flix`: the spine alone measured 1,575 noncomment lines and
+carrying the retained Grit closure, the maintained query inventory, the typed
+envelope and the conservative admission genuinely costs the rest, so no artifact
+was golfed, deleted or relabelled to fit the earlier number. The budget line
+prints both numbers on every run (`attune-policy-budget shared_code=…`).
+
+Markdown prose is documentation and only genuinely empty lines are blank. The
+markdown rows were measured by the audit on the run immediately before this
+table was finalized, so editing this file moves only the metadata row; re-run the
+audit for the current number. The `other` row is `LICENSE`, the root locks
+(`MODULE.bazel.lock`, `maven_install.json`) and the root dotfiles that no
+package-local glob can see; its comment column is the `#` comments in `.bazelrc`,
+`.gitignore` and `.bazelignore`, and its code column is the remaining non-blank
+text lines, since that bucket has no code structure of its own. The `support`
+row is the inherited pinned closure and is dominated by its two lock files
+(`Cargo.lock` and `support/grit/cargo-bazel-lock.json`), which is why it is
+reported apart from shared implementation code. The `shared grit` row is the
+maintained `defines`/`imports`/`calls` inventory: 24 entry points, 368 code lines
+and the commented contract each one carries.
 
 The admitted foreign families are counted in their own `support` role, so
 inherited support never merges into shared implementation code. Admitting a
@@ -150,7 +185,8 @@ family admits its language, suffix and content, not a new source root: an
 authored package still lives under `src/`, `test/`, `tools/` or `build/`, and
 `//test/policy:policy_cases_test` asserts both halves, an admitted
 `support`/proposal/Grit/Ruby-data workspace that is accepted and a new `.rs`
-algorithm that is rejected.
+algorithm that is rejected. The carried Zed assets are admitted as inherited
+support and are not a source root: they are declared once in `//:zed_assets`.
 
 The counting law behind these columns is executable rather than asserted in
 prose: `//test/policy:count_law_test` fails if comment-only files, trailing
@@ -163,9 +199,20 @@ Implemented: the independent build spine, the shared nominal envelope, the
 authentic native Flix test route over explicit declared files, the Flix-owned
 isolation assertions, the compact declared-source policy, its named fixture
 cases, the honest line counter, the live uncached audit inside the public gate,
-the typed LangChain4j embedding/decision seam over a recorded fake transport and
-the typed Arrow Dataset Parquet codec with an authored round-trip. Not
-implemented here, and deliberately out of scope: the retained native Grit
-frontends with the bounded Ruby arm, the canonical ASCII writer and typed
-projections, and the ten test-only proposals P01-P10. No runtime topology, cache
-ownership, real dataset or model experiment is selected or run.
+the typed LangChain4j embedding/decision seam over a recorded fake transport, the
+typed Arrow Dataset Parquet codec with an authored round-trip, and the retained
+native Grit frontends: the maintained `defines`/`imports`/`calls` inventory for
+the seven retained languages plus the approved bounded Ruby arm, the canonical
+typed fact envelope, and the conservative Flix identity, resolution and admission
+that derives `defined_in`, `imported_by` and `callers` from the forward relations
+once. The Ruby shop source is extracted and admitted with exact ranges and
+identities, and a computed require, a missing target, dynamic dispatch, an
+ambiguous receiver and a reopened declaration each stay explicitly unresolved.
+
+Not implemented here, and deliberately out of scope: the canonical ASCII writer
+and typed projections, the Datalog/typed-view computation, the README/comment
+document correspondence, per-language reference identity beyond the conservative
+rule the frontends document, and the ten test-only proposals P01-P10. No runtime
+topology, evaluator/cache ownership, real dataset or model experiment is selected
+or run; the native memoization carried in `support/grit/lib.rs` is the inherited
+support behavior, not a topology choice made here.

@@ -35,3 +35,25 @@ filegroup(
         "Attune/Isolation.flix",
     ],
 )
+
+# The canonical typed envelope over the pinned native Grit boundary: the admitted
+# language vocabulary, the canonical fact shape and the projection from the
+# native record stream into facts.
+filegroup(
+    name = "grit",
+    srcs = [
+        "Attune.flix",
+        "Attune/Grit.flix",
+    ],
+)
+
+# Conservative repository admission over the canonical facts: identity,
+# resolution, the admitted edges, the derived inverses and the named refusals.
+filegroup(
+    name = "repository",
+    srcs = [
+        "Attune.flix",
+        "Attune/Grit.flix",
+        "Attune/Repository.flix",
+    ],
+)

@@ -40,13 +40,32 @@ filegroup(
         ":policy_files",
         "//build:policy_files",
         "//src:policy_files",
+        "//src/grit:policy_files",
+        "//src/native/grit:policy_files",
         "//src/native/parquet:policy_files",
+        "//support/grit:policy_files",
         "//test:policy_files",
+        "//test/grit:policy_files",
         "//test/policy:policy_files",
         "//test/seam:policy_files",
         "//test/spine:policy_files",
         "//tools:policy_files",
         "//tools/boundary:policy_files",
+    ],
+)
+
+# The carried Zed editor assets: the pinned Flix grammar revision the Grit
+# integration reuses and the language-server declaration that delegates to the
+# compiler's own server. They are declared data for the pin-correspondence
+# fixture, which reads them as source-as-data and never executes them.
+filegroup(
+    name = "zed_assets",
+    srcs = [
+        "zed/extension.toml",
+        "zed/languages/flix/brackets.scm",
+        "zed/languages/flix/config.toml",
+        "zed/languages/flix/highlights.scm",
+        "zed/languages/flix/outline.scm",
     ],
 )
 

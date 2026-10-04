@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The narrow JVM facade over the pinned native Grit ABI. It performs only
+# mechanical interop: it loads the prepared shared library, marshals UTF-8 byte
+# slices, and projects the versioned native envelope into a canonical record
+# stream. Flix owns every language, relation, identity, admission and verdict
+# decision; this library decides none of them.
+java_library(
+    name = "attune_grit",
+    srcs = [
+        "AttuneGrit.java",
+        "AttuneGritNative.java",
+    ],
+    javacopts = ["--release=22"],
+    resources = ["//src/grit:programs"],
+    deps = [
+        "@attune_maven//:com_fasterxml_jackson_core_jackson_core",
+        "@attune_maven//:com_fasterxml_jackson_core_jackson_databind",
+    ],
+)

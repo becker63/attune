@@ -17,6 +17,64 @@ bazel_dep(name = "rules_java", version = "9.9.0")
 bazel_dep(name = "rules_jvm_external", version = "7.1")
 bazel_dep(name = "platforms", version = "1.1.0")
 
+# The pinned native Grit closure: the Rust toolchain, the hermetic LLVM toolchain
+# (Rust cdylibs link against its real libunwind archive), rules_cc for that link
+# edge, and the crate universe generated from the frozen Grit lock. Every input
+# below is a pinned, non-secret engineering dependency of the inherited Grit
+# support; the one newly approved Rust extension lives in support/grit/lib.rs.
+bazel_dep(name = "rules_cc", version = "0.2.25")
+bazel_dep(name = "rules_rust", version = "0.74.0")
+bazel_dep(name = "llvm", version = "0.8.21")
+
+register_toolchains("@llvm//toolchain:all")
+
+llvm_runtime = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+use_repo(llvm_runtime, "llvm-project")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2024",
+    versions = ["1.98.0"],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# One content-addressed materialization of the frozen Grit source. The Grit pin
+# `c80b3026471b229f41b279c3eb0c162dcdacfdb1` is unchanged; Attune's admitted
+# languages are extensions of that one closure (Java and Ruby simply stop being
+# stripped; Flix and Starlark are two additional pinned Tree-sitter grammars).
+# The Flix grammar revision is the SAME revision `zed/extension.toml` pins for
+# the editor, so Grit and Zed cannot drift onto two Flix grammars.
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+gritql_repository = use_repo_rule("//build:grit_repository.bzl", "gritql_repository")
+
+gritql_repository(
+    name = "gritql_source",
+    attune_lib = "//support/grit:lib.rs",
+    cargo_lock = "//support/grit:Cargo.lock",
+    language_patches = [
+        "//support/grit/patches:flix.rs",
+        "//support/grit/patches:flix_binding.rs",
+        "//support/grit/patches:starlark.rs",
+        "//support/grit/patches:starlark_binding.rs",
+        "//support/grit/patches:textual_metavariable.rs",
+    ],
+)
+
+crate.from_cargo(
+    name = "grit_crates",
+    cargo_lockfile = "@gritql_source//:Cargo.lock",
+    lockfile = "//support/grit:cargo-bazel-lock.json",
+    manifests = ["@gritql_source//:Cargo.toml"],
+    supported_platform_triples = [
+        "aarch64-unknown-linux-gnu",
+        "x86_64-unknown-linux-gnu",
+    ],
+)
+use_repo(crate, "grit_crates")
+
 # The approved typed JVM seams: the LangChain4j 1.18.1 SDK path (with its
 # pinned Jackson 2.22.1) and the Arrow 19.0.0 Dataset/Parquet codec. These are
 # declared engineering dependencies, never a live provider, dataset or

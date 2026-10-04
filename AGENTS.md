@@ -42,7 +42,8 @@ these rules; `bazel test //...` enforces it.
   approved SDK, and must never depend on a test-only proposal module.
 - The only admitted foreign families are inherited pinned support, the one
   approved native Ruby arm, future test-only proposal/query source, maintained
-  Grit queries and Ruby source-as-data fixtures.
+  Grit queries, Ruby source-as-data fixtures and the carried Zed editor assets
+  whose pinned Flix grammar revision the Grit integration reuses.
 - Every public Flix module carries a `///` comment. The core documents listed in
   `DESIGN.md` must exist.
 

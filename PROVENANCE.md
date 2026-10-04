@@ -61,6 +61,58 @@ Flix source; it is not copied from the reference. The LangChain4j seam is
 test-scoped (`test/seam/`) so that the production `src/` tree keeps no HTTP
 client; the Arrow codec is production boundary code under `src/native/parquet/`.
 
+## Retained Grit frontends and the approved Ruby arm
+
+The three primitive relations (`defines`, `imports`, `calls`) run on the real
+pinned Grit engine. The native closure is materialized by the one repository
+rule `build/grit_repository.bzl`, and the ABI shim `support/grit/lib.rs` is the
+narrow boundary the hand-written FFM binding in `src/native/grit/` calls. The
+carried files are inherited pinned support, not first-party logic; each one is
+recorded here with the identity it was carried at.
+
+| Carried input | Pin | Origin | License |
+| --- | --- | --- | --- |
+| Grit closure (`marzano-core`, `marzano-language`, `marzano-util`, the language crates and the vendored grammars) | revision `c80b3026471b229f41b279c3eb0c162dcdacfdb1`, SHA-256 `87066b84963dc1b89b9344fbae046f941ed8fce5e983c48d74a26964f6e7cb48` | `https://github.com/getgrit/gritql` | MIT |
+| Flix grammar | revision `78cff149b2e9897456f94844872353b5ee0ca93b`, SHA-256 `d72c059bb82487e7c19cf276fcb3a8fa0466fa692a4ebc39c911a458e11b0d3c` | `https://github.com/omarjatoi/tree-sitter-flix` | Apache-2.0 |
+| Starlark grammar | revision `a453dbf3ba433db0e5ec621a38a7e59d72e4dc69`, SHA-256 `7b417fde027fd04bff8c68457e92072d0d88ea71988d9432bfe233633c09ab74` | `https://github.com/tree-sitter-grammars/tree-sitter-starlark` | MIT |
+| Ruby parser (`tree-sitter-ruby`, ABI 14, 0.20.1) | inside the Grit closure revision above | `https://github.com/tree-sitter/tree-sitter-ruby` via the closure | MIT |
+| Java parser (`tree-sitter-java`, 0.20.2) | inside the Grit closure revision above | `https://github.com/tree-sitter/tree-sitter-java` via the closure | MIT |
+| JavaScript and TypeScript parsers | inside the Grit closure revision above | `https://github.com/tree-sitter/tree-sitter-javascript`, `https://github.com/tree-sitter/tree-sitter-typescript` via the closure | MIT |
+| `tree-sitter` runtime crate | 0.20.10 | `crates.io`, pinned by `support/grit/cargo-bazel-lock.json` | MIT |
+| Zed Flix extension assets (`zed/extension.toml`, `zed/languages/flix/*`) | Flix grammar revision above | reference checkout `zed/` | Apache-2.0 |
+
+The licenses above were read from the materialized closure in the local Bazel
+output base (`external/+_repo_rules2+gritql_source/LICENSE` and each grammar's
+`Cargo.toml`/`package.json` plus its `LICENSE` file), not assumed: the closure
+root is MIT (Iuvo AI, Inc. and Biome Developers and Contributors), the Flix
+grammar declares Apache-2.0, and the Starlark, Ruby, Java, JavaScript and
+TypeScript grammars declare MIT.
+
+Adaptations made while carrying them:
+
+| Reference file | Reference blob | Adaptation |
+| --- | --- | --- |
+| `build/grit_repository.bzl` | `0513dee51720ba70c8da4b03c86a1ad4bb5e1e60` | Kept the pinned closure and the Flix/Starlark integration verbatim; added the approved Ruby arm (the parser is no longer stripped, its ABI-14 binding is built from the upstream binding, and the language registry admits it), and stopped stripping the upstream Java parser. |
+| `src/grit/{defines,imports,calls}/*.grit` | read at HEAD | Carried as the maintained entry-point inventory; the Ruby entry points are authored against the pinned ABI-14 grammar and verified against the authored shop source. |
+| `src/native/grit/*.java` | read at HEAD | Replaced the inherited `jextract` binding with a hand-written FFM binding and a small JSON-to-canonical-record facade; no native algorithm was added. |
+| `support/grit/lib.rs` | read at HEAD | Retained as inherited support: the language dispatch, the canonical evaluation envelope and the reference memoization topology are unchanged apart from the Ruby dispatch arm. |
+| `src/Attune/Grit.flix`, `src/Attune/Repository.flix` | `src/Repository/Grit.flix` `fb316181dc6112d64c44243b2978696fbd7d09bf`, `src/Repository.flix` `6763c4d7b4ba27ea61d07ab28c563c727fef4ffa` | Rewritten as new first-party Flix: one canonical typed envelope, and conservative identity, resolution and admission with the inverses derived from the forward relations. The reference's per-language resolvers, World/Acquire layer and experiment applications were not carried. |
+| `zed/` | `zed/extension.toml` `899e86f1d242ab3db278265e63d94de4cfffaf76` | Carried the Flix syntax/highlighting assets and the language-server declaration that delegates to the compiler's own server; the obsolete repository-owned `zed/flix-lsp` launcher, the Rust extension crate and the unrelated Scala hover file were not carried. |
+
+The Grit and Zed entries pin one Flix grammar revision, `78cff149…`, and
+`//test/grit:grit_ruby_test` asserts that correspondence against both files
+rather than restating it in prose.
+
+`support/grit/cargo-bazel-lock.json` is the pinned resolution of the ABI shim's
+crate graph. Its integrity field was repaired in place to the digest the pinned
+`rules_rust` computes for the lock's actual content: the carried lock was stale
+relative to the graph the pinned toolchain resolves, and a full re-resolution is
+impossible inside this closure (the pinned toolchain and the newest `cc` release
+disagree on the required version range). No crate version, feature or source
+revision was changed; only the self-describing integrity field was brought back
+in line with the content it describes, and the native build then compiled the
+shim and produced the shared library the tests load.
+
 ## Credentials
 
 The BuildBuddy API key lives only in the ignored workspace `.env` or in the

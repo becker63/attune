@@ -1,0 +1,59 @@
+engine marzano(0.1)
+language ruby
+
+// @dialect ruby
+// Ruby sources (`.rb`) are parsed by the pinned upstream `tree-sitter-ruby`
+// grammar (ABI 14) that the frozen Grit closure already carries. Grit returns
+// syntax matches plus logged source values; Attune assigns repository
+// identities, resolves and admits edges, and derives inverse relations one
+// layer above this frontend.
+
+// @syntax source
+//
+// Literal relative requires.
+//
+// Both written forms match. Ruby parses a parenthesized call as a `call` node
+// and a bare command as a `command_call` node, so the frontend names both:
+//
+//   require_relative "pricing"
+//
+//   require_relative("pricing")
+//
+// The match is the whole require and the logged value is the argument list:
+//
+//   "pricing"
+//
+//   ("pricing")
+//
+// The exact text between the match start and the logged arguments is the
+// requiring method, so `require_relative` is recoverable the same way a
+// declaration keyword is. Attune's Flix resolver takes the logged argument
+// text, keeps it only when it is one single quoted literal (with any wrapping
+// parentheses removed), resolves it against the requiring file's directory, and
+// admits the target only when exactly one admitted file matches.
+//
+// Everything else stays explicitly unresolved instead of being guessed here:
+//
+//   require_relative File.join("shop", "pricing")   -> computed require
+//
+//   require_relative "absent_pricing"               -> missing file
+//
+//   require "json"                                  -> not a relative require
+//
+// The first two still match, so Attune's Flix admission sees the non-literal or
+// absent target and reports the import as explicitly unresolved rather than
+// inventing an edge. Absolute and gem requires name no repository file and are
+// deliberately excluded by the logged method name.
+//
+// @example A literal relative require is a static file dependency.
+// require_relative "pricing"
+// @end
+
+or {
+  call(arguments = $arguments),
+  command_call(arguments = $arguments)
+} as $import where {
+  $import <: contains identifier() as $method,
+  $method <: r"^require_relative$",
+  log(message="import", variable=$arguments)
+}

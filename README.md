@@ -170,14 +170,22 @@ BuildBuddy, so it never requires a credential.
 build/native.bzl            native Flix test rules over explicit declared files
 build/workspace_root.bzl    the live workspace root, for the local audit test
 build/unshare_repository.bzl declared pinned unshare tool and closure
+build/grit_repository.bzl   the one content-addressed pinned Grit closure, with the Ruby arm
 tools/boundary/             minimal mechanical Java: manifest, probe, launcher, JVM test runner
 src/Attune/Envelope.flix    shared nominal world/File/Symbol/frontier/atom envelope
 src/Attune/Policy.flix      compact source, dependency, comment and LOC policy
 src/Attune/Isolation.flix   Flix-owned isolation assertions
+src/Attune/Grit.flix        typed fact envelope over the native boundary
+src/Attune/Repository.flix  conservative identity, resolution and admission with derived inverses
+src/grit/                   maintained defines/imports/calls entry points per admitted language
+src/native/grit/            hand-written FFM binding and canonical-record facade
 src/native/parquet/         typed Arrow Dataset Parquet codec behind a JSON envelope
+support/grit/               inherited pinned native closure, ABI shim and grammar patches
 test/spine/                 envelope, isolation, false-assertion and compiler-negative fixtures
 test/policy/                counting laws, named cases, declared check and live audit
 test/seam/                  typed LangChain4j and Arrow Parquet seam fixtures
+test/grit/                  Grit frontend, Ruby shop, negative and pin-correspondence fixtures
+zed/                        carried Flix syntax assets and the compiler-boundary language server
 MODULE.bazel                pinned Bazel modules and the pinned Maven install
 maven_install.json          exact transitive Maven artifacts and their SHA-256
 PROVENANCE.md               pins, origins and licenses
@@ -188,10 +196,12 @@ DESIGN.md                   source map, pins and measured counts
 ## Deferred
 
 This bootstrap establishes the build spine, the shared envelope, the policy
-surface and the two typed JVM seams. Not yet implemented, and deliberately out
-of scope here:
+surface, the two typed JVM seams and the retained Grit frontends with the
+approved Ruby arm. Not yet implemented, and deliberately out of scope here:
 
-- the retained native Grit frontends and Ruby dispatcher arm;
 - the canonical ASCII tree writer, route/proof/view projections;
+- the Datalog/typed-view computation and the document correspondence;
+- per-language reference identity beyond the conservative rule the frontends
+  document;
 - the test-only proposals P01-P10 and their independent reviews;
 - any topology selection, cache ownership, real dataset or model experiment.

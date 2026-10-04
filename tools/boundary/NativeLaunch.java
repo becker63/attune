@@ -70,6 +70,17 @@ public final class NativeLaunch {
             command.add(java.toString());
             command.add("--add-opens=java.base/java.nio=ALL-UNNAMED");
             command.add("--enable-native-access=ALL-UNNAMED");
+            List<String> libs = new ArrayList<>();
+            for (String location : splitList(System.getProperty("attune.libs", ""))) {
+                libs.add(Runfiles.resolve(location).toString());
+            }
+            if (!libs.isEmpty()) {
+                command.add("-Dattune.libs=" + String.join(",", libs));
+            }
+            String declared = System.getProperty("attune.fixtures", "");
+            if (!declared.isEmpty()) {
+                command.add("-Dattune.fixtures=" + fixtureBindings(declared));
+            }
             command.add("-cp");
             command.add(innerClasspath(jars));
             command.add("attune.tools.boundary.NativeInner");
@@ -157,6 +168,18 @@ public final class NativeLaunch {
         }
         parts.addAll(extra);
         return String.join(File.pathSeparator, parts);
+    }
+
+    /// The declared fixture manifest, resolved to `name=absolute path` bindings.
+    private static String fixtureBindings(String manifest) throws IOException {
+        List<String> bindings = new ArrayList<>();
+        for (String line : Files.readAllLines(Runfiles.resolve(manifest), StandardCharsets.UTF_8)) {
+            if (!line.isBlank()) {
+                String name = line.trim();
+                bindings.add(name + "=" + Runfiles.resolve(name));
+            }
+        }
+        return String.join(",", bindings);
     }
 
     /// The prepared dependency jars named by the declared jar manifest.
