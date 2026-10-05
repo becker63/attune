@@ -322,6 +322,70 @@ def native_flix_producer(name, srcs, export = [], declared_files = [], java_deps
         **kwargs
     )
 
+def _native_receipt_impl(ctx):
+    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
+    out = ctx.actions.declare_directory(ctx.label.name)
+    classpath = depset(transitive = [
+        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
+    ]).to_list()
+    args = ctx.actions.args()
+    args.add("-cp")
+    args.add_joined(classpath, join_with = ":")
+    args.add("-Dattune.mode=receipt")
+    args.add("-Dattune.outputs=" + out.path)
+    args.add("-Dattune.plan=" + ctx.file.plan.path)
+
+    # The scoped freshness token is a declared measurement identity only: it is
+    # read from `--define=attune_measurement_freshness=...` and changes this
+    # action's key, so a fresh remote run is not served from cache. No world or
+    # prediction action reads it, so deterministic scientific artifacts stay
+    # cacheable and are never invalidated by a fresh measurement.
+    freshness = ctx.var.get("attune_measurement_freshness", "")
+    if freshness:
+        args.add("-Dattune.freshness=" + freshness)
+    args.add("attune.tools.boundary.NativeLaunch")
+    ctx.actions.run(
+        executable = runtime.java_executable_exec_path,
+        arguments = [args],
+        inputs = depset([ctx.file.plan] + classpath, transitive = [runtime.files]),
+        outputs = [out],
+        mnemonic = "AttuneProcessReceipt",
+        progress_message = "Recording bounded process receipts %{label}",
+    )
+    return [DefaultInfo(files = depset([out]))]
+
+_native_process_receipt = rule(
+    implementation = _native_receipt_impl,
+    doc = "Execute one declared bounded argv plan and emit the raw receipt tree.",
+    attrs = {
+        "plan": attr.label(allow_single_file = True, mandatory = True),
+        "_launcher": attr.label(
+            default = "//platform/tools/boundary:native_launch",
+            providers = [JavaInfo],
+        ),
+    },
+    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+)
+
+def native_process_receipt(name, plan, **kwargs):
+    """Execute one declared bounded argv plan and emit its receipt tree.
+
+    The action runs the existing mechanical launcher in `receipt` mode over the
+    declared plan file: it executes each declared command with concurrent bounded
+    log draining, a finite declared timeout and process-tree cleanup, then emits
+    one declared tree holding `receipts.tsv` and the bounded per-stream log files.
+    A measured nonzero child exit is ordinary receipt data, so the action succeeds
+    whenever the receipt was written; it fails only when no receipt could be
+    produced. The plan and the interpretation are Flix/Study concerns, not this
+    mechanical action's.
+
+    Args:
+      name: the producer target name, which also names its declared tree output.
+      plan: the declared bounded argv plan, one tab-separated record per command.
+      **kwargs: forwarded to the underlying rule.
+    """
+    _native_process_receipt(name = name, plan = plan, **kwargs)
+
 def native_flix_consumer_test(name, srcs, produced, declared_files = [], size = "small", tags = [], data = []):
     """Run native `@Test` laws over the declared trees a producer emitted.
 

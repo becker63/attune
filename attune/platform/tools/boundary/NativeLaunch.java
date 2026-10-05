@@ -58,6 +58,9 @@ public final class NativeLaunch {
         if (mode.equals("produce")) {
             return produce();
         }
+        if (mode.equals("receipt")) {
+            return receipts();
+        }
         String isolation = isolation();
         Path flixJar = Runfiles.resolve(require("attune.flix"));
         Path unshare = isolation.equals("unshare") ? Runfiles.resolve(require("attune.unshare")) : null;
@@ -359,6 +362,25 @@ public final class NativeLaunch {
         }
         Files.write(out.resolve("closure.tsv"), closure, StandardCharsets.UTF_8);
         return 0;
+    }
+
+    /// The declared receipt action: run one bounded declared argv plan through
+    /// the mechanical measurement boundary and materialize the declared receipt
+    /// tree. The plan is a declared input authored on the Flix/Study side; this
+    /// mode decides nothing about which commands to run or what their exits mean.
+    /// A measured nonzero child exit is receipt data, so the action succeeds
+    /// whenever the receipt was written and fails only on an infrastructure
+    /// error that prevented one. The declared freshness identity is recorded
+    /// verbatim; it separates a fresh measurement from a replay without touching
+    /// any deterministic world or prediction artifact.
+    private static int receipts() throws Exception {
+        Path plan = Path.of(require("attune.plan"));
+        Path out = Path.of(require("attune.outputs"));
+        String freshness = System.getProperty("attune.freshness", "-");
+        if (freshness.isEmpty()) {
+            freshness = "-";
+        }
+        return ProcessReceipts.run(plan, out, freshness, workDir());
     }
 
     private static List<Path> absolutes(List<String> paths) {

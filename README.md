@@ -56,6 +56,19 @@ network-disabled container instead and does not claim a namespace it did not
 create. `services.yaml` declares the same selection as the `remote_native`
 command. The ordinary gate above is unchanged and needs no credential.
 
+The same opt-in profile runs the bounded process-receipt fixture, which executes
+one declared argv plan through the existing mechanical launcher: it drains both
+log streams concurrently under a finite declared byte cap, applies the declared
+finite timeout, destroys the process tree on timeout and records raw receipts.
+A measured nonzero child exit is data rather than an infrastructure failure, and
+an unstarted, timed-out, truncated or runtime-failed command is unmeasured with
+its primary reason and cleanup state preserved. The plan and the interpretation
+are Flix `Attune.Study` values; the mechanical boundary decides no policy. A
+`--define=attune_measurement_freshness=<token>` scopes a fresh measurement
+identity to the receipt action only, so deterministic world artifacts stay
+cacheable. `services.yaml` declares the same selection as the `remote_receipts`
+command.
+
 ## Why I want this
 
 The starting point is [Can One Edit Predict the Future?](https://www.becker63.digital/Blogs/one-edit):

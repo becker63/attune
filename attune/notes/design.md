@@ -478,28 +478,28 @@ excluded).
 | core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 196 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
 | theory | `src/Attune/Theory.flix` | Flix | 555 | A | `Attune.Theory` | Bounded canonical descriptors, the relation-independent native lowering key with the fixed rule families and the world-shard witness rows consumed by the shared index. |
-| study | `src/Attune/Study.flix` | Flix | 549 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
+| study | `src/Attune/Study.flix` | Flix | 644 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 522 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
-| boundary | `platform/tools/boundary/*.java` | Java | 605 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing and the two declared isolation modes; owns no policy, classification or fixture case. |
+| boundary | `platform/tools/boundary/*.java` | Java | 796 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses); owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 297 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule and the declared-tree consumer macro, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,971 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
+| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 336 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and the declared-tree consumer macro, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 4,124 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws and fault plan in `test/receipt`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,352 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,374 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,247; B mechanical 1,489; A+B authored 5,736; C test 3,971; C support 21,884
+4,342; B mechanical 1,719; A+B authored 6,061; C test 4,124; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 128 readable files, code 33,943,
-comment 2,149, documentation 4398, blank 2082; the report prints the derived
-physical 42572 and nonblank 40490 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 132 readable files, code 34,443,
+comment 2,180, documentation 4626, blank 2164; the report prints the derived
+physical 43413 and nonblank 41249 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
 them. The portable-native-declared-artifact-actions leaf moved, relative to the
@@ -527,7 +527,17 @@ re-run the check rather than copying them. The retired
 `proposal-semantics` component is gone from the table rather than relabelled: its
 77-line P08 portion moved into `study` (549 includes it) and its surrounding
 `@Test` laws moved into `tests`, so the subtraction is a
-real move between named owners and not a change of label.
+real move between named owners and not a change of label. The
+bounded-process-receipt leaf then moves, relative to the remote-native record
+(4,247/1,489/5,736/3,971), `study` 549 -> 644 (the bounded plan/receipt
+vocabulary with its measurement interpretation and obligation predicate),
+`boundary` 605 -> 796 (the concurrent capped log drain, finite timeout,
+process-tree cleanup and raw receipt writer), `build-rules` 297 -> 336 (the
+declared receipt rule and its scoped freshness token), `tests` 3,971 -> 4,124
+(the `test/receipt` laws and fault plan) and `metadata` 2,352 -> 2,374 (the new
+package in `//:policy_sources`); the cognitive core and every other component are
+unchanged, so that whole delta is one cognitive vocabulary, mechanical substrate
+and fixtures.
 
 ### Excluded inherited and generated families
 
@@ -1836,3 +1846,99 @@ Java only launches the process and records measured facts. Validation on this
 leaf: remote `//test/dag:declared_artifact_consumer_test` 1/1 with fresh remote
 receipts; integrated `bazel test //...` 26/26 green; typecheck exit 0; scoped
 buildifier exit 4 with the documented pre-existing diagnostic families only.
+
+### Leaf record: minimal bounded process receipts (`minimal-process-receipts`)
+
+The mechanical measurement boundary is the existing launcher, extended by one
+mode and one small Java class rather than a new engine. `NativeLaunch` gains
+`-Dattune.mode=receipt`: `ProcessReceipts` executes one declared argv plan,
+draining stdout and stderr concurrently on two bounded threads (each capped at
+the declared per-stream byte cap, discarding beyond it while still reading to
+end-of-stream so a chatty child cannot block on a full pipe), applying the
+declared finite timeout, forcibly destroying the process tree on timeout, and
+writing `receipts.tsv` beside the bounded log files. Each receipt records the
+request/source/command/runtime identities, the observed runtime, the declared
+freshness identity, the started flag, the raw exit status, the measured elapsed
+work, the drained per-stream bytes, the effective timeout and log caps, the
+truncation and timeout flags, the process-tree cleanup state and a classified
+start/runtime error kind. A measured nonzero child exit is ordinary receipt data,
+so the action returns success whenever it wrote the receipt; it fails only when
+no receipt could be produced. A command whose absolute program path does not
+exist is recorded unstarted with `missing`, and a valid program with an invalid
+working directory is recorded unstarted with `runtime`.
+
+Study owns the plan and its interpretation. `Attune.Study` gains the bounded
+`CommandPlan`/`Plan` vocabulary with `admissiblePlan` (finite positive timeout
+and cap, at most 16 commands and 32 argv entries each), the tab-separated
+`parsePlan`/`parseReceipts` readers, the `Measurement` classification (unstarted,
+then timeout, then explicit truncation, then a runtime error, then the measured
+exit, preserving the primary reason and the cleanup state together), the
+`outcomeOf` mapping onto the existing `Outcome`, the scoped `measurementIdentity`
+that carries the freshness token without touching the command identity, and
+`obligationProven`, which requires the bounded log to actually name every
+required test identity so a zero exit alone is not proof. The plan fixture in
+`test/receipt` is a declared input; Java decides no policy and classifies
+nothing.
+
+The declared `native_process_receipt` Starlark rule runs that action through the
+pinned JDK runtime toolchain and emits one declared tree; `native_flix_consumer_test`
+consumes it as a declared input, so the pinned native Tester reads the actual
+records and bounded logs. `//test/receipt:process_receipt_test` holds nine laws:
+the declared plan is bounded and admissible; a measured nonzero exit is data
+(`Measured(7)` -> `ObservedFalse`); a measured zero exit is `ObservedTrue`; zero
+alone does not prove the required test ran; timeout/missing/runtime/truncated
+stay unmeasured with their reasons and cleanup states; receipts carry identities,
+effective limits and elapsed work; the bounded logs respect the cap and the
+truncation flag is explicit; a missing or under-specified receipt is not an
+invented one; and the freshness token scopes the measurement identity only.
+
+Freshness is scoped, not global. The receipt rule reads
+`--define=attune_measurement_freshness=<token>` through `ctx.var`, records it as
+a measurement identity and changes only its own action key. Measured on the local
+gate: under a new token the receipt action re-executed while
+`//test/dag:world_source_producer` stayed a full action-cache hit (20 action
+cache hits, zero re-executions), so a fresh measurement never invalidates a
+deterministic world artifact. A pre-start dispatch or image failure cannot write
+a receipt: the action produces one only if it started and ran, no in-action
+receipt is fabricated and no retry scheduler is added; the preserved prior
+host-Nix failure BEP above stays the honest pre-start evidence.
+
+Evidence. Fresh remote invocation `387863c6-ecd7-4ee4-a31d-7aa839141dfe`
+(`--config=remote --noremote_accept_cached --cache_test_results=no
+--define=attune_measurement_freshness=remote-run-1`) executed eight actions
+remotely: `AttuneProcessReceipt` on `//test/receipt:process_receipts` with
+`runner=remote`, `cacheHit=false`, `exitCode=0` on platform properties
+`{Arch=arm64, OSFamily=Linux, container-image=…rbe-ubuntu22-04:latest,
+dockerNetwork=off}`, reporting the declared tree with `receipts.tsv` (944 bytes)
+and the 512-byte truncated logs, and the remote `TestRunner` passed all nine
+laws (`status=PASSED`, `strategy=remote`, 10.4s). A following remote build with
+the same token downloaded that exact tree (SHA-256
+`1c9a0036fa8a82b9b2f75d1c78c570377cb49fd44bbf81df8629682182e3020c`, matching
+the execution log's digest), whose records carry `freshness=remote-run-1`,
+`observedRuntime=os=Linux;arch=aarch64;java=25.0.4`, exit 0/7, `timedOut=true`
+with `cleanup=killed` and exit 137, unstarted `missing` and `runtime` rows with no
+exit, and a truncation row at exactly the 512-byte cap. Local `bazel test //...`
+is 27/27 green, typecheck exit 0, and scoped buildifier exit 4 with the
+documented pre-existing diagnostic families only.
+
+Measured on this leaf's declared identity (declared-source check, `accept`; see
+the canonical table above for the live totals): A cognitive 4,342; B mechanical
+1,719; A+B authored 6,061; C test 4,124; C support 21,884; presentation A 522 /
+B 87 (subsets). Relative to the remote-native record (4,247/1,489/5,736/3,971),
+`study` moves 549 -> 644, `boundary` 605 -> 796, `build-rules` 297 -> 336,
+`tests` 3,971 -> 4,124 and `metadata` 2,352 -> 2,374; the cognitive core and
+every other component are unchanged.
+
+Bounded architecture review (the cognitive core is unchanged at 4,342, above the
+around-2,500 STOP-AND-JUSTIFY trigger, and A+B is above the preferred 5,000 line;
+both are review triggers, not failures). Largest application-semantic component:
+`repository` (809), unchanged. Hardest reacquisition: the Grit acquisition
+boundary under `repository`, unchanged by this leaf. Localization/coordination
+navigation: unchanged; this leaf adds the receipt action, its Study vocabulary
+and the `test/receipt` fault fixtures. Policy-leak/duplication check: the plan,
+the interpretation and the obligation predicate live once in `Attune.Study`; the
+Java boundary only spawns the declared argv, drains bounded logs, applies the
+declared timeout and records raw facts, and it decides no command, verdict or
+classification. The plan fixture is declared data whose schema and bounds Study
+owns, so no second parser, registry, resolver, scheduler or scientific decision
+entered the mechanical side.

@@ -20,6 +20,7 @@ java_library(
         "NativeInner.java",
         "NativeLaunch.java",
         "NativeTester.java",
+        "ProcessReceipts.java",
         "Runfiles.java",
     ],
     deps = ["@flix_compiler//jar"],

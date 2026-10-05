@@ -881,4 +881,178 @@ pub mod Attune.Study {
 
     def retainedIndex(text: String, prefixLength: Int32): Option[Int32] =
         Int32.fromString(String.take(String.length(text) - prefixLength - 1, String.drop(prefixLength, text)))
+
+    // ------------------------------------------------------ process receipts
+    //
+    // Study owns the bounded measurement vocabulary and its interpretation. The
+    // mechanical boundary in `platform/tools/boundary` only spawns the declared
+    // argv, drains bounded logs, applies the declared finite timeout, cleans up
+    // the process tree and writes the raw receipt records. Which commands to run
+    // and what a receipt means are decided here, never there: a measured nonzero
+    // exit is data, and an unstarted, timed-out, truncated or runtime-failed
+    // command is unmeasured rather than a passing or false observation.
+
+    /// One bounded measurement command. The request, source, command and runtime
+    /// are identities; the timeout and log cap are the finite declared limits;
+    /// the argv is the exact declared command. Study owns this vocabulary.
+    pub type alias CommandPlan = {
+        request = String, source = String, command = String, runtime = String,
+        cwd = String, timeoutMillis = Int32, logCapBytes = Int32, argv = List[String]
+    }
+
+    /// A bounded measurement plan: an ordered, finite list of commands.
+    pub type alias Plan = List[CommandPlan]
+
+    /// The finite mechanical bounds a fixture plan must respect.
+    pub def maxCommands(): Int32 = 16
+
+    pub def maxArgv(): Int32 = 32
+
+    /// Whether one command declares finite, positive limits and non-empty
+    /// identities. A zero or negative timeout or cap is not a bound.
+    pub def admissibleCommand(plan: CommandPlan): Bool =
+        not String.isEmpty(plan#request) and not String.isEmpty(plan#source)
+            and not String.isEmpty(plan#command) and plan#timeoutMillis > 0
+            and plan#logCapBytes > 0 and not List.isEmpty(plan#argv)
+            and List.length(plan#argv) <= maxArgv()
+
+    /// Whether a plan is non-empty, bounded and fully admissible.
+    pub def admissiblePlan(plan: Plan): Bool =
+        not List.isEmpty(plan) and List.length(plan) <= maxCommands()
+            and List.forAll(admissibleCommand, plan)
+
+    /// The non-empty records of one tab-separated mechanical record set.
+    def recordLines(text: String): List[String] =
+        List.filter(line -> not String.isEmpty(String.trim(line)), String.lines(text))
+
+    def recordFields(line: String): List[String] = String.split(regex = "\t", line)
+
+    /// Parse one plan record. An under-specified or non-numeric record yields
+    /// nothing rather than a guessed command, so a malformed plan can never
+    /// become an admissible one.
+    def parseCommand(line: String): Option[CommandPlan] =
+        match recordFields(line) {
+            case request :: source :: command :: runtime :: cwd :: timeout :: cap :: argv =>
+                match (Int32.fromString(timeout), Int32.fromString(cap)) {
+                    case (Some(limit), Some(bound)) => Some({
+                        request = request, source = source, command = command, runtime = runtime,
+                        cwd = cwd, timeoutMillis = limit, logCapBytes = bound, argv = argv
+                    })
+                    case _ => None
+                }
+            case _ => None
+        }
+
+    /// Parse a bounded plan, preserving declared order.
+    pub def parsePlan(text: String): Plan =
+        List.filterMap(parseCommand, recordLines(text))
+
+    /// One raw process receipt exactly as the mechanical boundary reported it.
+    /// `started` is false when the command never began; `exit` and
+    /// `elapsedMillis` are absent in that case. `outBytes`/`errBytes` are the
+    /// bounded bytes actually drained and `logBytes` their sum. `timeoutMillis`
+    /// and `logCapBytes` are the effective limits the boundary applied, and
+    /// `cleanup` is the process-tree cleanup state it recorded.
+    pub type alias Receipt = {
+        request = String, source = String, command = String, runtime = String,
+        observedRuntime = String, freshness = String, started = Bool,
+        exit = Option[Int32], elapsedMillis = Option[Int32], outBytes = Int32,
+        errBytes = Int32, timeoutMillis = Int32, logCapBytes = Int32, truncated = Bool,
+        timedOut = Bool, cleanup = String, error = String, outLog = String, errLog = String
+    }
+
+    /// The total bounded log bytes of one receipt.
+    pub def logBytes(receipt: Receipt): Int32 = receipt#outBytes + receipt#errBytes
+
+    /// Parse one raw receipt record. A record that does not carry the exact
+    /// declared field population yields nothing rather than a partial receipt.
+    def parseReceipt(line: String): Option[Receipt] =
+        match recordFields(line) {
+            case request :: source :: command :: runtime :: observed :: freshness :: started :: exit :: elapsed :: outBytes :: errBytes :: timeout :: cap :: truncated :: timedOut :: cleanup :: error :: outLog :: errLog :: Nil =>
+                match (Int32.fromString(outBytes), Int32.fromString(errBytes), Int32.fromString(timeout), Int32.fromString(cap)) {
+                    case (Some(out), Some(err), Some(limit), Some(bound)) => Some({
+                        request = request, source = source, command = command, runtime = runtime,
+                        observedRuntime = observed, freshness = freshness, started = started == "true",
+                        exit = Int32.fromString(exit), elapsedMillis = Int32.fromString(elapsed),
+                        outBytes = out, errBytes = err, timeoutMillis = limit, logCapBytes = bound,
+                        truncated = truncated == "true", timedOut = timedOut == "true",
+                        cleanup = cleanup, error = error, outLog = outLog, errLog = errLog
+                    })
+                    case _ => None
+                }
+            case _ => None
+        }
+
+    /// Parse a bounded receipt set, preserving the boundary's record order.
+    pub def parseReceipts(text: String): List[Receipt] =
+        List.filterMap(parseReceipt, recordLines(text))
+
+    /// The exact command identity a plan declared.
+    pub def commandIdentity(plan: CommandPlan): (String, String, String) =
+        (plan#request, plan#source, plan#command)
+
+    /// The exact command identity a receipt measured.
+    pub def receiptIdentity(receipt: Receipt): (String, String, String) =
+        (receipt#request, receipt#source, receipt#command)
+
+    /// The receipt that measured one named command, if any.
+    pub def receiptFor(command: String, receipts: List[Receipt]): Option[Receipt] =
+        List.find(receipt -> receipt#command == command, receipts)
+
+    /// The scoped freshness identity of one measurement. It separates a fresh
+    /// run from a replay; it is not part of any deterministic world or
+    /// prediction artifact identity, so a fresh measurement never invalidates
+    /// one.
+    pub def measurementIdentity(receipt: Receipt): (String, String, String, String) =
+        (receipt#request, receipt#source, receipt#command, receipt#freshness)
+
+    /// The classified interpretation of one raw receipt. `Measured` carries the
+    /// raw exit status; `Unmeasured` carries the classified primary reason and
+    /// the cleanup state together. A measured nonzero exit is data, never a
+    /// failure.
+    pub enum Measurement with Eq, ToString {
+        case Measured(Int32)
+        case Unmeasured(String, String)
+    }
+
+    /// Classify one raw receipt. Order is fixed: unstarted, then timeout, then
+    /// explicit truncation, then a runtime error, then the measured exit. The
+    /// primary reason and the cleanup state are preserved together.
+    pub def measurement(receipt: Receipt): Measurement =
+        if (not receipt#started) Measurement.Unmeasured(startError(receipt), receipt#cleanup)
+        else if (receipt#timedOut) Measurement.Unmeasured("timeout", receipt#cleanup)
+        else if (receipt#truncated) Measurement.Unmeasured("truncated", receipt#cleanup)
+        else if (receipt#error != "-") Measurement.Unmeasured(receipt#error, receipt#cleanup)
+        else match receipt#exit {
+            case Some(status) => Measurement.Measured(status)
+            case None         => Measurement.Unmeasured("runtime", receipt#cleanup)
+        }
+
+    def startError(receipt: Receipt): String =
+        if (receipt#error == "-") "unstarted" else receipt#error
+
+    /// The judged outcome of one measurement. A measured exit is observed; an
+    /// unmeasured receipt contributes no passing or false observation.
+    pub def outcomeOf(measurement: Measurement): Outcome = match measurement {
+        case Measurement.Measured(0)      => Outcome.ObservedTrue
+        case Measurement.Measured(_)      => Outcome.ObservedFalse
+        case Measurement.Unmeasured(_, _) => Outcome.Unmeasured
+    }
+
+    /// The test identities a bounded log actually names, from a declared
+    /// required set, in declared order.
+    pub def observedIdentities(required: List[String], log: String): List[String] =
+        List.filter(identity -> String.contains(substr = identity, log), required)
+
+    /// Whether one measured command proves a declared test obligation. A zero
+    /// exit alone is not proof: the bounded log must actually name every
+    /// required test identity. A nonzero exit, an unmeasured receipt and an
+    /// empty requirement all fail this predicate.
+    pub def obligationProven(receipt: Receipt, log: String, required: List[String]): Bool =
+        match measurement(receipt) {
+            case Measurement.Measured(0) =>
+                not List.isEmpty(required)
+                    and List.forAll(identity -> String.contains(substr = identity, log), required)
+            case _ => false
+        }
 }

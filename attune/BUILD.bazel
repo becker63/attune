@@ -51,6 +51,7 @@ filegroup(
         "//test/grit:policy_files",
         "//test/history:policy_files",
         "//test/policy:policy_files",
+        "//test/receipt:policy_files",
         "//test/seam:policy_files",
         "//test/spine:policy_files",
         "//test/theory:policy_files",
