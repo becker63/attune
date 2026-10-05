@@ -3,7 +3,7 @@ import attune.grit.fixtures.GritFixtures
 use Attune.Envelope
 use Attune.Repository
 use Attune.Repository.Grit
-use Attune.Study
+use Attune.Coverage
 
 /// Native `@Test` laws for the retained native Grit frontends and the approved
 /// bounded Ruby arm.
@@ -574,7 +574,7 @@ def callFacts(repository: Repository.Repository, scope: Envelope.World): List[En
         case (caller, target) => { world = scope, source = caller, atom = Envelope.Atom.Calls, target = target }
     }, repository#calls)
 
-def supportOf(facts: List[Envelope.Fact], status: Study.Status): List[Study.Support] =
+def supportOf(facts: List[Envelope.Fact], status: Coverage.Status): List[Coverage.Support] =
     List.map(fact -> { fact = fact, status = status }, facts)
 
 /// Earned scoped coverage over the real extraction. A positive witness survives
@@ -588,18 +588,45 @@ def earnedCoverageResistsForeignAndProposedDonation(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = true, List.exists(fact -> fact#value == "total_cents", receipt));
     let repository = admitted(shopFiles());
     let facts = callFacts(repository, shopWorldName());
-    let ask: Study.Query = { scope = shopWorldName(), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
-    Assert.assertEq(expected = Study.Outcome.Witness, Study.observe(ask, Study.Coverage.Partial, facts));
-    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(ask, Study.Coverage.Missing, Nil));
-    Assert.assertEq(expected = Study.Outcome.Failed,
-        Study.observe(ask, Study.Coverage.Failure("acquisition-error"), Nil));
-    let foreign: Study.Query =
+    let ask: Coverage.Query = { scope = shopWorldName(), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
+    Assert.assertEq(expected = Coverage.Outcome.Witness, Coverage.observe(ask, Coverage.Coverage.Partial, facts));
+    Assert.assertEq(expected = Coverage.Outcome.Unknown, Coverage.observe(ask, Coverage.Coverage.Missing, Nil));
+    Assert.assertEq(expected = Coverage.Outcome.Failed,
+        Coverage.observe(ask, Coverage.Coverage.Failure("acquisition-error"), Nil));
+    let foreign: Coverage.Query =
         { scope = Envelope.World.World("shop-v2"), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
-    Assert.assertEq(expected = Study.Outcome.NoMatch, Study.observe(foreign, Study.Coverage.Complete, facts));
-    let support = supportOf(facts, Study.Status.Observed);
-    Assert.assertEq(expected = 2, List.length(Study.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support)));
+    Assert.assertEq(expected = Coverage.Outcome.NoMatch, Coverage.observe(foreign, Coverage.Coverage.Complete, facts));
+    let support = supportOf(facts, Coverage.Status.Observed);
+    Assert.assertEq(expected = 2, List.length(Coverage.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support)));
     Assert.assertEq(expected = 2,
-        List.length(Study.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support ::: support)));
+        List.length(Coverage.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support ::: support)));
     Assert.assertEq(expected = false,
-        Study.meets(1, shopWorldName(), "Shop.Pricing.total_cents", supportOf(facts, Study.Status.Proposed)))
+        Coverage.meets(1, shopWorldName(), "Shop.Pricing.total_cents", supportOf(facts, Coverage.Status.Proposed)))
+}
+
+/// The one nominal world-bearing facts / earned scoped coverage bridge: the
+/// admitted shop repository supplies its world-bearing facts and the coverage it
+/// actually earned, and a scoped question resolves against that earned coverage
+/// rather than against a claim supplied by the caller.
+@Test
+def theWorldFactsAndEarnedCoverageBridgeIsExact(): Unit \ {Assert, IO} = {
+    let repository = admitted(shopFiles());
+    let world = shopWorldName();
+    let facts = Repository.worldFacts(world, repository);
+    Assert.assertEq(expected = true, List.forAll(fact -> fact#world == world, facts));
+    Assert.assertEq(expected = true, List.exists(fact ->
+        fact#atom == Envelope.Atom.Imports and fact#source == path("shop/receipt.rb")
+            and fact#target == path("shop/pricing.rb"), facts));
+    Assert.assertEq(expected = true, List.exists(fact ->
+        fact#atom == Envelope.Atom.ImportedBy and fact#source == path("shop/pricing.rb")
+            and fact#target == path("shop/receipt.rb"), facts));
+    // The shop has unresolved dynamic receivers, so the acquisition is partial;
+    // a complete no-match is never claimed from partial coverage.
+    Assert.assertEq(expected = Coverage.Coverage.Partial, Repository.scopeCoverage(repository));
+    Assert.assertEq(expected = Coverage.Outcome.Witness,
+        Repository.ask(world, repository, "Shop.Receipt.render", Envelope.Atom.Calls));
+    Assert.assertEq(expected = Coverage.Outcome.Unknown,
+        Repository.ask(world, repository, "Shop.Nothing.render", Envelope.Atom.Calls));
+    Assert.assertEq(expected = true,
+        List.length(Repository.scopedFacts(world, repository)#facts) == List.length(facts))
 }

@@ -5,7 +5,7 @@ use Attune.Docs
 use Attune.Envelope
 use Attune.Envelope.{Atom, Domain, Fact, Frontier, World}
 use Attune.Repository
-use Attune.Study.{Outcome}
+use Attune.Coverage.{Outcome}
 use Attune.View
 
 /// The documentation correspondence fixture.

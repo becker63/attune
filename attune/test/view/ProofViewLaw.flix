@@ -1,5 +1,5 @@
 use Attune.AsciiTree
-use Attune.Study.{Outcome, outcomeName}
+use Attune.Coverage.{Outcome, outcomeName}
 use Attune.View
 
 /// Native `@Test` laws for the proof adapter, driven by a native Datalog fixture.

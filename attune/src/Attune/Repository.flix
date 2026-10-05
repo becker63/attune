@@ -43,6 +43,9 @@ pub mod Attune.Repository {
 
     import attune.grit.AttuneGrit
 
+    use Attune.Coverage
+    use Attune.Coverage.{Outcome, WorldFacts}
+    use Attune.Envelope.{Atom, Fact, World}
     use Attune.Repository.Grit
 
     // ---------------------------------------------------------------- refusals
@@ -791,4 +794,47 @@ pub mod Attune.Repository {
             case Ok(edge)     => { edges = edge :: relation#edges, refusals = relation#refusals }
             case Err(refusal) => { edges = relation#edges, refusals = refusal :: relation#refusals }
         }, emptyRelation(), entry#calls)
+
+    // -------------------------------------------- world facts and coverage
+
+    /// The one nominal world-bearing facts / earned scoped coverage bridge.
+    ///
+    /// Repository is the only owner that earns acquisition completeness, so it is
+    /// the only owner that may hand another owner a world-bearing fact set
+    /// together with a coverage claim for that exact scope. The facts are the six
+    /// core atoms over the admitted forward relations and the inverses derived
+    /// from them exactly once; the world is carried explicitly on every fact, so
+    /// a same-named entity in another world can never donate a witness.
+    pub def worldFacts(world: World, repository: Repository): List[Fact] =
+        List.map(pair -> worldEdge(world, Atom.Defines, pair), repository#defines)
+            ::: List.map(pair -> worldEdge(world, Atom.DefinedIn, pair), repository#definedIn)
+            ::: List.map(pair -> worldEdge(world, Atom.Imports, pair), repository#imports)
+            ::: List.map(pair -> worldEdge(world, Atom.ImportedBy, pair), repository#importedBy)
+            ::: List.map(pair -> worldEdge(world, Atom.Calls, pair), repository#calls)
+            ::: List.map(pair -> worldEdge(world, Atom.Callers, pair), repository#callers)
+
+    def worldEdge(world: World, atom: Atom, pair: (String, String)): Fact =
+        { world = world, source = firstOf(pair), atom = atom, target = secondOf(pair) }
+
+    /// The acquisition completeness this repository actually earned for its own
+    /// scope. `Complete` is claimed only when the whole declared world was
+    /// analyzed and every reference the extractor saw was admitted; any unresolved
+    /// reference leaves `Partial`, so a complete no-match can never be donated by
+    /// a scope that did not observe all of it.
+    pub def scopeCoverage(repository: Repository): Attune.Coverage.Coverage =
+        if (List.isEmpty(repository#refusals)) Attune.Coverage.Coverage.Complete
+        else Attune.Coverage.Coverage.Partial
+
+    /// The bridge as one value: the world-bearing nominal facts of an admitted
+    /// repository, carried with their world.
+    pub def scopedFacts(world: World, repository: Repository): WorldFacts =
+        { world = world, facts = worldFacts(world, repository) }
+
+    /// Resolve one scoped question against the coverage this repository earned,
+    /// never against a coverage claim supplied by the caller.
+    pub def ask(world: World, repository: Repository, subject: String, atom: Atom): Outcome =
+        Coverage.observe(
+            { scope = world, subject = subject, atom = atom },
+            scopeCoverage(repository),
+            worldFacts(world, repository))
 }

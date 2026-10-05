@@ -1,7 +1,7 @@
 use Attune.Envelope
 use Attune.Envelope.{Atom, Domain, Fact, World}
 use Attune.AsciiTree
-use Attune.Study.{Outcome}
+use Attune.Coverage.{Outcome}
 use Attune.View
 
 /// P09 - semantic views and diagram projection.

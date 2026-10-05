@@ -8,36 +8,14 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-# The remaining test-only proposal namespace. P05, P06, P08 and P09 stay here
-# until their own compact features migrate them; P01-P04, P07 and P10 were
-# consolidated into the compact core (`//test/spine:core_*_test`) and the real
-# Parquet seam (`//test/seam:parquet_seam_test`), and their duplicate proposal
-# implementations were removed rather than left beside the compact owners. The
-# approved policy admits and counts this exact prefix (`test/proposals/`).
-
-# P05: native first-class Datalog composition. A parameterized fragment joins a
-# second fragment on a shared scope/center role, rule-set union is not
-# conjunction of answers, and an explicit candidate id isolates two candidates.
-# Executed fixture.
-native_flix_test(
-    name = "p05_datalog_test",
-    srcs = [
-        "P05Datalog.flix",
-        "//src:Attune.flix",
-    ],
-)
-
-# P06: finite canonical descriptors. The alpha-normal identity preserves a
-# consistent renaming and breaks on inequality, direction and output-role
-# changes; safe outputs and bounded role slots are validated. Executed fixture.
-native_flix_test(
-    name = "p06_descriptors_test",
-    srcs = [
-        "P06Descriptors.flix",
-        "//src:Attune.flix",
-        "//src:Attune/Envelope.flix",
-    ],
-)
+# The remaining test-only proposal namespace. P08 and P09 stay here until their
+# own compact features migrate them; P01-P04, P07 and P10 were consolidated into
+# the compact core (`//test/spine:core_*_test`) and the real Parquet seam
+# (`//test/seam:parquet_seam_test`), and P05 and P06 were consolidated into the
+# `Attune.Theory` owner (`//test/theory:theory_law_test`); their duplicate
+# proposal implementations were removed rather than left beside the compact
+# owners. The approved policy admits and counts this exact prefix
+# (`test/proposals/`).
 
 # P08: prior and decision contracts. The approved LangChain4j seam is driven by
 # a recorded fake transport; a decoded in-budget decision is chosen, a classified
@@ -63,8 +41,8 @@ native_flix_test(
         "P09Views.flix",
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
         "//src:Attune/Envelope.flix",
-        "//src:Attune/Study.flix",
         "//src:Attune/View.flix",
     ],
 )

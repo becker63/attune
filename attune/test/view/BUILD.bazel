@@ -28,8 +28,8 @@ native_flix_test(
         "RouteViewLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
         "//src:Attune/Envelope.flix",
-        "//src:Attune/Study.flix",
         "//src:Attune/View.flix",
     ],
 )
@@ -42,8 +42,8 @@ native_flix_test(
         "GrammarLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
         "//src:Attune/Envelope.flix",
-        "//src:Attune/Study.flix",
         "//src:Attune/View.flix",
     ],
 )
@@ -56,8 +56,8 @@ native_flix_test(
         "ProofViewLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
         "//src:Attune/Envelope.flix",
-        "//src:Attune/Study.flix",
         "//src:Attune/View.flix",
     ],
 )
@@ -70,8 +70,8 @@ native_flix_test(
         "SemanticViewLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
         "//src:Attune/Envelope.flix",
-        "//src:Attune/Study.flix",
         "//src:Attune/View.flix",
     ],
 )

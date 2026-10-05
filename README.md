@@ -245,7 +245,8 @@ The marker extraction and link resolution are Flix semantics in
 | Documentation correspondence | `//test/docs:readme_correspondence_test` | passes; `local` and unconditionally re-executed |
 | Typed inference seam | `//test/seam:inference_seam_test` | passes |
 | Typed Parquet seam | `//test/seam:parquet_seam_test` | passes |
-| Ten typed proposals | `//test/proposals:*` | execute from the test-only namespace |
+| Typed proposals | `//test/proposals:*` | the two remaining proposals execute from the test-only namespace |
+| Bounded native theory | `//test/theory:theory_law_test` | passes; descriptor grammar, canonicalization, native lowering and shared-index laws |
 
 ## The models stay visible, and offline
 
@@ -262,17 +263,19 @@ proposals in `test/proposals`, never as a live call.
 The owner-approved cognitive-ownership accounting replaced the absolute size
 gates: the non-presentation 1,800 / combined 2,200 rules and the shared 4,300
 compatibility gate are retired, not raised. `//test/policy:declared_source_policy_test`
-now reports A cognitive 3,265, B mechanical 1,278, A+B authored 4,543, C test
-2,477 and C support 21,884 (raw 31,188 code lines over 121 readable files); the
+now reports A cognitive 3,723, B mechanical 1,278, A+B authored 5,001, C test
+2,746 and C support 21,884 (raw 31,935 code lines over 123 readable files); the
 per-component table, the exact support provenance, the presentation subsets
 (A/presentation 452, B/presentation 87) and the bounded STOP-AND-JUSTIFY
 architecture review are in [the design note](attune/notes/design.md). An
 independent review found that a blanket `test/** -> fixture` rule hid two
-reusable test-placed algorithms, so the bounded `proposal-semantics` component
-(P06 descriptor safety and alpha-normalization, P08 prior/decision/evidence
+reusable test-placed algorithms, so the one remaining bounded
+`proposal-semantics` component (P08 prior/decision/evidence
 settlement) is counted as cognitive under any placement while genuine `@Test`
-assertions and fixed data stay fixtures; the mixed files are disclosed rather
-than split per function. A soft threshold crossing yields a review note, never a
+assertions and fixed data stay fixtures; the mixed file is disclosed rather
+than split per function. The P06 descriptor safety/alpha-normalization portion
+that review named is now production code in the bounded `Attune.Theory` owner,
+so that list shrank to the one path left. A soft threshold crossing yields a review note, never a
 rejection, so a total above the preferred range still accepts. Setup is the declared developer shell with one
 Bazel owner, an output base outside the workspace, and no credential or provider
 read; the only model-shaped code is the recorded fake transport above.
@@ -290,7 +293,8 @@ claims a live or user-flow result.
 
 ## Deferred
 
-This bootstrap establishes the build spine, the shared envelope, the policy and
+This bootstrap establishes the build spine, the shared envelope, the canonical
+coverage vocabulary, the bounded native Theory owner, the policy and
 counting surfaces, the two typed JVM seams, the retained Grit frontends with the
 Ruby arm, the ASCII writer and typed route/grammar/proof/view adapters, and the
 checked documentation correspondence. Deliberately not selected or run here:
@@ -298,7 +302,7 @@ checked documentation correspondence. Deliberately not selected or run here:
 - any final source, cache-ownership, sharding or "most parallel" topology;
 - real datasets, retained priors, localization experiments, census or benchmarks;
 - a general view catalog, large-graph layout, ASCII parser or architecture browser;
-- promotion of any test-only proposal into production semantics.
+- promotion of the two remaining test-only proposals into production semantics.
 
 No architecture decision is implied by this file, and no localization gain is
 claimed. The source map, the pins and licenses, the per-file adaptation record,

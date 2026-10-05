@@ -101,6 +101,7 @@ native_flix_test(
     srcs = [
         "CoreEvidenceLaw.flix",
         "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
         "//src:Attune/Envelope.flix",
         "//src:Attune/Study.flix",
     ],

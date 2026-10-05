@@ -1,0 +1,24 @@
+load("//platform/build:native.bzl", "native_flix_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# VAL-THEORY-001..005: the admitted bounded descriptor grammar, bounded
+# canonicalization, the fixed native conjunction/guard/projection lowering,
+# candidate/world/scope isolation and the world-shared structural evaluation with
+# cheap application anchor joins.
+native_flix_test(
+    name = "theory_law_test",
+    srcs = [
+        "TheoryLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/Theory.flix",
+    ],
+)

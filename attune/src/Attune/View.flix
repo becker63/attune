@@ -20,7 +20,7 @@ pub mod Attune.View {
 
     use Attune.Envelope
     use Attune.Envelope.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
-    use Attune.Study.{Outcome, outcomeName}
+    use Attune.Coverage.{Outcome, outcomeName}
     use Attune.AsciiTree
 
     // ------------------------------------------------------------ projections

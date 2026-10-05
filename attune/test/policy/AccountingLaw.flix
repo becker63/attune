@@ -76,21 +76,31 @@ def relocationDoesNotMakeAuthoredCodeInherited(): Unit \ Assert = {
 }
 
 /// A blanket `test/** -> Fixture` rule must not hide reusable algorithms: the
-/// two bounded test portions the independent review named (P06 descriptor
-/// safety/alpha-normalization and P08 decision/evidence settlement) are
-/// cognitive under any placement, while the other proposals, the core laws and
-/// their fixed fixture data stay fixtures. This is the explicit bounded
-/// classification, not a general registry.
+/// one bounded test portion the independent review named that a compact owner
+/// has not absorbed (P08 decision/evidence settlement) is cognitive under any
+/// placement, while the other proposals, the core laws and their fixed fixture
+/// data stay fixtures. The migrated P06 descriptor semantics now live in the
+/// `theory` component, so the bounded list shrank to its one remaining path.
 @Test
 def reusableTestPlacedSemanticsAreCognitiveNotHiddenFixtures(): Unit \ Assert = {
-    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/proposals/P06Descriptors.flix"));
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/proposals/P08Decisions.flix"));
-    Assert.assertEq(expected = "proposal-semantics", componentOf("test/proposals/P06Descriptors.flix"));
     Assert.assertEq(expected = "proposal-semantics", componentOf("test/proposals/P08Decisions.flix"));
-    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/proposals/P05Datalog.flix"));
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/proposals/P09Views.flix"));
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/spine/CoreApplyLaw.flix"));
     Assert.assertEq(expected = "tests", componentOf("test/policy/AccountingLaw.flix"))
+}
+
+/// The compact sixth semantic owner is classified as its own component, and the
+/// canonical generic coverage/evidence/support values live in `core`; both are
+/// cognitive under any placement.
+@Test
+def theoryAndCoverageAreTheirOwnCognitiveComponents(): Unit \ Assert = {
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Theory.flix"));
+    Assert.assertEq(expected = "theory", componentOf("src/Attune/Theory.flix"));
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Coverage.flix"));
+    Assert.assertEq(expected = "core", componentOf("src/Attune/Coverage.flix"));
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Study.flix"));
+    Assert.assertEq(expected = "study", componentOf("src/Attune/Study.flix"))
 }
 
 /// The thresholds are the owner's engineering policy, published explicitly

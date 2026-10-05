@@ -125,10 +125,14 @@ threshold (cognitive review at 2,000 and around 2,500 STOP-AND-JUSTIFY before
 further semantic concepts; mechanical preferred <=2,500; authored A+B review
 around 5,000) produces a review note, never a rejection. A semantic algorithm
 counts as cognitive under any placement, so test placement never exempts it: the
-two bounded test-placed portions the independent review named (P06 descriptor
-safety/alpha-normalization and P08 decision/evidence settlement) are classified
-as the `proposal-semantics` cognitive component rather than hidden as fixtures,
-while genuine `@Test` assertions and fixed data stay fixtures. Change policy only
+P06 descriptor safety/alpha-normalization the independent review named is now
+production code in the bounded `Attune.Theory` owner, and the one remaining
+test-placed portion (P08 decision/evidence settlement) is classified as the
+`proposal-semantics` cognitive component rather than hidden as a fixture, while
+genuine `@Test` assertions and fixed data stay fixtures. The generic coverage,
+evidence and support vocabulary lives once in `src/Attune/Coverage.flix` (core),
+and the bounded descriptor grammar, fixed native lowering and world-shard witness
+rows live once in `src/Attune/Theory.flix`. Change policy only
 by editing `src/Attune/Policy.flix`, never by golfing code, relabelling a
 component or dropping tests. The measured per-component table, exact support
 provenance and the bounded architecture review are in `notes/design.md`; the

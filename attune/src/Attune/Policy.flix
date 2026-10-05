@@ -660,20 +660,20 @@ pub mod Attune.Policy {
     pub def isPresentationMechanical(path: String): Bool = path == "src/Attune/AsciiTree.flix"
 
     /// The exact test portions whose reusable algorithms are policy-bearing
-    /// semantics rather than assertions. P06 carries the descriptor safety check
-    /// and the alpha-normalization identity (`safe`/`bound`/`identityKey` and the
-    /// role renaming it depends on); P08 carries the typed prior/request/evidence
-    /// contract and the `fromSeam`/`settle` decision semantics. The owner policy
-    /// counts a semantic algorithm as cognitive under any placement, so the
-    /// blanket `test/** -> Fixture` rule must not hide these two. The list is
-    /// bounded and explicit — two named paths, not a general registry or lexer —
-    /// and it holds exactly the test-placed semantics that `Attune.Theory` and
-    /// `Attune.Study` have not absorbed yet, so it shrinks to empty when they do.
-    /// The genuine `@Test` assertions and fixed fixture data in the same files
-    /// are disclosed in `notes/design.md`; this accounting makes no per-function
-    /// claim.
+    /// semantics rather than assertions. P06's descriptor safety check and
+    /// alpha-normalization identity (`safe`/`bound`/`identityKey` and the role
+    /// renaming it depends on) now live in `Attune.Theory`, so only P08 remains:
+    /// it carries the typed prior/request/evidence contract and the
+    /// `fromSeam`/`settle` decision semantics. The owner policy counts a semantic
+    /// algorithm as cognitive under any placement, so the blanket
+    /// `test/** -> Fixture` rule must not hide this one. The list is bounded and
+    /// explicit — one named path, not a general registry or lexer — and it holds
+    /// exactly the test-placed semantics that `Attune.Study` has not absorbed
+    /// yet, so it shrinks to empty when it does. The genuine `@Test` assertions
+    /// and fixed fixture data in the same file are disclosed in
+    /// `notes/design.md`; this accounting makes no per-function claim.
     pub def isUnmigratedSemanticTest(path: String): Bool =
-        path == "test/proposals/P06Descriptors.flix" or path == "test/proposals/P08Decisions.flix"
+        path == "test/proposals/P08Decisions.flix"
 
     def isMechanicalPath(path: String): Bool =
         hasPrefix("src/native/", path) or hasPrefix("platform/tools/", path)
@@ -696,10 +696,11 @@ pub mod Attune.Policy {
         else if (hasPrefix("src/", path) or isApprovedRoot(path)) Ownership.Cognitive
         else Ownership.Metadata
 
-    /// The named components the accounting reports, in table order. `theory` is
-    /// the not-yet-built sixth semantic owner and is expected to be zero until
-    /// its own feature. `proposal-semantics` is the bounded pair of test-placed
-    /// semantic portions that `Attune.Theory`/`Attune.Study` have not absorbed.
+    /// The named components the accounting reports, in table order. `core` holds
+    /// the shared envelope, application and the canonical generic
+    /// coverage/evidence/support values; `theory` is the sixth semantic owner.
+    /// `proposal-semantics` is the one remaining test-placed semantic portion
+    /// that `Attune.Study` has not absorbed yet.
     pub def componentNames(): List[String] =
         "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
             :: "frontends" :: "proposal-semantics" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
@@ -711,8 +712,10 @@ pub mod Attune.Policy {
         else if (isBuildFile(path) or isRootMetadata(path) or hasPrefix("notes/", path)) "metadata"
         else if (hasSuffix(".grit", path)) "frontends"
         else if (path == "src/Attune/AsciiTree.flix") "ascii"
-        else if (path == "src/Attune.flix" or path == "src/Attune/Envelope.flix" or path == "src/Attune/Apply.flix") "core"
+        else if (path == "src/Attune.flix" or path == "src/Attune/Envelope.flix" or path == "src/Attune/Apply.flix"
+            or path == "src/Attune/Coverage.flix") "core"
         else if (hasPrefix("src/Attune/Repository", path)) "repository"
+        else if (path == "src/Attune/Theory.flix") "theory"
         else if (path == "src/Attune/Study.flix") "study"
         else if (path == "src/Attune/Policy.flix" or path == "src/Attune/Isolation.flix") "policy"
         else if (path == "src/Attune/View.flix" or path == "src/Attune/Docs.flix") "view"
