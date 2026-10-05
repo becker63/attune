@@ -6,11 +6,12 @@ explicit entry point per admitted source language. Attune derives `defined_in`,
 `imported_by`, and `callers` by inversion; there are no independent inverse
 extractors.
 
-Every language emits the same `Attune.Grit.Fact` shape and flows through
-ordinary `Attune.Repository` admission. There are no per-language fact types, and
-the native host never normalizes syntax differently for Atlas: language-specific
-syntax is parsed by Grit (inside the frozen closure), and `Attune.Grit` turns the
-one wire envelope into one canonical typed fact stream.
+Every language emits the same `Attune.Repository.Grit.Fact` shape and flows
+through ordinary `Attune.Repository` admission. There are no per-language fact
+types, and the native host never normalizes syntax differently for Atlas:
+language-specific syntax is parsed by Grit (inside the frozen closure), and the
+`Attune.Repository.Grit` projection turns the one wire envelope into one
+canonical typed fact stream.
 
 File routing is explicit:
 
@@ -26,7 +27,7 @@ File routing is explicit:
 | `BUILD`, `BUILD.bazel`, `WORKSPACE`, `WORKSPACE.bazel` | `starlark.grit` | `language starlark` |
 | `.rb` | `ruby.grit` | `language ruby` |
 
-`Attune.Grit.language(path)` is the one detection table; unknown extensions are
+`Attune.Repository.Grit.language(path)` is the one detection table; unknown extensions are
 rejected by name before Grit runs. Every entry point documents positive examples,
 exclusions, normalization, parser selection, returned values, and the later
 resolver/admission responsibilities.

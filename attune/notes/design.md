@@ -25,9 +25,9 @@ adaptation record, the proposal index and the counts all live in this one file.
 | Mechanical manifest, boundary probe and launcher | `platform/tools/boundary/*.java` | shared Java |
 | One content-addressed Grit closure rule | `platform/build/grit_repository.bzl` | shared Starlark |
 | Maintained defines/imports/calls entry-point inventory | `src/grit/{defines,imports,calls}/*.grit` | shared Grit |
-| Typed fact envelope over the native boundary | `src/Attune/Grit.flix` | shared Flix |
+| Typed fact envelope over the native boundary (the Repository owner's Grit projection) | `src/Attune/Repository/Grit.flix` | shared Flix |
 | Per-language identity, resolution and admission with derived inverses | `src/Attune/Repository.flix` | shared Flix |
-| Hand-written FFM binding and canonical-record facade | `src/native/grit/*.java` | shared Java |
+| Hand-written FFM binding and canonical-record facade | `platform/tools/grit/*.java` | shared Java |
 | Inherited pinned native closure, ABI shim and grammar patches | `platform/support/grit/**` | inherited support |
 | Carried Flix syntax/highlighting assets and language-server declaration | `platform/zed/extension.toml`, `platform/zed/languages/flix/*` | inherited support |
 | Native envelope, core identity/application/memo/evidence, isolation and compiler-negative fixtures | `test/spine/*.flix` | fixtures |
@@ -108,7 +108,7 @@ The hermetic policy check consumes `//:policy_sources`, which aggregates one
 | `//platform/zed` | the carried Zed editor assets, declared once in `//platform/zed:zed_assets` |
 | `//src` | the shared Flix envelope, the policy evaluator, the isolation assertions, the typed Grit envelope, the per-language admission, the bounded ASCII writer, the typed route/grammar/proof/view adapters and the documentation correspondence seam |
 | `//src/grit` | the maintained `defines`/`imports`/`calls` entry-point inventory and its index |
-| `//src/native/grit` | the hand-written FFM binding and canonical-record facade |
+| `//platform/tools/grit` | the hand-written FFM binding and canonical-record facade |
 | `//src/native/parquet` | the typed Arrow Dataset Parquet codec |
 | `//platform/support/grit` | the inherited pinned native closure, ABI shim, header and grammar patches |
 | `//test`, `//test/spine`, `//test/policy`, `//test/seam`, `//test/grit`, `//test/view`, `//test/docs` | the fixtures and their laws, including the documentation correspondence fixture |
@@ -227,9 +227,9 @@ plus minimal Java):
 | `src/native/inference/*.java` | (read at HEAD) | Kept the LangChain4j request/response decode shape; dropped the live OpenRouter key path and the acquisition workflow, and replaced the transport with a recorded fake used only by the tests |
 | `platform/build/grit_repository.bzl` | `0513dee51720ba70c8da4b03c86a1ad4bb5e1e60` | Kept the pinned closure and the Flix/Starlark integration verbatim; added the approved Ruby arm (the parser is no longer stripped, its ABI-14 binding is built from the upstream binding, and the language registry admits it), and stopped stripping the upstream Java parser |
 | `src/grit/{defines,imports,calls}/*.grit` | read at HEAD | Carried as the maintained entry-point inventory; the Ruby entry points are authored against the pinned ABI-14 grammar and verified against the authored shop source |
-| `src/native/grit/*.java` | read at HEAD | Replaced the inherited `jextract` binding with a hand-written FFM binding and a small JSON-to-canonical-record facade; no native algorithm was added |
+| `platform/tools/grit/*.java` | read at HEAD | Replaced the inherited `jextract` binding with a hand-written FFM binding and a small JSON-to-canonical-record facade; no native algorithm was added. Grouped under `platform/tools/` with the other mechanical Java by the retained-repository-boundary consolidation |
 | `platform/support/grit/lib.rs` | read at HEAD | Retained as inherited support: the language dispatch, the canonical evaluation envelope and the reference memoization topology are unchanged apart from the Ruby dispatch arm |
-| `src/Attune/Grit.flix`, `src/Attune/Repository.flix` | `src/Repository/Grit.flix` `fb316181dc6112d64c44243b2978696fbd7d09bf`, `src/Repository.flix` `6763c4d7b4ba27ea61d07ab28c563c727fef4ffa` | Rewritten as new first-party Flix: one canonical typed envelope, and conservative identity, resolution and admission with the inverses derived from the forward relations. The reference's per-language import dispatch (JS/JSX/TS/TSX relative candidates, Java dotted type, Flix module prefix, Starlark label), its narrowest-enclosing-owner call law with the unique same-file target before the unique repository-wide fallback, and its ambiguous/dynamic/ownerless refusals are carried; the bounded Ruby `require_relative` and constant-qualified singleton arm is kept as an additional branch. The reference's World/Acquire layer and experiment applications were not carried |
+| `src/Attune/Repository/Grit.flix`, `src/Attune/Repository.flix` | `src/Repository/Grit.flix` `fb316181dc6112d64c44243b2978696fbd7d09bf`, `src/Repository.flix` `6763c4d7b4ba27ea61d07ab28c563c727fef4ffa` | Rewritten as new first-party Flix: one canonical typed envelope, and conservative identity, resolution and admission with the inverses derived from the forward relations. The reference's per-language import dispatch (JS/JSX/TS/TSX relative candidates, Java dotted type, Flix module prefix, Starlark label), its narrowest-enclosing-owner call law with the unique same-file target before the unique repository-wide fallback, and its ambiguous/dynamic/ownerless refusals are carried; the bounded Ruby `require_relative` and constant-qualified singleton arm is kept as an additional branch. The reference's World/Acquire layer and experiment applications were not carried |
 | `platform/zed/` | `platform/zed/extension.toml` `899e86f1d242ab3db278265e63d94de4cfffaf76` | Carried the Flix syntax/highlighting assets and the language-server declaration that delegates to the compiler's own server; the obsolete repository-owned `platform/zed/flix-lsp` launcher, the Rust extension crate and the unrelated Scala hover file were not carried |
 
 The reference resolves a Flix project from a synthesized `flix.toml` and runs a
@@ -289,8 +289,14 @@ attune-policy-verdict: accept
 Measured by the declared-source check and confirmed by the live audit (both
 `accept`); documentation edits move only the metadata/documentation counts, so
 re-run the check rather than trust a copied number. Shared implementation code
-totals 4,292 against the user-approved 4,300-line target; test code 2,418 is
-within 2,600 and test-only proposal code 381 is within 1,500. The 4,433 shared
+totals 4,285 against the user-approved 4,300-line target; test code 2,526 is
+within 2,600 and test-only proposal code 381 is within 1,500. (The
+retained-repository-boundary consolidation added the byte-correct range accessor
+and the classified malformed-record branch to the shared Grit projection, then
+removed the hand-rolled adjacent-dedup walk in favour of the standard distinct,
+and added the repository-boundary laws to the fixtures: shared 4,292 -> 4,285 and
+test 2,418 -> 2,526; the earlier 4,292/2,418/381 figures are preserved as
+history.) The 4,433 shared
 figure from the core-and-artifact commit (`d901935`) is preserved as the
 historical failing measurement that motivated the bounded subtraction, and the
 4,291/2,579/841 figures recorded before that consolidation are preserved as
@@ -645,3 +651,46 @@ case still pass. Measured result: shared 4,433 to 4,292 (141 lines removed),
 proposal 381 and test 2,418 unchanged; the declared and live audits both return
 `accept`. This clears the historical gate only, not the final 1,800/2,200 limits.
 Recovery checkpoint: commit `d901935` on `main`.
+
+## Retained-repository-boundary consolidation record
+
+The repository boundary moved under the one Repository owner and the mechanical
+native adapters under `platform/`, without rewriting any `.grit` frontend:
+
+| Path | Change |
+| --- | --- |
+| `attune/src/Attune/Grit.flix` → `attune/src/Attune/Repository/Grit.flix` | module renamed `Attune.Grit` → `Attune.Repository.Grit`, so the wire projection is a submodule of the Repository owner rather than a seventh semantic owner |
+| `attune/src/native/grit/*.java` → `attune/platform/tools/grit/*.java` | the mechanical FFM binding and JSON-to-record facade grouped with the other mechanical Java under `platform/tools/`; resources still land at `grit/…` |
+| `attune/src/Attune/Repository.flix` | `use Attune.Repository.Grit`; the one native route `factsOf` is now `pub` so fixtures stop re-implementing the packaged program lookup |
+| `attune/src/BUILD.bazel` | the unused `grit` and `repository` filegroups removed (dead plumbing) |
+| `attune/src/Attune/Repository.flix` | the hand-rolled adjacent dedup (`dedupAdjacent`, `distinctSorted`) replaced by the standard `List.distinct` after the same sort, removing the second walk without changing the admitted edge set |
+
+New separating laws in `//test/grit:grit_ruby_test`, over the real pinned engine:
+
+- `javascriptAndTypescriptFrontendsReportExactFactRanges` states exact JS and TS
+  fact lines (kind, the syntax before the logged name, the name and both byte
+  ranges) independently of the engine;
+- `nonAsciiSourceKeepsExactByteRanges` requires the range accessor to agree with
+  the logged value on a source that carries `é`/`☕` before the construct, and the
+  declaration keyword to be read from the right bytes. This law failed before the
+  fix: `Grit.substring` used character indexing on byte offsets, so a multi-byte
+  character shifted every later range. It now slices the UTF-8 bytes;
+- `malformedNativeRecordsAreClassified` pins that an unparseable non-blank record
+  is a `Wire` failure (the `RMalformed` branch) and that a mis-ranged match, a
+  foreign match path and a log outside its match classify as `InvalidRange`,
+  `UnexpectedPath` and `LogOutsideMatch` rather than a complete empty evaluation;
+- `everyInverseIsTheExactReversalOfItsForwardRelation` covers the empty and
+  multiple-edge cases for all three derived inverses;
+- `earnedCoverageResistsForeignAndProposedDonation` states the acquisition,
+  extractor, relation, scope and bound explicitly and shows a witness surviving
+  partial coverage, missing/failed evidence staying unknown/failed, a foreign
+  scope donating nothing, and support counting distinct entities, not proof paths.
+
+The presentation writer still rejects a non-ASCII label (one law in
+`//test/view:ascii_tree_test`), but that rejection never erases the structural
+repository data the same source produces. `src/grit/**` (the maintained
+frontends) and the Ruby teaching fixture are unchanged; only the Flix projection,
+the mechanical Java location and the BUILD plumbing moved. Measured result:
+shared 4,292 to 4,285 (the two semantic fixes add 4 code lines; the dedup
+consolidation removes 11), test 2,418 to 2,526, proposal 381 unchanged; declared
+and live audits both `accept`, and the offline gate is 24/24 green.

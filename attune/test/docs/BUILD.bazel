@@ -50,8 +50,8 @@ native_flix_java_test(
         "//src:Attune/AsciiTree.flix",
         "//src:Attune/Docs.flix",
         "//src:Attune/Envelope.flix",
-        "//src:Attune/Grit.flix",
         "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
         "//src:Attune/Study.flix",
         "//src:Attune/View.flix",
     ],
@@ -62,7 +62,7 @@ native_flix_java_test(
     declared_files = [":documents"],
     java_deps = [
         "//test/grit:grit_fixtures",
-        "//src/native/grit:attune_grit",
+        "//platform/tools/grit:attune_grit",
     ],
     native_libs = ["//platform/support/grit:attune_grit_abi"],
     tags = [

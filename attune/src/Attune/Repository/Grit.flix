@@ -1,17 +1,18 @@
-/// The canonical typed envelope over the pinned native Grit boundary.
+/// The canonical typed envelope over the pinned native Grit boundary: the wire
+/// projection of the Repository owner.
 ///
 /// Flix owns the meaning here: the admitted language vocabulary, deterministic
 /// language detection, the one canonical fact shape, and the projection from
-/// the native envelope into facts. The narrow JVM facade only copies the
-/// versioned JSON the pinned engine returns into a canonical record stream; it
-/// classifies nothing.
+/// the native envelope into facts. The narrow JVM facade in
+/// `//platform/tools/grit` only copies the versioned JSON the pinned engine
+/// returns into a canonical record stream; it classifies nothing.
 ///
 /// The fact shape is one shape for every language: a syntactic kind, a path, the
 /// byte range of the match, the byte range of the logged value, and that value.
 /// There are no per-language fact types. Identity assignment, conservative
-/// resolution, admission and inverse derivation live in `Attune.Repository`,
-/// one layer above this module.
-pub mod Attune.Grit {
+/// resolution, admission and inverse derivation live in the parent
+/// `Attune.Repository` module, one step above this projection.
+pub mod Attune.Repository.Grit {
 
     /// The admitted source languages: the seven retained surfaces plus the
     /// approved bounded Ruby arm. Order is stable.
@@ -177,7 +178,10 @@ pub mod Attune.Grit {
             case _ => Err(Error.Wire("native envelope does not begin with a version record"))
         }
 
-    /// One canonical record line.
+    /// One canonical record line. `RMalformed` is a non-blank line the canonical
+    /// grammar does not recognise: it is a classified failure, not a line to
+    /// skip silently, so a truncated or corrupted envelope can never collapse
+    /// into a complete empty evaluation.
     enum Record {
         case RVersion(Int32)
         case RError(String, String)
@@ -185,31 +189,33 @@ pub mod Attune.Grit {
         case RSpan(Span)
         case RLog(Log)
         case RDiagnostic(String)
+        case RMalformed
     }
 
-    /// Parse one record line, or report it as unparseable.
+    /// Parse one record line. A blank line is dropped; a non-blank line that is
+    /// not a canonical record is preserved as `RMalformed`.
     def parseRecord(line: String): Option[Record] =
         if (String.isEmpty(String.trim(line))) None
         else match String.split(regex = "\t", line) {
             case "version" :: version :: Nil =>
                 match Int32.fromString(version) {
                     case Some(value) => Some(Record.RVersion(value))
-                    case None        => None
+                    case None        => Some(Record.RMalformed)
                 }
             case "error" :: kind :: message :: Nil => Some(Record.RError(unescape(kind), unescape(message)))
             case "matched" :: value :: Nil         => Some(Record.RMatched(value == "true"))
             case "match" :: path :: start :: end :: Nil =>
                 match (Int32.fromString(start), Int32.fromString(end)) {
                     case (Some(s), Some(e)) => Some(Record.RSpan({ path = unescape(path), startByte = s, endByte = e }))
-                    case _                  => None
+                    case _                  => Some(Record.RMalformed)
                 }
             case "log" :: message :: start :: end :: Nil =>
                 match (Int32.fromString(start), Int32.fromString(end)) {
                     case (Some(s), Some(e)) => Some(Record.RLog({ message = unescape(message), startByte = s, endByte = e }))
-                    case _                  => None
+                    case _                  => Some(Record.RMalformed)
                 }
             case "diagnostic" :: message :: Nil => Some(Record.RDiagnostic(unescape(message)))
-            case _                              => None
+            case _                              => Some(Record.RMalformed)
         }
 
     /// Fold the record stream into one evaluation, preserving order.
@@ -234,6 +240,7 @@ pub mod Attune.Grit {
             case Record.RLog(log)             => assemble(rest, matched, spans, log :: logs, diagnostics)
             case Record.RDiagnostic(message)  => assemble(rest, matched, spans, logs, message :: diagnostics)
             case Record.RVersion(_)           => Err(Error.Wire("duplicate version record"))
+            case Record.RMalformed            => Err(Error.Wire("native envelope carries an unparseable record"))
         }
     }
 
@@ -253,12 +260,17 @@ pub mod Attune.Grit {
 
     // ---------------------------------------------------------------- facts
 
-    /// The exact source text of one byte range.
-    pub def substring(source: String, start: Int32, end: Int32): String =
-        if (start < 0 or end < start or end > String.length(source))
+    /// The exact source text of one byte range. The native envelope reports byte
+    /// offsets, so the range is sliced from the source's UTF-8 bytes rather than
+    /// from its character sequence: a source that carries a multi-byte character
+    /// before the range must still yield exactly the text those bytes hold.
+    pub def substring(source: String, start: Int32, end: Int32): String = {
+        let bytes = String.toBytes(source);
+        if (start < 0 or end < start or end > Vector.length(bytes))
             ""
         else
-            String.take(end - start, String.drop(start, source))
+            String.fromBytes(Vector.slice(start = start, end = end, bytes))
+    }
 
     /// Project the native envelope into canonical facts for one source file.
     /// Every logged range is bound to its smallest enclosing syntax match, so

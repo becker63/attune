@@ -43,7 +43,7 @@ pub mod Attune.Repository {
 
     import attune.grit.AttuneGrit
 
-    use Attune.Grit
+    use Attune.Repository.Grit
 
     // ---------------------------------------------------------------- refusals
 
@@ -165,17 +165,10 @@ pub mod Attune.Repository {
     }
 
     /// Sort and deduplicate a relation, so one admitted edge is recorded once.
+    /// The ordered pair key is unique per edge, so the standard distinct after
+    /// the sort is exactly the adjacent dedup, without a second hand-rolled walk.
     def dedupSorted(edges: List[(String, String)]): List[(String, String)] =
-        dedupAdjacent(List.sortBy(pair -> firstOf(pair) + "\t" + secondOf(pair), edges), Nil)
-
-    def dedupAdjacent(sorted: List[(String, String)], acc: List[(String, String)]): List[(String, String)] =
-        match sorted {
-            case Nil => List.reverse(acc)
-            case edge :: rest => match acc {
-                case head :: _ if head == edge => dedupAdjacent(rest, acc)
-                case _                         => dedupAdjacent(rest, edge :: acc)
-            }
-        }
+        List.distinct(List.sortBy(pair -> firstOf(pair) + "\t" + secondOf(pair), edges))
 
     /// The inverse of a relation is derived from that relation, once.
     def invert(edges: List[(String, String)]): List[(String, String)] =
@@ -194,8 +187,10 @@ pub mod Attune.Repository {
 
     // ------------------------------------------------------------ the frontend
 
-    /// Run one admitted relation program over one source file.
-    def factsOf(id: String, source: String, language: Grit.Language, program: Grit.Program): Result[Grit.Error, List[Grit.Fact]] \ IO = {
+    /// Run one admitted relation program over one source file. This is the one
+    /// native route: `fileFacts` and every fixture that needs a single relation
+    /// go through it, rather than re-implementing the packaged program lookup.
+    pub def factsOf(id: String, source: String, language: Grit.Language, program: Grit.Program): Result[Grit.Error, List[Grit.Fact]] \ IO = {
         let languageName = Grit.name(language);
         let programText = AttuneGrit.program(languageName, Grit.programName(program));
         Grit.facts(id, source, AttuneGrit.evaluate(languageName, programText, id, source))
@@ -360,12 +355,8 @@ pub mod Attune.Repository {
             if (countOfSymbol(declarations, d#symbol) > 1) Some(d#symbol) else None,
             declarations))
 
-    def dedupStrings(values: List[String]): List[String] = distinctSorted(List.sortBy(value -> value, values))
-
-    def distinctSorted(sorted: List[String]): List[String] = match sorted {
-        case Nil => Nil
-        case value :: rest => value :: distinctSorted(List.filter(other -> other != value, rest))
-    }
+    def dedupStrings(values: List[String]): List[String] =
+        List.distinct(List.sortBy(value -> value, values))
 
     // ------------------------------------------------------- Ruby import branch
 

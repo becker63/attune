@@ -1,8 +1,9 @@
-import attune.grit.AttuneGrit
 import attune.grit.fixtures.GritFixtures
 
-use Attune.Grit
+use Attune.Envelope
 use Attune.Repository
+use Attune.Repository.Grit
+use Attune.Study
 
 /// Native `@Test` laws for the retained native Grit frontends and the approved
 /// bounded Ruby arm.
@@ -88,12 +89,11 @@ def edgeText(edge: (String, String)): String = match edge {
 
 def reversed(edges: List[(String, String)]): List[String] = List.map(edgeText, edges)
 
-/// One relation program of one language over one source, through the ABI.
-def relationFacts(language: Grit.Language, file: String, source: String, program: Grit.Program): List[Grit.Fact] \ IO = {
-    let languageName = Grit.name(language);
-    let text = AttuneGrit.program(languageName, Grit.programName(program));
-    Result.getWithDefault(Nil, Grit.facts(file, source, AttuneGrit.evaluate(languageName, text, file, source)))
-}
+/// One relation program of one language over one source, through the one native
+/// route the Repository owner uses, so the fixture never re-implements the
+/// packaged program lookup or the wire projection.
+def relationFacts(language: Grit.Language, file: String, source: String, program: Grit.Program): List[Grit.Fact] \ IO =
+    Result.getWithDefault(Nil, Repository.factsOf(file, source, language, program))
 
 /// A fact as kind, the exact source text before its logged value, that value and
 /// both byte ranges: the construct, the syntax the value does not carry, the
@@ -106,6 +106,10 @@ def factLines(language: Grit.Language, file: String, program: Grit.Program): Lis
     let source = fixture(file);
     List.map(fact -> factLine(source, fact), relationFacts(language, path(file), source, program))
 }
+
+/// The fact lines of one relation program over one inline source.
+def factLinesOf(language: Grit.Language, file: String, source: String, program: Grit.Program): List[String] \ IO =
+    List.map(fact -> factLine(source, fact), relationFacts(language, file, source, program))
 
 def surface(language: Grit.Language, file: String, source: String, callee: String): Unit \ {Assert, IO} =
     Assert.assertEq(
@@ -459,3 +463,143 @@ def unsupportedFileIsRefusedNotGuessed(): Unit \ {Assert, IO} =
             case Err(Grit.Error.UnsupportedFile(file)) => "unsupported-file " + file
             case Err(other) => "other ${other}"
         })
+
+/// The JavaScript and TypeScript frontends report exact facts through the real
+/// engine on sources whose whole spans are stated independently: the matched
+/// construct, the syntax before the logged name, that name and both byte ranges.
+@Test
+def javascriptAndTypescriptFrontendsReportExactFactRanges(): Unit \ {Assert, IO} = {
+    Assert.assertEq(expected = "call helper [0,9] [0,6]" :: Nil,
+        factLinesOf(Grit.Language.JavaScript, "src/helper.js", "helper(1)", Grit.Program.Calls));
+    Assert.assertEq(expected = "definition function helper [0,31] [9,15]" :: Nil,
+        factLinesOf(Grit.Language.JavaScript, "src/helper.js", "function helper() { return 1; }", Grit.Program.Defines));
+    Assert.assertEq(expected = "call helper [0,9] [0,6]" :: Nil,
+        factLinesOf(Grit.Language.TypeScript, "src/helper.ts", "helper(1)", Grit.Program.Calls));
+    Assert.assertEq(expected = "definition function helper [0,31] [9,15]" :: Nil,
+        factLinesOf(Grit.Language.TypeScript, "src/helper.ts", "function helper() { return 1; }", Grit.Program.Defines));
+    Assert.assertEq(expected = "import require(\"./util\" [0,17] [8,16]" :: Nil,
+        factLinesOf(Grit.Language.JavaScript, "src/helper.js", "require(\"./util\");\n", Grit.Program.Imports))
+}
+
+/// A source that carries a multi-byte character before a construct still reports
+/// exact byte ranges: the range accessor agrees with the logged value, the
+/// declaration keyword is read from the right bytes, and admission is not
+/// refused merely because the bytes are not ASCII.
+@Test
+def nonAsciiSourceKeepsExactByteRanges(): Unit \ {Assert, IO} = {
+    let source = "module Boutique\n  # café ☕\n  def self.total\n    1\n  end\nend\n";
+    let facts = relationFacts(Grit.Language.Ruby, "src/boutique.rb", source, Grit.Program.Defines);
+    Assert.assertEq(expected = true, List.exists(fact -> fact#value == "total", facts));
+    Assert.assertEq(
+        expected = Nil,
+        List.filterMap(fact ->
+            if (Grit.substring(source, fact#valueStart, fact#valueEnd) == fact#value) None
+            else Some(fact#value), facts));
+    let repository = admittedWorld(("src/boutique.rb", source) :: Nil);
+    Assert.assertEq(
+        expected = true,
+        List.exists(line -> String.contains(substr = " singleton 32-", line), Repository.declarationTexts(repository)))
+}
+
+def decodeName(wire: String): String = match Grit.decode(wire) {
+    case Ok(_)  => "ok"
+    case Err(e) => errorName(e)
+}
+
+def factsName(path: String, source: String, wire: String): String = match Grit.facts(path, source, wire) {
+    case Ok(_)  => "ok"
+    case Err(e) => errorName(e)
+}
+
+def errorName(error: Grit.Error): String = match error {
+    case Grit.Error.Wire(_)                     => "wire"
+    case Grit.Error.Native(kind, _)             => "native " + kind
+    case Grit.Error.UnsupportedVersion(version) => "unsupported-version ${version}"
+    case Grit.Error.UnexpectedPath(_, actual)   => "unexpected-path " + actual
+    case Grit.Error.InvalidRange(start, end)    => "invalid-range ${start} ${end}"
+    case Grit.Error.LogOutsideMatch(start, end) => "log-outside-match ${start} ${end}"
+    case Grit.Error.UnsupportedFile(file)       => "unsupported-file " + file
+}
+
+/// A malformed, mis-ranged or foreign native envelope is a classified failure,
+/// never an admitted empty evaluation.
+@Test
+def malformedNativeRecordsAreClassified(): Unit \ Assert = {
+    Assert.assertEq(expected = "wire", decodeName("matched\ttrue\n"));
+    Assert.assertEq(expected = "wire", decodeName("version\t1\nmatched\ttrue\nmatch\tf.rb\tnope\t2\n"));
+    Assert.assertEq(expected = "unsupported-version 2", decodeName("version\t2\n"));
+    Assert.assertEq(expected = "native host", decodeName("version\t1\nerror\thost\tboom\n"));
+    Assert.assertEq(expected = "invalid-range 5 2", factsName("f.rb", "abcdefgh", "version\t1\nmatch\tf.rb\t5\t2\n"));
+    Assert.assertEq(expected = "unexpected-path other.rb", factsName("f.rb", "abcdefgh", "version\t1\nmatch\tother.rb\t0\t2\n"));
+    Assert.assertEq(expected = "log-outside-match 5 7",
+        factsName("f.rb", "abcdefgh", "version\t1\nmatch\tf.rb\t0\t2\nlog\tx\t5\t7\n"))
+}
+
+/// The three forward relations are the only extraction; each inverse is exactly
+/// the reversal of its forward set, including the empty and multiple-edge cases.
+@Test
+def everyInverseIsTheExactReversalOfItsForwardRelation(): Unit \ {Assert, IO} = {
+    let repository = admittedWorld(List#{
+        ("src/a.js", "import { b } from \"./b\";\nimport { c } from \"./c\";\nfunction run() { b(1); }\n"),
+        ("src/b.js", "function b(value) { return value; }\n"),
+        ("src/c.js", "function c(value) { return value; }\n")
+    });
+    Assert.assertEq(expected = sorted(reversed(repository#imports)),
+        sorted(Repository.edgeTexts(repository#importedBy)));
+    Assert.assertEq(expected = sorted(reversed(repository#definedIn)),
+        sorted(Repository.edgeTexts(repository#defines)));
+    Assert.assertEq(expected = sorted(reversed(repository#calls)),
+        sorted(Repository.edgeTexts(repository#callers)));
+    let empty = admittedWorld(("src/only.ts", "function solo(): number { return 1; }\n") :: Nil);
+    Assert.assertEq(expected = Nil, empty#imports);
+    Assert.assertEq(expected = Nil, empty#importedBy);
+    Assert.assertEq(expected = Nil, empty#calls);
+    Assert.assertEq(expected = Nil, empty#callers)
+}
+
+/// The declared coverage claim of this fixture: the acquisition is the authored
+/// Ruby shop, the extractor is the pinned Ruby `calls` frontend, the relation is
+/// `calls`, the scope is one world named for that acquisition, and the bound is
+/// the three authored shop files.
+def acquisition(): String = "authored-ruby-shop"
+
+def extractor(): Grit.Program = Grit.Program.Calls
+
+def scopeBound(): Int32 = 3
+
+def shopWorldName(): Envelope.World = Envelope.World.World(acquisition())
+
+def callFacts(repository: Repository.Repository, scope: Envelope.World): List[Envelope.Fact] =
+    List.map(pair -> match pair {
+        case (caller, target) => { world = scope, source = caller, atom = Envelope.Atom.Calls, target = target }
+    }, repository#calls)
+
+def supportOf(facts: List[Envelope.Fact], status: Study.Status): List[Study.Support] =
+    List.map(fact -> { fact = fact, status = status }, facts)
+
+/// Earned scoped coverage over the real extraction. A positive witness survives
+/// partial coverage, missing or failed evidence cannot become a complete
+/// no-match, a same-named entity in another scope cannot donate a witness, and
+/// support counts distinct entities rather than duplicated proof paths.
+@Test
+def earnedCoverageResistsForeignAndProposedDonation(): Unit \ {Assert, IO} = {
+    Assert.assertEq(expected = scopeBound(), List.length(shopFiles()));
+    let receipt = relationFacts(Grit.Language.Ruby, path("shop/receipt.rb"), fixture("shop/receipt.rb"), extractor());
+    Assert.assertEq(expected = true, List.exists(fact -> fact#value == "total_cents", receipt));
+    let repository = admitted(shopFiles());
+    let facts = callFacts(repository, shopWorldName());
+    let ask: Study.Query = { scope = shopWorldName(), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
+    Assert.assertEq(expected = Study.Outcome.Witness, Study.observe(ask, Study.Coverage.Partial, facts));
+    Assert.assertEq(expected = Study.Outcome.Unknown, Study.observe(ask, Study.Coverage.Missing, Nil));
+    Assert.assertEq(expected = Study.Outcome.Failed,
+        Study.observe(ask, Study.Coverage.Failure("acquisition-error"), Nil));
+    let foreign: Study.Query =
+        { scope = Envelope.World.World("shop-v2"), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
+    Assert.assertEq(expected = Study.Outcome.NoMatch, Study.observe(foreign, Study.Coverage.Complete, facts));
+    let support = supportOf(facts, Study.Status.Observed);
+    Assert.assertEq(expected = 2, List.length(Study.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support)));
+    Assert.assertEq(expected = 2,
+        List.length(Study.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support ::: support)));
+    Assert.assertEq(expected = false,
+        Study.meets(1, shopWorldName(), "Shop.Pricing.total_cents", supportOf(facts, Study.Status.Proposed)))
+}

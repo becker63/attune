@@ -76,6 +76,7 @@ def labelsAreAcceptedOrRejectedWithoutMerging(): Unit \ Assert = {
     Assert.assertEq(expected = Ok("b/pricing.rb"), AsciiTree.label(limits(), "b/pricing.rb"));
     Assert.assertTrue(AsciiTree.label(limits(), "a/pricing.rb") != AsciiTree.label(limits(), "b/pricing.rb"));
     Assert.assertErr(AsciiTree.label(limits(), "a\tb"));
+    Assert.assertErr(AsciiTree.label(limits(), "café"));
     Assert.assertErr(AsciiTree.label(limits(), "a -> b"));
     Assert.assertErr(AsciiTree.label(limits(), "[OK]"));
     Assert.assertErr(AsciiTree.label(limits(), String.repeat(65, "x")))
