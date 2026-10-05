@@ -53,67 +53,178 @@ def selfFacts(): List[Fact] = edge(selfWorld(), "one", Atom.Imports, "one") :: N
 
 def selfScope(): Coverage.WorldFacts = Coverage.scoped(selfWorld(), selfFacts())
 
-// --------------------------------------------------------------- shape table
+// ------------------------------------------- relation-dependent wiring repair
 
-/// The 23 reachable connected shapes of one to three positive binary atoms over
-/// four role slots. A shape names its role wiring only; the relations are chosen
-/// so every role keeps one nominal domain, and a repeated role pair uses two
-/// distinct same-domain relations, because identical conjuncts normalize away.
-def shapes(): List[(String, List[(Atom, Int32, Int32)])] =
-    ("0>1", (Atom.Imports, 0, 1) :: Nil)
-        :: ("0>1;0>1", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: Nil)
-        :: ("0>1;0>2", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: Nil)
-        :: ("0>1;1>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 0) :: Nil)
-        :: ("0>1;1>2", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: Nil)
-        :: ("0>1;2>1", (Atom.Imports, 0, 1) :: (Atom.Imports, 2, 1) :: Nil)
-        :: ("0>1;0>1;0>2", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: Nil)
-        :: ("0>1;0>1;1>0", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 0) :: Nil)
-        :: ("0>1;0>1;1>2", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: Nil)
-        :: ("0>1;0>1;2>0", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 2, 0) :: Nil)
-        :: ("0>1;0>1;2>1", (Atom.ImportedBy, 0, 1) :: (Atom.Imports, 0, 1) :: (Atom.Imports, 2, 1) :: Nil)
-        :: ("0>1;0>2;0>3", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 0, 3) :: Nil)
-        :: ("0>1;0>2;1>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 1, 0) :: Nil)
-        :: ("0>1;0>2;1>2", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 1, 2) :: Nil)
-        :: ("0>1;0>2;1>3", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 1, 3) :: Nil)
-        :: ("0>1;0>2;3>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 3, 0) :: Nil)
-        :: ("0>1;0>2;3>1", (Atom.Imports, 0, 1) :: (Atom.Imports, 0, 2) :: (Atom.Imports, 3, 1) :: Nil)
-        :: ("0>1;1>0;2>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 0) :: (Atom.Imports, 2, 0) :: Nil)
-        :: ("0>1;1>2;2>0", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: (Atom.Imports, 2, 0) :: Nil)
-        :: ("0>1;1>2;2>3", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: (Atom.Imports, 2, 3) :: Nil)
-        :: ("0>1;1>2;3>1", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: (Atom.Imports, 3, 1) :: Nil)
-        :: ("0>1;1>2;3>2", (Atom.Imports, 0, 1) :: (Atom.Imports, 1, 2) :: (Atom.Imports, 3, 2) :: Nil)
-        :: ("0>1;2>1;3>1", (Atom.Imports, 0, 1) :: (Atom.Imports, 2, 1) :: (Atom.Imports, 3, 1) :: Nil)
+/// One file defines one symbol that is defined in another file: the authored
+/// facts for the `defines`+`defined_in` conjunction.
+def definedInWorld(): World = World.World("theory-defined-in")
+
+def definedInFacts(): List[Fact] =
+    edge(definedInWorld(), "app.rb", Atom.Defines, "Main")
+        :: edge(definedInWorld(), "Main", Atom.DefinedIn, "lib.rb")
         :: Nil
 
-def shapeDescriptor(atoms: List[(Atom, Int32, Int32)]): Theory.Descriptor =
-    descriptor(List.map(atom -> match atom { case (relation, subject, object) => pattern(relation, subject, object) }, atoms),
-        Nil, 0 :: 1 :: Nil)
+def definedInScope(): Coverage.WorldFacts = Coverage.scoped(definedInWorld(), definedInFacts())
 
-/// A world that witnesses exactly one shape: one fact per positive atom, with a
-/// distinct entity per role. The canonical atoms decide the relation and roles,
-/// so the world matches the row the lowering stores.
-def shapeWorld(d: Theory.Descriptor): Coverage.WorldFacts = {
-    let world = World.World("shape");
+/// The same definition, with the defined symbol calling another symbol: the
+/// authored facts for the `defines`+`calls` conjunction.
+def callsWorld(): World = World.World("theory-calls")
+
+def callsFacts(): List[Fact] =
+    edge(callsWorld(), "app.rb", Atom.Defines, "Main")
+        :: edge(callsWorld(), "Main", Atom.Calls, "Helper")
+        :: Nil
+
+def callsScope(): Coverage.WorldFacts = Coverage.scoped(callsWorld(), callsFacts())
+
+def definesDefinedIn(): Theory.Descriptor =
+    descriptor(pattern(Atom.Defines, 0, 1) :: pattern(Atom.DefinedIn, 1, 2) :: Nil, Nil, 0 :: 2 :: Nil)
+
+def definesCalls(): Theory.Descriptor =
+    descriptor(pattern(Atom.Defines, 0, 1) :: pattern(Atom.Calls, 1, 2) :: Nil, Nil, 0 :: 2 :: Nil)
+
+// ------------------------------------------- grammar-derived wiring coverage
+
+/// The twelve ordered role pairs of the four role slots, in a fixed grammar order.
+def rolePairs(): List[(Int32, Int32)] =
+    List.flatMap(subject -> List.filterMap(object -> if (object != subject) Some((subject, object)) else None, indices(4)), indices(4))
+
+def pairAt(index: Int32): (Int32, Int32) = match List.drop(index, rolePairs()) {
+    case head :: _ => head
+    case Nil       => (0, 1)
+}
+
+def pairLeft(pair: (Int32, Int32)): Int32 = match pair { case (left, _) => left }
+
+def pairRight(pair: (Int32, Int32)): Int32 = match pair { case (_, right) => right }
+
+/// The non-decreasing index lists of one to three role pairs: the bounded
+/// multisets of the wiring grammar itself, not a table of shape strings.
+def pairIndexLists(size: Int32): List[List[Int32]] = match size {
+    case 1 => List.map(index -> index :: Nil, indices(12))
+    case 2 => List.flatMap(first -> List.map(second -> first :: second :: Nil, List.drop(first, indices(12))), indices(12))
+    case _ => List.flatMap(first -> List.flatMap(second -> List.map(third -> first :: second :: third :: Nil, List.drop(second, indices(12))), List.drop(first, indices(12))), indices(12))
+}
+
+/// The two nominal domains of one role slot.
+def slotDomains(): List[Domain] = Domain.Files :: Domain.Symbols :: Nil
+
+/// The sixteen role-domain assignments of the four roles.
+def domainAssignments(): List[List[Domain]] =
+    List.flatMap(a -> List.flatMap(b -> List.flatMap(c -> List.map(d -> a :: b :: c :: d :: Nil, slotDomains()), slotDomains()), slotDomains()), slotDomains())
+
+def domainAt(domains: List[Domain], role: Int32): Domain = match List.drop(role, domains) {
+    case head :: _ => head
+    case Nil       => Domain.Files
+}
+
+/// The six admitted relations.
+def allAtoms(): List[Atom] = Atom.Defines :: Atom.DefinedIn :: Atom.Imports :: Atom.ImportedBy :: Atom.Calls :: Atom.Callers :: Nil
+
+/// The relations whose nominal signature is exactly one domain pair, read from
+/// the core signature table so the wiring grammar and the relations never drift.
+def relationsBetween(source: Domain, target: Domain): List[Atom] =
+    List.filter(atom -> Attune.atomSource(atom) == source and Attune.atomTarget(atom) == target, allAtoms())
+
+/// The relation for one edge under one role-domain assignment. A repeated pair
+/// takes the next same-signature relation so the two conjuncts stay distinct.
+def relationFor(domains: List[Domain], seen: List[(Int32, Int32)], pair: (Int32, Int32)): Atom = {
+    let matches = relationsBetween(domainAt(domains, pairLeft(pair)), domainAt(domains, pairRight(pair)));
+    match List.drop(if (List.memberOf(pair, seen)) 1 else 0, matches) {
+        case head :: _ => head
+        case Nil =>
+            match matches {
+                case head :: _ => head
+                case Nil       => Atom.Imports
+            }
+    }
+}
+
+def wiringAtoms(indices: List[Int32], domains: List[Domain], seen: List[(Int32, Int32)]): List[Theory.AtomPattern] = match indices {
+    case Nil => Nil
+    case index :: rest =>
+        let pair = pairAt(index);
+        pattern(relationFor(domains, seen, pair), pairLeft(pair), pairRight(pair)) :: wiringAtoms(rest, domains, pair :: seen)
+}
+
+def wiringRoles(pairs: List[(Int32, Int32)]): List[Int32] =
+    List.distinct(List.flatMap(pair -> pairLeft(pair) :: pairRight(pair) :: Nil, pairs))
+
+/// One wiring descriptor under one role-domain assignment: the relations come
+/// from the signature table, and the first-appearance role is the output.
+def wiringDescriptor(indices: List[Int32], domains: List[Domain]): Theory.Descriptor = {
+    let pairs = List.map(index -> pairAt(index), indices);
+    descriptor(wiringAtoms(indices, domains, Nil), Nil, List.take(1, wiringRoles(pairs)))
+}
+
+/// The world one wiring descriptor requires: one fact per positive lowered atom,
+/// with a distinct entity per role, so every admitted wiring is satisfiable.
+def wiringWorld(d: Theory.Descriptor): Coverage.WorldFacts = {
+    let world = World.World("wiring");
+    let lowered = Theory.lowering(d);
+    let atoms = lowered#atoms;
     Coverage.scoped(world, List.map(atom -> {
         world = world,
         source = "r" + Int32.toString(atom#subject),
         target = "r" + Int32.toString(atom#object),
         atom = atom#relation
-    }, Theory.canonical(d)#atoms))
+    }, atoms))
 }
 
-/// One shape's outcome: is it admitted, does its canonical key match, and does
-/// its world yield the authored witness through the native schema.
-def shapeOutcome(entry: (String, List[(Atom, Int32, Int32)])): (Bool, Bool, Bool) =
-    match entry {
-        case (key, atoms) => {
-            let d = shapeDescriptor(atoms);
-            let rows = Theory.witnesses(shapeWorld(d), candidate("shape", d) :: Nil);
-            (Theory.safe(d),
-                Theory.shapeKey(Theory.canonical(d)) == key,
-                List.exists(row -> row#x == Theory.Entity.File("r0") and row#y == Theory.Entity.File("r1"), rows))
+/// The `index`-th declared projected output role, padding a one-slot descriptor
+/// with its first slot exactly as the lowering does.
+def outputRole(index: Int32, outputs: List[Int32]): Int32 = match List.drop(index, outputs) {
+    case head :: _ => head
+    case Nil =>
+        match outputs {
+            case first :: _ => first
+            case Nil        => 0
         }
+}
+
+/// The nominal domain one lowered role slot holds, read from the atom that names it.
+def roleDomain(role: Int32, atoms: List[Theory.AtomPattern]): Domain =
+    match List.find(atom -> atom#subject == role or atom#object == role, atoms) {
+        case Some(atom) => if (atom#subject == role) Attune.atomSource(atom#relation) else Attune.atomTarget(atom#relation)
+        case None       => Domain.Files
     }
+
+def roleEntity(role: Int32, atoms: List[Theory.AtomPattern]): Theory.Entity =
+    Theory.entityOf("r" + Int32.toString(role), roleDomain(role, atoms))
+
+/// Does the descriptor lower to a compiled rule family and answer with the entity
+/// its authored facts require? A wiring with no compiled rule answers empty here.
+def wiringWitness(d: Theory.Descriptor): Bool = {
+    let lowered = Theory.lowering(d);
+    let outputs = lowered#outputs;
+    let rows = Theory.witnesses(wiringWorld(d), candidate("wiring", d) :: Nil);
+    List.exists(row ->
+        row#x == roleEntity(outputRole(0, outputs), lowered#atoms)
+            and row#y == roleEntity(outputRole(1, outputs), lowered#atoms), rows)
+}
+
+/// The first wiring index list per owner lowering key: the bounded representatives
+/// the fixed rule families must cover, derived from the key rather than a table.
+def windingRepresentatives(lists: List[List[Int32]], seen: List[String], acc: List[List[Int32]]): List[List[Int32]] = match lists {
+    case Nil => List.reverse(acc)
+    case list :: rest =>
+        let d = wiringDescriptor(list, slotDomains());
+        if (Theory.safe(d)) {
+            let key = Theory.loweringKey(d);
+            if (List.memberOf(key, seen)) windingRepresentatives(rest, seen, acc)
+            else windingRepresentatives(rest, key :: seen, list :: acc)
+        } else windingRepresentatives(rest, seen, acc)
+}
+
+/// The first descriptor per owner lowering key, so the native witness check runs
+/// once per compiled rule family.
+def keyedRepresentatives(descriptors: List[Theory.Descriptor], seen: List[String], acc: List[Theory.Descriptor]): List[Theory.Descriptor] = match descriptors {
+    case Nil => List.reverse(acc)
+    case d :: rest =>
+        let key = Theory.loweringKey(d);
+        if (List.memberOf(key, seen)) keyedRepresentatives(rest, seen, acc)
+        else keyedRepresentatives(rest, key :: seen, d :: acc)
+}
 
 // --------------------------------------------------------------- test helpers
 
@@ -182,20 +293,64 @@ def declaredBoundsArePublished(): Unit \ Assert = {
     Assert.assertEq(expected = 8, Theory.maxShards())
 }
 
-/// Every reachable shape of one to three positive atoms over four roles is
-/// admitted, keeps its canonical key, and yields its authored witness through
-/// the compiler-checked native schema. The whole family, not three smoke
-/// templates.
+/// Every admitted structural wiring of one to three positive binary atoms over
+/// four role slots lowers to a compiled fixed rule and yields the witness its
+/// authored facts require. The population is derived from the ordered role-pair
+/// grammar together with the sixteen role-domain assignments, and each edge takes
+/// its relation from the core signature table, so the relation, direction and
+/// domain axes are covered without a hand table of shape strings. The
+/// relation-independent key bounds the whole family to twenty-three fixed rules.
 @Test
-def everyAdmittedShapeEvaluatesNatively(): Unit \ Assert = {
-    let outcomes = List.map(shapeOutcome, shapes());
-    Assert.assertEq(expected = 23, List.length(shapes()));
-    Assert.assertEq(expected = 23, List.length(List.filter(outcome -> match outcome {
-        case (admitted, keyed, witnessed) => admitted and keyed and witnessed
-    }, outcomes)));
-    Assert.assertEq(expected = 0, List.length(List.filter(outcome -> match outcome {
-        case (admitted, keyed, witnessed) => not (admitted and keyed and witnessed)
-    }, outcomes)))
+def everyAdmittedGrammarWiringLowersToAuthoredWitness(): Unit \ Assert = {
+    let lists = List.flatMap(size -> pairIndexLists(size), 1 :: 2 :: 3 :: Nil);
+    let filesDescriptors = List.filter(d -> Theory.safe(d), List.map(list -> wiringDescriptor(list, slotDomains()), lists));
+    let representatives = windingRepresentatives(lists, Nil, Nil);
+    let domainDescriptors = List.flatMap(domains -> List.map(list -> wiringDescriptor(list, domains), representatives), domainAssignments());
+    let all = filesDescriptors ::: List.filter(d -> Theory.safe(d), domainDescriptors);
+    let keys = List.distinct(List.map(d -> Theory.loweringKey(d), all));
+    Assert.assertEq(expected = 23, List.length(keys));
+    let native = keyedRepresentatives(all, Nil, Nil);
+    Assert.assertEq(expected = 23, List.length(native));
+    Assert.assertEq(expected = 0, List.length(List.filter(d -> not wiringWitness(d), native)))
+}
+
+/// The internal lowering key is relation-independent and direction-sensitive:
+/// one structural wiring keeps its key under different relation spellings, while
+/// a reversed edge direction reaches a different key. Relation spelling is not a
+/// wiring axis; the direction is.
+@Test
+def loweringKeyIgnoresRelationSpellingButNotDirection(): Unit \ Assert = {
+    let pathImports = descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 1, 2) :: Nil, Nil, 0 :: 2 :: Nil);
+    let pathMixed = descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.ImportedBy, 1, 2) :: Nil, Nil, 0 :: 2 :: Nil);
+    let sharedObject = descriptor(pattern(Atom.Imports, 0, 1) :: pattern(Atom.Imports, 2, 1) :: Nil, Nil, 0 :: 2 :: Nil);
+    Assert.assertEq(expected = true, Theory.safe(pathImports));
+    Assert.assertEq(expected = true, Theory.safe(pathMixed));
+    Assert.assertEq(expected = true, Theory.safe(sharedObject));
+    Assert.assertEq(expected = Theory.loweringKey(pathImports), Theory.loweringKey(pathMixed));
+    Assert.assertEq(expected = false, Theory.loweringKey(pathImports) == Theory.loweringKey(sharedObject))
+}
+
+/// The confirmed silent false-empty repair. `defines`+`defined_in` and
+/// `defines`+`calls` are admitted, satisfiable conjunctions whose relation
+/// spelling made the old relation-dependent canonical wiring (`0>1;2>0`) select
+/// no fixed rule, so they answered empty. The relation-independent lowering key
+/// lands both on one compiled rule family and each yields its authored projected
+/// witness.
+@Test
+def relationDependentWiringLowersToAuthoredWitness(): Unit \ Assert = {
+    let definedIn = definesDefinedIn();
+    let calls = definesCalls();
+    Assert.assertEq(expected = true, Theory.safe(definedIn));
+    Assert.assertEq(expected = true, Theory.safe(calls));
+    Assert.assertEq(expected = Theory.loweringKey(definedIn), Theory.loweringKey(calls));
+    let definedInRows = Theory.witnesses(definedInScope(), candidate("defined_in", definedIn) :: Nil);
+    Assert.assertEq(expected = 1, List.length(definedInRows));
+    Assert.assertEq(expected = true, List.exists(row ->
+        row#x == Theory.Entity.File("app.rb") and row#y == Theory.Entity.File("lib.rb"), definedInRows));
+    let callRows = Theory.witnesses(callsScope(), candidate("calls", calls) :: Nil);
+    Assert.assertEq(expected = 1, List.length(callRows));
+    Assert.assertEq(expected = true, List.exists(row ->
+        row#x == Theory.Entity.File("app.rb") and row#y == Theory.Entity.Symbol("Helper"), callRows))
 }
 
 /// An empty, over-bounded, disconnected, self-referential, domain-mismatched or

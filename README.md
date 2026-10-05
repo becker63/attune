@@ -336,9 +336,9 @@ prior/request/evidence contract itself is production source in `Attune.Study`.
 The owner-approved cognitive-ownership accounting replaced the absolute size
 gates: the non-presentation 1,800 / combined 2,200 rules and the shared 4,300
 compatibility gate are retired, not raised. `//test/policy:declared_source_policy_test`
-now reports A cognitive 4,210, B mechanical 1,278, A+B authored 5,488, C test
-3,658 and C support 21,884 (raw 33,319 code lines over 123 readable files; the
-report also prints the derived physical 41,074 and nonblank 39,134 totals on the
+now reports A cognitive 4,233, B mechanical 1,278, A+B authored 5,511, C test
+3,753 and C support 21,884 (raw 33,437 code lines over 123 readable files; the
+report also prints the derived physical 41,341 and nonblank 39,362 totals on the
 same line); the
 per-component table, the exact support provenance, the presentation subsets
 (A/presentation 510, B/presentation 87), the concise six-chunk

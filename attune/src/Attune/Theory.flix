@@ -29,6 +29,15 @@
 /// every intermediate and result row, so no witness crosses a partition, and
 /// duplicate candidate ids can never union distinct descriptors.
 ///
+/// The `Desc` shape a rule selects on is the relation-independent lowering key
+/// `shapeKey(lowering(...))`, not the full canonical form: relation spelling can
+/// reorder the role wiring under alpha-canonicalization, so keying a rule on the
+/// canonical shape would let some admitted conjunction select no rule and answer
+/// empty. `lowering` minimizes the role wiring with the relation names ignored
+/// and transforms the relation, output and inequality slots by the same renaming,
+/// so every spelling of one structural wiring lands on one fixed rule family
+/// while descriptor identity keeps its public canonical form.
+///
 /// Theory reads no document, contacts no provider, ranks no task and owns no
 /// verdict. It consumes core values and one world's facts through
 /// `Attune.Coverage` and never imports Study or View. There is no runtime rule
@@ -209,13 +218,60 @@ pub mod Attune.Theory {
             + "] denied[" + List.join(";", List.map(renderPair, candidate#denied))
             + "] outputs[" + List.join(",", List.map(output -> "v" + Int32.toString(output), candidate#outputs)) + "]"
 
-    /// The canonical connected shape of a descriptor's positive atoms, as the
-    /// ordered role pairs the fixed lowering rules select on.
+    /// The connected shape of a descriptor's positive atoms, as its ordered role
+    /// pairs. The fixed rules do not select on the canonical form directly but on
+    /// `loweringKey`, which minimizes this role wiring with the relation names
+    /// ignored.
     pub def shapeKey(candidate: Descriptor): String =
         List.join(";", List.map(atom -> Int32.toString(atom#subject) + ">" + Int32.toString(atom#object), candidate#atoms))
 
     /// The one empty descriptor, used only when a descriptor has no form at all.
     pub def emptyDescriptor(): Descriptor = { atoms = Nil, denied = Nil, outputs = Nil }
+
+    // ------------------------------------------------ relation-independent lowering
+
+    /// The internal lowering key the fixed rules select on: the descriptor's role
+    /// wiring minimized over the at most `maxRenamings()` consistent renamings
+    /// with the relation names ignored. It is deliberately separate from
+    /// `identityKey`: descriptor identity keeps its public canonical form, while
+    /// lowering lands every relation spelling of one structural wiring on one
+    /// compiled rule family, so an admitted conjunction can never select no rule
+    /// and answer empty.
+    pub def loweringKey(candidate: Descriptor): String = shapeKey(lowering(candidate))
+
+    /// One descriptor normalized for lowering. The role renaming is chosen by the
+    /// least role wiring first and the least full form second, then renumbered by
+    /// first appearance. Every relation, projected output and bound-inequality
+    /// slot is carried through the same renaming, so the `Desc` row and the rule
+    /// family it selects stay consistent.
+    pub def lowering(candidate: Descriptor): Descriptor =
+        match bestWireOption(candidate, renamings(), None) {
+            case None         => emptyDescriptor()
+            case Some(option) => renumber(renamed(candidate, option))
+        }
+
+    def bestWireOption(candidate: Descriptor, options: List[List[Int32]], best: Option[List[Int32]]): Option[List[Int32]] =
+        match options {
+            case Nil => best
+            case option :: rest => match best {
+                case None => bestWireOption(candidate, rest, Some(option))
+                case Some(current) =>
+                    if (wiringPrecedes(candidate, option, current)) bestWireOption(candidate, rest, Some(option))
+                    else bestWireOption(candidate, rest, best)
+            }
+        }
+
+    /// True when one consistent renaming's role wiring precedes another's. The
+    /// wiring is compared first, so the minimization is relation-independent; the
+    /// full canonical form breaks a remaining tie, so the choice stays
+    /// deterministic and independent of the input's role names.
+    def wiringPrecedes(candidate: Descriptor, option: List[Int32], current: List[Int32]): Bool = {
+        let left = renamed(candidate, option);
+        let right = renamed(candidate, current);
+        let leftShape = shapeKey(left);
+        let rightShape = shapeKey(right);
+        if (leftShape != rightShape) leftShape < rightShape else render(left) < render(right)
+    }
 
     def bestOption(candidate: Descriptor, options: List[List[Int32]], best: Option[List[Int32]]): Option[List[Int32]] =
         match options {
@@ -387,7 +443,7 @@ pub mod Attune.Theory {
     // --------------------------------------------------------------- lowering
 
     /// The fixed native schema every world shard shares. `Edge` is the world's
-    /// nominal facts, `Desc` one canonical descriptor row per candidate,
+    /// nominal facts, `Desc` one lowering-keyed descriptor row per candidate,
     /// `Binding` and `Output` the anchor-free structural rows, `Anchor` the
     /// application anchors and `Task` the anchored join. Nothing here is a
     /// runtime rule string.
@@ -409,16 +465,19 @@ pub mod Attune.Theory {
             entityOf(fact#source, Attune.atomSource(fact#atom)),
             entityOf(fact#target, Attune.atomTarget(fact#atom))), facts)
 
-    /// One `Desc` row per candidate: the id, the canonical shape key, the three
-    /// relation slots, the one optional bound inequality and the two output
-    /// slots. A descriptor with no inequality carries `distinct = false`, and an
-    /// unused relation or output slot is padded; `safe` guarantees the padded
-    /// slots are never read.
+    /// One `Desc` row per candidate: the id, the relation-independent lowering
+    /// key, the three relation slots, the one optional bound inequality and the
+    /// two output slots. A descriptor with no inequality carries `distinct =
+    /// false`, and an unused relation or output slot is padded; `safe` guarantees
+    /// the padded slots are never read.
     pub def descriptors(candidates: List[Candidate]): List[(String, String, Atom, Atom, Atom, Bool, Int32, Int32, Int32, Int32)] =
         List.map(descriptorRow, candidates)
 
+    /// The `Desc` row for one candidate: its identity id and lowering key, and the
+    /// relation, inequality and output slots taken from the same lowering
+    /// normalization as the key, so the row and the rule it selects agree.
     def descriptorRow(candidate: Candidate): (String, String, Atom, Atom, Atom, Bool, Int32, Int32, Int32, Int32) = {
-        let descriptor = canonical(candidate#descriptor);
+        let descriptor = lowering(candidate#descriptor);
         let relations = List.map(atom -> atom#relation, descriptor#atoms);
         let (distinct, neq0, neq1) = match descriptor#denied {
             case pair :: _ => match pair { case (left, right) => (true, left, right) }
@@ -445,7 +504,7 @@ pub mod Attune.Theory {
     }
 
     /// Assemble one world shard's lowering: the scope's world-bearing facts, one
-    /// canonical descriptor row per candidate, and the application anchors.
+    /// lowering-keyed descriptor row per candidate, and the application anchors.
     pub def lower(world: WorldFacts, candidates: List[Candidate], anchors: List[(World, Entity)]): Schema =
         inject edges(world#facts), descriptors(candidates), anchors into Edge/4, Desc/10, Anchor/2
 
@@ -460,12 +519,13 @@ pub mod Attune.Theory {
     }
 
     /// The complete fixed lowering over the admitted family: one compiler-checked
-    /// rule per connected shape of one to three positive binary atoms over four
-    /// role slots, plus the projection and the anchored task rule. The shape is
-    /// data in `Desc`; each rule selects one shape by name, joins generic `Edge`
-    /// facts by relation value, and enforces the one bound inequality as a
-    /// per-role-pair guard whose free variables stay inside the compiler's
-    /// lifted-guard budget. There is no runtime rule text and no second evaluator.
+    /// rule per connected structural wiring of one to three positive binary atoms
+    /// over four role slots (twenty-three families), plus the projection and the
+    /// anchored task rule. The wiring is data in `Desc`; each rule selects one
+    /// relation-independent lowering key, joins generic `Edge` facts by relation
+    /// value, and enforces the one bound inequality as a per-role-pair guard whose
+    /// free variables stay inside the compiler's lifted-guard budget. There is no
+    /// runtime rule text and no second evaluator.
     pub def rules(): Schema = #{
         // shape 0>1
         Binding(c, w, e0, e1, e0, e0) :-

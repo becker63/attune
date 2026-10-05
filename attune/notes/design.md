@@ -355,7 +355,13 @@ The answers the walkthrough must settle, each with its owner and actual source:
    compiler-checked native schema whose shapes require every conjunct, while a
    route is the one `Attune.apply` over an exact frontier;
    `conjunctionRequiresEveryConjunct` and `unionOfRulesIsNotConjunction` pin the
-   difference.
+   difference. Each rule selects a `Desc` row by the relation-independent
+   `loweringKey`, not by the full canonical form, so relation spelling cannot
+   reorder an admitted conjunction's wiring out of the fixed family;
+   `relationDependentWiringLowersToAuthoredWitness`,
+   `loweringKeyIgnoresRelationSpellingButNotDirection` and the grammar-derived
+   `everyAdmittedGrammarWiringLowersToAuthoredWitness` pin that every admitted
+   wiring of one to three atoms reaches a compiled rule and yields its witness.
 7. **Task context versus world computation**: `Attune.Theory.lower`/`witnesses`
    materialize one world's witnesses once; the cheap task/pair anchors are joined
    afterwards without rerunning Datalog
@@ -425,8 +431,10 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the residency-walkthrough-and-raw-counting leaf (the six-chunk
-walkthrough and the derived physical/nonblank report totals), built on `b1a797a`
+Source identity: the complete-admitted-native-theory-lowering leaf (the
+relation-independent native Theory lowering repair), built on `bbd5234` (the
+residency-walkthrough-and-raw-counting leaf: the six-chunk walkthrough and the
+derived physical/nonblank report totals), which was built on `b1a797a`
 (the compact-ownership-and-bounded-accounting leaf: the semantic owner cutover,
 the core fold, the P08 absorption and the mechanical-adapter move), which was
 built on `6db53df` (the fixture-application-reports-and-checked-docs leaf), which
@@ -434,7 +442,8 @@ was built on `6c8e6d3` (the compact ASCII-projection leaf, which itself builds o
 the shared Study policies and corrected-regression leaf, `8376473`, `b21b97b`,
 `a97b234` and `eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a`; the exact commit of this
 leaf is recorded in the mission handoff). The earlier figures remain history, not
-erased, each labelled by the identity that measured it: `b1a797a`
+erased, each labelled by the identity that measured it: `bbd5234`
+4,210/1,278/5,488/3,658, `b1a797a`
 4,207/1,278/5,485/3,647, `6db53df`
 4,275/1,278/5,553/3,621, `6c8e6d3` 4,216/1,278/5,494/3,346, `8376473`
 4,216/1,278/5,494/3,335, `b21b97b` 3,723/1,278/5,001/2,746, `a97b234`
@@ -449,7 +458,7 @@ excluded).
 | --- | --- | --- | --- | --- | --- | --- |
 | core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 194 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
-| theory | `src/Attune/Theory.flix` | Flix | 532 | A | `Attune.Theory` | Bounded canonical descriptors, the fixed native lowering and the world-shard witness rows consumed by the shared index. |
+| theory | `src/Attune/Theory.flix` | Flix | 555 | A | `Attune.Theory` | Bounded canonical descriptors, the relation-independent native lowering key with the fixed rule families and the world-shard witness rows consumed by the shared index. |
 | study | `src/Attune/Study.flix` | Flix | 549 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 510 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
@@ -460,18 +469,18 @@ excluded).
 | boundary | `platform/tools/boundary/*.java` | Java | 481 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 210 | B | build substrate | Native Flix test rules, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,658 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,753 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
 | metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,289 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,210; B mechanical 1,278; A+B authored 5,488; C test 3,658; C support 21,884
+4,233; B mechanical 1,278; A+B authored 5,511; C test 3,753; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 510
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 123 readable files, code 33,319,
-comment 2,092, documentation 3,723, blank 1,940; the report prints the derived
-physical 41,074 and nonblank 39,134 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 123 readable files, code 33,437,
+comment 2,094, documentation 3,785, blank 1,973; the report prints the derived
+physical 41,289 and nonblank 39,316 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
 them. The code, comment and file
@@ -482,7 +491,7 @@ produced these figures, and this note's own text is part of that population), so
 re-run the check rather than copying them. The retired
 `proposal-semantics` component is gone from the table rather than relabelled: its
 77-line P08 portion moved into `study` (549 includes it) and its surrounding
-`@Test` laws moved into `tests` (3,658 includes them), so the subtraction is a
+`@Test` laws moved into `tests` (3,753 includes them), so the subtraction is a
 real move between named owners and not a change of label.
 
 ### Excluded inherited and generated families
@@ -1439,3 +1448,46 @@ escaped-quote and multiline executable-content counting laws
 (`//test/policy:count_law_test`) still pass unchanged. Declared and live checks
 `accept`; `bazel test //...` green; typecheck exit 0; scoped buildifier exit 4
 with the documented pre-existing diagnostic families only.
+
+## Complete-admitted-native-theory-lowering leaf record
+
+Feature `complete-admitted-native-theory-lowering` (fulfils VAL-THEORY-001 and
+VAL-THEORY-003). Recoverable checkpoint: the `bbd5234` `main` tip this leaf
+builds on.
+
+This leaf repairs one confirmed silent false-empty. The lowering `Desc` shape was
+the full canonical form `shapeKey(canonical(...))`, whose role wiring depends on
+the relation names, because alpha-canonicalization minimizes the whole rendered
+descriptor. An admitted, satisfiable conjunction whose relation spelling sorted
+its edges differently could therefore select no fixed rule and answer empty. The
+two confirmed cases were `defines`+`defined_in` and `defines`+`calls`: their
+canonical wiring was `0>1;2>0`, for which no rule exists, and the grammar-derived
+enumeration exposed thirteen such empty families in total.
+
+| Path | Change |
+| --- | --- |
+| `attune/src/Attune/Theory.flix` | adds the relation-independent `lowering`/`loweringKey` with their `bestWireOption`/`wiringPrecedes` helpers (bounded by the same 24 renamings) and points `descriptorRow` at `lowering`, so the relation, output and inequality slots are all transformed by the same renaming as the wiring; `canonical`/`identityKey` are untouched, so public descriptor identity is unchanged |
+| `attune/test/theory/TheoryLaw.flix` | replaces the 23-entry hand shape table with the grammar-derived `everyAdmittedGrammarWiringLowersToAuthoredWitness` over the ordered role-pair grammar and the sixteen role-domain assignments, and adds `relationDependentWiringLowersToAuthoredWitness` and `loweringKeyIgnoresRelationSpellingButNotDirection` |
+| `attune/notes/design.md` | the refreshed component/totals figures, the corrected completeness claim and this leaf record |
+
+The repair is one normalization, not a second evaluator: the fixed `Binding`/
+`Output`/`Task` rules, the `Desc` schema, the 24-renaming bound, candidate/world
+isolation and the shard bounds are unchanged, and no rule text or grammar
+narrowing was added. The failing reproduction precedes the repair: with
+`descriptorRow` still on `canonical`, the focused target failed with actual
+native counts (`relationDependentWiringLowersToAuthoredWitness` expected 1 got 0;
+`everyAdmittedGrammarWiringLowersToAuthoredWitness` expected 0 got 13), and after
+the repair all 18 Theory laws pass. The grammar-derived family is bounded at
+twenty-three rule families and needs no second solver, proof harness or census.
+
+Measured on this leaf's declared identity: A cognitive 4,233; B mechanical 1,278;
+A+B authored 5,511; C test 3,753; C support 21,884; presentation A 510 / B 87
+(subsets). `theory` moves 532 -> 555 and `tests` 3,658 -> 3,753; `repository`,
+`study`, `policy`, `view`, `frontends`, `grit-rule` and every mechanical component
+are unchanged. The cognitive core stays above the around-2,500 STOP-AND-JUSTIFY
+line and the authored A+B subtotal above the preferred 5,000 line; both are the
+same engineering-policy review triggers as the prior leaf, not automatic
+failures, and this leaf adds no new semantic concept — it makes one existing
+lowering key relation-independent. Declared and live checks `accept`;
+`bazel test //...` 25/25 green; typecheck exit 0; scoped buildifier exit 4 with
+the documented pre-existing diagnostic families only and no `# reformat`.
