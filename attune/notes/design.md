@@ -272,71 +272,140 @@ server heap, matching the approved budget rather than the earlier four-job
 setting, and the output base lives outside the workspace (`services.yaml`), so
 one Bazel owner at a time is the rule and `bazel clean` is never run.
 
-## Current counts
+## Cognitive-ownership accounting (owner policy, 2026-10-05)
 
-The policy classifies every readable file once (role, language, honest
-code/comment/doc/blank counts and comment-stripped code text) and keeps that
-per-file record reproducible through `Attune.Policy.classified`; the report
-renders only the fixed raw totals and the budget summary, not a generic
-role-by-language table:
+The owner-approved accounting in `library/cognitive-budget.md` is the active
+policy. It classifies authored implementation by responsibility, not by language
+or file placement, and it is an engineering review proxy, not a claim that LOC
+proves comprehension:
+
+- **A, cognitive core:** world/entity identity, the six atoms, frontiers,
+  application and exact memo, admission/resolution, earned coverage and
+  witness/no-match/unknown meaning, descriptors/lowering/isolation, task
+  intent/ranking/verdict/metrics, typed evidence and semantic View. Preferred
+  1,500–2,000 authored lines; architectural review at 2,000; around 2,500 a
+  STOP-AND-JUSTIFY architecture review before any further semantic concept.
+  These are review triggers, not automatic failures.
+- **B, mechanical substrate:** JVM/FFM, serialization, filesystem/runfiles,
+  process launch and remote-platform wiring, build rules and the generic ASCII
+  writer. Each has a named owner, a one-sentence contract, few semantic
+  dependencies, representative boundary tests and a clear forbidden-decision
+  list. Preferred <=2,500 and minimized.
+- **C, reported separately:** genuine tests/fixtures, inherited/generated
+  support, locks and data, with exact paths and origins.
+- **A+B together:** preferred 3,000–5,000 with review around 5,000; 5,001 is not
+  an automatic failure. Presentation is a labelled breakdown, never a second
+  addition.
+
+Classification is by component meaning, not whole language: under `src/Attune`
+the one generic `AsciiTree` writer is mechanical while its Flix neighbours are
+cognitive; the maintained `.grit` frontends and the maintained Grit closure rule
+(which carries the Flix/Starlark/Java/Ruby language-registry admission) are
+cognitive under any path; the mechanical Java adapters are mechanical although
+first-party authored; a genuine fixture stays a fixture and inherited support
+stays inherited wherever it sits.
+
+### Measured component table
+
+Source identity: the accounting leaf built on checkpoint
+`eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a` (the leaf commit is recorded in the
+mission handoff). `//test/policy:declared_source_policy_test` renders the class
+report and `//test/policy:accounting_law_test` prints the per-component table and
+asserts it partitions the raw code total. "Code" is measured noncomment code
+lines under the policy's honest counter (comments, documentation and blanks
+excluded).
+
+| Component | Source | Language | Code | Class | Owner | One-sentence contract |
+| --- | --- | --- | --- | --- | --- | --- |
+| core | `src/Attune.flix`, `src/Attune/Envelope.flix`, `src/Attune/Apply.flix` | Flix | 145 | A | `Attune` | Nominal world/File/Symbol identity, the six atoms, exact typed frontiers, one application and the local exact memo. |
+| repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 787 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once and earned scoped coverage. |
+| theory | (none yet) | Flix | 0 | A | `Attune.Theory` | Bounded canonical descriptors, native fixed-schema fragments, world shards and witness rows — the next semantic owner. |
+| study | `src/Attune/Study.flix` | Flix | 80 | A | `Attune.Study` | Typed evidence/outcome/observation/artifact values and the prediction/gold materialization records. |
+| policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 561 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, and the Flix-owned isolation assertions. |
+| view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 452 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
+| frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
+| grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
+| ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
+| parquet | `src/native/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
+| boundary | `platform/tools/boundary/*.java` | Java | 481 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester; owns no policy, classification or fixture case. |
+| grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
+| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 210 | B | build substrate | Native Flix test rules, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 2,645 | C | fixtures | Genuine native laws and fixtures, including the four remaining test-only proposals, run as the pinned compiler's `@Test`. |
+| inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
+| inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,284 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+
+Measured totals on this identity (declared-source check, `accept`): A cognitive
+3,081; B mechanical 1,278; A+B authored 4,359; C test 2,645; C support 21,884
+(655 source + 21,229 generated locks). Presentation subsets: A/presentation 452
+and B/presentation 87, both already inside their class totals and never added
+again. Raw population: 121 readable files, code 31,172, comment 1,956,
+documentation 2,672, blank 1,518, so physical 37,318 and nonblank 35,800 at the
+recorded run. The code and comment columns are stable; the documentation column
+moves whenever this note itself is edited, so re-run the check rather than
+copying it.
+
+The `inherited`/`inherited-locks` split is the exact support provenance: the
+maintained upstream `lib.rs` plus the five patch files and header are 655 code
+lines, while the two pinned generated locks are 21,229. `metadata` is dominated
+by `maven_install.json` (a pinned JSON lock) plus `MODULE.bazel.lock`; the
+checkout-root `README.md`/`LICENSE` and the read-only reference stay outside the
+audited workspace. The live audit additionally walks workspace files the declared
+inventory does not list (such as the untracked `platform/zed/grammars/` editor
+checkout) and reports them in the inherited support class rather than as
+authored source.
+
+### Retired gates and active review semantics
+
+The absolute non-presentation 1,800 / combined 2,200 rules and the shared 4,300
+compatibility gate are retired, not raised: `Policy.flix` no longer holds a
+`sharedTarget`/`proposalTarget`/`testTarget` constant and no longer emits a
+`budget-exceeded` finding. `renderReport` prints the raw totals, the class
+totals, the presentation subsets and any review note:
 
 ```
 attune-policy-total files=… code=… comment=… doc=… blank=…
-attune-policy-budget shared_code=… shared_target=… proposal_code=… proposal_line_target=… test_code=… test_target=…
+attune-policy-class cognitive=… mechanical=… authored=… test=… support=…
+attune-policy-presentation cognitive=… mechanical=… (subsets of the class totals, not added again)
+attune-policy-review <bounded review note, when a soft threshold is crossed>
 attune-policy-verdict: accept
 ```
 
-Measured by the declared-source check and confirmed by the live audit (both
-`accept`); documentation edits move only the metadata/documentation counts, so
-re-run the check rather than trust a copied number. Shared implementation code
-totals 4,285 against the user-approved 4,300-line target; test code 2,526 is
-within 2,600 and test-only proposal code 381 is within 1,500. (The
-retained-repository-boundary consolidation added the byte-correct range accessor
-and the classified malformed-record branch to the shared Grit projection, then
-removed the hand-rolled adjacent-dedup walk in favour of the standard distinct,
-and added the repository-boundary laws to the fixtures: shared 4,292 -> 4,285 and
-test 2,418 -> 2,526; the earlier 4,292/2,418/381 figures are preserved as
-history.) The 4,433 shared
-figure from the core-and-artifact commit (`d901935`) is preserved as the
-historical failing measurement that motivated the bounded subtraction, and the
-4,291/2,579/841 figures recorded before that consolidation are preserved as
-earlier history. The compact core-and-artifact migration moved the P01-P04/P07/P10
-laws into `Attune`/`Study` and deleted those seven proposal sources: it added 142
-shared Flix lines (a structured world identity, the one exact six-atom application
-with its instrumented local memo, and Study's typed evidence/observation/artifact
-values) while removing 161 fixture lines, leaving the corpus 133 shared lines over
-4,300. The early subtraction removes the generic role-by-language report
-scaffolding and the duplicated audit traversals from `src/Attune/Policy.flix`
-(count each readable file once, compute the audit BUILD-reference/code text once)
-for a net 141 shared lines, so the historical gate is green again; this is not a
-claim of the final 1,800/2,200 limits, which remain owned by the compact
-ownership-and-accounting work. Only the shared, test and proposal totals feed the
-budget. If a count exceeds its target the gate stops and reports the excess; a
-target is never raised automatically, and it is only ever moved by editing the
-declared constant in `src/Attune/Policy.flix`, never by golfing, deleting or
-relabelling an artifact:
+The only verdict remains `accept`/`reject` from hard findings, so a total above
+the soft range can never reject a correct tree. The superseded gate history is
+preserved as history, not an active cap: the pre-implementation aim 2,000, the
+3,200 working constant, the 4,000 approval and the 4,300 approval after the
+corrected 4,272 measurement; the test target 2,400 to 2,600; and the failing
+measurements 4,433/4,300 (`d901935`), 4,291/2,579/841, and the 4,285/2,526/381
+figures. None is a current target, and none was reached by golfing, relabelling
+or deleting a boundary.
 
-- the pre-implementation aim of 2,000 was raised to 3,200 when the spine alone
-  measured 1,575 noncomment lines and carrying the retained Grit closure, the
-  maintained query inventory, the typed envelope and the admission genuinely
-  cost the rest;
-- at commit `06e6fc3` the shared count measured 3,031 and the tree was green
-  under that 3,200 constant. That raw green-under-3,200 evidence is preserved as
-  history, not rewritten: the 3,200 rationale was never approved as a ceiling,
-  and the constant that stood there was a working number, not an approved one.
-  Restoring the reference per-language import dispatch, the narrowest-owner call
-  law and the ambiguous, dynamic and ownerless refusals is real retained
-  admission rather than padding, and the user approved 4,000 for it before this
-  work began. That approval supersedes the 3,200 rationale;
-- the test target was raised once, from 2,400 to 2,600, explicitly approved by
-  the user after P09/P10 for the final correspondence fixtures;
-- the corrected ordinary-string escape count measured 4,272 shared lines against
-  the then-approved 4,000, so the tree was honestly red (`budget-exceeded
-  path=shared`, Bazel exit 3) rather than quietly under-reported. That raw failed
-  measurement is preserved as history, not rewritten. The user then approved
-  4,300 for shared code together with the escape fix and its named regression, and
-  the 4,300 approval supersedes the 4,000 one. The proposal target (1,500) and the
-  test target (2,600) are unchanged by it.
+### Architecture review (STOP-AND-JUSTIFY trigger)
+
+The measured cognitive core (3,081) is above the around-2,500 review trigger, so
+this feature performs the required bounded architecture review instead of
+claiming compliance or fabricating a pass. The review decomposes the class:
+
+- the meaning-bearing scientific core — core 145 + repository 787 + study 80 +
+  frontends 372 = 1,384 — sits in the lower half of the preferred 1,500–2,000
+  band, and `theory` is still 0;
+- two components are counted cognitive conservatively rather than as build
+  overhead: the maintained Grit closure rule (684), because it changes which
+  languages the pinned engine admits, and the policy/accounting module (561),
+  because policy-bearing code counts as A under any path;
+- the presentation cognitive subset (452: View + Docs) is policy-bearing
+  projection, already inside A and not added again.
+
+Decision: proceed to the Theory feature. The trigger fired on a conservative
+classification, the true scientific core measures about 1,384 against a
+1,500–2,000 preference, the mechanical substrate is 1,278 (well under the
+preferred 2,500), and A+B is 4,359 inside the preferred 3,000–5,000. This is a
+review conclusion, not a numeric pass: if Theory grows the cognitive class
+further, the next review must either subtract genuinely redundant policy/build
+code or record a bounded justified excess, and it must never raise a constant or
+relabel authored code. The counting limitations in "Known corrections" below
+remain disclosed; no general lexer or accounting framework was added, and the
+accounting reuses the same one-pass classifier.
 
 ### Known corrections to the reported counts
 
@@ -528,9 +597,9 @@ build passes. At that checkpoint the shared row was honestly red at 4,433 of the
 user-approved 4,300 (`attune-policy-verdict: reject`, Bazel exit 3) because this
 leaf added the required core semantics to a corpus that already sat nine lines
 under the gate; test 2,418 of 2,600 and proposals 381 of 1,500 stayed within
-their targets. The further reduction toward the final 1,800/2,200 limits remains
-owned by the compact ownership-and-accounting work, which removes the rest of the
-superseded bootstrap policy/report apparatus. The pins and licenses above are unchanged by this work;
+their targets. Those superseded caps were later retired outright by the compact
+accounting leaf (see "Cognitive-ownership accounting" above), which also removed
+the rest of the superseded bootstrap policy/report apparatus. The pins and licenses above are unchanged by this work;
 the only model-shaped code is the recorded fake transport and no provider is
 contacted; the setup is the one-Bazel-owner, out-of-workspace output base with the
 checkout-root `.env` read only by the narrow BuildBuddy helper. Each remaining
@@ -649,7 +718,8 @@ semantics were dropped: the escaped-quote and multiline-literal counting laws,
 the boundary/secret/reference/size/symlink/ownership checks and every named policy
 case still pass. Measured result: shared 4,433 to 4,292 (141 lines removed),
 proposal 381 and test 2,418 unchanged; the declared and live audits both return
-`accept`. This clears the historical gate only, not the final 1,800/2,200 limits.
+`accept`. This cleared the historical gate only; the later accounting leaf
+retired the 1,800/2,200 and 4,300 caps rather than meet or raise them.
 Recovery checkpoint: commit `d901935` on `main`.
 
 ## Retained-repository-boundary consolidation record
@@ -694,3 +764,29 @@ the mechanical Java location and the BUILD plumbing moved. Measured result:
 shared 4,292 to 4,285 (the two semantic fixes add 4 code lines; the dedup
 consolidation removes 11), test 2,418 to 2,526, proposal 381 unchanged; declared
 and live audits both `accept`, and the offline gate is 24/24 green.
+
+## Cognitive-ownership accounting leaf record
+
+The first accounting feature applied the owner policy and retired the obsolete
+gate before substantial new Theory:
+
+| Path | Change |
+| --- | --- |
+| `attune/src/Attune/Policy.flix` | removed `sharedTarget`/`proposalTarget`/`testTarget` and `budgetFindings`; added the `Ownership` class, `componentOf`/`componentNames`, `accountingOf`/`reviewNotes` and the class/presentation/review report lines; removed the now-dead `Role`/`roleOf` and the `Classified` role field (a genuine subtraction, not a relabel) |
+| `attune/test/policy/AccountingLaw.flix` | new: component classification, relocation/inheritance, presentation-subset, retired-gate/no-rejection, component-partition and raw-total laws, over a declared fixture and the real declared population |
+| `attune/test/policy/BUILD.bazel` | added `accounting_law_test` over `//:policy_sources` |
+| `attune/BUILD.bazel` | added the accounting law to the `policy_tests` suite |
+| `attune/AGENTS.md`, `attune/notes/mission.md`, `attune/notes/design.md`, `README.md` | active policy and reporting semantics updated; the obsolete 1,800/2,200 and 4,300 caps are recorded as retired history, not as active targets |
+
+No constant was raised and no new lexer or accounting framework was added: the
+accounting reuses the same one-pass classifier. Measured on this leaf, declared
+and live checks both `accept`, `bazel test //...` 25/25 green (up from 24),
+typecheck exit 0, scoped buildifier exit 4 with the pre-existing
+`grit_repository.bzl` reformat and the documented diagnostic families only:
+A cognitive 3,081, B mechanical 1,278, A+B 4,359, C test 2,645, C support 21,884;
+raw code 31,172, comment 1,956, documentation 2,672, blank 1,518 over 121
+readable files (physical 37,318, nonblank 35,800 at the recorded run; the
+documentation column shifts whenever this note is edited). Source identity: this
+leaf's commit on top of checkpoint
+`eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a` (the exact commit is recorded in the
+mission handoff). The retired gate remains recoverable from checkpoint `eab5dbb`.

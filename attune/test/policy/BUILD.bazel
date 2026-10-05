@@ -29,6 +29,19 @@ native_flix_test(
     ],
 )
 
+# The owner-approved cognitive-ownership accounting laws: component
+# classification, separate test/support populations, presentation subsets and
+# soft review semantics over the declared population.
+native_flix_declared_test(
+    name = "accounting_law_test",
+    srcs = [
+        "AccountingLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Policy.flix",
+    ],
+    declared = "//:policy_sources",
+)
+
 # The hermetic declared-source policy over exactly the declared inputs.
 native_flix_declared_test(
     name = "declared_source_policy_test",

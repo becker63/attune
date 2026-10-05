@@ -68,16 +68,6 @@ pub mod Attune.Policy {
         case Other
     }
 
-    /// The accounting role of one path.
-    pub enum Role with Eq, ToString {
-        case Shared
-        case Declarative
-        case Fixture
-        case Support
-        case Metadata
-        case Excluded
-    }
-
     /// Lexical state carried across the lines of one file. `Str` is an ordinary
     /// quoted literal; `Triple` is the Starlark triple-quoted literal — the
     /// generated-text idiom, which is not a docstring — so its opening and
@@ -173,15 +163,6 @@ pub mod Attune.Policy {
     pub def isBuildFile(path: String): Bool =
         hasSuffix("BUILD.bazel", path) or path == "BUILD" or hasSuffix("/BUILD", path)
             or hasSuffix("MODULE.bazel", path)
-
-    pub def roleOf(path: String): Role =
-        if (isExcludedPath(path)) Role.Excluded
-        else if (isBuildFile(path)) Role.Declarative
-        else if (isRootMetadata(path)) Role.Metadata
-        else if (hasPrefix("test/", path)) Role.Fixture
-        else if (hasPrefix("src/", path) or hasPrefix("platform/tools/", path) or hasPrefix("platform/build/", path)) Role.Shared
-        else if (isAdmittedForeign(path)) Role.Support
-        else Role.Metadata
 
     pub def languageOf(path: String): Language =
         if (hasSuffix(".flix", path)) Language.Flix
@@ -501,12 +482,12 @@ pub mod Attune.Policy {
 
     // ------------------------------------------------------- classification
 
-    /// One loaded file, classified once: its measured entry, accounting role,
-    /// language, honest line counts and comment-stripped code text, and whether
-    /// its content was readable. The counts and code text come from one lexical
-    /// pass, and every per-file decision (findings, totals, audit) consumes this
+    /// One loaded file, classified once: its measured entry, language, honest
+    /// line counts and comment-stripped code text, and whether its content was
+    /// readable. The counts and code text come from one lexical pass, and every
+    /// per-file decision (findings, totals, audit, ownership) consumes this
     /// record, so a readable file is never read or counted twice.
-    pub type alias Classified = (Entry, Role, Language, Counts, String, Bool)
+    pub type alias Classified = (Entry, Language, Counts, String, Bool)
 
     pub def classified(loaded: List[(Entry, String)]): List[Classified] =
         List.map(classify, loaded)
@@ -517,33 +498,10 @@ pub mod Attune.Policy {
         let lang = languageOf(path);
         if (readable(e)) {
             let (counts, code) = countAndCode(lang, pairText(p));
-            (e, roleOf(path), lang, counts, code, true)
-        } else (e, roleOf(path), lang, zeroCounts(), "", false)
+            (e, lang, counts, code, true)
+        } else (e, lang, zeroCounts(), "", false)
 
     // ------------------------------------------------------------- findings
-
-    /// The reviewed shared-code target. The user explicitly approved 4,300
-    /// counted noncomment shared implementation lines after the corrected
-    /// ordinary-string escape law measured 4,272 shared lines, superseding the
-    /// earlier 4,000 approval (itself superseding the original pre-implementation
-    /// aim of 2,000 and the 3,200 constant one worker set on its own authority;
-    /// the historical 06e6fc3 tree passed only under that unauthorized gate, which
-    /// is preserved as history, not an approved completion claim). Carrying the
-    /// retained Grit closure, the maintained defines/imports/calls inventory, the
-    /// typed envelope and the conservative per-language admission genuinely costs
-    /// that much, so no required artifact was golfed, deleted or relabelled to
-    /// fit an earlier number. This is the approved value: if shared code
-    /// exceeds it, the excess is reported and the run stops for a user
-    /// decision; the gate is never raised automatically.
-    pub def sharedTarget(): Int32 = 4300
-    pub def proposalTarget(): Int32 = 1500
-
-    /// The reviewed test-code target. The user explicitly approved 2,600 counted
-    /// test lines after P09/P10, replacing the earlier 2,400 value, for the final
-    /// correspondence fixtures. The proposal target above is unchanged. If test
-    /// code exceeds it, the excess is reported and the run stops for a user
-    /// decision; the gate is never raised automatically.
-    pub def testTarget(): Int32 = 2600
 
     def requiredDocs(): List[String] =
         "AGENTS.md" :: "notes/design.md" :: "BUILD.bazel" :: "MODULE.bazel" :: Nil
@@ -580,7 +538,7 @@ pub mod Attune.Policy {
     /// and the excluded boundaries first, then ownership, suffix, embedded
     /// script and size checks over the entry and its recovered code text.
     def fileFindings(c: Classified): List[Finding] =
-        let (e, _, lang, _, code, readable) = c;
+        let (e, lang, _, code, readable) = c;
         let path = entryPath(e);
         if (isSecretPath(path))
             if (readable) Finding.Finding("secret-content", path, "a secret path must stay metadata only") :: Nil else Nil
@@ -612,7 +570,7 @@ pub mod Attune.Policy {
         List.flatMap(c -> ownershipFindings(blob, c) ::: symlinkFindings(root, c), cs)
 
     def ownershipFindings(blob: String, c: Classified): List[Finding] =
-        let (e, _, _, _, code, _) = c;
+        let (e, _, _, code, _) = c;
         let path = entryPath(e);
         let orphan = if (isOrphanCandidate(path) and not hasInfix(basename(path), blob))
             Finding.Finding("orphaned-source", path, "no BUILD file in this workspace admits this source") :: Nil else Nil;
@@ -624,7 +582,7 @@ pub mod Attune.Policy {
 
     /// A symbolic link whose resolved target leaves the audited root escapes it.
     def symlinkFindings(root: String, c: Classified): List[Finding] =
-        let (e, _, _, _, _, _) = c;
+        let (e, _, _, _, _) = c;
         let path = entryPath(e);
         if (isExcludedPath(path) or isReferencePath(path)) Nil
         else match entryMeasured(e) {
@@ -662,47 +620,184 @@ pub mod Attune.Policy {
     def keepThree(l: List[String]): List[String] =
         match l { case a :: b :: c :: _ => a :: b :: c :: Nil case _ => l }
 
+    // --------------------------------------------------- cognitive ownership
+    //
+    // The owner-approved accounting classifies authored implementation by
+    // responsibility, not language or placement. The meaning-bearing core
+    // (identity, admission, coverage, theory, task, ranking, verdict, metrics,
+    // semantic Grit/Starlark/View) is cognitive; pure JVM/FFM/serialization/
+    // filesystem/process/runfiles/action plumbing and the generic ASCII writer
+    // are mechanical. A component is named, so a `.flix` under `src/Attune` is
+    // cognitive while the one generic writer beside it is mechanical. Genuine
+    // tests/fixtures and inherited/generated support are reported separately
+    // with honest origins; authored algorithms under tests stay in the authored
+    // population rather than becoming an exemption.
+
+    /// The authored cognitive-ownership class of one component.
+    pub enum Ownership with Eq, ToString {
+        case Cognitive
+        case Mechanical
+        case Fixture
+        case Support
+        case Declarative
+        case Metadata
+    }
+
+    /// The maintained Grit closure rule carries the Flix/Starlark/Java/Ruby
+    /// language-registry admission that changes what the pinned engine can mean,
+    /// so it is classified cognitive rather than inherited build plumbing. The
+    /// other build rules only construct the declared graph.
+    pub def isGritClosureRule(path: String): Bool = path == "platform/build/grit_repository.bzl"
+
+    /// The semantic View projection and the documentation correspondence seam
+    /// are policy-bearing presentation: cognitive, reported as a presentation
+    /// subset and never added a second time.
+    pub def isPresentationCognitive(path: String): Bool =
+        path == "src/Attune/View.flix" or path == "src/Attune/Docs.flix"
+
+    /// The generic bounded ASCII writer owns no identity or truth: it is
+    /// mechanical presentation.
+    pub def isPresentationMechanical(path: String): Bool = path == "src/Attune/AsciiTree.flix"
+
+    def isMechanicalPath(path: String): Bool =
+        hasPrefix("src/native/", path) or hasPrefix("platform/tools/", path)
+            or (hasPrefix("platform/build/", path) and not isGritClosureRule(path))
+
+    pub def ownershipOf(path: String): Ownership =
+        if (isExcludedPath(path) or isReferencePath(path) or isSecretPath(path)) Ownership.Metadata
+        else if (isBuildFile(path)) Ownership.Declarative
+        else if (isRootMetadata(path) or hasPrefix("notes/", path)) Ownership.Metadata
+        else if (isPresentationMechanical(path)) Ownership.Mechanical
+        // A maintained Grit frontend changes what the engine means, so it stays
+        // cognitive under any path rather than an inherited or fixture exemption.
+        else if (hasSuffix(".grit", path)) Ownership.Cognitive
+        else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) Ownership.Support
+        else if (hasPrefix("test/", path)) Ownership.Fixture
+        else if (isMechanicalPath(path)) Ownership.Mechanical
+        else if (hasPrefix("src/", path) or isApprovedRoot(path)) Ownership.Cognitive
+        else Ownership.Metadata
+
+    /// The named components the accounting reports, in table order. `theory` is
+    /// the not-yet-built sixth semantic owner and is expected to be zero until
+    /// its own feature.
+    pub def componentNames(): List[String] =
+        "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
+            :: "frontends" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
+            :: "build-rules" :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
+
+    pub def componentOf(path: String): String =
+        if (isExcludedPath(path) or isReferencePath(path) or isSecretPath(path)) "metadata"
+        else if (isGritClosureRule(path)) "grit-rule"
+        else if (isBuildFile(path) or isRootMetadata(path) or hasPrefix("notes/", path)) "metadata"
+        else if (hasSuffix(".grit", path)) "frontends"
+        else if (path == "src/Attune/AsciiTree.flix") "ascii"
+        else if (path == "src/Attune.flix" or path == "src/Attune/Envelope.flix" or path == "src/Attune/Apply.flix") "core"
+        else if (hasPrefix("src/Attune/Repository", path)) "repository"
+        else if (path == "src/Attune/Study.flix") "study"
+        else if (path == "src/Attune/Policy.flix" or path == "src/Attune/Isolation.flix") "policy"
+        else if (path == "src/Attune/View.flix" or path == "src/Attune/Docs.flix") "view"
+        else if (hasPrefix("src/grit/", path)) "frontends"
+        else if (hasPrefix("src/native/", path)) "parquet"
+        else if (hasPrefix("platform/tools/boundary/", path)) "boundary"
+        else if (hasPrefix("platform/tools/grit/", path)) "grit-binding"
+        else if (hasPrefix("platform/build/", path)) "build-rules"
+        else if (path == "platform/support/grit/cargo-bazel-lock.json" or path == "platform/support/grit/Cargo.lock") "inherited-locks"
+        else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) "inherited"
+        else if (hasPrefix("test/", path)) "tests"
+        else "metadata"
+
     // --------------------------------------------------------------- totals
 
     /// Raw totals over the readable population: file count and the summed
-    /// code/comment/doc/blank lines, plus the shared, proposal and test code
-    /// subtotals the budgets compare. The per-file role/language/counts record
-    /// stays reproducible through `classified`; this is only the summary.
-    pub type alias Totals = (Int32, Counts, Int32, Int32, Int32)
+    /// code/comment/doc/blank lines. The per-file record stays reproducible
+    /// through `classified`; this is only the summary.
+    pub type alias Totals = (Int32, Counts)
 
     pub def totalsOf(cs: List[Classified]): Totals =
-        List.foldLeft(addTotal, (0, zeroCounts(), 0, 0, 0), cs)
+        List.foldLeft(addTotal, (0, zeroCounts()), cs)
 
     def addTotal(t: Totals, c: Classified): Totals =
-        let (files, all, shared, proposal, test) = t;
-        let (e, role, _, counts, _, readable) = c;
-        if (not readable) t
+        let (files, all) = t;
+        let (_, _, counts, _, readable) = c;
+        if (not readable) t else (files + 1, addCounts(all, counts))
+
+    /// Authored code by ownership class, plus the two presentation subsets.
+    /// Presentation is a labelled subset of A/B, never a second addition.
+    pub type alias Accounting = (Int32, Int32, Int32, Int32, Int32, Int32)
+
+    pub def accountingOf(cs: List[Classified]): Accounting =
+        List.foldLeft(addAccounting, (0, 0, 0, 0, 0, 0), cs)
+
+    def addAccounting(a: Accounting, c: Classified): Accounting =
+        let (cog, mech, tst, sup, pCog, pMech) = a;
+        let (e, _, counts, _, readable) = c;
+        if (not readable) a
         else {
+            let path = entryPath(e);
             let code = codeOf(counts);
-            (files + 1, addCounts(all, counts),
-                if (role == Role.Shared) shared + code else shared,
-                if (hasPrefix("test/proposals/", entryPath(e))) proposal + code else proposal,
-                if (role == Role.Fixture) test + code else test)
+            let pC = if (isPresentationCognitive(path)) pCog + code else pCog;
+            let pM = if (isPresentationMechanical(path)) pMech + code else pMech;
+            match ownershipOf(path) {
+                case Ownership.Cognitive => (cog + code, mech, tst, sup, pC, pM)
+                case Ownership.Mechanical => (cog, mech + code, tst, sup, pC, pM)
+                case Ownership.Fixture => (cog, mech, tst + code, sup, pC, pM)
+                case Ownership.Support => (cog, mech, tst, sup + code, pC, pM)
+                case _ => (cog, mech, tst, sup, pC, pM)
+            }
         }
 
-    def budgetFindings(t: Totals): List[Finding] =
-        let (_, _, shared, _, test) = t;
-        let overShared = if (shared > sharedTarget())
-            Finding.Finding("budget-exceeded", "shared", "shared implementation code exceeds the declared target without a reviewed gate change") :: Nil else Nil;
-        let overTest = if (test > testTarget())
-            Finding.Finding("budget-exceeded", "test", "test-review code exceeds the declared target without a reviewed gate change") :: Nil else Nil;
-        overShared ::: overTest
+    pub def cognitiveOf(a: Accounting): Int32 = match a { case (c, _, _, _, _, _) => c }
+    pub def mechanicalOf(a: Accounting): Int32 = match a { case (_, m, _, _, _, _) => m }
+    pub def authoredOf(a: Accounting): Int32 = cognitiveOf(a) + mechanicalOf(a)
+    pub def fixturesOf(a: Accounting): Int32 = match a { case (_, _, f, _, _, _) => f }
+    pub def supportOf(a: Accounting): Int32 = match a { case (_, _, _, s, _, _) => s }
+    pub def presentationCognitiveOf(a: Accounting): Int32 = match a { case (_, _, _, _, pc, _) => pc }
+    pub def presentationMechanicalOf(a: Accounting): Int32 = match a { case (_, _, _, _, _, pm) => pm }
+
+    /// Owner-approved engineering-policy thresholds, not empirical capacity
+    /// limits: cognitive core preferred 1500-2000, review at 2000, around 2500
+    /// STOP-AND-JUSTIFY architecture review before further semantic concepts;
+    /// mechanical substrate preferred <=2500; authored A+B preferred 3000-5000
+    /// with review around 5000. 5001 is not an automatic failure, and the
+    /// retired absolute 1800/2200 and shared 4300 gates are not replaced by
+    /// another total rejection.
+    pub def cognitivePreferredLow(): Int32 = 1500
+    pub def cognitivePreferredHigh(): Int32 = 2000
+    pub def cognitiveStopAndJustify(): Int32 = 2500
+    pub def mechanicalPrefer(): Int32 = 2500
+    pub def authoredPreferredLow(): Int32 = 3000
+    pub def authoredPreferredHigh(): Int32 = 5000
+
+    /// Proportionate review notes: informational, never findings, so crossing a
+    /// soft threshold triggers architecture review instead of a total-size
+    /// rejection.
+    pub def reviewNotes(a: Accounting): List[String] =
+        let cognitive = cognitiveOf(a);
+        let mechanical = mechanicalOf(a);
+        let authored = authoredOf(a);
+        (if (cognitive > cognitiveStopAndJustify())
+            "cognitive core " + "${cognitive}" + " exceeds the around-2500 threshold: STOP-AND-JUSTIFY architecture review before further semantic concepts (review, not automatic failure)" :: Nil
+         else if (cognitive > cognitivePreferredHigh())
+            "cognitive core " + "${cognitive}" + " exceeds the 2000 preferred range: architectural review required (not automatic failure)" :: Nil
+         else Nil)
+        ::: (if (mechanical > mechanicalPrefer())
+            "mechanical substrate " + "${mechanical}" + " exceeds the preferred <=2500: justify the excess while the cognitive core stays small" :: Nil else Nil)
+        ::: (if (authored > authoredPreferredHigh())
+            "authored A+B " + "${authored}" + " exceeds the preferred 3000-5000 range: disproportionate architecture review required, and 5001 is not an automatic failure" :: Nil else Nil)
 
     /// The one evaluation: classify every loaded file once, then derive the
-    /// per-file findings, the required-document check, the live audit (in audit
-    /// mode) and the budget verdict from those records.
+    /// per-file findings, the required-document check and the live audit (in
+    /// audit mode) from those records. Size is reported and reviewed through
+    /// `accountingOf`/`reviewNotes`; it never produces a finding, so the
+    /// obsolete absolute total gate cannot reject a correct tree.
     pub def evaluate(mode: String, root: String, loaded: List[(Entry, String)]): (List[Finding], List[Classified]) =
         let cs = classified(loaded);
         let blob = List.join("\n", buildTexts(loaded));
         let audit = if (mode == "audit") nestedBuildFindings(loaded) ::: auditFindings(root, blob, cs) else Nil;
-        (List.flatMap(fileFindings, cs) ::: docFindings(loaded) ::: audit ::: budgetFindings(totalsOf(cs)), cs)
+        (List.flatMap(fileFindings, cs) ::: docFindings(loaded) ::: audit, cs)
 
-    /// The single verdict string the report prints and the tests assert.
+    /// The single verdict string the report prints and the tests assert. It is
+    /// derived from hard findings only; soft size thresholds never reject.
     pub def verdictName(findings: List[Finding]): String =
         if (List.isEmpty(findings)) "accept" else "reject"
 
@@ -712,20 +807,40 @@ pub mod Attune.Policy {
         "attune-policy-finding rule=" + ruleOf(f) + " path=" + pathOf(f) + " message=" + messageOf(f)
 
     def totalsLine(t: Totals): String =
-        let (files, c, _, _, _) = t;
+        let (files, c) = t;
         "attune-policy-total files=" + "${files}" + " code=" + "${codeOf(c)}" + " comment=" + "${commentOf(c)}"
             + " doc=" + "${docOf(c)}" + " blank=" + "${blankOf(c)}"
 
-    def budgetLine(t: Totals): String =
-        let (_, _, shared, proposal, test) = t;
-        "attune-policy-budget shared_code=" + "${shared}" + " shared_target=" + "${sharedTarget()}"
-            + " proposal_code=" + "${proposal}" + " proposal_line_target=" + "${proposalTarget()}"
-            + " test_code=" + "${test}" + " test_target=" + "${testTarget()}"
+    def accountingLine(a: Accounting): String =
+        "attune-policy-class cognitive=" + "${cognitiveOf(a)}" + " mechanical=" + "${mechanicalOf(a)}"
+            + " authored=" + "${authoredOf(a)}" + " test=" + "${fixturesOf(a)}" + " support=" + "${supportOf(a)}"
 
-    /// The whole report as text: findings, the raw totals, the budgets and the
-    /// verdict. Formatting lives here; the mechanical test only prints it.
+    def presentationLine(a: Accounting): String =
+        "attune-policy-presentation cognitive=" + "${presentationCognitiveOf(a)}" + " mechanical=" + "${presentationMechanicalOf(a)}" + " (subsets of the class totals, not added again)"
+
+    def reviewLine(note: String): String = "attune-policy-review " + note
+
+    /// Per-component code totals over the current classification. The component
+    /// set is fixed and small; this publishes the measured table the accounting
+    /// law records, and adds no general report or lexer framework.
+    pub def componentLines(cs: List[Classified]): String =
+        List.join("\n", List.map(n -> "attune-policy-component name=" + n + " code=" + "${codeForComponent(cs, n)}", componentNames()))
+
+    def codeForComponent(cs: List[Classified], name: String): Int32 =
+        List.foldLeft((acc, c) -> addComponent(acc, name, c), 0, cs)
+
+    def addComponent(acc: Int32, name: String, c: Classified): Int32 =
+        let (e, _, counts, _, readable) = c;
+        if (readable and componentOf(entryPath(e)) == name) acc + codeOf(counts) else acc
+
+    /// The whole report as text: findings, the raw totals, the ownership
+    /// classes, the presentation subsets, the review notes and the verdict.
+    /// Formatting lives here; the mechanical test only prints it.
     pub def renderReport(findings: List[Finding], cs: List[Classified]): String =
         let t = totalsOf(cs);
+        let a = accountingOf(cs);
         List.join("\n", List.map(findingLine, findings)
-            ::: (totalsLine(t) :: budgetLine(t) :: ("attune-policy-verdict: " + verdictName(findings)) :: Nil))
+            ::: (totalsLine(t) :: accountingLine(a) :: presentationLine(a)
+                :: List.map(reviewLine, reviewNotes(a))
+                ::: ("attune-policy-verdict: " + verdictName(findings)) :: Nil))
 }

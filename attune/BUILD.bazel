@@ -71,6 +71,7 @@ test_suite(
 test_suite(
     name = "policy_tests",
     tests = [
+        "//test/policy:accounting_law_test",
         "//test/policy:count_law_test",
         "//test/policy:declared_source_policy_test",
         "//test/policy:policy_cases_test",

@@ -237,6 +237,7 @@ The marker extraction and link resolution are Flix semantics in
 | Manual false assertion | `//test/spine:false_assertion_test` | tagged `manual`; fails when run directly |
 | Honest counting laws | `//test/policy:count_law_test` | passes |
 | Named policy cases | `//test/policy:policy_cases_test` | passes |
+| Cognitive-ownership accounting | `//test/policy:accounting_law_test` | passes; component classification, presentation subsets and soft review semantics |
 | Declared-source policy | `//test/policy:declared_source_policy_test` | passes |
 | Live workspace audit | `//test/policy:workspace_audit_test` | passes; `local` and unconditionally re-executed |
 | Retained Grit + Ruby | `//test/grit:grit_ruby_test` | passes |
@@ -258,10 +259,16 @@ proposals in `test/proposals`, never as a live call.
 
 ## Handoff status
 
-The gate passes as measured, with shared implementation code 4,291 of the
-user-approved 4,300, test code 2,579 of 2,600 and test-only proposal code 841 of
-1,500; the exact table, the pins and licenses and the per-file adaptation record
-are in [the design note](attune/notes/design.md). Setup is the declared developer shell with one
+The owner-approved cognitive-ownership accounting replaced the absolute size
+gates: the non-presentation 1,800 / combined 2,200 rules and the shared 4,300
+compatibility gate are retired, not raised. `//test/policy:declared_source_policy_test`
+now reports A cognitive 3,081, B mechanical 1,278, A+B authored 4,359, C test
+2,645 and C support 21,884 (raw 31,172 code lines over 121 readable files); the
+per-component table, the exact support provenance, the presentation subsets
+(A/presentation 452, B/presentation 87) and the bounded STOP-AND-JUSTIFY
+architecture review are in [the design note](attune/notes/design.md). A soft
+threshold crossing yields a review note, never a rejection, so a total above the
+preferred range still accepts. Setup is the declared developer shell with one
 Bazel owner, an output base outside the workspace, and no credential or provider
 read; the only model-shaped code is the recorded fake transport above.
 

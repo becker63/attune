@@ -114,8 +114,18 @@ markdown prose are documentation or code exactly as `notes/design.md` describes,
 and an apostrophe in prose must never silence the lines after it. An escaped
 quote inside an ordinary string literal must not close the literal early or hide
 the following code from the count; `//test/policy:count_law_test` pins that law
-in `anEscapedQuoteDoesNotCloseAnOrdinaryLiteral`. Budgets are reported, and
-changing a gate means editing the declared constant in `src/Attune/Policy.flix`,
-never golfing code or dropping tests. The counter's applied corrections and its
-budget-neutral residual limitations are recorded in `notes/design.md`; never
-claim exact parser totals while any remains.
+in `anEscapedQuoteDoesNotCloseAnOrdinaryLiteral`. The owner-approved
+cognitive-ownership accounting is the active policy (`library/cognitive-budget.md`,
+2026-10-05): authored implementation is classified A cognitive / B mechanical,
+with C tests/fixtures/inherited/generated support reported separately and honest
+origins. The absolute non-presentation 1,800 / combined 2,200 rules and the shared
+4,300 compatibility gate are retired, not raised: `src/Attune/Policy.flix` holds
+no total-size gate and emits no `budget-exceeded` finding. Crossing a soft
+threshold (cognitive review at 2,000 and around 2,500 STOP-AND-JUSTIFY before
+further semantic concepts; mechanical preferred <=2,500; authored A+B review
+around 5,000) produces a review note, never a rejection. Change policy only by
+editing `src/Attune/Policy.flix`, never by golfing code, relabelling a component
+or dropping tests. The measured per-component table, exact support provenance and
+the bounded architecture review are in `notes/design.md`; the counter's applied
+corrections and its budget-neutral residual limitations stay recorded there, and
+no exact parser totals may be claimed while any remains.
