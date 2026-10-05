@@ -30,6 +30,8 @@ per-file adaptation record; this file is the source map that points at it.
 | Inference and Parquet seam fixtures | `test/seam/*.flix` | fixtures |
 | Narrow typed Flix view over the seam envelopes | `test/seam/Seam.flix` | fixtures |
 | Grit frontend, Ruby shop and pin-correspondence fixtures | `test/grit/*.flix`, `test/grit/fixtures/**` | fixtures |
+| One bounded ASCII writer and typed route/grammar/proof/view adapters | `src/Attune/AsciiTree.flix`, `src/Attune/View.flix` | shared Flix |
+| Writer, route, grammar, proof and semantic-view laws | `test/view/*.flix` | fixtures |
 | Root documentation | `README.md`, `AGENTS.md`, `DESIGN.md`, `PROVENANCE.md`, `LICENSE` | metadata |
 
 There is no policy program entry point and no Java case runner. Authentic native
@@ -50,12 +52,12 @@ The hermetic policy check consumes `//:policy_sources`, which aggregates one
 | --- | --- |
 | `//` | root metadata: `README.md`, `AGENTS.md`, `DESIGN.md`, `PROVENANCE.md`, `LICENSE`, `BUILD.bazel`, `MODULE.bazel`, locks and `flake.*` |
 | `//build` | the Starlark rules, including the one Grit closure rule |
-| `//src` | the shared Flix envelope, the policy evaluator, the isolation assertions, the typed Grit envelope and the per-language admission |
+| `//src` | the shared Flix envelope, the policy evaluator, the isolation assertions, the typed Grit envelope, the per-language admission, the bounded ASCII writer and the typed route/grammar/proof/view adapters |
 | `//src/grit` | the maintained `defines`/`imports`/`calls` entry-point inventory and its index |
 | `//src/native/grit` | the hand-written FFM binding and canonical-record facade |
 | `//src/native/parquet` | the typed Arrow Dataset Parquet codec |
 | `//support/grit` | the inherited pinned native closure, ABI shim, header and grammar patches |
-| `//test`, `//test/spine`, `//test/policy`, `//test/seam`, `//test/grit` | the fixtures and their laws |
+| `//test`, `//test/spine`, `//test/policy`, `//test/seam`, `//test/grit`, `//test/view` | the fixtures and their laws |
 | `//tools`, `//tools/boundary` | the minimal Java boundary |
 
 The carried Zed assets under `zed/` are not a Bazel package: they are admitted
@@ -236,9 +238,15 @@ the constant-qualified call inside it, and a computed require, a missing target,
 dynamic dispatch, an ambiguous receiver and a reopened declaration each stay
 explicitly unresolved.
 
-Not implemented here, and deliberately out of scope: the canonical ASCII writer
-and typed projections, the Datalog/typed-view computation, the README/comment
-document correspondence, and the ten test-only proposals P01-P10. No runtime
+Implemented as the bounded ASCII utility: one writer over a label and ordered
+children with finite depth/node/label/byte limits and one reject-or-accept label
+policy, plus the typed route, serial-event, grammar, native-Datalog proof and
+semantic-view adapters over the shared envelope, with independent goldens and
+named counterexamples in `test/view`.
+
+Not implemented here, and deliberately out of scope: the production Datalog or
+typed-view computation over real admitted facts, the README/comment document
+correspondence, and the ten test-only proposals P01-P10. No runtime
 topology, evaluator/cache ownership, real dataset or model experiment is selected
 or run; the native memoization carried in `support/grit/lib.rs` is the inherited
 support behavior, not a topology choice made here.

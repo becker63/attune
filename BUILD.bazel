@@ -49,6 +49,7 @@ filegroup(
         "//test/policy:policy_files",
         "//test/seam:policy_files",
         "//test/spine:policy_files",
+        "//test/view:policy_files",
         "//tools:policy_files",
         "//tools/boundary:policy_files",
     ],

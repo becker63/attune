@@ -107,4 +107,11 @@ pub mod Attune.Envelope {
         case Atom.Calls      => Domain.Symbols
         case Atom.Callers    => Domain.Symbols
     }
+
+    /// Every directed atom, in one fixed order. This is the single signature
+    /// table: grammar display and route validation both read it, so the two can
+    /// never drift into separate vocabularies.
+    pub def atoms(): List[Atom] =
+        Atom.Defines :: Atom.DefinedIn :: Atom.Imports ::
+            Atom.ImportedBy :: Atom.Calls :: Atom.Callers :: Nil
 }
