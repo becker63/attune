@@ -491,15 +491,15 @@ excluded).
 | tests | `test/**` | Flix/Java/Ruby/Starlark | 4,124 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws and fault plan in `test/receipt`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,374 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,376 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
 4,342; B mechanical 1,719; A+B authored 6,061; C test 4,124; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 132 readable files, code 34,443,
-comment 2,180, documentation 4626, blank 2164; the report prints the derived
-physical 43413 and nonblank 41249 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 132 readable files, code 34,445,
+comment 2,189, documentation 4705, blank 2173; the report prints the derived
+physical 43512 and nonblank 41339 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
 them. The portable-native-declared-artifact-actions leaf moved, relative to the
@@ -537,7 +537,10 @@ declared receipt rule and its scoped freshness token), `tests` 3,971 -> 4,124
 (the `test/receipt` laws and fault plan) and `metadata` 2,352 -> 2,374 (the new
 package in `//:policy_sources`); the cognitive core and every other component are
 unchanged, so that whole delta is one cognitive vocabulary, mechanical substrate
-and fixtures.
+and fixtures. The immutable-static-remote-runtime-pin leaf then moves only
+`metadata` 2,374 -> 2,376 (the multi-line digest declaration in `MODULE.bazel`);
+the regenerated lock's line count and every other component are unchanged, so
+that whole delta is declared configuration.
 
 ### Excluded inherited and generated families
 
@@ -1942,3 +1945,84 @@ declared timeout and records raw facts, and it decides no command, verdict or
 classification. The plan fixture is declared data whose schema and bounds Study
 owns, so no second parser, registry, resolver, scheduler or scientific decision
 entered the mechanical side.
+
+### Leaf record: immutable static remote runtime pin (`immutable-static-remote-runtime-pin`)
+
+This leaf closes the immutable-runtime half of VAL-RUN-001 that the remote-native
+record left open. The pinned `toolchains_buildbuddy` 0.0.4 extension resolves its
+built-in `UBUNTU22_04_IMAGE` constant to the mutable tag
+`gcr.io/flame-public/rbe-ubuntu22-04:latest`, so the declared execution platform
+carried a moving runtime identity and no execution record named the bytes that
+actually ran. The extension's supported `container_image` attribute declares the
+registry-resolved immutable digest of that same image instead, on the identical
+compatible platform; no engine, resolver, container client, daemon, image build,
+service, tool/version upgrade or account/pool change is involved.
+
+Resolution was one read-only registry lookup through the registry's own HTTP API
+(`GET /v2/flame-public/rbe-ubuntu22-04/manifests/latest` with the OCI image-index
+`Accept`), which returned `Docker-Content-Digest:
+sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3`, equal
+to the SHA-256 of the returned index body. The index resolves a `linux/arm64`
+child manifest `sha256:8407a0341d608c2ab52138aedfb125967fadae88c245493d38cdc8ba30eb4e87`
+beside its amd64 sibling, so the pinned reference still selects the arm64 image
+the declared platform requires. No digest was invented and no Docker/OCI client,
+local API or container lifecycle was used.
+
+`MODULE.bazel` now declares
+`buildbuddy.platform(container_image = "gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3")`.
+`MODULE.bazel.lock` was regenerated normally by an ordinary query, which changed
+only the extension's `usagesDigest` and the recorded `container_image` value; no
+unlocked or `--lockfile_mode=off` replacement ships and the lock's line count is
+unchanged. `bazel aquery --config=remote 'deps(//test/dag:declared_artifact_consumer_test)'`
+now renders `ExecutionInfo: {Arch: arm64, OSFamily: Linux,
+container-image: docker://gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80…,
+dockerNetwork: off}` on every action and mentions `unshare` zero times.
+
+Evidence. A fresh remote invocation
+`8423c14e-11b5-4017-9b41-16d0df5cdd0c` (`--config=remote
+--noremote_accept_cached --cache_test_results=no`) executed the declared native
+producer/consumer route with 20 actions, all `runner=remote`, `cacheHit=false`,
+`exitCode=0`, each on the digest-bearing platform properties, and the remote
+`TestRunner` passed all seven declared-artifact laws. Its producer tree is
+byte-identical to the earlier tag-based run (`closure.tsv` 165 bytes SHA-256
+`572f9a426a17a2ab…`, `sources/Shop.flix` 569 bytes SHA-256
+`718e45cee49ad815…`), so pinning the runtime identity did not change the
+deterministic world artifact. A second fresh invocation
+`0cc3bd76-f7ab-4906-accd-9a8a7d1094d8` (`--define=attune_measurement_freshness=manifest-receipt-2`)
+executed the receipt fixture with four remote actions, `cacheHit=false`,
+`exitCode=0` on the same digest properties, and the remote `TestRunner` passed all
+nine laws; the downloaded tree's `receipts.tsv` (980 bytes) records
+`freshness=manifest-receipt-2` and `observedRuntime=os=Linux;arch=aarch64;java=25.0.4`.
+Both BEP records report `testResult status=PASSED`, `strategy=remote` and
+`overallSuccess=true`; neither invocation used a local fallback.
+
+The earlier tag-based successes stay genuine execution evidence and are not
+promoted: invocations `fd52ccb8-0530-4b41-b1f5-e3967f3ac3fd` (native route),
+`387863c6-ecd7-4ee4-a31d-7aa839141dfe` (receipts) and the pre-commit
+`4e0df731-1ced-4332-9e43-d90b782a5223` / `6ff0884f-e3ba-4a16-aad8-78228f37e284`
+describe the mutable `:latest` runtime and are labelled as such, not as immutable
+pins. The preserved host-Nix `unshare` TestRunner failure
+`33af89c9-346c-4479-ae6b-152e3fb2ae75` remains the identified earlier failure.
+
+Local validation on this revision: `bazel test //...` 27/27 green, typecheck exit
+0, and scoped `buildifier -mode=check -lint=warn` exit 4 with only the documented
+pre-existing diagnostic families and no `# reformat` finding from the edited
+`MODULE.bazel`.
+
+Measured on this leaf's declared identity (declared-source check, `accept`; see
+the canonical table above for the live totals): only `metadata` moves,
+2,374 -> 2,376, from the two extra code lines the multi-line digest declaration
+adds to `MODULE.bazel`; the regenerated lock's line count and every other
+component, including the whole cognitive core and the fixture population, are
+unchanged, so this leaf's entire code delta is declared configuration.
+
+Bounded architecture review (the cognitive core is unchanged at 4,342, above the
+around-2,500 STOP-AND-JUSTIFY trigger, and A+B is above the preferred 5,000 line;
+both are review triggers, not failures). Largest application-semantic component:
+`repository` (809), unchanged. Hardest reacquisition: the Grit acquisition
+boundary under `repository`, unchanged by this leaf. Localization/coordination
+navigation: unchanged; this leaf adds only a declared platform image pin.
+Policy-leak/duplication check: the immutable runtime identity is one declared
+extension attribute and its regenerated lock entry, not a second platform,
+registry, resolver or scheduler; the digest is the registry's own content digest
+and no scientific decision or policy moved into configuration.

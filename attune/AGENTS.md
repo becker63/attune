@@ -46,8 +46,12 @@ BuildBuddy service. It adds the published endpoint `grpcs://remote.buildbuddy.io
 through the existing flake credential helper, wires
 `@buildbuddy_toolchain//:platform_linux_arm64` as the *execution* platform
 (declared properties `Arch=arm64`, `OSFamily=Linux`,
-`container-image=docker://gcr.io/flame-public/rbe-ubuntu22-04:latest`,
+`container-image=docker://gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3`,
 `dockerNetwork=off`), and sets `--define=attune_native_isolation=platform`. The
+platform image is pinned by its registry-resolved immutable digest, declared in
+`MODULE.bazel` through the extension's supported `container_image` attribute
+(the built-in `UBUNTU22_04_IMAGE` constant would carry the mutable `:latest`
+tag), so every execution record names the exact runtime bytes that ran. The
 aarch64 platform must match the declared JDK 25 runtime and the host
 architecture: a mismatch is reported, never silently emulated.
 

@@ -49,7 +49,12 @@ nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-baze
 `--config=remote` adds the published endpoint `grpcs://remote.buildbuddy.io`, the
 `@buildbuddy_toolchain//:platform_linux_arm64` execution platform (arm64, matching
 the declared JDK 25 runtime; `dockerNetwork=off`), and the declared portable
-native route. In that profile the native action carries no host Nix `unshare`
+native route. The platform's container image is pinned by its registry-resolved
+immutable digest
+(`gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3`,
+declared in `MODULE.bazel`), so an execution record names the exact runtime bytes
+rather than a moving `:latest` tag. In that profile the native action carries no
+host Nix `unshare`
 binary: the pinned `unshare` creates the local user/network namespace, which a
 provider container cannot run, so the remote route uses the platform's own
 network-disabled container instead and does not claim a namespace it did not

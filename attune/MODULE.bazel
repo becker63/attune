@@ -113,8 +113,19 @@ local_workspace(name = "local_workspace")
 
 # Existing BuildBuddy integration. The toolchain supplies the remote platform
 # labels; the ordinary `bazel test //...` gate does not use them.
+#
+# The extension's built-in `UBUNTU22_04_IMAGE` constant resolves to the mutable
+# tag `gcr.io/flame-public/rbe-ubuntu22-04:latest`, so the declared execution
+# platform would carry a moving runtime identity and no execution record could
+# name the bytes that actually ran. The extension's supported `container_image`
+# attribute instead declares the registry-resolved immutable digest of that same
+# image (resolved from the tag with a read-only registry lookup on 2026-10-05),
+# on the same compatible `Arch=arm64`, `OSFamily=Linux`, `dockerNetwork=off`
+# platform. No tool, version, account or pool changes with it.
 bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
 
 buildbuddy = use_extension("@toolchains_buildbuddy//:extensions.bzl", "buildbuddy")
-buildbuddy.platform(buildbuddy_container_image = "UBUNTU22_04_IMAGE")
+buildbuddy.platform(
+    container_image = "gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
+)
 use_repo(buildbuddy, "buildbuddy_toolchain")

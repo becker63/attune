@@ -58,8 +58,13 @@ build:buildbuddy --remote_cache_compression
 #
 # The execution platform is `@buildbuddy_toolchain//:platform_linux_arm64`, the
 # pinned provider platform whose declared execution properties are
-# `Arch=arm64`, `OSFamily=Linux`, `container-image=docker://gcr.io/flame-public/rbe-ubuntu22-04:latest`
-# and `dockerNetwork=off`. Those aarch64 properties match the declared JDK 25
+# `Arch=arm64`, `OSFamily=Linux`,
+# `container-image=docker://gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3`
+# and `dockerNetwork=off`. The image is pinned to the registry-resolved immutable
+# digest of that tag (declared in `MODULE.bazel` through the extension's supported
+# `container_image` attribute), so an execution record can name the exact runtime
+# bytes; the built-in `UBUNTU22_04_IMAGE` constant would carry the mutable
+# `:latest` tag. Those aarch64 properties match the declared JDK 25
 # runtime (`remotejdk_25`, the arm64 build) and the host/native architecture, so
 # no amd64 worker and no emulation is involved. It must be wired as the
 # *execution* platform (`--extra_execution_platforms` plus `--host_platform`),
