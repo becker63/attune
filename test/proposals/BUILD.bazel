@@ -1,0 +1,57 @@
+load("//build:native.bzl", "native_flix_reject_test", "native_flix_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The test-only proposal namespace. P01-P10 live here, one small typed contract
+# per file: a question and ASCII explanation, the smallest relevant signature,
+# a visible positive fixture, a counterexample and the enforcement note. The
+# approved policy admits and counts this exact prefix (`test/proposals/`), so
+# proposal source is reported separately from ordinary test code.
+
+# P01: exact world/domain/frontier identity. Reordering one set preserves
+# identity; equal-sized unequal sets, equal basenames, another world and another
+# domain stay distinct. Executed fixture.
+native_flix_test(
+    name = "p01_identity_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/View.flix",
+        "P01Identity.flix",
+    ],
+)
+
+# P02: typed composition. A legal Files -> defines -> Symbols -> defined_in ->
+# Files walk succeeds, a typed empty continuation keeps its domain, and
+# Symbols -> imports rejects at runtime. Executed fixture.
+native_flix_test(
+    name = "p02_composition_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/View.flix",
+        "P02Composition.flix",
+    ],
+)
+
+# The one static domain witness P02 cites: a `Frontier` constructor fixes its
+# member domain, so a `SymbolId` cannot inhabit `Frontier.Files`. The pinned
+# compiler rejects it during `check` with no `main` required. Sibling to the
+# spine's File/Symbol negative, kept isolated so the normal suite stays green.
+native_flix_reject_test(
+    name = "p02_domain_witness_negative_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "P02DomainWitnessNegative.flix",
+    ],
+    expected = "Unable to unify the types",
+)

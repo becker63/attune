@@ -78,6 +78,27 @@ def rawHttpClientInProductionIsRejected(): Unit \ Assert = {
     Assert.assertEq(expected = true, hasRule("raw-http", "declared", "", loaded))
 }
 
+// Assembled from pieces so this fixture source never contains the proposal
+// module token literally; the fixture entry below carries the real token.
+def proposalModule(): String = "Attune." + "Prop" + "osal"
+
+@Test
+def productionSourceDependingOnAProposalModuleIsRejected(): Unit \ Assert = {
+    let loaded = entry("src/Attune/ImportsProposal.flix",
+        "/// Production source must never depend on a test-only proposal module.\nuse " + proposalModule() + ".P01\n\npub mod Attune.ImportsProposal {\n}\n") :: green();
+    Assert.assertEq(expected = true, hasRule("proposal-dependency", "declared", "", loaded))
+}
+
+@Test
+def theProposalNamespaceItselfIsAdmitted(): Unit \ Assert = {
+    // The same token is harmless in the admitted test-only proposal prefix;
+    // only a production `src/` dependency is a finding.
+    let loaded = entry("test/proposals/P01Identity.flix",
+        "/// A test-only proposal module.\nuse " + proposalModule() + ".P01\n") :: entry("test/proposals/BUILD.bazel",
+        "filegroup(\n    name = \"policy_files\",\n    srcs = [\"P01Identity.flix\"],\n)\n") :: green();
+    Assert.assertEq(expected = true, List.isEmpty(findings("declared", "", loaded)))
+}
+
 @Test
 def referenceSourceIsRejected(): Unit \ Assert = {
     let loaded = entry("attuneflix/src/Atlas.flix", "/// A read-only reference source.\npub mod Atlas {\n}\n") :: green();
