@@ -1,6 +1,6 @@
 import attune.history.fixtures.HistoryFixtures
 
-use Attune.Envelope.{Domain, FileId, SymbolId, World}
+use Attune.{Domain, FileId, SymbolId, World}
 use Attune.Study
 
 // ------------------------------------------------------- the recorded inputs

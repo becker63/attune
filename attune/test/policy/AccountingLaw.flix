@@ -55,7 +55,7 @@ def ownershipSplitsByComponentNotLanguage(): Unit \ Assert = {
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("platform/build/grit_repository.bzl"));
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/View.flix"));
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("src/Attune/AsciiTree.flix"));
-    Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("src/native/parquet/AttuneParquet.java"));
+    Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("platform/tools/parquet/AttuneParquet.java"));
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("platform/tools/boundary/NativeLaunch.java"));
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("platform/build/native.bzl"));
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/spine/CoreApplyLaw.flix"));
@@ -75,19 +75,19 @@ def relocationDoesNotMakeAuthoredCodeInherited(): Unit \ Assert = {
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("src/Attune/AsciiTree.flix"))
 }
 
-/// A blanket `test/** -> Fixture` rule must not hide reusable algorithms: the
-/// one bounded test portion the independent review named that a compact owner
-/// has not absorbed (P08 decision/evidence settlement) is cognitive under any
-/// placement, while the ordinary test laws and their fixed fixture data stay
-/// fixtures. The migrated P06 descriptor semantics live in the `theory`
-/// component and the migrated P09 projection laws now live in `test/view`, so
-/// the bounded list is the single remaining P08 path.
+/// The migration of the last test-placed semantics left no hidden algorithm: a
+/// blanket `test/** -> Fixture` rule is now honest because the P06 descriptor
+/// safety lives in `Attune.Theory` and the P08 decision settlement lives in
+/// `Attune.Study`, so an ordinary test file is a fixture with no cognitive
+/// exception. No test path is carved out of the fixture rule any more.
 @Test
-def reusableTestPlacedSemanticsAreCognitiveNotHiddenFixtures(): Unit \ Assert = {
-    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/proposals/P08Decisions.flix"));
-    Assert.assertEq(expected = "proposal-semantics", componentOf("test/proposals/P08Decisions.flix"));
+def migratedSemanticsLeaveNoHiddenTestAlgorithm(): Unit \ Assert = {
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Theory.flix"));
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Study.flix"));
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune.flix"));
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/view/SemanticViewLaw.flix"));
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/spine/CoreApplyLaw.flix"));
+    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/seam/DecisionSeamLaw.flix"));
     Assert.assertEq(expected = "tests", componentOf("test/policy/AccountingLaw.flix"))
 }
 
@@ -143,7 +143,7 @@ def cognitiveCrossingTriggersStopAndJustifyReviewNotRejection(): Unit \ Assert =
 /// never rejected.
 @Test
 def mechanicalExcessIsReviewedNotRejected(): Unit \ Assert = {
-    let loaded = entry("src/native/parquet/Big.java", String.repeat(mechanicalPrefer() + 1, "x = 1;\n")) :: green();
+    let loaded = entry("platform/tools/parquet/Big.java", String.repeat(mechanicalPrefer() + 1, "x = 1;\n")) :: green();
     let (found, cs) = evaluate("declared", "", loaded);
     let notes = reviewNotes(accountingOf(cs));
     Assert.assertEq(expected = "accept", verdictName(found));
@@ -177,7 +177,7 @@ def componentTablePartitionsTheRawCodeTotal(): Unit \ { Assert, IO } = {
     let a = accountingOf(cs);
     let cognitiveComponents =
         "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "frontends" :: "grit-rule"
-            :: "proposal-semantics" :: Nil;
+            :: Nil;
     let mechanicalComponents =
         "ascii" :: "parquet" :: "boundary" :: "grit-binding" :: "build-rules" :: Nil;
     Assert.assertEq(expected = cognitiveOf(a), sumComponents(cs, cognitiveComponents));

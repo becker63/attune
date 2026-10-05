@@ -1,6 +1,5 @@
 import attune.grit.fixtures.GritFixtures
 
-use Attune.Envelope
 use Attune.Repository
 use Attune.Repository.Grit
 use Attune.Coverage
@@ -567,14 +566,14 @@ def extractor(): Grit.Program = Grit.Program.Calls
 
 def scopeBound(): Int32 = 3
 
-def shopWorldName(): Envelope.World = Envelope.World.World(acquisition())
+def shopWorldName(): Attune.World = Attune.World.World(acquisition())
 
-def callFacts(repository: Repository.Repository, scope: Envelope.World): List[Envelope.Fact] =
+def callFacts(repository: Repository.Repository, scope: Attune.World): List[Attune.Fact] =
     List.map(pair -> match pair {
-        case (caller, target) => { world = scope, source = caller, atom = Envelope.Atom.Calls, target = target }
+        case (caller, target) => { world = scope, source = caller, atom = Attune.Atom.Calls, target = target }
     }, repository#calls)
 
-def supportOf(facts: List[Envelope.Fact], status: Coverage.Status): List[Coverage.Support] =
+def supportOf(facts: List[Attune.Fact], status: Coverage.Status): List[Coverage.Support] =
     List.map(fact -> { fact = fact, status = status }, facts)
 
 /// Earned scoped coverage over the real extraction. A positive witness survives
@@ -588,13 +587,13 @@ def earnedCoverageResistsForeignAndProposedDonation(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = true, List.exists(fact -> fact#value == "total_cents", receipt));
     let repository = admitted(shopFiles());
     let facts = callFacts(repository, shopWorldName());
-    let ask: Coverage.Query = { scope = shopWorldName(), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
+    let ask: Coverage.Query = { scope = shopWorldName(), subject = "Shop.Receipt.render", atom = Attune.Atom.Calls };
     Assert.assertEq(expected = Coverage.Outcome.Witness, Coverage.observe(ask, Coverage.Coverage.Partial, facts));
     Assert.assertEq(expected = Coverage.Outcome.Unknown, Coverage.observe(ask, Coverage.Coverage.Missing, Nil));
     Assert.assertEq(expected = Coverage.Outcome.Failed,
         Coverage.observe(ask, Coverage.Coverage.Failure("acquisition-error"), Nil));
     let foreign: Coverage.Query =
-        { scope = Envelope.World.World("shop-v2"), subject = "Shop.Receipt.render", atom = Envelope.Atom.Calls };
+        { scope = Attune.World.World("shop-v2"), subject = "Shop.Receipt.render", atom = Attune.Atom.Calls };
     Assert.assertEq(expected = Coverage.Outcome.NoMatch, Coverage.observe(foreign, Coverage.Coverage.Complete, facts));
     let support = supportOf(facts, Coverage.Status.Observed);
     Assert.assertEq(expected = 2, List.length(Coverage.witnesses(shopWorldName(), "Shop.Pricing.total_cents", support)));
@@ -615,18 +614,18 @@ def theWorldFactsAndEarnedCoverageBridgeIsExact(): Unit \ {Assert, IO} = {
     let facts = Repository.worldFacts(world, repository);
     Assert.assertEq(expected = true, List.forAll(fact -> fact#world == world, facts));
     Assert.assertEq(expected = true, List.exists(fact ->
-        fact#atom == Envelope.Atom.Imports and fact#source == path("shop/receipt.rb")
+        fact#atom == Attune.Atom.Imports and fact#source == path("shop/receipt.rb")
             and fact#target == path("shop/pricing.rb"), facts));
     Assert.assertEq(expected = true, List.exists(fact ->
-        fact#atom == Envelope.Atom.ImportedBy and fact#source == path("shop/pricing.rb")
+        fact#atom == Attune.Atom.ImportedBy and fact#source == path("shop/pricing.rb")
             and fact#target == path("shop/receipt.rb"), facts));
     // The shop has unresolved dynamic receivers, so the acquisition is partial;
     // a complete no-match is never claimed from partial coverage.
     Assert.assertEq(expected = Coverage.Coverage.Partial, Repository.scopeCoverage(repository));
     Assert.assertEq(expected = Coverage.Outcome.Witness,
-        Repository.ask(world, repository, "Shop.Receipt.render", Envelope.Atom.Calls));
+        Repository.ask(world, repository, "Shop.Receipt.render", Attune.Atom.Calls));
     Assert.assertEq(expected = Coverage.Outcome.Unknown,
-        Repository.ask(world, repository, "Shop.Nothing.render", Envelope.Atom.Calls));
+        Repository.ask(world, repository, "Shop.Nothing.render", Attune.Atom.Calls));
     Assert.assertEq(expected = true,
         List.length(Repository.scopedFacts(world, repository)#facts) == List.length(facts))
 }

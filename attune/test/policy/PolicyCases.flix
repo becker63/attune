@@ -75,27 +75,6 @@ def rawHttpClientInProductionIsRejected(): Unit \ Assert = {
     Assert.assertEq(expected = true, hasRule("raw-http", "declared", "", loaded))
 }
 
-// Assembled from pieces so this fixture source never contains the proposal
-// module token literally; the fixture entry below carries the real token.
-def proposalModule(): String = "Attune." + "Prop" + "osal"
-
-@Test
-def productionSourceDependingOnAProposalModuleIsRejected(): Unit \ Assert = {
-    let loaded = entry("src/Attune/ImportsProposal.flix",
-        "/// Production source must never depend on a test-only proposal module.\nuse " + proposalModule() + ".P01\n\npub mod Attune.ImportsProposal {\n}\n") :: green();
-    Assert.assertEq(expected = true, hasRule("proposal-dependency", "declared", "", loaded))
-}
-
-@Test
-def theProposalNamespaceItselfIsAdmitted(): Unit \ Assert = {
-    // The same token is harmless in the admitted test-only proposal prefix;
-    // only a production `src/` dependency is a finding.
-    let loaded = entry("test/proposals/P01Identity.flix",
-        "/// A test-only proposal module.\nuse " + proposalModule() + ".P01\n") :: entry("test/proposals/BUILD.bazel",
-        "filegroup(\n    name = \"policy_files\",\n    srcs = [\"P01Identity.flix\"],\n)\n") :: green();
-    Assert.assertEq(expected = true, List.isEmpty(findings("declared", "", loaded)))
-}
-
 @Test
 def referenceSourceIsRejected(): Unit \ Assert = {
     let loaded = entry("attuneflix/src/Atlas.flix", "/// A read-only reference source.\npub mod Atlas {\n}\n") :: green();
@@ -145,8 +124,6 @@ def admittedForeignExceptionsStayAdmissible(): Unit \ Assert = {
         entry("platform/support/inherited/Widget.java",
             "package support.inherited;\n\nimport java.net.HttpURLConnection;\n\nfinal class Widget {\n    static Object inherited() { return HttpURLConnection.class; }\n}\n")
             :: entry("platform/support/BUILD.bazel", "filegroup(\n    name = \"inherited\",\n    srcs = [\"inherited/Widget.java\"],\n)\n")
-            :: entry("test/proposals/p01/Proposal.flix", "/// A future approved test-only proposal.\npub mod Attune.Proposal01 {\n}\n")
-            :: entry("test/proposals/p01/BUILD.bazel", "filegroup(\n    name = \"proposal\",\n    srcs = [\"Proposal.flix\"],\n)\n")
             :: entry("platform/tools/queries/attune.grit", "language java\n`HttpURLConnection` => `ApprovedSdk`\n")
             :: entry("platform/tools/queries/BUILD.bazel", "filegroup(\n    name = \"queries\",\n    srcs = [\"attune.grit\"],\n)\n")
             :: entry("test/data/sample.rb", "# source as data\nputs 'sample'\n")

@@ -45,7 +45,7 @@ pub mod Attune.Repository {
 
     use Attune.Coverage
     use Attune.Coverage.{Outcome, WorldFacts}
-    use Attune.Envelope.{Atom, Fact, World}
+    use Attune.{Atom, Fact, World}
     use Attune.Repository.Grit
 
     // ---------------------------------------------------------------- refusals

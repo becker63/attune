@@ -23,13 +23,14 @@ repository-side policy an agent must follow while changing this tree.
   or the store. Only the narrow BuildBuddy credential helper in `flake.nix` may
   read it, internally, from that explicit checkout root.
 - No application provider, MCP or live model call, ever. The bootstrap-era
-  "no scientific data" sentence is superseded: the approved mission authorizes
-  the named pinned `nebius/SWE-rebench-V2` acquisition and selected studies,
-  and explicitly hashed minimal named historical imports from the recorded
-  sibling location, under the scientific freeze order (rankings before
-  evaluator labels; pair predictions before joint execution). That is not
-  authorization for a wider corpus, a different corpus, a rescue search or any
-  provider/MCP/model acquisition.
+  sentence that this workspace carries no scientific data is stale: the approved
+  mission authorizes the named pinned `nebius/SWE-rebench-V2` corpus and the
+  selected studies, plus explicitly hashed minimal named historical imports from
+  the recorded sibling location, under the scientific freeze order (rankings
+  before evaluator labels; pair predictions before joint execution). Only that
+  approved corpus and those studies are authorized. That is not authorization for
+  a wider corpus, a different corpus, a rescue search or any provider/MCP/model
+  acquisition, which remain forbidden.
 - One Bazel owner at a time. The output base is outside the checkout
   (`services.yaml`); never run `bazel clean` or touch global caches.
 - JVM dependencies are pinned: `MODULE.bazel` declares the exact Maven
@@ -55,12 +56,17 @@ these rules; `bazel test //...` enforces it.
   decisions, secret and size decisions, verdict and report formatting, isolation
   assertions and fixture cases live in Flix.
 - Production source (`src/`) must not substitute a raw HTTP client for an
-  approved SDK, and must never depend on a test-only proposal module.
+  approved SDK, and must never depend on test-only source. The bootstrap-era
+  `test/proposals` namespace is retired and the `proposal-dependency` rule with
+  it, because every proposal has migrated into a production owner: `Attune`,
+  `Attune.Coverage`, `Attune.Repository`, `Attune.Theory`, `Attune.Study` and
+  `Attune.View`. Do not recreate a test-only semantic module.
 - The only admitted foreign families are inherited pinned support under
-  `platform/support/`, the one approved native Ruby arm, future test-only
-  proposal/query source, maintained Grit queries, Ruby source-as-data fixtures
-  and the carried Zed editor assets under `platform/zed/` whose pinned Flix
-  grammar revision the Grit integration reuses.
+  `platform/support/`, maintained Grit queries (including the approved Ruby entry
+  points), Ruby source-as-data fixtures and the carried Zed editor assets under
+  `platform/zed/` whose pinned Flix grammar revision the Grit integration reuses.
+  The approved Ruby arm is that maintained Grit inventory plus the pinned closure;
+  it is not a first-party `src/native/` tree, which no longer exists.
 - Every public Flix module carries a `///` comment. The core documents listed in
   `notes/design.md` must exist.
 
@@ -135,12 +141,13 @@ no total-size gate and emits no `budget-exceeded` finding. Crossing a soft
 threshold (cognitive review at 2,000 and around 2,500 STOP-AND-JUSTIFY before
 further semantic concepts; mechanical preferred <=2,500; authored A+B review
 around 5,000) produces a review note, never a rejection. A semantic algorithm
-counts as cognitive under any placement, so test placement never exempts it: the
-P06 descriptor safety/alpha-normalization the independent review named is now
-production code in the bounded `Attune.Theory` owner, and the one remaining
-test-placed portion (P08 decision/evidence settlement) is classified as the
-`proposal-semantics` cognitive component rather than hidden as a fixture, while
-genuine `@Test` assertions and fixed data stay fixtures. The generic coverage,
+counts as cognitive under any placement, so test placement never exempts it. That
+rule is now enforced by ownership rather than by a placement-based exception: the
+P06 descriptor safety/alpha-normalization lives in the bounded `Attune.Theory`
+owner, the P09 projection identity in `Attune.View`, and P08's typed
+prior/request/evidence contract with `settle` in `Attune.Study`, so
+`test/**` is a fixture population again with no carve-out and no hidden
+algorithm. The generic coverage,
 evidence and support vocabulary lives once in `src/Attune/Coverage.flix` (core),
 and the bounded descriptor grammar, fixed native lowering and world-shard witness
 rows live once in `src/Attune/Theory.flix`. Change policy only

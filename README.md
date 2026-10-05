@@ -18,8 +18,9 @@ workspace `attune/`. One further root entry is permitted and preserved: the user
 `repomix-output.xml` bundle, which is kept intact, named here as prose rather
 than linked, and excluded from active action, Nix and CAS input. Everything that
 builds or runs lives under `attune/`:
-`src/` for the shared Flix owners and the mechanical Java seams, `test/` for the
-native fixtures and laws, `platform/` for the build rules, mechanical boundary,
+`src/` for the shared Flix owners, `test/` for the
+native fixtures and laws, `platform/` for the build rules, the mechanical
+adapters (the boundary launcher, the Grit FFM binding and the Arrow codec),
 pinned native support and carried editor assets, and `notes/` for the one design
 note and the approved mission. The credential file `.env`, the agent tooling and
 the VCS metadata sit at the checkout root as hidden metadata; they are never
@@ -265,7 +266,7 @@ work, with no external measurement claimed.
 ## The commented grammar cannot drift
 
 The type table is one vocabulary: route validation and grammar display both read
-the six atoms from [Envelope.flix](attune/src/Attune/Envelope.flix), so a legal grammar
+the six atoms from [Attune.flix](attune/src/Attune.flix), so a legal grammar
 branch is exactly a step the validator accepts. The depth-two Symbols
 continuation tree is documented in a comment in
 [View.flix](attune/src/Attune/View.flix) and compared with the regenerated output, so
@@ -316,7 +317,7 @@ The marker extraction and link resolution are Flix semantics in
 | Documentation correspondence | `//test/docs:readme_correspondence_test` | passes; `local` and unconditionally re-executed |
 | Typed inference seam | `//test/seam:inference_seam_test` | passes |
 | Typed Parquet seam | `//test/seam:parquet_seam_test` | passes |
-| Typed proposals | `//test/proposals:*` | the two remaining proposals execute from the test-only namespace |
+| Typed prior/decision laws | `//test/seam:decision_seam_test` | passes; the prior/request/evidence/`settle` contract is production code in `Attune.Study`, driven over the recorded fake transport |
 | Bounded native theory | `//test/theory:theory_law_test` | passes; descriptor grammar, canonicalization, native lowering and shared-index laws |
 
 ## The models stay visible, and offline
@@ -326,27 +327,32 @@ The earlier work used **Qwen3 Embedding 8B** for the broad semantic prior and
 dataflow, and their current handlers are **fake and offline**: the approved
 LangChain4j seam is driven by a deterministic recorded transport, with request
 identity and classified errors preserved, and no provider, endpoint, credential
-or socket is used. Acquisition and decision contracts are exercised as test-only
-proposals in `test/proposals`, never as a live call.
+or socket is used. Acquisition and decision contracts are exercised as recorded
+fixture seams in `test/seam`, never as a live call; the typed
+prior/request/evidence contract itself is production source in `Attune.Study`.
 
 ## Handoff status
 
 The owner-approved cognitive-ownership accounting replaced the absolute size
 gates: the non-presentation 1,800 / combined 2,200 rules and the shared 4,300
 compatibility gate are retired, not raised. `//test/policy:declared_source_policy_test`
-now reports A cognitive 3,723, B mechanical 1,278, A+B authored 5,001, C test
-2,746 and C support 21,884 (raw 31,935 code lines over 123 readable files); the
+now reports A cognitive 4,207, B mechanical 1,278, A+B authored 5,485, C test
+3,647 and C support 21,884 (raw 33,305 code lines over 123 readable files); the
 per-component table, the exact support provenance, the presentation subsets
-(A/presentation 452, B/presentation 87) and the bounded STOP-AND-JUSTIFY
+(A/presentation 510, B/presentation 87) and the bounded STOP-AND-JUSTIFY
 architecture review are in [the design note](attune/notes/design.md). An
-independent review found that a blanket `test/** -> fixture` rule hid two
-reusable test-placed algorithms, so the one remaining bounded
-`proposal-semantics` component (P08 prior/decision/evidence
-settlement) is counted as cognitive under any placement while genuine `@Test`
-assertions and fixed data stay fixtures; the mixed file is disclosed rather
-than split per function. The P06 descriptor safety/alpha-normalization portion
-that review named is now production code in the bounded `Attune.Theory` owner,
-so that list shrank to the one path left. A soft threshold crossing yields a review note, never a
+independent review once found that a blanket `test/** -> fixture` rule hid
+reusable test-placed algorithms. That exception is now retired rather than
+widened: all three portions it named are production code in named owners, so an
+ordinary `test/**` path is a fixture again with no carve-out and nothing is
+hidden. The P06 descriptor safety/alpha-normalization lives in `Attune.Theory`,
+the P09 projection identity in `Attune.View`, and P08's typed
+prior/request/evidence contract with `settle` in `Attune.Study`; the last
+bootstrap proposal, its `test/proposals` package and its policy admission are
+gone. The two temporary core owner files (`Attune.Envelope`, `Attune.Apply`) were
+folded into the one `Attune` owner, and the typed Arrow codec moved to
+`platform/tools/parquet/` with no line changed and no saving claimed. A soft
+threshold crossing yields a review note, never a
 rejection, so a total above the preferred range still accepts. Setup is the declared developer shell with one
 Bazel owner, an output base outside the workspace, and no credential or provider
 read; the only model-shaped code is the recorded fake transport above.
@@ -373,7 +379,8 @@ checked documentation correspondence. Deliberately not selected or run here:
 - any final source, cache-ownership, sharding or "most parallel" topology;
 - real datasets, retained priors, localization experiments, census or benchmarks;
 - a general view catalog, large-graph layout, ASCII parser or architecture browser;
-- promotion of the two remaining test-only proposals into production semantics.
+- any model choice, live provider effect, ranking-quality claim or application
+  policy selection beyond the recorded fixture decision contract.
 
 No architecture decision is implied by this file, and no localization gain is
 claimed. The source map, the pins and licenses, the per-file adaptation record,

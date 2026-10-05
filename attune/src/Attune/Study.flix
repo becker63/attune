@@ -12,18 +12,18 @@
 /// Study also owns the one bounded vocabulary both fixture applications share:
 /// a world-scoped typed task anchor, the retained edit-intent operations, the
 /// lexical/Atlas/flat/composed evidence joins, the E0/L/E1/E2 intent policies
-/// with their exact input contracts, the coverage-aware metric laws, and the
-/// honest origin/promotion/limit values the historical regression reports. The
-/// retained correct-v2 evidence reader at the end is a bounded historical
-/// replay of the recorded admission rule; it is not a general resolver and it
-/// never reads live source.
+/// with their exact input contracts, the coverage-aware metric laws, the typed
+/// prior/request/evidence decision contract that settles one candidate under a
+/// finite budget, and the honest origin/promotion/limit values the historical
+/// regression reports. The retained correct-v2 evidence reader at the end is a
+/// bounded historical replay of the recorded admission rule; it is not a
+/// general resolver and it never reads live source.
 ///
 /// Nothing here reads a document, contacts a provider or decides a corpus
 /// verdict.
 pub mod Attune.Study {
 
-    use Attune.Envelope
-    use Attune.Envelope.{Domain, FileId, SymbolId, World}
+    use Attune.{Domain, FileId, SymbolId, World}
 
     /// The declared schema of one produced artifact. Closed: an evaluator's gold
     /// and a prediction input are different schemas, not interchangeable labels.
@@ -655,6 +655,66 @@ pub mod Attune.Study {
             + " coverage=" + percentage(coverageRatio(confusion))
             + " precision=" + percentage(precisionRatio(confusion))
             + " recall=" + percentage(recallRatio(confusion))
+
+    // ------------------------------------------------------- settled decisions
+
+    /// A typed fake prior: the model identity and a finite declared preference
+    /// order over candidate labels. It ranks candidates and makes no quality
+    /// claim; `settle` reads the declared order, never a score.
+    pub type alias Prior = { model = String, options = List[String] }
+
+    /// One decision request: the sealed scope, the prompt and the finite number
+    /// of candidate options this run is allowed to consider.
+    pub type alias DecisionRequest = { scope = String, prompt = String, budget = Int32 }
+
+    /// The typed evidence a decision is settled from. `Decoded` carries the
+    /// seam's declared result kind, `Unknown` means no evidence was available,
+    /// and `Failed` carries the classified seam kind. The three cases never
+    /// collapse into one.
+    pub enum Evidence with Eq, ToString {
+        case Decoded(String)
+        case Unknown
+        case Failed(String)
+    }
+
+    /// The classified decision result. `NoChoice` is honest emptiness,
+    /// `Fallback` is the caller's declared answer, and `Failed` carries a
+    /// classified error, so a failure is never reported as an empty success.
+    pub enum Decision with Eq, ToString {
+        case Chosen(String)
+        case NoChoice
+        case Failed(String)
+        case Fallback(String)
+    }
+
+    /// Classify one seam exchange into typed evidence: a decoded exchange keeps
+    /// its declared result kind and a rejected one keeps its classified kind, so
+    /// the two never collapse and a transport failure can never be read as a
+    /// decoded answer. The seam's own `Outcome` type is test-scoped, so the
+    /// caller passes the two facts and this owner decides what they mean.
+    pub def evidenceOf(decoded: Bool, kind: String): Evidence =
+        if (decoded) Evidence.Decoded(kind) else Evidence.Failed(kind)
+
+    /// The typed SDK request body the approved decision API consumes.
+    pub def requestJson(prior: Prior, ask: DecisionRequest): String =
+        "{\"model\":\"" + prior#model + "\",\"messages\":[\"" + ask#prompt + "\"]}"
+
+    /// Settle a decision from typed evidence under a finite budget. A classified
+    /// failure stays a failure; unknown evidence and an over-budget request take
+    /// the fallback the caller declared; only a decoded, in-budget, non-empty
+    /// prior yields a choice, and a decoded run over an empty prior is honest
+    /// emptiness rather than a fallback or a failure.
+    pub def settle(prior: Prior, ask: DecisionRequest, evidence: Evidence, fallback: String): Decision =
+        match evidence {
+            case Evidence.Failed(kind) => Decision.Failed(kind)
+            case Evidence.Unknown      => Decision.Fallback(fallback)
+            case Evidence.Decoded(_)   =>
+                if (List.length(prior#options) > ask#budget) Decision.Fallback(fallback)
+                else match prior#options {
+                    case head :: _ => Decision.Chosen(head)
+                    case Nil       => Decision.NoChoice
+                }
+        }
 
     // -------------------------------------------------- origin and limitations
 

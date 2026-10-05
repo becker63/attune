@@ -11,7 +11,10 @@ filegroup(
 # The typed Parquet artifact boundary: Arrow Dataset JNI write/read mechanics
 # behind a versioned JSON envelope. Flix owns every schema and row meaning; this
 # library only performs the unavoidable native codec work and classifies a
-# rejection instead of throwing across the interop boundary.
+# rejection instead of throwing across the interop boundary. It is mechanical
+# first-party Java, grouped with the other mechanical adapters under
+# `platform/tools/`; the move from `src/native/parquet/` changes no line of it
+# and saves zero code, so no saving is claimed for the relocation.
 java_library(
     name = "attune_parquet",
     srcs = ["AttuneParquet.java"],

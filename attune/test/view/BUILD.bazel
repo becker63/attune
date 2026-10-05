@@ -29,7 +29,6 @@ native_flix_test(
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/View.flix",
     ],
 )
@@ -43,7 +42,6 @@ native_flix_test(
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/View.flix",
     ],
 )
@@ -57,7 +55,6 @@ native_flix_test(
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/View.flix",
     ],
 )
@@ -71,7 +68,6 @@ native_flix_test(
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/View.flix",
     ],
 )
@@ -86,7 +82,6 @@ native_flix_test(
         "//src:Attune.flix",
         "//src:Attune/AsciiTree.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/View.flix",
     ],
 )

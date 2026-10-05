@@ -1,5 +1,4 @@
-use Attune.Envelope
-use Attune.Envelope.{Atom, Frontier, World}
+use Attune.{Atom, Frontier, World}
 use Attune.AsciiTree
 use Attune.View
 
@@ -15,9 +14,9 @@ def limits(): AsciiTree.Limits = AsciiTree.limits(16, 64, 100, 64, 4096)
 
 def world(): World = World.World("shop-v1")
 
-def files(names: List[String]): Frontier = Envelope.files(world(), names)
+def files(names: List[String]): Frontier = Attune.files(world(), names)
 
-def symbols(names: List[String]): Frontier = Envelope.symbols(world(), names)
+def symbols(names: List[String]): Frontier = Attune.symbols(world(), names)
 
 def step(
     id: Int32,
@@ -80,9 +79,9 @@ def emptinessKeepsItsDomain(): Unit \ Assert = {
         "   `-- imports -> Files{}  [EMPTY]" ::
         "       `-- defines -> Symbols{}  [EMPTY]" :: Nil);
     Assert.assertEq(expected = Ok(expected), View.renderRoutes(limits(), world(), "demo", route :: Nil));
-    Assert.assertEq(expected = false, Envelope.files(world(), Nil) == Envelope.symbols(world(), Nil));
-    Assert.assertEq(expected = "Files{}", View.frontierLabel(Envelope.files(world(), Nil)));
-    Assert.assertEq(expected = "Symbols{}", View.frontierLabel(Envelope.symbols(world(), Nil)))
+    Assert.assertEq(expected = false, Attune.files(world(), Nil) == Attune.symbols(world(), Nil));
+    Assert.assertEq(expected = "Files{}", View.frontierLabel(Attune.files(world(), Nil)));
+    Assert.assertEq(expected = "Symbols{}", View.frontierLabel(Attune.symbols(world(), Nil)))
 }
 
 /// A zero-step route is a legal typed answer, not an error.
@@ -179,8 +178,8 @@ def aHitCannotCrossWorldsOrMemoScopes(): Unit \ Assert = {
 /// One transition cannot move between worlds even without a reuse claim.
 @Test
 def aTransitionCannotCrossWorlds(): Unit \ Assert = {
-    let input = Envelope.files(World.World("shop-v1"), List#{"a.rb"});
-    let output = Envelope.files(World.World("shop-v2"), List#{"b.rb"});
+    let input = Attune.files(World.World("shop-v1"), List#{"a.rb"});
+    let output = Attune.files(World.World("shop-v2"), List#{"b.rb"});
     let bad = step(1, World.World("shop-v1"), "demo", input, Atom.Imports, output, View.Work.Unrecorded);
     Assert.assertErr(View.validateStep(input, bad, Nil))
 }
@@ -231,7 +230,7 @@ def repeatedBasenamesStayDistinct(): Unit \ Assert = {
 /// An unsafe identity is rejected before a document is made.
 @Test
 def unsafeLabelsReject(): Unit \ Assert = {
-    let bad = Envelope.files(world(), List#{"bad name"});
+    let bad = Attune.files(world(), List#{"bad name"});
     let route = { name = "X", seed = bad, steps = Nil };
     Assert.assertErr(View.renderRoutes(limits(), world(), "demo", route :: Nil))
 }

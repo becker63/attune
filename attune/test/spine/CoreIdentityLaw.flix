@@ -1,5 +1,4 @@
-use Attune.Envelope
-use Attune.Envelope.{World, WorldId}
+use Attune.{World, WorldId}
 
 /// Native `@Test` laws for exact nominal identity (VAL-CORE-001).
 ///
@@ -16,8 +15,8 @@ use Attune.Envelope.{World, WorldId}
 def reorderingOneExactSetPreservesIdentity(): Unit \ Assert = {
     let world = World.World("shop-v1");
     Assert.assertEq(
-        expected = Envelope.files(world, List#{"a/pricing.rb", "b/pricing.rb"}),
-        Envelope.files(world, List#{"b/pricing.rb", "a/pricing.rb"}))
+        expected = Attune.files(world, List#{"a/pricing.rb", "b/pricing.rb"}),
+        Attune.files(world, List#{"b/pricing.rb", "a/pricing.rb"}))
 }
 
 /// Equal size is not identity: two sets with the same cardinality stay distinct.
@@ -25,7 +24,7 @@ def reorderingOneExactSetPreservesIdentity(): Unit \ Assert = {
 def equalSizedUnequalSetsDoNotMerge(): Unit \ Assert = {
     let world = World.World("shop-v1");
     Assert.assertEq(expected = false,
-        Envelope.files(world, List#{"a.flix", "b.flix"}) == Envelope.files(world, List#{"a.flix", "c.flix"}))
+        Attune.files(world, List#{"a.flix", "b.flix"}) == Attune.files(world, List#{"a.flix", "c.flix"}))
 }
 
 /// A shared display basename does not merge two entities.
@@ -33,7 +32,7 @@ def equalSizedUnequalSetsDoNotMerge(): Unit \ Assert = {
 def sameBasenamesAtDifferentPathsStayDistinct(): Unit \ Assert = {
     let world = World.World("shop-v1");
     Assert.assertEq(expected = false,
-        Envelope.files(world, List#{"a/pricing.rb"}) == Envelope.files(world, List#{"b/pricing.rb"}))
+        Attune.files(world, List#{"a/pricing.rb"}) == Attune.files(world, List#{"b/pricing.rb"}))
 }
 
 /// Same-name declarations with different qualifications stay distinct, and the
@@ -42,22 +41,22 @@ def sameBasenamesAtDifferentPathsStayDistinct(): Unit \ Assert = {
 def qualificationsAndDomainsStayDistinct(): Unit \ Assert = {
     let world = World.World("shop-v1");
     Assert.assertEq(expected = false,
-        Envelope.symbols(world, List#{"A.render"}) == Envelope.symbols(world, List#{"B.render"}));
+        Attune.symbols(world, List#{"A.render"}) == Attune.symbols(world, List#{"B.render"}));
     Assert.assertEq(expected = false,
-        Envelope.symbols(world, List#{"render"}) == Envelope.symbols(world, List#{"A.render"}));
+        Attune.symbols(world, List#{"render"}) == Attune.symbols(world, List#{"A.render"}));
     Assert.assertEq(expected = false,
-        Envelope.files(world, List#{"x"}) == Envelope.symbols(world, List#{"x"}))
+        Attune.files(world, List#{"x"}) == Attune.symbols(world, List#{"x"}))
 }
 
 /// World identity carries origin, exact content epoch and semantics, so a dirty
 /// content or a changed semantic recipe never reuses a clean world's identity.
 @Test
 def worldIdentityIncludesContentAndSemantics(): Unit \ Assert = {
-    let clean = Envelope.worldId({ origin = "repo", content = "clean", semantics = "v1" });
-    let same = Envelope.worldId({ origin = "repo", content = "clean", semantics = "v1" });
-    let dirty = Envelope.worldId({ origin = "repo", content = "dirty", semantics = "v1" });
-    let other = Envelope.worldId({ origin = "repo", content = "clean", semantics = "v2" });
-    let fork = Envelope.worldId({ origin = "fork", content = "clean", semantics = "v1" });
+    let clean = Attune.worldId({ origin = "repo", content = "clean", semantics = "v1" });
+    let same = Attune.worldId({ origin = "repo", content = "clean", semantics = "v1" });
+    let dirty = Attune.worldId({ origin = "repo", content = "dirty", semantics = "v1" });
+    let other = Attune.worldId({ origin = "repo", content = "clean", semantics = "v2" });
+    let fork = Attune.worldId({ origin = "fork", content = "clean", semantics = "v1" });
     Assert.assertEq(expected = true, clean == same);
     Assert.assertEq(expected = false, clean == dirty);
     Assert.assertEq(expected = false, clean == other);

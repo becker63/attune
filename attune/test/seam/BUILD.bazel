@@ -47,7 +47,25 @@ native_flix_java_test(
         "ParquetSeamTest.flix",
         "Seam.flix",
     ],
-    java_deps = ["//src/native/parquet:attune_parquet"],
+    java_deps = ["//platform/tools/parquet:attune_parquet"],
+)
+
+# The typed prior/decision laws. The prior/request/evidence/result contract now
+# lives once in the `Attune.Study` owner (the `study` component), so this target
+# carries only the fixture laws and the adapter from the test-scoped seam
+# vocabulary. It drives the approved SDK decision API over a deterministic
+# recorded exchange and asserts the finite-budget, declared-fallback and
+# classified-failure laws. No provider is contacted. Executed fixture.
+native_flix_java_test(
+    name = "decision_seam_test",
+    srcs = [
+        "DecisionSeamLaw.flix",
+        "Seam.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+    ],
+    java_deps = [":attune_inference"],
 )
 
 # Manual negative fixture: a deliberately false assertion over the Java-backed

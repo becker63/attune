@@ -1,5 +1,4 @@
-use Attune.Envelope
-use Attune.Envelope.{Atom, Domain, Frontier, World}
+use Attune.{Atom, Domain, Frontier, World}
 use Attune.AsciiTree
 use Attune.View
 
@@ -66,17 +65,17 @@ def depthZeroIsTheRootAloneAndTheBoundIsExplicit(): Unit \ Assert = {
 @Test
 def grammarUsesTheSameSignatureTableAsTheValidator(): Unit \ Assert = {
     Assert.assertEq(expected = 11, View.atomWidth());
-    Assert.assertEq(expected = true, List.forAll(acceptsAtom, Envelope.atoms()))
+    Assert.assertEq(expected = true, List.forAll(acceptsAtom, Attune.atoms()))
 }
 
 def frontierOf(domain: Domain, name: String): Frontier = match domain {
-    case Domain.Files   => Envelope.files(world(), name :: Nil)
-    case Domain.Symbols => Envelope.symbols(world(), name :: Nil)
+    case Domain.Files   => Attune.files(world(), name :: Nil)
+    case Domain.Symbols => Attune.symbols(world(), name :: Nil)
 }
 
 def acceptsAtom(atom: Atom): Bool = {
-    let source = frontierOf(Envelope.atomSource(atom), "in");
-    let output = frontierOf(Envelope.atomTarget(atom), "out");
+    let source = frontierOf(Attune.atomSource(atom), "in");
+    let output = frontierOf(Attune.atomTarget(atom), "out");
     let probe = { id = 1, snapshot = world(), memo = "demo", input = source, atom = atom, output = output,
         work = View.Work.Unrecorded };
     Result.isOk(View.validateStep(source, probe, Nil))

@@ -1,4 +1,4 @@
-use Attune.Envelope.{Atom, Fact, World}
+use Attune.{Atom, Fact, World}
 use Attune.Coverage
 use Attune.Study
 

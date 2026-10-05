@@ -1,6 +1,5 @@
 use Attune.Coverage
-use Attune.Envelope
-use Attune.Envelope.{Atom, Domain, Fact, World}
+use Attune.{Atom, Domain, Fact, World}
 use Attune.Theory
 
 /// Native laws for the bounded Theory owner (VAL-THEORY-001..005).
@@ -136,7 +135,7 @@ def fileSourceRelations(): List[Atom] = Atom.Defines :: Atom.Imports :: Atom.Imp
 def symbolSourceRelations(): List[Atom] = Atom.DefinedIn :: Atom.Calls :: Atom.Callers :: Nil
 
 def followers(relation: Atom): List[Atom] =
-    if (Envelope.atomTarget(relation) == Domain.Files) fileSourceRelations() else symbolSourceRelations()
+    if (Attune.atomTarget(relation) == Domain.Files) fileSourceRelations() else symbolSourceRelations()
 
 def pickAtom(values: List[Atom], index: Int32): Atom = match List.drop(index, values) {
     case head :: _ => head

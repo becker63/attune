@@ -79,15 +79,15 @@ _LANGUAGE_REGISTRY_PATCHES = [
     ("    Sql,\n    Vue,", "    Sql,\n    Starlark,\n    Vue,"),
     (
         '            PatternLanguage::Css => write!(f, "css"),\n            PatternLanguage::Json => write!(f, "json"),',
-        '            PatternLanguage::Css => write!(f, "css"),\n'
-        + '            PatternLanguage::Flix => write!(f, "flix"),\n'
-        + '            PatternLanguage::Json => write!(f, "json"),',
+        '            PatternLanguage::Css => write!(f, "css"),\n' +
+        '            PatternLanguage::Flix => write!(f, "flix"),\n' +
+        '            PatternLanguage::Json => write!(f, "json"),',
     ),
     (
         '            PatternLanguage::Sql => write!(f, "sql"),\n            PatternLanguage::Vue => write!(f, "vue"),',
-        '            PatternLanguage::Sql => write!(f, "sql"),\n'
-        + '            PatternLanguage::Starlark => write!(f, "starlark"),\n'
-        + '            PatternLanguage::Vue => write!(f, "vue"),',
+        '            PatternLanguage::Sql => write!(f, "sql"),\n' +
+        '            PatternLanguage::Starlark => write!(f, "starlark"),\n' +
+        '            PatternLanguage::Vue => write!(f, "vue"),',
     ),
     ("            Self::Json,\n            Self::Java,", "            Self::Json,\n            Self::Flix,\n            Self::Java,"),
     ("            Self::Sql,\n            Self::Vue,", "            Self::Sql,\n            Self::Starlark,\n            Self::Vue,"),
@@ -97,59 +97,59 @@ _LANGUAGE_REGISTRY_PATCHES = [
     ),
     (
         '            "sql" => Some(Self::Sql),\n            "vue" => Some(Self::Vue),\n            "toml" => Some(Self::Toml),',
-        '            "sql" => Some(Self::Sql),\n'
-        + '            "starlark" => Some(Self::Starlark),\n'
-        + '            "vue" => Some(Self::Vue),\n'
-        + '            "toml" => Some(Self::Toml),',
+        '            "sql" => Some(Self::Sql),\n' +
+        '            "starlark" => Some(Self::Starlark),\n' +
+        '            "vue" => Some(Self::Vue),\n' +
+        '            "toml" => Some(Self::Toml),',
     ),
     (
         '            "sql" => Some(Self::Sql),\n            "vue" => Some(Self::Vue),\n            "php" | "phps" | "phtml" | "pht" => Some(Self::Php),',
-        '            "sql" => Some(Self::Sql),\n'
-        + '            // Bazel\'s build files are Starlark: `.bzl` and `.bazel` carry the\n'
-        + '            // extension, and `BUILD`/`WORKSPACE` are named without one.\n'
-        + '            "bzl" | "star" | "bazel" | "BUILD" | "BUILD.bazel" | "WORKSPACE" | "WORKSPACE.bazel" => {\n'
-        + '                Some(Self::Starlark)\n'
-        + '            }\n'
-        + '            "vue" => Some(Self::Vue),\n'
-        + '            "php" | "phps" | "phtml" | "pht" => Some(Self::Php),',
+        '            "sql" => Some(Self::Sql),\n' +
+        "            // Bazel's build files are Starlark: `.bzl` and `.bazel` carry the\n" +
+        "            // extension, and `BUILD`/`WORKSPACE` are named without one.\n" +
+        '            "bzl" | "star" | "bazel" | "BUILD" | "BUILD.bazel" | "WORKSPACE" | "WORKSPACE.bazel" => {\n' +
+        "                Some(Self::Starlark)\n" +
+        "            }\n" +
+        '            "vue" => Some(Self::Vue),\n' +
+        '            "php" | "phps" | "phtml" | "pht" => Some(Self::Php),',
     ),
     (
         '            PatternLanguage::Java => &["java"],\n            PatternLanguage::Kotlin => &["kt", "kts"],',
-        '            PatternLanguage::Java => &["java"],\n'
-        + '            PatternLanguage::Flix => &["flix"],\n'
-        + '            PatternLanguage::Kotlin => &["kt", "kts"],',
+        '            PatternLanguage::Java => &["java"],\n' +
+        '            PatternLanguage::Flix => &["flix"],\n' +
+        '            PatternLanguage::Kotlin => &["kt", "kts"],',
     ),
     (
         '            PatternLanguage::Sql => &["sql"],\n            PatternLanguage::Vue => &["vue"],',
-        '            PatternLanguage::Sql => &["sql"],\n'
-        + '            // Bazel/Starlark sources: `.bzl`, the `.bazel` files (`BUILD.bazel`,\n'
-        + '            // `MODULE.bazel`), and Buck2-style `.star`.\n'
-        + '            PatternLanguage::Starlark => &["bzl", "bazel", "star"],\n'
-        + '            PatternLanguage::Vue => &["vue"],',
+        '            PatternLanguage::Sql => &["sql"],\n' +
+        "            // Bazel/Starlark sources: `.bzl`, the `.bazel` files (`BUILD.bazel`,\n" +
+        "            // `MODULE.bazel`), and Buck2-style `.star`.\n" +
+        '            PatternLanguage::Starlark => &["bzl", "bazel", "star"],\n' +
+        '            PatternLanguage::Vue => &["vue"],',
     ),
     (
         '            PatternLanguage::Java => Some("java"),\n            PatternLanguage::Kotlin => Some("kt"),',
-        '            PatternLanguage::Java => Some("java"),\n'
-        + '            PatternLanguage::Flix => Some("flix"),\n'
-        + '            PatternLanguage::Kotlin => Some("kt"),',
+        '            PatternLanguage::Java => Some("java"),\n' +
+        '            PatternLanguage::Flix => Some("flix"),\n' +
+        '            PatternLanguage::Kotlin => Some("kt"),',
     ),
     (
         '            PatternLanguage::Sql => Some("sql"),\n            PatternLanguage::Vue => Some("vue"),',
-        '            PatternLanguage::Sql => Some("sql"),\n'
-        + '            PatternLanguage::Starlark => Some("bzl"),\n'
-        + '            PatternLanguage::Vue => Some("vue"),',
+        '            PatternLanguage::Sql => Some("sql"),\n' +
+        '            PatternLanguage::Starlark => Some("bzl"),\n' +
+        '            PatternLanguage::Vue => Some("vue"),',
     ),
     (
-        '            PatternLanguage::Java => Ok(TargetLanguage::Java(Java::new(Some(lang)))),\n            PatternLanguage::CSharp =>',
-        '            PatternLanguage::Java => Ok(TargetLanguage::Java(Java::new(Some(lang)))),\n'
-        + '            PatternLanguage::Flix => Ok(TargetLanguage::Flix(Flix::new(Some(lang)))),\n'
-        + '            PatternLanguage::CSharp =>',
+        "            PatternLanguage::Java => Ok(TargetLanguage::Java(Java::new(Some(lang)))),\n            PatternLanguage::CSharp =>",
+        "            PatternLanguage::Java => Ok(TargetLanguage::Java(Java::new(Some(lang)))),\n" +
+        "            PatternLanguage::Flix => Ok(TargetLanguage::Flix(Flix::new(Some(lang)))),\n" +
+        "            PatternLanguage::CSharp =>",
     ),
     (
-        '            PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(Some(lang)))),\n            PatternLanguage::Vue =>',
-        '            PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(Some(lang)))),\n'
-        + '            PatternLanguage::Starlark => Ok(TargetLanguage::Starlark(Starlark::new(Some(lang)))),\n'
-        + '            PatternLanguage::Vue =>',
+        "            PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(Some(lang)))),\n            PatternLanguage::Vue =>",
+        "            PatternLanguage::Sql => Ok(TargetLanguage::Sql(Sql::new(Some(lang)))),\n" +
+        "            PatternLanguage::Starlark => Ok(TargetLanguage::Starlark(Starlark::new(Some(lang)))),\n" +
+        "            PatternLanguage::Vue =>",
     ),
     (
         "            TargetLanguage::CSharp(_)\n            | TargetLanguage::Go(_)",
@@ -162,15 +162,15 @@ _LANGUAGE_REGISTRY_PATCHES = [
     ("    Sql,\n    Php,\n    PhpOnly\n}", "    Sql,\n    Php,\n    PhpOnly,\n    Starlark\n}"),
     (
         '            TargetLanguage::Json(_) => write!(f, "json"),\n            TargetLanguage::Java(_) => write!(f, "java"),',
-        '            TargetLanguage::Json(_) => write!(f, "json"),\n'
-        + '            TargetLanguage::Flix(_) => write!(f, "flix"),\n'
-        + '            TargetLanguage::Java(_) => write!(f, "java"),',
+        '            TargetLanguage::Json(_) => write!(f, "json"),\n' +
+        '            TargetLanguage::Flix(_) => write!(f, "flix"),\n' +
+        '            TargetLanguage::Java(_) => write!(f, "java"),',
     ),
     (
         '            TargetLanguage::Sql(_) => write!(f, "sql"),\n            TargetLanguage::Vue(_) => write!(f, "vue"),',
-        '            TargetLanguage::Sql(_) => write!(f, "sql"),\n'
-        + '            TargetLanguage::Starlark(_) => write!(f, "starlark"),\n'
-        + '            TargetLanguage::Vue(_) => write!(f, "vue"),',
+        '            TargetLanguage::Sql(_) => write!(f, "sql"),\n' +
+        '            TargetLanguage::Starlark(_) => write!(f, "starlark"),\n' +
+        '            TargetLanguage::Vue(_) => write!(f, "vue"),',
     ),
 ]
 
@@ -374,9 +374,9 @@ def _extend_language_registry(repository_ctx):
         repository_ctx,
         language_cargo,
         'tree-sitter-javascript = { path = "../../resources/language-metavariables/tree-sitter-javascript", optional = true }\n',
-        'tree-sitter-javascript = { path = "../../resources/language-metavariables/tree-sitter-javascript", optional = true }\n'
-        + 'tree-sitter-flix = { path = "../../resources/language-metavariables/tree-sitter-flix", optional = true }\n'
-        + 'tree-sitter-starlark = { path = "../../resources/language-metavariables/tree-sitter-starlark", optional = true }\n',
+        'tree-sitter-javascript = { path = "../../resources/language-metavariables/tree-sitter-javascript", optional = true }\n' +
+        'tree-sitter-flix = { path = "../../resources/language-metavariables/tree-sitter-flix", optional = true }\n' +
+        'tree-sitter-starlark = { path = "../../resources/language-metavariables/tree-sitter-starlark", optional = true }\n',
     )
     _replace(
         repository_ctx,
@@ -729,6 +729,7 @@ rust_library(
             _STARLARK_GRAMMAR.version,
         ),
     )
+
     # The Ruby parser is the pinned grammar already inside the frozen Grit
     # closure (ABI 14, `tree-sitter-ruby` 0.20.1); Attune only stops stripping
     # it and dispatches to it. It uses the upstream binding, which already

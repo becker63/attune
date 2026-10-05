@@ -36,8 +36,7 @@
 pub mod Attune.Theory {
 
     use Attune.Coverage.WorldFacts
-    use Attune.Envelope
-    use Attune.Envelope.{Atom, Domain, Fact, World}
+    use Attune.{Atom, Domain, Fact, World}
 
     // -------------------------------------------------------------- entities
 
@@ -171,8 +170,8 @@ pub mod Attune.Theory {
 
     def domainsOf(role: Int32, atoms: List[AtomPattern]): List[Domain] =
         List.flatMap(atom ->
-            (if (atom#subject == role) Envelope.atomSource(atom#relation) :: Nil else Nil)
-                ::: (if (atom#object == role) Envelope.atomTarget(atom#relation) :: Nil else Nil),
+            (if (atom#subject == role) Attune.atomSource(atom#relation) :: Nil else Nil)
+                ::: (if (atom#object == role) Attune.atomTarget(atom#relation) :: Nil else Nil),
             atoms)
 
     // ---------------------------------------------------- canonical identity
@@ -298,10 +297,10 @@ pub mod Attune.Theory {
     def ordered(left: Int32, right: Int32): (Int32, Int32) = if (left <= right) (left, right) else (right, left)
 
     def atomKey(atom: AtomPattern): String =
-        Int32.toString(atom#subject) + "," + Int32.toString(atom#object) + " " + Envelope.atomName(atom#relation)
+        Int32.toString(atom#subject) + "," + Int32.toString(atom#object) + " " + Attune.atomName(atom#relation)
 
     def renderAtom(atom: AtomPattern): String =
-        Envelope.atomName(atom#relation) + "(v" + Int32.toString(atom#subject) + ",v" + Int32.toString(atom#object) + ")"
+        Attune.atomName(atom#relation) + "(v" + Int32.toString(atom#subject) + ",v" + Int32.toString(atom#object) + ")"
 
     def renderPair(pair: (Int32, Int32)): String = match pair {
         case (left, right) => "v" + Int32.toString(left) + "!=v" + Int32.toString(right)
@@ -407,8 +406,8 @@ pub mod Attune.Theory {
         List.map(fact -> (
             fact#world,
             fact#atom,
-            entityOf(fact#source, Envelope.atomSource(fact#atom)),
-            entityOf(fact#target, Envelope.atomTarget(fact#atom))), facts)
+            entityOf(fact#source, Attune.atomSource(fact#atom)),
+            entityOf(fact#target, Attune.atomTarget(fact#atom))), facts)
 
     /// One `Desc` row per candidate: the id, the canonical shape key, the three
     /// relation slots, the one optional bound inequality and the two output

@@ -42,7 +42,7 @@ java_library(
     srcs = ["HistoryFixtures.java"],
     javacopts = ["--release=21"],
     deps = [
-        "//src/native/parquet:attune_parquet",
+        "//platform/tools/parquet:attune_parquet",
         "@attune_maven//:com_fasterxml_jackson_core_jackson_core",
         "@attune_maven//:com_fasterxml_jackson_core_jackson_databind",
     ],
@@ -57,7 +57,6 @@ native_flix_java_test(
     srcs = [
         "CorrectedRegression.flix",
         "//src:Attune.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/Study.flix",
     ],
     declared_files = [":inputs"],

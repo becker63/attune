@@ -18,7 +18,6 @@ native_flix_test(
         "TheoryLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/Theory.flix",
     ],
 )

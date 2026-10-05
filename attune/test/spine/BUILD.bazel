@@ -16,7 +16,6 @@ native_flix_test(
     srcs = [
         "EnvelopeLaw.flix",
         "//src:Attune.flix",
-        "//src:Attune/Envelope.flix",
     ],
 )
 
@@ -38,7 +37,6 @@ native_flix_test(
     srcs = [
         "FalseAssertion.flix",
         "//src:Attune.flix",
-        "//src:Attune/Envelope.flix",
     ],
     tags = ["manual"],
 )
@@ -50,7 +48,6 @@ native_flix_reject_test(
     srcs = [
         "NominalNegative.flix",
         "//src:Attune.flix",
-        "//src:Attune/Envelope.flix",
     ],
     expected = "Unable to unify the types",
 )
@@ -63,7 +60,6 @@ native_flix_test(
     srcs = [
         "CoreIdentityLaw.flix",
         "//src:Attune.flix",
-        "//src:Attune/Envelope.flix",
     ],
 )
 
@@ -75,8 +71,6 @@ native_flix_test(
     srcs = [
         "CoreApplyLaw.flix",
         "//src:Attune.flix",
-        "//src:Attune/Apply.flix",
-        "//src:Attune/Envelope.flix",
     ],
 )
 
@@ -88,8 +82,6 @@ native_flix_test(
     srcs = [
         "CoreMemoLaw.flix",
         "//src:Attune.flix",
-        "//src:Attune/Apply.flix",
-        "//src:Attune/Envelope.flix",
     ],
 )
 
@@ -102,7 +94,6 @@ native_flix_test(
         "CoreEvidenceLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/Study.flix",
     ],
 )

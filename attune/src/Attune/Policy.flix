@@ -186,17 +186,23 @@ pub mod Attune.Policy {
             or hasSuffix(".so", path) or hasSuffix(".dylib", path) or hasSuffix(".node", path)
 
     /// The exact admitted foreign/source-as-data families: inherited pinned
-    /// support, the one approved native Ruby arm, future test-only proposal and
-    /// query source, maintained Grit queries, Ruby fixture data and the carried
-    /// Zed editor assets, whose pinned Flix grammar revision is the single
-    /// revision the Grit integration reuses. The upstream grammar checkout
-    /// preserved beside the Zed assets is untracked editor work and is never a
-    /// build input, but it sits inside the audited workspace, so the admitted
-    /// `platform/zed/` family keeps it from being reported as authored source.
+    /// support, maintained Grit query source (including the approved Ruby entry
+    /// points), Ruby fixture data and the carried Zed editor assets, whose pinned
+    /// Flix grammar revision is the single revision the Grit integration reuses.
+    /// The upstream grammar checkout preserved beside the Zed assets is untracked
+    /// editor work and is never a build input, but it sits inside the audited
+    /// workspace, so the admitted `platform/zed/` family keeps it from being
+    /// reported as authored source.
+    ///
+    /// Two paths this list used to admit are retired because nothing lives there:
+    /// `test/proposals/` (the last bootstrap-era test-only proposal, P08, is now
+    /// production source in `Attune.Study`) and `src/native/ruby/` (the approved
+    /// Ruby arm is the maintained Grit rule plus the pinned closure, not a
+    /// first-party `src/native/` tree, and `src/native/` itself is gone). An
+    /// admission for an empty tree is not an exemption; it is unowned policy.
     pub def isAdmittedForeign(path: String): Bool =
         hasPrefix("platform/support/", path) or hasPrefix("platform/vendor/", path)
             or hasPrefix("platform/zed/", path)
-            or hasPrefix("src/native/ruby/", path) or hasPrefix("test/proposals/", path)
             or hasSuffix(".grit", path)
             or (hasPrefix("test/", path) and hasSuffix(".rb", path))
 
@@ -212,9 +218,6 @@ pub mod Attune.Policy {
     def httpTokens(): List[String] =
         ("Http" + "Client") :: ("Http" + "URL" + "Connection") :: ("java." + "net." + "http")
             :: ("ok" + "http") :: ("URL" + "Connection") :: Nil
-
-    def proposalTokens(): List[String] =
-        ("Attune." + "Prop" + "osal") :: ("Prop" + "osal" + ".P0") :: Nil
 
     def containsAny(tokens: List[String], text: String): Bool =
         List.exists(t -> hasInfix(t, text), tokens)
@@ -516,8 +519,6 @@ pub mod Attune.Policy {
             Finding.Finding("embedded-script", path, "executable code embeds a shell script or shell action") :: Nil else Nil)
             ::: (if (hasPrefix("src/", path) and containsAny(httpTokens(), code))
                 Finding.Finding("raw-http", path, "production source substitutes a raw HTTP client for the approved SDK") :: Nil else Nil)
-            ::: (if (hasPrefix("src/", path) and containsAny(proposalTokens(), code))
-                Finding.Finding("proposal-dependency", path, "production source depends on a test-only proposal module") :: Nil else Nil)
 
     def rootFindings(path: String): List[Finding] =
         if (isRootMetadata(path) or isExcludedPath(path) or isApprovedRoot(path) or isAdmittedForeign(path)) Nil
@@ -659,24 +660,16 @@ pub mod Attune.Policy {
     /// mechanical presentation.
     pub def isPresentationMechanical(path: String): Bool = path == "src/Attune/AsciiTree.flix"
 
-    /// The exact test portions whose reusable algorithms are policy-bearing
-    /// semantics rather than assertions. P06's descriptor safety check and
-    /// alpha-normalization identity (`safe`/`bound`/`identityKey` and the role
-    /// renaming it depends on) now live in `Attune.Theory`, so only P08 remains:
-    /// it carries the typed prior/request/evidence contract and the
-    /// `fromSeam`/`settle` decision semantics. The owner policy counts a semantic
-    /// algorithm as cognitive under any placement, so the blanket
-    /// `test/** -> Fixture` rule must not hide this one. The list is bounded and
-    /// explicit — one named path, not a general registry or lexer — and it holds
-    /// exactly the test-placed semantics that `Attune.Study` has not absorbed
-    /// yet, so it shrinks to empty when it does. The genuine `@Test` assertions
-    /// and fixed fixture data in the same file are disclosed in
-    /// `notes/design.md`; this accounting makes no per-function claim.
-    pub def isUnmigratedSemanticTest(path: String): Bool =
-        path == "test/proposals/P08Decisions.flix"
-
+    /// No test-placed semantic exception remains. An earlier accounting carried
+    /// a bounded explicit list for reusable algorithms that a compact owner had
+    /// not absorbed yet (P06 descriptor safety, then P08 decision settlement).
+    /// P06 now lives in `Attune.Theory` and P08's typed prior/request/evidence
+    /// and `settle` contract now lives in `Attune.Study`, so the blanket
+    /// `test/** -> Fixture` rule below hides no algorithm and no special case is
+    /// needed. A semantic algorithm under any placement still counts as
+    /// cognitive: the rule is simply that it belongs in a production owner.
     def isMechanicalPath(path: String): Bool =
-        hasPrefix("src/native/", path) or hasPrefix("platform/tools/", path)
+        hasPrefix("platform/tools/", path)
             or (hasPrefix("platform/build/", path) and not isGritClosureRule(path))
 
     pub def ownershipOf(path: String): Ownership =
@@ -688,22 +681,18 @@ pub mod Attune.Policy {
         // cognitive under any path rather than an inherited or fixture exemption.
         else if (hasSuffix(".grit", path)) Ownership.Cognitive
         else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) Ownership.Support
-        // Unmigrated test-placed semantics count as cognitive before the
-        // blanket test/** fixture rule, so placement cannot hide an algorithm.
-        else if (isUnmigratedSemanticTest(path)) Ownership.Cognitive
         else if (hasPrefix("test/", path)) Ownership.Fixture
         else if (isMechanicalPath(path)) Ownership.Mechanical
         else if (hasPrefix("src/", path) or isApprovedRoot(path)) Ownership.Cognitive
         else Ownership.Metadata
 
     /// The named components the accounting reports, in table order. `core` holds
-    /// the shared envelope, application and the canonical generic
-    /// coverage/evidence/support values; `theory` is the sixth semantic owner.
-    /// `proposal-semantics` is the one remaining test-placed semantic portion
-    /// that `Attune.Study` has not absorbed yet.
+    /// the one `Attune` owner (identity, the six atoms, frontiers, application
+    /// and memo) plus the canonical generic coverage/evidence/support values;
+    /// `theory` is the sixth semantic owner.
     pub def componentNames(): List[String] =
         "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
-            :: "frontends" :: "proposal-semantics" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
+            :: "frontends" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
             :: "build-rules" :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
 
     pub def componentOf(path: String): String =
@@ -712,21 +701,19 @@ pub mod Attune.Policy {
         else if (isBuildFile(path) or isRootMetadata(path) or hasPrefix("notes/", path)) "metadata"
         else if (hasSuffix(".grit", path)) "frontends"
         else if (path == "src/Attune/AsciiTree.flix") "ascii"
-        else if (path == "src/Attune.flix" or path == "src/Attune/Envelope.flix" or path == "src/Attune/Apply.flix"
-            or path == "src/Attune/Coverage.flix") "core"
+        else if (path == "src/Attune.flix" or path == "src/Attune/Coverage.flix") "core"
         else if (hasPrefix("src/Attune/Repository", path)) "repository"
         else if (path == "src/Attune/Theory.flix") "theory"
         else if (path == "src/Attune/Study.flix") "study"
         else if (path == "src/Attune/Policy.flix" or path == "src/Attune/Isolation.flix") "policy"
         else if (path == "src/Attune/View.flix" or path == "src/Attune/Docs.flix") "view"
         else if (hasPrefix("src/grit/", path)) "frontends"
-        else if (hasPrefix("src/native/", path)) "parquet"
+        else if (hasPrefix("platform/tools/parquet/", path)) "parquet"
         else if (hasPrefix("platform/tools/boundary/", path)) "boundary"
         else if (hasPrefix("platform/tools/grit/", path)) "grit-binding"
         else if (hasPrefix("platform/build/", path)) "build-rules"
         else if (path == "platform/support/grit/cargo-bazel-lock.json" or path == "platform/support/grit/Cargo.lock") "inherited-locks"
         else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) "inherited"
-        else if (isUnmigratedSemanticTest(path)) "proposal-semantics"
         else if (hasPrefix("test/", path)) "tests"
         else "metadata"
 

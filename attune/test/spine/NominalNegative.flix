@@ -1,4 +1,4 @@
-use Attune.Envelope.{FileId, Frontier, World}
+use Attune.{FileId, Frontier, World}
 
 /// The compiler negative fixture.
 ///

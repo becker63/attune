@@ -2,8 +2,7 @@ import attune.grit.fixtures.GritFixtures
 
 use Attune.AsciiTree
 use Attune.Docs
-use Attune.Envelope
-use Attune.Envelope.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
+use Attune.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
 use Attune.Repository
 use Attune.Coverage.{Coverage, Outcome, observe, outcomeName}
 use Attune.Study
@@ -51,9 +50,9 @@ def targets(edges: List[(String, String)], owner: String): List[String] =
         case (source, target) => if (source == owner) Some(target) else None
     }, edges)))
 
-def files(names: List[String]): Frontier = Envelope.files(snapshot(), names)
+def files(names: List[String]): Frontier = Attune.files(snapshot(), names)
 
-def symbols(names: List[String]): Frontier = Envelope.symbols(snapshot(), names)
+def symbols(names: List[String]): Frontier = Attune.symbols(snapshot(), names)
 
 def step(id: Int32, input: Frontier, atom: Atom, output: Frontier, work: View.Work): View.Step =
     { id = id, snapshot = snapshot(), memo = "demo", input = input, atom = atom, output = output, work = work }

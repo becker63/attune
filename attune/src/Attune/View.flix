@@ -1,7 +1,7 @@
 /// The typed route, grammar, serial-event, proof and semantic-view adapters.
 ///
-/// Every readout here is derived from the one shared `Attune.Envelope`
-/// vocabulary: a frontier carries its world, its nominal domain and its exact
+/// Every readout here is derived from the one shared `Attune` vocabulary: a
+/// frontier carries its world, its nominal domain and its exact
 /// finite member set, and an atom declares its source and target domains. A
 /// renderer cannot invent a fact, a cache hit, a proof premise or a view edge;
 /// it only presents the typed records it was given. All text is composed by the
@@ -18,8 +18,7 @@
 /// adjacency listing whenever a tree cannot honestly carry the edges.
 pub mod Attune.View {
 
-    use Attune.Envelope
-    use Attune.Envelope.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
+    use Attune.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
     use Attune.Coverage.{Outcome, outcomeName}
     use Attune.AsciiTree
 
@@ -54,7 +53,7 @@ pub mod Attune.View {
     /// and printed in one deterministic lexical order, so set insertion order is
     /// never mistaken for architecture.
     pub def frontierLabel(frontier: Frontier): String =
-        domainLabel(Envelope.domainOf(frontier)) + "{" +
+        domainLabel(Attune.domainOf(frontier)) + "{" +
             List.join(", ", List.sort(members(frontier))) + "}"
 
     /// The name of a world, for a document header.
@@ -103,19 +102,19 @@ pub mod Attune.View {
     /// as its recorded producer. Equal output alone is insufficient, the
     /// producer must be present and earlier, and no reuse may be inferred.
     pub def validateStep(previous: Frontier, step: Step, seen: List[Step]): Result[String, Unit] = {
-        let name = Envelope.atomName(step#atom);
+        let name = Attune.atomName(step#atom);
         let ids = List.map(item -> item#id, seen);
         if (step#id <= 0 or not List.forAll(id -> id < step#id, ids))
             Err("Event IDs must increase in this recorded serial run.")
         else if (not safeFrontier(step#input) or not safeFrontier(step#output))
             Err("Unsupported label; escape it without changing identity.")
         else if (step#input != previous) Err("Broken route: next input is not previous output.")
-        else if (Envelope.domainOf(previous) != Envelope.atomSource(step#atom))
-            Err(name + " needs " + domainLabel(Envelope.atomSource(step#atom)) +
-                "; received " + domainLabel(Envelope.domainOf(previous)) + ".")
-        else if (Envelope.worldOf(step#input) != Envelope.worldOf(step#output))
+        else if (Attune.domainOf(previous) != Attune.atomSource(step#atom))
+            Err(name + " needs " + domainLabel(Attune.atomSource(step#atom)) +
+                "; received " + domainLabel(Attune.domainOf(previous)) + ".")
+        else if (Attune.worldOf(step#input) != Attune.worldOf(step#output))
             Err("A transition cannot cross worlds.")
-        else if (Envelope.domainOf(step#output) != Envelope.atomTarget(step#atom))
+        else if (Attune.domainOf(step#output) != Attune.atomTarget(step#atom))
             Err("Wrong output domain in recorded step.")
         else if (empty(previous) and not empty(step#output))
             Err("These relation steps cannot create members from an empty input.")
@@ -188,7 +187,7 @@ pub mod Attune.View {
     def stepTree(steps: List[Step]): List[AsciiTree.Tree] = match steps {
         case Nil => Nil
         case step :: rest =>
-            let name = Envelope.atomName(step#atom);
+            let name = Attune.atomName(step#atom);
             let show = step#work != Work.Unrecorded or List.isEmpty(rest) or empty(step#output);
             let suffix = if (show) "  " + annotation(step) else "";
             AsciiTree.Tree.Node(name + " -> " + frontierLabel(step#output) + suffix, stepTree(rest)) :: Nil
@@ -203,9 +202,9 @@ pub mod Attune.View {
 
     /// The typed path line, derived from the same steps as the value tree.
     pub def typedPath(route: Route): String =
-        domainLabel(Envelope.domainOf(route#seed)) + List.join("", List.map(step -> {
-            let name = Envelope.atomName(step#atom);
-            " -> " + name + " -> " + domainLabel(Envelope.atomTarget(step#atom))
+        domainLabel(Attune.domainOf(route#seed)) + List.join("", List.map(step -> {
+            let name = Attune.atomName(step#atom);
+            " -> " + name + " -> " + domainLabel(Attune.atomTarget(step#atom))
         }, route#steps))
 
     /// Validate every record before drawing anything, then render one document.
@@ -260,7 +259,7 @@ pub mod Attune.View {
     /// The longest atom label, so the rendered `->` column lines up for every
     /// branch. `imported_by` is longer than `calls`.
     pub def atomWidth(): Int32 =
-        List.foldLeft((width, atom) -> bigger(width, String.length(Envelope.atomName(atom))), 0, Envelope.atoms())
+        List.foldLeft((width, atom) -> bigger(width, String.length(Attune.atomName(atom))), 0, Attune.atoms())
 
     /// The complete legal continuation tree for one domain, generated from the
     /// single atom signature table. It renders POSSIBLE continuations; it does
@@ -301,12 +300,12 @@ pub mod Attune.View {
     def grammarBranches(domain: Domain, remaining: Int32): List[AsciiTree.Tree] =
         if (remaining <= 0) Nil
         else List.filterMap(atom -> {
-            if (Envelope.atomSource(atom) != domain) None
+            if (Attune.atomSource(atom) != domain) None
             else Some(AsciiTree.Tree.Node(
-                String.padRight(atomWidth(), ' ', Envelope.atomName(atom)) + " -> " +
-                    domainLabel(Envelope.atomTarget(atom)),
-                grammarBranches(Envelope.atomTarget(atom), remaining - 1)))
-        }, Envelope.atoms())
+                String.padRight(atomWidth(), ' ', Attune.atomName(atom)) + " -> " +
+                    domainLabel(Attune.atomTarget(atom)),
+                grammarBranches(Attune.atomTarget(atom), remaining - 1)))
+        }, Attune.atoms())
 
     // ------------------------------------------------------------------ proof
 
@@ -416,7 +415,7 @@ pub mod Attune.View {
         let seedIds = List.map(seed -> seed#id, seeds);
         let children = List.filterMap(fact ->
             if (List.exists(id -> id == fact#source, seedIds))
-                Some({ id = fact#target, domain = Envelope.atomTarget(fact#atom) })
+                Some({ id = fact#target, domain = Attune.atomTarget(fact#atom) })
             else None,
             selected);
         let nodes = nodesOf(seeds, children);
@@ -511,13 +510,13 @@ pub mod Attune.View {
         "graph=view name=" + view#name + " scope=" + view#scope + " mode=" + mode + "\n\n"
 
     def viewTree(view: View, id: String): AsciiTree.Tree = {
-        let edges = List.sortBy(edge -> Envelope.atomName(edge#relation) + " " + edge#target,
+        let edges = List.sortBy(edge -> Attune.atomName(edge#relation) + " " + edge#target,
             List.filter(edge -> edge#source == id, view#edges));
         AsciiTree.Tree.Node(labelOf(view, id), List.map(edge -> {
             let child = viewTree(view, edge#target);
             match child {
                 case AsciiTree.Tree.Node(childLabel, grandchildren) =>
-                    AsciiTree.Tree.Node(Envelope.atomName(edge#relation) + " -> " + childLabel, grandchildren)
+                    AsciiTree.Tree.Node(Attune.atomName(edge#relation) + " -> " + childLabel, grandchildren)
             }
         }, edges))
     }
@@ -526,7 +525,7 @@ pub mod Attune.View {
         List.sort(List.map(edge -> edgeText(view, edge), view#edges))
 
     def edgeText(view: View, edge: ViewEdge): String =
-        labelOf(view, edge#source) + " --" + Envelope.atomName(edge#relation) + "--> "
+        labelOf(view, edge#source) + " --" + Attune.atomName(edge#relation) + "--> "
             + labelOf(view, edge#target)
 
     def labelOf(view: View, id: String): String = match List.find(node -> node#id == id, view#nodes) {

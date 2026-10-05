@@ -1,5 +1,4 @@
-use Attune.Envelope
-use Attune.Envelope.{Atom, Domain, Fact, World}
+use Attune.{Atom, Domain, Fact, World}
 use Attune.AsciiTree
 use Attune.View
 
@@ -177,8 +176,8 @@ def anEdgeKeepsItsDirectionAndRelation(): Unit \ Assert = {
     Assert.assertEq(expected = false, View.viewEdgeTexts(forward) == View.viewEdgeTexts(backward));
     Assert.assertEq(expected = List#{"Files{a.rb} --imported_by--> Files{b.rb}"}, View.viewEdgeTexts(relabelled));
     Assert.assertEq(expected = false, View.viewEdgeTexts(forward) == View.viewEdgeTexts(relabelled));
-    Assert.assertEq(expected = 6, List.length(Envelope.atoms()));
-    Assert.assertEq(expected = false, List.exists(atom -> Envelope.atomName(atom) == "writes", Envelope.atoms()))
+    Assert.assertEq(expected = 6, List.length(Attune.atoms()));
+    Assert.assertEq(expected = false, List.exists(atom -> Attune.atomName(atom) == "writes", Attune.atoms()))
 }
 
 /// The rendered adjacency document presents exactly the semantic set: every

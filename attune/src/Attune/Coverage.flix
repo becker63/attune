@@ -16,7 +16,7 @@
 /// coverage, which only an owner that actually earned it may claim.
 pub mod Attune.Coverage {
 
-    use Attune.Envelope.{Atom, Fact, World}
+    use Attune.{Atom, Fact, World}
 
     /// How much of one scope's observation window was actually seen. `Complete`
     /// is an honest claim that nothing else was observed; the others can never

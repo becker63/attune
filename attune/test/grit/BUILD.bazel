@@ -62,7 +62,6 @@ native_flix_java_test(
         "GritSeamTest.flix",
         "//src:Attune.flix",
         "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
         "//src:Attune/Repository.flix",
         "//src:Attune/Repository/Grit.flix",
     ],

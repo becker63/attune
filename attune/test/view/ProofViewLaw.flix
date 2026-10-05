@@ -1,7 +1,6 @@
 use Attune.AsciiTree
 use Attune.Coverage.{Outcome, outcomeName}
-use Attune.Envelope
-use Attune.Envelope.{Atom, World}
+use Attune.{Atom, World}
 use Attune.View
 
 /// Native `@Test` laws for the proof adapter, driven by a native Datalog fixture.
@@ -142,9 +141,9 @@ def proofAndRouteReadoutsStayDistinct(): Unit \ Assert = {
     };
     let world = World.World("shop-v1");
     let recorded = { id = 1, snapshot = world, memo = "demo",
-        input = Envelope.files(world, List#{"receipt.rb"}), atom = Atom.Imports,
-        output = Envelope.files(world, List#{"pricing.rb"}), work = View.Work.Computed };
-    let route = { name = "R", seed = Envelope.files(world, List#{"receipt.rb"}), steps = recorded :: Nil };
+        input = Attune.files(world, List#{"receipt.rb"}), atom = Atom.Imports,
+        output = Attune.files(world, List#{"pricing.rb"}), work = View.Work.Computed };
+    let route = { name = "R", seed = Attune.files(world, List#{"receipt.rb"}), steps = recorded :: Nil };
     let routeText = match View.renderRoutes(limits(), world, "demo", route :: Nil) {
         case Ok(text) => text
         case Err(_)   => ""

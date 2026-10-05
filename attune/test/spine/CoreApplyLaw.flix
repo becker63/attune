@@ -1,6 +1,4 @@
-use Attune.Apply
-use Attune.Envelope
-use Attune.Envelope.{Atom, Fact, Frontier, World}
+use Attune.{Atom, Fact, Frontier, World}
 
 /// Native `@Test` laws for the one exact six-atom application (VAL-CORE-002).
 ///
@@ -24,35 +22,35 @@ def facts(): List[Fact] = List#{
     fact("Pricing.total", Atom.Callers, "Shop.Receipt.render")
 }
 
-def files(names: List[String]): Frontier = Envelope.files(w(), names)
+def files(names: List[String]): Frontier = Attune.files(w(), names)
 
-def symbols(names: List[String]): Frontier = Envelope.symbols(w(), names)
+def symbols(names: List[String]): Frontier = Attune.symbols(w(), names)
 
 /// All six primitive signatures apply to their exact source domain and produce
 /// their declared target frontier.
 @Test
 def allSixAtomsApplyWithTheirDeclaredDomains(): Unit \ Assert = {
     Assert.assertEq(expected = Ok(symbols(List#{"Pricing.total"})),
-        Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.Defines));
+        Attune.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.Defines));
     Assert.assertEq(expected = Ok(files(List#{"shop/pricing.rb"})),
-        Apply.apply(facts(), symbols(List#{"Pricing.total"}), Atom.DefinedIn));
+        Attune.apply(facts(), symbols(List#{"Pricing.total"}), Atom.DefinedIn));
     Assert.assertEq(expected = Ok(files(List#{"shop/pricing.rb"})),
-        Apply.apply(facts(), files(List#{"shop/receipt.rb"}), Atom.Imports));
+        Attune.apply(facts(), files(List#{"shop/receipt.rb"}), Atom.Imports));
     Assert.assertEq(expected = Ok(files(List#{"shop/receipt.rb"})),
-        Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.ImportedBy));
+        Attune.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.ImportedBy));
     Assert.assertEq(expected = Ok(symbols(List#{"Pricing.total"})),
-        Apply.apply(facts(), symbols(List#{"Shop.Receipt.render"}), Atom.Calls));
+        Attune.apply(facts(), symbols(List#{"Shop.Receipt.render"}), Atom.Calls));
     Assert.assertEq(expected = Ok(symbols(List#{"Shop.Receipt.render"})),
-        Apply.apply(facts(), symbols(List#{"Pricing.total"}), Atom.Callers))
+        Attune.apply(facts(), symbols(List#{"Pricing.total"}), Atom.Callers))
 }
 
 /// A legal route composes Files -> defines -> Symbols -> defined_in -> Files
 /// through the one evaluator.
 @Test
 def aLegalRouteComposesThroughOneEvaluator(): Unit \ Assert = {
-    match Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.Defines) {
+    match Attune.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.Defines) {
         case Err(error) => Assert.fail(error)
-        case Ok(symbolsFrontier) => match Apply.apply(facts(), symbolsFrontier, Atom.DefinedIn) {
+        case Ok(symbolsFrontier) => match Attune.apply(facts(), symbolsFrontier, Atom.DefinedIn) {
             case Err(error)   => Assert.fail(error)
             case Ok(filesFrontier) => Assert.assertEq(expected = files(List#{"shop/pricing.rb"}), filesFrontier)
         }
@@ -63,10 +61,10 @@ def aLegalRouteComposesThroughOneEvaluator(): Unit \ Assert = {
 /// and the two empty domains stay distinct values.
 @Test
 def legalEmptinessKeepsItsWorldAndDomain(): Unit \ Assert = {
-    let empty = Apply.apply(facts(), files(List#{"shop/ghost.rb"}), Atom.Imports);
+    let empty = Attune.apply(facts(), files(List#{"shop/ghost.rb"}), Atom.Imports);
     Assert.assertEq(expected = Ok(files(Nil)), empty);
     Assert.assertEq(expected = "shop-v1", match empty {
-        case Ok(frontier) => match Envelope.worldOf(frontier) { case World.World(name) => name }
+        case Ok(frontier) => match Attune.worldOf(frontier) { case World.World(name) => name }
         case Err(_)       => "rejected"
     });
     Assert.assertEq(expected = false, files(Nil) == symbols(Nil))
@@ -75,13 +73,13 @@ def legalEmptinessKeepsItsWorldAndDomain(): Unit \ Assert = {
 /// An illegal domain composition is a classified rejection, never an empty success.
 @Test
 def illegalDomainCompositionIsRejection(): Unit \ Assert = {
-    Assert.assertErr(Apply.apply(facts(), symbols(List#{"Pricing.total"}), Atom.Imports));
-    Assert.assertErr(Apply.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.DefinedIn))
+    Assert.assertErr(Attune.apply(facts(), symbols(List#{"Pricing.total"}), Atom.Imports));
+    Assert.assertErr(Attune.apply(facts(), files(List#{"shop/pricing.rb"}), Atom.DefinedIn))
 }
 
 /// A fact from another world cannot apply here.
 @Test
 def aForeignWorldFactIsRejection(): Unit \ Assert = {
     let foreign = { world = World.World("shop-v2"), source = "shop/receipt.rb", atom = Atom.Imports, target = "shop/pricing.rb" };
-    Assert.assertErr(Apply.apply(foreign :: Nil, files(List#{"shop/receipt.rb"}), Atom.Imports))
+    Assert.assertErr(Attune.apply(foreign :: Nil, files(List#{"shop/receipt.rb"}), Atom.Imports))
 }

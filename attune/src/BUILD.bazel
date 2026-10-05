@@ -6,62 +6,14 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-# The shared nominal envelope. Flix owns world, File, Symbol, frontier and atom
-# identity; one vocabulary drives route validation and grammar display.
-filegroup(
-    name = "envelope",
-    srcs = [
-        "Attune.flix",
-        "Attune/Envelope.flix",
-    ],
-)
-
-# The Flix-owned policy evaluator: classification, exclusions, secret and size
-# decisions, honest counting, report formatting and the verdict. It has no
-# entry point; a native test fixture reads it and asserts its verdict.
-filegroup(
-    name = "policy",
-    srcs = [
-        "Attune.flix",
-        "Attune/Policy.flix",
-    ],
-)
-
-# The Flix-owned isolation assertions over the mechanical boundary record.
-filegroup(
-    name = "isolation",
-    srcs = [
-        "Attune.flix",
-        "Attune/Isolation.flix",
-    ],
-)
-
-# The Repository owner's native Grit wire projection lives under
-# `Attune.Repository.Grit` and its conservative identity, resolution, admission,
-# derived inverses and named refusals under `Attune.Repository`; both are part of
-# this package's `policy_files` glob rather than a separate label, because a
-# target that needs the Repository owner declares the two sources it uses.
-
-# The one canonical generic coverage, evidence and support vocabulary. It is the
-# core home Repository earns coverage into and Theory consumes world facts from.
-filegroup(
-    name = "coverage",
-    srcs = [
-        "Attune.flix",
-        "Attune/Coverage.flix",
-        "Attune/Envelope.flix",
-    ],
-)
-
-# The Theory owner: bounded canonical descriptors, the fixed native lowering and
-# the world-shard witness rows. It consumes core values and a world's facts and
-# never imports Study or View.
-filegroup(
-    name = "theory",
-    srcs = [
-        "Attune.flix",
-        "Attune/Coverage.flix",
-        "Attune/Envelope.flix",
-        "Attune/Theory.flix",
-    ],
-)
+# The owner sources are plain files rather than one filegroup per owner: a
+# target declares the exact owner sources it needs, so an unused per-owner
+# filegroup would be dead plumbing. `//src:Attune.flix` carries the `Attune`
+# owner whole -- the module root, the shared nominal envelope and the one exact
+# relation application with its local memo -- after the temporary
+# `Attune/Envelope.flix` and `Attune/Apply.flix` files were folded back into it.
+# `Attune.Repository.flix`, `Attune/Theory.flix`, `Attune.Study.flix`,
+# `Attune.AsciiTree.flix` and `Attune.View.flix` are the other five semantic
+# owners; the mechanical Parquet adapter lives under `platform/tools/parquet/`.
+# A new package that adds authored source still contributes its own
+# `policy_files` filegroup to `//:policy_sources` in the root BUILD file.
