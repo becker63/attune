@@ -63,3 +63,22 @@ def theSerialFixtureRecordsExactHitsAndMisses(): Unit \ Assert = {
     Assert.assertEq(expected = a3, a6);
     Assert.assertEq(expected = false, a3 == a7)
 }
+
+/// Two worlds that only differ by where a separator falls never share a memo
+/// entry. The key carries the world namespace, so an aliased pair would count
+/// as one reuse and hand back the other world's answer. Both lookups here are
+/// legal in their own world and produce their own distinct output.
+@Test
+def separatorBearingWorldsDoNotShareMemoEntries(): Unit \ Assert = {
+    let wa = Attune.worldId({ origin = "a@b", content = "c", semantics = "s" });
+    let wb = Attune.worldId({ origin = "a", content = "b@c", semantics = "s" });
+    let factsA = List#{ { world = wa, source = "x.rb", atom = Atom.Imports, target = "y.rb" } };
+    let factsB = List#{ { world = wb, source = "x.rb", atom = Atom.Imports, target = "z.rb" } };
+    let (ra, m1, e1, n1) = Attune.lookup(Nil, 0, "demo", Attune.files(wa, List#{"x.rb"}), Atom.Imports, factsA);
+    let (rb, _, e2, _) = Attune.lookup(m1, n1, "demo", Attune.files(wb, List#{"x.rb"}), Atom.Imports, factsB);
+    let events = e1 ::: e2;
+    Assert.assertEq(expected = 2, Attune.misses(events));
+    Assert.assertEq(expected = 0, Attune.hits(events));
+    Assert.assertEq(expected = Ok(Attune.files(wa, List#{"y.rb"})), ra);
+    Assert.assertEq(expected = Ok(Attune.files(wb, List#{"z.rb"})), rb)
+}

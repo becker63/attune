@@ -31,8 +31,22 @@ pub mod Attune {
 
     /// The world named by one structured identity. Changing any component yields
     /// a different world, so dirty content cannot reuse a clean world's identity.
+    ///
+    /// The three components are concatenated by an injective, length-prefixed
+    /// encoding rather than by bare `@`/`#` separators. A component may itself
+    /// contain `@` or `#` (a repository URL, a content digest, a semantic recipe),
+    /// and a bare separator could not tell `origin="a@b", content="c"` from
+    /// `origin="a", content="b@c"`. Prefixing each component with its decimal
+    /// length and `:` makes the boundary explicit, so distinct components always
+    /// yield distinct worlds while exactly equal components stay equal.
     pub def worldId(id: WorldId): World =
-        World.World(id#origin + "@" + id#content + "#" + id#semantics)
+        World.World(component(id#origin) + component(id#content) + component(id#semantics))
+
+    /// One identity component in an unambiguous, self-delimiting string form: the
+    /// decimal length of the text, a `:`, then the exact text verbatim. The length
+    /// fixes the boundary, so no input is restricted and no content is lost.
+    def component(text: String): String =
+        Int32.toString(String.length(text)) + ":" + text
 
     /// A file entity identity, valid only in the Files domain.
     pub enum FileId with Eq, Order, ToString, Hash {

@@ -327,9 +327,14 @@ The answers the walkthrough must settle, each with its owner and actual source:
 1. **World and entity identity and the six atoms** are established once in
    `src/Attune.flix`: `WorldId`/`worldId` fix identity as the canonical origin,
    the exact content/source epoch and the frontend/resolver/admission semantics;
-   `FileId` and `SymbolId` are distinct nominal types; `Frontier` carries its
-   world, domain and exact element set; `Atom` names the six relations.
-   `worldIdentityIncludesContentAndSemantics` and
+   `worldId` encodes the three components by a length-prefixed, injective
+   concatenation, so a `@` or `#` inside one component can never imitate a
+   component boundary (`separatorBearingComponentsDoNotAlias`,
+   `emptyAndBoundaryComponentsStayDistinct`), and two such distinct worlds never
+   share a memo entry (`separatorBearingWorldsDoNotShareMemoEntries`,
+   `test/spine/CoreMemoLaw.flix`); `FileId` and `SymbolId` are distinct nominal
+   types; `Frontier` carries its world, domain and exact element set; `Atom`
+   names the six relations. `worldIdentityIncludesContentAndSemantics` and
    `sameBasenamesAtDifferentPathsStayDistinct`
    (`test/spine/CoreIdentityLaw.flix`) pin it.
 2. **Where facts enter** is `Attune.Repository.Grit` (the canonical wire
