@@ -179,6 +179,12 @@ The budget line prints both numbers on every run
 exceeds 4,000 the gate stops and reports the excess; the target is never raised
 again.
 
+One known correction applies to the shared count and is disclosed rather than
+hidden: the Starlark lexer understates a multiline non-docstring assignment, so
+the measured shared total may be two lines low. The same correction was recorded
+at `7110134` (1,575 measured against 1,577 corrected). The number above is the
+tool's measured value, not a claim of exact parser totals.
+
 Markdown prose is documentation and only genuinely empty lines are blank. The
 markdown rows were measured by the audit on the run immediately before this
 table was finalized, so editing this file moves only the metadata row; re-run the
