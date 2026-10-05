@@ -103,6 +103,15 @@ pub mod Attune.Policy {
     pub def addCounts(x: Counts, y: Counts): Counts =
         Counts.Counts(codeOf(x) + codeOf(y), commentOf(x) + commentOf(y), docOf(x) + docOf(y), blankOf(x) + blankOf(y))
 
+    /// The physical line count: every line the four buckets together account
+    /// for. The derived population is reported beside the buckets so a consumer
+    /// never has to re-derive it, and it is computed from the same one-pass
+    /// classification rather than a second traversal.
+    pub def physicalOf(c: Counts): Int32 = codeOf(c) + commentOf(c) + docOf(c) + blankOf(c)
+
+    /// The nonblank line count: the physical total minus the blank lines.
+    pub def nonblankOf(c: Counts): Int32 = physicalOf(c) - blankOf(c)
+
     pub def zeroCounts(): Counts = Counts.Counts(0, 0, 0, 0)
 
     /// One policy finding: rule identifier, offending path and a message.
@@ -821,6 +830,7 @@ pub mod Attune.Policy {
         let (files, c) = t;
         "attune-policy-total files=" + "${files}" + " code=" + "${codeOf(c)}" + " comment=" + "${commentOf(c)}"
             + " doc=" + "${docOf(c)}" + " blank=" + "${blankOf(c)}"
+            + " physical=" + "${physicalOf(c)}" + " nonblank=" + "${nonblankOf(c)}"
 
     def accountingLine(a: Accounting): String =
         "attune-policy-class cognitive=" + "${cognitiveOf(a)}" + " mechanical=" + "${mechanicalOf(a)}"

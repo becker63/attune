@@ -336,10 +336,13 @@ prior/request/evidence contract itself is production source in `Attune.Study`.
 The owner-approved cognitive-ownership accounting replaced the absolute size
 gates: the non-presentation 1,800 / combined 2,200 rules and the shared 4,300
 compatibility gate are retired, not raised. `//test/policy:declared_source_policy_test`
-now reports A cognitive 4,207, B mechanical 1,278, A+B authored 5,485, C test
-3,647 and C support 21,884 (raw 33,305 code lines over 123 readable files); the
+now reports A cognitive 4,210, B mechanical 1,278, A+B authored 5,488, C test
+3,658 and C support 21,884 (raw 33,319 code lines over 123 readable files; the
+report also prints the derived physical 41,074 and nonblank 39,134 totals on the
+same line); the
 per-component table, the exact support provenance, the presentation subsets
-(A/presentation 510, B/presentation 87) and the bounded STOP-AND-JUSTIFY
+(A/presentation 510, B/presentation 87), the concise six-chunk
+residency/ownership walkthrough and the bounded STOP-AND-JUSTIFY
 architecture review are in [the design note](attune/notes/design.md). An
 independent review once found that a blanket `test/** -> fixture` rule hid
 reusable test-placed algorithms. That exception is now retired rather than

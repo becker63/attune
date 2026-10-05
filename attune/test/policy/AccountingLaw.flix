@@ -4,8 +4,8 @@ use Attune.Policy.{
     cognitiveOf, cognitivePreferredHigh, cognitivePreferredLow,
     cognitiveStopAndJustify, commentOf, componentLines, componentNames,
     componentOf, docOf, entryPath, evaluate, fixturesOf, mechanicalOf,
-    mechanicalPrefer, ownershipOf, presentationCognitiveOf,
-    presentationMechanicalOf, reviewNotes, ruleOf, supportOf, totalsOf, verdictName
+    mechanicalPrefer, nonblankOf, ownershipOf, physicalOf, presentationCognitiveOf,
+    presentationMechanicalOf, renderReport, reviewNotes, ruleOf, supportOf, totalsOf, verdictName
 }
 
 /// The owner-approved cognitive-ownership accounting laws.
@@ -199,4 +199,20 @@ def rawTotalsBucketThePhysicalLines(): Unit \ { Assert, IO } = {
     let physical = codeOf(c) + commentOf(c) + docOf(c) + blankOf(c);
     Assert.assertEq(expected = true, files > 0);
     Assert.assertEq(expected = codeOf(c) + commentOf(c) + docOf(c), physical - blankOf(c))
+}
+
+/// The report supplies the physical and nonblank totals, not only the four
+/// buckets: both derived figures are printed from the same one-pass
+/// classification, so the honest physical/nonblank population is visible in the
+/// accounting output itself and no consumer has to re-derive it.
+@Test
+def theReportSuppliesPhysicalAndNonblankTotals(): Unit \ { Assert, IO } = {
+    let (_, _, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
+    let (findings, cs) = evaluate("declared", "", loaded);
+    let (_, c) = totalsOf(cs);
+    let report = renderReport(findings, cs);
+    Assert.assertEq(expected = physicalOf(c), codeOf(c) + commentOf(c) + docOf(c) + blankOf(c));
+    Assert.assertEq(expected = nonblankOf(c), physicalOf(c) - blankOf(c));
+    Assert.assertEq(expected = true, String.contains(substr = "physical=" + "${physicalOf(c)}", report));
+    Assert.assertEq(expected = true, String.contains(substr = "nonblank=" + "${nonblankOf(c)}", report))
 }
