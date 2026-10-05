@@ -408,13 +408,14 @@ pub mod Attune.Policy {
                     else if (isSpaceText(one)) lexFrom(lang, Lex.Triple(q), s, i + 1, code, comment, doc, one :: kept)
                     else lexFrom(lang, Lex.Triple(q), s, i + 1, true, comment, doc, one :: kept)
                 case Lex.Str(q) =>
-                    // A backslash skips one character, which is the pre-existing
-                    // ordinary-string handling: an escaped quote can close the
-                    // literal early and leave later lines unclassified. That
-                    // residual undercount is measured and disclosed in
-                    // `DESIGN.md`; correcting it here would move the shared
-                    // count past its approved target, which is a user decision.
-                    if (hasPrefix("\\", r)) lexFrom(lang, Lex.Str(q), s, i + 1, code, comment, doc, one :: kept)
+                    // A backslash escapes exactly one following character: the
+                    // escape is consumed as a unit (i + 2), so an escaped quote
+                    // stays content and can no longer close the literal early
+                    // and hide the following lines from the count. The escaped
+                    // character is re-added to `kept` in order, so the code text
+                    // the forbidden-token scan sees still contains every byte of
+                    // the literal.
+                    if (hasPrefix("\\", r)) lexFrom(lang, Lex.Str(q), s, i + 2, code, comment, doc, String.take(1, String.drop(1, r)) :: one :: kept)
                     else if (hasPrefix(q, r)) lexFrom(lang, Lex.Normal, s, i + 1, code, comment, doc, kept)
                     else lexFrom(lang, Lex.Str(q), s, i + 1, code, comment, doc, one :: kept)
                 case Lex.TripleDoc(_) =>
@@ -571,19 +572,20 @@ pub mod Attune.Policy {
 
     // ------------------------------------------------------------- findings
 
-    /// The reviewed shared-code target. The user explicitly approved 4,000
-    /// counted noncomment shared implementation lines after the retained Grit
-    /// handoff, superseding both the original pre-implementation aim of 2,000
-    /// and the 3,200 constant one worker set on its own authority (the
-    /// historical 06e6fc3 tree passed only under that unauthorized gate, which
-    /// is not an approved completion claim). Carrying the retained Grit
-    /// closure, the maintained defines/imports/calls inventory, the typed
-    /// envelope and the conservative per-language admission genuinely costs
+    /// The reviewed shared-code target. The user explicitly approved 4,300
+    /// counted noncomment shared implementation lines after the corrected
+    /// ordinary-string escape law measured 4,272 shared lines, superseding the
+    /// earlier 4,000 approval (itself superseding the original pre-implementation
+    /// aim of 2,000 and the 3,200 constant one worker set on its own authority;
+    /// the historical 06e6fc3 tree passed only under that unauthorized gate, which
+    /// is preserved as history, not an approved completion claim). Carrying the
+    /// retained Grit closure, the maintained defines/imports/calls inventory, the
+    /// typed envelope and the conservative per-language admission genuinely costs
     /// that much, so no required artifact was golfed, deleted or relabelled to
     /// fit an earlier number. This is the approved value: if shared code
     /// exceeds it, the excess is reported and the run stops for a user
     /// decision; the gate is never raised automatically.
-    pub def sharedTarget(): Int32 = 4000
+    pub def sharedTarget(): Int32 = 4300
     pub def proposalTarget(): Int32 = 1500
 
     /// The reviewed test-code target. The user explicitly approved 2,600 counted

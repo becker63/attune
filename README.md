@@ -241,18 +241,18 @@ proposals in `test/proposals`, never as a live call.
 
 ## Handoff status
 
-The gate passes as measured, with shared implementation code 3,809 of 4,000,
-test code 2,540 of 2,600 and test-only proposal code 841 of 1,500; the exact
-table, the pins and licenses and the per-file adaptation record are in
-[DESIGN.md](DESIGN.md). Setup is the declared developer shell with one Bazel
-owner, an output base outside the workspace, and no credential or provider read;
-the only model-shaped code is the recorded fake transport above.
+The gate passes as measured, with shared implementation code 4,272 of the
+user-approved 4,300, test code 2,576 of 2,600 and test-only proposal code 841 of
+1,500; the exact table, the pins and licenses and the per-file adaptation record
+are in [DESIGN.md](DESIGN.md). Setup is the declared developer shell with one
+Bazel owner, an output base outside the workspace, and no credential or provider
+read; the only model-shaped code is the recorded fake transport above.
 
-Two things are open and are not hidden. The counter's ordinary-string escape
-handling undercounts, so the honest shared count is about 4,272 against the
-approved 4,000 target and needs a user decision; `DESIGN.md` records that
-measurement and its independent verification, and the correction is deliberately
-not applied. And the independent reviews of P01-P10 are still pending: nothing
+The counter now pairs an ordinary string's escapes exactly, so an escaped quote
+cannot close a literal early and hide the lines after it. The named native
+regression `anEscapedQuoteDoesNotCloseAnOrdinaryLiteral` executes that law, and
+`DESIGN.md` records the corrected rows and the budget-neutral residuals that
+remain disclosed. The independent reviews of P01-P10 are still pending: nothing
 here claims one.
 
 ## Deferred

@@ -99,3 +99,22 @@ def documentedForbiddenTokenIsNotEmbeddedCode(): Unit \ Assert = {
     Assert.assertFalse(String.contains(substr = token, codeText(Language.Flix, mention)));
     Assert.assertEq(expected = 1, codeOf(countLines(Language.Flix, mention)))
 }
+
+/// An escaped quote does not close an ordinary literal. A backslash consumes the
+/// character after it as one unit, so `\"` stays content: the rest of the literal
+/// and the lines after it keep their classification instead of leaking into the
+/// blank bucket. The two snippets below are the exact bytes the law is stated
+/// over; each is a two- and a three-line program whose only unusual feature is
+/// the escape. The law is stated in Flix and Starlark because `Lex.Str` is the
+/// language-generic ordinary-literal state, and pinning it twice keeps the shared
+/// branch honest.
+@Test
+def anEscapedQuoteDoesNotCloseAnOrdinaryLiteral(): Unit \ Assert = {
+    let flix = "def f(): String = \"a\\\"b\"\nlet x = 1;\n";
+    Assert.assertEq(expected = 2, codeOf(countLines(Language.Flix, flix)));
+    Assert.assertEq(expected = 0, blankOf(countLines(Language.Flix, flix)));
+
+    let starlark = "def f():\n    s = \"a\\\"b\"\n    return s\n";
+    Assert.assertEq(expected = 3, codeOf(countLines(Language.Starlark, starlark)));
+    Assert.assertEq(expected = 0, blankOf(countLines(Language.Starlark, starlark)))
+}

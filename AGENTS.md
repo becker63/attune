@@ -100,9 +100,11 @@ sequential rather than substituting the default.
 code count; a trailing comment or a comment-like string still counts as code; a
 recognised Starlark docstring, a multiline non-docstring Starlark literal and
 markdown prose are documentation or code exactly as `DESIGN.md` describes, and an
-apostrophe in prose must never silence the lines after it. Budgets are reported,
-and changing a gate means editing the declared constant in
-`src/Attune/Policy.flix`, never golfing code or dropping tests. The counter's
-known corrections, including the residual undercount that is disclosed rather
-than applied, are recorded in `DESIGN.md`; never claim exact parser totals while
-one remains.
+apostrophe in prose must never silence the lines after it. An escaped quote
+inside an ordinary string literal must not close the literal early or hide the
+following code from the count; `//test/policy:count_law_test` pins that law in
+`anEscapedQuoteDoesNotCloseAnOrdinaryLiteral`. Budgets are reported, and changing
+a gate means editing the declared constant in `src/Attune/Policy.flix`, never
+golfing code or dropping tests. The counter's applied corrections and its
+budget-neutral residual limitations are recorded in `DESIGN.md`; never claim
+exact parser totals while any remains.
