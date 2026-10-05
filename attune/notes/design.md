@@ -381,6 +381,31 @@ it changes what the engine can mean; its owner contract and forbidden-decision
 list (never rewrite the pinned closure source, only the admitted registry edits)
 are the same build-substrate rules above.
 
+### Component inputs, outputs and semantic dependencies
+
+Dependency directions are acyclic and point at the core; no component has a
+surprising effect, and `View` never supplies scientific truth:
+
+- core — in: nominal file/symbol records and facts; out: exact typed frontiers
+  and memo answers; depends on nothing semantic.
+- repository — in: Grit wire records and the pinned native engine; out: admitted
+  forward facts, derived inverses and earned scoped coverage; depends on core.
+- theory (next owner) — in: world facts and bounded descriptors; out: isolated
+  witness rows; depends on core and world facts, never on Study.
+- study — in: task context, world index and a frozen permitted prior; out:
+  predictions, typed evidence and metrics; depends on core structural artifacts.
+- policy/accounting — in: the declared manifest and live inventory; out:
+  findings, the class/presentation report and review notes; independent of
+  scientific semantics.
+- view/docs — in: core/study values and checked document bytes; out: typed
+  projections and ASCII/markdown payloads; consumes truth, creates none.
+- frontends — in: source bytes; out: canonical wire records; feeds the engine.
+- grit-rule — in: the pinned closure revision; out: the materialized closure with
+  the admitted language registry; depends on nothing first-party.
+
+The mechanical components above take argv/metadata/records and emit
+manifest/bytes/exit status only; none imports a semantic owner or decides truth.
+
 ### Retired gates and active review semantics
 
 The absolute non-presentation 1,800 / combined 2,200 rules and the shared 4,300
