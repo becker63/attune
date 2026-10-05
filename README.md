@@ -252,8 +252,9 @@ The counter now pairs an ordinary string's escapes exactly, so an escaped quote
 cannot close a literal early and hide the lines after it. The named native
 regression `anEscapedQuoteDoesNotCloseAnOrdinaryLiteral` executes that law, and
 `DESIGN.md` records the corrected rows and the budget-neutral residuals that
-remain disclosed. The independent reviews of P01-P10 are still pending: nothing
-here claims one.
+remain disclosed. The independent reviews of P01-P10 are recorded in the
+`DESIGN.md` index: each proposal carries one non-author round-1 scrutiny verdict,
+and nothing here claims a live or user-flow result.
 
 ## Deferred
 

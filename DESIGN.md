@@ -277,7 +277,7 @@ audit rather than trust a copied number:
 | fixture | ruby | 11 | 87 | 28 | 0 | 17 |
 | support | other | 15 | 22271 | 44 | 0 | 250 |
 | metadata | nix | 1 | 117 | 26 | 0 | 16 |
-| metadata | markdown | 3 | 0 | 0 | 736 | 134 |
+| metadata | markdown | 3 | 0 | 0 | 743 | 134 |
 | metadata | other | 8 | 1660 | 27 | 0 | 42 |
 
 Shared implementation code totals 4,272 as measured against the user-approved
@@ -341,11 +341,12 @@ record: two applied, one disclosed.
    (the old tool hid 604 real content lines in the blank bucket): shared
    implementation code 3,809 to 4,272, test code 2,540 to 2,576, proposal code
    unchanged at 841. The corrected figure is independently verified against a
-   raw non-blank line count of the same files: shared Flix 2,679, fixture Flix
-   3,102 and shared Java 1,120 each equal the corrected code+comment+doc totals
-   exactly. The user approved 4,300 shared code for this corrected count; the
-   earlier disclosure-only state is preserved as history, not as the shipped
-   behaviour.
+   raw non-blank line count of the same files: shared Flix 2,681, fixture Flix
+   3,119 and shared Java 1,120 each equal the corrected code+comment+doc totals
+   exactly (the fixture Flix set is all 30 `test/**/*.flix` files, whose counted
+   code includes the 841 proposal lines reported separately). The user approved
+   4,300 shared code for this corrected count; the earlier disclosure-only state
+   is preserved as history, not as the shipped behaviour.
 3. **Disclosed, not applied: three budget-neutral residuals of the same family.**
    Each touches only a blank column or a non-budget row, so none moves a budget
    row, and none justifies a new general lexer or audit subsystem. (a)
@@ -401,21 +402,25 @@ relevant signature, a visible positive fixture, a counterexample and the
 enforcement note. `P02DomainWitnessNegative.flix` is the single auxiliary
 compiler-negative fixture cited by P02 and is not an additional entry. Status
 means compiled and executed as a native `@Test` fixture under the pinned
-compiler. Every review column is pending: no independent review of these
-proposals has been performed yet, and none is claimed.
+compiler. The review column records one independent non-author verdict per
+proposal from round 1 of the bootstrap scrutiny (2026-10-05), which assessed
+each proposal separately even when one reviewer covered a pair; the per-pair
+reports are under `validation/bootstrap/scrutiny/reviews/` and the synthesis is
+`validation/bootstrap/scrutiny/synthesis.json`. No author reviewed their own
+proposal.
 
 | ID | Source | Test target | Status | Counterexample | Review | Open choice |
 | --- | --- | --- | --- | --- | --- | --- |
-| P01 | `test/proposals/P01Identity.flix` | `//test/proposals:p01_identity_test` | executed fixture | `equalSizedUnequalSetsDoNotMerge`, `equalBasenamesKeepDistinctIdentities`, `anotherWorldOrDomainDoesNotMerge` | pending | durable encoding, and whether extra identity witnesses earn their complexity, stay undecided; `identityKey` is a canonical in-memory key, not a storage format |
-| P02 | `test/proposals/P02Composition.flix` | `//test/proposals:p02_composition_test` (plus the isolated `p02_domain_witness_negative_test`) | executed fixture; one static compiler negative | `symbolsThenImportsRejectsAtRuntime`, `filesThenDefinedInAlsoRejectsAtRuntime`; the negative expects `Unable to unify the types` | pending | whether those extra witnesses are worth their complexity stays undecided |
-| P03 | `test/proposals/P03Evidence.flix` | `//test/proposals:p03_evidence_test` | executed fixture | `equalOutputWithUnequalInputIsNotReuse`, `aMissingProducerIsNotReuse`, `crossWorldReuseIsNotReuse` | pending | runtime memo ownership and partitioning, and any distributed reuse protocol, stay undecided; the ordinals are local to one recorded serial run |
-| P04 | `test/proposals/P04Completeness.flix` | `//test/proposals:p04_completeness_test` | executed fixture | `aForeignSimilarlyNamedFileCannotDonateAWitness`, `missingEvidenceStaysUnknown`, `failureIsNotEmptiness` | pending | production scope recipes, census populations and empirical thresholds stay undecided |
-| P05 | `test/proposals/P05Datalog.flix` | `//test/proposals:p05_datalog_test` | executed fixture on the native solver | `unionOfRulesIsNotConjunction`, `aSharedPredicateLeaksBetweenCandidates` | pending | whether candidate isolation travels as an explicit id column or as hygienic local predicates, and which relations survive, stay undecided |
-| P06 | `test/proposals/P06Descriptors.flix` | `//test/proposals:p06_descriptors_test` | executed fixture | `anInequalityChangesIdentity`, `aDirectionChangeBreaksIdentity`, `anOutputRoleChangeBreaksIdentityAndSafetyIsChecked` | pending | real search bounds, retained operators and census outcomes stay undecided |
-| P07 | `test/proposals/P07Guards.flix` | `//test/proposals:p07_guards_test` | executed fixture | `twoProofPathsToOneEntityAreOneSupporter`, `anotherScopesEntityCannotMeetTheGuard`, `proposedEvidenceIsNotObserved` | pending | which calibrated values deserve retention, and which architectural names are worth keeping, stay undecided |
-| P08 | `test/proposals/P08Decisions.flix` | `//test/proposals:p08_decisions_test` | executed fixture over the recorded fake transport | `failureIsNotAnEmptySuccess`, `overBudgetTakesTheDeclaredFallback`, `unknownDecisionPreservesTheFallback` | pending | any model choice, live provider effect, ranking quality and application policy selection stay undecided |
-| P09 | `test/proposals/P09Views.flix` | `//test/proposals:p09_views_test` | executed fixture | `geometryCannotReverseAnEdge`, `importsCannotBeRelabelledAsAWrite`, `proofAndRouteMeaningsStayDistinct` | pending | a full view catalog, large-graph layout and general C4 recovery stay undecided |
-| P10 | `test/proposals/P10Artifacts.flix` | `//test/proposals:p10_artifacts_test` | executed fixture over the recorded fake handler | `aWrongSchemaDoesNotRoundTrip`, `aChangedIdentityDoesNotReuseTheStoredArtifact`, `goldShapedInputHasNoPathIntoPrediction` | pending | final materialization granularity, shared build stages, parallel runtime and production storage stay undecided |
+| P01 | `test/proposals/P01Identity.flix` | `//test/proposals:p01_identity_test` | executed fixture | `equalSizedUnequalSetsDoNotMerge`, `equalBasenamesKeepDistinctIdentities`, `anotherWorldOrDomainDoesNotMerge` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p01-p02-identity-composition.json`) | durable encoding, and whether extra identity witnesses earn their complexity, stay undecided; `identityKey` is a canonical in-memory key, not a storage format |
+| P02 | `test/proposals/P02Composition.flix` | `//test/proposals:p02_composition_test` (plus the isolated `p02_domain_witness_negative_test`) | executed fixture; one static compiler negative | `symbolsThenImportsRejectsAtRuntime`, `filesThenDefinedInAlsoRejectsAtRuntime`; the negative expects `Unable to unify the types` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p01-p02-identity-composition.json`) | whether those extra witnesses are worth their complexity stays undecided |
+| P03 | `test/proposals/P03Evidence.flix` | `//test/proposals:p03_evidence_test` | executed fixture | `equalOutputWithUnequalInputIsNotReuse`, `aMissingProducerIsNotReuse`, `crossWorldReuseIsNotReuse` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p03-p04-evidence-completeness.json`) | runtime memo ownership and partitioning, and any distributed reuse protocol, stay undecided; the ordinals are local to one recorded serial run |
+| P04 | `test/proposals/P04Completeness.flix` | `//test/proposals:p04_completeness_test` | executed fixture | `aForeignSimilarlyNamedFileCannotDonateAWitness`, `missingEvidenceStaysUnknown`, `failureIsNotEmptiness` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p03-p04-evidence-completeness.json`) | production scope recipes, census populations and empirical thresholds stay undecided |
+| P05 | `test/proposals/P05Datalog.flix` | `//test/proposals:p05_datalog_test` | executed fixture on the native solver | `unionOfRulesIsNotConjunction`, `aSharedPredicateLeaksBetweenCandidates` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p05-p06-native-composition-descriptors.json`) | whether candidate isolation travels as an explicit id column or as hygienic local predicates, and which relations survive, stay undecided |
+| P06 | `test/proposals/P06Descriptors.flix` | `//test/proposals:p06_descriptors_test` | executed fixture | `anInequalityChangesIdentity`, `aDirectionChangeBreaksIdentity`, `anOutputRoleChangeBreaksIdentityAndSafetyIsChecked` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p05-p06-native-composition-descriptors.json`) | real search bounds, retained operators and census outcomes stay undecided |
+| P07 | `test/proposals/P07Guards.flix` | `//test/proposals:p07_guards_test` | executed fixture | `twoProofPathsToOneEntityAreOneSupporter`, `anotherScopesEntityCannotMeetTheGuard`, `proposedEvidenceIsNotObserved` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p07-p08-guards-budget-fallback.json`) | which calibrated values deserve retention, and which architectural names are worth keeping, stay undecided |
+| P08 | `test/proposals/P08Decisions.flix` | `//test/proposals:p08_decisions_test` | executed fixture over the recorded fake transport | `failureIsNotAnEmptySuccess`, `overBudgetTakesTheDeclaredFallback`, `unknownDecisionPreservesTheFallback` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p07-p08-guards-budget-fallback.json`) | any model choice, live provider effect, ranking quality and application policy selection stay undecided |
+| P09 | `test/proposals/P09Views.flix` | `//test/proposals:p09_views_test` | executed fixture | `geometryCannotReverseAnEdge`, `importsCannotBeRelabelledAsAWrite`, `proofAndRouteMeaningsStayDistinct` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p09-p10-views-artifact-effects.json`) | a full view catalog, large-graph layout and general C4 recovery stay undecided |
+| P10 | `test/proposals/P10Artifacts.flix` | `//test/proposals:p10_artifacts_test` | executed fixture over the recorded fake handler | `aWrongSchemaDoesNotRoundTrip`, `aChangedIdentityDoesNotReuseTheStoredArtifact`, `goldShapedInputHasNoPathIntoPrediction` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p09-p10-views-artifact-effects.json`) | final materialization granularity, shared build stages, parallel runtime and production storage stay undecided |
 
 Each proposal is compiled and executed but none is admitted to production:
 `Policy` reports a `proposal-dependency` finding if `src/` imports one, and
@@ -461,7 +466,8 @@ recorded fake transport, so a fake or offline Qwen/Jev path is labelled as such
 and no live result is claimed. This file and `AGENTS.md` are updated with it.
 
 Implemented as test-only proposals: P01-P10 above, each compiled and executed,
-none admitted to production, all independent reviews still pending.
+none admitted to production, each carrying one independent non-author review
+verdict in the index above.
 
 Not implemented here, and deliberately out of scope: the production Datalog or
 typed-view computation over real admitted facts beyond the checked fixtures, and
@@ -481,6 +487,6 @@ recorded fake transport and no provider is contacted; the setup is the
 one-Bazel-owner, out-of-workspace output base with `.env` read only by the narrow
 BuildBuddy helper. The ordinary-string escape fix and its named native regression
 are applied, so the reported budget rows are the actual corrected counts rather
-than a disclosed undercount. The independent reviews of P01-P10 are still
-outstanding, and the three budget-neutral residuals in "Known corrections" stay
-disclosed rather than silently dropped.
+than a disclosed undercount. Each of P01-P10 carries an independent non-author
+round-1 scrutiny verdict in the index above, and the three budget-neutral
+residuals in "Known corrections" stay disclosed rather than silently dropped.
