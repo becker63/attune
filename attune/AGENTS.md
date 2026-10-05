@@ -18,7 +18,14 @@ repository-side policy an agent must follow while changing this tree.
   copy or print it; never pass a credential into an action input, argument, log
   or the store. Only the narrow BuildBuddy credential helper in `flake.nix` may
   read it, internally, from that explicit checkout root.
-- No application provider, MCP or live model call. No scientific data.
+- No application provider, MCP or live model call, ever. The bootstrap-era
+  "no scientific data" sentence is superseded: the approved mission authorizes
+  the named pinned `nebius/SWE-rebench-V2` acquisition and selected studies,
+  and explicitly hashed minimal named historical imports from the recorded
+  sibling location, under the scientific freeze order (rankings before
+  evaluator labels; pair predictions before joint execution). That is not
+  authorization for a wider corpus, a different corpus, a rescue search or any
+  provider/MCP/model acquisition.
 - One Bazel owner at a time. The output base is outside the checkout
   (`services.yaml`); never run `bazel clean` or touch global caches.
 - JVM dependencies are pinned: `MODULE.bazel` declares the exact Maven
