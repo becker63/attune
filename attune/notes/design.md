@@ -355,6 +355,32 @@ inventory does not list (such as the untracked `platform/zed/grammars/` editor
 checkout) and reports them in the inherited support class rather than as
 authored source.
 
+### Mechanical owners, effect restrictions and boundary tests
+
+Each mechanical component has one owner, a short contract, few semantic
+dependencies, an explicit forbidden-decision list and representative boundary
+laws (the full component table above names the first three):
+
+- `Attune.AsciiTree` (87) — `//test/view:ascii_tree_test`; owns formatting only,
+  and is forbidden to own identity, evidence, truth or scientific meaning.
+- parquet boundary (315) — `//test/seam:parquet_seam_test`; owns the Arrow
+  envelope only, and is forbidden to interpret schema or outcomes
+  scientifically (Flix owns schema checks).
+- native boundary launcher (481) — exercised by every native `@Test` target;
+  owns manifests, runfiles resolution, process launch and exit status, and is
+  forbidden to hold policy, classification, a verdict or a fixture case.
+- Grit FFM binding (185) — `//test/grit:grit_ruby_test` over the real engine;
+  owns the FFM binding and record facade, and is forbidden to add a native
+  algorithm or decide admission.
+- build rules (210) — the offline gate and `--build_tests_only` typecheck; own
+  the declared build graph, and are forbidden to run shell actions, an authored
+  main, a resolver or a second semantic engine.
+
+The maintained Grit closure rule is listed as A rather than in this set because
+it changes what the engine can mean; its owner contract and forbidden-decision
+list (never rewrite the pinned closure source, only the admitted registry edits)
+are the same build-substrate rules above.
+
 ### Retired gates and active review semantics
 
 The absolute non-presentation 1,800 / combined 2,200 rules and the shared 4,300
