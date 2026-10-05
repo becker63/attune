@@ -12,9 +12,12 @@ or on any credential. The old AttuneFlix experiment is untouched.
 
 ## Layout
 
-The checkout root holds exactly four ordinary entries: this `README.md`, the
-`LICENSE`, the read-only reference checkout `attuneflix/`, and the active
-workspace `attune/`. Everything that builds or runs lives under `attune/`:
+The checkout root holds exactly four intended ordinary entries: this `README.md`,
+the `LICENSE`, the read-only reference checkout `attuneflix/`, and the active
+workspace `attune/`. One further root entry is permitted and preserved: the user
+`repomix-output.xml` bundle, which is kept intact, named here as prose rather
+than linked, and excluded from active action, Nix and CAS input. Everything that
+builds or runs lives under `attune/`:
 `src/` for the shared Flix owners and the mechanical Java seams, `test/` for the
 native fixtures and laws, `platform/` for the build rules, mechanical boundary,
 pinned native support and carried editor assets, and `notes/` for the one design
@@ -198,6 +201,67 @@ no-match, unknown and failure stay four distinct outcomes; the route laws live i
 [ProofViewLaw.flix](attune/test/view/ProofViewLaw.flix), and a proof readout stays
 a different document from a route readout.
 
+## Two whole-system fixture applications
+
+The same authored shop drives the two studies this instrument is built for, so
+both fixture application reports trace a real computation rather than a
+transcribed narrative. Localization predicts the file a task touches from the
+admitted `imports` relation; coordination decides whether two declared task
+intents coordinate, using the shared `Attune.Study` policies over the real
+admitted call relation. Both reports are rendered by the bounded `Attune.View`
+writer, and both are labelled fixture work rather than an external result:
+
+<!-- attune:snippet=localization -->
+```text
+graph=application name=localization scope=shop-v1 work=fixture
+
+prediction task=receipt = shop/pricing.rb assuming(structural-imports-only)
+
+prediction task=pricing = EMPTY assuming(legal-empty-continuation)
+
+observation task=receipt = Unmeasured assuming(no-external-execution)
+
+observation task=pricing = UNKNOWN assuming(coverage-partial)
+
+history task=receipt = none assuming(no-retained-localization-evidence)
+
+fixture task=receipt = gold=shop/pricing.rb hit=true assuming(labelled-fixture-gold)
+```
+<!-- attune:end=localization -->
+
+<!-- attune:snippet=coordination -->
+```text
+graph=application name=coordination scope=shop-v1 work=fixture
+
+prediction pair=receipt/checkout = CoordinatesBecause(E1:SameDeclaredBoundary(Shop::Pricing)) assuming(single-declared-boundary)
+
+prediction pair=receipt/checkout-both-extend = ParallelBecause(E1:DistinctAnchorsAndNoDirectCallOn(Shop::Pricing)) assuming(distinct-anchors-no-direct-call)
+
+prediction pair=receipt/absent = UnknownBecause(E1:UnknownIntent) assuming(unknown-intent-stays-unknown)
+
+observation pair=receipt/checkout = Unmeasured assuming(no-external-execution)
+
+observation query=Shop.Nothing.render = UNKNOWN assuming(coverage-partial)
+
+observation coverage=failure = FAILED assuming(classified-failure-not-unmeasured-success)
+
+history retained-corrected-v2 = NotEarned assuming(historical-replay-is-not-external-execution)
+
+fixture acquired-shop = Partial assuming(three-authored-files)
+```
+<!-- attune:end=coordination -->
+
+Every entry carries its provenance, and the report header names the application
+and the world scope. `prediction` is the frozen answer the method produced,
+`observation` is the evaluator side of the same world, and `history` is the
+retained corrected-v2 promotion. The observations keep three different states
+apart, so an unmeasured obligation, an unknown coverage state and a classified
+failure can never be read as each other. The coordination decisions stay
+witness-bearing: `CoordinatesBecause`, `ParallelBecause` and `UnknownBecause`
+carry their witnesses and the assumptions they rest on rather than collapsing to
+a bare label. The report's own `work=fixture` says what this is: labelled fixture
+work, with no external measurement claimed.
+
 ## The commented grammar cannot drift
 
 The type table is one vocabulary: route validation and grammar display both read
@@ -209,16 +273,21 @@ the comment cannot silently go stale.
 
 ## Three checks, kept separate
 
-1. **Semantic sets.** The expected nodes, edges, frontiers and witnesses are
-   stated independently and asserted after real extraction and admission:
+1. **Semantic sets.** The expected nodes, edges, frontiers, witnesses and
+   application entries are stated independently and asserted after real
+   extraction and admission:
    [GritSeamTest.flix](attune/test/grit/GritSeamTest.flix),
-   [PolicyCases.flix](attune/test/policy/PolicyCases.flix).
+   [PolicyCases.flix](attune/test/policy/PolicyCases.flix), and the two
+   whole-system reports in
+   [ReadmeCorrespondence.flix](attune/test/docs/ReadmeCorrespondence.flix).
 2. **Renderer goldens.** The independently stated byte goldens for the writer,
-   routes, grammar, proofs and views live in `test/view`, including
-   [RouteViewLaw.flix](attune/test/view/RouteViewLaw.flix) and
-   [SemanticViewLaw.flix](attune/test/view/SemanticViewLaw.flix).
-3. **Document correspondence.** The actual checked-in payloads above are
-   compared with regenerated output by
+   routes, grammar, proofs, views and application reports live in `test/view`,
+   including [RouteViewLaw.flix](attune/test/view/RouteViewLaw.flix),
+   [SemanticViewLaw.flix](attune/test/view/SemanticViewLaw.flix) and
+   [ApplicationViewLaw.flix](attune/test/view/ApplicationViewLaw.flix).
+3. **Document correspondence.** The actual checked-in payloads above, including
+   the localization and coordination reports, are compared with regenerated
+   output by
    [ReadmeCorrespondence.flix](attune/test/docs/ReadmeCorrespondence.flix), which reads
    the real README and the real `View.flix` comment. A drifted payload, a
    missing or duplicated marker and a broken local link each fail. No test ever
@@ -243,6 +312,7 @@ The marker extraction and link resolution are Flix semantics in
 | Live workspace audit | `//test/policy:workspace_audit_test` | passes; `local` and unconditionally re-executed |
 | Retained Grit + Ruby | `//test/grit:grit_ruby_test` | passes |
 | Writer and typed views | `//test/view:*` | passes |
+| Whole-system application reports | `//test/view:application_view_test` | passes; coordination and localization goldens with the four provenances kept apart |
 | Documentation correspondence | `//test/docs:readme_correspondence_test` | passes; `local` and unconditionally re-executed |
 | Typed inference seam | `//test/seam:inference_seam_test` | passes |
 | Typed Parquet seam | `//test/seam:parquet_seam_test` | passes |

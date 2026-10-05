@@ -38,8 +38,8 @@ adaptation record, the proposal index and the counts all live in this one file.
 | Narrow typed Flix view over the seam envelopes | `test/seam/Seam.flix` | fixtures |
 | Grit frontend, Ruby shop and pin-correspondence fixtures | `test/grit/*.flix`, `test/grit/fixtures/**` | fixtures |
 | Corrected-intent historical regression, its mechanical input reader and the imported recorded corrected-v2 inputs | `test/history/*.flix`, `test/history/*.java`, `test/history/inputs/*.parquet` | fixtures (imported evidence bytes) |
-| One bounded ASCII writer and typed route/grammar/proof/view adapters | `src/Attune/AsciiTree.flix`, `src/Attune/View.flix` | shared Flix |
-| Writer, route, grammar, proof and semantic-view laws | `test/view/*.flix` | fixtures |
+| One bounded ASCII writer and typed route/grammar/proof/view/application-report adapters | `src/Attune/AsciiTree.flix`, `src/Attune/View.flix` | shared Flix |
+| Writer, route, grammar, proof, semantic-view and application-report laws | `test/view/*.flix` | fixtures |
 | Restricted marker, link and snippet correspondence seam | `src/Attune/Docs.flix` | shared Flix |
 | README/comment correspondence fixture | `test/docs/*.flix` | fixtures |
 | Test-only proposal namespace: remaining P08 (P01-P04/P07/P10 migrated into `Attune`/`Study`/`Coverage` and removed, P05/P06 consolidated into `Attune.Theory` and removed, P09 absorbed into `Attune.View`/`test/view` and removed) | `test/proposals/*.flix` | fixtures (reported apart) |
@@ -82,10 +82,19 @@ Three checks stay deliberately distinct:
 
 - the admitted semantic sets are stated in `test/docs/ReadmeCorrespondence.flix`
   and decided by the real extraction and admission, not by a renderer;
-- the renderer goldens stay in `test/view` (route, grammar, proof and view laws);
+- the renderer goldens stay in `test/view` (route, grammar, proof, view and
+  application-report laws);
 - the actual checked-in document bytes are compared by the `test/docs` fixture,
   which regenerates each payload from the authored shop and compares it with the
   README markers and with the `Attune.View` grammar comment.
+The checked set includes the two whole-system fixture application reports: a
+localization report whose predicted candidate is the real admitted import target
+and a coordination report whose decisions are the shared `Attune.Study` policies
+over the real admitted call relation. `Attune.View` renders them as typed
+`AppEntry` records, so a frozen prediction, an observation, a historical replay
+and labelled fixture work stay four distinct provenances, and the coordination
+decisions remain witness-bearing `ParallelBecause`/`CoordinatesBecause`/
+`UnknownBecause` phrases rather than a flattened label.
 
 The fixture drives the real flow rather than a transcribed narrative: the
 authored Ruby shop in `test/grit/fixtures/` is read through the declared
@@ -327,13 +336,14 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the compact ASCII-projection leaf, built on checkpoint `6c8e6d3`
-(the shared Study policies and corrected-regression leaf, which itself builds on
-`8376473`, `b21b97b`, `a97b234` and
+Source identity: the fixture-application-reports-and-checked-docs leaf, built on
+`6c8e6d3` (the compact ASCII-projection leaf, which itself builds on the shared
+Study policies and corrected-regression leaf, `8376473`, `b21b97b`, `a97b234` and
 `eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a`; the exact commit of this leaf is
-recorded in the mission handoff, and the earlier `8376473` 4,216/1,278/5,494/3,335,
-`b21b97b` 3,723/1,278/5,001/2,746, `a97b234` 3,081/1,278/4,359/2,645 and corrected
-3,265/1,278/4,543/2,477 figures remain history, not erased).
+recorded in the mission handoff, and the earlier `6c8e6d3` 4,216/1,278/5,494/3,346,
+`8376473` 4,216/1,278/5,494/3,335, `b21b97b` 3,723/1,278/5,001/2,746, `a97b234`
+3,081/1,278/4,359/2,645 and corrected 3,265/1,278/4,543/2,477 figures remain
+history, not erased).
 `//test/policy:declared_source_policy_test` renders the
 class report and `//test/policy:accounting_law_test` prints the per-component
 table and asserts it partitions the raw code total. "Code" is measured noncomment code
@@ -347,7 +357,7 @@ excluded).
 | theory | `src/Attune/Theory.flix` | Flix | 533 | A | `Attune.Theory` | Bounded canonical descriptors, the fixed native lowering and the world-shard witness rows consumed by the shared index. |
 | study | `src/Attune/Study.flix` | Flix | 522 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 567 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting (including the bounded test-placed-semantics classification), and the Flix-owned isolation assertions. |
-| view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 452 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
+| view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 511 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | proposal-semantics | `test/proposals/P08Decisions.flix` | Flix | 77 | A (mixed, disclosed) | `Attune.Study` (pending) | Unmigrated policy-bearing semantics: P08 typed prior/request/evidence and `fromSeam`/`settle` decision settlement; a test algorithm counts as cognitive under any placement. |
@@ -356,10 +366,10 @@ excluded).
 | boundary | `platform/tools/boundary/*.java` | Java | 481 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 210 | B | build substrate | Native Flix test rules, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` except the one unmigrated semantic portion above | Flix/Java/Ruby/Starlark | 3,346 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws in `test/view`, the corrected-intent historical regression over its declared imported inputs and the one remaining semantic proposal P08, run as the pinned compiler's `@Test`. |
+| tests | `test/**` except the one unmigrated semantic portion above | Flix/Java/Ruby/Starlark | 3,621 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs and the one remaining semantic proposal P08, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,336 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,349 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
 4,216; B mechanical 1,278; A+B authored 5,494; C test 3,335; C support 21,884
@@ -1154,3 +1164,49 @@ replace the removed proposal) and `metadata` from 2,347 to 2,336 (the two BUILD
 edits); no cognitive or mechanical total changed. Declared and live checks
 `accept`; `bazel test //...` green; typecheck exit 0; scoped buildifier exit 4 with
 the documented pre-existing families only.
+
+## Fixture application reports and checked documentation leaf record
+
+Feature `fixture-application-reports-and-checked-docs` (fulfils VAL-ASCII-006).
+Recoverable checkpoint: the `6c8e6d3` `main` tip this leaf builds on.
+
+- `src/Attune/View.flix` gains the whole-system application-report projection:
+  `Provenance` (prediction/observation/history/fixture), the typed `AppEntry` and
+  `ApplicationReport`, the witness-bearing `because` phrase
+  (`ParallelBecause`/`CoordinatesBecause`/`UnknownBecause`) and
+  `renderApplication`, which composes the one bounded `Attune.AsciiTree` writer.
+  It is presentation only: View consumes truth and creates none, and it still
+  does not import `Attune.Study`.
+- `test/view/ApplicationViewLaw.flix` (new `//test/view:application_view_test`)
+  states the independent coordination and localization byte goldens, keeps the
+  four provenances distinct, pins the witness-bearing decision phrases and the
+  presentation rejections.
+- `test/docs/ReadmeCorrespondence.flix` now builds both whole-system reports from
+  the real admitted shop: the localization candidate is the real `imports`
+  target, the coordination decisions are the shared `Study.e1` policies over the
+  real admitted call relation, the observations are the honest `Coverage`
+  outcomes (unmeasured, unknown and a classified failure kept apart), and the
+  history row is the retained corrected-v2 promotion. A new law
+  `applicationReportsTraceRealComputations` asserts the typed entries
+  independently, and the README `localization`/`coordination` payloads are
+  compared byte-for-byte, with a drifted decision phrase added to the deliberate
+  drift law.
+- `src/Attune/Docs.flix`: the marker helper is reduced without a framework. The
+  two single-name marker scans and their helper collapse into one bounded pass
+  (`markerLines`/`markerLinesAt`); `snippetOpen`/`snippetClose` remain the single
+  definition of the closed vocabulary, and the public `snippet`, `localLinks`
+  and `linkFindings` surface is unchanged. No lexer or new abstraction is added.
+- Root wording synchronised to the owner amendment: `README.md` Layout,
+  `attune/AGENTS.md` and `notes/mission.md` now name the four intended ordinary
+  root entries plus the sole permitted preserved `repomix-output.xml`. The root
+  `.gitignore` gains `/repomix-output.xml`, so Git-backed flake collection
+  excludes it from action/Nix/CAS input while the file stays intact.
+- Measured on this leaf's declared identity: A cognitive 4,275; B mechanical
+  1,278; A+B authored 5,553; C test 3,621; C support 21,884; presentation A 511 /
+  B 87 (subsets). `view` moves 452 -> 511 and `tests` 3,346 -> 3,621; raw 126 files
+  / code 33,407 / comment 2,107 / doc 3,447 / blank 1,922. The cognitive core is
+  above the around-2500 STOP-AND-JUSTIFY line, so this leaf's bounded review is
+  recorded here: the added projection is presentation-only `Attune.View` code
+  that renders typed `Study`/`Coverage` values and duplicates no scientific
+  policy; the largest new module is the application-report law fixture, which
+  states independent expectations rather than new semantics. Verdict `accept`.

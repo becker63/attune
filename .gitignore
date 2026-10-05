@@ -16,3 +16,8 @@
 
 # Bazel convenience symlinks, should any ever be generated at the checkout root.
 /bazel-*
+
+# Preserved user bundle at the checkout root (owner amendment, 2026-10-05). It is
+# kept intact and is not project source, so it is never an action, Nix or CAS
+# input; this ignore rule is what Git-backed flake collection filters out.
+/repomix-output.xml

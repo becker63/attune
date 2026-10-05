@@ -552,5 +552,97 @@ pub mod Attune.View {
             visit(view, rest ::: fresh, node :: seen)
     }
 
+    // ------------------------------------------------------- application reports
+
+    /// How one application-report entry was obtained. The four provenances stay
+    /// apart: a frozen prediction is not an observation, a historical replay is
+    /// not a fresh execution, and labelled fixture work is never an external
+    /// result.
+    pub enum Provenance with Eq, ToString {
+        case Prediction
+        case Observation
+        case History
+        case Fixture
+    }
+
+    /// The stable provenance name one report writes on its header and entries.
+    pub def provenanceName(provenance: Provenance): String = match provenance {
+        case Provenance.Prediction  => "prediction"
+        case Provenance.Observation => "observation"
+        case Provenance.History     => "history"
+        case Provenance.Fixture     => "fixture"
+    }
+
+    /// One application-report entry: what it is about, the answer or decision it
+    /// carries, how that answer was obtained, and the assumptions it rests on.
+    pub type alias AppEntry = {
+        subject     = String,
+        answer      = String,
+        provenance  = Provenance,
+        assumptions = List[String]
+    }
+
+    /// One whole-system application report: the application, the world scope and
+    /// the whole report's own provenance. A report is `Fixture` work unless an
+    /// owner has a fresh external execution to label.
+    pub type alias ApplicationReport = {
+        application = String,
+        scope       = String,
+        work        = Provenance,
+        entries     = List[AppEntry]
+    }
+
+    /// The witness-bearing phrase of one coordination decision. `Parallel`,
+    /// `Coordinate` and `Unknown` render as `ParallelBecause(...)`,
+    /// `CoordinatesBecause(...)` and `UnknownBecause(...)`, so a decision is
+    /// never flattened to a bare label and an abstention keeps its witnesses.
+    pub def because(decision: String, witnesses: List[String]): String =
+        becauseName(decision) + "(" + List.join(", ", witnesses) + ")"
+
+    def becauseName(decision: String): String = match decision {
+        case "Parallel"   => "ParallelBecause"
+        case "Coordinate" => "CoordinatesBecause"
+        case _            => "UnknownBecause"
+    }
+
+    /// Render one whole-system application report. The header names the
+    /// application, the world scope and the report's own provenance, and every
+    /// entry carries its provenance beside its answer, so a labelled fixture or
+    /// a historical replay can never read as a fresh external observation.
+    pub def renderApplication(limits: AsciiTree.Limits, report: ApplicationReport): Result[String, String] =
+        if (not safeId(report#application) or not safeId(report#scope)) Err("Unsupported application label.")
+        else if (List.isEmpty(report#entries)) Err("An application report carries at least one entry.")
+        else {
+            let header = "graph=application name=" + report#application + " scope=" + report#scope
+                + " work=" + provenanceName(report#work) + "\n\n";
+            match applicationEntries(limits, report#entries, Nil) {
+                case Err(error) => Err(error)
+                case Ok(bodies) => AsciiTree.withinBytes(limits, header + List.join("\n", bodies))
+            }
+        }
+
+    def applicationEntries(
+        limits: AsciiTree.Limits,
+        entries: List[AppEntry],
+        acc: List[String]
+    ): Result[String, List[String]] = match entries {
+        case Nil => Ok(List.reverse(acc))
+        case entry :: rest =>
+            match AsciiTree.render(limits, "", applicationEntry(entry)) {
+                case Err(error) => Err(error)
+                case Ok(text)   => applicationEntries(limits, rest, text :: acc)
+            }
+    }
+
+    /// One entry as a single label: the provenance, the subject, the answer and
+    /// the assumptions. The witness-bearing decision already sits in the answer,
+    /// so it is never re-flattened here.
+    def applicationEntry(entry: AppEntry): AsciiTree.Tree = {
+        let assuming = if (List.isEmpty(entry#assumptions)) ""
+            else " assuming(" + List.join("; ", entry#assumptions) + ")";
+        AsciiTree.Tree.Node(
+            provenanceName(entry#provenance) + " " + entry#subject + " = " + entry#answer + assuming, Nil)
+    }
+
     def bigger(left: Int32, right: Int32): Int32 = if (left > right) left else right
 }

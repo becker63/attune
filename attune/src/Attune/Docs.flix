@@ -22,36 +22,38 @@ pub mod Attune.Docs {
     /// The closing marker line of one named payload.
     pub def snippetClose(name: String): String = "<!-- attune:end=" + name + " -->"
 
-    /// Extract one payload: the lines strictly between the two marker lines,
-    /// with an optional leading `///` doc-comment leader and one enclosing
-    /// fenced-code line pair removed. Exactly one opening marker and one closing
-    /// marker must be present, and the opening must come first.
-    pub def snippet(name: String, text: String): Result[String, String] =
+    /// Extract one payload: the lines strictly between the two marker lines of
+    /// the given name, with an optional leading `///` doc-comment leader and one
+    /// enclosing fenced-code line pair removed. Exactly one opening marker and
+    /// one closing marker must be present and the opening must come first, so a
+    /// missing, duplicated or inverted marker is an explicit rejection rather
+    /// than a silently skipped block.
+    pub def snippet(name: String, text: String): Result[String, String] = {
         let lines = String.lines(text);
-        match (markerLines(snippetOpen(name), lines), markerLines(snippetClose(name), lines)) {
-            case (open :: Nil, close :: Nil) =>
+        match markerLines(name, lines) {
+            case open :: close :: Nil =>
                 if (open < close)
                     Ok(joinPayload(List.take(close - open - 1, List.drop(open + 1, lines))))
                 else
                     Err("snippet marker " + name + " closes before it opens")
-            case (Nil, _) => Err("missing opening marker for snippet " + name)
-            case (_, Nil) => Err("missing closing marker for snippet " + name)
-            case _        => Err("duplicate marker for snippet " + name)
+            case Nil => Err("missing snippet marker " + name)
+            case _   => Err("duplicate snippet marker " + name)
         }
+    }
 
-    /// The zero-based indices of every line that is exactly `marker` once the
-    /// line is trimmed and an optional `///` doc-comment leader is removed.
-    def markerLines(marker: String, lines: List[String]): List[Int32] =
-        indicesWhere(marker, lines, 0, Nil)
+    /// The zero-based indices of the named payload's marker lines, in the order
+    /// they appear. Both markers share the one closed vocabulary, so a marker of
+    /// another name is never matched.
+    def markerLines(name: String, lines: List[String]): List[Int32] =
+        markerLinesAt(name, lines, 0, Nil)
 
-    def indicesWhere(marker: String, lines: List[String], index: Int32, acc: List[Int32]): List[Int32] =
+    def markerLinesAt(name: String, lines: List[String], index: Int32, acc: List[Int32]): List[Int32] =
         match lines {
             case Nil => List.reverse(acc)
             case line :: rest =>
-                if (withoutLeader(String.trim(line)) == marker)
-                    indicesWhere(marker, rest, index + 1, index :: acc)
-                else
-                    indicesWhere(marker, rest, index + 1, acc)
+                let text = withoutLeader(String.trim(line));
+                let hit = text == snippetOpen(name) or text == snippetClose(name);
+                markerLinesAt(name, rest, index + 1, if (hit) index :: acc else acc)
         }
 
     /// Remove one optional `///` doc-comment leader from an already trimmed line.

@@ -6,8 +6,12 @@ repository-side policy an agent must follow while changing this tree.
 ## Boundaries
 
 - This workspace is the `attune/` child of the checkout root
-  `/home/becker/projects/attune`. The checkout root holds exactly four ordinary
-  entries: `README.md`, `LICENSE`, `attuneflix/` and `attune/`.
+  `/home/becker/projects/attune`. The checkout root holds exactly four intended
+  ordinary entries: `README.md`, `LICENSE`, `attuneflix/` and `attune/`. One
+  further root entry is permitted and preserved: the user `repomix-output.xml`
+  bundle (owner amendment, 2026-10-05), kept intact and excluded from active
+  action/Nix/CAS input by the root `.gitignore` rule. This exception admits no
+  other bundle.
 - `attuneflix/` (at the checkout root, a separate Git repository) is a read-only
   reference checkout, not project source. Never import it, symlink it, read it
   into an action or admit it to Nix or the CAS.

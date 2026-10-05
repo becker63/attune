@@ -75,3 +75,18 @@ native_flix_test(
         "//src:Attune/View.flix",
     ],
 )
+
+# The whole-system application-report laws: independent coordination and
+# localization goldens, the four provenances kept apart, witness-bearing
+# decisions that are never flattened, and the presentation rejections.
+native_flix_test(
+    name = "application_view_test",
+    srcs = [
+        "ApplicationViewLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/View.flix",
+    ],
+)
