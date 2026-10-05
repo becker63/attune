@@ -45,6 +45,12 @@ import java.util.Map;
  * own Flix sources to the pinned Tester's file list, so the consumer really
  * compiles the producer's exported source. Both modes only resolve declared
  * locations, copy bytes and record measured metadata.
+ *
+ * <p>One test-only fault fixture extends the receipt route: {@code drainprobe}
+ * drives the production bounded drain over deterministic faulty streams and
+ * emits the production receipt records, so a native law can prove that a
+ * post-start log I/O failure cannot become a clean measurement. It is a
+ * declared action, not a production fault endpoint, and it decides no policy.
  */
 public final class NativeLaunch {
     private NativeLaunch() {}
@@ -60,6 +66,9 @@ public final class NativeLaunch {
         }
         if (mode.equals("receipt")) {
             return receipts();
+        }
+        if (mode.equals("drainprobe")) {
+            return drainProbe();
         }
         String isolation = isolation();
         Path flixJar = Runfiles.resolve(require("attune.flix"));
@@ -381,6 +390,17 @@ public final class NativeLaunch {
             freshness = "-";
         }
         return ProcessReceipts.run(plan, out, freshness, workDir());
+    }
+
+    /// The test-only drain-probe action: drive the production bounded drain over
+    /// the deterministic faulty streams the fixture declares and materialize the
+    /// production receipt records. It is a fault fixture, not a production
+    /// endpoint: it decides no policy and classifies nothing, and the native law
+    /// that consumes the tree owns the interpretation.
+    private static int drainProbe() throws Exception {
+        Path out = Path.of(require("attune.outputs"));
+        DrainProbe.write(out);
+        return 0;
     }
 
     private static List<Path> absolutes(List<String> paths) {

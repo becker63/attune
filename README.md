@@ -67,7 +67,11 @@ log streams concurrently under a finite declared byte cap, applies the declared
 finite timeout, destroys the process tree on timeout and records raw receipts.
 A measured nonzero child exit is data rather than an infrastructure failure, and
 an unstarted, timed-out, truncated or runtime-failed command is unmeasured with
-its primary reason and cleanup state preserved. The plan and the interpretation
+its primary reason and cleanup state preserved. A bounded log that cannot be
+opened or written, or a child pipe that fails before end-of-stream, is the same
+kind of runtime failure: the incomplete receipt stays unmeasured rather than
+becoming a clean measurement just because the child exited zero. The plan and
+the interpretation
 are Flix `Attune.Study` values; the mechanical boundary decides no policy. A
 `--define=attune_measurement_freshness=<token>` scopes a fresh measurement
 identity to the receipt action only, so deterministic world artifacts stay

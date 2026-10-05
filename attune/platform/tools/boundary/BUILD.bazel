@@ -16,6 +16,7 @@ java_library(
     name = "native_launch",
     srcs = [
         "BoundaryProbe.java",
+        "DrainProbe.java",
         "Manifest.java",
         "NativeInner.java",
         "NativeLaunch.java",

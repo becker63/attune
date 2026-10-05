@@ -30,7 +30,11 @@ import java.util.concurrent.TimeUnit;
  * still drained to end-of-stream, so a chatty child cannot block on a full pipe
  * and cannot exceed the declared artifact bound. A command that exceeds its
  * finite timeout is killed together with its descendants, and the cleanup state
- * is recorded rather than assumed.
+ * is recorded rather than assumed. If a bounded drain cannot open or write its
+ * log, or cannot read the child pipe to end-of-stream, the receipt records the
+ * incomplete bytes as a runtime error rather than a clean measurement, so a
+ * post-start log I/O failure can never be mistaken for a successful command even
+ * when the child itself exited zero.
  */
 final class ProcessReceipts {
     private ProcessReceipts() {}
@@ -111,6 +115,7 @@ final class ProcessReceipts {
                 outThread.join();
                 errThread.join();
                 truncated = out.truncated() || err.truncated();
+                error = drainError(error, timedOut, out.failed(), err.failed());
                 outBytes = out.written();
                 errBytes = err.written();
                 exit = Integer.toString(process.exitValue());
@@ -129,12 +134,54 @@ final class ProcessReceipts {
             }
         }
         long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+        return recordLine(request, source, command, runtime, observedRuntime, freshness, started, exit,
+                elapsedMillis, outBytes, errBytes, timeout, cap, truncated, timedOut, cleanup, error,
+                "logs/" + index + ".out", "logs/" + index + ".err");
+    }
+
+    /**
+     * Format one receipt record in the exact declared field order. The
+     * production path and the test-only drain seam both call this, so a seam
+     * record cannot drift from the production receipt shape.
+     */
+    static String recordLine(String request, String source, String command, String runtime,
+            String observedRuntime, String freshness, boolean started, String exit, long elapsedMillis,
+            long outBytes, long errBytes, String timeout, String cap, boolean truncated, boolean timedOut,
+            String cleanup, String error, String outLog, String errLog) {
         return String.join("\t",
                 request, source, command, runtime, observedRuntime, freshness,
                 Boolean.toString(started), exit, Long.toString(elapsedMillis),
                 Long.toString(outBytes), Long.toString(errBytes), timeout, cap,
-                Boolean.toString(truncated), Boolean.toString(timedOut), cleanup, error,
-                "logs/" + index + ".out", "logs/" + index + ".err");
+                Boolean.toString(truncated), Boolean.toString(timedOut), cleanup, error, outLog, errLog);
+    }
+
+    /**
+     * The receipt error state after a bounded drain. A drain that could not open
+     * or write its bounded log, or could not read the child pipe to
+     * end-of-stream, records incomplete bytes, so it is a runtime failure: the
+     * receipt cannot prove a clean measurement. A timeout's own reason and any
+     * already-classified start error are preserved, and cap-exceeded truncation
+     * stays the separate `truncated` flag rather than an error reason.
+     */
+    static String drainError(String error, boolean timedOut, boolean outFailed, boolean errFailed) {
+        if (error.equals("-") && !timedOut && (outFailed || errFailed)) {
+            return "runtime";
+        }
+        return error;
+    }
+
+    /**
+     * Test-only mechanical seam: run one production {@link Drain} to completion
+     * over an injected stream and return it, so a native law can drive the real
+     * bounded drain with a deterministic failing stream. It starts the same
+     * drain the production path starts and decides no policy.
+     */
+    static Drain drain(InputStream input, Path file, int cap) throws InterruptedException {
+        Drain drain = new Drain(input, file, cap);
+        Thread thread = new Thread(drain, "attune-probe-drain");
+        thread.start();
+        thread.join();
+        return drain;
     }
 
     /// True only for an absolute program path that does not exist. A relative
@@ -176,14 +223,18 @@ final class ProcessReceipts {
     /**
      * One concurrent bounded log drain. It writes at most the declared cap bytes
      * to the file and keeps reading to end-of-stream so the child never blocks on
-     * a full pipe; the truncation flag records that the cap was exceeded.
+     * a full pipe; the truncation flag records that the cap was exceeded. If
+     * opening or writing the log, or reading the child pipe, fails before
+     * end-of-stream, `failed` records that the drained bytes are incomplete so
+     * the receipt is not mistaken for a clean measurement.
      */
-    private static final class Drain implements Runnable {
+    static final class Drain implements Runnable {
         private final InputStream input;
         private final Path file;
         private final int cap;
         private long written;
         private boolean truncated;
+        private boolean failed;
 
         Drain(InputStream input, Path file, int cap) {
             this.input = input;
@@ -208,9 +259,11 @@ final class ProcessReceipts {
                         truncated = true;
                     }
                 }
-            } catch (IOException ignored) {
-                // A broken pipe or an unreadable stream is not a policy verdict;
-                // the receipt still records what was actually drained.
+            } catch (IOException failure) {
+                // A failed log open/write or an unreadable pipe is not a policy
+                // verdict, but it does mean the drained bytes are incomplete:
+                // the flag is propagated so the receipt stays unmeasured.
+                failed = true;
             }
         }
 
@@ -220,6 +273,10 @@ final class ProcessReceipts {
 
         boolean truncated() {
             return truncated;
+        }
+
+        boolean failed() {
+            return failed;
         }
     }
 }

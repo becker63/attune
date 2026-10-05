@@ -386,6 +386,57 @@ def native_process_receipt(name, plan, **kwargs):
     """
     _native_process_receipt(name = name, plan = plan, **kwargs)
 
+def _native_drain_probe_impl(ctx):
+    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
+    out = ctx.actions.declare_directory(ctx.label.name)
+    classpath = depset(transitive = [
+        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
+    ]).to_list()
+    args = ctx.actions.args()
+    args.add("-cp")
+    args.add_joined(classpath, join_with = ":")
+    args.add("-Dattune.mode=drainprobe")
+    args.add("-Dattune.outputs=" + out.path)
+    args.add("attune.tools.boundary.NativeLaunch")
+    ctx.actions.run(
+        executable = runtime.java_executable_exec_path,
+        arguments = [args],
+        inputs = depset(classpath, transitive = [runtime.files]),
+        outputs = [out],
+        mnemonic = "AttuneDrainProbe",
+        progress_message = "Recording bounded drain fault fixture %{label}",
+    )
+    return [DefaultInfo(files = depset([out]))]
+
+_native_drain_probe = rule(
+    implementation = _native_drain_probe_impl,
+    doc = "Emit the test-only bounded-drain fault fixture over deterministic faulty streams.",
+    attrs = {
+        "_launcher": attr.label(
+            default = "//platform/tools/boundary:native_launch",
+            providers = [JavaInfo],
+        ),
+    },
+    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+)
+
+def native_drain_probe(name, **kwargs):
+    """Emit the test-only bounded-drain fault fixture tree.
+
+    The action runs the existing mechanical launcher in `drainprobe` mode: it
+    drives the *production* bounded drain over a stream that fails after a
+    bounded prefix and over a log store that cannot be opened, beside an
+    ordinary clean drain, and emits one declared tree holding the production
+    receipt records for those cases. It is a declared fault fixture for the
+    native laws, not a production fault endpoint or a new entrypoint: the
+    launcher decides no policy and the Flix consumer owns the interpretation.
+
+    Args:
+      name: the producer target name, which also names its declared tree output.
+      **kwargs: forwarded to the underlying rule.
+    """
+    _native_drain_probe(name = name, **kwargs)
+
 def native_flix_consumer_test(name, srcs, produced, declared_files = [], size = "small", tags = [], data = []):
     """Run native `@Test` laws over the declared trees a producer emitted.
 

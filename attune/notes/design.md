@@ -436,7 +436,13 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the portable-remote-native-execution leaf (the opt-in
+Source identity: the receipt-drain-failure-propagation leaf (the bounded drain's
+I/O-failure flag propagated through the existing receipt error classification,
+the shared production record formatter and the test-only drain fault seam), which
+was built on the minimal-process-receipts leaf (the declared bounded argv plan,
+the concurrent capped drains, the finite timeout and the Study receipt
+interpretation), built on the immutable-static-remote-runtime-pin leaf (the
+registry-resolved digest), built on the portable-remote-native-execution leaf (the opt-in
 `--config=remote` BuildBuddy profile, the declared `platform` isolation mode with
 its `config_setting`, and the host-only pin for the namespace fixture), which was
 built on the portable-native-declared-artifact-actions leaf (the declared
@@ -485,24 +491,32 @@ excluded).
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
-| boundary | `platform/tools/boundary/*.java` | Java | 796 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses); owns no policy, classification or fixture case. |
+| boundary | `platform/tools/boundary/*.java` | Java | 909 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 336 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and the declared-tree consumer macro, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 4,124 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws and fault plan in `test/receipt`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
+| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 370 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, and the declared-tree consumer macro, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 4,184 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,376 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,383 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,342; B mechanical 1,719; A+B authored 6,061; C test 4,124; C support 21,884
+4,342; B mechanical 1,866; A+B authored 6,208; C test 4,184; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 132 readable files, code 34,445,
-comment 2,189, documentation 4705, blank 2173; the report prints the derived
-physical 43512 and nonblank 41339 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 133 readable files, code 34,659,
+comment 2,199, documentation 4890, blank 2208; the report prints the derived
+physical 43956 and nonblank 41748 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The portable-native-declared-artifact-actions leaf moved, relative to the
+them. The receipt-drain-failure-propagation leaf moves, relative to the
+minimal-process-receipts record (4,342/1,719/6,061/4,124), `boundary` 796 -> 909
+(the drain failure flag and propagation, the shared production record formatter
+and the test-only drain seam), `build-rules` 336 -> 370 (the declared
+drain-probe fault rule), `tests` 4,124 -> 4,184 (the four drain-I/O-failure laws)
+and `metadata` 2,376 -> 2,383 (the drain-probe target and its comment in
+`test/receipt/BUILD.bazel`); the cognitive core and every other component are
+unchanged, so this whole delta is mechanical substrate, fixtures and declared
+metadata. The portable-native-declared-artifact-actions leaf moved, relative to the
 `de61d97` record (4,247/1,278/5,525/3,860), `boundary` 481 -> 594 (the
 produced-tree listing and the producer/consumer
 launcher modes), `build-rules` 210 -> 282 (the declared producer rule and the
@@ -2026,3 +2040,76 @@ Policy-leak/duplication check: the immutable runtime identity is one declared
 extension attribute and its regenerated lock entry, not a second platform,
 registry, resolver or scheduler; the digest is the registry's own content digest
 and no scientific decision or policy moved into configuration.
+
+### Leaf record: receipt drain failure propagation (`receipt-drain-failure-propagation`)
+
+This leaf repairs one concrete false-success path in the bounded process
+boundary. `ProcessReceipts.Drain` caught an `IOException` from opening or
+writing the bounded log, or from reading the child pipe, and silently stopped
+reading while leaving `started=true`, `error=-`, `truncated=false`; a child that
+exited zero then classified as `Measured(0)` -> `ObservedTrue`, so an incomplete
+or runtime-failed log could be reported as a clean measurement. The drain now
+records a `failed` flag, and `ProcessReceipts.drainError` propagates it into the
+existing receipt error vocabulary: an already-classified start error and a
+timeout's own reason are preserved, cap-exceeded truncation stays the separate
+`truncated` flag, and any other drain failure sets the receipt's existing
+`runtime` error kind. `Study.measurement` already maps a non-`-` error to
+`Unmeasured(error, cleanup)`, so the incomplete receipt stays unmeasured with no
+new ADT case, no new receipt field and no change to `Attune.Study`.
+
+A real child cannot deterministically make the drain fail, so the fixture is a
+test-only mechanical seam, not a fabricated synthetic receipt. `DrainProbe`
+drives the *exact production* `ProcessReceipts.Drain` over declared faulty
+streams and emits each case through the production record formatter and the
+production failure propagation; `NativeLaunch` gains a `drainprobe` mode and the
+declared `native_drain_probe` Starlark rule materializes one declared tree. It is
+a fault fixture inside the existing receipt package, not a production fault
+endpoint, a new executable entrypoint, a runtime control or a wrapper engine:
+the launcher decides no policy and the Flix consumer owns the interpretation.
+Three deterministic cases each declare child exit zero, so only the drain state
+can keep the receipt from becoming a clean success: `read-failure` (the child
+pipe yields a bounded prefix and then fails -> 13 drained bytes, `error=runtime`),
+`write-failure` (the case's `logs` store is a regular file, so the production
+`Files.newOutputStream` fails -> 0 bytes, `error=runtime`) and `clean` (an
+ordinary stream read to end-of-stream -> `error=-`, `Measured(0)`).
+
+`//test/receipt:process_receipt_test` now holds thirteen laws: the original nine
+plus four drain-failure laws. A post-start drain read failure and a post-start
+drain write failure are each `Unmeasured("runtime", "ok")` with
+`outcomeOf = Unmeasured` and no proven obligation even though the declared exit
+is zero; a clean drain stays `Measured(0)` -> `ObservedTrue`; and cap-exceeded
+truncation stays distinct from a drain I/O failure. Without the propagation the
+two failure laws fail with `expected runtime, but got -`, so the regression is
+genuine rather than a rewritten or blessed expectation; the clean and
+distinctness laws still pass, so the repair is narrow.
+
+Validation. Local `bazel test //...` is 27/27 green; typecheck is exit 0; scoped
+`buildifier -mode=check -lint=warn` is exit 4 with only the documented
+pre-existing diagnostic families (a newly introduced `test/receipt/BUILD.bazel`
+reformat finding was fixed with `buildifier -mode=fix` before the final check).
+The local probe tree's `receipts.tsv` records exactly the three declared cases,
+and the existing `//test/receipt:process_receipts` fixture and plan are
+unchanged, so the raw exits, effective caps, timeout reason, cleanup state and
+nonzero-exit-as-data semantics are all preserved.
+
+Measured on this leaf's declared identity (declared-source check, `accept`; see
+the canonical table above for the live totals): A cognitive 4,342; B mechanical
+1,866; A+B authored 6,208; C test 4,184; C support 21,884; presentation A 522 /
+B 87 (subsets). Relative to the minimal-process-receipts record
+(4,342/1,719/6,061/4,124), `boundary` moves 796 -> 909, `build-rules` 336 -> 370,
+`tests` 4,124 -> 4,184 and `metadata` 2,376 -> 2,383; the cognitive core and every
+other component are unchanged, so this leaf's whole delta is mechanical
+substrate, fixtures and declared metadata.
+
+Bounded architecture review (the cognitive core is unchanged at 4,342, above the
+around-2,500 STOP-AND-JUSTIFY trigger, and A+B is above the preferred 5,000 line;
+both are review triggers, not failures). Largest application-semantic component:
+`repository` (809), unchanged. Hardest reacquisition: the Grit acquisition
+boundary under `repository`, unchanged by this leaf. Localization/coordination
+navigation: unchanged; this leaf adds one drain failure flag and its propagation,
+one test-only drain seam and four native laws. Policy-leak/duplication check: the
+failure classification still happens once, in `Attune.Study.measurement`; the
+boundary only records the incomplete-bytes flag through the existing `error`
+field, the seam reads the exact production drain rather than re-implementing it,
+and no second parser, verdict, registry, resolver, scheduler or fault API
+entered the mechanical side.

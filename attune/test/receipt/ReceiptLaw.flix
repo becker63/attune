@@ -75,6 +75,22 @@ def logText(command: String): String \ IO =
         case None => ""
     }
 
+// --------------------------------------------------- drain fault fixture
+
+/// The resolved root of the declared drain fault tree: the second declared
+/// produced tree the consumer bound beside the receipt tree.
+def probeRoot(): String \ IO =
+    match boundPath("produced1", readText("attune-bindings.tsv")) {
+        case Some(path) => path
+        case None       => ""
+    }
+
+def probeReceipts(): List[Study.Receipt] \ IO =
+    Study.parseReceipts(readText(probeRoot() + "/receipts.tsv"))
+
+def probeOf(command: String): Option[Study.Receipt] \ IO =
+    Study.receiptFor(command, probeReceipts())
+
 // -------------------------------------------------------------------- laws
 
 /// The declared plan is bounded and admissible, and its declared order and
@@ -195,6 +211,74 @@ def aFreshnessTokenScopesTheMeasurementIdentityOnly(): Unit \ Assert = {
     Assert.assertEq(expected = true,
         Study.receiptIdentity(synthetic("run-1")) == Study.receiptIdentity(synthetic("run-2")));
     Assert.assertEq(expected = true, Study.measurement(synthetic("run-1")) == Study.measurement(synthetic("run-2")))
+}
+
+/// A post-start drain read failure cannot become a clean measured success, even
+/// when the declared child exit is zero: the fixture drives the actual
+/// production bounded drain over a stream that fails after a bounded prefix, and
+/// the incomplete bytes are propagated so the receipt stays unmeasured.
+@Test
+def aPostStartDrainReadFailureIsNotACleanSuccess(): Unit \ {Assert, IO} =
+    match probeOf("read-failure") {
+        case Some(receipt) => {
+            Assert.assertEq(expected = true, receipt#started);
+            Assert.assertEq(expected = Some(0), receipt#exit);
+            Assert.assertEq(expected = false, receipt#truncated);
+            Assert.assertEq(expected = "runtime", receipt#error);
+            Assert.assertEq(expected = Study.Measurement.Unmeasured("runtime", "ok"), Study.measurement(receipt));
+            Assert.assertEq(expected = Study.Outcome.Unmeasured, Study.outcomeOf(Study.measurement(receipt)));
+            Assert.assertEq(expected = false,
+                Study.obligationProven(receipt, "unused", List#{"TEST:PASS:x"}))
+        }
+        case None => Assert.assertEq(expected = "read-failure drain probe receipt", "missing")
+    }
+
+/// A post-start drain that cannot open its bounded log fails the same way: the
+/// production `Files.newOutputStream` failure is propagated, so a zero child
+/// exit beside an unwritable log store is never a clean measurement.
+@Test
+def aPostStartDrainWriteFailureIsNotACleanSuccess(): Unit \ {Assert, IO} =
+    match probeOf("write-failure") {
+        case Some(receipt) => {
+            Assert.assertEq(expected = true, receipt#started);
+            Assert.assertEq(expected = Some(0), receipt#exit);
+            Assert.assertEq(expected = false, receipt#truncated);
+            Assert.assertEq(expected = "runtime", receipt#error);
+            Assert.assertEq(expected = Study.Measurement.Unmeasured("runtime", "ok"), Study.measurement(receipt));
+            Assert.assertEq(expected = Study.Outcome.Unmeasured, Study.outcomeOf(Study.measurement(receipt)))
+        }
+        case None => Assert.assertEq(expected = "write-failure drain probe receipt", "missing")
+    }
+
+/// An ordinary bounded drain that reaches end-of-stream stays a normal
+/// measurement: the fault flag is not raised and the clean zero exit remains
+/// observed true.
+@Test
+def aCleanDrainStaysAMeasuredSuccess(): Unit \ {Assert, IO} =
+    match probeOf("clean") {
+        case Some(receipt) => {
+            Assert.assertEq(expected = true, receipt#started);
+            Assert.assertEq(expected = false, receipt#truncated);
+            Assert.assertEq(expected = "-", receipt#error);
+            Assert.assertEq(expected = Study.Measurement.Measured(0), Study.measurement(receipt));
+            Assert.assertEq(expected = Study.Outcome.ObservedTrue, Study.outcomeOf(Study.measurement(receipt)))
+        }
+        case None => Assert.assertEq(expected = "clean drain probe receipt", "missing")
+    }
+
+/// Cap-exceeded truncation stays distinct from a drain I/O failure: the plan's
+/// truncated command reports truncation while the fixture's failed drain reports
+/// its runtime error, and the two classifications differ.
+@Test
+def capExceededTruncationStaysDistinctFromDrainFailure(): Unit \ {Assert, IO} = {
+    Assert.assertEq(expected = Study.Measurement.Unmeasured("truncated", "ok"), measurementOf("truncated"));
+    match probeOf("read-failure") {
+        case Some(receipt) =>
+            Assert.assertEq(expected = false,
+                Study.measurement(receipt) == Study.Measurement.Unmeasured("truncated", "ok"))
+        case None => Assert.assertEq(expected = "read-failure drain probe receipt", "missing")
+    };
+    Assert.assertEq(expected = 3, List.length(probeReceipts()))
 }
 
 def synthetic(freshness: String): Study.Receipt = {

@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_consumer_test", "native_process_receipt")
+load("//platform/build:native.bzl", "native_drain_probe", "native_flix_consumer_test", "native_process_receipt")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -20,10 +20,22 @@ native_process_receipt(
     plan = "plan.tsv",
 )
 
+# The declared drain fault fixture: the existing mechanical launcher drives the
+# *production* bounded drain over a stream that fails after a bounded prefix and
+# over a log store that cannot be opened, beside an ordinary clean drain, and
+# emits one declared tree of production receipt records. A real child cannot
+# make the drain fail deterministically, so this test-only fixture supplies the
+# faulty streams; the Flix consumer owns the interpretation. It is not a
+# production fault endpoint and adds no launcher entrypoint.
+native_drain_probe(
+    name = "receipt_drain_probe",
+)
+
 # The consumer: the receipt tree is a declared input. The pinned compiler's
 # authentic native Tester runs the Study receipt laws over the actual records
 # and bounded logs, and the declared plan is bound so the laws can assert its
-# finiteness and admissibility.
+# finiteness and admissibility. The drain fault fixture is a second declared
+# input for the post-start drain-failure laws.
 native_flix_consumer_test(
     name = "process_receipt_test",
     srcs = [
@@ -32,5 +44,8 @@ native_flix_consumer_test(
         "//src:Attune/Study.flix",
     ],
     declared_files = ["plan.tsv"],
-    produced = [":process_receipts"],
+    produced = [
+        ":process_receipts",
+        ":receipt_drain_probe",
+    ],
 )
