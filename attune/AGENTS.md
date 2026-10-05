@@ -50,7 +50,10 @@ these rules; `bazel test //...` enforces it.
   only first-party executable entrypoint. Authored `main` functions, per-case
   application mains, custom test engines, central registries and fat JARs are
   forbidden, as are shell scripts, shell actions, `run_shell`, shell genrules
-  and Python runners.
+  and Python runners. The declared producer action (`native_flix_producer`) is a
+  Starlark `ctx.actions.run` of the same mechanical launcher through the pinned
+  JDK runtime toolchain: it runs the authentic native Tester and emits a declared
+  tree, and it is a build action rather than a new executable entrypoint.
 - Java keeps only the unavoidable mechanics (filesystem metadata, process
   launch, runfiles resolution). Policy, classification, inventory and exclusion
   decisions, secret and size decisions, verdict and report formatting, isolation

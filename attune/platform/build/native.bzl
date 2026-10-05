@@ -13,6 +13,8 @@ classification, verdict formatting, fixture cases and isolation assertions live
 in Flix.
 """
 
+load("@rules_java//java/common:java_info.bzl", "JavaInfo")
+
 _UNSHARE = "@unshare//:bin/unshare"
 _CLOSURE = "@unshare//:closure"
 _FLIX = "@flix_compiler//jar"
@@ -191,3 +193,119 @@ def native_flix_audit_test(name, srcs, workspace_root, skip = [], size = "small"
         tags + ["local", "external"],
         data,
     )
+
+def _native_producer_impl(ctx):
+    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
+    out = ctx.actions.declare_directory(ctx.label.name)
+    classpath = depset(transitive = [
+        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
+    ]).to_list()
+    jars = depset(transitive = [
+        dependency[JavaInfo].transitive_runtime_jars
+        for dependency in ctx.attr.java_deps
+    ]).to_list()
+    sources = [source.path for source in ctx.files.srcs]
+    export = [source.path for source in ctx.files.export]
+    bindings = [binding.path for binding in ctx.files.declared_files]
+    args = ctx.actions.args()
+    args.add("-cp")
+    args.add_joined(classpath, join_with = ":")
+    args.add("-Dattune.mode=produce")
+    args.add("-Dattune.outputs=" + out.path)
+    args.add("-Dattune.tests=" + ",".join(sources))
+    args.add("-Dattune.export=" + ",".join(export))
+    if jars:
+        args.add("-Dattune.jars=" + ",".join([jar.path for jar in jars]))
+    if bindings:
+        args.add("-Dattune.bindings=" + ",".join(bindings))
+    args.add("attune.tools.boundary.NativeLaunch")
+    ctx.actions.run(
+        executable = runtime.java_executable_exec_path,
+        arguments = [args],
+        inputs = depset(
+            ctx.files.srcs + ctx.files.export + ctx.files.declared_files + jars + classpath,
+            transitive = [runtime.files],
+        ),
+        outputs = [out],
+        mnemonic = "AttuneNativeProducer",
+        progress_message = "Materializing declared native tree %{label}",
+    )
+    return [DefaultInfo(files = depset([out]))]
+
+_native_flix_producer = rule(
+    implementation = _native_producer_impl,
+    doc = "Run the pinned native Tester over explicit sources and jars and emit one declared tree.",
+    attrs = {
+        "srcs": attr.label_list(allow_files = [".flix"]),
+        "export": attr.label_list(allow_files = True),
+        "declared_files": attr.label_list(allow_files = True),
+        "java_deps": attr.label_list(providers = [JavaInfo]),
+        "_launcher": attr.label(
+            default = "//platform/tools/boundary:native_launch",
+            providers = [JavaInfo],
+        ),
+    },
+    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+)
+
+def native_flix_producer(name, srcs, export = [], declared_files = [], java_deps = [], **kwargs):
+    """Run the pinned native Tester and emit a declared immutable source tree.
+
+    The action compiles and executes the explicit declared Flix `@Test` sources
+    with the pinned compiler's authentic native test engine over the explicit
+    declared dependency jars, then materializes one declared tree artifact: an
+    immutable regular-file copy of each exported source under `sources/` beside a
+    mechanical `closure.tsv` naming the exact source, jar and binding closure.
+    The `export` files are the sources the tree carries (defaulting to `srcs`);
+    `srcs` also covers any producer law that must run but must not be exported.
+
+    A non-zero Tester verdict fails the action, so a downstream consumer can only
+    depend on a tree the pinned engine actually accepted. This is a build action,
+    not an authored application main: the compiler's own engine decides the
+    verdict, and the mechanical launcher only resolves declared paths and copies
+    bytes.
+
+    Args:
+      name: the producer target name, which also names its declared tree output.
+      srcs: the explicit declared Flix sources the pinned Tester compiles.
+      export: the sources the emitted tree carries (defaults to `srcs`).
+      declared_files: the declared data bindings named in the closure.
+      java_deps: the explicit dependency jar closure passed to the Tester.
+      **kwargs: forwarded to the underlying rule.
+    """
+    _native_flix_producer(
+        name = name,
+        srcs = srcs,
+        export = export or srcs,
+        declared_files = declared_files,
+        java_deps = java_deps,
+        **kwargs
+    )
+
+def native_flix_consumer_test(name, srcs, produced, declared_files = [], size = "small", tags = [], data = []):
+    """Run native `@Test` laws over the declared trees a producer emitted.
+
+    Each `produced` tree is a declared input, not an undeclared test output: the
+    launcher walks it and writes the measured listing, records the declared
+    `name=path` bindings, and appends the tree's own Flix sources to the pinned
+    Tester's file list. The consumer therefore compiles the producer's exported
+    source and asserts the tree's contract over the actual declared bytes.
+
+    Args:
+      name: the consumer test target name.
+      srcs: the consumer's own explicit declared Flix law sources.
+      produced: the producer targets whose declared trees this test consumes.
+      declared_files: the declared sources the laws compare the trees against.
+      size: the Bazel test size.
+      tags: the Bazel test tags.
+      data: additional declared test data.
+    """
+    flags = ["-Dattune.mode=native", "-Dattune.produced=" + _rlocation(produced)]
+    extra_data = list(produced)
+    if declared_files:
+        files_manifest = name + "_declared"
+        declared_manifest(name = files_manifest, srcs = declared_files)
+        flags.append("-Dattune.fixtures=$(rlocationpath :%s)" % files_manifest)
+        extra_data.append(":" + files_manifest)
+        extra_data.extend(declared_files)
+    _native_test(name, srcs, flags, extra_data, size, tags, data)

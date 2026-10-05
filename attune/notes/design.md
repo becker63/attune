@@ -436,8 +436,11 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the checked-doc-marker-and-fixture-boundaries leaf (the tagged
-marker scan and the symbol-domain coordination anchors), built on `8deb78c`
+Source identity: the portable-native-declared-artifact-actions leaf (the declared
+native producer/consumer route, its mechanical `closure.tsv` and the immutable
+regular-file source tree), built on `de61d97` (the
+checked-doc-marker-and-fixture-boundaries leaf: the tagged marker scan and the
+symbol-domain coordination anchors), which was built on `8deb78c`
 (route-rendering-world-scope-guard: the snapshot-world scope check in the route
 projection), which was built on `ba6b750` (injective-world-identity-components:
 the length-prefixed injective `worldId`), built on `64f6daf` (the
@@ -452,7 +455,8 @@ was built on `6c8e6d3` (the compact ASCII-projection leaf, which itself builds o
 the shared Study policies and corrected-regression leaf, `8376473`, `b21b97b`,
 `a97b234` and `eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a`; the exact commit of this
 leaf is recorded in the mission handoff). The earlier figures remain history, not
-erased, each labelled by the identity that measured it: `8deb78c`
+erased, each labelled by the identity that measured it: `de61d97`
+4,247/1,278/5,525/3,860, `8deb78c`
 4,239/1,278/5,517/3,809, `64f6daf`
 4,233/1,278/5,511/3,753, `bbd5234`
 4,210/1,278/5,488/3,658, `b1a797a`
@@ -478,24 +482,30 @@ excluded).
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
-| boundary | `platform/tools/boundary/*.java` | Java | 481 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester; owns no policy, classification or fixture case. |
+| boundary | `platform/tools/boundary/*.java` | Java | 594 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action and the produced-tree listing; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 210 | B | build substrate | Native Flix test rules, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,860 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
+| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 282 | B | build substrate | Native Flix test rules, the declared producer rule and the declared-tree consumer macro, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,971 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,289 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,319 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,247; B mechanical 1,278; A+B authored 5,525; C test 3,860; C support 21,884
+4,247; B mechanical 1,463; A+B authored 5,710; C test 3,971; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 123 readable files, code 33,558,
-comment 2,101, documentation 4,017, blank 2,010; the report prints the derived
-physical 41,686 and nonblank 39,676 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 128 readable files, code 33,884,
+comment 2,118, documentation 4,142, blank 2,055; the report prints the derived
+physical 42,199 and nonblank 40,144 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The code, comment and file
+them. Relative to the `de61d97` record (4,247/1,278/5,525/3,860), this leaf moves
+`boundary` 481 -> 594 (the produced-tree listing and the producer/consumer
+launcher modes), `build-rules` 210 -> 282 (the declared producer rule and the
+consumer macro), `tests` 3,860 -> 3,971 (the three `test/dag` fixture laws) and
+`metadata` 2,289 -> 2,319 (the new `test/dag/BUILD.bazel`); the cognitive core is
+unchanged, so the whole delta is mechanical substrate plus fixtures. The code,
+comment and file
 columns are stable across this note's own edits, because markdown prose counts as
 documentation; the documentation, blank, physical and nonblank columns move
 whenever this note itself is edited (they are the measured values at the run that
@@ -503,7 +513,7 @@ produced these figures, and this note's own text is part of that population), so
 re-run the check rather than copying them. The retired
 `proposal-semantics` component is gone from the table rather than relabelled: its
 77-line P08 portion moved into `study` (549 includes it) and its surrounding
-`@Test` laws moved into `tests` (3,809 includes them), so the subtraction is a
+`@Test` laws moved into `tests`, so the subtraction is a
 real move between named owners and not a change of label.
 
 ### Excluded inherited and generated families
@@ -1627,3 +1637,78 @@ Validation on this leaf: fresh `//test/docs:readme_correspondence_test` 8/8 pass
 //test/view/... //test/grit/... //test/history/...` 9/9 pass; integrated
 `bazel test //...` 25/25 green; typecheck exit 0; scoped buildifier exit 4 with
 the documented pre-existing diagnostic families only and no `# reformat`.
+
+## Portable native declared-artifact producer/consumer leaf record
+
+Feature `portable-native-declared-artifact-actions` (fulfils VAL-DAG-001).
+Recoverable checkpoint: the `de61d97` `main` tip this leaf builds on.
+
+This leaf extends the existing mechanical native route minimally so a producer
+action can emit a declared immutable source tree that a downstream consumer
+consumes as a declared input. No authored application main, custom registry,
+fat JAR, runtime resolver, shell action or Python runner is added: the producer
+runs the pinned compiler's authentic native Tester, and the consumer compiles
+the producer's exported source with the same engine.
+
+The producer is one new Starlark rule (`platform/build/native.bzl`,
+`AttuneNativeProducer`) that runs the existing mechanical launcher
+(`platform/tools/boundary`) through the pinned JDK runtime toolchain as a build
+action. In `produce` mode the launcher runs the authentic `NativeTester` over the
+explicit declared Flix sources and the explicit declared dependency jar closure,
+then materializes one declared tree artifact: an immutable regular-file copy of
+each exported source under `sources/` beside a mechanical `closure.tsv` naming
+the exact source/jar/binding closure. A non-zero Tester verdict fails the
+action, so a consumer can only depend on a tree the engine accepted. The
+consumer macro (`native_flix_consumer_test`) adds the producer's tree as a
+declared input; the launcher walks it, writes the measured `attune-produced.tsv`
+listing and the declared `attune-bindings.tsv`, and appends the tree's own Flix
+sources to the pinned Tester's file list. Nothing flows through
+`TEST_UNDECLARED_OUTPUTS`.
+
+The separating laws in `test/dag` are the new native `@Test` declarations:
+`theProducedTreeIsAnImmutableRegularFileTree` (exact declared file set, every
+entry a regular file), `theExportedSourceIsByteIdenticalToTheDeclaredSource`
+(the exported copy equals the declared source bytes), `theClosureNamesTheExactDeclaredPopulation`
+(exactly the declared source, jar and binding closure), and
+`theConsumedSourceCompilesThroughThePinnedTester` (the consumer compiles the
+tree's exported source, so `answer()` resolves only through the artifact). The
+pure negatives `aMissingListingAdmitsNothing`, `aNonRegularEntryIsRejected` and
+`anUndeclaredExtraEntryIsRejected` fail closed on an empty listing, a non-regular
+entry and an undeclared extra entry.
+
+The failing reproduction precedes the repair: the first producer run failed with
+a real pinned-compiler resolution error (`UndefinedName` from a module whose name
+did not match its file path), and the fixture world source was reduced to a plain
+top-level computation so the same bytes stay a valid compilation unit from either
+location. No test was blessed or rewritten to pass.
+
+Action closures are inspectable through `aquery`: the producer action lists the
+declared sources, the explicit jar closure, the launcher jar, the flix compiler
+jar and the JDK toolchain as inputs and the tree artifact as its single output;
+the consumer's runfiles manifest names the producer tree as a declared input. A
+controlled invalidation probe appended one comment to
+`test/dag/fixtures/world/Shop.flix`: the consumer test re-executed (1 of 1) and
+passed; restoring the exact bytes returned it to `(cached)`.
+
+Measured on this leaf's declared identity (declared-source check, `accept`; see
+the table above for the canonical figures): A cognitive 4,247; B mechanical
+1,463; A+B authored 5,710; C test 3,971; C support 21,884; presentation A 522 /
+B 87 (subsets). Relative to the `de61d97` record, `boundary` moves 481 -> 594,
+`build-rules` 210 -> 282, `tests` 3,860 -> 3,971 and `metadata` 2,289 -> 2,319;
+no other component moves and the cognitive core is unchanged.
+
+Bounded architecture review (the cognitive core is above the around-2,500
+trigger and A+B above the preferred 5,000 line; both are review triggers, not
+failures). Largest application-semantic component: `repository` (809), unchanged.
+Hardest reacquisition: the Grit acquisition boundary under `repository`, unchanged
+by this leaf. Localization/coordination navigation: unchanged; this leaf adds only
+the declared producer/consumer route and its fixtures.
+Policy-leak/duplication check: the new rule and launcher modes add no second
+evaluator, registry, resolver or scientific decision; `Attune.apply` remains the
+only relation application and the consumer's classification stays in Flix while
+Java only records measured metadata.
+Validation on this leaf: fresh `//test/dag:declared_artifact_consumer_test` 7/7
+pass; integrated `bazel test //...` 26/26 green; typecheck exit 0; scoped
+buildifier exit 4 with the documented pre-existing diagnostic families only, no
+`# reformat`, and the pre-existing `native-java-info` family removed by the
+required `JavaInfo` load.

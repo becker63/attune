@@ -65,6 +65,44 @@ final class Manifest {
         Files.write(output, lines, StandardCharsets.UTF_8);
     }
 
+    /**
+     * The listing of one or more produced declared trees: for each root, its
+     * resolved real path followed by every entry beneath it, measured the same
+     * way the declared population is. The root is resolved first, because the
+     * runfiles tree may present a declared tree artifact as a link to its real
+     * directory; every child is then measured by its effective kind, so a
+     * runfiles link to a regular file is still reported as the regular file the
+     * declared artifact owns. The walk decides nothing about policy: the Flix
+     * consumer classifies what the records mean.
+     */
+    static void produced(Path output, List<Path> roots) throws IOException {
+        List<String> lines = new ArrayList<>();
+        for (Path root : roots) {
+            Path real = root.toRealPath();
+            List<String> records = new ArrayList<>();
+            walkProduced(real, real, records);
+            records.sort(Comparator.naturalOrder());
+            lines.add("root\t" + real);
+            lines.addAll(records);
+        }
+        Files.write(output, lines, StandardCharsets.UTF_8);
+    }
+
+    private static void walkProduced(Path dir, Path root, List<String> out) throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+            for (Path child : stream) {
+                String relative = root.relativize(child).toString();
+                if (Files.isDirectory(child)) {
+                    walkProduced(child, root, out);
+                } else if (Files.isRegularFile(child)) {
+                    out.add(relative + "\t" + child + "\tfile\t" + Files.size(child) + "\t-");
+                } else {
+                    out.add(relative + "\t" + child + "\tsymlink\t0\t-");
+                }
+            }
+        }
+    }
+
     private static void walk(Path dir, Path root, Set<String> skipTop, List<String> out)
             throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {

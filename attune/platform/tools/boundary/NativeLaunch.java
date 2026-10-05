@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -21,6 +22,17 @@ import java.util.Map;
  * user/network namespace with an allowlisted environment. It decides no policy,
  * classifies nothing and formats no verdict; a non-zero exit from the engine is
  * this process's failure, and isolation failure is fatal with no fallback.
+ *
+ * <p>Two declared-artifact modes extend the same route without a new engine. In
+ * {@code produce} the launcher runs the pinned compiler's authentic native
+ * Tester over the explicit declared sources and jars and materializes one
+ * declared output tree: an immutable regular-file copy of each exported source
+ * beside a mechanical {@code closure.tsv} naming the exact source/jar/binding
+ * closure. In a consumer test the launcher walks each declared producer tree,
+ * writes the measured listing the Flix law classifies, and appends the tree's
+ * own Flix sources to the pinned Tester's file list, so the consumer really
+ * compiles the producer's exported source. Both modes only resolve declared
+ * locations, copy bytes and record measured metadata.
  */
 public final class NativeLaunch {
     private NativeLaunch() {}
@@ -31,6 +43,9 @@ public final class NativeLaunch {
 
     static int run() throws Exception {
         String mode = System.getProperty("attune.mode", "native");
+        if (mode.equals("produce")) {
+            return produce();
+        }
         Path flixJar = Runfiles.resolve(require("attune.flix"));
         Path unshare = Runfiles.resolve(require("attune.unshare"));
         List<String> tests = new ArrayList<>();
@@ -62,6 +77,23 @@ public final class NativeLaunch {
                     new LinkedHashSet<>(splitList(System.getProperty("attune.skip", ""))));
         }
 
+        List<String> bindings = declaredBindings();
+        List<Path> produced = producedTrees();
+        if (!produced.isEmpty()) {
+            Manifest.produced(work.resolve("attune-produced.tsv"), produced);
+            bindings.add("produced_manifest=" + work.resolve("attune-produced.tsv"));
+            for (int index = 0; index < produced.size(); index++) {
+                bindings.add("produced" + index + "=" + produced.get(index));
+            }
+            for (Path tree : produced) {
+                tests.addAll(flixSources(tree));
+            }
+        }
+        if (!bindings.isEmpty()) {
+            writeBindings(work.resolve("attune-bindings.tsv"), bindings);
+        }
+        String fixtures = bindings.isEmpty() ? "" : "-Dattune.fixtures=" + String.join(",", bindings);
+
         if (mode.equals("java")) {
             List<String> jars = jarPaths();
             List<String> command = new ArrayList<>();
@@ -77,17 +109,8 @@ public final class NativeLaunch {
             if (!libs.isEmpty()) {
                 command.add("-Dattune.libs=" + String.join(",", libs));
             }
-            String declared = System.getProperty("attune.fixtures", "");
-            String checkout = System.getProperty("attune.checkout_files", "");
-            if (!declared.isEmpty() || !checkout.isEmpty()) {
-                List<String> bindings = new ArrayList<>();
-                if (!declared.isEmpty()) {
-                    bindings.add(fixtureBindings(declared));
-                }
-                if (!checkout.isEmpty()) {
-                    bindings.add(checkoutBindings(checkout));
-                }
-                command.add("-Dattune.fixtures=" + String.join(",", bindings));
+            if (!fixtures.isEmpty()) {
+                command.add(fixtures);
             }
             command.add("-cp");
             command.add(innerClasspath(jars));
@@ -179,7 +202,7 @@ public final class NativeLaunch {
     }
 
     /// The declared fixture manifest, resolved to `name=absolute path` bindings.
-    private static String fixtureBindings(String manifest) throws IOException {
+    private static List<String> fixtureBindings(String manifest) throws IOException {
         List<String> bindings = new ArrayList<>();
         for (String line : Files.readAllLines(Runfiles.resolve(manifest), StandardCharsets.UTF_8)) {
             if (!line.isBlank()) {
@@ -187,7 +210,7 @@ public final class NativeLaunch {
                 bindings.add(name + "=" + Runfiles.resolve(name));
             }
         }
-        return String.join(",", bindings);
+        return bindings;
     }
 
     /// The documents that live at the checkout root, outside this nested
@@ -195,7 +218,7 @@ public final class NativeLaunch {
     /// parent of the recorded Bazel workspace root; the names are the exact
     /// relative documents the caller declared, and this method decides nothing
     /// about their content.
-    private static String checkoutBindings(String names) throws IOException {
+    private static List<String> checkoutBindings(String names) throws IOException {
         Path workspace = Path.of(Files.readString(
                 Runfiles.resolve(require("attune.workspace_root")), StandardCharsets.UTF_8).trim());
         Path checkout = workspace.getParent();
@@ -203,7 +226,109 @@ public final class NativeLaunch {
         for (String name : splitList(names)) {
             bindings.add(name + "=" + checkout.resolve(name));
         }
-        return String.join(",", bindings);
+        return bindings;
+    }
+
+    /// Every declared `name=absolute path` binding this run prepared: the
+    /// declared fixture population and the live checkout documents. The produced
+    /// tree roots are added by `run` after this, because their names are derived
+    /// from the resolved trees rather than from a declared manifest.
+    private static List<String> declaredBindings() throws IOException {
+        List<String> bindings = new ArrayList<>();
+        String declared = System.getProperty("attune.fixtures", "");
+        String checkout = System.getProperty("attune.checkout_files", "");
+        if (!declared.isEmpty()) {
+            bindings.addAll(fixtureBindings(declared));
+        }
+        if (!checkout.isEmpty()) {
+            bindings.addAll(checkoutBindings(checkout));
+        }
+        return bindings;
+    }
+
+    /// The produced declared trees named on `attune.produced`, resolved from the
+    /// runfiles tree. This decides nothing about their content: it resolves the
+    /// declared location the caller named and nothing else.
+    private static List<Path> producedTrees() {
+        List<Path> trees = new ArrayList<>();
+        for (String location : splitList(System.getProperty("attune.produced", ""))) {
+            trees.add(Runfiles.resolve(location));
+        }
+        return trees;
+    }
+
+    /// Write the prepared `name<TAB>path` table a Flix law reads to resolve a
+    /// declared name onto its real prepared path. Formatting only; the law owns
+    /// what the table means.
+    private static void writeBindings(Path output, List<String> bindings) throws IOException {
+        List<String> lines = new ArrayList<>();
+        for (String binding : bindings) {
+            int separator = binding.indexOf('=');
+            if (separator > 0) {
+                lines.add(binding.substring(0, separator) + "\t" + binding.substring(separator + 1));
+            }
+        }
+        Files.write(output, lines, StandardCharsets.UTF_8);
+    }
+
+    /// The declared Flix sources inside a produced tree, resolved to absolute
+    /// paths and sorted. The consumer compiles them through the pinned Tester,
+    /// so the exported artifact is really consumed rather than only named.
+    private static List<String> flixSources(Path tree) throws IOException {
+        List<String> sources = new ArrayList<>();
+        try (java.util.stream.Stream<Path> stream = Files.walk(tree.toRealPath())) {
+            stream.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().endsWith(".flix"))
+                    .sorted()
+                    .forEach(path -> sources.add(path.toAbsolutePath().toString()));
+        }
+        return sources;
+    }
+
+    /// The producer action: run the pinned compiler's authentic native Tester
+    /// over the explicit declared sources and dependency jars, then materialize
+    /// the declared output tree. The tree holds one immutable regular-file copy
+    /// of each exported source under `sources/` and a mechanical `closure.tsv`
+    /// naming the exact source, jar and binding closure. This is compiler launch
+    /// and filesystem mechanics: it decides no policy and classifies nothing,
+    /// and a non-zero Tester verdict fails the action rather than being recorded.
+    private static int produce() throws Exception {
+        Path out = Path.of(require("attune.outputs"));
+        List<String> tester = splitList(System.getProperty("attune.tests", ""));
+        List<String> jars = splitList(System.getProperty("attune.jars", ""));
+        List<String> export = splitList(System.getProperty("attune.export", ""));
+        List<String> bindings = splitList(System.getProperty("attune.bindings", ""));
+        int status = NativeTester.run(absolutes(jars), absolutes(tester));
+        if (status != 0) {
+            System.err.println("the pinned native Tester failed over the declared sources: exit " + status);
+            return status;
+        }
+        Path sources = out.resolve("sources");
+        Files.createDirectories(sources);
+        List<String> closure = new ArrayList<>();
+        for (String source : export) {
+            Path input = Path.of(source);
+            String name = input.getFileName().toString();
+            Path artifact = sources.resolve(name);
+            Files.copy(input, artifact, StandardCopyOption.REPLACE_EXISTING);
+            closure.add("source\t" + source + "\t" + "sources/" + name + "\t" + Files.size(artifact));
+        }
+        for (String jar : jars) {
+            closure.add("jar\t" + Path.of(jar).getFileName().toString() + "\t" + Files.size(Path.of(jar)));
+        }
+        for (String binding : bindings) {
+            closure.add("binding\t" + Path.of(binding).getFileName().toString() + "\t" + Files.size(Path.of(binding)));
+        }
+        Files.write(out.resolve("closure.tsv"), closure, StandardCharsets.UTF_8);
+        return 0;
+    }
+
+    private static List<Path> absolutes(List<String> paths) {
+        List<Path> absolute = new ArrayList<>();
+        for (String path : paths) {
+            absolute.add(Path.of(path).toAbsolutePath());
+        }
+        return absolute;
     }
 
     /// The prepared dependency jars named by the declared jar manifest.

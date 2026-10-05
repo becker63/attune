@@ -322,6 +322,18 @@ The marker extraction and link resolution are Flix semantics in
 | Typed Parquet seam | `//test/seam:parquet_seam_test` | passes |
 | Typed prior/decision laws | `//test/seam:decision_seam_test` | passes; the prior/request/evidence/`settle` contract is production code in `Attune.Study`, driven over the recorded fake transport |
 | Bounded native theory | `//test/theory:theory_law_test` | passes; descriptor grammar, canonicalization, native lowering and shared-index laws |
+| Declared native producer/consumer | `//test/dag:declared_artifact_consumer_test` | passes; a producer action runs the pinned native Tester and emits a declared immutable source tree, and the consumer compiles and asserts that declared tree |
+
+The declared-artifact route is the smallest step toward the shared graph: a
+producer target runs the pinned compiler's authentic native Tester over explicit
+declared sources and jars and emits one declared immutable source tree (a
+regular-file copy of each exported source beside a mechanical `closure.tsv`
+naming the exact source/jar/binding closure), and a consumer target takes that
+tree as a declared input, compiles its exported source with the same engine and
+asserts the tree's exact file set, byte identity and closure. Nothing depends on
+`TEST_UNDECLARED_OUTPUTS`, no authored application main, registry, fat JAR,
+resolver or shell action is added, and the action closure is inspectable with
+`bazel aquery`.
 
 ## The models stay visible, and offline
 

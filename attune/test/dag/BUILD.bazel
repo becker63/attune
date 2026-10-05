@@ -1,0 +1,48 @@
+load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_producer")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The declared fixture world source and its binding. `Shop.flix` is the source
+# the producer exports; `world.tsv` is the declared data binding the producer
+# names in its closure, so the explicit source/jar/binding closure is exercised
+# rather than merely declared.
+filegroup(
+    name = "world",
+    srcs = [
+        "fixtures/world/Shop.flix",
+        "fixtures/world/world.tsv",
+    ],
+)
+
+# The producer: the pinned compiler's authentic native Tester runs over the
+# explicit declared Flix sources and the explicit declared dependency jar, then
+# the action materializes one declared immutable source tree. `ProducerLaw.flix`
+# is a tester source only; `fixtures/world/Shop.flix` is the exported source.
+# The output is a real declared tree artifact, not `TEST_UNDECLARED_OUTPUTS`.
+native_flix_producer(
+    name = "world_source_producer",
+    srcs = [
+        "ProducerLaw.flix",
+        "fixtures/world/Shop.flix",
+    ],
+    declared_files = ["fixtures/world/world.tsv"],
+    export = ["fixtures/world/Shop.flix"],
+    java_deps = ["@attune_maven//:org_slf4j_slf4j_nop"],
+)
+
+# The consumer: the producer's declared tree is a declared input. The launcher
+# walks it, records the measured listing and the declared bindings, and appends
+# the tree's own Flix sources to the pinned Tester, so the consumer compiles the
+# producer's exported source and asserts the tree's contract over its real bytes.
+native_flix_consumer_test(
+    name = "declared_artifact_consumer_test",
+    srcs = ["ArtifactLaw.flix"],
+    declared_files = ["fixtures/world/Shop.flix"],
+    produced = [":world_source_producer"],
+)
