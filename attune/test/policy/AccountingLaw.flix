@@ -78,14 +78,15 @@ def relocationDoesNotMakeAuthoredCodeInherited(): Unit \ Assert = {
 /// A blanket `test/** -> Fixture` rule must not hide reusable algorithms: the
 /// one bounded test portion the independent review named that a compact owner
 /// has not absorbed (P08 decision/evidence settlement) is cognitive under any
-/// placement, while the other proposals, the core laws and their fixed fixture
-/// data stay fixtures. The migrated P06 descriptor semantics now live in the
-/// `theory` component, so the bounded list shrank to its one remaining path.
+/// placement, while the ordinary test laws and their fixed fixture data stay
+/// fixtures. The migrated P06 descriptor semantics live in the `theory`
+/// component and the migrated P09 projection laws now live in `test/view`, so
+/// the bounded list is the single remaining P08 path.
 @Test
 def reusableTestPlacedSemanticsAreCognitiveNotHiddenFixtures(): Unit \ Assert = {
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/proposals/P08Decisions.flix"));
     Assert.assertEq(expected = "proposal-semantics", componentOf("test/proposals/P08Decisions.flix"));
-    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/proposals/P09Views.flix"));
+    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/view/SemanticViewLaw.flix"));
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/spine/CoreApplyLaw.flix"));
     Assert.assertEq(expected = "tests", componentOf("test/policy/AccountingLaw.flix"))
 }

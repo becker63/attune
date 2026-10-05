@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_java_test", "native_flix_test")
+load("//platform/build:native.bzl", "native_flix_java_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -8,14 +8,15 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-# The remaining test-only proposal namespace. P08 and P09 stay here until their
-# own compact features migrate them; P01-P04, P07 and P10 were consolidated into
-# the compact core (`//test/spine:core_*_test`) and the real Parquet seam
-# (`//test/seam:parquet_seam_test`), and P05 and P06 were consolidated into the
-# `Attune.Theory` owner (`//test/theory:theory_law_test`); their duplicate
-# proposal implementations were removed rather than left beside the compact
-# owners. The approved policy admits and counts this exact prefix
-# (`test/proposals/`).
+# The one remaining test-only proposal source. P01-P04, P07 and P10 were
+# consolidated into the compact core (`//test/spine:core_*_test`) and the real
+# Parquet seam (`//test/seam:parquet_seam_test`); P05 and P06 were consolidated
+# into the `Attune.Theory` owner (`//test/theory:theory_law_test`); and P09's
+# projection identity was already owned by the shared `Attune.View`, so its
+# duplicate proposal source was removed and its laws absorbed into
+# `//test/view:semantic_view_test` and `//test/view:proof_view_test`. P08 stays
+# until its own feature absorbs its decision/evidence settlement semantics. The
+# approved policy admits and counts this exact prefix (`test/proposals/`).
 
 # P08: prior and decision contracts. The approved LangChain4j seam is driven by
 # a recorded fake transport; a decoded in-budget decision is chosen, a classified
@@ -28,21 +29,4 @@ native_flix_java_test(
         "//test/seam:Seam.flix",
     ],
     java_deps = ["//test/seam:attune_inference"],
-)
-
-# P09: semantic views and diagram projection. A seed and selected relation
-# produce exact node and directed edge sets, including the induced lateral edge
-# between two seeds; a geometry-only change keeps every edge, while reversing an
-# arrow or relabelling Imports is a different identity, and the proof and route
-# readouts stay distinct. Executed fixture.
-native_flix_test(
-    name = "p09_views_test",
-    srcs = [
-        "P09Views.flix",
-        "//src:Attune.flix",
-        "//src:Attune/AsciiTree.flix",
-        "//src:Attune/Coverage.flix",
-        "//src:Attune/Envelope.flix",
-        "//src:Attune/View.flix",
-    ],
 )

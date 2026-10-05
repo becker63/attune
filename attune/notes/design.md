@@ -42,7 +42,7 @@ adaptation record, the proposal index and the counts all live in this one file.
 | Writer, route, grammar, proof and semantic-view laws | `test/view/*.flix` | fixtures |
 | Restricted marker, link and snippet correspondence seam | `src/Attune/Docs.flix` | shared Flix |
 | README/comment correspondence fixture | `test/docs/*.flix` | fixtures |
-| Test-only proposal namespace: remaining P08/P09 (P01-P04/P07/P10 migrated into `Attune`/`Study`/`Coverage` and removed, P05/P06 consolidated into `Attune.Theory` and removed) | `test/proposals/*.flix` | fixtures (reported apart) |
+| Test-only proposal namespace: remaining P08 (P01-P04/P07/P10 migrated into `Attune`/`Study`/`Coverage` and removed, P05/P06 consolidated into `Attune.Theory` and removed, P09 absorbed into `Attune.View`/`test/view` and removed) | `test/proposals/*.flix` | fixtures (reported apart) |
 | Workspace documentation | `AGENTS.md`, `notes/design.md`, `notes/mission.md` | metadata |
 | Checkout-root documentation | `README.md`, `LICENSE` | metadata (outside this workspace) |
 
@@ -115,7 +115,7 @@ The hermetic policy check consumes `//:policy_sources`, which aggregates one
 | `//src/native/parquet` | the typed Arrow Dataset Parquet codec |
 | `//platform/support/grit` | the inherited pinned native closure, ABI shim, header and grammar patches |
 | `//test`, `//test/spine`, `//test/theory`, `//test/policy`, `//test/seam`, `//test/grit`, `//test/history`, `//test/view`, `//test/docs` | the fixtures and their laws, including the bounded Theory laws, the corrected-intent historical regression with its declared imported inputs, and the documentation correspondence fixture |
-| `//test/proposals` | the two remaining test-only proposal sources (P08/P09); P08 carries reusable semantics and is reported in the `proposal-semantics` cognitive component, P09 stays with the ordinary test code |
+| `//test/proposals` | the one remaining test-only proposal source (P08); it carries reusable semantics and is reported in the `proposal-semantics` cognitive component (P09's projection laws were absorbed into `test/view` and its duplicate source removed) |
 | `//platform/tools`, `//platform/tools/boundary` | the minimal Java boundary |
 
 The carried Zed assets under `platform/zed/` are declared once in
@@ -327,12 +327,12 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the shared Study policies and corrected-regression leaf, built on
-checkpoint `8376473` (the world-native Theory and shared-index leaf, which itself
-builds on the test-placed-semantics accounting correction `b21b97b`, on top of
-`a97b234` and `eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a`; the exact commit of
-this leaf is recorded in the mission handoff, and the earlier `b21b97b`
-3,723/1,278/5,001/2,746, `a97b234` 3,081/1,278/4,359/2,645 and corrected
+Source identity: the compact ASCII-projection leaf, built on checkpoint `6c8e6d3`
+(the shared Study policies and corrected-regression leaf, which itself builds on
+`8376473`, `b21b97b`, `a97b234` and
+`eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a`; the exact commit of this leaf is
+recorded in the mission handoff, and the earlier `8376473` 4,216/1,278/5,494/3,335,
+`b21b97b` 3,723/1,278/5,001/2,746, `a97b234` 3,081/1,278/4,359/2,645 and corrected
 3,265/1,278/4,543/2,477 figures remain history, not erased).
 `//test/policy:declared_source_policy_test` renders the
 class report and `//test/policy:accounting_law_test` prints the per-component
@@ -356,10 +356,10 @@ excluded).
 | boundary | `platform/tools/boundary/*.java` | Java | 481 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 210 | B | build substrate | Native Flix test rules, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` except the one unmigrated semantic portion above | Flix/Java/Ruby/Starlark | 3,335 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the corrected-intent historical regression over its declared imported inputs and the one remaining semantic proposal P08, run as the pinned compiler's `@Test`. |
+| tests | `test/**` except the one unmigrated semantic portion above | Flix/Java/Ruby/Starlark | 3,346 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws in `test/view`, the corrected-intent historical regression over its declared imported inputs and the one remaining semantic proposal P08, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,347 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,336 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
 4,216; B mechanical 1,278; A+B authored 5,494; C test 3,335; C support 21,884
@@ -385,10 +385,11 @@ safe direction. The classification method is a one-path explicit list in
 no lexer, registry or per-function total is claimed. The P06 descriptor
 safety/alpha-normalization portion that list previously held is now production
 code in `Attune.Theory`, so the list shrank to the one path `Study` has not
-absorbed yet, and it empties when that happens. The other remaining proposal
-(P09) stays in `tests`: its projection identity is already owned by the shared
-`Attune.View`, so only its thin test-local adapters remain. That boundary is
-explicit and revisable, not hidden.
+absorbed yet, and it empties when that happens. The former P09 proposal is now
+gone too: its projection identity was already owned by the shared `Attune.View`,
+so its thin test-local `edgeKey`/`reversed`/`relabelled` adapters were removed and
+its laws absorbed into `test/view`. That boundary is explicit and revisable, not
+hidden.
 
 The `inherited`/`inherited-locks` split is the exact support provenance: the
 maintained upstream `lib.rs` plus the five patch files and header are 655 code
@@ -651,8 +652,10 @@ seven proposal sources plus the `P02DomainWitnessNegative.flix` negative rather
 than keep a second evaluator beside the new core. The world-native Theory leaf
 then consolidated P05 and P06 into `Attune.Theory` (and the shared `Attune.Coverage`
 vocabulary), deleted those two proposal sources and their targets, and re-pointed
-their laws into `//test/theory:theory_law_test`. P08 and P09 remain
-test-only here and are migrated by their own later work. Status means compiled and
+their laws into `//test/theory:theory_law_test`. P09's projection identity was
+already owned by the shared `Attune.View`, so the ASCII-projection leaf removed
+its duplicate proposal source and moved its laws into `test/view`; P08 remains
+test-only here and is migrated by its own later work. Status means compiled and
 executed as a native `@Test` fixture under the pinned compiler. The review column
 records one independent non-author verdict per proposal from round 1 of the
 bootstrap scrutiny (2026-10-05), which assessed each proposal separately even
@@ -671,10 +674,10 @@ proposal.
 | P06 | `test/proposals/P06Descriptors.flix` | `//test/proposals:p06_descriptors_test` | **migrated** into `test/theory:theory_law_test` (`Attune.Theory`); source removed | `canonicalizationNormalizesOnlyRenamingAndBodyOrder`, `canonicalizationIsBoundedByTwentyFourRenamings`, `unsafeDisconnectedAndOutOfBoundDescriptorsReject`, `everyAdmittedShapeEvaluatesNatively` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p05-p06-native-composition-descriptors.json`) | the declared bounds are now published (1–3 positive atoms, ≤4 roles, ≤2 outputs, ≤1 inequality, 24 renamings, 256 candidates, 32-descriptor shards and ≤8 shards); whether they are the right production census values stays undecided |
 | P07 | `test/proposals/P07Guards.flix` | `//test/proposals:p07_guards_test` | **migrated** into `test/spine:core_evidence_test` (`Attune.Study.witnesses`/`meets`); source removed | `twoProofPathsToOneEntityAreOneSupporter`, `anotherScopesEntityCannotMeetTheGuard`, `proposedEvidenceIsNotObserved` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p07-p08-guards-budget-fallback.json`) | which calibrated values deserve retention, and which architectural names are worth keeping, stay undecided |
 | P08 | `test/proposals/P08Decisions.flix` | `//test/proposals:p08_decisions_test` | executed fixture over the recorded fake transport | `failureIsNotAnEmptySuccess`, `overBudgetTakesTheDeclaredFallback`, `unknownDecisionPreservesTheFallback` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p07-p08-guards-budget-fallback.json`) | any model choice, live provider effect, ranking quality and application policy selection stay undecided |
-| P09 | `test/proposals/P09Views.flix` | `//test/proposals:p09_views_test` | executed fixture | `geometryCannotReverseAnEdge`, `importsCannotBeRelabelledAsAWrite`, `proofAndRouteMeaningsStayDistinct` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p09-p10-views-artifact-effects.json`) | a full view catalog, large-graph layout and general C4 recovery stay undecided |
+| P09 | `test/proposals/P09Views.flix` | `//test/proposals:p09_views_test` | **migrated** into `test/view:semantic_view_test`/`proof_view_test` (`Attune.View`); source and target removed | `geometryCannotReverseAnEdge`, `importsCannotBeRelabelledAsAWrite`, `proofAndRouteMeaningsStayDistinct` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p09-p10-views-artifact-effects.json`) | a full view catalog, large-graph layout and general C4 recovery stay undecided |
 | P10 | `test/proposals/P10Artifacts.flix` | `//test/proposals:p10_artifacts_test` | **migrated** into `test/spine:core_evidence_test` (`Attune.Study` schema/artifact/prediction/gold values); source removed | `aWrongSchemaDoesNotRoundTrip`, `aChangedIdentityDoesNotReuseTheStoredArtifact`, `goldShapedInputHasNoPathIntoPrediction` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p09-p10-views-artifact-effects.json`) | final materialization granularity, shared build stages, parallel runtime and production storage stay undecided |
 
-Every remaining proposal is compiled and executed but none is admitted to
+The one remaining proposal (P08) is compiled and executed but is not admitted to
 production: `Policy` reports a `proposal-dependency` finding if `src/` imports
 one, and `//test/policy:policy_cases_test` exercises that rejection. The migrated
 laws are now shared production code rather than test-only proposals.
@@ -718,14 +721,16 @@ README also reports the model route honestly: the only model-shaped code is the
 recorded fake transport, so a fake or offline Qwen/Jev path is labelled as such
 and no live result is claimed. This file and `AGENTS.md` are updated with it.
 
-Implemented as test-only proposals: P08 and P09 above, each compiled
-and executed, none admitted to production, each carrying one independent
-non-author review verdict in the index above. P01-P04, P07 and P10 are no longer
-test-only: their laws were migrated into the shared `Attune`/`Study` owners and
-their proposal sources were removed, so the shared core is the only evaluator.
-P05 and P06 are no longer test-only either: their laws were consolidated into the
-bounded `Attune.Theory` owner (with the shared `Attune.Coverage` vocabulary) and
-their sources and targets were removed.
+Implemented as a test-only proposal: P08 above, compiled and executed, not
+admitted to production, carrying its one independent non-author review verdict in
+the index above. P01-P04, P07 and P10 are no longer test-only: their laws were
+migrated into the shared `Attune`/`Study` owners and their proposal sources were
+removed, so the shared core is the only evaluator. P05 and P06 are no longer
+test-only either: their laws were consolidated into the bounded `Attune.Theory`
+owner (with the shared `Attune.Coverage` vocabulary) and their sources and targets
+were removed. P09 is no longer test-only either: its projection identity was
+already the shared `Attune.View`'s, so the ASCII-projection leaf removed the thin
+test-local adapters and moved the laws into `test/view`.
 
 Not implemented here, and deliberately out of scope: the production Datalog or
 typed-view computation over real admitted facts beyond the checked fixtures, and
@@ -736,7 +741,8 @@ choice made here. Deferred, with the reason recorded: durable identity storage
 (P01), a distributed reuse protocol (P03), production census thresholds (P04),
 whether the published descriptor bounds are the right production census values
 (P06), guard calibration (P07), model and policy
-selection (P08), a full view catalog (P09) and production materialization
+selection (P08), a full view catalog (P09's open choice, whose exercised
+projection laws now live in `test/view`) and production materialization
 granularity (P10).
 
 Handoff status at the core-and-artifact leaf (superseded by the early policy
@@ -995,7 +1001,7 @@ path.
 | `attune/src/Attune/Policy.flix` | `componentOf` maps `src/Attune/Coverage.flix` to `core` and `src/Attune/Theory.flix` to `theory`; `isUnmigratedSemanticTest` shrinks to the one remaining path `test/proposals/P08Decisions.flix`; no constant raised |
 | `attune/test/theory/TheoryLaw.flix` | new: 16 native laws binding VAL-THEORY-001..005 over authored worlds, the full 23-shape family, safety rejection, canonicalization, conjunction/union/inequality/projection, candidate/world/scope isolation, duplicate-id refusal, shared-world anchor joins and population/shard bounds |
 | `attune/test/theory/BUILD.bazel` | new `theory_law_test` over `//src:theory` |
-| `attune/test/spine/CoreEvidenceLaw.flix`, `attune/test/grit/GritSeamTest.flix`, `attune/test/view/ProofViewLaw.flix`, `attune/test/proposals/P09Views.flix`, `attune/test/docs/ReadmeCorrespondence.flix` | re-pointed from `Attune.Study` to `Attune.Coverage`; `GritSeamTest` gains `theWorldFactsAndEarnedCoverageBridgeIsExact` |
+| `attune/test/spine/CoreEvidenceLaw.flix`, `attune/test/grit/GritSeamTest.flix`, `attune/test/view/ProofViewLaw.flix`, `attune/test/proposals/P09Views.flix` (since removed in the ASCII-projection leaf), `attune/test/docs/ReadmeCorrespondence.flix` | re-pointed from `Attune.Study` to `Attune.Coverage`; `GritSeamTest` gains `theWorldFactsAndEarnedCoverageBridgeIsExact` |
 | `attune/test/policy/AccountingLaw.flix` | removed the P06 assertion, added `theoryAndCoverageAreTheirOwnCognitiveComponents`; the partition law is unchanged |
 | `attune/src/BUILD.bazel`, `attune/test/*/BUILD.bazel`, `attune/BUILD.bazel` | `coverage`/`theory` filegroups; `//test/theory:policy_files` added to `//:policy_sources`; Study→Coverage srcs re-pointed |
 | `attune/test/proposals/{P05Datalog,P06Descriptors}.flix` and `attune/test/proposals/BUILD.bazel` | deleted (Git `rm`); laws consolidated into `//test/theory:theory_law_test` |
@@ -1112,3 +1118,39 @@ the band's edge and above the around-2,500 line, so the justified-excess review
 above is the required STOP-AND-JUSTIFY conclusion, not a fabricated pass.
 Declared and live checks `accept`; `bazel test //...` 25/25 green; typecheck exit
 0; scoped buildifier exit 4 with the documented pre-existing families only.
+
+## Compact ASCII writer and absorbed P09 projection laws leaf record
+
+Feature `compact-executable-ascii-and-checked-examples` (fulfils
+VAL-ASCII-001..004). Recoverable checkpoint: Git `6c8e6d3` on `main`, from which
+the removed `test/proposals/P09Views.flix` is recoverable by path.
+
+The bounded writer and the thin route/grammar/proof/semantic-view adapters were
+already the shared `Attune.AsciiTree`/`Attune.View`. This leaf completes the
+projection surface, absorbs P09 rather than leaving a duplicate proposal beside
+its owner, and keeps the independent semantic sets separate from the renderer byte
+goldens. No new writer or projection semantics were added.
+
+| Path | Change |
+| --- | --- |
+| `attune/test/proposals/P09Views.flix`, `attune/test/proposals/BUILD.bazel` | deleted (Git `rm`); the `p09_views_test` target removed, leaving P08 as the one remaining test-only proposal |
+| `attune/test/view/SemanticViewLaw.flix` | four new laws: input-order geometry changes no edge (`aGeometryOnlyChangeKeepsEveryEdge`); an edge keeps its direction and relation and `imports` is not a write (`anEdgeKeepsItsDirectionAndRelation`); the rendered document presents exactly the semantic set (`theDocumentPresentsExactlyTheSemanticSet`); and a non-ASCII identity rejects only the drawing, never the typed result (`aNonAsciiLabelRejectsPresentationWithoutLosingTheResult`) |
+| `attune/test/view/ProofViewLaw.flix` | one new law: a proof readout (`:-`, `graph=proof`) stays a different document from a route readout (`->`, `graph=route`) (`proofAndRouteReadoutsStayDistinct`) |
+| `attune/test/docs/BUILD.bazel` | the declared document set drops the removed proposal source and adds `//test/view:ProofViewLaw.flix` |
+| `attune/test/policy/AccountingLaw.flix` | the P09 fixture assertion re-points to the surviving `test/view/SemanticViewLaw.flix`; no constant changed |
+| `README.md` | the two P09 links now point at the surviving semantic-view and proof laws; the marked payloads did not change |
+
+The P09 helpers `edgeKey`, `reversed` and `relabelled` were thin test-local
+adapters over the already-owned `Attune.View` `ViewEdge`/`viewEdgeTexts` surface,
+so they were removed rather than relocated, and P09's laws were expressed over the
+shared API. `Attune` (core), `Attune.Repository` and `Attune.Theory` still do not
+import `Attune.View` for scientific meaning; only `Attune.View` imports the one
+`Attune.AsciiTree` writer.
+
+Measured on this leaf's declared identity: A cognitive 4,216; B mechanical 1,278;
+A+B authored 5,494; C test 3,346; C support 21,884; presentation A 452 / B 87
+(subsets). The `test` component moves from 3,335 to 3,346 (the absorbed view laws
+replace the removed proposal) and `metadata` from 2,347 to 2,336 (the two BUILD
+edits); no cognitive or mechanical total changed. Declared and live checks
+`accept`; `bazel test //...` green; typecheck exit 0; scoped buildifier exit 4 with
+the documented pre-existing families only.

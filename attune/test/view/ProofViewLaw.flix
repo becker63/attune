@@ -1,5 +1,7 @@
 use Attune.AsciiTree
 use Attune.Coverage.{Outcome, outcomeName}
+use Attune.Envelope
+use Attune.Envelope.{Atom, World}
 use Attune.View
 
 /// Native `@Test` laws for the proof adapter, driven by a native Datalog fixture.
@@ -8,7 +10,8 @@ use Attune.View
 /// that the authored world has exactly the two convergent applications, and the
 /// rendered proof preserves one application with ALL its premises while marking
 /// the second as a separate alternative. A false premise, an unknown state and a
-/// failure stay distinct from a witness.
+/// failure stay distinct from a witness, and a proof readout stays a different
+/// document from a route readout under the one writer.
 
 def limits(): AsciiTree.Limits = AsciiTree.limits(16, 64, 100, 100, 4096)
 
@@ -120,4 +123,34 @@ def unknownAndFailureStayDistinct(): Unit \ Assert = {
         View.renderProof(limits(), failed));
     Assert.assertEq(expected = false, outcomeName(unknown#outcome) == outcomeName(failed#outcome));
     Assert.assertEq(expected = false, outcomeName(unknown#outcome) == outcomeName(Outcome.Witness))
+}
+
+/// A proof readout and a route readout are different documents under the one
+/// writer: a proof carries `:-` premises with their bindings, while a route
+/// carries `->` steps and a recorded answer status. Geometry never merges the
+/// two meanings, and a proved claim is never presented as a route.
+@Test
+def proofAndRouteReadoutsStayDistinct(): Unit \ Assert = {
+    let main = app("ViewImport(shop, x, y)", "shop", List#{
+        premise("pair", "Imports(shop, receipt.rb, pricing.rb)", true, List#{("x", "receipt.rb")})
+    });
+    let proof = { goal = "ViewImport", scope = "shop", outcome = Outcome.Witness, detail = "",
+        application = main, alternatives = Nil };
+    let proofText = match View.renderProof(limits(), proof) {
+        case Ok(text) => text
+        case Err(_)   => ""
+    };
+    let world = World.World("shop-v1");
+    let recorded = { id = 1, snapshot = world, memo = "demo",
+        input = Envelope.files(world, List#{"receipt.rb"}), atom = Atom.Imports,
+        output = Envelope.files(world, List#{"pricing.rb"}), work = View.Work.Computed };
+    let route = { name = "R", seed = Envelope.files(world, List#{"receipt.rb"}), steps = recorded :: Nil };
+    let routeText = match View.renderRoutes(limits(), world, "demo", route :: Nil) {
+        case Ok(text) => text
+        case Err(_)   => ""
+    };
+    Assert.assertEq(expected = true, String.contains(substr = "graph=proof", proofText));
+    Assert.assertEq(expected = true, String.contains(substr = ":-", proofText));
+    Assert.assertEq(expected = true, String.contains(substr = "graph=route", routeText));
+    Assert.assertEq(expected = true, String.contains(substr = " -> ", routeText))
 }

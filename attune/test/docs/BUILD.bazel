@@ -27,7 +27,7 @@ filegroup(
         "//test/grit:GritSeamTest.flix",
         "//test/grit:fixtures",
         "//test/policy:PolicyCases.flix",
-        "//test/proposals:P09Views.flix",
+        "//test/view:ProofViewLaw.flix",
         "//test/view:RouteViewLaw.flix",
         "//test/view:SemanticViewLaw.flix",
     ],

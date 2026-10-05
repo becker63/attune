@@ -149,8 +149,8 @@ edges
 Geometry cannot change a meaning: an induced view falls back to an exact labeled
 adjacency listing for cycles, self-loops and parallel relation kinds rather than
 dropping, reversing or relabelling an edge. The node and edge sets are asserted
-independently in [SemanticViewLaw.flix](attune/test/view/SemanticViewLaw.flix) and
-[P09Views.flix](attune/test/proposals/P09Views.flix).
+independently, with the direction, relation and non-ASCII-rejection laws, in
+[SemanticViewLaw.flix](attune/test/view/SemanticViewLaw.flix).
 
 ## A Datalog claim and its counterexample
 
@@ -194,8 +194,9 @@ Pair(s, a, b, center) :-
 
 A failed match of a legal query is not an illegal route. Match, complete
 no-match, unknown and failure stay four distinct outcomes; the route laws live in
-[RouteViewLaw.flix](attune/test/view/RouteViewLaw.flix) and the semantic-view proposal
-in [P09Views.flix](attune/test/proposals/P09Views.flix).
+[RouteViewLaw.flix](attune/test/view/RouteViewLaw.flix) and the proof laws in
+[ProofViewLaw.flix](attune/test/view/ProofViewLaw.flix), and a proof readout stays
+a different document from a route readout.
 
 ## The commented grammar cannot drift
 
