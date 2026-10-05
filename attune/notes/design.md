@@ -274,51 +274,41 @@ one Bazel owner at a time is the rule and `bazel clean` is never run.
 
 ## Current counts
 
-The policy reports code, comment, documentation and blank lines separately for
-every role and language, and prints the whole table on every run
-(`attune-policy-count ...`). Measured by the live audit while this table was
-being written; documentation edits move only the metadata rows, so re-run the
-audit rather than trust a copied number:
+The policy classifies every readable file once (role, language, honest
+code/comment/doc/blank counts and comment-stripped code text) and keeps that
+per-file record reproducible through `Attune.Policy.classified`; the report
+renders only the fixed raw totals and the budget summary, not a generic
+role-by-language table:
 
-| Role | Language | Files | Code | Comment | Doc | Blank |
-| --- | --- | --- | --- | --- | --- | --- |
-| shared | flix | 11 | 2186 | 38 | 686 | 406 |
-| shared | java | 9 | 981 | 19 | 145 | 95 |
-| shared | starlark | 4 | 894 | 34 | 132 | 70 |
-| shared | grit | 24 | 372 | 1514 | 0 | 96 |
-| shared | markdown | 1 | 0 | 0 | 72 | 12 |
-| declarative | starlark | 21 | 721 | 225 | 0 | 103 |
-| fixture | flix | 27 | 2096 | 16 | 605 | 330 |
-| fixture | java | 2 | 235 | 0 | 42 | 28 |
-| fixture | ruby | 11 | 87 | 28 | 0 | 17 |
-| support | markdown | 1 | 0 | 0 | 13 | 9 |
-| support | nix | 1 | 41 | 9 | 0 | 8 |
-| support | other | 150 | 57857 | 607 | 0 | 1390 |
-| metadata | markdown | 3 | 0 | 0 | 700 | 102 |
-| metadata | nix | 1 | 118 | 37 | 0 | 16 |
-| metadata | other | 7 | 1485 | 35 | 0 | 7 |
+```
+attune-policy-total files=… code=… comment=… doc=… blank=…
+attune-policy-budget shared_code=… shared_target=… proposal_code=… proposal_line_target=… test_code=… test_target=…
+attune-policy-verdict: accept
+```
 
-Shared implementation code totals 4,433 as measured against the user-approved
-4,300-line target, so that row is honestly red (`attune-policy-verdict: reject`,
-Bazel exit 3); test code 2,418 is within 2,600 and test-only proposal code 381 is
-within 1,500. The 4,291/2,579/841 figures recorded before this consolidation are
-preserved as history. The compact core-and-artifact migration moved the
-P01-P04/P07/P10 laws into `Attune`/`Study` and deleted those seven proposal
-sources: it added 142 shared Flix lines (a structured world identity, the one
-exact six-atom application with its instrumented local memo, and Study's typed
-evidence/observation/artifact values) while removing 161 fixture lines. The
-excess is therefore the compact cutover's own addition to a corpus that already
-sat nine lines under 4,300, not a relabelled or golfed artifact; the superseded
-bootstrap policy/report apparatus that brings the corpus toward the final
-1,800/2,200 limits is owned by the compact ownership-and-accounting work, not
-this leaf, and the 4,300 constant is unchanged. Only the shared, test and
-proposal rows feed the budget. The
-budget line prints all three on every run
-(`attune-policy-budget shared_code=… shared_target=… proposal_code=… test_code=… test_target=…`).
-If a count exceeds its target the gate stops and reports the excess; a target is
-never raised automatically, and it is only ever moved by editing the declared
-constant in `src/Attune/Policy.flix`, never by golfing, deleting or relabelling
-an artifact:
+Measured by the declared-source check and confirmed by the live audit (both
+`accept`); documentation edits move only the metadata/documentation counts, so
+re-run the check rather than trust a copied number. Shared implementation code
+totals 4,292 against the user-approved 4,300-line target; test code 2,418 is
+within 2,600 and test-only proposal code 381 is within 1,500. The 4,433 shared
+figure from the core-and-artifact commit (`d901935`) is preserved as the
+historical failing measurement that motivated the bounded subtraction, and the
+4,291/2,579/841 figures recorded before that consolidation are preserved as
+earlier history. The compact core-and-artifact migration moved the P01-P04/P07/P10
+laws into `Attune`/`Study` and deleted those seven proposal sources: it added 142
+shared Flix lines (a structured world identity, the one exact six-atom application
+with its instrumented local memo, and Study's typed evidence/observation/artifact
+values) while removing 161 fixture lines, leaving the corpus 133 shared lines over
+4,300. The early subtraction removes the generic role-by-language report
+scaffolding and the duplicated audit traversals from `src/Attune/Policy.flix`
+(count each readable file once, compute the audit BUILD-reference/code text once)
+for a net 141 shared lines, so the historical gate is green again; this is not a
+claim of the final 1,800/2,200 limits, which remain owned by the compact
+ownership-and-accounting work. Only the shared, test and proposal totals feed the
+budget. If a count exceeds its target the gate stops and reports the excess; a
+target is never raised automatically, and it is only ever moved by editing the
+declared constant in `src/Attune/Policy.flix`, never by golfing, deleting or
+relabelling an artifact:
 
 - the pre-implementation aim of 2,000 was raised to 3,200 when the spine alone
   measured 1,575 noncomment lines and carrying the retained Grit closure, the
@@ -522,18 +512,19 @@ descriptor search bounds (P06), guard calibration (P07), model and policy
 selection (P08), a full view catalog (P09) and production materialization
 granularity (P10).
 
-Handoff status: the corrected lexer and the ordinary-string escape fix with its
-named native regression are applied, so the reported budget rows are the actual
-corrected counts rather than a disclosed undercount. This compact leaf is
+Handoff status at the core-and-artifact leaf (superseded by the early policy
+subtraction below): the corrected lexer and the ordinary-string escape fix with
+its named native regression are applied, so the reported budget rows are the
+actual corrected counts rather than a disclosed undercount. This compact leaf is
 functionally green: all 22 non-budget tests pass, including the four new
 `test/spine` core laws and the real Parquet evidence round-trip, and the typecheck
-build passes. The shared row is honestly red at 4,433 of the user-approved 4,300
-(`attune-policy-verdict: reject`, Bazel exit 3) because this leaf added the
-required core semantics to a corpus that already sat nine lines under the gate;
-test 2,418 of 2,600 and proposals 381 of 1,500 stay within their targets. The
-reduction toward the final 1,800/2,200 limits is owned by the compact
-ownership-and-accounting work, which removes the superseded bootstrap
-policy/report apparatus. The pins and licenses above are unchanged by this work;
+build passes. At that checkpoint the shared row was honestly red at 4,433 of the
+user-approved 4,300 (`attune-policy-verdict: reject`, Bazel exit 3) because this
+leaf added the required core semantics to a corpus that already sat nine lines
+under the gate; test 2,418 of 2,600 and proposals 381 of 1,500 stayed within
+their targets. The further reduction toward the final 1,800/2,200 limits remains
+owned by the compact ownership-and-accounting work, which removes the rest of the
+superseded bootstrap policy/report apparatus. The pins and licenses above are unchanged by this work;
 the only model-shaped code is the recorded fake transport and no provider is
 contacted; the setup is the one-Bazel-owner, out-of-workspace output base with the
 checkout-root `.env` read only by the narrow BuildBuddy helper. Each remaining
@@ -623,3 +614,34 @@ migration moved test-only proposal laws into shared production owners, which is
 why the shared row grew while the fixture and proposal rows shrank. The
 superseded bootstrap apparatus that will bring the shared row under the final
 limits is removed by the compact ownership-and-accounting work.
+
+## Early policy subtraction record
+
+The bounded early subtraction brought the shared count back under the historical
+4,300 gate before the rest of the compact cutover, because the core-and-artifact
+leaf left it 133 lines over. It changes only `src/Attune/Policy.flix` (plus the
+two policy test files whose `evaluate`/`renderReport` call shape follows):
+
+- each readable file is now classified once into a `Classified` record (entry,
+  role, language, honest counts, comment-stripped code text, readable flag), and
+  every finding, total and audit check consumes that record instead of re-reading
+  or re-lexing the file;
+- the generic role-by-language report scaffolding (`roles`/`languages`/`rowOf`/
+  `rows`/`roleCode`/`proposalCode`/`rowLine`/`roleName`/`langName`) is removed;
+  the report renders the fixed raw-totals line and the budget line only, while the
+  per-file record stays reproducible through `Attune.Policy.classified`;
+- the duplicated audit traversals (`orphanFindings`/`orphanOne`/`ignoredFindings`/
+  `ignoredOne`/`symlinkFindings`/`symlinkOne`) collapse to one pass that shares a
+  single BUILD-text blob and the classified code text;
+- the counting pass yields both the counts and the comment-stripped code text, so
+  `countLines`/`codeText` share one traversal; the duplicated lexer branches in
+  `scanLine` are unified, and a few single-use wrappers (`isSpaceText`,
+  `measuredOf`, `quotedLiterals`, `basename`'s tail helper) are inlined.
+
+No limit was raised, no lexer was added, no ASCII or frontend was touched, and no
+semantics were dropped: the escaped-quote and multiline-literal counting laws,
+the boundary/secret/reference/size/symlink/ownership checks and every named policy
+case still pass. Measured result: shared 4,433 to 4,292 (141 lines removed),
+proposal 381 and test 2,418 unchanged; the declared and live audits both return
+`accept`. This clears the historical gate only, not the final 1,800/2,200 limits.
+Recovery checkpoint: commit `d901935` on `main`.

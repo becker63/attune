@@ -10,8 +10,8 @@ use Attune.Policy.verdictName
 @Test
 def declaredSourcePopulationIsAccepted(): Unit \ { Assert, IO } = {
     let (root, _, loaded) = Attune.Policy.readWorldIO("attune-manifest.tsv");
-    let (findings, counts) = Attune.Policy.evaluate("declared", root, loaded);
-    println(Attune.Policy.renderReport(findings, counts, loaded));
+    let (findings, classified) = Attune.Policy.evaluate("declared", root, loaded);
+    println(Attune.Policy.renderReport(findings, classified));
     Assert.assertEq(expected = "accept", verdictName(findings))
 }
 
