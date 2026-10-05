@@ -42,6 +42,34 @@ native_flix_test(
     ],
 )
 
+# P03: transition identity and execution evidence. Two authored routes share an
+# exact final key, EMPTY+REUSE is representable, and equal-output/unequal-input,
+# missing-producer and cross-world reuse all reject at runtime. Executed fixture.
+native_flix_test(
+    name = "p03_evidence_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/View.flix",
+        "P03Evidence.flix",
+    ],
+)
+
+# P04: scoped observations and completeness. Match, complete no-match, unknown
+# and failure stay four distinct outcomes; a foreign similarly named file cannot
+# donate a witness and missing evidence stays unknown. Executed fixture.
+native_flix_test(
+    name = "p04_completeness_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/View.flix",
+        "P04Completeness.flix",
+    ],
+)
+
 # The one static domain witness P02 cites: a `Frontier` constructor fixes its
 # member domain, so a `SymbolId` cannot inhabit `Frontier.Files`. The pinned
 # compiler rejects it during `check` with no `main` required. Sibling to the
