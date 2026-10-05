@@ -123,9 +123,14 @@ origins. The absolute non-presentation 1,800 / combined 2,200 rules and the shar
 no total-size gate and emits no `budget-exceeded` finding. Crossing a soft
 threshold (cognitive review at 2,000 and around 2,500 STOP-AND-JUSTIFY before
 further semantic concepts; mechanical preferred <=2,500; authored A+B review
-around 5,000) produces a review note, never a rejection. Change policy only by
-editing `src/Attune/Policy.flix`, never by golfing code, relabelling a component
-or dropping tests. The measured per-component table, exact support provenance and
-the bounded architecture review are in `notes/design.md`; the counter's applied
-corrections and its budget-neutral residual limitations stay recorded there, and
-no exact parser totals may be claimed while any remains.
+around 5,000) produces a review note, never a rejection. A semantic algorithm
+counts as cognitive under any placement, so test placement never exempts it: the
+two bounded test-placed portions the independent review named (P06 descriptor
+safety/alpha-normalization and P08 decision/evidence settlement) are classified
+as the `proposal-semantics` cognitive component rather than hidden as fixtures,
+while genuine `@Test` assertions and fixed data stay fixtures. Change policy only
+by editing `src/Attune/Policy.flix`, never by golfing code, relabelling a
+component or dropping tests. The measured per-component table, exact support
+provenance and the bounded architecture review are in `notes/design.md`; the
+counter's applied corrections and its budget-neutral residual limitations stay
+recorded there, and no exact parser totals may be claimed while any remains.

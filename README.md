@@ -262,13 +262,18 @@ proposals in `test/proposals`, never as a live call.
 The owner-approved cognitive-ownership accounting replaced the absolute size
 gates: the non-presentation 1,800 / combined 2,200 rules and the shared 4,300
 compatibility gate are retired, not raised. `//test/policy:declared_source_policy_test`
-now reports A cognitive 3,081, B mechanical 1,278, A+B authored 4,359, C test
-2,645 and C support 21,884 (raw 31,172 code lines over 121 readable files); the
+now reports A cognitive 3,265, B mechanical 1,278, A+B authored 4,543, C test
+2,477 and C support 21,884 (raw 31,188 code lines over 121 readable files); the
 per-component table, the exact support provenance, the presentation subsets
 (A/presentation 452, B/presentation 87) and the bounded STOP-AND-JUSTIFY
-architecture review are in [the design note](attune/notes/design.md). A soft
-threshold crossing yields a review note, never a rejection, so a total above the
-preferred range still accepts. Setup is the declared developer shell with one
+architecture review are in [the design note](attune/notes/design.md). An
+independent review found that a blanket `test/** -> fixture` rule hid two
+reusable test-placed algorithms, so the bounded `proposal-semantics` component
+(P06 descriptor safety and alpha-normalization, P08 prior/decision/evidence
+settlement) is counted as cognitive under any placement while genuine `@Test`
+assertions and fixed data stay fixtures; the mixed files are disclosed rather
+than split per function. A soft threshold crossing yields a review note, never a
+rejection, so a total above the preferred range still accepts. Setup is the declared developer shell with one
 Bazel owner, an output base outside the workspace, and no credential or provider
 read; the only model-shaped code is the recorded fake transport above.
 

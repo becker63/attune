@@ -69,10 +69,28 @@ def ownershipSplitsByComponentNotLanguage(): Unit \ Assert = {
 /// mechanical writer stays authored.
 @Test
 def relocationDoesNotMakeAuthoredCodeInherited(): Unit \ Assert = {
-    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/proposals/P08Decisions.flix"));
+    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/policy/AccountingLaw.flix"));
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/queries/attune.grit"));
     Assert.assertEq(expected = Ownership.Support, ownershipOf("platform/support/grit/lib.rs"));
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("src/Attune/AsciiTree.flix"))
+}
+
+/// A blanket `test/** -> Fixture` rule must not hide reusable algorithms: the
+/// two bounded test portions the independent review named (P06 descriptor
+/// safety/alpha-normalization and P08 decision/evidence settlement) are
+/// cognitive under any placement, while the other proposals, the core laws and
+/// their fixed fixture data stay fixtures. This is the explicit bounded
+/// classification, not a general registry.
+@Test
+def reusableTestPlacedSemanticsAreCognitiveNotHiddenFixtures(): Unit \ Assert = {
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/proposals/P06Descriptors.flix"));
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/proposals/P08Decisions.flix"));
+    Assert.assertEq(expected = "proposal-semantics", componentOf("test/proposals/P06Descriptors.flix"));
+    Assert.assertEq(expected = "proposal-semantics", componentOf("test/proposals/P08Decisions.flix"));
+    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/proposals/P05Datalog.flix"));
+    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/proposals/P09Views.flix"));
+    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/spine/CoreApplyLaw.flix"));
+    Assert.assertEq(expected = "tests", componentOf("test/policy/AccountingLaw.flix"))
 }
 
 /// The thresholds are the owner's engineering policy, published explicitly
@@ -147,7 +165,8 @@ def componentTablePartitionsTheRawCodeTotal(): Unit \ { Assert, IO } = {
     println(componentLines(cs));
     let a = accountingOf(cs);
     let cognitiveComponents =
-        "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "frontends" :: "grit-rule" :: Nil;
+        "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "frontends" :: "grit-rule"
+            :: "proposal-semantics" :: Nil;
     let mechanicalComponents =
         "ascii" :: "parquet" :: "boundary" :: "grit-binding" :: "build-rules" :: Nil;
     Assert.assertEq(expected = cognitiveOf(a), sumComponents(cs, cognitiveComponents));

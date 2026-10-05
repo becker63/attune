@@ -659,6 +659,22 @@ pub mod Attune.Policy {
     /// mechanical presentation.
     pub def isPresentationMechanical(path: String): Bool = path == "src/Attune/AsciiTree.flix"
 
+    /// The exact test portions whose reusable algorithms are policy-bearing
+    /// semantics rather than assertions. P06 carries the descriptor safety check
+    /// and the alpha-normalization identity (`safe`/`bound`/`identityKey` and the
+    /// role renaming it depends on); P08 carries the typed prior/request/evidence
+    /// contract and the `fromSeam`/`settle` decision semantics. The owner policy
+    /// counts a semantic algorithm as cognitive under any placement, so the
+    /// blanket `test/** -> Fixture` rule must not hide these two. The list is
+    /// bounded and explicit — two named paths, not a general registry or lexer —
+    /// and it holds exactly the test-placed semantics that `Attune.Theory` and
+    /// `Attune.Study` have not absorbed yet, so it shrinks to empty when they do.
+    /// The genuine `@Test` assertions and fixed fixture data in the same files
+    /// are disclosed in `notes/design.md`; this accounting makes no per-function
+    /// claim.
+    pub def isUnmigratedSemanticTest(path: String): Bool =
+        path == "test/proposals/P06Descriptors.flix" or path == "test/proposals/P08Decisions.flix"
+
     def isMechanicalPath(path: String): Bool =
         hasPrefix("src/native/", path) or hasPrefix("platform/tools/", path)
             or (hasPrefix("platform/build/", path) and not isGritClosureRule(path))
@@ -672,6 +688,9 @@ pub mod Attune.Policy {
         // cognitive under any path rather than an inherited or fixture exemption.
         else if (hasSuffix(".grit", path)) Ownership.Cognitive
         else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) Ownership.Support
+        // Unmigrated test-placed semantics count as cognitive before the
+        // blanket test/** fixture rule, so placement cannot hide an algorithm.
+        else if (isUnmigratedSemanticTest(path)) Ownership.Cognitive
         else if (hasPrefix("test/", path)) Ownership.Fixture
         else if (isMechanicalPath(path)) Ownership.Mechanical
         else if (hasPrefix("src/", path) or isApprovedRoot(path)) Ownership.Cognitive
@@ -679,10 +698,11 @@ pub mod Attune.Policy {
 
     /// The named components the accounting reports, in table order. `theory` is
     /// the not-yet-built sixth semantic owner and is expected to be zero until
-    /// its own feature.
+    /// its own feature. `proposal-semantics` is the bounded pair of test-placed
+    /// semantic portions that `Attune.Theory`/`Attune.Study` have not absorbed.
     pub def componentNames(): List[String] =
         "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
-            :: "frontends" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
+            :: "frontends" :: "proposal-semantics" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
             :: "build-rules" :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
 
     pub def componentOf(path: String): String =
@@ -703,6 +723,7 @@ pub mod Attune.Policy {
         else if (hasPrefix("platform/build/", path)) "build-rules"
         else if (path == "platform/support/grit/cargo-bazel-lock.json" or path == "platform/support/grit/Cargo.lock") "inherited-locks"
         else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) "inherited"
+        else if (isUnmigratedSemanticTest(path)) "proposal-semantics"
         else if (hasPrefix("test/", path)) "tests"
         else "metadata"
 

@@ -112,15 +112,22 @@ The hermetic policy check consumes `//:policy_sources`, which aggregates one
 | `//src/native/parquet` | the typed Arrow Dataset Parquet codec |
 | `//platform/support/grit` | the inherited pinned native closure, ABI shim, header and grammar patches |
 | `//test`, `//test/spine`, `//test/policy`, `//test/seam`, `//test/grit`, `//test/view`, `//test/docs` | the fixtures and their laws, including the documentation correspondence fixture |
-| `//test/proposals` | the ten test-only proposal sources, counted and reported separately from ordinary test code |
+| `//test/proposals` | the four remaining test-only proposal sources (P05/P06/P08/P09); P06/P08 carry reusable semantics and are reported in the `proposal-semantics` cognitive component, the rest stay with the ordinary test code |
 | `//platform/tools`, `//platform/tools/boundary` | the minimal Java boundary |
 
 The carried Zed assets under `platform/zed/` are declared once in
 `//platform/zed:zed_assets` for the pin-correspondence fixture and never compiled
-or executed. The untracked upstream grammar checkout preserved beside them
-(`platform/zed/grammars/`) is not a Bazel package or input; `.bazelignore` keeps
-it out of package discovery, while the live audit still walks it and reports it
+or executed. Two Zed populations are distinct and must not be conflated. The
+*declared* population is the tracked, pinned `platform/zed/extension.toml` and
+`platform/zed/languages/flix/**`, which the fixture binds and the declared
+inventory lists. The *live* population additionally includes the untracked
+upstream grammar checkout preserved beside them under `platform/zed/grammars/`.
+That editor work is outside Nix collection, outside Bazel (`.bazelignore` keeps
+it out of package discovery, so it is never a package, an action input or a CAS
+entry) and outside the build, while the live audit still walks it and reports it
 in the admitted `platform/zed/` foreign family rather than as authored source.
+There is no second, parity or mirror Zed project, and no grammar is registered
+outside the single pinned revision the Grit closure and the Zed extension share.
 
 A Bazel glob cannot cross a package boundary, so a new package that carries
 authored source must add its filegroup to `//:policy_sources`. The separate
@@ -307,11 +314,13 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the accounting leaf built on checkpoint
-`eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a` (the leaf commit is recorded in the
-mission handoff). `//test/policy:declared_source_policy_test` renders the class
-report and `//test/policy:accounting_law_test` prints the per-component table and
-asserts it partitions the raw code total. "Code" is measured noncomment code
+Source identity: the corrected accounting leaf built on the accounting
+implementation `a97b234` on top of checkpoint
+`eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a` (the exact commit is recorded in the
+mission handoff; the earlier `a97b234` 3,081/1,278/4,359/2,645 figures remain
+history, not erased). `//test/policy:declared_source_policy_test` renders the
+class report and `//test/policy:accounting_law_test` prints the per-component
+table and asserts it partitions the raw code total. "Code" is measured noncomment code
 lines under the policy's honest counter (comments, documentation and blanks
 excluded).
 
@@ -321,29 +330,47 @@ excluded).
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 787 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once and earned scoped coverage. |
 | theory | (none yet) | Flix | 0 | A | `Attune.Theory` | Bounded canonical descriptors, native fixed-schema fragments, world shards and witness rows — the next semantic owner. |
 | study | `src/Attune/Study.flix` | Flix | 80 | A | `Attune.Study` | Typed evidence/outcome/observation/artifact values and the prediction/gold materialization records. |
-| policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 561 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, and the Flix-owned isolation assertions. |
+| policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 565 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting (including the bounded test-placed-semantics classification), and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 452 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
+| proposal-semantics | `test/proposals/P06Descriptors.flix`, `test/proposals/P08Decisions.flix` | Flix | 180 | A (mixed, disclosed) | `Attune.Theory` / `Attune.Study` (pending) | Unmigrated policy-bearing semantics: P06 descriptor safety and alpha-normalization (`safe`/`bound`/`identityKey` and the role renaming), P08 typed prior/request/evidence and `fromSeam`/`settle` decision settlement; a test algorithm counts as cognitive under any placement. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
 | parquet | `src/native/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
 | boundary | `platform/tools/boundary/*.java` | Java | 481 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 210 | B | build substrate | Native Flix test rules, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 2,645 | C | fixtures | Genuine native laws and fixtures, including the four remaining test-only proposals, run as the pinned compiler's `@Test`. |
+| tests | `test/**` except the two unmigrated semantic portions above | Flix/Java/Ruby/Starlark | 2,477 | C | fixtures | Genuine native laws and fixtures, including the two remaining test-only proposals P05/P09, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
 | metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,284 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-3,081; B mechanical 1,278; A+B authored 4,359; C test 2,645; C support 21,884
+3,265; B mechanical 1,278; A+B authored 4,543; C test 2,477; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 452
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population: 121 readable files, code 31,172, comment 1,956,
-documentation 2,672, blank 1,518, so physical 37,318 and nonblank 35,800 at the
+again. Raw population: 121 readable files, code 31,188, comment 1,958,
+documentation 2,818, blank 1,535, so physical 37,499 and nonblank 35,964 at the
 recorded run. The code and comment columns are stable; the documentation column
 moves whenever this note itself is edited, so re-run the check rather than
 copying it.
+
+### Mixed-code disclosure (bounded)
+
+The `proposal-semantics` row is a conservative whole-component count, not a
+per-function split: each of the two files is classified as one cognitive
+component because a reusable semantic algorithm under `test/` counts as
+cognitive under any placement. The genuine `@Test` assertions and the fixed
+fixture data those files also carry are therefore **inside** that 180-line
+count rather than reported separately, which over-states A and under-states the
+fixture population — the safe direction. The classification method is a
+two-path explicit list in `Policy.isUnmigratedSemanticTest` plus the ordinary
+per-file component classifier; no lexer, registry or per-function total is
+claimed. The other two remaining proposals (P05, P09) stay in `tests`: P05's
+fragments are pending Theory material whose own feature will absorb them, and
+P09's projection identity is already owned by the shared `Attune.View`, so only
+its thin test-local adapters remain. That boundary is explicit and revisable,
+not hidden.
 
 The `inherited`/`inherited-locks` split is the exact support provenance: the
 maintained upstream `lib.rs` plus the five patch files and header are 655 code
@@ -392,6 +419,10 @@ surprising effect, and `View` never supplies scientific truth:
   forward facts, derived inverses and earned scoped coverage; depends on core.
 - theory (next owner) — in: world facts and bounded descriptors; out: isolated
   witness rows; depends on core and world facts, never on Study.
+- proposal-semantics — in: the proposal-world fact sets and the recorded seam
+  exchanges; out: canonical descriptor identity/safety and typed
+  prior/decision/evidence settlement; depends on core (`Attune.Envelope`) and
+  the recorded seam, never on View; absorbed by Theory and Study.
 - study — in: task context, world index and a frozen permitted prior; out:
   predictions, typed evidence and metrics; depends on core structural artifacts.
 - policy/accounting — in: the declared manifest and live inventory; out:
@@ -433,30 +464,51 @@ or deleting a boundary.
 
 ### Architecture review (STOP-AND-JUSTIFY trigger)
 
-The measured cognitive core (3,081) is above the around-2,500 review trigger, so
+The corrected cognitive core (3,265) is above the around-2,500 review trigger, so
 this feature performs the required bounded architecture review instead of
-claiming compliance or fabricating a pass. The review decomposes the class:
+claiming compliance or fabricating a pass. The review decomposes the class by
+responsibility:
 
-- the meaning-bearing scientific core — core 145 + repository 787 + study 80 +
-  frontends 372 = 1,384 — sits in the lower half of the preferred 1,500–2,000
-  band, and `theory` is still 0;
-- two components are counted cognitive conservatively rather than as build
+- the production application-semantic components — core 145 + repository 787 +
+  study 80 + frontends 372 = 1,384 — sit **below** the preferred 1,500–2,000
+  band, not inside it, and `theory` is still 0. Adding the unmigrated
+  proposal-semantics (180: P06 descriptors + P08 decisions, the test-placed
+  semantics this feature restores to A), the application-semantic population is
+  1,564, inside the band. This subtotal is a description, not an exemption:
+  being below (or inside) the preference does not remove the rest of the class
+  from review.
+- two components remain counted cognitive conservatively rather than as build
   overhead: the maintained Grit closure rule (684), because it changes which
-  languages the pinned engine admits, and the policy/accounting module (561),
-  because policy-bearing code counts as A under any path;
+  languages the pinned engine admits, and the policy/accounting module (565,
+  four lines above the earlier 561 because this classification itself is
+  policy-bearing code), because policy-bearing code counts as A under any path.
+  Subtracting either would be a relabel, not a subtraction.
 - the presentation cognitive subset (452: View + Docs) is policy-bearing
   projection, already inside A and not added again.
 
-Decision: proceed to the Theory feature. The trigger fired on a conservative
-classification, the true scientific core measures about 1,384 against a
-1,500–2,000 preference, the mechanical substrate is 1,278 (well under the
-preferred 2,500), and A+B is 4,359 inside the preferred 3,000–5,000. This is a
-review conclusion, not a numeric pass: if Theory grows the cognitive class
-further, the next review must either subtract genuinely redundant policy/build
-code or record a bounded justified excess, and it must never raise a constant or
-relabel authored code. The counting limitations in "Known corrections" below
-remain disclosed; no general lexer or accounting framework was added, and the
-accounting reuses the same one-pass classifier.
+Largest application-semantic component: `repository` (787) — the Grit wire
+projection plus conservative identity/resolution/admission. Hardest component to
+reacquire: the Grit acquisition boundary that `repository` consumes, because it
+spans a maintained closure rule, a hand-written FFM binding, inherited native
+language dispatch and the Flix admission. Its navigation/dependency path is
+`platform/build/native.bzl` → `platform/build/grit_repository.bzl` →
+`src/grit/{defines,imports,calls}/*.grit` → `platform/tools/grit/*.java` →
+`platform/support/grit/lib.rs` → `src/Attune/Repository/Grit.flix` →
+`src/Attune/Repository.flix`; the shared `Attune.Envelope` is the only semantic
+input it needs.
+
+Decision: continue the approved Theory feature within the same six resident
+navigation chunks — Repository, World/composition (core), **Theory**, Study,
+View/ASCII, Bazel execution substrate. Theory is the one still-empty chunk, its
+absorbing owner for the P05/P06 material is already named, the mechanical
+substrate is 1,278 (well under the preferred 2,500), and A+B is 4,543 inside the
+preferred 3,000–5,000. This is a bounded review conclusion, not a numeric pass:
+if Theory grows the class further, the next review must either subtract
+genuinely redundant policy/build code or record a justified excess, and it must
+never raise a constant or relabel authored code. The counting limitations in
+"Known corrections" below and the mixed-code disclosure above remain visible; no
+general lexer, registry or accounting framework was added, and the accounting
+reuses the same one-pass classifier with one explicit two-path exception.
 
 ### Known corrections to the reported counts
 
@@ -841,3 +893,31 @@ documentation column shifts whenever this note is edited). Source identity: this
 leaf's commit on top of checkpoint
 `eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a` (the exact commit is recorded in the
 mission handoff). The retired gate remains recoverable from checkpoint `eab5dbb`.
+
+## Test-placed semantics correction record
+
+The independent review of the accounting implementation `a97b234` found that the
+blanket `test/** -> Fixture` branch of `Policy.ownershipOf` hid reusable
+algorithms: P06's descriptor safety check and alpha-normalization
+(`safe`/`bound`/`identityKey` and the role renaming) and P08's typed
+prior/request/evidence contract with `fromSeam`/`settle` decision settlement. A
+semantic algorithm counts as cognitive under any placement, so those two
+test-placed portions were restored to A. The `a97b234` measurement remains
+history, preserved above and in `library/migration-status.md`.
+
+| Path | Change |
+| --- | --- |
+| `attune/src/Attune/Policy.flix` | added `isUnmigratedSemanticTest` (a bounded two-path explicit list), the `proposal-semantics` component and the `Cognitive` ownership branch before the blanket test rule; no constant raised, no lexer/registry/framework added |
+| `attune/test/policy/AccountingLaw.flix` | moved the P08 fixture assertion to the retained core law, added `reusableTestPlacedSemanticsAreCognitiveNotHiddenFixtures`, and added `proposal-semantics` to the partition law |
+| `attune/notes/design.md`, `README.md` | corrected table, mixed-code disclosure, Zed population clarification, largest/hardest naming and the bounded Theory-continuation review |
+
+Measured on the corrected declared identity: A cognitive 3,265; B mechanical
+1,278; A+B 4,543; C test 2,477; C support 21,884; presentation A 452 / B 87.
+`proposal-semantics` is 180 (P06 + P08 whole-file, mixed and disclosed) and the
+`tests` row drops to 2,477. The production application-semantic subtotal stays
+1,384 (below the 1,500–2,000 preference); with the restored proposal semantics it
+is 1,564, inside the band. The review trigger still fires on the conservative
+additions (policy 565, grit-rule 684) and the presentation subset (452), and the
+bounded review above justifies continuing Theory within the same six chunks.
+Declared and live checks `accept`, `bazel test //...` green, typecheck exit 0,
+scoped buildifier exit 4 with the documented pre-existing families only.
