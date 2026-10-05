@@ -1,4 +1,4 @@
-load("//build:native.bzl", "native_flix_reject_test", "native_flix_test")
+load("//build:native.bzl", "native_flix_java_test", "native_flix_reject_test", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -92,6 +92,34 @@ native_flix_test(
         "//src:Attune/Envelope.flix",
         "P06Descriptors.flix",
     ],
+)
+
+# P07: evidence guards, support and witnesses. Two distinct observed entities
+# support two branches, two proof paths to one entity are one supporter, a
+# foreign scope cannot meet a sealed threshold, and proposed evidence stays
+# distinct from observed. Executed fixture.
+native_flix_test(
+    name = "p07_guards_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/View.flix",
+        "P07Guards.flix",
+    ],
+)
+
+# P08: prior and decision contracts. The approved LangChain4j seam is driven by
+# a recorded fake transport; a decoded in-budget decision is chosen, a classified
+# failure stays a failure, and over-budget/unknown requests take the declared
+# fallback. No provider is contacted. Executed fixture.
+native_flix_java_test(
+    name = "p08_decisions_test",
+    srcs = [
+        "//test/seam:Seam.flix",
+        "P08Decisions.flix",
+    ],
+    java_deps = ["//test/seam:attune_inference"],
 )
 
 # The one static domain witness P02 cites: a `Frontier` constructor fixes its
