@@ -24,6 +24,7 @@ filegroup(
         "fixtures/negative/dynamic_dispatch.rb",
         "fixtures/negative/missing_require.rb",
         "fixtures/negative/reopened_declaration.rb",
+        "fixtures/instance/register.rb",
         "fixtures/shop/checkout.rb",
         "fixtures/shop/pricing.rb",
         "fixtures/shop/receipt.rb",

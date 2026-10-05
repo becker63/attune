@@ -28,6 +28,12 @@ def negativeFiles(): List[String] =
         :: "negative/reopened_declaration.rb" :: "negative/ambiguous/caller.rb"
         :: "negative/ambiguous/left.rb" :: "negative/ambiguous/right.rb" :: Nil
 
+/// The instance-method fixture: a bare `def` whose body calls a class-level
+/// method by constant path, so the ordinary `def` classification and call
+/// ownership are exercised without broad instance dispatch.
+def instanceFiles(): List[String] =
+    "instance/register.rb" :: Nil
+
 /// The carried native/editor support files this fixture reads as source-as-data.
 def supportAssets(): List[String] =
     "build/grit_repository.bzl" :: "zed/extension.toml" :: "zed/languages/flix/brackets.scm"
@@ -112,7 +118,7 @@ def surface(language: Grit.Language, file: String, source: String, callee: Strin
 @Test
 def declaredFixturePopulationIsExact(): Unit \ {Assert, IO} =
     Assert.assertEq(
-        expected = sorted(List.map(file -> path(file), shopFiles() ::: negativeFiles()) ::: supportAssets()),
+        expected = sorted(List.map(file -> path(file), shopFiles() ::: negativeFiles() ::: instanceFiles()) ::: supportAssets()),
         sorted(String.lines(GritFixtures.declared())))
 
 /// The carried native and editor support corresponds: the one Grit repository
@@ -151,39 +157,104 @@ def eightAdmittedSurfacesRunRealGrit(): Unit \ {Assert, IO} = {
     surface(Grit.Language.Ruby, "src/helper.rb", "def run\n  helper(1)\nend\n", "helper")
 }
 
-/// The seven retained surfaces also carry their negative regression: each
-/// authored call is extracted, none is silently resolved into an invented edge,
-/// and each one is refused by name. The declaration form vocabulary is Ruby's
-/// keywords, so no retained-language call has an identified caller here, which
-/// is the conservative outcome rather than a guessed one.
+/// The retained frontends keep the reference's per-language import dispatch: a
+/// JS/JSX/TS/TSX quoted relative specifier, a Java dotted type, a Flix qualified
+/// module reference and a Starlark repository label each resolve to exactly the
+/// one authored file they name. Every language is exercised through the real
+/// engine rather than a stub.
 @Test
-def retainedSurfacesFlowThroughAdmission(): Unit \ {Assert, IO} = {
-    let cases = List#{
-        (Grit.Language.JavaScript, "src/helper.js", "function run() {\n  value.fetch(1);\n}\n"),
-        (Grit.Language.Jsx, "src/view.jsx", "function view() {\n  value.fetch(1);\n}\n"),
-        (Grit.Language.TypeScript, "src/helper.ts", "function run() {\n  value.fetch(1);\n}\n"),
-        (Grit.Language.Tsx, "src/view.tsx", "function view() {\n  value.fetch(1);\n}\n"),
-        (Grit.Language.Java, "src/Helper.java", "class Helper {\n    void run() {\n        value.fetch(1);\n    }\n}\n"),
-        (Grit.Language.Flix, "src/Helper.flix", "def run(): Int32 = value.fetch(1)\n"),
-        (Grit.Language.Starlark, "src/helper.bzl", "def _run():\n    return value.fetch(1)\n")
-    };
-    List.forEach(entry -> match entry {
-        case (language, file, source) => {
-            let calls = relationFacts(language, file, source, Grit.Program.Calls);
-            let repository = admittedWorld((file, source) :: Nil);
-            Assert.assertEq(expected = true, List.length(calls) > 0);
-            Assert.assertEq(expected = Nil, repository#calls);
-            Assert.assertEq(expected = List.length(calls), List.length(repository#refusals));
-            Assert.assertEq(
-                expected = false,
-                List.exists(
-                    refusal -> not String.startsWith(
-                        prefix = "unscoped-call " + file + " ",
-                        Repository.refusalText(refusal)),
-                    repository#refusals))
-        }
-    }, cases)
+def retainedImportsResolvePerLanguage(): Unit \ {Assert, IO} = {
+    let repository = admittedWorld(List#{
+        ("src/helper.js", "const util = require(\"./util\");\n"),
+        ("src/util.js", "function util() { return 1; }\n"),
+        ("src/helper.ts", "import \"./verify\";\n"),
+        ("src/verify.ts", "export function verify(): boolean { return true; }\n"),
+        ("src/view.jsx", "const view = require(\"./render\");\n"),
+        ("src/render.jsx", "function render() { return null; }\n"),
+        ("src/view.tsx", "import \"./element\";\n"),
+        ("src/element.tsx", "export function element(): boolean { return true; }\n"),
+        ("src/a/Client.java", "package a;\n\nimport a.Other;\n\npublic class Client {}\n"),
+        ("src/a/Other.java", "package a;\n\npublic class Other {}\n"),
+        ("src/Demo.flix", "mod Demo {\n    use Repository.Structure.FileId\n\n    pub def helper(x: Int32): Int32 = x\n}\n"),
+        ("src/Repository/Structure.flix", "mod Repository.Structure {\n    pub def x(): Int32 = 1\n}\n"),
+        ("src/pkg/BUILD", "load(\"//tools:defs.bzl\", \"helper\")\n\ndef run():\n    helper(\"sample\")\n"),
+        ("src/tools/defs.bzl", "def helper(name):\n    pass\n")
+    });
+    Assert.assertEq(expected = List#{
+        "src/Demo.flix -> src/Repository/Structure.flix",
+        "src/a/Client.java -> src/a/Other.java",
+        "src/helper.js -> src/util.js",
+        "src/helper.ts -> src/verify.ts",
+        "src/pkg/BUILD -> src/tools/defs.bzl",
+        "src/view.jsx -> src/render.jsx",
+        "src/view.tsx -> src/element.tsx"
+    }, Repository.edgeTexts(repository#imports))
 }
+
+/// A retained call is owned by the narrowest declaration that encloses it, and
+/// it admits the uniquely named target in that same file before any
+/// repository-wide fallback.
+@Test
+def retainedCallsUseNarrowestOwnerAndUniqueSameFileTarget(): Unit \ {Assert, IO} = {
+    let repository = admittedWorld(List#{
+        ("src/a/Client.java", "package a;\n\nimport a.Other;\n\npublic class Client {\n    public void helper(String name) {}\n    public void verify(String name) { helper(name); }\n}\n"),
+        ("src/a/Other.java", "package a;\n\npublic class Other {}\n")
+    });
+    Assert.assertEq(expected = List#{"Client.verify -> Client.helper"}, Repository.edgeTexts(repository#calls))
+}
+
+/// With no same-file target, a uniquely named repository-wide target is
+/// admitted instead of refused.
+@Test
+def retainedCallsFallBackToUniqueRepositoryTarget(): Unit \ {Assert, IO} = {
+    let repository = admittedWorld(List#{
+        ("src/a/Util.java", "package a;\n\npublic class Util {\n    public void shared(String name) {}\n}\n"),
+        ("src/b/Caller.java", "package b;\n\npublic class Caller {\n    public void run(String name) { shared(name); }\n}\n")
+    });
+    Assert.assertEq(expected = List#{"Caller.run -> Util.shared"}, Repository.edgeTexts(repository#calls))
+}
+
+/// An ambiguous repository-wide name, an ownerless call and a dynamic callee
+/// each stay unresolved with their own named reason, so the three conservative
+/// outcomes are distinguished rather than collapsed into one.
+@Test
+def retainedAmbiguousOwnerlessAndDynamicCallsAreDistinguished(): Unit \ {Assert, IO} = {
+    let ambiguous = admittedWorld(List#{
+        ("src/a/Left.java", "package a;\n\npublic class Left {\n    public void shared(String name) {}\n}\n"),
+        ("src/b/Right.java", "package b;\n\npublic class Right {\n    public void shared(String name) {}\n}\n"),
+        ("src/c/Caller.java", "package c;\n\npublic class Caller {\n    public void run(String name) { shared(name); }\n}\n")
+    });
+    Assert.assertEq(expected = Nil, ambiguous#calls);
+    Assert.assertEq(expected = List#{"ambiguous-target"}, refusalCodes(ambiguous));
+
+    let ownerless = admittedWorld(("src/top.ts", "helper(1);\n") :: Nil);
+    Assert.assertEq(expected = Nil, ownerless#calls);
+    Assert.assertEq(expected = List#{"unscoped-call"}, refusalCodes(ownerless));
+
+    let dynamic = admittedWorld(("src/dyn.ts", "function run(): number {\n  return handlers[kind](1);\n}\n") :: Nil);
+    Assert.assertEq(expected = Nil, dynamic#calls);
+    Assert.assertEq(expected = List#{"dynamic-dispatch"}, refusalCodes(dynamic))
+}
+
+/// A bare `def` is classified as an instance method, and a constant-qualified
+/// call inside it is owned by that method and resolves to the unique singleton
+/// declaration of the constant path.
+@Test
+def rubyInstanceMethodIsClassifiedAndOwnsItsCall(): Unit \ {Assert, IO} = {
+    let repository = admitted(instanceFiles() ::: "shop/pricing.rb" :: Nil);
+    Assert.assertEq(
+        expected = true,
+        List.exists(line -> String.startsWith(prefix = "Shop.Register.total ", line)
+            and String.contains(substr = " instance ", line),
+            Repository.declarationTexts(repository)));
+    Assert.assertEq(
+        expected = List#{"Shop.Register.total -> Shop.Pricing.total_cents"},
+        List.filter(edge -> String.startsWith(prefix = "Shop.Register.total ", edge),
+            Repository.edgeTexts(repository#calls)))
+}
+
+def refusalCodes(repository: Repository.Repository): List[String] =
+    sorted(List.map(Repository.refusalCode, repository#refusals))
 
 /// The Ruby frontends report the exact constructs, values and byte ranges of an
 /// authored file: a declaration's whole body with its name, a require with its

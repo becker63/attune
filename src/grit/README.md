@@ -46,21 +46,30 @@ and Starlark/Bazel via a maintained Tree-sitter Starlark grammar. Tree-sitter is
 an implementation detail inside Grit; it is never exposed as a second frontend
 to Repository or Atlas.
 
-Resolution in this tree is deliberately conservative and language-independent:
-one literal, single-quoted relative path resolves against the requiring file's
-own directory (`require_relative "pricing"` names `pricing.rb` beside it, the one
-relative-path rule this bootstrap implements), and every other reference is an
-explicit typed refusal — a computed require, a target no admitted file names, a
-receiver that is not a constant path, a constant path reachable from more than
-one scope, or a symbol the world declares more than once. The declaration form
-vocabulary the caller lookup reads is Ruby's own keywords, so a call in a
-retained-language file has no identified caller and is refused as unscoped rather
-than attached to a guessed one. No language-specific resolver beyond that rule is
-implemented here, and nothing is guessed: a refusal is recorded with its own name
-rather than dropped or resolved to a plausible edge. Per-language reference
-identity for the other frontends (a Flix qualified module name, a Java dotted
-type reference, a Starlark repository label) is deferred rather than
-approximated.
+Resolution in `Attune.Repository` is per language, because each frontend writes
+its references differently. Imports keep the reference dispatch: a
+JavaScript/JSX/TypeScript/TSX quoted relative specifier resolves against the
+requiring file's own directory through the candidate extensions and `index`
+files, a Java dotted type reference resolves to its source file, a Flix qualified
+module reference resolves to the file naming its longest admitted module prefix,
+a Starlark repository-relative label resolves to the source file it names, and a
+Ruby literal `require_relative` resolves beside the requiring file. Every path is
+admitted only on a unique match; a match of zero or more than one candidate stays
+unresolved.
+
+Calls follow the reference law too: a call in a retained-language file is owned
+by the narrowest declaration that encloses it in the same file, and it is
+admitted to the uniquely named target in that file or, when the file declares no
+such name, to the uniquely named target in the repository. Ruby keeps its own
+bounded rule as an additional branch beside that law: a constant-qualified call
+inside a `module`/`class` method resolves to the unique singleton declaration of
+its constant path.
+
+Nothing is guessed: every other reference is an explicit typed refusal with its
+own name — a computed require, a target no admitted file names, a receiver that
+is not a constant path, a constant path reachable from more than one scope, an
+ambiguous or ownerless call, a dynamic callee, or a symbol the world declares
+more than once — rather than dropped or resolved to a plausible edge.
 
 Starlark adds exactly one narrow relation-word extension: a log with kind
 `dependency` for a label/dependency reference that is a real repository

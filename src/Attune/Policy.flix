@@ -544,15 +544,19 @@ pub mod Attune.Policy {
 
     // ------------------------------------------------------------- findings
 
-    /// The reviewed shared-code target. The bootstrap spine alone measured 1,575
-    /// noncomment lines; the tree now measures 3,031, because carrying the
-    /// retained Grit closure, the maintained defines/imports/calls inventory, the
-    /// typed envelope and the conservative admission genuinely costs that much.
-    /// The reviewed target is therefore 3,200 rather than the pre-implementation
-    /// aim of 2,000: raising this constant is the reviewed gate change the budget
-    /// finding names, and no required artifact was golfed, deleted or relabelled
-    /// to fit the earlier number.
-    pub def sharedTarget(): Int32 = 3200
+    /// The reviewed shared-code target. The user explicitly approved 4,000
+    /// counted noncomment shared implementation lines after the retained Grit
+    /// handoff, superseding both the original pre-implementation aim of 2,000
+    /// and the 3,200 constant one worker set on its own authority (the
+    /// historical 06e6fc3 tree passed only under that unauthorized gate, which
+    /// is not an approved completion claim). Carrying the retained Grit
+    /// closure, the maintained defines/imports/calls inventory, the typed
+    /// envelope and the conservative per-language admission genuinely costs
+    /// that much, so no required artifact was golfed, deleted or relabelled to
+    /// fit an earlier number. This is the approved value: if shared code
+    /// exceeds it, the excess is reported and the run stops for a user
+    /// decision; the gate is never raised automatically.
+    pub def sharedTarget(): Int32 = 4000
     pub def proposalTarget(): Int32 = 1500
     pub def testTarget(): Int32 = 2400
 

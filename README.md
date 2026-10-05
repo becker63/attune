@@ -16,7 +16,7 @@ services.yaml: test
 
 | Surface | Target | Status |
 | --- | --- | --- |
-| Public gate | `bazel test //...` | passes (9 tests) |
+| Public gate | `bazel test //...` | passes (10 tests) |
 | Shared envelope laws | `//test/spine:envelope_test` | passes; four native `@Test` laws over world, File/Symbol, frontier and atom identity |
 | Isolation boundary | `//test/spine:isolation_test` | passes; eight native `@Test` laws over the recorded kernel and environment facts, including a rejected unisolated host record and a missing-record fail-closed case |
 | Nominal compiler negative | `//test/spine:nominal_negative_test` | passes; the pinned compiler rejects the File/Symbol mix with `Unable to unify the types`, with no `main` |
@@ -25,6 +25,7 @@ services.yaml: test
 | Named policy cases | `//test/policy:policy_cases_test` | passes; twenty-one authored cases, defined in Flix, each reaching its exact verdict and rule |
 | Declared-source policy | `//test/policy:declared_source_policy_test` | passes; the Flix policy accepts exactly the declared authored population |
 | Live workspace audit | `//test/policy:workspace_audit_test` | passes; a normal, local, uncached test that re-reads the live root on every invocation and prunes exactly the Flix-declared boundaries |
+| Retained Grit frontends | `//test/grit:grit_ruby_test` | passes; eighteen native `@Test` laws over the maintained `defines`/`imports`/`calls` inventory for the seven retained languages, the per-language import dispatch and narrowest-owner call law, and the approved bounded Ruby arm |
 | Typed inference seam | `//test/seam:inference_seam_test` | passes; five native `@Test` laws that drive the real LangChain4j request builders and response decoders through a recorded fake transport, keeping request identity and classified failures |
 | Typed Parquet seam | `//test/seam:parquet_seam_test` | passes; two native `@Test` laws that write and read a tiny authored Arrow table with exact schema and values and reject a wrong schema |
 | Manual false assertion (JVM route) | `//test/seam:false_assertion_java_test` | tagged `manual`, so excluded from `//...`; fails with a real native assertion failure when run directly, proving the JVM-backed route reports failures |
@@ -176,7 +177,7 @@ src/Attune/Envelope.flix    shared nominal world/File/Symbol/frontier/atom envel
 src/Attune/Policy.flix      compact source, dependency, comment and LOC policy
 src/Attune/Isolation.flix   Flix-owned isolation assertions
 src/Attune/Grit.flix        typed fact envelope over the native boundary
-src/Attune/Repository.flix  conservative identity, resolution and admission with derived inverses
+src/Attune/Repository.flix  per-language identity, resolution and admission with derived inverses
 src/grit/                   maintained defines/imports/calls entry points per admitted language
 src/native/grit/            hand-written FFM binding and canonical-record facade
 src/native/parquet/         typed Arrow Dataset Parquet codec behind a JSON envelope
@@ -197,11 +198,11 @@ DESIGN.md                   source map, pins and measured counts
 
 This bootstrap establishes the build spine, the shared envelope, the policy
 surface, the two typed JVM seams and the retained Grit frontends with the
-approved Ruby arm. Not yet implemented, and deliberately out of scope here:
+approved Ruby arm, including the reference per-language import dispatch and the
+narrowest-owner call law. Not yet implemented, and deliberately out of scope
+here:
 
 - the canonical ASCII tree writer, route/proof/view projections;
 - the Datalog/typed-view computation and the document correspondence;
-- per-language reference identity beyond the conservative rule the frontends
-  document;
 - the test-only proposals P01-P10 and their independent reviews;
 - any topology selection, cache ownership, real dataset or model experiment.

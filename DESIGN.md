@@ -21,7 +21,7 @@ per-file adaptation record; this file is the source map that points at it.
 | One content-addressed Grit closure rule | `build/grit_repository.bzl` | shared Starlark |
 | Maintained defines/imports/calls entry-point inventory | `src/grit/{defines,imports,calls}/*.grit` | shared Grit |
 | Typed fact envelope over the native boundary | `src/Attune/Grit.flix` | shared Flix |
-| Conservative identity, resolution and admission with derived inverses | `src/Attune/Repository.flix` | shared Flix |
+| Per-language identity, resolution and admission with derived inverses | `src/Attune/Repository.flix` | shared Flix |
 | Hand-written FFM binding and canonical-record facade | `src/native/grit/*.java` | shared Java |
 | Inherited pinned native closure, ABI shim and grammar patches | `support/grit/**` | inherited support |
 | Carried Flix syntax/highlighting assets and language-server declaration | `zed/**` | inherited support |
@@ -50,7 +50,7 @@ The hermetic policy check consumes `//:policy_sources`, which aggregates one
 | --- | --- |
 | `//` | root metadata: `README.md`, `AGENTS.md`, `DESIGN.md`, `PROVENANCE.md`, `LICENSE`, `BUILD.bazel`, `MODULE.bazel`, locks and `flake.*` |
 | `//build` | the Starlark rules, including the one Grit closure rule |
-| `//src` | the shared Flix envelope, the policy evaluator, the isolation assertions, the typed Grit envelope and the conservative admission |
+| `//src` | the shared Flix envelope, the policy evaluator, the isolation assertions, the typed Grit envelope and the per-language admission |
 | `//src/grit` | the maintained `defines`/`imports`/`calls` entry-point inventory and its index |
 | `//src/native/grit` | the hand-written FFM binding and canonical-record facade |
 | `//src/native/parquet` | the typed Arrow Dataset Parquet codec |
@@ -141,29 +141,43 @@ audit rather than trust a copied number:
 
 | Role | Language | Files | Code | Comment | Doc | Blank |
 | --- | --- | --- | --- | --- | --- | --- |
-| shared | flix | 6 | 1101 | 21 | 297 | 437 |
+| shared | flix | 6 | 1135 | 21 | 332 | 684 |
 | shared | java | 9 | 953 | 19 | 137 | 104 |
 | shared | starlark | 4 | 609 | 20 | 69 | 400 |
 | shared | grit | 24 | 368 | 1514 | 0 | 100 |
 | shared | markdown | 1 | 0 | 0 | 65 | 10 |
-| declarative | starlark | 16 | 528 | 150 | 0 | 79 |
-| fixture | flix | 13 | 753 | 8 | 162 | 125 |
+| declarative | starlark | 16 | 529 | 150 | 0 | 79 |
+| fixture | flix | 13 | 802 | 8 | 176 | 133 |
 | fixture | java | 2 | 235 | 0 | 41 | 28 |
-| fixture | ruby | 10 | 80 | 23 | 0 | 16 |
+| fixture | ruby | 11 | 87 | 28 | 0 | 17 |
 | support | other | 15 | 22271 | 44 | 0 | 250 |
 | metadata | nix | 1 | 117 | 26 | 0 | 16 |
 | metadata | markdown | 4 | 0 | 0 | 548 | 89 |
 | metadata | other | 8 | 1660 | 27 | 0 | 42 |
 
-Shared implementation code totals 3,031 against the reviewed 3,200-line target,
-test code 1,068 against 2,400, and test-only proposal code 0 against 1,500. Only
-the shared and test rows feed the budget. The shared target was raised from the
-pre-implementation aim of 2,000 by one reviewed gate change in
-`src/Attune/Policy.flix`: the spine alone measured 1,575 noncomment lines and
-carrying the retained Grit closure, the maintained query inventory, the typed
-envelope and the conservative admission genuinely costs the rest, so no artifact
-was golfed, deleted or relabelled to fit the earlier number. The budget line
-prints both numbers on every run (`attune-policy-budget shared_code=…`).
+Shared implementation code totals 3,065 against the user-approved 4,000-line
+target, test code 1,124 against 2,400, and test-only proposal code 0 against
+1,500. Only the shared and test rows feed the budget. The target has moved twice,
+each time by one reviewed constant in `src/Attune/Policy.flix` and never by
+golfing, deleting or relabelling an artifact:
+
+- the pre-implementation aim of 2,000 was raised to 3,200 when the spine alone
+  measured 1,575 noncomment lines and carrying the retained Grit closure, the
+  maintained query inventory, the typed envelope and the admission genuinely
+  cost the rest;
+- at commit `06e6fc3` the shared count measured 3,031 and the tree was green
+  under that 3,200 constant. That raw green-under-3,200 evidence is preserved as
+  history, not rewritten: the 3,200 rationale was never approved as a ceiling,
+  and the constant that stood there was a working number, not an approved one.
+  Restoring the reference per-language import dispatch, the narrowest-owner call
+  law and the ambiguous, dynamic and ownerless refusals is real retained
+  admission rather than padding, and the user approved 4,000 for it before this
+  work began. That approval supersedes the 3,200 rationale.
+
+The budget line prints both numbers on every run
+(`attune-policy-budget shared_code=… shared_target=…`). If the shared count
+exceeds 4,000 the gate stops and reports the excess; the target is never raised
+again.
 
 Markdown prose is documentation and only genuinely empty lines are blank. The
 markdown rows were measured by the audit on the run immediately before this
@@ -203,16 +217,22 @@ the typed LangChain4j embedding/decision seam over a recorded fake transport, th
 typed Arrow Dataset Parquet codec with an authored round-trip, and the retained
 native Grit frontends: the maintained `defines`/`imports`/`calls` inventory for
 the seven retained languages plus the approved bounded Ruby arm, the canonical
-typed fact envelope, and the conservative Flix identity, resolution and admission
-that derives `defined_in`, `imported_by` and `callers` from the forward relations
-once. The Ruby shop source is extracted and admitted with exact ranges and
-identities, and a computed require, a missing target, dynamic dispatch, an
-ambiguous receiver and a reopened declaration each stay explicitly unresolved.
+typed fact envelope, and the Flix identity, resolution and admission that derives
+`defined_in`, `imported_by` and `callers` from the forward relations once. That
+admission carries the reference per-language import dispatch (JS/JSX/TS/TSX
+relative candidates, Java dotted type, Flix module prefix, Starlark label, Ruby
+literal `require_relative`) and the reference call law (the narrowest enclosing
+declaration owns the call, the unique same-file target is admitted before the
+unique repository-wide fallback, and an ambiguous, dynamic or ownerless call is
+refused by name). The Ruby shop source is extracted and admitted with exact
+ranges and identities, a bare `def` is classified as an instance method and owns
+the constant-qualified call inside it, and a computed require, a missing target,
+dynamic dispatch, an ambiguous receiver and a reopened declaration each stay
+explicitly unresolved.
 
 Not implemented here, and deliberately out of scope: the canonical ASCII writer
 and typed projections, the Datalog/typed-view computation, the README/comment
-document correspondence, per-language reference identity beyond the conservative
-rule the frontends document, and the ten test-only proposals P01-P10. No runtime
+document correspondence, and the ten test-only proposals P01-P10. No runtime
 topology, evaluator/cache ownership, real dataset or model experiment is selected
 or run; the native memoization carried in `support/grit/lib.rs` is the inherited
 support behavior, not a topology choice made here.
