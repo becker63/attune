@@ -44,7 +44,8 @@ import org.apache.arrow.vector.types.pojo.Schema;
  * Thin Arrow Dataset seam for the typed Parquet artifact.
  *
  * <p>Adapted from the read-only reference {@code src/native/parquet/AttuneParquet.java}
- * (HEAD {@code ce2e3f0a363f67217fa6f1f39ffc7b194d4aa3d7}); see {@code PROVENANCE.md}.
+ * (HEAD {@code ce2e3f0a363f67217fa6f1f39ffc7b194d4aa3d7}); see the adaptation
+ * record in {@code DESIGN.md}.
  * Flix owns every schema and row meaning: it passes the exact declared schema and
  * the authored rows as JSON and reads back the admitted rows. This class only
  * performs the unavoidable Arrow Dataset JNI write/read mechanics.

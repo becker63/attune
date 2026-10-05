@@ -47,6 +47,20 @@ these rules; `bazel test //...` enforces it.
 - Every public Flix module carries a `///` comment. The core documents listed in
   `DESIGN.md` must exist.
 
+## Checked documentation
+
+The root `README.md` and the selected source comment in `src/Attune/View.flix`
+carry named marker blocks: an `<!-- attune:snippet=NAME -->` line, the payload,
+and an `<!-- attune:end=NAME -->` line. `//test/docs:readme_correspondence_test`
+regenerates every payload from the authored Ruby shop through the pinned Grit
+engine, admission, the typed view and the native query, and compares it with the
+checked-in bytes. A drifted payload, a missing or duplicated marker and a broken
+local link all fail. Never hand-edit a marked payload to satisfy a failing test,
+never widen the marker vocabulary, and never let a test bless or rewrite a
+document: fix the generator or the code. The three checks stay separate: the
+admitted semantic sets, the renderer goldens in `test/view`, and the actual
+document bytes.
+
 ## Declared population
 
 A Bazel glob cannot cross a package boundary, so each package that carries
@@ -84,7 +98,11 @@ sequential rather than substituting the default.
 
 `DESIGN.md` records the current counts. Comment-only changes must not move the
 code count; a trailing comment or a comment-like string still counts as code; a
-recognised Starlark docstring and markdown prose are documentation, and an
+recognised Starlark docstring, a multiline non-docstring Starlark literal and
+markdown prose are documentation or code exactly as `DESIGN.md` describes, and an
 apostrophe in prose must never silence the lines after it. Budgets are reported,
 and changing a gate means editing the declared constant in
-`src/Attune/Policy.flix`, never golfing code or dropping tests.
+`src/Attune/Policy.flix`, never golfing code or dropping tests. The counter's
+known corrections, including the residual undercount that is disclosed rather
+than applied, are recorded in `DESIGN.md`; never claim exact parser totals while
+one remains.

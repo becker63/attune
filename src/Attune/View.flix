@@ -264,6 +264,28 @@ pub mod Attune.View {
     /// The complete legal continuation tree for one domain, generated from the
     /// single atom signature table. It renders POSSIBLE continuations; it does
     /// not execute a route.
+    ///
+    /// The depth-two Symbols grammar is checked against this comment by the
+    /// documentation correspondence fixture, so the commented payload cannot
+    /// drift from the generated one:
+    ///
+    /// <!-- attune:snippet=grammar -->
+    /// graph=grammar depth=2
+    ///
+    /// Symbols
+    /// +-- defined_in  -> Files
+    /// |   +-- defines     -> Symbols
+    /// |   +-- imports     -> Files
+    /// |   `-- imported_by -> Files
+    /// +-- calls       -> Symbols
+    /// |   +-- defined_in  -> Files
+    /// |   +-- calls       -> Symbols
+    /// |   `-- callers     -> Symbols
+    /// `-- callers     -> Symbols
+    ///     +-- defined_in  -> Files
+    ///     +-- calls       -> Symbols
+    ///     `-- callers     -> Symbols
+    /// <!-- attune:end=grammar -->
     pub def grammar(limits: AsciiTree.Limits, domain: Domain, depth: Int32): Result[String, String] =
         if (depth < 0 or depth > 7) Err("Display grammar depth must be within 0..7.")
         else {

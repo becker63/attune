@@ -50,6 +50,22 @@ def starlarkDocstringsAreDocumentation(): Unit \ Assert = {
     Assert.assertEq(expected = 2, codeOf(countLines(Language.Starlark, value)))
 }
 
+/// A *non-docstring* triple-quoted value that spans lines is code, not blank:
+/// the content of a generated string must be counted, and a triple-quoted
+/// literal pairs its delimiters exactly so an interior line cannot be mistaken
+/// for an empty line. This is the bounded lexer correction for the multiline
+/// Starlark idiom (`repository_ctx.file(..., """...""")`).
+@Test
+def multilineNonDocstringStarlarkStringsCountAsCode(): Unit \ Assert = {
+    let value = "def _impl(ctx):\n    return \"\"\"one\n    two\n    \"\"\"\n";
+    Assert.assertEq(expected = 4, codeOf(countLines(Language.Starlark, value)));
+    let blankContent = "x = \"\"\"one\n\nstill\"\"\"\n";
+    Assert.assertEq(expected = 2, codeOf(countLines(Language.Starlark, blankContent)));
+    Assert.assertEq(expected = 1, blankOf(countLines(Language.Starlark, blankContent)));
+    let interiorQuote = "x = \"\"\"a\"b\nc\"\"\"\n";
+    Assert.assertEq(expected = 2, codeOf(countLines(Language.Starlark, interiorQuote)))
+}
+
 @Test
 def blankLinesAreCountedSeparately(): Unit \ Assert = {
     let spaced = "let x = 1;\n\nlet y = 2;\n";

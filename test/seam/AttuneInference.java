@@ -29,7 +29,8 @@ import java.util.List;
  * The typed LangChain4j inference seam, driven only by a recorded fake transport.
  *
  * <p>Adapted from the read-only reference {@code src/native/inference}
- * (HEAD {@code ce2e3f0a363f67217fa6f1f39ffc7b194d4aa3d7}); see {@code PROVENANCE.md}.
+ * (HEAD {@code ce2e3f0a363f67217fa6f1f39ffc7b194d4aa3d7}); see the adaptation
+ * record in {@code DESIGN.md}.
  * It preserves the approved typed embedding/decision shape while copying no live
  * acquisition workflow: there is no provider endpoint, no credential read and no
  * socket. The real SDK request builder and response decoder run against a

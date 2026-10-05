@@ -45,6 +45,7 @@ filegroup(
         "//src/native/parquet:policy_files",
         "//support/grit:policy_files",
         "//test:policy_files",
+        "//test/docs:policy_files",
         "//test/grit:policy_files",
         "//test/policy:policy_files",
         "//test/proposals:policy_files",
@@ -95,7 +96,6 @@ test_suite(
 
 exports_files([
     "LICENSE",
-    "PROVENANCE.md",
     "README.md",
     "AGENTS.md",
     "DESIGN.md",

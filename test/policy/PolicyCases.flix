@@ -43,7 +43,6 @@ def green(): List[(Entry, String)] =
     entry("README.md", "# Fixture workspace\n")
         :: entry("AGENTS.md", "# Fixture policy\n")
         :: entry("DESIGN.md", "# Fixture design\n")
-        :: entry("PROVENANCE.md", "# Fixture provenance\n")
         :: entry("LICENSE", "Fixture license text\n")
         :: entry("BUILD.bazel", "package(default_visibility = [\"//visibility:public\"])\n")
         :: entry("MODULE.bazel", "module(\n    name = \"fixture\",\n    version = \"0.0.0\",\n)\n")
