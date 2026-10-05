@@ -37,6 +37,25 @@ nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-baze
 `services.yaml` declares the same commands (`test`, `typecheck`, `lint`) and adds
 the Nix credential-helper check.
 
+The authenticated BuildBuddy service can also execute the declared native
+producer/consumer route remotely, opt-in and on the same pinned toolchain:
+
+```
+cd attune
+nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-bazel" test \
+  //test/dag:declared_artifact_consumer_test --config=remote
+```
+
+`--config=remote` adds the published endpoint `grpcs://remote.buildbuddy.io`, the
+`@buildbuddy_toolchain//:platform_linux_arm64` execution platform (arm64, matching
+the declared JDK 25 runtime; `dockerNetwork=off`), and the declared portable
+native route. In that profile the native action carries no host Nix `unshare`
+binary: the pinned `unshare` creates the local user/network namespace, which a
+provider container cannot run, so the remote route uses the platform's own
+network-disabled container instead and does not claim a namespace it did not
+create. `services.yaml` declares the same selection as the `remote_native`
+command. The ordinary gate above is unchanged and needs no credential.
+
 ## Why I want this
 
 The starting point is [Can One Edit Predict the Future?](https://www.becker63.digital/Blogs/one-edit):

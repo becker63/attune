@@ -436,7 +436,10 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the portable-native-declared-artifact-actions leaf (the declared
+Source identity: the portable-remote-native-execution leaf (the opt-in
+`--config=remote` BuildBuddy profile, the declared `platform` isolation mode with
+its `config_setting`, and the host-only pin for the namespace fixture), which was
+built on the portable-native-declared-artifact-actions leaf (the declared
 native producer/consumer route, its mechanical `closure.tsv` and the immutable
 regular-file source tree), built on `de61d97` (the
 checked-doc-marker-and-fixture-boundaries leaf: the tagged marker scan and the
@@ -482,29 +485,39 @@ excluded).
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
-| boundary | `platform/tools/boundary/*.java` | Java | 594 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action and the produced-tree listing; owns no policy, classification or fixture case. |
+| boundary | `platform/tools/boundary/*.java` | Java | 605 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing and the two declared isolation modes; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 282 | B | build substrate | Native Flix test rules, the declared producer rule and the declared-tree consumer macro, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 297 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule and the declared-tree consumer macro, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
 | tests | `test/**` | Flix/Java/Ruby/Starlark | 3,971 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,319 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,352 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,247; B mechanical 1,463; A+B authored 5,710; C test 3,971; C support 21,884
+4,247; B mechanical 1,489; A+B authored 5,736; C test 3,971; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 128 readable files, code 33,884,
-comment 2,118, documentation 4,142, blank 2,055; the report prints the derived
-physical 42,199 and nonblank 40,144 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 128 readable files, code 33,943,
+comment 2,149, documentation 4398, blank 2082; the report prints the derived
+physical 42572 and nonblank 40490 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. Relative to the `de61d97` record (4,247/1,278/5,525/3,860), this leaf moves
-`boundary` 481 -> 594 (the produced-tree listing and the producer/consumer
+them. The portable-native-declared-artifact-actions leaf moved, relative to the
+`de61d97` record (4,247/1,278/5,525/3,860), `boundary` 481 -> 594 (the
+produced-tree listing and the producer/consumer
 launcher modes), `build-rules` 210 -> 282 (the declared producer rule and the
 consumer macro), `tests` 3,860 -> 3,971 (the three `test/dag` fixture laws) and
 `metadata` 2,289 -> 2,319 (the new `test/dag/BUILD.bazel`); the cognitive core is
-unchanged, so the whole delta is mechanical substrate plus fixtures. The code,
+unchanged, so that whole delta is mechanical substrate plus fixtures. The
+portable-remote-native-execution leaf then moves, relative to the
+declared-artifact-actions record (4,247/1,463/5,710/3,971), only mechanical
+substrate and declared metadata: `boundary` 594 -> 605 (the launcher's declared
+`attune.isolation` mode and its namespace-prefix helper), `build-rules` 282 ->
+297 (the `platform`/`unshare` isolation selection and the host-only pin in
+`native_flix_test`) and `metadata` 2,319 -> 2,352 (the `.bazelrc` remote profile,
+the `config_setting` in `platform/build/BUILD.bazel`, the `no-remote` tag and
+comment on the namespace fixture, and the flake wrapper's container-valid PATH
+suffix); no cognitive or fixture line changed. The code,
 comment and file
 columns are stable across this note's own edits, because markdown prose counts as
 documentation; the documentation, blank, physical and nonblank columns move
@@ -1690,8 +1703,9 @@ controlled invalidation probe appended one comment to
 `test/dag/fixtures/world/Shop.flix`: the consumer test re-executed (1 of 1) and
 passed; restoring the exact bytes returned it to `(cached)`.
 
-Measured on this leaf's declared identity (declared-source check, `accept`; see
-the table above for the canonical figures): A cognitive 4,247; B mechanical
+Measured on this leaf's declared identity (declared-source check, `accept`; the
+figures below are this leaf's own measured values, a labelled historical
+snapshot, not the live totals): A cognitive 4,247; B mechanical
 1,463; A+B authored 5,710; C test 3,971; C support 21,884; presentation A 522 /
 B 87 (subsets). Relative to the `de61d97` record, `boundary` moves 481 -> 594,
 `build-rules` 210 -> 282, `tests` 3,860 -> 3,971 and `metadata` 2,289 -> 2,319;
@@ -1712,3 +1726,113 @@ pass; integrated `bazel test //...` 26/26 green; typecheck exit 0; scoped
 buildifier exit 4 with the documented pre-existing diagnostic families only, no
 `# reformat`, and the pre-existing `native-java-info` family removed by the
 required `JavaInfo` load.
+
+## Portable remote native execution leaf record
+
+Feature `portable-remote-native-execution` (fulfils VAL-RUN-001). Recoverable
+checkpoint: the `9fd10e9` `main` tip this leaf builds on, whose own parent is the
+`portable-native-declared-artifact-actions` leaf record above.
+
+This leaf makes the declared native producer/consumer route genuinely remote on
+the already-authenticated BuildBuddy service. It adds no engine, resolver,
+container client, scheduler or local service: the remote profile is declared
+configuration plus one declared isolation mode in the existing mechanical
+launcher, and the authentic pinned native Tester remains the only engine.
+
+`.bazelrc` gains the opt-in `build:remote` profile. It inherits the existing
+`build:buildbuddy` cache/BES configuration and the flake credential helper, adds
+the published endpoint `grpcs://remote.buildbuddy.io`, and wires
+`@buildbuddy_toolchain//:platform_linux_arm64` through
+`--extra_execution_platforms`, `--host_platform` *and* `--platforms`. All three
+are required: with `--platforms` alone the execution log records empty platform
+properties, the declared aarch64 JDK 25 lands on an amd64 worker and the action
+dies with `Exec format error`. The platform's declared execution properties are
+`Arch=arm64`, `OSFamily=Linux`,
+`container-image=docker://gcr.io/flame-public/rbe-ubuntu22-04:latest` and
+`dockerNetwork=off`, so the image architecture, the declared JDK/native
+architecture and the platform agree and nothing is emulated.
+`--remote_local_fallback=false` keeps the evidence honest (no silent local pass),
+`--jobs=8` bounds invocation-level remote fan-out while `--local_resources` keeps
+the local limit at one job, and no account, pool or provider setting changes.
+
+Isolation has exactly two declared modes and the launcher never claims one it did
+not create. The condition is `//platform/build:platform_native_isolation`
+(`config_setting(values = {"define": "attune_native_isolation=platform"})`, set
+only by `--config=remote`). Unset, the mechanical launcher keeps the pinned
+util-linux user/network namespace: it resolves `@unshare//:bin/unshare` and its
+closure as declared inputs and prefixes the inner step with
+`--user --map-root-user --net`. Set, `-Dattune.isolation=platform` skips that
+prefix entirely, so the portable action declares neither the Nix-store binary nor
+its closure; the guest network denial is the platform's own `dockerNetwork=off`
+property. `NativeLaunch` refuses any isolation value other than the two declared
+ones, and the mechanical boundary record is still written, so the facts of
+whichever mode ran stay inspectable. A target whose assertions *are* the host
+boundary pins the host mode (`native_flix_test(host_isolation = True)`) and is
+tagged `no-remote`: `//test/spine:isolation_test` therefore always runs on the
+host with `unshare`, and it can never be presented as remote evidence, nor can
+the portable route be presented as an isolated one. `src/Attune/Isolation.flix`
+is unchanged; nothing was weakened to make a remote run look isolated.
+
+Two smaller mechanical facts belong to this leaf. First, `--spawn_strategy` must
+not be forced to `remote`: with it, a `no-remote`/`local` tagged target cannot
+even build its own `Javac` spawn ("cannot be executed with any of the available
+strategies: [remote]"), so the default strategy list is kept, which already
+routes remote-eligible actions remotely and keeps host-only tags on the client.
+Second, the declared action PATH is the flake wrapper's allowlisted PATH plus the
+container-valid `:/usr/bin:/bin` suffix: Bazel's own `test-setup.sh` and
+`generate-xml.sh` wrappers resolve `bash` and the coreutils through PATH, and a
+`--test_env=PATH=/usr/bin:/bin` override would strand the local host-only
+fixtures on NixOS (exit 127 from the missing coreutils). The launcher's own inner
+process still runs with the explicit hermetic `PATH=/usr/bin:/bin`, `HOME=<work>`,
+`LANG=C`, and the compiler and JDK resolve from declared runfiles and the
+declared JDK 25 toolchain, never from PATH or the image's system Java.
+`MODULE.bazel.lock` gained the previously missing
+`@@toolchains_buildbuddy+//:extensions.bzl%buildbuddy` entry through an ordinary
+update; no unlocked or `--lockfile_mode=off` replacement ships.
+
+Evidence. A fresh remote invocation (`--noremote_accept_cached
+--cache_test_results=no`, BES `4e0df731-1ced-4332-9e43-d90b782a5223`, repeated as
+`6ff0884f-e3ba-4a16-aad8-78228f37e284`) executed both native actions with
+`runner=remote`, `cacheHit=false`, `exitCode=0`, `targetLabel`
+`//test/dag:world_source_producer` (`mnemonic=AttuneNativeProducer`) and
+`//test/dag:declared_artifact_consumer_test` (`mnemonic=TestRunner`), each on
+platform properties `{Arch=arm64, OSFamily=Linux, container-image=…rbe-ubuntu22-04:latest,
+dockerNetwork=off}` with zero `unshare` inputs; the producer's remote output
+materialized `sources/Shop.flix` (569 bytes) and the exact mechanical
+`closure.tsv`, and the remote consumer log shows the seven declared-artifact laws
+passing, including `theConsumedSourceCompilesThroughThePinnedTester`. `bazel
+aquery --config=remote` mentions `unshare` zero times over the whole consumer
+closure (the default configuration mentions it twice), and the consumer's
+execution platform is `@buildbuddy_toolchain//:platform_linux_arm64` with the
+declared `dockerNetwork=off` execution info. The host-only fixtures
+(`//test/spine:isolation_test`, `//test/policy:workspace_audit_test`) still ran
+locally and passed under `--config=remote`, so the profile does not strand them.
+The prior failure is preserved, not erased or promoted: the earlier host-Nix
+`unshare` TestRunner failed remotely with `java.io.IOException: Cannot run
+program ".../unshare/bin/unshare" … Exec failed, error: 2` (invocation
+`33af89c9-346c-4479-ae6b-152e3fb2ae75`, `runner=remote`, `cacheHit=false`,
+`exitCode=1`), and that record remains the identified failure this leaf's
+portable route replaces.
+
+Measured on this leaf's declared identity (declared-source check, `accept`; see
+the canonical table above for the live totals): A cognitive 4,247; B mechanical
+1,489; A+B authored 5,736; C test 3,971; C support 21,884; presentation A 522 /
+B 87 (subsets). Relative to the declared-artifact-actions record
+(4,247/1,463/5,710/3,971), `boundary` moves 594 -> 605, `build-rules` 282 -> 297
+and `metadata` 2,319 -> 2,352; no cognitive or fixture line moves, so the whole
+delta of this leaf is mechanical substrate and declared metadata.
+
+Bounded architecture review (the cognitive core is unchanged at 4,247, above the
+around-2,500 STOP-AND-JUSTIFY trigger, and A+B is above the preferred 5,000 line;
+both are review triggers, not failures). Largest application-semantic component:
+`repository` (809), unchanged. Hardest reacquisition: the Grit acquisition
+boundary under `repository`, unchanged by this leaf. Localization/coordination
+navigation: unchanged; this leaf adds only the remote execution profile, the
+declared isolation mode and the host-only pin. Policy-leak/duplication check: the
+isolation decision is a declared build condition and a launcher branch, not a
+second evaluator, registry, resolver or scheduler; the scientific classification
+stays in Flix, the guest network denial stays a declared platform property, and
+Java only launches the process and records measured facts. Validation on this
+leaf: remote `//test/dag:declared_artifact_consumer_test` 1/1 with fresh remote
+receipts; integrated `bazel test //...` 26/26 green; typecheck exit 0; scoped
+buildifier exit 4 with the documented pre-existing diagnostic families only.

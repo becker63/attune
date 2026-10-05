@@ -18,10 +18,22 @@ import java.util.Map;
  * declaration. This launcher only performs the unavoidable process and
  * filesystem interop: it prepares the metadata manifest the Flix evaluator
  * reads, then runs the pinned 0.76.1 compiler's authentic native test engine
- * over the explicit declared files inside the declared pinned {@code unshare}
- * user/network namespace with an allowlisted environment. It decides no policy,
- * classifies nothing and formats no verdict; a non-zero exit from the engine is
- * this process's failure, and isolation failure is fatal with no fallback.
+ * over the explicit declared files with an allowlisted environment. It decides
+ * no policy, classifies nothing and formats no verdict; a non-zero exit from
+ * the engine is this process's failure, and an isolation failure is fatal with
+ * no fallback.
+ *
+ * <p>Isolation has exactly two declared modes and the launcher never claims
+ * one it did not create. In {@code unshare} (the default, and the ordinary
+ * local gate) the inner step runs inside the pinned util-linux user/network
+ * namespace, so the mechanical boundary record reports a distinct network
+ * namespace and the Flix-owned isolation assertions can hold. In
+ * {@code platform}, declared by the opt-in remote profile, the inner step runs
+ * directly in the declared BuildBuddy Linux container: no namespace is created
+ * here and no such claim is made, and the guest network denial comes from the
+ * platform's declared {@code dockerNetwork=off} execution property. The
+ * boundary record is still written, so the facts of whichever mode ran remain
+ * inspectable.
  *
  * <p>Two declared-artifact modes extend the same route without a new engine. In
  * {@code produce} the launcher runs the pinned compiler's authentic native
@@ -46,8 +58,9 @@ public final class NativeLaunch {
         if (mode.equals("produce")) {
             return produce();
         }
+        String isolation = isolation();
         Path flixJar = Runfiles.resolve(require("attune.flix"));
-        Path unshare = Runfiles.resolve(require("attune.unshare"));
+        Path unshare = isolation.equals("unshare") ? Runfiles.resolve(require("attune.unshare")) : null;
         List<String> tests = new ArrayList<>();
         for (String location : splitList(System.getProperty("attune.tests", ""))) {
             tests.add(Runfiles.resolve(location).toString());
@@ -56,7 +69,7 @@ public final class NativeLaunch {
         Path java = Path.of(System.getProperty("java.home"), "bin", "java");
 
         if (mode.equals("check")) {
-            return check(unshare, java, flixJar, tests, System.getProperty("attune.expect", ""), work);
+            return check(isolation, unshare, java, flixJar, tests, System.getProperty("attune.expect", ""), work);
         }
 
         if (mode.equals("declared")) {
@@ -97,8 +110,7 @@ public final class NativeLaunch {
         if (mode.equals("java")) {
             List<String> jars = jarPaths();
             List<String> command = new ArrayList<>();
-            command.add(unshare.toString());
-            command.addAll(List.of("--user", "--map-root-user", "--net", "--"));
+            command.addAll(namespace(isolation, unshare));
             command.add(java.toString());
             command.add("--add-opens=java.base/java.nio=ALL-UNNAMED");
             command.add("--enable-native-access=ALL-UNNAMED");
@@ -126,8 +138,7 @@ public final class NativeLaunch {
         }
 
         List<String> command = new ArrayList<>();
-        command.add(unshare.toString());
-        command.addAll(List.of("--user", "--map-root-user", "--net", "--"));
+        command.addAll(namespace(isolation, unshare));
         command.add(java.toString());
         command.add("-cp");
         command.add(innerClasspath(List.of()));
@@ -140,12 +151,11 @@ public final class NativeLaunch {
     }
 
     /** Compile-only negative: the pinned compiler must reject with the diagnostic. */
-    private static int check(Path unshare, Path java, Path flixJar, List<String> files,
+    private static int check(String isolation, Path unshare, Path java, Path flixJar, List<String> files,
             String expected, Path work) throws Exception {
         String diagnostic = expected.replace("_", " ");
         List<String> command = new ArrayList<>();
-        command.add(unshare.toString());
-        command.addAll(List.of("--user", "--map-root-user", "--net", "--"));
+        command.addAll(namespace(isolation, unshare));
         command.add(java.toString());
         command.add("-jar");
         command.add(flixJar.toString());
@@ -175,6 +185,34 @@ public final class NativeLaunch {
         ProcessBuilder builder = process(command, work);
         builder.inheritIO();
         return builder.start().waitFor();
+    }
+
+    /// The declared isolation mode this run uses.
+    ///
+    /// `unshare` is the default and the ordinary local gate: the inner step
+    /// runs inside the pinned util-linux user/network namespace and the
+    /// mechanical boundary record can therefore report a distinct network
+    /// namespace. `platform` is declared by the opt-in remote profile
+    /// (`--define=attune_native_isolation=platform`, wired in `.bazelrc`),
+    /// where the action runs directly in the declared BuildBuddy container and
+    /// creates no namespace here; the guest network denial is the platform's
+    /// declared `dockerNetwork=off` property. An unknown value is refused
+    /// rather than silently treated as isolated.
+    private static String isolation() {
+        String isolation = System.getProperty("attune.isolation", "unshare");
+        if (!isolation.equals("unshare") && !isolation.equals("platform")) {
+            throw new IllegalStateException("unknown attune.isolation: " + isolation);
+        }
+        return isolation;
+    }
+
+    /// The declared isolation prefix for the inner step, empty in the mode where
+    /// the declared platform itself supplies the boundary.
+    private static List<String> namespace(String isolation, Path unshare) {
+        if (isolation.equals("unshare")) {
+            return List.of(unshare.toString(), "--user", "--map-root-user", "--net", "--");
+        }
+        return List.of();
     }
 
     private static ProcessBuilder process(List<String> command, Path work) {

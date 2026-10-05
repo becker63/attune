@@ -72,6 +72,17 @@
           # util-linux and binutils/glibc are on PATH because the declared
           # local_unshare repository rule resolves the pinned unshare binary
           # and its dynamic-library closure with `unshare`, `ldd` and `readelf`.
+          #
+          # The `:/usr/bin:/bin` suffix is the declared action PATH's
+          # container-valid half. Bazel passes this PATH to actions and to test
+          # actions, which Bazel's own `test-setup.sh`/`generate-xml.sh`
+          # wrappers resolve `bash` and the coreutils through. In the pinned
+          # local shell the Nix entries come first; on a remote BuildBuddy
+          # worker those store paths simply do not exist, and `/usr/bin:/bin`
+          # is what resolves there. Without it no remote action can find even
+          # `bash`, and a host-only action kept on the client would lose its
+          # shell if a test-only PATH override replaced the client PATH
+          # wholesale. No secret is added here.
           bazel = pkgs.writeShellScriptBin "bazel" ''
             set -eu
             workspace="$PWD"
@@ -110,7 +121,7 @@
                 pkgs.util-linux
                 pkgs.binutils
                 pkgs.glibc.bin
-              ]} \
+              ]}:/usr/bin:/bin \
               SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
               ${pkgs.bazelisk}/bin/bazelisk "$@" \
                 --credential_helper=remote.buildbuddy.io=${buildbuddyCredential}/bin/attune-buildbuddy-credential

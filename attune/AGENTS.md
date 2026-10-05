@@ -38,6 +38,32 @@ repository-side policy an agent must follow while changing this tree.
   SHA-256. Never resolve an unpinned coordinate at test time, and never let the
   resolver run outside the declared install.
 
+## Remote execution profile
+
+`--config=remote` (declared in `.bazelrc`, invoked as the `remote_native`
+command in `services.yaml`) is the opt-in remote profile on the authenticated
+BuildBuddy service. It adds the published endpoint `grpcs://remote.buildbuddy.io`
+through the existing flake credential helper, wires
+`@buildbuddy_toolchain//:platform_linux_arm64` as the *execution* platform
+(declared properties `Arch=arm64`, `OSFamily=Linux`,
+`container-image=docker://gcr.io/flame-public/rbe-ubuntu22-04:latest`,
+`dockerNetwork=off`), and sets `--define=attune_native_isolation=platform`. The
+aarch64 platform must match the declared JDK 25 runtime and the host
+architecture: a mismatch is reported, never silently emulated.
+
+The profile declares exactly two native isolation modes and never claims one it
+did not create. Left unset, `--define` keeps the ordinary host route: the
+mechanical launcher runs the pinned Tester inside the pinned util-linux
+user/network namespace, and `//test/spine:isolation_test` asserts that boundary.
+Set, the portable route runs the same authentic Tester directly in the provider
+container, declares neither the Nix-store `unshare` binary nor its closure, and
+takes its guest network denial from the platform's `dockerNetwork=off` property.
+A fixture whose assertions are about the host namespace pins the host mode
+(`native_flix_test(host_isolation = True)`) and is tagged `no-remote`; it can
+never be the evidence for a remote native run. Do not add a local-execution
+fallback that would let a remote action silently pass on the host, and do not
+weaken `src/Attune/Isolation.flix` to accept a boundary the run did not create.
+
 ## Source policy
 
 The compact policy in `src/Attune/Policy.flix` is the executable statement of

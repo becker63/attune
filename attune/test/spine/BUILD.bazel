@@ -20,7 +20,12 @@ native_flix_test(
 )
 
 # Isolation fixture: the Flix-owned assertions over the boundary record the
-# mechanical probe wrote from inside the same namespace.
+# mechanical probe wrote from inside the same namespace. These assertions are
+# about the host `unshare` user/network namespace itself, so the target pins
+# that declared mode in every configuration and is tagged `no-remote`: the
+# opt-in remote profile runs in the declared provider container, which creates
+# no such namespace, and the portable route therefore can never be the evidence
+# for this boundary. It runs on the host and passes there as before.
 native_flix_test(
     name = "isolation_test",
     srcs = [
@@ -28,6 +33,8 @@ native_flix_test(
         "//src:Attune.flix",
         "//src:Attune/Isolation.flix",
     ],
+    host_isolation = True,
+    tags = ["no-remote"],
 )
 
 # Manual negative fixture: a deliberately false native assertion. It is excluded

@@ -50,3 +50,47 @@ build:buildbuddy --bes_results_url=https://app.buildbuddy.io/invocation/
 build:buildbuddy --bes_backend=grpcs://remote.buildbuddy.io
 build:buildbuddy --remote_cache=grpcs://remote.buildbuddy.io
 build:buildbuddy --remote_cache_compression
+
+# Opt-in remote execution on the same authenticated BuildBuddy service (the
+# published endpoint `grpcs://remote.buildbuddy.io`, reached with the flake's
+# credential helper). It is a separate profile: the ordinary public gate above
+# never requires a credential and never leaves the host.
+#
+# The execution platform is `@buildbuddy_toolchain//:platform_linux_arm64`, the
+# pinned provider platform whose declared execution properties are
+# `Arch=arm64`, `OSFamily=Linux`, `container-image=docker://gcr.io/flame-public/rbe-ubuntu22-04:latest`
+# and `dockerNetwork=off`. Those aarch64 properties match the declared JDK 25
+# runtime (`remotejdk_25`, the arm64 build) and the host/native architecture, so
+# no amd64 worker and no emulation is involved. It must be wired as the
+# *execution* platform (`--extra_execution_platforms` plus `--host_platform`),
+# not only as the target platform: with `--platforms` alone the execution log
+# records empty platform properties, the aarch64 JDK lands on an amd64 worker
+# and the action dies with `Exec format error`.
+#
+# The declared action PATH is the flake wrapper's allowlisted PATH plus the
+# container-valid `:/usr/bin:/bin` suffix, so the same declared environment
+# resolves `bash` and the coreutils both in the pinned local shell and in the
+# provider image; no `--test_env` override is needed and a host-only action
+# kept on the client still finds its shell.
+# `--define=attune_native_isolation=platform` selects the declared portable
+# native route (see `platform/build:native.bzl`): the native producer/consumer
+# actions then carry no host Nix `unshare` binary, and the guest network denial
+# comes from the platform's declared `dockerNetwork=off` property rather than
+# from a host namespace this environment cannot create. Remote invocation may
+# fan out up to eight jobs; the local job limit stays at one via
+# `--local_resources=cpu=1` above.
+#
+# `--remote_local_fallback=false` keeps remote evidence honest: an action that
+# cannot run remotely fails instead of silently running on the host. Actions
+# that declare themselves host-only (`local`/`no-remote` tags, such as the live
+# workspace audit and the host-namespace isolation fixture) are still selected
+# for local execution by Bazel's ordinary strategy selection; the fallback flag
+# governs only a remote attempt that fails.
+build:remote --config=buildbuddy
+build:remote --remote_executor=grpcs://remote.buildbuddy.io
+build:remote --remote_local_fallback=false
+build:remote --extra_execution_platforms=@buildbuddy_toolchain//:platform_linux_arm64
+build:remote --host_platform=@buildbuddy_toolchain//:platform_linux_arm64
+build:remote --platforms=@buildbuddy_toolchain//:platform_linux_arm64
+build:remote --define=attune_native_isolation=platform
+build:remote --jobs=8

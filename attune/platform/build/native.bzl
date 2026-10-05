@@ -6,6 +6,14 @@ pinned 0.76.1 compiler's authentic native test engine, inside the declared
 pinned user/network namespace, with no synthesized `flix.toml` project mode, no
 authored application main, no fat JAR, no custom test engine and no registry.
 
+Isolation has exactly two declared modes, and the mechanical boundary never
+claims one it did not create. The ordinary gate leaves the isolation condition
+unset and runs inside the pinned util-linux `unshare` user/network namespace.
+The opt-in `--config=remote` profile sets `platform_native_isolation`, so a
+remote action declares neither that Nix-store binary nor its closure and runs
+directly in the declared provider container, whose own `dockerNetwork=off`
+property denies the guest network.
+
 The only Java involved is the small mechanical launcher in
 `//platform/tools/boundary`, which prepares the metadata manifest and the
 process boundary. Policy,
@@ -19,28 +27,60 @@ _UNSHARE = "@unshare//:bin/unshare"
 _CLOSURE = "@unshare//:closure"
 _FLIX = "@flix_compiler//jar"
 
+# The declared isolation condition. Left unset, the native actions run inside
+# the pinned util-linux user/network namespace and carry its binary and library
+# closure as declared inputs. The opt-in `--config=remote` profile sets it, so
+# a remotely executed native action instead relies on the declared execution
+# platform's own container and its `dockerNetwork=off` property: the action
+# then declares neither the host Nix `unshare` binary nor its closure, because
+# that binary is a Nix-store ELF that cannot execute in the provider image, and
+# claiming the local namespace would be false there.
+_PLATFORM_ISOLATION = "//platform/build:platform_native_isolation"
+
+def _isolation_data(host_isolation):
+    if host_isolation:
+        return [_UNSHARE, _CLOSURE]
+    return select({
+        _PLATFORM_ISOLATION: [],
+        "//conditions:default": [_UNSHARE, _CLOSURE],
+    })
+
+def _isolation_flags(host_isolation):
+    unshare = "-Dattune.unshare=$(rlocationpath %s)" % _UNSHARE
+    if host_isolation:
+        return ["-Dattune.isolation=unshare", unshare]
+    return select({
+        _PLATFORM_ISOLATION: ["-Dattune.isolation=platform"],
+        "//conditions:default": ["-Dattune.isolation=unshare", unshare],
+    })
+
 def _rlocation(labels):
     return ",".join(["$(rlocationpath %s)" % label for label in labels])
 
-def _native_test(name, srcs, flags, extra_data, size, tags, data):
+def _native_test(name, srcs, flags, extra_data, size, tags, data, host_isolation = False):
     native.java_test(
         name = name,
         size = size,
         main_class = "attune.tools.boundary.NativeLaunch",
         use_testrunner = False,
         runtime_deps = ["//platform/tools/boundary:native_launch"],
-        data = srcs + [_UNSHARE, _CLOSURE, _FLIX] + extra_data + data,
+        data = srcs + _isolation_data(host_isolation) + [_FLIX] + extra_data + data,
         jvm_flags = flags + [
             "-Dattune.tests=" + _rlocation(srcs),
             "-Dattune.flix=$(rlocationpath %s)" % _FLIX,
-            "-Dattune.unshare=$(rlocationpath %s)" % _UNSHARE,
-        ],
+        ] + _isolation_flags(host_isolation),
         tags = tags,
     )
 
-def native_flix_test(name, srcs, size = "small", tags = [], data = []):
-    """Run explicit declared Flix `@Test` declarations in the pinned namespace."""
-    _native_test(name, srcs, ["-Dattune.mode=native"], [], size, tags, data)
+def native_flix_test(name, srcs, size = "small", tags = [], data = [], host_isolation = False):
+    """Run explicit declared Flix `@Test` declarations under the declared isolation mode.
+
+    `host_isolation` pins a target to the host `unshare` boundary in every
+    configuration, for the one fixture family whose assertions are about that
+    local boundary. Such a target must also be tagged `no-remote`, and it can
+    never be the evidence for a remote native run.
+    """
+    _native_test(name, srcs, ["-Dattune.mode=native"], [], size, tags, data, host_isolation)
 
 def _java_jar_manifest_impl(ctx):
     jars = depset(transitive = [
