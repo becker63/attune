@@ -122,6 +122,36 @@ native_flix_java_test(
     java_deps = ["//test/seam:attune_inference"],
 )
 
+# P09: semantic views and diagram projection. A seed and selected relation
+# produce exact node and directed edge sets, including the induced lateral edge
+# between two seeds; a geometry-only change keeps every edge, while reversing an
+# arrow or relabelling Imports is a different identity, and the proof and route
+# readouts stay distinct. Executed fixture.
+native_flix_test(
+    name = "p09_views_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/AsciiTree.flix",
+        "//src:Attune/View.flix",
+        "P09Views.flix",
+    ],
+)
+
+# P10: typed artifacts and effect/handler seams. The approved LangChain4j
+# embedding seam runs a recorded fake exchange with no provider IO; an authored
+# artifact round-trips by exact schema/producer/input identity, a wrong schema or
+# changed identity rejects, and a gold-shaped input has no path into prediction.
+# Executed fixture.
+native_flix_java_test(
+    name = "p10_artifacts_test",
+    srcs = [
+        "//test/seam:Seam.flix",
+        "P10Artifacts.flix",
+    ],
+    java_deps = ["//test/seam:attune_inference"],
+)
+
 # The one static domain witness P02 cites: a `Frontier` constructor fixes its
 # member domain, so a `SymbolId` cannot inhabit `Frontier.Files`. The pinned
 # compiler rejects it during `check` with no `main` required. Sibling to the
