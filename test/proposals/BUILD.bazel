@@ -70,6 +70,30 @@ native_flix_test(
     ],
 )
 
+# P05: native first-class Datalog composition. A parameterized fragment joins a
+# second fragment on a shared scope/center role, rule-set union is not
+# conjunction of answers, and an explicit candidate id isolates two candidates.
+# Executed fixture.
+native_flix_test(
+    name = "p05_datalog_test",
+    srcs = [
+        "//src:Attune.flix",
+        "P05Datalog.flix",
+    ],
+)
+
+# P06: finite canonical descriptors. The alpha-normal identity preserves a
+# consistent renaming and breaks on inequality, direction and output-role
+# changes; safe outputs and bounded role slots are validated. Executed fixture.
+native_flix_test(
+    name = "p06_descriptors_test",
+    srcs = [
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "P06Descriptors.flix",
+    ],
+)
+
 # The one static domain witness P02 cites: a `Frontier` constructor fixes its
 # member domain, so a `SymbolId` cannot inhabit `Frontier.Files`. The pinned
 # compiler rejects it during `check` with no `main` required. Sibling to the
