@@ -7,12 +7,14 @@
 /// marker name and the declared path list, so the comparison is made here but
 /// the document is never rewritten.
 ///
-/// The marker vocabulary is closed (one name per payload). A missing, duplicate
-/// or unbalanced marker is an explicit rejection rather than a silently skipped
-/// block, so a stale or drifted payload fails the check instead of being
-/// blessed. An optional `///` doc-comment leader and one enclosing fenced-code
-/// line pair are removed, which lets the same convention hold a README block
-/// and a commented block in Flix source.
+/// The marker vocabulary is closed (one name per payload), and the one-pass scan
+/// keeps each marker's kind: exactly one opening marker must precede exactly one
+/// closing marker. A missing, two openings, two closings, an inverted pair or any
+/// further duplicate is an explicit rejection rather than a silently skipped or
+/// silently accepted block, so a stale or drifted payload fails the check instead
+/// of being blessed. An optional `///` doc-comment leader and one enclosing
+/// fenced-code line pair are removed, which lets the same convention hold a
+/// README block and a commented block in Flix source.
 pub mod Attune.Docs {
 
     /// The opening marker line of one named payload, matched exactly once the
@@ -24,37 +26,49 @@ pub mod Attune.Docs {
 
     /// Extract one payload: the lines strictly between the two marker lines of
     /// the given name, with an optional leading `///` doc-comment leader and one
-    /// enclosing fenced-code line pair removed. Exactly one opening marker and
-    /// one closing marker must be present and the opening must come first, so a
-    /// missing, duplicated or inverted marker is an explicit rejection rather
-    /// than a silently skipped block.
+    /// enclosing fenced-code line pair removed. The scan keeps each marker's
+    /// kind, so exactly one opening marker must precede exactly one closing
+    /// marker: two openings, two closings, a closing before an opening, a lone
+    /// marker and any further duplicate are each an explicit rejection rather
+    /// than a silently skipped or silently accepted block.
     pub def snippet(name: String, text: String): Result[String, String] = {
         let lines = String.lines(text);
-        match markerLines(name, lines) {
-            case open :: close :: Nil =>
-                if (open < close)
-                    Ok(joinPayload(List.take(close - open - 1, List.drop(open + 1, lines))))
-                else
-                    Err("snippet marker " + name + " closes before it opens")
+        match markers(name, lines) {
+            case (open, MarkerKind.Opens) :: (close, MarkerKind.Closes) :: Nil =>
+                Ok(joinPayload(List.take(close - open - 1, List.drop(open + 1, lines))))
             case Nil => Err("missing snippet marker " + name)
-            case _   => Err("duplicate snippet marker " + name)
+            case (_, MarkerKind.Closes) :: (_, MarkerKind.Opens) :: Nil =>
+                Err("snippet marker " + name + " closes before it opens")
+            case _ => Err("duplicate snippet marker " + name)
         }
     }
 
-    /// The zero-based indices of the named payload's marker lines, in the order
-    /// they appear. Both markers share the one closed vocabulary, so a marker of
-    /// another name is never matched.
-    def markerLines(name: String, lines: List[String]): List[Int32] =
-        markerLinesAt(name, lines, 0, Nil)
+    /// Which end of one named payload a marker line delimits. The kind is
+    /// retained by the scan, so an opening marker is never mistaken for a
+    /// closing one.
+    enum MarkerKind with Eq {
+        case Opens
+        case Closes
+    }
 
-    def markerLinesAt(name: String, lines: List[String], index: Int32, acc: List[Int32]): List[Int32] =
-        match lines {
-            case Nil => List.reverse(acc)
-            case line :: rest =>
-                let text = withoutLeader(String.trim(line));
-                let hit = text == snippetOpen(name) or text == snippetClose(name);
-                markerLinesAt(name, rest, index + 1, if (hit) index :: acc else acc)
-        }
+    /// The named payload's marker lines in document order, each tagged with its
+    /// kind: one bounded single pass over the document.
+    def markers(name: String, lines: List[String]): List[(Int32, MarkerKind)] =
+        markersAt(name, lines, 0, Nil)
+
+    def markersAt(
+        name: String,
+        lines: List[String],
+        index: Int32,
+        acc: List[(Int32, MarkerKind)]
+    ): List[(Int32, MarkerKind)] = match lines {
+        case Nil => List.reverse(acc)
+        case line :: rest =>
+            let text = withoutLeader(String.trim(line));
+            if (text == snippetOpen(name)) markersAt(name, rest, index + 1, (index, MarkerKind.Opens) :: acc)
+            else if (text == snippetClose(name)) markersAt(name, rest, index + 1, (index, MarkerKind.Closes) :: acc)
+            else markersAt(name, rest, index + 1, acc)
+    }
 
     /// Remove one optional `///` doc-comment leader from an already trimmed line.
     def withoutLeader(line: String): String =

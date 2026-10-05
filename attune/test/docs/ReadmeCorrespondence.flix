@@ -2,7 +2,7 @@ import attune.grit.fixtures.GritFixtures
 
 use Attune.AsciiTree
 use Attune.Docs
-use Attune.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
+use Attune.{Atom, Domain, Fact, Frontier, SymbolId, World}
 use Attune.Repository
 use Attune.Coverage.{Coverage, Outcome, observe, outcomeName}
 use Attune.Study
@@ -194,8 +194,6 @@ def assumption(text: String): List[String] = text :: Nil
 def appEntry(provenance: View.Provenance, subject: String, answer: String, assumptions: List[String]): View.AppEntry =
     { subject = subject, answer = answer, provenance = provenance, assumptions = assumptions }
 
-def fileNode(id: String): Study.AnchorNode = Study.AnchorNode.AnchorFile(FileId.FileId(id))
-
 def symbolNode(name: String): Study.AnchorNode = Study.AnchorNode.AnchorSymbol(SymbolId.SymbolId(name))
 
 def shopAnchor(task: String, node: Study.AnchorNode): Study.Anchor =
@@ -205,6 +203,32 @@ def shopAnchor(task: String, node: Study.AnchorNode): Study.Anchor =
 def admittedCalls(repository: Repository.Repository): List[Study.CallEdge] =
     List.map(pair -> match pair { case (caller, callee) => (symbolNode(caller), symbolNode(callee)) },
         repository#calls)
+
+/// Every symbol that really occurs as an endpoint of an admitted call edge. The
+/// coordination anchors are checked against this set, so an anchor that could
+/// never meet a call edge is a failure rather than a quiet domain mismatch.
+def admittedCallEndpoints(repository: Repository.Repository): List[Study.AnchorNode] =
+    List.map(symbolNode, List.distinct(List.flatMap(pair -> match pair {
+        case (caller, callee) => caller :: callee :: Nil
+    }, repository#calls)))
+
+/// The admitted symbols declared in one file, sorted and distinct.
+def declaredSymbols(repository: Repository.Repository, path: String): List[String] =
+    List.sort(List.distinct(List.filterMap(declaration ->
+        if (declaration#file == path) Some(declaration#symbol) else None, repository#declarations)))
+
+/// The node one task anchors on: the symbol its own file declares that really
+/// occurs as an endpoint of an admitted call edge. A file anchor could never
+/// match a symbol call edge, so pairing one with the symbol call relation would
+/// leave E1's direct-call guard vacuous; the anchors must share the call edges'
+/// nominal symbol domain for the relation to decide the guard.
+def callEndpoint(repository: Repository.Repository, path: String): Study.AnchorNode =
+    match List.filter(symbol ->
+        List.exists(pair -> match pair { case (a, b) => a == symbol or b == symbol }, repository#calls),
+        declaredSymbols(repository, path)) {
+        case symbol :: _ => symbolNode(symbol)
+        case Nil         => symbolNode(path)
+    }
 
 /// The targets of one real admitted relation from one source, sorted and
 /// distinct.
@@ -225,9 +249,13 @@ def decision(verdict: Study.Verdict): String =
 def shopFacts(repository: Repository.Repository): List[Fact] =
     Repository.scopedFacts(snapshot(), repository)#facts
 
-def receiptCheckoutAnchors(): List[Study.Anchor] = List#{
-    shopAnchor("receipt", fileNode("shop/receipt.rb")),
-    shopAnchor("checkout", fileNode("shop/checkout.rb"))
+/// The two task anchors of the coordination report, drawn from the endpoints of
+/// the real admitted call relation. Both names are symbols the admitted call
+/// edges really use, not file paths, so the direct-call guard compares like
+/// domains.
+def receiptCheckoutAnchors(repository: Repository.Repository): List[Study.Anchor] = List#{
+    shopAnchor("receipt", callEndpoint(repository, "shop/receipt.rb")),
+    shopAnchor("checkout", callEndpoint(repository, "shop/checkout.rb"))
 }
 
 /// The coordination report. The E1 decisions are the shared Study policies over
@@ -235,7 +263,7 @@ def receiptCheckoutAnchors(): List[Study.Anchor] = List#{
 /// states of the same world; the historical row is the retained promotion value.
 def coordinationReport(repository: Repository.Repository): View.ApplicationReport = {
     let earned = { verdict = Study.Verdict.Unknown(List#{"static:no-direct-call"}), calls = admittedCalls(repository) };
-    let anchors = receiptCheckoutAnchors();
+    let anchors = receiptCheckoutAnchors(repository);
     let contract = List#{
         { task = "receipt", operation = Study.Operation.ChangesContract, boundary = "Shop::Pricing" },
         { task = "checkout", operation = Study.Operation.ExtendsImplementation, boundary = "Shop::Pricing" } };
@@ -397,7 +425,50 @@ def applicationReportsTraceRealComputations(): Unit \ {Assert, IO} = {
     let document = payload(coordinationDocument(repository));
     Assert.assertTrue(String.contains(substr = "graph=application name=coordination scope=shop-v1 work=fixture", document));
     Assert.assertTrue(String.contains(substr = "observation query=Shop.Nothing.render = UNKNOWN", document));
-    Assert.assertTrue(String.contains(substr = "observation coverage=failure = FAILED", document))
+    Assert.assertTrue(String.contains(substr = "observation coverage=failure = FAILED", document));
+
+    // The coordination anchors share the symbol domain of the real admitted call
+    // edges, so E1's direct-call guard is decided by the call relation instead of
+    // passing vacuously between a file anchor and a symbol call edge.
+    let anchors = receiptCheckoutAnchors(repository);
+    Assert.assertEq(
+        expected = List#{symbolNode("Shop.Receipt.render"), symbolNode("Shop.Checkout.free_shipping?")},
+        List.map(anchor -> anchor#node, anchors));
+    Assert.assertEq(expected = List#{"receipt", "checkout"}, List.map(anchor -> anchor#task, anchors));
+    Assert.assertEq(expected = true,
+        List.forAll(anchor -> List.memberOf(anchor#node, admittedCallEndpoints(repository)), anchors))
+}
+
+/// Direct-call evidence is load-bearing: the same two same-boundary
+/// ExtendsImplementation intents flip when their anchors move onto a real
+/// admitted call edge. The anchors and the call relation are both nominal
+/// symbols from the real extraction, so the guard decides instead of passing
+/// vacuously across domains.
+@Test
+def directCallEvidenceFlipsTheE1Guard(): Unit \ {Assert, IO} = {
+    let repository = admitted();
+    let endpoints = admittedCallEndpoints(repository);
+    let receipt = symbolNode("Shop.Receipt.render");
+    let checkout = symbolNode("Shop.Checkout.free_shipping?");
+    let pricing = symbolNode("Shop.Pricing.total_cents");
+    Assert.assertEq(expected = true,
+        List.forAll(node -> List.memberOf(node, endpoints), receipt :: checkout :: pricing :: Nil));
+
+    let intents = List#{
+        { task = "receipt", operation = Study.Operation.ExtendsImplementation, boundary = "Shop::Pricing" },
+        { task = "other", operation = Study.Operation.ExtendsImplementation, boundary = "Shop::Pricing" } };
+    let carried = Study.Verdict.Unknown(List#{"E0:carried-evidence"});
+    let earned = { verdict = carried, calls = admittedCalls(repository) };
+
+    // Off the call: two distinct admitted symbols that do not call each other.
+    let offCall = List#{ shopAnchor("receipt", receipt), shopAnchor("other", checkout) };
+    Assert.assertEq(expected = Study.Verdict.Parallel(List#{"E1:DistinctAnchorsAndNoDirectCallOn(Shop::Pricing)"}),
+        Study.e1({ anchors = offCall, earned = earned, intents = intents }));
+
+    // On the call: the same intents with the second anchor moved onto the real
+    // admitted edge Shop.Receipt.render -> Shop.Pricing.total_cents.
+    let onCall = List#{ shopAnchor("receipt", receipt), shopAnchor("other", pricing) };
+    Assert.assertEq(expected = carried, Study.e1({ anchors = onCall, earned = earned, intents = intents }))
 }
 
 /// The selected View comment payload is the grammar the writer regenerates from
@@ -422,6 +493,24 @@ def aDriftedOrMalformedPayloadFails(): Unit \ {Assert, IO} = {
     let open = Docs.snippetOpen("routes");
     let close = Docs.snippetClose("routes");
     Assert.assertErr(Docs.snippet("routes", open + "\n" + open + "\n" + close + "\n"))
+}
+
+/// The marker scan keeps each marker's kind, so exactly one opening marker must
+/// precede exactly one closing marker. Two openings, two closings, a closing
+/// before an opening, a lone opening and a lone closing are each an explicit
+/// rejection rather than a silently accepted block: a scan that cannot tell an
+/// opening from a closing would accept the first two and the inverted pair. The
+/// payload of a legal pair is unchanged.
+@Test
+def markerKindAndOrderAreEnforced(): Unit \ Assert = {
+    let open = Docs.snippetOpen("routes");
+    let close = Docs.snippetClose("routes");
+    Assert.assertEq(expected = Ok("payload\n"), Docs.snippet("routes", open + "\npayload\n" + close + "\n"));
+    Assert.assertErr(Docs.snippet("routes", open + "\npayload\n" + open + "\n"));
+    Assert.assertErr(Docs.snippet("routes", close + "\npayload\n" + close + "\n"));
+    Assert.assertErr(Docs.snippet("routes", close + "\npayload\n" + open + "\n"));
+    Assert.assertErr(Docs.snippet("routes", open + "\npayload\n"));
+    Assert.assertErr(Docs.snippet("routes", "payload\n" + close + "\n"))
 }
 
 /// Every local link in the README names a path the build declared. A remote URL

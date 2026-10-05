@@ -436,10 +436,12 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the route-rendering-world-scope-guard leaf (the snapshot-world
-scope check in the route projection), measured on `ba6b750` (injective-world-
-identity-components: the length-prefixed injective `worldId`), which was built on
-`64f6daf` (the complete-admitted-native-theory-lowering leaf: the
+Source identity: the checked-doc-marker-and-fixture-boundaries leaf (the tagged
+marker scan and the symbol-domain coordination anchors), built on `8deb78c`
+(route-rendering-world-scope-guard: the snapshot-world scope check in the route
+projection), which was built on `ba6b750` (injective-world-identity-components:
+the length-prefixed injective `worldId`), built on `64f6daf` (the
+complete-admitted-native-theory-lowering leaf: the
 relation-independent native Theory lowering repair), built on `bbd5234` (the
 residency-walkthrough-and-raw-counting leaf: the six-chunk walkthrough and the
 derived physical/nonblank report totals), which was built on `b1a797a`
@@ -450,7 +452,8 @@ was built on `6c8e6d3` (the compact ASCII-projection leaf, which itself builds o
 the shared Study policies and corrected-regression leaf, `8376473`, `b21b97b`,
 `a97b234` and `eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a`; the exact commit of this
 leaf is recorded in the mission handoff). The earlier figures remain history, not
-erased, each labelled by the identity that measured it: `64f6daf`
+erased, each labelled by the identity that measured it: `8deb78c`
+4,239/1,278/5,517/3,809, `64f6daf`
 4,233/1,278/5,511/3,753, `bbd5234`
 4,210/1,278/5,488/3,658, `b1a797a`
 4,207/1,278/5,485/3,647, `6db53df`
@@ -470,7 +473,7 @@ excluded).
 | theory | `src/Attune/Theory.flix` | Flix | 555 | A | `Attune.Theory` | Bounded canonical descriptors, the relation-independent native lowering key with the fixed rule families and the world-shard witness rows consumed by the shared index. |
 | study | `src/Attune/Study.flix` | Flix | 549 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
-| view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 514 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
+| view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 522 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
@@ -478,18 +481,18 @@ excluded).
 | boundary | `platform/tools/boundary/*.java` | Java | 481 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 210 | B | build substrate | Native Flix test rules, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,809 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,860 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
 | metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,289 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,239; B mechanical 1,278; A+B authored 5,517; C test 3,809; C support 21,884
-(655 source + 21,229 generated locks). Presentation subsets: A/presentation 514
+4,247; B mechanical 1,278; A+B authored 5,525; C test 3,860; C support 21,884
+(655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 123 readable files, code 33,499,
-comment 2,095, documentation 3,872, blank 1,986; the report prints the derived
-physical 41,452 and nonblank 39,466 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 123 readable files, code 33,558,
+comment 2,101, documentation 4,017, blank 2,010; the report prints the derived
+physical 41,686 and nonblank 39,676 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
 them. The code, comment and file
@@ -1554,3 +1557,73 @@ leaf: fresh `//test/view:route_view_test` 17/17 pass; fresh
 `//test/docs:readme_correspondence_test` pass; integrated `bazel test //...`
 25/25 green; typecheck exit 0; scoped buildifier exit 4 with the documented
 baseline diagnostic families only.
+
+## Checked-doc marker and coordination-anchor leaf record
+
+Feature `checked-doc-marker-and-fixture-boundaries` (fulfils VAL-ASCII-006).
+Recoverable checkpoint: the `8deb78c` `main` tip this leaf builds on.
+
+This leaf repairs two confirmed defects in the checked-documentation fixture
+without adding a framework or scientific policy to `Attune.View`.
+
+First, the one-pass marker scan in `src/Attune/Docs.flix` discarded each marker's
+kind and matched any two marker lines, so two openings or two closings were
+accepted as a valid block, and a closing before an opening was accepted because
+the scan compared only line order. The scan now tags each marker
+`MarkerKind.Opens`/`MarkerKind.Closes`, and `snippet` requires exactly one
+opening before exactly one closing; a lone marker is still `missing`, and any
+other shape is `duplicate` or the explicit `closes before it opens` rejection.
+The public `snippetOpen`/`snippetClose`/`snippet`/`localLinks`/`linkFindings`
+surface and the payload of a legal pair are unchanged.
+
+Second, the coordination fixture anchored its two tasks on `AnchorFile`s while
+the admitted call relation it feeds E1 is `AnchorSymbol`s, so `callDirectly` in
+`Attune.Study.e1` could never be true and the "no direct call" witness was
+vacuous. The fixture now derives each task's anchor from the symbol its own file
+declares that really occurs as an endpoint of an admitted call edge
+(`callEndpoint`), so the anchors share the call edges' nominal symbol domain.
+
+The failing reproduction precedes the repair. `markerKindAndOrderAreEnforced` was
+added first, and the focused target failed with a real `Assertion failed:
+expected Err(_), but got Ok(_)` on the two-opening case before the scan repair;
+the same law and the domain-match assertions in
+`applicationReportsTraceRealComputations` pass after it. A new
+`directCallEvidenceFlipsTheE1Guard` law shows the guard is load-bearing: the same
+two same-boundary `ExtendsImplementation` intents are `Parallel` on two admitted
+callers that do not call each other, and fall back to E0's carried evidence when
+the anchor moves onto the real edge `Shop.Receipt.render ->
+Shop.Pricing.total_cents`. Every anchor that law uses is asserted to be an
+endpoint of a real admitted call edge.
+
+The three documentation checks stay distinct and unchanged: the admitted
+semantic sets, the renderer goldens in `test/view`, and the actual README/source
+bytes compared by the fixture. `readmePayloadsEqualTheGeneratedDocuments` still
+matches the checked-in README and the `Attune.View` comment byte-for-byte, so the
+coordination payload is unchanged; the report's provenance and assumption labels
+are unchanged and the historical row stays labelled. Tests never rewrite or bless
+a document.
+
+Measured on this leaf's declared identity (declared-source check, `accept`; see
+the table above for the canonical figures): A cognitive 4,247; B mechanical
+1,278; A+B authored 5,525; C test 3,860; C support 21,884 (655 source + 21,229
+generated locks); presentation A 522 / B 87 (subsets). Relative to the `8deb78c`
+record, `view` moves 514 -> 522 (the tagged scan and the derived anchor helper)
+and `tests` 3,809 -> 3,860 (the two new laws and the anchor assertions); no other
+component moves.
+
+Bounded architecture review (the cognitive core is above the around-2,500
+trigger and A+B above the preferred 5,000 line; both are review triggers, not
+failures). Largest application-semantic component: `repository` (809), unchanged.
+Hardest reacquisition: the Grit acquisition boundary under `repository`, unchanged
+by this leaf. Localization/coordination navigation: both applications still join
+through `Attune.Study` over the shared world index; this leaf changes only the
+`test/docs` fixture's anchors and the `Attune.Docs` marker helper, and
+`Attune.View` still consumes typed values and never creates them.
+Policy-leak/duplication check: the tagged scan and the derived anchors add no
+second evaluator, no registry and no scientific decision; the one `Attune.apply`
+remains the only relation application, and `Attune.Study.e1` is unchanged.
+Validation on this leaf: fresh `//test/docs:readme_correspondence_test` 8/8 pass
+(the pre-repair marker failure is recorded above); fresh `//test/docs/...
+//test/view/... //test/grit/... //test/history/...` 9/9 pass; integrated
+`bazel test //...` 25/25 green; typecheck exit 0; scoped buildifier exit 4 with
+the documented pre-existing diagnostic families only and no `# reformat`.
