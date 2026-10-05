@@ -1,0 +1,18 @@
+package(default_visibility = ["//visibility:public"])
+
+# The carried Zed editor assets: the pinned Flix grammar revision the Grit
+# integration reuses and the language-server declaration that delegates to the
+# compiler's own server. They are declared data for the pin-correspondence
+# fixture, which reads them as source-as-data and never executes them. The
+# untracked upstream grammar checkout beside them is preserved editor work, not
+# a build input, and is never declared here.
+filegroup(
+    name = "zed_assets",
+    srcs = [
+        "extension.toml",
+        "languages/flix/brackets.scm",
+        "languages/flix/config.toml",
+        "languages/flix/highlights.scm",
+        "languages/flix/outline.scm",
+    ],
+)

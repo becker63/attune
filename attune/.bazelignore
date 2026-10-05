@@ -1,0 +1,6 @@
+# The preserved upstream Flix grammar checkout beside the carried Zed assets is
+# untracked editor work, not project source and not a Bazel input. It is never
+# declared, compiled or read into an action; this keeps Bazel's package
+# discovery from scanning it. The read-only reference checkout `attuneflix/` and
+# the agent/VCS metadata all live at the checkout root, outside this workspace.
+platform/zed/grammars

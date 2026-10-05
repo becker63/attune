@@ -1,0 +1,52 @@
+# Attune v2: pinned, independent developer build of the nested `attune/`
+# workspace.
+#
+# The public gate is `nix develop --command bazel test //...` from this
+# workspace. BuildBuddy is a separate opt-in config so the ordinary gate never
+# requires a credential.
+
+# The Bazel server is the largest single process this workspace starts, so its
+# heap is bounded explicitly rather than left at a fraction of host RAM.
+startup --host_jvm_args=-Xmx512m
+startup --host_jvm_args=-XX:MaxMetaspaceSize=256m
+
+build --enable_bzlmod
+
+# Pinned language and runtime versions (mission pins: Java 25).
+build --java_language_version=25
+build --tool_java_language_version=25
+build --java_runtime_version=remotejdk_25
+build --tool_java_runtime_version=remotejdk_25
+
+# The host has eight CPUs, active swap and a competing experiment. The approved
+# budget is one local build job with bounded memory. The earlier four-job/4GiB
+# setting was not approved; it is corrected here rather than left implicit.
+build --local_resources=cpu=1
+build --local_resources=memory=1024
+build --jobs=1
+
+test --test_output=errors
+# `bazel test //...` is the ordinary gate; only test targets are built.
+test --build_tests_only
+# Ordinary native tests stay cacheable. The two live-checkout checks (the
+# workspace audit and the checked-document correspondence) are tagged `local`
+# and `external` instead, so they re-read the live tree on every invocation
+# without disabling test caching globally.
+#
+# Note: `external` is the tag that forces unconditional execution. The `no-cache`
+# tag only excludes the disk and remote action caches; it was measured to leave
+# the in-memory test result cache intact, so a live check tagged `no-cache` alone
+# still replayed `(cached)`. `external` is what the audit and the correspondence
+# fixture actually carry.
+
+# aspect_tools_telemetry (pulled in transitively) reports usage unless
+# disabled; an empty value does NOT disable it, "-all" does.
+common --repo_env=ASPECT_TOOLS_TELEMETRY=-all
+
+# BuildBuddy remote cache and BES. Authentication is supplied by the local
+# credential helper from the ignored checkout-root .env; the key never enters a
+# declared action input, CAS object, argument or log.
+build:buildbuddy --bes_results_url=https://app.buildbuddy.io/invocation/
+build:buildbuddy --bes_backend=grpcs://remote.buildbuddy.io
+build:buildbuddy --remote_cache=grpcs://remote.buildbuddy.io
+build:buildbuddy --remote_cache_compression

@@ -1,0 +1,61 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//platform/build:native.bzl", "native_flix_java_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The test-scoped typed LangChain4j inference seam. It is a fake/recorded
+# boundary: the real SDK request builder and response decoder run against a
+# deterministic recorded exchange, with no provider endpoint, credential or
+# socket. The production policy keeps its `raw-http` guard on `src/`, so the
+# approved SDK's own client interface is exercised here rather than disguised.
+java_library(
+    name = "attune_inference",
+    srcs = ["AttuneInference.java"],
+    javacopts = ["--release=21"],
+    runtime_deps = ["@attune_maven//:org_slf4j_slf4j_nop"],
+    deps = [
+        "@attune_maven//:com_fasterxml_jackson_core_jackson_core",
+        "@attune_maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@attune_maven//:dev_langchain4j_langchain4j_core",
+        "@attune_maven//:dev_langchain4j_langchain4j_http_client",
+        "@attune_maven//:dev_langchain4j_langchain4j_http_client_jdk",
+        "@attune_maven//:dev_langchain4j_langchain4j_open_ai",
+    ],
+)
+
+# The native Flix fixtures drive the typed seam through the pinned compiler's
+# authentic test engine, with the SDK jars passed explicitly as prepared
+# dependencies. No `flix.toml` project and no dependency resolver are used.
+native_flix_java_test(
+    name = "inference_seam_test",
+    srcs = [
+        "InferenceSeamTest.flix",
+        "Seam.flix",
+    ],
+    java_deps = [":attune_inference"],
+)
+
+native_flix_java_test(
+    name = "parquet_seam_test",
+    srcs = [
+        "ParquetSeamTest.flix",
+        "Seam.flix",
+    ],
+    java_deps = ["//src/native/parquet:attune_parquet"],
+)
+
+# Manual negative fixture: a deliberately false assertion over the Java-backed
+# route. It is excluded from `bazel test //...` by the `manual` tag; running it
+# directly must fail, proving the route reports real assertion failures.
+native_flix_java_test(
+    name = "false_assertion_java_test",
+    srcs = ["FalseAssertionJava.flix"],
+    java_deps = [":attune_inference"],
+    tags = ["manual"],
+)

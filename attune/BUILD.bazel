@@ -1,0 +1,84 @@
+package(default_visibility = ["//visibility:public"])
+
+# The pinned Flix compiler as a private Bazel build tool. It is never a public
+# project verb; the native test launcher invokes its authentic test engine, not
+# `flix run` or a fat JAR.
+java_binary(
+    name = "flix",
+    main_class = "ca.uwaterloo.flix.Main",
+    runtime_deps = ["@flix_compiler//jar"],
+)
+
+# The declared authored-source population, minus the exact boundaries: VCS and
+# agent tooling outside this workspace, Bazel output and the pinned foreign
+# families reported in their own role. A glob cannot cross a Bazel package
+# boundary, so every package that carries authored source contributes its own
+# `policy_files` filegroup. `notes/design.md` records which packages make up
+# this declared population; a new package must add its filegroup here so its
+# source stays declared rather than silently unowned.
+filegroup(
+    name = "policy_files",
+    srcs = glob(
+        [
+            "*.md",
+            "*.bzl",
+            "*.nix",
+            "*.lock",
+            "BUILD.bazel",
+            "MODULE.bazel",
+            "maven_install.json",
+        ],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "policy_sources",
+    srcs = [
+        ":policy_files",
+        "//notes:policy_files",
+        "//platform/build:policy_files",
+        "//platform/support/grit:policy_files",
+        "//platform/tools:policy_files",
+        "//platform/tools/boundary:policy_files",
+        "//src:policy_files",
+        "//src/grit:policy_files",
+        "//src/native/grit:policy_files",
+        "//src/native/parquet:policy_files",
+        "//test:policy_files",
+        "//test/docs:policy_files",
+        "//test/grit:policy_files",
+        "//test/policy:policy_files",
+        "//test/proposals:policy_files",
+        "//test/seam:policy_files",
+        "//test/spine:policy_files",
+        "//test/view:policy_files",
+    ],
+)
+
+# One aggregated name for the ordinary gate. `bazel test //...` is the public
+# interface; this suite exists so the spine can be selected by one label.
+test_suite(
+    name = "spine_tests",
+    tests = [
+        "//test/spine:envelope_test",
+        "//test/spine:isolation_test",
+        "//test/spine:nominal_negative_test",
+    ],
+)
+
+# The policy and counting surface of the same public gate.
+test_suite(
+    name = "policy_tests",
+    tests = [
+        "//test/policy:count_law_test",
+        "//test/policy:declared_source_policy_test",
+        "//test/policy:policy_cases_test",
+        "//test/policy:workspace_audit_test",
+    ],
+)
+
+# The repository rules an agent must read before changing this workspace. The
+# checkout root's README.md and LICENSE stay outside this nested workspace and
+# are maintained separately.
+exports_files(["AGENTS.md"])
