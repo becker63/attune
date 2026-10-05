@@ -34,3 +34,30 @@ def parquetRejectsWrongSchema(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = Outcome.Rejected("schema"), outcome(out));
     Assert.assertEq(expected = false, String.contains(substr = "\"rows\"", out))
 }
+
+/// The evidence schema keeps a tri-state observation and a classified error
+/// separate: `observed` is nullable, so an unmeasured or failed observation is
+/// null and can never read back as a boolean `false`.
+def evidenceSchema(): String =
+    "{\"format\":\"attune-evidence-rows-v1\",\"columns\":[{\"name\":\"scope\",\"type\":\"string\",\"nullable\":false},{\"name\":\"subject\",\"type\":\"string\",\"nullable\":false},{\"name\":\"atom\",\"type\":\"string\",\"nullable\":false},{\"name\":\"outcome\",\"type\":\"string\",\"nullable\":false},{\"name\":\"observed\",\"type\":\"boolean\",\"nullable\":true},{\"name\":\"error\",\"type\":\"string\",\"nullable\":true}]}"
+
+def evidenceRows(): String =
+    "[{\"scope\":\"shop-v1\",\"subject\":\"pricing.rb\",\"atom\":\"defines\",\"outcome\":\"WITNESS\",\"observed\":true,\"error\":null},{\"scope\":\"shop-v1\",\"subject\":\"receipt.rb\",\"atom\":\"defines\",\"outcome\":\"NO-MATCH\",\"observed\":false,\"error\":null},{\"scope\":\"shop-v1\",\"subject\":\"ghost.rb\",\"atom\":\"defines\",\"outcome\":\"UNKNOWN\",\"observed\":null,\"error\":null},{\"scope\":\"shop-v1\",\"subject\":\"pricing.rb\",\"atom\":\"calls\",\"outcome\":\"FAILED\",\"observed\":null,\"error\":\"acquisition-error\"}]"
+
+/// Witness/no-match/unknown/failure and the tri-state observation/error survive
+/// the real Arrow Dataset write/read. A missing row is not invented, and an
+/// unmeasured observation stays null rather than becoming false.
+@Test
+def parquetPreservesEvidenceAndTriStateDistinctions(): Unit \ {Assert, IO} = {
+    let expected = "{\"version\":1,\"status\":\"ok\",\"kind\":\"parquet\",\"rows\":" + evidenceRows() + "}";
+    let written = AttuneParquet.writeTable("evidence-rows.parquet", evidenceSchema(), evidenceRows());
+    let read = AttuneParquet.readTable("evidence-rows.parquet", evidenceSchema());
+    Assert.assertEq(expected = expected, written);
+    Assert.assertEq(expected = expected, read);
+    Assert.assertEq(expected = Outcome.Decoded("parquet"), outcome(read));
+    Assert.assertTrue(String.contains(substr = "\"outcome\":\"UNKNOWN\",\"observed\":null", read));
+    Assert.assertTrue(String.contains(substr = "\"outcome\":\"NO-MATCH\",\"observed\":false", read));
+    Assert.assertTrue(String.contains(substr = "\"outcome\":\"FAILED\",\"observed\":null,\"error\":\"acquisition-error\"", read));
+    Assert.assertEq(expected = false,
+        String.contains(substr = "\"outcome\":\"UNKNOWN\",\"observed\":false", read))
+}

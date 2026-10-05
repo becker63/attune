@@ -1,4 +1,5 @@
 use Attune.AsciiTree
+use Attune.Study.{Outcome, outcomeName}
 use Attune.View
 
 /// Native `@Test` laws for the proof adapter, driven by a native Datalog fixture.
@@ -56,7 +57,7 @@ def aConjunctionProofKeepsEveryPremise(): Unit \ Assert = {
             List#{("s", "good"), ("b", "receipt.rb"), ("center", "pricing.rb")}),
         premise("", "a != b", true, Nil)
     });
-    let proof = { goal = "Pair", scope = "good", outcome = View.Outcome.Witness, detail = "",
+    let proof = { goal = "Pair", scope = "good", outcome = Outcome.Witness, detail = "",
         application = main, alternatives = alternative :: Nil };
     let expected = lines(
         "graph=proof goal=Pair scope=good" ::
@@ -81,7 +82,7 @@ def aFalsePremiseIsANoMatchNotAWitness(): Unit \ Assert = {
     let facts = #{ Imports("one", "receipt.rb", "pricing.rb"). };
     let rows = query facts, pairRules() select (a, b) from Pair("one", a, b, "pricing.rb");
     Assert.assertTrue(Vector.isEmpty(rows));
-    let proof = { goal = "Pair", scope = "one", outcome = View.Outcome.NoMatch, detail = "",
+    let proof = { goal = "Pair", scope = "one", outcome = Outcome.NoMatch, detail = "",
         application = app("Pair(s, a, b, center)", "one", List#{
             premise("left", "Imports(s, a, center)", true,
                 List#{("s", "one"), ("a", "receipt.rb"), ("center", "pricing.rb")}),
@@ -105,9 +106,9 @@ def aFalsePremiseIsANoMatchNotAWitness(): Unit \ Assert = {
 @Test
 def unknownAndFailureStayDistinct(): Unit \ Assert = {
     let noApplication = app("Pair(s, a, b, center)", "good", Nil);
-    let unknown = { goal = "Pair", scope = "good", outcome = View.Outcome.Unknown,
+    let unknown = { goal = "Pair", scope = "good", outcome = Outcome.Unknown,
         detail = "evidence-incomplete", application = noApplication, alternatives = Nil };
-    let failed = { goal = "Pair", scope = "good", outcome = View.Outcome.Failed,
+    let failed = { goal = "Pair", scope = "good", outcome = Outcome.Failed,
         detail = "extractor-error", application = noApplication, alternatives = Nil };
     Assert.assertEq(
         expected = Ok(lines("graph=proof goal=Pair scope=good" :: "outcome=UNKNOWN" ::
@@ -117,6 +118,6 @@ def unknownAndFailureStayDistinct(): Unit \ Assert = {
         expected = Ok(lines("graph=proof goal=Pair scope=good" :: "outcome=FAILED" ::
             "detail=extractor-error" :: Nil)),
         View.renderProof(limits(), failed));
-    Assert.assertEq(expected = false, View.outcomeName(unknown#outcome) == View.outcomeName(failed#outcome));
-    Assert.assertEq(expected = false, View.outcomeName(unknown#outcome) == View.outcomeName(View.Outcome.Witness))
+    Assert.assertEq(expected = false, outcomeName(unknown#outcome) == outcomeName(failed#outcome));
+    Assert.assertEq(expected = false, outcomeName(unknown#outcome) == outcomeName(Outcome.Witness))
 }

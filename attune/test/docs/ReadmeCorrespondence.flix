@@ -3,8 +3,9 @@ import attune.grit.fixtures.GritFixtures
 use Attune.AsciiTree
 use Attune.Docs
 use Attune.Envelope
-use Attune.Envelope.{Atom, Domain, Frontier, World}
+use Attune.Envelope.{Atom, Domain, Fact, Frontier, World}
 use Attune.Repository
+use Attune.Study.{Outcome}
 use Attune.View
 
 /// The documentation correspondence fixture.
@@ -96,8 +97,8 @@ def routesDocument(repository: Repository.Repository): Result[String, String] = 
     View.renderRoutes(limits(), snapshot(), "demo", r :: e :: a :: b :: Nil)
 }
 
-def viewFact(source: String, target: String): View.ViewFact =
-    { scope = "shop-v1", source = source, atom = Atom.Imports, target = target }
+def viewFact(source: String, target: String): Fact =
+    { world = World.World("shop-v1"), source = source, atom = Atom.Imports, target = target }
 
 def fileSeed(id: String): View.ViewSeed = { id = id, domain = Domain.Files }
 
@@ -159,7 +160,7 @@ def proofDocument(repository: Repository.Repository): Result[String, String] =
             match pairs {
                 case Nil => Err("the shop join produced no witness")
                 case (a, b) :: _ => View.renderProof(limits(), {
-                    goal = "Pair", scope = "shop-v1", outcome = View.Outcome.Witness, detail = "",
+                    goal = "Pair", scope = "shop-v1", outcome = Outcome.Witness, detail = "",
                     application = application("shop-v1", a, b, center, true), alternatives = Nil })
             }
         }
@@ -172,7 +173,7 @@ def counterexampleDocument(): Result[String, String] = {
     let rows = query facts, pairRules() select (a, b) from Pair("one", a, b, "pricing.rb");
     if (not Vector.isEmpty(rows)) Err("the one-importer counterexample should have no row")
     else View.renderProof(limits(), {
-        goal = "Pair", scope = "one", outcome = View.Outcome.NoMatch, detail = "",
+        goal = "Pair", scope = "one", outcome = Outcome.NoMatch, detail = "",
         application = application("one", "receipt.rb", "receipt.rb", "pricing.rb", false), alternatives = Nil })
 }
 

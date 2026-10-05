@@ -54,3 +54,54 @@ native_flix_reject_test(
     ],
     expected = "Unable to unify the types",
 )
+
+# VAL-CORE-001: exact nominal identity. Reordering one exact set is the same
+# observation; equal cardinality, a shared basename, another world and another
+# domain stay distinct, and world identity carries origin, content and semantics.
+native_flix_test(
+    name = "core_identity_test",
+    srcs = [
+        "CoreIdentityLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+    ],
+)
+
+# VAL-CORE-002: the one exact six-atom application. All six primitive signatures
+# apply, a legal empty answer keeps its world and domain, and an illegal domain
+# composition or a foreign-world fact is a classified rejection.
+native_flix_test(
+    name = "core_apply_test",
+    srcs = [
+        "CoreApplyLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Apply.flix",
+        "//src:Attune/Envelope.flix",
+    ],
+)
+
+# VAL-CORE-003: the measured local exact memo. The declared serial fixture has
+# exact hit/miss counts, a real empty reuse, a repeated producer reuse, and
+# equal-output/different-input and cross-world lookups that do not count.
+native_flix_test(
+    name = "core_memo_test",
+    srcs = [
+        "CoreMemoLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Apply.flix",
+        "//src:Attune/Envelope.flix",
+    ],
+)
+
+# VAL-CORE-004: typed evidence and artifact values. Witness/no-match/unknown/
+# failure, the tri-state observation, distinct-entity support and artifact
+# identity stay distinct. The Parquet round trip is `//test/seam`.
+native_flix_test(
+    name = "core_evidence_test",
+    srcs = [
+        "CoreEvidenceLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Envelope.flix",
+        "//src:Attune/Study.flix",
+    ],
+)

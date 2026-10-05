@@ -1,6 +1,7 @@
 use Attune.Envelope
-use Attune.Envelope.{Atom, Domain, World}
+use Attune.Envelope.{Atom, Domain, Fact, World}
 use Attune.AsciiTree
+use Attune.Study.{Outcome}
 use Attune.View
 
 /// P09 - semantic views and diagram projection.
@@ -52,14 +53,14 @@ pub def relabelled(edge: View.ViewEdge, relation: Atom): View.ViewEdge =
 
 def limits(): AsciiTree.Limits = AsciiTree.limits(16, 64, 100, 64, 4096)
 
-def fact(scope: String, source: String, atom: Atom, target: String): View.ViewFact =
-    { scope = scope, source = source, atom = atom, target = target }
+def fact(scope: String, source: String, atom: Atom, target: String): Fact =
+    { world = World.World(scope), source = source, atom = atom, target = target }
 
 def seed(id: String): View.ViewSeed = { id = id, domain = Domain.Files }
 
 /// The authored shop graph: two seeds with a shared child and a lateral edge
 /// from one seed to the other.
-def shopFacts(): List[View.ViewFact] = List#{
+def shopFacts(): List[Fact] = List#{
     fact("shop", "receipt.rb", Atom.Imports, "pricing.rb"),
     fact("shop", "checkout.rb", Atom.Imports, "pricing.rb"),
     fact("shop", "receipt.rb", Atom.Imports, "checkout.rb")
@@ -124,7 +125,7 @@ def importsCannotBeRelabelledAsAWrite(): Unit \ Assert = {
 def proofAndRouteMeaningsStayDistinct(): Unit \ Assert = {
     let premise = { role = "pair", text = "Imports(shop, receipt.rb, pricing.rb)", holds = true, bindings = List#{("x", "receipt.rb")} };
     let application = { head = "ViewImport(shop, x, y)", scope = "shop", premises = List#{premise} };
-    let proof = { goal = "ViewImport", scope = "shop", outcome = View.Outcome.Witness, detail = "", application = application, alternatives = Nil };
+    let proof = { goal = "ViewImport", scope = "shop", outcome = Outcome.Witness, detail = "", application = application, alternatives = Nil };
     let proofText = match View.renderProof(limits(), proof) {
         case Ok(text) => text
         case Err(_)   => ""

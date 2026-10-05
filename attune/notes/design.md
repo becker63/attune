@@ -16,7 +16,8 @@ adaptation record, the proposal index and the counts all live in this one file.
 | Native Flix test rules | `platform/build/native.bzl` | shared Starlark |
 | Live workspace root for the audit test | `platform/build/workspace_root.bzl` | shared Starlark |
 | Declared pinned isolation tool | `platform/build/unshare_repository.bzl` | shared Starlark |
-| Shared nominal envelope | `src/Attune.flix`, `src/Attune/Envelope.flix` | shared Flix |
+| Shared nominal envelope, exact application and local memo | `src/Attune.flix`, `src/Attune/Envelope.flix`, `src/Attune/Apply.flix` | shared Flix |
+| Typed evidence, outcome, observation and artifact values | `src/Attune/Study.flix` | shared Flix |
 | Compact source/language/dependency/doc/LOC policy | `src/Attune/Policy.flix` | shared Flix |
 | Flix-owned isolation assertions | `src/Attune/Isolation.flix` | shared Flix |
 | Typed Arrow Dataset Parquet codec | `src/native/parquet/AttuneParquet.java` | shared Java |
@@ -29,7 +30,7 @@ adaptation record, the proposal index and the counts all live in this one file.
 | Hand-written FFM binding and canonical-record facade | `src/native/grit/*.java` | shared Java |
 | Inherited pinned native closure, ABI shim and grammar patches | `platform/support/grit/**` | inherited support |
 | Carried Flix syntax/highlighting assets and language-server declaration | `platform/zed/extension.toml`, `platform/zed/languages/flix/*` | inherited support |
-| Native envelope, isolation and compiler-negative fixtures | `test/spine/*.flix` | fixtures |
+| Native envelope, core identity/application/memo/evidence, isolation and compiler-negative fixtures | `test/spine/*.flix` | fixtures |
 | Counting laws, named policy cases, declared check and live audit | `test/policy/*.flix` | fixtures |
 | Inference and Parquet seam fixtures | `test/seam/*.flix` | fixtures |
 | Narrow typed Flix view over the seam envelopes | `test/seam/Seam.flix` | fixtures |
@@ -38,7 +39,7 @@ adaptation record, the proposal index and the counts all live in this one file.
 | Writer, route, grammar, proof and semantic-view laws | `test/view/*.flix` | fixtures |
 | Restricted marker, link and snippet correspondence seam | `src/Attune/Docs.flix` | shared Flix |
 | README/comment correspondence fixture | `test/docs/*.flix` | fixtures |
-| Test-only proposal namespace P01-P10 | `test/proposals/*.flix` | fixtures (reported apart) |
+| Test-only proposal namespace: remaining P05/P06/P08/P09 (P01-P04/P07/P10 migrated into `Attune`/`Study` and removed) | `test/proposals/*.flix` | fixtures (reported apart) |
 | Workspace documentation | `AGENTS.md`, `notes/design.md`, `notes/mission.md` | metadata |
 | Checkout-root documentation | `README.md`, `LICENSE` | metadata (outside this workspace) |
 
@@ -281,28 +282,36 @@ audit rather than trust a copied number:
 
 | Role | Language | Files | Code | Comment | Doc | Blank |
 | --- | --- | --- | --- | --- | --- | --- |
-| shared | flix | 9 | 2044 | 38 | 598 | 372 |
+| shared | flix | 11 | 2186 | 38 | 686 | 406 |
 | shared | java | 9 | 981 | 19 | 145 | 95 |
 | shared | starlark | 4 | 894 | 34 | 132 | 70 |
 | shared | grit | 24 | 372 | 1514 | 0 | 96 |
 | shared | markdown | 1 | 0 | 0 | 72 | 12 |
-| declarative | starlark | 21 | 747 | 237 | 0 | 106 |
-| fixture | flix | 30 | 2257 | 12 | 859 | 361 |
+| declarative | starlark | 21 | 721 | 225 | 0 | 103 |
+| fixture | flix | 27 | 2096 | 16 | 605 | 330 |
 | fixture | java | 2 | 235 | 0 | 42 | 28 |
 | fixture | ruby | 11 | 87 | 28 | 0 | 17 |
 | support | markdown | 1 | 0 | 0 | 13 | 9 |
 | support | nix | 1 | 41 | 9 | 0 | 8 |
 | support | other | 150 | 57857 | 607 | 0 | 1390 |
-| metadata | markdown | 3 | 0 | 0 | 699 | 102 |
+| metadata | markdown | 3 | 0 | 0 | 700 | 102 |
 | metadata | nix | 1 | 118 | 37 | 0 | 16 |
 | metadata | other | 7 | 1485 | 35 | 0 | 7 |
 
-Shared implementation code totals 4,291 as measured against the user-approved
-4,300-line target, test code 2,579 against 2,600, and test-only proposal code 841
-against 1,500. The 4,272/2,576 figures recorded before the nested-workspace
-migration are preserved as history; the migration itself added the checkout-root
-document binding to the mechanical launcher, the new root/`notes`/`platform/zed`
-BUILD files, and the nested-path policy vocabulary. Only the shared, test and
+Shared implementation code totals 4,433 as measured against the user-approved
+4,300-line target, so that row is honestly red (`attune-policy-verdict: reject`,
+Bazel exit 3); test code 2,418 is within 2,600 and test-only proposal code 381 is
+within 1,500. The 4,291/2,579/841 figures recorded before this consolidation are
+preserved as history. The compact core-and-artifact migration moved the
+P01-P04/P07/P10 laws into `Attune`/`Study` and deleted those seven proposal
+sources: it added 142 shared Flix lines (a structured world identity, the one
+exact six-atom application with its instrumented local memo, and Study's typed
+evidence/observation/artifact values) while removing 161 fixture lines. The
+excess is therefore the compact cutover's own addition to a corpus that already
+sat nine lines under 4,300, not a relabelled or golfed artifact; the superseded
+bootstrap policy/report apparatus that brings the corpus toward the final
+1,800/2,200 limits is owned by the compact ownership-and-accounting work, not
+this leaf, and the 4,300 constant is unchanged. Only the shared, test and
 proposal rows feed the budget. The
 budget line prints all three on every run
 (`attune-policy-budget shared_code=… shared_target=… proposal_code=… test_code=… test_target=…`).
@@ -418,37 +427,44 @@ comments after code, comment-like text inside strings, an escaped quote inside a
 ordinary literal, Starlark docstrings, multiline non-docstring Starlark literals,
 markdown prose or dotfile comments are counted any other way.
 
-## The ten test-only proposals P01-P10
+## The test-only proposals P01-P10
 
-Exactly ten entries live in the admitted `test/proposals/` namespace, one small
-typed contract per file, each with a question and ASCII explanation, the smallest
-relevant signature, a visible positive fixture, a counterexample and the
-enforcement note. `P02DomainWitnessNegative.flix` is the single auxiliary
-compiler-negative fixture cited by P02 and is not an additional entry. Status
-means compiled and executed as a native `@Test` fixture under the pinned
-compiler. The review column records one independent non-author verdict per
-proposal from round 1 of the bootstrap scrutiny (2026-10-05), which assessed
-each proposal separately even when one reviewer covered a pair; the per-pair
-reports are under `validation/bootstrap/scrutiny/reviews/` and the synthesis is
+Ten entries originally lived in the admitted `test/proposals/` namespace, one
+small typed contract per file, each with a question and ASCII explanation, the
+smallest relevant signature, a visible positive fixture, a counterexample and the
+enforcement note. `P02DomainWitnessNegative.flix` was the single auxiliary
+compiler-negative fixture cited by P02, not an additional entry. The compact
+core-and-artifact consolidation migrated P01-P04, P07 and P10 into the shared
+`Attune`/`Study` owners (grouped native laws under `test/spine`, the real Parquet
+seam under `test/seam`, and `Attune.Apply`/`Attune.Study`), and deleted those
+seven proposal sources plus the `P02DomainWitnessNegative.flix` negative rather
+than keep a second evaluator beside the new core. P05, P06, P08 and P09 remain
+test-only here and are migrated by their own later work. Status means compiled and
+executed as a native `@Test` fixture under the pinned compiler. The review column
+records one independent non-author verdict per proposal from round 1 of the
+bootstrap scrutiny (2026-10-05), which assessed each proposal separately even
+when one reviewer covered a pair; the per-pair reports are under
+`validation/bootstrap/scrutiny/reviews/` and the synthesis is
 `validation/bootstrap/scrutiny/synthesis.json`. No author reviewed their own
 proposal.
 
 | ID | Source | Test target | Status | Counterexample | Review | Open choice |
 | --- | --- | --- | --- | --- | --- | --- |
-| P01 | `test/proposals/P01Identity.flix` | `//test/proposals:p01_identity_test` | executed fixture | `equalSizedUnequalSetsDoNotMerge`, `equalBasenamesKeepDistinctIdentities`, `anotherWorldOrDomainDoesNotMerge` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p01-p02-identity-composition.json`) | durable encoding, and whether extra identity witnesses earn their complexity, stay undecided; `identityKey` is a canonical in-memory key, not a storage format |
-| P02 | `test/proposals/P02Composition.flix` | `//test/proposals:p02_composition_test` (plus the isolated `p02_domain_witness_negative_test`) | executed fixture; one static compiler negative | `symbolsThenImportsRejectsAtRuntime`, `filesThenDefinedInAlsoRejectsAtRuntime`; the negative expects `Unable to unify the types` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p01-p02-identity-composition.json`) | whether those extra witnesses are worth their complexity stays undecided |
-| P03 | `test/proposals/P03Evidence.flix` | `//test/proposals:p03_evidence_test` | executed fixture | `equalOutputWithUnequalInputIsNotReuse`, `aMissingProducerIsNotReuse`, `crossWorldReuseIsNotReuse` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p03-p04-evidence-completeness.json`) | runtime memo ownership and partitioning, and any distributed reuse protocol, stay undecided; the ordinals are local to one recorded serial run |
-| P04 | `test/proposals/P04Completeness.flix` | `//test/proposals:p04_completeness_test` | executed fixture | `aForeignSimilarlyNamedFileCannotDonateAWitness`, `missingEvidenceStaysUnknown`, `failureIsNotEmptiness` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p03-p04-evidence-completeness.json`) | production scope recipes, census populations and empirical thresholds stay undecided |
+| P01 | `test/proposals/P01Identity.flix` | `//test/proposals:p01_identity_test` | **migrated** into `test/spine:core_identity_test` (`Attune.Envelope`); source removed | `equalSizedUnequalSetsDoNotMerge`, `equalBasenamesKeepDistinctIdentities`, `anotherWorldOrDomainDoesNotMerge` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p01-p02-identity-composition.json`) | durable encoding, and whether extra identity witnesses earn their complexity, stay undecided; the structured `WorldId` is a canonical in-memory identity, not a storage format |
+| P02 | `test/proposals/P02Composition.flix` | `//test/proposals:p02_composition_test` (plus the isolated `p02_domain_witness_negative_test`) | **migrated** into `test/spine:core_apply_test` (`Attune.Apply`); source removed | `symbolsThenImportsRejectsAtRuntime`, `filesThenDefinedInAlsoRejectsAtRuntime`; the negative expected `Unable to unify the types` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p01-p02-identity-composition.json`) | whether those extra witnesses are worth their complexity stays undecided |
+| P03 | `test/proposals/P03Evidence.flix` | `//test/proposals:p03_evidence_test` | **migrated** into `test/spine:core_memo_test` (`Attune.Apply`); source removed | `equalOutputWithUnequalInputIsNotReuse`, `aMissingProducerIsNotReuse`, `crossWorldReuseIsNotReuse` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p03-p04-evidence-completeness.json`) | runtime memo ownership and partitioning, and any distributed reuse protocol, stay undecided; the ordinals are local to one recorded serial run |
+| P04 | `test/proposals/P04Completeness.flix` | `//test/proposals:p04_completeness_test` | **migrated** into `test/spine:core_evidence_test` and `//test/seam:parquet_seam_test` (`Attune.Study`); source removed | `aForeignSimilarlyNamedFileCannotDonateAWitness`, `missingEvidenceStaysUnknown`, `failureIsNotEmptiness` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p03-p04-evidence-completeness.json`) | production scope recipes, census populations and empirical thresholds stay undecided |
 | P05 | `test/proposals/P05Datalog.flix` | `//test/proposals:p05_datalog_test` | executed fixture on the native solver | `unionOfRulesIsNotConjunction`, `aSharedPredicateLeaksBetweenCandidates` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p05-p06-native-composition-descriptors.json`) | whether candidate isolation travels as an explicit id column or as hygienic local predicates, and which relations survive, stay undecided |
 | P06 | `test/proposals/P06Descriptors.flix` | `//test/proposals:p06_descriptors_test` | executed fixture | `anInequalityChangesIdentity`, `aDirectionChangeBreaksIdentity`, `anOutputRoleChangeBreaksIdentityAndSafetyIsChecked` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p05-p06-native-composition-descriptors.json`) | real search bounds, retained operators and census outcomes stay undecided |
-| P07 | `test/proposals/P07Guards.flix` | `//test/proposals:p07_guards_test` | executed fixture | `twoProofPathsToOneEntityAreOneSupporter`, `anotherScopesEntityCannotMeetTheGuard`, `proposedEvidenceIsNotObserved` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p07-p08-guards-budget-fallback.json`) | which calibrated values deserve retention, and which architectural names are worth keeping, stay undecided |
+| P07 | `test/proposals/P07Guards.flix` | `//test/proposals:p07_guards_test` | **migrated** into `test/spine:core_evidence_test` (`Attune.Study.witnesses`/`meets`); source removed | `twoProofPathsToOneEntityAreOneSupporter`, `anotherScopesEntityCannotMeetTheGuard`, `proposedEvidenceIsNotObserved` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p07-p08-guards-budget-fallback.json`) | which calibrated values deserve retention, and which architectural names are worth keeping, stay undecided |
 | P08 | `test/proposals/P08Decisions.flix` | `//test/proposals:p08_decisions_test` | executed fixture over the recorded fake transport | `failureIsNotAnEmptySuccess`, `overBudgetTakesTheDeclaredFallback`, `unknownDecisionPreservesTheFallback` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p07-p08-guards-budget-fallback.json`) | any model choice, live provider effect, ranking quality and application policy selection stay undecided |
 | P09 | `test/proposals/P09Views.flix` | `//test/proposals:p09_views_test` | executed fixture | `geometryCannotReverseAnEdge`, `importsCannotBeRelabelledAsAWrite`, `proofAndRouteMeaningsStayDistinct` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p09-p10-views-artifact-effects.json`) | a full view catalog, large-graph layout and general C4 recovery stay undecided |
-| P10 | `test/proposals/P10Artifacts.flix` | `//test/proposals:p10_artifacts_test` | executed fixture over the recorded fake handler | `aWrongSchemaDoesNotRoundTrip`, `aChangedIdentityDoesNotReuseTheStoredArtifact`, `goldShapedInputHasNoPathIntoPrediction` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p09-p10-views-artifact-effects.json`) | final materialization granularity, shared build stages, parallel runtime and production storage stay undecided |
+| P10 | `test/proposals/P10Artifacts.flix` | `//test/proposals:p10_artifacts_test` | **migrated** into `test/spine:core_evidence_test` (`Attune.Study` schema/artifact/prediction/gold values); source removed | `aWrongSchemaDoesNotRoundTrip`, `aChangedIdentityDoesNotReuseTheStoredArtifact`, `goldShapedInputHasNoPathIntoPrediction` | pass — non-author round-1 scrutiny, 2026-10-05 (`reviews/proposals-p09-p10-views-artifact-effects.json`) | final materialization granularity, shared build stages, parallel runtime and production storage stay undecided |
 
-Each proposal is compiled and executed but none is admitted to production:
-`Policy` reports a `proposal-dependency` finding if `src/` imports one, and
-`//test/policy:policy_cases_test` exercises that rejection.
+Every remaining proposal is compiled and executed but none is admitted to
+production: `Policy` reports a `proposal-dependency` finding if `src/` imports
+one, and `//test/policy:policy_cases_test` exercises that rejection. The migrated
+laws are now shared production code rather than test-only proposals.
 
 ## Status, handoff and deferred work
 
@@ -489,9 +505,11 @@ README also reports the model route honestly: the only model-shaped code is the
 recorded fake transport, so a fake or offline Qwen/Jev path is labelled as such
 and no live result is claimed. This file and `AGENTS.md` are updated with it.
 
-Implemented as test-only proposals: P01-P10 above, each compiled and executed,
-none admitted to production, each carrying one independent non-author review
-verdict in the index above.
+Implemented as test-only proposals: P05, P06, P08 and P09 above, each compiled
+and executed, none admitted to production, each carrying one independent
+non-author review verdict in the index above. P01-P04, P07 and P10 are no longer
+test-only: their laws were migrated into the shared `Attune`/`Study` owners and
+their proposal sources were removed, so the shared core is the only evaluator.
 
 Not implemented here, and deliberately out of scope: the production Datalog or
 typed-view computation over real admitted facts beyond the checked fixtures, and
@@ -504,17 +522,24 @@ descriptor search bounds (P06), guard calibration (P07), model and policy
 selection (P08), a full view catalog (P09) and production materialization
 granularity (P10).
 
-Handoff status: the gate is green under the corrected lexer, with shared 4,291 of
-the user-approved 4,300, test 2,579 of 2,600 and proposals 841 of 1,500; the pins
-and licenses above are unchanged by this work; the only model-shaped code is the
-recorded fake transport and no provider is contacted; the setup is the
-one-Bazel-owner, out-of-workspace output base with the checkout-root `.env` read
-only by the narrow BuildBuddy helper. The ordinary-string escape fix and its
+Handoff status: the corrected lexer and the ordinary-string escape fix with its
 named native regression are applied, so the reported budget rows are the actual
-corrected counts rather than a disclosed undercount. Each of P01-P10 carries an
-independent non-author round-1 scrutiny verdict in the index above, and the three
-budget-neutral residuals in "Known corrections" stay disclosed rather than
-silently dropped.
+corrected counts rather than a disclosed undercount. This compact leaf is
+functionally green: all 22 non-budget tests pass, including the four new
+`test/spine` core laws and the real Parquet evidence round-trip, and the typecheck
+build passes. The shared row is honestly red at 4,433 of the user-approved 4,300
+(`attune-policy-verdict: reject`, Bazel exit 3) because this leaf added the
+required core semantics to a corpus that already sat nine lines under the gate;
+test 2,418 of 2,600 and proposals 381 of 1,500 stay within their targets. The
+reduction toward the final 1,800/2,200 limits is owned by the compact
+ownership-and-accounting work, which removes the superseded bootstrap
+policy/report apparatus. The pins and licenses above are unchanged by this work;
+the only model-shaped code is the recorded fake transport and no provider is
+contacted; the setup is the one-Bazel-owner, out-of-workspace output base with the
+checkout-root `.env` read only by the narrow BuildBuddy helper. Each remaining
+proposal carries an independent non-author round-1 scrutiny verdict in the index
+above, and the three budget-neutral residuals in "Known corrections" stay
+disclosed rather than silently dropped.
 
 ## Nested-workspace migration record
 
@@ -575,3 +600,26 @@ is likewise deliberately untracked (and ignored) so Git-backed collection filter
 it out instead of copying it into the store; its files remain on disk. Verified
 by reading the materialized store tree, which now holds only `attune/`,
 `.gitignore`, `LICENSE` and `README.md`.
+
+## Core-and-artifact consolidation record
+
+The first compact semantic leaf consolidated the identity/composition/evidence
+proposal laws into shared owners. Recoverable checkpoint: the nested-workspace
+commit `7a32afb` on `main`, from which every deleted proposal file is recoverable
+by path. New/changed paths:
+
+| Path | Change |
+| --- | --- |
+| `attune/src/Attune/Apply.flix` | new shared Flix: one exact six-atom `apply`, the exact `Lookup`/`Memo` and the instrumented `lookup` |
+| `attune/src/Attune/Study.flix` | new shared Flix: `Outcome`, `Coverage`, `Query`/`observe`, `Status`/`Support`/`witnesses`/`meets`, the tri-state `Observation`, and the `Schema`/`Artifact`/`PredictionInput`/`GoldLabel` values |
+| `attune/src/Attune/Envelope.flix` | added the structured `WorldId`/`worldId` and the canonical `Fact` |
+| `attune/src/Attune/View.flix` | now consumes `Attune.Study`'s `Outcome` and `Attune.Envelope`'s `Fact`; its duplicate `Outcome`, `outcomeName` and `ViewFact` were removed |
+| `attune/test/spine/Core{Identity,Apply,Memo,Evidence}Law.flix` | new grouped native laws for VAL-CORE-001..004 |
+| `attune/test/seam/ParquetSeamTest.flix` | added the evidence/observation round-trip through the real Arrow seam |
+| `attune/test/proposals/{P01Identity,P02Composition,P02DomainWitnessNegative,P03Evidence,P04Completeness,P07Guards,P10Artifacts}.flix` | deleted (Git `rm`); laws migrated above |
+
+No shared code was deleted by this leaf beyond the `View` duplicates: the
+migration moved test-only proposal laws into shared production owners, which is
+why the shared row grew while the fixture and proposal rows shrank. The
+superseded bootstrap apparatus that will bring the shared row under the final
+limits is removed by the compact ownership-and-accounting work.

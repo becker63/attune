@@ -1,4 +1,4 @@
-use Attune.Envelope.{Atom, Domain}
+use Attune.Envelope.{Atom, Domain, Fact, World}
 use Attune.AsciiTree
 use Attune.View
 
@@ -14,8 +14,8 @@ def limits(): AsciiTree.Limits = AsciiTree.limits(16, 64, 100, 64, 4096)
 
 def lines(xs: List[String]): String = List.join("\n", xs) + "\n"
 
-def fact(scope: String, source: String, atom: Atom, target: String): View.ViewFact =
-    { scope = scope, source = source, atom = atom, target = target }
+def fact(scope: String, source: String, atom: Atom, target: String): Fact =
+    { world = World.World(scope), source = source, atom = atom, target = target }
 
 def seed(id: String): View.ViewSeed = { id = id, domain = Domain.Files }
 

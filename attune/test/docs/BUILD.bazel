@@ -52,6 +52,7 @@ native_flix_java_test(
         "//src:Attune/Envelope.flix",
         "//src:Attune/Grit.flix",
         "//src:Attune/Repository.flix",
+        "//src:Attune/Study.flix",
         "//src:Attune/View.flix",
     ],
     checkout_files = [

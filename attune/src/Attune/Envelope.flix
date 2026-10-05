@@ -16,6 +16,17 @@ pub mod Attune.Envelope {
         case World(String)
     }
 
+    /// A structured world identity: the canonical repository origin, the exact
+    /// content/source epoch and the frontend/resolver/admission semantics. All
+    /// three are part of identity, so a display name, a member count or an
+    /// unchecked commit alone can never establish it.
+    pub type alias WorldId = { origin = String, content = String, semantics = String }
+
+    /// The world named by one structured identity. Changing any component yields
+    /// a different world, so dirty content cannot reuse a clean world's identity.
+    pub def worldId(id: WorldId): World =
+        World.World(id#origin + "@" + id#content + "#" + id#semantics)
+
     /// A file entity identity, valid only in the Files domain.
     pub enum FileId with Eq, Order, ToString, Hash {
         case FileId(String)
@@ -42,6 +53,11 @@ pub mod Attune.Envelope {
         case Calls
         case Callers
     }
+
+    /// One directed relation fact in exactly one world. The world is part of the
+    /// fact's identity, so a same-named edge in another world is a different
+    /// fact and can never donate an edge.
+    pub type alias Fact = { world = World, source = String, atom = Atom, target = String }
 
     /// A complete finite frontier: one world, one nominal domain and the exact
     /// finite set of entities in that domain. The constructor fixes the domain,

@@ -19,7 +19,8 @@
 pub mod Attune.View {
 
     use Attune.Envelope
-    use Attune.Envelope.{Atom, Domain, FileId, Frontier, SymbolId, World}
+    use Attune.Envelope.{Atom, Domain, Fact, FileId, Frontier, SymbolId, World}
+    use Attune.Study.{Outcome, outcomeName}
     use Attune.AsciiTree
 
     // ------------------------------------------------------------ projections
@@ -309,22 +310,6 @@ pub mod Attune.View {
 
     // ------------------------------------------------------------------ proof
 
-    /// A logical outcome, distinct from an answer's emptiness.
-    pub enum Outcome with Eq, ToString {
-        case Witness
-        case NoMatch
-        case Unknown
-        case Failed
-    }
-
-    /// The stable outcome name.
-    pub def outcomeName(outcome: Outcome): String = match outcome {
-        case Outcome.Witness => "WITNESS"
-        case Outcome.NoMatch => "NO-MATCH"
-        case Outcome.Unknown => "UNKNOWN"
-        case Outcome.Failed  => "FAILED"
-    }
-
     /// One premise of one rule application: the named role it fills, the literal
     /// premise, whether it holds for this binding, and the exact bindings. A
     /// premise that does not hold is shown as false rather than dropped.
@@ -402,9 +387,6 @@ pub mod Attune.View {
 
     // ------------------------------------------------------------ semantic view
 
-    /// One authored relation fact in one scope.
-    pub type alias ViewFact = { scope = String, source = String, atom = Atom, target = String }
-
     /// A seed node with its nominal domain.
     pub type alias ViewSeed = { id = String, domain = Domain }
 
@@ -423,13 +405,14 @@ pub mod Attune.View {
     /// two selected nodes is an edge. An induced lateral edge between two seeds
     /// therefore survives even though no traversal tree would draw it.
     pub def induced(
-        facts: List[ViewFact],
+        facts: List[Fact],
         name: String,
         scope: String,
         seeds: List[ViewSeed],
         relations: List[Atom]
     ): View = {
-        let selected = List.filter(fact -> fact#scope == scope and memberOf(fact#atom, relations), facts);
+        let selected = List.filter(fact ->
+            fact#world == World.World(scope) and memberOf(fact#atom, relations), facts);
         let seedIds = List.map(seed -> seed#id, seeds);
         let children = List.filterMap(fact ->
             if (List.exists(id -> id == fact#source, seedIds))
