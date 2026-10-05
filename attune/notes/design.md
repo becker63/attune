@@ -436,7 +436,10 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the complete-admitted-native-theory-lowering leaf (the
+Source identity: the route-rendering-world-scope-guard leaf (the snapshot-world
+scope check in the route projection), measured on `ba6b750` (injective-world-
+identity-components: the length-prefixed injective `worldId`), which was built on
+`64f6daf` (the complete-admitted-native-theory-lowering leaf: the
 relation-independent native Theory lowering repair), built on `bbd5234` (the
 residency-walkthrough-and-raw-counting leaf: the six-chunk walkthrough and the
 derived physical/nonblank report totals), which was built on `b1a797a`
@@ -447,7 +450,8 @@ was built on `6c8e6d3` (the compact ASCII-projection leaf, which itself builds o
 the shared Study policies and corrected-regression leaf, `8376473`, `b21b97b`,
 `a97b234` and `eab5dbbb49d37ad8e1bd1827ede15b0cdcd9eb7a`; the exact commit of this
 leaf is recorded in the mission handoff). The earlier figures remain history, not
-erased, each labelled by the identity that measured it: `bbd5234`
+erased, each labelled by the identity that measured it: `64f6daf`
+4,233/1,278/5,511/3,753, `bbd5234`
 4,210/1,278/5,488/3,658, `b1a797a`
 4,207/1,278/5,485/3,647, `6db53df`
 4,275/1,278/5,553/3,621, `6c8e6d3` 4,216/1,278/5,494/3,346, `8376473`
@@ -461,12 +465,12 @@ excluded).
 
 | Component | Source | Language | Code | Class | Owner | One-sentence contract |
 | --- | --- | --- | --- | --- | --- | --- |
-| core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 194 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
+| core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 196 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
 | theory | `src/Attune/Theory.flix` | Flix | 555 | A | `Attune.Theory` | Bounded canonical descriptors, the relation-independent native lowering key with the fixed rule families and the world-shard witness rows consumed by the shared index. |
 | study | `src/Attune/Study.flix` | Flix | 549 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
-| view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 510 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
+| view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 514 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
@@ -474,18 +478,18 @@ excluded).
 | boundary | `platform/tools/boundary/*.java` | Java | 481 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 210 | B | build substrate | Native Flix test rules, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,753 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 3,809 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
 | metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,289 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,233; B mechanical 1,278; A+B authored 5,511; C test 3,753; C support 21,884
-(655 source + 21,229 generated locks). Presentation subsets: A/presentation 510
+4,239; B mechanical 1,278; A+B authored 5,517; C test 3,809; C support 21,884
+(655 source + 21,229 generated locks). Presentation subsets: A/presentation 514
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 123 readable files, code 33,437,
-comment 2,094, documentation 3,785, blank 1,973; the report prints the derived
-physical 41,289 and nonblank 39,316 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 123 readable files, code 33,499,
+comment 2,095, documentation 3,872, blank 1,986; the report prints the derived
+physical 41,452 and nonblank 39,466 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
 them. The code, comment and file
@@ -496,7 +500,7 @@ produced these figures, and this note's own text is part of that population), so
 re-run the check rather than copying them. The retired
 `proposal-semantics` component is gone from the table rather than relabelled: its
 77-line P08 portion moved into `study` (549 includes it) and its surrounding
-`@Test` laws moved into `tests` (3,753 includes them), so the subtraction is a
+`@Test` laws moved into `tests` (3,809 includes them), so the subtraction is a
 real move between named owners and not a change of label.
 
 ### Excluded inherited and generated families
@@ -642,13 +646,13 @@ or deleting a boundary.
 
 ### Architecture review (STOP-AND-JUSTIFY trigger)
 
-The cognitive core (4,210) is above the around-2,500 review trigger, so this
+The cognitive core (4,239) is above the around-2,500 review trigger, so this
 feature performs the required bounded architecture review instead of claiming
 compliance or fabricating a pass. The review decomposes the class by
 responsibility:
 
-- the production application-semantic components — core 194 + repository 809 +
-  theory 532 + study 549 + frontends 372 = 2,456 — sit below the around-2,500
+- the production application-semantic components — core 196 + repository 809 +
+  theory 555 + study 549 + frontends 372 = 2,481 — sit below the around-2,500
   STOP-AND-JUSTIFY line but **above** the preferred 1,500–2,000 band. This
   subtotal is a description, not an exemption: being inside the preference does
   not remove the rest of the class from review.
@@ -657,7 +661,7 @@ responsibility:
   languages the pinned engine admits, and the policy/accounting module (560),
   because policy-bearing code counts as A under any path. Subtracting either
   would be a relabel, not a subtraction.
-- the presentation cognitive subset (510: View + Docs) is policy-bearing
+- the presentation cognitive subset (514: View + Docs) is policy-bearing
   projection, already inside A and not added again.
 
 Largest application-semantic component: `repository` (809) — the Grit wire
@@ -1496,3 +1500,57 @@ failures, and this leaf adds no new semantic concept — it makes one existing
 lowering key relation-independent. Declared and live checks `accept`;
 `bazel test //...` 25/25 green; typecheck exit 0; scoped buildifier exit 4 with
 the documented pre-existing diagnostic families only and no `# reformat`.
+
+## Route-rendering-world-scope-guard leaf record
+
+Feature `route-rendering-world-scope-guard` (fulfils VAL-ASCII-002). Recoverable
+checkpoint: the `ba6b750` `main` tip this leaf builds on.
+
+This leaf repairs one confirmed false-success in the route projection: a route
+whose seed frontier belonged to another world could render under the snapshot
+header, and a step's caller-stamped `snapshot` field was compared with the batch
+but its actual frontier world was not. Two small structural checks close it. In
+`Attune.View.validateRoutes`, the seed's world must equal the rendered snapshot
+world, which rejects a zero-step foreign seed before any header is made. In
+`Attune.View.validateStep`, each frontier must belong to the `snapshot` the step
+records, so a caller-stamped snapshot can no longer smuggle another world's
+transition into the run. Neither check is scientific policy: they compare worlds
+for equality and add no rule, threshold or ranking to rendering.
+
+The failing reproduction precedes the repair. Three native laws were added first
+to `test/view/RouteViewLaw.flix` — `aZeroStepForeignSeedRejects`,
+`aStepCannotStampAForeignSnapshot` and `aForeignChainCannotEvadeThroughStampedSnapshots`
+— and the focused target failed 14/17 with three real `Assertion failed: expected
+Err(_), but got Ok(_)` results before the guard; all 17 pass after it. The legal
+same-world zero-step, legal-empty and actual-reuse routes and every golden and
+marked document byte are unchanged: the fresh docs correspondence test still
+matches the README and `Attune.View` marker payloads, and the header still names
+the one snapshot.
+
+Measured on this leaf's declared identity (declared-source check, `accept`; see
+the table above for the canonical figures): A cognitive 4,239; B mechanical
+1,278; A+B authored 5,517; C test 3,809; C support 21,884 (655 source + 21,229
+generated locks); presentation A 514 / B 87 (subsets). Relative to the
+`64f6daf` record, `view` moves 510 -> 514 (the two scope checks) and `tests`
+3,753 -> 3,809 (the three native laws); `core` 194 -> 196 is the `ba6b750`
+injective `worldId` folded into this measurement rather than this leaf's change.
+No other component moves.
+
+Bounded architecture review (the cognitive core is above the around-2,500
+trigger and A+B above the preferred 5,000 line; both are review triggers, not
+failures). Largest application-semantic component: `repository` (809), unchanged.
+Hardest reacquisition: the Grit acquisition boundary under `repository`, whose
+navigation path `platform/build/native.bzl` -> `platform/build/grit_repository.bzl`
+-> `src/grit/{defines,imports,calls}/*.grit` -> `platform/tools/grit/*.java` ->
+`platform/support/grit/lib.rs` -> `src/Attune/Repository/Grit.flix` ->
+`src/Attune/Repository.flix` is unchanged by this leaf. Localization/coordination
+navigation: both applications still join through `Attune.Study` over the shared
+world index; this route guard touches only the `Attune.View` presentation
+consumer and none of their inputs. Policy-leak/duplication check: the guard adds
+no second evaluator, no registry and no scientific decision to View; `View`
+still consumes the `Attune` world-typed frontiers and never creates one, and the
+one `Attune.apply` remains the only relation application. Validation on this
+leaf: fresh `//test/view:route_view_test` 17/17 pass; fresh
+`//test/docs:readme_correspondence_test` pass; integrated `bazel test //...`
+25/25 green; typecheck exit 0; scoped buildifier exit 4 with the documented
+baseline diagnostic families only.

@@ -243,3 +243,37 @@ def theDocumentNeedsUniqueNonEmptyRoutes(): Unit \ Assert = {
     let a = { name = "A", seed = pricing, steps = Nil };
     Assert.assertErr(View.renderRoutes(limits(), world(), "demo", a :: a :: Nil))
 }
+
+/// A route seed from a world other than the rendered snapshot is rejected
+/// before any document is made, even when the route has no steps to chain
+/// through: a zero-step foreign seed can no longer render a false snapshot
+/// header under the snapshot's name.
+@Test
+def aZeroStepForeignSeedRejects(): Unit \ Assert = {
+    let foreign = Attune.files(World.World("shop-v2"), List#{"pricing.rb"});
+    let route = { name = "Z", seed = foreign, steps = Nil };
+    Assert.assertErr(View.renderRoutes(limits(), world(), "demo", route :: Nil))
+}
+
+/// A recorded transition's frontiers must belong to the snapshot the step
+/// records, not merely agree with each other: a caller-stamped snapshot cannot
+/// smuggle a transition from another world into the run.
+@Test
+def aStepCannotStampAForeignSnapshot(): Unit \ Assert = {
+    let foreign = Attune.files(World.World("shop-v2"), List#{"pricing.rb"});
+    let empty = Attune.files(World.World("shop-v2"), Nil);
+    let stamped = step(1, world(), "demo", foreign, Atom.Imports, empty, View.Work.Unrecorded);
+    Assert.assertErr(View.validateStep(foreign, stamped, Nil))
+}
+
+/// A whole chain in another world cannot evade the scope guard by stamping
+/// every step's snapshot with the rendered world: the seed world and each
+/// frontier world are checked against the snapshot itself.
+@Test
+def aForeignChainCannotEvadeThroughStampedSnapshots(): Unit \ Assert = {
+    let seed = Attune.files(World.World("shop-v2"), List#{"pricing.rb"});
+    let rest = Attune.files(World.World("shop-v2"), List#{"checkout.rb"});
+    let first = step(1, world(), "demo", seed, Atom.Imports, rest, View.Work.Unrecorded);
+    let route = { name = "F", seed = seed, steps = first :: Nil };
+    Assert.assertErr(View.renderRoutes(limits(), world(), "demo", route :: Nil))
+}

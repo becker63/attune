@@ -124,7 +124,10 @@ work. They are independent axes, so `EMPTY; REUSE t4` is representable. A reuse
 tag is accepted only when the named producer is present, earlier in the same
 recorded serial run, and carries the same world, memo scope, exact input
 frontier, atom and output. Equal output from unequal input proves nothing, and
-the renderer never sorts an execution history to manufacture a hit. Routes `A`
+the renderer never sorts an execution history to manufacture a hit. A route seed
+and every recorded transition frontier must also belong to the snapshot world
+named in the header, so a seed from another world is rejected before any
+document is made, even when the route has no steps to chain through. Routes `A`
 and `B` end on the same exact frontier; only `B`'s first transition is recorded
 as a reuse, because only that key matches `t4` exactly. This is an authored
 serial-event fixture, not a live cache measurement.

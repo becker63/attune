@@ -108,6 +108,8 @@ pub mod Attune.View {
             Err("Event IDs must increase in this recorded serial run.")
         else if (not safeFrontier(step#input) or not safeFrontier(step#output))
             Err("Unsupported label; escape it without changing identity.")
+        else if (Attune.worldOf(step#input) != step#snapshot)
+            Err("A recorded transition must stay in its snapshot world.")
         else if (step#input != previous) Err("Broken route: next input is not previous output.")
         else if (Attune.domainOf(previous) != Attune.atomSource(step#atom))
             Err(name + " needs " + domainLabel(Attune.atomSource(step#atom)) +
@@ -154,8 +156,12 @@ pub mod Attune.View {
             }
     }
 
-    /// Validate every route before any document is made. All routes share one
-    /// recorded serial run, so their event IDs must be globally increasing.
+    /// Validate every route before any document is made. A route seed and every
+    /// recorded transition frontier must belong to the one rendered snapshot
+    /// world; a foreign seed is rejected even when the route has no steps, so a
+    /// caller cannot stamp a step's snapshot to smuggle another world's chain
+    /// under this document's header. All routes share one recorded serial run,
+    /// so their event IDs must be globally increasing.
     pub def validateRoutes(
         snapshot: World,
         memo: String,
@@ -165,6 +171,8 @@ pub mod Attune.View {
         case Nil => Ok(())
         case route :: rest =>
             if (not safeId(route#name) or not safeFrontier(route#seed)) Err("Unsupported route label.")
+            else if (Attune.worldOf(route#seed) != snapshot)
+                Err("A route seed belongs to the snapshot world.")
             else match validateSteps(snapshot, memo, route#seed, route#steps, seen) {
                 case Err(error)   => Err(error)
                 case Ok(nextSeen) => validateRoutes(snapshot, memo, rest, nextSeen)
