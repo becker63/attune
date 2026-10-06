@@ -452,7 +452,11 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the pinned-catalog-and-shared-analysis-manifest leaf (the
+Source identity: the streaming-corpus-normalization-and-provenance leaf (the
+streamed, bounded-batch normalization of the same pinned public corpus with its
+audited raw/normalized/js-ts/accepted/excluded/failed denominators, its retained
+dataset/repository-license provenance and its declared public/oracle separation),
+built on the pinned-catalog-and-shared-analysis-manifest leaf (the
 declared immutable public-corpus acquisition with its minimal projected/batched
 Arrow boundary and its declared identity/physical-schema contract), built on the
 world/task/pair-remote-slice leaf (the branch records are
@@ -513,31 +517,46 @@ excluded).
 | core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 204 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms with their one typed inverse table, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
 | theory | `src/Attune/Theory.flix` | Flix | 586 | A | `Attune.Theory` | Bounded canonical descriptors, the declared descriptor-record decoder, the relation-independent native lowering key with the fixed rule families, the declared-index bounded slice selection (`shardAt`) and the world-shard witness rows consumed by the shared index. |
-| study | `src/Attune/Study.flix` | Flix | 798 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection with its explicit pair-attrition findings and candidate ranking, the frozen prediction-policy vocabulary and its declared-record decoder, the pinned public catalog identity/physical-schema contract with its one comparison and classified findings, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
+| study | `src/Attune/Study.flix` | Flix | 997 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection with its explicit pair-attrition findings and candidate ranking, the frozen prediction-policy vocabulary and its declared-record decoder, the pinned public catalog identity/physical-schema contract with its one comparison and classified findings, the declared public/oracle projection separation, the streamed record framing/fate vocabulary with its audited normalization denominators, its classified faults and exclusions, its retained dataset/repository-license provenance and its canonical record text, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 522 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
-| parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 534 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read, plus the minimal projected/batched scan mechanics (`inspect`: exact byte length, SHA-256 of exactly those bytes and the recorded pre-order physical schema; `projectColumns`: a declared codec-level column projection streamed in declared batches as canonical per-cell records, written through batch by batch); makes no scientific decision. |
+| parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 563 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read, plus the minimal projected/batched scan mechanics (`inspect`: exact byte length, SHA-256 of exactly those bytes and the recorded pre-order physical schema; `projectColumns`: a declared codec-level column projection streamed in declared batches as canonical per-cell records, written through batch by batch; `projectBatches`: the same scan writing one declared file per scanned batch beside its codec header, so a consumer reduces the catalog one bounded batch at a time); makes no scientific decision. |
 | boundary | `platform/tools/boundary/*.java` | Java | 1,009 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, the pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`, plus the declared bounded argv receipt plan the stage action itself executes and binds before the stage law runs), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 925 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule (its declared input bindings, its declared measurement receipt plan and the declared jars the stage action may bind), the one `attune_declared_record_file` rule that emits the declared task-context anchor token and the declared per-index theory-shard record from the admitted manifest's own row, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair/shard fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact) and the one declared prediction-only frozen policy input every `prediction_<task>` consumes, the independent per-pair/per-branch check stages with their declared receipt plans, the per-environment joint stages that depend on the frozen predictions and never on an individual check, the one `results` reducer stage that materializes the declared Parquet artifact and renders the bounded report, and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 6,037 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, the declared catalog acquisition stage with its declared immutable pin and declared physical-schema contract beside its artifact laws (declared identity, recorded schema node for node, streamed projection records and the negative findings law), and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation/pair-attrition, shared-world/immutable-branch DAG and prediction-firewall laws (including that a prediction consumes the one declared public policy and carries exactly its identity while extraction and shards never consume it), its pair-attrition laws over the bounded late/capped panels, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 6,599 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, the declared catalog acquisition stage with its declared immutable pin and declared physical-schema contract beside its artifact laws (declared identity, recorded schema node for node, streamed projection records and the negative findings law), the declared streaming-normalization stage that reads the same pinned corpus one bounded batch at a time and writes the audited denominators, accepted population, classified exclusions/failures, retained provenance and public/oracle separation beside its corpus-free framing/fate/denominator laws and its artifact laws (identity, denominator identities, contiguous batch partition, js/ts accepted population with retained unavailable licenses, provenance and the no-evaluator-column firewall), and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation/pair-attrition, shared-world/immutable-branch DAG and prediction-firewall laws (including that a prediction consumes the one declared public policy and carries exactly its identity while extraction and shards never consume it), its pair-attrition laws over the bounded late/capped panels, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*`, every package `BUILD.bazel` | mixed | 2,552 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*`, every package `BUILD.bazel` | mixed | 2,600 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,535; B mechanical 2,740; A+B authored 7,275; C test 6,037; C support 21,884
+4,734; B mechanical 2,769; A+B authored 7,503; C test 6,599; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 176 readable files, code 37,748,
-comment 2,450, documentation 6,132, blank 2,666; the report prints the derived
-physical 48,996 and nonblank 46,330 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 179 readable files, code 38,586,
+comment 2,490, documentation 6,447, blank 2,792; the report prints the derived
+physical 50,315 and nonblank 47,523 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The pinned-catalog-and-shared-analysis-manifest leaf moves, relative to
+them. The streaming-corpus-normalization-and-provenance leaf moves, relative to
+the pinned-catalog-and-shared-analysis-manifest record (4,535/2,740/7,275/6,037),
+`study` 798 -> 997 (the declared public/oracle separation, the streamed
+framing/fate vocabulary with its audited denominators, its classified faults and
+exclusions, its retained dataset/repository-license provenance and its canonical
+record text), `parquet` 534 -> 563 (the per-batch scan that writes one declared
+file per scanned batch beside its codec header, so a consumer reduces the catalog
+one bounded batch at a time) and `tests` 6,037 -> 6,599 (the streaming
+normalization stage, its corpus-free framing/fate/denominator laws and its
+artifact laws over the real run); `metadata` 2,552 -> 2,600 (the new
+normalization targets in `test/catalog/BUILD.bazel`); every other component and
+family is unchanged. The delta is therefore one bounded mechanical scan
+capability, one declared normalization vocabulary with its audited denominators
+and provenance, and their declared fixtures, with no owner, evaluator,
+feasibility phase, yield gate or framework change. The
+pinned-catalog-and-shared-analysis-manifest leaf moves, relative to
 the prediction-policy-input-invalidation-boundary record
 (4,500/2,521/7,021/5,698), `parquet` 315 -> 534 (the minimal projected/batched
 scan mechanics added to the one Arrow seam: the exact-byte/physical-schema
@@ -2739,3 +2758,102 @@ revision/path, so the two cannot drift silently); the stage adapter decodes the
 same records the contract compares and holds no policy; no selection, ranking,
 grouping, label or provider entered; and the corpus is provably absent from the
 ordinary gate.
+
+## Streaming corpus normalization and provenance (2026-10-06)
+
+**What it is.** `VAL-DATA-002`. The full pinned `nebius/SWE-rebench-V2` catalog is
+now streamed through the same existing Arrow seam in bounded projected batches and
+reduced by Flix. `Attune.Study` owns the declared public projection
+(`catalogPublicColumns`) and the declared evaluator columns
+(`catalogOracleColumns`) with their separation check, the streamed record framing
+and fate vocabulary (`CatalogRecord`, `CatalogFault`, `CatalogExclusion`,
+`CatalogFate`), the language normalization and js/ts predicate, the audited
+denominators with their accounting identities, the canonical record text and the
+retained license/provenance vocabulary. The thin
+`test/catalog/CatalogNormalize.flix` adapter resolves the declared bindings,
+re-verifies the exact bytes and the recorded physical schema of the same immutable
+pinned file, drives the mechanical scan, decodes the canonical cell records into
+framed or faulted rows, asks `Attune.Study` for every fate and writes the declared
+records. Nothing here selects a panel, groups a repository, ranks a task, applies
+a yield threshold or expands a cap.
+
+**Mechanics.** `AttuneParquet.projectBatches` runs one projected/batched scan and
+writes one declared `batch-<index>.tsv` per scanned batch beside the codec's own
+`batches.tsv` header; the adapter then reads, reduces and appends one bounded batch
+at a time, so the whole raw catalog (and the whole projection) is never held as one
+row list. The existing `projectColumns` and `inspect` behaviour is unchanged (the
+acquisition stage and its laws re-ran and still pass). The projection spec is built
+from the owner's declared public columns, so a column the owner does not declare
+cannot be projected and no evaluator column reaches a public record.
+
+**Real measurement on the pinned identity.** raw 32,079 = normalized 32,079 +
+failed 0; js-ts 8,342 (js 4,138, ts 4,204) = accepted 8,342 + excluded 0;
+other-language 23,737; 251 batch files (2..896 cell records each) partitioning rows
+0..32,078 contiguously; 909 repository records whose tasks sum to 8,342 (881
+`declared`, 28 `unavailable`, 0 `conflicting`); 164 accepted rows retain an
+explicitly `unavailable` license (the corpus's null `license` cells) and are never
+claimed as a known license; the dataset attribution carries the declared revision,
+path, digest and byte count, and the dataset-level license and fork provenance are
+recorded as explicitly `unavailable` with their reasons. No exclusion or failure
+occurs in this pinned corpus; the laws exercise those classified paths over crafted
+records rather than inventing any.
+
+**Regressions.** `//test/catalog:catalog_normalize_law` (corpus-free) drives the
+production separation, framing/fate, license-evidence and denominator functions:
+a clean projection has no finding while a leaked evaluator column, a missing public
+column and an unknown column are each reported once; an incomplete row, an
+undeclared column and an absent language are each their own classified failure and
+never an exclusion; a js/ts row is accepted or excluded by its declared
+requirements with its exact reasons, and another primary language is counted as
+other-language; an absent license is `unavailable` and a disagreeing repository is
+`conflicting`; and the denominator identities are audited against the scanned count
+rather than assumed. `//test/catalog:catalog_normalize_test` audits the real tree:
+the declared identity and the recorded schema with no finding, the denominator
+identities against the codec's own counts, the accepted/excluded/failed record files
+against their denominators, the batch files' contiguous partition of the scanned
+rows, the js/ts accepted population with its retained unavailable licenses, the
+public/oracle separation and the retained attribution, unavailable kinds and
+ordered repository provenance.
+
+**Validation on this identity.** `//test/catalog:all` 3 test targets, 10 laws
+passed (the acquisition stage re-ran after the seam change and its 4 laws still
+pass); the normalization stage itself passed in 2.3 s over the 428,839,266 pinned
+bytes; `bazel test //...` 27/27 exit 0 with the corpus untouched. This leaf's laws
+assert its own declared artifact; they do not establish the mission's
+behavioral-acceptance contract, which the system-managed skip setting still blocks
+(`AGENTS.md`, 2026-10-06).
+
+**Declared identity.** A 4,734; B 2,769; A+B 7,503; C test 6,599; C support
+21,884 (`study` 798 -> 997, `parquet` 534 -> 563, `tests` 6,037 -> 6,599,
+`metadata` 2,552 -> 2,600; raw 179 files, code 38,586, comment 2,490, doc 6,447,
+blank 2,792, physical 50,315, nonblank 47,523; presentation A 522 / B 87
+unchanged).
+
+Bounded architecture review (cognitive core 4,535 -> 4,734, A+B 7,275 -> 7,503,
+mechanical 2,740 -> 2,769; all above their soft review thresholds, which are
+review triggers, not failures). The 199 new cognitive lines are the declared
+public/oracle projection with its separation check, the streamed framing/fate
+vocabulary with its audited denominators and classified faults/exclusions, the
+license-evidence vocabulary and the canonical record text: the mission explicitly
+assigns normalization, schema validation and selection to Flix, and this is one
+declared normalization vocabulary, not a new evaluator, policy family or
+framework. The 29 mechanical lines are the per-batch scan over the pinned Arrow
+codec. The 562 fixture lines are the streaming stage, its corpus-free laws and its
+artifact laws. Largest application-semantic component: `repository` (809),
+unchanged. Hardest reacquisition: the Grit acquisition boundary under
+`repository`, unchanged. Localization/coordination navigation: the declared public
+and oracle vocabularies, the fates and the denominator identities are reachable at
+`Attune.Study.catalogPublicColumns`/`catalogOracleColumns`/`catalogFate`/
+`catalogDenominatorFindings`; the retained provenance at
+`Attune.Study.repoLicenseProvenance`/`catalogAttributionText`; the stage at
+`test/catalog/CatalogNormalize.flix`; the mechanics at
+`AttuneParquet.projectBatches`. Policy-leak/duplication check: the public and
+oracle column sets exist once, in the owner, and both the projection spec and the
+separation check read that one declaration, so the public artifact cannot drift
+into carrying evaluator data; the denominators are counted by the one production
+`countCatalogFate` fold and re-checked against the codec's own row count; the
+license evidence is retained per accepted row and summarized once by
+`repoLicenseProvenance` (a disagreement is `conflicting`, never reduced to one
+token); the codec's `null` token is decoded to absent evidence and the raw cell
+records remain in the declared batch files, so no distinction is hidden; and no
+selection, grouping, ranking, label, provider or yield gate entered.

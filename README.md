@@ -366,6 +366,8 @@ The marker extraction and link resolution are Flix semantics in
 | Declared native producer/consumer | `//test/dag:declared_artifact_consumer_test` | passes; a producer action runs the pinned native Tester and emits a declared immutable source tree, and the consumer compiles and asserts that declared tree |
 | Declared study graph | `//test/study:all` | passes; the admitted world/task/pair fan-out with the shared world index, the gold-free prediction firewall and the separate evaluator reducer |
 | Prediction firewall | `//test/study:firewall_test` | passes; each stage's declared input set is asserted against its allowlist, so no public prediction-side stage declares an evaluator artifact and the prediction carries the one declared frozen policy |
+| Pinned corpus acquisition | `//test/catalog:catalog_pin_test` | passes; tagged `manual`; the declared immutable `nebius/SWE-rebench-V2` file is materialized and its exact bytes, digest and physical schema are verified through the projected Arrow boundary |
+| Streaming normalization and provenance | `//test/catalog:catalog_normalize_test` | passes; tagged `manual`; the full pinned catalog is streamed in bounded projected batches, every row's fate is reduced by Flix and the audited denominators, accepted js/ts population, classified exclusions/failures, retained provenance and public/oracle separation are recorded |
 
 The declared study graph is the complete world/task/pair fan-out the analysis
 manifest admits. Each exact world materializes its source tree and facts/index
@@ -462,9 +464,15 @@ SHA-256 `0e0bf9355f892ad74ae98d4e1c404f39fd6654a8e351ee3e6ab162e4a64cd3ad`
 (428,839,266 bytes) is materialized by the `manual` `//test/catalog` acquisition,
 which verifies the real bytes and the physical schema through the minimal
 projected/batched Arrow boundary and leaves every scientific decision to Flix.
-The ordinary `bazel test //...` gate never fetches or scans it. Normalization,
-panel selection and the studies remain the following features' work, so no
-localization gain is claimed here.
+The ordinary `bazel test //...` gate never fetches or scans it. The same pinned
+catalog is then streamed in bounded projected batches by the `manual`
+`//test/catalog:catalog_normalize` stage, which reduces every row's fate in Flix
+and records the audited raw/normalized/js-ts/accepted/excluded/failed
+denominators, the accepted js/ts population with its retained license evidence,
+the classified exclusions and failures, the dataset attribution with the
+explicitly unavailable dataset-license and fork provenance, and the declared
+public/evaluator column separation. Panel selection and the studies remain the
+following features' work, so no localization gain is claimed here.
 
 ## Deferred
 
@@ -475,9 +483,9 @@ Ruby arm, the ASCII writer and typed route/grammar/proof/view adapters, and the
 checked documentation correspondence. Deliberately not selected or run here:
 
 - any final source, cache-ownership, sharding or "most parallel" topology;
-- the approved corpus's streaming normalization, retained priors, localization
-  experiments, census or benchmarks (the one pinned corpus is acquired; none of
-  these studies is run here);
+- the approved corpus's retained priors, localization
+  experiments, census or benchmarks (the one pinned corpus is acquired and its
+  streaming normalization is recorded; no study is run here);
 - a general view catalog, large-graph layout, ASCII parser or architecture browser;
 - any model choice, live provider effect, ranking-quality claim or application
   policy selection beyond the recorded fixture decision contract.

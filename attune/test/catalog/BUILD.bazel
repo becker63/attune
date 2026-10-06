@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_consumer_test", "native_study_stage")
+load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_test", "native_study_stage")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -66,5 +66,70 @@ native_flix_consumer_test(
 test_suite(
     name = "all",
     tags = ["manual"],
-    tests = [":catalog_pin_test"],
+    tests = [
+        ":catalog_normalize_law",
+        ":catalog_normalize_test",
+        ":catalog_pin_test",
+    ],
+)
+
+# The declared streaming-normalization stage (`VAL-DATA-002`): it re-verifies the
+# exact bytes and the recorded physical schema of the same immutable pinned
+# catalog, then streams the whole catalog through the mechanical projected/batched
+# Arrow boundary one bounded batch at a time and reduces every row's fate in
+# `Attune.Study`. It writes the audited denominators, the accepted js/ts
+# population, the classified exclusions and failures, the retained dataset and
+# repository provenance and the declared public/oracle separation. Manual like
+# every study surface: the ordinary `bazel test //...` gate never scans the
+# 428,839,266-byte corpus.
+native_study_stage(
+    name = "catalog_normalize",
+    srcs = [
+        "CatalogNormalize.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    input_names = [
+        "catalog",
+        "pin",
+        "schema",
+    ],
+    inputs = [
+        "@swe_rebench_v2_catalog//file:file",
+        "catalog_pin.tsv",
+        "catalog_schema.tsv",
+    ],
+    java_deps = ["//platform/tools/parquet:attune_parquet"],
+    stage = "catalog_normalize",
+    tags = ["manual"],
+)
+
+# The corpus-free normalization laws: they drive the production separation,
+# framing/fate, license-evidence and denominator functions over crafted records,
+# so they need no corpus and no Arrow seam.
+native_flix_test(
+    name = "catalog_normalize_law",
+    srcs = [
+        "NormalizeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    tags = ["manual"],
+)
+
+# The declared normalization-artifact laws: they audit the tree the stage
+# materialized over the real pinned corpus.
+native_flix_consumer_test(
+    name = "catalog_normalize_test",
+    srcs = [
+        "NormalizeArtifactLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    declared_files = [
+        "catalog_pin.tsv",
+        "catalog_schema.tsv",
+    ],
+    produced = [":catalog_normalize"],
+    tags = ["manual"],
 )

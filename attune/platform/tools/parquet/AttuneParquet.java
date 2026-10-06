@@ -95,10 +95,13 @@ public final class AttuneParquet {
     // streams a declared column projection in declared batches into canonical
     // per-cell records. Which fields must exist, what a record means, which
     // columns a study projects and every comparison against a declared pin are
-    // Flix decisions; neither method filters, selects or interprets a row. Both
-    // return the same canonical record text and escape every value, so a value
-    // can never collapse into a missing field and an unreadable file is a typed
-    // answer rather than a crash across the interop boundary.
+    // Flix decisions; none of the three methods filters, selects or interprets a
+    // row. All return the same canonical record text and escape every value, so a
+    // value can never collapse into a missing field and an unreadable file is a
+    // typed answer rather than a crash across the interop boundary. `projectBatches`
+    // writes the same records as `projectColumns` but one declared file per
+    // scanned batch, so a consumer can reduce the whole catalog one bounded batch
+    // at a time instead of reading one whole projection.
     //
     // Canonical records text:
     //   status<TAB>ok<TAB>parquet-inspect
@@ -162,13 +165,37 @@ public final class AttuneParquet {
      * nothing and ranks nothing.
      */
     public static String projectColumns(String name, String spec, String output) {
+        return project(name, spec, output, false);
+    }
+
+    /**
+     * Stream one declared column projection into one canonical file per scanned batch.
+     *
+     * <p>The same projected/batched scan as {@link #projectColumns}, but the
+     * declared output is a directory: each scanned batch's canonical `cell`
+     * records are written to their own `batch-&lt;index&gt;.tsv` before the next
+     * batch loads, and the codec's own projection header is written to
+     * `batches.tsv`. A consumer therefore reduces the whole catalog one bounded
+     * batch at a time and never needs the whole projection, let alone the whole
+     * raw catalog, in memory. The method filters nothing and ranks nothing.
+     */
+    public static String projectBatches(String name, String spec, String output) {
+        return project(name, spec, output, true);
+    }
+
+    private static String project(String name, String spec, String output, boolean perBatch) {
         Path cells = null;
+        Path assembled = null;
         try {
             ProjectionSpec projection = parseProjection(spec);
             Path source = Path.of(name).toAbsolutePath();
             Path target = Path.of(output).toAbsolutePath();
             Files.createDirectories(target.getParent());
-            cells = Files.createTempFile(target.getParent(), ".project-", ".cells");
+            if (perBatch) {
+                Files.createDirectories(target);
+            } else {
+                cells = Files.createTempFile(target.getParent(), ".project-", ".cells");
+            }
             int rowIndex = 0;
             long batches = 0;
             try (BufferAllocator allocator = new RootAllocator();
@@ -178,10 +205,11 @@ public final class AttuneParquet {
                  var scanner = dataset.newScan(new ScanOptions(
                          projection.names().toArray(String[]::new), projection.batchSize()));
                  var reader = scanner.scanBatches();
-                 var writer = Files.newBufferedWriter(cells, StandardCharsets.UTF_8)) {
+                 var writer = perBatch ? null : Files.newBufferedWriter(cells, StandardCharsets.UTF_8)) {
                 var root = reader.getVectorSchemaRoot();
                 while (reader.loadNextBatch()) {
                     int count = root.getRowCount();
+                    long batchIndex = batches;
                     batches++;
                     StringBuilder block = new StringBuilder();
                     for (int row = 0; row < count; row++) {
@@ -191,7 +219,12 @@ public final class AttuneParquet {
                         appendCells(block, rowIndex, projection, root, row);
                         rowIndex++;
                     }
-                    writer.write(block.toString());
+                    if (perBatch) {
+                        Files.writeString(target.resolve(batchFileName(batchIndex)), block.toString(),
+                                StandardCharsets.UTF_8);
+                    } else {
+                        writer.write(block.toString());
+                    }
                     if (projection.limit() > 0 && rowIndex >= projection.limit()) {
                         break;
                     }
@@ -206,23 +239,37 @@ public final class AttuneParquet {
                 head.append("column\t").append(index).append('\t').append(column.name())
                         .append('\t').append(column.type()).append('\n');
             }
-            Path assembled = Files.createTempFile(target.getParent(), ".project-", ".txt");
-            try (var sink = Files.newOutputStream(assembled)) {
-                sink.write(head.toString().getBytes(StandardCharsets.UTF_8));
-                Files.copy(cells, sink);
+            if (perBatch) {
+                Files.writeString(target.resolve("batches.tsv"), head.toString(), StandardCharsets.UTF_8);
+            } else {
+                assembled = Files.createTempFile(target.getParent(), ".project-", ".txt");
+                try (var sink = Files.newOutputStream(assembled)) {
+                    sink.write(head.toString().getBytes(StandardCharsets.UTF_8));
+                    Files.copy(cells, sink);
+                }
+                Files.move(assembled, target, StandardCopyOption.REPLACE_EXISTING);
             }
-            Files.move(assembled, target, StandardCopyOption.REPLACE_EXISTING);
             return head.toString();
         } catch (Throwable error) {
             return catalogFailure(error);
         } finally {
-            if (cells != null) {
-                try {
-                    Files.deleteIfExists(cells);
-                } catch (IOException ignored) {
-                    // The declared output is already complete; a leftover temp file is not a result.
-                }
-            }
+            deleteQuietly(cells);
+            deleteQuietly(assembled);
+        }
+    }
+
+    private static String batchFileName(long index) {
+        return String.format("batch-%05d.tsv", index);
+    }
+
+    private static void deleteQuietly(Path path) {
+        if (path == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException ignored) {
+            // The declared output is already complete; a leftover temp file is not a result.
         }
     }
 

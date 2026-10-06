@@ -1333,4 +1333,333 @@ pub mod Attune.Study {
             else List#{"the recorded physical schema differs from the declared schema"};
         locator ::: identity ::: schema
     }
+
+    // -------------------------------------------------- streaming normalization
+    //
+    // The pinned public catalog's streaming normalization (`VAL-DATA-002`). The
+    // declared public projection and the declared evaluator columns live here, so
+    // the firewall between a public task context and an evaluator row is one
+    // typed declaration rather than a convention inside an adapter. The
+    // mechanical projected/batched scan frames rows; this owner decides every
+    // fate. A js/ts row that satisfies the declared eligibility requirements is
+    // accepted, a js/ts row that does not is excluded with its reasons, a row of
+    // another primary language is counted as other-language, and a projected
+    // record that cannot be normalized is a classified failure. No record is
+    // silently dropped, no language is assumed, and no evaluator column is ever
+    // consulted. Nothing here selects a panel, ranks a task, applies a yield
+    // threshold or expands a cap.
+
+    /// The declared public projection of the pinned catalog: exactly the columns
+    /// a public task context may carry. The predictor whitelist is this set plus
+    /// the clean baseline source; none of these columns is evaluator data.
+    pub def catalogPublicColumns(): List[String] =
+        List#{"repo", "instance_id", "language", "license", "base_commit", "created_at", "image_name"}
+
+    /// The declared evaluator columns of the pinned catalog: the reference patch,
+    /// the hidden tests, the interface and the provider's derived annotations.
+    /// None of them is projected into the public input; they are named here so the
+    /// separation is checked rather than assumed.
+    pub def catalogOracleColumns(): List[String] =
+        List#{"patch", "test_patch", "interface", "FAIL_TO_PASS", "PASS_TO_PASS", "pr_description", "meta"}
+
+    /// Whether one projected column set is exactly the declared public projection
+    /// and touches no declared evaluator column. A leaked evaluator column, a
+    /// missing public column and a column outside the declaration are each
+    /// reported once, so a public artifact can never quietly carry evaluator data.
+    pub def catalogSeparationFindings(projected: List[String]): List[String] = {
+        let leaked = List.filter(name -> List.memberOf(name, catalogOracleColumns()), projected);
+        let missing = List.filter(name -> not List.memberOf(name, projected), catalogPublicColumns());
+        let extra = List.filter(
+            name -> not List.memberOf(name, catalogPublicColumns())
+                and not List.memberOf(name, catalogOracleColumns()), projected);
+        List.map(name -> "the projected column is a declared evaluator column: " + name, leaked)
+            ::: List.map(name -> "the declared public column is not projected: " + name, missing)
+            ::: List.map(name -> "the projected column is outside the declared public projection: " + name, extra)
+    }
+
+    /// The classified reason a projected record could not be normalized. A fault
+    /// is a property of the record, not a scientific rejection: an incomplete or
+    /// ill-framed record is counted and recorded, never silently dropped and never
+    /// turned into an exclusion.
+    pub enum CatalogFault with Eq, ToString {
+        case IncompleteRow
+        case UndeclaredColumn
+        case NonScalarCell
+        case LanguageAbsent
+    }
+
+    /// The canonical text of one classified record fault.
+    pub def catalogFaultText(fault: CatalogFault): String = match fault {
+        case CatalogFault.IncompleteRow    => "the projected record does not carry exactly the declared public columns"
+        case CatalogFault.UndeclaredColumn => "the projected record names a column outside the declared public projection"
+        case CatalogFault.NonScalarCell    => "a declared scalar column carried a list element index"
+        case CatalogFault.LanguageAbsent   => "the projected record carries no language evidence"
+    }
+
+    /// The canonical token of one classified record fault.
+    pub def catalogFaultToken(fault: CatalogFault): String = match fault {
+        case CatalogFault.IncompleteRow    => "incomplete-row"
+        case CatalogFault.UndeclaredColumn => "undeclared-column"
+        case CatalogFault.NonScalarCell    => "non-scalar-cell"
+        case CatalogFault.LanguageAbsent   => "language-absent"
+    }
+
+    /// The classified reason a js/ts row is excluded from the shared panel. Each
+    /// requirement is evidence the later panel and pair stages genuinely need, not
+    /// a quality judgement: an absent repository, instance identity, base-commit
+    /// or execution image cannot be selected or executed.
+    pub enum CatalogExclusion with Eq, ToString {
+        case RepositoryAbsent
+        case InstanceAbsent
+        case BaseCommitAbsent
+        case ImageAbsent
+    }
+
+    /// The canonical text of one classified exclusion reason.
+    pub def catalogExclusionText(exclusion: CatalogExclusion): String = match exclusion {
+        case CatalogExclusion.RepositoryAbsent => "no repository evidence"
+        case CatalogExclusion.InstanceAbsent   => "no instance identity evidence"
+        case CatalogExclusion.BaseCommitAbsent => "no base-commit evidence"
+        case CatalogExclusion.ImageAbsent      => "no execution-image evidence"
+    }
+
+    /// The canonical token of one classified exclusion reason.
+    pub def catalogExclusionToken(exclusion: CatalogExclusion): String = match exclusion {
+        case CatalogExclusion.RepositoryAbsent => "repository-absent"
+        case CatalogExclusion.InstanceAbsent   => "instance-absent"
+        case CatalogExclusion.BaseCommitAbsent => "base-commit-absent"
+        case CatalogExclusion.ImageAbsent      => "image-absent"
+    }
+
+    /// One normalized public metadata row. Every field is decoded from a declared
+    /// public column, so there is no field an evaluator column could occupy.
+    pub type alias CatalogRow = {
+        repo = String,
+        instanceId = String,
+        language = String,
+        license = String,
+        baseCommit = String,
+        createdAt = String,
+        image = String
+    }
+
+    /// The normalized fate of one streamed projected record. The fate carries the
+    /// normalized row for the three row outcomes and the classified fault for a
+    /// failed record; the classification is read by matching on the case.
+    pub enum CatalogFate {
+        case Accepted(CatalogRow)
+        case Excluded(CatalogRow, List[CatalogExclusion])
+        case OtherLanguage(CatalogRow)
+        case Failed(CatalogFault)
+    }
+
+    /// One streamed projected record as the mechanical decoder framed it: the
+    /// declared public cells in declared order, or the framing fault the decoder
+    /// observed. Mechanical decoding never decides the fate below.
+    pub enum CatalogRecord with Eq, ToString {
+        case Framed(List[String])
+        case Faulted(CatalogFault)
+    }
+
+    /// The declared normalization of one primary-language token: the provider
+    /// spelling is trimmed and lower-cased, the two JavaScript-family spellings
+    /// collapse onto one token each, and every other language keeps its own
+    /// trimmed token so the other-language denominator stays auditable.
+    pub def normalizeLanguage(raw: String): String = {
+        let token = String.toLowerCase(String.trim(raw));
+        if (token == "javascript") "js" else if (token == "typescript") "ts" else token
+    }
+
+    /// Whether one normalized language token is a primary JavaScript/TypeScript
+    /// row of the approved subset.
+    pub def isJsTs(language: String): Bool = language == "js" or language == "ts"
+
+    /// The declared fate of one framed or faulted projected record. The
+    /// eligibility requirements are declared once, in declared order, so an
+    /// exclusion always carries the exact reasons it was excluded for.
+    pub def catalogFate(record: CatalogRecord): CatalogFate = match record {
+        case CatalogRecord.Faulted(fault) => CatalogFate.Failed(fault)
+        case CatalogRecord.Framed(
+            repo :: instanceId :: language :: license :: baseCommit :: createdAt :: image :: Nil
+        ) => {
+            let row = {
+                repo = String.trim(repo),
+                instanceId = String.trim(instanceId),
+                language = normalizeLanguage(language),
+                license = String.trim(license),
+                baseCommit = String.trim(baseCommit),
+                createdAt = String.trim(createdAt),
+                image = String.trim(image)
+            };
+            if (String.isEmpty(row#language)) CatalogFate.Failed(CatalogFault.LanguageAbsent)
+            else if (not isJsTs(row#language)) CatalogFate.OtherLanguage(row)
+            else {
+                let reasons =
+                    (if (String.isEmpty(row#repo)) List#{CatalogExclusion.RepositoryAbsent} else Nil)
+                    ::: (if (String.isEmpty(row#instanceId)) List#{CatalogExclusion.InstanceAbsent} else Nil)
+                    ::: (if (String.isEmpty(row#baseCommit)) List#{CatalogExclusion.BaseCommitAbsent} else Nil)
+                    ::: (if (String.isEmpty(row#image)) List#{CatalogExclusion.ImageAbsent} else Nil);
+                if (List.isEmpty(reasons)) CatalogFate.Accepted(row)
+                else CatalogFate.Excluded(row, reasons)
+            }
+        }
+        case CatalogRecord.Framed(_) => CatalogFate.Failed(CatalogFault.IncompleteRow)
+    }
+
+    /// The declared normalization denominators of the pinned catalog. Every record
+    /// the scan produced reaches exactly one bucket, so the totals are auditable
+    /// rather than asserted.
+    pub type alias CatalogDenominators = {
+        raw = Int32,
+        normalized = Int32,
+        jsTs = Int32,
+        otherLanguage = Int32,
+        accepted = Int32,
+        excluded = Int32,
+        failed = Int32
+    }
+
+    /// The empty denominator set of a stream that has produced no record yet.
+    pub def emptyCatalogDenominators(): CatalogDenominators =
+        { raw = 0, normalized = 0, jsTs = 0, otherLanguage = 0, accepted = 0, excluded = 0, failed = 0 }
+
+    /// Count one streamed record's fate.
+    pub def countCatalogFate(denominators: CatalogDenominators, fate: CatalogFate): CatalogDenominators =
+        match fate {
+            case CatalogFate.Accepted(_) =>
+                { raw = denominators#raw + 1, normalized = denominators#normalized + 1,
+                  jsTs = denominators#jsTs + 1, otherLanguage = denominators#otherLanguage,
+                  accepted = denominators#accepted + 1, excluded = denominators#excluded,
+                  failed = denominators#failed }
+            case CatalogFate.Excluded(_, _) =>
+                { raw = denominators#raw + 1, normalized = denominators#normalized + 1,
+                  jsTs = denominators#jsTs + 1, otherLanguage = denominators#otherLanguage,
+                  accepted = denominators#accepted, excluded = denominators#excluded + 1,
+                  failed = denominators#failed }
+            case CatalogFate.OtherLanguage(_) =>
+                { raw = denominators#raw + 1, normalized = denominators#normalized + 1,
+                  jsTs = denominators#jsTs, otherLanguage = denominators#otherLanguage + 1,
+                  accepted = denominators#accepted, excluded = denominators#excluded,
+                  failed = denominators#failed }
+            case CatalogFate.Failed(_) =>
+                { raw = denominators#raw + 1, normalized = denominators#normalized,
+                  jsTs = denominators#jsTs, otherLanguage = denominators#otherLanguage,
+                  accepted = denominators#accepted, excluded = denominators#excluded,
+                  failed = denominators#failed + 1 }
+        }
+
+    /// The accounting identities every audited denominator set must satisfy,
+    /// reduced against the row count the codec itself reported: the raw
+    /// denominator is the normalized plus failed denominator, the normalized
+    /// denominator is the js-ts plus other-language denominator, and the js-ts
+    /// denominator is the accepted plus excluded denominator.
+    pub def catalogDenominatorFindings(denominators: CatalogDenominators, scanned: Int32): List[String] =
+        (if (denominators#raw == scanned) Nil
+            else List#{"the normalized record count differs from the scanned row count"})
+        ::: (if (denominators#raw == denominators#normalized + denominators#failed) Nil
+            else List#{"the raw denominator is not the normalized plus failed denominator"})
+        ::: (if (denominators#normalized == denominators#jsTs + denominators#otherLanguage) Nil
+            else List#{"the normalized denominator is not the js-ts plus other-language denominator"})
+        ::: (if (denominators#jsTs == denominators#accepted + denominators#excluded) Nil
+            else List#{"the js-ts denominator is not the accepted plus excluded denominator"})
+
+    /// The declared evidence token of one license cell: the recorded license, or
+    /// the explicit `unavailable` token when the corpus recorded none. An absent
+    /// license is never claimed as a known license.
+    pub def catalogLicenseToken(license: String): String =
+        if (String.isEmpty(license)) "unavailable" else license
+
+    /// The declared evidence token of one optional identity cell: the recorded
+    /// value, or the explicit `unavailable` token when the corpus recorded none.
+    pub def catalogEvidenceToken(value: String): String =
+        if (String.isEmpty(value)) "unavailable" else value
+
+    /// The canonical record text of one normalized row, in declared column order.
+    pub def catalogRowText(row: CatalogRow): String =
+        List.join("\t", List#{row#repo, row#instanceId, row#language, catalogLicenseToken(row#license),
+            row#baseCommit, row#createdAt, row#image})
+
+    /// The canonical record text of one accepted js/ts row.
+    pub def catalogAcceptedText(row: CatalogRow): String = "accepted\t" + catalogRowText(row)
+
+    /// The canonical record text of one excluded js/ts row and its exact reasons.
+    pub def catalogExcludedText(row: CatalogRow, reasons: List[CatalogExclusion]): String =
+        "excluded\t" + catalogEvidenceToken(row#repo) + "\t" + catalogEvidenceToken(row#instanceId)
+            + "\t" + List.join(",", List.map(catalogExclusionToken, reasons))
+
+    /// The canonical record text of one classified record fault.
+    pub def catalogFailedText(fault: CatalogFault): String =
+        "failed\t" + catalogFaultToken(fault) + "\t" + catalogFaultText(fault)
+
+    /// The retained status of one repository's license evidence.
+    pub enum LicenseStatus with Eq, ToString {
+        case Declared
+        case Unavailable
+        case Conflicting
+    }
+
+    /// The canonical token of one retained license status.
+    pub def licenseStatusToken(status: LicenseStatus): String = match status {
+        case LicenseStatus.Declared    => "declared"
+        case LicenseStatus.Unavailable => "unavailable"
+        case LicenseStatus.Conflicting => "conflicting"
+    }
+
+    /// One repository's retained license provenance over the accepted rows.
+    pub type alias RepoLicense = {
+        repo = String, tasks = Int32, license = String, status = LicenseStatus
+    }
+
+    /// Fold the accepted rows' `(repository, license)` evidence into one
+    /// deterministic record per repository, in repository order. A repository
+    /// whose rows disagree is `conflicting` rather than silently reduced to one of
+    /// its tokens, so no license claim is invented.
+    pub def repoLicenseProvenance(evidence: List[(String, String)]): List[RepoLicense] =
+        List.reverse(List.foldLeft(mergeRepoLicense, Nil,
+            List.sortBy(pair -> match pair { case (repo, _) => repo }, evidence)))
+
+    def mergeRepoLicense(acc: List[RepoLicense], evidence: (String, String)): List[RepoLicense] =
+        match evidence {
+            case (repo, license) => match acc {
+                case last :: rest if last#repo == repo =>
+                    { repo = repo, tasks = last#tasks + 1, license = last#license,
+                      status = if (last#license == license) last#status else LicenseStatus.Conflicting } :: rest
+                case _ =>
+                    { repo = repo, tasks = 1, license = license,
+                      status = if (String.isEmpty(license)) LicenseStatus.Unavailable
+                               else LicenseStatus.Declared } :: acc
+            }
+        }
+
+    /// The canonical provenance record of one repository.
+    pub def repoLicenseText(record: RepoLicense): String =
+        List.join("\t", List#{"provenance", "repo", record#repo, Int32.toString(record#tasks),
+            catalogLicenseToken(record#license), licenseStatusToken(record#status)})
+
+    /// The provider's declared dataset name of the pinned public corpus.
+    pub def catalogDatasetName(): String = "nebius/SWE-rebench-V2"
+
+    /// The canonical dataset-attribution record of the pinned public corpus: the
+    /// provider's named dataset at one immutable revision, retained with the exact
+    /// identity the acquisition verified.
+    pub def catalogAttributionText(pin: CatalogPin): String =
+        List.join("\t", List#{"provenance", "dataset", catalogDatasetName(), pin#revision, pin#path,
+            pin#sha256, Int32.toString(pin#bytes), pin#url})
+
+    /// The declared reason no dataset-level license is retained: the pinned
+    /// Parquet carries no dataset-level license field and this study contacts no
+    /// provider, so the honest value is unavailable rather than a guess.
+    pub def catalogDatasetLicenseReason(): String =
+        "the pinned Parquet carries no dataset-level license field and this study contacts no provider"
+
+    /// The declared reason no fork/parent-repository provenance is retained: the
+    /// declared public projection carries no fork indicator and this study
+    /// contacts no provider, so the honest value is unavailable rather than an
+    /// assumed canonical repository.
+    pub def catalogForkProvenanceReason(): String =
+        "the declared public projection carries no fork indicator and this study contacts no provider"
+
+    /// The canonical record of one unavailable provenance kind.
+    pub def catalogUnavailableProvenanceText(kind: String, reason: String): String =
+        List.join("\t", List#{"provenance", kind, "unavailable", reason})
 }
