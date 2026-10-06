@@ -30,10 +30,12 @@ use Fs.FileWrite
 /// through the shared `Attune.Theory` owner, `task_join` cheaply joins an
 /// application anchor against the already materialized world witnesses without
 /// re-lowering anything, `prediction` ranks from the joined context plus the
-/// shared world index under one frozen policy, and `check`/`joint` record the
-/// declared source-variant and own-environment branch identities. A `joint`
-/// branch additionally consumes the frozen pair predictions; no branch consumes
-/// another branch's successful result.
+/// shared world index under one frozen policy, `reduce` joins the frozen
+/// prediction with one separately declared label artifact (the declared
+/// evaluator boundary), and `check`/`joint` record the declared source-variant
+/// and own-environment branch identities. A `joint` branch additionally consumes
+/// the frozen pair predictions; no branch consumes another branch's successful
+/// result.
 ///
 /// Fixture scope: the panel and world facts are declared fixture inputs, not a
 /// corpus. Every record this file writes is fixture-labelled by its own stage
@@ -260,6 +262,27 @@ def forbiddenKeys(): List[String] =
 def containsForbidden(rows: List[List[String]]): Bool =
     List.exists(row -> List.exists(cell -> List.memberOf(cell, forbiddenKeys()), row), rows)
 
+/// The declared evaluator join. It reads the frozen prediction tree and one
+/// separately declared label artifact and records the two identities and the
+/// honest observation state. The label is a distinct declared input, so a
+/// gold-only change can invalidate only this join, never the prediction it
+/// reads; no execution receipt exists yet, so the observation stays
+/// `unmeasured` rather than becoming a false or true verdict.
+def reduceStage(): Unit \ {Assert, IO} = {
+    let taskId = stripPrefix("reduce_", stageLabel());
+    let predictionPath = Option.getWithDefault("", binding("prediction"));
+    let referencePath = Option.getWithDefault("", binding("reference"));
+    let prediction = List.map(fields, records(readText(predictionPath + "/prediction.tsv")));
+    let reference = List.map(fields, records(readText(referencePath)));
+    Assert.assertEq(expected = false, containsForbidden(prediction));
+    Assert.assertEq(expected = true, not List.isEmpty(prediction));
+    Assert.assertEq(expected = true, not List.isEmpty(reference));
+    let head = List#{"reduce", "task", taskId} :: List#{"observation", "unmeasured"} :: Nil;
+    let frozen = List#{"frozen", baseName(predictionPath)} :: Nil;
+    let labels = List.map(row -> List#{"reference"} ::: row, reference);
+    writeText(outputsDir(), "reduce.tsv", renderTsv(head ::: frozen ::: labels))
+}
+
 def branch(kind: String): Unit \ {Assert, IO} = {
     let rest = stripPrefix(kind + "_", stageLabel());
     let parts = String.split(regex = "_", rest);
@@ -294,6 +317,7 @@ def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     else if (stage == "theory_shard") theoryShard()
     else if (stage == "task_join") taskJoin()
     else if (stage == "prediction") prediction()
+    else if (stage == "reduce") reduceStage()
     else if (stage == "check") branch("check")
     else if (stage == "joint") branch("joint")
     else Assert.assertEq(expected = "a declared stage name", stage)

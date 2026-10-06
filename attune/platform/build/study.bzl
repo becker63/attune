@@ -26,6 +26,10 @@ Dependency directions the wiring makes explicit:
   anchor; it re-lowers nothing.
 - `prediction_<task>` consumes the joined context and the shared world index; it
   never consumes a reference patch, a test patch or an outcome.
+- `reduce_<task>` is the declared evaluator join: it consumes the frozen
+  prediction tree and one separately declared label artifact, and nothing else.
+  The label is a distinct declared input, so a gold-only change can invalidate
+  only this join, never the prediction it reads.
 - `check_<pair>_<branch>` (baseline/A/B) is independent and speculative: it
   consumes only its own immutable variant tree.
 - `joint_<pair>_<environment>` consumes the AB variant tree plus the two frozen
@@ -220,6 +224,7 @@ def attune_study(
         law_srcs,
         variant_files,
         task_fixtures,
+        label_fixtures,
         plan,
         package = None):
     """Expand the admitted analysis manifest into the complete study graph.
@@ -231,6 +236,8 @@ def attune_study(
       law_srcs: the explicit Flix law source for each declared consumer test.
       variant_files: the package-relative baseline/A/B/AB variant source files.
       task_fixtures: the package-relative directory holding one anchor per task.
+      label_fixtures: the package-relative directory holding one evaluator label
+        artifact per task, joined to the frozen prediction only by `reduce_<task>`.
       plan: the package-relative declared obligation plan.
       package: the calling package; defaults to the current package.
     """
@@ -292,6 +299,17 @@ def attune_study(
             input_names = ["join", "index"],
         )
         produced.append(":prediction_%s" % task_id)
+        native_study_stage(
+            name = "reduce_%s" % task_id,
+            stage = "reduce",
+            srcs = stage_srcs,
+            inputs = [
+                ":prediction_%s" % task_id,
+                _label(package, "%s/label_%s.tsv" % (label_fixtures, task_id)),
+            ],
+            input_names = ["prediction", "reference"],
+        )
+        produced.append(":reduce_%s" % task_id)
 
     for pair in pairs:
         pair_id = pair[1]
@@ -362,19 +380,29 @@ def attune_study(
         produced = produced,
         tags = ["manual"],
     )
+    native_flix_consumer_test(
+        name = "firewall_test",
+        srcs = [law_srcs["firewall_test"]],
+        produced = produced,
+        tags = ["manual"],
+    )
 
     native.test_suite(
         name = "remote_fixture",
         tests = [
             ":manifest_test",
             ":dag_test",
+            ":firewall_test",
         ],
+        tags = ["manual"],
     )
     native.test_suite(
         name = "all",
         tests = [
             ":bounds_test",
             ":dag_test",
+            ":firewall_test",
             ":manifest_test",
         ],
+        tags = ["manual"],
     )

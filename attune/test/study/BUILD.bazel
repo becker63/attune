@@ -15,7 +15,9 @@ filegroup(
 # files, and `manifest/analysis.tsv` is the bounded gold-free record set native
 # preparation emitted from it. Restating those paths here would be a second,
 # drift-prone declaration of the same population, so the macro consumes the
-# manifest instead.
+# manifest instead. The evaluator labels under `fixtures/labels/` are a separate
+# declared population, named only by the `label_fixtures` argument, so the only
+# stage that reads one is the declared `reduce_<task>` join.
 
 # The explicit source closure every declared stage compiles: the dispatcher plus
 # the shared owners it consumes. One declaration, so every stage action compiles
@@ -65,9 +67,11 @@ native_study_stage(
 attune_study(
     name = "study",
     analysis = ANALYSIS,
+    label_fixtures = "fixtures/labels",
     law_srcs = {
         "bounds_test": "BoundsLaw.flix",
         "dag_test": "DagLaw.flix",
+        "firewall_test": "FirewallLaw.flix",
         "manifest_test": "ManifestLaw.flix",
     },
     plan = "fixtures/plan.tsv",

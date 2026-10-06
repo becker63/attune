@@ -364,6 +364,23 @@ The marker extraction and link resolution are Flix semantics in
 | Typed prior/decision laws | `//test/seam:decision_seam_test` | passes; the prior/request/evidence/`settle` contract is production code in `Attune.Study`, driven over the recorded fake transport |
 | Bounded native theory | `//test/theory:theory_law_test` | passes; descriptor grammar, canonicalization, native lowering and shared-index laws |
 | Declared native producer/consumer | `//test/dag:declared_artifact_consumer_test` | passes; a producer action runs the pinned native Tester and emits a declared immutable source tree, and the consumer compiles and asserts that declared tree |
+| Declared study graph | `//test/study:all` | passes; the admitted world/task/pair fan-out with the shared world index, the gold-free prediction firewall and the separate evaluator reducer |
+| Prediction firewall | `//test/study:firewall_test` | passes; each stage's declared input set is asserted against its allowlist, so no public prediction-side stage declares an evaluator artifact |
+
+The declared study graph is the complete world/task/pair fan-out the analysis
+manifest admits. Each exact world materializes its source tree, facts/index and
+theory shards once; each task joins the shared witnesses cheaply and predicts
+from the joined context and the shared index alone; each pair's individual
+checks stay speculative and its joint checks consume the frozen pair
+predictions. The one stage that reads a label is the declared `reduce_<task>`
+evaluator join, whose only inputs are the frozen prediction and one separately
+declared label artifact. `bazel aquery "deps(//test/study:prediction_t1)"` shows
+the prediction closure carries no variant, plan or label, and
+`//test/study:firewall_test` pins the same boundary over the declared input sets
+each stage recorded. A controlled change to one declared fixture re-executes
+only the stages whose inputs changed; the world source, shared facts and theory
+shards stay cached when a task anchor changes, and the frozen prediction stays
+cached when only a label changes.
 
 The declared-artifact route is the smallest step toward the shared graph: a
 producer target runs the pinned compiler's authentic native Tester over explicit
