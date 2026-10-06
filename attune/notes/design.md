@@ -537,8 +537,8 @@ Measured totals on this identity (declared-source check, `accept`): A cognitive
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
 again. Raw population at the recorded run: 179 readable files, code 38,586,
-comment 2,490, documentation 6,447, blank 2,792; the report prints the derived
-physical 50,315 and nonblank 47,523 totals on the same `attune-policy-total`
+comment 2,490, documentation 6,451, blank 2,792; the report prints the derived
+physical 50,319 and nonblank 47,527 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
 them. The streaming-corpus-normalization-and-provenance leaf moves, relative to
@@ -2702,10 +2702,14 @@ seven-column projection (`repo`, `instance_id`, `language`, `license`,
 `base_commit`, `created_at`, `image_name`), all 251 batches because the codec's
 batch granularity follows the pinned file's row groups (the declared `batch`
 value is a maximum, so the observed count is recorded, not predicted); and the
-recorded physical schema of 82 pre-order nodes (12 top-level `utf8` fields,
+recorded physical schema of 77 pre-order nodes (12 top-level `utf8` fields,
 `FAIL_TO_PASS`/`PASS_TO_PASS` as `list<utf8>`, the nested `install_config` and
 `meta` structs with their scalar/list children, and `meta.llm_metadata` with its
-`detected_issues` struct) matching the declared schema node for node. The 32,079
+`detected_issues` struct) matching the declared schema node for node (the early
+hand count of 82 recorded here was corrected by
+`streaming-corpus-normalization-and-provenance`, which re-read the recorded
+`AttuneParquet.inspect` output and the 77 `field` rows of
+`test/catalog/catalog_schema.tsv` and asserts 77 against the real run). The 32,079
 rows equal the provider's published `num_examples` for the whole `train` split,
 which is the streaming-normalization feature's denominator to use; this leaf
 selects nothing from it.
@@ -2825,8 +2829,8 @@ behavioral-acceptance contract, which the system-managed skip setting still bloc
 
 **Declared identity.** A 4,734; B 2,769; A+B 7,503; C test 6,599; C support
 21,884 (`study` 798 -> 997, `parquet` 534 -> 563, `tests` 6,037 -> 6,599,
-`metadata` 2,552 -> 2,600; raw 179 files, code 38,586, comment 2,490, doc 6,447,
-blank 2,792, physical 50,315, nonblank 47,523; presentation A 522 / B 87
+`metadata` 2,552 -> 2,600; raw 179 files, code 38,586, comment 2,490, doc 6,451,
+blank 2,792, physical 50,319, nonblank 47,527; presentation A 522 / B 87
 unchanged).
 
 Bounded architecture review (cognitive core 4,535 -> 4,734, A+B 7,275 -> 7,503,
