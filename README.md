@@ -368,8 +368,12 @@ The marker extraction and link resolution are Flix semantics in
 | Prediction firewall | `//test/study:firewall_test` | passes; each stage's declared input set is asserted against its allowlist, so no public prediction-side stage declares an evaluator artifact |
 
 The declared study graph is the complete world/task/pair fan-out the analysis
-manifest admits. Each exact world materializes its source tree, facts/index and
-theory shards once; each task joins the shared witnesses cheaply and predicts
+manifest admits. Each exact world materializes its source tree and facts/index
+once, and every declared theory shard materializes its own bounded slice of the
+world's descriptors: the declared index is carried as a generated record from the
+admitted manifest, so a later shard lowers its own candidates rather than a
+duplicate of the first slice, and a legal empty slice stays a typed empty
+artifact. Each task joins the shared witnesses cheaply and predicts
 from the joined context and the shared index alone; each pair's individual
 checks stay speculative and its joint checks consume the frozen pair
 predictions. The one stage that reads a label is the declared `reduce_<task>`

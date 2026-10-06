@@ -21,8 +21,11 @@
 ///
 /// **Lowering.** One deterministic population of at most `maxCandidates()`
 /// canonical candidates is sharded at about `shardSize()` descriptors per shard,
-/// at most `maxShards()` shards per world. A world's facts and one shard's
-/// descriptors become native `Edge` and `Desc` facts, and the fixed
+/// at most `maxShards()` shards per world. The declared shard index is carried
+/// explicitly, so `shardAt` selects exactly that one node's own bounded slice
+/// (`theory_shard_<world>_<index>`) rather than a guessed or first chunk, and an
+/// index outside the bounded list is an empty slice. A world's facts and that
+/// slice's descriptors become native `Edge` and `Desc` facts, and the fixed
 /// compiler-checked rule set below materializes anchor-free `Binding` and
 /// `Output` rows. Only the `Task` rule joins an application anchor, so a task or
 /// pair join never re-evaluates the structure. Candidate and world are part of
@@ -476,6 +479,24 @@ pub mod Attune.Theory {
     def chunks(size: Int32, values: List[a]): List[List[a]] =
         if (List.length(values) <= size) values :: Nil
         else List.take(size, values) :: chunks(size, List.drop(size, values))
+
+    /// The declared shard at one index of a bounded shard list, or the empty
+    /// slice when the index is outside it. A declared per-index node
+    /// (`theory_shard_<world>_<index>`) materializes exactly its own declared
+    /// slice: the index is carried explicitly, so the node lowers its own
+    /// bounded candidates rather than guessing a label or falling back to the
+    /// first chunk. An index beyond the bounded shard list is an empty slice,
+    /// which a legal empty witness slice materializes as a typed empty artifact.
+    pub def shardAt(index: Int32, sharded: Shards): List[Candidate] =
+        match sliceAt(index, sharded#shards) {
+            case Some(slice) => slice
+            case None        => Nil
+        }
+
+    def sliceAt(index: Int32, bounded: List[List[Candidate]]): Option[List[Candidate]] = match bounded {
+        case Nil           => None
+        case slice :: rest => if (index <= 0) Some(slice) else sliceAt(index - 1, rest)
+    }
 
     // --------------------------------------------------------------- lowering
 

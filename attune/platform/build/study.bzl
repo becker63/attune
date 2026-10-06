@@ -20,8 +20,9 @@ Dependency directions the wiring makes explicit:
 
 - `world_facts_<world>` consumes only its own world source tree and declared
   facts; it has no task, prediction or evaluator dependency.
-- `theory_shard_<world>_<n>` consumes the shared world facts and its descriptor
-  shard; it is materialized once per world.
+- `theory_shard_<world>_<n>` consumes the shared world facts, its descriptor shard
+  and one generated record of its own declared index and count, so the node
+  lowers exactly its own bounded slice; it is materialized once per world.
 - `task_join_<task>` consumes the shared shard witnesses and one application
   anchor; it re-lowers nothing.
 - `prediction_<task>` consumes the joined context and the shared world index; it
@@ -49,6 +50,7 @@ load(
     "attune_source_tree",
     "native_flix_anchor_file",
     "native_flix_consumer_test",
+    "native_flix_shard_file",
     "native_study_stage",
 )
 
@@ -281,12 +283,26 @@ def attune_study(
         )
         produced.append(":world_facts_%s" % world_id)
         for shard in _world_shards(shards, world_id):
+            # The admitted manifest's own shard row is the declared authority for
+            # this node's index: the record is generated here rather than parsed
+            # out of the target name, so the node lowers exactly its own bounded
+            # slice and the declaration can never drift from the manifest.
+            native_flix_shard_file(
+                name = "shard_%s_%s" % (world_id, shard[2]),
+                world = world_id,
+                index = shard[2],
+                count = shard[3],
+            )
             native_study_stage(
                 name = "theory_shard_%s_%s" % (world_id, shard[2]),
                 stage = "theory_shard",
                 srcs = stage_srcs,
-                inputs = [":world_facts_%s" % world_id, _label(package, world[7])],
-                input_names = ["worldfacts", "descriptors"],
+                inputs = [
+                    ":world_facts_%s" % world_id,
+                    _label(package, world[7]),
+                    ":shard_%s_%s" % (world_id, shard[2]),
+                ],
+                input_names = ["worldfacts", "descriptors", "shard"],
             )
             produced.append(":theory_shard_%s_%s" % (world_id, shard[2]))
 

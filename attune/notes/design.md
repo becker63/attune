@@ -493,7 +493,7 @@ excluded).
 | --- | --- | --- | --- | --- | --- | --- |
 | core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 204 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms with their one typed inverse table, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
-| theory | `src/Attune/Theory.flix` | Flix | 577 | A | `Attune.Theory` | Bounded canonical descriptors, the declared descriptor-record decoder, the relation-independent native lowering key with the fixed rule families and the world-shard witness rows consumed by the shared index. |
+| theory | `src/Attune/Theory.flix` | Flix | 586 | A | `Attune.Theory` | Bounded canonical descriptors, the declared descriptor-record decoder, the relation-independent native lowering key with the fixed rule families, the declared-index bounded slice selection (`shardAt`) and the world-shard witness rows consumed by the shared index. |
 | study | `src/Attune/Study.flix` | Flix | 746 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection and candidate ranking, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 522 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
@@ -503,19 +503,19 @@ excluded).
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
 | boundary | `platform/tools/boundary/*.java` | Java | 1,009 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, the pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`, plus the declared bounded argv receipt plan the stage action itself executes and binds before the stage law runs), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 886 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule (its declared input bindings, its declared measurement receipt plan and the declared jars the stage action may bind), the one manifest-anchor rule that emits the single declared task-context anchor from the admitted token, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact), the independent per-pair/per-branch check stages with their declared receipt plans, the per-environment joint stages that depend on the frozen predictions and never on an individual check, the one `results` reducer stage that materializes the declared Parquet artifact and renders the bounded report, and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 5,404 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation, shared-world/immutable-branch DAG and prediction-firewall laws, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
+| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 907 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule (its declared input bindings, its declared measurement receipt plan and the declared jars the stage action may bind), the one `attune_declared_record_file` rule that emits the declared task-context anchor token and the declared per-index theory-shard record from the admitted manifest's own row, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair/shard fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact), the independent per-pair/per-branch check stages with their declared receipt plans, the per-environment joint stages that depend on the frozen predictions and never on an individual check, the one `results` reducer stage that materializes the declared Parquet artifact and renders the bounded report, and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 5,551 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation, shared-world/immutable-branch DAG and prediction-firewall laws, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
 | metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,480 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,474; B mechanical 2,482; A+B authored 6,956; C test 5,404; C support 21,884
+4,483; B mechanical 2,503; A+B authored 6,986; C test 5,551; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 165 readable files, code 36,724,
-comment 2,299, documentation 5,516, blank 2,527; the report prints the derived
-physical 47,066 and nonblank 44,539 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 168 readable files, code 36,901,
+comment 2,311, documentation 5,638, blank 2,545; the report prints the derived
+physical 47,395 and nonblank 44,850 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
 them. The world/task/pair-remote-slice leaf moves, relative to the
@@ -534,7 +534,20 @@ and label fixtures, and the extended DAG/firewall/reducer laws); `metadata`
 hand-authored `test/study/fixtures/tasks` records were deleted rather than left
 beside the one declared anchor authority. The cognitive core and every other
 component are unchanged, so the whole delta is mechanical substrate, fixtures
-and declared metadata. The study-stage-ownership-and-bound-admission leaf moves, relative to the
+and declared metadata. The materialize-declared-theory-shard-slices leaf moves,
+relative to the remote-world-task-pair-slice record
+(4,474/2,482/6,956/5,404), `theory` 577 -> 586 (the declared-index
+`Theory.shardAt`/`sliceAt` selection, replacing the chunk-0 lowering that made
+every declared shard a duplicate of the first slice), `build-rules` 886 -> 907
+(the one `attune_declared_record_file` rule shared by the task anchor and the
+declared per-index shard record, plus the `study.bzl` wiring that gives each
+`theory_shard_<world>_<index>` its own declared `shard` input) and `tests`
+5,404 -> 5,551 (the four `DagLaw` laws over the bounded `w3`/`t7` fixture, the
+updated `FirewallLaw` input-name assertions and the regenerated admitted panel);
+`metadata` 2,480 is unchanged. The delta is therefore one declared-index
+cognitive function, one shared mechanical record rule and their fixture
+regression. The
+study-stage-ownership-and-bound-admission leaf moves, relative to the
 declarative-world-dag record (4,342/2,288/6,630/5,033), `core` 196 -> 204 (the
 typed atom inverse table), `theory` 555 -> 577 (the declared descriptor-record
 decoder), `study` 644 -> 746 (the bounded panel selection, the candidate ranking
@@ -2315,3 +2328,43 @@ joint; a label: only `reduce_t1`; a fresh measurement token: only the receipt
 action), with the world source, shared facts and shards staying cached when the
 task anchor changed and the frozen prediction staying cached when only the label
 changed.
+
+Bounded architecture review (the cognitive core moves 4,474 -> 4,483 and the
+application-semantic subtotal 2,708 -> 2,717, both above the around-2,500
+STOP-AND-JUSTIFY trigger, and A+B moves 6,956 -> 6,986, above the preferred
+5,000 line; these are review triggers, not failures). The nine new cognitive
+lines are the single declared-index slice selection (`Attune.Theory.shardAt`
+plus its `sliceAt` helper): one bounded pure function that returns the exact
+declared shard of an already-populated world, with an out-of-range index an empty
+slice. It is a selection over an existing truth, not a new algorithm or concept:
+the population, canonicalization, lowering key and witness rows are unchanged and
+`theoryShard()` stays a thin binding adapter that reads a declared record instead
+of guessing. The remaining delta is mechanical substrate (`build-rules` 886 ->
+907: the one `attune_declared_record_file` rule, now shared by the task anchor
+and the declared per-index shard record, plus the `study.bzl` per-shard input
+wiring) and fixtures (`tests` 5,404 -> 5,551: the four `DagLaw` multi-shard laws
+and the bounded `w3`/`t7` fixture); `metadata` 2,480 is unchanged. Largest
+application-semantic component: `repository` (809), unchanged. Hardest
+reacquisition: the Grit acquisition boundary under `repository`, unchanged by
+this leaf. Localization/coordination navigation: unchanged except that every
+`theory_shard_<world>_<index>` is now reachable at its own declared index through
+`Attune.Theory.shardAt`, with the declared record emitted by the one shared rule
+from the admitted manifest's own `shard` row. Policy-leak/duplication check: the
+declared index is generated declared data, not parsed from a target label, so no
+second hand-authored shard authority exists and the `study.bzl` macro and the
+admitted manifest cannot drift; the anchor and shard records share one rule
+rather than two near-duplicate rules; the non-emptiness assertion is gone in
+favour of a legal typed empty artifact rather than a silent first-chunk fallback;
+one native evaluator, the manifest authority, gold separation and the
+32/8/256 caps are untouched; and no cap, lexer, registry, scheduler or Java
+entrypoint entered the mechanical side. Regression evidence: before the repair
+the real laws failed ("expected 8, but got 32" for `w3_1`, "expected WITNESS, but
+got NO-MATCH" for `t7`) and both stage actions failed on the non-emptiness
+assertion, preserved in `library/theory-shard-prerepair-{laws,stage}.log`; after
+the repair `theory_shard_w3_0` records `shard w3 0 32 32 2 0 false` with 32
+identities and empty witnesses, `theory_shard_w3_1` records
+`shard w3 1 8 8 2 0 false` with the `p01`-`p08` witnesses, `task_join_t7` reduces
+`WITNESS` with only the later-shard candidates, and `prediction_t7` ranks them.
+Fresh remote slice `992911cc-bbb6-4163-a544-db5c54d16afd` executed all four
+`theory_shard_*` stages `runner=remote`/`cacheHit=false`/`exitCode=0` on the
+digest-pinned arm64 platform with `dockerNetwork=off`.

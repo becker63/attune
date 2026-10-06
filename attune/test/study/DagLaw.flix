@@ -130,6 +130,43 @@ def obligationField(name: String, key: String, index: Int32, listing: String): S
 def reduceRows(name: String, listing: String): List[List[String]] \ IO =
     List.map(fields, records(readText(treePath(name, "reduce.tsv", listing))))
 
+/// The declared shard records one theory-shard tree wrote: its head record and
+/// one `identity` row per materialized candidate.
+def shardRows(name: String, listing: String): List[List[String]] \ IO =
+    List.map(fields, records(readText(treePath(name, "shard.tsv", listing))))
+
+/// The exact declared candidate identities one theory-shard tree materialized.
+def shardIdentities(name: String, listing: String): List[String] \ IO =
+    List.map(row -> field(row, 1), rowValues("identity", shardRows(name, listing)))
+
+/// One field of a theory-shard tree's head record, or the empty string.
+def shardField(name: String, index: Int32, listing: String): String \ IO =
+    match List.find(row -> field(row, 0) == "shard", shardRows(name, listing)) {
+        case Some(row) => Option.getWithDefault("", nthOf(row, index))
+        case None      => ""
+    }
+
+/// The regular-file entries one named produced tree recorded in the mechanical
+/// listing, so a typed empty artifact can be shown to exist rather than inferred
+/// from a zero row count.
+def treeEntries(name: String, listing: String): List[List[String]] =
+    entriesBelow(name, records(listing), Nil, false)
+
+def entriesBelow(name: String, lines: List[String], acc: List[List[String]], inside: Bool): List[List[String]] = match lines {
+    case Nil => List.reverse(acc)
+    case line :: rest =>
+        match fields(line) {
+            case "root" :: path :: _ =>
+                if (inside) List.reverse(acc) else entriesBelow(name, rest, acc, baseName(path) == name)
+            case _ =>
+                if (inside) entriesBelow(name, rest, fields(line) :: acc, true)
+                else entriesBelow(name, rest, acc, false)
+        }
+}
+
+def recordedFile(name: String, file: String, listing: String): Bool =
+    List.exists(row -> field(row, 0) == file and field(row, 2) == "file", treeEntries(name, listing))
+
 // ---------------------------------------------------------- shared world work
 
 /// Each exact world materializes one index, and several tasks consume that one
@@ -171,6 +208,78 @@ def theCheapJoinIsAnchoredToTheSharedWitnesses(): Unit \ {Assert, IO} = {
         List.forAll(row -> field(row, 1) == "file:Shop.flix" or field(row, 2) == "file:Shop.flix",
             joinRows("task_join_t1", produced)));
     Assert.assertEq(expected = true, not List.isEmpty(contextRows("task_join_t1", produced)))
+}
+
+// ------------------------------------------------- declared per-index shards
+
+/// Each declared `theory_shard_<world>_<index>` node materializes exactly its own
+/// bounded slice. The declared w3 world admits 40 distinct canonical candidates,
+/// so it has two declared shards: index 0 materializes 32 and index 1 the
+/// remaining 8, the two identity sets are disjoint, their union is the whole
+/// declared population, and each node records the declared index and count it
+/// materialized from the manifest's own shard row. Before the declared index was
+/// carried, both nodes lowered the first chunk, so index 1 was a 32-candidate
+/// duplicate of index 0 and the eight later candidates never materialized.
+@Test
+def theDeclaredShardMaterializesItsOwnBoundedSlice(): Unit \ {Assert, IO} = {
+    let produced = listing();
+    let first = shardIdentities("theory_shard_w3_0", produced);
+    let second = shardIdentities("theory_shard_w3_1", produced);
+    Assert.assertEq(expected = "0", shardField("theory_shard_w3_0", 2, produced));
+    Assert.assertEq(expected = "1", shardField("theory_shard_w3_1", 2, produced));
+    Assert.assertEq(expected = "32", shardField("theory_shard_w3_0", 4, produced));
+    Assert.assertEq(expected = "8", shardField("theory_shard_w3_1", 4, produced));
+    Assert.assertEq(expected = 32, List.length(first));
+    Assert.assertEq(expected = 8, List.length(second));
+    Assert.assertEq(expected = 40, List.length(List.distinct(first ::: second)));
+    Assert.assertEq(expected = 0, List.length(List.filter(id -> List.memberOf(id, second), first)))
+}
+
+/// The manifest declaration and the lowered population agree exactly: each node
+/// records the declared candidate count beside the count it really materialized,
+/// and both equal the number of distinct identities it carries.
+@Test
+def eachDeclaredShardRecordsItsExactDeclaredAndMaterializedCount(): Unit \ {Assert, IO} = {
+    let produced = listing();
+    Assert.assertEq(expected = "32", shardField("theory_shard_w3_0", 3, produced));
+    Assert.assertEq(expected = "8", shardField("theory_shard_w3_1", 3, produced));
+    Assert.assertEq(expected = 32, List.length(shardIdentities("theory_shard_w3_0", produced)));
+    Assert.assertEq(expected = 8, List.length(shardIdentities("theory_shard_w3_1", produced)));
+    Assert.assertEq(expected = "3", shardField("theory_shard_w1_0", 3, produced));
+    Assert.assertEq(expected = 3, List.length(shardIdentities("theory_shard_w1_0", produced)));
+    Assert.assertEq(expected = "0", shardField("theory_shard_w1_0", 2, produced))
+}
+
+/// A legal empty witness slice is a typed empty artifact, not a failed action.
+/// The declared index-0 slice really writes its `witnesses.tsv` regular file
+/// beside its own 32 recorded identities, and that file carries no witness row
+/// because none of its candidates matches the world's declared facts.
+@Test
+def aLegalEmptyWitnessSliceStillMaterializesTypedArtifacts(): Unit \ {Assert, IO} = {
+    let produced = listing();
+    Assert.assertEq(expected = true, recordedFile("theory_shard_w3_0", "witnesses.tsv", produced));
+    Assert.assertEq(expected = true, recordedFile("theory_shard_w3_0", "shard.tsv", produced));
+    Assert.assertEq(expected = 0, List.length(witnessRows("theory_shard_w3_0", produced)));
+    Assert.assertEq(expected = 32, List.length(shardIdentities("theory_shard_w3_0", produced)))
+}
+
+/// The later declared slice materializes the eight candidates that do match the
+/// world's facts, and the task anchored to one of their witnesses joins and ranks
+/// exactly those later-shard candidates from the already-materialized shard
+/// trees: the cheap join re-lowers nothing and no index-0 candidate appears.
+@Test
+def theLaterShardWitnessJoinsAndRanksWithoutRerunningStructure(): Unit \ {Assert, IO} = {
+    let produced = listing();
+    let earlier = shardIdentities("theory_shard_w3_0", produced);
+    let later = shardIdentities("theory_shard_w3_1", produced);
+    let joined = candidatesOf(joinRows("task_join_t7", produced));
+    let ranked = List.map(row -> field(row, 2), rowValues("rank", predictionRows("prediction_t7", produced)));
+    Assert.assertEq(expected = "WITNESS", contextOutcome("task_join_t7", produced));
+    Assert.assertEq(expected = true, not List.isEmpty(witnessRows("theory_shard_w3_1", produced)));
+    Assert.assertEq(expected = true, not List.isEmpty(joined));
+    Assert.assertEq(expected = true, List.forAll(id -> List.memberOf(id, later), joined));
+    Assert.assertEq(expected = true, List.forAll(id -> not List.memberOf(id, earlier), joined));
+    Assert.assertEq(expected = List.sort(joined), List.sort(ranked))
 }
 
 // ------------------------------------------------- immutable branch identities

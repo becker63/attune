@@ -83,12 +83,12 @@ def inputFiles(name: String, listing: String): List[String] \ IO =
 /// predictions. None may declare an evaluator input.
 def publicStages(): List[String] =
     List#{
-        "world_facts_w1", "world_facts_w2",
-        "theory_shard_w1_0", "theory_shard_w2_0",
+        "world_facts_w1", "world_facts_w2", "world_facts_w3",
+        "theory_shard_w1_0", "theory_shard_w2_0", "theory_shard_w3_0", "theory_shard_w3_1",
         "task_join_t1", "task_join_t2", "task_join_t5", "task_join_t6",
-        "task_join_t3", "task_join_t4",
+        "task_join_t3", "task_join_t4", "task_join_t7",
         "prediction_t1", "prediction_t2", "prediction_t5", "prediction_t6",
-        "prediction_t3", "prediction_t4"
+        "prediction_t3", "prediction_t4", "prediction_t7"
     }
 
 /// True when one declared input file is evaluator material: a reference variant
@@ -123,14 +123,22 @@ def everyDeclaredStageRecordsItsOwnIdentity(): Unit \ {Assert, IO} = {
 def worldFactsConsumesOnlyItsWorldSourceAndDeclaredFacts(): Unit \ {Assert, IO} = {
     let produced = listing();
     Assert.assertEq(expected = List#{"facts", "source"}, inputNames("world_facts_w1", produced));
-    Assert.assertEq(expected = List#{"facts", "source"}, inputNames("world_facts_w2", produced))
+    Assert.assertEq(expected = List#{"facts", "source"}, inputNames("world_facts_w2", produced));
+    Assert.assertEq(expected = List#{"facts", "source"}, inputNames("world_facts_w3", produced))
 }
 
+/// A theory shard consumes the shared world facts, its descriptor population and
+/// one generated record of its own declared index and count. Nothing else, and
+/// no evaluator artifact: the declared shard record is the manifest's own row,
+/// so the node lowers exactly its own bounded slice.
 @Test
-def theoryShardConsumesOnlySharedWorldFactsAndDescriptors(): Unit \ {Assert, IO} = {
+def theoryShardConsumesOnlySharedWorldFactsDescriptorsAndItsDeclaredShard(): Unit \ {Assert, IO} = {
     let produced = listing();
-    Assert.assertEq(expected = List#{"descriptors", "worldfacts"}, inputNames("theory_shard_w1_0", produced));
-    Assert.assertEq(expected = List#{"descriptors", "worldfacts"}, inputNames("theory_shard_w2_0", produced))
+    let expected = List#{"descriptors", "shard", "worldfacts"};
+    Assert.assertEq(expected = expected, inputNames("theory_shard_w1_0", produced));
+    Assert.assertEq(expected = expected, inputNames("theory_shard_w2_0", produced));
+    Assert.assertEq(expected = expected, inputNames("theory_shard_w3_0", produced));
+    Assert.assertEq(expected = expected, inputNames("theory_shard_w3_1", produced))
 }
 
 @Test
@@ -141,7 +149,10 @@ def taskJoinConsumesOnlySharedShardsAndItsAnchor(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t5", produced));
     Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t6", produced));
     Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t3", produced));
-    Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t4", produced))
+    Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t4", produced));
+    // A multi-shard world's join consumes every already-materialized declared
+    // slice and still nothing else: no descriptor population, no world facts.
+    Assert.assertEq(expected = List#{"task", "witnesses0", "witnesses1"}, inputNames("task_join_t7", produced))
 }
 
 /// The core firewall: a prediction consumes exactly the cheap join and the
@@ -154,7 +165,8 @@ def predictionConsumesOnlyTheJoinAndSharedIndex(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t5", produced));
     Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t6", produced));
     Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t3", produced));
-    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t4", produced))
+    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t4", produced));
+    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t7", produced))
 }
 
 /// The declared evaluator join is the one stage that reads a label artifact.
@@ -166,7 +178,8 @@ def reduceJoinsOnlyTheFrozenPredictionToTheDeclaredLabel(): Unit \ {Assert, IO} 
     Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t5", produced));
     Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t6", produced));
     Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t3", produced));
-    Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t4", produced))
+    Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t4", produced));
+    Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t7", produced))
 }
 
 @Test

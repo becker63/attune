@@ -1,0 +1,4 @@
+imports	Src/Alpha.flix	Src/Beta.flix
+imports	Src/Beta.flix	Src/Gamma.flix
+imports	Src/Gamma.flix	Src/Alpha.flix
+imports	Src/Beta.flix	Src/Alpha.flix

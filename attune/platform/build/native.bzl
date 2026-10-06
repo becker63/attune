@@ -641,16 +641,25 @@ def attune_source_tree(name, srcs, **kwargs):
     """
     _attune_source_tree(name = name, srcs = srcs, **kwargs)
 
-def _attune_anchor_file_impl(ctx):
+def _attune_declared_record_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".tsv")
-    ctx.actions.write(out, "anchor\t" + ctx.attr.token + "\n")
+    ctx.actions.write(out, "\t".join([ctx.attr.kind] + ctx.attr.fields) + "\n")
     return [DefaultInfo(files = depset([out]))]
 
-attune_anchor_file = rule(
-    implementation = _attune_anchor_file_impl,
-    doc = "Materialize one task anchor record from the admitted manifest's authority.",
+attune_declared_record_file = rule(
+    implementation = _attune_declared_record_impl,
+    doc = """Materialize one declared record from the admitted manifest's authority.
+
+    The admitted manifest is the single declared authority for the small records
+    the study graph derives from it: one task's anchor token and one declared
+    theory shard's world, index and candidate count. This rule writes exactly
+    those declared cells as the declared stage input the consumer reads, so no
+    second hand-authored record can drift from the manifest and the consumer
+    never parses a path or target name to recover a declared value.
+    """,
     attrs = {
-        "token": attr.string(mandatory = True),
+        "kind": attr.string(mandatory = True),
+        "fields": attr.string_list(mandatory = True),
     },
 )
 
@@ -658,7 +667,7 @@ def native_flix_anchor_file(name, token):
     """Emit one task's declared anchor record.
 
     The admitted gold-free manifest is the single declared authority for each
-    task's anchor token; this rule writes that one token as the declared stage
+    task's anchor token; this helper writes that one token as the declared stage
     input the cheap join consumes, so no second hand-authored anchor file can
     drift from the manifest.
 
@@ -666,7 +675,23 @@ def native_flix_anchor_file(name, token):
       name: the target name.
       token: the anchor token the manifest declared for this task.
     """
-    attune_anchor_file(name = name, token = token)
+    attune_declared_record_file(name = name, kind = "anchor", fields = [token])
+
+def native_flix_shard_file(name, world, index, count):
+    """Emit one declared shard record from the admitted manifest's authority.
+
+    The admitted manifest's own `shard` row is the single declared authority for
+    a declared per-index theory node: the world it belongs to, the node's own
+    index and the candidate count declared for that slice. The index is declared
+    data, not a guess parsed out of the target's own name.
+
+    Args:
+      name: the target name.
+      world: the world the declared shard row belongs to.
+      index: the declared shard index this node materializes.
+      count: the candidate count the manifest declared for that slice.
+    """
+    attune_declared_record_file(name = name, kind = "shard", fields = [world, index, count])
 
 def native_flix_consumer_test(name, srcs, produced, declared_files = [], size = "small", tags = [], data = []):
     """Run native `@Test` laws over the declared trees a producer emitted.

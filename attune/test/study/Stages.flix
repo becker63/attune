@@ -37,6 +37,12 @@ use Fs.FileWrite
 /// the frozen pair predictions; no branch consumes another branch's successful
 /// result.
 ///
+/// A `theory_shard_<world>_<index>` node carries its declared index explicitly on
+/// a declared binding generated from the admitted manifest's own shard row, so it
+/// lowers exactly its own bounded slice and records its exact declared identity
+/// and count. A slice whose candidates match no world fact is a legal empty
+/// witness artifact rather than a failed action.
+///
 /// Fixture scope: the panel and world facts are declared fixture inputs, not a
 /// corpus. Every record this file writes is fixture-labelled by its own stage
 /// identity.
@@ -191,23 +197,53 @@ def theoryShard(): Unit \ {Assert, IO} = {
     let worldFacts = Coverage.scoped(world, List.map(fact -> match fact {
         case (atom, source, target) => { world = world, source = source, atom = atom, target = target }
     }, facts));
+    // The declared shard record is the admitted manifest's authority for this
+    // node: the world it belongs to, this node's own declared index and the
+    // candidate count the manifest declared for that slice. The index travels
+    // explicitly on a declared binding, so the node materializes exactly its own
+    // bounded slice rather than lowering the first chunk once per declared index.
+    let declaration = declaredShard(readText(Option.getWithDefault("", binding("shard"))));
+    let declaredWorld = match declaration { case Some((name, _, _)) => name case None => "" };
+    let index = match declaration { case Some((_, declaredIndex, _)) => declaredIndex case None => 0 };
+    let declared = match declaration { case Some((_, _, count)) => count case None => 0 };
+    Assert.assertEq(expected = worldId, declaredWorld);
     let descriptorsPath = Option.getWithDefault("", binding("descriptors"));
     let candidates = List.filterMap(Theory.decodeCandidate, List.map(fields, records(readText(descriptorsPath))));
     let population = Theory.population(candidates);
     let sharded = Theory.shards(population);
-    let chosen = match sharded#shards {
-        case first :: _ => first
-        case Nil        => Nil
-    };
+    let chosen = Theory.shardAt(index, sharded);
     let rows = Theory.witnesses(worldFacts, chosen);
     writeText(outputsDir(), "witnesses.tsv", renderTsv(List.sortBy(row -> List.join("\t", row), List.map(witnessRow, rows))));
-    writeText(outputsDir(), "shard.tsv", renderTsv(List#{"shard",
-        "world", worldId,
-        "candidates", Int32.toString(List.length(chosen)),
-        "dropped", Int32.toString(sharded#dropped),
-        "truncated", if (sharded#truncated) "true" else "false"} :: Nil));
-    Assert.assertEq(expected = true, not List.isEmpty(rows))
+    writeText(outputsDir(), "shard.tsv", renderTsv(shardRecord(worldId, index, declared, chosen, sharded)))
 }
+
+/// The declared shard record: the world, this node's declared index, the count
+/// the manifest declared for it, the count this node actually materialized, the
+/// bounded shard count of the population, the dropped candidates and the
+/// truncation flag, followed by one `identity` row per materialized candidate.
+/// The exact identity and count are recorded rather than asserted away, so a
+/// legal empty witness slice stays a typed empty artifact and a partition/union
+/// law can check the whole declared population from the materialized trees.
+def shardRecord(
+    worldId: String,
+    index: Int32,
+    declared: Int32,
+    chosen: List[Theory.Candidate],
+    sharded: Theory.Shards
+): List[List[String]] =
+    List#{"shard", worldId, Int32.toString(index), Int32.toString(declared),
+        Int32.toString(List.length(chosen)), Int32.toString(List.length(sharded#shards)),
+        Int32.toString(sharded#dropped), if (sharded#truncated) "true" else "false"} ::
+        List.map(candidate -> List#{"identity", candidate#id}, chosen)
+
+/// The declared shard record one `theory_shard_<world>_<index>` node carries:
+/// the world, the declared index and the declared candidate count. An absent or
+/// malformed declaration yields nothing rather than a guessed index.
+def declaredShard(text: String): Option[(String, Int32, Int32)] =
+    match rowsOf(List.map(fields, records(text)), "shard") {
+        case row :: _ => Some((field(row, 1), intOf(field(row, 2)), intOf(field(row, 3))))
+        case Nil      => None
+    }
 
 def witnessRow(witness: Theory.Witness): List[String] =
     List#{witness#candidate, Theory.entityText(witness#x), Theory.entityText(witness#y)}
