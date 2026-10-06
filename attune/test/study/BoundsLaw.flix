@@ -69,11 +69,28 @@ def groupsOf(manifest: String): List[String] =
         case _            => ""
     }, rowsOf(manifest, "group"))
 
+/// The admitted candidate population: the descriptors the manifest's shard rows
+/// materialize. The manifest carries shards rather than a second descriptor
+/// count, so this is the one honest denominator.
 def candidates(manifest: String): Int32 =
-    List.foldLeft((total, row) -> match row {
-        case _ :: _ :: count :: _ => total + intOf(count)
-        case _                    => total
-    }, 0, rowsOf(manifest, "descriptors"))
+    List.foldLeft((total, shard) -> total + shardSize(shard), 0, rowsOf(manifest, "shard"))
+
+def worldIds(manifest: String): List[String] =
+    List.map(row -> match row {
+        case _ :: id :: _ => id
+        case _            => ""
+    }, rowsOf(manifest, "world"))
+
+def shardsOf(world: String, manifest: String): List[List[String]] =
+    List.filter(row -> match row {
+        case _ :: owner :: _ => owner == world
+        case _               => false
+    }, rowsOf(manifest, "shard"))
+
+def shardSize(shard: List[String]): Int32 = match shard {
+    case _ :: _ :: _ :: size :: _ => intOf(size)
+    case _                        => 0
+}
 
 @Test
 def anExceededGroupBoundIsReportedExplicitly(): Unit \ {Assert, IO} = {
@@ -107,6 +124,16 @@ def anExceededCandidateBoundIsReportedExplicitly(): Unit \ {Assert, IO} = {
     let overflow = manifest();
     Assert.assertEq(expected = "truncated\tcandidates\two1\t300\t256", finding("truncated", "candidates", overflow));
     Assert.assertEq(expected = true, candidates(overflow) <= 256)
+}
+
+@Test
+def theCappedCandidatePopulationStillRespectsTheShardBounds(): Unit \ {Assert, IO} = {
+    let overflow = manifest();
+    Assert.assertEq(expected = 256, candidates(overflow));
+    Assert.assertEq(expected = true,
+        List.forAll(world -> List.length(shardsOf(world, overflow)) <= 8, worldIds(overflow)));
+    Assert.assertEq(expected = true,
+        List.forAll(world -> List.forAll(shard -> shardSize(shard) <= 32, shardsOf(world, overflow)), worldIds(overflow)))
 }
 
 @Test

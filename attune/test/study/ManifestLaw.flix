@@ -73,11 +73,11 @@ def groupsOf(manifest: String): List[String] =
         case _            => ""
     }, rowsOf(manifest, "group"))
 
+/// The admitted candidate population: the descriptors the manifest's shard rows
+/// materialize. The manifest carries shards rather than a second descriptor
+/// count, so this is the one honest denominator.
 def declaredCandidates(manifest: String): Int32 =
-    List.foldLeft((total, row) -> match row {
-        case _ :: _ :: count :: _ => total + intOf(count)
-        case _                    => total
-    }, 0, rowsOf(manifest, "descriptors"))
+    List.foldLeft((total, shard) -> total + shardSize(shard), 0, rowsOf(manifest, "shard"))
 
 def shardsOf(world: String, manifest: String): List[List[String]] =
     List.filter(row -> match row {

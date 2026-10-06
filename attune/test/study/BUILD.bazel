@@ -1,5 +1,5 @@
 load("//platform/build:native.bzl", "native_study_stage")
-load("//platform/build:study.bzl", "attune_study")
+load("//platform/build:study.bzl", "attune_admission_probe", "attune_study")
 load("//test/study:manifest/manifest.bzl", "ANALYSIS")
 
 package(default_visibility = ["//visibility:public"])
@@ -19,11 +19,15 @@ filegroup(
 
 # The explicit source closure every declared stage compiles: the dispatcher plus
 # the shared owners it consumes. One declaration, so every stage action compiles
-# exactly the same set and no stage can reach a source its closure omits.
+# exactly the same set and no stage can reach a source its closure omits. The
+# dispatcher is a thin adapter; the bounded panel selection, candidate ranking
+# and anchor decoding live in `Attune.Study`, and the descriptor decoding and
+# shard lowering live in `Attune.Theory`.
 STAGE_SRCS = [
     "Stages.flix",
     "//src:Attune.flix",
     "//src:Attune/Coverage.flix",
+    "//src:Attune/Study.flix",
     "//src:Attune/Theory.flix",
 ]
 
@@ -75,4 +79,49 @@ attune_study(
         "b": "fixtures/variants/b.flix",
         "baseline": "fixtures/variants/base.flix",
     },
+)
+
+# The bounded macro-admission regression. Two declared record sets are run
+# through the same production `_bound_violations` contract the study macro
+# enforces over the admitted manifest. The first carries over-bound structural
+# declarations only; the second carries the `truncated` finding the preparation
+# emits for anything it clipped (the old `exceeded`-only check admitted it).
+# Under `--define=attune_admission_strict=1` each probe fails on exactly its
+# violations; without the define they only record them, so the ordinary offline
+# gate is never affected.
+_PROBE_BOUNDS = [
+    "bounds\tgroups\t24",
+    "bounds\ttasks_per_group\t4",
+    "bounds\tpairs\t32",
+    "bounds\tpair_groups\t8",
+    "bounds\tcandidates\t256",
+    "bounds\tshards_per_world\t8",
+    "bounds\tshard_size\t32",
+]
+
+_PROBE_OVERBOUND = (
+    ["generation\tprobe-overbound"] +
+    _PROBE_BOUNDS +
+    ["group\tg%d\tacme/x%d\tdevelopment" % (index, index) for index in range(25)] +
+    ["shard\tw1\t%d\t4" % index for index in range(8)] + [
+        "shard\tw1\t8\t40",
+    ] + ["shard\tw2\t%d\t32" % index for index in range(8)] +
+    ["task\tt%d\tg1\tw1\tlocalization\tFile:Shop.flix" % index for index in range(5)]
+)
+
+_PROBE_TRUNCATED = (
+    ["generation\tprobe-truncated"] +
+    _PROBE_BOUNDS + [
+        "truncated\tpairs\t36\t32",
+    ]
+)
+
+attune_admission_probe(
+    name = "admission_probe",
+    rows = _PROBE_OVERBOUND,
+)
+
+attune_admission_probe(
+    name = "admission_probe_truncated",
+    rows = _PROBE_TRUNCATED,
 )

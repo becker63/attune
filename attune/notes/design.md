@@ -481,10 +481,10 @@ excluded).
 
 | Component | Source | Language | Code | Class | Owner | One-sentence contract |
 | --- | --- | --- | --- | --- | --- | --- |
-| core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 196 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
+| core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 204 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms with their one typed inverse table, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
-| theory | `src/Attune/Theory.flix` | Flix | 555 | A | `Attune.Theory` | Bounded canonical descriptors, the relation-independent native lowering key with the fixed rule families and the world-shard witness rows consumed by the shared index. |
-| study | `src/Attune/Study.flix` | Flix | 644 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
+| theory | `src/Attune/Theory.flix` | Flix | 577 | A | `Attune.Theory` | Bounded canonical descriptors, the declared descriptor-record decoder, the relation-independent native lowering key with the fixed rule families and the world-shard witness rows consumed by the shared index. |
+| study | `src/Attune/Study.flix` | Flix | 746 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection and candidate ranking, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 522 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
@@ -493,22 +493,34 @@ excluded).
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
 | boundary | `platform/tools/boundary/*.java` | Java | 993 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 708 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair fan-out at analysis time, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 5,033 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the `test/study` stage dispatcher with its admitted-manifest, bounded-truncation and shared-world/immutable-branch DAG laws, run as the pinned compiler's `@Test`. |
+| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 803 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair fan-out at analysis time with its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps) and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 4,939 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation and shared-world/immutable-branch DAG laws, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,432 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,465 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,342; B mechanical 2,288; A+B authored 6,630; C test 5,033; C support 21,884
+4,474; B mechanical 2,383; A+B authored 6,857; C test 4,939; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 156 readable files, code 35,979,
-comment 2,235, documentation 5,101, blank 2,399; the report prints the derived
-physical 45,714 and nonblank 43,315 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 156 readable files, code 36,145,
+comment 2,266, documentation 5,279, blank 2,434; the report prints the derived
+physical 46,124 and nonblank 43,690 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The declarative-world-dag-and-remote-slice leaf moves, relative to the
+them. The study-stage-ownership-and-bound-admission leaf moves, relative to the
+declarative-world-dag record (4,342/2,288/6,630/5,033), `core` 196 -> 204 (the
+typed atom inverse table), `theory` 555 -> 577 (the declared descriptor-record
+decoder), `study` 644 -> 746 (the bounded panel selection, the candidate ranking
+and the anchor-token decoder moved out of the test dispatcher into their owner),
+`build-rules` 708 -> 803 (the production admission predicate that refuses a
+`truncated`/`exceeded` row and enforces the declared group/per-group
+task/candidate/pair/shard caps, with its one strict-gated admission probe),
+`tests` 5,033 -> 4,939 (the `test/study` dispatcher is now a thin adapter; the
+reusable algorithms it carried moved into their owners rather than staying
+counted as fixtures) and `metadata` 2,432 -> 2,465 (the probe record sets and
+comments in `test/study/BUILD.bazel`); no inherited support or generated lock
+moves. The declarative-world-dag-and-remote-slice leaf moves, relative to the
 receipt-drain-failure record (4,342/1,866/6,208/4,184), `boundary` 909 -> 993
 (the declared study-stage launcher mode: the declared input bindings, the pinned
 Tester child over the explicit stage sources, the fail-closed check that a
@@ -709,16 +721,29 @@ or deleting a boundary.
 
 ### Architecture review (STOP-AND-JUSTIFY trigger)
 
-The cognitive core (4,239) is above the around-2,500 review trigger, so this
+The cognitive core (4,474) is above the around-2,500 review trigger, so this
 feature performs the required bounded architecture review instead of claiming
 compliance or fabricating a pass. The review decomposes the class by
 responsibility:
 
-- the production application-semantic components — core 196 + repository 809 +
-  theory 555 + study 549 + frontends 372 = 2,481 — sit below the around-2,500
-  STOP-AND-JUSTIFY line but **above** the preferred 1,500–2,000 band. This
-  subtotal is a description, not an exemption: being inside the preference does
-  not remove the rest of the class from review.
+- the production application-semantic components — core 204 + repository 809 +
+  theory 577 + study 746 + frontends 372 = 2,708 — now sit **above** the
+  around-2,500 STOP-AND-JUSTIFY line as well as above the preferred 1,500–2,000
+  band. The study-stage-ownership-and-bound-admission leaf moved that subtotal
+  from 2,576 up by 132 (the same 132 as the cognitive delta, since no other
+  cognitive component moved), but it added no new semantic concept: 94 of those
+  lines are the bounded panel selection, the candidate ranking, the anchor-token
+  decoder and the descriptor decoder that were already implemented inside
+  `test/study/Stages.flix` and counted wholesale as fixtures, and 38 are the
+  thin owner-side glue and documentation the reuse needed. They are now in
+  their owners (`Attune.Study`, `Attune.Theory`, `Attune`), which is the honest
+  classification the owner policy requires rather than a growth in meaning. The
+  move is a relocation with small documentation, not a second evaluator: the
+  atom inverse table is one typed case match in core, the descriptor decoder is
+  one record reader in Theory, and Study's additions are the pure selection,
+  ranking and anchor decode the owner already scoped to itself. This subtotal is
+  a description, not an exemption: being above the line is exactly why this
+  review is recorded.
 - two components remain counted cognitive conservatively rather than as build
   overhead: the maintained Grit closure rule (684), because it changes which
   languages the pinned engine admits, and the policy/accounting module (560),
@@ -739,9 +764,12 @@ language dispatch and the Flix admission. Its navigation/dependency path is
 `src/Attune/Repository.flix`; the shared `Attune` core is the only semantic
 input it needs.
 
-Second-largest application-semantic component: `study` (549). The earlier shared
+Second-largest application-semantic component: `study` (746). The earlier shared
 Study-policies leaf grew it by 493 lines, and the growth is the justified excess
-that leaf's review required rather than a fabricated pass. What it added is
+that leaf's review required rather than a fabricated pass; the
+study-stage-ownership leaf then added the bounded panel selection, the candidate
+ranking and the anchor-token decoder that had been counted as fixtures, which is
+the same relocation described above and not new meaning. What it added is
 exactly the vocabulary the mission scopes to Study and that both fixture
 applications must share: the world-scoped typed task/boundary anchors, the
 retained edit-intent operations, the lexical/flat/Atlas/composed joins, the
@@ -2123,3 +2151,90 @@ boundary only records the incomplete-bytes flag through the existing `error`
 field, the seam reads the exact production drain rather than re-implementing it,
 and no second parser, verdict, registry, resolver, scheduler or fault API
 entered the mechanical side.
+
+### Leaf record: study stage ownership and bound admission (`study-stage-ownership-and-bound-admission`)
+
+This leaf corrects two concrete gaps in the declared DAG before further
+integration, and adds no new owner, lexer, registry, Java entrypoint, budget
+detour or cap change.
+
+**Semantic ownership.** `test/study/Stages.flix` had grown a set of reusable
+algorithms that the blanket `test/** -> Fixture` rule counted wholesale as
+fixtures. They now live in the owners the architecture already scopes them to,
+and the dispatcher is a thin adapter (declared bindings, declared records,
+assertions and the one `@Test` dispatcher):
+
+- the atom inverse table is `Attune.inverse`, one typed case match beside
+  `Attune.atoms()`, so forward and inverse vocabularies cannot disagree; the
+  dispatcher's `parseFact`/`invertFact` now carry the typed `Atom` instead of a
+  second string mapping;
+- the declared descriptor-record decoder is `Attune.Theory.decodeCandidate`,
+  beside the bounded descriptor grammar it decodes into;
+- the bounded deterministic panel selection (`Attune.Study.manifestRows` with
+  its per-bound `truncated` findings and its shard rows), the candidate ranking
+  (`Attune.Study.rankedCandidates`) and the declared anchor-token decoder
+  (`Attune.Study.decodeAnchorToken`) are in `Attune.Study`.
+
+The preparation stage additionally asserts that the manifest's candidate and
+shard bounds equal `Attune.Theory`'s declared limits, so selection and lowering
+cannot drift onto two granularities. There is no second inversion, descriptor or
+ranking truth owner: the dispatcher calls the owner functions and renders their
+results, and the emitted `analysis.tsv`/`manifest.bzl` bytes are unchanged.
+
+**Manifest admission.** `platform/build/study.bzl` checked for a row kind the
+preparation never emits (`exceeded`) while the preparation reports clipping with
+`truncated`, so an over-bound admitted manifest could pass. The macro now runs
+one production predicate, `_bound_violations`, which refuses any `truncated` or
+`exceeded` row, refuses a record outside the declared safe vocabulary (or short
+of its declared arity), and enforces the declared caps: groups, per-group tasks,
+the admitted candidate population (the descriptors the shard rows materialize),
+pairs, pair groups, shards per world and shard size. No cap was raised and the
+preparation's explicit `truncated` reporting is preserved.
+
+**Regressions.** The native preparation regression `BoundsLaw` now also proves
+the over-cap panel's capped candidate population still respects the shard bounds,
+and `ManifestLaw`/`BoundsLaw` measure the admitted candidate population from the
+shard rows rather than the `descriptors` rows the manifest never carries, so the
+candidate assertion is no longer vacuous. The macro admission regression is one
+bounded strict-gated probe, `attune_admission_probe`, run over two declared
+record sets in `test/study/BUILD.bazel`: the first carries over-bound structural
+declarations only, the second carries the emitted `truncated` row. Under
+`--define=attune_admission_strict=1` each fails in analysis with its exact
+violation list; without the define the probe only records the violations, so it
+is a non-test target that can never break the ordinary offline gate.
+
+Validation. Local `//test/study:all` passes 3/3 with the moved code (the
+preparation emitted bytes identical to the admitted `manifest/analysis.tsv` and
+`manifest.bzl`). The strict probe invocations exit 1 with the five structural
+violations and the truncated-row violation respectively. The full offline gate
+`bazel test //...` passes 30/30; `build --build_tests_only //...` exits 0; scoped
+`buildifier -mode=check -lint=warn` exits 4 with only the documented
+pre-existing diagnostic families (the two `# reformat` findings this leaf
+introduced were fixed with `buildifier -mode=fix`).
+
+Measured on this leaf's declared identity (declared-source check, `accept`; see
+the canonical table above): A cognitive 4,474; B mechanical 2,383; A+B authored
+6,857; C test 4,939; C support 21,884; presentation A 522 / B 87 (subsets).
+Relative to the declarative-world-dag record (4,342/2,288/6,630/5,033), `core`
+196 -> 204, `theory` 555 -> 577, `study` 644 -> 746, `build-rules` 708 -> 803,
+`tests` 5,033 -> 4,939 and `metadata` 2,432 -> 2,465; no inherited support or
+generated lock moves.
+
+Bounded architecture review (the cognitive core is now 4,474 and the
+application-semantic subtotal 2,708, both above the around-2,500
+STOP-AND-JUSTIFY trigger, and A+B is above the preferred 5,000 line; these are
+review triggers, not failures). The 132-line cognitive increase is 94 lines of
+algorithms relocated out of the fixture population into their owners plus 38
+lines of thin owner-side glue and documentation; no new semantic concept,
+evaluator, registry or framework was added. Largest application-semantic
+component: `repository` (809), unchanged.
+Hardest reacquisition: the Grit acquisition boundary under `repository`,
+unchanged by this leaf. Localization/coordination navigation: unchanged; the
+`test/study` dispatcher is now a thin adapter whose algorithms are reachable at
+`Attune.Study.manifestRows`/`rankedCandidates`/`decodeAnchorToken`,
+`Attune.Theory.decodeCandidate` and `Attune.inverse`. Policy-leak/duplication
+check: the admission predicate is one shared Starlark function called by both the
+macro and its probe; the candidate denominator is measured once from the shard
+rows; the inverse, descriptor, anchor and ranking truths each have one owner; and
+no cap, lexer, registry, scheduler or Java entrypoint entered the mechanical
+side.

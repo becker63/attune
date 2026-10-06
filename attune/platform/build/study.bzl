@@ -10,8 +10,11 @@ discovered at execution time and no nested Bazel loop or scheduler exists.
 
 The macro also refuses to expand an out-of-bound manifest. The declared caps
 (`<=24` groups, `<=4` tasks per group, `<=32` ordered pairs across `<=8` included
-groups, `<=256` candidate descriptors, `<=8` shards per world) are enforced here
-and reported by the preparation, not silently truncated at load time.
+groups, `<=256` candidate descriptors, `<=8` shards per world of `<=32`
+descriptors) are enforced here, and a manifest that still carries a `truncated`
+or `exceeded` finding is refused rather than admitted: the preparation reports
+clipping explicitly, so an admitted manifest must be clean. Only the declared
+record kinds are admitted.
 
 Dependency directions the wiring makes explicit:
 
@@ -53,6 +56,22 @@ _DEFAULT_CAPS = {
     "tasks_per_group": 4,
 }
 
+# The declared record kinds an admitted manifest may carry. A record outside this
+# vocabulary is not a bounded analysis input, so the admission refuses it rather
+# than letting an unknown row reach the graph. `truncated` and `exceeded` are
+# deliberately absent: the preparation reports clipping with `truncated`, so an
+# admitted manifest that carries either kind was not cleanly admitted.
+_SAFE_KINDS = {
+    "generation": 2,
+    "bounds": 3,
+    "world": 8,
+    "group": 4,
+    "shard": 4,
+    "task": 6,
+    "pair": 6,
+    "descriptors": 3,
+}
+
 def _bounds(analysis):
     caps = dict(_DEFAULT_CAPS)
     caps.update({row[1]: int(row[2]) for row in _rows(analysis, "bounds")})
@@ -61,33 +80,138 @@ def _bounds(analysis):
 def _world_shards(shards, world):
     return [shard for shard in shards if shard[1] == world]
 
-def _enforce_bounds(name, analysis, bounds):
-    if not analysis:
-        return
-    exceeded = _rows(analysis, "exceeded")
-    if exceeded:
-        fail("%s: admitted manifest reports exceeded bounds: %s" % (name, exceeded))
+def _bound_violations(name, analysis, bounds):
+    """Return the exact bound violations of one admitted manifest, without failing.
+
+    The preparation emits `truncated` findings for anything it clipped and never
+    an `exceeded` row, so an admitted manifest that carries either kind was not
+    cleanly admitted and is refused. The same contract then checks the declared
+    per-group task, world candidate, pair and world-shard bounds, so no manifest
+    can reach the analysis graph over any of them. Returning the violations
+    (rather than failing) lets the bounded admission regression exercise the
+    exact production predicate on a declared over-bound record set.
+    """
+    violations = []
+    for row in analysis:
+        if not row:
+            violations.append("empty record")
+            continue
+        kind = row[0]
+        if kind in ("truncated", "exceeded"):
+            violations.append("admitted manifest reports %s bounds: %s" % (kind, row))
+            continue
+        required = _SAFE_KINDS.get(kind)
+        if required == None:
+            violations.append("record kind %r is outside the safe manifest vocabulary" % kind)
+        elif len(row) < required:
+            violations.append("record kind %r has %d fields, fewer than the declared %d" % (
+                kind,
+                len(row),
+                required,
+            ))
+    if violations:
+        return violations
 
     groups = _rows(analysis, "group")
     tasks = _rows(analysis, "task")
     pairs = _rows(analysis, "pair")
+    shards = _rows(analysis, "shard")
+
     if len(groups) > bounds["groups"]:
-        fail("%s: admitted manifest has %d groups, over the declared %d" % (name, len(groups), bounds["groups"]))
-    if len(tasks) > bounds["groups"] * bounds["tasks_per_group"]:
-        fail("%s: admitted manifest has %d tasks, over the declared %d" % (
-            name,
-            len(tasks),
-            bounds["groups"] * bounds["tasks_per_group"],
+        violations.append("admitted manifest has %d groups, over the declared %d" % (
+            len(groups),
+            bounds["groups"],
+        ))
+    for group in groups:
+        owned = [task for task in tasks if task[2] == group[1]]
+        if len(owned) > bounds["tasks_per_group"]:
+            violations.append("group %s has %d tasks, over the declared %d" % (
+                group[1],
+                len(owned),
+                bounds["tasks_per_group"],
+            ))
+
+    # The admitted candidate population is exactly the descriptors the shard
+    # rows materialize: the manifest carries shards, not a second descriptor
+    # count, so this is the one honest denominator.
+    candidates = 0
+    for shard in shards:
+        candidates += int(shard[3])
+    if candidates > bounds["candidates"]:
+        violations.append("admitted manifest declares %d candidate descriptors, over the declared %d" % (
+            candidates,
+            bounds["candidates"],
         ))
     if len(pairs) > bounds["pairs"]:
-        fail("%s: admitted manifest has %d pairs, over the declared %d" % (name, len(pairs), bounds["pairs"]))
+        violations.append("admitted manifest has %d pairs, over the declared %d" % (
+            len(pairs),
+            bounds["pairs"],
+        ))
     pair_groups = len({pair[2]: True for pair in pairs})
     if pair_groups > bounds["pair_groups"]:
-        fail("%s: admitted manifest spans %d pair groups, over the declared %d" % (
-            name,
+        violations.append("admitted manifest spans %d pair groups, over the declared %d" % (
             pair_groups,
             bounds["pair_groups"],
         ))
+    for world in sorted({shard[1]: True for shard in shards}.keys()):
+        owned = [shard for shard in shards if shard[1] == world]
+        if len(owned) > bounds["shards_per_world"]:
+            violations.append("world %s has %d shards, over the declared %d" % (
+                world,
+                len(owned),
+                bounds["shards_per_world"],
+            ))
+        for shard in owned:
+            if int(shard[3]) > bounds["shard_size"]:
+                violations.append("world %s shard %s has %d descriptors, over the declared %d" % (
+                    world,
+                    shard[2],
+                    int(shard[3]),
+                    bounds["shard_size"],
+                ))
+    return violations
+
+def _enforce_bounds(name, analysis, bounds):
+    if not analysis:
+        return
+    violations = _bound_violations(name, analysis, bounds)
+    if violations:
+        fail("%s: admitted manifest violates its declared bounds:\n  %s" % (
+            name,
+            "\n  ".join(violations),
+        ))
+
+_ADMISSION_STRICT = "attune_admission_strict"
+
+def _admission_probe_impl(ctx):
+    analysis = [row.split("\t") for row in ctx.attr.rows]
+    bounds = _bounds(analysis)
+    violations = _bound_violations(ctx.label.name, analysis, bounds)
+    out = ctx.actions.declare_file(ctx.label.name + ".txt")
+    ctx.actions.write(out, "".join([violation + "\n" for violation in violations]))
+    if violations and ctx.var.get(_ADMISSION_STRICT, "") == "1":
+        fail("%s: admitted manifest violates its declared bounds:\n  %s" % (
+            ctx.label.name,
+            "\n  ".join(violations),
+        ))
+    return [DefaultInfo(files = depset([out]))]
+
+attune_admission_probe = rule(
+    implementation = _admission_probe_impl,
+    doc = """Exercise the production admission predicate over a declared record set.
+
+    This is the one bounded macro-admission regression, not a validation
+    framework. It runs the exact `_bound_violations` contract the study macro
+    enforces, over the declared `rows`, and writes the violations it found. Under
+    `--define=attune_admission_strict=1` it also fails, so a controlled fixture
+    invocation can prove that a truncated row and each over-bound declaration are
+    refused in analysis. Without the define it only records, so the target can
+    never break the ordinary offline gate.
+    """,
+    attrs = {
+        "rows": attr.string_list(mandatory = True),
+    },
+)
 
 def attune_study(
         name,

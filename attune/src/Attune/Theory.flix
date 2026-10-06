@@ -118,6 +118,43 @@ pub mod Attune.Theory {
     /// The declared bound on theory shards per world.
     pub def maxShards(): Int32 = 8
 
+    // ------------------------------------------------------- record decoding
+
+    /// Decode one declared descriptor record
+    /// (`id rel0 subj0 obj0 rel1 subj1 obj1 out0 out1 …`) into a candidate. `-`
+    /// is the declared empty slot for an absent second atom or output. A record
+    /// with an unknown relation name or a short arity yields nothing rather than
+    /// a guessed descriptor, so a malformed panel row can never become an
+    /// admitted candidate.
+    pub def decodeCandidate(row: List[String]): Option[Candidate] = match row {
+        case id :: rel0 :: subj0 :: obj0 :: rel1 :: subj1 :: obj1 :: out0 :: out1 :: _ =>
+            match patternOf(rel0, subj0, obj0) {
+                case Some(first) =>
+                    let atoms = first :: (match patternOf(rel1, subj1, obj1) {
+                        case Some(second) => second :: Nil
+                        case None         => Nil
+                    });
+                    Some({ id = id, descriptor = { atoms = atoms, denied = Nil, outputs = outputsOf(out0, out1) } })
+                case None => None
+            }
+        case _ => None
+    }
+
+    /// One declared atom pattern from its relation name and role slots, or
+    /// nothing when the relation name is unknown or the slot is the empty `-`.
+    def patternOf(rel: String, subj: String, obj: String): Option[AtomPattern] =
+        if (rel == "-") None
+        else match List.find(atom -> Attune.atomName(atom) == rel, Attune.atoms()) {
+            case Some(atom) => Some({ relation = atom, subject = intOf(subj), object = intOf(obj) })
+            case None       => None
+        }
+
+    /// The declared output slots, dropping an absent second output.
+    def outputsOf(out0: String, out1: String): List[Int32] =
+        (if (out0 == "-") Nil else intOf(out0) :: Nil) ::: (if (out1 == "-") Nil else intOf(out1) :: Nil)
+
+    def intOf(text: String): Int32 = Option.getWithDefault(0, Int32.fromString(text))
+
     // -------------------------------------------------------------- admission
 
     /// True exactly when the descriptor is inside the admitted grammar.

@@ -102,6 +102,23 @@ pub mod Attune.Study {
     pub def anchorFor(task: String, anchors: List[Anchor]): Option[AnchorNode] =
         Option.map(a -> a#node, List.find(a -> a#task == task, anchors))
 
+    /// Decode one declared anchor token (`File:…` or `Symbol:…`) into the
+    /// nominal anchor node it names. An unrecognised or empty token yields
+    /// nothing rather than a guessed entity, so a malformed task declaration can
+    /// never become a silently wrong anchor.
+    pub def decodeAnchorToken(token: String): Option[AnchorNode] =
+        if (String.startsWith(prefix = "File:", token))
+            Some(AnchorNode.AnchorFile(FileId.FileId(String.drop(5, token))))
+        else if (String.startsWith(prefix = "Symbol:", token))
+            Some(AnchorNode.AnchorSymbol(SymbolId.SymbolId(String.drop(7, token))))
+        else None
+
+    /// The declared name one anchor node carries, without its nominal domain.
+    pub def anchorNodeName(node: AnchorNode): String = match node {
+        case AnchorNode.AnchorFile(FileId.FileId(name))       => name
+        case AnchorNode.AnchorSymbol(SymbolId.SymbolId(name)) => name
+    }
+
     /// The retained edit-intent operation vocabulary. Only the first two were
     /// exercised by the retained historical panel; the rest are reserved names
     /// with no retained validation, and a task with no supported intent stays
@@ -412,6 +429,143 @@ pub mod Attune.Study {
     def usesOf(typeUses: List[TypeUse], symbol: AnchorNode): List[String] =
         List.distinct(List.map(match (_, _, used) -> used,
             List.filter(match (usedBy, _, _) -> usedBy == symbol, typeUses)))
+
+    // ------------------------------------------------ bounded panel selection
+    //
+    // The one bounded deterministic selection over a declared panel of record
+    // rows. Groups, tasks per group, ordered pairs, included pair groups, the
+    // candidate population and the world shards are each capped at a declared
+    // bound, and anything clipped is reported as an explicit `truncated` finding
+    // carrying the observed count and the cap, never silently dropped. The
+    // declared bounds are Study's selection contract; the candidate and shard
+    // values equal Theory's declared limits, which a separating law pins.
+
+    /// The declared bounds of the admitted manifest, as values rather than
+    /// prose: preparation enforces them, the analysis macro refuses an
+    /// over-bound manifest, and the consumer laws read them back from the
+    /// manifest itself.
+    pub def boundNames(): List[(String, Int32)] =
+        ("groups", 24) :: ("tasks_per_group", 4) :: ("pairs", 32) :: ("pair_groups", 8) ::
+            ("candidates", 256) :: ("shards_per_world", 8) :: ("shard_size", 32) :: Nil
+
+    /// The declared value of one named bound, or zero when the name is unknown.
+    pub def boundOf(name: String): Int32 =
+        match List.find(pair -> match pair { case (key, _) => key == name }, boundNames()) {
+            case Some((_, value)) => value
+            case None             => 0
+        }
+
+    /// The declared bounds as emitted manifest rows.
+    pub def boundRows(): List[List[String]] =
+        List.map(pair -> match pair { case (name, value) => List#{"bounds", name, Int32.toString(value)} }, boundNames())
+
+    /// The bounded deterministic manifest rows of one declared panel, and the
+    /// explicit bound findings. Groups, tasks per group, ordered pairs and
+    /// included pair groups are capped at their declared bounds; the candidate
+    /// population is capped at its declared bound and sharded at the declared
+    /// shard granularity. Anything clipped is reported as an explicit
+    /// `truncated` finding with the observed count and the cap, never silently
+    /// dropped.
+    pub def manifestRows(panel: List[List[String]]): (List[List[String]], List[List[String]]) = {
+        let generation = match rowsOf(panel, "generation") {
+            case row :: _ => field(row, 1)
+            case Nil      => "unknown"
+        };
+        let groups = rowsOf(panel, "group");
+        let keptGroups = List.take(boundOf("groups"), groups);
+        let groupFindings = if (List.length(groups) > boundOf("groups"))
+            List#{"truncated", "groups", Int32.toString(List.length(groups)), Int32.toString(boundOf("groups"))} :: Nil
+            else Nil;
+        let worldRows = rowsOf(panel, "world");
+        match capCounts(rowsOf(panel, "descriptors"), boundOf("candidates"), Nil, Nil) {
+            case (keptCounts, countFindings) =>
+                match capTasks(keptGroups, rowsOf(panel, "task"), Nil, Nil) {
+                    case (keptTasks, taskFindings) =>
+                        match capPairs(keptGroups, rowsOf(panel, "pair")) {
+                            case (keptPairs, pairFindings) =>
+                                let shards = List.flatMap(row -> shardRows(0, field(row, 1), intOf(field(row, 2)), Nil), keptCounts);
+                                let head = List#{"generation", generation} :: boundRows();
+                                (head ::: worldRows ::: keptGroups ::: shards ::: keptTasks ::: keptPairs,
+                                 groupFindings ::: countFindings ::: taskFindings ::: pairFindings)
+                        }
+                }
+        }
+    }
+
+    def capCounts(rows: List[List[String]], remaining: Int32, kept: List[List[String]], findings: List[List[String]]): (List[List[String]], List[List[String]]) = match rows {
+        case Nil => (kept, findings)
+        case row :: rest =>
+            let world = field(row, 1);
+            let observed = intOf(field(row, 2));
+            let keep = if (observed > remaining) remaining else observed;
+            let capped = kept ::: (List#{"descriptors", world, Int32.toString(keep)} :: Nil);
+            let finding = if (keep < observed)
+                List#{"truncated", "candidates", world, Int32.toString(observed), Int32.toString(boundOf("candidates"))} :: findings
+                else findings;
+            capCounts(rest, remaining - keep, capped, finding)
+    }
+
+    def capTasks(groups: List[List[String]], tasks: List[List[String]], kept: List[List[String]], findings: List[List[String]]): (List[List[String]], List[List[String]]) = match groups {
+        case Nil => (kept, findings)
+        case group :: rest =>
+            let id = field(group, 1);
+            let mine = List.filter(task -> field(task, 2) == id, tasks);
+            let cap = boundOf("tasks_per_group");
+            let keptHere = List.take(cap, mine);
+            let finding = if (List.length(mine) > cap)
+                List#{"truncated", "tasks", id, Int32.toString(List.length(mine)), Int32.toString(cap)} :: findings
+                else findings;
+            capTasks(rest, tasks, kept ::: keptHere, finding)
+    }
+
+    def capPairs(groups: List[List[String]], pairs: List[List[String]]): (List[List[String]], List[List[String]]) = {
+        let included = List.take(boundOf("pair_groups"), List.map(group -> field(group, 1), groups));
+        let eligible = List.filter(pair -> List.memberOf(field(pair, 2), included), pairs);
+        let kept = List.take(boundOf("pairs"), eligible);
+        let declaredGroups = List.distinct(List.map(pair -> field(pair, 2), pairs));
+        let groupFindings = if (List.length(declaredGroups) > boundOf("pair_groups"))
+            List#{"truncated", "pair_groups", Int32.toString(List.length(declaredGroups)), Int32.toString(boundOf("pair_groups"))} :: Nil
+            else Nil;
+        let pairFindings = if (List.length(pairs) > boundOf("pairs"))
+            List#{"truncated", "pairs", Int32.toString(List.length(pairs)), Int32.toString(boundOf("pairs"))} :: groupFindings
+            else groupFindings;
+        (kept, pairFindings)
+    }
+
+    /// The bounded shard rows of one world's descriptor count: at most the
+    /// declared shards per world, each at most the declared shard size. The
+    /// declared starting granularity is a fixture choice here, not a measured
+    /// tuning claim.
+    def shardRows(index: Int32, world: String, remaining: Int32, acc: List[List[String]]): List[List[String]] =
+        if (remaining <= 0 or index >= boundOf("shards_per_world")) acc
+        else {
+            let size = if (remaining < boundOf("shard_size")) remaining else boundOf("shard_size");
+            shardRows(index + 1, world, remaining - size, acc ::: (List#{"shard", world, Int32.toString(index), Int32.toString(size)} :: Nil))
+        }
+
+    /// The deterministic ranking of one set of candidate ids: distinct ids in
+    /// ascending order, each with its one-based rank. Ties are broken by the id
+    /// itself, so the frozen order is reproducible and no score is invented.
+    pub def rankedCandidates(candidates: List[String]): List[(Int32, String)] =
+        rankedFrom(1, List.sort(List.distinct(candidates)), Nil)
+
+    def rankedFrom(rank: Int32, candidates: List[String], acc: List[(Int32, String)]): List[(Int32, String)] = match candidates {
+        case Nil               => List.reverse(acc)
+        case candidate :: rest => rankedFrom(rank + 1, rest, (rank, candidate) :: acc)
+    }
+
+    /// The non-empty declared records of one tab-separated record set.
+    def rowsOf(list: List[List[String]], kind: String): List[List[String]] =
+        List.filter(row -> match row {
+            case first :: _ => first == kind
+            case Nil        => false
+        }, list)
+
+    /// One declared field of a record row, or the empty string when absent.
+    def field(row: List[String], index: Int32): String =
+        Option.getWithDefault("", nth(row, index))
+
+    def intOf(text: String): Int32 = Option.getWithDefault(0, Int32.fromString(text))
 
     // ------------------------------------------------------- method contracts
 

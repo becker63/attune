@@ -152,6 +152,20 @@ pub mod Attune {
         Atom.Defines :: Atom.DefinedIn :: Atom.Imports ::
             Atom.ImportedBy :: Atom.Calls :: Atom.Callers :: Nil
 
+    /// The opposite of one directed atom. `defines`/`defined_in`,
+    /// `imports`/`imported_by` and `calls`/`callers` are the three inverse
+    /// pairs. Deriving an inverse relation reads this one typed table rather
+    /// than a second string mapping, so the forward and inverse vocabularies
+    /// cannot disagree.
+    pub def inverse(atom: Atom): Atom = match atom {
+        case Atom.Defines    => Atom.DefinedIn
+        case Atom.DefinedIn  => Atom.Defines
+        case Atom.Imports    => Atom.ImportedBy
+        case Atom.ImportedBy => Atom.Imports
+        case Atom.Calls      => Atom.Callers
+        case Atom.Callers    => Atom.Calls
+    }
+
     /// The exact identity of one memo entry: the world/semantic namespace, the
     /// exact typed input frontier and the next atom. The ordinal and the work tag
     /// are absent by design, so two transitions may share a key while recording
