@@ -1,0 +1,70 @@
+load("//platform/build:native.bzl", "native_flix_consumer_test", "native_study_stage")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The shared semantic owners every catalog law compiles. The dispatcher is a thin
+# adapter: the pinned-identity and physical-schema contract it reduces lives in
+# `Attune.Study`, and the unavoidable Arrow codec work lives in the mechanical
+# `//platform/tools/parquet` seam.
+STAGE_SRCS = [
+    "CatalogAcquire.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Study.flix",
+]
+
+# The declared catalog acquisition stage (`VAL-DATA-001`): it streams the pinned
+# public Parquet through the projected/batched Arrow boundary, records the exact
+# bytes and the physical schema the codec observed, and reduces them against the
+# declared identity and schema. The pinned artifact is the immutable revision the
+# module's acquisition URL names.
+#
+# The target is `manual` on purpose, like every other study surface: the ordinary
+# `bazel test //...` gate must never acquire or scan the 428,839,266-byte corpus.
+native_study_stage(
+    name = "catalog_acquire",
+    srcs = STAGE_SRCS,
+    input_names = [
+        "catalog",
+        "pin",
+        "schema",
+    ],
+    inputs = [
+        "@swe_rebench_v2_catalog//file:file",
+        "catalog_pin.tsv",
+        "catalog_schema.tsv",
+    ],
+    java_deps = ["//platform/tools/parquet:attune_parquet"],
+    stage = "catalog",
+    tags = ["manual"],
+)
+
+# The declared acquisition-artifact laws: they consume the tree the stage
+# materialized and assert the declared identity, the recorded physical schema and
+# the streamed projection, then exercise the same production comparison in the
+# negative direction. Manual for the same reason: `//...` never touches them.
+native_flix_consumer_test(
+    name = "catalog_pin_test",
+    srcs = [
+        "CatalogPinLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    declared_files = [
+        "catalog_pin.tsv",
+        "catalog_schema.tsv",
+    ],
+    produced = [":catalog_acquire"],
+    tags = ["manual"],
+)
+
+test_suite(
+    name = "all",
+    tags = ["manual"],
+    tests = [":catalog_pin_test"],
+)

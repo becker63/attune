@@ -1264,4 +1264,73 @@ pub mod Attune.Study {
                     and List.forAll(identity -> String.contains(substr = identity, log), required)
             case _ => false
         }
+
+    // -------------------------------------------------- pinned public catalog
+    //
+    // The one approved public corpus input (`VAL-DATA-001`). Its streaming
+    // normalization is a later feature's responsibility; this section owns only
+    // the declared identity contract and the declared physical-schema contract
+    // that the acquisition verifies against the real materialized bytes. The
+    // declared values arrive as declared stage inputs
+    // (`test/catalog/catalog_pin.tsv`, `test/catalog/catalog_schema.tsv`),
+    // exactly like the frozen policy and the analysis panel, so the contract is
+    // materialized and inspectable rather than buried in an adapter and no
+    // second copy can drift from it. This owner holds the types and the
+    // comparison and decides every verdict; the acquisition adapter only
+    // resolves bindings and decodes the same bounded record vocabulary.
+
+    /// The declared identity of the pinned catalog artifact: the immutable
+    /// revision, the immutable path inside that revision, the acquisition URL
+    /// that encodes both, the provider-published SHA-256 and the byte count.
+    pub type alias CatalogPin = {
+        revision = String, path = String, url = String, sha256 = String, bytes = Int32
+    }
+
+    /// One node of a physical Arrow schema: its pre-order depth, its field name,
+    /// its shallow type and its nullability. The declared expectation and the
+    /// mechanically recorded schema are read into this same type, so the two are
+    /// compared as ordered values rather than as one text blob.
+    pub type alias PhysicalField = {
+        depth = Int32, name = String, arrowType = String, nullable = Bool
+    }
+
+    /// The canonical text of one physical schema node.
+    pub def physicalFieldText(field: PhysicalField): String =
+        Int32.toString(field#depth) + "\t" + field#name + "\t" + field#arrowType + "\t"
+            + (if (field#nullable) "true" else "false")
+
+    /// The declared findings of one catalog acquisition: one classified record
+    /// per disagreement between the declared contract and the mechanically
+    /// observed bytes. The empty list means every declared fact matched exactly:
+    /// the acquisition URL still encodes the immutable revision and path, the
+    /// observed byte count equals the declared size, the observed SHA-256 equals
+    /// the declared digest, and the recorded physical schema equals the declared
+    /// schema node for node. A missing declaration is a finding too, so an
+    /// absent contract can never pass as the empty contract.
+    pub def catalogFindings(
+        pin: CatalogPin,
+        bytes: Int32,
+        sha256: String,
+        declared: List[PhysicalField],
+        observed: List[PhysicalField]
+    ): List[String] = {
+        let locator =
+            (if (String.contains(substr = pin#revision, pin#url)) Nil
+                else List#{"the acquisition URL does not encode the declared revision"})
+            ::: (if (String.contains(substr = pin#path, pin#url)) Nil
+                else List#{"the acquisition URL does not encode the declared path"});
+        let identity =
+            (if (bytes == pin#bytes) Nil
+                else List#{"the observed byte count differs from the declared size"})
+            ::: (if (sha256 == pin#sha256) Nil
+                else List#{"the observed SHA-256 differs from the declared digest"});
+        let declaredText = List.map(physicalFieldText, declared);
+        let observedText = List.map(physicalFieldText, observed);
+        let schema =
+            if (List.isEmpty(declaredText)) List#{"the declared physical schema is absent or empty"}
+            else if (List.isEmpty(observedText)) List#{"the physical schema was not recorded"}
+            else if (declaredText == observedText) Nil
+            else List#{"the recorded physical schema differs from the declared schema"};
+        locator ::: identity ::: schema
+    }
 }

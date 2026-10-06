@@ -452,6 +452,20 @@ The independent reviews of P01-P10 are recorded in the design note index: each
 proposal carries one non-author round-1 scrutiny verdict, and nothing here
 claims a live or user-flow result.
 
+The counts in the paragraph above are the compact-ownership leaf's snapshot, not
+the live totals; the canonical measured block is in
+[the design note](attune/notes/design.md). The one approved pinned corpus is now
+acquired through declared checksum mechanics: the main issue-based
+`nebius/SWE-rebench-V2` release at revision
+`10483de0f50fe5da545942705a76c6150171af7f`, path `data/train-00000-of-00001.parquet`,
+SHA-256 `0e0bf9355f892ad74ae98d4e1c404f39fd6654a8e351ee3e6ab162e4a64cd3ad`
+(428,839,266 bytes) is materialized by the `manual` `//test/catalog` acquisition,
+which verifies the real bytes and the physical schema through the minimal
+projected/batched Arrow boundary and leaves every scientific decision to Flix.
+The ordinary `bazel test //...` gate never fetches or scans it. Normalization,
+panel selection and the studies remain the following features' work, so no
+localization gain is claimed here.
+
 ## Deferred
 
 This bootstrap establishes the build spine, the shared envelope, the canonical
@@ -461,7 +475,9 @@ Ruby arm, the ASCII writer and typed route/grammar/proof/view adapters, and the
 checked documentation correspondence. Deliberately not selected or run here:
 
 - any final source, cache-ownership, sharding or "most parallel" topology;
-- real datasets, retained priors, localization experiments, census or benchmarks;
+- the approved corpus's streaming normalization, retained priors, localization
+  experiments, census or benchmarks (the one pinned corpus is acquired; none of
+  these studies is run here);
 - a general view catalog, large-graph layout, ASCII parser or architecture browser;
 - any model choice, live provider effect, ranking-quality claim or application
   policy selection beyond the recorded fixture decision contract.

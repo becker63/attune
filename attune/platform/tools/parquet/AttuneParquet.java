@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -83,6 +84,287 @@ public final class AttuneParquet {
             return ok(readRows(name, JSON.readValue(schemaPayload, TableSpec.class)));
         } catch (Throwable error) {
             return failure(error);
+        }
+    }
+
+    // ------------------------------------------------ pinned public input mechanics
+    //
+    // The two methods below are the minimal projected/batched Arrow boundary the
+    // streaming normalization consumes. They are mechanics only: `inspect`
+    // reports the exact bytes and the recorded physical schema, and `project`
+    // streams a declared column projection in declared batches into canonical
+    // per-cell records. Which fields must exist, what a record means, which
+    // columns a study projects and every comparison against a declared pin are
+    // Flix decisions; neither method filters, selects or interprets a row. Both
+    // return the same canonical record text and escape every value, so a value
+    // can never collapse into a missing field and an unreadable file is a typed
+    // answer rather than a crash across the interop boundary.
+    //
+    // Canonical records text:
+    //   status<TAB>ok<TAB>parquet-inspect
+    //   bytes<TAB><exact byte length>
+    //   sha256<TAB><lower-case hex digest of exactly those bytes>
+    //   field<TAB><depth><TAB><name><TAB><shallow type><TAB><nullable>
+    // and, for a projection:
+    //   status<TAB>ok<TAB>parquet-projection
+    //   rows<TAB><rows written>   batches<TAB><batches scanned>
+    //   column<TAB><index><TAB><name><TAB><declared type>
+    //   cell<TAB><row><TAB><column index><TAB><item|-|null><TAB><escaped value>
+    // A scalar cell carries `-` as its item; a list cell carries one record per
+    // element with the element index; a null value is the unescaped token
+    // `null`, an empty string is `\e`. A failure is
+    // `status<TAB>error<TAB><kind><TAB><escaped message>`.
+    //
+    // The projection spec is the same canonical text:
+    //   column<TAB><name><TAB><type>   (type in the flat table vocabulary, plus list<string>)
+    //   batch<TAB><rows per batch>     (optional)
+    //   limit<TAB><rows to write>      (optional; 0, the default, means every row)
+
+    /**
+     * Mechanically describe one Parquet file's exact bytes and physical schema.
+     *
+     * <p>It reads the file's real byte length, digests exactly those bytes with
+     * SHA-256 and reports the Arrow physical schema the pinned codec observes,
+     * one `field` record per node in pre-order. It decides nothing: the declared
+     * identity and the expected schema live in Flix, and the caller compares.
+     */
+    public static String inspect(String name) {
+        try {
+            Path path = Path.of(name).toAbsolutePath();
+            long bytes = Files.size(path);
+            String sha256 = digest(path);
+            StringBuilder out = new StringBuilder();
+            out.append("status\tok\tparquet-inspect\n");
+            out.append("bytes\t").append(bytes).append('\n');
+            out.append("sha256\t").append(sha256).append('\n');
+            try (BufferAllocator allocator = new RootAllocator();
+                 var factory = new FileSystemDatasetFactory(allocator, NativeMemoryPool.getDefault(),
+                         FileFormat.PARQUET, path.toUri().toString());
+                 var dataset = factory.finish();
+                 var scanner = dataset.newScan(new ScanOptions(4_096))) {
+                for (Field field : scanner.schema().getFields()) {
+                    appendPhysicalField(out, field, 0);
+                }
+            }
+            return out.toString();
+        } catch (Throwable error) {
+            return catalogFailure(error);
+        }
+    }
+
+    /**
+     * Stream one declared column projection of one Parquet file into canonical per-cell records.
+     *
+     * <p>The scan is projected at the codec (only the declared top-level columns
+     * are read) and batched at the declared batch size, and each batch's records
+     * are written through to the declared output before the next batch loads, so
+     * the whole raw catalog is never held as one row list. The method filters
+     * nothing and ranks nothing.
+     */
+    public static String projectColumns(String name, String spec, String output) {
+        Path cells = null;
+        try {
+            ProjectionSpec projection = parseProjection(spec);
+            Path source = Path.of(name).toAbsolutePath();
+            Path target = Path.of(output).toAbsolutePath();
+            Files.createDirectories(target.getParent());
+            cells = Files.createTempFile(target.getParent(), ".project-", ".cells");
+            int rowIndex = 0;
+            long batches = 0;
+            try (BufferAllocator allocator = new RootAllocator();
+                 var factory = new FileSystemDatasetFactory(allocator, NativeMemoryPool.getDefault(),
+                         FileFormat.PARQUET, source.toUri().toString());
+                 var dataset = factory.finish();
+                 var scanner = dataset.newScan(new ScanOptions(
+                         projection.names().toArray(String[]::new), projection.batchSize()));
+                 var reader = scanner.scanBatches();
+                 var writer = Files.newBufferedWriter(cells, StandardCharsets.UTF_8)) {
+                var root = reader.getVectorSchemaRoot();
+                while (reader.loadNextBatch()) {
+                    int count = root.getRowCount();
+                    batches++;
+                    StringBuilder block = new StringBuilder();
+                    for (int row = 0; row < count; row++) {
+                        if (projection.limit() > 0 && rowIndex >= projection.limit()) {
+                            break;
+                        }
+                        appendCells(block, rowIndex, projection, root, row);
+                        rowIndex++;
+                    }
+                    writer.write(block.toString());
+                    if (projection.limit() > 0 && rowIndex >= projection.limit()) {
+                        break;
+                    }
+                }
+            }
+            StringBuilder head = new StringBuilder();
+            head.append("status\tok\tparquet-projection\n");
+            head.append("rows\t").append(rowIndex).append('\n');
+            head.append("batches\t").append(batches).append('\n');
+            for (int index = 0; index < projection.columns().size(); index++) {
+                ProjectedColumn column = projection.columns().get(index);
+                head.append("column\t").append(index).append('\t').append(column.name())
+                        .append('\t').append(column.type()).append('\n');
+            }
+            Path assembled = Files.createTempFile(target.getParent(), ".project-", ".txt");
+            try (var sink = Files.newOutputStream(assembled)) {
+                sink.write(head.toString().getBytes(StandardCharsets.UTF_8));
+                Files.copy(cells, sink);
+            }
+            Files.move(assembled, target, StandardCopyOption.REPLACE_EXISTING);
+            return head.toString();
+        } catch (Throwable error) {
+            return catalogFailure(error);
+        } finally {
+            if (cells != null) {
+                try {
+                    Files.deleteIfExists(cells);
+                } catch (IOException ignored) {
+                    // The declared output is already complete; a leftover temp file is not a result.
+                }
+            }
+        }
+    }
+
+    private static void appendPhysicalField(StringBuilder out, Field field, int depth) {
+        out.append("field\t").append(depth).append('\t').append(field.getName()).append('\t')
+                .append(typeName(field.getType())).append('\t').append(field.isNullable() ? "true" : "false")
+                .append('\n');
+        for (Field child : field.getChildren()) {
+            appendPhysicalField(out, child, depth + 1);
+        }
+    }
+
+    private static String typeName(ArrowType type) {
+        if (type instanceof ArrowType.Utf8) {
+            return "utf8";
+        }
+        if (type instanceof ArrowType.Bool) {
+            return "bool";
+        }
+        if (type instanceof ArrowType.Int integer) {
+            return "int" + integer.getBitWidth();
+        }
+        if (type instanceof ArrowType.FloatingPoint) {
+            return "float64";
+        }
+        if (type instanceof ArrowType.List) {
+            return "list";
+        }
+        if (type instanceof ArrowType.Struct) {
+            return "struct";
+        }
+        return type.toString();
+    }
+
+    private static void appendCells(
+            StringBuilder out, int row, ProjectionSpec projection, VectorSchemaRoot root, int index) {
+        for (int columnIndex = 0; columnIndex < projection.columns().size(); columnIndex++) {
+            ProjectedColumn column = projection.columns().get(columnIndex);
+            FieldVector vector = root.getVector(column.name());
+            if (vector == null) {
+                throw new IllegalArgumentException("projected column is absent from the physical schema: " + column.name());
+            }
+            if (vector.isNull(index)) {
+                cell(out, row, columnIndex, "-", "null");
+                continue;
+            }
+            switch (column.type()) {
+                case "string" -> cell(out, row, columnIndex, "-", text((VarCharVector) vector, index));
+                case "int32" -> cell(out, row, columnIndex, "-", Integer.toString(((IntVector) vector).get(index)));
+                case "int64" -> cell(out, row, columnIndex, "-", Long.toString(((BigIntVector) vector).get(index)));
+                case "float64" -> cell(out, row, columnIndex, "-", Double.toString(((Float8Vector) vector).get(index)));
+                case "boolean" -> cell(out, row, columnIndex, "-", ((BitVector) vector).get(index) != 0 ? "true" : "false");
+                case "list<string>" -> {
+                    List<?> items = (List<?>) ((ListVector) vector).getObject(index);
+                    for (int item = 0; item < items.size(); item++) {
+                        cell(out, row, columnIndex, Integer.toString(item), String.valueOf(items.get(item)));
+                    }
+                }
+                default -> throw new IllegalArgumentException("unsupported projected column type: " + column.type());
+            }
+        }
+    }
+
+    private static void cell(StringBuilder out, int row, int column, String item, String value) {
+        out.append("cell\t").append(row).append('\t').append(column).append('\t').append(item).append('\t')
+                .append(escape(value)).append('\n');
+    }
+
+    private static ProjectionSpec parseProjection(String spec) {
+        long limit = 0;
+        long batchSize = 8_192;
+        List<ProjectedColumn> columns = new ArrayList<>();
+        for (String line : spec.split("\n")) {
+            if (line.isBlank()) {
+                continue;
+            }
+            String[] fields = line.split("\t", -1);
+            switch (fields[0]) {
+                case "limit" -> limit = Long.parseLong(fields[1].trim());
+                case "batch" -> batchSize = Long.parseLong(fields[1].trim());
+                case "column" -> columns.add(new ProjectedColumn(fields[1], fields[2]));
+                default -> throw new IllegalArgumentException("unknown projection record: " + fields[0]);
+            }
+        }
+        if (columns.isEmpty()) {
+            throw new IllegalArgumentException("projection declares no columns");
+        }
+        if (batchSize <= 0) {
+            throw new IllegalArgumentException("projection batch size must be positive");
+        }
+        return new ProjectionSpec(columns, limit, batchSize);
+    }
+
+    private static String digest(Path path) throws Exception {
+        MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+        try (var stream = Files.newInputStream(path)) {
+            byte[] buffer = new byte[1 << 16];
+            int read;
+            while ((read = stream.read(buffer)) >= 0) {
+                sha256.update(buffer, 0, read);
+            }
+        }
+        StringBuilder hex = new StringBuilder();
+        for (byte value : sha256.digest()) {
+            hex.append(String.format("%02x", value));
+        }
+        return hex.toString();
+    }
+
+    private static String catalogFailure(Throwable error) {
+        Throwable root = rootCause(error);
+        String kind = (root instanceof IllegalArgumentException) ? "schema"
+                : (root instanceof IOException) ? "io" : "native";
+        return "status\terror\t" + kind + "\t" + escape(root.getClass().getSimpleName() + ": " + root.getMessage()) + "\n";
+    }
+
+    private static String escape(String value) {
+        if (value == null) {
+            return "null";
+        }
+        if (value.isEmpty()) {
+            return "\\e";
+        }
+        StringBuilder out = new StringBuilder();
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            switch (character) {
+                case '\\' -> out.append("\\\\");
+                case '\t' -> out.append("\\t");
+                case '\n' -> out.append("\\n");
+                case '\r' -> out.append("\\r");
+                default -> out.append(character);
+            }
+        }
+        return out.toString();
+    }
+
+    private record ProjectedColumn(String name, String type) {}
+
+    private record ProjectionSpec(List<ProjectedColumn> columns, long limit, long batchSize) {
+        List<String> names() {
+            return columns.stream().map(ProjectedColumn::name).toList();
         }
     }
 

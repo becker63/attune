@@ -46,6 +46,7 @@ filegroup(
         "//src:policy_files",
         "//src/grit:policy_files",
         "//test:policy_files",
+        "//test/catalog:policy_files",
         "//test/dag:policy_files",
         "//test/docs:policy_files",
         "//test/grit:policy_files",

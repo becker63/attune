@@ -129,3 +129,31 @@ buildbuddy.platform(
     container_image = "gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
 )
 use_repo(buildbuddy, "buildbuddy_toolchain")
+
+# The one approved public corpus artifact (VAL-DATA-001): the main issue-based
+# `nebius/SWE-rebench-V2` release at one immutable revision and one immutable
+# path. The URL carries the revision and the path, and the provider's own
+# SHA-256 pins the exact bytes, so a mutated, substituted or different-revision
+# file fails the fetch rather than entering the study. The declared identity is
+# duplicated nowhere as truth: `Attune.Study`'s `CatalogPin` contract and its one
+# `catalogFindings` comparison own the pin, and the acquisition stage recomputes
+# the SHA-256 of the materialized bytes, so a drift between this URL and that
+# declaration fails the catalog law instead of passing quietly.
+#
+# The declaration is placed last on purpose: adding a `use_repo_rule` repo before
+# the `grit_crates` extension renumbers the anonymous repos and fails the pinned
+# `platform/support/grit/cargo-bazel-lock.json` resolution digest. Declaring it
+# last leaves that inherited lock untouched.
+#
+# This is a public-input acquisition, distinct from the credential-free,
+# network-denied scientific guests: the fetch happens on the client, and no
+# action that executes a reference obligation ever reaches the network. It is
+# requested only by the explicitly selected `manual` `//test/catalog` targets,
+# so the ordinary `bazel test //...` gate never acquires the corpus.
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "swe_rebench_v2_catalog",
+    sha256 = "0e0bf9355f892ad74ae98d4e1c404f39fd6654a8e351ee3e6ab162e4a64cd3ad",
+    urls = ["https://huggingface.co/datasets/nebius/SWE-rebench-V2/resolve/10483de0f50fe5da545942705a76c6150171af7f/data/train-00000-of-00001.parquet"],
+)
