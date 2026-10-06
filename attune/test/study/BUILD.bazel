@@ -1,0 +1,78 @@
+load("//platform/build:native.bzl", "native_study_stage")
+load("//platform/build:study.bzl", "attune_study")
+load("//test/study:manifest/manifest.bzl", "ANALYSIS")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The world/task/pair fixture population is declared once, by the admitted
+# manifest: `manifest/panel.tsv` names each world's source, facts and descriptor
+# files, and `manifest/analysis.tsv` is the bounded gold-free record set native
+# preparation emitted from it. Restating those paths here would be a second,
+# drift-prone declaration of the same population, so the macro consumes the
+# manifest instead.
+
+# The explicit source closure every declared stage compiles: the dispatcher plus
+# the shared owners it consumes. One declaration, so every stage action compiles
+# exactly the same set and no stage can reach a source its closure omits.
+STAGE_SRCS = [
+    "Stages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# Native preparation: the pinned Tester runs the declared panel through the
+# stage dispatcher and materializes one declared tree holding `analysis.tsv` and
+# the loadable `manifest.bzl`. This is the emitted manifest the integration owner
+# admits back into the workspace before the selected study invocation. The
+# declared panel carries no evaluator material: only group/task/pair/world
+# metadata.
+native_study_stage(
+    name = "analysis_prepare",
+    srcs = STAGE_SRCS,
+    input_names = ["panel"],
+    inputs = ["manifest/panel.tsv"],
+    stage = "prepare_manifest",
+    tags = ["manual"],
+)
+
+# The same preparation over the declared over-cap panel, so the bounded-truncation
+# laws can prove an exceeded bound is reported rather than silently dropped.
+native_study_stage(
+    name = "analysis_prepare_overflow",
+    srcs = STAGE_SRCS,
+    input_names = ["panel"],
+    inputs = ["manifest/panel_overflow.tsv"],
+    stage = "prepare_manifest",
+    tags = ["manual"],
+)
+
+# The complete declared world/task/pair fan-out, expanded from the admitted
+# manifest. Study targets are manual on purpose: `bazel test //...` must not
+# accidentally acquire or run the selected study surface. Every law, variant,
+# anchor and plan this graph consumes is named here, so the live workspace audit
+# sees the exact declared population rather than a macro default.
+attune_study(
+    name = "study",
+    analysis = ANALYSIS,
+    law_srcs = {
+        "bounds_test": "BoundsLaw.flix",
+        "dag_test": "DagLaw.flix",
+        "manifest_test": "ManifestLaw.flix",
+    },
+    plan = "fixtures/plan.tsv",
+    stage_srcs = STAGE_SRCS,
+    task_fixtures = "fixtures/tasks",
+    variant_files = {
+        "ab": "fixtures/variants/ab.flix",
+        "a": "fixtures/variants/a.flix",
+        "b": "fixtures/variants/b.flix",
+        "baseline": "fixtures/variants/base.flix",
+    },
+)

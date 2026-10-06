@@ -1,0 +1,21 @@
+generation	attune-fixture-panel-1
+bounds	groups	24
+bounds	tasks_per_group	4
+bounds	pairs	32
+bounds	pair_groups	8
+bounds	candidates	256
+bounds	shards_per_world	8
+bounds	shard_size	32
+world	w1	acme/shop	rev-shop	gr1t-filetree	fixtures/world/Shop.flix	fixtures/world/w1.tsv	fixtures/descriptors.tsv
+world	w2	acme/tools	rev-tools	gr1t-filetree	fixtures/world/Shop.flix	fixtures/world/w2.tsv	fixtures/descriptors.tsv
+group	g1	acme/shop	development
+group	g2	acme/tools	calibration
+group	g3	acme/lab	final
+shard	w1	0	3
+shard	w2	0	3
+task	t1	g1	w1	localization	File:Shop.flix
+task	t2	g1	w1	coordination	Symbol:Shop.Receipt.render
+task	t3	g2	w2	localization	File:Shop.flix
+task	t4	g2	w2	coordination	Symbol:Shop.Receipt.render
+pair	p1	g1	t1	t2	w1
+pair	p2	g2	t3	t4	w2

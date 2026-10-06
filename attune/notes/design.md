@@ -125,7 +125,7 @@ The hermetic policy check consumes `//:policy_sources`, which aggregates one
 | `//platform/tools/grit` | the hand-written FFM binding and canonical-record facade |
 | `//platform/tools/parquet` | the typed Arrow Dataset Parquet codec |
 | `//platform/support/grit` | the inherited pinned native closure, ABI shim, header and grammar patches |
-| `//test`, `//test/spine`, `//test/theory`, `//test/policy`, `//test/seam`, `//test/grit`, `//test/history`, `//test/view`, `//test/docs` | the fixtures and their laws, including the bounded Theory laws, the corrected-intent historical regression with its declared imported inputs, and the documentation correspondence fixture |
+| `//test`, `//test/spine`, `//test/theory`, `//test/policy`, `//test/seam`, `//test/grit`, `//test/history`, `//test/view`, `//test/docs`, `//test/dag`, `//test/receipt`, `//test/study` | the fixtures and their laws, including the bounded Theory laws, the corrected-intent historical regression with its declared imported inputs, the documentation correspondence fixture, the declared producer/consumer artifact laws, the bounded process-receipt laws, and the study stage dispatcher with its admitted-manifest, bounded-truncation and shared-world/immutable-branch DAG laws |
 | `//platform/tools`, `//platform/tools/boundary` | the minimal Java boundary |
 
 The carried Zed assets under `platform/zed/` are declared once in
@@ -491,24 +491,34 @@ excluded).
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
-| boundary | `platform/tools/boundary/*.java` | Java | 909 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
+| boundary | `platform/tools/boundary/*.java` | Java | 993 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,unshare_repository,workspace_root}.bzl` | Starlark | 370 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, and the declared-tree consumer macro, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 4,184 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, and the physical/nonblank report law in `test/policy`, run as the pinned compiler's `@Test`. |
+| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 708 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair fan-out at analysis time, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 5,033 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the `test/study` stage dispatcher with its admitted-manifest, bounded-truncation and shared-world/immutable-branch DAG laws, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,383 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,432 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,342; B mechanical 1,866; A+B authored 6,208; C test 4,184; C support 21,884
+4,342; B mechanical 2,288; A+B authored 6,630; C test 5,033; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 133 readable files, code 34,659,
-comment 2,199, documentation 4890, blank 2208; the report prints the derived
-physical 43956 and nonblank 41748 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 156 readable files, code 35,979,
+comment 2,235, documentation 5,101, blank 2,399; the report prints the derived
+physical 45,714 and nonblank 43,315 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The receipt-drain-failure-propagation leaf moves, relative to the
+them. The declarative-world-dag-and-remote-slice leaf moves, relative to the
+receipt-drain-failure record (4,342/1,866/6,208/4,184), `boundary` 909 -> 993
+(the declared study-stage launcher mode: the declared input bindings, the pinned
+Tester child over the explicit stage sources, the fail-closed check that a
+regular file was written and the mechanical `closure.tsv`), `build-rules` 370
+-> 708 (the declared study-stage rule, the immutable source-tree rule and the
+new `platform/build/study.bzl` macro that expands the admitted manifest), `tests`
+4,184 -> 5,033 (the study stage dispatcher and the three `test/study` law files)
+and `metadata` 2,383 -> 2,432 (the new `test/study/BUILD.bazel`); the cognitive
+core is unchanged, so this whole delta is mechanical substrate, fixtures and
+declared metadata. The receipt-drain-failure-propagation leaf moves, relative to the
 minimal-process-receipts record (4,342/1,719/6,061/4,124), `boundary` 796 -> 909
 (the drain failure flag and propagation, the shared production record formatter
 and the test-only drain seam), `build-rules` 336 -> 370 (the declared
@@ -569,7 +579,7 @@ role rather than merged into authored code:
 | `platform/support/grit/Cargo.lock`, `platform/support/grit/cargo-bazel-lock.json` | inherited-locks (21,229 generated) | pinned generated resolution locks, not authored | the crate graph pinned by `platform/support/grit/cargo-bazel-lock.json` |
 | `platform/zed/extension.toml`, `platform/zed/languages/flix/{brackets.scm,config.toml,highlights.scm,outline.scm}` | inherited (carried editor assets, declared once in `//platform/zed:zed_assets`) | reference checkout `platform/zed/`, Apache-2.0 | Flix grammar revision `78cff149b2e9897456f94844872353b5ee0ca93b` |
 | `platform/zed/grammars/**` | inherited (live-audit only) | untracked upstream tree-sitter-flix checkout preserved beside the assets | same Flix grammar revision; outside Nix/Bazel/CAS, never a package or action input |
-| `notes/`, `AGENTS.md`, `BUILD.bazel`, `MODULE.bazel`, `MODULE.bazel.lock`, `maven_install.json`, `.bazelrc`, `.bazelversion`, `.gitignore`, `.bazelignore`, `flake.nix`, `flake.lock` | declared/metadata (2,289) | workspace configuration, mission/design notes and pinned JSON locks | the declared root metadata set in `Policy.isRootMetadata` |
+| `notes/`, `AGENTS.md`, `BUILD.bazel`, `MODULE.bazel`, `MODULE.bazel.lock`, `maven_install.json`, `.bazelrc`, `.bazelversion`, `.gitignore`, `.bazelignore`, `flake.nix`, `flake.lock` | declared/metadata (2,432) | workspace configuration, mission/design notes and pinned JSON locks | the declared root metadata set in `Policy.isRootMetadata` |
 
 Outside the audited workspace and never counted as authored source: the
 checkout-root `README.md` and `LICENSE`, the read-only `attuneflix/` reference

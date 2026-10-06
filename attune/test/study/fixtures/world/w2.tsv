@@ -1,0 +1,3 @@
+defines	Shop.flix	Shop.Receipt
+calls	Shop.Receipt.render	Shop.Receipt.audit
+imports	Checkout.flix	Shop.flix

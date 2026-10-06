@@ -37,7 +37,7 @@ _FLIX = "@flix_compiler//jar"
 # claiming the local namespace would be false there.
 _PLATFORM_ISOLATION = "//platform/build:platform_native_isolation"
 
-def _isolation_data(host_isolation):
+def attune_isolation_data(host_isolation):
     if host_isolation:
         return [_UNSHARE, _CLOSURE]
     return select({
@@ -45,7 +45,7 @@ def _isolation_data(host_isolation):
         "//conditions:default": [_UNSHARE, _CLOSURE],
     })
 
-def _isolation_flags(host_isolation):
+def attune_isolation_flags(host_isolation):
     unshare = "-Dattune.unshare=$(rlocationpath %s)" % _UNSHARE
     if host_isolation:
         return ["-Dattune.isolation=unshare", unshare]
@@ -64,11 +64,11 @@ def _native_test(name, srcs, flags, extra_data, size, tags, data, host_isolation
         main_class = "attune.tools.boundary.NativeLaunch",
         use_testrunner = False,
         runtime_deps = ["//platform/tools/boundary:native_launch"],
-        data = srcs + _isolation_data(host_isolation) + [_FLIX] + extra_data + data,
+        data = srcs + attune_isolation_data(host_isolation) + [_FLIX] + extra_data + data,
         jvm_flags = flags + [
             "-Dattune.tests=" + _rlocation(srcs),
             "-Dattune.flix=$(rlocationpath %s)" % _FLIX,
-        ] + _isolation_flags(host_isolation),
+        ] + attune_isolation_flags(host_isolation),
         tags = tags,
     )
 
@@ -436,6 +436,181 @@ def native_drain_probe(name, **kwargs):
       **kwargs: forwarded to the underlying rule.
     """
     _native_drain_probe(name = name, **kwargs)
+
+def _native_study_stage_impl(ctx):
+    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
+    out = ctx.actions.declare_directory(ctx.label.name)
+    classpath = depset(transitive = [
+        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
+    ]).to_list()
+    sources = [source.path for source in ctx.files.srcs]
+    inputs = ctx.files.inputs
+    if len(inputs) != len(ctx.attr.input_names):
+        fail("native_study_stage %s: %d declared inputs but %d names" % (
+            ctx.label.name,
+            len(inputs),
+            len(ctx.attr.input_names),
+        ))
+    specs = [ctx.attr.input_names[index] + "=" + inputs[index].path for index in range(len(inputs))]
+
+    # The declared isolation flags match the native test route: an ordinary
+    # action runs inside the pinned `unshare` namespace, while the opt-in remote
+    # profile runs directly in the provider container and declares neither the
+    # Nix-store binary nor its closure.
+    declared_inputs = list(ctx.files.srcs) + list(inputs) + list(classpath)
+    args = ctx.actions.args()
+    if ctx.attr.isolation == "unshare":
+        args.add("-Dattune.isolation=unshare")
+        args.add("-Dattune.unshare=" + ctx.file.unshare_binary.path)
+        declared_inputs.append(ctx.file.unshare_binary)
+        declared_inputs.extend(ctx.files.unshare_closure)
+    else:
+        args.add("-Dattune.isolation=platform")
+    args.add("-cp")
+    args.add_joined(classpath, join_with = ":")
+    args.add("-Dattune.mode=stage")
+    args.add("-Dattune.stage=" + ctx.attr.stage)
+    args.add("-Dattune.label=" + ctx.label.name)
+    args.add("-Dattune.outputs=" + out.path)
+    args.add("-Dattune.tests=" + ",".join(sources))
+    if specs:
+        args.add("-Dattune.inputs=" + ",".join(specs))
+    args.add("attune.tools.boundary.NativeLaunch")
+    ctx.actions.run(
+        executable = runtime.java_executable_exec_path,
+        arguments = [args],
+        inputs = depset(declared_inputs, transitive = [runtime.files]),
+        outputs = [out],
+        mnemonic = "AttuneStudyStage",
+        progress_message = "Materializing declared study stage %{label}",
+    )
+    return [DefaultInfo(files = depset([out]))]
+
+_native_study_stage = rule(
+    implementation = _native_study_stage_impl,
+    doc = "Run the pinned native Tester over explicit stage sources and emit one declared tree.",
+    attrs = {
+        "srcs": attr.label_list(allow_files = [".flix"]),
+        "inputs": attr.label_list(allow_files = True),
+        "input_names": attr.string_list(),
+        "stage": attr.string(mandatory = True),
+        "isolation": attr.string(values = ["unshare", "platform"], default = "unshare"),
+        "unshare_binary": attr.label(allow_single_file = True),
+        "unshare_closure": attr.label(allow_files = True),
+        "_launcher": attr.label(
+            default = "//platform/tools/boundary:native_launch",
+            providers = [JavaInfo],
+        ),
+    },
+    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+)
+
+def native_study_stage(name, stage, srcs, inputs = [], input_names = [], host_isolation = False, **kwargs):
+    """Materialize one declared study stage tree through the authentic native Tester.
+
+    The action runs the pinned compiler's authentic native test engine over the
+    explicit declared stage sources with the declared input artifacts bound by
+    name, then materializes the declared output tree that stage's law wrote into.
+    The launcher decides no policy: it creates the output directory, binds the
+    inputs and the exact output location, and fails when the engine failed or the
+    law wrote nothing.
+
+    `inputs` and `input_names` are positional pairs: each declared input artifact
+    is bound under the matching name, so the stage law resolves a declared name
+    rather than a path of its own. Each input must resolve to exactly one
+    artifact.
+
+    Args:
+      name: the stage target name, which also names its declared tree output.
+      stage: the declared stage identity the law dispatches on.
+      srcs: the explicit declared Flix stage sources.
+      inputs: the declared input artifacts, in the same order as `input_names`.
+      input_names: the declared binding name of each input.
+      host_isolation: pins the host `unshare` boundary instead of the portable route.
+      **kwargs: forwarded to the underlying rule.
+    """
+    if len(inputs) != len(input_names):
+        fail("native_study_stage %s: %d inputs but %d names" % (name, len(inputs), len(input_names)))
+    unshare_binary = _UNSHARE
+    unshare_closure = _CLOSURE
+    if host_isolation:
+        isolation = "unshare"
+    else:
+        isolation = select({
+            _PLATFORM_ISOLATION: "platform",
+            "//conditions:default": "unshare",
+        })
+        unshare_binary = select({
+            _PLATFORM_ISOLATION: None,
+            "//conditions:default": _UNSHARE,
+        })
+        unshare_closure = select({
+            _PLATFORM_ISOLATION: None,
+            "//conditions:default": _CLOSURE,
+        })
+    _native_study_stage(
+        name = name,
+        stage = stage,
+        srcs = srcs,
+        inputs = inputs,
+        input_names = input_names,
+        isolation = isolation,
+        unshare_binary = unshare_binary,
+        unshare_closure = unshare_closure,
+        **kwargs
+    )
+
+def _attune_source_tree_impl(ctx):
+    runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
+    out = ctx.actions.declare_directory(ctx.label.name)
+    classpath = depset(transitive = [
+        ctx.attr._launcher[JavaInfo].transitive_runtime_jars,
+    ]).to_list()
+    sources = [source.path for source in ctx.files.srcs]
+    args = ctx.actions.args()
+    args.add("-cp")
+    args.add_joined(classpath, join_with = ":")
+    args.add("-Dattune.mode=copytree")
+    args.add("-Dattune.outputs=" + out.path)
+    args.add("-Dattune.sources=" + ",".join(sources))
+    args.add("attune.tools.boundary.NativeLaunch")
+    ctx.actions.run(
+        executable = runtime.java_executable_exec_path,
+        arguments = [args],
+        inputs = depset(ctx.files.srcs + classpath, transitive = [runtime.files]),
+        outputs = [out],
+        mnemonic = "AttuneSourceTree",
+        progress_message = "Materializing immutable source tree %{label}",
+    )
+    return [DefaultInfo(files = depset([out]))]
+
+_attune_source_tree = rule(
+    implementation = _attune_source_tree_impl,
+    doc = "Copy explicit declared regular files into one declared immutable tree.",
+    attrs = {
+        "srcs": attr.label_list(allow_files = True),
+        "_launcher": attr.label(
+            default = "//platform/tools/boundary:native_launch",
+            providers = [JavaInfo],
+        ),
+    },
+    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
+)
+
+def attune_source_tree(name, srcs, **kwargs):
+    """Declare one immutable regular-file source tree.
+
+    The action copies each explicit declared regular file into one declared
+    output directory and records the mechanical listing. A baseline/A/B/AB
+    variant is therefore an immutable tree artifact, not a mutable shared
+    worktree; the rule decides nothing about the content.
+
+    Args:
+      name: the tree target name, which also names its declared tree output.
+      srcs: the explicit declared regular files the tree carries.
+      **kwargs: forwarded to the underlying rule.
+    """
+    _attune_source_tree(name = name, srcs = srcs, **kwargs)
 
 def native_flix_consumer_test(name, srcs, produced, declared_files = [], size = "small", tags = [], data = []):
     """Run native `@Test` laws over the declared trees a producer emitted.

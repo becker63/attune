@@ -46,6 +46,17 @@ import java.util.Map;
  * compiles the producer's exported source. Both modes only resolve declared
  * locations, copy bytes and record measured metadata.
  *
+ * <p>Two declared study-graph modes extend the same route without a new engine
+ * or an authored entrypoint. In {@code stage} the launcher binds the declared
+ * inputs and the exact output location, runs the pinned Tester in a child
+ * process over the explicit declared stage sources, and materializes the
+ * declared tree the stage law wrote into. In {@code copytree} it copies explicit
+ * declared regular files into one declared directory, so a baseline/A/B/AB
+ * variant is an immutable tree artifact. Both decide no policy: the stage law
+ * owns the records, the launcher only resolves declared locations and copies
+ * bytes, and a stage that writes nothing fails rather than emitting an empty
+ * tree.
+ *
  * <p>One test-only fault fixture extends the receipt route: {@code drainprobe}
  * drives the production bounded drain over deterministic faulty streams and
  * emits the production receipt records, so a native law can prove that a
@@ -63,6 +74,12 @@ public final class NativeLaunch {
         String mode = System.getProperty("attune.mode", "native");
         if (mode.equals("produce")) {
             return produce();
+        }
+        if (mode.equals("stage")) {
+            return stage();
+        }
+        if (mode.equals("copytree")) {
+            return copyTree();
         }
         if (mode.equals("receipt")) {
             return receipts();
@@ -371,6 +388,104 @@ public final class NativeLaunch {
         }
         Files.write(out.resolve("closure.tsv"), closure, StandardCharsets.UTF_8);
         return 0;
+    }
+
+    /// The declared study-stage action: run the pinned compiler's authentic
+    /// native Tester over the explicit declared stage sources with the declared
+    /// input bindings, then materialize the declared output tree the stage law
+    /// wrote into. It decides no policy: it creates the output directory, binds
+    /// the declared inputs and the exact output location on
+    /// `attune-bindings.tsv`, runs the engine in a child process whose working
+    /// directory is that binding table's home, and records the mechanical
+    /// closure. It fails only when the engine failed or the stage law wrote no
+    /// regular file, so an empty tree can never masquerade as a materialized
+    /// stage.
+    private static int stage() throws Exception {
+        Path out = Path.of(require("attune.outputs"));
+        String stage = System.getProperty("attune.stage", "");
+        List<String> tester = splitList(System.getProperty("attune.tests", ""));
+        List<String> inputs = splitList(System.getProperty("attune.inputs", ""));
+        Files.createDirectories(out);
+        Path work = workDir();
+        List<String> bindings = new ArrayList<>();
+        bindings.add("outputs=" + out.toAbsolutePath());
+        bindings.add("stage=" + stage);
+        bindings.add("label=" + System.getProperty("attune.label", ""));
+        for (String spec : inputs) {
+            int separator = spec.indexOf('=');
+            if (separator > 0) {
+                bindings.add(spec.substring(0, separator) + "="
+                        + Path.of(spec.substring(separator + 1)).toAbsolutePath());
+            }
+        }
+        writeBindings(work.resolve("attune-bindings.tsv"), bindings);
+
+        String isolation = isolation();
+        Path unshare = isolation.equals("unshare") ? Runfiles.resolve(require("attune.unshare")) : null;
+        Path java = Path.of(System.getProperty("java.home"), "bin", "java");
+        List<String> command = new ArrayList<>();
+        command.addAll(namespace(isolation, unshare));
+        command.add(java.toString());
+        command.add("--add-opens=java.base/java.nio=ALL-UNNAMED");
+        command.add("--enable-native-access=ALL-UNNAMED");
+        command.add("-cp");
+        command.add(innerClasspath(List.of()));
+        command.add("attune.tools.boundary.NativeInner");
+        command.add(work.toString());
+        command.add("-");
+        command.add(hostNetns());
+        command.add("java");
+        command.add("0");
+        for (String source : tester) {
+            command.add(Path.of(source).toAbsolutePath().toString());
+        }
+        int status = launch(command, work);
+        if (status != 0) {
+            System.err.println("the pinned native Tester failed over the declared stage sources: exit " + status);
+            return status;
+        }
+        if (!hasRegularFile(out)) {
+            System.err.println("the declared stage wrote no output artifact: " + stage);
+            return 1;
+        }
+        List<String> closure = new ArrayList<>();
+        closure.add("stage\t" + stage);
+        for (String spec : inputs) {
+            int separator = spec.indexOf('=');
+            if (separator > 0) {
+                closure.add("input\t" + spec.substring(0, separator) + "\t"
+                        + Path.of(spec.substring(separator + 1)).getFileName());
+            }
+        }
+        Files.write(out.resolve("closure.tsv"), closure, StandardCharsets.UTF_8);
+        return 0;
+    }
+
+    /// The declared immutable-source-tree action: copy each explicit declared
+    /// regular file into one declared output directory and record the mechanical
+    /// listing. It decides nothing about the content: it is a byte copy, so a
+    /// baseline/A/B/AB variant is an immutable tree artifact rather than a
+    /// mutable shared worktree.
+    private static int copyTree() throws Exception {
+        Path out = Path.of(require("attune.outputs"));
+        List<String> sources = splitList(System.getProperty("attune.sources", ""));
+        Files.createDirectories(out);
+        List<String> records = new ArrayList<>();
+        for (String source : sources) {
+            Path input = Path.of(source);
+            Path artifact = out.resolve(input.getFileName().toString());
+            Files.copy(input, artifact, StandardCopyOption.REPLACE_EXISTING);
+            records.add(input.getFileName() + "\t" + Files.size(artifact));
+        }
+        Files.write(out.resolve("tree.tsv"), records, StandardCharsets.UTF_8);
+        return 0;
+    }
+
+    /// True when the directory tree holds at least one regular file.
+    private static boolean hasRegularFile(Path dir) throws IOException {
+        try (java.util.stream.Stream<Path> stream = Files.walk(dir)) {
+            return stream.anyMatch(Files::isRegularFile);
+        }
     }
 
     /// The declared receipt action: run one bounded declared argv plan through
