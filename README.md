@@ -369,6 +369,7 @@ The marker extraction and link resolution are Flix semantics in
 | Pinned corpus acquisition | `//test/catalog:catalog_pin_test` | passes; tagged `manual`; the declared immutable `nebius/SWE-rebench-V2` file is materialized and its exact bytes, digest and physical schema are verified through the projected Arrow boundary |
 | Streaming normalization and provenance | `//test/catalog:catalog_normalize_test` | passes; tagged `manual`; the full pinned catalog is streamed in bounded projected batches, every row's fate is reduced by Flix and the audited denominators, accepted js/ts population, classified exclusions/failures, retained provenance and public/oracle separation are recorded |
 | Bounded shared panel and split | `//test/catalog:panel_artifact_test` | passes; tagged `manual`; the normalized accepted js/ts population is reduced to the one bounded, deterministic, metadata-only panel in `Attune.Study` (at most 24 canonical fork/duplicate groups, four tasks per group, 32 ordered pairs across eight included groups), with the group-disjoint approximately 60/20/20 split, the exposure flags, the explicit selection attrition and the classified image pins |
+| External localization reference labels | `//test/study:localization_labels` | passes; tagged `manual`; the admitted real panel is mapped into the shared record vocabulary and all 96 selected tasks' real reference patches are reduced against their exact worlds' verified clean-source inventories (92 worlds, 36,288 recorded baseline JS/TS paths), with the seven classified cases, the full-versus-supported coverage and the physically separate evaluator labels; `//test/study:localization_law`, `localization_artifact_test` and `localization_admission_test` are the corpus-free, artifact and admission laws |
 
 The declared study graph is the complete world/task/pair fan-out the analysis
 manifest admits. Each exact world materializes its source tree and facts/index
@@ -508,8 +509,9 @@ checked documentation correspondence. Deliberately not selected or run here:
 
 - any final source, cache-ownership, sharding or "most parallel" topology;
 - the approved corpus's retained priors, localization
-  experiments, census or benchmarks (the one pinned corpus is acquired and its
-  streaming normalization is recorded; no study is run here);
+  experiments, census or benchmarks (the one pinned corpus is acquired, streamed,
+  reduced to the shared panel and reduced to its evaluator reference labels; the
+  frozen localization arms, rankings and metrics are not run here);
 - a general view catalog, large-graph layout, ASCII parser or architecture browser;
 - any model choice, live provider effect, ranking-quality claim or application
   policy selection beyond the recorded fixture decision contract.
