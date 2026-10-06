@@ -25,8 +25,11 @@ Dependency directions the wiring makes explicit:
   lowers exactly its own bounded slice; it is materialized once per world.
 - `task_join_<task>` consumes the shared shard witnesses and one application
   anchor; it re-lowers nothing.
-- `prediction_<task>` consumes the joined context and the shared world index; it
-  never consumes a reference patch, a test patch or an outcome.
+- `prediction_<task>` consumes the joined context, the shared world index and
+  the one declared frozen prediction policy; it never consumes a reference patch,
+  a test patch or an outcome. The policy is a declared prediction-only public
+  input, so a policy change invalidates the prediction and its dependents while
+  the shared world extraction and theory shards stay cached.
 - `reduce_<task>` is the declared evaluator join: it consumes the frozen
   prediction tree and one separately declared label artifact, and nothing else.
   The label is a distinct declared input, so a gold-only change can invalidate
@@ -236,6 +239,7 @@ def attune_study(
         variant_files,
         branch_plans,
         label_fixtures,
+        policy,
         plan,
         parquet_deps = [],
         package = None):
@@ -252,6 +256,10 @@ def attune_study(
         measured branch (`baseline`/`a`/`b`/`ab`).
       label_fixtures: the package-relative directory holding one evaluator label
         artifact per task, joined to the frozen prediction only by `reduce_<task>`.
+      policy: the package-relative declared frozen prediction policy, the one
+        public gold-free prior a prediction ranks under. It is consumed only by
+        the `prediction_<task>` stages, so a policy change invalidates the
+        predictions and their dependents while extraction and shards stay cached.
       plan: the package-relative declared obligation plan.
       parquet_deps: the explicit dependency jars the result reducer compiles against.
       package: the calling package; defaults to the current package.
@@ -334,8 +342,12 @@ def attune_study(
             name = "prediction_%s" % task_id,
             stage = "prediction",
             srcs = stage_srcs,
-            inputs = [":task_join_%s" % task_id, ":world_facts_%s" % world_id],
-            input_names = ["join", "index"],
+            inputs = [
+                ":task_join_%s" % task_id,
+                ":world_facts_%s" % world_id,
+                _label(package, policy),
+            ],
+            input_names = ["join", "index", "policy"],
         )
         produced.append(":prediction_%s" % task_id)
         native_study_stage(
@@ -446,6 +458,10 @@ def attune_study(
         name = "firewall_test",
         srcs = [law_srcs["firewall_test"]],
         produced = produced,
+        # The declared frozen policy is a public prediction input, so the
+        # firewall law reads the same declared bytes the prediction stage does
+        # and checks the prediction carries exactly that identity.
+        declared_files = [_label(package, policy)],
         tags = ["manual"],
     )
     native_flix_consumer_test(

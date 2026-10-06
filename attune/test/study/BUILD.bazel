@@ -119,6 +119,11 @@ attune_study(
     },
     parquet_deps = ["//platform/tools/parquet:attune_parquet"],
     plan = "fixtures/plan.tsv",
+    # The one declared frozen prediction policy: the public gold-free prior a
+    # prediction ranks under. It is consumed only by the `prediction_<task>`
+    # stages, so a policy change invalidates the predictions and their dependents
+    # while the shared world extraction and theory shards stay cached.
+    policy = "fixtures/policy.tsv",
     result_srcs = RESULT_SRCS,
     stage_srcs = STAGE_SRCS,
     variant_files = {

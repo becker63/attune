@@ -30,7 +30,9 @@ use Fs.FileWrite
 /// through the shared `Attune.Theory` owner, `task_join` cheaply joins an
 /// application anchor against the already materialized world witnesses without
 /// re-lowering anything, `prediction` ranks from the joined context plus the
-/// shared world index under one frozen policy, `reduce` joins the frozen
+/// shared world index under one frozen policy declared as a prediction-only
+/// public input (the world extraction and theory shards never consume it, so a
+/// policy change leaves them cached), `reduce` joins the frozen
 /// prediction with one separately declared label artifact (the declared
 /// evaluator boundary), and `check`/`joint` record the declared source-variant
 /// and own-environment branch identities. A `joint` branch additionally consumes
@@ -288,15 +290,22 @@ def taskJoin(): Unit \ {Assert, IO} = {
             or outcome == Coverage.Outcome.Unknown)
 }
 
-/// The frozen policy identity. It is a declared fixture value on the Study
-/// side, not a provider call, a per-task search or a tuned final-label
-/// threshold.
-def policyIdentity(): String = "fixture-lexical-prior-v1"
+/// The frozen policy identity one declared prediction-policy record names, or
+/// the empty string. The policy is a declared prediction-only public input
+/// resolved through `Attune.Study`; it is never a literal in the shared stage
+/// sources, so editing it invalidates only the prediction that reads it and its
+/// dependents while the shared world extraction and theory shards stay cached.
+def declaredPolicy(text: String): String =
+    match Study.policyIdentity(List.map(fields, records(text))) {
+        case Some(identity) => identity
+        case None           => ""
+    }
 
 def prediction(): Unit \ {Assert, IO} = {
     let taskId = stripPrefix("prediction_", stageLabel());
     let joinPath = Option.getWithDefault("", binding("join"));
     let indexPath = Option.getWithDefault("", binding("index"));
+    let policy = declaredPolicy(readText(Option.getWithDefault("", binding("policy"))));
     let joined = List.map(fields, records(readText(joinPath + "/join.tsv")));
     let context = List.map(fields, records(readText(joinPath + "/context.tsv")));
     let joinOutcome = match rowsOf(context, "context") {
@@ -304,10 +313,11 @@ def prediction(): Unit \ {Assert, IO} = {
         case Nil      => Coverage.outcomeName(Coverage.Outcome.Unknown)
     };
     let ranked = Study.rankedCandidates(List.map(row -> field(row, 0), joined));
-    let head = List#{"prediction", "task", taskId, "policy", policyIdentity(), "join", joinOutcome} ::
+    let head = List#{"prediction", "task", taskId, "policy", policy, "join", joinOutcome} ::
         (List#{"prediction", "input", "context", baseName(joinPath), "index", baseName(indexPath)} :: Nil);
     let rows = head ::: List.map(match (rank, candidate) -> List#{"rank", Int32.toString(rank), candidate}, ranked);
     writeText(outputsDir(), "prediction.tsv", renderTsv(rows));
+    Assert.assertEq(expected = false, String.isEmpty(policy));
     Assert.assertEq(expected = false, containsForbidden(rows))
 }
 

@@ -54,6 +54,36 @@ def listingRoot(name: String, listing: String): String =
 def treePath(name: String, file: String, listing: String): String =
     listingRoot(name, listing) + "/" + file
 
+/// The records of one prediction tree.
+def predictionRows(name: String, listing: String): List[List[String]] \ IO =
+    List.map(fields, records(readText(treePath(name, "prediction.tsv", listing))))
+
+/// The resolved path of one declared binding from the launcher's binding table.
+def boundPath(name: String): Option[String] \ IO =
+    match List.filterMap(line -> match fields(line) {
+        case key :: path :: _ if key == name => Some(path)
+        case _                               => None
+    }, records(readText("attune-bindings.tsv"))) {
+        case path :: _ => Some(path)
+        case Nil       => None
+    }
+
+/// The frozen policy identity the declared prediction-policy input names, or the
+/// empty string. The record kind and its production decoding are owned by
+/// `Attune.Study`; this law reads the same declared bytes the prediction stage
+/// does and compares them with what the prediction recorded.
+def declaredPolicy(): String \ IO =
+    match boundPath("test/study/fixtures/policy.tsv") {
+        case Some(path) => match List.filterMap(line -> match fields(line) {
+            case kind :: value :: _ if kind == "policy" => Some(value)
+            case _                                      => None
+        }, records(readText(path))) {
+            case value :: _ => value
+            case Nil        => ""
+        }
+        case None => ""
+    }
+
 /// The declared input bindings one materialized stage recorded, as (name, file).
 def stageInputs(name: String, listing: String): List[(String, String)] \ IO =
     List.filterMap(line -> match fields(line) {
@@ -155,18 +185,21 @@ def taskJoinConsumesOnlySharedShardsAndItsAnchor(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = List#{"task", "witnesses0", "witnesses1"}, inputNames("task_join_t7", produced))
 }
 
-/// The core firewall: a prediction consumes exactly the cheap join and the
-/// shared world index, and nothing else.
+/// The core firewall: a prediction consumes exactly the cheap join, the shared
+/// world index and the one declared frozen policy, and nothing else. The policy
+/// is public (gold-free), so it widens the whitelist by exactly that one declared
+/// input and no evaluator artifact.
 @Test
-def predictionConsumesOnlyTheJoinAndSharedIndex(): Unit \ {Assert, IO} = {
+def predictionConsumesOnlyTheJoinTheSharedIndexAndThePublicPolicy(): Unit \ {Assert, IO} = {
     let produced = listing();
-    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t1", produced));
-    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t2", produced));
-    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t5", produced));
-    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t6", produced));
-    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t3", produced));
-    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t4", produced));
-    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t7", produced))
+    let expected = List#{"index", "join", "policy"};
+    Assert.assertEq(expected = expected, inputNames("prediction_t1", produced));
+    Assert.assertEq(expected = expected, inputNames("prediction_t2", produced));
+    Assert.assertEq(expected = expected, inputNames("prediction_t5", produced));
+    Assert.assertEq(expected = expected, inputNames("prediction_t6", produced));
+    Assert.assertEq(expected = expected, inputNames("prediction_t3", produced));
+    Assert.assertEq(expected = expected, inputNames("prediction_t4", produced));
+    Assert.assertEq(expected = expected, inputNames("prediction_t7", produced))
 }
 
 /// The declared evaluator join is the one stage that reads a label artifact.
@@ -220,6 +253,22 @@ def theFrozenPredictionRecordsCarryNoEvaluatorMaterial(): Unit \ {Assert, IO} = 
     let rows = List.map(fields, records(readText(treePath("prediction_t1", "prediction.tsv", produced))));
     Assert.assertEq(expected = false, List.isEmpty(rows));
     Assert.assertEq(expected = false, carriesEvaluatorCell(rows))
+}
+
+/// The prediction carries exactly the declared frozen policy identity. The
+/// prediction-only public input is the one authority for the policy, so a policy
+/// change is visible in the prediction and nowhere else: the extraction and
+/// shard input-name laws above already prove no extraction or shard stage
+/// consumes the policy input.
+@Test
+def thePredictionCarriesTheDeclaredFrozenPolicy(): Unit \ {Assert, IO} = {
+    let produced = listing();
+    let declared = declaredPolicy();
+    Assert.assertEq(expected = false, String.isEmpty(declared));
+    Assert.assertEq(expected = true, List.forAll(name ->
+        List.exists(row -> field(row, 0) == "prediction" and field(row, 3) == "policy" and field(row, 4) == declared,
+            predictionRows(name, produced)),
+        List#{"prediction_t1", "prediction_t2", "prediction_t3", "prediction_t4"}))
 }
 
 def evaluatorCells(): List[String] =

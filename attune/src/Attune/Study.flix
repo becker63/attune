@@ -584,6 +584,31 @@ pub mod Attune.Study {
         case candidate :: rest => rankedFrom(rank + 1, rest, (rank, candidate) :: acc)
     }
 
+    // ------------------------------------------------- frozen prediction policy
+    //
+    // The one declared prediction policy record: the frozen, permitted prior a
+    // prediction ranks under. Study owns the vocabulary and the decoding, while
+    // the value is a declared prediction-only public input resolved at the
+    // consuming stage, never a literal compiled into the shared stage sources.
+    // Editing the policy therefore invalidates only the prediction that reads it
+    // and its dependents, while the shared world extraction and theory shards
+    // stay cached.
+
+    /// The declared record kind of the one frozen prediction policy.
+    pub def policyKind(): String = "policy"
+
+    /// The frozen policy identity one declared record set names, if it names a
+    /// non-empty one. A malformed or empty record yields nothing rather than a
+    /// guessed policy, so an absent policy can never silently become a default.
+    pub def policyIdentity(rows: List[List[String]]): Option[String] =
+        match List.find(row -> field(row, 0) == policyKind(), rows) {
+            case Some(row) => match nth(row, 1) {
+                case Some(value) if not String.isEmpty(value) => Some(value)
+                case _                                        => None
+            }
+            case None => None
+        }
+
     /// The non-empty declared records of one tab-separated record set.
     def rowsOf(list: List[List[String]], kind: String): List[List[String]] =
         List.filter(row -> match row {

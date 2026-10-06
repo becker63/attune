@@ -365,7 +365,7 @@ The marker extraction and link resolution are Flix semantics in
 | Bounded native theory | `//test/theory:theory_law_test` | passes; descriptor grammar, canonicalization, native lowering and shared-index laws |
 | Declared native producer/consumer | `//test/dag:declared_artifact_consumer_test` | passes; a producer action runs the pinned native Tester and emits a declared immutable source tree, and the consumer compiles and asserts that declared tree |
 | Declared study graph | `//test/study:all` | passes; the admitted world/task/pair fan-out with the shared world index, the gold-free prediction firewall and the separate evaluator reducer |
-| Prediction firewall | `//test/study:firewall_test` | passes; each stage's declared input set is asserted against its allowlist, so no public prediction-side stage declares an evaluator artifact |
+| Prediction firewall | `//test/study:firewall_test` | passes; each stage's declared input set is asserted against its allowlist, so no public prediction-side stage declares an evaluator artifact and the prediction carries the one declared frozen policy |
 
 The declared study graph is the complete world/task/pair fan-out the analysis
 manifest admits. Each exact world materializes its source tree and facts/index
@@ -374,17 +374,21 @@ world's descriptors: the declared index is carried as a generated record from th
 admitted manifest, so a later shard lowers its own candidates rather than a
 duplicate of the first slice, and a legal empty slice stays a typed empty
 artifact. Each task joins the shared witnesses cheaply and predicts
-from the joined context and the shared index alone; each pair's individual
-checks stay speculative and its joint checks consume the frozen pair
-predictions. The one stage that reads a label is the declared `reduce_<task>`
-evaluator join, whose only inputs are the frozen prediction and one separately
-declared label artifact. `bazel aquery "deps(//test/study:prediction_t1)"` shows
-the prediction closure carries no variant, plan or label, and
-`//test/study:firewall_test` pins the same boundary over the declared input sets
-each stage recorded. A controlled change to one declared fixture re-executes
-only the stages whose inputs changed; the world source, shared facts and theory
-shards stay cached when a task anchor changes, and the frozen prediction stays
-cached when only a label changes.
+from the joined context, the shared index and the one declared frozen policy
+alone; each pair's individual checks stay speculative and its joint checks
+consume the frozen pair predictions. The one stage that reads a label is the
+declared `reduce_<task>` evaluator join, whose only inputs are the frozen
+prediction and one separately declared label artifact. `bazel aquery
+"deps(//test/study:prediction_t1)"` shows the prediction closure carries no
+variant, plan or label, and `//test/study:firewall_test` pins the same boundary
+over the declared input sets each stage recorded, including that the prediction
+carries exactly the declared policy identity. The frozen policy is a
+prediction-only public input, not a literal in the shared stage sources: a
+controlled policy change re-executes only the predictions and their
+`reduce_<task>`/joint dependents, while the world source, shared facts and theory
+shards stay cached. The same controlled probe shows a task-anchor change leaves
+those world artifacts cached, and a label-only change leaves the frozen
+prediction cached.
 
 The declared-artifact route is the smallest step toward the shared graph: a
 producer target runs the pinned compiler's authentic native Tester over explicit
