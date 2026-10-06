@@ -1662,4 +1662,551 @@ pub mod Attune.Study {
     /// The canonical record of one unavailable provenance kind.
     pub def catalogUnavailableProvenanceText(kind: String, reason: String): String =
         List.join("\t", List#{"provenance", kind, "unavailable", reason})
+
+    // ------------------------------------------ bounded shared panel and split
+    //
+    // The one bounded, deterministic, metadata-only panel selection over the
+    // normalized accepted js/ts population (`VAL-DATA-003`). It is the single
+    // shared task/world/pair catalog both studies consume: the localization
+    // catalog and the pair candidates are selected from the same rows under the
+    // same frozen group order, so no second pair catalog and no rescue search can
+    // exist. Every declared cap is enforced by selection rather than reported
+    // after the fact, and every loss is recorded as an explicit attrition row, so
+    // an exclusion can never pass unnoticed as an empty result.
+    //
+    // The grouping rule is metadata-only: two repository identities that share a
+    // repository name (the final path segment) collapse onto one canonical group,
+    // so duplicates, backports, snapshots and forks always stay together and can
+    // never be split across two splits. The public projection carries no fork
+    // indicator, so this name-stem collapse is the one honest rule and a finer
+    // fork-parent attribution stays explicitly unavailable rather than invented.
+    //
+    // The split is the frozen approximately 60/20/20 development/calibration/final
+    // group assignment, apportioned by largest remainder over the declared weights
+    // and assigned in frozen group order. A group belongs to exactly one split, so
+    // cross-split group overlap is impossible by construction. The exposure flag
+    // records the same firewall: development and calibration sources are exposed
+    // to method selection before the final evaluation, and the final sources are
+    // held out.
+
+    /// The canonical fork/duplicate group key of one repository identity: the
+    /// lower-cased final path segment. Two repository identities that share a
+    /// repository name collapse onto one canonical group, so duplicates, forks,
+    /// mirrors and re-uploads stay together.
+    pub def canonicalGroupKey(repo: String): String =
+        String.toLowerCase(match List.reverse(String.split(regex = "/", repo)) {
+            case last :: _ => last
+            case Nil       => repo
+        })
+
+    /// The frozen split of one selected group.
+    pub enum PanelSplit with Eq, Order, ToString {
+        case Development
+        case Calibration
+        case Final
+    }
+
+    /// The stable name of one split.
+    pub def panelSplitName(split: PanelSplit): String = match split {
+        case PanelSplit.Development => "development"
+        case PanelSplit.Calibration => "calibration"
+        case PanelSplit.Final       => "final"
+    }
+
+    /// Whether a group's source has already been exposed to method selection
+    /// before the final evaluation. Development and calibration groups are
+    /// exposed by construction; final groups are held out, so the flag records the
+    /// frozen firewall rather than a guess about model training data.
+    pub enum Exposure with Eq, Order, ToString {
+        case Exposed
+        case HeldOut
+    }
+
+    /// The stable name of one exposure flag.
+    pub def exposureName(exposure: Exposure): String = match exposure {
+        case Exposure.Exposed => "exposed"
+        case Exposure.HeldOut => "held-out"
+    }
+
+    /// The exposure one split implies: the held-out final split is unexposed and
+    /// the two selection splits are exposed.
+    pub def exposureOf(split: PanelSplit): Exposure = match split {
+        case PanelSplit.Final => Exposure.HeldOut
+        case _                => Exposure.Exposed
+    }
+
+    /// The classified runtime-image pin of one selected task. `Pinned` requires an
+    /// immutable digest reference and a declared compatible platform; every other
+    /// reference is `Unsupported` with its classified reason. No image is pulled,
+    /// resolved or emulated here: the classification is a metadata record taken in
+    /// the ordinary record path.
+    pub enum ImagePin with Eq, ToString {
+        case Pinned(String)
+        case Unsupported(String)
+    }
+
+    /// The stable status name of one image pin.
+    pub def imagePinName(pin: ImagePin): String = match pin {
+        case ImagePin.Pinned(_)        => "pinned"
+        case ImagePin.Unsupported(_)   => "unsupported"
+    }
+
+    /// The classified reason of one image pin: the immutable reference itself when
+    /// pinned, or the classified reason it is unsupported.
+    pub def imagePinReason(pin: ImagePin): String = match pin {
+        case ImagePin.Pinned(reference)    => reference
+        case ImagePin.Unsupported(reason)  => reason
+    }
+
+    /// The frozen identity of the panel-selection recipe.
+    pub def panelFreezeId(): String = "attune-panel-2026-10-06"
+
+    /// The declared split shares of the frozen approximately 60/20/20 assignment,
+    /// as integer weights in declared order.
+    pub def panelSplitWeights(): List[(PanelSplit, Int32)] =
+        (PanelSplit.Development, 3) :: (PanelSplit.Calibration, 1) :: (PanelSplit.Final, 1) :: Nil
+
+    /// The declared weight of one split.
+    pub def panelSplitWeight(split: PanelSplit): Int32 = match split {
+        case PanelSplit.Development => 3
+        case PanelSplit.Calibration => 1
+        case PanelSplit.Final       => 1
+    }
+
+    /// The declared compatible execution platform of the pinned runtime. The host
+    /// and the declared remote execution platform are both arm64 Linux, so a
+    /// declared amd64 reference is a classified platform mismatch rather than a
+    /// silently emulated run.
+    pub def compatiblePlatform(): String = "linux/arm64"
+
+    /// Whether one declared image reference carries an immutable `@sha256:` digest
+    /// of exactly 64 hexadecimal digits. A mutable tag never counts as a pin.
+    pub def immutableDigest(reference: String): Bool =
+        match List.reverse(String.split(regex = "@sha256:", reference)) {
+            case digest :: _ => String.length(digest) == 64 and isHex(digest)
+            case Nil         => false
+        }
+
+    def isHex(text: String): Bool =
+        List.forAll(isHexChar, String.toList(text))
+
+    def isHexChar(c: Char): Bool =
+        (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') or (c >= 'A' and c <= 'F')
+
+    /// Classify one declared runtime image reference against the declared
+    /// compatible platform. An absent reference, a mutable tag, an undeclared
+    /// platform and a platform mismatch are four distinct classified reasons, so
+    /// an unsupported image is recorded rather than repaired, pulled or emulated.
+    pub def classifyImage(reference: String, platform: String): ImagePin =
+        if (String.isEmpty(String.trim(reference))) ImagePin.Unsupported("image-absent")
+        else if (not immutableDigest(String.trim(reference))) ImagePin.Unsupported("mutable-tag")
+        else if (String.isEmpty(String.trim(platform))) ImagePin.Unsupported("platform-undeclared")
+        else if (String.trim(platform) != compatiblePlatform()) ImagePin.Unsupported("platform-mismatch")
+        else ImagePin.Pinned(String.trim(reference))
+
+    /// One canonical group of the candidate population: its key, its distinct
+    /// member repositories in ascending order, and its candidate rows in frozen
+    /// order.
+    pub type alias PanelGroup = { key = String, repos = List[String], rows = List[CatalogRow] }
+
+    /// One selected panel task: its frozen id, its instance identity, its canonical
+    /// group, its exact world identity and its declared public metadata.
+    pub type alias PanelTask = {
+        id = String, instanceId = String, group = String, repo = String, revision = String,
+        world = String, language = String, license = String, createdAt = String, image = String
+    }
+
+    /// One selected panel world: the exact repository snapshot `(repo, revision)`
+    /// the task's clean baseline source is taken from, and its canonical group.
+    pub type alias PanelWorld = { id = String, repo = String, revision = String, group = String }
+
+    /// One ordered pair candidate: its two distinct tasks, their worlds and the
+    /// declared stratum. A pair whose two tasks share one exact world is the
+    /// native identical-base stratum; every other pair is the deterministic
+    /// merge-base replay stratum.
+    pub type alias PanelPair = {
+        id = String, group = String, first = String, second = String,
+        firstWorld = String, secondWorld = String, stratum = String
+    }
+
+    /// The one bounded shared panel: the frozen recipe identity, the selected
+    /// groups and their splits, the selected tasks and worlds, the ordered pair
+    /// candidates, the selection attrition rows and the audited denominators.
+    pub type alias Panel = {
+        freeze = String,
+        groups = List[(String, PanelSplit)],
+        tasks = List[PanelTask],
+        worlds = List[PanelWorld],
+        pairs = List[PanelPair],
+        attrition = List[List[String]],
+        denominators = List[(String, Int32)]
+    }
+
+    /// The canonical groups of one candidate population: one group per distinct
+    /// canonical key, in ascending key order, each carrying its distinct member
+    /// repositories and its rows in ascending instance-id order.
+    pub def panelGroups(rows: List[CatalogRow]): List[PanelGroup] = {
+        let keys = List.sort(List.distinct(List.map(row -> canonicalGroupKey(row#repo), rows)));
+        List.map(key -> {
+            let members = List.filter(row -> canonicalGroupKey(row#repo) == key, rows);
+            {
+                key = key,
+                repos = List.sort(List.distinct(List.map(row -> row#repo, members))),
+                rows = List.sortBy(row -> row#instanceId, members)
+            }
+        }, keys)
+    }
+
+    /// The frozen group order: richest group first (most candidates), ties broken
+    /// by the canonical key. The order is a total, metadata-only function of the
+    /// population, so the selected groups and their split assignment are
+    /// reproducible.
+    pub def frozenGroupOrder(groups: List[PanelGroup]): List[PanelGroup] =
+        List.sortBy(group -> (-List.length(group#rows), group#key), groups)
+
+    /// The declared split counts of `n` groups under the frozen weights, using the
+    /// largest-remainder rounding rule: each split receives its truncated share and
+    /// the leftover groups go to the splits with the largest fractional remainder,
+    /// ties broken by the declared split order. The counts sum to `n` exactly, so
+    /// no group is dropped and none is counted twice.
+    pub def splitCounts(n: Int32): List[(PanelSplit, Int32)] = {
+        let weights = panelSplitWeights();
+        let total = List.foldLeft((sum, entry) -> match entry { case (_, weight) => sum + weight }, 0, weights);
+        let base = List.map(match (split, weight) -> (split, (n * weight) / total), weights);
+        let assigned = List.foldLeft((sum, entry) -> match entry { case (_, count) => sum + count }, 0, base);
+        let remainders = List.map(match (split, weight) -> (split, Int32.remainder(n * weight, total)), weights);
+        addLeftover(base, rankRemainders(remainders), n - assigned)
+    }
+
+    /// The declared leftover groups the largest-remainder rule distributed.
+    pub def splitLeftover(n: Int32): Int32 = {
+        let weights = panelSplitWeights();
+        let total = List.foldLeft((sum, entry) -> match entry { case (_, weight) => sum + weight }, 0, weights);
+        let assigned = List.foldLeft((sum, entry) -> match entry { case (_, weight) => sum + (n * weight) / total }, 0, weights);
+        n - assigned
+    }
+
+    def rankRemainders(remainders: List[(PanelSplit, Int32)]): List[PanelSplit] = {
+        let indexed = numberSplits(remainders, 0, Nil);
+        List.map(entry -> match entry { case (_, (split, _)) => split },
+            List.sortBy(entry -> match entry { case (index, (_, remainder)) => (-remainder, index) }, indexed))
+    }
+
+    def numberSplits(remainders: List[(PanelSplit, Int32)], index: Int32, acc: List[(Int32, (PanelSplit, Int32))]): List[(Int32, (PanelSplit, Int32))] = match remainders {
+        case Nil           => List.reverse(acc)
+        case entry :: rest => numberSplits(rest, index + 1, (index, entry) :: acc)
+    }
+
+    def addLeftover(base: List[(PanelSplit, Int32)], ranked: List[PanelSplit], leftover: Int32): List[(PanelSplit, Int32)] =
+        if (leftover <= 0) base
+        else match ranked {
+            case Nil           => base
+            case split :: rest => addLeftover(addOne(base, split), rest, leftover - 1)
+        }
+
+    def addOne(base: List[(PanelSplit, Int32)], target: PanelSplit): List[(PanelSplit, Int32)] =
+        List.map(match (split, count) -> if (split == target) (split, count + 1) else (split, count), base)
+
+    /// The frozen split assignment of the kept groups: the groups in frozen order,
+    /// the first development share then the calibration share then the remainder
+    /// as final. Each group appears exactly once, so the assignment is
+    /// group-disjoint by construction.
+    pub def assignSplits(groups: List[PanelGroup]): List[(String, PanelSplit)] = {
+        let counts = splitCounts(List.length(groups));
+        let sequence = List.flatMap(match (split, count) -> repeatSplit(count, split), counts);
+        zipGroups(groups, sequence)
+    }
+
+    def repeatSplit(count: Int32, split: PanelSplit): List[PanelSplit] =
+        if (count <= 0) Nil else split :: repeatSplit(count - 1, split)
+
+    def zipGroups(groups: List[PanelGroup], splits: List[PanelSplit]): List[(String, PanelSplit)] = match (groups, splits) {
+        case (group :: rest, split :: more) => (group#key, split) :: zipGroups(rest, more)
+        case _                              => Nil
+    }
+
+    /// The bounded selection over one candidate population: at most the declared
+    /// groups in frozen order, at most the declared tasks per group, the frozen
+    /// split, the exact worlds, the ordered pair candidates across at most the
+    /// declared included groups, and the explicit attrition and denominators.
+    pub def selectPanel(rows: List[CatalogRow]): Panel = {
+        let all = panelGroups(rows);
+        let ordered = frozenGroupOrder(all);
+        let keptGroups = List.take(boundOf("groups"), ordered);
+        let tasks = selectTasks(keptGroups);
+        let worlds = panelWorlds(tasks);
+        let selected = List.map(task -> withWorld(task, worlds), tasks);
+        let assignments = assignSplits(keptGroups);
+        let pairs = panelPairs(keptGroups, assignments, selected);
+        {
+            freeze = panelFreezeId(),
+            groups = assignments,
+            tasks = selected,
+            worlds = worlds,
+            pairs = pairs,
+            attrition = panelAttrition(all, keptGroups, assignments, selected, pairs),
+            denominators = List#{
+                ("candidates", List.length(rows)),
+                ("groups", List.length(all)),
+                ("groups-kept", List.length(keptGroups)),
+                ("worlds", List.length(worlds)),
+                ("tasks", List.length(selected)),
+                ("pairs", List.length(pairs))
+            }
+        }
+    }
+
+    /// The selected tasks of the kept groups, in frozen order: the first declared
+    /// tasks per group in ascending instance-id order, numbered `t1..tN`.
+    def selectTasks(groups: List[PanelGroup]): List[PanelTask] = {
+        let raw = List.foldLeft((acc, group) ->
+            acc ::: List.map(row -> taskOf(group#key, row),
+                List.take(boundOf("tasks_per_group"), group#rows)), Nil, groups);
+        numberTasks(raw, 1, Nil)
+    }
+
+    def taskOf(group: String, row: CatalogRow): PanelTask =
+        {
+            id = "", instanceId = row#instanceId, group = group, repo = row#repo,
+            revision = row#baseCommit, world = "", language = row#language,
+            license = catalogLicenseToken(row#license), createdAt = row#createdAt, image = row#image
+        }
+
+    def numberTasks(tasks: List[PanelTask], index: Int32, acc: List[PanelTask]): List[PanelTask] = match tasks {
+        case Nil           => List.reverse(acc)
+        case task :: rest  =>
+            numberTasks(rest, index + 1, {
+                id = "t" + Int32.toString(index), instanceId = task#instanceId, group = task#group,
+                repo = task#repo, revision = task#revision, world = task#world, language = task#language,
+                license = task#license, createdAt = task#createdAt, image = task#image
+            } :: acc)
+    }
+
+    /// The exact worlds of one selected task list, in first-appearance order. One
+    /// world is one exact repository snapshot `(repo, revision)`, so two tasks
+    /// that share a snapshot share one world and two tasks from different
+    /// repositories never do.
+    pub def panelWorlds(tasks: List[PanelTask]): List[PanelWorld] =
+        List.reverse(List.foldLeft((acc, task) -> {
+            let key = task#repo + "@" + task#revision;
+            if (List.exists(world -> world#repo + "@" + world#revision == key, acc)) acc
+            else {
+                let id = "w" + Int32.toString(List.length(acc) + 1);
+                { id = id, repo = task#repo, revision = task#revision, group = task#group } :: acc
+            }
+        }, Nil, tasks))
+
+    /// The exact world id one snapshot identity names, or the empty string.
+    pub def worldOf(repo: String, revision: String, worlds: List[PanelWorld]): String =
+        match List.find(world -> world#repo == repo and world#revision == revision, worlds) {
+            case Some(world) => world#id
+            case None        => ""
+        }
+
+    def withWorld(task: PanelTask, worlds: List[PanelWorld]): PanelTask =
+        {
+            id = task#id, instanceId = task#instanceId, group = task#group, repo = task#repo,
+            revision = task#revision, world = worldOf(task#repo, task#revision, worlds),
+            language = task#language, license = task#license, createdAt = task#createdAt, image = task#image
+        }
+
+    /// The ordered pair candidates of the shared panel: the declared pair-group
+    /// bound apportioned across the three splits by the same frozen
+    /// largest-remainder rule, each split's included groups taken in frozen order,
+    /// and each split's pair bound taken from those groups' ordered pairs. The two
+    /// applications therefore share the same approximately 60/20/20 assignment
+    /// instead of confining the pair candidates to one split. Both tasks of every
+    /// pair are selected panel tasks, so every paired task also belongs to
+    /// localization.
+    pub def panelPairs(groups: List[PanelGroup], assignments: List[(String, PanelSplit)], tasks: List[PanelTask]): List[PanelPair] = {
+        let eligible = List.filter(group -> List.length(tasksOf(group#key, tasks)) >= 2, groups);
+        let included = includedPairGroups(assignments, eligible);
+        let selected = List.flatMap(match (split, cap) ->
+            List.take(cap, splitPairs(split, assignments, included, tasks)), splitCounts(boundOf("pairs")));
+        numberPairs(selected, 1, Nil)
+    }
+
+    /// The included pair groups of the shared panel: the declared pair-group bound
+    /// apportioned across the three splits by the frozen largest-remainder rule,
+    /// each split's groups taken in frozen order. The split order and the group
+    /// order are both frozen, so the included groups are reproducible.
+    pub def includedPairGroups(assignments: List[(String, PanelSplit)], eligible: List[PanelGroup]): List[PanelGroup] =
+        List.flatMap(split -> List.take(splitAllocation(split, boundOf("pair_groups")),
+            eligibleOfSplit(split, assignments, eligible)),
+            List.map(entry -> match entry { case (split, _) => split }, splitCounts(boundOf("pair_groups"))))
+
+    /// The eligible groups of one split, in the frozen group order the split
+    /// assignment carries.
+    def eligibleOfSplit(split: PanelSplit, assignments: List[(String, PanelSplit)], eligible: List[PanelGroup]): List[PanelGroup] =
+        List.filterMap(entry -> match entry {
+            case (key, assigned) => if (assigned == split) List.find(group -> group#key == key, eligible) else None
+        }, assignments)
+
+    /// The ordered pairs of one split's included groups, in frozen group order.
+    def splitPairs(split: PanelSplit, assignments: List[(String, PanelSplit)], included: List[PanelGroup], tasks: List[PanelTask]): List[PanelPair] =
+        List.flatMap(group -> orderedPairsOf(group#key, tasksOf(group#key, tasks)),
+            List.filter(group -> splitOfKey(group#key, assignments) == split, included))
+
+    /// The frozen split of one group, recovered from the split assignment.
+    def splitOfKey(key: String, assignments: List[(String, PanelSplit)]): PanelSplit =
+        match List.find(entry -> match entry { case (assigned, _) => assigned == key }, assignments) {
+            case Some((_, split)) => split
+            case None             => PanelSplit.Final
+        }
+
+    /// The declared count of one split under the frozen largest-remainder rule.
+    pub def splitAllocation(split: PanelSplit, bound: Int32): Int32 =
+        match List.find(entry -> match entry { case (assigned, _) => assigned == split }, splitCounts(bound)) {
+            case Some((_, count)) => count
+            case None             => 0
+        }
+
+    /// The selected tasks of one canonical group, in frozen order.
+    pub def tasksOf(group: String, tasks: List[PanelTask]): List[PanelTask] =
+        List.filter(task -> task#group == group, tasks)
+
+    def orderedPairsOf(group: String, tasks: List[PanelTask]): List[PanelPair] =
+        List.flatMap(first -> List.filterMap(second ->
+            if (second#id == first#id) None
+            else Some({
+                id = "", group = group, first = first#id, second = second#id,
+                firstWorld = first#world, secondWorld = second#world,
+                stratum = if (first#world == second#world) "native-identical" else "replay"
+            }), tasks), tasks)
+
+    def numberPairs(pairs: List[PanelPair], index: Int32, acc: List[PanelPair]): List[PanelPair] = match pairs {
+        case Nil          => List.reverse(acc)
+        case pair :: rest =>
+            numberPairs(rest, index + 1, {
+                id = "p" + Int32.toString(index), group = pair#group, first = pair#first,
+                second = pair#second, firstWorld = pair#firstWorld, secondWorld = pair#secondWorld,
+                stratum = pair#stratum
+            } :: acc)
+    }
+
+    /// The explicit selection attrition of one bounded panel: one row per non-zero
+    /// loss class, carrying the input count, the kept count, the excluded count and
+    /// the reason. The group cap, the per-group task cap, the included-pair-group
+    /// allocation and the per-split pair allocation are separate classes, so no
+    /// excluded candidate can pass unnoticed.
+    pub def panelAttrition(
+        all: List[PanelGroup],
+        keptGroups: List[PanelGroup],
+        assignments: List[(String, PanelSplit)],
+        tasks: List[PanelTask],
+        pairs: List[PanelPair]
+    ): List[List[String]] = {
+        let groupInput = List.length(all);
+        let groupKept = List.length(keptGroups);
+        let taskInput = List.foldLeft((sum, group) -> sum + List.length(group#rows), 0, keptGroups);
+        let taskKept = List.length(tasks);
+        let eligible = List.filter(group -> List.length(tasksOf(group#key, tasks)) >= 2, keptGroups);
+        let included = includedPairGroups(assignments, eligible);
+        let eligiblePairs = List.foldLeft((sum, group) -> pairCount(group#key, tasks) + sum, 0, eligible);
+        let includedPairs = List.foldLeft((sum, group) -> pairCount(group#key, tasks) + sum, 0, included);
+        let pairKept = List.length(pairs);
+        panelAttritionRow("groups", groupInput, groupKept, groupInput - groupKept, "group-count-cap")
+            ::: panelAttritionRow("tasks", taskInput, taskKept, taskInput - taskKept, "tasks-per-group-cap")
+            ::: panelAttritionRow("pair-groups", List.length(eligible), List.length(included),
+                List.length(eligible) - List.length(included), "pair-group-cap")
+            ::: panelAttritionRow("pairs", eligiblePairs, includedPairs, eligiblePairs - includedPairs,
+                "pair-group-not-included")
+            ::: panelAttritionRow("pairs", includedPairs, pairKept, includedPairs - pairKept, "pair-split-allocation")
+    }
+
+    /// The ordered-pair count of one group's selected tasks: `n * (n - 1)`.
+    def pairCount(group: String, tasks: List[PanelTask]): Int32 = {
+        let n = List.length(tasksOf(group, tasks));
+        n * (n - 1)
+    }
+
+    /// One attrition row for the candidates one selection step excluded, or nothing
+    /// when that step excluded none.
+    pub def panelAttritionRow(kind: String, input: Int32, kept: Int32, excluded: Int32, reason: String): List[List[String]] =
+        if (excluded > 0)
+            List#{"attrition", kind, Int32.toString(input), Int32.toString(kept), Int32.toString(excluded), reason} :: Nil
+        else Nil
+
+    /// The public panel rows: the frozen recipe identity, the declared bounds, the
+    /// audited denominators, the split counts and rounding, the selected groups
+    /// with their split and exposure, the exact worlds, the selected tasks and the
+    /// ordered pairs, then the explicit selection attrition. Every cell is public
+    /// metadata; no evaluator column and no label value appears.
+    pub def panelRows(panel: Panel): List[List[String]] =
+        (List#{"generation", panel#freeze} :: Nil)
+            ::: boundRows()
+            ::: List.map(match (kind, value) -> List#{"denominator", kind, Int32.toString(value)}, panel#denominators)
+            ::: splitRows(panel)
+            ::: List.map(match (key, split) ->
+                List#{"group", key, panelSplitName(split), exposureName(exposureOf(split))}, panel#groups)
+            ::: List.map(worldRow, panel#worlds)
+            ::: List.map(taskRow, panel#tasks)
+            ::: List.map(pairRow, panel#pairs)
+            ::: panelImageRows(panel)
+            ::: (List#{"provenance", "exposure-prior", "none",
+                "no corpus source was acquired or inspected before this selection"} :: Nil)
+            ::: panel#attrition
+
+    /// The classified runtime-image pin of every selected task, taken in the
+    /// ordinary record path: the declared reference, its status and its classified
+    /// reason. The declared public projection carries no platform, so the honest
+    /// classification of a tag reference is the explicit `mutable-tag` reason
+    /// rather than a claimed pin.
+    pub def panelImageRows(panel: Panel): List[List[String]] =
+        List.map(task -> {
+            let pin = classifyImage(task#image, "");
+            List#{"image", task#id, task#image, imagePinName(pin), imagePinReason(pin)}
+        }, panel#tasks)
+
+    /// The declared split counts, weights and rounding record of one panel.
+    def splitRows(panel: Panel): List[List[String]] = {
+        let n = List.length(panel#groups);
+        List.map(match (split, count) -> List#{"split", panelSplitName(split), Int32.toString(count),
+            Int32.toString(panelSplitWeight(split)), Int32.toString(n)}, splitCounts(n))
+            ::: List#{"rounding", Int32.toString(n), Int32.toString(splitLeftover(n)), "largest-remainder"} :: Nil
+    }
+
+    def worldRow(world: PanelWorld): List[String] =
+        List#{"world", world#id, world#repo, world#revision, world#group}
+
+    def taskRow(task: PanelTask): List[String] =
+        List#{"task", task#id, task#instanceId, task#group, task#world, task#language,
+            task#license, task#createdAt, task#image}
+
+    def pairRow(pair: PanelPair): List[String] =
+        List#{"pair", pair#id, pair#group, pair#first, pair#second, pair#firstWorld,
+            pair#secondWorld, pair#stratum}
+
+    /// The declared evaluator-side scope of one panel, physically separate from
+    /// the public panel: the counts of tasks and pairs whose reference labels a
+    /// later evaluator join must supply, and the declared evaluator columns it must
+    /// supply for each. No label value appears here, and the public panel carries
+    /// no evaluator column, so the two manifests stay physically separate.
+    pub def panelEvaluatorRows(panel: Panel): List[List[String]] =
+        List#{"evaluator-scope", "tasks", Int32.toString(List.length(panel#tasks))}
+            :: List#{"evaluator-scope", "pairs", Int32.toString(List.length(panel#pairs))}
+            :: List.map(task -> List#{"evaluator", task#id, List.join(",", catalogOracleColumns())}, panel#tasks)
+
+    /// The declared evaluator columns one label join must supply for each task.
+    pub def panelEvaluatorColumns(): List[String] = catalogOracleColumns()
+
+    /// The audited selection identities of one panel: its own counts against the
+    /// declared caps and against the denominators it recorded. A finding means the
+    /// selection and the manifest disagree, so a clean panel is the empty list.
+    pub def panelDenominatorFindings(panel: Panel): List[String] = {
+        let groupKeys = List.map(entry -> match entry { case (key, _) => key }, panel#groups);
+        let taskIds = List.map(task -> task#id, panel#tasks);
+        (if (List.length(panel#groups) > boundOf("groups"))
+            List#{"the selected group count exceeds the declared group bound"} else Nil)
+            ::: (if (List.length(panel#pairs) > boundOf("pairs"))
+                List#{"the selected pair count exceeds the declared pair bound"} else Nil)
+            ::: (if (List.length(List.distinct(List.map(pair -> pair#group, panel#pairs))) > boundOf("pair_groups"))
+                List#{"the selected pair groups exceed the declared pair-group bound"} else Nil)
+            ::: (if (List.forAll(key -> List.length(tasksOf(key, panel#tasks)) <= boundOf("tasks_per_group"), groupKeys)) Nil
+                else List#{"a selected group exceeds the declared tasks-per-group bound"})
+            ::: (if (List.forAll(pair -> List.memberOf(pair#first, taskIds) and List.memberOf(pair#second, taskIds), panel#pairs)) Nil
+                else List#{"a selected pair names a task outside the selected panel"})
+            ::: (if (List.length(List.distinct(groupKeys)) == List.length(groupKeys)) Nil
+                else List#{"a selected group appears in more than one split"})
+    }
 }

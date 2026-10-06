@@ -368,6 +368,7 @@ The marker extraction and link resolution are Flix semantics in
 | Prediction firewall | `//test/study:firewall_test` | passes; each stage's declared input set is asserted against its allowlist, so no public prediction-side stage declares an evaluator artifact and the prediction carries the one declared frozen policy |
 | Pinned corpus acquisition | `//test/catalog:catalog_pin_test` | passes; tagged `manual`; the declared immutable `nebius/SWE-rebench-V2` file is materialized and its exact bytes, digest and physical schema are verified through the projected Arrow boundary |
 | Streaming normalization and provenance | `//test/catalog:catalog_normalize_test` | passes; tagged `manual`; the full pinned catalog is streamed in bounded projected batches, every row's fate is reduced by Flix and the audited denominators, accepted js/ts population, classified exclusions/failures, retained provenance and public/oracle separation are recorded |
+| Bounded shared panel and split | `//test/catalog:panel_artifact_test` | passes; tagged `manual`; the normalized accepted js/ts population is reduced to the one bounded, deterministic, metadata-only panel in `Attune.Study` (at most 24 canonical fork/duplicate groups, four tasks per group, 32 ordered pairs across eight included groups), with the group-disjoint approximately 60/20/20 split, the exposure flags, the explicit selection attrition and the classified image pins |
 
 The declared study graph is the complete world/task/pair fan-out the analysis
 manifest admits. Each exact world materializes its source tree and facts/index
@@ -471,8 +472,18 @@ and records the audited raw/normalized/js-ts/accepted/excluded/failed
 denominators, the accepted js/ts population with its retained license evidence,
 the classified exclusions and failures, the dataset attribution with the
 explicitly unavailable dataset-license and fork provenance, and the declared
-public/evaluator column separation. Panel selection and the studies remain the
-following features' work, so no localization gain is claimed here.
+public/evaluator column separation. The same accepted js/ts population is then
+reduced by the `manual` `//test/catalog:panel_select` stage to the one bounded,
+deterministic, metadata-only shared panel in `Attune.Study`: at most 24 canonical
+repository/fork groups (the lower-cased final repository-name segment collapses
+duplicates, backports, snapshots and forks onto one group) and four tasks per
+group for localization, at most 32 ordered pair candidates across at most eight
+included groups, and the frozen group-disjoint approximately 60/20/20
+development/calibration/final split with its largest-remainder rounding, its
+prior-exposure flags, its explicit selection attrition and its classified image
+pins. The public panel and the physically separate evaluator scope are admitted
+before the study invocation. The selected localization and pair studies remain
+the following features' work, so no localization gain is claimed here.
 
 ## Deferred
 

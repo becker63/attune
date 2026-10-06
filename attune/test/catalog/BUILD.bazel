@@ -63,6 +63,49 @@ native_flix_consumer_test(
     tags = ["manual"],
 )
 
+# The declared shared-panel selection stage (`VAL-DATA-003`): it reads the
+# normalized accepted js/ts population the streaming-normalization stage
+# materialized and reduces the one bounded, deterministic, metadata-only shared
+# panel in `Attune.Study` — canonical fork/duplicate grouping, the frozen group
+# order, the declared group/task/pair caps, the largest-remainder approximately
+# 60/20/20 group split, the exact worlds, the ordered pair candidates, the
+# exposure flags and the classified image pins. It writes the public panel
+# manifest, the physically separate evaluator scope and the loadable Starlark
+# list the integration owner admits before the study invocation. Manual like
+# every study surface: the ordinary `bazel test //...` gate never scans the
+# corpus.
+native_study_stage(
+    name = "panel_select",
+    srcs = [
+        "PanelSelect.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    input_names = ["normalized"],
+    inputs = [":catalog_normalize"],
+    stage = "select_panel",
+    tags = ["manual"],
+)
+
+# The declared shared-panel artifact laws: they audit the tree the selection
+# stage materialized over the real normalized corpus, so the real run's bounds,
+# split, pair membership and image classification are checked against the actual
+# selected panel rather than against a fixture.
+native_flix_consumer_test(
+    name = "panel_artifact_test",
+    srcs = [
+        "PanelArtifactLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    declared_files = [
+        "//test/study:manifest/catalog/panel_public.tsv",
+        "//test/study:manifest/catalog/manifest.bzl",
+    ],
+    produced = [":panel_select"],
+    tags = ["manual"],
+)
+
 test_suite(
     name = "all",
     tags = ["manual"],
@@ -70,6 +113,8 @@ test_suite(
         ":catalog_normalize_law",
         ":catalog_normalize_test",
         ":catalog_pin_test",
+        ":panel_artifact_test",
+        ":panel_law",
     ],
 )
 
@@ -111,6 +156,22 @@ native_flix_test(
     name = "catalog_normalize_law",
     srcs = [
         "NormalizeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    tags = ["manual"],
+)
+
+# The corpus-free bounded shared-panel laws (`VAL-DATA-003`): they drive the
+# production canonical grouping, frozen group order, declared caps, the
+# largest-remainder approximately 60/20/20 split, the ordered pair candidates,
+# the exposure flag, the classified image pin, the explicit attrition and the
+# public/evaluator separation over a crafted population, so no corpus is read
+# here and the real run's clean finding set is meaningful rather than vacuous.
+native_flix_test(
+    name = "panel_law",
+    srcs = [
+        "PanelLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/Study.flix",
     ],

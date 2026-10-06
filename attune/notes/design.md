@@ -517,7 +517,7 @@ excluded).
 | core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 204 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms with their one typed inverse table, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
 | theory | `src/Attune/Theory.flix` | Flix | 586 | A | `Attune.Theory` | Bounded canonical descriptors, the declared descriptor-record decoder, the relation-independent native lowering key with the fixed rule families, the declared-index bounded slice selection (`shardAt`) and the world-shard witness rows consumed by the shared index. |
-| study | `src/Attune/Study.flix` | Flix | 997 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection with its explicit pair-attrition findings and candidate ranking, the frozen prediction-policy vocabulary and its declared-record decoder, the pinned public catalog identity/physical-schema contract with its one comparison and classified findings, the declared public/oracle projection separation, the streamed record framing/fate vocabulary with its audited normalization denominators, its classified faults and exclusions, its retained dataset/repository-license provenance and its canonical record text, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
+| study | `src/Attune/Study.flix` | Flix | 1334 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection with its explicit pair-attrition findings and candidate ranking, the frozen prediction-policy vocabulary and its declared-record decoder, the pinned public catalog identity/physical-schema contract with its one comparison and classified findings, the declared public/oracle projection separation, the streamed record framing/fate vocabulary with its audited normalization denominators, its classified faults and exclusions, its retained dataset/repository-license provenance and its canonical record text, the one bounded metadata-only shared panel selection over the normalized accepted population (the canonical fork/duplicate group key, the frozen richest-first group order, the declared group/task/pair caps, the exact worlds, the ordered pair candidates across the included pair groups, the largest-remainder approximately 60/20/20 group-disjoint split with its exposure flags, the explicit selection attrition and the classified image pins) and its physically separate evaluator scope, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 522 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
@@ -527,21 +527,36 @@ excluded).
 | boundary | `platform/tools/boundary/*.java` | Java | 1,009 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, the pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`, plus the declared bounded argv receipt plan the stage action itself executes and binds before the stage law runs), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 925 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule (its declared input bindings, its declared measurement receipt plan and the declared jars the stage action may bind), the one `attune_declared_record_file` rule that emits the declared task-context anchor token and the declared per-index theory-shard record from the admitted manifest's own row, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair/shard fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact) and the one declared prediction-only frozen policy input every `prediction_<task>` consumes, the independent per-pair/per-branch check stages with their declared receipt plans, the per-environment joint stages that depend on the frozen predictions and never on an individual check, the one `results` reducer stage that materializes the declared Parquet artifact and renders the bounded report, and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 6,599 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, the declared catalog acquisition stage with its declared immutable pin and declared physical-schema contract beside its artifact laws (declared identity, recorded schema node for node, streamed projection records and the negative findings law), the declared streaming-normalization stage that reads the same pinned corpus one bounded batch at a time and writes the audited denominators, accepted population, classified exclusions/failures, retained provenance and public/oracle separation beside its corpus-free framing/fate/denominator laws and its artifact laws (identity, denominator identities, contiguous batch partition, js/ts accepted population with retained unavailable licenses, provenance and the no-evaluator-column firewall), and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation/pair-attrition, shared-world/immutable-branch DAG and prediction-firewall laws (including that a prediction consumes the one declared public policy and carries exactly its identity while extraction and shards never consume it), its pair-attrition laws over the bounded late/capped panels, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 7,671 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, the declared catalog acquisition stage with its declared immutable pin and declared physical-schema contract beside its artifact laws (declared identity, recorded schema node for node, streamed projection records and the negative findings law), the declared streaming-normalization stage that reads the same pinned corpus one bounded batch at a time and writes the audited denominators, accepted population, classified exclusions/failures, retained provenance and public/oracle separation beside its corpus-free framing/fate/denominator laws and its artifact laws (identity, denominator identities, contiguous batch partition, js/ts accepted population with retained unavailable licenses, provenance and the no-evaluator-column firewall), the declared bounded-shared-panel selection stage that reduces the same normalized accepted population to the one bounded panel and writes the public manifest, the physically separate evaluator scope and the loadable Starlark list the integration owner admits before the study invocation, beside its corpus-free selection laws (canonical fork/duplicate grouping, declared caps, group-disjoint approximately 60/20/20 largest-remainder split with rounding, exposure flags, classified image pins, public/evaluator separation, attrition classes and reproducible frozen order) and its artifact laws over the real selected panel, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation/pair-attrition, shared-world/immutable-branch DAG and prediction-firewall laws (including that a prediction consumes the one declared public policy and carries exactly its identity while extraction and shards never consume it), its pair-attrition laws over the bounded late/capped panels, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*`, every package `BUILD.bazel` | mixed | 2,600 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*`, every package `BUILD.bazel` | mixed | 2,637 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,734; B mechanical 2,769; A+B authored 7,503; C test 6,599; C support 21,884
+5,071; B mechanical 2,769; A+B authored 7,840; C test 7,671; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 179 readable files, code 38,586,
-comment 2,490, documentation 6,451, blank 2,792; the report prints the derived
-physical 50,319 and nonblank 47,527 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 184 readable files, code 40,032,
+comment 2,536, documentation 6,670, blank 2,921; the report prints the derived
+physical 52,159 and nonblank 49,238 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The streaming-corpus-normalization-and-provenance leaf moves, relative to
+them. The bounded-shared-panel-and-split leaf moves, relative to
+the streaming-corpus-normalization-and-provenance record
+(4,734/2,769/7,503/6,599), `study` 997 -> 1,334 (the one bounded metadata-only
+shared panel selection over the normalized accepted population: the canonical
+fork/duplicate group key, the frozen richest-first group order, the declared
+group/task/pair caps, the exact worlds, the ordered pair candidates across the
+included pair groups, the largest-remainder approximately 60/20/20 group-disjoint
+split with its exposure flags, the explicit selection attrition, the classified
+image pins and the physically separate evaluator scope) and `tests`
+6,599 -> 7,671 (the declared panel-selection stage, its corpus-free selection
+laws and its artifact laws over the real selected panel); `metadata`
+2,600 -> 2,637 (the new panel targets in `test/catalog/BUILD.bazel`); every other
+component and family is unchanged. The delta is therefore one declared
+metadata-only selection vocabulary with its frozen split and its admitted
+manifests, and their declared fixtures, with no owner, evaluator, feasibility
+phase, yield gate or framework change. The streaming-corpus-normalization-and-provenance leaf moves, relative to
 the pinned-catalog-and-shared-analysis-manifest record (4,535/2,740/7,275/6,037),
 `study` 798 -> 997 (the declared public/oracle separation, the streamed
 framing/fate vocabulary with its audited denominators, its classified faults and
@@ -2861,3 +2876,92 @@ license evidence is retained per accepted row and summarized once by
 token); the codec's `null` token is decoded to absent evidence and the raw cell
 records remain in the declared batch files, so no distinction is hidden; and no
 selection, grouping, ranking, label, provider or yield gate entered.
+
+## Bounded shared panel and split (2026-10-06)
+
+**What it is.** `VAL-DATA-003`. The normalized accepted js/ts population is now
+reduced to the one bounded, deterministic, metadata-only shared panel both studies
+consume. `Attune.Study` owns the canonical group key (the lower-cased final
+repository path segment, so duplicates, backports, snapshots and forks collapse
+onto one group), the frozen richest-first group order, the declared
+group/task/pair bounds, the exact `(repo, revision)` worlds, the ordered pair
+candidates and their two strata, the largest-remainder approximately 60/20/20
+development/calibration/final group split with its exposure flags, the classified
+runtime-image pin, the explicit selection attrition and the physically separate
+evaluator scope. The thin `test/catalog/PanelSelect.flix` adapter resolves the
+declared binding, reads the accepted rows the streaming-normalization stage
+materialized and writes the public panel, the evaluator scope and the loadable
+Starlark list. Nothing here pulls an image, runs an emulation, expands a cap,
+performs a rescue search or starts a separate feasibility/minimum-yield phase.
+
+**Real measurement on the pinned identity.** 8,342 accepted candidates collapse
+onto 881 canonical groups; the declared group bound keeps the richest 24, which
+supply 96 tasks (four per group) over 92 exact worlds and 288 ordered pair
+candidates. The group-disjoint split is development 14 / calibration 5 / final 5
+of 24 (weights 3/1/1, two leftover groups by largest remainder), so no group can
+appear in two splits and the two studies share one assignment. The declared
+pair-group bound includes eight groups and the declared pair bound keeps 32
+ordered candidates, apportioned across the splits by the same rule (development
+19 / calibration 7 / final 6); two of the 32 pairs are the native identical-base
+stratum (both tasks share one exact world) and 30 are the deterministic replay
+stratum. Every selected task's image is a mutable tag, so all 96 are recorded
+`unsupported` with the classified `mutable-tag` reason in the ordinary record
+path; no image is pulled, resolved or emulated. The five attrition rows record
+every loss explicitly: groups 881 -> 24 (857, group-count-cap), tasks 2,160 -> 96
+(2,064, tasks-per-group-cap), pair-groups 24 -> 8 (16, pair-group-cap), pairs
+288 -> 96 (192, pair-group-not-included), pairs 96 -> 32 (64,
+pair-split-allocation). The public panel and the evaluator scope are admitted at
+`test/study/manifest/catalog/panel_public.tsv` and `manifest.bzl` before the study
+invocation; the public panel carries no evaluator column and no label value.
+
+**Regressions.** `//test/catalog:panel_law` (corpus-free) drives the production
+selection over a crafted population: the canonical fork/duplicate grouping, the
+frozen order, the declared group/task/pair caps, the group-disjoint
+approximately 60/20/20 split with its largest-remainder rounding, the exposure
+flags, the classified image pins (an absent reference, a mutable tag, an
+undeclared platform and a platform mismatch are each their own reason), the
+public/evaluator separation, the attrition classes and the reproducible order.
+`//test/catalog:panel_artifact_test` audits the real selected panel: the admitted
+panel equals the prepared one, every declared bound holds, the split is
+group-disjoint and sums to the group count, every paired task is a selected
+localization task, every selected image is classified, and the public panel
+carries no evaluator column while the attrition rows are present.
+
+**Validation on this identity.** `//test/catalog:all` 5 test targets pass (the
+panel selection stage ran over the real 8,342-row accepted population, and the
+corpus-free and real-artifact panel laws passed); `bazel test //...` 27/27 exit 0
+with the corpus untouched. This leaf's laws assert its own declared artifact; they
+do not establish the mission's behavioral-acceptance contract, which the
+system-managed skip setting still blocks (`AGENTS.md`, 2026-10-06).
+
+**Declared identity.** A 5,071; B 2,769; A+B 7,840; C test 7,671; C support
+21,884 (`study` 997 -> 1,334, `tests` 6,599 -> 7,671, `metadata` 2,600 -> 2,637;
+raw 184 files, code 40,032, comment 2,536, doc 6,670, blank 2,921, physical
+52,159, nonblank 49,238; presentation A 522 / B 87 unchanged).
+
+Bounded architecture review (cognitive core 4,734 -> 5,071, A+B 7,503 -> 7,840,
+mechanical 2,769 unchanged; all above their soft review thresholds, which are
+review triggers, not failures). The 337 new cognitive lines are the one declared
+metadata-only selection vocabulary with its frozen split, exposure flags,
+classified image pin and physically separate evaluator scope: the mission
+explicitly assigns selection, splits and all classifications to Flix, and this is
+one selection vocabulary, not a new evaluator, policy family or framework. No
+mechanical line is added. The 1,072 fixture lines are the panel-selection stage,
+its corpus-free selection laws and its artifact laws over the real run. Largest
+application-semantic component: `study` (1,334). Hardest reacquisition: the Grit
+acquisition boundary under `repository` (809), unchanged.
+Localization/coordination navigation: the canonical group key, frozen order,
+caps, split, exposure, image pin, attrition and evaluator scope are reachable at
+`Attune.Study.canonicalGroupKey`/`frozenGroupOrder`/`splitCounts`/`assignSplits`/
+`selectPanel`/`panelPairs`/`panelAttrition`/`classifyImage`/`panelEvaluatorRows`;
+the stage at `test/catalog/PanelSelect.flix`; the admitted panel at
+`test/study/manifest/catalog/panel_public.tsv`. Policy-leak/duplication check: the
+group key, the frozen order and the split weights exist once, in the owner, and
+both the selection and the manifest rows read that one declaration; the pair
+candidates and the included pair groups both apportion the same frozen rule, so
+the two studies share one assignment rather than drifting apart; the public panel
+and the evaluator scope are separate artifacts and the public artifact cannot
+carry an evaluator column; every cap is enforced by selection and every loss is
+recorded as an explicit attrition row, so an exclusion can never pass unnoticed
+as an empty result; and no image pull, emulation, rescue search, cap expansion,
+separate pair catalog or yield gate entered.
