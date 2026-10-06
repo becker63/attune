@@ -68,6 +68,33 @@ native_study_stage(
     tags = ["manual"],
 )
 
+# The same preparation over the declared late-pair panel: nine declared groups
+# whose only pairs live in the first (a normally retained pair), the eighth (a
+# pair solely in a later included localization group) and the ninth (a group
+# outside the included pair groups) group. The attrition laws prove the retained
+# pairs survive and the filtered pair is reported explicitly.
+native_study_stage(
+    name = "analysis_prepare_late",
+    srcs = STAGE_SRCS,
+    input_names = ["panel"],
+    inputs = ["manifest/panel_late.tsv"],
+    stage = "prepare_manifest",
+    tags = ["manual"],
+)
+
+# The same preparation over the declared capped-pair panel: one group whose 36
+# declared pairs exceed the declared pair bound of 32, so the attrition laws can
+# prove the pair-count cap reports its own input/kept/excluded/reason row beside
+# the separate over-bound declaration.
+native_study_stage(
+    name = "analysis_prepare_capped",
+    srcs = STAGE_SRCS,
+    input_names = ["panel"],
+    inputs = ["manifest/panel_capped.tsv"],
+    stage = "prepare_manifest",
+    tags = ["manual"],
+)
+
 # The complete declared world/task/pair fan-out, expanded from the admitted
 # manifest. Study targets are manual on purpose: `bazel test //...` must not
 # accidentally acquire or run the selected study surface. Every law, variant,
@@ -105,11 +132,12 @@ attune_study(
 # The bounded macro-admission regression. Two declared record sets are run
 # through the same production `_bound_violations` contract the study macro
 # enforces over the admitted manifest. The first carries over-bound structural
-# declarations only; the second carries the `truncated` finding the preparation
-# emits for anything it clipped (the old `exceeded`-only check admitted it).
-# Under `--define=attune_admission_strict=1` each probe fails on exactly its
-# violations; without the define they only record them, so the ordinary offline
-# gate is never affected.
+# declarations only; the second carries both a `truncated` bound finding and the
+# `truncated pair_attrition` row the preparation emits for a filtered or capped
+# pair (the old `exceeded`-only check admitted the first, and an unrecorded loss
+# produced no row to refuse at all). Under `--define=attune_admission_strict=1`
+# each probe fails on exactly its violations; without the define they only record
+# them, so the ordinary offline gate is never affected.
 _PROBE_BOUNDS = [
     "bounds\tgroups\t24",
     "bounds\ttasks_per_group\t4",
@@ -134,6 +162,7 @@ _PROBE_TRUNCATED = (
     ["generation\tprobe-truncated"] +
     _PROBE_BOUNDS + [
         "truncated\tpairs\t36\t32",
+        "truncated\tpair_attrition\t36\t32\t4\tpair-count-cap",
     ]
 )
 

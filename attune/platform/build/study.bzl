@@ -424,8 +424,16 @@ def attune_study(
     native_flix_consumer_test(
         name = "bounds_test",
         srcs = [law_srcs["bounds_test"]],
-        produced = [":analysis_prepare_overflow"],
-        declared_files = ["manifest/panel_overflow.tsv"],
+        produced = [
+            ":analysis_prepare_capped",
+            ":analysis_prepare_late",
+            ":analysis_prepare_overflow",
+        ],
+        declared_files = [
+            "manifest/panel_capped.tsv",
+            "manifest/panel_late.tsv",
+            "manifest/panel_overflow.tsv",
+        ],
         tags = ["manual"],
     )
     native_flix_consumer_test(

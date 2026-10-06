@@ -494,7 +494,7 @@ excluded).
 | core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 204 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms with their one typed inverse table, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
 | theory | `src/Attune/Theory.flix` | Flix | 586 | A | `Attune.Theory` | Bounded canonical descriptors, the declared descriptor-record decoder, the relation-independent native lowering key with the fixed rule families, the declared-index bounded slice selection (`shardAt`) and the world-shard witness rows consumed by the shared index. |
-| study | `src/Attune/Study.flix` | Flix | 746 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection and candidate ranking, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
+| study | `src/Attune/Study.flix` | Flix | 754 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection with its explicit pair-attrition findings and candidate ranking, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 522 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
@@ -503,22 +503,34 @@ excluded).
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
 | boundary | `platform/tools/boundary/*.java` | Java | 1,009 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, the pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`, plus the declared bounded argv receipt plan the stage action itself executes and binds before the stage law runs), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 907 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule (its declared input bindings, its declared measurement receipt plan and the declared jars the stage action may bind), the one `attune_declared_record_file` rule that emits the declared task-context anchor token and the declared per-index theory-shard record from the admitted manifest's own row, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair/shard fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact), the independent per-pair/per-branch check stages with their declared receipt plans, the per-environment joint stages that depend on the frozen predictions and never on an individual check, the one `results` reducer stage that materializes the declared Parquet artifact and renders the bounded report, and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 5,551 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation, shared-world/immutable-branch DAG and prediction-firewall laws, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
+| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 915 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule (its declared input bindings, its declared measurement receipt plan and the declared jars the stage action may bind), the one `attune_declared_record_file` rule that emits the declared task-context anchor token and the declared per-index theory-shard record from the admitted manifest's own row, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair/shard fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact), the independent per-pair/per-branch check stages with their declared receipt plans, the per-environment joint stages that depend on the frozen predictions and never on an individual check, the one `results` reducer stage that materializes the declared Parquet artifact and renders the bounded report, and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 5,659 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation/pair-attrition, shared-world/immutable-branch DAG and prediction-firewall laws, its pair-attrition laws over the bounded late/capped panels, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,480 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,497 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,483; B mechanical 2,503; A+B authored 6,986; C test 5,551; C support 21,884
+4,491; B mechanical 2,511; A+B authored 7,002; C test 5,659; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 168 readable files, code 36,901,
-comment 2,311, documentation 5,638, blank 2,545; the report prints the derived
-physical 47,395 and nonblank 44,850 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 170 readable files, code 37,042,
+comment 2,333, documentation 5,674, blank 2,556; the report prints the derived
+physical 47,605 and nonblank 45,049 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The world/task/pair-remote-slice leaf moves, relative to the
+them. The explicit-pair-panel-filter-attrition leaf moves, relative to the
+materialize-declared-theory-shard-slices record (4,483/2,503/6,986/5,551),
+`study` 746 -> 754 (the explicit `pair_attrition` rows the bounded pair
+selection emits beside its unchanged over-bound findings), `build-rules`
+907 -> 915 (the `bounds_test` consumer now declares the three prepared panels),
+`tests` 5,551 -> 5,659 (the three pair-attrition laws and the bounded late/capped
+fixture panels) and `metadata` 2,480 -> 2,497 (the two new preparation targets
+and the extended admission-probe record set in `test/study/BUILD.bazel`); the
+cognitive core outside `study`, every other component and the inherited/generated
+families are unchanged. The delta is therefore one bounded
+selection-reporting addition, its declared fixtures and the shared mechanical
+wiring, with no cap, owner, evaluator or framework change. The
+world/task/pair-remote-slice leaf moves, relative to the
 gold-free-prediction-closure record (4,474/2,407/6,881/5,107), `boundary`
 993 -> 1,009 (the declared bounded receipt plan the study-stage action itself
 executes and binds before the stage law runs, and the declared stage jars that
@@ -2368,3 +2380,96 @@ identities and empty witnesses, `theory_shard_w3_1` records
 Fresh remote slice `992911cc-bbb6-4163-a544-db5c54d16afd` executed all four
 `theory_shard_*` stages `runner=remote`/`cacheHit=false`/`exitCode=0` on the
 digest-pinned arm64 platform with `dockerNetwork=off`.
+
+### Leaf record: explicit pair-panel filter attrition (`explicit-pair-panel-filter-attrition`)
+
+This leaf repairs one concrete dishonest path in the bounded panel selection and
+adds no new owner, evaluator, cap, rescue cohort or attrition framework.
+
+**The defect.** `Attune.Study.capPairs` selected the eligible pairs as those whose
+group is one of the first `pair_groups` (8) kept groups and capped them at the
+declared `pairs` (32) bound, but it reported only the two *over-bound
+declarations* (`truncated pair_groups`, `truncated pairs`). A panel whose pairs
+live in groups beyond the first eight included groups therefore had every such
+pair silently discarded whenever its declared pair count and its distinct
+pair-group count were inside their bounds: no finding, no denominator, and an
+admitted manifest that would have carried zero pairs with no evidence that any
+pair had been supplied.
+
+**The fix.** `capPairs` now reports every actual loss through the existing
+preparation finding vocabulary as one `truncated pair_attrition` row per loss
+class, carrying the input count, the kept count, the excluded count and the
+reason: `group-not-included` for pairs filtered by the included-group rule and
+`pair-count-cap` for pairs dropped by the declared pair bound. The two declared
+over-bound rows are unchanged and stay separate declarations about the panel's
+own counts against its caps, and the admission predicate still refuses any
+manifest carrying a `truncated` row, so a lossy panel is reported and refused
+rather than admitted silently.
+
+**Regressions.** Three new native laws in `test/study/BoundsLaw.flix` run over two
+new declared preparation panels beside the existing over-cap one:
+
+- `manifest/panel_late.tsv` (nine declared groups, one pair each in the first,
+  the eighth and the ninth group; three distinct pair groups and three declared
+  pairs) is the separating fixture for the silent case: no over-bound row can
+  fire, yet the ninth-group pair is dropped. The law asserts that the normally
+  retained pair `pr` and the pair `pl` that lives only in the eighth (later
+  included localization) group both survive, and that the dropped pair is
+  reported as `truncated pair_attrition 3 2 1 group-not-included`.
+- `manifest/panel_capped.tsv` (one group, 36 declared pairs) asserts the
+  pair-count cap reports `truncated pair_attrition 36 32 4 pair-count-cap` beside
+  the separate over-bound `truncated pairs 36 32` declaration, with 32 pairs kept.
+- the existing `manifest/panel_overflow.tsv` now also asserts its group-filtering
+  attrition (`truncated pair_attrition 36 32 4 group-not-included`).
+
+Before the fix the real laws fail because the emitted row is absent (the
+separating assertion is `expected truncated pair_attrition 3 2 1
+group-not-included, but got` the empty string, and the two cap rows likewise);
+the failing run is preserved in `library/pair-attrition-prerepair-laws.log`. The
+strict-gated admission probe now also carries the emitted `pair_attrition` row,
+so `--define=attune_admission_strict=1` refuses it beside the over-bound probe's
+five structural violations.
+
+**Materialized artifacts.** `analysis_prepare_late` emits two kept `pair` rows
+(`pr`, `pl`) and exactly one `truncated pair_attrition 3 2 1 group-not-included`
+row, with no `pairs` or `pair_groups` row; `analysis_prepare_capped` emits 32
+kept pairs, `truncated pairs 36 32` and `truncated pair_attrition 36 32 4
+pair-count-cap`; the admitted fixture panel is unchanged and still emits zero
+findings, so `analysis.tsv` and `manifest.bzl` stay byte-identical.
+
+**Remote evidence.** Fresh invocation `35a1aa89-1f8d-4fd6-80b5-2a5c489b0bfa`
+(`test //test/study:bounds_test --config=remote --noremote_accept_cached
+--cache_test_results=no --remote_download_outputs=all`) ran 10 remote actions
+(three `AttuneStudyStage`, the `TestRunner`, Java compile/ijar) with
+`runner=remote`, `cacheHit=false`, `exitCode=0` and the digest-pinned
+`rbe-ubuntu22-04@sha256:0d84a80b…` image, and `bounds_test` PASSED. Raw evidence:
+`library/pair-attrition-remote-{bep,exec}.json` and
+`library/pair-attrition-remote-build.log`.
+
+Validation on this identity: `//test/study:all` 5/5; `//test/study:bounds_test`
+and `manifest_test` pass; the strict probes exit 1 with their exact violation
+lists; offline gate `bazel test //...` 27/27 exit 0; `build --build_tests_only
+//...` exit 0; scoped buildifier exit 4 with only the documented pre-existing
+diagnostic families. Declared identity: A 4,491; B 2,511; A+B 7,002; C test
+5,659; C support 21,884 (`study` 746 -> 754, `build-rules` 907 -> 915, `tests`
+5,551 -> 5,659, `metadata` 2,480 -> 2,497; raw 170 files, code 37,042, comment
+2,333, doc 5,674, blank 2,556, physical 47,605, nonblank 45,049).
+
+Bounded architecture review (cognitive core 4,483 -> 4,491 and A+B 6,986 ->
+7,002, both above their soft review thresholds; these are review triggers, not
+failures). The eight new cognitive lines are the bounded pair-attrition rows: the
+existing selection gains one explicit loss report per loss class with no new
+concept, no cap change, no rescue selection and no second selection truth — the
+over-bound declarations and the admission predicate are untouched, and the
+emitted rows are pure functions of the already-computed declared, eligible and
+kept counts. The rest of the delta is fixtures (`tests`) and declared metadata.
+Largest application-semantic component: `repository` (809), unchanged. Hardest
+reacquisition: the Grit acquisition boundary under `repository`, unchanged.
+Localization/coordination navigation: unchanged except that the pair side of the
+bounded panel is now reachable at `Attune.Study.manifestRows`/`capPairs`, whose
+attrition rows name the loss class and its input/kept/excluded counts. Policy-leak
+and duplication check: one `attritionRows`/`attritionRow` pair is the only
+attrition logic, called once from `capPairs`; the laws assert independently
+expected rows rather than calling the function; the over-bound rows, the safe-kind
+vocabulary and the strict probe keep their existing meaning; and no cap, lexer,
+registry, scheduler or Java entrypoint entered the mechanical side.

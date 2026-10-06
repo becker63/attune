@@ -435,10 +435,14 @@ pub mod Attune.Study {
     // The one bounded deterministic selection over a declared panel of record
     // rows. Groups, tasks per group, ordered pairs, included pair groups, the
     // candidate population and the world shards are each capped at a declared
-    // bound, and anything clipped is reported as an explicit `truncated` finding
-    // carrying the observed count and the cap, never silently dropped. The
-    // declared bounds are Study's selection contract; the candidate and shard
-    // values equal Theory's declared limits, which a separating law pins.
+    // bound, and anything clipped is reported as an explicit finding carrying the
+    // observed count and the cap, never silently dropped. The pair selection
+    // reports every actual loss as its own `truncated pair_attrition` row with the
+    // input count, the kept count, the excluded count and the reason, so a pair
+    // filtered by the included-group rule and a pair dropped by the declared pair
+    // bound each have reproducible attrition. The declared bounds are Study's
+    // selection contract; the candidate and shard values equal Theory's declared
+    // limits, which a separating law pins.
 
     /// The declared bounds of the admitted manifest, as values rather than
     /// prose: preparation enforces them, the analysis macro refuses an
@@ -463,9 +467,11 @@ pub mod Attune.Study {
     /// explicit bound findings. Groups, tasks per group, ordered pairs and
     /// included pair groups are capped at their declared bounds; the candidate
     /// population is capped at its declared bound and sharded at the declared
-    /// shard granularity. Anything clipped is reported as an explicit
-    /// `truncated` finding with the observed count and the cap, never silently
-    /// dropped.
+    /// shard granularity. Anything clipped is reported as an explicit finding
+    /// with the observed count and the cap, and every pair filtered by the
+    /// included-group rule or dropped by the declared pair bound adds its own
+    /// `truncated pair_attrition` row with the input count, the kept count, the
+    /// excluded count and the reason, never silently dropped.
     pub def manifestRows(panel: List[List[String]]): (List[List[String]], List[List[String]]) = {
         let generation = match rowsOf(panel, "generation") {
             case row :: _ => field(row, 1)
@@ -518,6 +524,12 @@ pub mod Attune.Study {
             capTasks(rest, tasks, kept ::: keptHere, finding)
     }
 
+    /// The bounded pair selection over the kept groups. The pairs whose group is
+    /// one of the first `pair_groups` included groups are eligible, and at most
+    /// `pairs` of those are kept. The declared over-bound findings (`pair_groups`,
+    /// `pairs`) keep reporting the panel's own counts against their caps, and every
+    /// actual loss additionally gets its own `truncated pair_attrition` row from
+    /// `attritionRows`, so a pair is never discarded without an explicit finding.
     def capPairs(groups: List[List[String]], pairs: List[List[String]]): (List[List[String]], List[List[String]]) = {
         let included = List.take(boundOf("pair_groups"), List.map(group -> field(group, 1), groups));
         let eligible = List.filter(pair -> List.memberOf(field(pair, 2), included), pairs);
@@ -529,8 +541,26 @@ pub mod Attune.Study {
         let pairFindings = if (List.length(pairs) > boundOf("pairs"))
             List#{"truncated", "pairs", Int32.toString(List.length(pairs)), Int32.toString(boundOf("pairs"))} :: groupFindings
             else groupFindings;
-        (kept, pairFindings)
+        (kept, pairFindings ::: attritionRows(List.length(pairs), List.length(eligible), List.length(kept)))
     }
+
+    /// The explicit pair-attrition rows of one bounded pair selection: one
+    /// `truncated pair_attrition` finding per non-zero loss class, carrying the
+    /// input count, the kept count, the excluded count and the reason. The
+    /// included-group filter and the pair-count cap are separate loss classes, so
+    /// each excluded pair is counted once and neither loss can pass unnoticed as
+    /// an unmeasured execution or a zero-supplied candidate set.
+    def attritionRows(declared: Int32, eligible: Int32, kept: Int32): List[List[String]] =
+        attritionRow(declared, eligible, declared - eligible, "group-not-included")
+            ::: attritionRow(eligible, kept, eligible - kept, "pair-count-cap")
+
+    /// One attrition row for the pairs one selection step excluded, or nothing
+    /// when that step excluded none.
+    def attritionRow(input: Int32, kept: Int32, excluded: Int32, reason: String): List[List[String]] =
+        if (excluded > 0)
+            List#{"truncated", "pair_attrition", Int32.toString(input), Int32.toString(kept),
+                Int32.toString(excluded), reason} :: Nil
+        else Nil
 
     /// The bounded shard rows of one world's descriptor count: at most the
     /// declared shards per world, each at most the declared shard size. The
