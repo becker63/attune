@@ -16,8 +16,12 @@ The checkout root holds exactly four intended ordinary entries: this `README.md`
 the `LICENSE`, the read-only reference checkout `attuneflix/`, and the active
 workspace `attune/`. One further root entry is permitted and preserved: the user
 `repomix-output.xml` bundle, which is kept intact, named here as prose rather
-than linked, and excluded from active action, Nix and CAS input. Everything that
-builds or runs lives under `attune/`:
+than linked, and excluded from active action, Nix and CAS input. One owned
+deliverable is also permitted at the root: the single localization performance
+report `LOCALIZATION_REPORT.md`, kept as prose and not linked, maintained in
+place rather than copied, and never a build, Nix or CAS input. This exception
+admits no other bundle, and the preserved `repomix-output.xml` is never a source
+input. Everything that builds or runs lives under `attune/`:
 `src/` for the shared Flix owners, `test/` for the
 native fixtures and laws, `platform/` for the build rules, the mechanical
 adapters (the boundary launcher, the Grit FFM binding and the Arrow codec),

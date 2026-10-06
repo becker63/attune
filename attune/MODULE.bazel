@@ -157,3 +157,22 @@ http_file(
     sha256 = "0e0bf9355f892ad74ae98d4e1c404f39fd6654a8e351ee3e6ab162e4a64cd3ad",
     urls = ["https://huggingface.co/datasets/nebius/SWE-rebench-V2/resolve/10483de0f50fe5da545942705a76c6150171af7f/data/train-00000-of-00001.parquet"],
 )
+
+# The approved clean-source acquisition of the selected panel's exact worlds: the
+# same declared world/archive/revision/digest identity record the localization
+# label stage verified, turned into real materialized source bytes. The manifest
+# is the admitted `Attune.Study` archive identity record
+# (`//test/study/manifest/catalog:archives.tsv`), so no repository, revision or
+# digest is restated here as truth. Each archive is fetched on the client and
+# verified against its declared SHA-256 before extraction, exactly like the
+# pinned catalog above, and no scientific action ever reaches the network.
+#
+# Declared last for the same reason as the catalog: a `use_repo_rule` repo
+# declared before the `grit_crates` extension renumbers the anonymous repos and
+# fails the pinned `cargo-bazel-lock.json` resolution digest.
+world_sources = use_repo_rule("//platform/build:world_archives.bzl", "attune_world_sources")
+
+world_sources(
+    name = "attune_worlds",
+    manifest = "//test/study:manifest/catalog/archives.tsv",
+)

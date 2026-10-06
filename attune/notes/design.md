@@ -728,8 +728,10 @@ role rather than merged into authored code:
 
 Outside the audited workspace and never counted as authored source: the
 checkout-root `README.md` and `LICENSE`, the read-only `attuneflix/` reference
-checkout, the preserved `repomix-output.xml`, `.factory/` tooling, and `.env`
-(recorded as metadata only and never read, hashed or passed anywhere). The
+checkout, the preserved `repomix-output.xml`, the one owned root deliverable
+`LOCALIZATION_REPORT.md` (owner live-audit amendment, 2026-10-06), `.factory/`
+tooling, and `.env` (recorded as metadata only and never read, hashed or passed
+anywhere). The
 authored Grit frontends (`src/grit/**`) and the maintained closure rule
 (`platform/build/grit_repository.bzl`) are *not* in this table: they change what
 the pinned engine can mean, so they stay cognitive under any path.
@@ -1608,6 +1610,13 @@ Recoverable checkpoint: the `6c8e6d3` `main` tip this leaf builds on.
   root entries plus the sole permitted preserved `repomix-output.xml`. The root
   `.gitignore` gains `/repomix-output.xml`, so Git-backed flake collection
   excludes it from action/Nix/CAS input while the file stays intact.
+- Root wording synchronised to the owner live-audit amendment (2026-10-06):
+  `README.md` Layout, `attune/AGENTS.md` and this note now admit the one owned
+  root deliverable `LOCALIZATION_REPORT.md` beside the four intended ordinary
+  entries and the preserved `repomix-output.xml`. It is the single report,
+  maintained in place, named as prose rather than linked, and never a build,
+  Nix or CAS input. The exception admits no other bundle, and the preserved
+  repomix bundle is never a source input.
 - Measured on this leaf's declared identity: A cognitive 4,275; B mechanical
   1,278; A+B authored 5,553; C test 3,621; C support 21,884; presentation A 511 /
   B 87 (subsets). `view` moves 452 -> 511 and `tests` 3,346 -> 3,621; raw 126 files

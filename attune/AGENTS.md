@@ -10,8 +10,12 @@ repository-side policy an agent must follow while changing this tree.
   ordinary entries: `README.md`, `LICENSE`, `attuneflix/` and `attune/`. One
   further root entry is permitted and preserved: the user `repomix-output.xml`
   bundle (owner amendment, 2026-10-05), kept intact and excluded from active
-  action/Nix/CAS input by the root `.gitignore` rule. This exception admits no
-  other bundle.
+  action/Nix/CAS input by the root `.gitignore` rule. One owned deliverable is
+  also permitted at the root: the single localization performance report
+  `LOCALIZATION_REPORT.md` (owner live-audit amendment, 2026-10-06), maintained
+  in place as the one report rather than copied, and never a build, Nix or CAS
+  input. Neither exception admits any other bundle, and the preserved
+  `repomix-output.xml` is never a source input.
 - `attuneflix/` (at the checkout root, a separate Git repository) is a read-only
   reference checkout, not project source. Never import it, symlink it, read it
   into an action or admit it to Nix or the CAS.

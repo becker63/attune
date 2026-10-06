@@ -27,6 +27,19 @@ _UNSHARE = "@unshare//:bin/unshare"
 _CLOSURE = "@unshare//:closure"
 _FLIX = "@flix_compiler//jar"
 
+# The one declared locale boundary for every action that runs the mechanical
+# launcher. A JVM derives `sun.jnu.encoding` from the process locale, and the
+# C/POSIX locale maps to `ANSI_X3.4-1968`, where `Path.of` rejects any path that
+# is not representable in ASCII. The pinned corpus carries arbitrary valid
+# UTF-8 source paths, so the boundary names the one locale that is UTF-8 while
+# staying byte-transparent: `C.UTF-8` is provided by glibc itself from 2.35 on,
+# needs no generated locale archive, and changes no collation or classification
+# rule relative to `C`. The same locale is set for the launcher's inner step in
+# `NativeLaunch`, so the parent and the child resolve declared paths under the
+# identical encoding. Nothing about the filenames or the source bytes is
+# normalized, renamed or excluded: only the boundary is named.
+_LOCALE_ENV = {"LANG": "C.UTF-8"}
+
 # The declared isolation condition. Left unset, the native actions run inside
 # the pinned util-linux user/network namespace and carry its binary and library
 # closure as declared inputs. The opt-in `--config=remote` profile sets it, so
@@ -64,6 +77,7 @@ def _native_test(name, srcs, flags, extra_data, size, tags, data, host_isolation
         main_class = "attune.tools.boundary.NativeLaunch",
         use_testrunner = False,
         runtime_deps = ["//platform/tools/boundary:native_launch"],
+        env = _LOCALE_ENV,
         data = srcs + attune_isolation_data(host_isolation) + [_FLIX] + extra_data + data,
         jvm_flags = flags + [
             "-Dattune.tests=" + _rlocation(srcs),
@@ -267,6 +281,7 @@ def _native_producer_impl(ctx):
             transitive = [runtime.files],
         ),
         outputs = [out],
+        env = _LOCALE_ENV,
         mnemonic = "AttuneNativeProducer",
         progress_message = "Materializing declared native tree %{label}",
     )
@@ -349,6 +364,7 @@ def _native_receipt_impl(ctx):
         arguments = [args],
         inputs = depset([ctx.file.plan] + classpath, transitive = [runtime.files]),
         outputs = [out],
+        env = _LOCALE_ENV,
         mnemonic = "AttuneProcessReceipt",
         progress_message = "Recording bounded process receipts %{label}",
     )
@@ -403,6 +419,7 @@ def _native_drain_probe_impl(ctx):
         arguments = [args],
         inputs = depset(classpath, transitive = [runtime.files]),
         outputs = [out],
+        env = _LOCALE_ENV,
         mnemonic = "AttuneDrainProbe",
         progress_message = "Recording bounded drain fault fixture %{label}",
     )
@@ -462,9 +479,33 @@ def _native_study_stage_impl(ctx):
     # profile runs directly in the provider container and declares neither the
     # Nix-store binary nor its closure.
     declared_inputs = list(ctx.files.srcs) + list(inputs) + list(classpath) + jars
+    declared_inputs.extend(ctx.files.world_sources)
+    declared_inputs.extend(ctx.files.native_libs)
     args = ctx.actions.args()
     if jars:
         args.add("-Dattune.jars=" + ",".join([jar.path for jar in jars]))
+    if ctx.attr.native_libs:
+        # A stage law that drives the pinned native Grit engine names the prepared
+        # shared library here, exactly as the native Java test route does. The
+        # launcher only makes the declared paths absolute and forwards them; it
+        # loads nothing and decides nothing.
+        args.add("-Dattune.libs=" + ",".join([library.path for library in ctx.files.native_libs]))
+    if ctx.files.world_sources:
+        # A whole-world stage (the clean-source extraction) declares every source
+        # byte of one exact world here. A world can carry thousands of files, so
+        # the declared list is written to a declared manifest file and bound as
+        # `world_manifest` rather than joined onto the command line: a single
+        # argument would exceed the platform's argument-length limit. The
+        # launcher rewrites that manifest into the absolute-path `worldsources`
+        # binding, so the stage law reads the exact declared source set rather
+        # than a path of its own.
+        world_manifest = ctx.actions.declare_file(ctx.label.name + ".worldsources.txt")
+        ctx.actions.write(
+            world_manifest,
+            "\n".join([source.path for source in ctx.files.world_sources]) + "\n",
+        )
+        args.add("-Dattune.world_manifest=" + world_manifest.path)
+        declared_inputs.append(world_manifest)
     if ctx.file.receipt_plan:
         # A declared measurement stage: the launcher executes this bounded argv
         # plan through the mechanical receipt boundary before the stage law runs,
@@ -498,6 +539,7 @@ def _native_study_stage_impl(ctx):
         arguments = [args],
         inputs = depset(declared_inputs, transitive = [runtime.files]),
         outputs = [out],
+        env = _LOCALE_ENV,
         mnemonic = "AttuneStudyStage",
         progress_message = "Materializing declared study stage %{label}",
     )
@@ -513,6 +555,8 @@ _native_study_stage = rule(
         "stage": attr.string(mandatory = True),
         "receipt_plan": attr.label(allow_single_file = True),
         "java_deps": attr.label_list(providers = [JavaInfo]),
+        "native_libs": attr.label_list(allow_files = True),
+        "world_sources": attr.label_list(allow_files = True),
         "isolation": attr.string(values = ["unshare", "platform"], default = "unshare"),
         "unshare_binary": attr.label(allow_single_file = True),
         "unshare_closure": attr.label(allow_files = True),
@@ -524,7 +568,7 @@ _native_study_stage = rule(
     toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
 )
 
-def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], host_isolation = False, **kwargs):
+def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], native_libs = [], world_sources = [], host_isolation = False, **kwargs):
     """Materialize one declared study stage tree through the authentic native Tester.
 
     The action runs the pinned compiler's authentic native test engine over the
@@ -543,7 +587,11 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
     through the mechanical process-receipt boundary before the stage law runs;
     the law then reduces the real receipts. `java_deps` names the explicit
     dependency jars a Java-backed stage law (the Arrow Parquet reducer) compiles
-    and runs against.
+    and runs against. `native_libs` names the prepared shared libraries a stage
+    law that drives the pinned native Grit engine loads. `world_sources` names a
+    whole declared world source set: the launcher rewrites it into an
+    absolute-path manifest bound as `worldsources`, so a clean-source extraction
+    stage reads exactly the declared source bytes.
 
     Args:
       name: the stage target name, which also names its declared tree output.
@@ -553,6 +601,8 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
       input_names: the declared binding name of each input.
       receipt_plan: the declared bounded argv plan this measurement stage executes.
       java_deps: the explicit dependency jars a Java-backed stage law consumes.
+      native_libs: the prepared shared libraries a native-engine stage law loads.
+      world_sources: the declared whole-world source set a stage reads by path.
       host_isolation: pins the host `unshare` boundary instead of the portable route.
       **kwargs: forwarded to the underlying rule.
     """
@@ -583,6 +633,8 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
         input_names = input_names,
         receipt_plan = receipt_plan,
         java_deps = java_deps,
+        native_libs = native_libs,
+        world_sources = world_sources,
         isolation = isolation,
         unshare_binary = unshare_binary,
         unshare_closure = unshare_closure,
@@ -608,6 +660,7 @@ def _attune_source_tree_impl(ctx):
         arguments = [args],
         inputs = depset(ctx.files.srcs + classpath, transitive = [runtime.files]),
         outputs = [out],
+        env = _LOCALE_ENV,
         mnemonic = "AttuneSourceTree",
         progress_message = "Materializing immutable source tree %{label}",
     )

@@ -121,6 +121,67 @@ pub mod Attune.Theory {
     /// The declared bound on theory shards per world.
     pub def maxShards(): Int32 = 8
 
+    /// The declared finite structural template family: the deterministic
+    /// population every world lowers. One or two positive binary atoms over the
+    /// six core atoms, one or two projected outputs and no inequality, in a fixed
+    /// order (single atoms first, then chains, each in the declared atom order and
+    /// the declared shape order). The family is reproducible, needs no per-world
+    /// declaration and stays well under `maxCandidates()`; `population` then drops
+    /// the domain-inconsistent and duplicate members, so the admitted population is
+    /// exactly the safe canonical subset.
+    pub def templateCandidates(): List[Candidate] = {
+        let atoms = Attune.atoms();
+        let singles = List.flatMap(atom -> List.map(outputs -> {
+            atoms = { relation = atom, subject = 0, object = 1 } :: Nil,
+            denied = Nil,
+            outputs = outputs
+        }, List#{1 :: Nil, 0 :: Nil, 0 :: 1 :: Nil}), atoms);
+        let chains = List.flatMap(first -> List.flatMap(second -> chainTemplates(first, second), atoms), atoms);
+        named(1, singles ::: chains, Nil)
+    }
+
+    /// The four declared chain shapes of one ordered atom pair: the forward and
+    /// reversed two-edge chain, each projecting the tail or the head.
+    def chainTemplates(first: Atom, second: Atom): List[Descriptor] =
+        List#{
+            { atoms = { relation = first, subject = 0, object = 1 } :: { relation = second, subject = 1, object = 2 } :: Nil, denied = Nil, outputs = 2 :: Nil },
+            { atoms = { relation = first, subject = 0, object = 1 } :: { relation = second, subject = 1, object = 2 } :: Nil, denied = Nil, outputs = 0 :: Nil },
+            { atoms = { relation = first, subject = 0, object = 1 } :: { relation = second, subject = 2, object = 1 } :: Nil, denied = Nil, outputs = 2 :: Nil },
+            { atoms = { relation = first, subject = 0, object = 1 } :: { relation = second, subject = 2, object = 1 } :: Nil, denied = Nil, outputs = 0 :: Nil }
+        }
+
+    /// Number the declared template family in its frozen order.
+    def named(index: Int32, candidates: List[Descriptor], acc: List[Candidate]): List[Candidate] = match candidates {
+        case Nil                => List.reverse(acc)
+        case descriptor :: rest => named(index + 1, rest, { id = "t" + Int32.toString(index), descriptor = descriptor } :: acc)
+    }
+
+    /// The declared descriptor records of one candidate population, in the exact
+    /// `id rel0 subj0 obj0 rel1 subj1 obj1 out0 out1` vocabulary `decodeCandidate`
+    /// reads, so a generated population and a decoded one are the same artifact.
+    pub def descriptorRows(candidates: List[Candidate]): List[List[String]] =
+        List.map(candidate -> {
+            let atoms = candidate#descriptor#atoms;
+            let (rel1, subj1, obj1) = match atoms {
+                case a :: _ => (Attune.atomName(a#relation), Int32.toString(a#subject), Int32.toString(a#object))
+                case Nil    => ("-", "-", "-")
+            };
+            let (rel2, subj2, obj2) = match atoms {
+                case _ :: b :: _ => (Attune.atomName(b#relation), Int32.toString(b#subject), Int32.toString(b#object))
+                case _           => ("-", "-", "-")
+            };
+            let outputs = candidate#descriptor#outputs;
+            let out0 = match outputs {
+                case output :: _ => Int32.toString(output)
+                case Nil         => "-"
+            };
+            let out1 = match outputs {
+                case _ :: output :: _ => Int32.toString(output)
+                case _                => "-"
+            };
+            List#{candidate#id, rel1, subj1, obj1, rel2, subj2, obj2, out0, out1}
+        }, candidates)
+
     // ------------------------------------------------------- record decoding
 
     /// Decode one declared descriptor record

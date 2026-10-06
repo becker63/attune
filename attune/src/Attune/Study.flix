@@ -2830,4 +2830,413 @@ pub mod Attune.Study {
             case Some((_, mapped)) => mapped
             case None              => ""
         }
+
+    // ------------------------------------------------- clean-source archives
+    //
+    // Every verified export names one canonical repository at one exact revision
+    // and the SHA-256 of that revision's immutable public archive. That recorded
+    // identity is the one declared authority the acquisition repository rule
+    // consumes, so the materialized clean-source bytes and the recorded export
+    // identity cannot drift apart, and no repository, revision or digest is
+    // restated anywhere else as truth.
+
+    /// One declared world archive identity: the world, its canonical repository,
+    /// its pinned revision and the SHA-256 of the exact archive bytes.
+    pub type alias ArchiveRecord = { world = String, repo = String, revision = String, sha256 = String }
+
+    /// The declared archive identity of every verified export, in recorded order.
+    pub def worldArchives(exports: List[ExportRecord]): List[ArchiveRecord] =
+        List.map(record -> {
+            world = record#world,
+            repo = record#repo,
+            revision = record#revision,
+            sha256 = record#digest
+        }, exports)
+
+    /// The declared archive identity records as emitted manifest rows, one
+    /// `archive <world> <repository> <revision> <sha256>` record per world.
+    pub def archiveManifestRows(archives: List[ArchiveRecord]): List[List[String]] =
+        List.map(archive -> List#{"archive", archive#world, archive#repo, archive#revision, archive#sha256}, archives)
+
+    /// The declared findings of one archive identity record set: a duplicate world,
+    /// a missing repository or revision and an unverified digest are each explicit
+    /// rather than silently accepted, so a world can never be materialized from an
+    /// identity the export record did not earn.
+    pub def archiveFindings(archives: List[ArchiveRecord]): List[List[String]] =
+        List.flatMap(archive -> {
+            let defects = if (String.isEmpty(archive#repo) or String.isEmpty(archive#revision))
+                List#{"archive-identity-incomplete", archive#world, archive#repo, archive#revision} :: Nil
+                else if (not verifiedExportDigest(archive#sha256))
+                    List#{"archive-digest-unverified", archive#world, archive#repo, archive#revision} :: Nil
+                else Nil;
+            List.map(defect -> List#{"finding"} ::: defect, defects)
+        }, archives)
+
+    // ----------------------------------------------------- localization arms
+    //
+    // The four frozen localization arms share one candidate population, one
+    // deterministic lexical prior and one ranking function; what differs is
+    // exactly which permitted evidence family each arm may read. P ranks by the
+    // prior alone, P+A adds honest issue-derived anchor evidence resolved against
+    // the world's declared symbols and files, P+A+F adds the earned repository
+    // fact/index adjacency, and P+A+D adds the world's theory witnesses. No arm
+    // may read an evaluator artifact: the evidence vocabulary below has no label,
+    // patch, interface or outcome family at all, so the firewall is structural
+    // rather than asserted.
+
+    /// The four measured localization arms.
+    pub enum LocalizationArm with Eq, Order, ToString {
+        case Prior
+        case Anchors
+        case Facts
+        case Descriptors
+    }
+
+    /// The four arms in frozen order.
+    pub def localizationArms(): List[LocalizationArm] =
+        LocalizationArm.Prior :: LocalizationArm.Anchors :: LocalizationArm.Facts
+            :: LocalizationArm.Descriptors :: Nil
+
+    /// The declared public name of one arm.
+    pub def localizationArmName(arm: LocalizationArm): String = match arm {
+        case LocalizationArm.Prior       => "P"
+        case LocalizationArm.Anchors     => "P+A"
+        case LocalizationArm.Facts       => "P+A+F"
+        case LocalizationArm.Descriptors => "P+A+D"
+    }
+
+    /// The exact evidence families a localization arm may read.
+    pub enum LocalizationFact with Eq, Order, ToString {
+        case IssueText
+        case CleanSource
+        case AnchorEvidence
+        case RepositoryFacts
+        case TheoryWitnesses
+    }
+
+    /// The declared input set of one localization arm. The containment chain is
+    /// the separation: each arm adds exactly one evidence family, so a difference
+    /// between two arms can never be a relabelling of the same operation.
+    pub def localizationInputs(arm: LocalizationArm): List[LocalizationFact] = match arm {
+        case LocalizationArm.Prior =>
+            LocalizationFact.IssueText :: LocalizationFact.CleanSource :: Nil
+        case LocalizationArm.Anchors =>
+            LocalizationFact.IssueText :: LocalizationFact.CleanSource
+                :: LocalizationFact.AnchorEvidence :: Nil
+        case LocalizationArm.Facts =>
+            LocalizationFact.IssueText :: LocalizationFact.CleanSource
+                :: LocalizationFact.AnchorEvidence :: LocalizationFact.RepositoryFacts :: Nil
+        case LocalizationArm.Descriptors =>
+            LocalizationFact.IssueText :: LocalizationFact.CleanSource
+                :: LocalizationFact.AnchorEvidence :: LocalizationFact.RepositoryFacts
+                :: LocalizationFact.TheoryWitnesses :: Nil
+    }
+
+    /// Whether one arm may read one evidence family.
+    pub def localizationCanRead(arm: LocalizationArm, fact: LocalizationFact): Bool =
+        List.memberOf(fact, localizationInputs(arm))
+
+    /// Whether `larger` contains every family of `smaller`.
+    pub def containsLocalizationInputs(larger: List[LocalizationFact], smaller: List[LocalizationFact]): Bool =
+        List.forAll(fact -> List.memberOf(fact, larger), smaller)
+
+    /// The declared evaluator-only families no localization arm may ever read. The
+    /// evidence vocabulary carries none of them, so this list is the explicit
+    /// firewall a law checks the vocabulary and the emitted rankings against.
+    pub def localizationForbiddenKeys(): List[String] =
+        "label" :: "patch" :: "test_patch" :: "interface" :: "FAIL_TO_PASS" :: "PASS_TO_PASS" :: "gold" :: Nil
+
+    /// The arm separation law: one containment chain of real input sets, one
+    /// distinct family added per arm, and no arm may read a later arm's family.
+    pub def localizationArmLaws(): Bool =
+        localizationInputs(LocalizationArm.Prior)
+                == (LocalizationFact.IssueText :: LocalizationFact.CleanSource :: Nil)
+            and containsLocalizationInputs(localizationInputs(LocalizationArm.Anchors), localizationInputs(LocalizationArm.Prior))
+            and containsLocalizationInputs(localizationInputs(LocalizationArm.Facts), localizationInputs(LocalizationArm.Anchors))
+            and containsLocalizationInputs(localizationInputs(LocalizationArm.Descriptors), localizationInputs(LocalizationArm.Facts))
+            and List.length(List.distinct(localizationInputs(LocalizationArm.Descriptors))) == 5
+            and not localizationCanRead(LocalizationArm.Prior, LocalizationFact.AnchorEvidence)
+            and not localizationCanRead(LocalizationArm.Anchors, LocalizationFact.RepositoryFacts)
+            and not localizationCanRead(LocalizationArm.Facts, LocalizationFact.TheoryWitnesses)
+            and List.length(localizationArms()) == 4
+
+    // -------------------------------------------------- deterministic prior
+
+    /// The deterministic token vocabulary of one text: maximal runs of ASCII
+    /// letters, digits and underscore, lower-cased. No stemming, no model, no
+    /// embedding and no randomness enters the prior.
+    pub def lexicalTokens(text: String): List[String] =
+        List.distinct(List.filter(token -> String.length(token) >= 3, tokenize(String.toList(String.toLowerCase(text)), "", Nil)))
+
+    def tokenize(chars: List[Char], current: String, acc: List[String]): List[String] = match chars {
+        case Nil => flushToken(current, acc)
+        case c :: rest =>
+            if (isTokenChar(c)) tokenize(rest, current + "${c}", acc)
+            else tokenize(rest, "", flushToken(current, acc))
+    }
+
+    def flushToken(current: String, acc: List[String]): List[String] =
+        if (String.isEmpty(current)) acc else current :: acc
+
+    def isTokenChar(c: Char): Bool = Char.isLetterOrDigit(c) or c == '_'
+
+    /// The deterministic lexical prior score of one candidate path against one
+    /// issue text: the number of distinct issue tokens that occur as a whole token
+    /// of the candidate path. The path is read with the same declared vocabulary,
+    /// so the score is reproducible and no score is invented.
+    pub def lexicalPriorScore(issueTokens: List[String], path: String): Int32 = {
+        let pathTokens = lexicalTokens(path);
+        List.foldLeft((score, token) -> if (List.memberOf(token, pathTokens)) score + 1 else score, 0, issueTokens)
+    }
+
+    // ------------------------------------------------------ issue anchors
+
+    /// The honest issue-derived anchors of one task against one world: the pairs
+    /// `(token, entity)` whose exact token names exactly one declared entity, and
+    /// the tokens whose evidence is ambiguous. A token that names no declared
+    /// entity contributes no anchor, and a token that names more than one distinct
+    /// entity is recorded ambiguous and contributes none, so an anchor is never
+    /// invented from absent or ambiguous evidence.
+    pub type alias IssueAnchors = { anchors = List[(String, String)], ambiguous = List[String] }
+
+    /// The declared anchor policy identities. `anchors-exact-name-v1` matches a
+    /// declared symbol by its exact declared name; `anchors-path-segment-v1` also
+    /// accepts a symbol's final dotted segment. The family is declared, finite and
+    /// ordered; at most one member is selected, and only on development.
+    pub def localizationPolicies(): List[String] =
+        "anchors-exact-name-v1" :: "anchors-path-segment-v1" :: Nil
+
+    /// The deterministic criterion a development split selects a policy by: the
+    /// number of development tasks whose eligible gold path appears within the
+    /// declared top-k of the P+A arm, ties resolved by declared policy order.
+    pub def localizationSelectionCriterion(): String = "development-gold-in-top-k-then-declared-order"
+
+    /// The declared top-k the development selection criterion reads.
+    pub def localizationTopK(): Int32 = 10
+
+    /// The declared structural-policy identity a stage that declares no variant
+    /// carries; the frozen graph always names a selected member of the declared
+    /// family, never this placeholder.
+    pub def localizationPolicyPlaceholder(): String = "unselected"
+
+    /// The declared symbol names one policy accepts for one issue token.
+    def policySymbolMatches(token: String, symbols: List[String], policy: String): List[String] =
+        List.filter(symbol -> if (policy == "anchors-path-segment-v1")
+                symbol == token or finalSegment(symbol) == token
+            else symbol == token, symbols)
+
+    /// The final dotted segment of one declared symbol name, or the name itself.
+    pub def finalSegment(name: String): String =
+        match List.reverse(String.split(regex = "\\.", name)) {
+            case last :: _ => last
+            case Nil       => name
+        }
+
+    /// The basename of one path with its final extension removed.
+    pub def basenameStem(path: String): String = {
+        let base = match List.reverse(String.split(regex = "/", path)) {
+            case last :: _ => last
+            case Nil       => path
+        };
+        match List.reverse(String.split(regex = "\\.", base)) {
+            case _ :: rest if not List.isEmpty(rest) => List.join(".", List.reverse(rest))
+            case _                                   => base
+        }
+    }
+
+    /// The distinct declared entities one issue token names under one policy. A
+    /// file entity is the declared basename stem of a clean-source path; a symbol
+    /// entity is a declared symbol name the policy accepts.
+    def anchorEntities(token: String, files: List[String], symbols: List[String], policy: String): List[String] =
+        List.distinct(
+            List.map(path -> "file:" + path, List.filter(path -> basenameStem(path) == token, files))
+                ::: List.map(symbol -> "symbol:" + symbol, policySymbolMatches(token, symbols, policy)))
+
+    /// The honest anchors of one issue text against one world's declared files and
+    /// symbols under one declared policy.
+    pub def issueAnchors(issueTokens: List[String], files: List[String], symbols: List[String], policy: String): IssueAnchors = {
+        let resolved = List.map(token -> (token, anchorEntities(token, files, symbols, policy)), issueTokens);
+        let anchors = List.flatMap(entry -> match entry {
+            case (token, entities) => match entities {
+                case entity :: Nil => (token, entity) :: Nil
+                case _             => Nil
+            }
+        }, resolved);
+        let ambiguous = List.filterMap(entry -> match entry {
+            case (token, entities) => if (List.length(entities) > 1) Some(token) else None
+        }, resolved);
+        { anchors = List.sortBy(entry -> match entry { case (token, _) => token }, List.distinct(anchors)), ambiguous = ambiguous }
+    }
+
+    // ------------------------------------------------------ arm evidence
+
+    /// The permitted evidence one localization arm conditions on for one task and
+    /// one exact world. Every field is a permitted public input: the issue tokens
+    /// and the clean-source candidate inventory, the honest issue anchors, the
+    /// earned forward facts and the world's theory witness rows. No evaluator
+    /// artifact appears here.
+    pub type alias LocalizationEvidence = {
+        issueTokens = List[String],
+        candidates  = List[String],
+        anchors     = List[(String, String)],
+        defines     = List[(String, String)],
+        imports     = List[(String, String)],
+        witnesses   = List[(String, String, String)]
+    }
+
+    /// The declared anchor-entity set of one evidence value.
+    def anchorEntitiesOf(evidence: LocalizationEvidence): List[String] =
+        List.map(pair -> match pair { case (_, entity) => entity }, evidence#anchors)
+
+    /// The P+A evidence of one candidate: the candidate directly hosts an anchor
+    /// entity, either as the anchored file itself or as the file that declares the
+    /// anchored symbol. Two points per hosting anchor, so the evidence is a real
+    /// operation rather than a tie-break.
+    pub def anchorEvidence(evidence: LocalizationEvidence, candidate: String): Int32 =
+        List.foldLeft((score, entity) -> {
+            let hosts = entity == "file:" + candidate
+                or List.memberOf((candidate, stripEntityPrefix("symbol:", entity)), evidence#defines);
+            if (hosts) score + 2 else score
+        }, 0, anchorEntitiesOf(evidence))
+
+    /// The P+A+F evidence of one candidate: the candidate is adjacent to an
+    /// anchored file through the earned imports relation, in either direction. One
+    /// point per adjacent anchor, read only from the materialized fact index.
+    pub def factEvidence(evidence: LocalizationEvidence, candidate: String): Int32 = {
+        let anchorFiles = List.filterMap(entity -> if (String.startsWith(prefix = "file:", entity))
+            Some(stripEntityPrefix("file:", entity)) else None, anchorEntitiesOf(evidence));
+        List.foldLeft((score, file) ->
+            if (List.memberOf((file, candidate), evidence#imports) or List.memberOf((candidate, file), evidence#imports))
+                score + 1
+            else score, 0, anchorFiles)
+    }
+
+    /// The P+A+D evidence of one candidate: a materialized theory witness row
+    /// joins this candidate file to one of the task's anchor entities. One point
+    /// per such witness, so the descriptor arm conditions on real structural
+    /// evidence the other arms cannot see.
+    pub def witnessEvidence(evidence: LocalizationEvidence, candidate: String): Int32 = {
+        let anchors = anchorEntitiesOf(evidence);
+        List.foldLeft((score, row) -> match row {
+            case (_, x, y) =>
+                if (x == "file:" + candidate and List.memberOf(y, anchors)) score + 1
+                else if (y == "file:" + candidate and List.memberOf(x, anchors)) score + 1
+                else score
+        }, 0, evidence#witnesses)
+    }
+
+    def stripEntityPrefix(prefix: String, entity: String): String =
+        if (String.startsWith(prefix = prefix, entity)) String.drop(String.length(prefix), entity) else entity
+
+    /// The exact score one arm assigns one candidate. The arm's own input set is
+    /// the only thing that changes: the same prior, the same anchor evidence, the
+    /// same fact adjacency and the same witnesses feed every arm, and each arm
+    /// reads exactly the families it declares.
+    pub def armScore(arm: LocalizationArm, evidence: LocalizationEvidence, candidate: String): Int32 = {
+        let prior = if (localizationCanRead(arm, LocalizationFact.IssueText))
+            lexicalPriorScore(evidence#issueTokens, candidate) else 0;
+        let anchors = if (localizationCanRead(arm, LocalizationFact.AnchorEvidence))
+            anchorEvidence(evidence, candidate) else 0;
+        let facts = if (localizationCanRead(arm, LocalizationFact.RepositoryFacts))
+            factEvidence(evidence, candidate) else 0;
+        let descriptors = if (localizationCanRead(arm, LocalizationFact.TheoryWitnesses))
+            witnessEvidence(evidence, candidate) else 0;
+        prior + anchors + facts + descriptors
+    }
+
+    /// The complete deterministic ranking of one candidate population under one
+    /// arm: every declared candidate, ordered by descending score and ascending
+    /// path. The tie rule is the frozen second key, so no tie is silently broken
+    /// and no candidate is dropped.
+    pub def rankUnderArm(arm: LocalizationArm, evidence: LocalizationEvidence): List[(Int32, String, Int32)] = {
+        let scored = List.map(candidate -> (candidate, armScore(arm, evidence, candidate)), evidence#candidates);
+        numbered(1, List.sortBy(rankKey, scored), Nil)
+    }
+
+    def rankKey(entry: (String, Int32)): String = match entry {
+        case (path, score) => padScore(99999999 - score) + "\t" + path
+    }
+
+    def padScore(value: Int32): String = {
+        let text = Int32.toString(value);
+        String.repeat(8 - String.length(text), "0") + text
+    }
+
+    def numbered(rank: Int32, entries: List[(String, Int32)], acc: List[(Int32, String, Int32)]): List[(Int32, String, Int32)] = match entries {
+        case Nil                   => List.reverse(acc)
+        case (path, score) :: rest => numbered(rank + 1, rest, (rank, path, score) :: acc)
+    }
+
+    /// Whether one eligible gold path appears within the declared top-k of one
+    /// complete ranking. This is the development selection criterion only; the
+    /// scored localization metrics are a separate owner's declared reduction.
+    pub def topContains(ranking: List[(Int32, String, Int32)], gold: List[String], k: Int32): Bool =
+        List.exists(entry -> match entry { case (rank, path, _) => rank <= k and List.memberOf(path, gold) }, ranking)
+
+    /// The selected policy of one declared policy family from its observed
+    /// development criterion counts: the highest count wins, and a tie is resolved
+    /// by the declared policy order rather than by any outcome. Nothing selected
+    /// stays nothing rather than a guessed default.
+    pub def selectPolicy(observed: List[(String, Int32)]): Option[String] =
+        match List.foldLeft((best, entry) -> match (best, entry) {
+            case (None, (name, hits))                       => Some((name, hits))
+            case (Some((bestName, bestHits)), (name, hits)) => if (hits > bestHits) Some((name, hits)) else Some((bestName, bestHits))
+        }, None, observed) {
+            case Some((name, _)) => Some(name)
+            case None            => None
+        }
+
+    // ------------------------------------------------------- frozen records
+
+    /// The frozen prior identity every localization arm ranks under.
+    pub def localizationPriorIdentity(): String = "deterministic-lexical-token-prior-v1"
+
+    /// The frozen tie rule: descending score, ascending path, no other key.
+    pub def localizationTieRule(): String = "score-descending-path-ascending"
+
+    /// The frozen ranking budget: the complete candidate population, so no
+    /// candidate is dropped and no rank is invented.
+    pub def localizationRankingBudget(): String = "complete-candidate-population"
+
+    /// The declared evaluation splits the freeze order names.
+    pub def localizationSplits(): List[String] = "development" :: "calibration" :: "final" :: Nil
+
+    /// The frozen records of one localization study, in one declared order. The
+    /// records name the prior, the arm separation, the declared policy family and
+    /// its development-selected member, the selection criterion, the tie rule, the
+    /// complete ranking budget and the explicit statement that only development
+    /// evidence was consumed before the rankings were frozen.
+    pub def localizationFreezeRows(selected: String): List[List[String]] =
+        List#{"freeze", "prior", localizationPriorIdentity(), "", ""} ::
+            List#{"freeze", "tie", localizationTieRule(), "", ""} ::
+            List#{"freeze", "budget", localizationRankingBudget(), "", ""} ::
+            List#{"freeze", "policy-family", List.join(",", localizationPolicies()), "", ""} ::
+            List#{"freeze", "policy-selected", selected, "", ""} ::
+            List#{"freeze", "policy-criterion", localizationSelectionCriterion(), Int32.toString(localizationTopK()), ""} ::
+            List#{"freeze", "policy-selected-on", "development", "", ""} ::
+            List#{"freeze", "labels-consumed-before-freeze", "development", "", ""} ::
+            List#{"freeze", "final-labels-consumed", "false", "", ""} ::
+            List.map(arm -> List#{"freeze", "arm", localizationArmName(arm),
+                List.join(",", List.map(fact -> localizationFactName(fact), localizationInputs(arm))), ""},
+                localizationArms())
+
+    /// The declared name of one localization evidence family.
+    pub def localizationFactName(fact: LocalizationFact): String = match fact {
+        case LocalizationFact.IssueText       => "issue-text"
+        case LocalizationFact.CleanSource     => "clean-source"
+        case LocalizationFact.AnchorEvidence  => "anchor-evidence"
+        case LocalizationFact.RepositoryFacts => "repository-facts"
+        case LocalizationFact.TheoryWitnesses => "theory-witnesses"
+    }
+
+    /// The complete immutable ranking rows of one task under one arm: one
+    /// `rank <rank> <path> <score>` record per candidate, preceded by the frozen
+    /// task/arm/policy identity. The ranking is the prediction artifact and carries
+    /// no evaluator material.
+    pub def rankingRows(task: String, arm: LocalizationArm, selected: String, ranking: List[(Int32, String, Int32)]): List[List[String]] =
+        List#{"ranking", task, localizationArmName(arm), "policy", selected,
+            "prior", localizationPriorIdentity(), "candidates", Int32.toString(List.length(ranking))} ::
+            List.map(entry -> match entry {
+                case (rank, path, score) => List#{"rank", Int32.toString(rank), path, Int32.toString(score)}
+            }, ranking)
 }

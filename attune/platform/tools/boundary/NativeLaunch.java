@@ -244,6 +244,21 @@ public final class NativeLaunch {
         return List.of();
     }
 
+    /// The one declared locale boundary for the inner step.
+    ///
+    /// A JVM derives `sun.jnu.encoding` from the process locale, and on Linux
+    /// the C/POSIX locale maps to `ANSI_X3.4-1968`, where `Path.of` rejects any
+    /// path that is not representable in ASCII. The pinned corpus contains
+    /// arbitrary valid UTF-8 source paths, so the boundary names the one locale
+    /// that is UTF-8 while staying byte-transparent: `C.UTF-8` is provided by
+    /// glibc itself from 2.35 on, needs no generated locale archive, and changes
+    /// no collation or classification rule relative to `C`. The launcher's own
+    /// JVM takes the same locale from its action environment, so the parent
+    /// resolves the declared manifest and the child reads the declared bytes
+    /// under the identical encoding. Neither the filenames nor the source bytes
+    /// are normalized, renamed or excluded: only the boundary is named.
+    private static final String LOCALE = "C.UTF-8";
+
     private static ProcessBuilder process(List<String> command, Path work) {
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.directory(work.toFile());
@@ -251,8 +266,23 @@ public final class NativeLaunch {
         environment.clear();
         environment.put("HOME", work.toString());
         environment.put("PATH", "/usr/bin:/bin");
-        environment.put("LANG", "C");
+        environment.put("LANG", LOCALE);
         return builder;
+    }
+
+    /// The declared encoding record of the launcher's own JVM, bound beside the
+    /// other declared inputs so a stage law can assert the encoding boundary it
+    /// actually ran under rather than assuming it. It is a measurement of the
+    /// process, not a policy: the law owns the assertion.
+    private static void writeEncodings(Path work, List<String> bindings) throws IOException {
+        List<String> rows = new ArrayList<>();
+        rows.add("lang\t" + System.getenv("LANG"));
+        rows.add("sun.jnu.encoding\t" + System.getProperty("sun.jnu.encoding"));
+        rows.add("file.encoding\t" + System.getProperty("file.encoding"));
+        rows.add("native.encoding\t" + System.getProperty("native.encoding"));
+        Path record = work.resolve("attune-encodings.tsv");
+        Files.write(record, rows, StandardCharsets.UTF_8);
+        bindings.add("encodings=" + record.toAbsolutePath());
     }
 
     /// The outer classpath, made absolute so the in-namespace step can resolve it
@@ -412,12 +442,30 @@ public final class NativeLaunch {
         bindings.add("outputs=" + out.toAbsolutePath());
         bindings.add("stage=" + stage);
         bindings.add("label=" + System.getProperty("attune.label", ""));
+        writeEncodings(work, bindings);
         for (String spec : inputs) {
             int separator = spec.indexOf('=');
             if (separator > 0) {
                 bindings.add(spec.substring(0, separator) + "="
                         + Path.of(spec.substring(separator + 1)).toAbsolutePath());
             }
+        }
+
+        // A declared whole-world source set: the declared manifest names every
+        // source byte of one exact world. The launcher rewrites it into one
+        // absolute-path manifest the stage law reads. It is filesystem mechanics
+        // only; the law owns which bytes are source and what they mean.
+        String worldManifest = System.getProperty("attune.world_manifest", "");
+        if (!worldManifest.isEmpty()) {
+            List<String> lines = new ArrayList<>();
+            for (String line : Files.readAllLines(Path.of(worldManifest), StandardCharsets.UTF_8)) {
+                if (!line.isBlank()) {
+                    lines.add(Path.of(line.trim()).toAbsolutePath().toString());
+                }
+            }
+            Path manifest = work.resolve("attune-world-sources.tsv");
+            Files.write(manifest, lines, StandardCharsets.UTF_8);
+            bindings.add("worldsources=" + manifest.toAbsolutePath());
         }
 
         // A declared measurement stage runs its bounded argv plan through the
@@ -442,11 +490,21 @@ public final class NativeLaunch {
         String isolation = isolation();
         Path unshare = isolation.equals("unshare") ? Runfiles.resolve(require("attune.unshare")) : null;
         Path java = Path.of(System.getProperty("java.home"), "bin", "java");
+        List<String> libs = new ArrayList<>();
+        for (String location : splitList(System.getProperty("attune.libs", ""))) {
+            libs.add(Path.of(location).toAbsolutePath().toString());
+        }
         List<String> command = new ArrayList<>();
         command.addAll(namespace(isolation, unshare));
         command.add(java.toString());
         command.add("--add-opens=java.base/java.nio=ALL-UNNAMED");
         command.add("--enable-native-access=ALL-UNNAMED");
+        if (!libs.isEmpty()) {
+            // A stage law that drives the pinned native engine names the prepared
+            // shared library on this property, exactly as the native Java test
+            // route does. The launcher only forwards the declared paths.
+            command.add("-Dattune.libs=" + String.join(",", libs));
+        }
         command.add("-cp");
         command.add(innerClasspath(jars));
         command.add("attune.tools.boundary.NativeInner");
