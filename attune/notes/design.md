@@ -436,7 +436,13 @@ stays inherited wherever it sits.
 
 ### Measured component table
 
-Source identity: the gold-free-prediction-closure-and-invalidation leaf (the
+Source identity: the world/task/pair-remote-slice leaf (the branch records are
+now real `ProcessReceipt`s reduced by Study instead of identity-only constants,
+a legal no-match or unrecognized anchor is a typed empty/`Unknown` result rather
+than a failed action, the declared task-context anchor has one authority in the
+admitted manifest, and one `results` reducer materializes the declared Parquet
+artifact through the typed Arrow seam and renders the bounded ASCII report),
+built on the gold-free-prediction-closure-and-invalidation leaf (the
 physical prediction/evaluator separation: the declared-input firewall laws, the
 `bazel aquery` transitive-closure evidence, and the separate `reduce_<task>`
 evaluator join that is the one stage reading a label), built on the
@@ -495,33 +501,40 @@ excluded).
 | grit-rule | `platform/build/grit_repository.bzl` | Starlark | 684 | A | build substrate (maintained) | Pins the Grit closure and admits Java/Ruby/Flix/Starlark into the frozen engine; conservatively cognitive because it changes what the engine can mean. |
 | ascii | `src/Attune/AsciiTree.flix` | Flix | 87 | B (presentation) | `Attune.AsciiTree` | One formatting-only bounded writer; owns no identity, evidence or truth. |
 | parquet | `platform/tools/parquet/AttuneParquet.java` | Java | 315 | B | mechanical boundary | Versioned JSON envelope over the real Arrow Dataset JNI write/read; makes no scientific decision. |
-| boundary | `platform/tools/boundary/*.java` | Java | 993 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
+| boundary | `platform/tools/boundary/*.java` | Java | 1,009 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, the pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`, plus the declared bounded argv receipt plan the stage action itself executes and binds before the stage law runs), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
-| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 827 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact) and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 5,107 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation, shared-world/immutable-branch DAG and prediction-firewall laws, run as the pinned compiler's `@Test`. |
+| build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 886 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule (its declared input bindings, its declared measurement receipt plan and the declared jars the stage action may bind), the one manifest-anchor rule that emits the single declared task-context anchor from the admitted token, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact), the independent per-pair/per-branch check stages with their declared receipt plans, the per-environment joint stages that depend on the frozen predictions and never on an individual check, the one `results` reducer stage that materializes the declared Parquet artifact and renders the bounded report, and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 5,404 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation, shared-world/immutable-branch DAG and prediction-firewall laws, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,467 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*` | mixed | 2,480 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-4,474; B mechanical 2,407; A+B authored 6,881; C test 5,107; C support 21,884
+4,474; B mechanical 2,482; A+B authored 6,956; C test 5,404; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 161 readable files, code 36,339,
-comment 2,271, documentation 5,371, blank 2,467; the report prints the derived
-physical 46,448 and nonblank 43,981 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 165 readable files, code 36,724,
+comment 2,299, documentation 5,516, blank 2,527; the report prints the derived
+physical 47,066 and nonblank 44,539 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The gold-free-prediction-closure-and-invalidation leaf moves, relative to
-the study-stage-ownership-and-bound-admission record (4,474/2,383/6,857/4,939),
-`build-rules` 803 -> 827 (the declared `reduce_<task>` evaluator join, the
-prediction-firewall consumer and the `manual` tag that keeps the study suites out
-of `bazel test //...` in the one study macro), `tests` 4,939 -> 5,107 (the
-`FirewallLaw` prediction-firewall laws, the `reduce` stage body in the thin
-dispatcher, the declared label fixtures and the new study BUILD rows) and
-`metadata` 2,465 -> 2,467; the cognitive core, every other component and all
-inherited support are unchanged, so the whole delta is mechanical substrate,
-fixtures and declared metadata. The study-stage-ownership-and-bound-admission leaf moves, relative to the
+them. The world/task/pair-remote-slice leaf moves, relative to the
+gold-free-prediction-closure record (4,474/2,407/6,881/5,107), `boundary`
+993 -> 1,009 (the declared bounded receipt plan the study-stage action itself
+executes and binds before the stage law runs, and the declared stage jars that
+reach the Arrow seam), `build-rules` 827 -> 886 (the one manifest-anchor rule
+that owns the declared task-context token, the per-branch receipt plans, the
+per-environment joint stages that depend on the frozen predictions and never on
+an individual check, and the one `results` reducer stage) and `tests`
+5,107 -> 5,404 (the real-receipt branch reduction, the legal-no-match/unknown
+outcome classification replacing the removed nonempty guards, the reducer stage
+with its materialized Parquet artifact and bounded View report, the new branch
+and label fixtures, and the extended DAG/firewall/reducer laws); `metadata`
+2,467 -> 2,480 (the admitted panel, plan and analysis rows) and the superseded
+hand-authored `test/study/fixtures/tasks` records were deleted rather than left
+beside the one declared anchor authority. The cognitive core and every other
+component are unchanged, so the whole delta is mechanical substrate, fixtures
+and declared metadata. The study-stage-ownership-and-bound-admission leaf moves, relative to the
 declarative-world-dag record (4,342/2,288/6,630/5,033), `core` 196 -> 204 (the
 typed atom inverse table), `theory` 555 -> 577 (the declared descriptor-record
 decoder), `study` 644 -> 746 (the bounded panel selection, the candidate ranking
@@ -815,6 +828,26 @@ relabel authored code. The counting limitations in "Known corrections" below
 remain visible; no general lexer, registry or accounting framework was added,
 and the accounting reuses the same one-pass classifier with no placement
 exception.
+
+Bounded leaf review for the world/task/pair-remote-slice leaf: it adds no new
+cognitive component and no new semantic concept. The cognitive class is
+unchanged at 4,474 and the application-semantic subtotal is unchanged at 2,708,
+because every new line lands in mechanical substrate (B, boundary
+993 -> 1,009 and build-rules 827 -> 886), fixtures (C test 5,107 -> 5,404) or
+declared metadata (2,467 -> 2,480). The substrate growth is genuinely
+mechanical: running a declared bounded argv plan and binding its receipts,
+materializing a declared Parquet artifact through the typed Arrow seam and
+rendering the bounded ASCII writer all decide no truth, and the one new anchor
+rule emits the token the admitted manifest already owns instead of adding a
+second anchor authority. The fixture growth is the real branch reduction, the
+legal-no-match/unknown classification that replaced the removed nonempty guards
+and the two legal-empty fixtures this feature requires. A+B moves
+6,881 -> 6,956, still above the preferred 3,000–5,000 upper edge and not an
+automatic failure; because the class and A+B both remain above a soft threshold,
+the next semantic feature must again subtract genuinely redundant policy/build
+code or record its own justified excess, and it must never raise a constant or
+relabel authored code. Nothing speculative was added: no second evaluator, no
+new stage algorithm, no new registry, no new constant and no new gate.
 
 ### Known corrections to the reported counts
 

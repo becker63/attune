@@ -29,17 +29,25 @@ Dependency directions the wiring makes explicit:
 - `reduce_<task>` is the declared evaluator join: it consumes the frozen
   prediction tree and one separately declared label artifact, and nothing else.
   The label is a distinct declared input, so a gold-only change can invalidate
-  only this join, never the prediction it reads.
+  only this join, never the prediction it reads. A legal empty prediction or
+  empty eligible label is a typed empty result, not a failed action.
 - `check_<pair>_<branch>` (baseline/A/B) is independent and speculative: it
-  consumes only its own immutable variant tree.
-- `joint_<pair>_<environment>` consumes the AB variant tree plus the two frozen
-  pair predictions. It deliberately depends on no individual check, so a
-  successful A or B result is never a prerequisite for joint dispatch.
+  consumes only its own immutable variant tree, its declared obligation plan and
+  its declared bounded argv receipt plan, which the launcher executes through the
+  mechanical process-receipt boundary before the law reduces the real receipts.
+- `joint_<pair>_<environment>` consumes the AB variant tree, the obligation plan,
+  the receipt plan and the two frozen pair predictions. It depends on no
+  individual check, so a successful A or B result is never a prerequisite for
+  joint dispatch, and it runs under each original environment.
+- `results` is the one Flix reducer: it consumes every frozen reduction and every
+  measured branch tree, materializes the declared Parquet artifact through the
+  typed Arrow seam and renders the bounded ASCII report.
 """
 
 load(
     "//platform/build:native.bzl",
     "attune_source_tree",
+    "native_flix_anchor_file",
     "native_flix_consumer_test",
     "native_study_stage",
 )
@@ -221,11 +229,13 @@ def attune_study(
         name,
         analysis,
         stage_srcs,
+        result_srcs,
         law_srcs,
         variant_files,
-        task_fixtures,
+        branch_plans,
         label_fixtures,
         plan,
+        parquet_deps = [],
         package = None):
     """Expand the admitted analysis manifest into the complete study graph.
 
@@ -233,12 +243,15 @@ def attune_study(
       name: the graph name; it also names the two declared study suites.
       analysis: the admitted manifest records, loaded from `manifest.bzl`.
       stage_srcs: the explicit Flix sources every declared stage compiles.
+      result_srcs: the explicit Flix sources of the Parquet/ASCII result reducer.
       law_srcs: the explicit Flix law source for each declared consumer test.
       variant_files: the package-relative baseline/A/B/AB variant source files.
-      task_fixtures: the package-relative directory holding one anchor per task.
+      branch_plans: the package-relative bounded argv receipt plan for each
+        measured branch (`baseline`/`a`/`b`/`ab`).
       label_fixtures: the package-relative directory holding one evaluator label
         artifact per task, joined to the frozen prediction only by `reduce_<task>`.
       plan: the package-relative declared obligation plan.
+      parquet_deps: the explicit dependency jars the result reducer compiles against.
       package: the calling package; defaults to the current package.
     """
     package = package or native.package_name()
@@ -250,6 +263,8 @@ def attune_study(
     tasks = _rows(analysis, "task")
     pairs = _rows(analysis, "pair")
     produced = []
+    reduced = []
+    branches = []
 
     for world in worlds:
         world_id = world[1]
@@ -278,6 +293,14 @@ def attune_study(
     for task in tasks:
         task_id = task[1]
         world_id = task[3]
+
+        # The admitted manifest is the one declared authority for this task's
+        # anchor token; its anchor record is generated here rather than
+        # hand-authored a second time, so the two can never drift.
+        native_flix_anchor_file(
+            name = "anchor_%s" % task_id,
+            token = task[5],
+        )
         witness_labels = [
             ":theory_shard_%s_%s" % (world_id, shard[2])
             for shard in _world_shards(shards, world_id)
@@ -287,7 +310,7 @@ def attune_study(
             name = "task_join_%s" % task_id,
             stage = "task_join",
             srcs = stage_srcs,
-            inputs = witness_labels + [_label(package, "%s/%s.tsv" % (task_fixtures, task_id))],
+            inputs = witness_labels + [":anchor_%s" % task_id],
             input_names = witness_names + ["task"],
         )
         produced.append(":task_join_%s" % task_id)
@@ -310,6 +333,7 @@ def attune_study(
             input_names = ["prediction", "reference"],
         )
         produced.append(":reduce_%s" % task_id)
+        reduced.append(":reduce_%s" % task_id)
 
     for pair in pairs:
         pair_id = pair[1]
@@ -320,27 +344,19 @@ def attune_study(
                 name = "variant_%s_%s" % (pair_id, variant),
                 srcs = [_label(package, path)],
             )
-        native_study_stage(
-            name = "check_%s_baseline" % pair_id,
-            stage = "check",
-            srcs = stage_srcs,
-            inputs = [":variant_%s_baseline" % pair_id, _label(package, plan)],
-            input_names = ["variant", "plan"],
-        )
-        native_study_stage(
-            name = "check_%s_ownA" % pair_id,
-            stage = "check",
-            srcs = stage_srcs,
-            inputs = [":variant_%s_a" % pair_id, _label(package, plan)],
-            input_names = ["variant", "plan"],
-        )
-        native_study_stage(
-            name = "check_%s_ownB" % pair_id,
-            stage = "check",
-            srcs = stage_srcs,
-            inputs = [":variant_%s_b" % pair_id, _label(package, plan)],
-            input_names = ["variant", "plan"],
-        )
+        for branch, variant, plan_key in [
+            ("baseline", "baseline", "baseline"),
+            ("ownA", "a", "a"),
+            ("ownB", "b", "b"),
+        ]:
+            native_study_stage(
+                name = "check_%s_%s" % (pair_id, branch),
+                stage = "check",
+                srcs = stage_srcs,
+                inputs = [":variant_%s_%s" % (pair_id, variant), _label(package, plan)],
+                input_names = ["variant", "plan"],
+                receipt_plan = _label(package, branch_plans[plan_key]),
+            )
         for environment in ["ownA", "ownB"]:
             native_study_stage(
                 name = "joint_%s_%s" % (pair_id, environment),
@@ -353,12 +369,34 @@ def attune_study(
                     ":prediction_%s" % second,
                 ],
                 input_names = ["variant", "plan", "predictionA", "predictionB"],
+                receipt_plan = _label(package, branch_plans["ab"]),
             )
         produced.append(":check_%s_baseline" % pair_id)
         produced.append(":check_%s_ownA" % pair_id)
         produced.append(":check_%s_ownB" % pair_id)
         produced.append(":joint_%s_ownA" % pair_id)
         produced.append(":joint_%s_ownB" % pair_id)
+        branches.append(":check_%s_baseline" % pair_id)
+        branches.append(":check_%s_ownA" % pair_id)
+        branches.append(":check_%s_ownB" % pair_id)
+        branches.append(":joint_%s_ownA" % pair_id)
+        branches.append(":joint_%s_ownB" % pair_id)
+
+    # The one Flix reducer: it consumes every frozen per-task reduction and every
+    # measured branch tree and materializes the declared Parquet artifact and the
+    # bounded ASCII report. It creates no truth; it re-states the already
+    # materialized fixture rows through the Arrow seam and the one writer.
+    result_inputs = reduced + branches
+    result_names = [label.split(":")[1] for label in result_inputs]
+    native_study_stage(
+        name = "results",
+        stage = "results",
+        srcs = result_srcs,
+        inputs = result_inputs,
+        input_names = result_names,
+        java_deps = parquet_deps,
+    )
+    produced.append(":results")
 
     native_flix_consumer_test(
         name = "manifest_test",
@@ -386,6 +424,12 @@ def attune_study(
         produced = produced,
         tags = ["manual"],
     )
+    native_flix_consumer_test(
+        name = "results_test",
+        srcs = [law_srcs["results_test"]],
+        produced = [":results"],
+        tags = ["manual"],
+    )
 
     native.test_suite(
         name = "remote_fixture",
@@ -393,6 +437,7 @@ def attune_study(
             ":manifest_test",
             ":dag_test",
             ":firewall_test",
+            ":results_test",
         ],
         tags = ["manual"],
     )
@@ -403,6 +448,7 @@ def attune_study(
             ":dag_test",
             ":firewall_test",
             ":manifest_test",
+            ":results_test",
         ],
         tags = ["manual"],
     )

@@ -1,0 +1,3 @@
+own	src-fixture	own	runtime-fixture	-	5000	4096	/bin/sh	-c	echo TEST:PASS:orig-source-tests; exit 0
+regression	src-fixture	regression	runtime-fixture	-	5000	4096	/bin/sh	-c	echo TEST:PASS:shared-regression; exit 0
+joint	src-fixture	joint	runtime-fixture	-	5000	4096	/bin/sh	-c	echo TEST:PASS:shared-joint-check; exit 1

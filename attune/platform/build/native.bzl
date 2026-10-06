@@ -452,13 +452,30 @@ def _native_study_stage_impl(ctx):
             len(ctx.attr.input_names),
         ))
     specs = [ctx.attr.input_names[index] + "=" + inputs[index].path for index in range(len(inputs))]
+    jars = depset(transitive = [
+        dependency[JavaInfo].transitive_runtime_jars
+        for dependency in ctx.attr.java_deps
+    ]).to_list()
 
     # The declared isolation flags match the native test route: an ordinary
     # action runs inside the pinned `unshare` namespace, while the opt-in remote
     # profile runs directly in the provider container and declares neither the
     # Nix-store binary nor its closure.
-    declared_inputs = list(ctx.files.srcs) + list(inputs) + list(classpath)
+    declared_inputs = list(ctx.files.srcs) + list(inputs) + list(classpath) + jars
     args = ctx.actions.args()
+    if jars:
+        args.add("-Dattune.jars=" + ",".join([jar.path for jar in jars]))
+    if ctx.file.receipt_plan:
+        # A declared measurement stage: the launcher executes this bounded argv
+        # plan through the mechanical receipt boundary before the stage law runs,
+        # so the law reduces real receipts rather than a fabricated record. The
+        # scoped freshness token is a measurement identity only; without it the
+        # stage stays cacheable.
+        args.add("-Dattune.plan=" + ctx.file.receipt_plan.path)
+        declared_inputs.append(ctx.file.receipt_plan)
+        freshness = ctx.var.get("attune_measurement_freshness", "")
+        if freshness:
+            args.add("-Dattune.freshness=" + freshness)
     if ctx.attr.isolation == "unshare":
         args.add("-Dattune.isolation=unshare")
         args.add("-Dattune.unshare=" + ctx.file.unshare_binary.path)
@@ -494,6 +511,8 @@ _native_study_stage = rule(
         "inputs": attr.label_list(allow_files = True),
         "input_names": attr.string_list(),
         "stage": attr.string(mandatory = True),
+        "receipt_plan": attr.label(allow_single_file = True),
+        "java_deps": attr.label_list(providers = [JavaInfo]),
         "isolation": attr.string(values = ["unshare", "platform"], default = "unshare"),
         "unshare_binary": attr.label(allow_single_file = True),
         "unshare_closure": attr.label(allow_files = True),
@@ -505,7 +524,7 @@ _native_study_stage = rule(
     toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
 )
 
-def native_study_stage(name, stage, srcs, inputs = [], input_names = [], host_isolation = False, **kwargs):
+def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], host_isolation = False, **kwargs):
     """Materialize one declared study stage tree through the authentic native Tester.
 
     The action runs the pinned compiler's authentic native test engine over the
@@ -520,12 +539,20 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], host_is
     rather than a path of its own. Each input must resolve to exactly one
     artifact.
 
+    `receipt_plan` names a declared bounded argv plan the launcher executes
+    through the mechanical process-receipt boundary before the stage law runs;
+    the law then reduces the real receipts. `java_deps` names the explicit
+    dependency jars a Java-backed stage law (the Arrow Parquet reducer) compiles
+    and runs against.
+
     Args:
       name: the stage target name, which also names its declared tree output.
       stage: the declared stage identity the law dispatches on.
       srcs: the explicit declared Flix stage sources.
       inputs: the declared input artifacts, in the same order as `input_names`.
       input_names: the declared binding name of each input.
+      receipt_plan: the declared bounded argv plan this measurement stage executes.
+      java_deps: the explicit dependency jars a Java-backed stage law consumes.
       host_isolation: pins the host `unshare` boundary instead of the portable route.
       **kwargs: forwarded to the underlying rule.
     """
@@ -554,6 +581,8 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], host_is
         srcs = srcs,
         inputs = inputs,
         input_names = input_names,
+        receipt_plan = receipt_plan,
+        java_deps = java_deps,
         isolation = isolation,
         unshare_binary = unshare_binary,
         unshare_closure = unshare_closure,
@@ -611,6 +640,33 @@ def attune_source_tree(name, srcs, **kwargs):
       **kwargs: forwarded to the underlying rule.
     """
     _attune_source_tree(name = name, srcs = srcs, **kwargs)
+
+def _attune_anchor_file_impl(ctx):
+    out = ctx.actions.declare_file(ctx.label.name + ".tsv")
+    ctx.actions.write(out, "anchor\t" + ctx.attr.token + "\n")
+    return [DefaultInfo(files = depset([out]))]
+
+attune_anchor_file = rule(
+    implementation = _attune_anchor_file_impl,
+    doc = "Materialize one task anchor record from the admitted manifest's authority.",
+    attrs = {
+        "token": attr.string(mandatory = True),
+    },
+)
+
+def native_flix_anchor_file(name, token):
+    """Emit one task's declared anchor record.
+
+    The admitted gold-free manifest is the single declared authority for each
+    task's anchor token; this rule writes that one token as the declared stage
+    input the cheap join consumes, so no second hand-authored anchor file can
+    drift from the manifest.
+
+    Args:
+      name: the target name.
+      token: the anchor token the manifest declared for this task.
+    """
+    attune_anchor_file(name = name, token = token)
 
 def native_flix_consumer_test(name, srcs, produced, declared_files = [], size = "small", tags = [], data = []):
     """Run native `@Test` laws over the declared trees a producer emitted.

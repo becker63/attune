@@ -212,26 +212,44 @@ def theoryShard(): Unit \ {Assert, IO} = {
 def witnessRow(witness: Theory.Witness): List[String] =
     List#{witness#candidate, Theory.entityText(witness#x), Theory.entityText(witness#y)}
 
-/// The application anchor token an anchor fixture declares, resolved through the
-/// shared `Attune.Study` decoder and projected into the tagged entity the witness
-/// rows carry. An unrecognised token leaves the anchor empty.
-def anchorText(text: String): String = match rowsOf(List.map(fields, records(text)), "anchor") {
-    case row :: _ => match Study.decodeAnchorToken(field(row, 1)) {
-        case Some(node) => Theory.entityText(Theory.entityOf(Study.anchorNodeName(node), Study.anchorDomain(node)))
-        case None       => ""
+/// The declared task-context anchor token: the admitted gold-free manifest is
+/// the one authority, and its anchor record is the declared stage input. The
+/// token is resolved through the shared `Attune.Study` decoder and projected
+/// into the tagged entity the witness rows carry. An unrecognised or empty
+/// token yields no anchor rather than a guessed one.
+def anchorToken(text: String): String =
+    match rowsOf(List.map(fields, records(text)), "anchor") {
+        case row :: _ => field(row, 1)
+        case Nil      => ""
     }
-    case Nil => ""
-}
 
+def anchorEntity(token: String): Option[String] =
+    Option.map(node -> Theory.entityText(Theory.entityOf(Study.anchorNodeName(node), Study.anchorDomain(node))),
+        Study.decodeAnchorToken(token))
+
+/// The cheap join of one application anchor against the already materialized
+/// shared witnesses. A legal no-match is a typed empty result, not a failed
+/// action: the context record states whether the anchor resolved to no witness
+/// (`NO-MATCH`), was absent or unrecognised (`UNKNOWN`), or matched (`WITNESS`).
 def taskJoin(): Unit \ {Assert, IO} = {
     let taskId = stripPrefix("task_join_", stageLabel());
     let witnessPaths = List.map(entry -> match entry { case (_, path) => path }, bindingsPrefixed("witnesses"));
     let materialized = List.flatMap(path -> List.map(fields, records(readText(path + "/witnesses.tsv"))), witnessPaths);
-    let anchor = anchorText(readText(Option.getWithDefault("", binding("task"))));
-    let joined = List.filter(row -> field(row, 1) == anchor or field(row, 2) == anchor, materialized);
+    let token = anchorToken(readText(Option.getWithDefault("", binding("task"))));
+    let resolved = anchorEntity(token);
+    let anchor = Option.getWithDefault("", resolved);
+    let joined = if (String.isEmpty(anchor)) Nil
+        else List.filter(row -> field(row, 1) == anchor or field(row, 2) == anchor, materialized);
+    let outcome = match resolved {
+        case None    => Coverage.Outcome.Unknown
+        case Some(_) => if (List.isEmpty(joined)) Coverage.Outcome.NoMatch else Coverage.Outcome.Witness
+    };
     writeText(outputsDir(), "join.tsv", renderTsv(List.sortBy(row -> List.join("\t", row), List.distinct(joined))));
-    writeText(outputsDir(), "context.tsv", renderTsv(List#{"context", "task", taskId, "anchor", anchor, "witnesses", Int32.toString(List.length(materialized))} :: Nil));
-    Assert.assertEq(expected = true, not List.isEmpty(joined))
+    writeText(outputsDir(), "context.tsv", renderTsv(List#{"context", "task", taskId, "anchor", anchor,
+        "outcome", Coverage.outcomeName(outcome), "witnesses", Int32.toString(List.length(materialized))} :: Nil));
+    Assert.assertEq(expected = true,
+        outcome == Coverage.Outcome.Witness or outcome == Coverage.Outcome.NoMatch
+            or outcome == Coverage.Outcome.Unknown)
 }
 
 /// The frozen policy identity. It is a declared fixture value on the Study
@@ -244,12 +262,16 @@ def prediction(): Unit \ {Assert, IO} = {
     let joinPath = Option.getWithDefault("", binding("join"));
     let indexPath = Option.getWithDefault("", binding("index"));
     let joined = List.map(fields, records(readText(joinPath + "/join.tsv")));
+    let context = List.map(fields, records(readText(joinPath + "/context.tsv")));
+    let joinOutcome = match rowsOf(context, "context") {
+        case row :: _ => field(row, 6)
+        case Nil      => Coverage.outcomeName(Coverage.Outcome.Unknown)
+    };
     let ranked = Study.rankedCandidates(List.map(row -> field(row, 0), joined));
-    let head = List#{"prediction", "task", taskId, "policy", policyIdentity()} ::
+    let head = List#{"prediction", "task", taskId, "policy", policyIdentity(), "join", joinOutcome} ::
         (List#{"prediction", "input", "context", baseName(joinPath), "index", baseName(indexPath)} :: Nil);
     let rows = head ::: List.map(match (rank, candidate) -> List#{"rank", Int32.toString(rank), candidate}, ranked);
     writeText(outputsDir(), "prediction.tsv", renderTsv(rows));
-    Assert.assertEq(expected = true, not List.isEmpty(ranked));
     Assert.assertEq(expected = false, containsForbidden(rows))
 }
 
@@ -266,8 +288,10 @@ def containsForbidden(rows: List[List[String]]): Bool =
 /// separately declared label artifact and records the two identities and the
 /// honest observation state. The label is a distinct declared input, so a
 /// gold-only change can invalidate only this join, never the prediction it
-/// reads; no execution receipt exists yet, so the observation stays
-/// `unmeasured` rather than becoming a false or true verdict.
+/// reads. A legal empty prediction or empty eligible label is a typed empty
+/// result, not a failed action, so the join records its row counts instead of
+/// asserting non-emptiness. No execution receipt exists here, so the
+/// observation stays `unmeasured` rather than becoming a false or true verdict.
 def reduceStage(): Unit \ {Assert, IO} = {
     let taskId = stripPrefix("reduce_", stageLabel());
     let predictionPath = Option.getWithDefault("", binding("prediction"));
@@ -275,14 +299,55 @@ def reduceStage(): Unit \ {Assert, IO} = {
     let prediction = List.map(fields, records(readText(predictionPath + "/prediction.tsv")));
     let reference = List.map(fields, records(readText(referencePath)));
     Assert.assertEq(expected = false, containsForbidden(prediction));
-    Assert.assertEq(expected = true, not List.isEmpty(prediction));
-    Assert.assertEq(expected = true, not List.isEmpty(reference));
-    let head = List#{"reduce", "task", taskId} :: List#{"observation", "unmeasured"} :: Nil;
-    let frozen = List#{"frozen", baseName(predictionPath)} :: Nil;
+    let head = List#{"reduce", "task", taskId} :: List#{"observation", "unmeasured"} ::
+        (List#{"frozen", baseName(predictionPath),
+            "prediction_rows", Int32.toString(List.length(prediction)),
+            "reference_rows", Int32.toString(List.length(reference))} :: Nil);
     let labels = List.map(row -> List#{"reference"} ::: row, reference);
-    writeText(outputsDir(), "reduce.tsv", renderTsv(head ::: frozen ::: labels))
+    writeText(outputsDir(), "reduce.tsv", renderTsv(head ::: labels))
 }
 
+/// The resolved root of the receipt tree the declared branch measurement
+/// recorded, or the empty string.
+def receiptsRoot(): String \ IO = Option.getWithDefault("", binding("receipts"))
+
+def receiptRecords(): List[Study.Receipt] \ IO =
+    Study.parseReceipts(readText(receiptsRoot() + "/receipts.tsv"))
+
+def receiptLog(receipt: Study.Receipt): String \ IO =
+    readText(receiptsRoot() + "/" + receipt#outLog)
+
+/// The declared obligation matrix one measured branch is checked against. Each
+/// obligation names the fixture command that measures it and the required test
+/// identity its bounded log must actually name; the reduction classifies the
+/// real receipt through `Attune.Study`. A measured nonzero exit is data
+/// (`ObservedFalse`), an unstarted/timed-out/truncated/runtime receipt is
+/// `Unmeasured`, and zero alone is not proof: the log must name the identity.
+def obligationRows(planText: String): List[List[String]] \ IO = {
+    let obligations = rowsOf(List.map(fields, records(planText)), "obligation");
+    let receipts = receiptRecords();
+    List.map(row -> {
+        let name = field(row, 1);
+        let token = field(row, 2);
+        match Study.receiptFor(name, receipts) {
+            case Some(receipt) =>
+                let measurement = Study.measurement(receipt);
+                let outcome = Study.outcomeOf(measurement);
+                let proven = Study.obligationProven(receipt, receiptLog(receipt), List#{"TEST:PASS:" + token});
+                List#{"obligation", name, ToString.toString(measurement), Study.outcomeName(outcome),
+                    if (proven) "proven" else "unproven"}
+            case None =>
+                List#{"obligation", name, "Unmeasured(absent,absent)", "Unmeasured", "unproven"}
+        }
+    }, obligations)
+}
+
+/// One measured source-variant branch. The branch executes its declared bounded
+/// argv plan through the mechanical receipt boundary, reduces the real raw
+/// receipts through `Attune.Study`, and records the source identity, the own
+/// environment and the honest per-obligation measurement. A `joint` branch
+/// additionally consumes the two frozen pair predictions; every record is
+/// fixture-labelled and no branch consumes another branch's success.
 def branch(kind: String): Unit \ {Assert, IO} = {
     let rest = stripPrefix(kind + "_", stageLabel());
     let parts = String.split(regex = "_", rest);
@@ -290,19 +355,20 @@ def branch(kind: String): Unit \ {Assert, IO} = {
     let environment = Option.getWithDefault("", atIndex(parts, 1));
     let variantPath = Option.getWithDefault("", binding("variant"));
     let planPath = Option.getWithDefault("", binding("plan"));
-    let obligations = List.map(row -> List#{"obligation", field(row, 1), field(row, 2)},
-        rowsOf(List.map(fields, records(readText(planPath))), "obligation"));
+    let obligations = obligationRows(readText(planPath));
     let predications = if (kind == "joint")
         List.map(name -> List#{"prediction", name, baseName(Option.getWithDefault("", binding(name)))},
             List#{"predictionA", "predictionB"})
         else Nil;
     let head = List#{"branch", kind, "pair", pairId, "environment", environment} ::
+        (List#{"fixture", "true"} ::
         (List#{"source", "variant", baseName(variantPath),
-            "files", Int32.toString(List.length(records(readText(variantPath + "/tree.tsv"))))} :: Nil);
+            "files", Int32.toString(List.length(records(readText(variantPath + "/tree.tsv"))))} :: Nil));
     writeText(outputsDir(), "branch.tsv", renderTsv(head ::: obligations ::: predications));
     Assert.assertEq(expected = true, not String.isEmpty(pairId));
     Assert.assertEq(expected = true, not String.isEmpty(environment));
     Assert.assertEq(expected = true, not List.isEmpty(obligations));
+    Assert.assertEq(expected = true, not List.isEmpty(receiptRecords()));
     if (kind == "joint") Assert.assertEq(expected = 2, List.length(predications))
     else Assert.assertEq(expected = 0, List.length(predications))
 }
@@ -320,5 +386,6 @@ def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     else if (stage == "reduce") reduceStage()
     else if (stage == "check") branch("check")
     else if (stage == "joint") branch("joint")
+    else if (stage == "results") ()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }

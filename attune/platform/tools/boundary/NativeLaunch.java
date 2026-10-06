@@ -405,6 +405,7 @@ public final class NativeLaunch {
         String stage = System.getProperty("attune.stage", "");
         List<String> tester = splitList(System.getProperty("attune.tests", ""));
         List<String> inputs = splitList(System.getProperty("attune.inputs", ""));
+        List<String> jars = splitList(System.getProperty("attune.jars", ""));
         Files.createDirectories(out);
         Path work = workDir();
         List<String> bindings = new ArrayList<>();
@@ -418,6 +419,24 @@ public final class NativeLaunch {
                         + Path.of(spec.substring(separator + 1)).toAbsolutePath());
             }
         }
+
+        // A declared measurement stage runs its bounded argv plan through the
+        // exact mechanical receipt boundary before the stage law executes, and
+        // the receipt tree is bound beside the other declared inputs. The
+        // boundary decides no policy: the law reduces the real raw receipts. A
+        // measured nonzero child exit is receipt data, so the stage still runs.
+        String plan = System.getProperty("attune.plan", "");
+        if (!plan.isEmpty()) {
+            Path receipts = out.resolve("receipts");
+            Files.createDirectories(receipts);
+            String freshness = System.getProperty("attune.freshness", "-");
+            int status = ProcessReceipts.run(Path.of(plan), receipts, freshness.isEmpty() ? "-" : freshness, work);
+            if (status != 0) {
+                System.err.println("the mechanical receipt boundary could not record the declared plan; status " + status);
+                return status;
+            }
+            bindings.add("receipts=" + receipts.toAbsolutePath());
+        }
         writeBindings(work.resolve("attune-bindings.tsv"), bindings);
 
         String isolation = isolation();
@@ -429,13 +448,16 @@ public final class NativeLaunch {
         command.add("--add-opens=java.base/java.nio=ALL-UNNAMED");
         command.add("--enable-native-access=ALL-UNNAMED");
         command.add("-cp");
-        command.add(innerClasspath(List.of()));
+        command.add(innerClasspath(jars));
         command.add("attune.tools.boundary.NativeInner");
         command.add(work.toString());
         command.add("-");
         command.add(hostNetns());
         command.add("java");
-        command.add("0");
+        command.add(Integer.toString(jars.size()));
+        for (String jar : jars) {
+            command.add(Path.of(jar).toAbsolutePath().toString());
+        }
         for (String source : tester) {
             command.add(Path.of(source).toAbsolutePath().toString());
         }

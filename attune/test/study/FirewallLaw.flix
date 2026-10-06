@@ -85,8 +85,10 @@ def publicStages(): List[String] =
     List#{
         "world_facts_w1", "world_facts_w2",
         "theory_shard_w1_0", "theory_shard_w2_0",
-        "task_join_t1", "task_join_t2", "task_join_t3", "task_join_t4",
-        "prediction_t1", "prediction_t2", "prediction_t3", "prediction_t4"
+        "task_join_t1", "task_join_t2", "task_join_t5", "task_join_t6",
+        "task_join_t3", "task_join_t4",
+        "prediction_t1", "prediction_t2", "prediction_t5", "prediction_t6",
+        "prediction_t3", "prediction_t4"
     }
 
 /// True when one declared input file is evaluator material: a reference variant
@@ -111,7 +113,8 @@ def everyDeclaredStageRecordsItsOwnIdentity(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = "prediction", stageIdentity("prediction_t1", produced));
     Assert.assertEq(expected = "reduce", stageIdentity("reduce_t1", produced));
     Assert.assertEq(expected = "check", stageIdentity("check_p1_ownA", produced));
-    Assert.assertEq(expected = "joint", stageIdentity("joint_p1_ownA", produced))
+    Assert.assertEq(expected = "joint", stageIdentity("joint_p1_ownA", produced));
+    Assert.assertEq(expected = "results", stageIdentity("results", produced))
 }
 
 // ------------------------------------------------------ declared input sets
@@ -135,6 +138,8 @@ def taskJoinConsumesOnlySharedShardsAndItsAnchor(): Unit \ {Assert, IO} = {
     let produced = listing();
     Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t1", produced));
     Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t2", produced));
+    Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t5", produced));
+    Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t6", produced));
     Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t3", produced));
     Assert.assertEq(expected = List#{"task", "witnesses0"}, inputNames("task_join_t4", produced))
 }
@@ -146,6 +151,8 @@ def predictionConsumesOnlyTheJoinAndSharedIndex(): Unit \ {Assert, IO} = {
     let produced = listing();
     Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t1", produced));
     Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t2", produced));
+    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t5", produced));
+    Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t6", produced));
     Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t3", produced));
     Assert.assertEq(expected = List#{"index", "join"}, inputNames("prediction_t4", produced))
 }
@@ -156,6 +163,8 @@ def reduceJoinsOnlyTheFrozenPredictionToTheDeclaredLabel(): Unit \ {Assert, IO} 
     let produced = listing();
     Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t1", produced));
     Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t2", produced));
+    Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t5", produced));
+    Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t6", produced));
     Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t3", produced));
     Assert.assertEq(expected = List#{"prediction", "reference"}, inputNames("reduce_t4", produced))
 }

@@ -33,6 +33,15 @@ STAGE_SRCS = [
     "//src:Attune/Theory.flix",
 ]
 
+# The one declared result reducer compiles the same dispatcher plus the Parquet
+# reducer law, which imports the typed Arrow seam. The seam jar is therefore a
+# declared dependency of the reducer stage alone, not of every study stage.
+RESULT_SRCS = STAGE_SRCS + [
+    "Results.flix",
+    "//src:Attune/AsciiTree.flix",
+    "//src:Attune/View.flix",
+]
+
 # Native preparation: the pinned Tester runs the declared panel through the
 # stage dispatcher and materializes one declared tree holding `analysis.tsv` and
 # the loadable `manifest.bzl`. This is the emitted manifest the integration owner
@@ -67,16 +76,24 @@ native_study_stage(
 attune_study(
     name = "study",
     analysis = ANALYSIS,
+    branch_plans = {
+        "a": "fixtures/branches/a.tsv",
+        "ab": "fixtures/branches/ab.tsv",
+        "b": "fixtures/branches/b.tsv",
+        "baseline": "fixtures/branches/baseline.tsv",
+    },
     label_fixtures = "fixtures/labels",
     law_srcs = {
         "bounds_test": "BoundsLaw.flix",
         "dag_test": "DagLaw.flix",
         "firewall_test": "FirewallLaw.flix",
         "manifest_test": "ManifestLaw.flix",
+        "results_test": "ResultsLaw.flix",
     },
+    parquet_deps = ["//platform/tools/parquet:attune_parquet"],
     plan = "fixtures/plan.tsv",
+    result_srcs = RESULT_SRCS,
     stage_srcs = STAGE_SRCS,
-    task_fixtures = "fixtures/tasks",
     variant_files = {
         "ab": "fixtures/variants/ab.flix",
         "a": "fixtures/variants/a.flix",
