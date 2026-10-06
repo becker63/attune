@@ -1,0 +1,6 @@
+label	obsidian-tasks-group__obsidian-tasks-1232	w36
+provenance	obsidian-tasks-group/obsidian-tasks	7716c2894fd721e6de5691066647822b3c7a1bad	cabad3b1c87b5f93f9c29bdbf8656766d10747de44d4a7a295b750dac0839761	reference-patch	17	567
+entry	modified	src/Query/Sort.ts	js-ts	source	regular	present	eligible
+gold	src/Query/Sort.ts
+coverage	full	1	supported	1
+case	eligible-gold

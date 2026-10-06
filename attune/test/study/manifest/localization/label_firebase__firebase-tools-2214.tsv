@@ -1,0 +1,14 @@
+label	firebase__firebase-tools-2214	w77
+provenance	firebase/firebase-tools	ba06f6dc34e64ef53a9cf002bacd6cdd0675749f	58e8cacc8965cdcddb9d5406d1ee02ad864b9b0022500732580dfea0eddd6286	reference-patch	286	11226
+entry	modified	CHANGELOG.md	other	source	regular	absent	ineligible
+entry	modified	README.md	other	source	regular	absent	ineligible
+entry	new	mockdata/mock.apk	other	source	regular	absent	ineligible
+entry	modified	src/commands/logout.js	js-ts	source	regular	present	eligible
+entry	new	src/defaultCredentials.ts	js-ts	source	regular	absent	ineligible
+entry	modified	src/emulator/controller.ts	js-ts	source	regular	present	eligible
+entry	modified	src/emulator/functionsEmulatorRuntime.ts	js-ts	source	regular	present	eligible
+gold	src/commands/logout.js
+gold	src/emulator/controller.ts
+gold	src/emulator/functionsEmulatorRuntime.ts
+coverage	full	7	supported	3
+case	eligible-gold

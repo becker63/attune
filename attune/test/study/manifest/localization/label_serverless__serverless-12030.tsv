@@ -1,0 +1,19 @@
+label	serverless__serverless-12030	w4
+provenance	serverless/serverless	17d64e6c94b88a5daf36f28a4fa192c231052cfb	78632a4b669afb099807440cf3cb779737c41a35a9ca176a3451b9733c76ce39	reference-patch	324	16462
+entry	modified	CHANGELOG.md	other	source	regular	absent	ineligible
+entry	modified	docs/providers/aws/events/msk.md	other	source	regular	absent	ineligible
+entry	modified	docs/providers/aws/guide/serverless.yml.md	other	source	regular	absent	ineligible
+entry	modified	docs/tutorial.md	other	source	regular	absent	ineligible
+entry	modified	lib/plugins/aws/package/compile/events/msk/index.js	js-ts	source	regular	present	eligible
+entry	modified	lib/plugins/aws/package/compile/events/schedule.js	js-ts	source	regular	present	eligible
+entry	modified	lib/plugins/aws/package/compile/events/websockets/lib/authorizers.js	js-ts	source	regular	present	eligible
+entry	modified	lib/utils/eventually-update.js	js-ts	source	regular	present	eligible
+entry	modified	lib/utils/standalone.js	js-ts	source	regular	present	eligible
+entry	modified	package.json	other	source	regular	absent	ineligible
+gold	lib/plugins/aws/package/compile/events/msk/index.js
+gold	lib/plugins/aws/package/compile/events/schedule.js
+gold	lib/plugins/aws/package/compile/events/websockets/lib/authorizers.js
+gold	lib/utils/eventually-update.js
+gold	lib/utils/standalone.js
+coverage	full	10	supported	5
+case	eligible-gold

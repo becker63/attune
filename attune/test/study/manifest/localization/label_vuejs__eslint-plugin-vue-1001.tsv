@@ -1,0 +1,11 @@
+label	vuejs__eslint-plugin-vue-1001	w31
+provenance	vuejs/eslint-plugin-vue	47e3f89a554ada9f32acd48088abbb7d40d51b5e	156a997d2f875f3f6a3d2e3b5dd17b6e15bc0546c6928848d5b53af127517e88	reference-patch	214	7520
+entry	modified	docs/rules/README.md	other	source	regular	absent	ineligible
+entry	new	docs/rules/html-button-has-type.md	other	source	regular	absent	ineligible
+entry	modified	lib/configs/recommended.js	js-ts	source	regular	present	eligible
+entry	modified	lib/index.js	js-ts	source	regular	present	eligible
+entry	new	lib/rules/html-button-has-type.js	js-ts	source	regular	absent	ineligible
+gold	lib/configs/recommended.js
+gold	lib/index.js
+coverage	full	5	supported	2
+case	eligible-gold

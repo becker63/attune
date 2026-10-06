@@ -1,0 +1,8 @@
+label	sveltejs__kit-3562	w20
+provenance	sveltejs/kit	842337b35a7c5fb49917c409e773ac5d9c61049d	f75c5abce6041174938d67690d754b2548ba7aa4fdeab66889045516d39ec981	reference-patch	111	4607
+entry	new	.changeset/clever-donuts-smile.md	other	source	regular	absent	ineligible
+entry	new	.changeset/eleven-dots-reply.md	other	source	regular	absent	ineligible
+entry	modified	packages/kit/src/packaging/index.js	js-ts	source	regular	present	eligible
+gold	packages/kit/src/packaging/index.js
+coverage	full	3	supported	1
+case	eligible-gold

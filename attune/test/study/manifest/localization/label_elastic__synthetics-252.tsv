@@ -1,0 +1,6 @@
+label	elastic__synthetics-252	w88
+provenance	elastic/synthetics	7384dc9588c3773f4f639387047faf3393e621f0	7b48a5fb3ac0123ba04f9dc06cfde73c02ad820f96f828b1dd0d3f88e4133406	reference-patch	57	1731
+entry	modified	src/reporters/json.ts	js-ts	source	regular	present	eligible
+gold	src/reporters/json.ts
+coverage	full	1	supported	1
+case	eligible-gold

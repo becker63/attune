@@ -1,0 +1,6 @@
+label	joshuakgoldberg__tslint-to-eslint-config-121	w23
+provenance	JoshuaKGoldberg/tslint-to-eslint-config	0c95c3f83e9ab70e77d552210f94928fce6808b3	0715cea533f0dfc9bb7ae9dd93f742d6bd504d646e0af0db48b4873a0bbffb85	reference-patch	27	868
+entry	modified	src/input/findTSLintConfiguration.ts	js-ts	source	regular	present	eligible
+gold	src/input/findTSLintConfiguration.ts
+coverage	full	1	supported	1
+case	eligible-gold

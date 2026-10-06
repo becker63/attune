@@ -517,7 +517,7 @@ excluded).
 | core | `src/Attune.flix`, `src/Attune/Coverage.flix` | Flix | 204 | A | `Attune` | One `Attune` owner carrying nominal world/File/Symbol identity, the six atoms with their one typed inverse table, exact typed frontiers, one application and the local exact memo, beside the one canonical generic coverage/evidence/support vocabulary. |
 | repository | `src/Attune/Repository.flix`, `src/Attune/Repository/Grit.flix` | Flix | 809 | A | `Attune.Repository` | Grit wire projection and conservative identity/resolution/admission with inverses derived once, plus the one world-bearing nominal-facts/earned-scoped-coverage bridge. |
 | theory | `src/Attune/Theory.flix` | Flix | 586 | A | `Attune.Theory` | Bounded canonical descriptors, the declared descriptor-record decoder, the relation-independent native lowering key with the fixed rule families, the declared-index bounded slice selection (`shardAt`) and the world-shard witness rows consumed by the shared index. |
-| study | `src/Attune/Study.flix` | Flix | 1334 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection with its explicit pair-attrition findings and candidate ranking, the frozen prediction-policy vocabulary and its declared-record decoder, the pinned public catalog identity/physical-schema contract with its one comparison and classified findings, the declared public/oracle projection separation, the streamed record framing/fate vocabulary with its audited normalization denominators, its classified faults and exclusions, its retained dataset/repository-license provenance and its canonical record text, the one bounded metadata-only shared panel selection over the normalized accepted population (the canonical fork/duplicate group key, the frozen richest-first group order, the declared group/task/pair caps, the exact worlds, the ordered pair candidates across the included pair groups, the largest-remainder approximately 60/20/20 group-disjoint split with its exposure flags, the explicit selection attrition and the classified image pins) and its physically separate evaluator scope, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
+| study | `src/Attune/Study.flix` | Flix | 1747 | A | `Attune.Study` | Structural evidence/outcome/observation/artifact values, the shared world-scoped task/boundary vocabulary with its declared anchor-token decoder, the bounded deterministic panel selection with its explicit pair-attrition findings and candidate ranking, the frozen prediction-policy vocabulary and its declared-record decoder, the pinned public catalog identity/physical-schema contract with its one comparison and classified findings, the declared public/oracle projection separation, the streamed record framing/fate vocabulary with its audited normalization denominators, its classified faults and exclusions, its retained dataset/repository-license provenance and its canonical record text, the one bounded metadata-only shared panel selection over the normalized accepted population (the canonical fork/duplicate group key, the frozen richest-first group order, the declared group/task/pair caps, the exact worlds, the ordered pair candidates across the included pair groups, the largest-remainder approximately 60/20/20 group-disjoint split with its exposure flags, the explicit selection attrition and the classified image pins) and its physically separate evaluator scope, the declared reference-label science (the declared supported JS/TS source extensions and test-path vocabulary, the declared non-regular git modes, the git and plain-unified patch-header reduction, the rename-to-old-path attribution, the preexisting-inventory requirement, the separate full/supported coverage numbers and the seven declared classified cases), the mapped real-panel vocabulary with its verified clean-source export records and classified missing-world/undeclared-export findings, the lexical/flat/Atlas/composed joins, the E0/L/E1/E2 input contracts and policies, the typed prior/request/evidence decision contract that settles one candidate under a finite budget, the bounded process-plan/receipt vocabulary with its measurement interpretation and obligation predicate, the coverage-aware metric laws, the origin/promotion/limit values and the bounded retained-evidence replay. |
 | policy | `src/Attune/Policy.flix`, `src/Attune/Isolation.flix` | Flix | 560 | A | `Attune` (policy) | Declared-source/boundary/counting policy plus the cognitive-ownership accounting, the derived physical/nonblank totals and the Flix-owned isolation assertions. |
 | view | `src/Attune/View.flix`, `src/Attune/Docs.flix` | Flix | 522 | A (presentation) | `Attune.View` | Thin typed route/grammar/proof/graph/application-report projections and the restricted documentation-correspondence seam; consumes truth, never creates it. |
 | frontends | `src/grit/{defines,imports,calls}/*.grit` | Grit | 372 | A | `Attune.Repository` | Maintained defines/imports/calls entry-point inventory — meaning-changing, hence cognitive under any path. |
@@ -527,36 +527,37 @@ excluded).
 | boundary | `platform/tools/boundary/*.java` | Java | 1,009 | B | mechanical boundary | Manifest/probe/launcher routing the pinned compiler's authentic Tester, including the declared producer action, the produced-tree listing, the declared study-stage action (declared input bindings, the pinned Tester child over the explicit stage sources, the fail-closed check that a regular file was written and the mechanical `closure.tsv`, plus the declared bounded argv receipt plan the stage action itself executes and binds before the stage law runs), the two declared isolation modes and the bounded process-receipt measurement (concurrent capped draining, finite timeout, process-tree cleanup, raw statuses) with the drain-I/O-failure propagation and its test-only drain fault seam; owns no policy, classification or fixture case. |
 | grit-binding | `platform/tools/grit/*.java` | Java | 185 | B | mechanical boundary | Hand-written FFM binding and JSON-to-canonical-record facade; adds no native algorithm. |
 | build-rules | `platform/build/{native,study,unshare_repository,workspace_root}.bzl` | Starlark | 925 | B | build substrate | Native Flix test rules with the two declared isolation modes, the declared producer rule, the declared receipt rule and its drain-probe fault fixture, the declared study-stage rule (its declared input bindings, its declared measurement receipt plan and the declared jars the stage action may bind), the one `attune_declared_record_file` rule that emits the declared task-context anchor token and the declared per-index theory-shard record from the admitted manifest's own row, the immutable source-tree rule, the declared-tree consumer macro, the one declarative study macro that expands the admitted manifest into the complete world/task/pair/shard fan-out at analysis time with the separate `reduce_<task>` evaluator join (the one stage reading a separately declared label artifact) and the one declared prediction-only frozen policy input every `prediction_<task>` consumes, the independent per-pair/per-branch check stages with their declared receipt plans, the per-environment joint stages that depend on the frozen predictions and never on an individual check, the one `results` reducer stage that materializes the declared Parquet artifact and renders the bounded report, and its production admission predicate (safe record vocabulary, no admitted `truncated`/`exceeded` row, and the declared group/per-group task/candidate/pair/shard caps), its prediction-firewall consumer and its one bounded strict-gated admission probe, the pinned isolation tool and the live-workspace inventory rule; construct the declared graph only. |
-| tests | `test/**` | Flix/Java/Ruby/Starlark | 7,671 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, the declared catalog acquisition stage with its declared immutable pin and declared physical-schema contract beside its artifact laws (declared identity, recorded schema node for node, streamed projection records and the negative findings law), the declared streaming-normalization stage that reads the same pinned corpus one bounded batch at a time and writes the audited denominators, accepted population, classified exclusions/failures, retained provenance and public/oracle separation beside its corpus-free framing/fate/denominator laws and its artifact laws (identity, denominator identities, contiguous batch partition, js/ts accepted population with retained unavailable licenses, provenance and the no-evaluator-column firewall), the declared bounded-shared-panel selection stage that reduces the same normalized accepted population to the one bounded panel and writes the public manifest, the physically separate evaluator scope and the loadable Starlark list the integration owner admits before the study invocation, beside its corpus-free selection laws (canonical fork/duplicate grouping, declared caps, group-disjoint approximately 60/20/20 largest-remainder split with rounding, exposure flags, classified image pins, public/evaluator separation, attrition classes and reproducible frozen order) and its artifact laws over the real selected panel, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation/pair-attrition, shared-world/immutable-branch DAG and prediction-firewall laws (including that a prediction consumes the one declared public policy and carries exactly its identity while extraction and shards never consume it), its pair-attrition laws over the bounded late/capped panels, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
+| tests | `test/**` | Flix/Java/Ruby/Starlark | 10,288 | C | fixtures | Genuine native laws and fixtures, including the bounded Theory laws, the absorbed P09 projection laws and the whole-system application-report laws in `test/view`, the corrected-intent historical regression over its declared imported inputs, the decision laws driving the recorded fake transport in `test/seam`, the declared producer/consumer artifact laws in `test/dag`, the bounded process-receipt laws, fault plan and drain-I/O-failure laws in `test/receipt`, the physical/nonblank report law in `test/policy`, the declared catalog acquisition stage with its declared immutable pin and declared physical-schema contract beside its artifact laws (declared identity, recorded schema node for node, streamed projection records and the negative findings law), the declared streaming-normalization stage that reads the same pinned corpus one bounded batch at a time and writes the audited denominators, accepted population, classified exclusions/failures, retained provenance and public/oracle separation beside its corpus-free framing/fate/denominator laws and its artifact laws (identity, denominator identities, contiguous batch partition, js/ts accepted population with retained unavailable licenses, provenance and the no-evaluator-column firewall), the declared bounded-shared-panel selection stage that reduces the same normalized accepted population to the one bounded panel and writes the public manifest, the physically separate evaluator scope and the loadable Starlark list the integration owner admits before the study invocation, beside its corpus-free selection laws (canonical fork/duplicate grouping, declared caps, group-disjoint approximately 60/20/20 largest-remainder split with rounding, exposure flags, classified image pins, public/evaluator separation, attrition classes and reproducible frozen order) and its artifact laws over the real selected panel, the declared localization reference-label stage that maps the admitted real panel into the shared record vocabulary, streams only the declared `instance_id`/`patch` columns one bounded batch at a time and reduces every selected task's real reference patch in the shared owner against that exact world's verified clean-source export inventory, beside its corpus-free reference-label laws (declared supported extensions and test-path vocabulary, declared non-regular modes, git and plain-unified patch-header reduction, rename-to-old-path attribution, preexisting-inventory requirement, separate full/supported coverage, ambiguous/new-file-only/test-only/unsupported/missing-world/empty-gold classification and the mapped-identity and missing-world/undeclared-export findings), its artifact laws over the real produced tree (96 audited labels, the coverage denominators, the mapped identities, the internal consistency of the admitted export records and the scan accounting) and its admission laws that the admitted mapping, coverage table and 96 evaluator labels are byte-identical to the emitted artifacts, and the thin `test/study` stage dispatcher (bindings, declared records, assertions only, with the selection/ranking/anchor/descriptor algorithms living in their owners) with its admitted-manifest, bounded-truncation/pair-attrition, shared-world/immutable-branch DAG and prediction-firewall laws (including that a prediction consumes the one declared public policy and carries exactly its identity while extraction and shards never consume it), its pair-attrition laws over the bounded late/capped panels, its per-declared-shard partition/count/empty-slice and later-shard join/rank laws over the bounded `w3`/`t7` fixture, its legal-no-match/unknown-anchor and real-receipt-reduction laws, and its one reducer stage that writes the declared Parquet artifact through the typed Arrow seam and renders the bounded View report, run as the pinned compiler's `@Test`. |
 | inherited | `platform/support/grit/{lib.rs,patches/*,attune_grit.h,Cargo.toml,BUILD}` | Rust/C | 655 | C | inherited support | Retained upstream language dispatch and ABI shim; the Ruby arm is the only maintained addition. |
 | inherited-locks | `platform/support/grit/{cargo-bazel-lock.json,Cargo.lock}` | generated | 21,229 | C | inherited support | Pinned generated resolution locks; not authored, never relabelled. |
-| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*`, every package `BUILD.bazel` | mixed | 2,637 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
+| metadata | root `BUILD.bazel`/`MODULE.bazel`/locks/`maven_install.json`, `notes/`, `AGENTS.md`, `flake.*`, every package `BUILD.bazel` | mixed | 2,809 | declared/metadata | workspace | Declared build/configuration metadata and the design/mission notes; the JSON lock dominates this bucket. |
 
 Measured totals on this identity (declared-source check, `accept`): A cognitive
-5,071; B mechanical 2,769; A+B authored 7,840; C test 7,671; C support 21,884
+5,484; B mechanical 2,769; A+B authored 8,253; C test 10,288; C support 21,884
 (655 source + 21,229 generated locks). Presentation subsets: A/presentation 522
 and B/presentation 87, both already inside their class totals and never added
-again. Raw population at the recorded run: 184 readable files, code 40,032,
-comment 2,536, documentation 6,670, blank 2,921; the report prints the derived
-physical 52,159 and nonblank 49,238 totals on the same `attune-policy-total`
+again. Raw population at the recorded run: 290 readable files, code 43,234,
+comment 2,609, documentation 7,120, blank 3,108; the report prints the derived
+physical 56,071 and nonblank 52,963 totals on the same `attune-policy-total`
 line, from the same one-pass classification, and
 `//test/policy:accounting_law_test` asserts that the rendered report carries
-them. The bounded-shared-panel-and-split leaf moves, relative to
-the streaming-corpus-normalization-and-provenance record
-(4,734/2,769/7,503/6,599), `study` 997 -> 1,334 (the one bounded metadata-only
-shared panel selection over the normalized accepted population: the canonical
-fork/duplicate group key, the frozen richest-first group order, the declared
-group/task/pair caps, the exact worlds, the ordered pair candidates across the
-included pair groups, the largest-remainder approximately 60/20/20 group-disjoint
-split with its exposure flags, the explicit selection attrition, the classified
-image pins and the physically separate evaluator scope) and `tests`
-6,599 -> 7,671 (the declared panel-selection stage, its corpus-free selection
-laws and its artifact laws over the real selected panel); `metadata`
-2,600 -> 2,637 (the new panel targets in `test/catalog/BUILD.bazel`); every other
+them. The external-localization-pilot leaf moves, relative to
+the bounded-shared-panel-and-split record (5,071/2,769/7,840/7,671), `study`
+1,334 -> 1,747 (the declared reference-label science: the declared supported
+JS/TS source extensions and test-path vocabulary, the declared non-regular git
+modes, the git and plain-unified patch-header reduction, the rename-to-old-path
+attribution, the preexisting-inventory requirement, the separate full/supported
+coverage numbers, the seven declared classified cases, the mapped real-panel
+vocabulary with its verified clean-source export records and its classified
+missing-world/undeclared-export findings) and `tests` 7,671 -> 10,288 (the
+declared localization reference-label stage over the real admitted panel and the
+real pinned corpus, its corpus-free reference-label laws, its artifact laws over
+the real produced tree and its admission laws over the admitted mapping, coverage
+table and 96 evaluator labels); `metadata` 2,637 -> 2,809 (the new localization
+targets and the admitted file list in `test/study/BUILD.bazel`); every other
 component and family is unchanged. The delta is therefore one declared
-metadata-only selection vocabulary with its frozen split and its admitted
-manifests, and their declared fixtures, with no owner, evaluator, feasibility
-phase, yield gate or framework change. The streaming-corpus-normalization-and-provenance leaf moves, relative to
+reference-label reduction with its mapped real-panel vocabulary and its admitted
+evaluator artifacts, with no owner, corpus, cap, provider or framework change. The streaming-corpus-normalization-and-provenance leaf moves, relative to
 the pinned-catalog-and-shared-analysis-manifest record (4,535/2,740/7,275/6,037),
 `study` 798 -> 997 (the declared public/oracle separation, the streamed
 framing/fate vocabulary with its audited denominators, its classified faults and
@@ -2965,3 +2966,105 @@ carry an evaluator column; every cap is enforced by selection and every loss is
 recorded as an explicit attrition row, so an exclusion can never pass unnoticed
 as an empty result; and no image pull, emulation, rescue search, cap expansion,
 separate pair catalog or yield gate entered.
+
+
+## External localization pilot (2026-10-06)
+
+`external-localization-pilot` (`VAL-LOC-001`) establishes the actual selected
+localization worlds and the evaluator-only reference-label eligibility through
+the shared owner, over the real admitted panel and the real pinned corpus. It adds
+no corpus, cap, provider, owner or framework.
+
+What the leaf establishes. `Attune.Study` now declares the reference-label
+science once: the eight declared supported JS/TS source extensions, the declared
+test-path vocabulary and the declared non-regular git modes; the git and plain
+unified patch-header reduction; the rename-to-old-path attribution (the
+pre-change path is the file the task actually touched); the preexisting-inventory
+requirement (a path counts as preexisting only when the world's verified
+clean-source export actually contains it); the separate full-versus-supported
+coverage numbers; and the seven declared classified cases (`eligible-gold`,
+`new-file-only`, `test-only`, `unsupported`, `ambiguous`, `missing-world`,
+`empty-gold`) with one declared deterministic precedence. A missing world carries
+no gold at all, and an unsupported or empty change set is an explicit case, so a
+missing or unsupported label can never become an empty successful gold. The same
+owner declares the mapped real-panel vocabulary: each declared world record
+carries the panel's exact canonical repository, pinned revision and verified
+clean-source export recipe beside the declared world source, facts and descriptor
+paths; each declared task record is named by the panel's real instance identity
+and carries its exact group, its exact world, the localization scope and the
+declared `unknown` anchor token (no whitelisted public input of this leaf derives
+an issue anchor, so the cheap join records an honest `Unknown` rather than an
+invented anchor); each declared pair record names two mapped instance identities;
+and a world without a verified export, a task whose exact world is not declared,
+a pair whose task is not declared and an export for an undeclared world are each
+a classified finding rather than a silently dropped record.
+
+What the leaf measures. `//test/study:localization_labels` is a declared `manual`
+native stage. It re-verifies the exact bytes and recorded physical schema of the
+same immutable pinned catalog, maps the admitted real panel
+(`test/study/manifest/catalog/panel_public.tsv`) through the shared owner, streams
+only the two declared columns `instance_id` and `patch` one bounded batch at a
+time (32,079 rows, 251 batches, ~98 s), and reduces all 96 selected tasks'
+reference patches against their exact worlds' verified inventories (92 worlds,
+36,288 recorded baseline JS/TS paths, admitted as
+`test/study/manifest/catalog/export_records.tsv`). Real result: 96 tasks, 425
+patch entries, 230 eligible paths; 93 `eligible-gold`, 2 `unsupported`, 1
+`empty-gold`, 0 new-file-only, 0 test-only, 0 ambiguous, 0 missing-world; 35 tasks
+have full coverage. The stage writes one physically separate evaluator label
+artifact per task, the audited coverage denominators, the mapped public manifest
+and the classified findings; the admitted copies under
+`test/study/manifest/localization/` are byte-identical to the emitted ones
+(`//test/study:localization_admission_test`), and the corpus-free reference-label
+laws and the artifact laws over the real tree are
+`//test/study:localization_law` and `//test/study:localization_artifact_test`.
+
+Measured totals on this identity (declared-source check, `accept`): A cognitive
+5,484; B mechanical 2,769; A+B authored 8,253; C test 10,288; C support 21,884
+(`study` 1,334 -> 1,747, `tests` 7,671 -> 10,288, `metadata` 2,637 -> 2,809;
+raw 290 files, code 43,234, comment 2,609, doc 7,120, blank 3,108, physical
+56,071, nonblank 52,963; presentation A 522 / B 87 unchanged).
+
+Bounded architecture review (cognitive core 5,071 -> 5,484, A+B 7,840 -> 8,253,
+mechanical 2,769 unchanged; all above their soft review thresholds, which are
+review triggers, not failures). The 413 new cognitive lines are one declared
+reference-label reduction with its declared case vocabulary and one mapped
+real-panel record vocabulary: the mission explicitly assigns the label
+eligibility recipe to Flix, and this is one reduction with one case vocabulary,
+not a new evaluator, policy family or framework. No mechanical line is added. The
+2,617 fixture lines are the label stage, its corpus-free laws, its artifact laws
+over the real run and its admission laws. Largest application-semantic component:
+`study` (1,747). Hardest reacquisition: the Grit acquisition boundary under
+`repository` (809), unchanged.
+
+Localization navigation: the label reduction is reachable at
+`Attune.Study.referenceLabel`/`referenceEntries`/`reduceEntry`/`resolvedKind`/
+`referenceLabelRows`/`referenceCoverageRows`/`sourceExtensions`/`isSourcePath`/
+`isTestPath`/`referenceCases`; the mapped vocabulary at
+`Attune.Study.localizationManifest`/`parseExportRecords`/`exportFindings`/
+`localizationRecipe`/`unknownAnchorToken`/`localizationLabelPath`; the stage at
+`test/study/LocalizationLabels.flix`; the admitted panel, export records and
+labels at `test/study/manifest/catalog/` and
+`test/study/manifest/localization/`. Policy-leak/duplication check: the supported
+extensions, the test-path vocabulary, the non-regular modes and the case
+precedence exist once, in the owner, and both the stage and the laws read that one
+declaration; the patch text is an input to the reduction and never part of its
+result, so no public mapping record can name a patch, a test patch, an interface,
+an execution outcome or a gold path, and only the physically separate label
+artifact names a gold path; the verified export identity and its path inventory
+are one declared record per world, so an eligibility claim is always checkable
+against the exact baseline it names; and nothing here executes target code,
+installs a target dependency or contacts a provider.
+
+Honest limit of this leaf. The mapped manifest declares each world's source,
+facts and descriptor paths, but the world facts and descriptor populations
+themselves are not materialized here: the architecture assigns "clean world
+source" and "world facts/index" to their own declared stages, and no whitelisted
+public input of this leaf derives a world's atom facts or descriptor population.
+Every such world is therefore reported as an explicit
+`finding world-facts-undeclared <world> <repo> <revision>` row in
+`test/study/manifest/localization/findings.tsv` rather than declared as a
+fabricated record, and the real graph's full expansion is the following features'
+work. The panel's own declared bounds (24 groups, 4 tasks per group, 32 pairs
+across 8 included groups, 256 candidates, 8 shards per world of 32) are carried
+unchanged into the mapped manifest, and the production admission predicate
+accepts it.

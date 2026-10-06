@@ -1,0 +1,19 @@
+label	elastic__synthetics-235	w85
+provenance	elastic/synthetics	01c81e9607da4c0f57f83c775f810bc22861c5db	f7d90ab3bfc34b7513bcd851c5c81e794803e8fed709d9b595a62498bb3d0245	reference-patch	390	11695
+entry	modified	.ci/Jenkinsfile	other	source	regular	absent	ineligible
+entry	modified	.gitignore	other	source	regular	absent	ineligible
+entry	modified	src/cli.ts	js-ts	source	regular	present	eligible
+entry	modified	src/common_types.ts	js-ts	source	regular	present	eligible
+entry	modified	src/core/runner.ts	js-ts	source	regular	present	eligible
+entry	modified	src/parse_args.ts	js-ts	source	regular	present	eligible
+entry	modified	src/reporters/base.ts	js-ts	source	regular	present	eligible
+entry	modified	src/reporters/index.ts	js-ts	source	regular	present	eligible
+entry	new	src/reporters/junit.ts	js-ts	source	regular	absent	ineligible
+gold	src/cli.ts
+gold	src/common_types.ts
+gold	src/core/runner.ts
+gold	src/parse_args.ts
+gold	src/reporters/base.ts
+gold	src/reporters/index.ts
+coverage	full	9	supported	6
+case	eligible-gold

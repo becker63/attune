@@ -2209,4 +2209,625 @@ pub mod Attune.Study {
             ::: (if (List.length(List.distinct(groupKeys)) == List.length(groupKeys)) Nil
                 else List#{"a selected group appears in more than one split"})
     }
+
+    // ------------------------------------------- declared reference-label science
+    //
+    // The localization application's evaluator boundary. One reference patch is
+    // reduced to the typed set of preexisting modified/deleted JS/TS source paths
+    // it changes, and that set is the only evaluator value the declared
+    // `reduce_<task>` join consumes. The patch text is an input to this reduction
+    // and never part of its result, so no prediction input can name a changed
+    // path, a patch byte or a label value. A rename is attributed to its old
+    // path, because the pre-change path is the file the task actually touched.
+    // A patch whose entries cannot be unambiguously reduced, or that changes
+    // nothing preexisting, is classified explicitly rather than admitted as empty
+    // successful gold, and a path only counts as preexisting when the world's
+    // verified clean-source export actually contains it. Nothing here executes
+    // target code, installs a dependency or contacts a provider.
+
+    /// The declared extensions of the supported JS/TS source population. The
+    /// retained frontend population resolves modules over the same eight
+    /// extensions; this is the localization label's own declared copy of that
+    /// vocabulary, pinned by a separating law rather than inferred from a path.
+    pub def sourceExtensions(): List[String] =
+        "js" :: "jsx" :: "mjs" :: "cjs" :: "ts" :: "tsx" :: "mts" :: "cts" :: Nil
+
+    /// The declared path segments that make one path a test path.
+    pub def testSegments(): List[String] =
+        "test" :: "tests" :: "__tests__" :: "__test__" :: "spec" :: "specs" :: Nil
+
+    /// The declared non-regular git file modes: a symbolic link and a submodule
+    /// are not regular source files, so neither can be eligible gold.
+    pub def nonRegularModes(): List[String] = "120000" :: "160000" :: Nil
+
+    /// The one declared classification of a task's reference change set. The
+    /// precedence is declared and deterministic: a task whose exact world is not
+    /// declared is `MissingWorld`; an entry that cannot be unambiguously reduced
+    /// makes the whole label `Ambiguous`; an empty change set is `EmptyGold`; a
+    /// change set whose entries are all creations is `NewFileOnly`; one whose
+    /// entries are all test paths is `TestOnly`; one whose entries are all in an
+    /// unsupported language is `Unsupported`; and only a change set with at least
+    /// one eligible preexisting source path is `EligibleGold`. Every other
+    /// combination is `EmptyGold`, never a silent success.
+    pub enum ReferenceCase with Eq, Order, ToString {
+        case EligibleGold
+        case NewFileOnly
+        case TestOnly
+        case Unsupported
+        case Ambiguous
+        case MissingWorld
+        case EmptyGold
+    }
+
+    /// The declared reference cases, in their declared order.
+    pub def referenceCases(): List[ReferenceCase] =
+        ReferenceCase.EligibleGold :: ReferenceCase.NewFileOnly :: ReferenceCase.TestOnly ::
+            ReferenceCase.Unsupported :: ReferenceCase.Ambiguous :: ReferenceCase.MissingWorld ::
+            ReferenceCase.EmptyGold :: Nil
+
+    /// The declared name of one reference case.
+    pub def referenceCaseName(c: ReferenceCase): String = match c {
+        case ReferenceCase.EligibleGold => "eligible-gold"
+        case ReferenceCase.NewFileOnly  => "new-file-only"
+        case ReferenceCase.TestOnly     => "test-only"
+        case ReferenceCase.Unsupported  => "unsupported"
+        case ReferenceCase.Ambiguous    => "ambiguous"
+        case ReferenceCase.MissingWorld => "missing-world"
+        case ReferenceCase.EmptyGold    => "empty-gold"
+    }
+
+    /// One changed file of one reference patch, as the diff text declares it. The
+    /// old path is the pre-change path; a rename keeps both paths because
+    /// localization attributes the change to the old one.
+    pub type alias PatchEntry = {
+        kind = String,
+        oldPath = String,
+        newPath = String,
+        mode = String,
+        binary = Bool,
+        hunk = Bool
+    }
+
+    /// One reduced patch entry: the declared classification the evaluator label
+    /// records. `created` means the diff declares the path as a creation, so it is
+    /// not a preexisting source path; `inventory` means the exact pre-change path
+    /// is present in the world's verified clean-source export; `eligible` means
+    /// this entry is one of the task's eligible gold paths.
+    pub type alias ReferenceEntry = {
+        kind = String,
+        path = String,
+        language = String,
+        test = Bool,
+        regular = Bool,
+        inventory = Bool,
+        created = Bool,
+        ambiguous = Bool,
+        eligible = Bool
+    }
+
+    /// The declared reference label of one task: the classified change set, the
+    /// eligible gold paths, the full and supported coverage counts and the one
+    /// explicit case. The patch text is never part of the label.
+    pub type alias ReferenceLabel = {
+        classification = ReferenceCase,
+        entries = List[ReferenceEntry],
+        gold = List[String],
+        full = Int32,
+        supported = Int32,
+        patchLines = Int32,
+        patchChars = Int32
+    }
+
+    def patchEntry(kind: String, oldPath: String, newPath: String): PatchEntry =
+        { kind = kind, oldPath = oldPath, newPath = newPath, mode = "", binary = false, hunk = false }
+
+    /// The one patch-entry constructor: every field is named explicitly, so a
+    /// partial update can never silently drop the declared identity of the entry
+    /// it derives from. The base entry is carried for the reader and the type,
+    /// because the derived entry always declares all seven fields.
+    def entryWith(_base: PatchEntry, kind: String, oldPath: String, newPath: String, mode: String, binary: Bool, hunk: Bool): PatchEntry =
+        { kind = kind, oldPath = oldPath, newPath = newPath, mode = mode, binary = binary, hunk = hunk }
+
+    /// The lower-cased extension of the final path segment, or nothing.
+    pub def pathExtension(path: String): Option[String] = {
+        let base = match List.reverse(String.split(regex = "/", path)) {
+            case last :: _ => last
+            case Nil       => path
+        };
+        match List.reverse(String.split(regex = "\\.", base)) {
+            case ext :: rest => if (List.isEmpty(rest) or String.isEmpty(ext)) None else Some(String.toLowerCase(ext))
+            case Nil         => None
+        }
+    }
+
+    /// Whether one path is in the declared supported JS/TS source population.
+    pub def isSourcePath(path: String): Bool = match pathExtension(path) {
+        case Some(ext) => List.memberOf(ext, sourceExtensions())
+        case None      => false
+    }
+
+    /// Whether one path is a declared test path: a declared test segment, or a
+    /// basename carrying the declared `.test.`/`.spec.` infix.
+    pub def isTestPath(path: String): Bool = {
+        let segments = String.split(regex = "/", path);
+        let base = String.toLowerCase(match List.reverse(segments) {
+            case last :: _ => last
+            case Nil       => path
+        });
+        List.exists(segment -> List.memberOf(String.toLowerCase(segment), testSegments()), segments)
+            or String.contains(substr = ".test.", base)
+            or String.contains(substr = ".spec.", base)
+    }
+
+    /// The declared language of one path: the supported JS/TS source population,
+    /// an unsupported other language, or no language for an absent path.
+    pub def pathLanguage(path: String): String =
+        if (String.isEmpty(path)) "absent"
+        else if (isSourcePath(path)) "js-ts" else "other"
+
+    def trimLeft(text: String): String =
+        if (String.startsWith(prefix = " ", text)) trimLeft(String.drop(1, text)) else text
+
+    def unescapeQuoted(text: String): String =
+        String.replace(src = "\\t", dst = "\t",
+            String.replace(src = "\\\"", dst = "\"",
+                String.replace(src = "\\\\", dst = "\\", text)))
+
+    /// One token of a git path header and the remainder after it. A quoted token
+    /// is unquoted and its C escapes decoded; an unquoted token ends at the first
+    /// space. An empty token with an empty remainder ends the scan.
+    def quotedToken(text: String): (String, String) =
+        if (String.startsWith(prefix = "\"", text)) {
+            let parts = String.split(regex = "\"", String.drop(1, text));
+            match parts {
+                case body :: rest =>
+                    let tail = List.join("\"", rest);
+                    (unescapeQuoted(body), if (String.isEmpty(tail)) "" else String.drop(1, tail))
+                case Nil => ("", "")
+            }
+        } else {
+            let parts = String.split(regex = " ", text);
+            match parts {
+                case head :: rest =>
+                    if (List.isEmpty(rest)) (head, "")
+                    else (head, String.drop(String.length(head) + 1, text))
+                case Nil => ("", "")
+            }
+        }
+
+    def pathTokens(text: String, acc: List[String]): List[String] = {
+        let trimmed = trimLeft(text);
+        if (String.isEmpty(trimmed)) List.reverse(acc)
+        else {
+            let (token, rest) = quotedToken(trimmed);
+            if (String.isEmpty(token) and String.isEmpty(rest)) List.reverse(acc)
+            else pathTokens(rest, token :: acc)
+        }
+    }
+
+    /// One header path without its `a/` or `b/` prefix.
+    pub def stripPathPrefix(path: String): String =
+        if (String.startsWith(prefix = "a/", path) or String.startsWith(prefix = "b/", path))
+            String.drop(2, path)
+        else path
+
+    /// The two paths one `diff --git` header declares, or nothing when the line is
+    /// not an unambiguous two-path git header. A quoted path is unquoted; any other
+    /// header shape is not guessed.
+    pub def diffHeaderPaths(line: String): Option[(String, String)] =
+        if (not String.startsWith(prefix = "diff --git ", line)) None
+        else match pathTokens(String.drop(11, line), Nil) {
+            case left :: right :: rest =>
+                if (List.isEmpty(rest)) Some((stripPathPrefix(left), stripPathPrefix(right))) else None
+            case _ => None
+        }
+
+    /// The declared state the patch fold carries: the entries already closed (most
+    /// recent first) and the entry the current file section is building.
+    type alias PatchState = { done = List[PatchEntry], open = Option[PatchEntry] }
+
+    /// The declared file mode of one `index` line, or nothing when the line does
+    /// not carry one.
+    def indexMode(line: String): String =
+        match List.reverse(String.split(regex = " ", line)) {
+            case mode :: _ => mode
+            case Nil       => ""
+        }
+
+    /// The declared old path of one `---` line and the kind it forces: `/dev/null`
+    /// declares a creation, and a declared old path that disagrees with the header
+    /// of an already-open modification makes the entry ambiguous.
+    def minusSide(entry: PatchEntry, declared: String): (String, String) =
+        if (declared == "/dev/null") (entry#kind, "")
+        else {
+            let path = stripPathPrefix(declared);
+            if (entry#kind == "modified" and not String.isEmpty(entry#oldPath) and entry#oldPath != path)
+                ("ambiguous", path)
+            else (entry#kind, path)
+        }
+
+    /// The declared new path of one `+++` line, and the ambiguity a disagreement
+    /// with the header forces.
+    def plusSide(entry: PatchEntry, declared: String): (String, String) =
+        if (declared == "/dev/null") (entry#kind, "")
+        else {
+            let path = stripPathPrefix(declared);
+            if (entry#kind == "modified" and not String.isEmpty(entry#newPath) and entry#newPath != path)
+                ("ambiguous", path)
+            else (entry#kind, path)
+        }
+
+    /// The declared state one patch line advances the open entry to.
+    def stepEntry(entry: PatchEntry, line: String): PatchEntry =
+        if (String.startsWith(prefix = "@@", line))
+            entryWith(entry, entry#kind, entry#oldPath, entry#newPath, entry#mode, entry#binary, true)
+        else if (String.startsWith(prefix = "new file mode ", line))
+            entryWith(entry, "new", entry#oldPath, entry#newPath, String.drop(15, line), entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "deleted file mode ", line))
+            entryWith(entry, "deleted", entry#oldPath, entry#newPath, String.drop(19, line), entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "old mode ", line))
+            entryWith(entry, entry#kind, entry#oldPath, entry#newPath, String.drop(9, line), entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "new mode ", line))
+            entryWith(entry, entry#kind, entry#oldPath, entry#newPath, String.drop(9, line), entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "rename from ", line))
+            entryWith(entry, "renamed", String.drop(12, line), entry#newPath, entry#mode, entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "rename to ", line))
+            entryWith(entry, "renamed", entry#oldPath, String.drop(10, line), entry#mode, entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "copy from ", line))
+            entryWith(entry, "copy", String.drop(10, line), entry#newPath, entry#mode, entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "copy to ", line))
+            entryWith(entry, "copy", entry#oldPath, String.drop(8, line), entry#mode, entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "index ", line))
+            entryWith(entry, entry#kind, entry#oldPath, entry#newPath, indexMode(line), entry#binary, entry#hunk)
+        else if (String.startsWith(prefix = "--- ", line)) {
+            let (kind, path) = minusSide(entry, String.drop(4, line));
+            entryWith(entry, kind, path, entry#newPath, entry#mode, entry#binary, true)
+        } else if (String.startsWith(prefix = "+++ ", line)) {
+            let (kind, path) = plusSide(entry, String.drop(4, line));
+            entryWith(entry, kind, entry#oldPath, path, entry#mode, entry#binary, true)
+        } else if (String.startsWith(prefix = "Binary files ", line) or String.startsWith(prefix = "GIT binary patch", line))
+            entryWith(entry, entry#kind, entry#oldPath, entry#newPath, entry#mode, true, entry#hunk)
+        else entry
+
+    def closeEntry(state: PatchState): PatchState = match state#open {
+        case None        => state
+        case Some(entry) => { done = entry :: state#done, open = None }
+    }
+
+    def stepPatchLine(state: PatchState, line: String): PatchState =
+        if (String.startsWith(prefix = "diff --git ", line)) {
+            let closed = closeEntry(state);
+            match diffHeaderPaths(line) {
+                case Some((left, right)) => { done = closed#done, open = Some(patchEntry("modified", left, right)) }
+                case None                => { done = closed#done, open = Some(patchEntry("ambiguous", "", "")) }
+            }
+        } else if (String.startsWith(prefix = "diff --", line)) {
+            let closed = closeEntry(state);
+            { done = closed#done, open = Some(patchEntry("ambiguous", "", "")) }
+        } else match state#open {
+            case Some(entry) => { done = state#done, open = Some(stepEntry(entry, line)) }
+            case None        =>
+                // A plain unified diff carries no `diff --git` header: its file
+                // section is opened by the `---` line itself, and a `/dev/null`
+                // old side declares a creation rather than a modification.
+                if (String.startsWith(prefix = "--- ", line)) {
+                    let declared = String.drop(4, line);
+                    if (declared == "/dev/null")
+                        { done = state#done, open = Some(patchEntry("new", "", "")) }
+                    else
+                        { done = state#done, open = Some(patchEntry("modified", stripPathPrefix(declared), "")) }
+                } else state
+        }
+
+    /// The declared kind of one closed entry: a modification without a pre-change
+    /// path, a modification whose two declared paths disagree, a modification that
+    /// declares neither a hunk, a mode change nor an index (so the section was
+    /// truncated) and a section with no resolvable path at all are each ambiguous
+    /// rather than guessed.
+    pub def resolvedKind(entry: PatchEntry): String =
+        if (entry#kind == "ambiguous") "ambiguous"
+        else if (String.isEmpty(entry#oldPath) and String.isEmpty(entry#newPath)) "ambiguous"
+        else if (entry#kind == "new") "new"
+        else if (String.isEmpty(entry#oldPath)) "ambiguous"
+        else if (entry#kind == "modified" and not entry#hunk and String.isEmpty(entry#mode)) "ambiguous"
+        else if (entry#kind == "modified" and entry#hunk and String.isEmpty(entry#newPath)) "ambiguous"
+        else entry#kind
+
+    /// The entries of one reference patch, in the order the diff declares them. A
+    /// file section is opened by its `diff --git` header and closed by the next
+    /// header; a header that is not a two-path git header opens an ambiguous entry
+    /// rather than dropping the section.
+    pub def referenceEntries(patch: String): List[PatchEntry] = {
+        let folded = List.foldLeft(stepPatchLine, { done = Nil, open = None }, String.lines(patch));
+        let closed = closeEntry(folded);
+        List.reverse(closed#done)
+    }
+
+    /// Reduce one patch entry against the world's verified clean-source inventory.
+    /// A creation, an ambiguous section, a non-regular file mode, a test path, an
+    /// unsupported language and a path the verified export does not contain are
+    /// each classified ineligible; only a preexisting regular JS/TS source path the
+    /// verified export actually contains is eligible gold.
+    pub def reduceEntry(entry: PatchEntry, inventory: List[String]): ReferenceEntry = {
+        let kind = resolvedKind(entry);
+        let created = kind == "new" or kind == "copy";
+        let path = if (created) entry#newPath else entry#oldPath;
+        let ambiguous = kind == "ambiguous";
+        let language = pathLanguage(path);
+        let test = isTestPath(path);
+        let regular = (not entry#binary) and not List.memberOf(entry#mode, nonRegularModes());
+        let present = List.memberOf(path, inventory);
+        { kind = kind, path = path, language = language, test = test, regular = regular,
+          inventory = present, created = created, ambiguous = ambiguous,
+          eligible = (not ambiguous) and (not created) and language == "js-ts" and (not test)
+              and regular and present }
+    }
+
+    /// Reduce one reference patch against one world's verified clean-source
+    /// inventory into the declared reference label. `worldDeclared` is false when
+    /// the task's exact world is not one of the admitted panel's worlds, so the
+    /// label is `MissingWorld` rather than an empty successful gold.
+    pub def referenceLabel(patch: String, inventory: List[String], worldDeclared: Bool): ReferenceLabel = {
+        let raw = referenceEntries(patch);
+        let entries = List.map(entry -> reduceEntry(entry, inventory), raw);
+        // A world the admitted panel does not declare has no verified clean-source
+        // inventory, so no entry can be claimed preexisting and the label carries
+        // no gold: a missing world is never an empty successful gold.
+        let gold = if (worldDeclared)
+            List.sort(List.distinct(List.filterMap(entry -> if (entry#eligible) Some(entry#path) else None, entries)))
+            else Nil;
+        let full = List.length(entries);
+        let supported = List.length(gold);
+        let classification =
+            if (not worldDeclared) ReferenceCase.MissingWorld
+            else if (List.exists(entry -> entry#ambiguous, entries)) ReferenceCase.Ambiguous
+            else if (full == 0) ReferenceCase.EmptyGold
+            else if (supported > 0) ReferenceCase.EligibleGold
+            else if (List.forAll(entry -> entry#created, entries)) ReferenceCase.NewFileOnly
+            else if (List.forAll(entry -> entry#test, entries)) ReferenceCase.TestOnly
+            else if (List.forAll(entry -> entry#language == "other", entries)) ReferenceCase.Unsupported
+            else ReferenceCase.EmptyGold;
+        { classification = classification, entries = entries, gold = gold, full = full,
+          supported = supported, patchLines = List.length(String.lines(patch)),
+          patchChars = String.length(patch) }
+    }
+
+    /// The declared rows of one reference label: the exact world identity and
+    /// clean-baseline provenance the label was reduced against, the classified
+    /// change set, the eligible gold paths, the full and supported coverage counts
+    /// and the one explicit case. The patch text never appears in a label row.
+    pub def referenceLabelRows(
+        label: ReferenceLabel,
+        instanceId: String,
+        world: String,
+        repo: String,
+        revision: String,
+        digest: String
+    ): List[List[String]] = {
+        let head = List#{"label", instanceId, world};
+        let provenance = List#{"provenance", repo, revision, digest, "reference-patch",
+            Int32.toString(label#patchLines), Int32.toString(label#patchChars)};
+        let entryRows = List.map(entry -> List#{"entry", entry#kind, entry#path, entry#language,
+            if (entry#test) "test" else "source",
+            if (entry#regular) "regular" else "nonregular",
+            if (entry#inventory) "present" else "absent",
+            if (entry#eligible) "eligible" else "ineligible"}, label#entries);
+        let goldRows = List.map(path -> List#{"gold", path}, label#gold);
+        let coverage = List#{"coverage", "full", Int32.toString(label#full), "supported", Int32.toString(label#supported)};
+        let classification = List#{"case", referenceCaseName(label#classification)};
+        head :: provenance :: (entryRows ::: (goldRows ::: (coverage :: classification :: Nil)))
+    }
+
+    /// The declared aggregate coverage record of one reduced task population: the
+    /// audited denominators, the count of every declared case and the explicit
+    /// findings. A task that could not be reduced is a classified case, never a
+    /// missing denominator, so the case counts always sum to the task denominator.
+    pub def referenceCoverageRows(labels: List[ReferenceLabel], findings: List[List[String]]): List[List[String]] = {
+        let tasks = List.length(labels);
+        let cases = List.map(c -> List#{"case", referenceCaseName(c),
+            Int32.toString(List.length(List.filter(l -> l#classification == c, labels)))}, referenceCases());
+        List#{"denominator", "tasks", Int32.toString(tasks)}
+            :: List#{"denominator", "eligible-gold-tasks",
+                Int32.toString(List.length(List.filter(l -> l#classification == ReferenceCase.EligibleGold, labels)))}
+            :: List#{"denominator", "supported-coverage-tasks",
+                Int32.toString(List.length(List.filter(l -> l#supported > 0, labels)))}
+            :: List#{"denominator", "full-coverage-tasks",
+                Int32.toString(List.length(List.filter(l -> l#full > 0 and l#supported == l#full, labels)))}
+            :: List#{"denominator", "patch-entries", Int32.toString(List.foldLeft((total, l) -> total + l#full, 0, labels))}
+            :: List#{"denominator", "eligible-paths", Int32.toString(List.foldLeft((total, l) -> total + l#supported, 0, labels))}
+            :: (cases ::: findings)
+    }
+
+    /// Whether one declared export digest is a verified 64-hexadecimal digest.
+    pub def verifiedExportDigest(digest: String): Bool =
+        String.length(digest) == 64 and isHex(digest)
+
+    /// The declared record kind of one emitted record, or the empty string. The
+    /// record vocabulary is tab-separated text, so a consumer reads a record
+    /// through the same declared accessors rather than splitting it again.
+    pub def rowKind(row: List[String]): String = field(row, 0)
+
+    /// One emitted record as its canonical tab-separated text.
+    pub def rowText(row: List[String]): String = List.join("\t", row)
+
+    /// The declared integer field of one emitted record, or zero.
+    pub def rowInt(row: List[String], index: Int32): Int32 = intOf(field(row, index))
+
+    /// One tab-separated record text as its declared fields.
+    pub def splitRow(text: String): List[String] = String.split(regex = "\t", text)
+
+    // ------------------------------------------- admitted real-panel world mapping
+    //
+    // The mapped vocabulary the shared study graph expands. The admitted real
+    // panel's exact worlds are preserved (canonical repository, pinned revision and
+    // the verified clean-source export digest), every selected localization task is
+    // mapped to its real instance identity and its exact world, and the declared
+    // bounds are the panel's own. The declared task anchor is left empty: no
+    // whitelisted public input of this leaf derives an issue anchor yet, so the
+    // cheap join records an honest `Unknown` rather than an invented anchor.
+
+    /// One exact world's verified clean-source export: the canonical repository,
+    /// the pinned baseline revision, the digest and byte count of the immutable
+    /// public archive that was verified, the archive's entry count and the JS/TS
+    /// source path inventory of that exact baseline. The inventory is what makes a
+    /// patch path's preexisting claim checkable.
+    pub type alias ExportRecord = {
+        world = String,
+        repo = String,
+        revision = String,
+        digest = String,
+        bytes = Int32,
+        entries = Int32,
+        sources = Int32,
+        inventory = List[String]
+    }
+
+    /// The declared clean-source export recipe identity one mapped world record
+    /// carries: the immutable public archive of the exact pinned baseline revision.
+    pub def localizationRecipe(): String = "public-archive-at-pinned-revision"
+
+    /// The declared admitted layout of the mapped localization panel: one world
+    /// record, one facts record and one descriptor-population record per exact
+    /// world, and one evaluator label per task, all beside the mapped manifest. The
+    /// graph consumes these package-relative paths, so the mapping, the label
+    /// artifacts and the admission cannot disagree about where an input lives.
+    pub def localizationWorldSourcePath(world: String): String = "world_" + world + ".tsv"
+    pub def localizationWorldFactsPath(world: String): String = "facts_" + world + ".tsv"
+    pub def localizationDescriptorsPath(world: String): String = "descriptors_" + world + ".tsv"
+    pub def localizationLabelPath(task: String): String = "label_" + task + ".tsv"
+
+    /// The declared export records of one admitted clean-source export record set,
+    /// each carrying its own world's path inventory. An absent or malformed record
+    /// yields nothing rather than a default.
+    pub def parseExportRecords(rows: List[List[String]]): List[ExportRecord] = {
+        let files = List.filterMap(row -> match row {
+            case "file" :: world :: path :: _ => Some((world, path))
+            case _                            => None
+        }, rows);
+        List.filterMap(row -> match row {
+            case "export" :: world :: repo :: revision :: digest :: bytes :: entries :: sources :: _ =>
+                Some({ world = world, repo = repo, revision = revision, digest = digest, bytes = intOf(bytes),
+                       entries = intOf(entries), sources = intOf(sources), inventory = inventoryOf(files, world) })
+            case _ => None
+        }, rows)
+    }
+
+    /// The declared paths one world's export records, in recorded order.
+    def inventoryOf(files: List[(String, String)], world: String): List[String] =
+        List.map(pair -> match pair { case (_, path) => path },
+            List.filter(pair -> match pair { case (w, _) => w == world }, files))
+
+    /// The declared export record of one world, if the record set carries it.
+    pub def exportOf(exports: List[ExportRecord], world: String): Option[ExportRecord] =
+        List.find(record -> record#world == world, exports)
+
+    /// The declared export findings of one admitted export record set against the
+    /// panel's exact worlds: a missing record, a repository or revision mismatch, an
+    /// unverified digest, a source count that disagrees with the recorded inventory
+    /// and an export for a world the panel does not declare are each explicit.
+    pub def exportFindings(panel: List[List[String]], exports: List[ExportRecord]): List[List[String]] = {
+        let worldRows = rowsOf(panel, "world");
+        let ids = List.map(row -> field(row, 1), worldRows);
+        let perWorld = List.filterMap(row -> {
+            let id = field(row, 1);
+            match exportOf(exports, id) {
+                case None => Some(List#{"finding", "missing-export", id, field(row, 2), field(row, 3)})
+                case Some(record) =>
+                    if (record#repo != field(row, 2) or record#revision != field(row, 3))
+                        Some(List#{"finding", "export-identity-mismatch", id, field(row, 2) + "@" + field(row, 3),
+                            record#repo + "@" + record#revision})
+                    else if (not verifiedExportDigest(record#digest))
+                        Some(List#{"finding", "export-digest-unverified", id, record#digest, ""})
+                    else if (record#sources <= 0 or record#sources != List.length(record#inventory))
+                        Some(List#{"finding", "export-inventory-mismatch", id, Int32.toString(record#sources),
+                            Int32.toString(List.length(record#inventory))})
+                    else None
+            }
+        }, worldRows);
+        let extra = List.filterMap(record -> if (List.memberOf(record#world, ids)) None
+            else Some(List#{"finding", "undeclared-export", record#world, record#repo, record#revision}), exports);
+        perWorld ::: extra
+    }
+
+    /// The declared anchor token of a selected task whose issue anchor no
+    /// whitelisted public input of this leaf derives. The token names no declared
+    /// anchor domain, so the shared decoder resolves it to no anchor and the cheap
+    /// join records an honest `Unknown` rather than an invented anchor.
+    pub def unknownAnchorToken(): String = "unknown"
+
+    /// The mapped analysis rows and explicit findings of the admitted real catalog
+    /// panel. Each declared world carries the panel's exact canonical repository,
+    /// pinned revision and verified export recipe; each declared task is named by
+    /// the panel's own real instance identity and carries its exact group, its
+    /// exact world and the localization scope; each declared pair is remapped onto
+    /// the same instance identities. A world without a verified export, a task
+    /// whose exact world is not declared, a pair whose task is not declared and an
+    /// export for a world the panel does not declare are each an explicit finding,
+    /// never a silently dropped record. The declared task anchor stays empty: no
+    /// whitelisted public input of this leaf derives an issue anchor, so the cheap
+    /// join records an honest `Unknown` rather than an invented anchor.
+    pub def localizationManifest(
+        panel: List[List[String]],
+        exports: List[ExportRecord]
+    ): (List[List[String]], List[List[String]]) = {
+        let generation = match rowsOf(panel, "generation") {
+            case row :: _ => "localization-" + field(row, 1)
+            case Nil      => "localization-unknown"
+        };
+        let worldRows = rowsOf(panel, "world");
+        let taskRows = rowsOf(panel, "task");
+        let pairRows = rowsOf(panel, "pair");
+        let declaredWorlds = List.filterMap(row -> {
+            let id = field(row, 1);
+            match exportOf(exports, id) {
+                case Some(record) =>
+                    if (record#repo == field(row, 2) and record#revision == field(row, 3))
+                        Some(List#{"world", id, field(row, 2), field(row, 3), localizationRecipe(),
+                            localizationWorldSourcePath(id), localizationWorldFactsPath(id), localizationDescriptorsPath(id)})
+                    else None
+                case None => None
+            }
+        }, worldRows);
+        let worldIds = List.map(row -> field(row, 1), declaredWorlds);
+        let taskFindings = List.filterMap(row -> {
+            let world = field(row, 4);
+            if (List.memberOf(world, worldIds)) None
+            else Some(List#{"finding", "missing-world", field(row, 1), field(row, 2), world})
+        }, taskRows);
+        let declaredTasks = List.filterMap(row -> {
+            let world = field(row, 4);
+            if (List.memberOf(world, worldIds))
+                Some(List#{"task", field(row, 2), field(row, 3), world, "localization", unknownAnchorToken()})
+            else None
+        }, taskRows);
+        let declaredPanelTasks = List.filterMap(row -> {
+            let world = field(row, 4);
+            if (List.memberOf(world, worldIds)) Some((field(row, 1), field(row, 2))) else None
+        }, taskRows);
+        let pairFindings = List.filterMap(row -> {
+            let first = mappedTaskId(declaredPanelTasks, field(row, 3));
+            let second = mappedTaskId(declaredPanelTasks, field(row, 4));
+            if (String.isEmpty(first) or String.isEmpty(second))
+                Some(List#{"finding", "missing-pair-task", field(row, 1), field(row, 3), field(row, 4)})
+            else None
+        }, pairRows);
+        let declaredPairs = List.filterMap(row -> {
+            let first = mappedTaskId(declaredPanelTasks, field(row, 3));
+            let second = mappedTaskId(declaredPanelTasks, field(row, 4));
+            if (String.isEmpty(first) or String.isEmpty(second)) None
+            else Some(List#{"pair", field(row, 1), field(row, 2), first, second, field(row, 5)})
+        }, pairRows);
+        (List#{"generation", generation} :: boundRows() ::: declaredWorlds ::: rowsOf(panel, "group")
+            ::: declaredTasks ::: declaredPairs,
+         exportFindings(panel, exports) ::: taskFindings ::: pairFindings)
+    }
+
+    /// The mapped task identity of one panel task id, or the empty string when the
+    /// panel does not declare that task in a declared world. A pair whose task is
+    /// not a declared task is a classified finding, never a silently dropped pair.
+    def mappedTaskId(declaredPanelTasks: List[(String, String)], panelId: String): String =
+        match List.find(entry -> match entry { case (key, _) => key == panelId }, declaredPanelTasks) {
+            case Some((_, mapped)) => mapped
+            case None              => ""
+        }
 }

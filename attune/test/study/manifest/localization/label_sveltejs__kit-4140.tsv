@@ -1,0 +1,22 @@
+label	sveltejs__kit-4140	w22
+provenance	sveltejs/kit	b7ebff7ecdac6b7e6901553ada453743b18d78e4	ddd587a0591da6ce55931339ea4a22ab932cade15fbac25e5d975f6f9a6b86be	reference-patch	194	8970
+entry	new	.changeset/honest-islands-flash.md	other	source	regular	absent	ineligible
+entry	new	.changeset/many-pigs-deliver.md	other	source	regular	absent	ineligible
+entry	new	.changeset/purple-readers-build.md	other	source	regular	absent	ineligible
+entry	modified	.github/workflows/ci.yml	other	source	regular	absent	ineligible
+entry	modified	documentation/docs/03-loading.md	other	source	regular	absent	ineligible
+entry	modified	documentation/docs/13-configuration.md	other	source	regular	absent	ineligible
+entry	modified	packages/adapter-netlify/README.md	other	source	regular	absent	ineligible
+entry	modified	packages/adapter-netlify/src/handler.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/runtime/client/renderer.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/runtime/client/router.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/types/ambient.d.ts	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/types/private.d.ts	js-ts	source	regular	present	eligible
+entry	modified	sites/kit.svelte.dev/src/lib/search/SearchBox.svelte	other	source	regular	absent	ineligible
+gold	packages/adapter-netlify/src/handler.js
+gold	packages/kit/src/runtime/client/renderer.js
+gold	packages/kit/src/runtime/client/router.js
+gold	packages/kit/types/ambient.d.ts
+gold	packages/kit/types/private.d.ts
+coverage	full	13	supported	5
+case	eligible-gold

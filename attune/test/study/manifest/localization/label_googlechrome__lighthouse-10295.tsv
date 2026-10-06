@@ -1,0 +1,6 @@
+label	googlechrome__lighthouse-10295	w83
+provenance	GoogleChrome/lighthouse	7ffb922b1911e6db114f21d92f37a63f835ba3b7	0f2cde4bf94fe585ff3f14ef02505bcd47803889ea8800099b69508c78319c8a	reference-patch	40	1737
+entry	modified	lighthouse-core/lib/stack-collector.js	js-ts	source	regular	present	eligible
+gold	lighthouse-core/lib/stack-collector.js
+coverage	full	1	supported	1
+case	eligible-gold

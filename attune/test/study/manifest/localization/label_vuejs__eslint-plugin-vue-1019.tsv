@@ -1,0 +1,12 @@
+label	vuejs__eslint-plugin-vue-1019	w33
+provenance	vuejs/eslint-plugin-vue	ee4143b08d57a279dc17fb5ebccd212dfc122d86	ed8727e247f6e27b6a0b265c65263b98c9dc197d5f8f4c4a76c1944a7f75b398	reference-patch	135	4815
+entry	modified	lib/rules/component-definition-name-casing.js	js-ts	source	regular	present	eligible
+entry	modified	lib/rules/match-component-file-name.js	js-ts	source	regular	present	eligible
+entry	modified	lib/rules/no-reserved-component-names.js	js-ts	source	regular	present	eligible
+entry	modified	lib/utils/index.js	js-ts	source	regular	present	eligible
+gold	lib/rules/component-definition-name-casing.js
+gold	lib/rules/match-component-file-name.js
+gold	lib/rules/no-reserved-component-names.js
+gold	lib/utils/index.js
+coverage	full	4	supported	4
+case	eligible-gold

@@ -1,5 +1,6 @@
-load("//platform/build:native.bzl", "native_study_stage")
+load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_test", "native_study_stage")
 load("//platform/build:study.bzl", "attune_admission_probe", "attune_study")
+load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
 load("//test/study:manifest/manifest.bzl", "ANALYSIS")
 
 package(default_visibility = ["//visibility:public"])
@@ -171,9 +172,231 @@ _PROBE_TRUNCATED = (
     ]
 )
 
+# The declared localization reference-label stage (`VAL-LOC-001`): it re-verifies
+# the exact bytes and recorded physical schema of the same immutable pinned
+# catalog, maps the admitted real catalog panel into the shared study graph's
+# record vocabulary through `Attune.Study`, streams only the declared
+# `instance_id` and `patch` columns one bounded batch at a time, and reduces every
+# selected task's real reference patch through `Attune.Study.referenceLabel`
+# against that exact world's verified clean-source export inventory. It writes the
+# declared evaluator label artifacts, the audited coverage denominators, the
+# mapped public manifest and the classified findings. Manual like every study
+# surface: the ordinary `bazel test //...` gate never fetches or scans the corpus.
+native_study_stage(
+    name = "localization_labels",
+    srcs = [
+        "LocalizationLabels.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    input_names = [
+        "catalog",
+        "exports",
+        "panel",
+        "pin",
+        "schema",
+    ],
+    inputs = [
+        "@swe_rebench_v2_catalog//file:file",
+        "manifest/catalog/export_records.tsv",
+        "manifest/catalog/panel_public.tsv",
+        "//test/catalog:catalog_pin.tsv",
+        "//test/catalog:catalog_schema.tsv",
+    ],
+    java_deps = ["//platform/tools/parquet:attune_parquet"],
+    stage = "localization_labels",
+    tags = ["manual"],
+)
+
+# The declared localization-artifact laws: they audit the tree the label stage
+# materialized over the real admitted panel and the real pinned corpus.
+native_flix_consumer_test(
+    name = "localization_artifact_test",
+    srcs = [
+        "LocalizationArtifactLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    declared_files = [
+        "manifest/catalog/export_records.tsv",
+        "manifest/catalog/panel_public.tsv",
+    ],
+    produced = [":localization_labels"],
+    tags = ["manual"],
+)
+
+LOCALIZATION_ADMITTED = [
+    "manifest/localization/coverage.tsv",
+    "manifest/localization/exports.tsv",
+    "manifest/localization/findings.tsv",
+    "manifest/localization/label_elastic__synthetics-235.tsv",
+    "manifest/localization/label_elastic__synthetics-244.tsv",
+    "manifest/localization/label_elastic__synthetics-251.tsv",
+    "manifest/localization/label_elastic__synthetics-252.tsv",
+    "manifest/localization/label_ember-cli__eslint-plugin-ember-1000.tsv",
+    "manifest/localization/label_ember-cli__eslint-plugin-ember-1055.tsv",
+    "manifest/localization/label_ember-cli__eslint-plugin-ember-1079.tsv",
+    "manifest/localization/label_ember-cli__eslint-plugin-ember-107.tsv",
+    "manifest/localization/label_eslint__eslint-10054.tsv",
+    "manifest/localization/label_eslint__eslint-10055.tsv",
+    "manifest/localization/label_eslint__eslint-10103.tsv",
+    "manifest/localization/label_eslint__eslint-10109.tsv",
+    "manifest/localization/label_fhir__sushi-1000.tsv",
+    "manifest/localization/label_fhir__sushi-1006.tsv",
+    "manifest/localization/label_fhir__sushi-1014.tsv",
+    "manifest/localization/label_fhir__sushi-1016.tsv",
+    "manifest/localization/label_firebase__firebase-tools-2214.tsv",
+    "manifest/localization/label_firebase__firebase-tools-2271.tsv",
+    "manifest/localization/label_firebase__firebase-tools-2291.tsv",
+    "manifest/localization/label_firebase__firebase-tools-2321.tsv",
+    "manifest/localization/label_formidablelabs__urql-1040.tsv",
+    "manifest/localization/label_formidablelabs__urql-1046.tsv",
+    "manifest/localization/label_formidablelabs__urql-1077.tsv",
+    "manifest/localization/label_formidablelabs__urql-1117.tsv",
+    "manifest/localization/label_googlechrome__lighthouse-10184.tsv",
+    "manifest/localization/label_googlechrome__lighthouse-10189.tsv",
+    "manifest/localization/label_googlechrome__lighthouse-10295.tsv",
+    "manifest/localization/label_googlechrome__lighthouse-10460.tsv",
+    "manifest/localization/label_jlongster__prettier-101.tsv",
+    "manifest/localization/label_jlongster__prettier-107.tsv",
+    "manifest/localization/label_jlongster__prettier-113.tsv",
+    "manifest/localization/label_jlongster__prettier-142.tsv",
+    "manifest/localization/label_joshuakgoldberg__create-typescript-app-1000.tsv",
+    "manifest/localization/label_joshuakgoldberg__create-typescript-app-1529.tsv",
+    "manifest/localization/label_joshuakgoldberg__create-typescript-app-1533.tsv",
+    "manifest/localization/label_joshuakgoldberg__create-typescript-app-1544.tsv",
+    "manifest/localization/label_joshuakgoldberg__tslint-to-eslint-config-121.tsv",
+    "manifest/localization/label_joshuakgoldberg__tslint-to-eslint-config-24.tsv",
+    "manifest/localization/label_joshuakgoldberg__tslint-to-eslint-config-25.tsv",
+    "manifest/localization/label_joshuakgoldberg__tslint-to-eslint-config-26.tsv",
+    "manifest/localization/label_jsx-eslint__eslint-plugin-react-1591.tsv",
+    "manifest/localization/label_jsx-eslint__eslint-plugin-react-3249.tsv",
+    "manifest/localization/label_jsx-eslint__eslint-plugin-react-3317.tsv",
+    "manifest/localization/label_jsx-eslint__eslint-plugin-react-3335.tsv",
+    "manifest/localization/label_marpple__fxts-102.tsv",
+    "manifest/localization/label_marpple__fxts-103.tsv",
+    "manifest/localization/label_marpple__fxts-104.tsv",
+    "manifest/localization/label_marpple__fxts-105.tsv",
+    "manifest/localization/label_obsidian-tasks-group__obsidian-tasks-1006.tsv",
+    "manifest/localization/label_obsidian-tasks-group__obsidian-tasks-1107.tsv",
+    "manifest/localization/label_obsidian-tasks-group__obsidian-tasks-1232.tsv",
+    "manifest/localization/label_obsidian-tasks-group__obsidian-tasks-1309.tsv",
+    "manifest/localization/label_pinojs__pino-1127.tsv",
+    "manifest/localization/label_pinojs__pino-1137.tsv",
+    "manifest/localization/label_pinojs__pino-1199.tsv",
+    "manifest/localization/label_pinojs__pino-121.tsv",
+    "manifest/localization/label_platers__obsidian-linter-1001.tsv",
+    "manifest/localization/label_platers__obsidian-linter-1002.tsv",
+    "manifest/localization/label_platers__obsidian-linter-1007.tsv",
+    "manifest/localization/label_platers__obsidian-linter-1008.tsv",
+    "manifest/localization/label_projectevergreen__greenwood-1024.tsv",
+    "manifest/localization/label_projectevergreen__greenwood-1032.tsv",
+    "manifest/localization/label_projectevergreen__greenwood-1085.tsv",
+    "manifest/localization/label_projectevergreen__greenwood-1100.tsv",
+    "manifest/localization/label_sage__carbon-5356.tsv",
+    "manifest/localization/label_sage__carbon-5432.tsv",
+    "manifest/localization/label_sage__carbon-5474.tsv",
+    "manifest/localization/label_sage__carbon-5512.tsv",
+    "manifest/localization/label_serverless__serverless-11277.tsv",
+    "manifest/localization/label_serverless__serverless-11907.tsv",
+    "manifest/localization/label_serverless__serverless-12001.tsv",
+    "manifest/localization/label_serverless__serverless-12030.tsv",
+    "manifest/localization/label_sindresorhus__got-114.tsv",
+    "manifest/localization/label_sindresorhus__got-172.tsv",
+    "manifest/localization/label_sindresorhus__got-183.tsv",
+    "manifest/localization/label_sindresorhus__got-2043.tsv",
+    "manifest/localization/label_singapore__renovate-1005.tsv",
+    "manifest/localization/label_singapore__renovate-1006.tsv",
+    "manifest/localization/label_singapore__renovate-1018.tsv",
+    "manifest/localization/label_singapore__renovate-1048.tsv",
+    "manifest/localization/label_solid__community-server-1040.tsv",
+    "manifest/localization/label_solid__community-server-1170.tsv",
+    "manifest/localization/label_solid__community-server-148.tsv",
+    "manifest/localization/label_solid__community-server-168.tsv",
+    "manifest/localization/label_stoplightio__spectral-1020.tsv",
+    "manifest/localization/label_stoplightio__spectral-1059.tsv",
+    "manifest/localization/label_stoplightio__spectral-1077.tsv",
+    "manifest/localization/label_stoplightio__spectral-1227.tsv",
+    "manifest/localization/label_sveltejs__kit-3562.tsv",
+    "manifest/localization/label_sveltejs__kit-3570.tsv",
+    "manifest/localization/label_sveltejs__kit-3571.tsv",
+    "manifest/localization/label_sveltejs__kit-4140.tsv",
+    "manifest/localization/label_vuejs__eslint-plugin-vue-1001.tsv",
+    "manifest/localization/label_vuejs__eslint-plugin-vue-1015.tsv",
+    "manifest/localization/label_vuejs__eslint-plugin-vue-1016.tsv",
+    "manifest/localization/label_vuejs__eslint-plugin-vue-1019.tsv",
+    "manifest/localization/mapped.bzl",
+    "manifest/localization/mapped.tsv",
+    "manifest/localization/scan.tsv",
+]
+
+# The declared localization admission laws: the admitted public mapping, coverage
+# table and evaluator label artifacts under `manifest/localization/` are
+# byte-identical to what the declared label stage emitted, and the admitted label
+# population is exactly the mapped task population. The admitted population is
+# declared here one file at a time, so the live workspace audit sees the exact
+# artifacts rather than a macro default.
+native_flix_consumer_test(
+    name = "localization_admission_test",
+    srcs = [
+        "LocalizationAdmissionLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    declared_files = LOCALIZATION_ADMITTED,
+    produced = [":localization_labels"],
+    tags = ["manual"],
+)
+
+# The corpus-free localization reference-label laws (`VAL-LOC-001`): they drive
+# the exact production reduction the localization stage runs over the real
+# admitted panel and the real pinned reference patches — the declared supported
+# source extensions, the declared test-path vocabulary, the declared non-regular
+# git modes, the git and plain-unified patch-header reduction, the
+# rename-to-old-path attribution, the preexisting-inventory requirement, the
+# separate full/supported coverage numbers and every declared classified case.
+# No corpus, no target code and no dependency is touched here.
+native_flix_test(
+    name = "localization_law",
+    srcs = [
+        "LocalizationLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Study.flix",
+    ],
+    tags = ["manual"],
+)
+
+# The declared localization surface (`VAL-LOC-001`): the corpus-free reference
+# label laws, the real-panel label stage and its artifact and admission laws. The
+# fixture graph's own `all` suite above stays the declared fixture study; this
+# suite is the declared way to run the real localization pilot. Manual like every
+# study surface, so the ordinary `bazel test //...` gate never fetches or scans
+# the pinned corpus.
+test_suite(
+    name = "localization",
+    tags = ["manual"],
+    tests = [
+        ":localization_admission_test",
+        ":localization_artifact_test",
+        ":localization_law",
+    ],
+)
+
 attune_admission_probe(
     name = "admission_probe",
     rows = _PROBE_OVERBOUND,
+)
+
+# The production admission predicate over the admitted real mapped localization
+# manifest. The mapped rows come from the emitted `mapped.bzl`, so this is the
+# real panel's own vocabulary being checked against the same contract the study
+# macro enforces: the declared record vocabulary, no admitted `truncated` or
+# `exceeded` row, and the panel's own group/per-group task/pair/pair-group
+# bounds. It records the violations it finds and fails only under
+# `--define=attune_admission_strict=1`, so it can never break the offline gate.
+attune_admission_probe(
+    name = "localization_admission_probe",
+    rows = ["\t".join(row) for row in LOCALIZATION_ANALYSIS],
 )
 
 attune_admission_probe(

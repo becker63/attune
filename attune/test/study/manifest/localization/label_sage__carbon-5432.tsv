@@ -1,0 +1,29 @@
+label	sage__carbon-5432	w28
+provenance	Sage/carbon	5be5f330c7dc88fc30f5362c7d4f9c9d0ada74bf	e5ef55306b1b53524b9a9c246f6b160d441961f325fb8a1ed85c2d687ed98ad2	reference-patch	425	17710
+entry	modified	src/components/select/filterable-select/filterable-select.component.js	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/filterable-select/filterable-select.d.ts	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/filterable-select/filterable-select.spec.js	js-ts	test	regular	present	ineligible
+entry	modified	src/components/select/filterable-select/filterable-select.stories.mdx	other	source	regular	absent	ineligible
+entry	modified	src/components/select/multi-select/multi-select.component.js	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/multi-select/multi-select.d.ts	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/multi-select/multi-select.spec.js	js-ts	test	regular	present	ineligible
+entry	modified	src/components/select/multi-select/multi-select.stories.mdx	other	source	regular	absent	ineligible
+entry	modified	src/components/select/select-list/select-list-container.style.js	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/select-list/select-list.component.js	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/select-list/select-list.spec.js	js-ts	test	regular	present	ineligible
+entry	modified	src/components/select/select-list/select-list.style.js	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/simple-select/simple-select.component.js	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/simple-select/simple-select.d.ts	js-ts	source	regular	present	eligible
+entry	modified	src/components/select/simple-select/simple-select.spec.js	js-ts	test	regular	present	ineligible
+entry	modified	src/components/select/simple-select/simple-select.stories.mdx	other	source	regular	absent	ineligible
+gold	src/components/select/filterable-select/filterable-select.component.js
+gold	src/components/select/filterable-select/filterable-select.d.ts
+gold	src/components/select/multi-select/multi-select.component.js
+gold	src/components/select/multi-select/multi-select.d.ts
+gold	src/components/select/select-list/select-list-container.style.js
+gold	src/components/select/select-list/select-list.component.js
+gold	src/components/select/select-list/select-list.style.js
+gold	src/components/select/simple-select/simple-select.component.js
+gold	src/components/select/simple-select/simple-select.d.ts
+coverage	full	16	supported	9
+case	eligible-gold

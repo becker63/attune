@@ -1,0 +1,25 @@
+label	solid__community-server-148	w52
+provenance	solid/community-server	b1991cb08ae722aae497104067a7a455456952c7	1162a6e0205aaddb00b54f3465c89e936bf2eac253e947f005ee1c6164c56018	reference-patch	421	15517
+entry	modified	config/config-default.json	other	source	regular	absent	ineligible
+entry	new	config/presets/cli-params.json	other	source	regular	absent	ineligible
+entry	modified	config/presets/setup.json	other	source	regular	absent	ineligible
+entry	modified	config/presets/storage.json	other	source	regular	absent	ineligible
+entry	modified	config/presets/storage_wrapper.json	other	source	regular	absent	ineligible
+entry	modified	index.ts	js-ts	source	regular	present	eligible
+entry	modified	package-lock.json	other	source	regular	absent	ineligible
+entry	modified	package.json	other	source	regular	absent	ineligible
+entry	modified	src/init/CliRunner.ts	js-ts	source	regular	present	eligible
+entry	deleted	src/init/RuntimeConfig.ts	js-ts	source	regular	present	eligible
+entry	modified	src/init/Setup.ts	js-ts	source	regular	present	eligible
+entry	modified	src/storage/ExtensionBasedMapper.ts	js-ts	source	regular	present	eligible
+entry	modified	src/storage/InMemoryResourceStore.ts	js-ts	source	regular	present	eligible
+entry	modified	src/storage/UrlContainerManager.ts	js-ts	source	regular	present	eligible
+gold	index.ts
+gold	src/init/CliRunner.ts
+gold	src/init/RuntimeConfig.ts
+gold	src/init/Setup.ts
+gold	src/storage/ExtensionBasedMapper.ts
+gold	src/storage/InMemoryResourceStore.ts
+gold	src/storage/UrlContainerManager.ts
+coverage	full	14	supported	7
+case	eligible-gold

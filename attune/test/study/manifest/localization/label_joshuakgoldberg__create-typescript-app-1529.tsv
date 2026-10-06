@@ -1,0 +1,10 @@
+label	joshuakgoldberg__create-typescript-app-1529	w17
+provenance	JoshuaKGoldberg/create-typescript-app	a64a9c7f55de23c8f80633dd0e6d4353fcd1f220	35073e2d815605185e91ed99e88491fcc83b4370bea120c66c94b189519fdd89	reference-patch	53	1708
+entry	modified	.github/actions/prepare/action.yml	other	source	regular	absent	ineligible
+entry	modified	package.json	other	source	regular	absent	ineligible
+entry	modified	src/steps/writing/creation/dotGitHub/actions.ts	js-ts	source	regular	present	eligible
+entry	modified	src/steps/writing/creation/writePackageJson.ts	js-ts	source	regular	present	eligible
+gold	src/steps/writing/creation/dotGitHub/actions.ts
+gold	src/steps/writing/creation/writePackageJson.ts
+coverage	full	4	supported	2
+case	eligible-gold

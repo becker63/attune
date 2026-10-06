@@ -1,0 +1,6 @@
+label	sindresorhus__got-172	w70
+provenance	sindresorhus/got	f9078b6440eefd3a8ebf15ff07b61d2bc1b27b8b	087253ced3a2a66172727f37d2cae89c71d3bfdb2b13f438cd7391c44cd36ded	reference-patch	13	322
+entry	modified	index.js	js-ts	source	regular	present	eligible
+gold	index.js
+coverage	full	1	supported	1
+case	eligible-gold

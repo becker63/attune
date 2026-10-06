@@ -1,0 +1,10 @@
+label	joshuakgoldberg__create-typescript-app-1533	w18
+provenance	JoshuaKGoldberg/create-typescript-app	834a44de5b4a7f3e4be4925a68911e192cbba2de	172e549cf0b04e9740ba0d19981bf285a7978316f4918f8a8df888b432882a2e	reference-patch	112	3745
+entry	modified	package.json	other	source	regular	absent	ineligible
+entry	modified	pnpm-lock.yaml	other	source	regular	absent	ineligible
+entry	modified	src/shared/options/getGitHub.ts	js-ts	source	regular	present	eligible
+entry	modified	src/steps/uninstallPackages.ts	js-ts	source	regular	present	eligible
+gold	src/shared/options/getGitHub.ts
+gold	src/steps/uninstallPackages.ts
+coverage	full	4	supported	2
+case	eligible-gold

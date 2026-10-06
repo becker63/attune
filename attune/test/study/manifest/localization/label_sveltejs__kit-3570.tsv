@@ -1,0 +1,62 @@
+label	sveltejs__kit-3570	w21
+provenance	sveltejs/kit	80233c279f94e6aa86888b24147d46141c3ea688	2876b6399f4d6f0c85ff00f0d20576d57a16e8ad610be3d7721a4e8e6d278a45	reference-patch	728	31325
+entry	new	.changeset/brown-impalas-travel.md	other	source	regular	absent	ineligible
+entry	new	.changeset/eight-readers-thank.md	other	source	regular	absent	ineligible
+entry	new	.changeset/hip-walls-flash.md	other	source	regular	absent	ineligible
+entry	new	.changeset/nine-kids-brake.md	other	source	regular	absent	ineligible
+entry	modified	.changeset/pre.json	other	source	regular	absent	ineligible
+entry	new	.changeset/proud-buses-hug.md	other	source	regular	absent	ineligible
+entry	new	.changeset/serious-horses-rule.md	other	source	regular	absent	ineligible
+entry	modified	.github/actions/env/package.json	other	source	regular	absent	ineligible
+entry	modified	.github/workflows/update_template.yml	other	source	regular	absent	ineligible
+entry	modified	documentation/docs/01-routing.md	other	source	regular	absent	ineligible
+entry	modified	documentation/docs/14-configuration.md	other	source	regular	absent	ineligible
+entry	modified	documentation/faq/70-packages.md	other	source	regular	absent	ineligible
+entry	modified	documentation/migrating/04-pages.md	other	source	regular	absent	ineligible
+entry	modified	package.json	other	source	regular	absent	ineligible
+entry	modified	packages/create-svelte/CHANGELOG.md	other	source	regular	absent	ineligible
+entry	modified	packages/create-svelte/package.json	other	source	regular	absent	ineligible
+entry	modified	packages/create-svelte/shared/README.md	other	source	regular	absent	ineligible
+entry	modified	packages/kit/CHANGELOG.md	other	source	regular	absent	ineligible
+entry	modified	packages/kit/package.json	other	source	regular	absent	ineligible
+entry	modified	packages/kit/src/cli.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/core/build/index.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/core/config/options.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/core/create_manifest_data/index.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/core/create_manifest_data/index.spec.js	js-ts	test	regular	present	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/.a.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/.well-known/dnt-policy.txt.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/__error.svelte	other	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/__layout.svelte	other	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/_a.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/a.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/a.md	other	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/a.spec.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/subdir/.a.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/subdir/.well-known/dnt-policy.txt.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/subdir/__error.svelte	other	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/subdir/__layout.svelte	other	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/subdir/_a.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/subdir/a.js	js-ts	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/subdir/a.md	other	test	regular	absent	ineligible
+entry	new	packages/kit/src/core/create_manifest_data/test/samples/hidden-by-excludes-config/subdir/a.spec.js	js-ts	test	regular	absent	ineligible
+entry	modified	packages/kit/src/core/dev/index.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/core/dev/plugin.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/core/generate_manifest/index.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/node.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/src/runtime/server/page/load_node.js	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/types/config.d.ts	js-ts	source	regular	present	eligible
+entry	modified	packages/kit/types/internal.d.ts	js-ts	source	regular	present	eligible
+gold	packages/kit/src/cli.js
+gold	packages/kit/src/core/build/index.js
+gold	packages/kit/src/core/config/options.js
+gold	packages/kit/src/core/create_manifest_data/index.js
+gold	packages/kit/src/core/dev/index.js
+gold	packages/kit/src/core/dev/plugin.js
+gold	packages/kit/src/core/generate_manifest/index.js
+gold	packages/kit/src/node.js
+gold	packages/kit/src/runtime/server/page/load_node.js
+gold	packages/kit/types/config.d.ts
+gold	packages/kit/types/internal.d.ts
+coverage	full	47	supported	11
+case	eligible-gold

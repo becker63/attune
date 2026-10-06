@@ -1,0 +1,11 @@
+label	firebase__firebase-tools-2271	w78
+provenance	firebase/firebase-tools	e04591d4965746af1b7e36873265dcf4cbd5cb6c	789f2a98d64c50b972fc92a5d0067bc4fd76a9360e04e98b9a7923856df09b3f	reference-patch	114	4090
+entry	modified	CHANGELOG.md	other	source	regular	absent	ineligible
+entry	modified	src/init/features/firestore/index.ts	js-ts	source	regular	present	eligible
+entry	modified	src/init/features/storage.ts	js-ts	source	regular	present	eligible
+entry	modified	src/management/projects.ts	js-ts	source	regular	present	eligible
+gold	src/init/features/firestore/index.ts
+gold	src/init/features/storage.ts
+gold	src/management/projects.ts
+coverage	full	4	supported	3
+case	eligible-gold

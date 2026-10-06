@@ -1,0 +1,11 @@
+label	fhir__sushi-1014	w10
+provenance	FHIR/sushi	663286ef961c7546f71ba9e86e1e6862e4ff7046	2b533c909790bc186f731fa7c6b02296667badbb92bc0b9e0a6f7f7cbe9a0f23	reference-patch	96	4521
+entry	new	.nvmrc	other	source	regular	absent	ineligible
+entry	modified	src/app.ts	js-ts	source	regular	present	eligible
+entry	modified	src/fhirdefs/load.ts	js-ts	source	regular	present	eligible
+entry	modified	src/import/loadConfigurationFromIgResource.ts	js-ts	source	regular	present	eligible
+gold	src/app.ts
+gold	src/fhirdefs/load.ts
+gold	src/import/loadConfigurationFromIgResource.ts
+coverage	full	4	supported	3
+case	eligible-gold

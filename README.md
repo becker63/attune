@@ -482,8 +482,21 @@ included groups, and the frozen group-disjoint approximately 60/20/20
 development/calibration/final split with its largest-remainder rounding, its
 prior-exposure flags, its explicit selection attrition and its classified image
 pins. The public panel and the physically separate evaluator scope are admitted
-before the study invocation. The selected localization and pair studies remain
-the following features' work, so no localization gain is claimed here.
+before the study invocation. The `manual` `//test/study:localization_labels`
+stage then maps that admitted real panel into the shared study record vocabulary
+in `Attune.Study` and reduces every one of its 96 selected tasks' real reference
+patch against that exact world's verified clean-source export inventory: gold is
+the set of modified or deleted preexisting JS/TS source paths (a rename is
+attributed to its old path), and full versus supported patch coverage, plus the
+new-file-only, test-only, ambiguous, unsupported, missing-world and
+empty-eligible-gold cases, are reported separately, so a missing or unsupported
+label can never become an empty successful gold. The stage writes the physically
+separate evaluator label artifacts, the audited coverage denominators, the
+mapped public manifest and the classified findings; the ordinary `bazel test //...`
+gate never fetches or scans the corpus, and the admitted label artifacts are
+byte-identical to the emitted ones. The world facts and descriptor populations
+that a fully expanded real graph needs are the following features' work, so no
+localization gain is claimed here.
 
 ## Deferred
 

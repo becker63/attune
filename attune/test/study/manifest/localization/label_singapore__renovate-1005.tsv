@@ -1,0 +1,6 @@
+label	singapore__renovate-1005	w65
+provenance	singapore/renovate	8d91a85fb72490c996fd953925a9e3a856c35b5f	09a030777f703c5418a0347dce3b0db64833000dba0b07344f99f1b5f518c149	reference-patch	35	1482
+entry	modified	lib/workers/package/index.js	js-ts	source	regular	present	eligible
+gold	lib/workers/package/index.js
+coverage	full	1	supported	1
+case	eligible-gold

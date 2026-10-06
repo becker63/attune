@@ -1,0 +1,6 @@
+label	jlongster__prettier-142	w41
+provenance	jlongster/prettier	d25881530f658cda4a516fbbbf60aea6182a1285	71b9419f14c2c6fca65bd0a385875e394fa3677576e92c6b3fe542e52d71a16d	reference-patch	24	796
+entry	modified	src/printer.js	js-ts	source	regular	present	eligible
+gold	src/printer.js
+coverage	full	1	supported	1
+case	eligible-gold

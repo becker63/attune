@@ -1,0 +1,6 @@
+label	sindresorhus__got-114	w69
+provenance	sindresorhus/got	f9f2807e63635432ab175824859caa70e3c583aa	3ce75ce319a4c58d2b3a0ccdb75a71685b972f1d818864ee767590a495b6c1a6	reference-patch	23	574
+entry	modified	index.js	js-ts	source	regular	present	eligible
+gold	index.js
+coverage	full	1	supported	1
+case	eligible-gold

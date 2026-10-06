@@ -1,0 +1,10 @@
+label	serverless__serverless-11907	w2
+provenance	serverless/serverless	4d64730130c44cdfbb872f8a16111df409135dc8	54fcb7a35b8d8f5087cc06f442fd73ff14e0b4a7f941bfa721854f19131dbbb5	reference-patch	76	2976
+entry	modified	docs/providers/aws/guide/functions.md	other	source	regular	absent	ineligible
+entry	modified	lib/plugins/aws/package/compile/functions.js	js-ts	source	regular	present	eligible
+entry	modified	lib/plugins/aws/provider.js	js-ts	source	regular	present	eligible
+entry	modified	package.json	other	source	regular	absent	ineligible
+gold	lib/plugins/aws/package/compile/functions.js
+gold	lib/plugins/aws/provider.js
+coverage	full	4	supported	2
+case	eligible-gold

@@ -1,0 +1,6 @@
+label	pinojs__pino-1127	w89
+provenance	pinojs/pino	c57c25855d89a2c481914672bbdeebe7ec3087c7	56f5c540be5b91215b83fe1e03afe76fce117097abd9c87c5973e626e0c7a327	reference-patch	19	536
+entry	modified	lib/tools.js	js-ts	source	regular	present	eligible
+gold	lib/tools.js
+coverage	full	1	supported	1
+case	eligible-gold
