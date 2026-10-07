@@ -2487,6 +2487,174 @@ Its assertions fail closed: a drifted task count, a changed semantic payload, a
 changed prompt, a moved candidate population, an unrecognized economics field or
 a missing fifth observation aborts the stage rather than publishing a family.
 
+## Replicated ensembles, working sets and actual incremental economics (generation 15)
+
+Owner-authorized continuation (2026-10-07): **Phases 3–5 of the strict +
+replicated experiment** — the stochastic stability of the frozen
+five-observation family, the cumulative votes and the three fixed ensembles, the
+cumulative working sets with their mandatory equal-budget control, and the actual
+incremental economics of the family. It consumes the immutable family published
+in generation 14 and re-derives nothing upstream: neither stage declares a world
+extraction, `Repository`, `Theory`, variant ranking, CodeRankEmbed inference, a
+hosted-Qwen request or a JEV call, so both re-execute zero upstream producers and
+issue zero provider requests (0 JEV / 0 embedding / 0 hosted-Qwen / 0
+`Repository` / 0 `Theory`, by construction and by its declared closure).
+
+The section lettering continues the strict publication: **A** strict ten-arm
+table and **B** oracle ceilings (generation 13, above) are followed here by
+**C** stability, **D** ensemble curves, **E** union working sets and the
+equal-budget control, **F** cost and latency, and **G** interpretation. The
+generation-14 section between them is the acquisition report that this reduction
+consumes.
+
+### C. Stability of the five-observation family (published before the ensemble)
+
+This reduction is published **before any ensemble ranking was constructed**. Its
+stage reads only the five typed observations of each condition and writes the
+stability record: it constructs no vote ranking, no fixed ensemble and no
+retrieval metric, and it asserts that fact over its own output (0 `metric` rows),
+so the publish-first ordering is a property of the built artifact rather than a
+claim about the writing order of this report. No ensemble or union target had
+been built when this section was published.
+
+**Population.** 88 surviving tasks per condition; 2,756 judged `A32` candidates
+per condition (5,512 total); five preregistered observations each = **27,560
+typed outcomes**, exactly the family published in generation 14. The raw
+categories `R` (Relevant), `N` (NotRelevant), `U` (Unknown) and a typed `Failed`
+are never collapsed: every pattern signature below is a multiset over those four
+letters, and the family's own generation-14 totals carry 0 typed `Failed`
+observations — a `Failed` observation would appear in a signature as a visible
+letter casting no vote, not as a silent drop or a negative.
+
+**Categorical agreement (per condition, 2,756 judged candidates).**
+
+| Measure | `A` control | `A` structure (`S`) |
+| --- | --- | --- |
+| all five identical (`5/5`) | 2,702 (98.0%) | 2,696 (97.8%) |
+| four of five identical (`4/5`) | 35 (1.3%) | 34 (1.2%) |
+| three of five identical (`3/5`) | 17 (0.6%) | 24 (0.9%) |
+| any other split (`other`) | 2 (0.1%) | 2 (0.1%) |
+| unstable (`4/5` + `3/5` + `other`) | **54 (2.0%)** | **60 (2.2%)** |
+| ever moved between `Relevant` and non-`Relevant` (flip) | **42 (1.5%)** | **37 (1.3%)** |
+| `Relevant` in all five (`R5`) | 169 (6.1%) | 132 (4.8%) |
+| `Relevant` in at least one | 211 (7.7%) | 169 (6.1%) |
+| `Relevant` in none | 2,545 (92.3%) | 2,587 (93.9%) |
+
+The 54 unstable `A` candidates are 42 flips plus 12 candidates that moved only
+between the two non-`Relevant` categories (`N`/`U`); the corresponding `S`
+numbers are 37 and 23.
+
+**Relevant votes 0..5 (the cumulative vote histogram).**
+
+| votes | `A` control | `A` structure (`S`) |
+| --- | --- | --- |
+| 0 | 2,545 (92.3%) | 2,587 (93.9%) |
+| 1 | 15 (0.5%) | 15 (0.5%) |
+| 2 | 12 (0.4%) | 9 (0.3%) |
+| 3 | 2 (0.1%) | 7 (0.3%) |
+| 4 | 13 (0.5%) | 6 (0.2%) |
+| 5 | 169 (6.1%) | 132 (4.8%) |
+
+Only an explicit `Relevant` observation casts a vote, so the histogram is the
+vote count, not a signed score; `N`, `U` and `Failed` all sit at 0.
+
+**Every observed pattern, with its count** (`R` vote, `N`, `U`, `F` = typed
+`Failed`; the pattern is the multiset over the five preregistered replicates):
+
+| pattern | `A` control | | pattern | `A` structure (`S`) |
+| --- | --- | --- | --- | --- |
+| `N5` | 2,489 | | `N5` | 2,525 |
+| `U5` | 44 | | `U5` | 39 |
+| `R5` | 169 | | `R5` | 132 |
+| `R4+N1` | 9 | | `R4+N1` | 3 |
+| `R4+U1` | 4 | | `R4+U1` | 3 |
+| `R3+N2` | 2 | | `R3+N2` | 3 |
+| `R3+U2` | — | | `R3+U2` | 4 |
+| `R2+N3` | 7 | | `R2+N3` | 7 |
+| `R2+U3` | 4 | | `R2+U3` | 1 |
+| `R2+N2+U1` | 1 | | `R2+N1+U2` | 1 |
+| `R1+N4` | 6 | | `R1+N4` | 9 |
+| `R1+U4` | 8 | | `R1+U4` | 4 |
+| `R1+N2+U2` | 1 | | `R1+N2+U2` | 1 |
+| `R1+N1+U3` | — | | `R1+N1+U3` | 1 |
+| `N4+U1` | 6 | | `N4+U1` | 9 |
+| `N3+U2` | 1 | | `N3+U2` | 5 |
+| `N2+U3` | 3 | | `N2+U3` | 3 |
+| `N1+U4` | 2 | | `N1+U4` | 6 |
+| **distinct** | **16** | | **distinct** | **18** |
+
+Every pattern sums to the condition's 2,756 judged candidates (the `—` cells are
+patterns that were not observed in that condition). No `F` appears in any
+observed pattern, because this family recorded no typed failures.
+
+**Per-task instability.** 31 of the 88 `A` tasks and 31 of the 88 `S` tasks carry
+at least one unstable candidate; 57 `A` tasks and 57 `S` tasks are perfectly
+stable at `5/5` on all 32 of their candidates. The worst `A` task is
+`joshuakgoldberg__create-typescript-app-1533` (5 unstable, 5 flips of 32); the
+worst `S` tasks are `joshuakgoldberg__tslint-to-eslint-config-25`,
+`obsidian-tasks-group__obsidian-tasks-1006` and `serverless__serverless-11277`
+(6 unstable each, 2–6 flips of 32). Instability is therefore concentrated in a
+minority of tasks rather than spread evenly, and neither condition dominates the
+other.
+
+**Pairwise replicate agreement, and ordinary top-10 overlap.** All ten replicate
+pairs per condition, over the 2,756 judged candidates and over each replicate's
+ordinary Relevant-first top-10 (88 tasks × 10 = 880 positions per replicate):
+
+| pair | `A` agreement | `A` top-10 overlap | `S` agreement | `S` top-10 overlap |
+| --- | --- | --- | --- | --- |
+| 1–2 | 2,730 (99.1%) | 866 (98.4%) | 2,728 (99.0%) | 868 (98.6%) |
+| 1–3 | 2,726 (98.9%) | 869 (98.8%) | 2,725 (98.9%) | 863 (98.1%) |
+| 1–4 | 2,727 (98.9%) | 868 (98.6%) | 2,727 (98.9%) | 867 (98.5%) |
+| 1–5 | 2,726 (98.9%) | 867 (98.5%) | 2,732 (99.1%) | 870 (98.9%) |
+| 2–3 | 2,732 (99.1%) | 870 (98.9%) | 2,731 (99.1%) | 870 (98.9%) |
+| 2–4 | 2,734 (99.2%) | 872 (99.1%) | 2,726 (98.9%) | 870 (98.9%) |
+| 2–5 | 2,735 (99.2%) | 870 (98.9%) | 2,720 (98.7%) | 867 (98.5%) |
+| 3–4 | 2,729 (99.0%) | 869 (98.8%) | 2,726 (98.9%) | 865 (98.3%) |
+| 3–5 | 2,731 (99.1%) | 869 (98.8%) | 2,719 (98.7%) | 865 (98.3%) |
+| 4–5 | 2,732 (99.1%) | 870 (98.9%) | 2,729 (99.0%) | 868 (98.6%) |
+
+The overlap of the two ordinary top-10 sets is 96.2–98.2% of their union as
+well, so the ~1–2% disagreement is not concentrated in a reordering of the
+ordinary head. Agreement ranges are narrow: 98.7–99.2% for `A` candidates and
+98.7–99.1% for `S`.
+
+**What this is, and what it is not.** The five observations per condition repeat
+one frozen prompt, one frozen payload and one resolved route, so the movement
+above is the measured non-determinism of that repeated call, not a claim about
+provider independence, model choice or a general stability property of the
+corpus. The family is highly stable but **not identical across repeats**: about
+2% of judged candidates move, about 1.5% change their Relevant/non-Relevant
+decision, and those candidates are concentrated in ~35% of tasks. Nothing here
+selects a threshold, a winner or a cutoff.
+
+**Replay.** The stability stage executed as the single **remote** action of
+invocation `abc945ac-ac3d-4a8c-9d44-6d56c258c1b5` (`1 remote`, all other declared
+actions resolved from the action/remote cache; 0 re-executions of upstream
+producers, 0 provider requests). Its closure is 100 declared inputs: the ten
+frozen decision manifests, the frozen `A32` population record, the admitted task
+map, and the 88 warm deterministic `P+A` rank trees. Its fail-closed assertions
+require 88 tasks, 88 population rows summing to 2,756, 2,756 judged candidates per
+condition, five observations per judged candidate (27,560 in total), no
+retrieval metric in its own output, and a stage name bound to the declared
+reduction.
+
+**Artifacts** (`bazel-bin/test/localization_ensembles/stability/`, headerless TSV
+with a leading `#` column contract row; sha256 of the published bytes):
+
+| artifact | rows | sha256 |
+| --- | --- | --- |
+| `stability_summary.tsv` | 67 | `cee23ac7f0cd6103d62e07ee7c11632eaa3358bcdf50a35124b112bcc2a64789` |
+| `stability_task.tsv` | 177 | `d88b10e93b40a1c47a19d3528bd04b2e80e6a6716cc853bb797d9e7930f7f273` |
+| `stability_pairwise.tsv` | 41 | `71b7d5a4d9e1133ca158a1865fb337f0ae1ee351fa1c812bbbb441c371b9eb41` |
+| `closure.tsv` | 101 | `8230ffd1bac488c33f15590da7028a684f872ba68e29c0be2552bbc766043881` |
+
+The stability reduction is the production statement `Attune.Study.Ensemble`
+driven by the stage in `test/localization_ensembles/EnsembleStages.flix`; its
+corpus-free laws (`EnsembleLaw.flix`) pin the agreement categories, the pattern
+signatures, the flip predicate and the pairwise reductions without touching the
+corpus, and run inside the ordinary offline gate.
+
 ## Latency regimes
 
 | Regime | Covers | Measured |
@@ -3471,3 +3639,34 @@ No upstream producer action re-executed in either.
   `74ffdae3-54c6-4e16-bb58-115e57d06f2a` and the ordinary offline gate is
   **35/35 passing**. No earlier number moved; the union and Sol phases remain
   unstarted.
+- **2026-10-07T23:40:00Z — generation 15, PART 1 OF 2: STOCHASTIC STABILITY
+  (Phase 3, published before the ensemble).** Adds the new
+  `test/localization_ensembles` package (two ordered corpus-bound stages, the
+  corpus-free `EnsembleLaw.flix` laws and the
+  `//test/localization_ensembles:policy_files` registration in the root
+  `BUILD.bazel`) and the production semantic owner
+  `src/Attune/Study/Ensemble.flix` (stability categories, pattern signatures,
+  relevant-only cumulative votes, the `(-votes, original P+A rank)` order, the
+  three fixed ensembles, the union working set and the reported statistics). This
+  part publishes the stability reduction **before any ensemble ranking was
+  constructed**: the `stability` stage builds no vote ranking, no fixed ensemble
+  and no metric, and asserts that over its own output; no ensemble target existed
+  when it ran. Measured over the frozen family (88 tasks per condition, 2,756
+  judged candidates per condition, five observations each = 27,560 typed
+  outcomes): `A` control 2,702 stable at 5/5 (98.0%), 35 at 4/5, 17 at 3/5, 2
+  other = 54 unstable (2.0%), of which 42 flip between `Relevant` and
+  non-`Relevant`; `S` structure 2,696 at 5/5 (97.8%), 34 at 4/5, 24 at 3/5, 2
+  other = 60 unstable (2.2%), of which 37 flip. Votes 0..5: `A` 2,545 / 15 / 12 /
+  2 / 13 / 169 and `S` 2,587 / 15 / 9 / 7 / 6 / 132, with only explicit
+  `Relevant` observations voting. 16 distinct outcome patterns are observed on
+  `A` and 18 on `S` (all `R`/`N`/`U` multisets, 0 typed `Failed` in this family);
+  57 of 88 tasks per condition are perfectly stable, and instability is
+  concentrated in the remaining 31. Pairwise replicate agreement is 98.7–99.2%
+  (`A`) and 98.7–99.1% (`S`) of judged candidates, with ordinary top-10 overlap
+  98.1–99.1% of 880 positions and 96.2–98.2% of the two sets' union. The
+  `stability` stage executed as the single remote action of invocation
+  `abc945ac-ac3d-4a8c-9d44-6d56c258c1b5` with 0 re-executed upstream producers,
+  0 JEV, 0 embedding, 0 hosted-Qwen, 0 `Repository`/`Theory` and 0 provider
+  requests. No earlier number moved; the votes/ensembles, union, equal-budget
+  control, economics and interpretation parts of generation 15 follow in part 2
+  of this section.
