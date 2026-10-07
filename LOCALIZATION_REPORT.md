@@ -2655,6 +2655,412 @@ corpus-free laws (`EnsembleLaw.flix`) pin the agreement categories, the pattern
 signatures, the flip predicate and the pairwise reductions without touching the
 corpus, and run inside the ordinary offline gate.
 
+### D. Ensemble curves (cumulative votes and the three fixed ensembles)
+
+**Construction.** For each condition the complete cumulative vote ranking of
+`N = 1..5` orders every candidate of the frozen `P+A` base ranking by
+`(−votes, original P+A rank)`: a candidate that any of the first `N` preregistered
+replicates called `Relevant` precedes every candidate with fewer votes, and within
+an equal vote count the original `P+A` rank decides, so the judged `A32`
+candidates keep their frozen order and the candidates outside the judged
+population follow in that same original order. Only an explicit `Relevant`
+observation votes, and a candidate with no receipt row is `Unknown` — an absence
+of evidence, never a negative. No learned weight, confidence, gold threshold or
+tuned cutoff enters the order. `N = 1` reproduces the published one-shot ranking
+exactly, asserted on all 176 (condition, task) pairs, and all nine arms carry the
+identical complete base candidate population (750 candidates per task), also
+asserted.
+
+**The three fixed ensembles, all published.** `ANY` selects votes ≥ 1 (211 `A`
+candidates, 169 `S`), `MAJ` votes ≥ 3 (184 / 145) and `CONS` votes = 5 (169 / 132)
+of the 2,756 judged candidates per condition; a selected candidate precedes every
+unselected one under the same `(−votes, original rank)` key, and the population is
+unchanged. None is selected as a winner and no threshold was tuned. `CONS` has at
+least one selected candidate in 68 of 88 `A` tasks and 61 of 88 `S` tasks, so on
+the remaining tasks it is the frozen order unchanged rather than an empty
+ranking.
+
+**All-eligible, task micro, 85 eligible tasks** — all twelve canonical metrics.
+The exact `(numerator, denominator)` pair is carried in
+`ensemble_metrics.tsv` for every cell, beside the percentage.
+
+| metric | `PA` | `votes1` | `votes2` | `votes3` | `votes4` | `votes5` | `ANY` | `MAJ` | `CONS` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Hit@1 | 18.8% | 30.6% | 30.6% | 30.6% | 31.8% | 31.8% | 31.8% | 31.8% | 31.8% |
+| Hit@5 | 31.8% | 47.1% | 47.1% | 48.2% | 48.2% | 48.2% | 48.2% | 48.2% | 47.1% |
+| Hit@10 | 41.2% | 51.8% | 54.1% | 54.1% | 54.1% | 54.1% | 54.1% | 54.1% | 51.8% |
+| Recall@1 | 11.6% | 20.8% | 20.8% | 20.8% | 21.0% | 21.0% | 21.0% | 21.0% | 21.0% |
+| Recall@5 | 19.6% | 32.0% | 32.0% | 32.1% | 32.1% | 32.1% | 32.1% | 32.1% | 31.8% |
+| Recall@10 | 27.1% | 34.4% | 35.7% | 35.7% | 35.9% | 35.9% | 35.9% | 35.7% | 34.2% |
+| MRR@10 | 25.0% | 38.2% | 38.4% | 38.5% | 39.3% | 39.3% | 39.3% | 39.3% | 39.0% |
+| FileAcc@1 | 8.2% | 16.5% | 16.5% | 16.5% | 16.5% | 16.5% | 16.5% | 16.5% | 16.5% |
+| FileAcc@3 | 12.9% | 22.4% | 22.4% | 22.4% | 22.4% | 22.4% | 22.4% | 22.4% | 22.4% |
+| FileAcc@5 | 14.1% | 22.4% | 22.4% | 22.4% | 22.4% | 22.4% | 22.4% | 22.4% | 22.4% |
+| FileAcc@10 | 20.0% | 23.5% | 24.7% | 24.7% | 24.7% | 24.7% | 24.7% | 24.7% | 23.5% |
+| FileAcc@32 | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% |
+
+`A` control, group-equal macro (22 groups):
+
+| metric | `PA` | `votes1` | `votes2` | `votes3` | `votes4` | `votes5` | `ANY` | `MAJ` | `CONS` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Hit@1 | 18.9% | 30.7% | 30.7% | 30.7% | 31.8% | 31.8% | 31.8% | 31.8% | 31.8% |
+| Hit@5 | 31.8% | 47.0% | 47.0% | 48.1% | 48.1% | 48.1% | 48.1% | 48.1% | 47.0% |
+| Hit@10 | 41.3% | 51.9% | 54.2% | 54.2% | 54.2% | 54.2% | 54.2% | 54.2% | 51.9% |
+| Recall@1 | 11.7% | 20.9% | 20.9% | 20.9% | 21.1% | 21.1% | 21.1% | 21.1% | 21.1% |
+| Recall@5 | 19.4% | 31.9% | 31.9% | 32.0% | 32.0% | 32.0% | 32.0% | 32.0% | 31.8% |
+| Recall@10 | 26.8% | 34.2% | 35.5% | 35.5% | 35.7% | 35.7% | 35.7% | 35.5% | 34.1% |
+| MRR@10 | 25.1% | 38.2% | 38.4% | 38.5% | 39.3% | 39.3% | 39.3% | 39.3% | 39.0% |
+| FileAcc@1 | 8.3% | 16.7% | 16.7% | 16.7% | 16.7% | 16.7% | 16.7% | 16.7% | 16.7% |
+| FileAcc@3 | 12.9% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% |
+| FileAcc@5 | 14.0% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% |
+| FileAcc@10 | 19.7% | 23.5% | 24.6% | 24.6% | 24.6% | 24.6% | 24.6% | 24.6% | 23.5% |
+| FileAcc@32 | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% |
+
+`S` structure, task micro:
+
+| metric | `PA` | `votes1` | `votes2` | `votes3` | `votes4` | `votes5` | `ANY` | `MAJ` | `CONS` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Hit@1 | 18.8% | 34.1% | 34.1% | 34.1% | 34.1% | 34.1% | 34.1% | 34.1% | 34.1% |
+| Hit@5 | 31.8% | 52.9% | 52.9% | 52.9% | 52.9% | 52.9% | 52.9% | 52.9% | 52.9% |
+| Hit@10 | 41.2% | 55.3% | 55.3% | 55.3% | 55.3% | 55.3% | 55.3% | 55.3% | 55.3% |
+| Recall@1 | 11.6% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% |
+| Recall@5 | 19.6% | 34.9% | 35.1% | 35.1% | 35.1% | 35.1% | 35.1% | 34.7% | 34.7% |
+| Recall@10 | 27.1% | 36.4% | 36.6% | 36.6% | 36.6% | 36.6% | 36.6% | 36.2% | 36.2% |
+| MRR@10 | 25.0% | 41.6% | 41.5% | 41.7% | 41.9% | 41.9% | 41.9% | 42.0% | 42.2% |
+| FileAcc@1 | 8.2% | 17.6% | 17.6% | 17.6% | 17.6% | 17.6% | 17.6% | 17.6% | 17.6% |
+| FileAcc@3 | 12.9% | 21.2% | 21.2% | 21.2% | 21.2% | 21.2% | 21.2% | 21.2% | 21.2% |
+| FileAcc@5 | 14.1% | 23.5% | 23.5% | 23.5% | 23.5% | 23.5% | 23.5% | 23.5% | 23.5% |
+| FileAcc@10 | 20.0% | 24.7% | 24.7% | 24.7% | 24.7% | 24.7% | 24.7% | 24.7% | 24.7% |
+| FileAcc@32 | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% |
+
+`S` structure, group-equal macro:
+
+| metric | `PA` | `votes1` | `votes2` | `votes3` | `votes4` | `votes5` | `ANY` | `MAJ` | `CONS` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Hit@1 | 18.9% | 34.1% | 34.1% | 34.1% | 34.1% | 34.1% | 34.1% | 34.1% | 34.1% |
+| Hit@5 | 31.8% | 52.7% | 52.7% | 52.7% | 52.7% | 52.7% | 52.7% | 52.7% | 52.7% |
+| Hit@10 | 41.3% | 55.3% | 55.3% | 55.3% | 55.3% | 55.3% | 55.3% | 55.3% | 55.3% |
+| Recall@1 | 11.7% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% | 22.3% |
+| Recall@5 | 19.4% | 34.8% | 34.9% | 34.9% | 34.9% | 34.9% | 34.9% | 34.6% | 34.6% |
+| Recall@10 | 26.8% | 36.2% | 36.3% | 36.3% | 36.3% | 36.3% | 36.3% | 36.0% | 36.0% |
+| MRR@10 | 25.1% | 41.6% | 41.5% | 41.7% | 41.8% | 41.8% | 41.8% | 41.9% | 42.2% |
+| FileAcc@1 | 8.3% | 17.8% | 17.8% | 17.8% | 17.8% | 17.8% | 17.8% | 17.8% | 17.8% |
+| FileAcc@3 | 12.9% | 21.2% | 21.2% | 21.2% | 21.2% | 21.2% | 21.2% | 21.2% | 21.2% |
+| FileAcc@5 | 14.0% | 23.5% | 23.5% | 23.5% | 23.5% | 23.5% | 23.5% | 23.5% | 23.5% |
+| FileAcc@10 | 19.7% | 24.6% | 24.6% | 24.6% | 24.6% | 24.6% | 24.6% | 24.6% | 24.6% |
+| FileAcc@32 | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% |
+
+**Split view, task micro** (`PA` frozen baseline, `votes1` the preserved
+replicate-1 promotion, `votes5` all five replicates, then the three fixed
+ensembles). Development 50 tasks / 13 groups, calibration 20 tasks / 5 groups,
+held-out final 15 tasks / 4 groups:
+
+| split | metric | `PA` | `votes1` | `votes5` | `ANY` | `MAJ` | `CONS` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| dev (50) | Hit@5 | 24.0% | 46.0% | 48.0% | 48.0% | 48.0% | 46.0% |
+| | Hit@10 | 38.0% | 54.0% | 56.0% | 56.0% | 56.0% | 54.0% |
+| | MRR@10 | 19.4% | 35.7% | 37.3% | 37.3% | 37.3% | 37.1% |
+| | FileAcc@5 | 4.0% | 16.0% | 16.0% | 16.0% | 16.0% | 16.0% |
+| | FileAcc@10 | 14.0% | 16.0% | 16.0% | 16.0% | 16.0% | 16.0% |
+| | FileAcc@32 | 18.0% | 18.0% | 18.0% | 18.0% | 18.0% | 18.0% |
+| cal (20) | Hit@5 | 40.0% | 50.0% | 50.0% | 50.0% | 50.0% | 50.0% |
+| | Hit@10 | 45.0% | 50.0% | 50.0% | 50.0% | 50.0% | 50.0% |
+| | MRR@10 | 27.6% | 42.9% | 42.9% | 42.9% | 42.9% | 42.9% |
+| | FileAcc@5 | 30.0% | 35.0% | 35.0% | 35.0% | 35.0% | 35.0% |
+| | FileAcc@10 | 30.0% | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% |
+| | FileAcc@32 | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% |
+| final (15) | Hit@5 | 46.7% | 46.7% | 46.7% | 46.7% | 46.7% | 46.7% |
+| | Hit@10 | 46.7% | 46.7% | 53.3% | 53.3% | 53.3% | 46.7% |
+| | MRR@10 | 40.0% | 40.0% | 41.1% | 41.1% | 41.1% | 40.0% |
+| | FileAcc@5 | 26.7% | 26.7% | 26.7% | 26.7% | 26.7% | 26.7% |
+| | FileAcc@10 | 26.7% | 26.7% | 33.3% | 33.3% | 33.3% | 26.7% |
+| | FileAcc@32 | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% |
+
+| split | metric | `PA` | `votes1` | `votes5` | `ANY` | `MAJ` | `CONS` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| dev (50) | Hit@5 | 24.0% | 52.0% | 52.0% | 52.0% | 52.0% | 52.0% |
+| | Hit@10 | 38.0% | 56.0% | 56.0% | 56.0% | 56.0% | 56.0% |
+| | MRR@10 | 19.4% | 40.3% | 40.9% | 40.9% | 40.9% | 41.3% |
+| | FileAcc@5 | 4.0% | 16.0% | 16.0% | 16.0% | 16.0% | 16.0% |
+| | FileAcc@10 | 14.0% | 16.0% | 16.0% | 16.0% | 16.0% | 16.0% |
+| | FileAcc@32 | 18.0% | 18.0% | 18.0% | 18.0% | 18.0% | 18.0% |
+| cal (20) | Hit@5 | 40.0% | 50.0% | 50.0% | 50.0% | 50.0% | 50.0% |
+| | Hit@10 | 45.0% | 50.0% | 50.0% | 50.0% | 50.0% | 50.0% |
+| | MRR@10 | 27.6% | 43.3% | 43.3% | 43.3% | 43.3% | 43.3% |
+| | FileAcc@5 | 30.0% | 35.0% | 35.0% | 35.0% | 35.0% | 35.0% |
+| | FileAcc@10 | 30.0% | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% |
+| | FileAcc@32 | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% |
+| final (15) | Hit@5 | 46.7% | 60.0% | 60.0% | 60.0% | 60.0% | 60.0% |
+| | Hit@10 | 46.7% | 60.0% | 60.0% | 60.0% | 60.0% | 60.0% |
+| | MRR@10 | 40.0% | 43.9% | 43.3% | 43.3% | 43.9% | 43.9% |
+| | FileAcc@5 | 26.7% | 33.3% | 33.3% | 33.3% | 33.3% | 33.3% |
+| | FileAcc@10 | 26.7% | 33.3% | 33.3% | 33.3% | 33.3% | 33.3% |
+| | FileAcc@32 | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% | 40.0% |
+
+**Reproduction.** 288 of 288 comparable cells of the ensemble table reproduce the
+published strict artifact exactly: `PA` equals the published `PA` row, `votes1`
+on `A` equals the published `PAJ` row and `votes1` on `S` equals the published
+`PAJstructure` row, across all twelve metrics, both aggregations and all four
+scopes (0 mismatches). The same reduction reproduces the published `A32` oracle
+(23 of 85 tasks, 27.1%) exactly. No frozen ranking moved.
+
+**Reading.** The step from the frozen baseline to the one-shot promotion is large
+(`A`: Hit@5 31.8% → 47.1%, FileAcc@10 20.0% → 23.5%, MRR@10 25.0% → 38.2%; `S`:
+Hit@5 31.8% → 52.9%, FileAcc@10 20.0% → 24.7%, MRR@10 25.0% → 41.6%). The step
+from that one-shot promotion to all five replicates is small and saturates by
+`N = 3`–`4`: `A` gains Hit@5 +1.1 pt, FileAcc@10 +1.2 pt, MRR@10 +1.1 pt with
+FileAcc@5 unchanged; `S` gains nothing on Hit@5 or FileAcc@5/10 and +0.3 pt on
+MRR@10. On `A` the `ANY` and `MAJ` ensembles coincide with the four- and
+five-replicate rankings on every metric here, and `CONS` — the only fixed
+ensemble that differs — is slightly *worse* on the head (`A` Hit@5 47.1% vs
+48.2%, Hit@10 51.8% vs 54.1%) because unanimity discards candidates on which four
+of five replicates agreed. On `S` the three fixed ensembles agree with the vote
+rankings except that `CONS` trades Recall@5 (34.7% vs 35.1%) for MRR@10 (42.2% vs
+41.9%). No ensemble is selected, and no positive direction is required or
+claimed.
+
+### E. Union working sets, the mandatory equal-budget control and the `A32` ceiling
+
+**Definition.** `Un` is the cumulative union of the ordinary Relevant-first
+top-10 of replicates `1..n` (`n = 1..5`), per condition, measured as a set by the
+one canonical reducer at its own size: `all-gold` means every eligible gold file
+of the task is inside the set, `file Recall` is the task's gold fraction inside
+the set, and `mean gold` / `mean non-gold` count the set's own membership. A union
+is a measured set, never a second metric engine.
+
+**Mandatory equal budget.** For every task and every `N`, `M = size(Un)` of that
+task and the control is `TopM(run 1)`: the first `M` files of the *preserved
+replicate-1* ordinary Relevant-first ranking. Both sets therefore have exactly the
+same size on every task, so the comparison below is size-for-size.
+
+`A` control (85 eligible tasks):
+
+| measure | U1 | U2 | U3 | U4 | U5 | `TopM(run 1)` control |
+| --- | --- | --- | --- | --- | --- | --- |
+| mean set size | 10.00 | 10.16 | 10.20 | 10.24 | 10.27 | identical by construction |
+| median / p95 set size | 10 / 10 | 10 / 11 | 10 / 11 | 10 / 11 | 10 / 11 | identical by construction |
+| at least one gold | 44 (51.8%) | 46 (54.1%) | 46 | 46 | 46 | not applicable |
+| all gold | 20 (23.5%) | 21 (24.7%) | 21 | 21 | 21 | **20 (23.5%) at every `N`** |
+| file Recall | 34.4% | 35.7% | 35.7% | 35.9% | 35.9% | **34.4% at every `N`** |
+| gold files retrieved | 61 | 63 | 63 | 64 | 64 | **61 at every `N`** |
+| mean gold / mean non-gold | 0.72 / 9.28 | 0.74 / 9.42 | 0.74 / 9.46 | 0.75 / 9.48 | 0.75 / 9.52 | — |
+| `A32`-solvable tasks | 23 (27.1%) | 23 | 23 | 23 | 23 | — |
+| `A32`-solvable recovered | 20 (87.0%) | 21 (91.3%) | 21 | 21 | 21 | — |
+
+`S` structure (85 eligible tasks):
+
+| measure | U1 | U2 | U3 | U4 | U5 | `TopM(run 1)` control |
+| --- | --- | --- | --- | --- | --- | --- |
+| mean set size | 10.00 | 10.14 | 10.24 | 10.28 | 10.33 | identical by construction |
+| median / p95 set size | 10 / 10 | 10 / 11 | 10 / 12 | 10 / 12 | 10 / 12 | identical by construction |
+| at least one gold | 47 (55.3%) | 47 | 47 | 47 | 47 | not applicable |
+| all gold | 21 (24.7%) | 21 | 21 | 21 | 21 | **21 (24.7%) at every `N`** |
+| file Recall | 36.4% | 36.6% | 36.6% | 36.6% | 36.6% | 36.4% → **36.7%** at `N ≥ 3` |
+| gold files retrieved | 65 | 66 | 66 | 66 | 66 | 65 → **67** at `N ≥ 3` |
+| mean gold / mean non-gold | 0.76 / 9.24 | 0.78 / 9.36 | 0.78 / 9.46 | 0.78 / 9.51 | 0.78 / 9.55 | — |
+| `A32`-solvable tasks | 23 (27.1%) | 23 | 23 | 23 | 23 | — |
+| `A32`-solvable recovered | 21 (91.3%) | 21 | 21 | 21 | 21 | — |
+
+**What each additional replicate actually buys** (incremental positions and
+membership over the previous `Un`, summed over the 85 eligible tasks):
+
+| condition | step | added set positions | added all-gold tasks | added non-gold files | non-gold per added all-gold task |
+| --- | --- | --- | --- | --- | --- |
+| `A` | U1 → U2 | 14 | 1 | 12 | 12 |
+| `A` | U2 → U3 | 3 | 0 | 3 | undefined (no added all-gold task) |
+| `A` | U3 → U4 | 3 | 0 | 2 | undefined |
+| `A` | U4 → U5 | 3 | 0 | 3 | undefined |
+| `S` | U1 → U2 | 12 | 0 | 11 | undefined |
+| `S` | U2 → U3 | 8 | 0 | 8 | undefined |
+| `S` | U3 → U4 | 4 | 0 | 4 | undefined |
+| `S` | U4 → U5 | 4 | 0 | 4 | undefined |
+
+An undefined ratio is reported as `undefined` rather than as a fabricated number,
+because the denominator — the added all-gold tasks — is genuinely zero.
+
+**The `A32` ceiling and what is not retrievable at all.** 23 of the 85 eligible
+tasks have all their gold inside the frozen `P+A` top-32 (the published `A32`
+oracle, 27.1%, reproduced exactly). The union recovers 20 of those 23 at `U1` and
+21 at `U2..U5` on `A` (87.0% → 91.3%), and 21 of 23 at every `N` on `S` (91.3%).
+The other **62 of 85 tasks are not `A32`-solvable at all**: their gold is not in
+the judged `A32` population, so no union of judged top-10s can retrieve it. That
+is the explicit distinction between *gold that was never available to the reducer*
+(62 tasks) and *available gold that was missed* (2 of 23 solvable tasks on both
+conditions).
+
+**Honest reading.** Most of the union's coverage is already in `U1`, i.e. in one
+ordinary Relevant-first top-10: `U1 → U5` adds +0.27 positions per task and +1
+all-gold task on `A`, and +0.33 positions per task and **0** all-gold tasks on
+`S`. Against the mandatory equal-budget control the union's advantage is **+1
+all-gold task and +3 gold files on `A`**, and **0 all-gold tasks and −1 gold file
+on `S`** — where the control's file Recall (36.7%) is marginally *higher* than the
+union's (36.6%). At essentially the same size (10 vs 10.27 files) the cumulative
+vote ranking's own top-10 matches the union on all-gold (21 of 85 = 24.7% on both
+conditions) and on file Recall (35.9% vs 35.9% on `A`; 36.6% vs 36.6% on `S`).
+The measured statement is therefore: on this corpus the replicated union does not
+buy coverage beyond simply taking the same number of files from one run, and the
+one exception is a single additional all-gold task on the `A` control.
+
+**Non-gold is not irrelevant.** Every non-gold file in a working set is labelled
+`non-gold-not-irrelevant` in the artifact and must be read that way: patch gold is
+not all useful agent context, and a bounded high-recall working set is expected to
+carry files that help an agent without being evaluator gold. The measured cost of
+that context is a mean 9.52 (`A`) / 9.55 (`S`) non-gold files per task at `U5`.
+
+### F. Cost, latency and the actual incremental economics
+
+**Per-replicate actuals** (`A1` is `historical`: its row is read back from the
+recorded acquisition, never re-acquired and never estimated):
+
+| condition | replicate | provenance | recorded cost (USD) | cost (nano-USD) | wall (ms) | wall/task (ms) | cost/task (nano-USD) | requests | logical | retries | failed | input / output tokens | latency median / p95 (ms) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `A` | 1 | historical | 0.013469736 | 13,469,736 | 31,572 | 358 | 153,065 | 88 | 2,756 | 0 | 0 | 320,708 / 123,118 | 326 / 463 |
+| `A` | 2 | acquired | 0.013469736 | 13,469,736 | 32,315 | 367 | 153,065 | 88 | 2,756 | 0 | 0 | 320,708 / 123,122 | 315 / 487 |
+| `A` | 3 | acquired | 0.013469736 | 13,469,736 | 32,714 | 371 | 153,065 | 88 | 2,756 | 0 | 0 | 320,708 / 123,130 | 311 / 480 |
+| `A` | 4 | acquired | 0.013469736 | 13,469,736 | 30,007 | 340 | 153,065 | 88 | 2,756 | 0 | 0 | 320,708 / 123,126 | 300 / 417 |
+| `A` | 5 | acquired | 0.013469736 | 13,469,736 | 32,028 | 363 | 153,065 | 88 | 2,756 | 0 | 0 | 320,708 / 123,134 | 303 / 476 |
+| `S` | 1 | historical | 0.021822318 | 21,822,318 | 38,557 | 438 | 247,980 | 88 | 2,756 | 0 | 0 | 519,579 / 123,174 | 348 / 501 |
+| `S` | 2 | acquired | 0.021822318 | 21,822,318 | 33,367 | 379 | 247,980 | 88 | 2,756 | 0 | 0 | 519,579 / 123,177 | 321 / 427 |
+| `S` | 3 | acquired | 0.021822318 | 21,822,318 | 31,331 | 356 | 247,980 | 88 | 2,756 | 0 | 0 | 519,579 / 123,180 | 340 / 444 |
+| `S` | 4 | acquired | 0.021822318 | 21,822,318 | 31,715 | 360 | 247,980 | 88 | 2,756 | 0 | 0 | 519,579 / 123,177 | 326 / 473 |
+| `S` | 5 | acquired | 0.021822318 | 21,822,318 | 31,445 | 357 | 247,980 | 88 | 2,756 | 0 | 0 | 519,579 / 123,162 | 338 / 436 |
+
+**Recorded-cost identity, stated because it is visible.** The recorded per-
+replicate cost is exactly `4.2e-8` USD per recorded *input* token
+(`0.013469736 / 320,708 = 4.2e-8` and `0.021822318 / 519,579 = 4.2e-8`), so the
+five replicates of one condition — whose input token counts are identical by
+payload identity — share one recorded cost even though their output token counts
+differ slightly (e.g. `A` 123,118 → 123,134). The record carries no output-token
+term; that is a property of the recorded artifact and of this route's recorded
+pricing, not an estimate made here.
+
+**Cumulative actuals of the family** (per condition; `FileAcc` is of the
+cumulative vote ranking, `all-gold`/size are of the cumulative union):
+
+| condition | `N` | cumulative cost (USD) | cumulative wall (ms) | wall/task (ms) | cost/task (nano-USD) | requests | `FileAcc@5` | `FileAcc@10` | union all-gold | union mean size |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `A` | 1 | 0.013469736 | 31,572 | 358 | 153,065 | 88 | 19/85 22.4% | 4/17 23.5% | 20 | 10.00 |
+| `A` | 2 | 0.026939472 | 63,887 | 725 | 306,130 | 176 | 19/85 22.4% | 21/85 24.7% | 21 | 10.16 |
+| `A` | 3 | 0.040409208 | 96,601 | 1,097 | 459,195 | 264 | 19/85 22.4% | 21/85 24.7% | 21 | 10.20 |
+| `A` | 4 | 0.053878944 | 126,608 | 1,438 | 612,260 | 352 | 19/85 22.4% | 21/85 24.7% | 21 | 10.24 |
+| `A` | 5 | 0.067348680 | 158,636 | 1,802 | 765,325 | 440 | 19/85 22.4% | 21/85 24.7% | 21 | 10.27 |
+| `S` | 1 | 0.021822318 | 38,557 | 438 | 247,980 | 88 | 4/17 23.5% | 21/85 24.7% | 21 | 10.00 |
+| `S` | 2 | 0.043644636 | 71,924 | 817 | 495,961 | 176 | 4/17 23.5% | 21/85 24.7% | 21 | 10.14 |
+| `S` | 3 | 0.065466954 | 103,255 | 1,173 | 743,942 | 264 | 4/17 23.5% | 21/85 24.7% | 21 | 10.24 |
+| `S` | 4 | 0.087289272 | 134,970 | 1,533 | 991,923 | 352 | 4/17 23.5% | 21/85 24.7% | 21 | 10.28 |
+| `S` | 5 | 0.109111590 | 166,415 | 1,891 | 1,239,904 | 440 | 4/17 23.5% | 21/85 24.7% | 21 | 10.33 |
+
+The family totals reproduce generation 14 exactly: `0.067348680 + 0.109111590 =
+0.176460270` USD and `158,636 + 166,415 = 325,051` ms, the published family cost
+and wall. The cumulative figures are actual sums of the recorded replicates, not
+extrapolations.
+
+**Duration versus wall.** The recorded `wall` is the wall of one replicate's
+88-request task batch; the recorded median/p95 are per-request latencies. On `A2`
+the batch wall is 32,315 ms for 88 requests — 367 ms per request on average, which
+sits between the recorded median (315 ms) and p95 (487 ms), and the sum of the 88
+median latencies (27,720 ms) is *below* the wall. The measurement is therefore
+consistent with a sequential shared batch whose wall exceeds the sum of typical
+request durations because of the tail and per-request overhead; it is not evidence
+of provider-side parallelism and no such claim is made.
+
+**Replay.** The ensemble stage executed as the single **remote** action of
+invocation `1e6a206f-7165-414b-9258-cef039501120` (`1 remote`, all other declared
+actions resolved from the action/remote cache). Its 192 declared inputs are the
+ten frozen decision manifests, the frozen `A32` population record, the admitted
+task map, the 88 warm deterministic `P+A` rank trees, the 88 admitted evaluator
+label artifacts and the five mechanically reduced economics records. It declares
+no world extraction, `Repository`, `Theory`, ranking, CodeRankEmbed or hosted-Qwen
+producer and issues no provider request: **0 JEV / 0 embedding / 0 hosted-Qwen / 0
+`Repository` / 0 `Theory`**, and it re-executed no upstream producer. Its
+fail-closed assertions require 88 tasks, 88 labels, 85 eligible tasks, the
+50/20/15 split, nine arms, 1,728 metric rows, 5,512 vote rows, 15,840 order rows,
+`N = 1` equal to the published one-shot ranking on all 176 pairs, identical
+populations across the nine arms on all 176 pairs, and monotone unions bounded by
+`n × 10`.
+
+**Artifacts** (`bazel-bin/test/localization_ensembles/ensembles/`, headerless TSV
+with a leading `#` column contract row; sha256 of the published bytes):
+
+| artifact | rows | sha256 |
+| --- | --- | --- |
+| `ensemble_metrics.tsv` | 1,729 | `3cc460f832de29c6333760df47a73e414b0bdb70894f2c9410edff2cc42084f9` |
+| `ensemble_votes.tsv` | 5,513 | `7effb337d6704b9dead2062dbf1d5c58ed3231a6f68b999cb13a29f42c18a6a3` |
+| `ensemble_order.tsv` | 15,841 | `ae90b7b69926253111c7f94960369660879372bf8e574d03b8b9769ce02d1f53` |
+| `union_metrics.tsv` | 233 | `6c98540b6bbddb8e4d7d20c8a9ed6b145bce862e4073f65aa4cbc076c1e9fd4f` |
+| `union_task.tsv` | 851 | `f40030b4524914e85f6e43e89483dc3e35edb7e8802885e3c55e48edc25cd740` |
+| `ensemble_economics.tsv` | 21 | `3780630980e5717935fe7397deff3ea9bcd08792f25bb27ade0f901816121446` |
+| `ensemble_summary.tsv` | 48 | `76e0fb62eb4164f58a53e7b8a2d8f5b3cdcc6498d8303c6ce663db7d2bce6e41` |
+| `closure.tsv` | 193 | `a329d63ae3ff6068efc6e1e0c3644fde99f5a840f7216c3fd035f1882c3a9c76` |
+
+### G. Interpretation (the seven owner questions)
+
+1. **How stable is the five-replicate family?** Highly stable but not identical:
+   98.0% (`A`) / 97.8% (`S`) of judged candidates are unanimous at `5/5`, 2.0% /
+   2.2% move, and 1.5% / 1.3% change the Relevant-versus-non-Relevant decision
+   itself. Instability is concentrated: 57 of 88 tasks per condition are perfectly
+   stable and the worst tasks move 5–6 of 32 candidates. The measurement is the
+   repeat behaviour of one frozen prompt, payload and route, not a claim about
+   provider independence.
+2. **Does cumulative voting over `N = 1..5` move retrieval?** Yes, but almost all
+   of the movement comes from the *one-shot* promotion and not from repetition.
+   From the frozen `P+A` baseline to replicate 1 the `A` control gains +15.3 pt
+   Hit@5, +3.5 pt FileAcc@10 and +13.2 pt MRR@10; from replicate 1 to all five it
+   gains +1.1 pt Hit@5, +1.2 pt FileAcc@10 and +1.1 pt MRR@10, and the curve is
+   flat from `N = 3`–`4`. The `S` structure condition gains +21.1 pt Hit@5, +4.7 pt
+   FileAcc@10 and +16.6 pt MRR@10 from baseline to replicate 1, then nothing on Hit@5 or
+   FileAcc@5/10 and +0.3 pt on MRR@10 through `N = 5`.
+3. **Do the three fixed ensembles differ, and is one selected?** All three are
+   published and none is selected. On `A`, `ANY` and `MAJ` coincide with the
+   four/five-replicate ranking and `CONS` is slightly worse on the head (Hit@5
+   47.1% vs 48.2%); on `S` all three agree except that `CONS` trades Recall@5
+   (34.7% vs 35.1%) for MRR@10 (42.2% vs 41.9%). Requiring unanimity is the only
+   fixed rule that visibly changes the head, and it changes it by at most ~1 pt.
+4. **Does the cumulative union buy coverage?** Barely, and not monotonically in
+   value: `U1 → U5` moves all-gold from 20 to 21 tasks (`A`) and stays at 21 (`S`),
+   file Recall 34.4% → 35.9% (`A`) and 36.4% → 36.6% (`S`), mean set size
+   10.00 → 10.27 (`A`) / 10.33 (`S`). Everything beyond `U2` adds non-gold files
+   only.
+5. **Is that just "more files"?** Substantially yes. Against the mandatory
+   equal-budget `TopM(run 1)` control at exactly the same size, the union's
+   advantage is +1 all-gold task and +3 gold files on `A`, and 0 all-gold tasks
+   and −1 gold file on `S` (where the control's file Recall 36.7% exceeds the
+   union's 36.6%). At the same size the cumulative vote ranking's own top-10 also
+   matches the union on all-gold (21 of 85 on both conditions) and file Recall.
+   The honest conclusion is that replication diversity did not purchase
+   measurable extra coverage here; the one exception is a single extra all-gold
+   task on the `A` control.
+6. **What is the distance to the `A32` oracle, and how much is recovered?** 23 of
+   85 eligible tasks (27.1%) are `A32`-solvable. The union recovers 20 of 23 at
+   `U1` and 21 of 23 at `U2..U5` on `A` (87.0% → 91.3%) and 21 of 23 at every `N`
+   on `S` (91.3%), so 2 of the 23 solvable tasks remain unrecovered on both
+   conditions. The other 62 tasks are **not retrievable at all** from this
+   population: their gold is outside the judged `A32` set, which is a property of
+   the frozen candidate population rather than a failure of the reducer. That
+   distinction — unavailable gold versus missed available gold — is reported
+   explicitly and is not collapsed.
+7. **What does the context cost, and does structure help?** The working set's
+   non-gold load is a mean 9.52 (`A`) / 9.55 (`S`) files per task at `U5`, and the
+   non-gold files purchased per *additional* all-gold task are 12 at `U2` on `A`
+   and undefined thereafter (no additional all-gold task at any later step on
+   either condition). Non-gold is explicitly **not** irrelevant: patch gold is not
+   all useful agent context, and a bounded high-recall working set is expected to
+   carry non-gold files. Structure (`S`) versus control (`A`) on the same
+   population: Hit@5 52.9% vs 48.2%, FileAcc@5 23.5% vs 22.4%, FileAcc@10 24.7%
+   vs 24.7%, FileAcc@32 27.1% vs 27.1%, MRR@10 41.9% vs 39.3%; but stability
+   97.8% vs 98.0%, ever-Relevant flips 1.3% vs 1.5%, per-replicate Relevant count
+   147.6 vs 188.4 (variance 8.64 vs 2.24), union all-gold 21 vs 21 and mean union
+   size 10.33 vs 10.27. So the structure prompt ranks slightly better on the
+   ranking measures while selecting fewer Relevant candidates and doing so less
+   consistently across replicates; no positive outcome is required and none is
+   claimed as a population fact.
+
+**Limits, stated plainly.** Every number in `C`–`G` is one descriptive
+measurement of one frozen family on 85 eligible tasks, of which only 15 tasks in 4
+groups are held-out final; there is no significance test, no tuned threshold, no
+selected winner and no goalpost moved. The union, the ensembles and the votes are
+not blended with any other arm, and no cross-arm selection was performed.
+
 ## Latency regimes
 
 | Regime | Covers | Measured |
@@ -2666,6 +3072,7 @@ corpus, and run inside the ordinary offline gate.
 | E — hosted-Qwen acquisition and warm ranking | The host-side batched acquisition of the immutable hosted fixtures, then the Q ranking and canonical metric latency over them | Cold acquisition: **351 batched requests** over 10,555 unique embedded inputs (27,733 logical rows; at most 32 inputs / 240,000 bytes per request, never one request per row), **0 failed**, 351/351 resolved-model echoes, 10,644,719 prompt tokens, **USD 0.1409903**, summed provider latency 1,581,398 ms (per-request 834/2,427/14,803/77,513 ms min/median/p95/max). Memoized replay: **0 requests**, cost `Unavailable` (no fabricated zero). Warm ranking: 88 rank stages + 1 metric stage, all served from the remote cache; **0** embedding-provider calls, **0** JEV calls, **0** `Repository`/`Theory` re-executions at replay |
 | F — warm Q-JEV over the hosted-Q base | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, complete-run cost, rerank-only time | **Complete hosted-Q pair: 88 of 88 tasks, both conditions.** Q-control: 88 requests, 2,756 decisions, 0 failures, 0 retries, 32,695 ms end-to-end (≈84 decisions/s wall), per-call latency 245/343/468/724 ms (min/median/p95/max), 360,394 input + 122,847 output tokens, USD 0.015136548. Q-structure: 88 requests, 2,756 decisions, 0 failures, 0 retries, 37,735 ms end-to-end (≈73 decisions/s wall), per-call latency 290/371/582/1,992 ms, 569,414 input + 122,895 output tokens, USD 0.023915388. Combined wall 70,491 ms. The structural prompt costs ≈58% more input tokens and ≈58% more dollars for the same 2,756 decisions, and one call ran 1,992 ms. 0 `Repository`/`Theory` re-executions; replay of the eight-arm stage is provider-free (**0** JEV calls, **0** embedding inferences, **0** hosted-Qwen requests, **0** executed actions) |
 | G — replicated lexical JEV acquisition | The four new replicates per lexical condition over the same frozen payloads, then the provider-free family stage | **88 of 88 tasks in both conditions in every replicate.** Per-replicate wall 30,007–32,714 ms (`A`) and 31,331–38,557 ms (`S`) at 0 failures and 0 retries; input tokens identical across all five replicates per condition (320,708 `A`, 519,579 `S`) while output tokens differ; new work 254,922 ms / 985,208 output tokens / USD 0.141168216, whole family 325,051 ms / 4,201,435 input tokens / USD 0.176460270. 0 `Repository`/`Theory` re-executions; the family stage replays provider-free |
+| H — replicated ensemble reduction (warm, provider-free) | The two ordered corpus-bound stages over the frozen five-observation family: stability first, then votes, fixed ensembles, unions, equal-budget control and economics | `stability` materialized as one remote action in 13.2 s of Tester time (invocation `abc945ac-…`, 38.1 s wall; 2,373 action-cache + 563 remote-cache hits, 0 executed upstream producers, 100 declared inputs); `ensembles` materialized as one remote action in 22.4 s of Tester time (invocation `1e6a206f-…`, 41.1 s wall; 192 declared inputs). **0** JEV calls, **0** embedding inferences, **0** hosted-Qwen requests, **0** `Repository`/`Theory` executions, **0** provider requests, and no re-executed upstream producer at replay |
 
 Deterministic compute is **not zero**: cold RBE/indexing cost, warm compute
 and any JEV spend are separate and are never collapsed into one misleading
@@ -3217,7 +3624,15 @@ No upstream producer action re-executed in either.
   separation, its exact-payload memo key and its provider-free replay; the final
   eight-arm table (`P`/`P+A`/`E`/`Q`/`P+A+J`/`P+A+J(structure)`/`Q+J`/
   `Q+J(structure)`) reduces all eight through the one canonical reducer, and all
-  336 of 336 comparable published cells are reproduced cell for cell.
+  336 of 336 comparable published cells are reproduced cell for cell. The frozen
+  five-observation lexical family is now reduced as well: 98.0% (`A`) / 97.8% (`S`)
+  of judged candidates are unanimous across the five replicates with 1.5% / 1.3%
+  Relevant-versus-non-Relevant flips, the cumulative vote curve saturates by
+  `N = 3`–`4` (+1.1 pt Hit@5 and +1.2 pt FileAcc@10 on `A`, +0.3 pt MRR@10 on `S`
+  over the one-shot promotion), 288 of 288 comparable ensemble cells reproduce the
+  published strict `PA`/`PAJ`/`PAJstructure` rows exactly, and the cumulative
+  union recovers 21 of the 23 `A32`-solvable tasks on both conditions while adding
+  at most one all-gold task over the mandatory equal-budget `TopM(run 1)` control.
 - **Measured gap, stated honestly:** this corpus contains no abstention, no
   unsupported or empty-gold task inside the eligible population and no undefined
   ratio, so the report claims **no corpus evidence** for those behaviours; the
@@ -3247,7 +3662,15 @@ No upstream producer action re-executed in either.
   `P+A+J(structure) − Q+J(structure)` difference, not a blend); any E+J number
   (that pair remains deferred); any claim that the pinned parser limitation is
   solved; any reading of the runtime cutoff as a quality statement; and any claim
-  that the stopped local invocation re-executed zero actions. The JEV pairs' own
+  that the stopped local invocation re-executed zero actions; and, for the
+  replicated lexical family, any claim that repeated observation, the fixed vote
+  ensembles or the cumulative union improve retrieval as a population fact — the
+  measured effect over the one-shot promotion is at most one all-gold task on `A`
+  and zero on `S`, and the equal-budget `TopM(run 1)` control matches or exceeds
+  the union's coverage on `S`, so replication diversity did not purchase
+  measurable coverage here; the union of replicates is a union *within* the one
+  frozen lexical family, not a cross-arm blend, and no ensemble winner or cutoff
+  was selected. The JEV pairs' own
   measured results — model identity, token counts, costs, latencies and outcomes —
   are now published above for both the lexical and the hosted-Qwen bases.
 
@@ -3670,3 +4093,51 @@ No upstream producer action re-executed in either.
   requests. No earlier number moved; the votes/ensembles, union, equal-budget
   control, economics and interpretation parts of generation 15 follow in part 2
   of this section.
+- **2026-10-07T23:55:00Z — generation 15, PART 2 OF 2: VOTES, FIXED ENSEMBLES,
+  UNION WORKING SETS, EQUAL-BUDGET CONTROL AND ACTUAL ECONOMICS (Phases 4–5).**
+  Completes generation 15 after the stability publication of part 1. Builds the
+  complete cumulative vote rankings `N = 1..5` under `(−votes, original P+A rank)`
+  (judged `A32` candidates first, then the candidates outside the judged
+  population in the original order; only explicit `Relevant` observations vote;
+  a candidate with no receipt row is `Unknown`, never a negative), the three fixed
+  ensembles `ANY` (votes ≥ 1: 211 `A` / 169 `S` candidates), `MAJ` (≥ 3: 184 / 145)
+  and `CONS` (= 5: 169 / 132) — all published, none selected, no threshold tuned —
+  the cumulative unions `U1..U5` of the ordinary Relevant-first top-10 with the
+  mandatory equal-budget `TopM(run 1)` control, the `A32` ceiling recovery at
+  every `N`, and the actual incremental and cumulative economics. Measured
+  (all-eligible task micro, 85 eligible tasks): the frozen `P+A` baseline scores
+  Hit@5 31.8%, FileAcc@5 14.1%, FileAcc@10 20.0%, FileAcc@32 27.1%, MRR@10 25.0%
+  for both conditions; replicate 1's one-shot promotion reaches Hit@5 47.1% (`A`)
+  / 52.9% (`S`), FileAcc@10 23.5% / 24.7%, MRR@10 38.2% / 41.6%; all five
+  replicates reach Hit@5 48.2% / 52.9%, FileAcc@5 22.4% / 23.5%, FileAcc@10 24.7%
+  / 24.7%, MRR@10 39.3% / 41.9%. The vote curve therefore saturates by `N = 3`–`4`:
+  the repetition adds +1.1 pt Hit@5 and +1.2 pt FileAcc@10 on `A` and +0.3 pt
+  MRR@10 on `S`, while the one-shot promotion itself is worth +15.3/+21.1 pt
+  Hit@5. `ANY` and `MAJ` coincide with the four/five-replicate ranking on `A`;
+  `CONS` is the only fixed ensemble that differs and is slightly worse on the head
+  (`A` Hit@5 47.1% vs 48.2%, Hit@10 51.8% vs 54.1%). Union: `U1 → U5` all-gold
+  20 → 21 tasks (`A`) and 21 → 21 (`S`), file Recall 34.4% → 35.9% (`A`) and
+  36.4% → 36.6% (`S`), mean set size 10.00 → 10.27 / 10.33; the equal-budget
+  `TopM(run 1)` control matches the union's all-gold on `S` (21) and trails by one
+  task on `A` (20), with the control's file Recall (36.7%) marginally *above* the
+  union's (36.6%) on `S`, so replication diversity did not purchase measurable
+  coverage beyond taking the same number of files from one run. `A32` ceiling:
+  23 of 85 tasks (27.1%) are solvable; `U5` recovers 21 of them on both conditions
+  (91.3%, from 87.0% at `U1` on `A`), the other 62 tasks are not retrievable from
+  the judged population at all, and non-gold is labelled not-irrelevant (mean 9.52
+  / 9.55 non-gold files per task at `U5`). Economics: the five replicates are
+  USD 0.013469736 (`A`) and 0.021822318 (`S`) each with 88 requests, 2,756 logical
+  decisions, 0 retries and 0 failed calls; cumulative `N = 5` is USD 0.067348680 /
+  0.109111590 and 158,636 / 166,415 ms, whose sums (USD 0.176460270, 325,051 ms)
+  reproduce the published generation-14 family totals exactly. `A1` stays
+  `historical` (read back, never re-acquired or estimated), and the recorded cost
+  is exactly 4.2e-8 USD per recorded input token, so identical input-token totals
+  give identical recorded costs. 288 of 288 comparable ensemble cells reproduce
+  the published strict `PA`/`PAJ`/`PAJstructure` rows exactly, and the `A32`
+  oracle is reproduced exactly. Adds `src/Attune/Study/Ensemble.flix`, the
+  `test/localization_ensembles` package and its `policy_files` registration. The
+  `ensembles` stage executed as the single remote action of invocation
+  `1e6a206f-7165-414b-9258-cef039501120` with 0 re-executed upstream producers,
+  0 JEV, 0 embedding, 0 hosted-Qwen, 0 `Repository`/`Theory` and 0 provider
+  requests. The union publication is the hard gate before the Sol arm; no Sol
+  dispatch was made here.

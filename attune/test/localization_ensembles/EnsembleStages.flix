@@ -299,7 +299,7 @@ def conditionTasks(
     groups: List[List[String]],
     tasks: List[List[String]]): List[ConditionTask] \ IO =
     List.map(entry -> match entry {
-        case (task, root) => conditionTask(condition, task, root, pathOf(labels, "label_" + task), manifests, groups, tasks)
+        case (task, root) => conditionTask(condition, task, root, pathOf(labels, task), manifests, groups, tasks)
     }, roots)
 
 // ------------------------------------------------------- stability reduction
@@ -1076,15 +1076,16 @@ def ensemblesStage(): Unit \ {Assert, IO} = {
     }, byCondition);
     Assert.assertEq(expected = 176, List.length(List.filter(value -> value, populationsMatch)));
     // The union grows monotonically and never exceeds the declared cutoff times
-    // the number of runs it unions.
-    Assert.assertEq(expected = 2 * 5, List.length(List.flatMap(entry -> match entry {
-        case (_, rows) => rows
-    }, unions)));
-    Assert.assertEq(expected = 2 * 5, List.length(List.filter(entry -> match entry {
-        case (_, rows) => List.forAll(row -> match row {
-            case (n, tasksOfUnion) => List.forAll(task -> task#size <= n * unionCutoff(), tasksOfUnion)
+    // the number of runs it unions: one measured union per (condition, N) pair.
+    let unionPairs = List.flatMap(entry -> match entry {
+        case (condition, rows) => List.map(row -> match row {
+            case (n, tasksOfUnion) => (condition, n, tasksOfUnion)
         }, rows)
-    }, unions)))
+    }, unions);
+    Assert.assertEq(expected = 2 * 5, List.length(unionPairs));
+    Assert.assertEq(expected = 2 * 5, List.length(List.filter(pair -> match pair {
+        case (_, n, tasksOfUnion) => List.forAll(task -> task#size <= n * unionCutoff(), tasksOfUnion)
+    }, unionPairs)))
 }
 
 def pathSet(ranking: Metrics.Ranking): List[String] =

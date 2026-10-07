@@ -143,11 +143,3 @@ test_suite(
     tags = ["manual"],
     tests = [":ensemble_law"],
 )
-
-# TEMPORARY local compile check for the corpus-bound stage sources; removed
-# before publish.
-native_flix_test(
-    name = "stage_compile",
-    srcs = STAGE_SRCS,
-    tags = ["manual"],
-)
