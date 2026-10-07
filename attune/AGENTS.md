@@ -51,7 +51,29 @@ repository-side policy an agent must follow while changing this tree.
   downstream rerank/evaluation only; `JEV_KEY` and every
   credential are never printed or passed through stdout, argv, Bazel public
   inputs, the CAS, receipts or commits; and it never reruns an upstream stage,
-  never substitutes an alternate model and never runs an agent loop.
+  never substitutes an alternate model and never runs an agent loop. A second
+  narrow owner-authorized exception (2026-10-07, "actually this should just run
+  in rbe") is the post-hoc exploratory embedding branch: exactly
+  `nomic-ai/CodeRankEmbed` at revision
+  `3c4b60807d71f79b43f3c4363786d9493691f8b1`, whose model/tokenizer/config bytes
+  and Python/PyTorch runtime wheels are digest-pinned declared inputs, ALL of
+  whose inference runs remotely on the BuildBuddy RBE profile (never host-local
+  and never a hosted embedding API), and whose Python is confined to the single
+  mechanical inference adapter `platform/tools/embedding/adapter.py`
+  (tokenize/model/vector serialization) with no ingestion, ranking, metrics or
+  scientific policy. Nix's only role there is to package/declare those pinned
+  inputs (`platform/embedding/runtime.nix` reads the same
+  `platform/embedding/runtime-lock.tsv` the Bazel repository rules read): no
+  host embedding, no host system closure/switch/kernel/flake-pin change. A
+  merely slow-looking CPU run is never an Unavailable branch, no second
+  numerics/parity engine exists, and the original four measured arms keep the
+  absolute ban unchanged. The same authorization carries the FOUR memoized JEV
+  conditions of the extension (A-control, A-structure, E-control, E-structure):
+  each pair keeps physical input separation over the same population and base,
+  each condition has its own frozen prompt identity with matched wording per
+  pair, and a JEV fixture keyed `(model, prompt, condition, task, candidate,
+  exact payload hash)` is reused ONLY on exact payload equality — a prompt
+  change regenerates only that prompt's JEV fixtures and never any embedding.
 - One Bazel owner at a time. The output base is outside the checkout
   (`services.yaml`); never run `bazel clean` or touch global caches.
 - JVM dependencies are pinned: `MODULE.bazel` declares the exact Maven

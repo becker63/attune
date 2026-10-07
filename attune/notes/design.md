@@ -3138,3 +3138,31 @@ reducer is not in the compiled closure of any extraction, Theory, variant,
 selection or ranking stage, so no label can reach a ranking through it; and no
 provider, corpus or evaluator artifact enters it beyond the frozen rankings and
 the physically separate admitted labels.
+
+## Post-hoc exploratory embedding fixtures (2026-10-07)
+
+Owner-approved POST-HOC EXPLORATORY EMBEDDING branch, fixture-acquisition leaf
+(`embedding-pin-and-fixture-acquisition`; `VAL-EMBED-001/002/005`). It adds one
+named mechanical component and grows the fixture population; it changes no
+semantic owner.
+
+| Component | Source | Language | Code | Class | Owner | One-sentence contract |
+| --- | --- | --- | --- | --- | --- | --- |
+| embedding | `platform/embedding/{runtime-lock.tsv,runtime.nix}`, `platform/tools/embedding/adapter.py` | TSV/Nix/Python | 246 | B | mechanical boundary | The one declared pinned-runtime record (24 CPython-3.10 aarch64 wheel digests plus the 12 model/tokenizer/config digests) that the Bazel acquisition rules and the Nix packaging expression both read, the Nix expression that only unpacks those declared wheels, and the single mechanical inference adapter (declared rows manifest in, raw CLS vectors and a tokenization report out) with no ingestion, ranking, metrics or scientific policy. |
+
+The `platform/embedding/` source root is admitted by name, and exactly one
+Python path (`platform/tools/embedding/adapter.py`) is admitted by name; every
+other `.py` path stays forbidden, so the admission is not a general Python
+carve-out. All embedding inference runs remotely on the BuildBuddy RBE profile;
+Nix packages declared inputs only and changes no host closure, kernel or flake
+pin.
+
+Declared population at this leaf: `core` 204, `repository` 809, `theory` 629,
+`study` 2180, `policy` 565, `view` 522, `ascii` 87, `frontends` 372, `parquet`
+563, `boundary` 1040, `grit-binding` 185, `grit-rule` 684, `build-rules` 1247,
+`embedding` 246, `inherited` 655, `inherited-locks` 21229, `tests` 15237,
+`metadata` 3208. Class report: cognitive 5965, mechanical 3368, authored 9333,
+test 15237, support 21884; `//test/policy:declared_source_policy_test` verdict
+`accept`. The new fixture population is `test/embedding/**` (the Study-owned
+query stage, the corpus-free memo law and the declared shard targets), inside the
+existing `tests` component and with no new exemption.

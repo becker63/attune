@@ -7,6 +7,8 @@ filegroup(
 )
 
 exports_files([
+    "embedding.bzl",
+    "embedding_runtime.bzl",
     "grit_repository.bzl",
     "native.bzl",
     "unshare_repository.bzl",

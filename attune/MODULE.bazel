@@ -176,3 +176,25 @@ world_sources(
     name = "attune_worlds",
     manifest = "//test/study:manifest/catalog/archives.tsv",
 )
+
+# The approved POST-HOC EXPLORATORY EMBEDDING runtime and model (owner 2026-10-07).
+# Both read the ONE declared identity record
+# `//platform/embedding:runtime-lock.tsv`: the pinned CodeRankEmbed revision's
+# model files and the digest-pinned Python/PyTorch inference wheels. Each artifact
+# is verified against its declared SHA-256 on the client before it is materialized
+# as a portable declared input, so a remote action can carry the exact runtime
+# bytes in the CAS and no inference ever runs on the host. Declared last for the
+# same anonymous-repo renumbering reason as the catalog and world archives above.
+embedding_runtime = use_repo_rule("//platform/build:embedding_runtime.bzl", "attune_embedding_runtime")
+
+embedding_runtime(
+    name = "attune_embedding_runtime",
+    lock = "//platform/embedding:runtime-lock.tsv",
+)
+
+embedding_model = use_repo_rule("//platform/build:embedding_runtime.bzl", "attune_embedding_model")
+
+embedding_model(
+    name = "attune_embedding_model",
+    lock = "//platform/embedding:runtime-lock.tsv",
+)

@@ -151,10 +151,16 @@ pub mod Attune.Policy {
     /// The read-only reference checkout, which is never parent source.
     pub def isReferencePath(path: String): Bool = hasPrefix("attuneflix/", path)
 
-    /// The approved authored source roots.
+    /// The approved authored source roots. `platform/embedding/` carries the one
+    /// declared pinned-runtime packaging record of the owner-approved post-hoc
+    /// exploratory embedding branch: the digest lock the Bazel acquisition rules
+    /// and the Nix packaging expression both read, plus the Nix expression that
+    /// only unpacks those declared wheels. It runs no inference and changes no
+    /// host closure.
     pub def isApprovedRoot(path: String): Bool =
         hasPrefix("src/", path) or hasPrefix("test/", path)
             or hasPrefix("platform/tools/", path) or hasPrefix("platform/build/", path)
+            or hasPrefix("platform/embedding/", path)
             or hasPrefix("notes/", path)
 
     /// The exact root metadata the policy requires and admits in this workspace.
@@ -209,9 +215,17 @@ pub mod Attune.Policy {
     /// Ruby arm is the maintained Grit rule plus the pinned closure, not a
     /// first-party `src/native/` tree, and `src/native/` itself is gone). An
     /// admission for an empty tree is not an exemption; it is unowned policy.
+    ///
+    /// One exact path is admitted by name: `platform/tools/embedding/adapter.py`,
+    /// the single mechanical inference adapter of the owner-approved post-hoc
+    /// exploratory embedding branch. It is not a general Python admission — it
+    /// tokenizes declared inputs, runs the one digest-pinned third-party model
+    /// and serializes the raw vectors, carries no ingestion, ranking, metrics or
+    /// scientific policy, and every other `.py` path stays forbidden.
     pub def isAdmittedForeign(path: String): Bool =
         hasPrefix("platform/support/", path) or hasPrefix("platform/vendor/", path)
             or hasPrefix("platform/zed/", path)
+            or path == "platform/tools/embedding/adapter.py"
             or hasSuffix(".grit", path)
             or (hasPrefix("test/", path) and hasSuffix(".rb", path))
 
@@ -679,6 +693,7 @@ pub mod Attune.Policy {
     /// cognitive: the rule is simply that it belongs in a production owner.
     def isMechanicalPath(path: String): Bool =
         hasPrefix("platform/tools/", path)
+            or hasPrefix("platform/embedding/", path)
             or (hasPrefix("platform/build/", path) and not isGritClosureRule(path))
 
     pub def ownershipOf(path: String): Ownership =
@@ -702,7 +717,7 @@ pub mod Attune.Policy {
     pub def componentNames(): List[String] =
         "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
             :: "frontends" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
-            :: "build-rules" :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
+            :: "build-rules" :: "embedding" :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
 
     pub def componentOf(path: String): String =
         if (isExcludedPath(path) or isReferencePath(path) or isSecretPath(path)) "metadata"
@@ -720,6 +735,8 @@ pub mod Attune.Policy {
         else if (hasPrefix("platform/tools/parquet/", path)) "parquet"
         else if (hasPrefix("platform/tools/boundary/", path)) "boundary"
         else if (hasPrefix("platform/tools/grit/", path)) "grit-binding"
+        else if (hasPrefix("platform/embedding/", path)) "embedding"
+        else if (hasPrefix("platform/tools/embedding/", path)) "embedding"
         else if (hasPrefix("platform/build/", path)) "build-rules"
         else if (path == "platform/support/grit/cargo-bazel-lock.json" or path == "platform/support/grit/Cargo.lock") "inherited-locks"
         else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) "inherited"
