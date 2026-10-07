@@ -501,7 +501,21 @@ mapped public manifest and the classified findings; the ordinary `bazel test //.
 gate never fetches or scans the corpus, and the admitted label artifacts are
 byte-identical to the emitted ones. The world facts and descriptor populations
 that a fully expanded real graph needs are the following features' work, so no
-localization gain is claimed here.
+localization gain is claimed for the label stage itself. The owner-approved
+runtime-capped continuation then materializes the derived cohort's four
+cumulative arms on the warm world/Theory/variant artifacts and reduces them
+through the one canonical retrieval reducer in `Attune.Study.Metrics`: the
+all-eligible population (85 tasks in 22 groups), its declared development
+(50 eligible / 13 groups), calibration (20 / 5) and held-out final (15 / 4)
+splits, and a labelled covered-only diagnostic, each with explicit
+`population`/`covered`/`undefined` counts so no denominator shrinks silently,
+plus six corpus-free metric laws at `//test/localization_runtime:metrics_law`
+(deliberately not `manual`) pinning multi-file recall versus hit, abstention
+denominators, undefined ratios and ineligible classifications. The measured
+four-arm numbers, the runtime cutoff with its exact original/capped denominators,
+and the honest gaps are reported in the root `LOCALIZATION_REPORT.md`; the
+post-hoc live JEV extension remains pending and not run, with its availability
+not established.
 
 ## Deferred
 
@@ -514,8 +528,11 @@ checked documentation correspondence. Deliberately not selected or run here:
 - any final source, cache-ownership, sharding or "most parallel" topology;
 - the approved corpus's retained priors, localization
   experiments, census or benchmarks (the one pinned corpus is acquired, streamed,
-  reduced to the shared panel and reduced to its evaluator reference labels; the
-  frozen localization arms, rankings and metrics are not run here);
+  reduced to the shared panel, reduced to its evaluator reference labels and then
+  reduced to the runtime-capped cohort's frozen four-arm rankings and canonical
+  metrics; every one of those stages is `manual` and is selected only through the
+  declared remote commands, never by `bazel test //...`, and the post-hoc live
+  JEV extension is still pending);
 - a general view catalog, large-graph layout, ASCII parser or architecture browser;
 - any model choice, live provider effect, ranking-quality claim or application
   policy selection beyond the recorded fixture decision contract.

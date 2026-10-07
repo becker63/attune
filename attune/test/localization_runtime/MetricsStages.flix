@@ -14,18 +14,20 @@ use Fs.FileWrite
 ///
 /// The reduction itself lives once, in `Attune.Study.Metrics`; this file is a
 /// thin adapter that resolves the declared bindings, parses the declared record
-/// vocabulary and renders the declared output rows. The canonical metrics leaf
-/// and the later post-hoc exploratory JEV extension reduce through the same
-/// functions rather than carrying a second metric engine.
+/// vocabulary and renders the declared output rows. The corpus-free metric laws
+/// (`MetricsLaw.flix`) and the later post-hoc exploratory JEV extension reduce
+/// through the same functions rather than carrying a second metric engine.
 ///
 /// Every metric value is emitted as an exact `(numerator, denominator)` pair; the
 /// one-decimal percentage is presentation and is always accompanied by the exact
-/// pair. A task with no eligible gold path is never scored as a miss: it is
-/// counted in its own population and excluded from the metric denominator, and a
-/// task whose whole canonical group was excluded by the runtime cutoff is
-/// recorded as `runtime-unavailable` rather than as a failure. The stage fails
-/// closed when the computed population disagrees with the declared derived
-/// bounds.
+/// pair. The stage reports one all-eligible population, its declared development,
+/// calibration and held-out final splits, and a labelled covered-only diagnostic,
+/// each with its own `population`/`covered`/`undefined` counts. An abstained arm
+/// is a measured miss retained in the denominator; a task with no eligible gold
+/// path is an ineligible classification rather than a zero score; and a task
+/// whose whole canonical group was excluded by the runtime cutoff is recorded as
+/// `runtime-unavailable`. The stage fails closed when the computed population
+/// disagrees with the declared derived bounds.
 
 // -------------------------------------------------------------- pure parsing
 
@@ -103,43 +105,41 @@ def rankEntries(text: String): List[(Int32, String, Int32)] =
 
 // ------------------------------------------------------------- scored records
 
-/// One scored task of the derived cohort: its declared identity, its admitted
-/// gold paths and one complete immutable ranking per frozen arm.
-type alias Scored = {
-    task     = String,
-    group    = String,
-    split    = String,
-    gold     = List[String],
-    rankings = List[(String, List[(Int32, String, Int32)])]
+/// One admitted task of the derived cohort: its declared identity, its admitted
+/// case classification and its eligible gold paths.
+type alias Admitted = {
+    task   = String,
+    group  = String,
+    split  = String,
+    status = String,
+    gold   = List[String]
 }
 
-/// The ranking of one arm of one scored task, or nothing when that arm is absent.
-def rankingOf(record: Scored, arm: String): Option[List[(Int32, String, Int32)]] =
-    match List.find(entry -> match entry { case (name, _) => name == arm }, record#rankings) {
-        case Some((_, ranking)) => Some(ranking)
-        case None               => None
-    }
-
-/// The exact value of one metric over one arm of one task, or nothing when the
-/// arm is absent or the metric is undefined for that task's gold.
-def ratioFor(record: Scored, arm: String, metric: Metrics.LocalizationMetric): Option[Metrics.Ratio] =
-    match rankingOf(record, arm) {
-        case Some(ranking) => Metrics.metricRatio(metric, ranking, record#gold)
-        case None          => None
-    }
-
-/// The task-micro mean: every scored task of the cohort weighs the same.
-def micro(scored: List[Scored], arm: String, metric: Metrics.LocalizationMetric): Option[Metrics.Ratio] =
-    Metrics.meanRatio(List.filterMap(record -> ratioFor(record, arm, metric), scored))
-
-/// The group-equal macro mean: first each group's own task mean, then the equal
-/// mean over the groups that carry at least one scored task.
-def macro(scored: List[Scored], arm: String, metric: Metrics.LocalizationMetric): Option[Metrics.Ratio] = {
-    let groups = List.distinct(List.map(record -> record#group, scored));
-    let means = List.filterMap(group ->
-        micro(List.filter(record -> record#group == group, scored), arm, metric), groups);
-    Metrics.meanRatio(means)
+/// One admitted task as a canonical reducer outcome: its immutable rankings per
+/// arm, or no rankings at all when the task's arm abstained. The declared
+/// evaluator path never enters a ranking; only the frozen ranking trees do.
+def outcomeOf(record: Admitted, root: String, arms: List[String]): Metrics.LocalizationOutcome \ IO = {
+    let rankings = if (String.isEmpty(root)) Nil
+        else List.map(arm -> (arm, rankEntries(readText(root + "/rank_" + arm + ".tsv"))), arms);
+    { task = record#task, group = record#group, split = record#split, gold = record#gold, rankings = rankings }
 }
+
+/// Whether every declared arm carries a present, non-empty ranking: the
+/// complete-coverage population reported beside the all-eligible one.
+def completelyCovered(outcome: Metrics.LocalizationOutcome, arms: List[String]): Bool =
+    not List.exists(arm -> match Metrics.outcomeRanking(arm, outcome) {
+        case Some(_) => false
+        case None    => true
+    }, arms)
+
+/// The total undefined members of every summary over a population: the explicit
+/// check that the all-eligible denominator did not shrink through a filterMap.
+def totalUndefined(population: List[Metrics.LocalizationOutcome], arms: List[String]): Int32 =
+    List.foldLeft((total, arm) -> List.foldLeft((sum, metric) -> {
+        let micro = Metrics.microSummary(metric, arm, population);
+        let macro = Metrics.macroSummary(metric, arm, population);
+        sum + micro#undefined + macro#undefined
+    }, total, Metrics.localizationMetrics()), 0, arms)
 
 // ------------------------------------------------------------- declared roots
 
@@ -166,6 +166,44 @@ def contributionSum(roots: List[String], key: String): Int32 \ IO =
         total + List.foldLeft((sum, row) -> sum + intOf(cell(row, 3)), 0, rows)
     }, 0, roots)
 
+/// One summary rendered as a declared metric row. No emitted cell can contain a
+/// tab or a newline, so the declared escaping vocabulary is not duplicated. An
+/// undefined value keeps its row and leaves the value cells empty, so an
+/// undefined metric is visible in the table instead of absent from it.
+def metricRow(
+    scope: String,
+    kind: String,
+    arm: String,
+    metric: Metrics.LocalizationMetric,
+    summary: Metrics.MetricSummary): List[String] = {
+    let value: List[String] = match summary#value {
+        case Some(ratio) => List#{
+            Int32.toString(ratio#numerator),
+            Int32.toString(ratio#denominator),
+            Metrics.ratioPercentage(ratio)
+        }
+        case None => List#{"", "", "undefined"}
+    };
+    List#{"metric", scope, kind, arm, Metrics.localizationMetricName(metric)}
+        ::: value
+        ::: List#{Int32.toString(summary#population), Int32.toString(summary#covered), Int32.toString(summary#undefined)}
+}
+
+/// Every declared metric row of one population and one arm: the task-micro and
+/// task-within-group group-equal macro summary of each declared metric.
+def populationRows(scope: String, arm: String, population: List[Metrics.LocalizationOutcome]): List[List[String]] =
+    List.flatMap(metric -> List#{
+        metricRow(scope, "micro", arm, metric, Metrics.microSummary(metric, arm, population)),
+        metricRow(scope, "macro", arm, metric, Metrics.macroSummary(metric, arm, population))
+    }, Metrics.localizationMetrics())
+
+def splitPopulationRows(scope: String, arm: String, split: String, outcomes: List[Metrics.LocalizationOutcome]): List[List[String]] =
+    populationRows(scope, arm, Metrics.splitOutcomes(split, outcomes))
+
+/// Render the declared metric record vocabulary.
+def renderTsv(rows: List[List[String]]): String =
+    List.join("\n", List.map(row -> List.join("\t", row), rows)) + "\n"
+
 // ------------------------------------------------------------------ the stage
 
 /// Reduce the runtime-capped cohort's immutable four-arm rankings, the admitted
@@ -179,6 +217,7 @@ def localizationMetricsStage(): Unit \ {Assert, IO} = {
     let tasks = rowsOf(mapped, "task");
     let excluded = List.map(row -> cell(row, 1), rowsOf(derived, "excluded"));
     let arms = List.map(Study.localizationArmName, Study.localizationArms());
+    let splits = Study.localizationSplits();
 
     // One record per admitted task. The status is the admitted case unless the
     // task's whole canonical group was excluded by the runtime cutoff, in which
@@ -210,45 +249,60 @@ def localizationMetricsStage(): Unit \ {Assert, IO} = {
         case None            => ""
     };
 
-    let scored = List.filterMap(record -> {
-        if (record#status == "eligible-gold" and not List.isEmpty(record#gold) and not String.isEmpty(rootOf(record#task))) {
-            let root = rootOf(record#task);
-            let rankings = List.map(arm -> (arm, rankEntries(readText(root + "/rank_" + arm + ".tsv"))), arms);
-            if (List.exists(entry -> match entry { case (_, ranking) => List.isEmpty(ranking) }, rankings)) None
-            else Some({ task = record#task, group = record#group, split = record#split,
-                gold = record#gold, rankings = rankings })
-        } else None
-    }, classified);
+    // The all-eligible population: exactly the admitted `eligible-gold` tasks
+    // that carry at least one gold path. An eligible task whose ranking arm
+    // abstained stays here and is scored as a miss; an ineligible classification
+    // (unsupported, empty-gold, runtime-unavailable) is not part of it.
+    let outcomes = List.map(record -> outcomeOf(record, rootOf(record#task), arms),
+        List.filter(record -> Metrics.isEligible(record#status, record#gold), classified));
 
-    let metricRow = (arm, kind, metric, value) -> match value {
-        case None         => Nil
-        case Some(measured) => List#{
-            List#{"metric", kind, arm, Metrics.localizationMetricName(metric),
-                Int32.toString(measured#numerator), Int32.toString(measured#denominator),
-                Metrics.ratioPercentage(measured)}
-        }
+    let coveredOf = split -> List.filter(outcome -> completelyCovered(outcome, arms),
+        match split { case "all" => outcomes case _ => Metrics.splitOutcomes(split, outcomes) });
+
+    // The declared all-eligible population, its three splits and the labelled
+    // covered-only diagnostic, each reduced through the one canonical reducer.
+    let eligibleScopes = List#{
+        ("all-eligible", outcomes),
+        ("eligible-development", Metrics.splitOutcomes("development", outcomes)),
+        ("eligible-calibration", Metrics.splitOutcomes("calibration", outcomes)),
+        ("eligible-final", Metrics.splitOutcomes("final", outcomes))
     };
 
-    let metricRows = List.flatMap(arm -> List.flatMap(metric ->
-        metricRow(arm, "micro", metric, micro(scored, arm, metric))
-            ::: metricRow(arm, "macro", metric, macro(scored, arm, metric)),
-        Metrics.localizationMetrics()), arms);
+    let metricRows = List.flatMap(arm ->
+        List.flatMap(scope -> match scope {
+            case (name, population) => populationRows(name, arm, population)
+        }, eligibleScopes)
+            ::: List.flatMap(split -> populationRows("covered-" + split, arm, coveredOf(split)),
+                "all" :: splits),
+        arms);
 
     let taskRows = List.flatMap(record -> List#{
         List#{"task", record#task, record#group, record#split, record#status, Int32.toString(List.length(record#gold))}
     }, classified);
 
     let countOf = status -> Int32.toString(List.length(List.filter(record -> record#status == status, classified)));
+    let eligibleIn = split -> Int32.toString(List.length(Metrics.splitOutcomes(split, outcomes)));
+    let groupsIn = split -> Int32.toString(List.length(List.distinct(List.map(outcome -> outcome#group,
+        Metrics.splitOutcomes(split, outcomes)))));
 
     let populationRows = List#{
-        List#{"population", "admitted", "tasks", Int32.toString(List.length(classified))},
-        List#{"population", "scored", "tasks", Int32.toString(List.length(scored))},
-        List#{"population", "eligible-gold", "tasks", countOf("eligible-gold")},
-        List#{"population", "unsupported", "tasks", countOf("unsupported")},
-        List#{"population", "empty-gold", "tasks", countOf("empty-gold")},
-        List#{"population", "runtime-unavailable", "tasks", countOf("runtime-unavailable")},
-        List#{"population", "scored", "groups", Int32.toString(List.length(List.distinct(List.map(record -> record#group, scored))))},
-        List#{"population", "excluded", "groups", Int32.toString(List.length(excluded))}
+        List#{"population", "admitted", "all", Int32.toString(List.length(classified))},
+        List#{"population", "eligible", "all", Int32.toString(List.length(outcomes))},
+        List#{"population", "eligible", "development", eligibleIn("development")},
+        List#{"population", "eligible", "calibration", eligibleIn("calibration")},
+        List#{"population", "eligible", "final", eligibleIn("final")},
+        List#{"population", "covered", "all", Int32.toString(List.length(coveredOf("all")))},
+        List#{"population", "covered", "development", Int32.toString(List.length(coveredOf("development")))},
+        List#{"population", "covered", "calibration", Int32.toString(List.length(coveredOf("calibration")))},
+        List#{"population", "covered", "final", Int32.toString(List.length(coveredOf("final")))},
+        List#{"population", "groups", "all", Int32.toString(List.length(List.distinct(List.map(outcome -> outcome#group, outcomes))))},
+        List#{"population", "groups", "development", groupsIn("development")},
+        List#{"population", "groups", "calibration", groupsIn("calibration")},
+        List#{"population", "groups", "final", groupsIn("final")},
+        List#{"population", "unsupported", "all", countOf("unsupported")},
+        List#{"population", "empty-gold", "all", countOf("empty-gold")},
+        List#{"population", "runtime-unavailable", "all", countOf("runtime-unavailable")},
+        List#{"population", "excluded-groups", "all", Int32.toString(List.length(excluded))}
     };
 
     let roots = List.map(entry -> match entry { case (_, root) => root }, rankedRoots);
@@ -268,18 +322,19 @@ def localizationMetricsStage(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = 85, intOf(derivedValue(derived, "eligible-gold-tasks")));
     Assert.assertEq(expected = 85, intOf(countOf("eligible-gold")));
     Assert.assertEq(expected = 8, intOf(countOf("runtime-unavailable")));
+    Assert.assertEq(expected = 85, List.length(outcomes));
+    Assert.assertEq(expected = 50, List.length(Metrics.splitOutcomes("development", outcomes)));
+    Assert.assertEq(expected = 20, List.length(Metrics.splitOutcomes("calibration", outcomes)));
+    Assert.assertEq(expected = 15, List.length(Metrics.splitOutcomes("final", outcomes)));
+    Assert.assertEq(expected = 13, List.length(List.distinct(List.map(outcome -> outcome#group, Metrics.splitOutcomes("development", outcomes)))));
+    Assert.assertEq(expected = 5, List.length(List.distinct(List.map(outcome -> outcome#group, Metrics.splitOutcomes("calibration", outcomes)))));
+    Assert.assertEq(expected = 4, List.length(List.distinct(List.map(outcome -> outcome#group, Metrics.splitOutcomes("final", outcomes)))));
+    Assert.assertEq(expected = 0, totalUndefined(outcomes, arms));
     Assert.assertEq(expected = 4, List.length(arms));
-    Assert.assertEq(expected = true, List.length(scored) > 0);
+    Assert.assertEq(expected = true, List.length(outcomes) > 0);
     Assert.assertEq(expected = true, not List.isEmpty(metricRows));
     Assert.assertEq(expected = true, not List.isEmpty(contributions))
 }
-
-/// Render the declared metric record vocabulary. No emitted cell can contain a
-/// tab or a newline: every field is a task identity, a group identity, a split,
-/// a case classification, a declared metric name or an integer, so the declared
-/// escaping vocabulary is not duplicated here.
-def renderTsv(rows: List[List[String]]): String =
-    List.join("\n", List.map(row -> List.join("\t", row), rows)) + "\n"
 
 // ---------------------------------------------------------------- dispatcher
 

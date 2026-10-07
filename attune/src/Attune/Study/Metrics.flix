@@ -20,6 +20,15 @@
 /// with no eligible gold path is undefined, and such a task is excluded from
 /// the eligible population by the caller rather than scored as zero.
 ///
+/// The module also owns the population reductions, because they are the same
+/// scientific statement as the per-task values: the task-micro mean and the
+/// task-within-group then group-equal macro mean. Each reduction returns a
+/// `MetricSummary` with its own explicit counts, so the all-eligible
+/// denominator can never shrink silently. An abstained arm (an absent or empty
+/// ranking) is a measured miss retained in the denominator; a genuinely
+/// undefined member is counted as undefined and refuses the mean instead of
+/// quietly disappearing from it.
+///
 pub mod Attune.Study.Metrics {
 
     /// One exact non-negative rational. The denominator is never zero.
@@ -141,5 +150,113 @@ pub mod Attune.Study.Metrics {
         let tenths = (numerator * 1000i64 + denominator / 2i64) / denominator;
         let whole = tenths / 10i64;
         "${whole}.${tenths - whole * 10i64}%"
+    }
+
+    // ----------------------------------------------------- population reduction
+
+    /// One arm's complete ranking of a candidate population: rank-ordered
+    /// entries of `(rank, path, score)`.
+    pub type alias Ranking = List[(Int32, String, Int32)]
+
+    /// One eligible localization outcome: the task's declared identity, its
+    /// admitted gold paths and one immutable ranking per frozen arm. A missing
+    /// or empty arm ranking is an abstention, not a member dropped from the
+    /// denominator.
+    pub type alias LocalizationOutcome = {
+        task     = String,
+        group    = String,
+        split    = String,
+        gold     = List[String],
+        rankings = List[(String, Ranking)]
+    }
+
+    /// One population summary with explicit denominators. `value` is the exact
+    /// mean, or nothing when a member is genuinely undefined or the population
+    /// is empty. `covered` counts the members whose metric value is defined and
+    /// `undefined` counts the members whose metric is undefined, so a reduction
+    /// can never turn a filterMap drop into a quietly smaller denominator: the
+    /// drop is reported and the mean is refused rather than shrunk.
+    pub type alias MetricSummary = {
+        value      = Option[Ratio],
+        population = Int32,
+        covered    = Int32,
+        undefined  = Int32
+    }
+
+    /// The arm's non-empty ranking of one outcome, or nothing when the arm
+    /// abstained. An absent entry and an empty ranking are the same observation.
+    pub def outcomeRanking(arm: String, outcome: LocalizationOutcome): Option[Ranking] =
+        match List.find(entry -> match entry { case (name, _) => name == arm }, outcome#rankings) {
+            case Some((_, ranking)) => if (List.isEmpty(ranking)) None else Some(ranking)
+            case None               => None
+        }
+
+    /// The exact value of one metric over one arm of one outcome. `None` means
+    /// genuinely undefined: an outcome with no eligible gold path is not part of
+    /// the all-eligible denominator rather than a zero score. An abstained arm
+    /// is a measured miss (`0/1`), retained in the denominator.
+    pub def outcomeMetric(metric: LocalizationMetric, arm: String, outcome: LocalizationOutcome): Option[Ratio] =
+        if (List.isEmpty(outcome#gold)) None
+        else match outcomeRanking(arm, outcome) {
+            case Some(ranking) => metricRatio(metric, ranking, outcome#gold)
+            case None          => Some(ratio(0, 1))
+        }
+
+    /// The all-eligible outcomes of a population: exactly those that carry at
+    /// least one eligible gold path. Ineligible classifications (unsupported,
+    /// empty-gold, runtime-unavailable) are excluded by the caller's own
+    /// classification predicate, never by a metric-side default.
+    pub def eligibleOutcomes(outcomes: List[LocalizationOutcome]): List[LocalizationOutcome] =
+        List.filter(outcome -> not List.isEmpty(outcome#gold), outcomes)
+
+    /// The covered subset for one arm: the outcomes whose arm ranking is present
+    /// and non-empty. This is a labelled diagnostic population reported beside
+    /// the all-eligible summary, never substituted for it.
+    pub def coveredOutcomes(arm: String, outcomes: List[LocalizationOutcome]): List[LocalizationOutcome] =
+        List.filter(outcome -> match outcomeRanking(arm, outcome) {
+            case Some(_) => true
+            case None    => false
+        }, outcomes)
+
+    /// The outcomes of one declared split.
+    pub def splitOutcomes(split: String, outcomes: List[LocalizationOutcome]): List[LocalizationOutcome] =
+        List.filter(outcome -> outcome#split == split, outcomes)
+
+    /// Whether one admitted case belongs to the all-eligible metric population:
+    /// only a case classified `eligible-gold` that carries at least one gold
+    /// path. An unsupported, empty-gold, unknown or runtime-unavailable case is
+    /// an ineligible classification, never a zero-scored member of the
+    /// denominator.
+    pub def isEligible(status: String, gold: List[String]): Bool =
+        status == "eligible-gold" and not List.isEmpty(gold)
+
+    /// One population's task-micro summary over one arm and one metric.
+    pub def microSummary(metric: LocalizationMetric, arm: String, outcomes: List[LocalizationOutcome]): MetricSummary = {
+        let values = List.map(outcome -> outcomeMetric(metric, arm, outcome), outcomes);
+        let defined = List.filterMap(value -> value, values);
+        let undefined = List.length(values) - List.length(defined);
+        {
+            value = if (undefined > 0) None else meanRatio(defined),
+            population = List.length(outcomes),
+            covered = List.length(defined),
+            undefined = undefined
+        }
+    }
+
+    /// One population's task-within-group then group-equal macro summary over one
+    /// arm and one metric: first each group's own task mean, then the equal mean
+    /// over the population's groups. The counts name groups, not tasks, and a
+    /// group with an undefined member refuses the macro rather than dropping it.
+    pub def macroSummary(metric: LocalizationMetric, arm: String, outcomes: List[LocalizationOutcome]): MetricSummary = {
+        let groups = List.distinct(List.map(outcome -> outcome#group, outcomes));
+        let summaries = List.map(group -> microSummary(metric, arm,
+            List.filter(outcome -> outcome#group == group, outcomes)), groups);
+        let means = List.filterMap(summary -> summary#value, summaries);
+        {
+            value = if (List.length(means) == List.length(groups)) meanRatio(means) else None,
+            population = List.length(groups),
+            covered = List.length(means),
+            undefined = List.length(groups) - List.length(means)
+        }
     }
 }

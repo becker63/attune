@@ -1,29 +1,35 @@
 # Localization performance report
 
 **Status:** FINAL for the runtime-capped deterministic localization result;
-POST-HOC EXPLORATORY JEV EXTENSION NOT RUN. The original panel
-`attune-panel-2026-10-06` remains immutable and its full result does not exist.
-An owner-approved runtime cutoff excludes whole canonical repository groups whose
-extraction was unfinished at the 22:44:04Z continuation start, and the derived
-cohort's four frozen arms are now built, audited and scored. All prior audit,
-repair and verification history is retained below unchanged.
+the POST-HOC EXPLORATORY JEV EXTENSION is **pending — not run**, and its
+availability is **not established** (no live probe has occurred). The original
+panel `attune-panel-2026-10-06` remains immutable and its full result does not
+exist. An owner-approved runtime cutoff excludes whole canonical repository
+groups whose extraction was unfinished at the 22:44:04Z continuation start, and
+the derived cohort's four frozen arms are now built, audited and scored through
+the one canonical metric reducer, including its declared development, calibration
+and held-out final reductions. All prior audit, repair and verification history
+is retained below unchanged.
 
-**Generated:** 2026-10-07T02:08:54Z (generation 6; supersedes generation 5 for
+**Generated:** 2026-10-07T02:29:00Z (generation 7; supersedes generation 6 for
 current state; earlier generations retained below as history)
 
-**Source:** Git `b15b98c` (branch `main`, "Freeze the runtime-capped four-arm
-localization result and canonical metrics"), built on `2b5bc2de3bdf25dd2d437e9f91068bf9f64413e2`
-("Repair UTF-8 world extraction and publish the localization run audit"). Input
-digests (sha256):
+**Source:** this commit (parent `75562bf`, branch `main`), built on
+`2b5bc2de3bdf25dd2d437e9f91068bf9f64413e2` ("Repair UTF-8 world extraction and
+publish the localization run audit"). The report is committed with the change it
+describes, so it names its parent and its own input digests rather than a
+self-referential hash. Input digests (sha256):
+
 
 | File | State | sha256 |
 |---|---|---|
-| `attune/src/Attune/Study/Metrics.flix` | new (canonical reducer) | `4d8865cf117950fb5c95b6fd45863458c31252323c761949b4943a68152a42d6` |
-| `attune/test/localization_runtime/localization_runtime.bzl` | new | `8c8240b08b1b7b653c79c254036321c25397b4f4d7ae2cdb62355df4ef5e3de6` |
-| `attune/test/localization_runtime/MetricsStages.flix` | new | `5679447140379ea63067061146176614be3d32e7848a59b646b634d772b12895` |
-| `attune/test/localization_runtime/LocalizationRuntimeLaw.flix` | new | `28f380fc77cbc01cf927177ad0efb3a7a7409ce99a296a438d6261a1dcadf63e` |
-| `attune/test/localization_runtime/BUILD.bazel` | new | `39337d514e18482c65a7d3f2fa7eb73060d4b0d61ca290ab761cdd04e8dd1424` |
-| `attune/src/Attune/Policy.flix` | modified (Study sub-module component map) | `4954d285f35e3496110cc8c6bf1b989b4cceaa9150a82e3ca2aacca0981166a8` |
+| `attune/src/Attune/Study/Metrics.flix` | modified (canonical reducer) | `70fec3779276593e93528c9aafb2794a715b435d87a9a42362f0f9e9174b53a2` |
+| `attune/test/localization_runtime/localization_runtime.bzl` | unchanged | `8c8240b08b1b7b653c79c254036321c25397b4f4d7ae2cdb62355df4ef5e3de6` |
+| `attune/test/localization_runtime/MetricsStages.flix` | modified (scoring leaf) | `853f58ca79c3a351936f8a810812dfe72f739c20bcf6687ad90481af6c9744dd` |
+| `attune/test/localization_runtime/MetricsLaw.flix` | new (corpus-free metric laws) | `4c847d97e9ddd311e541a7205e092f9d00369f22d81c925a36c35e2e9353e7b8` |
+| `attune/test/localization_runtime/LocalizationRuntimeLaw.flix` | unchanged | `28f380fc77cbc01cf927177ad0efb3a7a7409ce99a296a438d6261a1dcadf63e` |
+| `attune/test/localization_runtime/BUILD.bazel` | modified (metric-law target) | `8b395120cb06190476cfaf29b4db4590f6971ae7c1ebf173f124bb3ef1220a3e` |
+| `attune/src/Attune/Policy.flix` | unchanged | `4954d285f35e3496110cc8c6bf1b989b4cceaa9150a82e3ca2aacca0981166a8` |
 
 **Derived artifacts (built, sha256):**
 
@@ -31,16 +37,26 @@ digests (sha256):
 |---|---|
 | `bazel-bin/test/localization_runtime/derived_population.tsv` | `4cf2bcbe8f730bd5581237285552a56e67443524d1c9360115f40824bc0dca5e` |
 | `bazel-bin/test/localization_runtime/select_policy/selected.tsv` | `beca061e7b759fd54946be8ed3f6648a3d6019ab0a6e7b32cb765e6760ac2f96` |
-| `bazel-bin/test/localization_runtime/metrics/metrics.tsv` | `3a85017adcd99e4d43b0eb61eb86cddc38ac9836e07e91e827b53a31b7ad68a6` |
-| `bazel-bin/test/localization_runtime/metrics/tasks.tsv` (96 rows) | `d70817ef4d6de7c0e447278e9c2e4d6c5ee8f04d274e7a84643740eb748404a5` |
-| `bazel-bin/test/localization_runtime/metrics/contributions.tsv` | `90873f886011789bf2f3cd054cdf2dfc4c664aadb0050d58f6667f098f3d0644` |
+| `bazel-bin/test/localization_runtime/metrics/metrics.tsv` (465 rows) | `35e3e90215177404777592951b7b7cf32d537c425939a06a6cc7cd3dfa7b5087` |
+| `bazel-bin/test/localization_runtime/metrics/tasks.tsv` (96 rows, unchanged) | `d70817ef4d6de7c0e447278e9c2e4d6c5ee8f04d274e7a84643740eb748404a5` |
+| `bazel-bin/test/localization_runtime/metrics/contributions.tsv` (unchanged) | `90873f886011789bf2f3cd054cdf2dfc4c664aadb0050d58f6667f098f3d0644` |
+
+`derived_population.tsv`, `select_policy/selected.tsv`, `tasks.tsv` and
+`contributions.tsv` are byte-identical to generation 6: the frozen rankings and
+their measured contribution rows did not move. Only `metrics.tsv` changed, and
+only because the canonical reducer now reports the declared splits, the
+all-eligible versus covered-only populations and the explicit
+`population`/`covered`/`undefined` counts beside each exact pair.
 
 **Invocations:** `986f5302-…` (pre-fix, audited and interrupted),
 `1606f3a4-3382-4e96-8b09-a1cc039babde` (post-fix, self-terminated at
-2026-10-06T23:24:58Z with the two cutoff worlds unfinished), then the derived
+2026-10-06T23:24:58Z with the two cutoff worlds unfinished), the derived
 invocations `c86dd5c5-…`, `e998ba4e-…`, `6bf62f87-…`, `9717510c-…`,
-`f5d5541c-…`, `2442b5eb-…`, and the remote derived-law rerun
-`9613f659-e88d-4a4b-8943-183e6a8ccd9c`.
+`f5d5541c-…`, `2442b5eb-…`, the remote derived-law rerun
+`9613f659-e88d-4a4b-8943-183e6a8ccd9c`, and this generation's
+`0b5a90e8-736f-4eb5-8194-f1288a3f149e` (metrics rebuild),
+`31243e41-021b-41aa-a351-63daacc8a666` and
+`a7a9e614-e380-4eaa-9758-0a71d3894a17` (derived and metric laws).
 
 ## Runtime-capped deterministic localization result
 
@@ -166,6 +182,81 @@ reorder inside it. This is an honest null-to-negative result for the structural
 families beyond anchors under the frozen additive scoring, and it is reported as
 measured, not as a defect.
 
+### Declared denominators and split reductions
+
+The one canonical reducer is asked for the all-eligible population, its three
+declared splits and a labelled covered-only diagnostic, and it answers each with
+its own `population`/`covered`/`undefined` counts. Every row is a read-only
+re-slice of the same frozen rankings; no ranking was recomputed and no selection
+was re-run.
+
+| Population | Eligible tasks | Groups | Note |
+|---|---|---|---|
+| All eligible | **85** | **22** | the all-eligible denominator; nothing silently narrowed |
+| development | 50 | 13 | the split the policy was selected on (52 tasks total) |
+| calibration | 20 | 5 | never used for selection or tuning |
+| final — held out | **15** | **4** | explicitly distinguished from the 85/22 overall summary |
+| covered-only (all four arms present) | 85 | 22 | diagnostic; equals eligible here (no abstentions in this corpus) |
+
+Other admitted classifications: 96 tasks admitted, 2 `unsupported`
+(`solid__community-server-1040`, `stoplightio__spectral-1059`), 1 `empty-gold`
+(`projectevergreen__greenwood-1085`), 8 `runtime-unavailable` (the two excluded
+whole groups), 2 excluded groups. None of these enters a metric denominator.
+
+Development split, 50 eligible tasks / 13 groups:
+
+| Arm | Hit@1 | Hit@5 | Hit@10 | Recall@1 | Recall@5 | Recall@10 | MRR@10 |
+|---|---|---|---|---|---|---|---|
+| P (micro) | 14.0% | 24.0% | 34.0% | 6.6% | 12.8% | 21.1% | 19.4% |
+| P+A (micro) | 14.0% | 24.0% | 38.0% | 6.6% | 9.2% | 21.5% | 19.4% |
+| P+A+F (micro) | 12.0% | 24.0% | 38.0% | 6.5% | 9.4% | 21.9% | 18.1% |
+| P+A+D (micro) | 8.0% | 24.0% | 42.0% | 4.6% | 9.6% | 22.2% | 16.2% |
+| P (macro) | 14.1% | 25.6% | 35.3% | 7.0% | 13.7% | 21.7% | 20.0% |
+| P+A (macro) | 14.7% | 25.0% | 39.1% | 7.1% | 9.6% | 21.6% | 20.2% |
+| P+A+F (macro) | 12.8% | 25.0% | 39.1% | 6.9% | 10.0% | 22.1% | 19.0% |
+| P+A+D (macro) | 8.3% | 25.0% | 42.9% | 5.0% | 10.1% | 22.4% | 16.9% |
+
+Calibration split, 20 eligible tasks / 5 groups (micro and macro coincide because
+every group carries exactly four eligible tasks):
+
+| Arm | Hit@1 | Hit@5 | Hit@10 | Recall@1 | Recall@5 | Recall@10 | MRR@10 |
+|---|---|---|---|---|---|---|---|
+| P | 10.0% | 25.0% | 35.0% | 10.0% | 18.8% | 25.0% | 16.4% |
+| P+A | 20.0% | 40.0% | 45.0% | 13.8% | 33.8% | 35.0% | 27.6% |
+| P+A+F | 20.0% | 45.0% | 45.0% | 13.8% | 35.0% | 35.0% | 27.4% |
+| P+A+D | 15.0% | 40.0% | 45.0% | 8.8% | 30.0% | 35.0% | 24.4% |
+
+Final split — held out, 15 eligible tasks / 4 groups:
+
+| Arm | Hit@1 | Hit@5 | Hit@10 | Recall@1 | Recall@5 | Recall@10 | MRR@10 |
+|---|---|---|---|---|---|---|---|
+| P (micro) | 6.7% | 33.3% | 40.0% | 6.7% | 25.6% | 28.9% | 18.4% |
+| P+A (micro) | 33.3% | 46.7% | 46.7% | 25.6% | 35.6% | 35.6% | 40.0% |
+| P+A+F (micro) | 26.7% | 46.7% | 46.7% | 23.3% | 38.9% | 38.9% | 33.3% |
+| P+A+D (micro) | 26.7% | 33.3% | 33.3% | 23.3% | 33.3% | 33.3% | 30.0% |
+| P (macro) | 6.3% | 31.3% | 37.5% | 6.3% | 24.0% | 27.1% | 17.3% |
+| P+A (macro) | 31.3% | 43.8% | 43.8% | 24.0% | 33.3% | 33.3% | 37.5% |
+| P+A+F (macro) | 25.0% | 43.8% | 43.8% | 21.9% | 36.5% | 36.5% | 31.3% |
+| P+A+D (macro) | 25.0% | 31.3% | 31.3% | 21.9% | 31.3% | 31.3% | 28.1% |
+
+**Reading the splits.** The anchor gain is not uniform across splits. On the
+held-out final split anchors are the largest single effect measured anywhere in
+this study (+26.6 Hit@1 micro over P, +21.6 MRR@10), while on the development
+split they move Hit@1 not at all (14.0%) and only lift Hit@10 (+4.0). The
+cumulative D arm is worse than P+A on the development and final splits and on
+calibration too at Hit@1/Recall@1, which is the same null-to-negative structural
+result the overall table shows, not a new one. Because the final split is the one
+never used for selection or tuning, its numbers are the least exposed to that
+selection; they are nevertheless reported as measured on 15 tasks in 4 groups and
+are not treated as a separate confirmatory claim.
+
+**Covered-only diagnostic.** On this cohort the covered population equals the
+eligible population for every arm (85/85, and 50/20/15 per split), because every
+eligible task carries a complete four-arm ranking. The corpus therefore exercises
+no abstention: the abstention, undefined-ratio and ineligible-classification
+behaviours are pinned by the corpus-free laws in `MetricsLaw.flix` (see below),
+not by corpus data, and this report does not claim corpus evidence for them.
+
 ### Measured evidence contribution and arm-change counts (`contributions.tsv`)
 
 Corpus-level sums over the 88 immutable derived ranking trees:
@@ -208,6 +299,52 @@ same 88 rank trees and the same admitted labels. All 28 micro and 28 macro
 `(numerator, denominator)` pairs are **identical**. That recomputation is scratch
 verification, not a second implementation in the repository.
 
+**One path, not a second engine.** The canonical reducer now also owns the
+population reductions (task-micro, task-within-group then group-equal macro, the
+split re-slice, the covered-only diagnostic and the eligibility predicate), so
+the scoring leaf carries only binding resolution, parsing and rendering. The
+reducer answers with an explicit `MetricSummary` (`value`, `population`,
+`covered`, `undefined`) rather than a bare mean: an abstained arm (absent or
+empty ranking) is a measured miss retained in the denominator, a genuinely
+undefined ratio (no eligible gold path) is counted and refuses the mean, and the
+mean is never silently computed over a filterMap-shrunk population. Metric rows
+in `metrics.tsv` are `metric <population> <micro|macro> <arm> <name>
+<numerator> <denominator> <percentage> <members> <undefined>`, where `members` is
+tasks for micro and groups for macro, and an undefined value keeps its row with
+empty value cells.
+
+**Reproduction of the provisional reduction (generation 6).** The same canonical
+path reproduces generation 6's published all-eligible reduction exactly: all 56
+published cells (2 summaries × 4 arms × 7 metrics) match the new artifact with
+`0` mismatches, and `tasks.tsv`, `contributions.tsv`,
+`select_policy/selected.tsv` and `derived_population.tsv` are byte-identical to
+generation 6. Only `metrics.tsv` grew, because it now carries the declared splits
+and the explicit denominators.
+
+**Independent reproduction of the split reductions.** All 168 split cells
+(3 splits × 2 summaries × 4 arms × 7 metrics) were re-derived out of tree with
+exact `fractions.Fraction` arithmetic over the same 88 rank trees and the same
+admitted labels: `0` mismatches. That is scratch verification, not a second
+implementation in the repository.
+
+**Corpus-free metric laws (`VAL-LOC-003`).**
+`//test/localization_runtime:metrics_law` compiles `MetricsLaw.flix` against the
+production reducer and runs in the ordinary offline gate (it is not `manual`,
+because it is pure). Six native laws pass locally and on the remote path:
+
+| Law | Separates |
+|---|---|
+| `aMultiFileTaskSeparatesRecallFromHit` | a top-1 hit on a two-gold task is Hit@1 `1/1` but Recall@1 `1/2`; a gold path at rank 2 is a Hit@1 miss yet recalled inside the top 5 |
+| `anAbstainedArmStaysInTheAllEligibleDenominator` | three eligible tasks with one hit score `1/3` over a population of three; the covered-only diagnostic reads `1/1` beside it, never instead of it |
+| `anUndefinedRatioIsCountedAndRefusesTheMean` | an outcome with no eligible gold path is `undefined`, not zero; a reduction receiving one reports `2/1/1` and refuses the mean |
+| `ineligibleClassificationsAreNeverScored` | `unsupported`, `empty-gold`, `runtime-unavailable` and `unknown` are ineligible; `eligible-gold` with no gold path is ineligible |
+| `theGroupEqualMacroIsNotTheTaskMicro` | three hits in one group and one first-rank miss in another read `3/4` micro but `1/2` macro |
+| `theHeldOutSplitReducesThroughTheSamePath` | the held-out `final` split reduces through the same path; an undeclared split name selects nothing |
+
+This is the one canonical metric path: the corpus reduction, the runtime-capped
+reductions, the split reductions and (later) the D-versus-D+J comparison all go
+through `Attune.Study.Metrics`. No second metric framework was created.
+
 **Accounting admission.** Adding a module under `src/Attune/Study/` also had to
 be admitted to the policy's component table: `Attune.Policy.componentOf` mapped
 only the exact path `src/Attune/Study.flix` to the `study` component, so
@@ -235,13 +372,47 @@ summaries:
 | `9717510c-…` | metrics after the percentage-rendering fix | 2: 1 internal, 1 remote | only the metrics stage re-executed |
 | `f5d5541c-…`, `2442b5eb-…` | derived-cohort law | 8 / 6 processes, 0 upstream execution | law runs over the produced trees |
 | `9613f659-…` | derived-cohort law rerun on the remote path after the build-file formatting and policy-map fixes | 1440: 1505 action cache hit, 1038 remote cache hit, 402 internal, **0 remote** | `runtime_law` `(cached) PASSED`; no action re-executed |
+| `ef4c2c34-…` | metrics rebuild, first attempt | 565: 2374 action cache hit, 563 remote cache hit, 2 internal, **0 remote executed** | failed closed on a Flix effect error (`ImplicitlyPureFunctionUsesIO`) before running; no upstream action re-executed |
+| `0b5a90e8-…` | metrics rebuild after the effect fix | 2: 13 action cache hit, 1 internal, **1 remote** | the one executed action is `//test/localization_runtime:metrics`; its internal asserts passed |
+| `31243e41-…`, `a7a9e614-…` | derived + metric laws on the remote path | 7 / 1223: cache/remote-cache hits, **3 remote** (the new `metrics_law` actions) then **0 remote** (all cached) | `runtime_law` PASSED, `metrics_law` PASSED |
 
 **Zero `world_extract_*`, `theory_world_*`, `issue_text` or `rank_variants_*`
-action re-executed** in any derived invocation. The only executed actions are the
-89 new derived stages plus the one new metrics stage. This is the required "stop
+action re-executed** in any derived invocation. The only actions ever executed
+are the new derived stages themselves (the 89 derived rank/selection stages, the
+one metrics stage and the new `metrics_law` actions). This is the required "stop
 on unexpected mass re-execution" check: it did not trigger, so the approach
 proceeded. Reuse is reported from action-cache/remote-cache/executed records, not
 inferred from identical outputs.
+
+### Stopped accidental local (non-remote) derived invocation — reported separately
+
+One invocation ran the derived suite **without** `--config=remote` and was stopped
+as soon as it was observed re-executing upstream work. It is reported here on its
+own, and it is deliberately **not** covered by the remote zero-reexecution
+evidence above.
+
+| Field | Recovered value |
+|---|---|
+| Command id / build id | `75172e0a-9eb4-4173-bab8-ac75f7f09ddd` / `d20289f2-8644-405c-8b0a-be0e2424fa25` |
+| Client command | `test //test/localization_runtime:all --test_output=summary`, client cwd `/home/becker/projects/attune/attune`, **no `--config=remote`** |
+| Started / interrupted | 2026-10-07T00:50:27Z / 2026-10-07T00:52:50Z (≈143 s), `FailureDetail: build interrupted`, code `INTERRUPTED` |
+| Local execution actually observed | `//test/localization:world_extract_w91` (20.31 s, the slowest action in the interrupted critical path) and `//test/localization:issue_text` (17.81 s) began executing locally; local `Javac` multiplex workers were created |
+| Exact re-executed-action count | **Not retained.** The interrupted build printed no `N processes` total and no per-command profile for that command id survives, so the number of upstream actions that actually completed locally is **unknown**. This report does not claim zero for it. |
+
+The evidence comes from the Bazel server's own log
+(`~/.cache/attune-v2-bootstrap-bazel/java.log…20261006-100655.3782`, the
+`executeCommand`/`BuildSummaryStatsModule.buildComplete` records for that command
+id). It is a handoff disclosure recovered after the fact, not a measurement the
+incident retained.
+
+**Prevention, not a new guard.** The declared command in `services.yaml`
+(`localization_runtime`) already carries `--config=remote --jobs=8`; the warm
+upstream extractions live in the remote cache, so the declared remote command is
+the only correct way to run the derived suite. No upstream source, launcher or
+build rule was edited to add a guard, and no global cache was changed. The
+underlying reason the local route misbehaves is that the local action cache does
+not hold the world extractions, so any local request for them re-executes the
+extraction.
 
 ### Derived-cohort law (real remote execution)
 
@@ -399,11 +570,15 @@ unchanged and the derived builds re-executed none of them (see "Warm reuse").
   distinguished and never fabricated into totals. `JEV_KEY` and every
   credential are never written to stdout, CLI arguments, Bazel public inputs,
   the CAS, receipts or commits; no unrelated secret inspection.
-- **Status: not run — Unavailable.** 0 actual provider requests, 0 API usage,
-  0 cost as of this report. The route's exact model snapshot, usage metadata and
-  retry behaviour remain **unobserved**, so none is claimed. No prediction,
-  delta, token count or dollar value is reported for an extension that has not
-  run; the deterministic result above stands on its own.
+- **Status: authorized extension pending — not run; availability not
+  established.** 0 actual provider requests, 0 API usage and 0 cost as of this
+  report, and **no live availability probe has occurred**, so `JEV=Unavailable`
+  is *not* established and is not claimed here. `JEV=Unavailable` is valid only
+  on an actual recorded unavailability or failure of the configured route, and
+  only the separate JEV feature may establish that; an unobserved model snapshot,
+  usage metadata or retry behaviour is not provider unavailability. No
+  prediction, delta, token count or dollar value is reported for an extension
+  that has not run; the deterministic result above stands on its own.
 
 ## Latency regimes
 
@@ -411,7 +586,7 @@ unchanged and the derived builds re-executed none of them (see "Warm reuse").
 |---|---|---|
 | A — cold structural construction | World-extraction/Theory cost from real logs | 325 KB single-file 360.6s / zero declarations / 4,106 refusals; `w35` 3,664s remote pre-fix long pole; obsidian `w34`/`w35` 2,532.5s / 2,509.6s post-fix; `w41` >14,148s console elapsed and `w84` unfinished, both ending in an internal remote-execution upload timeout |
 | B — warm deterministic | Derived selection/rank latency and the capped continuation wall time over warm inputs | 88 derived rank actions executed in 1–29s of remote time (median ≈15s among the 36 fully logged); derived selection ~1s; first derived build 268s wall clock / 72s critical path for 89 fresh actions at `--jobs=8`; **zero** Repository/Theory re-execution; metrics stage 24s; continuation inspection (22:44:04Z) to materialized capped metrics (00:43:18Z) = 7,154s wall clock, of which the derived graph itself occupied ~623s and the six Bazel invocations ~413s |
-| C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, rerank-only time from persisted receipts | Not run; `Unavailable` |
+| C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, rerank-only time from persisted receipts | Not run; pending — availability not established (no live probe) |
 
 Deterministic compute is **not zero**: cold RBE/indexing cost, warm compute
 and any JEV spend are separate and are never collapsed into one misleading
@@ -753,9 +928,20 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   worlds extract on the real remote path with the exact original filename bytes
   preserved; the runtime cutoff is runtime/status-only and excludes exactly the
   two groups whose extraction never finished; the derived cohort's four frozen
-  arms score 85 of 85 eligible tasks with the numbers above; the canonical metric
-  reducer reproduces exactly under an independent exact recomputation; and no
-  Repository or Theory work was re-executed to produce them.
+  arms score 85 of 85 eligible tasks with the numbers above, and their declared
+  development/calibration/final slices reduce through the same canonical path
+  (168 of 168 split cells independently reproduced); the canonical metric
+  reducer reproduces generation 6's reduction exactly (56 of 56 published cells)
+  and no Repository or Theory work was re-executed to produce any of it.
+- **Measured gap, stated honestly:** this corpus contains no abstention, no
+  unsupported or empty-gold task inside the eligible population and no undefined
+  ratio, so the report claims **no corpus evidence** for those behaviours; the
+  abstention-in-denominator, undefined-ratio and ineligible-classification
+  behaviours are established only by the six corpus-free laws in
+  `MetricsLaw.flix`. One derived-suite invocation was accidentally run without
+  `--config=remote`, began re-executing local extractions and was interrupted;
+  its exact upstream action count is unknown and is reported separately rather
+  than folded into the remote zero-reexecution result.
 - **Plausible interpretation:** the anchor family is genuinely useful on this
   corpus, while the Repository-adjacency and Theory-witness families do not
   improve retrieval under the frozen additive scoring and can regress it. The
@@ -764,9 +950,10 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
 - **Unsupported claims:** any original-panel ranking metric; any claim that the
   post-fix invocation completed; any claim that the evaluator-label firewall has
   been confirmed at execution level rather than by source closure; any JEV
-  result, model identity, token count or cost; any claim that the pinned parser
-  limitation is solved; and any reading of the runtime cutoff as a quality
-  statement.
+  result, model identity, token count, cost **or availability status**; any claim
+  that the pinned parser limitation is solved; any reading of the runtime cutoff
+  as a quality statement; and any claim that the stopped local invocation
+  re-executed zero actions.
 
 ## Update history
 
@@ -811,7 +998,9 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   and arm-change counts; the one canonical Study-owned metric reducer plus its
   independent exact reproduction; the measured warm-reuse table (zero upstream
   re-execution); the passing derived-cohort law; and the latency-regime B
-  measurements. JEV remains not run and `Unavailable`; original denominators
+  measurements. JEV was published as not run and `Unavailable` here; generation 7
+  corrects that to pending/not run with availability not established, since no
+  live probe had occurred. Original denominators
   unchanged at 96 tasks / 93 gold-eligible and the original full result still
   0/96 and not estimated. Single report; later updates revise this file in place.
 - **2026-10-07T02:08:54Z — generation 6, FINAL for the runtime-capped
@@ -827,4 +1016,29 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   `test/localization_runtime/BUILD.bazel` and `src/Attune/Policy.flix` digests and
   the derived-law rerun identity `9613f659-…`. Denominators, four-arm metrics,
   contribution counts and artifact digests are unchanged from generation 5; JEV
-  remains not run and `Unavailable`.
+  was published as not run and `Unavailable`, corrected in generation 7 to
+  pending/not run with availability not established (no live probe occurred).
+- **2026-10-07T02:29:00Z — generation 7, FINAL for the runtime-capped
+  deterministic result; canonical denominators and split reductions.** The one
+  canonical reducer (`src/Attune/Study/Metrics.flix`) now owns the population
+  reductions and the eligibility predicate beside the per-task values, and the
+  scoring leaf only binds, parses and renders. Adds: the declared development
+  (50 eligible / 13 groups), calibration (20 / 5) and held-out final (15 / 4)
+  reductions through that same path, each with explicit
+  `population`/`covered`/`undefined` counts; the all-eligible-versus-covered-only
+  distinction; an explicit statement that the corpus exercises no abstention, so
+  the abstention, undefined-ratio and ineligible-classification behaviours are
+  pinned by six new corpus-free native laws in `MetricsLaw.flix` (target
+  `//test/localization_runtime:metrics_law`, non-`manual`, 28/28 offline gate);
+  the exact reproduction of generation 6's 56 published cells through the
+  canonical path; an independent exact recomputation of all 168 split cells with
+  `0` mismatches; the separately reported **stopped accidental local
+  (non-remote)** derived invocation `75172e0a-…` with its recovered start /
+  interrupt times, the locally executed actions actually observed and its
+  explicitly **unknown** upstream re-execution count; and the correction of the
+  premature `JEV=Unavailable` wording to pending/not run with availability not
+  established. Frozen rankings, `select_policy`, `derived_population`,
+  `tasks.tsv` and `contributions.tsv` are byte-identical to generation 6; only
+  `metrics.tsv` changed, and only by adding the new populations and counts.
+  Original denominators unchanged at 96 / 93 and the original full result still
+  0/96 and not estimated.

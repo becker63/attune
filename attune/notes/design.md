@@ -3077,3 +3077,64 @@ work. The panel's own declared bounds (24 groups, 4 tasks per group, 32 pairs
 across 8 included groups, 256 candidates, 8 shards per world of 32) are carried
 unchanged into the mapped manifest, and the production admission predicate
 accepts it.
+
+## Localization-metrics-and-denominators leaf record
+
+Feature `localization-metrics-and-denominators` (fulfils VAL-LOC-003). Recoverable
+checkpoint: the `75562bf` `main` tip this leaf builds on.
+
+This leaf adds no new scientific concept and no second metric engine. The one
+canonical reducer in `src/Attune/Study/Metrics.flix` already existed from the
+preceding leaf; this leaf extends that same module with the population
+reductions (`microSummary`, `macroSummary`, `splitOutcomes`, `coveredOutcomes`,
+`eligibleOutcomes`, `isEligible`, `outcomeMetric`) so the scoring leaf only binds,
+parses and renders, and so the corpus reduction, the declared
+development/calibration/final splits and the later JEV comparison all reduce
+through one path. Each reduction answers with an explicit `MetricSummary`
+(`value`/`population`/`covered`/`undefined`): an abstained arm is a measured miss
+retained in the denominator, an undefined ratio is counted and refuses the mean,
+and no filterMap can silently shrink the all-eligible denominator. The new
+corpus-free law source `test/localization_runtime/MetricsLaw.flix` (six native
+laws, target `//test/localization_runtime:metrics_law`, deliberately not
+`manual`) pins the separating behaviours: multi-file recall versus hit,
+abstention denominators, undefined ratios, ineligible classifications, the
+group-equal macro and the held-out split.
+
+Measured on this leaf's declared identity (declared-source check, `accept`):
+files=304 code=45,570 comment=2,856 doc=7,911 blank=3,481 physical=59,818
+nonblank=56,337; A cognitive 5,890; B mechanical 2,861; A+B authored 8,751; C
+test 11,968; C support 21,884; presentation A 522 / B 87 (subsets). Per component:
+`study` 2,110, `tests` 11,968, `core` 204, `repository` 809, `theory` 629,
+`policy` 560, `view` 522, `ascii` 87, `frontends` 372, `parquet` 563,
+`boundary` 1,040, `grit-binding` 185, `grit-rule` 684, `build-rules` 986,
+`inherited` 655, `inherited-locks` 21,229, `metadata` 2,967.
+
+These figures are the live declared population at this identity, not a delta
+attributable to this leaf alone: no study-milestone leaf since the
+reference-label record above refreshed the totals, so the growth from that record
+accumulates the frozen-arms/rankings leaf and this one. This leaf's own change is
+the canonical-reducer extension (within `study`) plus the six-law source (within
+`tests`). Reconciling the canonical totals block and the README snapshot with the
+integrated study source is the `integrated-counts-external-ascii-and-handoff`
+feature's declared work, not this leaf's; no historical leaf record above is
+rewritten. Declared and live checks `accept`; `bazel test //...` 28/28 green;
+typecheck exit 0; scoped buildifier exit 4 with the two documented pre-existing
+reformat findings only (`test/localization/localization.bzl`,
+`platform/build/world_archives.bzl`) and no `# reformat` in any file this leaf
+touched.
+
+Bounded architecture review (cognitive core and A+B are above their soft review
+thresholds; review triggers, not failures). Largest application-semantic
+component: `study` (2,110). Localization metrics navigation: the reducer at
+`Attune.Study.Metrics` (`localizationMetrics`, `metricRatio`, `ratio`,
+`addRatio`, `meanRatio`, `ratioPercentage`, plus the population functions above);
+the scoring leaf at `test/localization_runtime/MetricsStages.flix`; the
+corpus-free laws at `test/localization_runtime/MetricsLaw.flix`; the derived
+cohort law at `test/localization_runtime/LocalizationRuntimeLaw.flix`; the
+declared outputs at `bazel-bin/test/localization_runtime/metrics/`. Policy-leak
+check: the metric vocabulary, the eligibility predicate and the reductions exist
+once, in the Study-owned reducer; the leaf holds no metric arithmetic; the
+reducer is not in the compiled closure of any extraction, Theory, variant,
+selection or ranking stage, so no label can reach a ranking through it; and no
+provider, corpus or evaluator artifact enters it beyond the frozen rankings and
+the physically separate admitted labels.

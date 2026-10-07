@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_consumer_test")
+load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_test")
 load("//test/localization_runtime:localization_runtime.bzl", "RUNTIME_CAPPED_EXCLUSIONS", "attune_localization_runtime")
 load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
 
@@ -103,8 +103,28 @@ native_flix_consumer_test(
     tags = ["manual"],
 )
 
+# The corpus-free localization metric laws (`VAL-LOC-003`): they drive the one
+# canonical reducer in `Attune.Study.Metrics` with hand-built immutable rankings
+# and gold populations. Recall-versus-hit separation, abstention denominators,
+# undefined ratios, ineligible classifications and the group-equal macro are
+# therefore pinned without touching the corpus. Unlike the corpus-bound targets
+# this law is not `manual`: it is pure, so the ordinary offline gate runs it.
+native_flix_test(
+    name = "metrics_law",
+    srcs = [
+        "MetricsLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Metrics.flix",
+    ],
+)
+
 test_suite(
     name = "all",
     tags = ["manual"],
-    tests = [":runtime_law"],
+    tests = [
+        ":metrics_law",
+        ":runtime_law",
+    ],
 )
