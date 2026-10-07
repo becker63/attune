@@ -59,6 +59,7 @@ filegroup(
         "//test/localization_jev:policy_files",
         "//test/localization_qwen:policy_files",
         "//test/localization_qwen_jev:policy_files",
+        "//test/localization_replicated:policy_files",
         "//test/localization_runtime:policy_files",
         "//test/localization_strict:policy_files",
         "//test/policy:policy_files",

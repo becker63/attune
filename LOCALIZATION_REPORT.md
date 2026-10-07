@@ -5,6 +5,12 @@ for the post-hoc exploratory **embedding (E)** half of the extension, FINAL for
 the post-hoc exploratory **lexical JEV pair (A-control / A-structure)**, and now
 **FINAL for the post-hoc exploratory hosted-Qwen branch (`Q`) and its JEV pair
 (`Q`-control / `Q`-structure) together with the eight-arm report**.
+The owner-authorized strict + replicated continuation is also published so far as
+it goes: the **strict file-accuracy extension and its oracle ceilings** are
+published (generation 13), and the **replicated five-observation family**
+(`A1`…`A5`, `S1`…`S5`: the preserved original plus four new observations per
+lexical condition, 704 further provider requests, 22,048 new observations, 0
+failures) is acquired and frozen (generation 14).
 The JEV pair is complete: the frozen common A32 population (88 tasks, 2,756
 decisions per condition) was decided on the configured live route (176 successful
 provider calls, resolved model `typesafe/jev-1.13-20260917`, provider `TypeSafe`,
@@ -48,9 +54,20 @@ reproduces all 224 published P / P+A baseline cells exactly (0 mismatches). The
 held-out final split is **15 eligible tasks in only 4 groups**, so its differences
 are reported and explicitly not read as a finding.
 
-**Generated:** 2026-10-07T19:49:43Z (generation 13; supersedes generation 12 for
-current state; earlier generations retained below as history). Generation 13 is
-the owner-authorized **strict file-accuracy publication**: the ONE canonical
+**Generated:** 2026-10-07T21:20:00Z (generation 14; supersedes generation 13 for
+current state; earlier generations retained below as history). Generation 14 is
+the owner-authorized **replicated five-observation acquisition** (Phase 2 of the
+strict + replicated continuation): the preserved `A`-control and `A`-structure
+replicate 1 observations are retained byte-exact and **four new replicates per
+condition** (`A2`…`A5`, `S2`…`S5`) were acquired on the same configured route and
+resolved model with byte-identical semantic payloads — 0 `request_sha256`
+differences and identical input tokens across all 880 replicate-by-task pairs —
+as a frozen five-observation family for later ensemble analysis. The acquisition
+issued 704 provider requests and produced 22,048 new observations with 0 retries
+and 0 failures, and the phase is published provider-free: no upstream extraction,
+`Repository`, `Theory`, ranking, embedding or hosted-Qwen work re-executed, and
+replicate 1 was neither re-requested nor rewritten. Generation 13 is
+the earlier owner-authorized **strict file-accuracy publication**: the ONE canonical
 `Attune.Study.Metrics` is extended with the FileAcc@1/3/5/10/32 family and the ten
 already-frozen arms (`P`, `PA`, `PAF`, `PAD`, `E`, `PAJ`, `PAJstructure`, `Q`,
 `QJ`, `QJstructure`) are rescored through it over the all-eligible population and
@@ -2260,6 +2277,216 @@ confirmed by the 448/448 and 224/224 cell reproduction above. No acquisition, in
 provider action re-executed, and the successful strict invocation `4332b304-…` itself
 reports only `2 processes: 1 internal, 1 remote`, i.e. only the strict stage executed there.
 
+## Replicated five-observation family (generation 14)
+
+Owner-authorized continuation (2026-10-07): this is **Phase 2 — the replicate
+acquisition** of the strict + replicated experiment, and it runs only after the
+Phase 1 strict publication above. It acquires **exactly four new observations per
+lexical condition** beside the preserved original, so that each lexical condition
+(`A` control, `A` structure) carries a **five-observation family** for the later
+ensemble reduction. It is a repetition, not a new experiment: no candidate,
+prompt, template, model, route, temperature, evidence field, anchor, structure,
+population or batch size is changed, no quality- or outcome-directed retry is
+issued, and no upstream stage (extraction, `Repository`, `Theory`, ranking,
+CodeRankEmbed, hosted Qwen) is re-executed.
+
+### A. What was acquired, and what was preserved
+
+| condition | replicate 1 (preserved original) | new replicates |
+| --- | --- | --- |
+| `A` control | `test/localization_jev/decisions_A.tsv` (sha256 `a7bfa435…b5913`), untouched | `A2`, `A3`, `A4`, `A5` |
+| `S` structure | `test/localization_jev/decisions_S.tsv` (sha256 `cb60cc46…4aa9`), untouched | `S2`, `S3`, `S4`, `S5` |
+
+Every replicate uses the same A32 public payload: the same 88 surviving tasks and
+the same candidate population with its `P+A` rank scores and anchors, one provider
+request per task (88 per condition, 176 per replicate), the same 2,756 logical
+decisions per condition, the same batched task-level capture and the same
+byte-exact frozen prompts (`prompt_a.template.txt` sha256 `2d31da9f…38f8`,
+2,092 B; `prompt_a_structure.template.txt` sha256 `fc42d0d2…e0e3`, 2,617 B), on
+the same configured live route (`jev___jev_decide`, resolved model
+`typesafe/jev-1.13-20260917`, provider `TypeSafe`).
+
+The acquisition issued **704 provider requests** (8 replicate-conditions × 88
+tasks) and produced **22,048 new observations** (8 × 2,756 logical decisions)
+with **0 retries, 0 failed calls, 0 decode failures and 0 timeouts**. Every new
+observation was captured mechanically at task level as one typed receipt before
+the next task was issued, and each replicate's decision manifest was aggregated
+from those receipts; no value in this section was hand-transcribed.
+
+Replicate 1 was **not** re-acquired, rewritten or discarded. The published
+`decisions_A.tsv` / `decisions_S.tsv`, `population.tsv` (sha256 `e9ef3655…1313f`)
+and both prompt templates are unchanged, the recorded replicate-1 receipts under
+the mission-local `runtime/jev-paired/receipts/{A,S}` are untouched, and the
+replicate-1 economics row is read back from its historical record rather than
+recomputed from a new call.
+
+### B. Semantic payload identity (exact, byte level)
+
+The semantic request key of one logical decision is its **exact payload hash**;
+the observation key is that key plus the local `replicate_id`. The four new
+replicates reuse the frozen payload bytes instead of rebuilding an equivalent
+request:
+
+| condition | replicate | `request_sha256` equal to preserved A1 | prompt sha256 equal | candidate population identical | input tokens |
+| --- | --- | --- | --- | --- | --- |
+| `A` control | `A1` (preserved) | — (reference) | reference | reference | 320,708 |
+| `A` control | `A2`, `A3`, `A4`, `A5` | 88 / 88 each | yes | yes | 320,708 each |
+| `A` structure | `S1` (preserved) | — (reference) | reference | reference | 519,579 |
+| `A` structure | `S2`, `S3`, `S4`, `S5` | 88 / 88 each | yes | yes | 519,579 each |
+
+All **880** replicate-by-task identity records
+(`replicate_identity.tsv`, 88 tasks × 2 conditions × 5 replicates) report
+`semantic-request-key-stable = true`, `prompt-stable = true` and
+`candidate-population-identical = true`: the semantic payload did not change with
+the replicate id, and the identical **input** token totals are the provider-side
+confirmation of that byte identity (a changed payload would change them). The
+same artifact carries **880 distinct observation keys** — one
+`<semantic request key>#r<id>` per replicate and task — so the five replications
+of one semantic request are five observations rather than one memo entry served
+five times, and no replication overwrites another's bytes.
+
+### C. Typed outcomes (raw R / N / U / Failed, kept distinct)
+
+`R` = `Relevant`, `N` = `NotRelevant`, `U` = `Unknown`. A typed `Failed` is a
+separate countable state, never a negative; only `R` casts a vote. `Failed = 0`
+here because every call answered.
+
+| condition | replicate | R | N | U | Failed | votes (`R` only) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `A` | 1 | 188 | 2,506 | 62 | 0 | 188 |
+| `A` | 2 | 187 | 2,508 | 61 | 0 | 187 |
+| `A` | 3 | 191 | 2,508 | 57 | 0 | 191 |
+| `A` | 4 | 189 | 2,508 | 59 | 0 | 189 |
+| `A` | 5 | 187 | 2,512 | 57 | 0 | 187 |
+| `S` | 1 | 147 | 2,552 | 57 | 0 | 147 |
+| `S` | 2 | 147 | 2,553 | 56 | 0 | 147 |
+| `S` | 3 | 153 | 2,550 | 53 | 0 | 153 |
+| `S` | 4 | 144 | 2,555 | 57 | 0 | 144 |
+| `S` | 5 | 147 | 2,548 | 61 | 0 | 147 |
+
+Family totals over all 27,560 observations: **R 1,680, N 25,300, U 580, Failed
+0**, votes 1,680. The family is frozen at these typed counts before any ensemble
+or stability reduction reads it.
+
+### D. Actual per-replicate economics
+
+Wall time, latency statistics and status counts are measured; tokens and cost are
+the provider's recorded usage. The declared latency statistics are the lower
+median and the nearest-rank 95th percentile of the 88 per-task call latencies,
+both fixed before any outcome was read.
+
+| condition | replicate | wall (ms) | requests | logical decisions | retries | input tokens | output tokens | cost (USD) | latency min / median / p95 / max (ms) | ok / failed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `A` | 1 | 31,572 | 88 | 2,756 | 0 | 320,708 | 123,118 | 0.013469736 | 269 / 326 / 463 / 765 | 88 / 0 |
+| `A` | 2 | 32,315 | 88 | 2,756 | 0 | 320,708 | 123,122 | 0.013469736 | 250 / 315 / 487 / 1,210 | 88 / 0 |
+| `A` | 3 | 32,714 | 88 | 2,756 | 0 | 320,708 | 123,130 | 0.013469736 | 242 / 311 / 480 / 1,634 | 88 / 0 |
+| `A` | 4 | 30,007 | 88 | 2,756 | 0 | 320,708 | 123,126 | 0.013469736 | 242 / 300 / 417 / 507 | 88 / 0 |
+| `A` | 5 | 32,028 | 88 | 2,756 | 0 | 320,708 | 123,134 | 0.013469736 | 248 / 303 / 476 / 1,205 | 88 / 0 |
+| `S` | 1 | 38,557 | 88 | 2,756 | 0 | 519,579 | 123,174 | 0.021822318 | 282 / 348 / 501 / 1,753 | 88 / 0 |
+| `S` | 2 | 33,367 | 88 | 2,756 | 0 | 519,579 | 123,177 | 0.021822318 | 262 / 321 / 427 / 2,717 | 88 / 0 |
+| `S` | 3 | 31,331 | 88 | 2,756 | 0 | 519,579 | 123,180 | 0.021822318 | 270 / 340 / 444 / 564 | 88 / 0 |
+| `S` | 4 | 31,715 | 88 | 2,756 | 0 | 519,579 | 123,177 | 0.021822318 | 266 / 326 / 473 / 1,337 | 88 / 0 |
+| `S` | 5 | 31,445 | 88 | 2,756 | 0 | 519,579 | 123,162 | 0.021822318 | 267 / 338 / 436 / 468 | 88 / 0 |
+
+Totals: the four new replicates cost **USD 0.141168216** and 254,922 ms of wall
+time; with the preserved replicate 1 (USD 0.035292054, 70,129 ms) the whole
+five-observation family is **USD 0.176460270** and 325,051 ms, over 4,201,435
+input tokens and 1,231,500 output tokens. No field is estimated: every value is
+read from the recorded receipt or run record, and an unobserved field would be
+reported `unavailable` rather than inferred.
+
+One convention difference is disclosed rather than smoothed over. The `A`-control
+replicate-1 row reports latency median **326 ms**, the *lower* median of its 88
+per-task latencies under the statistic fixed for this phase (`index (n-1)/2`),
+while the earlier published regime row reports **328 ms** for the same
+distribution, its upper median (`index n/2`). Both are exact order statistics of
+one unchanged distribution — the 44th and 45th of 88 sorted values — and min,
+p95 and max (269 / 463 / 765 ms) agree, as do wall, tokens and cost. No
+replicate-1 measurement moved; only the declared median convention differs, and
+it was fixed before any outcome was read. On `S` both conventions give 348 ms.
+
+### E. A new observation, not a memo replay
+
+Three independent observations show that the four new replicates are genuinely
+new provider responses:
+
+1. **Output tokens differ for every new replicate** (123,118 → 123,122 / 123,130 /
+   123,126 / 123,134 on `A`; 123,174 → 123,177 / 123,180 / 123,177 / 123,162 on
+   `S`) while input tokens are identical. A memo replay would reproduce both
+   sides exactly.
+2. **The typed outcome vector moved away from the preserved original** on 155 of
+   the 704 new (condition, replicate, task) pairs (22.0%): `A2` 20/88, `A3` 21/88,
+   `A4` 19/88, `A5` 21/88, `S2` 18/88, `S3` 17/88, `S4` 20/88, `S5` 19/88. A
+   re-served memo entry would reproduce the original vector on all 704.
+3. **Memo and observation identity are separate by construction**: the shared
+   semantic memo identity is `(model, prompt, condition, task, candidate, payload
+   hash)` and the observation identity adds `replicate_id`. A success is therefore
+   never re-queried (replicate 1 issued no call at all in this phase) and a new
+   observation is never mistaken for an existing memo entry.
+
+The 549 new pairs whose typed vector happens to equal the original's are still
+new observations, which point 1 shows at the token level; they are recorded as
+`identical-vs-original` beside the 155 `changed-vs-original` pairs rather than
+being reported as one "new observation" count.
+
+### F. The mechanical writer boundary
+
+The one mission-local mechanical writer already used for the `A` pair, the `Q`
+pair and the strict stage (`JevReceiptWriter.java`) carries this phase, extended
+in two mechanical ways only:
+
+- `--replicate N` stamps the local `replicate_id` into the receipt, run and freeze
+  records. It never enters the assembled payload, so the semantic bytes of
+  replicates 2–5 are those of replicate 1.
+- `--summary` reduces the recorded receipts of one output directory into the
+  per-replicate economics record (wall, declared/rpc/logical counts, retries,
+  tokens, cost, the declared latency statistics and the typed status counts).
+  It reads receipts only, issues no provider call and is therefore replayable
+  offline.
+
+Re-running `--summary` over the preserved receipt trees reproduced the earlier
+records byte-for-byte, which is how one defect was found and fixed: the summary
+header named 16 columns for 17, leaving the replicate id unnamed. The corrected
+header (`#replicate  replicate_id  condition  wall_ms  …`) is what the five in-tree
+economics records now carry, and the corrected records are byte-identical to the
+previous ones apart from that header line. No credential enters any record,
+argument, log or artifact: the writer resolves the configured route's environment
+opaquely, and no key value, hash or prefix is present in any artifact of this
+phase.
+
+### G. Artifacts, digests and reproduction
+
+**Published artifacts (built, sha256).**
+
+| Artifact | Rows | sha256 |
+|---|---|---|
+| `test/localization_replicated/replicated_family/five_observation_family.tsv` | 27,560 | `285b3b667a46f8e0975bdb7791c7fd031a7e54f874241edeefbed58be98cf53f` |
+| `test/localization_replicated/replicated_family/replicate_identity.tsv` | 880 | `08db84d7849b2a48689385a78fa1f93f4328d306b3bcbcecc98547fa94c7d6dc` |
+| `test/localization_replicated/replicated_family/replicate_summary.tsv` | 10 | `17f1b06c4b200496457bc290a0c46e77b061bf8333ab139159171b497b4ba00d` |
+| `test/localization_replicated/replicated_family/family_checkpoint.tsv` | 29 | `bc8dd7ce4fad72cc536290d8eef5ea7094cb2d6a5fce70fd77a3e9d11be005a9` |
+| `test/localization_replicated/replicated_family/closure.tsv` | 18 (17 declared inputs) | `6b49fe524e37bb2cbb243a848dcd459481c5be0688ed26dcdb38265bc8b8b7b1` |
+
+The 17-declared-input closure is exactly the frozen inputs: `mapped.tsv`, the
+population manifest, the two preserved replicate-1 decision manifests, the eight
+new replicate decision manifests and the five per-replicate economics records.
+Every in-tree replicate manifest is byte-identical to the mission-local
+aggregation it was copied from (verified by digest for all eight), so the
+published family is the acquired family.
+
+**Reproduce it provider-free.** `bazel test //test/localization_replicated:all`
+and `bazel build //test/localization_replicated:replicated_family` rebuild the
+family from the in-tree frozen inputs with no provider call: the stage is a
+declared manual study target, its corpus-free laws (`replicated_law`) prove the
+replicate order, the observation-key distinctness, the shared semantic identity
+with the added replicate id and the relevant-only vote, and the ordinary offline
+gate `bazel test //...` never acquires anything. The stage re-executed as a
+single remote action of invocation `74ffdae3-54c6-4e16-bb58-115e57d06f2a`
+(`3 processes: 1 remote cache hit, 1 internal, 1 remote`) with 0 JEV calls, 0
+embeddings, 0 hosted-Qwen requests and 0 `Repository`/`Theory` re-executions.
+Its assertions fail closed: a drifted task count, a changed semantic payload, a
+changed prompt, a moved candidate population, an unrecognized economics field or
+a missing fifth observation aborts the stage rather than publishing a family.
+
 ## Latency regimes
 
 | Regime | Covers | Measured |
@@ -2270,6 +2497,7 @@ reports only `2 processes: 1 internal, 1 remote`, i.e. only the strict stage exe
 | D — warm embedding ranking | E ranking and canonical metric latency over the immutable declared fixtures | 88 rank stages + 1 metric stage = 89 `AttuneStudyStage` actions, all served from the remote cache after the first materialization (the fixture acquisition had already paid for the 904 shard actions); **0** embedding inferences, **0** provider calls, **0** `Repository`/`Theory` re-executions at replay; a full `--remote_download_outputs=all` rerun of the metric tree reported 1,280 remote cache hits and 0 executed actions |
 | E — hosted-Qwen acquisition and warm ranking | The host-side batched acquisition of the immutable hosted fixtures, then the Q ranking and canonical metric latency over them | Cold acquisition: **351 batched requests** over 10,555 unique embedded inputs (27,733 logical rows; at most 32 inputs / 240,000 bytes per request, never one request per row), **0 failed**, 351/351 resolved-model echoes, 10,644,719 prompt tokens, **USD 0.1409903**, summed provider latency 1,581,398 ms (per-request 834/2,427/14,803/77,513 ms min/median/p95/max). Memoized replay: **0 requests**, cost `Unavailable` (no fabricated zero). Warm ranking: 88 rank stages + 1 metric stage, all served from the remote cache; **0** embedding-provider calls, **0** JEV calls, **0** `Repository`/`Theory` re-executions at replay |
 | F — warm Q-JEV over the hosted-Q base | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, complete-run cost, rerank-only time | **Complete hosted-Q pair: 88 of 88 tasks, both conditions.** Q-control: 88 requests, 2,756 decisions, 0 failures, 0 retries, 32,695 ms end-to-end (≈84 decisions/s wall), per-call latency 245/343/468/724 ms (min/median/p95/max), 360,394 input + 122,847 output tokens, USD 0.015136548. Q-structure: 88 requests, 2,756 decisions, 0 failures, 0 retries, 37,735 ms end-to-end (≈73 decisions/s wall), per-call latency 290/371/582/1,992 ms, 569,414 input + 122,895 output tokens, USD 0.023915388. Combined wall 70,491 ms. The structural prompt costs ≈58% more input tokens and ≈58% more dollars for the same 2,756 decisions, and one call ran 1,992 ms. 0 `Repository`/`Theory` re-executions; replay of the eight-arm stage is provider-free (**0** JEV calls, **0** embedding inferences, **0** hosted-Qwen requests, **0** executed actions) |
+| G — replicated lexical JEV acquisition | The four new replicates per lexical condition over the same frozen payloads, then the provider-free family stage | **88 of 88 tasks in both conditions in every replicate.** Per-replicate wall 30,007–32,714 ms (`A`) and 31,331–38,557 ms (`S`) at 0 failures and 0 retries; input tokens identical across all five replicates per condition (320,708 `A`, 519,579 `S`) while output tokens differ; new work 254,922 ms / 985,208 output tokens / USD 0.141168216, whole family 325,051 ms / 4,201,435 input tokens / USD 0.176460270. 0 `Repository`/`Theory` re-executions; the family stage replays provider-free |
 
 Deterministic compute is **not zero**: cold RBE/indexing cost, warm compute
 and any JEV spend are separate and are never collapsed into one misleading
@@ -2766,6 +2994,39 @@ process lines are copied from that invocation's console output.
 No upstream producer action was re-executed in any of them, and no provider call
 was made.
 
+### Replicated family acquisition and invocations (generation 14)
+
+The four new replicates are a **live provider acquisition**, not a BuildBuddy
+invocation. They were issued task by task by the mission-local mechanical writer
+through the configured `jev___jev_decide` route, and their evidence is the
+mission-local run logs (`runtime/jev-repl/r2.run.log` … `r5.run.log`, one line per
+task with its status, candidate count, latency and retry count) beside the typed
+receipt trees (`runtime/jev-repl/r{2..5}/receipts/{A,S}`, 88 receipts per condition
+per replicate plus `run_A.json` / `run_S.json` carrying the local replicate id, the
+frozen prompt digest, the requested route, the logical decision count and the
+measured wall). That acquisition is deliberately not reproducible offline; its
+*results* are frozen in the eight in-tree replicate decision manifests and the five
+economics records, and every later step reads only those.
+
+The BuildBuddy invocations of this phase are provider-free:
+
+- `74ffdae3-54c6-4e16-bb58-115e57d06f2a` — the family stage under
+  `--remote_download_outputs=all`: `3 processes: 1 remote cache hit, 1 internal,
+  1 remote`, with the stage's assertions passing and the downloaded artifacts the
+  ones whose digests are tabulated above. 0 JEV calls, 0 embedding inferences,
+  0 hosted-Qwen requests, 0 `Repository`/`Theory` re-executions.
+- the ordinary offline gate `nix develop --command bazel test //...` on the
+  committed source tree: **35 tests pass**, `Executed 4 out of 35 tests` (the four
+  targets Bazel re-ran unconditionally: `//test/docs:readme_correspondence_test`,
+  `//test/policy:accounting_law_test`, `//test/policy:declared_source_policy_test`
+  and `//test/policy:workspace_audit_test`; the corpus-free
+  `//test/localization_replicated:replicated_law` is part of the 35). The offline
+  configuration streams no BuildBuddy invocation, so none is claimed for it. This
+  report file is not a build, Nix or CAS input, so the gate's inputs are exactly
+  the committed source tree.
+
+No upstream producer action re-executed in either.
+
 ## What this means so far
 
 - **Measured facts:** the UTF-8 defect was a locale boundary, not data
@@ -3166,3 +3427,47 @@ was made.
   `2442b5eb-…` (surviving logs) are corroborated execution and the remaining IDs
   are preserved as unverified history. No earlier number moved; the replicate,
   union and Sol phases remain unstarted.
+- **2026-10-07T21:20:00Z — generation 14, REPLICATED FIVE-OBSERVATION FAMILY
+  (Phase 2 of the strict + replicated continuation).** Acquires exactly four new
+  replicates per lexical condition (`A2`…`A5`, `S2`…`S5`) beside the preserved
+  replicate 1, and returns after the immutable five-observation family. Every
+  replication reuses the frozen A32 payload bytes: the same 88 surviving tasks,
+  the same candidate population with its `P+A` ranks and anchors, the same
+  batched task-level capture, the same byte-exact prompts (control
+  `2d31da9f…38f8`, structure `fc42d0d2…e0e3`) and the same configured
+  `jev___jev_decide` route at the same resolved model
+  `typesafe/jev-1.13-20260917`. Measured: 704 provider requests (8
+  replicate-conditions × 88 tasks), 22,048 new observations, 0 retries, 0 failed
+  calls, 0 timeouts, 0 decode failures, no manual transcription; 985,208 new
+  output tokens and USD 0.141168216 of new provider cost over 254,922 ms of new
+  wall time, with the historical replicate-1 row read back rather than
+  re-acquired (whole family: USD 0.176460270, 325,051 ms, 4,201,435 input
+  tokens). Identity is verified on the built artifacts: all 880
+  replicate-by-task records show the preserved `request_sha256`, the preserved
+  prompt digest and the preserved candidate population (880/880 each), the 880
+  observation keys `<semantic request key>#r<id>` are distinct, and the identical
+  per-condition input-token totals (320,708 on `A`, 519,579 on `S`) confirm the
+  payload identity provider-side. Typed outcomes are kept distinct and raw
+  (family: 1,680 `Relevant`, 25,300 `NotRelevant`, 580 `Unknown`, 0 typed
+  `Failed`; only `Relevant` votes). The acquisition is a new observation rather
+  than a memo replay: output tokens differ for every new replicate while input
+  tokens do not, and the typed outcome vector moved away from the preserved
+  original on 155 of the 704 new (condition, replicate, task) pairs. Adds the new
+  `test/localization_replicated` package (stage, corpus-free replication laws,
+  BUILD, the eight replicate decision manifests and the five economics records)
+  and the `//test/localization_replicated:policy_files` registration in the root
+  `BUILD.bazel`. The one mechanical writer is extended only with `--replicate N`
+  (recorded in the receipt/run/freeze record, never in the assembled payload) and
+  a provider-free `--summary` reduction; re-running that reduction over the
+  preserved receipts reproduced the records byte-for-byte and exposed one
+  mechanical header defect (16 names for 17 columns), which is fixed in the five
+  in-tree records. Disclosed convention difference: the `A`-control replicate-1
+  latency median reads 326 ms under this phase's declared lower-median rule where
+  the earlier regime row published 328 ms for the same unchanged distribution (the
+  44th and 45th of 88 order statistics; min, p95, max, wall, tokens and cost all
+  agree), and both conventions give 348 ms on `S`. The phase does 0 world,
+  `Repository`, `Theory`, CodeRank or hosted-Qwen work and re-runs no upstream
+  stage; its stage executes as one remote action of invocation
+  `74ffdae3-54c6-4e16-bb58-115e57d06f2a` and the ordinary offline gate is
+  **35/35 passing**. No earlier number moved; the union and Sol phases remain
+  unstarted.
