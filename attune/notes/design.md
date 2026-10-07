@@ -3166,3 +3166,30 @@ test 15237, support 21884; `//test/policy:declared_source_policy_test` verdict
 `accept`. The new fixture population is `test/embedding/**` (the Study-owned
 query stage, the corpus-free memo law and the declared shard targets), inside the
 existing `tests` component and with no new exemption.
+
+## Post-hoc exploratory embedding ranking and metrics (2026-10-07)
+
+Owner-approved POST-HOC EXPLORATORY EMBEDDING branch, ranking/metrics leaf
+(`embedding-E-rank-and-metrics`; `VAL-EMBED-003/004`). It adds one Study-owned
+semantic submodule and one downstream fixture/stage package; it edits no shared
+`Attune.Study` source, no original `LocalizationArm` and no extraction, Theory,
+variant, selection or ranking stage.
+
+| Component | Source | Language | Class | Owner | One-sentence contract |
+| --- | --- | --- | --- | --- | --- |
+| study | `src/Attune/Study/Embedding.flix` | Flix | A | `Attune.Study.Embedding` | The one scientific statement of the embedding branch: a declared fixture row's logical identity, its admission through the existing `Schema.Embedding` boundary, the frozen cosine similarity on the unnormalized official vectors, the complete similarity-descending/ascending-path ranking carrying the original rank beside the exact sidecar, and the exact top-k overlap, gold decomposition, median and aggregate. |
+| tests | `test/localization_embedding/**` | Flix/Starlark | C | fixture/stage population | The downstream stage dispatcher (`rank_e`, `embedding_metrics`), the declared expansion of the 88 surviving tasks and the one metric stage, the corpus-free retrieval laws and the corpus-bound audit. |
+
+The `Embedding` submodule is downstream-only: no extraction, Theory, variant,
+selection or ranking stage imports it, so the frozen deterministic prediction
+graph is unaffected by its existence and no label can reach a ranking through it.
+The E ranking carries the original rank in the canonical `Int32` score column
+(which is all `Attune.Study.Metrics` reads) and the exact unquantized similarity
+in a sidecar the ordering follows, so the canonical reducer is used unchanged and
+no second reducer and no quantized tie artifact exist. `test/localization_embedding/**`
+is inside the existing `tests` component with no new exemption, and the new
+package is registered as `//test/localization_embedding:policy_files` in
+`//:policy_sources` so its source stays declared rather than silently unowned.
+Reconciling the canonical totals block and the README snapshot with the
+integrated source remains the `integrated-counts-external-ascii-and-handoff`
+feature's declared work, not this leaf's.

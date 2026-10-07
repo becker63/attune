@@ -1,7 +1,8 @@
 # Localization performance report
 
-**Status:** FINAL for the runtime-capped deterministic localization result.
-The POST-HOC EXPLORATORY JEV EXTENSION is **not part of that result and is not
+**Status:** FINAL for the runtime-capped deterministic localization result, and
+FINAL for the post-hoc exploratory **embedding (E)** half of the extension. The
+POST-HOC EXPLORATORY JEV EXTENSION is **not part of that result and is not
 computed**: the configured live route is **available and was contacted for real**
 (7 successful provider calls, resolved model `typesafe/jev-1.13-20260917`,
 provider `TypeSafe`, 192 logical decisions), but the frozen population of 2,756
@@ -14,6 +15,19 @@ excludes whole canonical repository groups whose extraction was unfinished at th
 built, audited and scored through the one canonical metric reducer, including its
 declared development, calibration and held-out final reductions. All prior audit,
 repair and verification history is retained below unchanged.
+
+The post-hoc exploratory embedding branch now has its complete standalone
+rankings for all 88 surviving tasks over the **exact same complete frozen
+candidate universe** as the deterministic arms (29,493 candidates), scored
+through the **same** canonical `Attune.Study.Metrics` path and published above in
+the new "Post-hoc exploratory embedding (E) result" section: P / P+A / E over the
+all-eligible population and the development, calibration and held-out final
+splits, task-micro and group-equal macro, plus the frozen A32/E32 and A10/E10
+overlap and gold decomposition. E was scored **before** any JEV work, as
+required. The E branch adds no second reducer, runs no model at replay time, and
+reproduces all 224 published P / P+A baseline cells exactly (0 mismatches). The
+held-out final split is **15 eligible tasks in only 4 groups**, so its differences
+are reported and explicitly not read as a finding.
 
 **Generated:** 2026-10-07T02:55:00Z (generation 8; supersedes generation 7 for
 current state; earlier generations retained below as history). Generation 8
@@ -564,6 +578,264 @@ unchanged and the derived builds re-executed none of them (see "Warm reuse").
   is made that the parser limitation is solved; fixing the parser or its
   performance is out of scope.
 
+## Post-hoc exploratory embedding (E) result
+
+> **POST-HOC EXPLORATORY EMBEDDING + JEV EXTENSION — NOT PART OF THE ORIGINAL
+> FOUR-ARM FREEZE.** This section is the embedding (E) half of the extension and
+> was scored **before** any JEV work, as required. The JEV half follows below and
+> remains incomplete; nothing in this section depends on it.
+
+- **Question:** does a frozen third-party code-retrieval embedding model, applied
+  with no lexical blend and no tuned weight, retrieve the gold file over the same
+  complete frozen candidate universe the deterministic arms rank? Exploratory and
+  post-hoc: no confirmatory claim, no prompt tuning, no model search, no second
+  numeric engine and no parity threshold.
+- **Fixed identity:** exactly `nomic-ai/CodeRankEmbed` at revision
+  `3c4b60807d71f79b43f3c4363786d9493691f8b1`, recipe
+  `coderankembed-queryprefix-cls-ctx8192-right-longestfirst-unnormalized-cosine-v1`,
+  768 dimensions, CLS pooling, the documented query prefix on queries only and
+  never on code. Every consumed row carries the logical fixture key
+  `(model revision, recipe, sha256 of the exact embedded input bytes)`; the vector
+  payload is data, never identity. All inference ran remotely on the BuildBuddy
+  RBE profile; Nix only packages the declared pinned inputs.
+- **Frozen similarity and order:** cosine on the two unnormalized official
+  vectors, ordered by **exact similarity descending, then candidate path
+  ascending**. No lexical evidence, no anchor evidence and no arbitrary weight
+  enters the value, so E is a genuine embedding similarity rather than a blend.
+  No tie is dropped and no candidate is reordered by a quantized key: the
+  canonical `Int32` score column of `rank_E.tsv` carries the **original rank**
+  (which is all `Attune.Study.Metrics` reads) and the exact unquantized `Float64`
+  similarity travels beside it in `similarity_E.tsv`. Ordering follows the exact
+  sidecar, never the integer column.
+- **Population and universe:** the E ranking covers the **exact same complete
+  frozen candidate universe** as the deterministic arms — verified per task, not
+  asserted globally: for all 88 surviving tasks the E candidate path set equals
+  the `rank_P.tsv` candidate path set exactly. 29,493 candidate files in total,
+  with 88 query rows over 27,645 code rows in 904 declared shards (32 files per
+  shard). No world extraction, Theory lowering or variant ranking was
+  re-executed; the E stage has no dependency on any of them.
+- **One canonical reducer, no second engine:** `Attune.Study.Metrics` is
+  unchanged and is the only scoring path. It scores P, P+A and E over the
+  all-eligible population and the declared development, calibration and held-out
+  final splits, in task-micro and group-equal macro form. The E branch adds one
+  downstream Study-owned submodule (`Attune.Study.Embedding`) and one downstream
+  stage package (`test/localization_embedding/`); no shared Study source, no
+  original `LocalizationArm` and no selection or ranking stage was edited.
+- **Baseline never recomputed:** the frozen runtime-capped P and P+A cells were
+  reproduced from the same frozen ranking trees as a **cache check**, cell for
+  cell. All **224 of 224** checks match, with 0 mismatches and 0 absent rows
+  (`reproduction.tsv`). Nothing was re-measured and no deterministic number in
+  this report moved.
+
+### Canonical P / P+A / E retrieval metrics (85 eligible tasks)
+
+Exact rational pairs are the measurement; the percentage beside each pair is
+presentation only. Population is 85 eligible tasks (22 groups) task-micro, and
+22 group-equal macro. Every arm is fully covered over this population (0
+undefined, 0 abstentions), so the covered-only diagnostic equals the
+all-eligible population and is not repeated here.
+
+**All eligible — task micro (85 tasks)**
+
+| Metric | P | P+A | E |
+|---|---|---|---|
+| Hit@1 | 2/17 (11.8%) | 16/85 (18.8%) | 16/85 (18.8%) |
+| Hit@5 | 22/85 (25.9%) | 27/85 (31.8%) | 6/17 (35.3%) |
+| Hit@10 | 6/17 (35.3%) | 7/17 (41.2%) | 39/85 (45.9%) |
+| Recall@1 | 91/1224 (7.4%) | 2287/19635 (11.6%) | 1463/15300 (9.6%) |
+| Recall@5 | 91621/556920 (16.5%) | 6004847/30630600 (19.6%) | 9029/42840 (21.1%) |
+| Recall@10 | 716173/3063060 (23.4%) | 4157441/15315300 (27.1%) | 4198261/15315300 (27.4%) |
+| MRR@10 | 1654/8925 (18.5%) | 17837/71400 (25.0%) | 29419/107100 (27.5%) |
+
+**All eligible — group-equal macro (22 groups)**
+
+| Metric | P | P+A | E |
+|---|---|---|---|
+| Hit@1 | 31/264 (11.7%) | 25/132 (18.9%) | 2/11 (18.2%) |
+| Hit@5 | 35/132 (26.5%) | 7/22 (31.8%) | 91/264 (34.5%) |
+| Hit@10 | 47/132 (35.6%) | 109/264 (41.3%) | 5/11 (45.5%) |
+| Recall@1 | 479/6336 (7.6%) | 2375/20328 (11.7%) | 133/1440 (9.2%) |
+| Recall@5 | 96469/576576 (16.7%) | 6151367/31711680 (19.4%) | 9101/44352 (20.5%) |
+| Recall@10 | 742837/3171168 (23.4%) | 1061429/3963960 (26.8%) | 531527/1981980 (26.8%) |
+| MRR@10 | 10379/55440 (18.7%) | 6947/27720 (25.1%) | 89207/332640 (26.8%) |
+
+**Development split — 50 eligible tasks, 13 groups**
+
+| Metric | P (micro) | P+A (micro) | E (micro) | P (macro) | P+A (macro) | E (macro) |
+|---|---|---|---|---|---|---|
+| Hit@1 | 7/50 (14.0%) | 7/50 (14.0%) | 9/50 (18.0%) | 11/78 (14.1%) | 23/156 (14.7%) | 9/52 (17.3%) |
+| Hit@5 | 6/25 (24.0%) | 6/25 (24.0%) | 19/50 (38.0%) | 10/39 (25.6%) | 1/4 (25.0%) | 29/78 (37.2%) |
+| Hit@10 | 17/50 (34.0%) | 19/50 (38.0%) | 12/25 (48.0%) | 55/156 (35.3%) | 61/156 (39.1%) | 25/52 (48.1%) |
+| Recall@1 | 239/3600 (6.6%) | 613/9240 (6.6%) | 319/4500 (7.1%) | 263/3744 (7.0%) | 1139/16016 (7.1%) | 319/4680 (6.8%) |
+| Recall@5 | 8387/65520 (12.8%) | 1650497/18018000 (9.2%) | 5207/25200 (20.7%) | 46783/340704 (13.7%) | 1797017/18738720 (9.6%) | 5279/26208 (20.1%) |
+| Recall@10 | 379837/1801800 (21.1%) | 1935221/9009000 (21.5%) | 1100633/4504500 (24.4%) | 406501/1873872 (21.7%) | 252937/1171170 (21.6%) | 2255221/9369360 (24.1%) |
+| MRR@10 | 611/3150 (19.4%) | 24461/126000 (19.4%) | 34723/126000 (27.6%) | 101/504 (20.0%) | 4421/21840 (20.2%) | 106069/393120 (27.0%) |
+
+**Calibration split — 20 eligible tasks, 5 groups** (micro and macro coincide here:
+every group carries exactly four eligible tasks, so group-equal macro is the
+task-micro mean of the per-group means)
+
+| Metric | P | P+A | E |
+|---|---|---|---|
+| Hit@1 | 1/10 (10.0%) | 1/5 (20.0%) | 1/4 (25.0%) |
+| Hit@5 | 1/4 (25.0%) | 2/5 (40.0%) | 7/20 (35.0%) |
+| Hit@10 | 7/20 (35.0%) | 9/20 (45.0%) | 1/2 (50.0%) |
+| Recall@1 | 1/10 (10.0%) | 11/80 (13.8%) | 43/240 (17.9%) |
+| Recall@5 | 3/16 (18.8%) | 27/80 (33.8%) | 61/240 (25.4%) |
+| Recall@10 | 1/4 (25.0%) | 7/20 (35.0%) | 101/240 (42.1%) |
+| MRR@10 | 2071/12600 (16.4%) | 199/720 (27.6%) | 31/96 (32.3%) |
+
+**Held-out final split — 15 eligible tasks, only 4 groups**
+
+| Metric | P (micro) | P+A (micro) | E (micro) | P (macro) | P+A (macro) | E (macro) |
+|---|---|---|---|---|---|---|
+| Hit@1 | 1/15 (6.7%) | 1/3 (33.3%) | 2/15 (13.3%) | 1/16 (6.3%) | 5/16 (31.3%) | 1/8 (12.5%) |
+| Hit@5 | 1/3 (33.3%) | 7/15 (46.7%) | 4/15 (26.7%) | 5/16 (31.3%) | 7/16 (43.8%) | 1/4 (25.0%) |
+| Hit@10 | 2/5 (40.0%) | 7/15 (46.7%) | 1/3 (33.3%) | 3/8 (37.5%) | 7/16 (43.8%) | 5/16 (31.3%) |
+| Recall@1 | 1/15 (6.7%) | 23/90 (25.6%) | 1/15 (6.7%) | 1/16 (6.3%) | 23/96 (24.0%) | 1/16 (6.3%) |
+| Recall@5 | 23/90 (25.6%) | 16/45 (35.6%) | 1/6 (16.7%) | 23/96 (24.0%) | 1/3 (33.3%) | 5/32 (15.6%) |
+| Recall@10 | 13/45 (28.9%) | 16/45 (35.6%) | 8/45 (17.8%) | 13/48 (27.1%) | 1/3 (33.3%) | 1/6 (16.7%) |
+| MRR@10 | 83/450 (18.4%) | 2/5 (40.0%) | 28/135 (20.7%) | 83/480 (17.3%) | 3/8 (37.5%) | 7/36 (19.4%) |
+
+> **Held-out caveat — 15 eligible tasks in only 4 groups.** The final split is
+> 15 eligible tasks drawn from 4 canonical groups (`firebase-tools`, `pino`,
+> `spectral`, `synthetics`), i.e. 4 group-equal macro units. A single task moves
+> any final-split cell by 1/15 (6.7 pp) micro and 1/4 (25 pp) macro, and a single
+> group moves every macro cell by 1/4. The final-split differences below are
+> therefore **not** a reliable estimate of any population difference; they are
+> reported because the split was declared before the freeze, not because they
+> support a claim. The all-eligible population (85 tasks / 22 groups) is the only
+> population here with enough groups for a macro reading to be meaningful.
+
+- **Reading (exploratory, descriptive only).** Over the full eligible population
+  E is roughly at parity with the best deterministic arm and ahead of P: E leads
+  P+A on Hit@5 (35.3% vs 31.8% micro), Hit@10 (45.9% vs 41.2%) and MRR@10 (27.5%
+  vs 25.0%), while P+A leads E on Hit@1 (18.8% both micro; P+A 18.9% vs E 18.2%
+  macro) and on Recall@1 (11.6% vs 9.6%). The same pattern holds on development
+  (E clearly ahead on Hit@5/10 and MRR@10, behind on Recall@1). On the held-out
+  final split the ordering reverses and E is behind P+A on nearly every cell —
+  **but that split is 15 tasks in 4 groups, so this reversal is not a finding**;
+  the honest statement is that the held-out evidence is too thin to separate the
+  arms. No arm is declared a winner, no significance is claimed and no threshold
+  was tuned: this is one descriptive measurement of one fixed model under one
+  fixed recipe.
+- **Model identity, failure counts and honest absence.** 88 of 88 declared query
+  rows and 27,645 of 27,645 declared code rows were consumed; **0 rows failed**
+  admission and **0 rows** were dropped for a malformed or non-finite vector
+  (`population ... failed 0` per task). The platform proved **compatible**: no
+  `Unavailable` branch was taken and no substitute model was used. Four code
+  shards (`code_w1_0`, `code_w1_1`, `code_w1_2`, `code_w1_20`) were absent from
+  the local output base at the start of this feature; they were served from the
+  remote cache with **0 new inference executions** (4 remote cache hits,
+  `<All keys matched successfully>`), so the acquisition was not repeated.
+- **No gold-based selection.** No evaluator label, reference patch or gold path
+  is an input to any ranking stage. The E rank stage binds only the task's query
+  fixture, its world's code shards and the frozen deterministic `rank_P.tsv` (as
+  the universe witness); the labels are read only by the metric/overlap consumer,
+  after both rankings were frozen.
+
+### Frozen A32/E32 and A10/E10 overlap and gold decomposition
+
+Evaluated **only after** the rankings were frozen, over the same 85 eligible
+tasks, by a read-only consumer. `A` is the frozen deterministic `P+A` ranking and
+`E` is the frozen embedding ranking.
+
+| Cutoff | Tasks | Σ intersection | Σ union | Mean intersection | Median intersection |
+|---|---|---|---|---|---|
+| top-32 | 85 | 662 | 4,658 | 662/85 ≈ 7.79 | 7 |
+| top-10 | 85 | 115 | 1,585 | 23/17 ≈ 1.35 | 1 |
+
+| Cutoff | Gold A-only | Gold E-only | Gold both | Gold neither | Total eligible gold paths |
+|---|---|---|---|---|---|
+| top-32 | 40 | 52 | 41 | 85 | 218 |
+| top-10 | 27 | 42 | 14 | 135 | 218 |
+
+- The four decomposition counts sum to the task's admitted eligible gold path
+  count for **every** task at **both** cutoffs (checked per task, 0 violations).
+- Mean and median are exact rationals, not rounded decimals. `Σ union` is the sum
+  of the per-task union sizes, not a global union.
+- **What this says, and does not say.** The two arms retrieve largely different
+  candidate sets: at top-32 they share on average ~7.8 of 32 files, and only 41
+  of the 218 eligible gold paths are in both arms' top-32 (40 A-only, 52 E-only,
+  85 in neither). At top-10 the overlap is much smaller (mean ~1.35 shared; 14
+  gold paths in both, 27 A-only, 42 E-only, 135 in neither). That is a
+  population-overlap statement only: because these counts were computed after the
+  freeze and no gold-based selection was performed at any point, they are
+  descriptive, not a selection rule, and no combination of A and E is proposed
+  or scored here.
+- Small-N caveat: the per-task top-10 population is at most 10 files, so a
+  per-task intersection/union difference of one file is a large relative move;
+  the aggregate is reported over all 85 tasks for that reason.
+
+### E-branch provenance and replay
+
+- **Produced artifacts.** 88 complete standalone E rankings under
+  `bazel-bin/test/localization_embedding/rank_e_<task>/` (`rank_E.tsv`,
+  `similarity_E.tsv`, `fixtures.tsv`, `embedding.tsv`) and one metric tree
+  `bazel-bin/test/localization_embedding/embedding_metrics/` (`metrics.tsv`,
+  `overlap.tsv`, `tasks.tsv`, `reproduction.tsv`).
+- **Provider/model-free replay.** Building the E rankings and the metric table
+  executes **0 embedding inferences, 0 provider calls, 0 Repository/Theory
+  actions**: the rank stage consumes only the immutable declared fixture files
+  and the frozen deterministic `rank_P.tsv`, and the metric stage consumes only
+  the frozen ranking trees and the admitted labels. The cold/warm distinction is
+  preserved: the physical shard actions were already materialized by the
+  acquisition feature; this feature added 88 new rank actions and 1 metric
+  action, all reusing the warm upstream cache. A repeat invocation is served
+  entirely from the action cache (`--remote_download_outputs=all` rerun: 1,280
+  remote cache hits, 0 executed).
+- **Source digests (sha256).**
+
+| File | State | sha256 |
+|---|---|---|
+| `attune/src/Attune/Study/Embedding.flix` | new (Study-owned E submodule) | `75e20180c067298aebb874f57c575c1202a9a733203d320832fc2558702f6f82` |
+| `attune/test/localization_embedding/EmbeddingRankStages.flix` | new (rank + metric stages) | `0a878276d9788f7f6e7f065ed34bda3b270a71bc29d7e3b2fa18a4b1bc8db353` |
+| `attune/test/localization_embedding/EmbeddingRankLaw.flix` | new (corpus-free laws) | `d5246ed327cb19f03115f4e5c148e9a37ab98589769b315b3d905a9d85b3f351` |
+| `attune/test/localization_embedding/EmbeddingRankAudit.flix` | new (corpus-bound audit) | `50f72906ed8365d22263c83f045f5de6f6046f8553a138d1ab38e1367685b2d1` |
+| `attune/test/localization_embedding/localization_embedding.bzl` | new (declared expansion) | `56ab1438ba6811e2076b62bb20b7407daa325bbc0cb756a2bd739d39946d809a` |
+| `attune/test/localization_embedding/BUILD.bazel` | new (package targets) | `46060104ae5812bae14189b1182d0c61b56400f174f0ab3b73757ad81c3770b4` |
+| `attune/BUILD.bazel` | modified (`//test/localization_embedding:policy_files` registered) | `0d85d89292323ec3b7d5e4fbb03ee221d5f8bacd6f5c5a6662c00b7c73160666` |
+
+- **Artifact digests (built, sha256).**
+
+| Artifact | sha256 |
+|---|---|
+| `bazel-bin/test/localization_embedding/embedding_metrics/metrics.tsv` (336 rows) | `d107a85aaac4fc63591d54c68eb295d9a22b81832404da51922730c25a866642` |
+| `bazel-bin/test/localization_embedding/embedding_metrics/overlap.tsv` (172 rows) | `6a17143c30c4caa5f0ce48447331249ac656a7579b25b5c721e38987f5d99c33` |
+| `bazel-bin/test/localization_embedding/embedding_metrics/tasks.tsv` (96 rows, byte-identical to the runtime-capped `tasks.tsv`) | `d70817ef4d6de7c0e447278e9c2e4d6c5ee8f04d274e7a84643740eb748404a5` |
+| `bazel-bin/test/localization_embedding/embedding_metrics/reproduction.tsv` (224 baseline checks, all `match`) | `1df4e156ed34da36f542aaa221a81ccd60121fcca8029fac8ed85b4aad7879d5` |
+| `bazel-bin/test/localization_embedding/rank_e_serverless__serverless-11277/rank_E.tsv` (example) | `34a8a7feb8d9f08da6e35db0e230f59ba13b745e74a387ad9598bd4d526fcda8` |
+| `bazel-bin/test/localization_embedding/rank_e_serverless__serverless-11277/similarity_E.tsv` (example) | `c98b97ec73e02734d4730e3d3d182e2a34423862a1e4aa139a9c410d1dad2f9b` |
+
+- **Evidence commands (one Bazel owner at a time).** All three below were run
+  from `attune/` through `nix develop --no-write-lock-file` with
+  `--output_base=/home/becker/.cache/attune-v2-bootstrap-bazel`:
+
+```
+# the 88 E rankings + the canonical metric table (RBE; 0 new inference)
+bazel build //test/localization_embedding:embedding_metrics --config=remote --jobs=80
+# the corpus-bound audit + the corpus-free laws (RBE)
+bazel test  //test/localization_embedding:all --config=remote --jobs=80 --test_output=summary
+# the ordinary gate, unchanged (RBE; 31/31 pass)
+bazel test  //... --config=remote --jobs=80 --test_output=summary
+```
+
+- **Laws.** The corpus-free law (`//test/localization_embedding:embedding_rank_law`,
+  9 native `@Test` declarations) pins the exact cosine, the
+  similarity-descending/ascending-path order including exact ties and a
+  last-representable-place difference, the rank column and sidecar separation,
+  the `Schema.Embedding` bridge (and its refusal of a `Gold`/`Prediction`-schema
+  artifact), the row/vector admission errors, and the top-k overlap, gold
+  partition, median and aggregate. It is part of the ordinary offline gate. The
+  corpus-bound audit
+  (`//test/localization_embedding:embedding_rank_audit`, `manual`) checks the
+  produced bytes: universe equality per task, contiguous ranks, the canonical
+  score column, the exact sidecar order, one model/recipe/768-dim per tree, every
+  metric cell present exactly once over 8 scopes × 2 kinds × 3 arms × 7 metrics,
+  no `undefined` E cell, E population/covered/undefined identical to P's, and the
+  per-task overlap decomposition partitioning the admitted gold paths at both
+  cutoffs.
+
 ## Post-hoc exploratory JEV extension
 
 > **POST-HOC EXPLORATORY EXTENSION, NOT PART OF ORIGINAL FOUR-ARM FREEZE**
@@ -674,6 +946,7 @@ unchanged and the derived builds re-executed none of them (see "Warm reuse").
 | A — cold structural construction | World-extraction/Theory cost from real logs | 325 KB single-file 360.6s / zero declarations / 4,106 refusals; `w35` 3,664s remote pre-fix long pole; obsidian `w34`/`w35` 2,532.5s / 2,509.6s post-fix; `w41` >14,148s console elapsed and `w84` unfinished, both ending in an internal remote-execution upload timeout |
 | B — warm deterministic | Derived selection/rank latency and the capped continuation wall time over warm inputs | 88 derived rank actions executed in 1–29s of remote time (median ≈15s among the 36 fully logged); derived selection ~1s; first derived build 268s wall clock / 72s critical path for 89 fresh actions at `--jobs=8`; **zero** Repository/Theory re-execution; metrics stage 24s; continuation inspection (22:44:04Z) to materialized capped metrics (00:43:18Z) = 7,154s wall clock, of which the derived graph itself occupied ~623s and the six Bazel invocations ~413s |
 | C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, rerank-only time from persisted receipts | **Partial and incomplete: 6 of 88 tasks.** Route availability is established — 7 real requests, all successful, 0 failures, 0 retries — and the provider side is cheap: batch latency 276–426 ms with median 324 ms (`n=6`, so p95 is not measurable and is not reported), 32 logical decisions per batch and one HTTP request per batch (≈99 decisions/s of provider time), 18,180 input / 8,561 output tokens and USD 0.000764 for the six batches, 0 `Repository`/`Theory` re-executions. End-to-end wall time, end-to-end decisions/s, rerank-only time and complete-run cost are **unavailable** — the frozen population was not completed and no value is extrapolated from a partial run |
+| D — warm embedding ranking | E ranking and canonical metric latency over the immutable declared fixtures | 88 rank stages + 1 metric stage = 89 `AttuneStudyStage` actions, all served from the remote cache after the first materialization (the fixture acquisition had already paid for the 904 shard actions); **0** embedding inferences, **0** provider calls, **0** `Repository`/`Theory` re-executions at replay; a full `--remote_download_outputs=all` rerun of the metric tree reported 1,280 remote cache hits and 0 executed actions |
 
 Deterministic compute is **not zero**: cold RBE/indexing cost, warm compute
 and any JEV spend are separate and are never collapsed into one misleading
@@ -713,6 +986,17 @@ speculative sub-cent pricing and no invented dollar values.
   `typesafe/jev-1.13-20260917`, provider `TypeSafe`); what is missing is the
   frozen decision population (6 of 88 tasks decided), not availability, and no
   `D` versus `D+J` comparison is published from a partial population.
+- **Embedding (E) versus the deterministic arms:** descriptive only. Over the
+  full eligible population E is at roughly P+A parity and ahead of P, leading on
+  Hit@5 (35.3% vs 31.8% micro), Hit@10 (45.9% vs 41.2%) and MRR@10 (27.5% vs
+  25.0%) while trailing on Recall@1 (9.6% vs 11.6%) and, in macro form, Hit@1.
+  The two arms retrieve largely different candidate sets (mean top-32
+  intersection ≈7.8 of 32; 41 of 218 eligible gold paths in both top-32 lists).
+  On the held-out final split the ordering reverses, but that split is 15 tasks
+  in 4 groups, so no arm is declared a winner, no significance is claimed and no
+  threshold was tuned. The overlap counts were computed after the freeze and no
+  gold-based selection was performed at any point, so no A+E combination is
+  proposed or scored.
 - **Repairs vs regressions:** anchors repair more than they regress; the
   Repository and Theory families regress more than they repair on these metrics.
 - **Latency/cost tradeoffs:** the cold structural cost is dominated by the
@@ -1047,7 +1331,12 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   defect introduced here.
 - **Unsupported claims:** any original-panel ranking metric; any claim that the
   post-fix invocation completed; any claim that the evaluator-label firewall has
-  been confirmed at execution level rather than by source closure; any JEV
+  been confirmed at execution level rather than by source closure; any claim that
+  the embedding arm is better (or worse) than the deterministic arms in the
+  population — the E result is one descriptive measurement of one fixed model
+  under one fixed recipe, with no significance test, no tuned threshold and a
+  held-out split of 15 tasks in 4 groups; any combined A+E or E+J ranking, metric
+  or selection; any JEV
   result, model identity, token count, cost **or availability status**; any claim
   that the pinned parser limitation is solved; any reading of the runtime cutoff
   as a quality statement; and any claim that the stopped local invocation
@@ -1168,3 +1457,35 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   `contributions.tsv` are byte-identical to generation 7; no upstream stage ran
   and the deterministic result is unchanged. Original denominators unchanged at
   96 / 93 and the original full result still 0/96 and not estimated.
+- **2026-10-07T11:30:00Z — generation 9, FINAL for the post-hoc exploratory
+  embedding (E) half of the extension.** Adds the complete standalone E ranking
+  of all 88 surviving tasks over the exact same complete frozen candidate
+  universe as the deterministic arms (verified per task: the E candidate path set
+  equals `rank_P.tsv`'s for all 88 tasks; 29,493 candidates; 88 query rows over
+  27,645 code rows in 904 shards), ordered by exact cosine similarity descending
+  then path ascending, with the original rank in the canonical `Int32` score
+  column and the exact unquantized `Float64` similarity in a sidecar
+  (`similarity_E.tsv`) that the ordering follows. Adds the P / P+A / E canonical
+  metric tables over the all-eligible population and the development (50 / 13),
+  calibration (20 / 5) and held-out final (15 / 4) splits, task-micro and
+  group-equal macro, through the **unchanged** one canonical
+  `Attune.Study.Metrics` reducer; the exact reproduction of all **224 of 224**
+  published P / P+A baseline cells (0 mismatches, 0 absent) as a cache check
+  rather than a recomputation; the frozen A32/E32 and A10/E10 populations with
+  their exact overlap (mean, median, union) and the gold decomposition
+  A-only/E-only/both/neither, evaluated only after the freeze and with no
+  gold-based selection at any point; the explicit held-out caveat that the final
+  split is 15 eligible tasks in only 4 groups; the honest failure counts (0 of
+  27,645 code rows and 0 of 88 query rows failed admission, 0 dropped) and the
+  four locally absent shards that were served from the remote cache with 0 new
+  inference executions; and the provider/model-free replay statement (0
+  embedding inferences, 0 provider calls, 0 Repository/Theory actions). Adds the
+  Study-owned downstream submodule `src/Attune/Study/Embedding.flix`, the new
+  `test/localization_embedding` package (stages, corpus-free laws, corpus-bound
+  audit and the declared expansion), and the `//test/localization_embedding:policy_files`
+  registration in the root `BUILD.bazel`. The offline gate is green at **31/31**
+  on RBE. Frozen deterministic rankings, `select_policy`, `derived_population`,
+  the runtime-capped `metrics.tsv`, `tasks.tsv` and `contributions.tsv` are
+  untouched and no deterministic number in this report moved; the JEV half is
+  unchanged and still incomplete. Original denominators unchanged at 96 / 93 and
+  the original full result still 0/96 and not estimated.
