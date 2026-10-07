@@ -1,8 +1,10 @@
 # Localization performance report
 
 **Status:** FINAL for the runtime-capped deterministic localization result, FINAL
-for the post-hoc exploratory **embedding (E)** half of the extension, and now
-**FINAL for the post-hoc exploratory lexical JEV pair (A-control / A-structure)**.
+for the post-hoc exploratory **embedding (E)** half of the extension, FINAL for
+the post-hoc exploratory **lexical JEV pair (A-control / A-structure)**, and now
+**FINAL for the post-hoc exploratory hosted-Qwen branch (`Q`) and its JEV pair
+(`Q`-control / `Q`-structure) together with the eight-arm report**.
 The JEV pair is complete: the frozen common A32 population (88 tasks, 2,756
 decisions per condition) was decided on the configured live route (176 successful
 provider calls, resolved model `typesafe/jev-1.13-20260917`, provider `TypeSafe`,
@@ -14,6 +16,17 @@ frozen contrasts and evaluator-only paired diagnostics. The older D-keyed
 `P+A+D+J` attempt (6 of 88 tasks, no metric) is kept as history only and is not
 the source of any published A number; the E+J pair is deferred and no E+J number
 is claimed. `JEV=Unavailable` is explicitly **not** claimed: the route answered.
+The hosted-Qwen `Q` branch is published (generation 11) and its JEV pair is
+complete: the frozen common Q32 population (88 tasks, 2,756 decisions per
+condition) was decided on the **same** configured live route through the **same**
+mission-local mechanical writer with the **same** resolved model (176 further
+successful calls, 0 failures, 0 retries), both Q prompts were frozen byte-exact
+before any outcome, and the **final eight primary arms** `P`, `P+A`, `E`, `Q`,
+`P+A+J`, `P+A+J(structure)`, `Q+J` and `Q+J(structure)` are scored through the
+same one canonical reducer over the all-eligible population and the three
+declared splits, with the seven priority contrasts, the explicit
+`P+A+J(structure)` versus `Q+J(structure)` comparison and the evaluator-only
+paired diagnostics.
 The original panel `attune-panel-2026-10-06` remains immutable and its full result
 does not exist. An owner-approved runtime cutoff excludes whole canonical
 repository groups whose extraction was unfinished at the 22:44:04Z continuation
@@ -35,20 +48,21 @@ reproduces all 224 published P / P+A baseline cells exactly (0 mismatches). The
 held-out final split is **15 eligible tasks in only 4 groups**, so its differences
 are reported and explicitly not read as a finding.
 
-**Generated:** 2026-10-07T11:50:00Z (generation 10; supersedes generation 9 for
-current state; earlier generations retained below as history). Generation 10 adds
-the complete post-hoc exploratory lexical JEV pair: the frozen common A32
-population (88 tasks, 2,756 decisions per condition), the two byte-exact paired
-prompts, the measured `P+A+J` and `P+A+J(structure)` metrics and contrasts over
-the all-eligible population and the three declared splits, the evaluator-only
-paired diagnostics, and the provider-free replay. It supersedes the earlier
-D-keyed partial `P+A+D+J` reading, which is kept below as history only. The
-frozen rankings, `select_policy`, `derived_population`, `metrics.tsv`,
-`tasks.tsv`, `contributions.tsv` and the E ranking tree are untouched by it: the
-`P` and `P+A` cells were reproduced cell-for-cell as a cache check and no
-deterministic number in this report moved.
+**Generated:** 2026-10-07T15:45:00Z (generation 12; supersedes generation 11 for
+current state; earlier generations retained below as history). Generation 12 adds
+the complete post-hoc exploratory hosted-Qwen JEV pair and the final eight-arm
+report: the frozen common Q32 population (88 tasks, 2,756 decisions per
+condition), the two byte-exact paired Q prompts, the measured `Q+J` and
+`Q+J(structure)` metrics, the seven exact priority contrasts, the explicit
+`P+A+J(structure)` versus `Q+J(structure)` comparison, the evaluator-only paired
+diagnostics and the provider-free replay, over the all-eligible population and
+the three declared splits. Generation 11 published the hosted-Qwen `Q` branch
+itself. No frozen ranking, `select_policy`, `derived_population`, `metrics.tsv`,
+`tasks.tsv`, `contributions.tsv`, E or Q ranking tree and no A-pair JEV decision
+is touched: every metric cell of every metric table in this report was compared
+against the built artifact (763 cells, 0 mismatches) and no earlier number moved.
 
-**Source:** this commit (parent `597db1d`, branch `main`), built on
+**Source:** this commit (parent `bbf922d`, branch `main`), built on
 `2b5bc2de3bdf25dd2d437e9f91068bf9f64413e2` ("Repair UTF-8 world extraction and
 publish the localization run audit"). The report is committed with the change it
 describes, so it names its parent and its own input digests rather than a
@@ -1516,6 +1530,420 @@ bazel test  //test/localization_jev:jev_law --config=remote --jobs=80 --test_out
   as history only and are **not** the source of any number above. The A pair above
   is a separate, complete, `P+A`-keyed measurement. No `D+J` figure is published.
 
+## Post-hoc exploratory Q-JEV pair and the final eight-arm report
+
+> **POST-HOC EXPLORATORY EXTENSION, NOT PART OF ORIGINAL FOUR-ARM FREEZE.** This
+> section reports the measured **hosted-Qwen JEV pair** (Q-control and
+> Q-structure) and the resulting **eight-arm** comparison. It is a strictly
+> downstream consumer of the already-published hosted-Qwen `Q` ranking tree, the
+> frozen `P`/`P+A`/`E` trees and the admitted evaluator labels, and it
+> re-executed no upstream action. The E+J pair remains deferred and no E+J number
+> is claimed. The four measured arms (`P`, `P+A`, `P+A+F`, `P+A+D`) and the
+> published E, lexical-A-JEV and hosted-Q results are untouched.
+
+- **Question:** does the same tiny typed relevance decision that lifted `P+A` also
+  lift the hosted-Qwen `Q` ranking at low marginal cost, does adding the same
+  already-public structural evidence to the same prompt help or hurt there, and
+  how does that structural effect compare with the A-pair structural effect? No
+  confirmatory claim, no prompt tuning, no new-model search, no blend and no
+  union of arms.
+- **Start condition (satisfied):** the standalone `Q` ranking, its frozen `Q32`
+  population and its canonical metric table were frozen and published
+  (generation 11) **before** any Q-JEV outcome, and the lexical JEV pair plus
+  every deterministic and CodeRank fixture remain immutable. This pair is a new
+  downstream consumer only: a Q-JEV invocation reruns no Repository, Theory,
+  variant, selection or ranking action.
+- **Frozen population (before any outcome):** the common **Q32** set — the top-32
+  candidates of each surviving task's frozen hosted-Qwen `rank_Q.tsv`, fixed K
+  across repositories, all candidates if fewer than 32. 88 surviving tasks
+  (52 development / 20 calibration / 16 final), 85 eligible, 22 groups. Four tasks
+  carry fewer than 32 candidates (`pino-121` 24, `got-114` 14, `got-172` 15,
+  `got-183` 15). Frozen total: **2,756 logical decisions per condition**, 5,512
+  across the pair; 8 tasks without a frozen Q tree are excluded and recorded
+  (`population.tsv`). Both conditions see the **same** candidate population and
+  the **same** base ranking; only the prompt evidence differs.
+- **Q32 is not A32.** Both sets are 2,756 candidates over the same 88 tasks, but
+  they share only **762** candidates (union 4,750) and differ on **84 of 88**
+  tasks; only the four short tasks coincide. So a Q judgment cannot be reused as
+  an A judgment, and the payload-hash check below confirms that empirically.
+- **Two paired prompts, frozen byte-exact before any outcome:** Q-control
+  `test/localization_qwen_jev/prompt_q.template.txt` (2,489 bytes, sha256
+  `fd793441ba2a840b6c3f9d079e0dad0391dcd089497c715feb1fe6fdb8bcbe50`) and
+  Q-structure `test/localization_qwen_jev/prompt_q_structure.template.txt`
+  (3,093 bytes, sha256
+  `6153ad552f8118cf7ce5f33f8c566b751f6676ff0d73c34d1f4897dfa69eeea9`). Both were
+  fixed before the first provider response and never edited: no prompt tuning, no
+  invented confidence threshold, no second model and no outcome-dependent retry.
+- **Physical input separation.** Q-control sees **only** the public issue text,
+  the candidate path, the original `Q` rank and the exact `Q` similarity — no
+  deterministic `P+A` score, no anchor, no Repository relation, no Theory witness
+  and no D/F/gold/patch/test/interface/oracle/final-metric field. Q-structure sees
+  the **exact same base fields** plus the already-public candidate Repository
+  relations (`defines`/`imports`/`imported_by` over the frozen `facts.tsv`) and
+  Theory witness IDs/descriptions (`witnesses.tsv`) for those candidates. No new
+  structural analysis, source body, tool or search was run for either condition,
+  and the structure condition adds no analysis beyond what the published Q report
+  already used.
+- **Typed outcomes and frozen rule before outcomes:** unchanged from the A pair.
+  One choice per candidate with an explicit `Unknown`; `Relevant` promotes before
+  all non-`Relevant`; stable original `Q` rank within both partitions; only the
+  judged top-32 candidates can promote; `Unknown`/`Failed` give no promotion and
+  no negative penalty; no candidate is deleted, invented or re-scored. Each
+  promoted ranking keeps the identical complete 29,493-file candidate universe,
+  so the rerank record is 117,972 rows (2 × 29,493 per pair, two pairs).
+- **Transport and credentials:** the same currently configured live Jev route
+  (the dedicated `jev___jev_decide` route, Jev 1.13), driven through the same
+  approved mission-local Java mechanical receipt writer over the MCP stdio
+  transport, extended with a base selector (`--base A|Q`) rather than a second
+  writer; not a manual copy, not raw HTTP, not a substitute model. Logical
+  decisions, provider requests, batches and retries are distinguished and never
+  fabricated into totals. The credential was passed opaquely through the process
+  environment only and was never printed, hashed, placed in argv, an action
+  input, the CAS, a receipt or a commit; no unrelated secret was inspected.
+- **Immutable exact memoization and no automatic A reuse.** Each decision is keyed
+  on `(resolved model, prompt identity, condition, task, candidate, exact payload
+  hash)` and persisted before the next call; a successful exact decision is never
+  requested twice and an error is never recorded as `NotRelevant`. All 176 calls
+  returned `Ok` with 0 retries, so the pair completed in one bounded pass. The 88
+  Q-control, 88 Q-structure, 88 A-control and 88 A-structure payload hashes are
+  **pairwise disjoint** — 0 shared hashes in each of the six cross-pairs — so no
+  Q decision could have been served from an A fixture even where the populations
+  overlapped.
+
+### Measured Q-JEV pair operations
+
+| JEV operation (measured) | Q-control | Q-structure |
+|---|---|---|
+| Surviving tasks / eligible tasks | 88 / 85 | 88 / 85 |
+| Frozen logical decisions | 2,756 | 2,756 |
+| Provider requests / batches / retries | 88 / 88 / 0 | 88 / 88 / 0 |
+| Calls with status `Ok` | 88 (100%) | 88 (100%) |
+| Observed resolved model / provider | `typesafe/jev-1.13-20260917` / `TypeSafe` | `typesafe/jev-1.13-20260917` / `TypeSafe` |
+| Observed tokens | 360,394 input, 122,847 output | 569,414 input, 122,895 output |
+| Observed provider cost | USD 0.015136548 | USD 0.023915388 |
+| Observed cost per task / per decision | ≈ USD 0.000172 / ≈ USD 0.0000055 | ≈ USD 0.000272 / ≈ USD 0.0000087 |
+| Observed per-call latency | min 245 ms / median 343 ms / p95 468 ms / max 724 ms | min 290 ms / median 371 ms / p95 582 ms / max 1,992 ms |
+| End-to-end wall time (88 tasks) | 32,695 ms | 37,735 ms |
+| `Repository` / `Theory` re-executions caused by the JEV calls | **0** | **0** |
+
+Combined pair wall time **70,491 ms**. The structural prompt costs ≈58% more
+input tokens and ≈58% more dollars for the same 2,756 decisions, and one call ran
+1,992 ms. Every field above is objective (returned by the provider or measured by
+the writer); nothing is `Unavailable` here.
+
+### Measured Q-JEV outcomes (per condition, 2,756 decisions)
+
+| Outcome | Q-control | Q-structure |
+|---|---|---|
+| `Relevant` | 444 | 339 |
+| `NotRelevant` | 2,245 | 2,331 |
+| `Unknown` | 67 | 86 |
+| `Failed` | 0 | 0 |
+| Eligible-population `Relevant` | 438 | 336 |
+| Tasks with any `Relevant` | 85 | 84 |
+
+### The final eight primary arms (85 eligible tasks)
+
+`P`, `P+A`, `E` and `Q` are the frozen published arms; `PAJ` and `PAJstructure`
+are the frozen A-pair reranks (`P+A` under A-control / A-structure); `QJ` and
+`QJstructure` are the Q-pair reranks (`Q` under Q-control / Q-structure). All
+eight reduce through the **unchanged** canonical `Attune.Study.Metrics`. Every arm
+is fully covered over this population (0 undefined, 0 abstentions), so the
+covered-only diagnostic equals the all-eligible population and is not repeated.
+
+**All eligible — task micro (85 tasks)**
+
+| Metric | P | P+A | E | Q | P+A+J | P+A+J(structure) | Q+J | Q+J(structure) |
+|---|---|---|---|---|---|---|---|---|
+| Hit@1 | 2/17 (11.8%) | 16/85 (18.8%) | 16/85 (18.8%) | 7/17 (41.2%) | 26/85 (30.6%) | 29/85 (34.1%) | 49/85 (57.6%) | 52/85 (61.2%) |
+| Hit@5 | 22/85 (25.9%) | 27/85 (31.8%) | 6/17 (35.3%) | 66/85 (77.6%) | 8/17 (47.1%) | 9/17 (52.9%) | 71/85 (83.5%) | 72/85 (84.7%) |
+| Hit@10 | 6/17 (35.3%) | 7/17 (41.2%) | 39/85 (45.9%) | 73/85 (85.9%) | 44/85 (51.8%) | 47/85 (55.3%) | 77/85 (90.6%) | 78/85 (91.8%) |
+| Recall@1 | 91/1224 (7.4%) | 2287/19635 (11.6%) | 1463/15300 (9.6%) | 55051/214200 (25.7%) | 5561/26775 (20.8%) | 47743/214200 (22.3%) | 19501/53550 (36.4%) | 10223/26775 (38.2%) |
+| Recall@5 | 91621/556920 (16.5%) | 6004847/30630600 (19.6%) | 9029/42840 (21.1%) | 1303/2380 (54.7%) | 188323/589050 (32.0%) | 411527/1178100 (34.9%) | 14827/23800 (62.3%) | 15301/23800 (64.3%) |
+| Recall@10 | 716173/3063060 (23.4%) | 4157441/15315300 (27.1%) | 4198261/15315300 (27.4%) | 198127/309400 (64.0%) | 2631487/7657650 (34.4%) | 163979/450450 (36.4%) | 500909/696150 (72.0%) | 510269/696150 (73.3%) |
+| MRR@10 | 1654/8925 (18.5%) | 17837/71400 (25.0%) | 29419/107100 (27.5%) | 40531/71400 (56.8%) | 13627/35700 (38.2%) | 991/2380 (41.6%) | 148207/214200 (69.2%) | 16861/23800 (70.8%) |
+
+**All eligible — group-equal macro (22 groups)**
+
+| Metric | P | P+A | E | Q | P+A+J | P+A+J(structure) | Q+J | Q+J(structure) |
+|---|---|---|---|---|---|---|---|---|
+| Hit@1 | 31/264 (11.7%) | 25/132 (18.9%) | 2/11 (18.2%) | 109/264 (41.3%) | 27/88 (30.7%) | 15/44 (34.1%) | 19/33 (57.6%) | 161/264 (61.0%) |
+| Hit@5 | 35/132 (26.5%) | 7/22 (31.8%) | 91/264 (34.5%) | 17/22 (77.3%) | 31/66 (47.0%) | 139/264 (52.7%) | 221/264 (83.7%) | 28/33 (84.8%) |
+| Hit@10 | 47/132 (35.6%) | 109/264 (41.3%) | 5/11 (45.5%) | 227/264 (86.0%) | 137/264 (51.9%) | 73/132 (55.3%) | 10/11 (90.9%) | 81/88 (92.0%) |
+| Recall@1 | 479/6336 (7.6%) | 2375/20328 (11.7%) | 133/1440 (9.2%) | 14239/55440 (25.7%) | 263/1260 (20.9%) | 49543/221760 (22.3%) | 80749/221760 (36.4%) | 84529/221760 (38.1%) |
+| Recall@5 | 96469/576576 (16.7%) | 6151367/31711680 (19.4%) | 9101/44352 (20.5%) | 2679/4928 (54.4%) | 389021/1219680 (31.9%) | 211951/609840 (34.8%) | 23123/36960 (62.6%) | 15891/24640 (64.5%) |
+| Recall@10 | 742837/3171168 (23.4%) | 1061429/3963960 (26.8%) | 531527/1981980 (26.8%) | 306983/480480 (63.9%) | 5428469/15855840 (34.2%) | 5740781/15855840 (36.2%) | 2078771/2882880 (72.1%) | 1058203/1441440 (73.4%) |
+| MRR@10 | 10379/55440 (18.7%) | 6947/27720 (25.1%) | 89207/332640 (26.8%) | 20983/36960 (56.8%) | 42341/110880 (38.2%) | 1025/2464 (41.6%) | 153401/221760 (69.2%) | 156943/221760 (70.8%) |
+
+**Development split — 50 eligible tasks, 13 groups (task micro)**
+
+| Metric | P | P+A | E | Q | P+A+J | P+A+J(structure) | Q+J | Q+J(structure) |
+|---|---|---|---|---|---|---|---|---|
+| Hit@1 | 7/50 (14.0%) | 7/50 (14.0%) | 9/50 (18.0%) | 17/50 (34.0%) | 13/50 (26.0%) | 8/25 (32.0%) | 1/2 (50.0%) | 27/50 (54.0%) |
+| Hit@5 | 6/25 (24.0%) | 6/25 (24.0%) | 19/50 (38.0%) | 19/25 (76.0%) | 23/50 (46.0%) | 13/25 (52.0%) | 41/50 (82.0%) | 21/25 (84.0%) |
+| Hit@10 | 17/50 (34.0%) | 19/50 (38.0%) | 12/25 (48.0%) | 9/10 (90.0%) | 27/50 (54.0%) | 14/25 (56.0%) | 23/25 (92.0%) | 47/50 (94.0%) |
+| Recall@1 | 239/3600 (6.6%) | 613/9240 (6.6%) | 319/4500 (7.1%) | 23761/126000 (18.9%) | 8909/63000 (14.1%) | 21073/126000 (16.7%) | 8371/31500 (26.6%) | 9211/31500 (29.2%) |
+| Recall@5 | 8387/65520 (12.8%) | 1650497/18018000 (9.2%) | 5207/25200 (20.7%) | 177/350 (50.6%) | 23692/86625 (27.4%) | 25309/86625 (29.2%) | 23831/42000 (56.7%) | 24833/42000 (59.1%) |
+| Recall@10 | 379837/1801800 (21.1%) | 1935221/9009000 (21.5%) | 1100633/4504500 (24.4%) | 338671/546000 (62.0%) | 2695409/9009000 (29.9%) | 2767481/9009000 (30.7%) | 558193/819000 (68.2%) | 571453/819000 (69.8%) |
+| MRR@10 | 611/3150 (19.4%) | 24461/126000 (19.4%) | 34723/126000 (27.6%) | 1499/2800 (53.5%) | 3751/10500 (35.7%) | 141/350 (40.3%) | 11569/18000 (64.3%) | 53/80 (66.3%) |
+
+**Calibration split — 20 eligible tasks, 5 groups (task micro; macro coincides)**
+
+| Metric | P | P+A | E | Q | P+A+J | P+A+J(structure) | Q+J | Q+J(structure) |
+|---|---|---|---|---|---|---|---|---|
+| Hit@1 | 1/10 (10.0%) | 1/5 (20.0%) | 1/4 (25.0%) | 1/2 (50.0%) | 2/5 (40.0%) | 2/5 (40.0%) | 7/10 (70.0%) | 7/10 (70.0%) |
+| Hit@5 | 1/4 (25.0%) | 2/5 (40.0%) | 7/20 (35.0%) | 3/4 (75.0%) | 1/2 (50.0%) | 1/2 (50.0%) | 4/5 (80.0%) | 4/5 (80.0%) |
+| Hit@10 | 7/20 (35.0%) | 9/20 (45.0%) | 1/2 (50.0%) | 3/4 (75.0%) | 1/2 (50.0%) | 1/2 (50.0%) | 17/20 (85.0%) | 17/20 (85.0%) |
+| Recall@1 | 1/10 (10.0%) | 11/80 (13.8%) | 43/240 (17.9%) | 79/240 (32.9%) | 27/80 (33.8%) | 27/80 (33.8%) | 59/120 (49.2%) | 59/120 (49.2%) |
+| Recall@5 | 3/16 (18.8%) | 27/80 (33.8%) | 61/240 (25.4%) | 143/240 (59.6%) | 49/120 (40.8%) | 101/240 (42.1%) | 161/240 (67.1%) | 11/16 (68.8%) |
+| Recall@10 | 1/4 (25.0%) | 7/20 (35.0%) | 101/240 (42.1%) | 31/48 (64.6%) | 107/240 (44.6%) | 107/240 (44.6%) | 61/80 (76.3%) | 61/80 (76.3%) |
+| MRR@10 | 2071/12600 (16.4%) | 199/720 (27.6%) | 31/96 (32.3%) | 143/240 (59.6%) | 103/240 (42.9%) | 13/30 (43.3%) | 53/70 (75.7%) | 53/70 (75.7%) |
+
+**Held-out final split — 15 eligible tasks, only 4 groups (task micro)**
+
+| Metric | P | P+A | E | Q | P+A+J | P+A+J(structure) | Q+J | Q+J(structure) |
+|---|---|---|---|---|---|---|---|---|
+| Hit@1 | 1/15 (6.7%) | 1/3 (33.3%) | 2/15 (13.3%) | 8/15 (53.3%) | 1/3 (33.3%) | 1/3 (33.3%) | 2/3 (66.7%) | 11/15 (73.3%) |
+| Hit@5 | 1/3 (33.3%) | 7/15 (46.7%) | 4/15 (26.7%) | 13/15 (86.7%) | 7/15 (46.7%) | 3/5 (60.0%) | 14/15 (93.3%) | 14/15 (93.3%) |
+| Hit@10 | 2/5 (40.0%) | 7/15 (46.7%) | 1/3 (33.3%) | 13/15 (86.7%) | 7/15 (46.7%) | 3/5 (60.0%) | 14/15 (93.3%) | 14/15 (93.3%) |
+| Recall@1 | 1/15 (6.7%) | 23/90 (25.6%) | 1/15 (6.7%) | 7/18 (38.9%) | 23/90 (25.6%) | 23/90 (25.6%) | 47/90 (52.2%) | 8/15 (53.3%) |
+| Recall@5 | 23/90 (25.6%) | 16/45 (35.6%) | 1/6 (16.7%) | 28/45 (62.2%) | 16/45 (35.6%) | 4/9 (44.4%) | 67/90 (74.4%) | 34/45 (75.6%) |
+| Recall@10 | 13/45 (28.9%) | 16/45 (35.6%) | 8/45 (17.8%) | 7/10 (70.0%) | 16/45 (35.6%) | 4/9 (44.4%) | 71/90 (78.9%) | 73/90 (81.1%) |
+| MRR@10 | 83/450 (18.4%) | 2/5 (40.0%) | 28/135 (20.7%) | 287/450 (63.8%) | 2/5 (40.0%) | 79/180 (43.9%) | 173/225 (76.9%) | 239/300 (79.7%) |
+
+> **Held-out caveat — 15 eligible tasks in only 4 groups.** A single task moves
+> any final-split cell by 1/15 (6.7 pp) micro and 1/4 (25 pp) macro, and several
+> per-arm denominators in that split are 2–15, so the final-split cells are not a
+> population estimate. The all-eligible population (85 tasks / 22 groups) is the
+> only one here where a group-equal macro reading is meaningful.
+
+### The seven priority contrasts (all-eligible)
+
+Each contrast is the **exact signed reduced rational difference** of the two
+arms' metric values through the ONE canonical exact-contrast statement
+(`Attune.Study.Qwen.contrast`, cross-multiplied in 64 bits and reduced by an exact
+gcd); the percentage beside it is presentation only. All 392 contrast rows are
+defined (0 undefined). The six priority contrasts are `P+A+J − P+A`,
+`P+A+J(structure) − P+A+J`, `Q − P+A`, `Q − E`, `Q+J − Q` and
+`Q+J(structure) − Q+J`; the seventh is the explicit
+`P+A+J(structure) − Q+J(structure)` comparison.
+
+**All eligible — task micro (85 tasks)**
+
+| Contrast | Hit@1 | Hit@5 | Hit@10 | Recall@1 | Recall@5 | Recall@10 | MRR@10 |
+|---|---|---|---|---|---|---|---|
+| P+A+J − P+A | +2/17 (11.8%) | +13/85 (15.3%) | +9/85 (10.6%) | +3838/42075 (9.1%) | +344359/2784600 (12.4%) | +859/11900 (7.2%) | +3139/23800 (13.2%) |
+| P+A+J(structure) − P+A+J | +3/85 (3.5%) | +1/17 (5.9%) | +3/85 (3.5%) | +31/2040 (1.5%) | +151/5100 (3.0%) | +26/1275 (2.0%) | +619/17850 (3.5%) |
+| Q − P+A | +19/85 (22.4%) | +39/85 (45.9%) | +38/85 (44.7%) | +47303/336600 (14.1%) | +10764763/30630600 (35.1%) | +869207/2356200 (36.9%) | +1621/5100 (31.8%) |
+| Q − E | +19/85 (22.4%) | +36/85 (42.4%) | +2/5 (40.0%) | +3841/23800 (16.1%) | +2885/8568 (33.7%) | +862927/2356200 (36.6%) | +1793/6120 (29.3%) |
+| Q+J − Q | +14/85 (16.5%) | +1/17 (5.9%) | +4/85 (4.7%) | +1093/10200 (10.7%) | +1797/23800 (7.6%) | +2423/30600 (7.9%) | +1901/15300 (12.4%) |
+| Q+J(structure) − Q+J | +3/85 (3.5%) | +1/85 (1.2%) | +1/85 (1.2%) | +3/170 (1.8%) | +237/11900 (2.0%) | +8/595 (1.3%) | +253/15300 (1.7%) |
+| P+A+J(structure) − Q+J(structure) | −23/85 (−27.1%) | −27/85 (−31.8%) | −31/85 (−36.5%) | −1621/10200 (−15.9%) | −138349/471240 (−29.4%) | −12074/32725 (−36.9%) | −993/3400 (−29.2%) |
+
+**All eligible — group-equal macro (22 groups)**
+
+| Contrast | Hit@1 | Hit@5 | Hit@10 | Recall@1 | Recall@5 | Recall@10 | MRR@10 |
+|---|---|---|---|---|---|---|---|
+| P+A+J − P+A | +31/264 (11.7%) | +5/33 (15.2%) | +7/66 (10.6%) | +4003/43560 (9.2%) | +360289/2882880 (12.5%) | +919/12320 (7.5%) | +21/160 (13.1%) |
+| P+A+J(structure) − P+A+J | +3/88 (3.4%) | +5/88 (5.7%) | +3/88 (3.4%) | +31/2112 (1.5%) | +151/5280 (2.9%) | +13/660 (2.0%) | +43/1260 (3.4%) |
+| Q − P+A | +59/264 (22.3%) | +5/11 (45.5%) | +59/132 (44.7%) | +12197/87120 (14.0%) | +5543999/15855840 (35.0%) | +452671/1219680 (37.1%) | +5023/15840 (31.7%) |
+| Q − E | +61/264 (23.1%) | +113/264 (42.8%) | +107/264 (40.5%) | +6079/36960 (16.4%) | +7505/22176 (33.8%) | +452171/1219680 (37.1%) | +2491/8316 (30.0%) |
+| Q+J − Q | +43/264 (16.3%) | +17/264 (6.4%) | +13/264 (4.9%) | +103/960 (10.7%) | +551/6720 (8.2%) | +2603/31680 (8.2%) | +3929/31680 (12.4%) |
+| Q+J(structure) − Q+J | +3/88 (3.4%) | +1/88 (1.1%) | +1/88 (1.1%) | +3/176 (1.7%) | +1427/73920 (1.9%) | +193/14784 (1.3%) | +23/1440 (1.6%) |
+| P+A+J(structure) − Q+J(structure) | −71/264 (−26.9%) | −85/264 (−32.2%) | −97/264 (−36.7%) | −833/5280 (−15.8%) | −145081/487872 (−29.7%) | −37817/101640 (−37.2%) | −64693/221760 (−29.2%) |
+
+All six priority contrasts are positive on every metric at both micro and
+group-equal macro form, and the explicit
+`P+A+J(structure) − Q+J(structure)` comparison is negative on every metric at both
+forms.
+
+> **Presentation note.** The `Q − P+A` and `Q − E` rows reproduce the published
+> generation-11 contrasts exactly, cell for cell (e.g. micro `Q − E` Hit@1
+> `+19/85` and macro `Q − E` Hit@1 `+61/264`). The generation-10 A/JEV text
+> rendered the same A-pair cell differences through a truncating
+> tenths-of-a-percentage-point helper (`+11.7`, `+3.6`, `+3.5`, …) rather than
+> through the exact reduced rational difference; the exact values are
+> `+2/17` (11.8%) for `P+A+J − P+A` micro Hit@1 and `+3/85` (3.5%) for
+> `P+A+J(structure) − P+A+J` micro Hit@1, and the A-pair bullets in
+> "Interpretation" now show the exact fraction beside the exact percentage. The
+> exact rational difference is the measurement here; the earlier decimals were
+> presentation of the same cells and **no A-pair cell changed**.
+
+### The explicit `P+A+J(structure)` versus `Q+J(structure)` comparison
+
+This is the only cross-pair comparison in the report and it is descriptive only.
+Both arms apply the *same* structural-evidence condition to their own pair's base
+ranking (`P+A` under A-structure, `Q` under Q-structure), so the difference
+measures how much better the hosted-Qwen base is than the lexical base **after
+both have received the identical structural evidence** — not the value of the
+structural evidence itself.
+
+On the all-eligible population `Q+J(structure)` is ahead on **every** metric at
+both micro and group-equal macro form, by between **15.8 pp** (macro Recall@1) and
+**36.9 pp** (micro Recall@10) — for example micro Hit@1 61.2% vs 34.1%,
+Hit@10 91.8% vs 55.3%, MRR@10 70.8% vs 41.6%. The held-out final split points the
+same way (micro Hit@1 73.3% vs 33.3%, MRR@10 79.7% vs 43.9%) but is 15 tasks in 4
+groups. The deterministic-compute and provider costs of the two arms are **not**
+the same and are not netted here: `Q+J(structure)` additionally carries the
+hosted-Qwen embedding acquisition (351 batched requests, USD 0.1409903) and the
+hosted-Qwen JEV call (USD 0.023915388), while `P+A+J(structure)` carries only the
+lexical JEV call (USD 0.021822318). No arm is declared a winner, no significance is
+claimed, no union or blend of the two bases is proposed or scored, and no gold
+path entered any ranking.
+
+### Evaluator-only paired diagnostics (computed after the decisions froze)
+
+These are descriptive and are **not** a learned rule: they were computed only
+after both conditions' decisions were frozen, no gold or evaluator label entered
+any prompt or decision, and no combination, union or selection is proposed.
+
+- **Rank-1 movement (85 eligible tasks):** `Q → Q+J` changed the top-ranked file on
+  **30** tasks and `Q+J → Q+J(structure)` on **7**; over all 88 ranked tasks the
+  same counts hold. The A pair moved **43** and **20** respectively over the same
+  85 eligible tasks (44 and 20 over all 88). *Label correction:* the
+  generation-10 sentence labelled the A-pair counts "of 88"; the diagnostic rows
+  are over the 85 **eligible** tasks, where the A-pair counts are 43 and 20. The
+  counts themselves are unchanged and no A-pair measurement moved.
+- **Gold in the top 10 (85 eligible tasks):** `P` 30, `P+A` 35, `E` 39, `Q` 73,
+  `P+A+J` 44, `P+A+J(structure)` 47, `Q+J` 77, `Q+J(structure)` 78. The hosted-Q
+  base already carries 73 of 85 tasks' gold in the top 10 before any JEV decision,
+  so the JEV headroom on this base — the eligible tasks whose gold lies inside the
+  judged top-32 but outside the top 10, the only ones a promotion can still lift —
+  is **7** tasks, against **12** on the `P+A` base. The control condition realises
+  5 of those 7 at Hit@10 (regressing 1, net +4 to 77/85), against 9 of 12 on the
+  `P+A` base (0 regressed, net +9 to 44/85).
+- **Improved / regressed / unchanged tasks versus the base arm:**
+
+| Comparison | Cutoff | Improved | Regressed | Unchanged |
+|---|---|---|---|---|
+| Q → Q+J | Hit@1 | 14 | 0 | 71 |
+| Q → Q+J | Hit@5 | 6 | 1 | 78 |
+| Q → Q+J | Hit@10 | 5 | 1 | 79 |
+| Q+J → Q+J(structure) | Hit@1 | 3 | 0 | 82 |
+| Q+J → Q+J(structure) | Hit@5 | 1 | 0 | 84 |
+| Q+J → Q+J(structure) | Hit@10 | 1 | 0 | 84 |
+
+- **Promotion decomposition (judged top-32 only, 85 eligible tasks):**
+
+| Pair | Condition | Promoted | Gold promoted | Non-gold promoted | Gold into top-10 | Gold not in top-10 | Non-gold into top-10 |
+|---|---|---|---|---|---|---|---|
+| Q | Q-control | 438 | 115 | 323 | 112 | 3 | 295 |
+| Q | Q-structure | 336 | 113 | 223 | 109 | 4 | 211 |
+| A | A-control | 185 | 51 | 134 | 51 | 0 | 133 |
+| A | A-structure | 144 | 55 | 89 | 55 | 0 | 89 |
+
+- **Structural distractor promotion.** On the `Q` base the structural condition
+  removes **84** non-gold promotions from the top 10 (295 → 211) while keeping the
+  gold promotions essentially intact (112 → 109), i.e. it is a *precision* filter
+  that discards harmful distractor promotion at almost no recall cost. The same
+  direction is present on the `P+A` base but far weaker (133 → 89 non-gold, with
+  gold rising 51 → 55). The gold share of promotions rises from 26.3% to 33.6% on
+  the `Q` base and from 27.6% to 38.2% on the `P+A` base.
+- **Witness-family flags (same 2,756 candidates per condition).** On the `Q`
+  population (2,660 judged candidates over the 85 eligible tasks) 322 carry no
+  structural evidence, 844 carry Repository relations only, 1,494 carry both
+  relations and Theory witnesses, and 0 carry witnesses only. On the `P+A`
+  population the same tally is 439 / 675 / 1,546 / 0 — the two populations select
+  different candidates and therefore see different structural evidence.
+- **Paired outcome transitions (Q-control → Q-structure, 2,756 candidates):**
+  `NotRelevant→NotRelevant` 2,217; `Relevant→Relevant` 315;
+  `Relevant→NotRelevant` 99; `NotRelevant→Relevant` 19;
+  `NotRelevant→Unknown` 9; `Unknown→Relevant` 5; `Unknown→Unknown` 47;
+  `Unknown→NotRelevant` 15; `Relevant→Unknown` 30 (sums to 2,756). The structural
+  prompt flips 99 candidates away from `Relevant` and only 19 toward it — the same
+  conservatism seen on the A pair, but proportionally much weaker here because the
+  hosted-Qwen base already reaches 85.9% Hit@10 before any JEV decision.
+
+### Q-JEV provenance and replay
+
+- **Produced artifacts.** One metric tree
+  `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/` with
+  `qwen_jev_metrics.tsv` (448 rows: 4 scopes × 2 kinds × 8 arms × 7 metrics),
+  `qwen_jev_contrasts.tsv` (392 rows: 4 scopes × 2 kinds × 7 contrast pairs ×
+  7 metrics), `qwen_jev_diagnostics.tsv` (1,953 rows), `qwen_jev_rerank.tsv`
+  (117,972 rows = 2 × 29,493 per pair, two pairs) and `closure.tsv` (358 rows).
+  The admitted sanitized typed-decision manifests are
+  `test/localization_qwen_jev/decisions_Q.tsv` and `decisions_QS.tsv` (2,756 rows
+  each); the frozen population record is `population.tsv` (88 population + 8
+  excluded).
+- **Provider/model-free replay.** Building the stage executes **0 JEV calls,
+  0 embedding inferences, 0 hosted-Qwen requests, 0 provider calls, 0
+  Repository/Theory actions**: the declared input closure is exactly 88
+  deterministic rank trees, 88 E rank trees, 88 Q rank trees, 88 admitted label
+  artifacts, the 4 admitted decision manifests and `mapped.tsv` (357 inputs, one
+  stage node, no producer). A full `--remote_download_outputs=all` rerun of the
+  metric tree reported **869 processes: 524 action-cache hits, 868 remote-cache
+  hits, 1 internal, 0 executed actions**.
+- **Eight-arm reproduction, cell for cell.** Every metric cell of every metric
+  table published in this report — the earlier generations' `P` / `P+A` / `E` / `Q`
+  and `P+A+J` / `P+A+J(structure)` tables and the new eight-arm tables — was
+  compared against the built artifact: **763 cells across 23 tables, 0
+  mismatches**, including all **336** comparable `P` / `P+A` / `E` / `Q` /
+  `P+A+J` / `P+A+J(structure)` cells (4 arms and 2 arms over 4 scopes × 2 kinds ×
+  7 metrics). Nothing was recomputed and no earlier number moved; the eight arms
+  come out of the same frozen ranking trees through the same canonical reducer.
+- **Laws.** The corpus-free law `//test/localization_qwen_jev:qwen_jev_law` (5
+  native `@Test` declarations) drives the exact production promotion statement in
+  `Attune.Study.Jev` with hand-built rankings and typed decisions: only `Relevant`
+  promotes; the promotion is keyed on the ORIGINAL base rank of the ranking it is
+  given (so the same decisions rerank the `Q` tree, not the `P+A` tree); a `Failed`
+  decision is neither a negative nor a promotion; an unjudged row is `Unknown` and
+  the complete population survives with contiguous positions; and the two Q
+  conditions are independent over the same base. It is part of the ordinary
+  offline gate and passed. The corpus-bound stage
+  `//test/localization_qwen_jev:qwen_jev_metrics` (`manual`) fails closed on the
+  produced bytes: 88 tasks, 85 eligible, the 50/20/15 splits, 22 groups, 2,756
+  decisions per condition, 0 failures, the judged population equal to the top-32
+  of the frozen `Q` tree, and population identity between every base and its
+  promoted rankings.
+- **Evidence commands (one Bazel owner at a time), all from `attune/` through
+  `nix develop --no-write-lock-file` with
+  `--output_base=/home/becker/.cache/attune-v2-bootstrap-bazel`:**
+
+```
+# the Q pair + the eight-arm canonical metric tree (RBE; 0 JEV, 0 embedding,
+# 0 hosted-Qwen request, 0 Repository/Theory)
+bazel build //test/localization_qwen_jev:qwen_jev_metrics --config=remote --jobs=80 --remote_download_outputs=all
+# the corpus-free Q-JEV rerank laws (RBE)
+bazel test  //test/localization_qwen_jev:qwen_jev_law --config=remote --jobs=80 --test_output=summary
+# the ordinary gate, unchanged (RBE; 33/33 pass)
+bazel test  //... --config=remote --jobs=80 --test_output=errors
+```
+
+- **Source digests (sha256).**
+
+| File | State | sha256 |
+|---|---|---|
+| `attune/test/localization_qwen_jev/QwenJevStages.flix` | new (Q-pair stage + eight-arm report) | `bc69a22edd81195e4e33dc1b17f0ff86ce369482da14ff5815bbee563ffb034b` |
+| `attune/test/localization_qwen_jev/QwenJevLaw.flix` | new (corpus-free rerank laws) | `d90e99e9a0bae82273f1f44b90bc4b1fc5439b2ebde5ff42bb0636de37ab462d` |
+| `attune/test/localization_qwen_jev/BUILD.bazel` | new (package targets) | `c49e92d106e14af1f2fa64298d48a7e60e831a65b68f436a074709066abef7d9` |
+| `attune/test/localization_qwen_jev/prompt_q.template.txt` | new (Q-control prompt, frozen) | `fd793441ba2a840b6c3f9d079e0dad0391dcd089497c715feb1fe6fdb8bcbe50` |
+| `attune/test/localization_qwen_jev/prompt_q_structure.template.txt` | new (Q-structure prompt, frozen) | `6153ad552f8118cf7ce5f33f8c566b751f6676ff0d73c34d1f4897dfa69eeea9` |
+| `attune/test/localization_qwen_jev/decisions_Q.tsv` | new (Q-control manifest) | `e5ab94cfbd30689b61e71337becc5983d2ba4e7f5779d2f64976b16946e3b684` |
+| `attune/test/localization_qwen_jev/decisions_QS.tsv` | new (Q-structure manifest) | `f9b6954f60d32df53ee6a89bc779a3ef4764311d47c45f7b0880b0fa242bc297` |
+| `attune/test/localization_qwen_jev/population.tsv` | new (frozen Q32 population) | `e42e3bc8eb3e1d7fcd819427780a397cfad81352f13681f298850e3fda0f2a40` |
+| `attune/BUILD.bazel` | modified (`//test/localization_qwen_jev:policy_files` registered) | `de2d581b8e6bcfa427044a5b9444c89c06210a39f841b2deec7eb0d2b59e27a1` |
+
+The paired acquisition was driven by the mission-local Java mechanical receipt
+writer `runtime/JevReceiptWriter.java` (sha256
+`069b1f5221257d2b8a920a174a189cfc38da8061e069411f418a2d215a4dbca8`), which is a
+non-cacheable mission artifact and never a Bazel, Nix or CAS input. Its
+`--base A|Q` extension selects the base ranking, the base-aware population and the
+condition names, and reads the Q rank/similarity pair; it adds no second writer,
+no second provider route and no second model. `attune/src/Attune/Study/Jev.flix`
+and `attune/src/Attune/Study/Metrics.flix` are **unmodified** — the promotion
+statement and the canonical reducer are reused exactly as frozen.
+
+- **Artifact digests (built, sha256).**
+
+| Artifact | sha256 |
+|---|---|
+| `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/qwen_jev_metrics.tsv` (448 rows) | `2783fc5f125a6b0694911093936ae61ca3947243b222bcb85684584deceb7de6` |
+| `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/qwen_jev_contrasts.tsv` (392 rows, 0 undefined) | `aed6ef5375d10129d8d41f72d61032024869184bd2292daf3f72100fe7c8b633` |
+| `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/qwen_jev_diagnostics.tsv` (1,953 rows) | `28fb499cd70c7daaa247182d60266eb23824834f9d84092163b71babbc8c96d1` |
+| `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/qwen_jev_rerank.tsv` (117,972 rows) | `07799173251009e49fae3ada6721655671ef4587b0f40e6267851a962d86d2f9` |
+| `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/closure.tsv` (358 rows) | `a9ae2e7c58678d064f9c2666d4973aa8f2af40275bd7ed0e833443ac11393e3e` |
+
 ## Latency regimes
 
 | Regime | Covers | Measured |
@@ -1525,6 +1953,7 @@ bazel test  //test/localization_jev:jev_law --config=remote --jobs=80 --test_out
 | C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, complete-run cost, rerank-only time | **Complete lexical pair: 88 of 88 tasks, both conditions.** A-control: 88 requests, 2,756 decisions, 0 failures, 0 retries, 31,572 ms end-to-end (≈87 decisions/s wall), per-call latency 269/328/463/765 ms (min/median/p95/max), 320,708 input + 123,118 output tokens, USD 0.013469736. A-structure: 88 requests, 2,756 decisions, 0 failures, 0 retries, 38,557 ms end-to-end (≈71 decisions/s wall), per-call latency 282/348/501/1,753 ms, 519,579 input + 123,174 output tokens, USD 0.021822318. Combined wall 70,189 ms. The structural prompt costs ≈62% more input tokens and ≈62% more dollars for the same 2,756 decisions, and one call ran 1,753 ms. 0 `Repository`/`Theory` re-executions; replay of the stage is provider-free |
 | D — warm embedding ranking | E ranking and canonical metric latency over the immutable declared fixtures | 88 rank stages + 1 metric stage = 89 `AttuneStudyStage` actions, all served from the remote cache after the first materialization (the fixture acquisition had already paid for the 904 shard actions); **0** embedding inferences, **0** provider calls, **0** `Repository`/`Theory` re-executions at replay; a full `--remote_download_outputs=all` rerun of the metric tree reported 1,280 remote cache hits and 0 executed actions |
 | E — hosted-Qwen acquisition and warm ranking | The host-side batched acquisition of the immutable hosted fixtures, then the Q ranking and canonical metric latency over them | Cold acquisition: **351 batched requests** over 10,555 unique embedded inputs (27,733 logical rows; at most 32 inputs / 240,000 bytes per request, never one request per row), **0 failed**, 351/351 resolved-model echoes, 10,644,719 prompt tokens, **USD 0.1409903**, summed provider latency 1,581,398 ms (per-request 834/2,427/14,803/77,513 ms min/median/p95/max). Memoized replay: **0 requests**, cost `Unavailable` (no fabricated zero). Warm ranking: 88 rank stages + 1 metric stage, all served from the remote cache; **0** embedding-provider calls, **0** JEV calls, **0** `Repository`/`Theory` re-executions at replay |
+| F — warm Q-JEV over the hosted-Q base | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, complete-run cost, rerank-only time | **Complete hosted-Q pair: 88 of 88 tasks, both conditions.** Q-control: 88 requests, 2,756 decisions, 0 failures, 0 retries, 32,695 ms end-to-end (≈84 decisions/s wall), per-call latency 245/343/468/724 ms (min/median/p95/max), 360,394 input + 122,847 output tokens, USD 0.015136548. Q-structure: 88 requests, 2,756 decisions, 0 failures, 0 retries, 37,735 ms end-to-end (≈73 decisions/s wall), per-call latency 290/371/582/1,992 ms, 569,414 input + 122,895 output tokens, USD 0.023915388. Combined wall 70,491 ms. The structural prompt costs ≈58% more input tokens and ≈58% more dollars for the same 2,756 decisions, and one call ran 1,992 ms. 0 `Repository`/`Theory` re-executions; replay of the eight-arm stage is provider-free (**0** JEV calls, **0** embedding inferences, **0** hosted-Qwen requests, **0** executed actions) |
 
 Deterministic compute is **not zero**: cold RBE/indexing cost, warm compute
 and any JEV spend are separate and are never collapsed into one misleading
@@ -1561,8 +1990,9 @@ speculative sub-cent pricing and no invented dollar values.
   the top 10.
 - **JEV gain beyond the base arm (measured, exploratory).** The lexical JEV pair
   is the largest effect in this report. Reranking the frozen `P+A` ranking under
-  the A-control decisions lifts every metric over `P+A` (micro: +11.7 Hit@1,
-  +10.6 Hit@10, +13.2 MRR@10; macro: +11.7 Hit@1, +10.6 Hit@10, +13.1 MRR@10)
+  the A-control decisions lifts every metric over `P+A` (micro: +2/17 = 11.8%
+  Hit@1, +9/85 = 10.6% Hit@10, +3139/23800 = 13.2% MRR@10; macro: +31/264 = 11.7%
+  Hit@1, +7/66 = 10.6% Hit@10, +21/160 = 13.1% MRR@10)
   and moves 43 of 88 top-ranked files, with 9–14 tasks improved and 0–1 regressed
   per cutoff. It is a promotion-only effect on the identical candidate population,
   driven by 185 promotions of which 51 are gold. This is a large, cheap gain for
@@ -1571,21 +2001,23 @@ speculative sub-cent pricing and no invented dollar values.
   threshold was tuned.
 - **Structural evidence over the lexical pair (measured, exploratory).** Adding
   the already-public Repository relations and Theory witnesses to the same prompt
-  improves every metric again on top of A-control (+3.6 Hit@1, +3.5 Hit@10, +3.5
-  MRR@10 micro; +3.4 Hit@1, +3.5 Hit@10, +3.4 MRR@10 macro) with 0 regressed
+  improves every metric again on top of A-control (+3/85 = 3.5% Hit@1, +3/85 =
+  3.5% Hit@10, +619/17850 = 3.5% MRR@10 micro; +3/88 = 3.4% Hit@1, +3/88 = 3.4%
+  Hit@10, +43/1260 = 3.4% MRR@10 macro) with 0 regressed
   tasks, but at ≈62% more input tokens and dollars. The mechanism is not more
   promotion but *better-targeted* promotion: A-structure promotes fewer candidates
   (144 vs 185) with a higher gold share (55 gold vs 89 non-gold), i.e. it flips 45
   candidates away from `Relevant` and only 13 toward it. So the structural
   evidence acts as a precision filter on the relevance decision rather than as an
   additional recall source.
-- **Measured A-pair regime: Regime 1 (inference works and structure works).** On
+- **Measured A-pair regime: A1 (inference works and structure works).** On
   the frozen `P+A` base the lexical JEV inference improves every metric and adding
   the already-public structural evidence improves it again, so this pair lands in
-  Regime 1 of the four pre-declared regimes. That is the measured outcome, not a
-  required one: the same design would have reported Regime 2 (inference works,
-  structure does not), Regime 3 (structure helps only the weak baseline) or
-  Regime 4 (neither) had the cells read that way, and no goalpost moved.
+  regime **A1** of the four pre-declared A-pair regimes (A1 = inference works and
+  structure works; A2 = inference works, structure does not; A3 = structure helps
+  only the weak baseline; A4 = neither). That is the measured outcome, not a
+  required one: the same design would have reported A2, A3 or A4 had the cells
+  read that way, and no goalpost moved.
 - **Embedding (E) versus the deterministic arms:** descriptive only. Over the
   full eligible population E is at roughly P+A parity and ahead of P, leading on
   Hit@5 (35.3% vs 31.8% micro), Hit@10 (45.9% vs 41.2%) and MRR@10 (27.5% vs
@@ -1609,15 +2041,78 @@ speculative sub-cent pricing and no invented dollar values.
   model search, no tuned threshold, no blend, and no gold-based selection at any
   point; the overlap counts were computed after the freeze and no A/E/Q
   combination is proposed or scored.
+- **Q-JEV gain beyond the hosted-Q base (measured, exploratory).** Reranking the
+  frozen `Q` ranking under the Q-control decisions lifts every metric over `Q`
+  (micro: +14/85 Hit@1, +4/85 Hit@10, +1901/15300 MRR@10; macro: +43/264 Hit@1,
+  +13/264 Hit@10, +3929/31680 MRR@10) and moves 30 of the 85 eligible tasks'
+  top-ranked file, with 5–14 tasks improved and 0–1 regressed per cutoff. It is a
+  promotion-only effect on the identical candidate population, driven by 438
+  promotions of which 115 are gold. The effect is **smaller in percentage terms
+  than on the lexical base** on the two headline cutoffs and on MRR@10 (Hit@5
+  +5.9 pp against +15.3 pp, Hit@10 +4.7 pp against +10.6 pp, MRR@10 +12.4 pp
+  against +13.2 pp) and larger only on Hit@1 (+16.5 pp against +11.8 pp), because
+  the hosted-Qwen base already reaches 85.9% Hit@10 and carries 73 of 85 tasks'
+  gold in the top 10 before any JEV decision, leaving only **7** eligible tasks
+  whose gold sits inside the judged top-32 but outside the top 10 — the only ones
+  a promotion can lift. Post-hoc and exploratory: no significance is claimed, the
+  held-out split is 15 tasks in 4 groups, and no threshold was tuned.
+- **Structural evidence over the hosted-Q pair (measured, exploratory).** Adding
+  the same already-public Repository relations and Theory witnesses to the same
+  prompt improves every metric again on top of Q-control (+3/85 Hit@1, +1/85
+  Hit@10, +253/15300 MRR@10 micro; +3/88 Hit@1, +1/88 Hit@10, +23/1440 MRR@10
+  macro) with 0 regressed tasks, at ≈58% more input tokens and dollars. The
+  mechanism is the same *precision filter* seen on the A pair but stronger in
+  absolute terms: the structural condition removes **84** non-gold top-10
+  promotions (295 → 211) while keeping the gold promotions essentially intact
+  (112 → 109), lifting the gold share of promotions from 26.3% to 33.6%. It flips
+  99 candidates away from `Relevant` and only 19 toward it.
+- **Measured Q-JEV regime: A1 as well (inference works and structure works).** On
+  the frozen hosted-Qwen base the JEV inference improves every metric and adding
+  the already-public structural evidence improves it again, so this pair also
+  lands in regime **A1** of the same four pre-declared regimes. As with the A pair
+  that is the measured outcome, not a required one: A2, A3 or A4 would have been
+  reported had the cells read that way, and no goalpost moved. The two pairs
+  nevertheless differ in *shape*: on the strong hosted-Q base the JEV inference is
+  a smaller percentage gain with more headroom already consumed, while the
+  structural filter is comparatively the more valuable half.
+- **The eight primary arms, read once (descriptive only).** Over the all-eligible
+  population the task-micro ordering is `Q+J(structure)` > `Q+J` > `Q` >
+  `P+A+J(structure)` > `P+A+J` > `E` ≈ `P+A` > `P` on Hit@1, Hit@5, Hit@10 and
+  MRR@10 (P+A and E cross over: they tie on Hit@1 at 16/85 each, `E` leads
+  Hit@5, Hit@10, Recall@5, Recall@10 and MRR@10, and `P+A` leads Recall@1).
+  Group-equal macro reads the same way. The two JEV pairs each add a
+  positive increment to their own base, and the hosted-Qwen pair sits above the
+  lexical pair at every stage of the comparison (base, +J, +J(structure)). These
+  arms are **not** alternatives that were blended, unioned or selected between:
+  they are one frozen pipeline's eight named readings, and the only cross-pair
+  comparison reported is the explicit
+  `P+A+J(structure)` − `Q+J(structure)` row above.
+- **`P+A+J(structure)` versus `Q+J(structure)` (the explicit comparison).** With
+  the *identical* structural condition applied to each pair's own base, the
+  hosted-Qwen arm is ahead on every metric at both forms by a margin of
+  15.8–36.9 pp (micro Hit@1 61.2% vs 34.1%, Hit@10 91.8% vs 55.3%, MRR@10 70.8%
+  vs 41.6%; equivalently the `P+A+J(structure)` − `Q+J(structure)` row is
+  negative on every metric, −15.8 pp to −36.9 pp). The
+  deterministic and provider costs are not equal and are not netted:
+  `Q+J(structure)` also carries the hosted-Qwen embedding acquisition (USD
+  0.1409903) and its own JEV call (USD 0.023915388), while
+  `P+A+J(structure)` carries only the lexical JEV call (USD 0.021822318). No arm
+  is declared a winner, no significance is claimed, and no union, blend or
+  selection between the bases is proposed or scored.
 - **Repairs vs regressions:** anchors repair more than they regress; the
   Repository and Theory families regress more than they repair on these metrics.
 - **Latency/cost tradeoffs:** the cold structural cost is dominated by the
   pinned native parse of a few large files; the warm deterministic path is
   cheap and fully reused (zero Repository/Theory re-execution); the JEV provider
-  step is also cheap where it was measured (276–426 ms and ≈USD 0.000127 per
-  32-decision task, ≈USD 0.000004 per decision), so the exploratory arm's
-  remaining cost is dominated by the volume of mandatory per-candidate
-  decisions, not by provider price.
+  step is also cheap where it was measured — on the complete pairs, 245–724 ms
+  (Q-control), 290–1,992 ms (Q-structure), 269–765 ms (A-control) and
+  282–1,753 ms (A-structure) per 32-decision task, at ≈USD 0.000172 /
+  ≈USD 0.000272 / ≈USD 0.000153 / ≈USD 0.000248 per task and ≈USD 0.0000055 /
+  ≈USD 0.0000087 / ≈USD 0.0000049 / ≈USD 0.0000079 per decision — so the
+  exploratory arms' remaining cost is dominated by the volume of mandatory
+  per-candidate decisions, not by provider price. The hosted-Qwen embedding
+  acquisition (USD 0.1409903) dominates the total exploratory provider spend, and
+  every one of these figures is reported only where it was objectively returned.
 - **Pathology:** the dominant cost is a measured product limitation of the
   pinned native parse relative to a cold-index implementation, not a defect
   introduced here and not a defect in the locale repair. It is pre-existing and
@@ -1912,6 +2407,30 @@ original panel is not done here and is not estimated.
 `2442b5eb-…`; log preserved as `library/evidence/runtime-capped-build-1.log`.
 Zero upstream re-execution across all of them (see "Warm reuse" above).
 
+### Q-JEV invocations (generation 12)
+
+Each ID below is a BuildBuddy invocation this report's own commands produced; the
+process lines are copied from that invocation's console output.
+
+- `bdcf58ff-bc87-412b-ab67-f0fa19a89403` — the eight-arm metric tree under
+  `--remote_download_outputs=all`:
+  `869 processes: 524 action cache hit, 868 remote cache hit, 1 internal`, i.e.
+  **0 executed actions**, and the downloaded artifacts are the ones whose digests
+  are tabulated above.
+- `d19c5208-51c8-4d4b-be06-c6379eafcb91` — the corpus-free Q-JEV law:
+  `2 processes: 2 action cache hit, 1 remote cache hit, 1 internal`, test
+  `PASSED` (cached).
+- `62a5cb79-d952-4ae3-b24c-a3cf7103e557` — the ordinary offline gate
+  `bazel test //...` on this committed source tree: **33 tests pass**,
+  `Executed 2 out of 33` (the two unconditionally re-executed live checks,
+  `//test/docs:readme_correspondence_test` and
+  `//test/policy:workspace_audit_test`); the five `//test/policy` targets among
+  them are the 5/5 policy suite. This report file is not a build, Nix or CAS
+  input, so the gate's inputs are exactly the committed source tree.
+
+No upstream producer action was re-executed in any of them, and no provider call
+was made.
+
 ## What this means so far
 
 - **Measured facts:** the UTF-8 defect was a locale boundary, not data
@@ -1926,7 +2445,15 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   development/calibration/final slices reduce through the same canonical path
   (168 of 168 split cells independently reproduced); the canonical metric
   reducer reproduces generation 6's reduction exactly (56 of 56 published cells)
-  and no Repository or Theory work was re-executed to produce any of it.
+  and no Repository or Theory work was re-executed to produce any of it. On top of
+  the frozen arms, the two post-hoc exploratory pairs are now complete and
+  measured: the lexical A pair (88 of 88 tasks, both conditions, 0 failures,
+  0 retries) and the hosted-Qwen Q pair (88 of 88 tasks, both conditions,
+  0 failures, 0 retries), each with its two frozen prompts, its physical input
+  separation, its exact-payload memo key and its provider-free replay; the final
+  eight-arm table (`P`/`P+A`/`E`/`Q`/`P+A+J`/`P+A+J(structure)`/`Q+J`/
+  `Q+J(structure)`) reduces all eight through the one canonical reducer, and all
+  336 of 336 comparable published cells are reproduced cell for cell.
 - **Measured gap, stated honestly:** this corpus contains no abstention, no
   unsupported or empty-gold task inside the eligible population and no undefined
   ratio, so the report claims **no corpus evidence** for those behaviours; the
@@ -1947,12 +2474,18 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   the embedding arm is better (or worse) than the deterministic arms in the
   population — the E result is one descriptive measurement of one fixed model
   under one fixed recipe, with no significance test, no tuned threshold and a
-  held-out split of 15 tasks in 4 groups; any combined A+E or E+J ranking, metric
-  or selection; any JEV
-  result, model identity, token count, cost **or availability status**; any claim
-  that the pinned parser limitation is solved; any reading of the runtime cutoff
-  as a quality statement; and any claim that the stopped local invocation
-  re-executed zero actions.
+  held-out split of 15 tasks in 4 groups; any claim that the hosted-Qwen `Q`
+  result or either JEV pair is better (or worse) than another arm as a population
+  fact — each is one descriptive measurement, with no significance test, no tuned
+  threshold and a held-out split of 15 tasks in 4 groups; any combined, unioned,
+  blended or selected arm, including any A+E, E+J, A+Q or cross-pair combination
+  (the one cross-pair row is the explicit descriptive
+  `P+A+J(structure) − Q+J(structure)` difference, not a blend); any E+J number
+  (that pair remains deferred); any claim that the pinned parser limitation is
+  solved; any reading of the runtime cutoff as a quality statement; and any claim
+  that the stopped local invocation re-executed zero actions. The JEV pairs' own
+  measured results — model identity, token counts, costs, latencies and outcomes —
+  are now published above for both the lexical and the hosted-Qwen bases.
 
 ## Update history
 
@@ -2188,3 +2721,80 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   / E cells match, with 0 mismatches and 0 absent. No CodeRank reacquisition and
   no E re-measurement occurred; no Q-JEV number is claimed. Original denominators
   unchanged at 96 / 93 and the original full result still 0/96 and not estimated.
+- **2026-10-07T15:40:00Z — generation 12, FINAL for the post-hoc exploratory
+  hosted-Qwen JEV pair (Q-control / Q-structure) and the final eight-arm report.**
+  Completes the JEV extension on the strong hosted-Qwen base, on a strictly
+  downstream consumer of the frozen `Q`, `P`, `P+A` and `E` ranking trees. Adds:
+  the frozen common **Q32** population (88 surviving tasks / 85 eligible /
+  22 groups; top-32 of each task's frozen `rank_Q.tsv`, all candidates if fewer,
+  4 tasks short of 32; **2,756 decisions per condition**, 5,512 across the pair;
+  8 tasks without a frozen `Q` tree excluded and recorded), together with the
+  measured fact that Q32 and A32 share only **762** of their 2,756 candidates and
+  differ on **84 of 88** tasks; the two byte-exact paired prompts frozen before
+  any outcome (Q-control `fd793441…` 2,489 bytes; Q-structure `6153ad55…`
+  3,093 bytes) with physical input separation (Q-control: issue/path/`Q` rank/exact
+  `Q` similarity only; Q-structure: the same base plus the already-public
+  Repository relations and Theory witnesses, no new analysis); the measured
+  operations (88 requests per condition, all `Ok`, 0 retries, resolved model
+  `typesafe/jev-1.13-20260917`, provider `TypeSafe`; Q 360,394 in / 122,847 out
+  tokens, USD 0.015136548, 32,695 ms; QS 569,414 in / 122,895 out tokens,
+  USD 0.023915388, 37,735 ms; per-call latency Q 245/343/468/724 ms, QS
+  290/371/582/1,992 ms; combined wall 70,491 ms); the measured outcomes (Q 444 /
+  2,245 / 67 / 0 and QS 339 / 2,331 / 86 / 0 for
+  `Relevant`/`NotRelevant`/`Unknown`/`Failed`); the empirically verified no-reuse
+  claim (the 88 Q-control, 88 Q-structure, 88 A-control and 88 A-structure payload
+  hashes are pairwise disjoint, 0 shared in each of the six cross-pairs); the
+  **final eight primary arms** `P` / `P+A` / `E` / `Q` / `P+A+J` /
+  `P+A+J(structure)` / `Q+J` / `Q+J(structure)` over the all-eligible population
+  and the development (50 / 13), calibration (20 / 5) and held-out final (15 / 4)
+  splits in task-micro and group-equal macro form, all through the **unchanged**
+  one canonical `Attune.Study.Metrics`; the **seven** priority contrasts through
+  the ONE canonical exact-contrast statement (`Attune.Study.Qwen.contrast`, an
+  exact signed reduced rational difference, 392 rows, 0 undefined) —
+  `P+A+J − P+A` and `P+A+J(structure) − P+A+J` positive on every metric, `Q − P+A`
+  and `Q − E` reproducing the published generation-11 rows cell for cell,
+  `Q+J − Q` positive on every metric, `Q+J(structure) − Q+J` positive on every
+  metric, and the explicit `P+A+J(structure) − Q+J(structure)` negative on every
+  metric at both forms (micro −27.1 Hit@1, −36.5 Hit@10, −29.2 MRR@10); the
+  evaluator-only paired diagnostics (rank-1 changes 30 and 7 of the 85 eligible
+  tasks; improved/regressed/unchanged per cutoff; promotion decomposition Q
+  438/115 vs QS 336/113 with the structural condition removing **84** non-gold
+  top-10 promotions while keeping gold at 112 → 109; witness-family flags
+  322 / 844 / 1,494 / 0 against the A pair's 439 / 675 / 1,546 / 0; the full
+  outcome-transition matrix), computed only after both conditions' decisions froze
+  and used as no learned rule; and the provider-free replay (**0** JEV calls,
+  **0** embedding inferences, **0** hosted-Qwen requests, **0** provider calls,
+  **0** `Repository`/`Theory` actions; a full
+  `--remote_download_outputs=all` rerun of the metric tree reported 869 processes
+  with 0 executed actions) with the exact reproduction of all **336 of 336**
+  comparable published cells (224 `P`/`P+A`/`E`/`Q` and 112
+  `P+A+J`/`P+A+J(structure)`) as a cache check. Adds the new
+  `test/localization_qwen_jev` package (stage, corpus-free laws, BUILD), the
+  `//test/localization_qwen_jev:policy_files` registration in the root
+  `BUILD.bazel`, and the `--base A|Q` extension of the mission-local mechanical
+  receipt writer; `Attune/Study/Jev.flix` and `Attune/Study/Metrics.flix` are
+  unmodified. The ordinary offline gate `bazel test //...` is green at **33/33**
+  on RBE on the committed source tree (invocation
+  `62a5cb79-d952-4ae3-b24c-a3cf7103e557`; the corpus-free
+  `//test/localization_qwen_jev:qwen_jev_law` is
+  one of them, so the tree carried 32 before this feature; the 31/31 recorded in
+  generation 11 is superseded by this measurement) and the policy suite at
+  **5/5**. Frozen deterministic rankings, `select_policy`, `derived_population`,
+  the runtime-capped `metrics.tsv`, `tasks.tsv`, `contributions.tsv`, the E
+  ranking tree, the Q ranking tree and the A-pair JEV decisions are untouched and
+  no earlier number moved; the E+J pair remains deferred and no E+J number is
+  claimed. Presentation corrections are recorded without moving any cell: the
+  generation-10 A/JEV contrasts were rendered through a truncating
+  tenths-of-a-percentage-point helper rather than the exact reduced rational
+  difference (exact values `+2/17` = 11.8% and `+3/85` = 3.5%), and the A-pair
+  bullets in "Interpretation" now show the exact fraction beside the exact
+  percentage; the generation-10 rank-1 sentence labelled the A-pair counts "of
+  88" when the diagnostic rows are over the 85 eligible tasks (the counts 43 and
+  20 are unchanged); and one figure in this section's own first draft was
+  corrected before publication — the JEV headroom on the `Q` base is **7**
+  eligible tasks (gold inside the judged top-32 but outside the top 10), not 5,
+  with **12** on the `P+A` base, both recomputed from the frozen trees and the
+  admitted labels. No metric, contrast or diagnostic cell changed in any of these
+  corrections. Original
+  denominators unchanged at 96 / 93 and the original full result still 0/96 and
+  not estimated.
