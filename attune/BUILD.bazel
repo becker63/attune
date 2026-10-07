@@ -60,6 +60,7 @@ filegroup(
         "//test/localization_qwen:policy_files",
         "//test/localization_qwen_jev:policy_files",
         "//test/localization_runtime:policy_files",
+        "//test/localization_strict:policy_files",
         "//test/policy:policy_files",
         "//test/receipt:policy_files",
         "//test/seam:policy_files",

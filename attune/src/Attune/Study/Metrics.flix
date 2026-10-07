@@ -16,6 +16,19 @@
 /// task-micro and group-equal macro summaries are computed without rounding
 /// drift and are rendered once, at the edge.
 ///
+/// The strict file-accuracy extension (`VAL-STRICT-001`) adds FileAcc@k to the
+/// same reducer, never a second engine: a per-task all-gold indicator that is
+/// one exactly when EVERY eligible gold path of the task appears inside the
+/// first k positions and zero otherwise. It is deliberately distinct from the
+/// Hit family (which asks only whether any gold path is inside k) and from file
+/// Recall@k (which reports the retrieved fraction rather than requiring all of
+/// it). A task whose eligible gold count exceeds k can never satisfy the
+/// subset condition, so it is a measured false rather than an undefined value;
+/// an empty or ineligible task stays undefined exactly as the other metrics
+/// leave it. The strict metric population is declared separately in
+/// `strictMetrics()` so the already-published seven-metric tables stay
+/// byte-identical and no frozen artifact is recomputed.
+///
 /// A ratio with a zero denominator is not representable: Recall over a task
 /// with no eligible gold path is undefined, and such a task is excluded from
 /// the eligible population by the caller rather than scored as zero.
@@ -39,6 +52,7 @@ pub mod Attune.Study.Metrics {
         case HitAt(Int32)
         case RecallAt(Int32)
         case ReciprocalRankAt(Int32)
+        case FileAccAt(Int32)
     }
 
     /// The declared metric population of one localization report row, in report
@@ -48,11 +62,23 @@ pub mod Attune.Study.Metrics {
             :: LocalizationMetric.RecallAt(1) :: LocalizationMetric.RecallAt(5) :: LocalizationMetric.RecallAt(10)
             :: LocalizationMetric.ReciprocalRankAt(10) :: Nil
 
+    /// The strict metric population of the file-accuracy extension
+    /// (`VAL-STRICT-001`): the same seven declared metrics followed by the five
+    /// FileAcc@k cutoffs. It is the one canonical reducer's own extended metric
+    /// list rather than a second engine, and it is declared here so the strict
+    /// consumer shares the exact reductions the seven-metric tables already use.
+    pub def strictMetrics(): List[LocalizationMetric] =
+        localizationMetrics()
+            ::: LocalizationMetric.FileAccAt(1) :: LocalizationMetric.FileAccAt(3)
+            :: LocalizationMetric.FileAccAt(5) :: LocalizationMetric.FileAccAt(10)
+            :: LocalizationMetric.FileAccAt(32) :: Nil
+
     /// The declared report name of one metric.
     pub def localizationMetricName(metric: LocalizationMetric): String = match metric {
         case LocalizationMetric.HitAt(k)            => "Hit@" + Int32.toString(k)
         case LocalizationMetric.RecallAt(k)         => "Recall@" + Int32.toString(k)
         case LocalizationMetric.ReciprocalRankAt(k) => "MRR@" + Int32.toString(k)
+        case LocalizationMetric.FileAccAt(k)        => "FileAcc@" + Int32.toString(k)
     }
 
     // --------------------------------------------------------- exact ratios
@@ -121,9 +147,20 @@ pub mod Attune.Study.Metrics {
         }
     }
 
+    /// The strict all-gold subset indicator of one ranking and one task's eligible
+    /// gold paths: true exactly when the task has eligible gold and EVERY eligible
+    /// gold path appears inside the first k positions. A task with more eligible
+    /// gold paths than k is false by construction, because the first k positions
+    /// cannot hold more than k paths. This is the FileAcc@k statement
+    /// (`VAL-STRICT-001`), kept distinct from the Hit family.
+    pub def fileAccuracy(ranking: List[(Int32, String, Int32)], gold: List[String], k: Int32): Bool =
+        not List.isEmpty(gold) and List.length(retrievedGold(ranking, gold, k)) == List.length(gold)
+
     /// The exact value of one metric over one immutable ranking and one task's
     /// eligible gold paths. Recall is undefined (nothing) when the task has no
     /// eligible gold path, so an ineligible task is never scored as a miss.
+    /// FileAcc is likewise undefined for an ineligible task, but a task whose
+    /// eligible gold count exceeds k is a measured false rather than undefined.
     pub def metricRatio(metric: LocalizationMetric, ranking: List[(Int32, String, Int32)], gold: List[String]): Option[Ratio] =
         match metric {
             case LocalizationMetric.HitAt(k) =>
@@ -133,6 +170,9 @@ pub mod Attune.Study.Metrics {
                 else Some(ratio(List.length(retrievedGold(ranking, gold, k)), List.length(gold)))
             case LocalizationMetric.ReciprocalRankAt(k) =>
                 Some(reciprocalRankRatio(ranking, gold, k))
+            case LocalizationMetric.FileAccAt(k) =>
+                if (List.isEmpty(gold)) None
+                else Some(ratio(if (fileAccuracy(ranking, gold, k)) 1 else 0, 1))
         }
 
     // ---------------------------------------------------------- rendering

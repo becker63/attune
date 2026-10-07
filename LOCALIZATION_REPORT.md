@@ -48,8 +48,18 @@ reproduces all 224 published P / P+A baseline cells exactly (0 mismatches). The
 held-out final split is **15 eligible tasks in only 4 groups**, so its differences
 are reported and explicitly not read as a finding.
 
-**Generated:** 2026-10-07T15:45:00Z (generation 12; supersedes generation 11 for
-current state; earlier generations retained below as history). Generation 12 adds
+**Generated:** 2026-10-07T19:49:43Z (generation 13; supersedes generation 12 for
+current state; earlier generations retained below as history). Generation 13 is
+the owner-authorized **strict file-accuracy publication**: the ONE canonical
+`Attune.Study.Metrics` is extended with the FileAcc@1/3/5/10/32 family and the ten
+already-frozen arms (`P`, `PA`, `PAF`, `PAD`, `E`, `PAJ`, `PAJstructure`, `Q`,
+`QJ`, `QJstructure`) are rescored through it over the all-eligible population and
+the three declared splits, task-micro and group-equal macro, together with the
+three mandatory oracle ceilings (A32/E32/Q32) and the evaluator-only eligible gold
+cardinality — all published **at 0 provider calls, before any replicate
+acquisition**. No frozen ranking is changed: the strict table reproduces 448 of
+448 comparable eight-arm cells and 224 of 224 comparable four-arm cells exactly
+(0 mismatches). Generation 12 added
 the complete post-hoc exploratory hosted-Qwen JEV pair and the final eight-arm
 report: the frozen common Q32 population (88 tasks, 2,756 decisions per
 condition), the two byte-exact paired Q prompts, the measured `Q+J` and
@@ -62,11 +72,21 @@ itself. No frozen ranking, `select_policy`, `derived_population`, `metrics.tsv`,
 is touched: every metric cell of every metric table in this report was compared
 against the built artifact (763 cells, 0 mismatches) and no earlier number moved.
 
-**Source:** this commit (parent `bbf922d`, branch `main`), built on
+**Source:** this commit (parent `9954ed6`, branch `main`), built on
 `2b5bc2de3bdf25dd2d437e9f91068bf9f64413e2` ("Repair UTF-8 world extraction and
 publish the localization run audit"). The report is committed with the change it
 describes, so it names its parent and its own input digests rather than a
-self-referential hash. Input digests (sha256):
+self-referential hash. Generation 13's own input digests (sha256):
+
+| File | State | sha256 |
+|---|---|---|
+| `attune/src/Attune/Study/Metrics.flix` | modified (canonical reducer, extended with FileAcc@1/3/5/10/32) | `9477140905f2bb10b077bafdbfc0774a92267c2dcf2280444f736f1e102fe709` |
+| `attune/test/localization_strict/StrictStages.flix` | new (strict ten-arm scoring stage) | `ef45d48782624de8762be803723babbc33b2a4ff0a825ccbed81e89b68c7ddd5` |
+| `attune/test/localization_strict/StrictLaw.flix` | new (corpus-free FileAcc laws) | `1f6c57c4d92e84a2f3f64299d2edb84e9d167cb5f6d2130870d5ab68b7245e0e` |
+| `attune/test/localization_strict/BUILD.bazel` | new (strict stage/law targets) | `be75f25c9c72ba22739e20c07088a4172170118f221b7ae352d73ab0001ca5eb` |
+| `attune/BUILD.bazel` | modified (admits `//test/localization_strict:policy_files`) | `d181cab8250a931b4a2f66f621e879e83343e98f9fed13f769c2b25a0287f82d` |
+
+Retained earlier-generation input digests (sha256):
 
 
 | File | State | sha256 |
@@ -104,7 +124,10 @@ invocations `c86dd5c5-…`, `e998ba4e-…`, `6bf62f87-…`, `9717510c-…`,
 `9613f659-e88d-4a4b-8943-183e6a8ccd9c`, and this generation's
 `0b5a90e8-736f-4eb5-8194-f1288a3f149e` (metrics rebuild),
 `31243e41-021b-41aa-a351-63daacc8a666` and
-`a7a9e614-e380-4eaa-9758-0a71d3894a17` (derived and metric laws).
+`a7a9e614-e380-4eaa-9758-0a71d3894a17` (derived and metric laws). Of these, only
+`c86dd5c5-…` and `2442b5eb-…` have a surviving log; the others are preserved as
+**unverified history** rather than corroborated execution (see "Derived
+invocations (this report)").
 
 ## Runtime-capped deterministic localization result
 
@@ -450,6 +473,13 @@ summaries:
 | `ef4c2c34-…` | metrics rebuild, first attempt | 565: 2374 action cache hit, 563 remote cache hit, 2 internal, **0 remote executed** | failed closed on a Flix effect error (`ImplicitlyPureFunctionUsesIO`) before running; no upstream action re-executed |
 | `0b5a90e8-…` | metrics rebuild after the effect fix | 2: 13 action cache hit, 1 internal, **1 remote** | the one executed action is `//test/localization_runtime:metrics`; its internal asserts passed |
 | `31243e41-…`, `a7a9e614-…` | derived + metric laws on the remote path | 7 / 1223: cache/remote-cache hits, **3 remote** (the new `metrics_law` actions) then **0 remote** (all cached) | `runtime_law` PASSED, `metrics_law` PASSED |
+
+> Corroboration legend (2026-10-07): only `c86dd5c5-…` and `2442b5eb-…` in this
+> table have a surviving log (`library/evidence/runtime-capped-build-1.log`,
+> `library/evidence/runtime-capped-command.log`). The other invocation IDs are
+> preserved here as **unverified history, not corroborated execution** — see
+> "Derived invocations (this report)" below. Their rows are kept verbatim; no run
+> is recreated and no pass is asserted from them.
 
 **Zero `world_extract_*`, `theory_world_*`, `issue_text` or `rank_variants_*`
 action re-executed** in any derived invocation. The only actions ever executed
@@ -1932,7 +1962,10 @@ non-cacheable mission artifact and never a Bazel, Nix or CAS input. Its
 condition names, and reads the Q rank/similarity pair; it adds no second writer,
 no second provider route and no second model. `attune/src/Attune/Study/Jev.flix`
 and `attune/src/Attune/Study/Metrics.flix` are **unmodified** — the promotion
-statement and the canonical reducer are reused exactly as frozen.
+statement and the canonical reducer are reused exactly as frozen. (This states the
+generation-12 Q-JEV build; generation 13 subsequently *extends* `Metrics.flix`
+with the FileAcc family in place, leaving the seven canonical metrics and the
+promotion statement unchanged — see the strict section below.)
 
 - **Artifact digests (built, sha256).**
 
@@ -1943,6 +1976,289 @@ statement and the canonical reducer are reused exactly as frozen.
 | `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/qwen_jev_diagnostics.tsv` (1,953 rows) | `28fb499cd70c7daaa247182d60266eb23824834f9d84092163b71babbc8c96d1` |
 | `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/qwen_jev_rerank.tsv` (117,972 rows) | `07799173251009e49fae3ada6721655671ef4587b0f40e6267851a962d86d2f9` |
 | `bazel-bin/test/localization_qwen_jev/qwen_jev_metrics/closure.tsv` (358 rows) | `a9ae2e7c58678d064f9c2666d4973aa8f2af40275bd7ed0e833443ac11393e3e` |
+
+## Strict file-accuracy extension and oracle ceilings (generation 13)
+
+Owner-authorized downstream continuation (2026-10-07): the strict + replicated
+experiment runs only after the hosted-Qwen `Q` branch and its JEV pair are complete
+and published (generation 12), which they are. This section is **Phase 1 — the
+strict publication** and it is published **at 0 provider calls, before any replicate
+acquisition**. It is a repeat and a scoring extension, not a new dataset and not a new
+metric framework: the ONE canonical `Attune.Study.Metrics` is extended with the
+FileAcc@1/3/5/10/32 family and the already-frozen ten arms are rescored through it.
+No extraction, Theory lowering, ranking acquisition, CodeRankEmbed inference, hosted-Qwen
+acquisition or JEV call is re-run by the strict stage; it reads only existing produced
+ranking trees, admitted labels and frozen decision manifests. (Editing the shared
+`Metrics.flix` does make Bazel re-execute the `rank_q_*`/`rank_e_*` actions that name it
+in their declared sources; that deterministic, provider-free recomputation is disclosed
+with its reproduction evidence in Section B.)
+
+**FileAcc@k statement.** FileAcc@k is a per-task all-gold subset indicator: it is one
+exactly when **every** eligible gold path of the task appears inside the first k
+positions, and zero otherwise. It is deliberately distinct from the Hit family (any
+gold inside k) and from file Recall@k (the retrieved fraction). A task whose eligible
+gold count exceeds k can never satisfy the subset condition, so it is a measured false
+rather than an undefined value; a task with no eligible gold path stays undefined exactly
+as the other metrics leave it; an abstained arm on an eligible task is a measured false.
+The seven canonical metrics and their eligibility rules, denominators and exact-rational
+reductions are unchanged, and the seven-metric tables already published are reproduced
+cell for cell (see the reproduction note below).
+
+The ten available arms are `P`, `PA` (= `P+A`), `PAF` (= `P+A+F`), `PAD` (= `P+A+D`),
+`E` (CodeRankEmbed), `PAJ`, `PAJstructure`, `Q` (hosted Qwen), `QJ` and `QJstructure`.
+The ten arms share the identical complete candidate universe of every task (the same
+frozen 29,493 task-candidate rows over the 88 tasks), so they differ only by their
+declared evidence and operation. The evaluator labels form the metric denominators only;
+no label reaches any ranking.
+
+### A. Strict ten-arm table
+
+#### All eligible — soft metrics (Hit / file Recall / MRR), task micro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `Hit@1` | 11.8% | 18.8% | 16.5% | 12.9% | 18.8% | 30.6% | 34.1% | 41.2% | 57.6% | 61.2% |
+| `Hit@5` | 25.9% | 31.8% | 32.9% | 29.4% | 35.3% | 47.1% | 52.9% | 77.6% | 83.5% | 84.7% |
+| `Hit@10` | 35.3% | 41.2% | 41.2% | 41.2% | 45.9% | 51.8% | 55.3% | 85.9% | 90.6% | 91.8% |
+| `Recall@1` | 7.4% | 11.6% | 11.1% | 8.9% | 9.6% | 20.8% | 22.3% | 25.7% | 36.4% | 38.2% |
+| `Recall@5` | 16.5% | 19.6% | 20.7% | 18.6% | 21.1% | 32.0% | 34.9% | 54.7% | 62.3% | 64.3% |
+| `Recall@10` | 23.4% | 27.1% | 28.0% | 27.2% | 27.4% | 34.4% | 36.4% | 64.0% | 72.0% | 73.3% |
+| `MRR@10` | 18.5% | 25.0% | 23.0% | 20.6% | 27.5% | 38.2% | 41.6% | 56.8% | 69.2% | 70.8% |
+
+#### All eligible — soft metrics, group-equal macro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `Hit@1` | 11.7% | 18.9% | 16.7% | 12.9% | 18.2% | 30.7% | 34.1% | 41.3% | 57.6% | 61.0% |
+| `Hit@5` | 26.5% | 31.8% | 33.0% | 29.5% | 34.5% | 47.0% | 52.7% | 77.3% | 83.7% | 84.8% |
+| `Hit@10` | 35.6% | 41.3% | 41.3% | 41.3% | 45.5% | 51.9% | 55.3% | 86.0% | 90.9% | 92.0% |
+| `Recall@1` | 7.6% | 11.7% | 11.2% | 8.9% | 9.2% | 20.9% | 22.3% | 25.7% | 36.4% | 38.1% |
+| `Recall@5` | 16.7% | 19.4% | 20.5% | 18.5% | 20.5% | 31.9% | 34.8% | 54.4% | 62.6% | 64.5% |
+| `Recall@10` | 23.4% | 26.8% | 27.7% | 26.9% | 26.8% | 34.2% | 36.2% | 63.9% | 72.1% | 73.4% |
+| `MRR@10` | 18.7% | 25.1% | 23.1% | 20.6% | 26.8% | 38.2% | 41.6% | 56.8% | 69.2% | 70.8% |
+
+#### All eligible — strict metrics (FileAcc), task micro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `FileAcc@1` | 5.9% | 8.2% | 8.2% | 7.1% | 4.7% | 16.5% | 17.6% | 17.6% | 25.9% | 27.1% |
+| `FileAcc@3` | 11.8% | 12.9% | 11.8% | 9.4% | 11.8% | 22.4% | 21.2% | 36.5% | 41.2% | 40.0% |
+| `FileAcc@5` | 11.8% | 14.1% | 15.3% | 14.1% | 11.8% | 22.4% | 23.5% | 38.8% | 43.5% | 47.1% |
+| `FileAcc@10` | 16.5% | 20.0% | 21.2% | 21.2% | 15.3% | 23.5% | 24.7% | 44.7% | 52.9% | 55.3% |
+| `FileAcc@32` | 24.7% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 27.1% | 70.6% | 70.6% | 70.6% |
+
+#### All eligible — strict metrics (FileAcc), group-equal macro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `FileAcc@1` | 6.1% | 8.3% | 8.3% | 7.2% | 4.5% | 16.7% | 17.8% | 17.8% | 26.1% | 27.3% |
+| `FileAcc@3` | 12.1% | 12.9% | 11.7% | 9.5% | 11.4% | 22.3% | 21.2% | 36.4% | 41.3% | 40.2% |
+| `FileAcc@5` | 12.1% | 14.0% | 15.2% | 14.0% | 11.4% | 22.3% | 23.5% | 38.6% | 43.9% | 47.3% |
+| `FileAcc@10` | 16.7% | 19.7% | 20.8% | 20.8% | 14.8% | 23.5% | 24.6% | 44.7% | 53.0% | 55.7% |
+| `FileAcc@32` | 24.6% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 26.9% | 70.8% | 70.8% | 70.8% |
+
+#### Development (50 tasks / 13 groups) — all twelve metrics, task micro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `Hit@1` | 14.0% | 14.0% | 12.0% | 8.0% | 18.0% | 26.0% | 32.0% | 34.0% | 50.0% | 54.0% |
+| `Hit@5` | 24.0% | 24.0% | 24.0% | 24.0% | 38.0% | 46.0% | 52.0% | 76.0% | 82.0% | 84.0% |
+| `Hit@10` | 34.0% | 38.0% | 38.0% | 42.0% | 48.0% | 54.0% | 56.0% | 90.0% | 92.0% | 94.0% |
+| `Recall@1` | 6.6% | 6.6% | 6.5% | 4.6% | 7.1% | 14.1% | 16.7% | 18.9% | 26.6% | 29.2% |
+| `Recall@5` | 12.8% | 9.2% | 9.4% | 9.6% | 20.7% | 27.4% | 29.2% | 50.6% | 56.7% | 59.1% |
+| `Recall@10` | 21.1% | 21.5% | 21.9% | 22.2% | 24.4% | 29.9% | 30.7% | 62.0% | 68.2% | 69.8% |
+| `MRR@10` | 19.4% | 19.4% | 18.1% | 16.2% | 27.6% | 35.7% | 40.3% | 53.5% | 64.3% | 66.3% |
+| `FileAcc@1` | 4.0% | 4.0% | 4.0% | 4.0% | 2.0% | 10.0% | 12.0% | 14.0% | 18.0% | 20.0% |
+| `FileAcc@3` | 8.0% | 4.0% | 4.0% | 4.0% | 10.0% | 16.0% | 16.0% | 32.0% | 32.0% | 30.0% |
+| `FileAcc@5` | 8.0% | 4.0% | 4.0% | 4.0% | 10.0% | 16.0% | 16.0% | 34.0% | 36.0% | 40.0% |
+| `FileAcc@10` | 14.0% | 14.0% | 14.0% | 14.0% | 10.0% | 16.0% | 16.0% | 40.0% | 46.0% | 48.0% |
+| `FileAcc@32` | 16.0% | 18.0% | 18.0% | 18.0% | 18.0% | 18.0% | 18.0% | 64.0% | 64.0% | 64.0% |
+
+#### Development (50 tasks / 13 groups) — all twelve metrics, group-equal macro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `Hit@1` | 14.1% | 14.7% | 12.8% | 8.3% | 17.3% | 26.9% | 32.7% | 34.6% | 50.0% | 53.8% |
+| `Hit@5` | 25.6% | 25.0% | 25.0% | 25.0% | 37.2% | 46.8% | 52.6% | 75.6% | 82.1% | 84.0% |
+| `Hit@10` | 35.3% | 39.1% | 39.1% | 42.9% | 48.1% | 55.1% | 57.1% | 90.4% | 92.3% | 94.2% |
+| `Recall@1` | 7.0% | 7.1% | 6.9% | 5.0% | 6.8% | 15.0% | 17.5% | 18.9% | 26.4% | 28.9% |
+| `Recall@5` | 13.7% | 9.6% | 10.0% | 10.1% | 20.1% | 28.0% | 29.8% | 49.9% | 56.7% | 59.0% |
+| `Recall@10` | 21.7% | 21.6% | 22.1% | 22.4% | 24.1% | 30.5% | 31.3% | 61.8% | 68.0% | 69.6% |
+| `MRR@10` | 20.0% | 20.2% | 19.0% | 16.9% | 27.0% | 36.6% | 41.1% | 53.8% | 64.2% | 66.1% |
+| `FileAcc@1` | 4.5% | 4.5% | 4.5% | 4.5% | 1.9% | 10.9% | 12.8% | 14.1% | 17.9% | 19.9% |
+| `FileAcc@3` | 9.0% | 4.5% | 4.5% | 4.5% | 9.6% | 16.7% | 16.7% | 31.4% | 31.4% | 29.5% |
+| `FileAcc@5` | 9.0% | 4.5% | 4.5% | 4.5% | 9.6% | 16.7% | 16.7% | 33.3% | 35.9% | 39.7% |
+| `FileAcc@10` | 14.7% | 14.1% | 14.1% | 14.1% | 9.6% | 16.7% | 16.7% | 39.7% | 45.5% | 48.1% |
+| `FileAcc@32` | 16.7% | 18.6% | 18.6% | 18.6% | 17.3% | 18.6% | 18.6% | 64.1% | 64.1% | 64.1% |
+
+#### Calibration (20 tasks / 5 groups) — all twelve metrics, task micro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `Hit@1` | 10.0% | 20.0% | 20.0% | 15.0% | 25.0% | 40.0% | 40.0% | 50.0% | 70.0% | 70.0% |
+| `Hit@5` | 25.0% | 40.0% | 45.0% | 40.0% | 35.0% | 50.0% | 50.0% | 75.0% | 80.0% | 80.0% |
+| `Hit@10` | 35.0% | 45.0% | 45.0% | 45.0% | 50.0% | 50.0% | 50.0% | 75.0% | 85.0% | 85.0% |
+| `Recall@1` | 10.0% | 13.8% | 13.8% | 8.8% | 17.9% | 33.8% | 33.8% | 32.9% | 49.2% | 49.2% |
+| `Recall@5` | 18.8% | 33.8% | 35.0% | 30.0% | 25.4% | 40.8% | 42.1% | 59.6% | 67.1% | 68.8% |
+| `Recall@10` | 25.0% | 35.0% | 35.0% | 35.0% | 42.1% | 44.6% | 44.6% | 64.6% | 76.3% | 76.3% |
+| `MRR@10` | 16.4% | 27.6% | 27.4% | 24.4% | 32.3% | 42.9% | 43.3% | 59.6% | 75.7% | 75.7% |
+| `FileAcc@1` | 10.0% | 10.0% | 10.0% | 5.0% | 15.0% | 30.0% | 30.0% | 20.0% | 35.0% | 35.0% |
+| `FileAcc@3` | 15.0% | 25.0% | 20.0% | 15.0% | 20.0% | 35.0% | 35.0% | 45.0% | 55.0% | 55.0% |
+| `FileAcc@5` | 15.0% | 30.0% | 30.0% | 25.0% | 20.0% | 35.0% | 35.0% | 45.0% | 55.0% | 60.0% |
+| `FileAcc@10` | 20.0% | 30.0% | 30.0% | 30.0% | 35.0% | 40.0% | 40.0% | 50.0% | 65.0% | 65.0% |
+| `FileAcc@32` | 45.0% | 40.0% | 40.0% | 40.0% | 50.0% | 40.0% | 40.0% | 80.0% | 80.0% | 80.0% |
+
+#### Calibration (20 tasks / 5 groups) — all twelve metrics, group-equal macro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `Hit@1` | 10.0% | 20.0% | 20.0% | 15.0% | 25.0% | 40.0% | 40.0% | 50.0% | 70.0% | 70.0% |
+| `Hit@5` | 25.0% | 40.0% | 45.0% | 40.0% | 35.0% | 50.0% | 50.0% | 75.0% | 80.0% | 80.0% |
+| `Hit@10` | 35.0% | 45.0% | 45.0% | 45.0% | 50.0% | 50.0% | 50.0% | 75.0% | 85.0% | 85.0% |
+| `Recall@1` | 10.0% | 13.8% | 13.8% | 8.8% | 17.9% | 33.8% | 33.8% | 32.9% | 49.2% | 49.2% |
+| `Recall@5` | 18.8% | 33.8% | 35.0% | 30.0% | 25.4% | 40.8% | 42.1% | 59.6% | 67.1% | 68.8% |
+| `Recall@10` | 25.0% | 35.0% | 35.0% | 35.0% | 42.1% | 44.6% | 44.6% | 64.6% | 76.3% | 76.3% |
+| `MRR@10` | 16.4% | 27.6% | 27.4% | 24.4% | 32.3% | 42.9% | 43.3% | 59.6% | 75.7% | 75.7% |
+| `FileAcc@1` | 10.0% | 10.0% | 10.0% | 5.0% | 15.0% | 30.0% | 30.0% | 20.0% | 35.0% | 35.0% |
+| `FileAcc@3` | 15.0% | 25.0% | 20.0% | 15.0% | 20.0% | 35.0% | 35.0% | 45.0% | 55.0% | 55.0% |
+| `FileAcc@5` | 15.0% | 30.0% | 30.0% | 25.0% | 20.0% | 35.0% | 35.0% | 45.0% | 55.0% | 60.0% |
+| `FileAcc@10` | 20.0% | 30.0% | 30.0% | 30.0% | 35.0% | 40.0% | 40.0% | 50.0% | 65.0% | 65.0% |
+| `FileAcc@32` | 45.0% | 40.0% | 40.0% | 40.0% | 50.0% | 40.0% | 40.0% | 80.0% | 80.0% | 80.0% |
+
+#### Held-out final (15 tasks / 4 groups) — all twelve metrics, task micro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `Hit@1` | 6.7% | 33.3% | 26.7% | 26.7% | 13.3% | 33.3% | 33.3% | 53.3% | 66.7% | 73.3% |
+| `Hit@5` | 33.3% | 46.7% | 46.7% | 33.3% | 26.7% | 46.7% | 60.0% | 86.7% | 93.3% | 93.3% |
+| `Hit@10` | 40.0% | 46.7% | 46.7% | 33.3% | 33.3% | 46.7% | 60.0% | 86.7% | 93.3% | 93.3% |
+| `Recall@1` | 6.7% | 25.6% | 23.3% | 23.3% | 6.7% | 25.6% | 25.6% | 38.9% | 52.2% | 53.3% |
+| `Recall@5` | 25.6% | 35.6% | 38.9% | 33.3% | 16.7% | 35.6% | 44.4% | 62.2% | 74.4% | 75.6% |
+| `Recall@10` | 28.9% | 35.6% | 38.9% | 33.3% | 17.8% | 35.6% | 44.4% | 70.0% | 78.9% | 81.1% |
+| `MRR@10` | 18.4% | 40.0% | 33.3% | 30.0% | 20.7% | 40.0% | 43.9% | 63.8% | 76.9% | 79.7% |
+| `FileAcc@1` | 6.7% | 20.0% | 20.0% | 20.0% | 0.0% | 20.0% | 20.0% | 26.7% | 40.0% | 40.0% |
+| `FileAcc@3` | 20.0% | 26.7% | 26.7% | 20.0% | 6.7% | 26.7% | 20.0% | 40.0% | 53.3% | 53.3% |
+| `FileAcc@5` | 20.0% | 26.7% | 33.3% | 33.3% | 6.7% | 26.7% | 33.3% | 46.7% | 53.3% | 53.3% |
+| `FileAcc@10` | 20.0% | 26.7% | 33.3% | 33.3% | 6.7% | 26.7% | 33.3% | 53.3% | 60.0% | 66.7% |
+| `FileAcc@32` | 26.7% | 40.0% | 40.0% | 40.0% | 26.7% | 40.0% | 40.0% | 80.0% | 80.0% | 80.0% |
+
+#### Held-out final (15 tasks / 4 groups) — all twelve metrics, group-equal macro
+
+| metric | P | PA | PAF | PAD | E | PAJ | PAJstructure | Q | QJ | QJstructure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `Hit@1` | 6.3% | 31.3% | 25.0% | 25.0% | 12.5% | 31.3% | 31.3% | 52.1% | 66.7% | 72.9% |
+| `Hit@5` | 31.3% | 43.8% | 43.8% | 31.3% | 25.0% | 43.8% | 56.3% | 85.4% | 93.8% | 93.8% |
+| `Hit@10` | 37.5% | 43.8% | 43.8% | 31.3% | 31.3% | 43.8% | 56.3% | 85.4% | 93.8% | 93.8% |
+| `Recall@1` | 6.3% | 24.0% | 21.9% | 21.9% | 6.3% | 24.0% | 24.0% | 38.5% | 53.1% | 54.2% |
+| `Recall@5` | 24.0% | 33.3% | 36.5% | 31.3% | 15.6% | 33.3% | 41.7% | 62.5% | 76.0% | 77.1% |
+| `Recall@10` | 27.1% | 33.3% | 36.5% | 31.3% | 16.7% | 33.3% | 41.7% | 69.8% | 80.2% | 82.3% |
+| `MRR@10` | 17.3% | 37.5% | 31.3% | 28.1% | 19.4% | 37.5% | 41.1% | 62.9% | 77.3% | 79.9% |
+| `FileAcc@1` | 6.3% | 18.8% | 18.8% | 18.8% | 0.0% | 18.8% | 18.8% | 27.1% | 41.7% | 41.7% |
+| `FileAcc@3` | 18.8% | 25.0% | 25.0% | 18.8% | 6.3% | 25.0% | 18.8% | 41.7% | 56.3% | 56.3% |
+| `FileAcc@5` | 18.8% | 25.0% | 31.3% | 31.3% | 6.3% | 25.0% | 31.3% | 47.9% | 56.3% | 56.3% |
+| `FileAcc@10` | 18.8% | 25.0% | 31.3% | 31.3% | 6.3% | 25.0% | 31.3% | 54.2% | 62.5% | 68.8% |
+| `FileAcc@32` | 25.0% | 37.5% | 37.5% | 37.5% | 29.2% | 37.5% | 37.5% | 81.3% | 81.3% | 81.3% |
+
+### B. Oracle ceilings (A32 / E32 / Q32) and eligible gold cardinality
+
+The three oracle ceilings are the FileAcc@32 value of the three base rankings a stable
+promotion can reorder: the **A32 oracle** (`FileAcc@32` of `PA`), the **E32 oracle**
+(`FileAcc@32` of `E`) and the **Q32 oracle** (`FileAcc@32` of `Q`). They are the level
+from which each reranked arm starts. A restricted reranker can only reorder candidates
+its base ranking already contains, and only the candidates inside the base's judged
+top-32 can promote (a candidate outside the judged pool carries no receipt row and is
+`Unknown`, which neither promotes nor penalises). A gold file the base placed outside
+its top-32 therefore **cannot** enter the promoted top-32: the restricted reranker
+cannot recover gold absent from the candidate pool it was given. The oracle is the base
+ranking's own FileAcc@32, not a bound on every promotion, because promotion can also
+push a previously in-top-32 gold file out; the measured reranked FileAcc@32 values in
+Section A are the honest outcome.
+
+| population | reduction | A32 (FileAcc@32 of `PA`) | E32 (FileAcc@32 of `E`) | Q32 (FileAcc@32 of `Q`) |
+| --- | --- | --- | --- | --- |
+| All eligible (85 tasks / 22 groups) | task micro | 27.1% (23/85) | 27.1% (23/85) | 70.6% (12/17) |
+| All eligible (85 tasks / 22 groups) | group macro | 26.9% (71/264) | 26.9% (71/264) | 70.8% (17/24) |
+| Development (50 tasks / 13 groups) | task micro | 18.0% (9/50) | 18.0% (9/50) | 64.0% (16/25) |
+| Development (50 tasks / 13 groups) | group macro | 18.6% (29/156) | 17.3% (9/52) | 64.1% (25/39) |
+| Calibration (20 tasks / 5 groups) | task micro | 40.0% (2/5) | 50.0% (1/2) | 80.0% (4/5) |
+| Calibration (20 tasks / 5 groups) | group macro | 40.0% (2/5) | 50.0% (1/2) | 80.0% (4/5) |
+| Held-out final (15 tasks / 4 groups) | task micro | 40.0% (2/5) | 26.7% (4/15) | 80.0% (4/5) |
+| Held-out final (15 tasks / 4 groups) | group macro | 37.5% (3/8) | 29.2% (7/24) | 81.3% (13/16) |
+
+Each cell is the FileAcc@32 value of the named base ranking: its one-decimal percentage
+and, in parentheses, the exact integer pair the canonical reducer emits. The reducer
+renders every exact rational in lowest terms, so a task-micro cell such as `12/17` is the
+same exact value as `60/85` over the 85 eligible tasks, `16/25` is `32/50`, `1/2` is
+`10/20` and `2/5` is `6/15` or `8/20`; a group-macro cell is the equal mean over the
+population's groups, whose exact pair need not share the task-micro denominator. The
+three denominators at the same population therefore differ across arms only through that
+reduction and through each arm's own defined-value count, never through a different
+eligible population: all three oracles cover the same 85/50/20/15 eligible tasks with
+`undefined = 0` (`strict_oracles.tsv`).
+
+The two cross-pool readings are stark and are read as descriptive facts only: on the
+held-out final split (15 tasks) the `PA` judged pool already contains the complete gold
+set of 6 of 15 tasks (40.0%) and the `E` pool of 4 of 15 (26.7%), whereas the `Q` judged
+pool already contains the complete gold set of 12 of 15 tasks (80.0%) at `FileAcc@32`.
+Over all 85 eligible tasks the same reading is 23/85 (27.1%) for both `PA` and `E` and
+60/85 (70.6%) for `Q`. That is a property of the frozen base rankings, not of the
+reranker.
+
+**Eligible gold cardinality (evaluator-only).** The number of eligible gold files per
+eligible task, over the 85-task all-eligible population. This is an evaluator-only
+element: it is reported here and is never a ranking, policy or prediction input.
+
+| eligible gold files | tasks |
+| --- | --- |
+| 1 | 41 |
+| 2 | 18 |
+| 3 | 9 |
+| 4 | 4 |
+| 5 | 4 |
+| 6 | 2 |
+| 7 | 1 |
+| 8 | 2 |
+| 9 | 1 |
+| 10 | 1 |
+| 11 | 1 |
+| 13 | 1 |
+
+Summary: **85** eligible tasks carrying **218** eligible gold paths (min 1, max 13, exact mean 218/85); **41** tasks with exactly one eligible gold file and **44** with more than one; **0** tasks have more eligible gold files than 32, so no eligible task is structurally barred from
+achieving FileAcc@32. The 218 eligible gold paths are exactly the frozen A32/E32 gold
+population already published in the embedding section (top-32 A-only 40 / E-only 52 /
+both 41 / neither 85 = 218), which is an independent consistency check on the label side.
+
+**Strict artifact digests (built, sha256).**
+
+| Artifact | sha256 |
+|---|---|
+| `bazel-bin/test/localization_strict/strict_metrics/strict_metrics.tsv` (960 rows: 10 arms x 4 scopes x 2 kinds x 12 metrics) | `2cfb6db404426d5a2d05cc2165acf73aa3e1960397e071f5eca4e5f838c071bb` |
+| `bazel-bin/test/localization_strict/strict_metrics/strict_oracles.tsv` (24 rows) | `734efd2ded99e38a7108f090d67ae8fc182ad432dc7a993e61da0096c90d8ef2` |
+| `bazel-bin/test/localization_strict/strict_metrics/strict_cardinality.tsv` (106 rows) | `c3a60897345ad99bf546d0691d19ceb06c51fb3c2555d923e3bc51c890b204ae` |
+| `bazel-bin/test/localization_strict/strict_metrics/closure.tsv` (357 declared inputs, 358 lines with the `stage` header) | `c8248bc611dc88c7ea1722473403c1d23cdc266a7cb15f0b7d3eb0276db247db` |
+
+**Reproduction and 0-provider evidence.** The strict stage executed as the single remote
+action of invocation `4332b304-b4a0-4bb7-9e4c-b6b14948925d`
+(`2 processes: 1 internal, 1 remote`), with **0 JEV calls, 0 embedding inferences, 0
+hosted-Qwen requests and 0 `Repository`/`Theory` re-executions**. Its 357-input closure
+(358 lines with the `stage` header) is the same shape as the published eight-arm closure:
+88 deterministic rank trees, 88 E
+rank trees, 88 Q rank trees, 88 label artifacts, 4 frozen decision manifests and the
+admitted `mapped.tsv`. The strict table reproduces the already-published tables cell for
+cell: **448 of 448** comparable cells of `qwen_jev_metrics.tsv` (the eight arms `P`, `PA`,
+`E`, `Q`, `PAJ`, `PAJstructure`, `QJ`, `QJstructure` x 4 scopes x 2 kinds x 7 metrics) and
+**224 of 224** comparable cells of `localization_runtime/metrics.tsv` (the four
+deterministic arms x 4 scopes x 2 kinds x 7 metrics) agree exactly, 0 mismatches. The
+extended FileAcc family is therefore added on top of unchanged frozen rankings.
+
+Disclosed blast radius: extending the canonical `Attune.Study.Metrics` source invalidates
+every stage whose declared source closure names it. The `//test/localization_qwen:rank_q_*`
+and `//test/localization_embedding:rank_e_*` rank stages list `Metrics.flix` in their
+`STAGE_SRCS`, so their 176 actions re-executed once while this change was being built
+(deterministic, provider-free, each <1 s) and produced byte-identical ranking trees —
+confirmed by the 448/448 and 224/224 cell reproduction above. No acquisition, inference or
+provider action re-executed, and the successful strict invocation `4332b304-…` itself
+reports only `2 processes: 1 internal, 1 remote`, i.e. only the strict stage executed there.
 
 ## Latency regimes
 
@@ -2403,8 +2719,27 @@ original panel is not done here and is not estimated.
 
 ### Derived invocations (this report)
 
-`c86dd5c5-…`, `e998ba4e-…`, `6bf62f87-…`, `9717510c-…`, `f5d5541c-…`,
-`2442b5eb-…`; log preserved as `library/evidence/runtime-capped-build-1.log`.
+Only two of the derived-invocation IDs recorded in this report are corroborated by
+a surviving log in the mission library, so only those two are presented as
+corroborated execution:
+
+- `c86dd5c5-02b8-4b7d-8dff-c762f23de0af` (first derived build) — log preserved as
+  `library/evidence/runtime-capped-build-1.log`; the derived-build row in the
+  "Warm reuse" table above is read from that log.
+- `2442b5eb-2ad2-45d1-a9f7-506bc0be1e36` (derived-cohort law) — log preserved as
+  `library/evidence/runtime-capped-command.log`.
+
+The remaining IDs the earlier generations recorded — `e998ba4e-…`, `6bf62f87-…`,
+`9717510c-…`, `f5d5541c-…`, `9613f659-…`, `ef4c2c34-…`, `0b5a90e8-…`,
+`31243e41-…` and `a7a9e614-…` — are **preserved as unverified history**: their
+rows are retained verbatim in the "Warm reuse" table above (and in the
+"Invocations:" list), but no surviving log, BEP or command record in this mission
+establishes them, so they are labelled **unverified history, not corroborated
+execution**. Nothing here recreates those runs, deletes the raw rows or asserts a
+pass on their evidence; their process lines are reported exactly as the earlier
+generations wrote them and are not re-measured. The current strict and Q-JEV
+replays are the provider-free, independently verified invocation records cited in
+this generation's section.
 Zero upstream re-execution across all of them (see "Warm reuse" above).
 
 ### Q-JEV invocations (generation 12)
@@ -2798,3 +3133,36 @@ was made.
   corrections. Original
   denominators unchanged at 96 / 93 and the original full result still 0/96 and
   not estimated.
+- **2026-10-07T19:49:43Z — generation 13, STRICT PUBLICATION (Phase 1 of the
+  strict + replicated continuation).** Publishes the strict file-accuracy
+  extension and its oracle ceilings at 0 provider calls, before any replicate
+  acquisition. The ONE canonical `Attune.Study.Metrics` is extended with
+  `FileAcc@1/3/5/10/32` (a per-task all-gold subset indicator, distinct from the
+  Hit family; a task with more eligible gold than k is a measured false, an
+  ineligible task stays undefined) through a new `Metrics.strictMetrics()`
+  declaration, and the ten already-frozen arms `P`, `PA`, `PAF`, `PAD`, `E`,
+  `PAJ`, `PAJstructure`, `Q`, `QJ`, `QJstructure` are rescored through it over
+  all-eligible/development/calibration/final, task-micro and group-equal macro,
+  with the exact `(numerator, denominator)` pair published beside the percentage
+  in the oracle table and carried in the built artifact for every cell. Adds
+  the new `test/localization_strict` package (stage, corpus-free FileAcc laws,
+  BUILD) and the `//test/localization_strict:policy_files` registration in the
+  root `BUILD.bazel`. The strict stage ran as the single remote action of
+  invocation `4332b304-b4a0-4bb7-9e4c-b6b14948925d` (`2 processes: 1 internal,
+  1 remote`) with 0 JEV, 0 embedding, 0 hosted-Qwen and 0 `Repository`/`Theory`
+  work; its 357-input closure is existing produced trees, admitted labels and
+  frozen decision manifests. All 448 comparable eight-arm cells of
+  `qwen_jev_metrics.tsv` and all 224 comparable four-arm cells of
+  `localization_runtime/metrics.tsv` are reproduced exactly (0 mismatches), so no
+  frozen ranking moved. The three mandatory oracles are published (A32 =
+  `FileAcc@32` of `PA`, E32 = of `E`, Q32 = of `Q`) over every split, together
+  with the evaluator-only eligible gold cardinality (85 tasks, 218 gold paths,
+  min 1, max 13, 41 single-gold and 44 multi-gold tasks, 0 tasks with more than
+  32 gold). Disclosed blast radius: extending `Metrics.flix` invalidated the
+  `rank_q_*`/`rank_e_*` stages whose declared `STAGE_SRCS` name it, so their 176
+  actions re-executed once on RBE deterministically and provider-free, producing
+  byte-identical trees (confirmed by the cell reproduction). The report's
+  "Derived invocations" rows are relabelled so that only `c86dd5c5-…` and
+  `2442b5eb-…` (surviving logs) are corroborated execution and the remaining IDs
+  are preserved as unverified history. No earlier number moved; the replicate,
+  union and Sol phases remain unstarted.
