@@ -26,15 +26,32 @@ repository-side policy an agent must follow while changing this tree.
   copy or print it; never pass a credential into an action input, argument, log
   or the store. Only the narrow BuildBuddy credential helper in `flake.nix` may
   read it, internally, from that explicit checkout root.
-- No application provider, MCP or live model call, ever. The bootstrap-era
-  sentence that this workspace carries no scientific data is stale: the approved
-  mission authorizes the named pinned `nebius/SWE-rebench-V2` corpus and the
-  selected studies, plus explicitly hashed minimal named historical imports from
-  the recorded sibling location, under the scientific freeze order (rankings
-  before evaluator labels; pair predictions before joint execution). Only that
-  approved corpus and those studies are authorized. That is not authorization for
-  a wider corpus, a different corpus, a rescue search or any provider/MCP/model
-  acquisition, which remain forbidden.
+- No application provider, MCP or live model call, ever — with exactly one
+  narrow owner-authorized exception named at the end of this bullet. The
+  bootstrap-era sentence that this workspace carries no scientific data is
+  stale: the approved mission authorizes the named pinned
+  `nebius/SWE-rebench-V2` corpus and the selected studies, plus explicitly
+  hashed minimal named historical imports from the recorded sibling location,
+  under the scientific freeze order (rankings before evaluator labels; pair
+  predictions before joint execution). Only that approved corpus and those
+  studies are authorized. That is not authorization for a wider corpus, a
+  different corpus, a rescue search or any provider/MCP/model acquisition
+  beyond that single exception, which remain forbidden. The four measured arms
+  (`P`, `P+A`, `P+A+F`, `P+A+D`) and the original coordination pairs keep the
+  absolute ban: no provider, MCP or live model call enters that frozen work,
+  before or after the exception. The single exception, owner-authorized
+  2026-10-06, is the downstream post-hoc exploratory JEV extension on the
+  currently configured live Jev route (the dedicated `jev___jev_decide` route),
+  and nothing else: it may run only after the runtime-capped `P+A+D` result and
+  the canonical metrics are frozen; it sees only the fixed top-32 public
+  evidence fields per surviving task; no evaluator-truth-derived feature enters
+  any declared study input, and no provider response enters the original
+  frozen deterministic or coordination inputs or any upstream producer input;
+  sanitized provider receipts are admitted as inputs to the authorized
+  downstream rerank/evaluation only; `JEV_KEY` and every
+  credential are never printed or passed through stdout, argv, Bazel public
+  inputs, the CAS, receipts or commits; and it never reruns an upstream stage,
+  never substitutes an alternate model and never runs an agent loop.
 - One Bazel owner at a time. The output base is outside the checkout
   (`services.yaml`); never run `bazel clean` or touch global caches.
 - JVM dependencies are pinned: `MODULE.bazel` declares the exact Maven

@@ -713,7 +713,7 @@ pub mod Attune.Policy {
         else if (path == "src/Attune.flix" or path == "src/Attune/Coverage.flix") "core"
         else if (hasPrefix("src/Attune/Repository", path)) "repository"
         else if (path == "src/Attune/Theory.flix") "theory"
-        else if (path == "src/Attune/Study.flix") "study"
+        else if (hasPrefix("src/Attune/Study", path)) "study"
         else if (path == "src/Attune/Policy.flix" or path == "src/Attune/Isolation.flix") "policy"
         else if (path == "src/Attune/View.flix" or path == "src/Attune/Docs.flix") "view"
         else if (hasPrefix("src/grit/", path)) "frontends"
