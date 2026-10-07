@@ -198,3 +198,24 @@ embedding_model(
     name = "attune_embedding_model",
     lock = "//platform/embedding:runtime-lock.tsv",
 )
+
+# The approved hosted-Qwen (Q) continuation (owner 2026-10-07). Q's only route is
+# the hosted OpenRouter embeddings API reached through the pinned LangChain4j
+# 1.18.1 SDK, so its vectors are acquired on the host by the mission-local
+# acquisition helper — whose one authorized credential read never becomes a build
+# input — and are admitted here as declared inputs. The committed sanitized
+# manifest `//test/localization_qwen:fixture-manifest.tsv` carries identity only
+# (group, side, logical rows, unique inputs, truncated rows, unmeasured rows,
+# frozen cap, provider, resolved model, frozen recipe, digest), and every fixture
+# file is admitted
+# through a `file://` URL that must match its declared SHA-256. Declared last for
+# the same anonymous-repo renumbering reason as the catalog, world archives and
+# embedding runtime above.
+qwen_fixtures = use_repo_rule("//platform/build:qwen_fixtures.bzl", "attune_qwen_fixtures")
+
+qwen_fixtures(
+    name = "attune_qwen_fixtures",
+    manifest = "//test/localization_qwen:fixture-manifest.tsv",
+    root = "/home/becker/.cache/attune-qwen-fixtures",
+    token = "1",
+)

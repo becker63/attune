@@ -847,6 +847,362 @@ bazel test  //... --config=remote --jobs=80 --test_output=summary
   per-task overlap decomposition partitioning the admitted gold paths at both
   cutoffs.
 
+## Post-hoc exploratory hosted-Qwen embedding (Q) result
+
+> **POST-HOC EXPLORATORY EMBEDDING EXTENSION — NOT PART OF THE ORIGINAL
+> FOUR-ARM FREEZE.** This section is the hosted-Qwen (Q) half of the embedding
+> extension and was scored **before any Q-JEV work**, as required. It is the
+> owner-authorized continuation of the E half: the same post-hoc question asked of
+> one hosted third-party model on the same frozen universe. Nothing below is
+> confirmatory, and no Q-JEV number exists yet.
+
+- **Question:** does one frozen hosted third-party embedding model, applied with
+  no lexical blend, no anchor and no tuned weight, retrieve the gold file over the
+  same complete frozen candidate universe the deterministic arms and the E branch
+  rank? Exploratory and post-hoc: no confirmatory claim, no prompt tuning, no
+  model search, no second numeric engine and no parity threshold.
+- **Fixed identity:** exactly `qwen/qwen3-embedding-8b` over OpenRouter as the
+  only Q route, resolved by the provider to `Qwen/Qwen3-Embedding-8B`, reached
+  through the pinned **LangChain4j 1.18.1 typed `OpenAiClient` embeddings SDK**
+  (no raw HTTP client, no second provider, no local deployment, no substitute
+  model). The frozen recipe is
+  `qwen3-embedding-8b-instruct-queryprefix-rawtrunc32768cu-native4096-unnormalized-cosine-v1`:
+  the documented Instruct form on the query side only, the declared raw source
+  bytes on the code side with **no** prefix, path text, summary, symbol, anchor or
+  structural field, at most 32,768 UTF-16 code units per input, 4,096 native
+  dimensions, cosine on the unnormalized vectors. Every consumed row carries the
+  logical fixture key `(provider, resolved model, recipe, sha256 of the exact
+  embedded input bytes)`; the vector payload is data, never identity.
+- **Frozen similarity and order:** cosine on the two unnormalized vectors, ordered
+  by **exact similarity descending, then candidate path ascending**. No lexical
+  evidence, no anchor evidence and no arbitrary weight enters the value, so Q is a
+  genuine embedding similarity rather than a blend. The canonical `Int32` score
+  column of `rank_Q.tsv` carries the **original rank** (which is all
+  `Attune.Study.Metrics` reads) and the exact unquantized `Float64` similarity
+  travels beside it in `similarity_Q.tsv`; ordering follows the exact sidecar.
+- **Population and universe:** the Q ranking covers the **exact same complete
+  frozen candidate universe** as the deterministic arms and the E branch —
+  verified per task, not asserted globally: for all 88 surviving tasks the Q
+  candidate path set equals the `rank_P.tsv` candidate path set exactly. 29,493
+  task-candidate rows in total (88 ranked tasks), over 27,645 code rows in 904
+  declared shards plus 88 query rows. No world extraction, Theory lowering or
+  variant ranking was re-executed; the Q stage has no dependency on any of them.
+  No CodeRank reacquisition and no E re-measurement took place.
+- **One canonical reducer, no second engine:** `Attune.Study.Metrics` is
+  unchanged and is the only scoring path. It scores P, P+A, E and Q over the
+  all-eligible population and the declared development, calibration and held-out
+  final splits, in task-micro and group-equal macro form. The Q branch adds one
+  downstream Study-owned submodule (`Attune.Study.Qwen`) and one downstream stage
+  package (`test/localization_qwen/`); no shared Study source, no original
+  `LocalizationArm` and no selection or ranking stage was edited.
+- **Baseline never recomputed:** the frozen runtime-capped P, P+A and E cells were
+  reproduced from the same frozen ranking trees as a **cache check**, cell for
+  cell. All **336 of 336** checks match, with 0 mismatches and 0 absent rows
+  (`reproduction.tsv`). Nothing was re-measured and no deterministic or E number
+  in this report moved.
+
+### Canonical P / P+A / E / Q retrieval metrics (85 eligible tasks)
+
+Exact rational pairs are the measurement; the percentage beside each pair is
+presentation only. Population is 85 eligible tasks (22 groups) task-micro, and
+22 group-equal macro. Every arm is fully covered over this population (0
+undefined, 0 abstentions), so the covered-only diagnostic equals the all-eligible
+population and is not repeated here.
+
+**All eligible — task micro (85 tasks)**
+
+| Metric | P | P+A | E | Q |
+|---|---|---|---|---|
+| Hit@1 | 2/17 (11.8%) | 16/85 (18.8%) | 16/85 (18.8%) | 7/17 (41.2%) |
+| Hit@5 | 22/85 (25.9%) | 27/85 (31.8%) | 6/17 (35.3%) | 66/85 (77.6%) |
+| Hit@10 | 6/17 (35.3%) | 7/17 (41.2%) | 39/85 (45.9%) | 73/85 (85.9%) |
+| Recall@1 | 91/1224 (7.4%) | 2287/19635 (11.6%) | 1463/15300 (9.6%) | 55051/214200 (25.7%) |
+| Recall@5 | 91621/556920 (16.5%) | 6004847/30630600 (19.6%) | 9029/42840 (21.1%) | 1303/2380 (54.7%) |
+| Recall@10 | 716173/3063060 (23.4%) | 4157441/15315300 (27.1%) | 4198261/15315300 (27.4%) | 198127/309400 (64.0%) |
+| MRR@10 | 1654/8925 (18.5%) | 17837/71400 (25.0%) | 29419/107100 (27.5%) | 40531/71400 (56.8%) |
+
+**All eligible — group-equal macro (22 groups)**
+
+| Metric | P | P+A | E | Q |
+|---|---|---|---|---|
+| Hit@1 | 31/264 (11.7%) | 25/132 (18.9%) | 2/11 (18.2%) | 109/264 (41.3%) |
+| Hit@5 | 35/132 (26.5%) | 7/22 (31.8%) | 91/264 (34.5%) | 17/22 (77.3%) |
+| Hit@10 | 47/132 (35.6%) | 109/264 (41.3%) | 5/11 (45.5%) | 227/264 (86.0%) |
+| Recall@1 | 479/6336 (7.6%) | 2375/20328 (11.7%) | 133/1440 (9.2%) | 14239/55440 (25.7%) |
+| Recall@5 | 96469/576576 (16.7%) | 6151367/31711680 (19.4%) | 9101/44352 (20.5%) | 2679/4928 (54.4%) |
+| Recall@10 | 742837/3171168 (23.4%) | 1061429/3963960 (26.8%) | 531527/1981980 (26.8%) | 306983/480480 (63.9%) |
+| MRR@10 | 10379/55440 (18.7%) | 6947/27720 (25.1%) | 89207/332640 (26.8%) | 20983/36960 (56.8%) |
+
+**Development split — 50 eligible tasks, 13 groups**
+
+| Metric | P (micro) | P+A (micro) | E (micro) | Q (micro) | P (macro) | P+A (macro) | E (macro) | Q (macro) |
+|---|---|---|---|---|---|---|---|---|
+| Hit@1 | 7/50 (14.0%) | 7/50 (14.0%) | 9/50 (18.0%) | 17/50 (34.0%) | 11/78 (14.1%) | 23/156 (14.7%) | 9/52 (17.3%) | 9/26 (34.6%) |
+| Hit@5 | 6/25 (24.0%) | 6/25 (24.0%) | 19/50 (38.0%) | 19/25 (76.0%) | 10/39 (25.6%) | 1/4 (25.0%) | 29/78 (37.2%) | 59/78 (75.6%) |
+| Hit@10 | 17/50 (34.0%) | 19/50 (38.0%) | 12/25 (48.0%) | 9/10 (90.0%) | 55/156 (35.3%) | 61/156 (39.1%) | 25/52 (48.1%) | 47/52 (90.4%) |
+| Recall@1 | 239/3600 (6.6%) | 613/9240 (6.6%) | 319/4500 (7.1%) | 23761/126000 (18.9%) | 263/3744 (7.0%) | 1139/16016 (7.1%) | 319/4680 (6.8%) | 12413/65520 (18.9%) |
+| Recall@5 | 8387/65520 (12.8%) | 1650497/18018000 (9.2%) | 5207/25200 (20.7%) | 177/350 (50.6%) | 46783/340704 (13.7%) | 1797017/18738720 (9.6%) | 5279/26208 (20.1%) | 335/672 (49.9%) |
+| Recall@10 | 379837/1801800 (21.1%) | 1935221/9009000 (21.5%) | 1100633/4504500 (24.4%) | 338671/546000 (62.0%) | 406501/1873872 (21.7%) | 252937/1171170 (21.6%) | 2255221/9369360 (24.1%) | 3656/5915 (61.8%) |
+| MRR@10 | 611/3150 (19.4%) | 24461/126000 (19.4%) | 34723/126000 (27.6%) | 1499/2800 (53.5%) | 101/504 (20.0%) | 4421/21840 (20.2%) | 106069/393120 (27.0%) | 1175/2184 (53.8%) |
+
+**Calibration split — 20 eligible tasks, 5 groups** (micro and macro coincide
+here: every group carries exactly four eligible tasks)
+
+| Metric | P | P+A | E | Q |
+|---|---|---|---|---|
+| Hit@1 | 1/10 (10.0%) | 1/5 (20.0%) | 1/4 (25.0%) | 1/2 (50.0%) |
+| Hit@5 | 1/4 (25.0%) | 2/5 (40.0%) | 7/20 (35.0%) | 3/4 (75.0%) |
+| Hit@10 | 7/20 (35.0%) | 9/20 (45.0%) | 1/2 (50.0%) | 3/4 (75.0%) |
+| Recall@1 | 1/10 (10.0%) | 11/80 (13.8%) | 43/240 (17.9%) | 79/240 (32.9%) |
+| Recall@5 | 3/16 (18.8%) | 27/80 (33.8%) | 61/240 (25.4%) | 143/240 (59.6%) |
+| Recall@10 | 1/4 (25.0%) | 7/20 (35.0%) | 101/240 (42.1%) | 31/48 (64.6%) |
+| MRR@10 | 2071/12600 (16.4%) | 199/720 (27.6%) | 31/96 (32.3%) | 143/240 (59.6%) |
+
+**Held-out final split — 15 eligible tasks, only 4 groups**
+
+| Metric | P (micro) | P+A (micro) | E (micro) | Q (micro) | P (macro) | P+A (macro) | E (macro) | Q (macro) |
+|---|---|---|---|---|---|---|---|---|
+| Hit@1 | 1/15 (6.7%) | 1/3 (33.3%) | 2/15 (13.3%) | 8/15 (53.3%) | 1/16 (6.3%) | 5/16 (31.3%) | 1/8 (12.5%) | 25/48 (52.1%) |
+| Hit@5 | 1/3 (33.3%) | 7/15 (46.7%) | 4/15 (26.7%) | 13/15 (86.7%) | 5/16 (31.3%) | 7/16 (43.8%) | 1/4 (25.0%) | 41/48 (85.4%) |
+| Hit@10 | 2/5 (40.0%) | 7/15 (46.7%) | 1/3 (33.3%) | 13/15 (86.7%) | 3/8 (37.5%) | 7/16 (43.8%) | 5/16 (31.3%) | 41/48 (85.4%) |
+| Recall@1 | 1/15 (6.7%) | 23/90 (25.6%) | 1/15 (6.7%) | 7/18 (38.9%) | 1/16 (6.3%) | 23/96 (24.0%) | 1/16 (6.3%) | 37/96 (38.5%) |
+| Recall@5 | 23/90 (25.6%) | 16/45 (35.6%) | 1/6 (16.7%) | 28/45 (62.2%) | 23/96 (24.0%) | 1/3 (33.3%) | 5/32 (15.6%) | 5/8 (62.5%) |
+| Recall@10 | 13/45 (28.9%) | 16/45 (35.6%) | 8/45 (17.8%) | 7/10 (70.0%) | 13/48 (27.1%) | 1/3 (33.3%) | 1/6 (16.7%) | 67/96 (69.8%) |
+| MRR@10 | 83/450 (18.4%) | 2/5 (40.0%) | 28/135 (20.7%) | 287/450 (63.8%) | 83/480 (17.3%) | 3/8 (37.5%) | 7/36 (19.4%) | 151/240 (62.9%) |
+
+> **Held-out caveat — 15 eligible tasks in only 4 groups.** The same caveat as the
+> E section applies unchanged: a single task moves any final-split cell by 1/15
+> (6.7 pp) micro and 1/4 (25 pp) macro. The final-split cells are reported because
+> the split was declared before the freeze, not because they support a claim.
+
+### Canonical Q contrasts (Q−P, Q−P+A, Q−E)
+
+Every contrast is the **exact reduced rational difference** of the two arms'
+metric values, with the sign carried separately; the percentage is presentation
+only. All 336 contrast rows are defined (0 undefined) and each is verified
+independently by cross-multiplication, including lowest-terms reduction, against
+the metric table rows.
+
+**All eligible — task micro (85 tasks)**
+
+| Metric | Q−P | Q−P+A | Q−E |
+|---|---|---|---|
+| Hit@1 | +5/17 (29.4%) | +19/85 (22.4%) | +19/85 (22.4%) |
+| Hit@5 | +44/85 (51.8%) | +39/85 (45.9%) | +36/85 (42.4%) |
+| Hit@10 | +43/85 (50.6%) | +38/85 (44.7%) | +2/5 (40.0%) |
+| Recall@1 | +6521/35700 (18.3%) | +47303/336600 (14.1%) | +3841/23800 (16.1%) |
+| Recall@5 | +213281/556920 (38.3%) | +10764763/30630600 (35.1%) | +2885/8568 (33.7%) |
+| Recall@10 | +957911/2356200 (40.7%) | +869207/2356200 (36.9%) | +862927/2356200 (36.6%) |
+| MRR@10 | +27299/71400 (38.2%) | +1621/5100 (31.8%) | +1793/6120 (29.3%) |
+
+**All eligible — group-equal macro (22 groups)**
+
+| Metric | Q−P | Q−P+A | Q−E |
+|---|---|---|---|
+| Hit@1 | +13/44 (29.5%) | +59/264 (22.3%) | +61/264 (23.1%) |
+| Hit@5 | +67/132 (50.8%) | +5/11 (45.5%) | +113/264 (42.8%) |
+| Hit@10 | +133/264 (50.4%) | +59/132 (44.7%) | +107/264 (40.5%) |
+| Recall@1 | +13397/73920 (18.1%) | +12197/87120 (14.0%) | +6079/36960 (16.4%) |
+| Recall@5 | +108487/288288 (37.6%) | +5543999/15855840 (35.0%) | +7505/22176 (33.8%) |
+| Recall@10 | +246779/609840 (40.5%) | +452671/1219680 (37.1%) | +452171/1219680 (37.1%) |
+| MRR@10 | +42191/110880 (38.1%) | +5023/15840 (31.7%) | +2491/8316 (30.0%) |
+
+**Held-out final split — 15 eligible tasks, only 4 groups, task micro**
+
+| Metric | Q−P | Q−P+A | Q−E |
+|---|---|---|---|
+| Hit@1 | +7/15 (46.7%) | +1/5 (20.0%) | +2/5 (40.0%) |
+| Hit@5 | +8/15 (53.3%) | +2/5 (40.0%) | +3/5 (60.0%) |
+| Hit@10 | +7/15 (46.7%) | +2/5 (40.0%) | +8/15 (53.3%) |
+| Recall@1 | +29/90 (32.2%) | +2/15 (13.3%) | +29/90 (32.2%) |
+| Recall@5 | +11/30 (36.7%) | +4/15 (26.7%) | +41/90 (45.6%) |
+| Recall@10 | +37/90 (41.1%) | +31/90 (34.4%) | +47/90 (52.2%) |
+| MRR@10 | +34/75 (45.3%) | +107/450 (23.8%) | +581/1350 (43.0%) |
+
+- **Reading (exploratory, descriptive only).** Q is ahead of every other arm on
+  every metric over the full eligible population: on task micro Q leads P+A by
+  +22.4 pp Hit@1, +45.9 pp Hit@5, +44.7 pp Hit@10, +36.9 pp Recall@10 and
+  +31.8 pp MRR@10, and it leads E by +22.4 pp Hit@1, +42.4 pp Hit@5, +40.0 pp
+  Hit@10, +36.6 pp Recall@10 and +29.3 pp MRR@10. The same direction holds on
+  development and calibration, and the held-out final split points the same way
+  but is 15 tasks in 4 groups and cannot carry a claim. No arm is declared a
+  winner, no significance is claimed and no threshold was tuned: this is one
+  descriptive measurement of one hosted model under one frozen recipe, on a route
+  whose only credential access is the narrow internal `.env` field read described
+  below.
+
+### Frozen A/Q, E/Q and A/E overlap and three-way gold decomposition
+
+Evaluated **only after** all four rankings were frozen, over the same 85 eligible
+tasks, by a read-only consumer. `A` is the frozen deterministic `P+A` ranking,
+`E` the frozen embedding ranking and `Q` the hosted ranking.
+
+| Cutoff | Pair | Σ intersection | Σ union | Mean intersection | Median intersection |
+|---|---|---|---|---|---|
+| top-32 | A–E | 662 | 4,658 | 662/85 ≈ 7.79 | 7 |
+| top-32 | A–Q | 717 | 4,603 | 717/85 ≈ 8.44 | 8 |
+| top-32 | E–Q | 1,132 | 4,188 | 1132/85 ≈ 13.32 | 13 |
+| top-10 | A–E | 115 | 1,585 | 23/17 ≈ 1.35 | 1 |
+| top-10 | A–Q | 154 | 1,546 | 154/85 ≈ 1.81 | 1 |
+| top-10 | E–Q | 273 | 1,427 | 273/85 ≈ 3.21 | 3 |
+
+Three-way gold decomposition (top-32 and top-10), summed over the 85 eligible
+tasks; the eight buckets sum to the admitted eligible gold path total of 218 at
+both cutoffs:
+
+| Cutoff | A-only | E-only | Q-only | A∩E | A∩Q | E∩Q | All three | None |
+|---|---|---|---|---|---|---|---|---|
+| top-32 | 12 | 3 | 44 | 2 | 28 | 49 | 39 | 41 |
+| top-10 | 7 | 7 | 41 | 1 | 20 | 35 | 13 | 94 |
+
+- The per-task two-way decomposition counts sum to the task's admitted eligible
+  gold path count for **every** task at **both** cutoffs (checked per task, 0
+  violations), and every overlap aggregate equals the sum of its per-task rows.
+- **What this says, and does not say.** Q and E share far more of their top-32
+  than either shares with the deterministic arm (Σ intersection 1,132 vs 717 and
+  662), and Q-only gold paths (44 at top-32, 41 at top-10) outnumber A-only and
+  E-only together. That is a population-overlap statement computed after the
+  freeze, with no gold-based selection performed at any point: it is descriptive,
+  not a selection rule, and no combination of A, E and Q is proposed or scored
+  here.
+- Small-N caveat: the per-task top-10 population is at most 10 files, so a
+  per-task difference of one file is a large relative move; the aggregates are
+  reported over all 85 tasks for that reason.
+
+### Q-branch acquisition, provenance and replay
+
+- **Route and compatibility gate.** The tiny real compatibility request ran
+  **before** any corpus work and recorded: configured model
+  `qwen/qwen3-embedding-8b`, provider-resolved model `Qwen/Qwen3-Embedding-8B`
+  (`resolved_model_matches_declared = true`), native dimension 4,096, finite
+  vectors, 2 inputs, one request, 3,099 ms, 39 prompt tokens, USD 0.00000039
+  (`probe.json`). The probe **fails closed** (exit 3) if the provider ever
+  resolves the configured model to a different identity. An unavailable route or
+  a genuinely different resolved model stops the Q branch and leaves A and E
+  untouched; no substitute model was used and no local deployment exists.
+- **Batched, deduplicated, memoized acquisition.** The 27,733 logical rows
+  (88 query rows + 27,645 code rows) collapse to **10,555 unique embedded inputs**
+  (10,554 measured + 1 unmeasured). The cold acquisition issued **351 batched
+  requests** (at most 32 inputs and 240,000 bytes per request — never one request
+  per row), with **0 failed requests**, 351 of 351 responses echoing the declared
+  resolved model and 0 absent echoes, **10,644,719 prompt tokens** and **USD
+  0.1409903** provider-reported cost. A warm replay over the same manifest made
+  **0 requests** and reported cost `Unavailable` rather than a fabricated zero
+  (`acquisition-cold.json`, `acquisition-warm.json`, `attempts-cold.tsv`).
+- **Measured provider boundary and the provable truncation cap.** Real exchanges
+  on the one route established the per-input limit: 32,768 / 65,536 / 131,072
+  bytes accepted, 196,608 / 262,144 bytes rejected with `400 20015 The parameter
+  is invalid`; 32 inputs × 16,384 bytes (524,288 bytes) accepted in one request.
+  The frozen cap of **32,768 UTF-16 code units** is therefore a *provable* bound
+  rather than a fitted one: a byte-oriented tokenizer emits at most one token per
+  byte, so the cap can never exceed the model's documented 32,768-token context.
+  **507 logical rows** (227 unique inputs) were shortened by it, recorded in
+  `truncations.tsv` and counted per fixture group in the manifest.
+- **Empty declared inputs are `unmeasured`, never fabricated.** The route rejects
+  an empty string outright (`400 ... Too small: expected string to have >=1
+  characters`). **213 logical rows** (1 unique input) carry exactly the empty
+  declared bytes; each keeps its exact logical identity and its candidate stays in
+  the universe, carrying the explicit `undefined` similarity marker and ordered
+  after every measured candidate by path ascending. No vector was invented for
+  them, and the audit checks that each such row carries the empty-input identity
+  on both sides.
+- **No gold-based selection.** No evaluator label, reference patch or gold path is
+  an input to any Q ranking stage. The Q rank stage binds only the task's query
+  fixture, its world's code shards and the frozen deterministic `rank_P.tsv` (as
+  the universe witness); the labels are read only by the metric/overlap consumer,
+  after all rankings were frozen.
+- **Credential boundary.** The only credential access is a narrow **internal
+  field read** of the single `OPENROUTER_API_KEY` entry of the checkout-root
+  `.env`, performed inside the mission-local acquisition helper. The value is
+  never printed, hashed, persisted, placed in argv, admitted as a Bazel input, or
+  written into the CAS, fixtures, receipts, logs or commits, and no unrelated
+  environment key is read. The BuildBuddy credential helper and the JEV MCP
+  launcher are untouched; the JEV credential was not repurposed. The `.env` file
+  itself is never read, hashed or copied by any inspection tool or test. The
+  committed sanitized manifest
+  (`attune/test/localization_qwen/fixture-manifest.tsv`, 905 groups, 11 columns)
+  carries identity only — no payload, no request, no response and no credential.
+
+- **Produced artifacts.** 88 complete standalone Q rankings under
+  `bazel-bin/test/localization_qwen/rank_q_<task>/` (`rank_Q.tsv`,
+  `similarity_Q.tsv`, `fixtures.tsv`, `embedding.tsv`) and one metric tree
+  `bazel-bin/test/localization_qwen/qwen_metrics/` (`metrics.tsv` 448 rows,
+  `contrasts.tsv` 336, `overlap.tsv` 516, `gold.tsv` 172, `reproduction.tsv`
+  336, `population.tsv` 5, `tasks.tsv` 96, `closure.tsv` 364). `tasks.tsv` is
+  byte-identical to the runtime-capped `tasks.tsv` and to the E `tasks.tsv`.
+- **Provider/model-free replay.** Building the Q rankings and the metric table
+  executes **0 embedding-provider calls, 0 JEV calls, 0 Repository/Theory
+  actions**: the rank stage consumes only the immutable declared fixture files
+  (admitted by the `attune_qwen_fixtures` repository rule through `file://` URLs
+  whose declared SHA-256 must match) and the frozen deterministic `rank_P.tsv`,
+  and the metric stage consumes only the frozen ranking trees and the admitted
+  labels. A repeat invocation is served from the action cache.
+- **Source digests (sha256).**
+
+| File | State | sha256 |
+|---|---|---|
+| `attune/src/Attune/Study/Qwen.flix` | new (Study-owned Q submodule) | `2233079fe110d58aca47a7cd202977b6539dad0628b85f3cc5a10df9577c6b78` |
+| `attune/test/localization_qwen/QwenStages.flix` | new (rank + metric stages) | `bd55de33c028b2168faafcae8e83a4e476eaa6d7d77bcfa95f0f918b97f7308e` |
+| `attune/test/localization_qwen/QwenLaw.flix` | new (corpus-free laws) | `b009c3b562abbdc42ad6413f3eeda8c974ff73f4d89a5539fa31c29f441d4bb6` |
+| `attune/test/localization_qwen/QwenAudit.flix` | new (corpus-bound audit) | `ddbc6d7be7953b2b409d248a7fc6dc0a7f7d628c93669baf0f45561a6dc68f62` |
+| `attune/test/localization_qwen/localization_qwen.bzl` | new (declared expansion) | `19bdf0b0547e29de67522603e3a90d15c78bf282025c0dce3155fdf71d394062` |
+| `attune/test/localization_qwen/BUILD.bazel` | new (package targets) | `ace290b272dbd7bb191905f690123c92aa0fd266b1dd0c345b32e0a410c2c982` |
+| `attune/test/localization_qwen/fixture-manifest.tsv` | new (sanitized fixture identity record, 905 groups) | `447a1437b30fcaa6280e4fc8fd9975525151c79e4ae4821a0275a8e49bc54874` |
+| `attune/platform/build/qwen_fixtures.bzl` | new (declared fixture admission) | `ce4b5631eb54f4a774cfef6614efd7a38c85c11f1ce38ec6524513d18347349a` |
+| `attune/BUILD.bazel` | modified (`//test/localization_qwen:policy_files` registered) | `b9f97d09261191aeddbb45a66922085c0c62d7adde200ecbfd96594bd21e88cc` |
+| `attune/MODULE.bazel` | modified (`attune_qwen_fixtures` repository rule) | `27944b9d102149855cfa94b666fa55d95ddbd0c46d20df61d3c8c0f96ad9cd11` |
+
+- **Artifact digests (built, sha256).**
+
+| Artifact | sha256 |
+|---|---|
+| `bazel-bin/test/localization_qwen/qwen_metrics/metrics.tsv` (448 rows) | `5a5a75eb7cf5f0bf2a4ddcdddf9995443f151b40a8bcc5274c34bef2b4a9dd0b` |
+| `bazel-bin/test/localization_qwen/qwen_metrics/contrasts.tsv` (336 rows, 0 undefined) | `dc5f36ad3078b5b70d622445cd0d6f3a54c171c7ed61864d9e280937fe9b007d` |
+| `bazel-bin/test/localization_qwen/qwen_metrics/overlap.tsv` (516 rows) | `e58d7a806356ca690eac0270734329b40d123ebfcd9e7c523f9115069e271243` |
+| `bazel-bin/test/localization_qwen/qwen_metrics/gold.tsv` (172 rows) | `3cf8e3c0bee8ba3ebe45e7671f00b283ba6222ccbf02e2426c79d677c5f6b780` |
+| `bazel-bin/test/localization_qwen/qwen_metrics/reproduction.tsv` (336 checks, all `match`) | `656b15891ec2beca82bd83473f9a04aacefc914ae374e07b21b1732df118aafc` |
+| `bazel-bin/test/localization_qwen/qwen_metrics/population.tsv` (5 rows) | `9ec7dae6f8d0c23d3f6d79d6889aa10bf0f4b04fd787631e7878d8b62e7689de` |
+| `bazel-bin/test/localization_qwen/qwen_metrics/tasks.tsv` (96 rows, byte-identical to the runtime-capped `tasks.tsv`) | `d70817ef4d6de7c0e447278e9c2e4d6c5ee8f04d274e7a84643740eb748404a5` |
+| `bazel-bin/test/localization_qwen/rank_q_serverless__serverless-11277/rank_Q.tsv` (example) | `dbab4d091f8fa163d99061a562fd7300f45a460f72a6efe8833da854ad1d2a5f` |
+| `bazel-bin/test/localization_qwen/rank_q_serverless__serverless-11277/similarity_Q.tsv` (example) | `77fcd67dee609b0433237bf87f11bc03359106e6c7d9669d0d00b8aff6d8cb44` |
+
+- **Evidence commands (one Bazel owner at a time).** All below were run from
+  `attune/` through `nix develop --no-write-lock-file` with
+  `--output_base=/home/becker/.cache/attune-v2-bootstrap-bazel`:
+
+```
+# the host-side hosted-Qwen acquisition (mission-local helper; reads the single
+# OPENROUTER_API_KEY field internally, never printed; 351 batched requests)
+bash runtime/run-qwen-acquire.sh --tag -cold
+# the memoized replay: 0 provider requests
+bash runtime/run-qwen-acquire.sh --tag -warm --memo
+# the 88 Q rankings + the canonical metric table (RBE; 0 provider calls)
+bazel build //test/localization_qwen:qwen_metrics --config=remote --jobs=80 --remote_download_outputs=all
+# the corpus-bound audit + the corpus-free laws (RBE)
+bazel test  //test/localization_qwen:all --config=remote --jobs=80 --test_output=summary
+# the ordinary gate, unchanged (RBE; 5/5 policy tests pass)
+bazel test  //test/policy:all --config=remote --jobs=80 --test_output=summary
+```
+
+- **Laws.** The corpus-free law (`//test/localization_qwen:qwen_law`, 12 native
+  `@Test` declarations) pins the exact cosine, the similarity-descending/
+  ascending-path order including exact ties and the two-tier measured/unmeasured
+  order, the rank column and sidecar separation, the `Schema.Embedding` bridge,
+  the row/vector admission errors including the empty-input `unmeasured` marker,
+  the frozen provider/model/recipe/cap identity, the exact 64-bit reduced signed
+  contrast (including a case whose reduced denominator exceeds 32 bits), and the
+  exact three-way gold partition. It is part of the ordinary offline gate. The
+  corpus-bound audit (`//test/localization_qwen:qwen_audit`, `manual`) checks the
+  produced bytes: universe equality per task, contiguous ranks, the canonical
+  score column, the exact sidecar order and tiering, one
+  provider/resolved-model/recipe/4,096-dim identity per tree, every code row's raw
+  digest equal to the frozen E fixture digest, every metric cell present exactly
+  once over 8 scopes × 2 kinds × 4 arms × 7 metrics, 0 mismatches and 0 absent
+  reproduction rows, every contrast exact by cross-multiplication, the per-task
+  overlap decomposition partitioning the admitted gold paths at both cutoffs, and
+  the frozen population totals (29,493 ranked candidate rows, 28,370 eligible
+  candidate rows, 88 ranked tasks, 85 eligible).
+
 ## Post-hoc exploratory JEV extension
 
 > **POST-HOC EXPLORATORY EXTENSION, NOT PART OF ORIGINAL FOUR-ARM FREEZE.** This
@@ -1164,6 +1520,7 @@ bazel test  //test/localization_jev:jev_law --config=remote --jobs=80 --test_out
 | B — warm deterministic | Derived selection/rank latency and the capped continuation wall time over warm inputs | 88 derived rank actions executed in 1–29s of remote time (median ≈15s among the 36 fully logged); derived selection ~1s; first derived build 268s wall clock / 72s critical path for 89 fresh actions at `--jobs=8`; **zero** Repository/Theory re-execution; metrics stage 24s; continuation inspection (22:44:04Z) to materialized capped metrics (00:43:18Z) = 7,154s wall clock, of which the derived graph itself occupied ~623s and the six Bazel invocations ~413s |
 | C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, complete-run cost, rerank-only time | **Complete lexical pair: 88 of 88 tasks, both conditions.** A-control: 88 requests, 2,756 decisions, 0 failures, 0 retries, 31,572 ms end-to-end (≈87 decisions/s wall), per-call latency 269/328/463/765 ms (min/median/p95/max), 320,708 input + 123,118 output tokens, USD 0.013469736. A-structure: 88 requests, 2,756 decisions, 0 failures, 0 retries, 38,557 ms end-to-end (≈71 decisions/s wall), per-call latency 282/348/501/1,753 ms, 519,579 input + 123,174 output tokens, USD 0.021822318. Combined wall 70,189 ms. The structural prompt costs ≈62% more input tokens and ≈62% more dollars for the same 2,756 decisions, and one call ran 1,753 ms. 0 `Repository`/`Theory` re-executions; replay of the stage is provider-free |
 | D — warm embedding ranking | E ranking and canonical metric latency over the immutable declared fixtures | 88 rank stages + 1 metric stage = 89 `AttuneStudyStage` actions, all served from the remote cache after the first materialization (the fixture acquisition had already paid for the 904 shard actions); **0** embedding inferences, **0** provider calls, **0** `Repository`/`Theory` re-executions at replay; a full `--remote_download_outputs=all` rerun of the metric tree reported 1,280 remote cache hits and 0 executed actions |
+| E — hosted-Qwen acquisition and warm ranking | The host-side batched acquisition of the immutable hosted fixtures, then the Q ranking and canonical metric latency over them | Cold acquisition: **351 batched requests** over 10,555 unique embedded inputs (27,733 logical rows; at most 32 inputs / 240,000 bytes per request, never one request per row), **0 failed**, 351/351 resolved-model echoes, 10,644,719 prompt tokens, **USD 0.1409903**, summed provider latency 1,581,398 ms (per-request 834/2,427/14,803/77,513 ms min/median/p95/max). Memoized replay: **0 requests**, cost `Unavailable` (no fabricated zero). Warm ranking: 88 rank stages + 1 metric stage, all served from the remote cache; **0** embedding-provider calls, **0** JEV calls, **0** `Repository`/`Theory` re-executions at replay |
 
 Deterministic compute is **not zero**: cold RBE/indexing cost, warm compute
 and any JEV spend are separate and are never collapsed into one misleading
@@ -1236,6 +1593,18 @@ speculative sub-cent pricing and no invented dollar values.
   threshold was tuned. The overlap counts were computed after the freeze and no
   gold-based selection was performed at any point, so no A+E combination is
   proposed or scored.
+- **Hosted-Qwen (Q) versus the deterministic arms and E:** descriptive only. Over
+  the full eligible population Q is ahead of every other arm on every metric
+  (micro +22.4 pp Hit@1, +45.9 pp Hit@5, +44.7 pp Hit@10, +36.9 pp Recall@10 and
+  +31.8 pp MRR@10 against P+A; +22.4 pp Hit@1, +42.4 pp Hit@5, +40.0 pp Hit@10,
+  +36.6 pp Recall@10 and +29.3 pp MRR@10 against E). Q and E share far more of
+  their top-32 than either shares with the deterministic arm (Σ intersection
+  1,132 vs 717 and 662 of 85×32), and 44 of the 218 eligible gold paths are in
+  Q's top-32 only. The held-out final split points the same way but is 15 tasks in
+  4 groups and carries no claim. One hosted model under one frozen recipe, no
+  model search, no tuned threshold, no blend, and no gold-based selection at any
+  point; the overlap counts were computed after the freeze and no A/E/Q
+  combination is proposed or scored.
 - **Repairs vs regressions:** anchors repair more than they regress; the
   Repository and Theory families regress more than they repair on these metrics.
 - **Latency/cost tradeoffs:** the cold structural cost is dominated by the
@@ -1766,3 +2135,52 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   earlier D-keyed partial `P+A+D+J` reading is kept as history only; the E+J pair
   is deferred and no E+J number is claimed. Original denominators unchanged at
   96 / 93 and the original full result still 0/96 and not estimated.
+- **2026-10-07T13:50:00Z — generation 11, FINAL for the post-hoc exploratory
+  hosted-Qwen embedding branch (Q).** Publishes the Q half of the embedding
+  extension **before** any Q-JEV work, as required. Adds: the one fixed route
+  `qwen/qwen3-embedding-8b` over OpenRouter through the pinned LangChain4j 1.18.1
+  typed `OpenAiClient` SDK, resolved by the provider to `Qwen/Qwen3-Embedding-8B`
+  (`resolved_model_matches_declared = true`, native 4,096 dims) by a tiny real
+  compatibility probe that ran before any corpus work and fails closed on a
+  divergent resolution; the frozen recipe
+  `qwen3-embedding-8b-instruct-queryprefix-rawtrunc32768cu-native4096-unnormalized-cosine-v1`
+  (documented Instruct form on queries only, declared raw source bytes on code
+  with no added path/summary/symbol/anchor/structure, ≤32,768 UTF-16 code units,
+  cosine, exact-similarity-descending/ascending-path order); the deduplicated
+  batched acquisition (27,733 logical rows → 10,555 unique embedded inputs,
+  **351 batched requests**, 0 failures, 351/351 resolved-model echoes, 10,644,719
+  prompt tokens, USD 0.1409903) with a memoized replay at **0 requests** and cost
+  reported `Unavailable` rather than a fabricated zero; the measured provider
+  boundary (131,072 bytes accepted / 196,608 rejected, 524,288 bytes in one
+  request accepted) that makes the 32,768-code-unit cap provable rather than
+  fitted, with **507 truncated logical rows** recorded; the honest `unmeasured`
+  treatment of the **213 logical rows** whose declared bytes are empty (never
+  sent, no fabricated vector, explicit `undefined` marker, ordered after every
+  measured candidate); the exact per-row logical fixture key `(provider, resolved
+  model, recipe, sha256 of the exact embedded input bytes)` with the vector
+  payload as data only, and the committed sanitized 11-column manifest (905
+  groups) whose every fixture is admitted through a `file://` URL verified
+  against its declared SHA-256; the canonical P / P+A / E / Q tables over the
+  all-eligible population and the development (50 / 13), calibration (20 / 5) and
+  held-out final (15 / 4) splits in task-micro and group-equal macro form; the
+  exact reduced Q−P / Q−P+A / Q−E contrasts (336 rows, 0 undefined, all verified
+  by cross-multiplication including lowest-terms reduction, with the reduction
+  carried in 64 bits after a real 32-bit overflow was found and fixed); the frozen
+  A/E, A/Q and E/Q top-32 and top-10 overlap and the three-way A/E/Q gold
+  decomposition, evaluated only after all four rankings froze; and the
+  provider/model-free replay (0 embedding-provider calls, 0 JEV calls, 0
+  Repository/Theory actions). Adds the Study-owned
+  `src/Attune/Study/Qwen.flix`, the new `test/localization_qwen` package (stages,
+  corpus-free laws, corpus-bound audit and the declared expansion), the
+  `platform/build/qwen_fixtures.bzl` repository rule, the `attune_qwen_fixtures`
+  declaration in `MODULE.bazel`, and the `//test/localization_qwen:policy_files`
+  registration in the root `BUILD.bazel`. The credential boundary is the narrow
+  internal `.env` `OPENROUTER_API_KEY` field read only; the BuildBuddy helper and
+  the JEV launcher are untouched and the JEV credential was not repurposed. The
+  offline gate is green at **31/31** on RBE and the policy suite at **5/5**.
+  Frozen deterministic rankings, `select_policy`, `derived_population`, the
+  runtime-capped `metrics.tsv`, `tasks.tsv`, `contributions.tsv`, the E ranking
+  tree and the JEV decisions are untouched: all **336 of 336** reproduced P / P+A
+  / E cells match, with 0 mismatches and 0 absent. No CodeRank reacquisition and
+  no E re-measurement occurred; no Q-JEV number is claimed. Original denominators
+  unchanged at 96 / 93 and the original full result still 0/96 and not estimated.
