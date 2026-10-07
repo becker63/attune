@@ -1,18 +1,27 @@
 # Localization performance report
 
-**Status:** FINAL for the runtime-capped deterministic localization result;
-the POST-HOC EXPLORATORY JEV EXTENSION is **pending — not run**, and its
-availability is **not established** (no live probe has occurred). The original
-panel `attune-panel-2026-10-06` remains immutable and its full result does not
-exist. An owner-approved runtime cutoff excludes whole canonical repository
-groups whose extraction was unfinished at the 22:44:04Z continuation start, and
-the derived cohort's four frozen arms are now built, audited and scored through
-the one canonical metric reducer, including its declared development, calibration
-and held-out final reductions. All prior audit, repair and verification history
-is retained below unchanged.
+**Status:** FINAL for the runtime-capped deterministic localization result.
+The POST-HOC EXPLORATORY JEV EXTENSION is **not part of that result and is not
+computed**: the configured live route is **available and was contacted for real**
+(7 successful provider calls, resolved model `typesafe/jev-1.13-20260917`,
+provider `TypeSafe`, 192 logical decisions), but the frozen population of 2,756
+per-candidate decisions was not completed, so **no `P+A+D+J` ranking, metric or
+delta exists and none is claimed**. `JEV=Unavailable` is explicitly **not**
+claimed: the route answered. The original panel `attune-panel-2026-10-06` remains
+immutable and its full result does not exist. An owner-approved runtime cutoff
+excludes whole canonical repository groups whose extraction was unfinished at the
+22:44:04Z continuation start, and the derived cohort's four frozen arms are now
+built, audited and scored through the one canonical metric reducer, including its
+declared development, calibration and held-out final reductions. All prior audit,
+repair and verification history is retained below unchanged.
 
-**Generated:** 2026-10-07T02:29:00Z (generation 7; supersedes generation 6 for
-current state; earlier generations retained below as history)
+**Generated:** 2026-10-07T02:55:00Z (generation 8; supersedes generation 7 for
+current state; earlier generations retained below as history). Generation 8
+corrects two overreaching readings of the frozen numbers, fixes the offline-gate
+accounting and names the build/test commands separately, and records the real
+live-JEV contact. The frozen rankings, `select_policy`, `derived_population`,
+`metrics.tsv`, `tasks.tsv` and `contributions.tsv` are untouched by it: every
+number below is the same measurement, only the reading of two of them changed.
 
 **Source:** this commit (parent `75562bf`, branch `main`), built on
 `2b5bc2de3bdf25dd2d437e9f91068bf9f64413e2` ("Repair UTF-8 world extraction and
@@ -175,12 +184,25 @@ Micro deltas, in percentage points (positive = the added family helped):
 (+7.0 Hit@1, +6.5 MRR@10 over the lexical prior). Repository adjacency adds a
 small Recall@5 gain (+1.1) but costs Hit@1 (−2.3) and MRR@10 (−2.0). The
 cumulative Theory arm (D = P+A + Repository facts + Theory witnesses) is **worse
-than P+A and worse than F on every cutoff except Recall@10**, where it is
-essentially flat. Hit@10 is identical (41.2%) for P+A, P+A+F and P+A+D: the F and
-D families never move a task across the top-10 boundary on this corpus; they only
-reorder inside it. This is an honest null-to-negative result for the structural
-families beyond anchors under the frozen additive scoring, and it is reported as
-measured, not as a defect.
+than P+A at every cutoff except two: Hit@10, where the two arms tie at 41.2%, and
+Recall@10, where it is slightly above P+A (+0.1) and still below P+A+F**. Against
+P+A+F it is worse at every cutoff except the same Hit@10 tie. This is an honest
+null-to-negative result for the structural families beyond anchors under the
+frozen additive scoring, and it is reported as measured, not as a defect.
+
+**The identical 41.2% Hit@10 of P+A, P+A+F and P+A+D is a net-flat count, not an
+invariance, and it must not be read as one.** Verified per task against the frozen
+rankings and the admitted labels, the cumulative D arm crosses the top-10 boundary
+in both directions: it **gains** gold membership on 3 tasks
+(`sveltejs__kit-3571`, `sveltejs__kit-4140`, `vuejs__eslint-plugin-vue-1016`) and
+**loses** it on 3 (`platers__obsidian-linter-1007`, `firebase__firebase-tools-2214`,
+`firebase__firebase-tools-2291`). The changes offset inside the overall count and
+also across splits: development 19/50 → 21/50, final 7/15 → 5/15, calibration
+9/20 → 9/20. For P+A+F the aggregate equality does coincide with genuine per-task
+invariance — 0 gained, 0 lost, the same 35 tasks in all three splits — but that is
+now stated because it was checked per task, not because the totals happened to
+match. Generation 7 read both arms as "never move a task across the top-10
+boundary"; generation 8 corrects that.
 
 ### Declared denominators and split reductions
 
@@ -354,9 +376,23 @@ only the exact path `src/Attune/Study.flix` to the `study` component, so
 the raw code total. The one-line fix widens the Study owner clause to the
 `src/Attune/Study` prefix (the same sub-module pattern already used for
 `src/Attune/Repository`), so the canonical reducer counts under `study` and the
-partition holds again. The full offline gate (`bazel test //...`) is 27/27 green
-after the fix; `notes/design.md`'s identity-labelled historical table is left as
-the observation of its own leaf, not rewritten.
+partition holds again. The full offline gate (`bazel test //...`) was 27/27 green
+at that point in the history — **that is history, not the current count**: the
+gate is **28/28** today, because generation 7 added the non-`manual`, corpus-free
+law target `//test/localization_runtime:metrics_law`. `notes/design.md`'s
+identity-labelled historical table is left as the observation of its own leaf,
+not rewritten.
+
+Two differently named surfaces must not be conflated here, because they do
+different things. `localization_runtime` is the declared **test** command
+(`bazel test //test/localization_runtime:all --config=remote --jobs=8
+--test_output=summary`), and it runs the corpus-free laws `runtime_law` and
+`metrics_law`. `localization_runtime_metrics` is a separate declared **build**
+command (`bazel build //test/localization_runtime:metrics --config=remote
+--jobs=8`) that materializes `metrics/metrics.tsv`. The metrics stage is
+deliberately not part of the `:all` suite, so the metrics build is the only way
+to produce the published table, and the test command alone never proves that the
+table exists.
 
 ### Warm reuse — measured, not inferred
 
@@ -570,15 +606,66 @@ unchanged and the derived builds re-executed none of them (see "Warm reuse").
   distinguished and never fabricated into totals. `JEV_KEY` and every
   credential are never written to stdout, CLI arguments, Bazel public inputs,
   the CAS, receipts or commits; no unrelated secret inspection.
-- **Status: authorized extension pending — not run; availability not
-  established.** 0 actual provider requests, 0 API usage and 0 cost as of this
-  report, and **no live availability probe has occurred**, so `JEV=Unavailable`
-  is *not* established and is not claimed here. `JEV=Unavailable` is valid only
-  on an actual recorded unavailability or failure of the configured route, and
-  only the separate JEV feature may establish that; an unobserved model snapshot,
-  usage metadata or retry behaviour is not provider unavailability. No
-  prediction, delta, token count or dollar value is reported for an extension
-  that has not run; the deterministic result above stands on its own.
+- **Status: the route is available and was contacted for real; the frozen
+  population was not completed; no `D+J` metric exists and none is claimed.**
+  7 actual provider requests were made on the currently configured route — one
+  2-question schema probe and six 32-question task batches — and all 7 succeeded,
+  for 192 logical decisions, 0 failures and 0 retries. The route resolved to
+  model snapshot `typesafe/jev-1.13-20260917` from provider `TypeSafe`; the
+  requested `jev-1.13` identity and the resolved dated snapshot are recorded
+  separately, and the responses returned usable `input_tokens`, `output_tokens`
+  and `cost`. `JEV=Unavailable` is therefore **explicitly not** claimed: the
+  route answered. **No `P+A+D+J` ranking, metric, delta or interpretation is
+  published**, because the frozen population is not complete:
+
+| JEV operation (measured) | Value |
+|---|---|
+| Surviving tasks in the frozen population | 88 (52 development / 20 calibration / 16 final) |
+| Frozen logical decisions, top-32 per task, fixed K | 2,756 (88 × 32 = 2,816 maximum; four tasks carry fewer than 32 candidates) |
+| Full unchanged candidate population | 29,493 files |
+| Tasks actually decided | **6 of 88** |
+| Logical decisions actually requested | **192 of 2,756** |
+| Provider HTTP requests / batches / retries | 7 / 7 / 0 |
+| Decision outcomes persisted | 160, in 5 task vectors |
+| Observed resolved model / provider | `typesafe/jev-1.13-20260917` / `TypeSafe` |
+| Observed tokens (six task batches) | 18,180 input, 8,561 output |
+| Observed provider cost (six task batches) | USD 0.000764 total, ≈ USD 0.000127 per task, ≈ USD 0.000004 per decision |
+| Observed batch latency | 276–426 ms, median 324 ms, 1 request per batch |
+| `Repository` / `Theory` re-executions caused by the JEV calls | **0** |
+| Complete-run cost per decision and per task in dollars | **unavailable** — not extrapolated from a partial run |
+
+  The partial receipts are not usable as rerank evidence and are not used as
+  any: two distinct tasks carry byte-identical 32-decision vectors, one task's
+  state text diverged from its exact public issue bytes, and one received
+  response was never persisted. Those are transcription defects in the worker's
+  own hand-off of payloads and answers, recorded rather than repaired silently.
+  The obstacle is **volume, not availability**: the tool's schema requires the
+  per-candidate choice encoding to be restated for every candidate, so a
+  32-candidate batch is a **measured 7,125 bytes** of emitted payload (7,183
+  bytes average across the frozen 88 tasks) before any answer comes back. The
+  full population is therefore ≈632 KB of emitted payload (≈160 K tokens) plus
+  one short answer per question, which a single worker session cannot carry.
+  Provider cost and latency are not the obstacle: extrapolated over all 88 tasks
+  they are ≈USD 0.011 and ≈30 s. Unblocking is the mission owner's decision, either a declared
+  host-local mechanical receipt writer (permitted as a non-cacheable provider
+  step, and it also removes the transcription defects) or a smaller frozen K;
+  neither is taken unilaterally here.
+- **Frozen before the first outcome, and unchanged since:** one prompt identity,
+  `test/localization_jev/prompt.template.txt` (2,044 bytes, sha256
+  `b860ecfde54c1dfbf7d77bed0567b6568db9e3f1cb545af6a1bf60d33be9f81b`), with a
+  byte-identical evidence copy at `library/jev-prompt.template.txt`. It was
+  fixed before any provider response and never edited afterwards: no prompt
+  tuning, no invented confidence threshold, no second model and no
+  outcome-dependent retry. Failure, malformed output and timeout are never
+  `NotRelevant`; no such outcome occurred in the six batches that ran. `JEV_KEY`
+  was never printed, hashed or passed through stdout, argv, a Bazel public input,
+  the CAS, a receipt or a commit, and no unrelated secret was inspected.
+- **Not done, and deliberately not approximated:** the stable promotion pass
+  (key `(Relevant?0:1, original D rank)`) was not applied to any population, no
+  candidate was deleted, invented or re-scored, and therefore no `D` versus
+  `D+J` delta, gain, regression or concentration figure exists. The frozen
+  deterministic result above stands exactly as it was before the JEV calls, and
+  the JEV work touched no upstream stage.
 
 ## Latency regimes
 
@@ -586,7 +673,7 @@ unchanged and the derived builds re-executed none of them (see "Warm reuse").
 |---|---|---|
 | A — cold structural construction | World-extraction/Theory cost from real logs | 325 KB single-file 360.6s / zero declarations / 4,106 refusals; `w35` 3,664s remote pre-fix long pole; obsidian `w34`/`w35` 2,532.5s / 2,509.6s post-fix; `w41` >14,148s console elapsed and `w84` unfinished, both ending in an internal remote-execution upload timeout |
 | B — warm deterministic | Derived selection/rank latency and the capped continuation wall time over warm inputs | 88 derived rank actions executed in 1–29s of remote time (median ≈15s among the 36 fully logged); derived selection ~1s; first derived build 268s wall clock / 72s critical path for 89 fresh actions at `--jobs=8`; **zero** Repository/Theory re-execution; metrics stage 24s; continuation inspection (22:44:04Z) to materialized capped metrics (00:43:18Z) = 7,154s wall clock, of which the derived graph itself occupied ~623s and the six Bazel invocations ~413s |
-| C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, rerank-only time from persisted receipts | Not run; pending — availability not established (no live probe) |
+| C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, rerank-only time from persisted receipts | **Partial and incomplete: 6 of 88 tasks.** Route availability is established — 7 real requests, all successful, 0 failures, 0 retries — and the provider side is cheap: batch latency 276–426 ms with median 324 ms (`n=6`, so p95 is not measurable and is not reported), 32 logical decisions per batch and one HTTP request per batch (≈99 decisions/s of provider time), 18,180 input / 8,561 output tokens and USD 0.000764 for the six batches, 0 `Repository`/`Theory` re-executions. End-to-end wall time, end-to-end decisions/s, rerank-only time and complete-run cost are **unavailable** — the frozen population was not completed and no value is extrapolated from a partial run |
 
 Deterministic compute is **not zero**: cold RBE/indexing cost, warm compute
 and any JEV spend are separate and are never collapsed into one misleading
@@ -606,24 +693,35 @@ speculative sub-cent pricing and no invented dollar values.
 - **Repository gain:** earned Repository adjacency adds a small Recall@5 gain
   but reduces Hit@1 and MRR@10; its effect is a reshuffle, not a broad
   improvement.
-- **Incremental Theory:** the cumulative D arm is worse than P+A and worse than
-  F on every cutoff except Recall@10, where it is flat. On this corpus the
-  Theory-witness family does not add retrieval value under the frozen additive
-  scoring.
+- **Incremental Theory:** the cumulative D arm is worse than P+A at every cutoff
+  except Hit@10, which ties at 41.2%, and Recall@10, where it is slightly above
+  P+A (+0.1) and still below P+A+F; it is worse than P+A+F at every cutoff except
+  the same Hit@10 tie. On this corpus the Theory-witness family does not add
+  retrieval value under the frozen additive scoring.
 - **Useful structural fraction:** 74 of 85 scored tasks change ranking when
   anchors are added; 46 when Repository adjacency is added; 62 and 58 for the
   Theory arm. The structural families move most tasks, but movement is not
   improvement.
-- **Broad vs concentrated:** the identical 41.2% Hit@10 for P+A, P+A+F and
-  P+A+D shows the F and D families never change *whether* gold is in the top 10;
-  their effect is confined to ordering inside it.
-- **JEV gain beyond Theory:** not measurable — the extension has not run.
+- **Broad vs concentrated:** the identical 41.2% Hit@10 for P+A, P+A+F and P+A+D
+  is a net count, and the two families behind it behave differently. P+A+F is
+  verified inert at the top-10 boundary (0 tasks gained, 0 lost). P+A+D is not:
+  it moves 3 tasks into the top 10 and 3 out, so its equal total is an offset,
+  not an absence of effect. Both families' larger effect is on ordering *inside*
+  the top 10.
+- **JEV gain beyond Theory:** not measurable and not claimed. The route is
+  available and answered real calls (7 requests, resolved model
+  `typesafe/jev-1.13-20260917`, provider `TypeSafe`); what is missing is the
+  frozen decision population (6 of 88 tasks decided), not availability, and no
+  `D` versus `D+J` comparison is published from a partial population.
 - **Repairs vs regressions:** anchors repair more than they regress; the
   Repository and Theory families regress more than they repair on these metrics.
 - **Latency/cost tradeoffs:** the cold structural cost is dominated by the
   pinned native parse of a few large files; the warm deterministic path is
-  cheap and fully reused (zero Repository/Theory re-execution); JEV cost is
-  unknown and unclaimed.
+  cheap and fully reused (zero Repository/Theory re-execution); the JEV provider
+  step is also cheap where it was measured (276–426 ms and ≈USD 0.000127 per
+  32-decision task, ≈USD 0.000004 per decision), so the exploratory arm's
+  remaining cost is dominated by the volume of mandatory per-candidate
+  decisions, not by provider price.
 - **Pathology:** the dominant cost is a measured product limitation of the
   pinned native parse relative to a cold-index implementation, not a defect
   introduced here and not a defect in the locale repair. It is pre-existing and
@@ -1042,3 +1140,31 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   `metrics.tsv` changed, and only by adding the new populations and counts.
   Original denominators unchanged at 96 / 93 and the original full result still
   0/96 and not estimated.
+- **2026-10-07T02:55:00Z — generation 8, FINAL for the runtime-capped
+  deterministic result; live-JEV contact recorded and two readings corrected.**
+  Adds the real live-JEV evidence: the configured route is available and answered
+  7 provider calls (one 2-question schema probe and six 32-question task batches,
+  192 logical decisions, 0 failures, 0 retries), resolving to model snapshot
+  `typesafe/jev-1.13-20260917` from provider `TypeSafe`, with observed 18,180
+  input / 8,561 output tokens, USD 0.000764, batch latency 276–426 ms (median
+  324 ms) and 0 `Repository`/`Theory` re-executions. Records the frozen prompt
+  identity (`test/localization_jev/prompt.template.txt`, 2,044 bytes, sha256
+  `b860ecfd…`) and the frozen population (88 tasks, 2,756 top-32 logical
+  decisions over 29,493 candidates, fixed K, four tasks short of 32), plus the
+  honest incompleteness: 6 of 88 tasks decided and partial receipts that are not
+  usable as rerank evidence (a duplicate decision vector across two tasks, one
+  diverged state, one unpersisted response), so no `D+J` metric, delta or gain is
+  published and `JEV=Unavailable` is explicitly not claimed. Corrects two
+  overreaching readings of the frozen numbers: (a) the cumulative D arm is worse
+  than P+A at every cutoff except the Hit@10 tie and Recall@10, where it is
+  slightly above P+A and below P+A+F — not "worse at every cutoff except
+  Recall@10"; (b) the identical 41.2% Hit@10 of P+A, P+A+F and P+A+D is
+  net-flat, not invariant — verified per task, P+A+D moves 3 tasks into the top
+  10 and 3 out (development 19/50→21/50, final 7/15→5/15), while P+A+F is
+  genuinely invariant at 0 gained / 0 lost. Names the two separate declared
+  surfaces (`localization_runtime` tests versus `localization_runtime_metrics`
+  build) and labels the 27/27 gate as history against the current 28/28. Frozen
+  rankings, `select_policy`, `derived_population`, `metrics.tsv`, `tasks.tsv` and
+  `contributions.tsv` are byte-identical to generation 7; no upstream stage ran
+  and the deterministic result is unchanged. Original denominators unchanged at
+  96 / 93 and the original full result still 0/96 and not estimated.
