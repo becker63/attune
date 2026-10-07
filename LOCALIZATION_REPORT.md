@@ -1082,13 +1082,17 @@ both cutoffs:
   untouched; no substitute model was used and no local deployment exists.
 - **Batched, deduplicated, memoized acquisition.** The 27,733 logical rows
   (88 query rows + 27,645 code rows) collapse to **10,555 unique embedded inputs**
-  (10,554 measured + 1 unmeasured). The cold acquisition issued **351 batched
-  requests** (at most 32 inputs and 240,000 bytes per request — never one request
-  per row), with **0 failed requests**, 351 of 351 responses echoing the declared
-  resolved model and 0 absent echoes, **10,644,719 prompt tokens** and **USD
-  0.1409903** provider-reported cost. A warm replay over the same manifest made
-  **0 requests** and reported cost `Unavailable` rather than a fabricated zero
-  (`acquisition-cold.json`, `acquisition-warm.json`, `attempts-cold.tsv`).
+  (10,554 measured + 1 unmeasured), from a declared raw-byte universe of 10,480
+  distinct raw code inputs (the handoff's unique logical keys) plus 88 distinct
+  raw query inputs — the raw code inputs collapse further because the frozen
+  truncation maps distinct long raw files onto the same capped bytes. The cold
+  acquisition issued **351 batched requests** (at most 32 inputs and 240,000 bytes
+  per request — never one request per row), with **0 failed requests**, 351 of 351
+  responses echoing the declared resolved model and 0 absent echoes, **10,644,719
+  prompt tokens** and **USD 0.1409903** provider-reported cost. A warm replay over
+  the same manifest made **0 requests** and reported cost `Unavailable` rather
+  than a fabricated zero (`acquisition-cold.json`, `acquisition-warm.json`,
+  `attempts-cold.tsv`).
 - **Measured provider boundary and the provable truncation cap.** Real exchanges
   on the one route established the per-input limit: 32,768 / 65,536 / 131,072
   bytes accepted, 196,608 / 262,144 bytes rejected with `400 20015 The parameter
