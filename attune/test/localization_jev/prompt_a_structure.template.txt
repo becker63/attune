@@ -1,0 +1,44 @@
+FROZEN JEV REQUEST — A-STRUCTURE CONDITION (post-hoc exploratory P+A ablation)
+
+This template records the exact bytes of the frozen A-structure prompt identity.
+It was fixed before any A-pair provider outcome and never edited afterwards: no
+prompt tuning, no invented confidence threshold, no second model and no
+outcome-dependent retry.
+
+PART 1 — the frozen scientific question (A-structure).
+
+rule (the state's `rule` field):
+Decide whether the candidate source file must be modified to fix this bug report. Use only the bug report text and the candidate file path. The listed repository relationships and theory witnesses show that code refers to this file; they are relationships, not proof that the file must be modified.
+
+state (JSON object, shared by every question of one task):
+{"task":"{task}","bug_report":"{bug_report}","rule":"<the rule above>"}
+  {task}       = the task's public instance_id
+  {bug_report} = the first 2000 characters of the task's public problem_statement
+                 (a deterministic prefix of the public catalog projection)
+
+question instruction (string, one question per candidate):
+Candidate file path: {path} (original P+A rank {rank}, P+A score {score})
+Repository relations: defines {n} ({symbols}); imports {n} ({paths}); imported_by {n} ({paths}).
+Theory witnesses: {template ids or none}
+  {path}   = the candidate's repository-relative path, exactly as the frozen P+A
+             ranking records it
+  {rank}   = the candidate's original rank in the frozen P+A ranking
+  {score}  = the candidate's frozen P+A ranking score
+
+The A-structure condition uses the exact same candidate base and the exact same
+rank/score fields as A-control and adds ONLY the already-materialized candidate
+Repository relations (the world's `facts.tsv` rows keyed by the candidate path)
+and Theory witness template ids (the world's `witnesses.tsv` rows naming a symbol
+the candidate defines). No new structural analysis, no source bodies, no tools
+and no search are used; it physically carries no F, D, gold, patch, test,
+interface, oracle or final-metric field.
+
+outcomes (fixed names; one independent choice per candidate):
+Relevant | NotRelevant | Unknown
+A Failed(kind) transport, decode or validation outcome is never one of these and
+is never mapped to a negative.
+
+PART 2 — mechanical tool encoding (not scientific prompt content).
+The installed jev-mcp server requires, per choice question, a `criteria` object
+mapping each outcome name to a non-empty description string:
+{"Relevant":"must be modified","NotRelevant":"must not be modified","Unknown":"insufficient information"}

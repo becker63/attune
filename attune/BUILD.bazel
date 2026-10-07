@@ -56,6 +56,7 @@ filegroup(
         "//test/history:policy_files",
         "//test/localization:policy_files",
         "//test/localization_embedding:policy_files",
+        "//test/localization_jev:policy_files",
         "//test/localization_runtime:policy_files",
         "//test/policy:policy_files",
         "//test/receipt:policy_files",

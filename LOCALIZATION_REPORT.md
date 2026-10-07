@@ -1,20 +1,26 @@
 # Localization performance report
 
-**Status:** FINAL for the runtime-capped deterministic localization result, and
-FINAL for the post-hoc exploratory **embedding (E)** half of the extension. The
-POST-HOC EXPLORATORY JEV EXTENSION is **not part of that result and is not
-computed**: the configured live route is **available and was contacted for real**
-(7 successful provider calls, resolved model `typesafe/jev-1.13-20260917`,
-provider `TypeSafe`, 192 logical decisions), but the frozen population of 2,756
-per-candidate decisions was not completed, so **no `P+A+D+J` ranking, metric or
-delta exists and none is claimed**. `JEV=Unavailable` is explicitly **not**
-claimed: the route answered. The original panel `attune-panel-2026-10-06` remains
-immutable and its full result does not exist. An owner-approved runtime cutoff
-excludes whole canonical repository groups whose extraction was unfinished at the
-22:44:04Z continuation start, and the derived cohort's four frozen arms are now
-built, audited and scored through the one canonical metric reducer, including its
-declared development, calibration and held-out final reductions. All prior audit,
-repair and verification history is retained below unchanged.
+**Status:** FINAL for the runtime-capped deterministic localization result, FINAL
+for the post-hoc exploratory **embedding (E)** half of the extension, and now
+**FINAL for the post-hoc exploratory lexical JEV pair (A-control / A-structure)**.
+The JEV pair is complete: the frozen common A32 population (88 tasks, 2,756
+decisions per condition) was decided on the configured live route (176 successful
+provider calls, resolved model `typesafe/jev-1.13-20260917`, provider `TypeSafe`,
+0 failures, 0 retries), both prompts were frozen byte-exact before any outcome,
+and `P`, `P+A`, `P+A+J` and `P+A+J(structure)` are scored through the one
+canonical reducer over the all-eligible population and the declared development,
+calibration and held-out final splits, task-micro and group-equal macro, with
+frozen contrasts and evaluator-only paired diagnostics. The older D-keyed
+`P+A+D+J` attempt (6 of 88 tasks, no metric) is kept as history only and is not
+the source of any published A number; the E+J pair is deferred and no E+J number
+is claimed. `JEV=Unavailable` is explicitly **not** claimed: the route answered.
+The original panel `attune-panel-2026-10-06` remains immutable and its full result
+does not exist. An owner-approved runtime cutoff excludes whole canonical
+repository groups whose extraction was unfinished at the 22:44:04Z continuation
+start, and the derived cohort's four frozen arms are built, audited and scored
+through the one canonical metric reducer, including its declared development,
+calibration and held-out final reductions. All prior audit, repair and
+verification history is retained below unchanged.
 
 The post-hoc exploratory embedding branch now has its complete standalone
 rankings for all 88 surviving tasks over the **exact same complete frozen
@@ -29,15 +35,20 @@ reproduces all 224 published P / P+A baseline cells exactly (0 mismatches). The
 held-out final split is **15 eligible tasks in only 4 groups**, so its differences
 are reported and explicitly not read as a finding.
 
-**Generated:** 2026-10-07T02:55:00Z (generation 8; supersedes generation 7 for
-current state; earlier generations retained below as history). Generation 8
-corrects two overreaching readings of the frozen numbers, fixes the offline-gate
-accounting and names the build/test commands separately, and records the real
-live-JEV contact. The frozen rankings, `select_policy`, `derived_population`,
-`metrics.tsv`, `tasks.tsv` and `contributions.tsv` are untouched by it: every
-number below is the same measurement, only the reading of two of them changed.
+**Generated:** 2026-10-07T11:50:00Z (generation 10; supersedes generation 9 for
+current state; earlier generations retained below as history). Generation 10 adds
+the complete post-hoc exploratory lexical JEV pair: the frozen common A32
+population (88 tasks, 2,756 decisions per condition), the two byte-exact paired
+prompts, the measured `P+A+J` and `P+A+J(structure)` metrics and contrasts over
+the all-eligible population and the three declared splits, the evaluator-only
+paired diagnostics, and the provider-free replay. It supersedes the earlier
+D-keyed partial `P+A+D+J` reading, which is kept below as history only. The
+frozen rankings, `select_policy`, `derived_population`, `metrics.tsv`,
+`tasks.tsv`, `contributions.tsv` and the E ranking tree are untouched by it: the
+`P` and `P+A` cells were reproduced cell-for-cell as a cache check and no
+deterministic number in this report moved.
 
-**Source:** this commit (parent `75562bf`, branch `main`), built on
+**Source:** this commit (parent `597db1d`, branch `main`), built on
 `2b5bc2de3bdf25dd2d437e9f91068bf9f64413e2` ("Repair UTF-8 world extraction and
 publish the localization run audit"). The report is committed with the change it
 describes, so it names its parent and its own input digests rather than a
@@ -838,106 +849,312 @@ bazel test  //... --config=remote --jobs=80 --test_output=summary
 
 ## Post-hoc exploratory JEV extension
 
-> **POST-HOC EXPLORATORY EXTENSION, NOT PART OF ORIGINAL FOUR-ARM FREEZE**
+> **POST-HOC EXPLORATORY EXTENSION, NOT PART OF ORIGINAL FOUR-ARM FREEZE.** This
+> section reports the measured **lexical P+A JEV pair** (A-control and
+> A-structure) only. The E+J pair is deferred and no E+J number is claimed here.
+> The four measured arms (`P`, `P+A`, `P+A+F`, `P+A+D`) and the frozen CodeRank E
+> result above are untouched: the A pair is a strictly downstream consumer of the
+> already-frozen `P+A` ranking trees and re-executed no upstream action.
 
-- **Question:** do tiny relevance decisions improve the warm deterministic
-  localizer at low marginal cost? No confirmatory claim, no prompt tuning, no
-  new-model search. Own assertions/feature (`P+A+D+J`); not part of
-  VAL-LOC-002.
-- **Start condition (now satisfied):** the complete runtime-capped `P+A+D`
-  artifacts are immutable and the canonical metrics above exist. The extension
-  is a new downstream consumer only; a JEV invocation must not rerun Repository
-  or Theory and is not integrated into extraction, Theory, variants, the
+- **Question:** do tiny typed relevance decisions improve the warm deterministic
+  `P+A` localizer at low marginal cost, and does adding already-public structural
+  evidence to the same prompt help or hurt? No confirmatory claim, no prompt
+  tuning, no new-model search. Own assertions/feature (`P+A+J` and
+  `P+A+J(structure)`); not part of VAL-LOC-002.
+- **Start condition (satisfied):** the complete runtime-capped `P+A+D` artifacts
+  and the canonical metrics above are frozen and immutable, and the frozen
+  CodeRank E result is complete and immutable. The extension is a new downstream
+  consumer only; a JEV invocation reruns no Repository, Theory, variant or
+  selection action and is not integrated into extraction, Theory, variants, the
   original `select_policy` or the original `rank`.
-- **Population:** top-32 candidates from the frozen D ranking per surviving
-  task, fixed K across repositories, all candidates if fewer than 32 — at
-  most 88 × 32 = 2,816 logical decisions.
-- **Fixed public compact fields only:** task ID, problem statement, candidate
-  path, original D rank, deterministic score if useful, candidate-specific
-  anchor evidence, Repository adjacency summary, Theory witness summary, and
-  small stable witness IDs/text already in public artifacts. Forbidden: gold,
-  reference patch, `test_patch`, interface, `PASS_TO_PASS`, `FAIL_TO_PASS`,
-  evaluator labels, final metrics or any truth-derived feature; no
-  entire-repo dumps, no browsing, no tools, no agent loop.
-- **Frozen prompt and frozen rule before outcomes:** one compact relevance
-  prompt frozen byte-exact before any JEV outcome; typed outcomes
-  `Relevant` / `NotRelevant` / `Unknown` / `Failed`; one choice with an
-  explicit `Unknown` outcome suffices — no confidence threshold is invented
-  or tuned. Fixed rerank: `Relevant` promotes before all non-`Relevant`,
-  stable original D order within both partitions, key
-  `(Relevant?0:1, original D rank)`; only top-32 candidates can be promoted;
+- **Frozen population (before any outcome):** the common **A32** set — the top-32
+  candidates of each surviving task's frozen `P+A` ranking (`rank_P+A.tsv`), fixed
+  K across repositories, all candidates if fewer than 32. 88 surviving tasks
+  (52 development / 20 calibration / 16 final), 85 eligible, 22 groups. Four tasks
+  carry fewer than 32 candidates (`pino-121` 24, `got-114` 14, `got-172` 15,
+  `got-183` 15). Frozen total: **2,756 logical decisions per condition**, 5,512
+  across the pair (declared maximum 88 × 2 × 32 = 5,632); 8 tasks without a frozen
+  `P+A` tree are excluded and recorded
+  (`population.tsv`). Both conditions see the **same** candidate population and
+  the **same** base ranking; only the prompt evidence differs.
+- **Two paired prompts, frozen byte-exact before any outcome:** A-control
+  `test/localization_jev/prompt_a.template.txt` (2,092 bytes, sha256
+  `2d31da9fd164efd67155f9eb88b2ba2646a5511e0d79aa1f4e47463a6bf338f8`) and
+  A-structure `test/localization_jev/prompt_a_structure.template.txt` (2,617
+  bytes, sha256
+  `fc42d0d24414bec301520f923cf2cdf6632ba42ded92d713de7d53e94289e0e3`). Both were
+  fixed before the first provider response and never edited: no prompt tuning, no
+  invented confidence threshold, no second model and no outcome-dependent retry.
+- **Physical input separation.** A-control sees **only** the public issue text,
+  candidate path, original `P+A` rank, deterministic `P+A` score and the
+  candidate anchor — physically no Repository relations, no Theory witnesses, no
+  D/F/gold/patch/test/interface/oracle/final-metric field. A-structure sees the
+  **exact same base fields** plus the already-public candidate Repository
+  relations (`defines`/`imports`/`imported_by` over the frozen `facts.tsv`) and
+  Theory witness IDs/descriptions (`witnesses.tsv`) for those candidates. No new
+  structural analysis, source body, tool or search was run for either condition.
+- **Typed outcomes and frozen rule before outcomes:** one choice per candidate
+  with an explicit `Unknown` outcome; `Relevant` / `NotRelevant` / `Unknown` /
+  `Failed`. Fixed rerank: `Relevant` promotes before all non-`Relevant`, stable
+  original `P+A` order within both partitions, key
+  `(Relevant?0:1, original P+A rank)`; only top-32 candidates can be promoted;
   `Unknown`/`Failed` give no promotion and no negative penalty; no candidate
-  deleted or invented; identical D population and the same canonical metrics
-  (Hit@1/5/10, Recall@1/5/10, MRR@10, task micro and group-equal macro,
-  coverage/abstention/failure). Primary comparison: delta JEV minus D at
-  rank 1 / top-5 / top-10, improved/regressed/unchanged tasks, tasks with any
-  `Relevant`, all outcome counts, and group concentration shifts.
+  deleted, invented or re-scored. The promoted ranking keeps the identical
+  complete 29,493-file candidate universe per condition (the rerank record is
+  58,986 rows = 2 × 29,493).
 - **Transport and credentials:** the currently configured live Jev route only
-  (the dedicated `jev___jev_decide` route; Jev 1.13 historical route); no
-  substitute model. Logical decisions, HTTP requests, batches and retries are
-  distinguished and never fabricated into totals. `JEV_KEY` and every
-  credential are never written to stdout, CLI arguments, Bazel public inputs,
-  the CAS, receipts or commits; no unrelated secret inspection.
-- **Status: the route is available and was contacted for real; the frozen
-  population was not completed; no `D+J` metric exists and none is claimed.**
-  7 actual provider requests were made on the currently configured route — one
-  2-question schema probe and six 32-question task batches — and all 7 succeeded,
-  for 192 logical decisions, 0 failures and 0 retries. The route resolved to
-  model snapshot `typesafe/jev-1.13-20260917` from provider `TypeSafe`; the
-  requested `jev-1.13` identity and the resolved dated snapshot are recorded
-  separately, and the responses returned usable `input_tokens`, `output_tokens`
-  and `cost`. `JEV=Unavailable` is therefore **explicitly not** claimed: the
-  route answered. **No `P+A+D+J` ranking, metric, delta or interpretation is
-  published**, because the frozen population is not complete:
+  (the dedicated `jev___jev_decide` route; Jev 1.13 historical route), driven
+  through the existing approved mission-local Java mechanical receipt writer over
+  the MCP stdio transport — not a manual copy, not raw HTTP, not a substitute
+  model. Logical decisions, provider requests, batches and retries are
+  distinguished and never fabricated into totals. The credential was passed
+  opaquely through the process environment only and was never printed, hashed,
+  placed in argv, an action input, the CAS, a receipt or a commit; no unrelated
+  secret was inspected.
+- **Immutable exact memoization.** Each decision is keyed on
+  `(resolved model, prompt identity, condition, task, candidate, exact payload
+  hash)` and persisted to a receipt **before the next call**; a successful exact
+  decision is never requested twice and an error is never recorded as
+  `NotRelevant`. All 176 calls returned `Ok` with 0 retries, so the pair
+  completed in one bounded pass with no reuse pressure.
 
-| JEV operation (measured) | Value |
+### Measured JEV pair operations
+
+| JEV operation (measured) | A-control | A-structure |
+|---|---|---|
+| Surviving tasks / eligible tasks | 88 / 85 | 88 / 85 |
+| Frozen logical decisions | 2,756 | 2,756 |
+| Provider requests / batches / retries | 88 / 88 / 0 | 88 / 88 / 0 |
+| Calls with status `Ok` | 88 (100%) | 88 (100%) |
+| Observed resolved model / provider | `typesafe/jev-1.13-20260917` / `TypeSafe` | `typesafe/jev-1.13-20260917` / `TypeSafe` |
+| Observed tokens | 320,708 input, 123,118 output | 519,579 input, 123,174 output |
+| Observed provider cost | USD 0.013469736 | USD 0.021822318 |
+| Observed cost per task / per decision | ≈ USD 0.000153 / ≈ USD 0.0000049 | ≈ USD 0.000248 / ≈ USD 0.0000079 |
+| Observed per-call latency | min 269 ms / median 328 ms / p95 463 ms / max 765 ms | min 282 ms / median 348 ms / p95 501 ms / max 1,753 ms |
+| End-to-end wall time (88 tasks) | 31,572 ms | 38,557 ms |
+| `Repository` / `Theory` re-executions caused by the JEV calls | **0** | **0** |
+
+### Measured JEV outcomes (per condition, 2,756 decisions)
+
+| Outcome | A-control | A-structure |
+|---|---|---|
+| `Relevant` | 188 | 147 |
+| `NotRelevant` | 2,506 | 2,552 |
+| `Unknown` | 62 | 57 |
+| `Failed` | 0 | 0 |
+| Eligible-population `Relevant` | 185 | 144 |
+| Tasks with any `Relevant` | 70 | 64 |
+
+### Canonical P / P+A / P+A+J / P+A+J(structure) metrics (85 eligible tasks)
+
+`P` and `P+A` are the frozen runtime-capped arms; `PAJ` is `P+A` reranked under
+A-control decisions; `PAJstructure` is `P+A` reranked under A-structure decisions.
+All four reduce through the unchanged canonical `Attune.Study.Metrics`. Every arm
+is fully covered over this population (0 undefined, 0 abstentions), so the
+covered-only diagnostic equals the all-eligible population and is not repeated.
+
+**All eligible — task micro (85 tasks)**
+
+| Metric | P | P+A | P+A+J | P+A+J(structure) |
+|---|---|---|---|---|
+| Hit@1 | 2/17 (11.8%) | 16/85 (18.8%) | 26/85 (30.6%) | 29/85 (34.1%) |
+| Hit@5 | 22/85 (25.9%) | 27/85 (31.8%) | 8/17 (47.1%) | 9/17 (52.9%) |
+| Hit@10 | 6/17 (35.3%) | 7/17 (41.2%) | 44/85 (51.8%) | 47/85 (55.3%) |
+| Recall@1 | 91/1224 (7.4%) | 2287/19635 (11.6%) | 5561/26775 (20.8%) | 47743/214200 (22.3%) |
+| Recall@5 | 91621/556920 (16.5%) | 6004847/30630600 (19.6%) | 188323/589050 (32.0%) | 411527/1178100 (34.9%) |
+| Recall@10 | 716173/3063060 (23.4%) | 4157441/15315300 (27.1%) | 2631487/7657650 (34.4%) | 163979/450450 (36.4%) |
+| MRR@10 | 1654/8925 (18.5%) | 17837/71400 (25.0%) | 13627/35700 (38.2%) | 991/2380 (41.6%) |
+
+**All eligible — group-equal macro (22 groups)**
+
+| Metric | P | P+A | P+A+J | P+A+J(structure) |
+|---|---|---|---|---|
+| Hit@1 | 31/264 (11.7%) | 25/132 (18.9%) | 27/88 (30.7%) | 15/44 (34.1%) |
+| Hit@5 | 35/132 (26.5%) | 7/22 (31.8%) | 31/66 (47.0%) | 139/264 (52.7%) |
+| Hit@10 | 47/132 (35.6%) | 109/264 (41.3%) | 137/264 (51.9%) | 73/132 (55.3%) |
+| Recall@1 | 479/6336 (7.6%) | 2375/20328 (11.7%) | 263/1260 (20.9%) | 49543/221760 (22.3%) |
+| Recall@5 | 96469/576576 (16.7%) | 6151367/31711680 (19.4%) | 389021/1219680 (31.9%) | 211951/609840 (34.8%) |
+| Recall@10 | 742837/3171168 (23.4%) | 1061429/3963960 (26.8%) | 5428469/15855840 (34.2%) | 5740781/15855840 (36.2%) |
+| MRR@10 | 10379/55440 (18.7%) | 6947/27720 (25.1%) | 42341/110880 (38.2%) | 1025/2464 (41.6%) |
+
+**Development split — 50 eligible tasks, 13 groups (micro)**
+
+| Metric | P | P+A | P+A+J | P+A+J(structure) |
+|---|---|---|---|---|
+| Hit@1 | 7/50 (14.0%) | 7/50 (14.0%) | 13/50 (26.0%) | 8/25 (32.0%) |
+| Hit@5 | 6/25 (24.0%) | 6/25 (24.0%) | 23/50 (46.0%) | 13/25 (52.0%) |
+| Hit@10 | 17/50 (34.0%) | 19/50 (38.0%) | 27/50 (54.0%) | 14/25 (56.0%) |
+| Recall@1 | 239/3600 (6.6%) | 613/9240 (6.6%) | 8909/63000 (14.1%) | 21073/126000 (16.7%) |
+| Recall@5 | 8387/65520 (12.8%) | 1650497/18018000 (9.2%) | 23692/86625 (27.4%) | 25309/86625 (29.2%) |
+| Recall@10 | 379837/1801800 (21.1%) | 1935221/9009000 (21.5%) | 2695409/9009000 (29.9%) | 2767481/9009000 (30.7%) |
+| MRR@10 | 611/3150 (19.4%) | 24461/126000 (19.4%) | 3751/10500 (35.7%) | 141/350 (40.3%) |
+
+**Calibration split — 20 eligible tasks, 5 groups (micro)**
+
+| Metric | P | P+A | P+A+J | P+A+J(structure) |
+|---|---|---|---|---|
+| Hit@1 | 1/10 (10.0%) | 1/5 (20.0%) | 2/5 (40.0%) | 2/5 (40.0%) |
+| Hit@5 | 1/4 (25.0%) | 2/5 (40.0%) | 1/2 (50.0%) | 1/2 (50.0%) |
+| Hit@10 | 7/20 (35.0%) | 9/20 (45.0%) | 1/2 (50.0%) | 1/2 (50.0%) |
+| Recall@1 | 1/10 (10.0%) | 11/80 (13.8%) | 27/80 (33.8%) | 27/80 (33.8%) |
+| Recall@5 | 3/16 (18.8%) | 27/80 (33.8%) | 49/120 (40.8%) | 101/240 (42.1%) |
+| Recall@10 | 1/4 (25.0%) | 7/20 (35.0%) | 107/240 (44.6%) | 107/240 (44.6%) |
+| MRR@10 | 2071/12600 (16.4%) | 199/720 (27.6%) | 103/240 (42.9%) | 13/30 (43.3%) |
+
+**Held-out final split — 15 eligible tasks, only 4 groups (micro)**
+
+| Metric | P | P+A | P+A+J | P+A+J(structure) |
+|---|---|---|---|---|
+| Hit@1 | 1/15 (6.7%) | 1/3 (33.3%) | 1/3 (33.3%) | 1/3 (33.3%) |
+| Hit@5 | 1/3 (33.3%) | 7/15 (46.7%) | 7/15 (46.7%) | 3/5 (60.0%) |
+| Hit@10 | 2/5 (40.0%) | 7/15 (46.7%) | 7/15 (46.7%) | 3/5 (60.0%) |
+| Recall@1 | 1/15 (6.7%) | 23/90 (25.6%) | 23/90 (25.6%) | 23/90 (25.6%) |
+| Recall@5 | 23/90 (25.6%) | 16/45 (35.6%) | 16/45 (35.6%) | 4/9 (44.4%) |
+| Recall@10 | 13/45 (28.9%) | 16/45 (35.6%) | 16/45 (35.6%) | 4/9 (44.4%) |
+| MRR@10 | 83/450 (18.4%) | 2/5 (40.0%) | 2/5 (40.0%) | 79/180 (43.9%) |
+
+> **Held-out caveat — 15 eligible tasks in only 4 groups** (`firebase-tools`,
+> `pino`, `spectral`, `synthetics`). A single task moves any final-split cell by
+> 1/15 (6.7 pp) micro and 1/4 (25 pp) macro, so the final-split numbers are not a
+> reliable population estimate; they are reported because the split was declared
+> before the freeze. The all-eligible population (85 tasks / 22 groups) is the
+> only one here where a group-equal macro reading is meaningful.
+
+### Frozen contrasts (all-eligible)
+
+Exact differences of the measured cells; the pairs are `P+A+J − P+A` (the JEV
+effect over the base arm) and `P+A+J(structure) − P+A+J` (the structural-evidence
+effect over the lexical pair).
+
+| Contrast | Kind | Hit@1 | Hit@5 | Hit@10 | Recall@1 | Recall@5 | Recall@10 | MRR@10 |
+|---|---|---|---|---|---|---|---|---|
+| P+A+J − P+A | micro | +11.7 | +15.3 | +10.6 | +9.1 | +12.3 | +7.2 | +13.2 |
+| P+A+J(structure) − P+A+J | micro | +3.6 | +5.9 | +3.5 | +1.5 | +3.0 | +2.1 | +3.5 |
+| P+A+J − P+A | macro | +11.7 | +15.1 | +10.6 | +9.2 | +12.5 | +7.5 | +13.1 |
+| P+A+J(structure) − P+A+J | macro | +3.4 | +5.7 | +3.5 | +1.5 | +2.9 | +2.0 | +3.4 |
+
+All four contrasts are positive on every metric at both micro and group-equal
+macro form.
+
+### Evaluator-only paired diagnostics (computed after the decisions froze)
+
+These are descriptive and are **not** a learned rule: they were computed only
+after both conditions' decisions were frozen, no gold or evaluator label entered
+any prompt or decision, and no combination or selection is proposed.
+
+- **Rank-1 movement:** `P+A → P+A+J` changed the top-ranked file on **43 of 88**
+  tasks; `P+A+J → P+A+J(structure)` changed it on **20 of 88**.
+- **Gold in the top 10:** `P+A` 35 tasks, `P+A+J` 44, `P+A+J(structure)` 47.
+- **Improved / regressed / unchanged tasks versus the base arm:**
+
+| Comparison | Cutoff | Improved | Regressed | Unchanged |
+|---|---|---|---|---|
+| P+A → P+A+J | Hit@1 | 11 | 1 | 73 |
+| P+A → P+A+J | Hit@5 | 14 | 1 | 70 |
+| P+A → P+A+J | Hit@10 | 9 | 0 | 76 |
+| P+A+J → P+A+J(structure) | Hit@1 | 3 | 0 | 82 |
+| P+A+J → P+A+J(structure) | Hit@5 | 5 | 0 | 80 |
+| P+A+J → P+A+J(structure) | Hit@10 | 3 | 0 | 82 |
+
+- **Promotion decomposition (top-32 candidates only):**
+
+| Condition | Promoted | Gold promoted | Non-gold promoted | Gold promoted into top-10 | Non-gold promoted into top-10 |
+|---|---|---|---|---|---|
+| A-control | 185 | 51 | 134 | 51 | 133 |
+| A-structure | 144 | 55 | 89 | 55 | 89 |
+
+- **Helpful / harmful promotion.** A-control promotes 185 candidates, of which
+  **51 are gold** (helpful) and 134 non-gold; 133 of the non-gold promotions land
+  in the top 10 (harmful distractor promotion). A-structure promotes fewer
+  candidates (144) but a **higher gold share** (55 gold vs 89 non-gold); all 89
+  non-gold promotions land in the top 10. Adding structural evidence makes the
+  model **more conservative and more precise** (fewer promotions, more gold per
+  promotion) while the aggregate metrics still improve.
+- **Witness-family flags (same 2,756 candidates per condition):** 441 carry no
+  structural evidence, 720 carry Repository relations only, 1,595 carry both
+  relations and Theory witnesses, 0 carry witnesses only.
+- **Group concentration shifts:** `P+A+J` moves **8** groups into the top-10
+  (`serverless`, `kit`, `tslint-to-eslint-config`, `carbon`, `obsidian-tasks`,
+  `eslint-plugin-react`, `greenwood`, `urql`) and loses none;
+  `P+A+J(structure)` moves **2** groups in (`create-typescript-app`,
+  `firebase-tools`) and loses none. Gains are broad, not concentrated in one
+  group.
+- **Paired outcome transitions (A-control → A-structure, 2,756 candidates):**
+  `NotRelevant→NotRelevant` 2,484; `NotRelevant→Relevant` 13;
+  `NotRelevant→Unknown` 9; `Relevant→NotRelevant` 45; `Relevant→Relevant` 129;
+  `Relevant→Unknown` 14; `Unknown→NotRelevant` 23; `Unknown→Relevant` 5;
+  `Unknown→Unknown` 34 (sums to 2,756). The structural prompt flips 45 candidates
+  away from `Relevant` and only 13 toward it — the conservatism seen above — while
+  leaving 129 `Relevant` decisions unchanged.
+
+### JEV provenance and replay
+
+- **Produced artifacts.** One metric tree
+  `bazel-bin/test/localization_jev/jev_rerank_metrics/` with `jev_metrics.tsv`
+  (224 rows: 4 scopes × 2 kinds × 4 arms × 7 metrics), `jev_contrasts.tsv`
+  (112 rows: 4 scopes × 2 kinds × 2 contrast pairs × 7 metrics),
+  `jev_diagnostics.tsv` (1,096 rows) and the complete `jev_rerank.tsv` record
+  (58,986 rows = 2 × 29,493). The admitted sanitized typed-decision manifests are
+  `test/localization_jev/decisions_A.tsv` and `decisions_S.tsv` (2,756 rows each);
+  the frozen population record is `population.tsv` (88 population + 8 excluded).
+- **Provider/model-free replay.** Building the stage executes **0 JEV calls, 0
+  embedding inferences, 0 provider calls, 0 Repository/Theory actions**: the
+  stage consumes only the immutable decision manifests, the warm `P+A` ranking
+  trees and the admitted evaluator labels. A repeat invocation is served from the
+  action cache (the build above ran 1 remote action, everything else a cache hit).
+- **Baseline never recomputed.** The frozen runtime-capped `P` and `P+A` cells
+  were reproduced from the same frozen ranking trees as a cache check, cell for
+  cell: all **28 of 28** compared percentage cells match, with 0 mismatches.
+  Nothing was re-measured and no deterministic number in this report moved.
+- **Laws.** The corpus-free law `//test/localization_jev:jev_law` drives the exact
+  production promotion statement in `Attune.Study.Jev` with hand-built rankings
+  and typed decisions (stable key, both partitions, no penalty for
+  `Unknown`/`Failed`, identical population); it is part of the ordinary offline
+  gate and passed. The corpus-bound stage
+  `//test/localization_jev:jev_rerank_metrics` (`manual`) fails closed on the
+  produced bytes: 88 tasks, 85 eligible, the 50/20/15 splits, 2,756 decisions per
+  condition, 0 failures, and population identity between the two conditions.
+- **Evidence commands (one Bazel owner at a time), all from `attune/` through
+  `nix develop --no-write-lock-file` with
+  `--output_base=/home/becker/.cache/attune-v2-bootstrap-bazel`:**
+
+```
+# the A pair + canonical metric tree (RBE; 0 JEV, 0 embedding, 0 Repository/Theory)
+bazel build //test/localization_jev:jev_rerank_metrics --config=remote --jobs=80
+# the corpus-free rerank laws (RBE)
+bazel test  //test/localization_jev:jev_law --config=remote --jobs=80 --test_output=summary
+```
+
+- **Source digests (sha256).**
+
+| File | State | sha256 |
+|---|---|---|
+| `attune/src/Attune/Study/Jev.flix` | new (Study-owned JEV promotion) | `60f83928cf911830b85c3c2fb7ea3c19145ea7db38449633ba44b959a065d129` |
+| `attune/test/localization_jev/JevStages.flix` | new (A-pair stage) | `91a2eab90dd46f02d0bffd07f57d5db202a1915884537cef384768b8afa877a9` |
+| `attune/test/localization_jev/JevLaw.flix` | new (corpus-free rerank laws) | `9bdb92ca9bc89960256176fcda48ea7dee2e2b19050eba6e0c16f6ee166687d7` |
+| `attune/test/localization_jev/BUILD.bazel` | new (package targets) | `fa9052a2640a1cc83b008cd79ee0b2b664ff63afc217eff3325ff2066d0bfeaf` |
+| `attune/test/localization_jev/prompt_a.template.txt` | new (A-control prompt, frozen) | `2d31da9fd164efd67155f9eb88b2ba2646a5511e0d79aa1f4e47463a6bf338f8` |
+| `attune/test/localization_jev/prompt_a_structure.template.txt` | new (A-structure prompt, frozen) | `fc42d0d24414bec301520f923cf2cdf6632ba42ded92d713de7d53e94289e0e3` |
+| `attune/test/localization_jev/decisions_A.tsv` | new (A-control manifest) | `a7bfa435aff2c1528a05d2bf6294f637533dc44f2142b86965525c179e9b5913` |
+| `attune/test/localization_jev/decisions_S.tsv` | new (A-structure manifest) | `cb60cc4603835d0b38e377272eafddb36cab177723e298954c9978e58ea14aa9` |
+| `attune/test/localization_jev/population.tsv` | new (frozen A32 population) | `e9ef3655c75f0b3fd28bdf71869b0fd14e5112a1cea9f28841ed101b2c41313f` |
+| `attune/BUILD.bazel` | modified (`//test/localization_jev:policy_files` registered) | `0d85d89292323ec3b7d5e4fbb03ee221d5f8bacd6f5c5a6662c00b7c73160666` |
+
+- **Artifact digests (built, sha256).**
+
+| Artifact | sha256 |
 |---|---|
-| Surviving tasks in the frozen population | 88 (52 development / 20 calibration / 16 final) |
-| Frozen logical decisions, top-32 per task, fixed K | 2,756 (88 × 32 = 2,816 maximum; four tasks carry fewer than 32 candidates) |
-| Full unchanged candidate population | 29,493 files |
-| Tasks actually decided | **6 of 88** |
-| Logical decisions actually requested | **192 of 2,756** |
-| Provider HTTP requests / batches / retries | 7 / 7 / 0 |
-| Decision outcomes persisted | 160, in 5 task vectors |
-| Observed resolved model / provider | `typesafe/jev-1.13-20260917` / `TypeSafe` |
-| Observed tokens (six task batches) | 18,180 input, 8,561 output |
-| Observed provider cost (six task batches) | USD 0.000764 total, ≈ USD 0.000127 per task, ≈ USD 0.000004 per decision |
-| Observed batch latency | 276–426 ms, median 324 ms, 1 request per batch |
-| `Repository` / `Theory` re-executions caused by the JEV calls | **0** |
-| Complete-run cost per decision and per task in dollars | **unavailable** — not extrapolated from a partial run |
+| `bazel-bin/test/localization_jev/jev_rerank_metrics/jev_metrics.tsv` (224 rows) | `94d3fb62fafcd3658c06e69565842a64efc8d6d4cd3fb99932fe6df7f54bd676` |
+| `bazel-bin/test/localization_jev/jev_rerank_metrics/jev_contrasts.tsv` (112 rows) | `a3a9c5f88832d99e275342dcbf3a7c5e94cf97a4a85cf7266fb10395d4aaa631` |
+| `bazel-bin/test/localization_jev/jev_rerank_metrics/jev_diagnostics.tsv` (1,096 rows) | `014b7b312adcd6992809df58b261b2df419477fbfa0f07c3a2f6960a40005d6c` |
+| `bazel-bin/test/localization_jev/jev_rerank_metrics/jev_rerank.tsv` (58,986 rows) | `e35c13f10c75961ea6ff38a3caa9d7f09c3782aad45cbd5aeb309c623c882efb` |
 
-  The partial receipts are not usable as rerank evidence and are not used as
-  any: two distinct tasks carry byte-identical 32-decision vectors, one task's
-  state text diverged from its exact public issue bytes, and one received
-  response was never persisted. Those are transcription defects in the worker's
-  own hand-off of payloads and answers, recorded rather than repaired silently.
-  The obstacle is **volume, not availability**: the tool's schema requires the
-  per-candidate choice encoding to be restated for every candidate, so a
-  32-candidate batch is a **measured 7,125 bytes** of emitted payload (7,183
-  bytes average across the frozen 88 tasks) before any answer comes back. The
-  full population is therefore ≈632 KB of emitted payload (≈160 K tokens) plus
-  one short answer per question, which a single worker session cannot carry.
-  Provider cost and latency are not the obstacle: extrapolated over all 88 tasks
-  they are ≈USD 0.011 and ≈30 s. Unblocking is the mission owner's decision, either a declared
-  host-local mechanical receipt writer (permitted as a non-cacheable provider
-  step, and it also removes the transcription defects) or a smaller frozen K;
-  neither is taken unilaterally here.
-- **Frozen before the first outcome, and unchanged since:** one prompt identity,
-  `test/localization_jev/prompt.template.txt` (2,044 bytes, sha256
-  `b860ecfde54c1dfbf7d77bed0567b6568db9e3f1cb545af6a1bf60d33be9f81b`), with a
-  byte-identical evidence copy at `library/jev-prompt.template.txt`. It was
-  fixed before any provider response and never edited afterwards: no prompt
-  tuning, no invented confidence threshold, no second model and no
-  outcome-dependent retry. Failure, malformed output and timeout are never
-  `NotRelevant`; no such outcome occurred in the six batches that ran. `JEV_KEY`
-  was never printed, hashed or passed through stdout, argv, a Bazel public input,
-  the CAS, a receipt or a commit, and no unrelated secret was inspected.
-- **Not done, and deliberately not approximated:** the stable promotion pass
-  (key `(Relevant?0:1, original D rank)`) was not applied to any population, no
-  candidate was deleted, invented or re-scored, and therefore no `D` versus
-  `D+J` delta, gain, regression or concentration figure exists. The frozen
-  deterministic result above stands exactly as it was before the JEV calls, and
-  the JEV work touched no upstream stage.
+- **Superseded history (kept, not used as A measurements).** The earlier D-based
+  `P+A+D+J` attempt completed only 6 of 88 tasks (7 real requests, 192 logical
+  decisions, resolved model `typesafe/jev-1.13-20260917`, provider `TypeSafe`) and
+  produced no `D+J` metric; its partial receipts and pending D-keyed module stay
+  as history only and are **not** the source of any number above. The A pair above
+  is a separate, complete, `P+A`-keyed measurement. No `D+J` figure is published.
 
 ## Latency regimes
 
@@ -945,7 +1162,7 @@ bazel test  //... --config=remote --jobs=80 --test_output=summary
 |---|---|---|
 | A — cold structural construction | World-extraction/Theory cost from real logs | 325 KB single-file 360.6s / zero declarations / 4,106 refusals; `w35` 3,664s remote pre-fix long pole; obsidian `w34`/`w35` 2,532.5s / 2,509.6s post-fix; `w41` >14,148s console elapsed and `w84` unfinished, both ending in an internal remote-execution upload timeout |
 | B — warm deterministic | Derived selection/rank latency and the capped continuation wall time over warm inputs | 88 derived rank actions executed in 1–29s of remote time (median ≈15s among the 36 fully logged); derived selection ~1s; first derived build 268s wall clock / 72s critical path for 89 fresh actions at `--jobs=8`; **zero** Repository/Theory re-execution; metrics stage 24s; continuation inspection (22:44:04Z) to materialized capped metrics (00:43:18Z) = 7,154s wall clock, of which the derived graph itself occupied ~623s and the six Bazel invocations ~413s |
-| C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, rerank-only time from persisted receipts | **Partial and incomplete: 6 of 88 tasks.** Route availability is established — 7 real requests, all successful, 0 failures, 0 retries — and the provider side is cheap: batch latency 276–426 ms with median 324 ms (`n=6`, so p95 is not measurable and is not reported), 32 logical decisions per batch and one HTTP request per batch (≈99 decisions/s of provider time), 18,180 input / 8,561 output tokens and USD 0.000764 for the six batches, 0 `Repository`/`Theory` re-executions. End-to-end wall time, end-to-end decisions/s, rerank-only time and complete-run cost are **unavailable** — the frozen population was not completed and no value is extrapolated from a partial run |
+| C — warm + JEV | Walltime, logical decisions / requests / batches / retries, decisions/sec, median and p95 decision latency, complete-run cost, rerank-only time | **Complete lexical pair: 88 of 88 tasks, both conditions.** A-control: 88 requests, 2,756 decisions, 0 failures, 0 retries, 31,572 ms end-to-end (≈87 decisions/s wall), per-call latency 269/328/463/765 ms (min/median/p95/max), 320,708 input + 123,118 output tokens, USD 0.013469736. A-structure: 88 requests, 2,756 decisions, 0 failures, 0 retries, 38,557 ms end-to-end (≈71 decisions/s wall), per-call latency 282/348/501/1,753 ms, 519,579 input + 123,174 output tokens, USD 0.021822318. Combined wall 70,189 ms. The structural prompt costs ≈62% more input tokens and ≈62% more dollars for the same 2,756 decisions, and one call ran 1,753 ms. 0 `Repository`/`Theory` re-executions; replay of the stage is provider-free |
 | D — warm embedding ranking | E ranking and canonical metric latency over the immutable declared fixtures | 88 rank stages + 1 metric stage = 89 `AttuneStudyStage` actions, all served from the remote cache after the first materialization (the fixture acquisition had already paid for the 904 shard actions); **0** embedding inferences, **0** provider calls, **0** `Repository`/`Theory` re-executions at replay; a full `--remote_download_outputs=all` rerun of the metric tree reported 1,280 remote cache hits and 0 executed actions |
 
 Deterministic compute is **not zero**: cold RBE/indexing cost, warm compute
@@ -981,11 +1198,33 @@ speculative sub-cent pricing and no invented dollar values.
   it moves 3 tasks into the top 10 and 3 out, so its equal total is an offset,
   not an absence of effect. Both families' larger effect is on ordering *inside*
   the top 10.
-- **JEV gain beyond Theory:** not measurable and not claimed. The route is
-  available and answered real calls (7 requests, resolved model
-  `typesafe/jev-1.13-20260917`, provider `TypeSafe`); what is missing is the
-  frozen decision population (6 of 88 tasks decided), not availability, and no
-  `D` versus `D+J` comparison is published from a partial population.
+- **JEV gain beyond the base arm (measured, exploratory).** The lexical JEV pair
+  is the largest effect in this report. Reranking the frozen `P+A` ranking under
+  the A-control decisions lifts every metric over `P+A` (micro: +11.7 Hit@1,
+  +10.6 Hit@10, +13.2 MRR@10; macro: +11.7 Hit@1, +10.6 Hit@10, +13.1 MRR@10)
+  and moves 43 of 88 top-ranked files, with 9–14 tasks improved and 0–1 regressed
+  per cutoff. It is a promotion-only effect on the identical candidate population,
+  driven by 185 promotions of which 51 are gold. This is a large, cheap gain for
+  one provider call per task — but it is post-hoc and exploratory: no
+  significance is claimed, the held-out split is 15 tasks in 4 groups, and no
+  threshold was tuned.
+- **Structural evidence over the lexical pair (measured, exploratory).** Adding
+  the already-public Repository relations and Theory witnesses to the same prompt
+  improves every metric again on top of A-control (+3.6 Hit@1, +3.5 Hit@10, +3.5
+  MRR@10 micro; +3.4 Hit@1, +3.5 Hit@10, +3.4 MRR@10 macro) with 0 regressed
+  tasks, but at ≈62% more input tokens and dollars. The mechanism is not more
+  promotion but *better-targeted* promotion: A-structure promotes fewer candidates
+  (144 vs 185) with a higher gold share (55 gold vs 89 non-gold), i.e. it flips 45
+  candidates away from `Relevant` and only 13 toward it. So the structural
+  evidence acts as a precision filter on the relevance decision rather than as an
+  additional recall source.
+- **Measured A-pair regime: Regime 1 (inference works and structure works).** On
+  the frozen `P+A` base the lexical JEV inference improves every metric and adding
+  the already-public structural evidence improves it again, so this pair lands in
+  Regime 1 of the four pre-declared regimes. That is the measured outcome, not a
+  required one: the same design would have reported Regime 2 (inference works,
+  structure does not), Regime 3 (structure helps only the weak baseline) or
+  Regime 4 (neither) had the cells read that way, and no goalpost moved.
 - **Embedding (E) versus the deterministic arms:** descriptive only. Over the
   full eligible population E is at roughly P+A parity and ahead of P, leading on
   Hit@5 (35.3% vs 31.8% micro), Hit@10 (45.9% vs 41.2%) and MRR@10 (27.5% vs
@@ -1489,3 +1728,41 @@ Zero upstream re-execution across all of them (see "Warm reuse" above).
   untouched and no deterministic number in this report moved; the JEV half is
   unchanged and still incomplete. Original denominators unchanged at 96 / 93 and
   the original full result still 0/96 and not estimated.
+- **2026-10-07T11:50:00Z — generation 10, FINAL for the post-hoc exploratory
+  lexical JEV pair (A-control / A-structure).** Completes the lexical JEV pair
+  that generation 8 left partial, on a strictly downstream consumer of the frozen
+  `P+A` ranking trees. Adds: the frozen common **A32** population (88 surviving
+  tasks / 85 eligible / 22 groups; top-32 of each task's frozen `rank_P+A.tsv`,
+  all candidates if fewer, 4 tasks short of 32; **2,756 decisions per condition**,
+  5,512 across the pair; 8 tasks without a frozen `P+A` tree excluded and
+  recorded); the two byte-exact paired prompts frozen before any outcome
+  (A-control `2d31da9f…` 2,092 bytes; A-structure `fc42d0d2…` 2,617 bytes) with
+  physical input separation (A-control: issue/path/`P+A` rank/score/anchor only;
+  A-structure: the same base plus already-public Repository relations and Theory
+  witnesses); the measured operations (88 requests per condition, all `Ok`, 0
+  retries, resolved model `typesafe/jev-1.13-20260917`, provider `TypeSafe`; A
+  320,708 in / 123,118 out tokens, USD 0.013469736, 31,572 ms; S 519,579 in /
+  123,174 out tokens, USD 0.021822318, 38,557 ms; per-call latency A
+  269/328/765 ms, S 282/348/1,753 ms); the measured outcomes (A 188 / 2,506 / 62
+  / 0 and S 147 / 2,552 / 57 / 0 for `Relevant`/`NotRelevant`/`Unknown`/`Failed`);
+  the `P` / `P+A` / `P+A+J` / `P+A+J(structure)` canonical tables over the
+  all-eligible population and the development (50 / 13), calibration (20 / 5) and
+  held-out final (15 / 4) splits, task-micro and group-equal macro; the frozen
+  contrasts `P+A+J − P+A` and `P+A+J(structure) − P+A+J` (all positive, micro
+  +11.7/+10.6/+13.2 Hit@1/Hit@10/MRR@10 for the JEV effect and +3.6/+3.5/+3.5
+  for the structural effect); the evaluator-only paired diagnostics (rank-1
+  changes 43 and 20 of 88; improved/regressed/unchanged per cutoff; promotion
+  decomposition A 185/51 vs S 144/55; group gains 8 and 2, losses 0; outcome
+  transitions), computed only after both conditions' decisions froze and used as
+  no learned rule; and the provider-free replay (0 JEV, 0 embedding, 0
+  provider, 0 Repository/Theory actions) with the exact reproduction of all
+  **28 of 28** frozen `P` / `P+A` percentage cells as a cache check. Adds the
+  Study-owned `src/Attune/Study/Jev.flix` promotion statement, the new
+  `test/localization_jev` stage/laws and the `//test/localization_jev:policy_files`
+  registration in the root `BUILD.bazel`. The offline gate is green at **31/31**
+  on RBE. Frozen deterministic rankings, `select_policy`, `derived_population`,
+  the runtime-capped `metrics.tsv`, `tasks.tsv`, `contributions.tsv` and the E
+  ranking tree are untouched; no deterministic number in this report moved. The
+  earlier D-keyed partial `P+A+D+J` reading is kept as history only; the E+J pair
+  is deferred and no E+J number is claimed. Original denominators unchanged at
+  96 / 93 and the original full result still 0/96 and not estimated.
