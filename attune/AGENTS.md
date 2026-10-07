@@ -25,9 +25,16 @@ repository-side policy an agent must follow while changing this tree.
 - `.env` (at the checkout root) is the local credential file. Never read, hash,
   copy or print it; never pass a credential into an action input, argument, log
   or the store. Only the narrow BuildBuddy credential helper in `flake.nix` may
-  read it, internally, from that explicit checkout root.
-- No application provider, MCP or live model call, ever — with exactly one
-  narrow owner-authorized exception named at the end of this bullet. The
+  read it, internally, from that explicit checkout root. One further narrow
+  internal reader is owner-authorized (2026-10-07, hosted-Qwen continuation):
+  the Q acquisition helper may read exactly the single `OPENROUTER_API_KEY`
+  entry, internally, as a narrow field read — never dumped, hashed, printed,
+  passed in argv, admitted as a Bazel input, or written into the CAS, fixtures,
+  receipts or commits; no secret headers; no unrelated environment key or other
+  entry is read. The BuildBuddy helper and the Q helper stay separate, and
+  agents and tests still never inspect the file.
+- No application provider, MCP or live model call, ever — with only the narrow
+  owner-authorized exceptions named in this bullet. The
   bootstrap-era sentence that this workspace carries no scientific data is
   stale: the approved mission authorizes the named pinned
   `nebius/SWE-rebench-V2` corpus and the selected studies, plus explicitly
@@ -58,7 +65,8 @@ repository-side policy an agent must follow while changing this tree.
   `3c4b60807d71f79b43f3c4363786d9493691f8b1`, whose model/tokenizer/config bytes
   and Python/PyTorch runtime wheels are digest-pinned declared inputs, ALL of
   whose inference runs remotely on the BuildBuddy RBE profile (never host-local
-  and never a hosted embedding API), and whose Python is confined to the single
+  and never a hosted embedding API — an RBE-only restriction scoped to this
+  CodeRankEmbed E branch), and whose Python is confined to the single
   mechanical inference adapter `platform/tools/embedding/adapter.py`
   (tokenize/model/vector serialization) with no ingestion, ranking, metrics or
   scientific policy. Nix's only role there is to package/declare those pinned
@@ -73,7 +81,23 @@ repository-side policy an agent must follow while changing this tree.
   each condition has its own frozen prompt identity with matched wording per
   pair, and a JEV fixture keyed `(model, prompt, condition, task, candidate,
   exact payload hash)` is reused ONLY on exact payload equality — a prompt
-  change regenerates only that prompt's JEV fixtures and never any embedding.
+  change regenerates only that prompt's JEV fixtures and never any embedding. A
+  third narrow owner-authorized exception (2026-10-07, A-first hosted-Qwen
+  continuation) is the hosted Qwen embedding branch Q: exactly
+  `qwen/qwen3-embedding-8b` over OpenRouter as the only Q route — no substitute
+  model, no local Q deployment, no second provider — reached through the pinned
+  LangChain4j 1.18.1 SDK inside one narrow internal Q acquisition helper whose
+  only credential access is the `OPENROUTER_API_KEY` field read described in the
+  `.env` boundary above (never printed, hashed, passed in argv, admitted as a
+  Bazel input, or written into the CAS, fixtures, receipts or commits; no secret
+  headers; no unrelated key reading). The RBE-only inference restriction above
+  is scoped to the CodeRankEmbed E branch; Q is hosted by definition, acquires
+  immutable per-logical vector fixtures keyed (provider, resolved model, recipe,
+  exact input bytes) with sanitized provider usage identity, and every Q
+  ranking, metric and replay consumer stays provider-free through the one
+  canonical path. Ordinary `bazel test //...` never runs corpus inference or
+  providers, and the original four measured arms keep the absolute ban
+  unchanged.
 - One Bazel owner at a time. The output base is outside the checkout
   (`services.yaml`); never run `bazel clean` or touch global caches.
 - JVM dependencies are pinned: `MODULE.bazel` declares the exact Maven
