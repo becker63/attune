@@ -419,6 +419,11 @@ identity and classified errors preserved, and no provider, endpoint, credential
 or socket is used. Acquisition and decision contracts are exercised as recorded
 fixture seams in `test/seam`, never as a live call; the typed
 prior/request/evidence contract itself is production source in `Attune.Study`.
+The only owner-authorized live work is the fixed downstream exploratory
+extension published in the root `LOCALIZATION_REPORT.md` — the live JEV route,
+the remote CodeRankEmbed and hosted-Qwen acquisitions, and the two Sol arms on
+the dedicated SIWC platform — each with its own documented credential boundary;
+the deterministic arms and coordination remain provider-free.
 
 ## Handoff status
 
@@ -513,9 +518,16 @@ plus six corpus-free metric laws at `//test/localization_runtime:metrics_law`
 (deliberately not `manual`) pinning multi-file recall versus hit, abstention
 denominators, undefined ratios and ineligible classifications. The measured
 four-arm numbers, the runtime cutoff with its exact original/capped denominators,
-and the honest gaps are reported in the root `LOCALIZATION_REPORT.md`; the
-post-hoc live JEV extension remains pending and not run, with its availability
-not established.
+and the honest gaps are reported in the root `LOCALIZATION_REPORT.md`, together
+with the owner-authorized post-hoc extensions that have since been published
+there: the embedding (`E`) branch, the hosted-Qwen (`Q`) branch, the two lexical
+and hosted JEV pairs, the strict file-accuracy extension and its oracle
+ceilings, the replicated five-observation family with its stability, ensembles,
+working sets and economics, and the two standalone Sol arms (the original
+`gpt-6.1-sol` medium arm and the distinct enforced read-only-inspected sibling).
+The report's generation-18 section is the final synthesis over all available
+arms and answers the owner's fifteen questions; every stage is `manual` and is
+selected only through the declared remote commands, never by `bazel test //...`.
 
 ## Scoped SIWC renewal
 
@@ -553,8 +565,10 @@ checked documentation correspondence. Deliberately not selected or run here:
   reduced to the shared panel, reduced to its evaluator reference labels and then
   reduced to the runtime-capped cohort's frozen four-arm rankings and canonical
   metrics; every one of those stages is `manual` and is selected only through the
-  declared remote commands, never by `bazel test //...`, and the post-hoc live
-  JEV extension is still pending);
+  declared remote commands, never by `bazel test //...`; the post-hoc exploratory
+  JEV, embedding and hosted-Qwen extensions, the replicated family, and the two
+  Sol arms are published in the root report, and the owner-approved ReviewBench
+  paired study is the next authorized work);
 - a general view catalog, large-graph layout, ASCII parser or architecture browser;
 - any model choice, live provider effect, ranking-quality claim or application
   policy selection beyond the recorded fixture decision contract.

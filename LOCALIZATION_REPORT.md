@@ -82,8 +82,18 @@ inspection commands whose file reads the frozen projection could not name. Both
 readings are published, the floor is not relaxed, and the earlier PARTIAL
 harness and acquisition sections at the end of this report remain as history.
 
-**Generated:** 2026-10-07T21:20:00Z (generation 14; supersedes generation 13 for
-current state; earlier generations retained below as history). Generation 14 is
+The **final synthesis over all available arms** is published as **generation 18**
+at the end of this report: the combined arm table (`P`, `PA`, `PAF`, `PAD`, `E`,
+`PAJ`, `S`, `Q`, `QJ`, `QS`, the five-pass votes and unions, `SOL` and the
+distinct `SOL-INSPECTED` arm), the held-out final split, answer size,
+task-conditioned and population walls, model usage and cost under four separated
+billing regimes, and the fifteen owner questions in six groups. It adds no new
+measurement and is an **INTERMEDIATE checkpoint**, not a terminal stop: the
+approved ReviewBench first paired-economics study is the next authorized work.
+
+**Generated:** 2026-10-08 (generation 18, the final synthesis over all available
+arms; the generation-17 distinct Sol inspected publication and every earlier
+generation are retained below as history). Generation 14 is
 the owner-authorized **replicated five-observation acquisition** (Phase 2 of the
 strict + replicated continuation): the preserved `A`-control and `A`-structure
 replicate 1 observations are retained byte-exact and **four new replicates per
@@ -5090,3 +5100,323 @@ stays where the previous section records it.
   output length, latency, billing and the provider-free replay. Result published
   as measured, including the 20 declared floor failures. No generation-16 number
   was changed.
+
+## Localization final synthesis over all available arms (generation 18, 2026-10-08)
+
+This is the **final synthesis** of the localization study (assertion
+`VAL-REPORT-005`), published as an **INTERMEDIATE checkpoint** before the
+owner-approved ReviewBench continuation. It adds **no new measurement**: every
+cell below is a reading of an artifact already frozen and published above
+(generations 5–17). No acquisition, no provider call, no upstream re-execution
+and no frozen number is changed; the section is a combined presentation plus the
+answers to the owner's fifteen questions. It is published after the immediate
+Sol and Sol-inspected publications, and it is the publication the ReviewBench
+gate waits on.
+
+**Scope and caveats, stated up front.** The population is the runtime-capped
+cohort: **22 groups / 84 worlds / 88 tasks / 85 eligible**, 218 eligible gold
+files; **3 tasks are `ineligible-no-gold`** and are excluded from every
+denominator rather than scored as zeros. The splits are development 50 tasks /
+13 groups, calibration 20 / 5 and **held-out final 15 tasks / 4 groups**; every
+final-split cell carries that small-N caveat and is not read as a finding. The
+ranking arms (`P`…`QJstructure`, the vote rankings) are ranked lists over the
+identical frozen 29,493-candidate universe and are evaluated in a fixed-k
+**rank window**; the working-set arms (`U5`) are **sets**, measured at their own
+size against a mandatory equal-size control; the two Sol arms are one agent turn
+per task, not rankings over that universe, so their comparison to the ranking
+arms is **descriptive, not like-for-like**. Failed, abstained, timed-out and
+floor-failed tasks are retained as measured misses in every denominator. A cell
+that the frozen artifact does not define is reported `—` (not applicable) or
+`Unavailable`, never zero or estimated.
+
+### A. The available arms (all-eligible, task micro)
+
+`S` = `PAJstructure` (= `P+A+J(structure)`), `QS` = `QJstructure`
+(= `Q+J(structure)`). `votes5` is the cumulative five-observation vote ranking
+(`N = 5`); `U5` is the cumulative five-replicate top-10 union, which is a **set**
+and therefore has no `Hit`/`FileAcc` cells. Exact `(numerator, denominator)`
+pairs for every cell are in `strict_metrics.tsv`, `ensemble_metrics.tsv`,
+`sol-metrics.tsv` and `sol_inspected_metrics.tsv`.
+
+| Arm | Hit@5 | Hit@10 | FileAcc@3 | FileAcc@5 | FileAcc@10 | FileAcc@32 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `P` | 25.9% | 35.3% | 11.8% | 11.8% | 16.5% | 24.7% |
+| `PA` | 31.8% | 41.2% | 12.9% | 14.1% | 20.0% | 27.1% |
+| `PAF` | 32.9% | 41.2% | 11.8% | 15.3% | 21.2% | 27.1% |
+| `PAD` | 29.4% | 41.2% | 9.4% | 14.1% | 21.2% | 27.1% |
+| `E` | 35.3% | 45.9% | 11.8% | 11.8% | 15.3% | 27.1% |
+| `PAJ` | 47.1% | 51.8% | 22.4% | 22.4% | 23.5% | 27.1% |
+| `S` (`PAJstructure`) | 52.9% | 55.3% | 21.2% | 23.5% | 24.7% | 27.1% |
+| `Q` | 77.6% | 85.9% | 36.5% | 38.8% | 44.7% | 70.6% |
+| `QJ` | 83.5% | 90.6% | 41.2% | 43.5% | 52.9% | 70.6% |
+| `QS` (`QJstructure`) | 84.7% | 91.8% | 40.0% | 47.1% | 55.3% | 70.6% |
+| `votes5` (`A` control) | 48.2% | 54.1% | 22.4% | 22.4% | 24.7% | 27.1% |
+| `votes5` (`S` structure) | 52.9% | 55.3% | 21.2% | 23.5% | 24.7% | 27.1% |
+| `SOL` (original) | 30.6% | 30.6% | 20.0% | 20.0% | 20.0% | 20.0% |
+| `SOL-INSPECTED` | 76.5% | 76.5% | 45.9% | 47.1% | 48.2% | 48.2% |
+| `U5` (`A` control) | — | — | — | — | — | — |
+| `U5` (`S` structure) | — | — | — | — | — | — |
+
+Read once, the ordering on the soft (any-gold) head is
+`QS` > `QJ` > `Q` > `S` > `PAJ` > `E` ≥ `PA` > `P`, and the two Sol arms sit
+outside that order because they answer a different question over a different
+universe. On the strict all-gold family the same top order holds, but `E` falls
+below `P` and `PA`, and `PAF`/`PAD` rise above `PA` (see question 2). No arm is
+declared a winner, no threshold was tuned, and no union, blend or cross-arm
+selection is proposed or scored.
+
+**Held-out final split (15 tasks / 4 groups), task micro.** Every cell carries
+the small-N caveat; `votes5`/`U5` final cells are in the generation-15 tables.
+
+| Arm | Hit@5 | Hit@10 | FileAcc@3 | FileAcc@5 | FileAcc@10 |
+| --- | --- | --- | --- | --- | --- |
+| `P` | 33.3% | 40.0% | 20.0% | 20.0% | 20.0% |
+| `PA` | 46.7% | 46.7% | 26.7% | 26.7% | 26.7% |
+| `PAF` | 46.7% | 46.7% | 26.7% | 33.3% | 33.3% |
+| `PAD` | 33.3% | 33.3% | 20.0% | 33.3% | 33.3% |
+| `E` | 26.7% | 33.3% | 6.7% | 6.7% | 6.7% |
+| `PAJ` | 46.7% | 46.7% | 26.7% | 26.7% | 26.7% |
+| `S` (`PAJstructure`) | 60.0% | 60.0% | 20.0% | 33.3% | 33.3% |
+| `Q` | 86.7% | 86.7% | 40.0% | 46.7% | 53.3% |
+| `QJ` | 93.3% | 93.3% | 53.3% | 53.3% | 60.0% |
+| `QS` (`QJstructure`) | 93.3% | 93.3% | 53.3% | 53.3% | 66.7% |
+| `SOL` (original) | 26.7% | 26.7% | 13.3% | 13.3% | 13.3% |
+| `SOL-INSPECTED` | 86.7% | 86.7% | 60.0% | 60.0% | 66.7% |
+
+### B. Answer size, task-conditioned wall, population wall and billing
+
+Each row names its **billing regime** (see section D). "Answer size" is the
+measured size of the arm's returned object where that object is a bounded answer,
+and the evaluated window where the arm returns a full ranking; a ranking arm's
+`Hit`/`FileAcc` cells are read inside the 10-file window. Task-conditioned walls
+are per-call or per-task; population walls are the whole-cohort operations.
+
+| Arm | Regime | Answer size (mean) | Task-conditioned wall | Population wall | Model usage | Provider cost |
+| --- | --- | --- | --- | --- | --- | --- |
+| `P`/`PA`/`PAF`/`PAD` | RBE deterministic | full ranking (10-file window) | rank action 1–29 s remote, median ≈15 s (36 logged) | 268 s wall / 72 s critical path for 89 fresh actions; metrics stage 24 s | none (no model) | `$0` provider; RBE durations are **not** dollars |
+| `E` | RBE (remote inference) | full ranking (10-file window) | warm replay served from the remote cache | 0 executed actions on the full rerun (1,280 cache hits); cold acquisition 904 shard actions | 0 inference at replay | `$0` provider at replay |
+| `Q` | hosted OpenRouter + RBE | full ranking (10-file window) | per-request 2,427 / 14,803 ms median / p95 (max 77,513) | 1,581,398 ms summed provider latency; 351 batched requests over 10,555 inputs | 10,644,719 prompt tokens | USD 0.1409903 (acquisition); `$0` at replay |
+| `PAJ` | JEV route | full ranking (10-file window) | per-call 326 / 463 ms; 358 ms per task | 31,572 ms (88 requests, 2,756 decisions) | 320,708 in + 123,118 out | USD 0.013469736 |
+| `S` | JEV route | full ranking (10-file window) | per-call 348 / 501 ms; 438 ms per task | 38,557 ms | 519,579 in + 123,174 out | USD 0.021822318 |
+| `QJ` | JEV route | full ranking (10-file window) | per-call 343 / 468 ms; 371 ms per task | 32,695 ms | 360,394 in + 122,847 out | USD 0.015136548 |
+| `QS` | JEV route | full ranking (10-file window) | per-call 371 / 582 ms; 429 ms per task | 37,735 ms | 569,414 in + 122,895 out | USD 0.023915388 |
+| `votes5` family (`A`+`S`) | JEV route | full ranking (10-file window) | per-call median 300–348 ms | 325,051 ms (whole family, 5 replicates × 2 conditions) | 4,201,435 in | USD 0.176460270 (family) |
+| `U5` (`A`) | provider-free reduction | **10.27 files (set)** | — | ensembles stage 22.4 s Tester / 41.1 s wall | none | `$0` |
+| `U5` (`S`) | provider-free reduction | **10.33 files (set)** | — | same reduction stage | none | `$0` |
+| `SOL` (original) | SIWC / ChatGPT plan | 0.66 paths per task (max 4) | turn wall 12,822 / 18,726 ms median / p95 | 36.1 s + 81.5 s BEP walls; summed turn wall 1,221,235 ms | 2,810,646 in (2,024,832 cached) + 20,944 out | `Unavailable` (plan-billed) |
+| `SOL-INSPECTED` | SIWC / ChatGPT plan | 3.23 paths per task (max 10) | turn wall 28,778 / 43,648 ms median / p95 | 18.6 min acquisition window; summed turn wall 2,582,262 ms | 7,984,586 in (6,192,512 cached) + 45,103 out | `Unavailable` (plan-billed) |
+
+### C. The five-pass working sets and the equal-budget control
+
+`U5` is the cumulative union of the ordinary Relevant-first top-10 over
+replicates 1–5, measured as a set; the control is `TopM(run 1)` at the **same**
+per-task size `M = size(U5)`. Every non-gold file is labelled
+`non-gold-not-irrelevant`: patch gold is not all useful agent context.
+
+| Measure | `U5` (`A` control) | `TopM(run 1)` (`A`) | `U5` (`S` structure) | `TopM(run 1)` (`S`) |
+| --- | --- | --- | --- | --- |
+| mean set size | 10.27 | identical by construction | 10.33 | identical by construction |
+| median / p95 size | 10 / 11 | identical | 10 / 12 | identical |
+| at least one gold | 46 (54.1%) | not applicable | 47 (55.3%) | not applicable |
+| all gold | 21 (24.7%) | 20 (23.5%) | 21 (24.7%) | 21 (24.7%) |
+| file Recall | 35.9% | 34.4% | 36.6% | 36.7% |
+| gold files retrieved | 64 | 61 | 66 | 67 |
+| mean gold / non-gold | 0.75 / 9.52 | — | 0.78 / 9.55 | — |
+| `A32`-solvable / recovered | 23 / 21 (91.3%) | — | 23 / 21 (91.3%) | — |
+
+### D. Separate billing regimes
+
+The regimes are reported separately and are never equated:
+
+- **RBE / BuildBuddy deterministic compute** (`P`…`PAD`, `E`, the union
+  reduction): no provider price; the durations above are compute, not dollars,
+  and cold/warm compute is **not** zero.
+- **Hosted OpenRouter** (`Q`): USD 0.1409903 for the one cold acquisition;
+  `$0` at replay.
+- **JEV route** (`PAJ`, `S`, `QJ`, `QS`, the replicated family): recorded USD per
+  condition and per family, from actual returned usage.
+- **SIWC / ChatGPT plan** (`SOL`, `SOL-INSPECTED`): token usage is observable but
+  cost is **`Unavailable`** — no USD figure, no quota figure and no
+  API-equivalent counterfactual is claimed, and the cost is never `$0`. The same
+  route carries the approved ReviewBench sessions later.
+
+### E. The fifteen questions, in six groups
+
+**(i) The Hit strict gap.**
+
+1. *How large is the any-gold `Hit` versus all-gold `FileAcc` gap?* Large and
+   consistent: `PA` 41.2% → 20.0% at k=10 (−21.2 pp), `Q` 85.9% → 44.7%
+   (−41.2 pp), `QJ` 90.6% → 52.9% (−37.7 pp), `SOL` 30.6% → 20.0% (−10.6 pp),
+   `SOL-INSPECTED` 76.5% → 48.2% (−28.3 pp). The gap is the all-gold subset
+   requirement: **41** of the 85 eligible tasks carry exactly one eligible gold
+   file and **44** carry more than one (218 gold files, exact mean 218/85), so a
+   ranking can hit *a* gold file while missing the complete set. No eligible task
+   has more than 32 gold files, so no task is structurally barred from
+   `FileAcc@32`.
+2. *Does the strict family reorder the arms?* At the top, no: `QS` > `QJ` > `Q` >
+   `S` > `PAJ` holds on `FileAcc@10`. At the bottom it does: on `Hit@10` the
+   order is `E` (45.9%) > `PAD`=`PAF`=`PA` (41.2%) > `P` (35.3%), whereas on
+   `FileAcc@10` `E` (15.3%) falls below `P` (16.5%) and `PA` (20.0%), and
+   `PAF`/`PAD` (21.2% each) rise above `PA` (20.0%). The strict family changes
+   the level everywhere and the order at the bottom.
+
+**(ii) `PA` versus `P`, JEV versus `PA` and structure.**
+
+3. *What does adding anchors buy (`PA`−`P`)?* All-eligible micro: Hit@5 +5.9 pp
+   (25.9→31.8), Hit@10 +5.9 pp (35.3→41.2), FileAcc@5 +2.3 pp (11.8→14.1),
+   FileAcc@10 +3.5 pp (16.5→20.0), FileAcc@32 +2.4 pp (24.7→27.1), MRR@10
+   +6.5 pp (18.5→25.0). The anchors are the one structural addition that lifts
+   every cutoff.
+4. *What does the lexical JEV inference add over `PA`?* `PAJ`−`PA` micro: Hit@5
+   +15.3 pp (31.8→47.1), Hit@10 +10.6 pp (41.2→51.8), FileAcc@5 +8.3 pp
+   (14.1→22.4), FileAcc@10 +3.5 pp (20.0→23.5), FileAcc@32 +2.4 pp, MRR@10
+   +13.2 pp. It is a promotion-only effect on the identical candidate population
+   (185 promotions, 51 of them gold) and the largest single effect in the study.
+5. *What does the structural condition add over the JEV control (`S`−`PAJ`)?*
+   Micro: Hit@5 +5.8 pp (47.1→52.9), Hit@10 +3.5 pp (51.8→55.3), FileAcc@5
+   +1.1 pp, FileAcc@10 +1.2 pp, MRR@10 +3.4 pp, with **0 regressed tasks**, at
+   ≈62% more input tokens and dollars. It promotes *fewer* candidates (144 vs
+   185) with a higher gold share, so it acts as a precision filter rather than an
+   additional recall source. The same pattern and mechanism recur on the hosted-Q
+   pair (question 8). Measured A-pair regime: **A1** (inference works and
+   structure works), not a required outcome.
+
+**(iii) The `E`/`Q`/`QJ` position.**
+
+6. *Where does `E` sit?* On the soft head `E` (Hit@5 35.3%, Hit@10 45.9%,
+   MRR@10 27.5%) leads `P` and `PA` on Hit@5 and Hit@10, but it trails `PA` on
+   the strict family (FileAcc@5 11.8% vs 14.1%, FileAcc@10
+   15.3% vs 20.0%) and on Recall@1 (9.6% vs 11.6%). `E` and `PA` retrieve largely
+   different sets (mean top-32 intersection ≈7.8 of 32). Descriptive only.
+7. *Where does `Q` sit?* Ahead of every other arm on every metric: micro +22.4 pp
+   Hit@1, +45.9 pp Hit@5, +44.7 pp Hit@10, +36.9 pp Recall@10 and +31.8 pp
+   MRR@10 against `PA`; `FileAcc@10` 44.7% vs 20.0% (`PA`) and 15.3% (`E`);
+   `FileAcc@32` 70.6% vs 27.1% for both. `Q` and `E` share more of their top-32
+   than either shares with the deterministic arm (Σ intersection 1,132 vs 717
+   and 662 of 85×32). One hosted model under one frozen recipe, no model search,
+   no tuned threshold, no blend.
+8. *Where does the `QJ` pair sit?* Above `Q` and above the lexical pair at every
+   stage: `QJ`−`Q` micro +16.5 pp Hit@1, +5.9 pp Hit@5, +4.7 pp Hit@10, +12.4 pp
+   MRR@10, FileAcc@10 +8.2 pp; `QS`−`QJ` adds +0.6 pp Hit@1, +1.2 pp Hit@5,
+   +1.2 pp Hit@10, +1.6 pp MRR@10, FileAcc@10 +2.4 pp. The explicit
+   `PAJstructure`−`QJstructure` comparison is negative on every metric
+   (−15.8 to −36.9 pp). The JEV increment is smaller in percentage terms on the
+   strong `Q` base (Hit@5 +5.9 pp vs +15.3 pp on `PA`) because `Q` already holds
+   73 of 85 tasks' gold in its top-10 before any decision, leaving only 7 eligible
+   tasks a promotion can lift; the structural half is comparatively the more
+   valuable one there. Regime: **A1** again.
+
+**(iv) Sol strict, median/p95, and orders of magnitude of task compute.**
+
+9. *What do the Sol arms score under the strict metrics?* `SOL` all-eligible
+   micro: Hit@5/10 30.6% (26/85), FileAcc@3/5/10/32 20.0% (1/5), FileAcc@1 17.6%
+   (3/17). `SOL-INSPECTED`: Hit@5/10 76.5% (13/17), FileAcc@3 45.9% (39/85),
+   FileAcc@5 47.1% (8/17), FileAcc@10/32 48.2% (41/85), FileAcc@1 38.8%
+   (33/85). Paired, the inspected arm rescues 42 tasks and regresses 3 at
+   Hit@10, and 26 / 2 at FileAcc@10; **20 of 88** inspected tasks fail the
+   declared nonempty-implementation-read floor and are retained as measured
+   misses (all three regressions are floor failures in the calibration split),
+   and the floor was not relaxed.
+10. *What are the per-task median/p95 walls?* `SOL` turn wall median 12,822 ms,
+    p95 18,726 ms (min 9,356, max 30,254; sum 1,221,235 ms). `SOL-INSPECTED`
+    median 28,778 ms, p95 43,648 ms (min 15,320, max 52,453; sum 2,582,262 ms) —
+    about **2.1×** the original median and **2.3×** its p95, and its answers are
+    about **4.9×** longer (3.23 vs 0.66 paths per task). Neither arm reached the
+    300 s cap; 0 timeouts, 0 interrupts.
+11. *How many orders of magnitude separate Sol task compute from a JEV decision?*
+    Only measured quantities are compared. Against the A-control per-task wall
+    (358 ms) the original Sol turn is ≈36× (≈1.6 orders) and the inspected turn
+    ≈80× (≈1.9 orders); against the JEV per-call median (326 ms) they are ≈39×
+    and ≈88×. So Sol's task compute is **roughly one to two orders of magnitude**
+    above a JEV decision. The Sol arms are plan-billed (`Unavailable`) while JEV
+    is token-billed (recorded USD), so **no dollar cost is equated**; `Q`'s
+    batched hosted acquisition (1,581,398 ms summed provider latency for 10,555
+    inputs) is a third, different regime.
+
+**(v) Repeated fixed k, the union, the equal-size control and the A32 distance.**
+
+12. *Does five-fold repetition change the fixed-k retrieval?* Very little. The
+    family is highly stable (98.0% `A` / 97.8% `S` of judged candidates unanimous
+    at 5/5; 1.5% / 1.3% ever flip the Relevant decision), and almost all the
+    movement is the *one-shot* promotion: `A` gains +15.3 pp Hit@5 from the frozen
+    `PA` baseline to replicate 1 but only +1.1 pp Hit@5 and +1.2 pp FileAcc@10
+    from replicate 1 to all five, saturating by `N = 3`–`4`; `S` gains nothing on
+    Hit@5 or FileAcc@5/10 and +0.3 pp MRR@10. All three fixed ensembles
+    (`ANY`≥1, `MAJ`≥3, `CONS`=5) are published; only `CONS` visibly changes the
+    head and it is slightly *worse* on `A` (Hit@5 47.1% vs 48.2%). No winner or
+    threshold is selected.
+13. *Does the cumulative union beat the equal-size control?* Barely, and not
+    consistently: against `TopM(run 1)` at the same per-task size the union's
+    advantage is **+1 all-gold task and +3 gold files on `A`**, and **0 all-gold
+    tasks and −1 gold file on `S`** (where the control's file Recall 36.7%
+    marginally exceeds the union's 36.6%). At the same size the cumulative vote
+    ranking's own top-10 matches the union on all-gold (21/85 both conditions)
+    and on file Recall. Replication diversity did not purchase measurable extra
+    coverage here; the one exception is a single additional all-gold task on `A`.
+14. *How far is the working set from the `A32` ceiling?* 23 of 85 eligible tasks
+    (27.1%) are `A32`-solvable (`FileAcc@32` of `PA`); `U5` recovers 21 of them on
+    both conditions (91.3%, up from 87.0% at `U1` on `A`), leaving 2 solvable
+    tasks unrecovered. The other **62 of 85 tasks are not retrievable at all**
+    from the judged population — their gold sits outside the frozen `A32` set, a
+    property of the base ranking, not of the reducer. Unavailable gold versus
+    missed available gold is reported explicitly and never collapsed.
+
+**(vi) The minimal ranker versus the cheap bounded high-recall working set.**
+
+15. *Which is better for a bounded working set?* On this corpus the cheap
+    bounded high-recall union does **not** beat simply taking the same number of
+    files from one run: its only measured advantage over the equal-size control
+    is one all-gold task on `A` (question 13), it ties or loses on `S`, and the
+    cumulative vote ranking's own top-10 matches it on all-gold and file Recall.
+    The union's context cost is a mean 9.52 (`A`) / 9.55 (`S`) non-gold files per
+    task at `U5`, which are labelled not-irrelevant but are not gold. The minimal
+    ranker (`votes5` / the JEV-promoted rankings) is therefore not beaten by the
+    cheap high-recall working set here, and no positive result is required or
+    claimed.
+
+### F. Provider-free replay and the frozen laws
+
+No stage in this synthesis acquires anything. The corpus-free laws that pin each
+arm's reduction — `//test/localization_runtime:metrics_law`,
+`//test/localization_embedding:embedding_rank_law`,
+`//test/localization_jev:jev_law`, `//test/localization_qwen:qwen_law`,
+`//test/localization_qwen_jev:qwen_jev_law`,
+`//test/localization_replicated:replicated_law`,
+`//test/localization_strict:strict_law`,
+`//test/localization_ensembles:ensemble_law`,
+`//test/localization_sol:sol_law` and
+`//test/localization_sol_inspected:sol_inspected_law` — run inside the ordinary
+offline gate and pass. A replay of any published reducer executes **0 Codex
+turns, 0 JEV calls, 0 hosted-Qwen requests, 0 CodeRankEmbed inferences and 0
+`Repository`/`Theory` actions**, and issues **0 provider requests**; the union
+reduction and the scoring stages declare no acquisition producer. The ordinary
+offline gate is **37 pass / 1 fail**, the one failure being the documented
+pre-existing `//test/policy:workspace_audit_test` over the preserved untracked
+`notes/repository-through-time/` data (see `AGENTS.md`); the user's untracked
+Zed grammars are likewise preserved. No frozen artifact, historical failure or
+prior generation was rewritten, and no unintended expensive producer was run.
+
+### G. Limits
+
+Every number above is one descriptive measurement of one frozen cohort of 85
+eligible tasks, of which only **15 tasks in 4 groups** are held-out final. There
+is no significance test, no tuned threshold, no selected winner, no blended
+cross-arm selection and no goalpost moved. The two Sol arms are a different
+measurement (one agent turn per task) from the ranking arms and are compared
+descriptively only. Coordination and accounting work is out of scope for this
+continuation, and this synthesis is an intermediate checkpoint, not a terminal
+stop: the approved ReviewBench first paired-economics study is the next
+authorized work.
+
+### Update history
+
+- Generation 18 (this section): the **final synthesis over all available arms**
+  is published — the combined arm table (`P`, `PA`, `PAF`, `PAD`, `E`, `PAJ`,
+  `S`, `Q`, `QJ`, `QS`, the five-pass votes and unions, `SOL` and the distinct
+  `SOL-INSPECTED` arm), the held-out final split, answer size / task-conditioned
+  wall / population wall / model usage and cost under four separated billing
+  regimes, the working-set table with its equal-size control, and the fifteen
+  owner questions answered in six groups. No new measurement, acquisition or
+  provider call; no earlier generation, frozen artifact or historical failure
+  changed. Published as the INTERMEDIATE checkpoint before the approved
+  ReviewBench continuation.
