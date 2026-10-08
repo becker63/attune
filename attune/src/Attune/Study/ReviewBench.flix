@@ -38,6 +38,7 @@
 pub mod Attune.Study.ReviewBench {
 
     use Attune.Study
+    use Attune.Study.Qwen
     use Attune.Repository.Grit
 
     // -------------------------------------------------------- origin and pin
@@ -507,4 +508,226 @@ pub mod Attune.Study.ReviewBench {
     /// before any outcome and consumes the SAME shared token budget as the arm's
     /// own review, so neither arm is handed extra budget.
     pub def assistedContextCapIdentity(): String = "reviewbench-assisted-context-cap-v1"
+
+    // ------------------------------------------------- world identity and export
+
+    /// The declared role of one exported world. Exactly base or head: no future
+    /// commit, no human review comment and no later fix is ever exported.
+    pub enum WorldRole {
+        case Base
+        case Head
+    }
+
+    pub def roleName(role: WorldRole): String = match role {
+        case WorldRole.Base => "base"
+        case WorldRole.Head => "head"
+    }
+
+    /// The declared source-repository mirror of one task. The canonical
+    /// `review-bench` org hosts one `<owner>_<repo>` mirror holding each task's
+    /// exact base and head commits, so the export survives an upstream rewrite or
+    /// deletion and the two exported revisions stay addressable.
+    pub def mirrorRepository(task: Task): String =
+        "review-bench/" + String.replace(src = "/", dst = "_", task#nwo)
+
+    /// The declared world identity of one task's export: the canonical repository
+    /// name with its path separator folded, the PR number and the declared role.
+    /// Source and facts are acquired once per exact WorldId and shared by both
+    /// review arms, so the two arms read identical bytes by construction.
+    pub def worldId(task: Task, role: WorldRole): String =
+        String.replace(src = "/", dst = "_", task#nwo) + "-" + Int32.toString(task#pr) + "-" + roleName(role)
+
+    /// The declared revision of one task's role: the task's own exported base or
+    /// head commit, never a later one.
+    pub def revisionOf(task: Task, role: WorldRole): String = match role {
+        case WorldRole.Base => task#base
+        case WorldRole.Head => task#head
+    }
+
+    /// The declared identity of one acquired world archive: the world id, the
+    /// mirror repository, the exact revision, the exact archive digest and the
+    /// exact byte count. The acquisition verifies the digest before the bytes
+    /// enter the study, so a mutated or substituted archive fails the fetch
+    /// instead of becoming source.
+    pub type alias Archive = {
+        world      = String,
+        repository = String,
+        revision   = String,
+        sha256     = String,
+        bytes      = Int64
+    }
+
+    /// The declared archive identity record of one task's role, derived from the
+    /// task's own exported identity rather than restated.
+    pub def archiveOf(task: Task, role: WorldRole, sha256: String, bytes: Int64): Archive = {
+        world = worldId(task, role),
+        repository = mirrorRepository(task),
+        revision = revisionOf(task, role),
+        sha256 = sha256,
+        bytes = bytes
+    }
+
+    /// One archive identity record as a canonical line of the declared archive
+    /// manifest the acquisition repository rule consumes.
+    pub def archiveLine(archive: Archive): String =
+        List.join("\t", List#{"archive", archive#world, archive#repository, archive#revision,
+            archive#sha256, Int64.toString(archive#bytes)})
+
+    // -------------------------------------------------------- bounded deadlines
+
+    /// The declared bounded extraction deadlines: one extraction unit and one
+    /// whole base+head world. They are the declared bounds the EXISTING
+    /// out-of-process deadline enforces; a deadline is never reported as an
+    /// in-process cancellation, because no file-based interrupt exists.
+    pub def extractionUnitSeconds(): Int32 = 20
+    pub def worldDeadlineSeconds(): Int32 = 120
+    pub def deadlineEnforcement(): String = "existing-out-of-process-deadline"
+    pub def interruptionClaim(): String = "never-claim-in-process-cancellation"
+
+    /// The declared status of a world that reached its deadline: a partial world
+    /// is UNKNOWN, never complete. A released worker's cost and cancellation
+    /// evidence is retained, and the shared paired set gets no outcome
+    /// replacement.
+    pub def partialWorldStatus(): String = "UNKNOWN"
+    pub def releasedWorkerDisposition(): String = "cost-and-cancellation-retained-no-replacement"
+
+    // -------------------------------------------------------- measured export
+
+    /// The measured facts of one task's real base/head export. Every count is a
+    /// reduction over the export's own measured changed files, so the record is
+    /// the export's real bytes rather than a declaration restated. `extensions`
+    /// is the declared extension histogram of the changed source population and
+    /// `maxSourceBytes` the largest single changed source file.
+    pub type alias Measurement = {
+        baseFiles           = Int32,
+        headFiles           = Int32,
+        changedFiles        = Int32,
+        changedBytes        = Int64,
+        sourceFiles         = Int32,
+        changedSourceBytes  = Int64,
+        supportedFiles      = Int32,
+        supportedSourceBytes = Int64,
+        unsupportedFiles    = Int32,
+        overCapFiles        = Int32,
+        overCapBytes        = Int64,
+        maxSourceBytes      = Int64,
+        extensions          = List[(String, Int32)]
+    }
+
+    /// The declared extension label of one path: the lower-cased final suffix, or
+    /// the empty string when the basename carries no dot.
+    pub def fileExtension(path: String): String = match String.split(regex = "\\.", basename(path)) {
+        case _ :: Nil => ""
+        case parts    => String.toLowerCase(match List.reverse(parts) {
+            case last :: _ => last
+            case Nil       => ""
+        })
+    }
+
+    /// The declared extension histogram of one population, in extension order.
+    pub def extensionCounts(files: List[SourceFile]): List[(String, Int32)] =
+        List.sort(List.map(extension -> (extension,
+            List.length(List.filter(file -> fileExtension(file#path) == extension, files))),
+            List.distinct(List.map(file -> fileExtension(file#path), files))))
+
+    /// The declared measurement of one task's export.
+    pub def measurementOf(baseFiles: Int32, headFiles: Int32, files: List[SourceFile]): Measurement = {
+        let changed = List.filter(file -> file#changed, files);
+        let source = List.filter(isSourceFile, changed);
+        let supported = List.filter(isSupported, source);
+        let unsupported = List.filter(file -> not hasLanguage(file#path), source);
+        let overCap = List.filter(isOverCap, source);
+        {
+            baseFiles = baseFiles,
+            headFiles = headFiles,
+            changedFiles = List.length(changed),
+            changedBytes = sumBytes(changed),
+            sourceFiles = List.length(source),
+            changedSourceBytes = sumBytes(source),
+            supportedFiles = List.length(supported),
+            supportedSourceBytes = sumBytes(supported),
+            unsupportedFiles = List.length(unsupported),
+            overCapFiles = List.length(overCap),
+            overCapBytes = sumBytes(overCap),
+            maxSourceBytes = List.foldLeft((largest, file) -> if (file#bytes > largest) file#bytes else largest, 0i64, source),
+            extensions = extensionCounts(source)
+        }
+    }
+
+    /// The declared byte accounting of one measurement: the admission arithmetic
+    /// of one task's export, reduced from the measured record rather than restated.
+    pub def accountingOfMeasurement(measurement: Measurement): Accounting = {
+        changedBytes = measurement#changedBytes,
+        changedSourceBytes = measurement#changedSourceBytes,
+        supportedSourceBytes = measurement#supportedSourceBytes,
+        skippedOverCapBytes = measurement#overCapBytes,
+        outsideFastCohort = measurement#overCapFiles > 0,
+        sourceFiles = measurement#sourceFiles,
+        unsupportedPaths = measurement#unsupportedFiles
+    }
+
+    // ------------------------------------------------------ frozen shared context
+
+    /// The declared frozen shared-context record: the one policy record both
+    /// review arms are frozen under, written before any outcome and never tuned
+    /// afterwards. It restates no model identity of its own — the hosted provider
+    /// and the frozen recipe are the existing `Attune.Study.Qwen` owner's, so a
+    /// recipe change is one declared identity change and not a second recipe.
+    pub type alias SharedContext = {
+        identity          = String,
+        descriptors       = List[String],
+        provider          = String,
+        model             = String,
+        recipe            = String,
+        batchInputs       = Int32,
+        batchBytes        = Int64,
+        concurrency       = Int32,
+        jevExcludes       = List[String],
+        assistedCap       = String,
+        evidenceBudget    = String,
+        deadlineUnit      = Int32,
+        deadlineWorld     = Int32,
+        deadlineEnforcement = String
+    }
+
+    pub def sharedContext(): SharedContext = {
+        identity = contextPolicyIdentity(),
+        descriptors = contextDescriptorPolicy(),
+        provider = Qwen.provider(),
+        model = Qwen.declaredModel(),
+        recipe = Qwen.recipeIdentity(),
+        batchInputs = qwenBatchInputs(),
+        batchBytes = qwenBatchBytes(),
+        concurrency = qwenBoundedConcurrency(),
+        jevExcludes = jevContextExcludes(),
+        assistedCap = assistedContextCapIdentity(),
+        evidenceBudget = "shared-with-arm-review-same-cumulative-token-budget",
+        deadlineUnit = extractionUnitSeconds(),
+        deadlineWorld = worldDeadlineSeconds(),
+        deadlineEnforcement = deadlineEnforcement()
+    }
+
+    /// The declared frozen shared-context record as canonical `key\tvalue` lines.
+    pub def renderSharedContext(): List[List[String]] = {
+        let context = sharedContext();
+        List#{
+            List#{"context", "identity", context#identity},
+            List#{"context", "descriptors", List.join(",", context#descriptors)},
+            List#{"context", "provider", context#provider},
+            List#{"context", "model", context#model},
+            List#{"context", "recipe", context#recipe},
+            List#{"context", "batch_inputs", Int32.toString(context#batchInputs)},
+            List#{"context", "batch_bytes", Int64.toString(context#batchBytes)},
+            List#{"context", "concurrency", Int32.toString(context#concurrency)},
+            List#{"context", "jev_excludes", List.join(",", context#jevExcludes)},
+            List#{"context", "assisted_cap", context#assistedCap},
+            List#{"context", "evidence_budget", context#evidenceBudget},
+            List#{"context", "deadline_unit_seconds", Int32.toString(context#deadlineUnit)},
+            List#{"context", "deadline_world_seconds", Int32.toString(context#deadlineWorld)},
+            List#{"context", "deadline_enforcement", context#deadlineEnforcement},
+            List#{"context", "interruption_claim", interruptionClaim()},
+            List#{"context", "partial_world_status", partialWorldStatus()},
+            List#{"context", "released_worker", releasedWorkerDisposition()}
+        }
+    }
 }

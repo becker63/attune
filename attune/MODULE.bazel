@@ -300,3 +300,21 @@ http_file(
     sha256 = "e74656b8c1c4bbab5ce85f1fcb742a7aaad550a4d7bd46e1f83a0746807bfa02",
     urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/corpus/manifest.json"],
 )
+
+# The approved clean-source acquisition of the pinned ReviewBench cohort's exact
+# base and head worlds (`VAL-REVIEW-002`). The declared archive identity record
+# `//test/reviewbench:archives.tsv` names each world's mirror repository, exact
+# revision and exact archive digest; it is emitted by the real acquisition and
+# owned by `Attune.Study.ReviewBench`, so no repository, revision or digest is
+# restated here as truth. Each archive is fetched on the client and verified
+# against its declared SHA-256 before extraction, exactly like the pinned
+# localization worlds above, so a mutated or substituted archive fails the fetch
+# instead of entering the study, and both review arms read identical bytes. The
+# ordinary `bazel test //...` gate never fetches it: only the explicitly selected
+# `manual` `//test/reviewbench:reviewbench_measure` target declares it.
+# Declared last for the same anonymous-repo renumbering reason as the catalog,
+# world archives, embedding runtime, Qwen fixtures, Codex assets and manifest.
+world_sources(
+    name = "reviewbench_worlds",
+    manifest = "//test/reviewbench:archives.tsv",
+)

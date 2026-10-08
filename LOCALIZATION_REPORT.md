@@ -5420,3 +5420,116 @@ authorized work.
   provider call; no earlier generation, frozen artifact or historical failure
   changed. Published as the INTERMEDIATE checkpoint before the approved
   ReviewBench continuation.
+
+## ReviewBench paired-economics study — pinned admission and bounded shared context (substrate checkpoint, 2026-10-08)
+
+This is the substrate checkpoint of the approved ReviewBench first
+paired-economics study (`VAL-REVIEW-001`, `VAL-REVIEW-002`), not its result.
+No review, no judge session and no provider call has run; the paired economic
+tables and graphs belong to the later reporting feature.
+
+### Admission (actual acquisition)
+
+The corpus is admitted only after actual acquisition verifies the declared
+origin: `corpus/manifest.json` at commit
+`66df3f322d0d85ea133ea9fa777f5d1a8c933c4e` of
+`https://github.com/review-bench/ReviewBench` was downloaded and reduced to
+git blob `c12d9f760bd4d79965e5870eb860cbcf78c07c9a`, SHA-256
+`e74656b8c1c4bbab5ce85f1fcb742a7aaad550a4d7bd46e1f83a0746807bfa02` and
+529,650 bytes — an exact match on all three declared identities, with MIT
+license and 219 task rows.
+
+| Measured | Value |
+| --- | --- |
+| Population rows | 219 |
+| Primary JS/TS/Java/Ruby slice | 91 tasks / 72 repositories |
+| Primary language split | 68 TypeScript, 15 JavaScript, 7 Java, 1 Ruby (41.6% of 219) |
+| Declared metadata exclusion | `added+removed > 10000` OR `files changed > 100` |
+| Outliers removed | exactly the eight named tasks |
+| Fast cohort | 83 tasks / 65 repositories (62/14/6/1) |
+
+### Frozen 24-task metadata-only cohort
+
+Selected under the declared seed `attune-reviewbench-first-paired-2026-10-08`
+by SHA-256 of `(taskid + seed)`, with the frozen quotas 17 TypeScript /
+4 JavaScript / 2 Java / 1 Ruby, preferring distinct repositories and retaining
+the `>1000`-line change-size stratum; the existing 3/1/1 largest-remainder
+mechanism keeps the development/calibration/final split repository-disjoint.
+No gold, finding, score or difficulty entered the selection. All four quotas were
+filled by the pinned corpus (no underfill occurred here); underfill would be
+reported as underfill and never substituted by an out-of-quota task. The
+resulting split is 14 development / 5 calibration / 5 final, repository-disjoint.
+
+### Exact base/head export and structural admission
+
+Each selected task's exact base and head commits are acquired once each from the
+canonical `review-bench` source mirrors (48 archives, digest-verified before
+extraction), so both review arms read identical bytes and the base-to-head diff
+is only permitted metadata. The measured export diff gives changed source bytes,
+the frozen generated/vendored/minified classification, the extension histogram,
+the largest changed source file, the 128 KiB fast-structural cap and the
+declared 90% supported-changed-source-byte admission.
+
+| Task | Language | Changed source bytes | Supported share | Admission |
+| --- | --- | --- | --- | --- |
+| konturio/disaster-ninja-fe#1208 | TypeScript | 1,178 | 0‰ | attrition |
+| capawesome-team/cli#126 | TypeScript | 71,535 | 996‰ | admitted |
+| Pushedskydiver/chief-clancy#216 | TypeScript | 196,873 | 315‰ | attrition |
+| wspulse/client-ts#20 | TypeScript | 81,037 | 833‰ | attrition |
+| heyitsaamir/teamscli#31 | TypeScript | 145,384 | 970‰ | admitted |
+| bndF1/wavely#133 | TypeScript | 347,049 | 520‰ | attrition |
+| godaddy/antares#142 | TypeScript | 575,248 | 86‰ | attrition |
+| thomHayner/bicycle-repair-stations#6 | TypeScript | 103,164 | 417‰ | attrition |
+| anokye-labs/kbexplorer#38 | TypeScript | 101,411 | 664‰ | attrition |
+| haoling/diary-notebook-blog-transformer#24 | TypeScript | 16,627 | 1000‰ | admitted |
+| hughdidit/DAISy-Agency#294 | TypeScript | 24,358 | 0‰ | attrition |
+| namehash/ensnode#1938 | TypeScript | 44,858 | 856‰ | attrition |
+| cmik/apilix#12 | TypeScript | 296,042 | 824‰ | attrition |
+| evdboom/Bindery#63 | TypeScript | 317,182 | 819‰ | attrition |
+| caasi/town-zero#6 | TypeScript | 128,805 | 996‰ | admitted |
+| EdV4H/usketch#534 | TypeScript | 77,617 | 1000‰ | admitted |
+| rulecom/rule-io-sdk#40 | TypeScript | 164,340 | 1000‰ | admitted |
+| brianc/node-postgres#3650 | JavaScript | 52,863 | 1000‰ | admitted |
+| agent-sh/agentsys#298 | JavaScript | 7,799 | 1000‰ | admitted |
+| fredericboyer/dev-team#797 | JavaScript | 162,184 | 894‰ | attrition |
+| joshjohanning/bulk-github-repo-settings-sync-action#120 | JavaScript | 523,293 | 891‰ | attrition |
+| jenkinsci/gitea-plugin#141 | Java | 19,116 | 1000‰ | admitted |
+| ls1intum/Artemis#12479 | Java | 410,509 | 939‰ | admitted |
+| sdsykes/fastimage#165 | Ruby | 56,256 | 839‰ | attrition |
+
+Ten of the 24 selected tasks are admitted to the paired structural study and
+fourteen are named attrition; the attrition is preserved, never replaced and
+never forced to a launch. `ls1intum/Artemis#12479` and
+`joshjohanning/bulk-github-repo-settings-sync-action#120` carry a changed source
+above the 128 KiB fast-structural cap, so they stay outside the fast structural
+cohort while their agent bytes are never truncated. The 24-task denominator is
+retained for the paired experiment regardless of this attrition.
+
+### Frozen shared context and bounded deadlines
+
+| Field | Frozen value |
+| --- | --- |
+| Context identity | `reviewbench-shared-context-v1` |
+| Descriptor policy | needed descriptors only, shared once per exact world, graph cold, no depth-7 census |
+| Hosted provider / model | `openrouter` / `qwen/qwen3-embedding-8b` (existing recipe identity) |
+| Qwen batch boundary | 32 inputs / 240,000 bytes, sequential; bounded 8-concurrency only if safe |
+| JEV | exact memo, existing dedicated route, contexts exclude findings and gold |
+| Assisted-context cap | `reviewbench-assisted-context-cap-v1`, frozen before outcomes, same shared token budget |
+| Deadlines | 20 s extraction unit / 120 s base+head world, existing out-of-process deadline; a partial world is UNKNOWN and in-process cancellation is never claimed |
+
+### Costs
+
+Acquisition network only: 48 public mirror archives (445,655,802 bytes
+compressed, 53,248 files, 884 MiB extracted). No provider call, no Grit CPU
+work, no RBE and no Sol/judge usage occurred in this checkpoint; those lines
+remain Unavailable until the paired experiment and judge actually run. Cost is
+never zero-by-assumption.
+
+### Update history
+
+- ReviewBench substrate checkpoint (this section): the pinned corpus admission,
+  the frozen 24-task metadata-only cohort, the exact base/head export, the
+  measured structural admission with preserved attrition and the frozen bounded
+  shared-context/deadline policy are published. No review, no judge session and
+  no provider call ran; the paired economic tables remain the later feature's
+  result.

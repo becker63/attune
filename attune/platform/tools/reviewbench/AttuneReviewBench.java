@@ -10,9 +10,12 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * The mechanical boundary of the pinned ReviewBench corpus.
@@ -227,6 +230,128 @@ public final class AttuneReviewBench {
         summary.append("cells\t").append(cells).append("\n");
         summary.append("status\tok\n");
         return summary.toString();
+    }
+
+    /** The streaming SHA-256 of one declared file's exact bytes, as lowercase hex. */
+    private static String digestOf(String path) {
+        try (InputStream raw = new FileInputStream(path);
+             DigestInputStream stream = new DigestInputStream(raw, MessageDigest.getInstance("SHA-256"))) {
+            byte[] buffer = new byte[1 << 16];
+            while (stream.read(buffer) >= 0) {
+                // the digest is updated by the stream itself
+            }
+            return hex(stream.getMessageDigest().digest());
+        } catch (Exception error) {
+            return "unreadable";
+        }
+    }
+
+    /**
+     * The declared changed-file record of one exact world pair, written to
+     * {@code output}.
+     *
+     * <p>The launcher's {@code worldsources} manifest names every declared source
+     * byte of the two worlds by absolute path. For each declared path under the
+     * world's own {@code /worlds/<world>/} marker the repository-relative path is
+     * recovered by dropping that world's single leading archive directory, exactly
+     * as the clean-source extraction does. A head file is <em>changed</em> when
+     * its repository-relative path is absent from the base world or its exact
+     * bytes differ; the record carries the head byte count and nothing else.
+     *
+     * <p>The adapter decides no classification, count, quota, threshold or
+     * admission: it reports which declared files differ and how large they are,
+     * and {@code Attune.Study}'s ReviewBench owner decides what that means. Two
+     * files with the same bytes are never reported as changed, so a re-exported
+     * identical tree yields no changed record rather than an invented one.
+     */
+    public static String changedFiles(String worldManifest, String baseWorld, String headWorld, String output) {
+        String baseMarker = "/worlds/" + baseWorld + "/";
+        String headMarker = "/worlds/" + headWorld + "/";
+        TreeMap<String, String> base = new TreeMap<>();
+        TreeMap<String, String> head = new TreeMap<>();
+        TreeMap<String, String> headPath = new TreeMap<>();
+        TreeSet<String> basePaths = new TreeSet<>();
+        try {
+            for (String line : Files.readAllLines(Paths.get(worldManifest), StandardCharsets.UTF_8)) {
+                String path = line.trim();
+                if (path.isEmpty()) {
+                    continue;
+                }
+                if (path.contains(baseMarker)) {
+                    String relative = dropLeadingDirectory(lastAfter(baseMarker, path));
+                    if (!relative.isEmpty()) {
+                        basePaths.add(relative);
+                        base.put(relative, digestOf(path));
+                    }
+                } else if (path.contains(headMarker)) {
+                    String relative = dropLeadingDirectory(lastAfter(headMarker, path));
+                    if (!relative.isEmpty()) {
+                        head.put(relative, digestOf(path));
+                        headPath.put(relative, path);
+                    }
+                }
+            }
+            long changedBytes = 0L;
+            TreeMap<String, Long> changed = new TreeMap<>();
+            for (String relative : head.keySet()) {
+                String baseDigest = base.get(relative);
+                if (baseDigest == null || !baseDigest.equals(head.get(relative))) {
+                    long size = Files.size(Paths.get(headPath.get(relative)));
+                    changed.put(relative, size);
+                    changedBytes += size;
+                }
+            }
+            try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(output), StandardCharsets.UTF_8)) {
+                for (String relative : changed.keySet()) {
+                    String status = basePaths.contains(relative) ? "modified" : "added";
+                    writer.write("changed\t" + status + "\t" + escape(relative) + "\t"
+                            + changed.get(relative) + "\t" + headerOf(headPath.get(relative)) + "\n");
+                }
+                writer.write("summary\t" + base.size() + "\t" + head.size() + "\t"
+                        + changed.size() + "\t" + changedBytes + "\n");
+            }
+            return "basefiles\t" + base.size() + "\nheadfiles\t" + head.size()
+                    + "\nchangedfiles\t" + changed.size() + "\nchangedbytes\t" + changedBytes + "\nstatus\tok\n";
+        } catch (Exception error) {
+            return "status\tfailed\terror\t" + escape(String.valueOf(error.getMessage())) + "\n";
+        }
+    }
+
+    /**
+     * A bounded sample of one declared file's first line, escaped with the
+     * canonical cell vocabulary. The declared generated/minified/vendor header
+     * rule is applied to this sample by the Flix owner; the adapter only reports
+     * the bytes it actually read, and an unreadable file reports an empty sample
+     * rather than an invented marker.
+     */
+    private static String headerOf(String path) {
+        try (InputStream stream = new FileInputStream(path)) {
+            byte[] buffer = new byte[400];
+            int read = stream.read(buffer);
+            if (read <= 0) {
+                return "";
+            }
+            String text = new String(buffer, 0, read, StandardCharsets.UTF_8);
+            int index = text.indexOf('\n');
+            String line = index < 0 ? text : text.substring(0, index);
+            if (line.length() > 200) {
+                line = line.substring(0, 200);
+            }
+            return escape(line);
+        } catch (Exception error) {
+            return "";
+        }
+    }
+
+    /** The substring after the last occurrence of {@code marker}. */
+    private static String lastAfter(String marker, String text) {        int index = text.lastIndexOf(marker);
+        return index < 0 ? text : text.substring(index + marker.length());
+    }
+
+    /** Drop the leading path segment, recovering the repository-relative path. */
+    private static String dropLeadingDirectory(String relative) {
+        int index = relative.indexOf('/');
+        return index < 0 ? "" : relative.substring(index + 1);
     }
 
 }

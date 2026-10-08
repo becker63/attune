@@ -3249,3 +3249,69 @@ metric engine; the scoring stage `test/localization_sol/SolStages.flix` only
 binds, classifies and renders through the one canonical
 `Attune.Study.Metrics`. The eight corpus-free structured-result laws are
 `test/localization_sol/SolLaw.flix`.
+
+## Pinned ReviewBench admission and bounded shared context (2026-10-08)
+
+The one owner-authorized additional corpus is admitted from its canonical origin
+by ACTUAL acquisition, not by a page fetch or a metadata claim: the pinned
+`corpus/manifest.json` at commit `66df3f322d0d85ea133ea9fa777f5d1a8c933c4e` is
+verified as git blob `c12d9f760bd4d79965e5870eb860cbcf78c07c9a`, SHA-256
+`e74656b8c1c4bbab5ce85f1fcb742a7aaad550a4d7bd46e1f83a0746807bfa02` and 529,650
+bytes before any task enters the study. The pinned 219-row array is streamed
+through the one declared metadata projection (`cell` records in declared
+batches) and reduced in `Attune.Study.ReviewBench`: the primary JS/TS/Java/Ruby
+slice reproduces 91 tasks / 72 repositories (68 TypeScript, 15 JavaScript,
+7 Java, 1 Ruby = 41.6% of the population, which is not representative of those
+languages) and the declared metadata exclusion
+(`added+removed > 10000` OR `files changed > 100`) removes exactly the eight
+owner-named outliers to 83 tasks / 65 repositories (62/14/6/1). The 24-task
+cohort is selected metadata-only under the declared seed and the frozen
+17/4/2/1 quotas, preferring distinct repositories, and the existing 3/1/1
+largest-remainder mechanism keeps the development/calibration/final splits
+repository-disjoint. No gold, finding, score or published difficulty
+participates in the selection, so nothing can replace a selected task.
+
+The cohort's 48 exact base and head worlds are acquired once each from the
+canonical `review-bench` source mirrors and digest-verified before extraction
+(`test/reviewbench/archives.tsv`, emitted by the real acquisition and owned by
+the same Flix module), so both review arms read identical bytes by construction
+and the base-to-head diff is only permitted metadata. The measured export diff
+is reduced by the same owner: changed files and bytes, the generated/vendored/
+minified classification from the frozen path/header vocabulary, the extension
+histogram, the largest changed source file, the 128 KiB fast-structural cap and
+the declared 90% supported-changed-source-byte admission. Of the 24 selected
+tasks 10 are admitted to the paired structural study and 14 are named
+attrition; `ls1intum/Artemis#12479` (939‰, one 193,463-byte changed source) and
+`joshjohanning/bulk-github-repo-settings-sync-action#120` (891‰) carry changed
+source above the cap and stay outside the fast structural cohort, while their
+agent bytes are never truncated. The declared bounded extraction deadlines
+(20 s unit / 120 s base+head world, existing out-of-process deadline only, a
+partial world UNKNOWN and never an in-process cancellation claim) and the frozen
+shared-context record (hosted Qwen `openrouter`/`qwen/qwen3-embedding-8b` under
+the existing `Attune.Study.Qwen` recipe identity, 32 inputs / 240,000 bytes
+sequential with bounded 8-concurrency, exact JEV memo with findings- and
+gold-free contexts, and the assisted-context cap frozen before any outcome) are
+stated in `Attune.Study.ReviewBench` and written by
+`//test/reviewbench:reviewbench_measure`.
+
+New component: `reviewbench` (266, B) — the mechanical corpus boundary
+`platform/tools/reviewbench/AttuneReviewBench.java` (the manifest identity
+probe, the declared metadata projection and the exact base/head export diff);
+it makes no scientific decision. `study` carries the new declared world
+identity/archive vocabulary, the bounded deadlines, the measured export record
+and the frozen shared-context record; `policy` and `tests` grew by this leaf's
+component registration and fixtures; every other component is unchanged.
+
+Measured on this identity (`//test/policy:declared_source_policy_test`, verdict
+`accept`): files 4,802, code 743,644, comment 5,034, documentation 10,670, blank
+12,816, derived physical 772,164 and nonblank 759,348; class totals cognitive
+7,146, mechanical 5,354, authored 12,500, test 117,622, support 21,884. The
+per-component table printed by `//test/policy:accounting_law_test` is core 204,
+repository 809, theory 629, study 3,359, policy 567, view 522, ascii 87,
+frontends 372, parquet 563, boundary 1,040, grit-binding 185, grit-rule 684,
+build-rules 1,517, embedding 246, sol 1,450, reviewbench 266, inherited 655,
+inherited-locks 21,229, tests 117,622, metadata 591,638. The accounting review
+note that the cognitive class exceeds the around-2500 STOP-AND-JUSTIFY threshold
+is pre-existing and unchanged by this leaf: this leaf adds no new semantic
+algorithm, only one declared corpus boundary and the frozen policy values the
+next feature consumes.

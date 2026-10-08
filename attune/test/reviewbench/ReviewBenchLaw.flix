@@ -224,3 +224,106 @@ def theBoundedSharedContextPolicyIsFrozen(): Unit \ Assert = {
     Assert.assertEq(expected = true, List.memberOf("no-depth-7-census", ReviewBench.contextDescriptorPolicy()));
     Assert.assertEq(expected = true, List.memberOf("needed-descriptors-only", ReviewBench.contextDescriptorPolicy()))
 }
+
+@Test
+def theWorldIdentityIsDerivedFromTheTaskAndDistinguishesBaseFromHead(): Unit \ Assert = {
+    let task = taskFixture("owner/repo", 42, "TypeScript", 10i64, 5i64, 1i64);
+    // One exact WorldId per role, derived from the task rather than restated, so
+    // the two arms name the same worlds by construction.
+    Assert.assertEq(expected = "owner_repo-42-base", ReviewBench.worldId(task, ReviewBench.WorldRole.Base));
+    Assert.assertEq(expected = "owner_repo-42-head", ReviewBench.worldId(task, ReviewBench.WorldRole.Head));
+    Assert.assertEq(expected = "0000000000000000000000000000000000000000",
+        ReviewBench.revisionOf(task, ReviewBench.WorldRole.Base));
+    Assert.assertEq(expected = "1111111111111111111111111111111111111111",
+        ReviewBench.revisionOf(task, ReviewBench.WorldRole.Head));
+    // The declared mirror convention folds the repository path separator.
+    Assert.assertEq(expected = "review-bench/owner_repo", ReviewBench.mirrorRepository(task));
+    // The archive identity record is derived from the task's own export, and its
+    // canonical line is the manifest form the acquisition rule consumes.
+    let archive = ReviewBench.archiveOf(task, ReviewBench.WorldRole.Head, "abc", 7i64);
+    Assert.assertEq(expected = "archive\towner_repo-42-head\treview-bench/owner_repo\t1111111111111111111111111111111111111111\tabc\t7",
+        ReviewBench.archiveLine(archive));
+    // The declared bounded deadlines are the proposals the existing
+    // out-of-process deadline enforces, and a partial world is UNKNOWN.
+    Assert.assertEq(expected = 20, ReviewBench.extractionUnitSeconds());
+    Assert.assertEq(expected = 120, ReviewBench.worldDeadlineSeconds());
+    Assert.assertEq(expected = "existing-out-of-process-deadline", ReviewBench.deadlineEnforcement());
+    Assert.assertEq(expected = "never-claim-in-process-cancellation", ReviewBench.interruptionClaim());
+    Assert.assertEq(expected = "UNKNOWN", ReviewBench.partialWorldStatus());
+    Assert.assertEq(expected = "cost-and-cancellation-retained-no-replacement", ReviewBench.releasedWorkerDisposition())
+}
+
+@Test
+def theMeasuredExportReducesItsOwnBytesAndAdmitsOnTheDeclaredThreshold(): Unit \ Assert = {
+    // A measured export of two changed files: one supported source, one
+    // unsupported config, plus an unchanged file that must not be counted.
+    let files = List#{
+        { path = "src/a.ts", bytes = 90i64, changed = true, header = "" },
+        { path = "config/a.json", bytes = 10i64, changed = true, header = "" },
+        { path = "src/unchanged.ts", bytes = 500i64, changed = false, header = "" }
+    };
+    let measurement = ReviewBench.measurementOf(3, 4, files);
+    Assert.assertEq(expected = 3, measurement#baseFiles);
+    Assert.assertEq(expected = 4, measurement#headFiles);
+    Assert.assertEq(expected = 2, measurement#changedFiles);
+    Assert.assertEq(expected = 100i64, measurement#changedBytes);
+    Assert.assertEq(expected = 2, measurement#sourceFiles);
+    Assert.assertEq(expected = 100i64, measurement#changedSourceBytes);
+    Assert.assertEq(expected = 1, measurement#supportedFiles);
+    Assert.assertEq(expected = 90i64, measurement#supportedSourceBytes);
+    Assert.assertEq(expected = 1, measurement#unsupportedFiles);
+    Assert.assertEq(expected = 0, measurement#overCapFiles);
+    Assert.assertEq(expected = 90i64, measurement#maxSourceBytes);
+    Assert.assertEq(expected = List#{("json", 1), ("ts", 1)}, measurement#extensions);
+    let accounting = ReviewBench.accountingOfMeasurement(measurement);
+    Assert.assertEq(expected = 900i64, ReviewBench.supportedPermille(accounting));
+    Assert.assertEq(expected = true, ReviewBench.admitted(accounting));
+    Assert.assertEq(expected = "", ReviewBench.attritionReason(accounting));
+    // The measured accounting is the same reduction the export record produces,
+    // so the two entry points cannot disagree about the decision or its reason.
+    let exportAccounting = ReviewBench.accountingOf({ baseCommit = "b", headCommit = "h", files = files });
+    Assert.assertEq(expected = ReviewBench.supportedPermille(accounting), ReviewBench.supportedPermille(exportAccounting));
+    Assert.assertEq(expected = ReviewBench.admitted(accounting), ReviewBench.admitted(exportAccounting));
+    Assert.assertEq(expected = accounting#changedSourceBytes, exportAccounting#changedSourceBytes);
+    Assert.assertEq(expected = accounting#supportedSourceBytes, exportAccounting#supportedSourceBytes);
+    Assert.assertEq(expected = accounting#skippedOverCapBytes, exportAccounting#skippedOverCapBytes);
+    // One byte below the declared share is attrition with the measured reason,
+    // and an over-cap source stays admitted but outside the fast cohort.
+    let below = ReviewBench.measurementOf(1, 1, List#{
+        { path = "src/a.ts", bytes = 899i64, changed = true, header = "" },
+        { path = "src/a.py", bytes = 101i64, changed = true, header = "" } });
+    Assert.assertEq(expected = false, ReviewBench.admitted(ReviewBench.accountingOfMeasurement(below)));
+    Assert.assertEq(expected = "supported-permille-899-below-900",
+        ReviewBench.attritionReason(ReviewBench.accountingOfMeasurement(below)));
+    let capped = ReviewBench.measurementOf(1, 1, List#{
+        { path = "src/big.ts", bytes = 131073i64, changed = true, header = "" } });
+    let cappedAccounting = ReviewBench.accountingOfMeasurement(capped);
+    Assert.assertEq(expected = true, cappedAccounting#outsideFastCohort);
+    Assert.assertEq(expected = 131073i64, cappedAccounting#skippedOverCapBytes);
+    Assert.assertEq(expected = false, ReviewBench.fastStructural(cappedAccounting));
+    Assert.assertEq(expected = true, ReviewBench.admitted(cappedAccounting))
+}
+
+@Test
+def theFrozenSharedContextNamesTheExistingHostedRecipeAndBoundedDeadlines(): Unit \ Assert = {
+    let context = ReviewBench.sharedContext();
+    Assert.assertEq(expected = ReviewBench.contextPolicyIdentity(), context#identity);
+    Assert.assertEq(expected = ReviewBench.contextDescriptorPolicy(), context#descriptors);
+    // The hosted provider, model and recipe are the existing Qwen owner's own
+    // declared identity, not a second restated recipe.
+    Assert.assertEq(expected = "openrouter", context#provider);
+    Assert.assertEq(expected = "qwen/qwen3-embedding-8b", context#model);
+    Assert.assertEq(expected = ReviewBench.qwenBatchInputs(), context#batchInputs);
+    Assert.assertEq(expected = ReviewBench.qwenBatchBytes(), context#batchBytes);
+    Assert.assertEq(expected = ReviewBench.qwenBoundedConcurrency(), context#concurrency);
+    Assert.assertEq(expected = List#{"findings", "gold"}, context#jevExcludes);
+    Assert.assertEq(expected = ReviewBench.assistedContextCapIdentity(), context#assistedCap);
+    Assert.assertEq(expected = ReviewBench.extractionUnitSeconds(), context#deadlineUnit);
+    Assert.assertEq(expected = ReviewBench.worldDeadlineSeconds(), context#deadlineWorld);
+    // The rendered record is a canonical key/value table with no credential, no
+    // request and no response in it.
+    let rendered = ReviewBench.renderSharedContext();
+    Assert.assertEq(expected = true, List.forAll(row -> List.length(row) == 3, rendered));
+    Assert.assertEq(expected = true, List.memberOf(List#{"context", "provider", "openrouter"}, rendered));
+    Assert.assertEq(expected = true, List.memberOf(List#{"context", "partial_world_status", "UNKNOWN"}, rendered))
+}

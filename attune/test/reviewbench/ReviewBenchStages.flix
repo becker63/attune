@@ -46,6 +46,13 @@ def records(text: String): List[String] =
 
 def fields(line: String): List[String] = String.split(regex = "\t", line)
 
+def atIndex(xs: List[String], index: Int32): Option[String] = match xs {
+    case value :: rest => if (index == 0) Some(value) else atIndex(rest, index - 1)
+    case Nil           => None
+}
+
+def field(row: List[String], index: Int32): String = Option.getWithDefault("", atIndex(row, index))
+
 def intOf(text: String): Int32 = Option.getWithDefault(0, Int32.fromString(text))
 
 def readText(path: String): String \ IO =
@@ -226,6 +233,116 @@ def digestOf(task: ReviewBench.Task, pairs: List[(String, String)]): String =
     }
 
 // -------------------------------------------------------------------- stage
+
+def boolText(value: Bool): String = if (value) "true" else "false"
+
+def int64Of(text: String): Int64 = Option.getWithDefault(0i64, Int64.fromString(text))
+
+/// The declared archive manifest's world ids, in declared order.
+def archiveWorlds(archives: List[String]): List[String] =
+    List.filterMap(line -> match fields(line) {
+        case "archive" :: world :: _ => Some(world)
+        case _                       => None
+    }, archives)
+
+/// One measured changed-file record of the mechanical export diff.
+def parseChanged(line: String): Option[ReviewBench.SourceFile] = match fields(line) {
+    case "changed" :: _ :: path :: bytes :: header :: _ =>
+        Some({ path = unescapeField(path), bytes = int64Of(bytes), changed = true, header = unescapeField(header) })
+    case _ => None
+}
+
+def changedFilesOf(path: String): List[ReviewBench.SourceFile] \ IO =
+    List.filterMap(parseChanged, records(readText(path)))
+
+/// The declared world identity of one selection row's role: the canonical
+/// repository name with its path separator folded, the PR number and the role.
+def rowWorld(row: List[String], role: String): String =
+    String.replace(src = "/", dst = "_", field(row, 3)) + "-" + field(row, 4) + "-" + role
+
+def summaryInt(lines: List[String], key: String): Int32 = intOf(valueOf(lines, key))
+
+/// One measured task: the mechanical export diff of the task's exact base and
+/// head worlds, reduced by `Attune.Study.ReviewBench` into the measured record
+/// and the declared admission. The stage decides nothing here; it binds the
+/// declared worlds, calls the one mechanical boundary and records the reduction.
+def measurementRow(dir: String, worlds: String, declared: List[String], row: List[String]): List[String] \ IO = {
+    let baseWorld = rowWorld(row, "base");
+    let headWorld = rowWorld(row, "head");
+    let declaredWorlds = archiveWorlds(declared);
+    if (not (List.memberOf(baseWorld, declaredWorlds) and List.memberOf(headWorld, declaredWorlds)))
+        List#{"missing", field(row, 1), field(row, 3), field(row, 4), baseWorld, headWorld}
+    else {
+        let out = dir + "/changed-" + field(row, 4) + ".tsv";
+        let summary = records(AttuneReviewBench.changedFiles(worlds, baseWorld, headWorld, out));
+        let files = changedFilesOf(out);
+        let measurement = ReviewBench.measurementOf(
+            summaryInt(summary, "basefiles"), summaryInt(summary, "headfiles"), files);
+        let accounting = ReviewBench.accountingOfMeasurement(measurement);
+        List#{
+            "measure", field(row, 1), field(row, 2), field(row, 3), field(row, 4),
+            valueOf(summary, "status"),
+            Int32.toString(measurement#baseFiles), Int32.toString(measurement#headFiles),
+            Int32.toString(measurement#changedFiles), Int64.toString(measurement#changedBytes),
+            Int32.toString(measurement#sourceFiles), Int64.toString(measurement#changedSourceBytes),
+            Int32.toString(measurement#supportedFiles), Int64.toString(measurement#supportedSourceBytes),
+            Int32.toString(measurement#unsupportedFiles),
+            Int32.toString(measurement#overCapFiles), Int64.toString(measurement#overCapBytes),
+            Int64.toString(measurement#maxSourceBytes),
+            ReviewBench.renderCounts(measurement#extensions),
+            Int64.toString(ReviewBench.supportedPermille(accounting)),
+            boolText(ReviewBench.admitted(accounting)),
+            if (ReviewBench.admitted(accounting)) "admitted" else "attrition",
+            ReviewBench.attritionReason(accounting),
+            boolText(ReviewBench.fastStructural(accounting)),
+            Study.panelSplitName(match List.find(entry -> entry == field(row, 9),
+                List#{"development", "calibration", "final"}) {
+                case Some("development") => Study.PanelSplit.Development
+                case Some("calibration") => Study.PanelSplit.Calibration
+                case _                   => Study.PanelSplit.Final
+            })
+        }
+    }
+}
+
+/// The declared measurement of the frozen cohort: the real export diff of every
+/// selected task's exact base and head worlds, the measured byte accounting and
+/// the declared structural admission or named attrition, plus the one frozen
+/// shared-context record both review arms are frozen under.
+@Test
+def theDeclaredReviewBenchMeasurementMaterializesItsArtifact(): Unit \ {Assert, IO} = {
+    let stage = Option.getWithDefault("", binding("stage"));
+    if (stage != "reviewbench_measure") ()
+    else {
+        let dir = outputsDir();
+        let selection = List.filter(row -> field(row, 0) == "task",
+            List.map(fields, records(readText(Option.getWithDefault("", binding("selection")) + "/selection.tsv"))));
+        let declared = records(readText(Option.getWithDefault("", binding("archives"))));
+        let worlds = Option.getWithDefault("", binding("worldsources"));
+        let rows = List.map(row -> measurementRow(dir, worlds, declared, row), selection);
+        let missing = List.filter(row -> field(row, 0) == "missing", rows);
+        let measures = List.filter(row -> field(row, 0) == "measure", rows);
+        let admitted = List.filter(row -> field(row, 21) == "admitted", measures);
+        let attrition = List.filter(row -> field(row, 21) == "attrition", measures);
+        let unmeasured = List.filter(row -> field(row, 5) != "ok", measures);
+        writeText(dir, "measurement.tsv", renderTsv(measures));
+        writeText(dir, "shared-context.tsv", renderTsv(ReviewBench.renderSharedContext()));
+        writeText(dir, "admission.tsv", renderTsv(List.map(row -> List#{
+            "admission", field(row, 1), field(row, 2), field(row, 3), field(row, 4),
+            field(row, 21), field(row, 19), field(row, 22), field(row, 23), field(row, 24) }, measures)));
+        writeText(dir, "findings.tsv", findingsText(
+            List.map(row -> "world not declared: " + field(row, 4) + " / " + field(row, 5), missing)
+                ::: List.map(row -> "world diff failed: " + field(row, 3) + "#" + field(row, 4), unmeasured)));
+        Assert.assertEq(expected = 0, List.length(missing));
+        Assert.assertEq(expected = 0, List.length(unmeasured));
+        Assert.assertEq(expected = ReviewBench.cohortSize(), List.length(measures));
+        Assert.assertEq(expected = List.length(measures), List.length(admitted) + List.length(attrition));
+        Assert.assertEq(expected = true, List.forAll(row -> intOf(field(row, 6)) > 0 and intOf(field(row, 7)) > 0, measures));
+        Assert.assertEq(expected = true, List.forAll(row -> intOf(field(row, 8)) > 0, measures));
+        Assert.assertEq(expected = true, List.forAll(row -> String.isEmpty(field(row, 22)) == (field(row, 21) == "admitted"), measures));
+        Assert.assertEq(expected = true, List.forAll(row -> List.memberOf(field(row, 24), List#{"development", "calibration", "final"}), measures))
+    }
+}
 
 @Test
 def theDeclaredReviewBenchAdmissionMaterializesItsArtifact(): Unit \ {Assert, IO} = {
