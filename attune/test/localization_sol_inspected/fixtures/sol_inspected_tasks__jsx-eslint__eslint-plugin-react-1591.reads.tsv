@@ -1,0 +1,13 @@
+tool	commandExecution	failed	163	4263
+tool	commandExecution	completed	670	8070
+tool	commandExecution	completed	8477	13612
+tool	commandExecution	completed	9226	13615
+tool	commandExecution	completed	4446	13616
+tool	commandExecution	completed	18752	17754
+read	unknown		163	5fccba1de8e7d39614f65582563d86723daf751ff7f719c7b46c38b429a5bd4c	127	failed	4263
+read	search	.	670	260962cbb45a237dea4aaa947468272e5e523a7412173bc41ea1da22cbf63346	0	completed	8070
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-14931918773893585685/repo/lib/rules/jsx-key.js	8477	b882d3e07a569dad90a109ccd7917c4b963c2bbd6b74cf71da8c45a4b574e63f	0	completed	13612
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-14931918773893585685/repo/tests/lib/rules/jsx-key.js	9226	5e31d843594de951288ba3750f9cd5bd4e8a9d9229d05153aed4b61310a63e34	0	completed	13615
+read	listFiles	util	4446	6204f842948ec81a34fd5bff98c83de874a8fd2bb1bed03e33e27a6f4c508ebb	0	completed	13616
+read	search	lib	4446	6204f842948ec81a34fd5bff98c83de874a8fd2bb1bed03e33e27a6f4c508ebb	0	completed	13616
+read	unknown		18752	07df9a14831051d4e6dab9c4bc9bd8696ea9a9cac7e8f914db41270684cc5a34	0	completed	17754

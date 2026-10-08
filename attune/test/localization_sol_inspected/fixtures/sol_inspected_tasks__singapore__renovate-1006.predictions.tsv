@@ -1,0 +1,3 @@
+prediction	singapore__renovate-1006	1	lib/platform/gitlab.js
+prediction	singapore__renovate-1006	2	test/platform/gitlab.spec.js
+prediction	singapore__renovate-1006	3	test/platform/__snapshots__/gitlab.spec.js.snap

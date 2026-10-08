@@ -1,0 +1,4 @@
+prediction	stoplightio__spectral-1059	1	src/rulesets/oas/index.json
+prediction	stoplightio__spectral-1059	2	src/rulesets/oas/__tests__/example-value-or-externalValue.ts
+prediction	stoplightio__spectral-1059	3	docs/reference/openapi-rules.md
+prediction	stoplightio__spectral-1059	4	docs/reference/functions.md

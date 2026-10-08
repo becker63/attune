@@ -67,18 +67,20 @@ generation-16 section below. The arm is a separate measurement from the ten
 frozen ranking arms and is not blended with any of them.
 
 The owner-approved **distinct Sol inspected arm** (continuation #1,
-`library/sol-inspected.md`) is **PARTIAL**: its harness is implemented and
-validated (pre-edit gen16 snapshot outside mutable outputs, new byte-frozen
-inspect-to-localize prompt, opt-in inspected driver path with real item-event
-parsing, observed read bytes and enforced client-mechanical bounds, corpus-free
-authored bring-up fixture, corpus-free native laws in the ordinary gate), but the
-real bring-up trace is **blocked on a concrete auth blocker**: the BuildBuddy
-`ACCESS_TOKEN` secret holds an expired SIWC token, so no turn was dispatched.
-The owner-authorized host guarded refresh was run and produced a fresh 1-hour
-handoff; the owner must replace the BuildBuddy secret and re-run
-`sol_inspected_route_check` → `sol_inspected_fixture` → `sol_inspected_first_task`.
-No inspected-arm metric is claimed. Details in the new PARTIAL section at the end
-of this report.
+`library/sol-inspected.md`) is now **PUBLISHED** (generation 17): the bounded
+cohort of 88 real inspected turns is frozen, and both arms are scored side by
+side through the ONE canonical `Attune.Study.Metrics` with the original-vs-
+inspected comparison, the coverage, the output-length, latency and billing
+statements in the generation-17 section below. The preserved original arm is
+reproduced from its own frozen fixtures cell for cell (0 mismatches). The
+inspected arm's all-eligible micro Hit@1 is **70.6% (60/85)** against the
+original's 30.6% (26/85), with **37 rescued / 3 regressed** tasks on that
+indicator, but the result is **not** published as an unqualified improvement: 20
+of 88 tasks fail the arm's declared nonempty-implementation-read floor and are
+retained as measured misses, and for all 20 the arm's own receipts show nonempty
+inspection commands whose file reads the frozen projection could not name. Both
+readings are published, the floor is not relaxed, and the earlier PARTIAL
+harness and acquisition sections at the end of this report remain as history.
 
 **Generated:** 2026-10-07T21:20:00Z (generation 14; supersedes generation 13 for
 current state; earlier generations retained below as history). Generation 14 is
@@ -4769,3 +4771,322 @@ snapshot still verify unchanged at `library/sol-inspected/`.
 canonical `Attune.Study.Metrics` (Hit@1/3/5/10, Recall@1/3/5/10, MRR@10,
 FileAcc@1/3/5/10/32 over task micro / group repo macro / dev·cal·final 15/4),
 and publish original-vs-inspected, regardless of score.
+
+**Qualified by generation 17 (this section is not revised).** The census row
+`zero-read (nonempty_read_count == 0) | 0` above uses the driver's byte-only
+counter, which counts every observed action with output, discovery included. The
+declared floor of this arm is the stricter "at least one **nonempty
+implementation** read" — a file read, with output, on a repository path that is
+not declared test source — and generation 17 scores that floor: 68 of 88 tasks
+meet it, 20 do not, and all 20 have nonempty inspection commands in their own
+receipts. The acquisition itself is unchanged and no observation was resampled.
+
+## Sol inspected arm — canonical scoring, original-vs-inspected comparison and publication (generation 17, 2026-10-08)
+
+Distinct-arm continuation #1 (`library/sol-inspected.md`, assertion
+`VAL-INSPECT-003`; feature `sol-inspected-canonical-comparison-and-publication`).
+This is the arm's **full publication**, issued **before any ReviewBench work**:
+the frozen original (`gen16`) and inspected observations are scored side by side
+through the ONE canonical `Attune.Study.Metrics`, and the paired
+original-vs-inspected comparison, the inspection coverage, the output length, the
+fresh latency and the billing statement are published together. **No improvement
+threshold was applied and no goalpost moved**: the result includes 20 tasks that
+fail the arm's declared inspection floor and are retained as measured misses,
+and it is published as measured.
+
+### What was scored, and from what
+
+One bounded stage, `//test/localization_sol_inspected:sol_inspected_metrics`,
+consumes only immutable fixtures: for each of the 88 tasks the preserved original
+arm's sanitized receipt, mechanical prediction projection and declared clean-world
+source manifest (`gen16`), the inspected arm's sanitized receipt, prediction
+projection and observed inspection-action projection, the admitted evaluator
+labels and the admitted mapped manifest. Both arms are classified by their own
+production statements (`Attune.Study.Sol`, and `Attune.Study.SolInspected` for
+the inspection floor) and reduced by the **same** canonical reducer over the
+report's declared metric list — Hit@1/3/5/10, Recall@1/3/5/10, MRR@10 and
+FileAcc@1/3/5/10/32, task micro and group-equal repository macro, over the
+all-eligible population and the development / calibration / held-out final
+splits. No frozen metric list was altered, no second engine exists, and no
+upstream producer was redeclared: the stage names no acquisition target, so a
+replay executes **0** Codex turns, **0** JEV calls, **0** hosted-Qwen requests,
+**0** CodeRankEmbed inferences and **0** `Repository`/`Theory` actions.
+
+The 528 per-task fixture files are byte-verified copies taken **outside** mutable
+Bazel outputs before any scoring, recorded with arm, snapshot path and SHA-256 in
+`attune/test/localization_sol_inspected/fixtures/MANIFEST.tsv` (528 rows; 88
+world manifests byte-identical between the two snapshots, 0 digest mismatches
+against both snapshots' own `SHA256SUMS`).
+
+**Population and arm identity, re-verified by the stage and failing closed.**
+88 tasks / 85 eligible / 3 `ineligible-no-gold`; 22 groups; 50 development / 20
+calibration / 15 held-out final; 218 eligible gold files. All 88 original
+receipts carry `resolved_model: Unavailable` and prompt identity
+`sha256:e3180318…`; all 88 inspected receipts carry `gpt-6.1-sol`,
+`result_status: ok`, `stop_reason: natural`, `turn_completed: true`, prompt
+identity `sha256:4974812a…`, `timed_out: false` and **0** tokens / 0 tool rounds
+of bound overshoot.
+
+### The preservation check: the original arm reproduces exactly
+
+Rescoring the preserved original arm from its own frozen fixtures through the same
+canonical reducer reproduces the published generation-16 cells exactly — all
+seven primary metrics plus FileAcc, asserted in the stage: Hit@1 `26/85`,
+macro Hit@1 `79/264`, Recall@1 `12787/56100`, Recall@5 and Recall@10
+`3403/14025`, MRR@10 `26/85`, FileAcc@1 `3/17`, FileAcc@3 `1/5`, FileAcc@32
+`1/5`, and 218 eligible gold files. Nothing about generation 16 is rerun,
+rewritten or re-scored, and its zero-tool counter is preserved as history: all 88
+original receipts still report `tool_calls: 0`.
+
+### The declared inspection floor, and its one observability limit
+
+The floor is "at least one nonempty **implementation** read": a file read with
+nonempty output on a repository path that is not declared test source. Two
+mechanical facts about the frozen projection had to be handled before that floor
+could be applied honestly, and both are disclosed rather than absorbed.
+
+First, the observed read target is the path the tool resolved, which is the
+driver's own per-task work directory followed by its `repo` root and the
+repository-relative path. The declared test-path rule is a statement about
+repository paths, so the reduction to the repository-relative path is now a
+declared rule of `Attune.Study.SolInspected` (`repositoryRelative`) applied before
+the test-path test; a target already repository-relative, or naming no such root,
+is returned unchanged rather than guessed at. Without it the sandbox prefix's own
+`test/` segment made every one of the 487 observed file reads look like test
+source, which would have scored the whole arm as protocol failures — a path
+artifact, not a measurement.
+
+Second, with the reduction applied, **68 of 88 tasks meet the floor and 20 do
+not** (development 37/52, calibration 17/20, final 14/16). The 20 that fail are
+not a claim that the model declined to look:
+
+- 18 have **no** `read`-kind row at all. The app-server reported their
+  `commandActions` entries with no action kind and no path (compound shell
+  commands such as `cat a b c` or `sed -n …`), so the projection names no
+  repository path even though the output bytes were observed.
+- 2 (`firebase__firebase-tools-2271`,
+  `joshuagoldberg__create-typescript-app-1529`) named only test source.
+
+Every one of the 20 receipts shows nonempty inspection commands
+(`read_count == nonempty_read_count`, 3–9 observed actions, 7,555–116,763 bytes)
+and its `read_commands` list contains file-reading shell commands. Every one of
+the 20 also returned a structured answer whose paths **all exist** in its own
+declared clean world, so under `Sol.classify` alone they would have been
+`Predicted`; the declared floor is the sole reason they are `ProtocolFailed`, and
+they stay in every metric denominator as measured misses. The driver's receipt
+field `nonempty_read_count` is a looser byte-only counter (any action with
+output, discovery included) and is not the declared floor; the two are reported
+separately and never conflated. This is the one place where the arm's published
+numbers are bounded by an upstream projection limit rather than by the model's
+behaviour, and it is the conservative direction for the inspected arm.
+
+### Metrics through the one canonical reducer
+
+Every cell is `numerator/denominator` as the canonical exact rational (reduced to
+lowest terms) with the rendered percentage. `micro` is the task mean; `macro` is
+the group-equal reduction. `population = covered` and `undefined = 0` for every
+cell below; failures and abstentions are measured misses, never dropped rows.
+
+**All-eligible (85 tasks / 22 groups).**
+
+| Metric | original micro | original macro | inspected micro | inspected macro |
+| --- | --- | --- | --- | --- |
+| Hit@1 | 26/85 = 30.6% | 79/264 = 29.9% | 12/17 = 70.6% | 23/33 = 69.7% |
+| Hit@3 | 26/85 = 30.6% | 79/264 = 29.9% | 13/17 = 76.5% | 199/264 = 75.4% |
+| Hit@5 | 26/85 = 30.6% | 79/264 = 29.9% | 13/17 = 76.5% | 199/264 = 75.4% |
+| Hit@10 | 26/85 = 30.6% | 79/264 = 29.9% | 13/17 = 76.5% | 199/264 = 75.4% |
+| Recall@1 | 12787/56100 = 22.8% | 13007/58080 = 22.4% | 50.8% | 50.6% |
+| Recall@3 | 3403/14025 = 24.3% | 1729/7260 = 23.8% | 58.9% | 58.4% |
+| Recall@5 | 3403/14025 = 24.3% | 1729/7260 = 23.8% | 60.7% | 60.2% |
+| Recall@10 | 3403/14025 = 24.3% | 1729/7260 = 23.8% | 60.9% | 60.3% |
+| MRR@10 | 26/85 = 30.6% | 79/264 = 29.9% | 73.1% | 72.2% |
+| FileAcc@1 | 3/17 = 17.6% | 23/132 = 17.4% | 33/85 = 38.8% | 103/264 = 39.0% |
+| FileAcc@3 | 1/5 = 20.0% | 13/66 = 19.7% | 39/85 = 45.9% | 11/24 = 45.8% |
+| FileAcc@5 | 1/5 = 20.0% | 13/66 = 19.7% | 8/17 = 47.1% | 31/66 = 47.0% |
+| FileAcc@10 | 1/5 = 20.0% | 13/66 = 19.7% | 41/85 = 48.2% | 127/264 = 48.1% |
+| FileAcc@32 | 1/5 = 20.0% | 13/66 = 19.7% | 41/85 = 48.2% | 127/264 = 48.1% |
+
+The inspected all-eligible `Hit@1` micro cell is the canonical reduced form
+`12/17` — 60 of the 85 eligible tasks observed the signal — and `Hit@3/5/10` are
+`13/17`, i.e. 65 of 85. The inspected Recall and MRR cells above are the canonical exact rationals in
+lowest terms (`85573/168300`, `162/275`, `102169/168300`, `102499/168300`,
+`373/510` micro; `88213/174240`, `4241/7260`, `104809/174240`, `105139/174240`,
+`127/176` macro) — they are means of per-task ratios, so their denominators are
+not the task count. The exact pairs for every cell are frozen in
+`library/sol-inspected/scoring-2026-10-08/sol_inspected_metrics.tsv` (224 rows).
+
+**Declared splits (eligible tasks / groups).**
+
+| Split | Metric | original micro | inspected micro | original macro | inspected macro |
+| --- | --- | --- | --- | --- | --- |
+| development (50 / 13) | Hit@1 | 9/25 = 36.0% | 64.0% | 55/156 = 35.3% | 62.8% |
+| development | Hit@3 | 9/25 = 36.0% | 70.0% | 55/156 = 35.3% | 68.6% |
+| development | Recall@1 | 8827/33000 = 26.7% | 43.4% | 9047/34320 = 26.4% | 43.0% |
+| development | Recall@3 | 4661/16500 = 28.2% | 50.1% | 367/1320 = 27.8% | 49.5% |
+| development | Recall@5 | 4661/16500 = 28.2% | 52.5% | 367/1320 = 27.8% | 51.8% |
+| development | MRR@10 | 9/25 = 36.0% | 66.7% | 55/156 = 35.3% | 65.4% |
+| development | FileAcc@1 | 11/50 = 22.0% | 32.0% | 17/78 = 21.8% | 32.1% |
+| development | FileAcc@3 | 6/25 = 24.0% | 36.0% | 37/156 = 23.7% | 35.9% |
+| calibration (20 / 5) | Hit@1 | 1/5 = 20.0% | 80.0% | 1/5 = 20.0% | 80.0% |
+| calibration | Hit@3 | 1/5 = 20.0% | 85.0% | 1/5 = 20.0% | 85.0% |
+| calibration | Recall@1 | 7/40 = 17.5% | 61.7% | 7/40 = 17.5% | 61.7% |
+| calibration | Recall@3 | 7/40 = 17.5% | 70.8% | 7/40 = 17.5% | 70.8% |
+| calibration | MRR@10 | 1/5 = 20.0% | 81.7% | 1/5 = 20.0% | 81.7% |
+| calibration | FileAcc@1 | 3/20 = 15.0% | 50.0% | 3/20 = 15.0% | 50.0% |
+| calibration | FileAcc@3 | 3/20 = 15.0% | 60.0% | 3/20 = 15.0% | 60.0% |
+| final (15 / 4) | Hit@1 | 4/15 = 26.7% | 80.0% | 1/4 = 25.0% | 79.2% |
+| final | Hit@3 | 4/15 = 26.7% | 86.7% | 1/4 = 25.0% | 85.4% |
+| final | Recall@1 | 1/6 = 16.7% | 61.1% | 5/32 = 15.6% | 61.5% |
+| final | Recall@3 | 1/5 = 20.0% | 72.2% | 3/16 = 18.8% | 71.9% |
+| final | Recall@5 | 1/5 = 20.0% | 74.4% | 3/16 = 18.8% | 74.0% |
+| final | MRR@10 | 4/15 = 26.7% | 83.3% | 1/4 = 25.0% | 82.3% |
+| final | FileAcc@1 | 1/15 = 6.7% | 46.7% | 1/16 = 6.3% | 47.9% |
+| final | FileAcc@3 | 2/15 = 13.3% | 60.0% | 1/8 = 12.5% | 60.4% |
+
+The complete 4-scope table, including Recall@10 and FileAcc@5/10/32 for every
+scope, is frozen as
+`library/sol-inspected/scoring-2026-10-08/sol_inspected_metrics.tsv`.
+
+**Reading the k-flattening honestly.** The original arm's rankings are at most 4
+paths long, so its `Hit@1 = Hit@5 = Hit@10` and `Recall@5 = Recall@10` by
+construction. The inspected arm returns up to 10, so its cutoffs separate
+(Hit@1 70.6% → Hit@3 76.5%; Recall@1 50.8% → Recall@10 60.9%): the deeper
+cutoffs are doing real work here rather than repeating the first one.
+
+### Paired original-vs-inspected comparison
+
+Two paired statements over the same frozen population and the same canonical
+values: an **indicator** contrast (a metric value is positive or not) and a
+**magnitude** contrast (strictly greater / equal / strictly less). Neither
+defines a metric of its own, reweights anything, applies a threshold or selects a
+winner.
+
+**All-eligible (85 tasks).**
+
+| Metric | original positive | inspected positive | rescued | regressed | both | neither |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hit@1 | 26 | 60 | 37 | 3 | 23 | 22 |
+| Hit@3 | 26 | 65 | 42 | 3 | 23 | 17 |
+| Hit@5 | 26 | 65 | 42 | 3 | 23 | 17 |
+| Hit@10 | 26 | 65 | 42 | 3 | 23 | 17 |
+| FileAcc@1 | 15 | 33 | 20 | 2 | 13 | 50 |
+| FileAcc@3 | 17 | 39 | 24 | 2 | 15 | 44 |
+| FileAcc@5 | 17 | 40 | 25 | 2 | 15 | 43 |
+| FileAcc@10 | 17 | 41 | 26 | 2 | 15 | 42 |
+| FileAcc@32 | 17 | 41 | 26 | 2 | 15 | 42 |
+
+| Metric | improved | regressed | equal |
+| --- | --- | --- | --- |
+| Recall@1 | 37 | 3 | 45 |
+| Recall@3 | 43 | 3 | 39 |
+| Recall@5 | 44 | 3 | 38 |
+| Recall@10 | 44 | 3 | 38 |
+| MRR@10 | 42 | 3 | 40 |
+
+`undefined` is 0 in every row. The three regressed tasks are
+`formidablelabs__urql-1077`, `formidablelabs__urql-1117` and
+`sindresorhus__got-172` — **all three in the calibration split, and all three are
+floor failures**: each returned 2 paths that exist in its declared clean world,
+each inspected (3–6 observed actions), and each fails the floor only because the
+projection named no nonempty implementation read for it. Development and
+held-out final have **0** regressions on every indicator and magnitude row. So
+the entire measured downside of the arm is the floor's treatment of the 20
+tasks described above, and none of it is a localization regression.
+
+### Coverage, output length, latency and usage
+
+**Inspection coverage.** 68 of 88 tasks have an observed nonempty implementation
+read (development 37/52, calibration 17/20, final 14/16); 88 of 88 observed a
+nonempty inspection command. Across the cohort the projection carries 508 `tool`
+rows and 1,011 `read` rows; the observed read bytes total **13,248,118** with a
+per-task median of 94,739 (min 7,555, max 2,098,161). Read actions per task:
+median 11 (min 3, max 25). Tool rounds per task: median 6, mean 5.77, min 3,
+max 12 — the 32-round budget was never approached. First nonempty read: median
+5,305 ms, p95 7,283 ms, min 3,931 ms, max 8,995 ms — a byte observation on the
+declared projection, never a claim about which read was *relevant*.
+
+**Output length.** The inspected arm returns materially longer answers: paths per
+task mean **3.23** (median 2, max 10) against the original's mean **0.66**
+(median 0, max 4); paths that exist in the declared clean world mean **2.06**
+(median 2, max 7) against **0.61** (median 0, max 3). The longer output is the
+direct contribution of inspection: the original arm answered from the prompt and
+the public issue alone with 0 observed tool calls, while the inspected arm read a
+median of 11 actions' worth of source (median 94.7 KB) before answering, and its
+answers name existing files far more often (181 of 284 returned paths exist
+versus 54 of 58 for the original). The full distribution — including the 4 tasks
+at the 10-path cap and the 9 single-path answers — is in
+`sol_inspected_statistics.tsv`.
+
+**Fresh latency and usage** (per-turn values from the 88 retained inspected
+receipts; percentiles are nearest-rank over the whole population).
+
+| Quantity | min | p25 | median | p75 | p90 | p95 | max | sum |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| turn wall (ms), inspected | 15,320 | 23,480 | 28,778 | 33,298 | 40,111 | 43,648 | 52,453 | 2,582,262 |
+| turn wall (ms), original | 9,356 | 11,871 | 12,822 | 14,831 | 18,328 | 18,726 | 30,254 | 1,221,235 |
+| input tokens, inspected | 46,013 | 68,969 | 89,904 | 104,376 | 125,474 | 144,391 | 176,015 | 7,984,586 |
+| cached input tokens, inspected | 29,952 | 54,272 | 68,608 | 83,328 | 102,528 | 118,400 | 144,384 | 6,192,512 |
+| output tokens, inspected | 179 | 390 | 502 | 588 | 747 | 817 | 1,021 | 45,103 |
+| reasoning tokens, inspected | 0 | 15 | 28 | 55 | 79 | 111 | 230 | 3,131 |
+| total tokens, inspected | 46,378 | 69,371 | 90,478 | 105,023 | 126,139 | 145,412 | 176,856 | 8,029,689 |
+| total tokens, original | 31,060 | 31,314 | 31,647 | 32,334 | 33,268 | 34,653 | 45,435 | 2,831,590 |
+
+`cache_write_input_tokens` is 0 on all 88 receipts, and `remote_wall_ms` /
+`queue_wall_ms` are `Unavailable` inside the action. The whole-population wall is
+the observed acquisition window: 2026-10-08T02:54:10Z → 03:12:43Z, **18.6 min**,
+at the frozen `--jobs=8`, against a summed turn wall of 2,582,262 ms (43.0 min) —
+the honest ratio of the two is the observed effective concurrency, and the
+300 s per-task cap was never reached (0 timeouts, 0 interrupts).
+
+**Billing.** All 88 inspected turns were billed to the owner's ChatGPT plan
+through the SIWC route — never OpenRouter, and no substitute model. The receipts
+return token usage and no billing, cost or quota field, so the SIWC usage
+observable is reported as the token table above and **cost stays `Unavailable`**:
+no USD amount, no quota figure and no API-equivalent counterfactual is presented
+as actual spend, and the cost is never reported as `$0`.
+
+### Provider-free replay and the corpus-free laws
+
+The scoring stage redeclares no producer and names no acquisition target, so
+replaying it executes **0** Codex turns, **0** JEV calls, **0** hosted-Qwen
+requests, **0** CodeRankEmbed inferences and **0** `Repository`/`Theory` actions,
+with **0** provider requests. The corpus-free laws
+`//test/localization_sol_inspected:sol_inspected_law` (8 cases, in the ordinary
+offline gate) pin the inspection floor and its test-path rule, the new
+`repositoryRelative` reduction with its unchanged-target cases, the typed
+non-`ok` failures, the retained overshoot, the exact `read`-row layout the driver
+writes, and the rescued / regressed / improved / equal partition of the paired
+comparison. The stage itself asserts the frozen population, both arms' identities,
+the 528-file fixture tree and the exact reproduction of the published generation-16
+cells, so a drifted cohort or a drifted fixture cannot publish a table.
+
+### Limits, stated plainly
+
+One measurement of one frozen cohort: 85 eligible tasks, of which only **15 tasks
+in 4 groups** are held-out final — final-split differences are reported and
+explicitly not read as a finding. There is no significance test, no tuned
+threshold, no selected winner and no blended cross-arm selection. The 20 floor
+failures are retained in every denominator as measured misses and are not
+re-scored or re-classified anywhere in this report; the disclosure above is
+context, not a corrected number, and the declared floor was not relaxed to
+improve the arm's figures. The comparison to the frozen ranking arms is
+descriptive only: this arm is one agent turn per task over a mounted clean
+repository, not a ranking over the frozen candidate universe, so it is not a
+like-for-like contrast with `P`, `P+A`, `E` or `Q`.
+
+### Frozen evidence
+
+`library/sol-inspected/scoring-2026-10-08/` holds the five stage artifacts with
+their `SHA256SUMS` and a note recording the headline numbers, the floor
+disclosure and the open upstream item, all copied **outside** mutable Bazel
+outputs. The frozen fixture tree and its manifest live in the workspace at
+`attune/test/localization_sol_inspected/fixtures/`, and the acquisition evidence
+stays where the previous section records it.
+
+### Update history
+
+- Generation 17 (this section): the distinct Sol inspected arm is scored and
+  published — canonical metrics for both arms, the paired comparison, coverage,
+  output length, latency, billing and the provider-free replay. Result published
+  as measured, including the 20 declared floor failures. No generation-16 number
+  was changed.

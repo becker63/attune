@@ -1,0 +1,4 @@
+prediction	solid__community-server-1170	1	config/app/init/base/init.json
+prediction	solid__community-server-1170	2	src/index.ts
+prediction	solid__community-server-1170	3	config/storage/key-value/resource-store.json
+prediction	solid__community-server-1170	4	config/storage/key-value/memory.json

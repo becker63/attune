@@ -149,6 +149,41 @@ def theDriverProjectionParsesIntoTheDeclaredReadActions(): Unit \ Assert = {
 }
 
 @Test
+def anObservedReadTargetIsReducedToItsRepositoryPath(): Unit \ Assert = {
+    // The read tool reports the path it resolved inside the driver's own
+    // per-task work directory; the declared test-path rule is about repository
+    // paths, so the mechanical prefix is dropped first.
+    Assert.assertEq(expected = "src/format.js", SolInspected.repositoryRelative(
+        "/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected"
+            + "/attune-sol-15091998680771512610/repo/src/format.js"));
+    Assert.assertEq(expected = "test/format.test.js", SolInspected.repositoryRelative(
+        "/work/attune-sol-77/repo/test/format.test.js"));
+    // A path the driver nested inside the repository keeps its own tail.
+    Assert.assertEq(expected = "repo/src/format.js", SolInspected.repositoryRelative(
+        "/work/attune-sol-77/repo/repo/src/format.js"));
+    // An already relative target and a target that names no declared root keep
+    // their own text rather than being guessed at.
+    Assert.assertEq(expected = "src/format.js", SolInspected.repositoryRelative("src/format.js"));
+    Assert.assertEq(expected = "/etc/passwd", SolInspected.repositoryRelative("/etc/passwd"));
+    Assert.assertEq(expected = "/work/attune-sol-77/repo", SolInspected.repositoryRelative(
+        "/work/attune-sol-77/repo"));
+    // The sandbox prefix carries a `test` segment of its own. It must not turn a
+    // real implementation read into declared test source, while a read of test
+    // source inside the repository still is test source.
+    Assert.assertEq(expected = 1, SolInspected.nonemptyImplementationReads(
+        SolInspected.readActions("read\tread\t/buildbuddy-execroot/bazel-out/aarch64-fastbuild"
+            + "/bin/test/localization_sol_inspected/attune-sol-77/repo/src/format.js"
+            + "\t555\tabc\t0\tcompleted\t1200\n")));
+    Assert.assertEq(expected = 0, SolInspected.nonemptyImplementationReads(
+        SolInspected.readActions("read\tread\t/work/attune-sol-77/repo/test/format.test.js"
+            + "\t480\ts\t0\tcompleted\t100\n")));
+    // An unparsed command action names no repository path, so it never
+    // establishes the floor however many bytes it observed.
+    Assert.assertEq(expected = 0, SolInspected.nonemptyImplementationReads(
+        SolInspected.readActions("read\tunknown\t\t15836\ts\t0\tcompleted\t20548\n")))
+}
+
+@Test
 def theDeclaredActionKindsAndBudgetsAreMechanical(): Unit \ Assert = {
     Assert.assertEq(expected = "read", kindText(SolInspected.readKindOf("read")));
     Assert.assertEq(expected = "search", kindText(SolInspected.readKindOf("search")));

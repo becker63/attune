@@ -1,0 +1,3 @@
+prediction	vuejs__eslint-plugin-vue-1019	1	lib/rules/no-reserved-component-names.js
+prediction	vuejs__eslint-plugin-vue-1019	2	tests/lib/rules/no-reserved-component-names.js
+prediction	vuejs__eslint-plugin-vue-1019	3	lib/utils/index.js

@@ -1,0 +1,14 @@
+tool	commandExecution	failed	41	4972
+tool	commandExecution	completed	411	7995
+tool	commandExecution	completed	37903	11186
+tool	commandExecution	completed	2687	15205
+tool	commandExecution	completed	9960	19610
+read	search	.	41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	4972
+read	unknown		411	52aae85b87fc60ef3d36bbb7df798137cd226a9a4f7e2121068befa379ed75ca	0	completed	7995
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-17262884465743780744/repo/lib/platform/gitlab.js	37903	e5acb6e4b1e17d67f729c52250650b0d53e388c2730abb293f33d03261a12be9	0	completed	11186
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-17262884465743780744/repo/test/platform/gitlab.spec.js	37903	e5acb6e4b1e17d67f729c52250650b0d53e388c2730abb293f33d03261a12be9	0	completed	11186
+read	search	lib	2687	4c85370c608050e96acce8de3b0ae69cdaf8fece4b2958805bc195bd2a7ad09d	0	completed	15205
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-17262884465743780744/repo/lib/platform/gl-got-wrapper.js	2687	4c85370c608050e96acce8de3b0ae69cdaf8fece4b2958805bc195bd2a7ad09d	0	completed	15205
+read	search	gitlab.spec.js.snap	2687	4c85370c608050e96acce8de3b0ae69cdaf8fece4b2958805bc195bd2a7ad09d	0	completed	15205
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-17262884465743780744/repo/lib/workers/pr/index.js	9960	b9f5e25c976b0dfaaac908a59b7a558b3779eef68df5751df8680818de02c20d	0	completed	19610
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-17262884465743780744/repo/test/workers/pr/index.spec.js	9960	b9f5e25c976b0dfaaac908a59b7a558b3779eef68df5751df8680818de02c20d	0	completed	19610

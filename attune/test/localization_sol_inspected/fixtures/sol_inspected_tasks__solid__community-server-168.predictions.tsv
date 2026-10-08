@@ -1,0 +1,6 @@
+prediction	solid__community-server-168	1	config/presets/ldp/operation-handler.json
+prediction	solid__community-server-168	2	index.ts
+prediction	solid__community-server-168	3	test/configs/Util.ts
+prediction	solid__community-server-168	4	src/ldp/operations/GetOperationHandler.ts
+prediction	solid__community-server-168	5	src/ldp/operations/ResponseDescription.ts
+prediction	solid__community-server-168	6	src/ldp/http/BasicResponseWriter.ts

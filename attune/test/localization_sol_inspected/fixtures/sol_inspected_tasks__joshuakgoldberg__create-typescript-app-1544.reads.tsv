@@ -1,0 +1,15 @@
+tool	commandExecution	failed	41	5934
+tool	commandExecution	failed	41	5986
+tool	commandExecution	completed	3294	9138
+tool	commandExecution	completed	4032	13674
+tool	commandExecution	completed	10303	13738
+tool	commandExecution	completed	18320	19742
+tool	commandExecution	completed	356	19795
+read	listFiles		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	5934
+read	search	.	41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	5986
+read	unknown		3294	bb82dc039e55a82d8c45c08bd3178d9471c16083f79567cb59c0e64ef03450b9	0	completed	9138
+read	search	..	4032	e365fdd21dcdaa366541dfd1e9fccd33f834e78762b1cc3bd6a97f68ad8e5435	0	completed	13674
+read	search	src	4032	e365fdd21dcdaa366541dfd1e9fccd33f834e78762b1cc3bd6a97f68ad8e5435	0	completed	13674
+read	unknown		10303	bb1e231b830a11a503bccb6e90bca60eae2ba749bcd284c3691d64416b922237	0	completed	13738
+read	unknown		18320	5aabcdb194dfa5f3f5df9023a67aade996567ccf034b497f16aaaa970ed9d970	0	completed	19742
+read	unknown		356	0055b2e4814963e429ce3a1e96dc284b2fdb97ac76336bb3726576489927f00b	0	completed	19795

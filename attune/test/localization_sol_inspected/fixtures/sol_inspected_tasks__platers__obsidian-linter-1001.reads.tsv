@@ -1,0 +1,34 @@
+tool	commandExecution	failed	41	6072
+tool	commandExecution	failed	41	6114
+tool	commandExecution	completed	780	10916
+tool	commandExecution	completed	10402	18429
+tool	commandExecution	completed	3777	18436
+tool	commandExecution	completed	28540	24506
+tool	commandExecution	completed	23326	24557
+tool	commandExecution	completed	15330	32694
+tool	commandExecution	completed	6734	38338
+read	listFiles		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	6072
+read	unknown		41	f48250f0085abe8668b290e5a84fd7e8a22342f533a35dcb6144260209615841	127	failed	6114
+read	unknown		780	0fd50c2c8b570db1008471dbcfe84a737d7d2dfa42a47bf72531ab46991ab4b1	0	completed	10916
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/rules/paragraph-blank-lines.ts	10402	ac76f502ff5995141d068e7256f5f45cdaccb3aa604b01237af6f408394734d1	0	completed	18429
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/rules/empty-line-around-tables.ts	10402	ac76f502ff5995141d068e7256f5f45cdaccb3aa604b01237af6f408394734d1	0	completed	18429
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/package.json	10402	ac76f502ff5995141d068e7256f5f45cdaccb3aa604b01237af6f408394734d1	0	completed	18429
+read	search	src	3777	9f21bfc3d441b75975836c7385dd8c665378cffdac860cf279014eb0e0141794	0	completed	18436
+read	listFiles	src	3777	9f21bfc3d441b75975836c7385dd8c665378cffdac860cf279014eb0e0141794	0	completed	18436
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/utils/mdast.ts	28540	0733e4c71a4ec51c16ecd10395c04c3367f0d2a35d802a52633ba43d4694b6a5	0	completed	24506
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/utils/mdast.ts	28540	0733e4c71a4ec51c16ecd10395c04c3367f0d2a35d802a52633ba43d4694b6a5	0	completed	24506
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/utils/ignore-types.ts	28540	0733e4c71a4ec51c16ecd10395c04c3367f0d2a35d802a52633ba43d4694b6a5	0	completed	24506
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/__tests__/get-all-tables-in-text.test.ts	23326	d834d89a312210dfd255e4b4d9f55bfdeb19dc1742c674bb11699c60446bd79d	0	completed	24557
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/__tests__/paragraph-blank-lines.test.ts	23326	d834d89a312210dfd255e4b4d9f55bfdeb19dc1742c674bb11699c60446bd79d	0	completed	24557
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/utils/regex.ts	23326	d834d89a312210dfd255e4b4d9f55bfdeb19dc1742c674bb11699c60446bd79d	0	completed	24557
+read	search	rule-builder.ts	23326	d834d89a312210dfd255e4b4d9f55bfdeb19dc1742c674bb11699c60446bd79d	0	completed	24557
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/utils/ignore-types.ts	15330	b8757e6bfbe4c3391affc507039f7c1d8b1238a23b93e323a04adf4c97fa1231	0	completed	32694
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/utils/ignore-types.ts	15330	b8757e6bfbe4c3391affc507039f7c1d8b1238a23b93e323a04adf4c97fa1231	0	completed	32694
+read	search	mdast.ts	15330	b8757e6bfbe4c3391affc507039f7c1d8b1238a23b93e323a04adf4c97fa1231	0	completed	32694
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/rules/rule-builder.ts	15330	b8757e6bfbe4c3391affc507039f7c1d8b1238a23b93e323a04adf4c97fa1231	0	completed	32694
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/__tests__/get-all-tables-in-text.test.ts	15330	b8757e6bfbe4c3391affc507039f7c1d8b1238a23b93e323a04adf4c97fa1231	0	completed	32694
+read	search	paragraph-blank-lines.test.ts	15330	b8757e6bfbe4c3391affc507039f7c1d8b1238a23b93e323a04adf4c97fa1231	0	completed	32694
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/src/utils/mdast.ts	6734	e291e9a08a74425557765162f67b92164a693a96dc748a57657d1cdc341b0a1d	0	completed	38338
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/__tests__/paragraph-blank-lines.test.ts	6734	e291e9a08a74425557765162f67b92164a693a96dc748a57657d1cdc341b0a1d	0	completed	38338
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-9615625483169850640/repo/__tests__/empty-line-around-tables.test.ts	6734	e291e9a08a74425557765162f67b92164a693a96dc748a57657d1cdc341b0a1d	0	completed	38338
+read	search	rules.ts	6734	e291e9a08a74425557765162f67b92164a693a96dc748a57657d1cdc341b0a1d	0	completed	38338

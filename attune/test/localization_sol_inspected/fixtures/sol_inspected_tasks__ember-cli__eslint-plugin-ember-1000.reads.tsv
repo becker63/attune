@@ -1,0 +1,10 @@
+tool	commandExecution	failed	203	5821
+tool	commandExecution	failed	8011	9524
+tool	commandExecution	completed	19798	14791
+read	unknown		203	a6321fcbf7fb903a688ad79bb8e4cc99653a885fddb8dee5f1cc9bd7b3c063c6	127	failed	5821
+read	unknown		8011	b34c97d03fbc5bab0936619e224081e9edb644a4d1d3264ef40dfa666853e407	2	failed	9524
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4409265316491322230/repo/lib/rules/no-get-with-default.js	19798	cb256cb96cf479856356acc23aafb9fcd704d2412332082bcb53ff4569e51c83	0	completed	14791
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4409265316491322230/repo/tests/lib/rules/no-get-with-default.js	19798	cb256cb96cf479856356acc23aafb9fcd704d2412332082bcb53ff4569e51c83	0	completed	14791
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4409265316491322230/repo/lib/utils/import.js	19798	cb256cb96cf479856356acc23aafb9fcd704d2412332082bcb53ff4569e51c83	0	completed	14791
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4409265316491322230/repo/lib/index.js	19798	cb256cb96cf479856356acc23aafb9fcd704d2412332082bcb53ff4569e51c83	0	completed	14791
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4409265316491322230/repo/package.json	19798	cb256cb96cf479856356acc23aafb9fcd704d2412332082bcb53ff4569e51c83	0	completed	14791

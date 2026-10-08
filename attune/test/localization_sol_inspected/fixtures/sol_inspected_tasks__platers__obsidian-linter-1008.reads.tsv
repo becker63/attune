@@ -1,0 +1,13 @@
+tool	commandExecution	failed	162	4629
+tool	commandExecution	completed	784	8719
+tool	commandExecution	completed	15810	11893
+tool	commandExecution	failed	11951	15741
+read	unknown		162	608697abc3dfa21c3b9c71ec0ff2e7b491f0ecf36d04c3623ccb5a05eb50b1da	127	failed	4629
+read	search	.	784	2da6ccb25835111003e50d41d5c7e96431a1b20e91c9d90c1fe843bad64460df	0	completed	8719
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4955389294545356372/repo/src/rules/heading-blank-lines.ts	15810	63fbad87498da92b19aa963aec806abfee2e012df0250d5d0474fcf9c98dbc37	0	completed	11893
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4955389294545356372/repo/__tests__/heading-blank-lines.test.ts	15810	63fbad87498da92b19aa963aec806abfee2e012df0250d5d0474fcf9c98dbc37	0	completed	11893
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4955389294545356372/repo/src/utils/regex.ts	15810	63fbad87498da92b19aa963aec806abfee2e012df0250d5d0474fcf9c98dbc37	0	completed	11893
+read	search	rule-builder.ts	11951	b83a35a65d64f410ff0a9f1bb6699738d8f8527773f793141303c053f21770ee	1	failed	15741
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4955389294545356372/repo/__tests__/common.ts	11951	b83a35a65d64f410ff0a9f1bb6699738d8f8527773f793141303c053f21770ee	1	failed	15741
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-4955389294545356372/repo/src/utils/ignore-types.ts	11951	b83a35a65d64f410ff0a9f1bb6699738d8f8527773f793141303c053f21770ee	1	failed	15741
+read	search	rules.ts	11951	b83a35a65d64f410ff0a9f1bb6699738d8f8527773f793141303c053f21770ee	1	failed	15741

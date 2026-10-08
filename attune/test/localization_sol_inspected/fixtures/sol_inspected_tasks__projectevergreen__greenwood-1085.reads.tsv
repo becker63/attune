@@ -1,0 +1,14 @@
+tool	commandExecution	failed	163	4713
+tool	commandExecution	completed	2723	8645
+tool	commandExecution	completed	4069	12764
+tool	commandExecution	completed	11912	18141
+tool	commandExecution	completed	7111	25141
+tool	commandExecution	completed	18834	29536
+read	unknown		163	c933ab6e7ac60a6c47dcbb64ac83a99e7a07debc04fce516302cdcdcc67ef3cf	127	failed	4713
+read	search	.	2723	038b4d7df43ff78380eed1bbd1d9533e01e58066b5e7a8e08565c0767136b34a	0	completed	8645
+read	listFiles		4069	f021432934312db48f7c1d7278c7c3aa19d4fa48b4cf63bee21a9a1bd9e06af5	0	completed	12764
+read	listFiles	plugin-import-css	4069	f021432934312db48f7c1d7278c7c3aa19d4fa48b4cf63bee21a9a1bd9e06af5	0	completed	12764
+read	search	cli	4069	f021432934312db48f7c1d7278c7c3aa19d4fa48b4cf63bee21a9a1bd9e06af5	0	completed	12764
+read	unknown		11912	4be7985e3a259cd6ec185dde1df83781e9103acb896600d409e5d6df05bfc257	0	completed	18141
+read	unknown		7111	b04a1a86a18356224dc2c1e8ba46d81e5b6b790dd9cb6ddceeeac05c7aad8fb5	0	completed	25141
+read	unknown		18834	35e1ec2fdcf49a4210d4e27ba8168900f91a49063ecc73f7b927d3df64fdcfbf	0	completed	29536

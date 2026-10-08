@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_test")
+load("//platform/build:native.bzl", "attune_source_tree", "native_flix_test", "native_study_stage")
 load("//platform/build:sol.bzl", "attune_sol_cohort", "attune_sol_route_check", "attune_sol_task")
 load("//test/localization_runtime:localization_runtime.bzl", "RUNTIME_CAPPED_EXCLUSIONS")
 load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
@@ -157,11 +157,72 @@ attune_sol_cohort(
     world_repo = "@attune_worlds",
 )
 
+# The frozen per-task fixtures of BOTH arms of the comparison
+# (`VAL-INSPECT-003`). They are the byte-verified copies of the snapshots taken
+# outside mutable Bazel outputs before any scoring:
+#
+# - the preserved original arm (`gen16`): `sol_tasks__<task>.receipt.json`,
+#   `.predictions.tsv` and `.world.tsv`;
+# - the distinct inspected arm: `sol_inspected_tasks__<task>.receipt.json`,
+#   `.predictions.tsv` and `.reads.tsv`.
+#
+# The declared clean-world source manifest is byte-identical in both snapshots
+# (88/88 verified, and both recorded digests are listed in `MANIFEST.tsv`), so it
+# is carried once as `sol_tasks__<task>.world.tsv`. `MANIFEST.tsv` records each
+# fixture's arm, snapshot, snapshot path and SHA-256; every digest in it matches
+# the corresponding snapshot's own `SHA256SUMS`. The tree is the only per-task
+# evidence the scoring stage binds: it names no acquisition producer, so a replay
+# cannot re-enter a Sol action.
+attune_source_tree(
+    name = "sol_inspected_fixtures",
+    srcs = glob(["fixtures/**"]),
+    tags = ["manual"],
+)
+
+# The one bounded scoring and comparison stage of the distinct inspected arm
+# (`VAL-INSPECT-003`). It binds the two arms' frozen fixtures, the admitted
+# evaluator labels and the admitted mapped manifest, classifies each arm through
+# its production statement (`Attune.Study.Sol` / `Attune.Study.SolInspected`),
+# reduces both rank trees through the ONE canonical `Attune.Study.Metrics`, and
+# emits the metric, per-task, per-value, paired-contrast and statistics records.
+# It redeclares no producer and calls no provider, so a replay executes 0 Codex
+# turns, 0 JEV calls, 0 Q embedding requests, 0 CodeRank inference and 0
+# Repository/Theory actions (`VAL-INSPECT-003`). `manual`, so the ordinary
+# offline gate never touches it.
+STAGE_SRCS = [
+    "SolInspectedStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Sol.flix",
+    "//src:Attune/Study/SolInspected.flix",
+]
+
+native_study_stage(
+    name = "sol_inspected_metrics",
+    srcs = STAGE_SRCS,
+    input_names = [
+        "mapped",
+        "fixtures",
+    ] + ["label_%s" % row[1] for row in _SURVIVING_TASKS],
+    inputs = [
+        "//test/study:manifest/localization/mapped.tsv",
+        ":sol_inspected_fixtures",
+    ] + ["//test/study:manifest/localization/label_%s.tsv" % row[1] for row in _SURVIVING_TASKS],
+    stage = "sol_inspected_metrics",
+    tags = ["manual"],
+)
+
 # The corpus-free laws of the inspected arm's inspection floor
-# (`VAL-INSPECT-001`): the declared action kinds, the declared test-path rule,
+# (`VAL-INSPECT-001`) and of its paired comparison statement
+# (`VAL-INSPECT-003`): the declared action kinds, the declared test-path rule,
 # the nonempty-implementation-read floor, the zero-read `ProtocolFailed`
-# classification, the typed result-status failures and the retained overshoot.
-# Pure, so unlike the arm's remote tasks it is part of the ordinary offline gate.
+# classification, the typed result-status failures, the retained overshoot, the
+# exact `read` row layout the driver writes, the repository-relative reduction of
+# an observed read target, and the rescued / regressed / improved / equal
+# partition of a paired metric comparison. Pure, so unlike the arm's remote tasks
+# it is part of the ordinary offline gate.
 native_flix_test(
     name = "sol_inspected_law",
     srcs = [

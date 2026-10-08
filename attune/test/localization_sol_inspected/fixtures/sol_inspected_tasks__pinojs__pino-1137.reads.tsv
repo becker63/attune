@@ -1,0 +1,11 @@
+tool	commandExecution	failed	163	7723
+tool	commandExecution	completed	2477	11151
+tool	commandExecution	completed	10015	16431
+tool	commandExecution	completed	27132	22230
+read	unknown		163	0311b8d084bb3096cb0cd406bdb5d650b7b1f619148439c6679c6a45bae04d4d	127	failed	7723
+read	listFiles	.	2477	f69938ee07afcb27b7a0f2e701f2592a0822ecfe6576d77468e90c14b9da5dae	0	completed	11151
+read	search	..	10015	e76c672bc30502a9356315e1e4d2d39b5970176df6425ba889fc7de1aefaaa89	0	completed	16431
+read	search	proto.js	10015	e76c672bc30502a9356315e1e4d2d39b5970176df6425ba889fc7de1aefaaa89	0	completed	16431
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-14832102488731991872/repo/lib/transport.js	10015	e76c672bc30502a9356315e1e4d2d39b5970176df6425ba889fc7de1aefaaa89	0	completed	16431
+read	read	/buildbuddy-execroot/bazel-out/aarch64-fastbuild/bin/test/localization_sol_inspected/attune-sol-14832102488731991872/repo/lib/proto.js	10015	e76c672bc30502a9356315e1e4d2d39b5970176df6425ba889fc7de1aefaaa89	0	completed	16431
+read	unknown		27132	6dbef33cc4f75b47a666886a45684209abe21f6f522487ec628e68dae16c1ca3	0	completed	22230

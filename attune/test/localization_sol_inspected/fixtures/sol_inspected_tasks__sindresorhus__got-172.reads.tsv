@@ -1,0 +1,6 @@
+tool	commandExecution	failed	162	5144
+tool	commandExecution	completed	406	7887
+tool	commandExecution	completed	11361	12017
+read	unknown		162	8f989d5f8f66d61cf3c959279777dfbb31319ffc5dfd67197982095e1426bedf	127	failed	5144
+read	listFiles	.	406	c05ed4be2fc6a6601818e22ffd821ec43739ec7c1827a2fa68042e92161a6e78	0	completed	7887
+read	unknown		11361	5f8fe5c99e318cffcdc277cb40c5bec66bd3bde09f369704ecc63deaca96ba12	0	completed	12017
