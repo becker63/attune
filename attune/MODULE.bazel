@@ -244,3 +244,39 @@ exports_files(["codex-aarch64-unknown-linux-musl"])
     sha256 = "f54dc5852042445bf41da3aa31156f3cb02f52c5a1a04074de73dc5598f7e1f7",
     urls = ["https://github.com/openai/codex/releases/download/rust-v0.160.1/codex-aarch64-unknown-linux-musl.tar.gz"],
 )
+
+# The companion code-mode host of the same pinned release. The `codex`
+# app-server resolves its shell/read tool executor as a sibling file named
+# `codex-code-mode-host`, so without this binary every turn's tool path fails
+# closed and the model can never inspect a repository (the diagnosed defect of
+# the DISTINCT Sol inspected arm, `library/sol-inspected.md`). The asset is the
+# same public `openai/codex` release as `codex_cli` above, pinned by SHA-256; the
+# driver renames it to the exact sibling name the app-server looks for. Additive:
+# it edits no existing acquisition closure and no `.bazelrc`.
+http_archive(
+    name = "codex_code_mode_host",
+    build_file_content = """package(default_visibility = ["//visibility:public"])
+
+exports_files(["codex-code-mode-host-aarch64-unknown-linux-musl"])
+""",
+    sha256 = "e5e027e6689efda2e3570aa600179f0ebb18632803350e152ed6c9b97dcf9741",
+    urls = ["https://github.com/openai/codex/releases/download/rust-v0.160.1/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz"],
+)
+
+# The bundled sandbox helper of the same pinned release. The code-mode host's
+# Linux sandbox launcher refuses to run a command without `bwrap`, and it looks
+# for the bundled copy at `codex-resources/bwrap` next to the Codex executable.
+# Without it the tool path is reachable but every command aborts, so a turn can
+# never read source (the second half of the diagnosed inspected-arm defect). The
+# asset is the same public `openai/codex` release, pinned by SHA-256; the driver
+# stages it under the exact relative path the launcher expects. Additive: no
+# existing acquisition closure and no `.bazelrc` edit.
+http_archive(
+    name = "codex_bwrap",
+    build_file_content = """package(default_visibility = ["//visibility:public"])
+
+exports_files(["bwrap-aarch64-unknown-linux-musl"])
+""",
+    sha256 = "5b2600ab05250bdf8b8b34f5dd8a8b543c941d2ad36a5213dfa93ad04d1a2bbd",
+    urls = ["https://github.com/openai/codex/releases/download/rust-v0.160.1/bwrap-aarch64-unknown-linux-musl.tar.gz"],
+)

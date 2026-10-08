@@ -99,6 +99,10 @@ def _world_source_manifest(ctx, world):
         if marker not in file.path:
             fail("declared world source %r is not under world %s" % (file.path, world))
         tail = file.path.split(marker, 1)[1]
+        # Every declared world tree carries exactly one leading top-level
+        # directory: a pinned archive's `<repo>-<revision>` directory, or the
+        # authored corpus-free bring-up fixture's own wrapper directory. Dropping
+        # it yields the repository-relative path the model inspects.
         parts = tail.split("/", 1)
         if len(parts) != 2:
             fail("declared world source %r carries no repository-relative path" % file.path)
@@ -115,7 +119,9 @@ def attune_sol_cohort(
         codex,
         issue_tree,
         world_repo,
-        inspect = False):
+        inspect = False,
+        code_mode_host = None,
+        bwrap = None):
     """Expand one declared task population into one Sol remote action per task.
 
     Args:
@@ -128,12 +134,17 @@ def attune_sol_cohort(
       world_repo: the declared acquisition repository of the clean world archives.
       inspect: opt in to the distinct enforced read-only inspection arm for
         every expanded task. Default `False` is the published original arm.
+      code_mode_host: the pinned companion `codex-code-mode-host` binary the
+        inspected arm stages as the app-server's tool executor sibling. Required
+        when `inspect` is set; ignored by the original arm.
     """
     targets = []
     for task in tasks:
         target_name = "%s__%s" % (name, task[1])
         attune_sol_task(
             name = target_name,
+            code_mode_host = code_mode_host,
+            bwrap = bwrap,
             codex = codex,
             inspect = inspect,
             issue_tree = issue_tree,
@@ -174,11 +185,19 @@ def _sol_task_impl(ctx):
     # of this and keep their published argument list exactly.
     inspect_arguments = []
     if ctx.attr.inspect:
+        if not ctx.attr.code_mode_host:
+            fail("the inspected arm requires the pinned code-mode host artifact")
+        if not ctx.attr.bwrap:
+            fail("the inspected arm requires the pinned bundled bwrap artifact")
         reads = ctx.actions.declare_file(ctx.label.name + ".reads.tsv")
         outputs.append(reads)
         inspect_arguments = [
             "--inspect",
             "true",
+            "--code-mode-host",
+            ctx.file.code_mode_host.path,
+            "--bwrap",
+            ctx.file.bwrap.path,
             "--max-tool-rounds",
             str(ctx.attr.max_tool_rounds),
             "--max-tokens",
@@ -204,7 +223,8 @@ def _sol_task_impl(ctx):
         arguments = arguments,
         inputs = depset(
             [manifest, ctx.file.prompt, ctx.file.codex] + issue_inputs + ctx.files.repo,
-            transitive = [depset(classpath), ctx.attr.codex.files, runtime.files],
+            transitive = [depset(classpath), ctx.attr.codex.files, ctx.attr.code_mode_host.files,
+                          ctx.attr.bwrap.files, runtime.files],
         ),
         outputs = outputs,
         env = _LOCALE_ENV,
@@ -239,6 +259,8 @@ attune_sol_task = rule(
     """,
     attrs = {
         "codex": attr.label(allow_single_file = True, mandatory = True),
+        "code_mode_host": attr.label(allow_single_file = True),
+        "bwrap": attr.label(allow_single_file = True),
         "prompt": attr.label(allow_single_file = True, mandatory = True),
         "issue_tree": attr.label(allow_single_file = True),
         "issue_tsv": attr.label(allow_single_file = True),

@@ -176,9 +176,21 @@ public final class SolLocalizeDriver {
         Path repoManifest = Paths.get(required(options, "repo"));
         Path reads = options.containsKey("reads") ? Paths.get(options.get("reads")) : null;
         String prompt = Files.readString(Paths.get(required(options, "prompt")), StandardCharsets.UTF_8);
-        Path issueProjection = options.containsKey("issue-tsv")
-                ? Paths.get(required(options, "issue-tsv"))
-                : Paths.get(required(options, "issue-tree")).resolve("issues.tsv");
+        // The declared issue projection is handed over either as the frozen
+        // fixture's own file (`--issue-tsv`) or as the arm's public projection
+        // tree (`--issue-tree`). The tree argument is accepted as the tree
+        // directory or as the projection file inside it, so the declared input
+        // cannot be double-appended into a nonexistent `issues.tsv/issues.tsv`.
+        Path issueProjection;
+        if (options.containsKey("issue-tsv")) {
+            issueProjection = Paths.get(required(options, "issue-tsv"));
+        } else {
+            Path declared = Paths.get(required(options, "issue-tree"));
+            issueProjection = declared.getFileName() != null
+                    && declared.getFileName().toString().endsWith(".tsv")
+                    ? declared
+                    : declared.resolve("issues.tsv");
+        }
         String issue = issueForTask(issueProjection, task);
 
         Receipt receipt = new Receipt(task, world, model, effort, backend);
@@ -190,11 +202,20 @@ public final class SolLocalizeDriver {
         receipt.promptIdentity = options.getOrDefault("prompt-identity", "Unavailable");
         receipt.startMillis = System.currentTimeMillis();
 
-        Path home = Files.createTempDirectory("attune-sol-");
+        // The Codex read-only sandbox mounts a fresh tmpfs over /tmp, which
+        // shadows a workspace that lives under /tmp, so a sandboxed `cat` of a
+        // materialized file fails with "No such file or directory". The working
+        // root is therefore created next to this action's declared outputs,
+        // outside /tmp, so the materialized clean repository stays visible to the
+        // sandboxed shell tool.
+        Path workBase = out.toAbsolutePath().getParent();
+        Path home = Files.createTempDirectory(workBase, "attune-sol-");
         Path repo = materializeRepo(repoManifest, home.resolve("repo"));
+        Path codexExecutable = provisionCodex(
+                codex, options.get("code-mode-host"), options.get("bwrap"), home);
         Process process = null;
         try {
-            ProcessBuilder builder = new ProcessBuilder(launchCommand(codex));
+            ProcessBuilder builder = new ProcessBuilder(launchCommand(codexExecutable));
             Map<String, String> env = builder.environment();
             env.clear();
             env.put("PATH", "/usr/bin:/bin");
@@ -254,11 +275,32 @@ public final class SolLocalizeDriver {
                     + CHATGPT_PLAN_PROVIDER + "\",\"cwd\":\"" + jsonEscape(repo.toString())
                     + "\",\"ephemeral\":true,\"approvalPolicy\":\"never\",\"sandbox\":\"read-only\","
                     + "\"config\":{\"model_reasoning_effort\":\"" + effort + "\"}}", 2);
-            String threadId = session.awaitThreadId(2);
-            session.send("turn/start", "{\"threadId\":\"" + jsonEscape(threadId) + "\",\"model\":\""
-                    + model + "\",\"effort\":\"" + effort + "\",\"outputSchema\":" + RESULT_SCHEMA
-                    + ",\"input\":[{\"type\":\"text\",\"text\":"
-                    + jsonString(prompt + "\n" + issue) + "}]}", 3);
+            String threadId = session.awaitThreadId(2, receipt);
+
+            // The declared structured result is the protocol's one output-shaping
+            // control, and the published original arm sends it on every turn. It
+            // constrains only the final assistant message's JSON shape, but it is
+            // the leading mechanical suspect for a turn that never opens the tool
+            // loop (gen16 and the first inspected fixture both made zero tool
+            // calls despite the prompt requiring inspection). The inspected arm
+            // therefore opts out of it (`--output-schema false`): the frozen
+            // prompt still demands the same `{"paths":[...]}` result and the
+            // extractor is unchanged, so the declared contract is preserved while
+            // the inspection phase runs as an ordinary tool-using turn. The
+            // default stays `true`, so the original arm's request bytes are
+            // byte-identical.
+            boolean emitResultSchema = Boolean.parseBoolean(options.getOrDefault("output-schema", "true"));
+            receipt.resultSchemaEmitted = emitResultSchema;
+            StringBuilder turnParams = new StringBuilder();
+            turnParams.append("{\"threadId\":\"").append(jsonEscape(threadId))
+                    .append("\",\"model\":\"").append(model)
+                    .append("\",\"effort\":\"").append(effort).append("\"");
+            if (emitResultSchema) {
+                turnParams.append(",\"outputSchema\":").append(RESULT_SCHEMA);
+            }
+            turnParams.append(",\"input\":[{\"type\":\"text\",\"text\":")
+                    .append(jsonString(prompt + "\n" + issue)).append("}]}");
+            session.send("turn/start", turnParams.toString(), 3);
             String finalMessage = inspect
                     ? session.awaitInspectedTurn(receipt, threadId, toolRoundBudget, tokenBudget)
                     : session.awaitTurnCompletion(receipt);
@@ -392,6 +434,42 @@ public final class SolLocalizeDriver {
             command.add(config);
         }
         return command;
+    }
+
+    /**
+     * Stage the pinned Codex app-server and, when one is declared, its companion
+     * code-mode host in a single directory.
+     *
+     * <p>The app-server resolves its shell/read tool executor as a sibling file
+     * named exactly {@code codex-code-mode-host} next to the running binary, so
+     * the declared host artifact is copied under that name. Without it the tool
+     * path fails closed and no model turn can inspect a repository (the
+     * diagnosed defect of the inspected arm). When no host is declared the
+     * original binary is launched in place, unchanged.
+     */
+    private static Path provisionCodex(Path codex, String hostPath, String bwrapPath, Path home)
+            throws IOException {
+        if (hostPath == null || hostPath.isEmpty()) {
+            return codex;
+        }
+        Path runtime = Files.createDirectories(home.resolve("runtime"));
+        Path codexCopy = runtime.resolve(codex.getFileName().toString());
+        Files.copy(codex, codexCopy);
+        codexCopy.toFile().setExecutable(true, false);
+        Path hostCopy = runtime.resolve("codex-code-mode-host");
+        Files.copy(Paths.get(hostPath), hostCopy);
+        hostCopy.toFile().setExecutable(true, false);
+        if (bwrapPath != null && !bwrapPath.isEmpty()) {
+            // The code-mode host's Linux sandbox launcher looks for the bundled
+            // sandbox helper at `codex-resources/bwrap` next to the Codex
+            // executable, so the declared artifact is staged under exactly that
+            // relative path.
+            Path resources = Files.createDirectories(runtime.resolve("codex-resources"));
+            Path bwrapCopy = resources.resolve("bwrap");
+            Files.copy(Paths.get(bwrapPath), bwrapCopy);
+            bwrapCopy.toFile().setExecutable(true, false);
+        }
+        return codexCopy;
     }
 
     // ------------------------------------------------------------ task inputs
@@ -546,8 +624,15 @@ public final class SolLocalizeDriver {
             }
         }
 
-        String awaitThreadId(int id) throws IOException, TaskTimeoutException {
+        String awaitThreadId(int id, Receipt receipt) throws IOException, TaskTimeoutException {
             String response = awaitResponse(id);
+            // The resolved model is observable metadata the provider actually
+            // returned on `thread/start`; it is captured rather than assumed so
+            // requested-vs-resolved stays a measured fact.
+            String resolved = jsonStringField(response, "model");
+            if (resolved != null && !resolved.isEmpty()) {
+                receipt.resolvedModel = resolved;
+            }
             String marker = "\"thread\"";
             int at = response.indexOf(marker);
             if (at < 0) {
@@ -665,6 +750,13 @@ public final class SolLocalizeDriver {
                     captureTurnStartResponse(envelope, receipt);
                     continue;
                 }
+                // A sanitized census of what the app-server actually emitted:
+                // notification method names and counts only, never payloads. It
+                // is the direct evidence that separates a counter gap (items on
+                // a channel the old counter never read) from a turn in which the
+                // model genuinely opened no tool at all.
+                receipt.notificationsSeen++;
+                receipt.methodCounts.merge(method, 1, Integer::sum);
                 Object params = envelope.get("params");
                 switch (method) {
                     case "turn/started" -> {
@@ -674,6 +766,18 @@ public final class SolLocalizeDriver {
                         }
                     }
                     case "thread/tokenUsage/updated" -> captureUsageEvent(params, receipt);
+                    case "item/started" -> {
+                        // The old counter never read `item/started`; recording its
+                        // item types distinguishes a stream that announced a tool
+                        // it never completed from one that announced no tool.
+                        if (params instanceof Map<?, ?> p) {
+                            String type = Json.asText(p.get("item") instanceof Map<?, ?> item
+                                    ? item.get("type") : null);
+                            if (type != null) {
+                                receipt.startedItemTypes.merge(type, 1, Integer::sum);
+                            }
+                        }
+                    }
                     case "item/completed" -> {
                         if (params instanceof Map<?, ?> p) {
                             captureItem(p.get("item"), receipt, seenItems, texts);
@@ -693,6 +797,8 @@ public final class SolLocalizeDriver {
                             receipt.httpStatus = status.toString();
                         }
                     }
+                    case "warning", "deprecationNotice", "configWarning" ->
+                            captureServerDiagnostic(method, params, receipt);
                     default -> {
                         // Every other declared notification is outside this arm's
                         // observation surface.
@@ -787,6 +893,10 @@ public final class SolLocalizeDriver {
             if (type == null) {
                 return;
             }
+            // Every observed item type is counted, tool or not, so the census
+            // shows whether the turn carried reasoning/agentMessage items only
+            // (no inspection at all) or any tool item.
+            receipt.itemTypes.merge(type, 1, Integer::sum);
             long at = Math.max(0, System.currentTimeMillis() - receipt.startMillis);
             if ("agentMessage".equals(type)) {
                 String text = Json.asText(map.get("text"));
@@ -809,6 +919,18 @@ public final class SolLocalizeDriver {
             receipt.toolItems.add(new ToolItem(type, status, bytes, at));
             if (!"commandExecution".equals(type)) {
                 return;
+            }
+            // The exact command text is recorded separately from the declared
+            // read projection (which keeps its pinned row layout). It is the
+            // verifiable record of what the tool actually ran, so a read can be
+            // corroborated rather than inferred from the app-server's coarse
+            // action classification alone.
+            String command = Json.asText(map.get("command"));
+            if (command != null && !command.isEmpty()) {
+                String bounded = command.length() > 300 ? command.substring(0, 300) : command;
+                if (receipt.readCommands.size() < 16) {
+                    receipt.readCommands.add(bounded);
+                }
             }
             String exitCode = map.get("exitCode") == null
                     ? "Unavailable"
@@ -851,6 +973,7 @@ public final class SolLocalizeDriver {
             String view = Json.asText(turn.get("itemsView"));
             receipt.turnItemsView = view == null ? "Unavailable" : view;
             if (turn.get("items") instanceof List<?> items) {
+                receipt.turnItemsCount = items.size();
                 for (Object item : items) {
                     captureItem(item, receipt, seenItems, texts);
                 }
@@ -863,6 +986,34 @@ public final class SolLocalizeDriver {
             }
             if (turn.get("durationMs") instanceof Number duration) {
                 receipt.turnDurationMs = duration.longValue();
+            }
+        }
+
+        /**
+         * Record one bounded server diagnostic notification (`warning`,
+         * `deprecationNotice`, `configWarning`). The app-server's own message
+         * text is the only place it states why a turn behaved as it did (for
+         * example a model without tool support); it carries no credential and no
+         * request payload, and the retained copy is capped so the receipt stays
+         * small.
+         */
+        private static void captureServerDiagnostic(String method, Object params, Receipt receipt) {
+            if (!(params instanceof Map<?, ?> p)) {
+                return;
+            }
+            String message = Json.asText(p.get("message"));
+            if (message == null) {
+                message = Json.asText(p.get("text"));
+            }
+            if (message == null || message.isEmpty()) {
+                return;
+            }
+            String line = method + ": " + message;
+            if (line.length() > 400) {
+                line = line.substring(0, 400);
+            }
+            if (receipt.serverDiagnostics.size() < 8 && !receipt.serverDiagnostics.contains(line)) {
+                receipt.serverDiagnostics.add(line);
             }
         }
 
@@ -1233,6 +1384,10 @@ public final class SolLocalizeDriver {
         // published shape and is never rewritten by the new path.
         String arm = "original";
         boolean inspectMode;
+        String resolvedModel = "Unavailable";
+        boolean resultSchemaEmitted = true;
+        long notificationsSeen;
+        long turnItemsCount;
         int toolRoundBudget = 32;
         long tokenBudget = 256000;
         long toolRounds;
@@ -1247,6 +1402,11 @@ public final class SolLocalizeDriver {
         long turnDurationMs;
         final List<ToolItem> toolItems = new ArrayList<>();
         final List<ReadAction> reads = new ArrayList<>();
+        final Map<String, Integer> itemTypes = new LinkedHashMap<>();
+        final Map<String, Integer> startedItemTypes = new LinkedHashMap<>();
+        final Map<String, Integer> methodCounts = new LinkedHashMap<>();
+        final List<String> serverDiagnostics = new ArrayList<>();
+        final List<String> readCommands = new ArrayList<>();
 
         Receipt(String task, String world, String model, String effort, String backend) {
             this.task = task;
@@ -1263,7 +1423,8 @@ public final class SolLocalizeDriver {
             field(json, "world", jsonString(world));
             field(json, "prompt_identity", jsonString(promptIdentity));
             field(json, "requested_model", jsonString(model));
-            field(json, "resolved_model", jsonString("Unavailable"));
+            field(json, "resolved_model", jsonString(resolvedModel));
+            field(json, "result_schema_emitted", Boolean.toString(resultSchemaEmitted));
             field(json, "effort", jsonString(effort));
             field(json, "backend", jsonString(backend));
             field(json, "start_unix_ms", Long.toString(startMillis));
@@ -1295,6 +1456,13 @@ public final class SolLocalizeDriver {
             field(json, "interrupt_sent", Boolean.toString(interruptSent));
             field(json, "turn_status", jsonString(turnStatus));
             field(json, "turn_items_view", jsonString(turnItemsView));
+            field(json, "turn_items_count", Long.toString(turnItemsCount));
+            field(json, "notifications_seen", Long.toString(notificationsSeen));
+            field(json, "method_counts", jsonString(histogram(methodCounts)));
+            field(json, "observed_item_types", jsonString(histogram(itemTypes)));
+            field(json, "started_item_types", jsonString(histogram(startedItemTypes)));
+            field(json, "server_diagnostics", jsonString(String.join(" | ", serverDiagnostics)));
+            field(json, "read_commands", jsonString(String.join(" | ", readCommands)));
             field(json, "turn_duration_ms",
                     turnDurationMs == 0 ? jsonString("Unavailable") : Long.toString(turnDurationMs));
             field(json, "model_context_window",
@@ -1353,12 +1521,17 @@ public final class SolLocalizeDriver {
             return first == Long.MAX_VALUE ? jsonString("Unavailable") : Long.toString(first);
         }
 
-        /** The observed item-type histogram, e.g. `commandExecution=3;reasoning=1`. */
+        /** The observed inspection-item-type histogram, e.g. `commandExecution=3;fileChange=1`. */
         private String toolItemTypes() {
             Map<String, Integer> counts = new LinkedHashMap<>();
             for (ToolItem item : toolItems) {
                 counts.merge(item.type(), 1, Integer::sum);
             }
+            return histogram(counts);
+        }
+
+        /** A stable `name=count;name=count` rendering of one bounded census. */
+        private static String histogram(Map<String, Integer> counts) {
             StringBuilder summary = new StringBuilder();
             for (Map.Entry<String, Integer> entry : counts.entrySet()) {
                 if (summary.length() > 0) {

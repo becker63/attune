@@ -20,6 +20,20 @@ filegroup(
 # actually reading source.
 PROMPT_INSPECTED_IDENTITY = "sha256:4974812a1f476c3b36357ffdc64b5ca47dd831407aa9afbaf4e027a5cb5b3539"
 
+# The pinned companion `codex-code-mode-host` binary of the same Codex release.
+# The app-server resolves its shell/read tool executor as a sibling file named
+# `codex-code-mode-host`; the pinned release tarball carries only the `codex`
+# binary, so without this declared artifact every turn's tool path fails closed
+# and no model can inspect a repository. The driver stages it under that exact
+# sibling name before launching the app-server.
+CODE_MODE_HOST = "@codex_code_mode_host//:codex-code-mode-host-aarch64-unknown-linux-musl"
+
+# The pinned bundled sandbox helper (`codex-resources/bwrap`) of the same Codex
+# release. The code-mode host's Linux sandbox launcher aborts every command
+# without it, so the inspected arm stages it at the relative path the launcher
+# expects before launching the app-server.
+CODE_BWRAP = "@codex_bwrap//:bwrap-aarch64-unknown-linux-musl"
+
 # The dedicated remote execution platform of the inspected arm. It is the same
 # declared platform as the original Sol arm — the ChatGPT-plan SIWC route must
 # reach the plan backend through BuildBuddy's declared external-network
@@ -76,11 +90,37 @@ exports_files([
 
 attune_sol_task(
     name = "fixture_task",
+    bwrap = CODE_BWRAP,
+    code_mode_host = CODE_MODE_HOST,
     codex = "@codex_cli//:codex-aarch64-unknown-linux-musl",
     inspect = True,
     issue_tsv = ":fixture_issue.tsv",
     prompt = ":prompt.txt",
     prompt_identity = PROMPT_INSPECTED_IDENTITY,
+    repo = ":fixture_world",
+    tags = ["manual"],
+    task = "fixture__total",
+    world = "fixture",
+)
+
+# The mechanical tool-availability probe (`VAL-INSPECT-001` diagnosis). The
+# corpus-free bring-up fixture answered without opening any tool even though the
+# binary's own feature list reports `shell_tool` enabled, so this diagnostic asks
+# the same model, on the same route, to run one shell command and report its
+# output. It is a diagnostic, not a scored task: it declares a distinct prompt
+# (whose bytes are frozen here) and never enters the cohort population. A real
+# command item in its `*.reads.tsv` proves the tool path works and that the
+# bring-up answer was the model's choice; no command item plus a `NO_TOOLS`
+# answer proves the tool path is unavailable.
+attune_sol_task(
+    name = "fixture_task_probe",
+    bwrap = CODE_BWRAP,
+    code_mode_host = CODE_MODE_HOST,
+    codex = "@codex_cli//:codex-aarch64-unknown-linux-musl",
+    inspect = True,
+    issue_tsv = ":fixture_issue.tsv",
+    prompt = ":probe_prompt.txt",
+    prompt_identity = "sha256:542cf40fe544312be131c99dc67d5405386b5e7ba0602e29267762f9d517653e",
     repo = ":fixture_world",
     tags = ["manual"],
     task = "fixture__total",
@@ -106,6 +146,8 @@ _SURVIVING_TASKS = [
 # closure. The bring-up gate builds exactly ONE of these targets first.
 attune_sol_cohort(
     name = "sol_inspected_tasks",
+    bwrap = CODE_BWRAP,
+    code_mode_host = CODE_MODE_HOST,
     codex = "@codex_cli//:codex-aarch64-unknown-linux-musl",
     inspect = True,
     issue_tree = "//test/localization:issue_text",
