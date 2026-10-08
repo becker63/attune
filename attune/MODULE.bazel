@@ -219,3 +219,28 @@ qwen_fixtures(
     root = "/home/becker/.cache/attune-qwen-fixtures",
     token = "1",
 )
+
+# The pinned Codex CLI of the standalone Sol scientific arm (owner-authorized
+# 2026-10-07, `library/sol-medium.md`). The arm's ChatGPT-plan SIWC route runs
+# the pinned Codex `0.160.1` app-server as a remote action, so its exact bytes
+# must be a declared, checksummed Bazel input rather than a host install. This
+# is the same public `openai/codex` release artifact the established smoke
+# (`invocation 097f5629-4658-426f-863e-8151069681f5`, remote PASS) ran: the
+# release tarball is pinned by SHA-256, and the single binary it carries
+# (`codex-aarch64-unknown-linux-musl`, SHA-256
+# `fbbaec80443919f86dd63648a0b62759cf6f1d0e09310602fde96885e0bceb3e`) is
+# byte-identical to the smoke's own copy. Declaring a new pinned tool repository
+# is additive: it edits no existing acquisition closure. Declared last for the
+# same anonymous-repo renumbering reason as the catalog, world archives,
+# embedding runtime and Qwen fixtures above.
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "codex_cli",
+    build_file_content = """package(default_visibility = ["//visibility:public"])
+
+exports_files(["codex-aarch64-unknown-linux-musl"])
+""",
+    sha256 = "f54dc5852042445bf41da3aa31156f3cb02f52c5a1a04074de73dc5598f7e1f7",
+    urls = ["https://github.com/openai/codex/releases/download/rust-v0.160.1/codex-aarch64-unknown-linux-musl.tar.gz"],
+)

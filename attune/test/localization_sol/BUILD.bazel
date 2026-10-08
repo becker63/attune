@@ -1,0 +1,88 @@
+load("//platform/build:sol.bzl", "attune_sol_cohort", "attune_sol_route_check")
+load("//test/localization_runtime:localization_runtime.bzl", "RUNTIME_CAPPED_EXCLUSIONS")
+load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The one frozen prompt identity of the Sol arm (`VAL-SOL-001`). The bytes are
+# `prompt.txt`, extracted verbatim from the binding contract
+# `library/sol-medium.md` and frozen BEFORE any outcome; the identity below is
+# the SHA-256 of exactly those bytes.
+PROMPT_IDENTITY = "sha256:e3180318bbe660aad182da50ca296616e976e1f669ec4397fe6597cf2cd66d5c"
+
+# The dedicated remote execution platform of the standalone Sol scientific arm
+# (`VAL-SOL-002`, `library/sol-medium.md`). It is deliberately separate from the
+# ordinary `--config=remote` platform: the ChatGPT-plan SIWC route must reach the
+# plan backend through BuildBuddy's declared external-network contract, and the
+# SIWC access token is injected *only* as the BuildBuddy secret `ACCESS_TOKEN`.
+#
+# `Arch=arm64`/`OSFamily=Linux` match the host and the declared JDK 25 runtime, so
+# no amd64 worker and no emulation is involved. `recycle-runner false` keeps the
+# runner single-use, and the token never reaches argv, the CAS, declared inputs,
+# logs, BEP, receipts, Git or Nix — it is present only in the action environment
+# the platform injects. The container image is the same registry-resolved
+# immutable digest the ordinary remote profile pins.
+platform(
+    name = "remote",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:arm64",
+    ],
+    exec_properties = {
+        "Arch": "arm64",
+        "OSFamily": "Linux",
+        "container-image": "docker://gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
+        "network": "external",
+        "env-secrets": "ACCESS_TOKEN",
+        "recycle-runner": "false",
+        "EstimatedCPU": "0.5",
+        "EstimatedMemory": "512MB",
+    },
+)
+
+# The declared pre-flight of the arm's secret boundary: it reports whether the
+# platform's injected `ACCESS_TOKEN` secret is present and, when it is a
+# well-formed JWT, its expiry instant. It makes NO provider call and touches no
+# corpus, so it can run before any scored task without consuming plan usage.
+attune_sol_route_check(
+    name = "route_check",
+    tags = ["manual"],
+)
+
+# The surviving tasks of the frozen runtime-capped cohort, derived from the same
+# admitted manifest the deterministic arms and the JEV extension consume, so the
+# Sol population cannot drift from the cohort it extends: 22 groups / 84 worlds /
+# 88 tasks / 85 eligible.
+_EXCLUDED_GROUPS = [entry["group"] for entry in RUNTIME_CAPPED_EXCLUSIONS]
+
+_SURVIVING_TASKS = [
+    row
+    for row in LOCALIZATION_ANALYSIS
+    if len(row) > 3 and row[0] == "task" and row[2] not in _EXCLUDED_GROUPS
+]
+
+# One declared remote action per surviving task. Each action's closure is
+# exactly: the pinned Codex binary, the frozen prompt bytes, the public issue
+# projection and that task's clean world source. The reference patch, gold
+# paths, test patch, FAIL_TO_PASS/PASS_TO_PASS, interface oracle, catalog
+# metadata, Attune E/Q ranks, JEV fixtures/receipts and the report/metrics are
+# physically absent — the rule declares no such input.
+attune_sol_cohort(
+    name = "sol_tasks",
+    codex = "@codex_cli//:codex-aarch64-unknown-linux-musl",
+    issue_tree = "//test/localization:issue_text",
+    prompt = ":prompt.txt",
+    prompt_identity = PROMPT_IDENTITY,
+    tasks = _SURVIVING_TASKS,
+    world_repo = "@attune_worlds",
+)
+
+exports_files([
+    "prompt.txt",
+])

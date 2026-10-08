@@ -717,7 +717,7 @@ pub mod Attune.Policy {
     pub def componentNames(): List[String] =
         "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
             :: "frontends" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
-            :: "build-rules" :: "embedding" :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
+            :: "build-rules" :: "embedding" :: "sol" :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
 
     pub def componentOf(path: String): String =
         if (isExcludedPath(path) or isReferencePath(path) or isSecretPath(path)) "metadata"
@@ -737,6 +737,11 @@ pub mod Attune.Policy {
         else if (hasPrefix("platform/tools/grit/", path)) "grit-binding"
         else if (hasPrefix("platform/embedding/", path)) "embedding"
         else if (hasPrefix("platform/tools/embedding/", path)) "embedding"
+        // The standalone Sol localization arm's mechanical app-server driver is
+        // its own mechanical tool family, exactly as the embedding adapter is:
+        // every mechanical path must belong to a named mechanical component, or
+        // the component table would silently drop the measured lines.
+        else if (hasPrefix("platform/tools/sol/", path)) "sol"
         else if (hasPrefix("platform/build/", path)) "build-rules"
         else if (path == "platform/support/grit/cargo-bazel-lock.json" or path == "platform/support/grit/Cargo.lock") "inherited-locks"
         else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) "inherited"

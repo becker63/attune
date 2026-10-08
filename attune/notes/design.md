@@ -3193,3 +3193,41 @@ package is registered as `//test/localization_embedding:policy_files` in
 Reconciling the canonical totals block and the README snapshot with the
 integrated source remains the `integrated-counts-external-ascii-and-handoff`
 feature's declared work, not this leaf's.
+
+## Standalone Sol localization arm (2026-10-07)
+
+Owner-authorized stage-8 publish-first continuation leaf
+(`sol-medium-rbe-localization-and-immediate-report`; `VAL-SOL-001..004`,
+binding aggregate `library/sol-medium.md`). It adds one named mechanical
+component and one downstream fixture/stage package; it changes no semantic
+owner and no acquisition closure.
+
+| Component | Source | Language | Code | Class | Owner | One-sentence contract |
+| --- | --- | --- | --- | --- | --- | --- |
+| sol | `platform/tools/sol/SolLocalizeDriver.java` | Java | 740 | B | mechanical boundary | The standalone Sol arm's mechanical app-server driver: it materializes one clean world and its public issue from declared inputs, launches the pinned Codex 0.160.1 app-server as a fresh ephemeral child with `approvalPolicy never` and a read-only sandbox, speaks the documented JSON-RPC handshake for exactly one repository-inspection-only task, extracts the raw structured `{"paths":[...]}` result and writes one sanitized receipt; it holds no scientific policy, no label, no rank and no metric. |
+
+Every mechanical path must belong to a named mechanical component, or the
+component table would silently drop the measured lines;
+`//test/policy:accounting_law_test` asserts that partition. The Sol arm's
+mechanical tool family is therefore declared exactly as the embedding
+adapter's is, and `platform/build/sol.bzl` (the additive Starlark route and
+cohort expansion) stays inside the existing `build-rules` component. The new
+fixture/stage package `test/localization_sol/**` is inside the existing
+`tests` component with no new exemption, and both new packages are registered
+as `//platform/tools/sol:policy_files` and `//test/localization_sol:policy_files`
+in `//:policy_sources` so their source stays declared rather than silently
+unowned.
+
+Declared population at this leaf: `core` 204, `repository` 809, `theory` 629,
+`study` 2690, `policy` 566, `view` 522, `ascii` 87, `frontends` 372, `parquet`
+563, `boundary` 1040, `grit-binding` 185, `grit-rule` 684, `build-rules` 1451,
+`embedding` 246, `sol` 740, `inherited` 655, `inherited-locks` 21229, `tests`
+53899, `metadata` 591342. Class report: cognitive 6476, mechanical 4312,
+authored 10788, test 53899, support 21884; raw population 4249 readable files,
+code 677913, comment 4442, documentation 9937, blank 12321, derived physical
+704613 and nonblank 692292; `//test/policy:declared_source_policy_test` verdict
+`accept`. The live audit's pre-existing failure over the untracked
+`notes/repository-through-time/` data is unchanged and is not this leaf's work.
+Reconciling the canonical totals block and the README snapshot with the
+integrated source remains the `integrated-counts-external-ascii-and-handoff`
+feature's declared work, not this leaf's.
