@@ -4452,18 +4452,43 @@ No upstream producer action re-executed in either.
   byte-identical outputs from the Bazel action and remote cache with 0 executed
   Sol actions, so no successful turn was rerun and no plan usage was lost or
   duplicated.
+- **2026-10-08T03:12:50Z — Sol inspected arm cohort acquired and frozen
+  (PARTIAL).** The owner re-installed the refreshed SIWC secret; a fresh
+  (non-cached) `sol_inspected_route_check` with a new
+  `attune_measurement_freshness` token re-executed and reported
+  `token_expired: false` (expiry `2026-10-08T04:03:59Z`), so the token was
+  verified, not assumed. The distinct inspected arm's bounded cohort is now
+  acquired: 88/88 tasks, all `ok`, all `natural` stop, 0 timeouts, 0
+  zero-reads, 0 interrupts, 0 overshoot, `gpt-6.1-sol` × 88, at the frozen
+  `--jobs=8`. Invocation `8aac5682-…` executed **87 fresh remote turns**; the
+  ONE retained bring-up trace `pinojs__pino-121` was reused from the action
+  cache and never reacquired (byte-identical to `first-trace-2026-10-08/`).
+  Population re-verified at 22 groups / 84 worlds / 88 tasks. All sanitized
+  receipts were persisted **outside** mutable Bazel outputs before any scoring,
+  in `library/sol-inspected/cohort-2026-10-08/` with a 356-entry `SHA256SUMS`.
+  **No metric is scored in this checkpoint**; scoring and the original-vs-
+  inspected comparison are the successor feature.
 
 ---
 
 ## Sol inspected arm — harness bring-up and blocked first trace (PARTIAL, 2026-10-08)
 
+> **RESOLVED later the same day; retained as the pre-resolution record.** The
+> owner re-installed the refreshed SIWC secret, a fresh (non-cached) route check
+> confirmed it valid, and the distinct arm's **full bounded cohort is now
+> acquired and frozen**. The measured acquisition is in the next section
+> (**"Sol inspected arm — bounded cohort acquisition"**). The blocker narrative
+> below is history: it is not rewritten, and no inspected-arm metric is scored
+> there.
+
 This section records the first, **distinct** continuation of the standalone Sol
 arm (`library/sol-inspected.md`). It is deliberately separate from the published
 generation-16 result, which it does **not** rerun, rescore or rewrite.
 
-**State: PARTIAL.** The harness is implemented and locally validated; the real
-bring-up trace is blocked on a concrete auth blocker, so **no inspected-arm
-metric and no inspected-arm observation is claimed here**.
+**State: PARTIAL (at the time of writing).** The harness is implemented and
+locally validated; the real bring-up trace was blocked on a concrete auth
+blocker, so **no inspected-arm metric and no inspected-arm observation is
+claimed here**.
 
 ### What the original zero-tool result is, on evidence
 
@@ -4629,3 +4654,118 @@ that bring-up trace is retained and reviewed. None of these may use
 `--config=remote`: the dedicated platform is part of the action key, and an
 ordinary profile injects no secret, which would overwrite retained receipts with
 ~250 ms failures.
+
+## Sol inspected arm — bounded cohort acquisition (PARTIAL, 2026-10-08)
+
+Distinct-arm continuation (`library/sol-inspected.md`, assertion
+`VAL-INSPECT-002`; feature `sol-inspected-bounded-cohort-acquisition`). This
+section records the **acquired and frozen population only**. It scores nothing:
+the canonical metrics, the original-vs-inspected comparison and the full
+inspected report are the successor feature
+(`sol-inspected-canonical-comparison-and-publication`). No inspected-arm hit,
+recall or ranking figure is claimed here.
+
+**State: PARTIAL.** The bounded cohort is frozen — 88 of 88 tasks observed, all
+receipts persisted outside mutable Bazel outputs **before** any scoring. What
+remains is scoring and reporting, not acquisition.
+
+### The blocker is resolved, on evidence
+
+The owner re-installed the refreshed SIWC token into the BuildBuddy secret. The
+dedicated pre-flight was **re-run with a new non-secret freshness token**
+(`sol-inspected-route-3-20261008-arm`) so the action cache could not replay the
+old verdict, and it re-executed (not cached) reporting the currently injected
+secret:
+
+```json
+{ "token_present": true, "token_expiry_unix": 1791432239,
+  "now_unix": 1791428782, "token_expired": false }
+```
+
+`1791432239` is `2026-10-08T04:03:59Z`, matching the owner's handoff. No token
+value was read, hashed or printed — presence and expiry only. The check was
+therefore a real verification, never an assumed expiry.
+
+### What was acquired
+
+Invocation `8aac5682-e10a-4545-809b-009edeb44455`, 2026-10-08T03:06:30Z →
+03:12:50Z, on the arm's own dedicated platform
+`//test/localization_sol_inspected:remote`, at the frozen **`--jobs=8`** (eight
+concurrent tasks initially; not raised). The build record is
+`187 processes: 52 action cache hit, 12 remote cache hit, 88 internal, 87
+remote` — the **87 remote executions are exactly the missing observations**.
+
+The bring-up gate had already produced the ONE real trace (`pinojs__pino-121`);
+per the corrected recipe that trace and the corpus-free fixture were **not
+reacquired**. The first trace was served from the action cache: its receipt
+mtime is unchanged (`2026-10-07 22:54:29` local) and the copy frozen in
+`library/sol-inspected/cohort-2026-10-08/` is **byte-identical** to the retained
+`library/sol-inspected/first-trace-2026-10-08/first_task.*`. No pre-flight model
+turn was re-run, and no successful observation was resampled.
+
+Frozen before any outcome (unchanged): the inspect-to-localize prompt
+`sha256:4974812a1f476c3b36357ffdc64b5ca47dd831407aa9afbaf4e027a5cb5b3539`;
+the client-mechanical bounds 300 s / 32 tool rounds / 256,000 observed
+cumulative tokens. `gpt-6.1-sol` medium only — no alternate model, no effort
+sweep. The arm added **no** dataset, Grit, extraction, embedding, JEV,
+structural-census or assistance work, and its declared closures keep the patch,
+gold, test patch, `F2P`/`P2P`, interface oracle, catalog metadata, Attune E/Q
+ranks, JEV fixtures and report/metrics physically out of every input.
+
+### Measured outcome census (all 88 tasks)
+
+| field | value |
+| --- | --- |
+| `result_status` | `ok` × 88 |
+| `stop_reason` | `natural` × 88 |
+| timed out | 0 |
+| `interrupt_sent` | 0 |
+| overshoot (tokens / tool rounds) | 0 / 0 |
+| zero-read (`nonempty_read_count == 0`) | 0 |
+| `resolved_model` | `gpt-6.1-sol` × 88 |
+| answers with no path | 0 |
+
+Every task read at least one nonempty implementation source; no bound was
+reached, so nothing was interrupted and no overshoot was retained. These are
+client-mechanical stops only and are never claimed as provider hard limits.
+
+Aggregate over the 88 tasks (`cohort-statistics.tsv`, task micro):
+
+| measure | min | p50 | mean | max |
+| --- | --- | --- | --- | --- |
+| tool rounds | 3 | 6.0 | 5.8 | 12 |
+| reads (all nonempty) | 3 | 11.0 | 11.5 | 25 |
+| read bytes | 7,555 | 95,459.5 | 150,546.8 | 2,098,161 |
+| first nonempty read (ms) | 3,931 | 5,312.5 | 5,509.0 | 8,995 |
+| returned paths | 1 | 2.5 | 3.2 | 10 |
+| input tokens | 46,013 | 90,069.5 | 90,733.9 | 176,015 |
+| cached input tokens | 29,952 | 69,312.0 | 70,369.5 | 144,384 |
+| output tokens | 179 | 503.5 | 512.5 | 1,021 |
+| turn wall (ms) | 15,320 | 28,942.0 | 29,343.9 | 52,453 |
+
+Totals: 8,029,689 observed tokens, 13,248,118 read bytes, 2,582,262 ms turn
+wall. 63 answers returned three or fewer paths; 4 returned the full ten, so the
+"fewer when warranted, no padding" rule is visibly exercised rather than
+uniformly saturating at the cap. First-nonempty-read timing is reported only
+because every task has a real nonempty read; the receipts carry it as an
+observed millisecond offset, not an inferred relevance instant.
+
+Population identity re-verified from the receipt set: **22 owner/repo groups /
+84 distinct worlds / 88 tasks** — the same frozen runtime-capped cohort the
+deterministic arms and the original Sol arm consume, with the same dev/cal/final
+15/4 splits. The acquisition is a strict sibling: same population and inputs,
+enforced read-only inspection as its only new ingredient.
+
+### Frozen evidence
+
+`library/sol-inspected/cohort-2026-10-08/` holds the 88 × 4 sanitized
+observations (`*.receipt.json`, `*.reads.tsv`, `*.predictions.tsv`,
+`*.world.tsv`), `cohort-statistics.tsv`, the acquisition log, the build event
+stream and a 356-entry `SHA256SUMS`, all taken **outside** mutable Bazel outputs
+before scoring. The fixture-first bring-up evidence and the original `gen16`
+snapshot still verify unchanged at `library/sol-inspected/`.
+
+**Next, and not claimed here:** score these persisted receipts through the ONE
+canonical `Attune.Study.Metrics` (Hit@1/3/5/10, Recall@1/3/5/10, MRR@10,
+FileAcc@1/3/5/10/32 over task micro / group repo macro / dev·cal·final 15/4),
+and publish original-vs-inspected, regardless of score.
