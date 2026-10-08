@@ -517,6 +517,28 @@ and the honest gaps are reported in the root `LOCALIZATION_REPORT.md`; the
 post-hoc live JEV extension remains pending and not run, with its availability
 not established.
 
+## Scoped SIWC renewal
+
+The ChatGPT-plan SIWC access token that the Sol arms and the downstream
+ReviewBench sessions use is renewed automatically, demand-driven and serialized,
+before any remote live batch. The only remotely updated artifact is the
+BuildBuddy org secret `ACCESS_TOKEN`; the rotating refresh token stays host-local
+private state. The host-side sequence is declared in `services.yaml` as
+`siwc_probe` (pinned official CLI plus the names-only `ORG_ADMIN` probe),
+`siwc_refresh` (the guarded helper: single-flight advisory lock, unique-temp
+atomic rotation), `siwc_update` (the official `bb secrets update ACCESS_TOKEN`
+upload) and `siwc_route_check` (a fresh, provider-free dedicated-platform check
+that the injected token is present and unexpired). The secret-operations
+credential is the dedicated org-admin entry `BUILDBUDDY_SECRET_ADMIN_API_KEY`,
+read environment-first or as a single ignored-checkout-`.env` field and supplied
+only to the CLI's child environment; the normal cache/RBE `BUILDBUDDY_API_KEY`
+is never used for secret operations. `siwc_offline_tests` runs the
+credential-selection and helper-discipline laws offline, with no network and no
+real secret. The pinned official CLI requires a `--` separator before the
+subcommand's `--file` flag. Nothing is promised about reboot or revocation
+survival, or about a 30-day token: SIWC access tokens live about an hour, and
+after a reboot or revocation only the owner login can restore them.
+
 ## Deferred
 
 This bootstrap establishes the build spine, the shared envelope, the canonical

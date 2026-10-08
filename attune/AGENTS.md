@@ -32,7 +32,17 @@ repository-side policy an agent must follow while changing this tree.
   passed in argv, admitted as a Bazel input, or written into the CAS, fixtures,
   receipts or commits; no secret headers; no unrelated environment key or other
   entry is read. The BuildBuddy helper and the Q helper stay separate, and
-  agents and tests still never inspect the file.
+  agents and tests still never inspect the file. A third narrow internal reader
+  is owner-authorized (2026-10-08, scoped SIWC renewal): the mission-local
+  renewal uploader may read exactly the single `BUILDBUDDY_SECRET_ADMIN_API_KEY`
+  entry — the environment variable of that name first, else that one entry —
+  and supplies it only to the official pinned BuildBuddy CLI's child
+  environment, under the CLI's native variable name, for the one
+  `ACCESS_TOKEN` org-secret update; it is never dumped, hashed, printed, passed
+  in argv, admitted as a Bazel input, or written into the CAS, fixtures,
+  receipts or commits, the normal cache/RBE `BUILDBUDDY_API_KEY` is never read
+  or used for secret operations, and agents and tests still never inspect the
+  file.
 - No application provider, MCP or live model call, ever — with only the narrow
   owner-authorized exceptions named in this bullet. The
   bootstrap-era sentence that this workspace carries no scientific data is
