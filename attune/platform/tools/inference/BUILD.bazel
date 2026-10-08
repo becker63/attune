@@ -1,0 +1,50 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//platform/build:native.bzl", "java_jar_manifest")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The ReviewBench native OpenRouter Decisions boundary (`VAL-REVIEW-002`, owner
+# decision 2026-10-08). It is the minimal mechanical substrate the owner directed
+# in place of the MCP-stdio `jev-mcp` route: the SAME
+# `https://openrouter.ai/api/alpha/decisions` endpoint and raw Decisions
+# `state`/`questions` -> `answers` shape, the credential read only inside the
+# package from the process environment and redacted from every failure envelope,
+# and a bounded retry of transient statuses only. It carries no scientific policy:
+# the Flix owner builds the payload, applies the fail-closed provider/snapshot
+# gate and keeps the exact memo. The mechanical runner writes the sanitized
+# observed-field manifest a live acquisition produces; ordinary `bazel test //...`
+# never runs it and never contacts a provider.
+java_library(
+    name = "attune_inference",
+    srcs = [
+        "AttuneDecisions.java",
+        "OpenRouterDecisions.java",
+        "ReviewBenchJev.java",
+    ],
+    javacopts = ["--release=21"],
+    runtime_deps = ["@attune_maven//:org_slf4j_slf4j_nop"],
+    deps = [
+        "@attune_maven//:com_fasterxml_jackson_core_jackson_core",
+        "@attune_maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@attune_maven//:dev_langchain4j_langchain4j_core",
+        "@attune_maven//:dev_langchain4j_langchain4j_http_client",
+        "@attune_maven//:dev_langchain4j_langchain4j_http_client_jdk",
+    ],
+)
+
+# The declared runtime class path of the mechanical native JEV runner: the
+# transitive runtime jars of the boundary, emitted as a runfiles manifest so the
+# host acquisition launches `attune.inference.ReviewBenchJev` with exactly the
+# declared dependencies and no resolver. It compiles no application main and runs
+# no provider; the credential still reaches the runner only through the child
+# process environment.
+java_jar_manifest(
+    name = "jev_runner_jars",
+    deps = [":attune_inference"],
+)

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Mechanical launcher for the native Flix test targets.
@@ -214,6 +215,52 @@ public final class NativeLaunch {
         ProcessBuilder builder = process(command, work);
         builder.inheritIO();
         return builder.start().waitFor();
+    }
+
+    /// Launch the declared stage command, enforcing the declared out-of-process
+    /// deadline when the stage declares one. Without a declared deadline the
+    /// ordinary unbounded wait is used and nothing about the run changes.
+    private static int launchStage(List<String> command, Path work, Path out, String stage) throws Exception {
+        long seconds = 0;
+        try {
+            seconds = Long.parseLong(System.getProperty("attune.stage_deadline", "0").trim());
+        } catch (NumberFormatException ignored) {
+            seconds = 0;
+        }
+        return seconds > 0 ? launchBounded(command, work, seconds, out, stage) : launch(command, work);
+    }
+
+    /// Launch the declared stage command under a declared out-of-process
+    /// wall-clock deadline.
+    ///
+    /// <p>The deadline is enforced by killing the child process tree, which is
+    /// the only deadline mechanism that exists here: no file-based interrupt is
+    /// created and no in-process cancellation is claimed. The law never ran, so
+    /// the stage writes no scientific record; the launcher writes one mechanical
+    /// `deadline.tsv` record naming the observed fact, and the stage is then a
+    /// partial world the study law classifies UNKNOWN. A released worker's
+    /// elapsed work is retained in that record rather than assumed.
+    private static int launchBounded(List<String> command, Path work, long seconds, Path out, String stage)
+            throws Exception {
+        ProcessBuilder builder = process(command, work);
+        builder.inheritIO();
+        Process process = builder.start();
+        long started = System.nanoTime();
+        boolean finished = process.waitFor(seconds, TimeUnit.SECONDS);
+        long elapsedMillis = (System.nanoTime() - started) / 1_000_000L;
+        if (finished) {
+            return process.exitValue();
+        }
+        process.descendants().forEach(ProcessHandle::destroyForcibly);
+        process.destroyForcibly();
+        process.waitFor();
+        List<String> record = new ArrayList<>();
+        record.add("deadline\t" + stage + "\tdeadline-exceeded\tkilled\t"
+                + Long.toString(seconds) + "\t" + Long.toString(elapsedMillis));
+        Files.write(out.resolve("deadline.tsv"), record, StandardCharsets.UTF_8);
+        System.err.println("the declared stage exceeded its out-of-process deadline of " + seconds
+                + "s and its worker was killed; the world stays a partial UNKNOWN");
+        return 0;
     }
 
     /// The declared isolation mode this run uses.
@@ -519,7 +566,7 @@ public final class NativeLaunch {
         for (String source : tester) {
             command.add(Path.of(source).toAbsolutePath().toString());
         }
-        int status = launch(command, work);
+        int status = launchStage(command, work, out, stage);
         if (status != 0) {
             System.err.println("the pinned native Tester failed over the declared stage sources: exit " + status);
             return status;

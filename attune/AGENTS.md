@@ -107,7 +107,36 @@ repository-side policy an agent must follow while changing this tree.
   ranking, metric and replay consumer stays provider-free through the one
   canonical path. Ordinary `bazel test //...` never runs corpus inference or
   providers, and the original four measured arms keep the absolute ban
-  unchanged.
+  unchanged. A fourth narrow owner-authorized exception (2026-10-08, ReviewBench
+  native JEV parity) is the ReviewBench shared-context JEV memo: it runs through
+  a NATIVE minimal Java/LangChain4j HTTP boundary under
+  `platform/tools/inference/` (mirroring the frozen sibling's read-only
+  `AttuneDecision`/`OpenRouter` reference) against the SAME
+  `https://openrouter.ai/api/alpha/decisions` endpoint and raw Decisions
+  `state`/`questions` -> `answers` shape — NOT the MCP-stdio `jev-mcp` route (no
+  MCP child process is spawned and no MCP tool is invoked for ReviewBench), NOT
+  a hosted chat completion, and NOT the recorded-fake `test/seam` chat seam
+  (tests only, never a live result). The original requested alias
+  `typesafe/jev-1.13` is preserved verbatim and the classification FAILS CLOSED
+  if the observed provider echo or resolved snapshot differs from the
+  localization-observed `TypeSafe` / `typesafe/jev-1.13-20260917`; explicit
+  dated-snapshot request support is UNVERIFIED, so no parity guarantee and no
+  identical-stochastic-output claim is made, and no model is substituted. Its
+  only credential source is a NARROW INTERNAL resolution of ONLY the configured
+  `mcpServers.jev` credential env binding in `/home/becker/.factory/mcp.json`
+  that feeds the localization JEV launcher's `OPENROUTER_API_KEY`, transferred
+  opaquely in memory (child process environment) to the native Java process for
+  the SAME endpoint only; `mcp.json` stays config metadata to agents (never
+  dumped/printed/copied/hashed, no unrelated key or `mcpServers` entry read), the
+  value never enters argv, logs, Bazel inputs, the CAS, receipts or commits, and
+  an ambiguous or unavailable binding resolution ESCALATES rather than guessing
+  or substituting another key. The checkout-root `.env` `OPENROUTER_API_KEY`
+  (Q), `BUILDBUDDY_API_KEY` (cache/RBE) and
+  `BUILDBUDDY_SECRET_ADMIN_API_KEY` (SIWC renewal) are NOT repurposed. Flix owns
+  the prompt/payload construction, the classification and the exact memo; the
+  JEV contexts carry no finding and no gold; ordinary `bazel test //...` never
+  runs a provider; the localization MCP history and all previously materialized
+  ReviewBench facts/Qwen fixtures stay read-only and are never reacquired.
 - One Bazel owner at a time. The output base is outside the checkout
   (`services.yaml`); never run `bazel clean` or touch global caches.
 - JVM dependencies are pinned: `MODULE.bazel` declares the exact Maven

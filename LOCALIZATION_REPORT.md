@@ -5533,3 +5533,127 @@ never zero-by-assumption.
   shared-context/deadline policy are published. No review, no judge session and
   no provider call ran; the paired economic tables remain the later feature's
   result.
+
+## ReviewBench shared-context materialization (2026-10-08)
+
+This is the materialization checkpoint of the same approved first
+paired-economics study (`VAL-REVIEW-001`, `VAL-REVIEW-002`): the shared context
+the two review arms will consume actually exists. Still no review, no judge
+session and no Sol arm ran; the paired economic tables and graphs remain the
+later reporting feature's result. The frozen 24-task cohort is unchanged: the
+same 10 admitted / 14 attrition, and both arms consume the same admitted subset
+with no replacement and no 48-success requirement.
+
+### Deterministic shared context (actual Grit extraction)
+
+Each admitted task's exact base and head world is extracted once from its real
+declared clean-source bytes, bounded to that world's changed first-party source.
+The bounded structural extraction ran over all 20 worlds through the pinned Grit
+engine; the structural scope, the exclusion vocabulary, the extraction status
+classification and the deadline policy are the frozen ones, and the context
+record itself makes no provider call.
+
+| Materialized | Value |
+| --- | --- |
+| Exact worlds | 20 (one base + one head per admitted task) |
+| Worlds complete | 19 |
+| Worlds UNKNOWN (partial) | 1 — `haoling_diary-notebook-blog-transformer-24` base (empty changed-source population) |
+| Worlds structurally unknown (over-cap) | 2 — `ls1intum/Artemis-12479` base and head, over-cap file outside Grit |
+| Task contexts | 10 |
+| Context provider calls | 0 |
+| Context world downloads / extractions | 0 / 0 (the aggregate stage is a provider-free replay) |
+| Deadline | 20 s extraction unit / 120 s world, existing out-of-process enforcement |
+| Partial world | classified UNKNOWN, never complete; no in-process cancellation claimed |
+
+`ls1intum/Artemis-12479` stays `fast=false`: its one over-cap file (193,463 B
+head / 189,886 B base) remains outside Grit and unknown structurally, while its
+full agent-visible bytes stay intact. No world's agent bytes are truncated.
+
+### Hosted-Qwen assisted context (actual provider acquisition)
+
+The bounded hosted-Qwen branch acquired immutable per-input vector fixtures once,
+under the existing recipe and the single `openrouter` / `qwen/qwen3-embedding-8b`
+route; no substitute model and no second provider. The acquisition is preserved
+and never repeated; the ranking consumers replay the admitted fixtures only.
+
+| Measured | Value |
+| --- | --- |
+| Provider / resolved model | `openrouter` / `Qwen/Qwen3-Embedding-8B` |
+| Requests | 5 (batches 32 / 32 / 32 / 31 / 12) |
+| Failed requests | 0 |
+| Unique inputs / logical rows | 139 / 139 |
+| Truncated inputs (32,768 code units) | 4 |
+| Unmeasured inputs | 0 |
+| Prompt / total tokens | 176,754 / 176,754 |
+| Cost | $0.00267825 |
+| Provider latency | 32,513 ms |
+| Batch boundary | 32 inputs / 240,000 bytes, sequential |
+| Materialized rank rows | 129 |
+
+### Native JEV public context (actual provider acquisition)
+
+The JEV memo ran through the owner-approved NATIVE Java OpenRouter Decisions
+boundary under `platform/tools/inference/` — the same
+`https://openrouter.ai/api/alpha/decisions` endpoint and raw Decisions
+`state`/`questions` → `answers` shape as the historical localization route, and
+NOT the MCP-stdio `jev-mcp` route (no MCP child process and no MCP tool was
+invoked) and NOT a hosted chat completion. The original requested alias
+`typesafe/jev-1.13` is preserved verbatim; the classification fails closed if the
+observed provider echo or resolved snapshot differs from the localization-observed
+identity, so a mismatch is Failed evidence rather than a silently accepted
+decision. Its only credential source is a narrow internal resolution of the one
+configured `mcpServers.jev` credential binding, transferred opaquely in memory
+(child process environment) for the same endpoint only; the value never entered
+argv, a log, a Bazel input, the CAS, a receipt or the commit. Flix owns the
+payload/prompt construction, the classification and the exact memo; Java owns the
+HTTP mechanics only. The context stage re-reads the admitted sanitized
+observations and makes no provider call, so a replay is provider-free.
+
+| Measured | Value |
+| --- | --- |
+| Route | native Java OpenRouter Decisions, no MCP |
+| Endpoint | `https://openrouter.ai/api/alpha/decisions` |
+| Requested model (verbatim) | `typesafe/jev-1.13` |
+| Provider echo | `TypeSafe` |
+| Resolved snapshot | `typesafe/jev-1.13-20260917` |
+| Provider requests / logical decisions | 10 / 129 |
+| Retries | 0 |
+| Wall time | 3,282 ms |
+| Input / output tokens | 601,747 / 143,007 |
+| Cost | $0.02527337 |
+| Outcomes | 87 Relevant / 13 NotRelevant / 29 Unknown / 0 failed |
+| JEV context provider calls | 0 (provider-free replay) |
+
+Every logical decision carries the exact declared memo identity, the
+localization-observed provider/snapshot and its sanitized usage, attempt and
+retry evidence. The JEV contexts carry no finding and no gold field. Explicit
+dated-snapshot request support is UNVERIFIED, so no parity guarantee and no
+identical-stochastic-output claim is made, and no model was substituted.
+
+### Costs (this checkpoint, actuals only)
+
+| Line | Actual |
+| --- | --- |
+| Hosted-Qwen tokens + requests | $0.00267825, 5 requests / 176,754 tokens |
+| JEV tokens + requests | $0.02527337, 10 requests / 744,754 tokens |
+| Grit CPU work | host-local structural extraction over 20 worlds (no RBE) |
+| Sol / judge usage | Unavailable — the review arms and judge have not run |
+| RBE | Unavailable — no billed remote action in this checkpoint |
+
+### Commands (see `services.yaml`)
+
+`reviewbench_context_worlds`, `reviewbench_context_tasks`,
+`reviewbench_context_qwen`, `reviewbench_context_jev_requests` and
+`reviewbench_context_jev_context` are `manual` producer actions (`bazel build`,
+read under `bazel-bin/test/reviewbench_context/`), so the ordinary
+`bazel test //...` gate never fetches a world archive, runs Grit or calls a
+provider. `reviewbench_context_law` is corpus-free and part of `//...`;
+`reviewbench_context_audit` is `manual` and re-reads the real materialized trees.
+
+### Update history
+
+- ReviewBench shared-context materialization (this section): the deterministic
+  per-world facts and per-task contexts, the bounded hosted-Qwen assisted
+  context and the native-route JEV public context are actually materialized,
+  preserved and provider-free on replay. No review and no judge session ran; the
+  paired economic tables remain the later feature's result.

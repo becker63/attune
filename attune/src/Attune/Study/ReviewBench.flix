@@ -39,6 +39,7 @@ pub mod Attune.Study.ReviewBench {
 
     use Attune.Study
     use Attune.Study.Qwen
+    use Attune.Theory
     use Attune.Repository.Grit
 
     // -------------------------------------------------------- origin and pin
@@ -730,4 +731,586 @@ pub mod Attune.Study.ReviewBench {
             List#{"context", "released_worker", releasedWorkerDisposition()}
         }
     }
+
+    // ------------------------------------------- structural scope and extraction
+
+    /// The declared frozen structural scope of the shared context. It is stated
+    /// once and never widened after an outcome: the structural extraction of one
+    /// exact world reads that world's first-party changed source, so the shared
+    /// facts are about the code a review task actually touches rather than a
+    /// whole-repository census.
+    pub def structuralScopeIdentity(): String =
+        "reviewbench-changed-first-party-source-per-exact-world-v1"
+
+    /// The declared status of one exact world's structural extraction. A partial
+    /// world is `PartialUnknown`, never complete: an extraction that did not
+    /// finish, or a world with no admitted structural source, reports UNKNOWN
+    /// rather than an empty complete fact set.
+    pub enum ExtractionStatus with Eq, Order, ToString {
+        case Complete
+        case PartialUnknown
+    }
+
+    pub def extractionStatusName(status: ExtractionStatus): String = match status {
+        case ExtractionStatus.Complete       => "complete"
+        case ExtractionStatus.PartialUnknown => "UNKNOWN"
+    }
+
+    /// The declared structural exclusion vocabulary of one measured file. Every
+    /// exclusion is named, so an excluded file is never silently dropped and its
+    /// agent-visible bytes stay intact.
+    pub enum StructuralExclusion with Eq, Order, ToString {
+        case Unchanged
+        case NonFirstParty
+        case OverCap
+        case Unsupported
+    }
+
+    pub def structuralExclusionName(exclusion: StructuralExclusion): String = match exclusion {
+        case StructuralExclusion.Unchanged   => "unchanged"
+        case StructuralExclusion.NonFirstParty => "generated-vendored-or-minified"
+        case StructuralExclusion.OverCap     => "over-128KiB-fast-structural-cap"
+        case StructuralExclusion.Unsupported => "unsupported-language"
+    }
+
+    /// The declared structural disposition of one measured source file: admitted
+    /// to the world's structural extraction, or excluded with one named reason.
+    /// The precedence is fixed — change, first-party classification, cap, then
+    /// language — so one file can never be both admitted and excluded.
+    pub type alias StructuralDisposition = {
+        path     = String,
+        bytes    = Int64,
+        admitted = Bool,
+        reason   = String
+    }
+
+    pub def structuralDisposition(file: SourceFile): StructuralDisposition = {
+        let excluded = reason ->
+            { path = file#path, bytes = file#bytes, admitted = false, reason = reason };
+        if (not file#changed) excluded(structuralExclusionName(StructuralExclusion.Unchanged))
+        else if (not isFirstPartySource(file)) excluded(structuralExclusionName(StructuralExclusion.NonFirstParty))
+        else if (isOverCap(file)) excluded(structuralExclusionName(StructuralExclusion.OverCap))
+        else if (not isSupported(file)) excluded(structuralExclusionName(StructuralExclusion.Unsupported))
+        else { path = file#path, bytes = file#bytes, admitted = true, reason = "" }
+    }
+
+    /// Whether one file is first-party source: changed and not generated,
+    /// vendored or minified. The structural scope never extracts a build product.
+    pub def isFirstPartySource(file: SourceFile): Bool =
+        file#changed and not isGenerated(file) and not isVendored(file) and not isMinified(file)
+
+    /// One exact world's declared structural accounting: the measured file
+    /// population and its admitted/excluded decomposition. Every count is a
+    /// reduction over the measured records, so the accounting is the export's own
+    /// bytes rather than a declaration restated.
+    pub type alias StructuralAccounting = {
+        measuredFiles      = Int32,
+        measuredBytes      = Int64,
+        admittedFiles      = Int32,
+        admittedBytes      = Int64,
+        overCapFiles       = Int32,
+        overCapBytes       = Int64,
+        unsupportedFiles   = Int32,
+        nonFirstPartyFiles = Int32,
+        unchangedFiles     = Int32
+    }
+
+    pub def structuralAccounting(files: List[SourceFile]): StructuralAccounting = {
+        let admitted = List.filter(file -> structuralDisposition(file)#admitted, files);
+        let overCap = List.filter(file -> structuralDisposition(file)#reason == structuralExclusionName(StructuralExclusion.OverCap), files);
+        let unsupported = List.filter(file -> structuralDisposition(file)#reason == structuralExclusionName(StructuralExclusion.Unsupported), files);
+        let nonFirstParty = List.filter(file -> structuralDisposition(file)#reason == structuralExclusionName(StructuralExclusion.NonFirstParty), files);
+        let unchanged = List.filter(file -> structuralDisposition(file)#reason == structuralExclusionName(StructuralExclusion.Unchanged), files);
+        {
+            measuredFiles = List.length(files),
+            measuredBytes = sumBytes(files),
+            admittedFiles = List.length(admitted),
+            admittedBytes = sumBytes(admitted),
+            overCapFiles = List.length(overCap),
+            overCapBytes = sumBytes(overCap),
+            unsupportedFiles = List.length(unsupported),
+            nonFirstPartyFiles = List.length(nonFirstParty),
+            unchangedFiles = List.length(unchanged)
+        }
+    }
+
+    /// The declared paths of one world's admitted structural source, in the
+    /// measured order. It is exactly the population the extraction reads.
+    pub def admittedPaths(files: List[SourceFile]): List[String] =
+        List.map(file -> file#path, List.filter(file -> structuralDisposition(file)#admitted, files))
+
+    /// Whether one world carries a structurally unknown file: changed first-party
+    /// source above the fast-structural cap is skipped by Grit and stays outside
+    /// the fast structural cohort, while the agent's bytes are never truncated.
+    pub def structurallyUnknown(accounting: StructuralAccounting): Bool =
+        accounting#overCapFiles > 0
+
+    /// The declared status of one world's structural extraction. Complete only
+    /// when the declared structural set was actually extracted; a world with no
+    /// admitted structural source, or an extraction that did not complete, is a
+    /// partial world and is classified UNKNOWN.
+    pub def extractionStatus(admittedFiles: Int32, extracted: Bool): ExtractionStatus =
+        if (extracted and admittedFiles > 0) ExtractionStatus.Complete else ExtractionStatus.PartialUnknown
+
+    /// The declared extraction status of one measured population from its own
+    /// admitted bytes: a world with no admitted structural bytes is UNKNOWN even
+    /// when the extractor reported success, because an empty fact set is not a
+    /// completed structural extraction.
+    pub def accountingExtractionStatus(accounting: StructuralAccounting, extracted: Bool): ExtractionStatus =
+        extractionStatus(accounting#admittedFiles, extracted)
+
+    // ------------------------------------------------------ bounded Qwen batches
+
+    /// One declared hosted-Qwen input: the declared logical key, the side and the
+    /// exact byte count of the input text. The declared key is the exact input
+    /// bytes' identity — the same three-key logical identity the existing hosted
+    /// fixture memo reuses, so a provider-free replay matches on bytes, not on a
+    /// row's position.
+    pub type alias QwenInput = {
+        key   = String,
+        side  = String,
+        bytes = Int64
+    }
+
+    /// The declared fixture identity of one hosted-Qwen input: the provider, the
+    /// resolved model, the frozen recipe and the exact input identity. A provider,
+    /// model, recipe or input change is a different identity, never a reuse.
+    pub def qwenInputIdentity(input: QwenInput): String =
+        Qwen.provider() + "|" + Qwen.resolvedModel() + "|" + Qwen.recipeIdentity() + "|" + input#key
+
+    /// One declared hosted-Qwen batch: a contiguous sequential slice of the
+    /// declared input order, with the inputs it carried and the exact bytes it
+    /// carried.
+    pub type alias QwenBatch = {
+        index  = Int32,
+        inputs = List[QwenInput],
+        bytes  = Int64
+    }
+
+    /// The declared sequential batching of one input population: consecutive
+    /// inputs accumulate while the batch holds at most the declared input count
+    /// and at most the declared byte cap. A single input larger than the byte cap
+    /// forms its own batch rather than being split, truncated or dropped, because
+    /// one fixture exists per logical input.
+    pub def qwenBatches(inputs: List[QwenInput]): List[QwenBatch] =
+        qwenBatchStep(1, inputs, Nil)
+
+    def qwenBatchStep(index: Int32, inputs: List[QwenInput], acc: List[QwenBatch]): List[QwenBatch] = match inputs {
+        case Nil => List.reverse(acc)
+        case _   =>
+            let taken = takeBatch(inputs, 0, 0i64, Nil);
+            qwenBatchStep(index + 1, List.drop(List.length(taken), inputs),
+                { index = index, inputs = taken, bytes = sumInputBytes(taken) } :: acc)
+    }
+
+    /// Take the longest declared prefix that fits both frozen caps. A single
+    /// input is always taken, whatever its size, so no input is lost and no input
+    /// is split across batches.
+    def takeBatch(inputs: List[QwenInput], count: Int32, bytes: Int64, acc: List[QwenInput]): List[QwenInput] = match inputs {
+        case Nil => List.reverse(acc)
+        case input :: rest =>
+            if (count > 0 and (count >= qwenBatchInputs() or bytes + input#bytes > qwenBatchBytes()))
+                List.reverse(acc)
+            else takeBatch(rest, count + 1, bytes + input#bytes, input :: acc)
+    }
+
+    def sumInputBytes(inputs: List[QwenInput]): Int64 =
+        List.foldLeft((sum, input) -> sum + input#bytes, 0i64, inputs)
+
+    // ------------------------------------------------------- bounded JEV context
+
+    /// The declared public field vocabulary of the JEV control condition: the
+    /// task's public issue, the candidate path, its rank and score and its anchor
+    /// — and nothing else. No structural field, no F/D field, no finding and no
+    /// gold can enter this condition.
+    pub def jevControlFields(): List[String] =
+        "issue" :: "path" :: "rank" :: "score" :: "anchor" :: Nil
+
+    /// The declared public field vocabulary of the JEV structural condition: the
+    /// exact control base plus the already-materialized candidate relations and
+    /// source-witness descriptions. No new analysis is performed for it.
+    pub def jevStructureFields(): List[String] =
+        jevControlFields() ::: ("relation" :: "witness" :: Nil)
+
+    /// The declared names that may never appear in a JEV context payload: any
+    /// finding and any gold or evaluator field. The check names every violation,
+    /// so a leak is a reported finding rather than a silent pass.
+    pub def forbiddenContextFields(): List[String] =
+        "finding" :: "findings" :: "gold" :: "patch" :: "test_patch"
+            :: "fail_to_pass" :: "pass_to_pass" :: "reference" :: Nil
+
+    /// Every forbidden field name present in one context payload, lower-cased for
+    /// the comparison. An empty list is the declared public-context contract.
+    pub def contextLeaks(fields: List[(String, String)]): List[String] =
+        List.filter(name -> List.memberOf(String.toLowerCase(name), forbiddenContextFields()),
+            List.map(field -> match field { case (name, _) => name }, fields))
+
+    /// One declared JEV context: the resolved model, the frozen prompt identity,
+    /// the condition, the task, the candidate and the exact public payload.
+    pub type alias JevContext = {
+        model     = String,
+        prompt    = String,
+        condition = String,
+        task      = String,
+        candidate = String,
+        fields    = List[(String, String)]
+    }
+
+    /// The declared public payload of one JEV context as canonical `key\tvalue`
+    /// lines, in declared field order. It carries public evidence only.
+    pub def renderJevPayload(fields: List[(String, String)]): String =
+        List.join("\n", List.map(field -> match field { case (name, value) => name + "\t" + value }, fields))
+
+    /// The declared memo identity of one JEV context: the exact previous memo key
+    /// components plus the exact payload hash. Reuse happens only when every
+    /// component is byte-identical, so a condition, payload or prompt change is a
+    /// different context and a successful exact decision is never requested twice.
+    pub def jevContextMemoKey(context: JevContext, payloadHash: String): String =
+        jevMemoKey(context#model, context#prompt, context#condition, context#task, context#candidate, payloadHash)
+
+    // -------------------------------------------------------------- reuse proof
+
+    /// The declared mechanism that actually served a reused artifact. A native
+    /// in-memory memo is NOT persistent across actions, so it is named separately
+    /// from the durable mechanisms and is never counted as cross-action reuse.
+    pub enum ReuseMechanism with Eq, Order, ToString {
+        case NativeMemo
+        case ActionCache
+        case RemoteDedup
+        case Cas
+    }
+
+    pub def reuseMechanismName(mechanism: ReuseMechanism): String = match mechanism {
+        case ReuseMechanism.NativeMemo  => "native-in-memory-memo"
+        case ReuseMechanism.ActionCache => "action-cache"
+        case ReuseMechanism.RemoteDedup => "remote-execution-dedup"
+        case ReuseMechanism.Cas         => "content-addressed-store"
+    }
+
+    /// Whether one mechanism is genuinely persistent across actions. Only a
+    /// durable mechanism may be counted as a source/facts reuse.
+    pub def crossActionReuse(mechanism: ReuseMechanism): Bool = match mechanism {
+        case ReuseMechanism.NativeMemo => false
+        case _                         => true
+    }
+
+    /// The declared bounded-assisted-context descriptor cap: the existing theory
+    /// owner's own declared candidate bound, so the assisted context reuses the
+    /// one bounded descriptor population rather than a second registry.
+    pub def assistedContextDescriptorCap(): Int32 = Theory.maxCandidates()
+
+    /// The declared bounded-assisted-context fan-out cap: the existing theory
+    /// owner's own declared world-shard bound. The witness rows are that owner's
+    /// own derived join result over one world's facts, so the declared bound is
+    /// the descriptor population and the shard fan-out, never a second row cap.
+    pub def assistedContextShardCap(): Int32 = Theory.maxShards()
+
+    /// The declared bounded assisted context of one task: the candidate
+    /// population, the descriptor population, the shard fan-out and the scoped
+    /// witness rows, all bounded by the existing theory owner's declared caps.
+    /// The bound is a declared refusal, not a silent truncation: an over-bound
+    /// population keeps its declared count and reports the bound.
+    pub type alias AssistedContext = {
+        candidates  = List[String],
+        descriptors = Int32,
+        shards      = Int32,
+        witnesses   = Int32,
+        bounded     = Bool
+    }
+
+    pub def assistedContextIsBounded(context: AssistedContext): Bool =
+        context#descriptors <= assistedContextDescriptorCap()
+            and context#shards <= assistedContextShardCap()
+
+    /// The declared context bundle of one exact world pair's public scoped
+    /// relations and witnesses, as canonical rows. It is the one statement the
+    /// assisted-context consumers read; it restates nothing.
+    pub def contextRow(kind: String, task: String, values: List[String]): List[String] =
+        List#{"context", kind, task} ::: values
+
+    // ------------------------------------------------------- JEV public context
+
+    /// The declared route identity of the ReviewBench JEV acquisition: the native
+    /// Java OpenRouter Decisions boundary. It is never the MCP-stdio route and
+    /// never a hosted chat completion.
+    pub def jevRouteIdentity(): String = "native-java-openrouter-decisions-no-mcp"
+
+    /// The declared endpoint of the ReviewBench JEV acquisition: the SAME endpoint
+    /// the historical localization route spoke.
+    pub def jevEndpoint(): String = "https://openrouter.ai/api/alpha/decisions"
+
+    /// The original requested model alias of the JEV route, preserved verbatim.
+    /// It is never renamed, never substituted and never replaced by an
+    /// "equivalent" model: the requested identity is part of the receipt.
+    pub def jevRequestedModel(): String = "typesafe/jev-1.13"
+
+    /// The localization-observed provider echo the native receipt must match.
+    /// Any other provider is Failed evidence, never a scored decision.
+    pub def jevProviderIdentity(): String = "TypeSafe"
+
+    /// The localization-observed resolved snapshot the native receipt must match.
+    /// Explicit dated-snapshot request support is UNVERIFIED, so the gate is an
+    /// observation check, not a guarantee that the alias resolves to it.
+    pub def jevResolvedSnapshot(): String = "typesafe/jev-1.13-20260917"
+
+    /// The frozen prompt identity of the approved assisted (structure) JEV
+    /// context. The control field vocabulary exists as the frozen field law, but
+    /// no separate control ablation is required or built beyond this approved
+    /// assisted context.
+    pub def jevPromptIdentity(): String = "reviewbench-assisted-context-jev-v1"
+
+    /// The declared condition name of the approved assisted context.
+    pub def jevAssistedCondition(): String = "A-structure"
+
+    /// The declared bounded-issue prefix of one JEV state: the deterministic
+    /// public-issue prefix both conditions carry. It is a public-input bound, not
+    /// prompt tuning.
+    pub def jevIssuePrefixChars(): Int32 = 2000
+
+    /// The frozen criteria mapping every choice question carries.
+    pub def jevCriteria(): List[(String, String)] =
+        ("Relevant", "must be modified") :: ("NotRelevant", "must not be modified")
+            :: ("Unknown", "insufficient information") :: Nil
+
+    /// The declared answer kind of every choice question.
+    pub def jevAnswerKind(): String = "choice"
+
+    /// The frozen rule of the assisted condition: the materialized relationships
+    /// and witnesses are evidence that code refers to the file, never proof that
+    /// the file must be modified.
+    pub def jevStructureRule(): String =
+        "Decide whether the candidate source file must be modified to fix this bug report. "
+            + "Use only the bug report text and the candidate file path. The listed repository "
+            + "relationships and theory witnesses show that code refers to this file; they are "
+            + "relationships, not proof that the file must be modified."
+
+    /// The declared typed outcome of one logical JEV decision. `Failed` carries the
+    /// observable failure kind; it is never mapped to a negative or to `Unknown`.
+    pub enum JevDecision with Eq, ToString {
+        case Relevant
+        case NotRelevant
+        case Unknown
+        case Failed(String)
+    }
+
+    pub def jevDecisionName(decision: JevDecision): String = match decision {
+        case JevDecision.Relevant     => "Relevant"
+        case JevDecision.NotRelevant  => "NotRelevant"
+        case JevDecision.Unknown      => "Unknown"
+        case JevDecision.Failed(kind) => "Failed:" + kind
+    }
+
+    /// Whether one typed decision promotes its candidate. Only `Relevant` does.
+    pub def jevDecisionPromotes(decision: JevDecision): Bool =
+        decision == JevDecision.Relevant
+
+    /// The declared typed outcome of one sanitized receipt row. A recorded
+    /// `Failed:<kind>` keeps its kind; any unrecognised token is a typed `Failed`
+    /// rather than a guessed decision.
+    pub def parseJevDecision(text: String): JevDecision = match text {
+        case "Relevant"    => JevDecision.Relevant
+        case "NotRelevant" => JevDecision.NotRelevant
+        case "Unknown"     => JevDecision.Unknown
+        case other         => if (String.startsWith(prefix = "Failed:", other))
+            JevDecision.Failed(String.drop(String.length("Failed:"), other))
+        else JevDecision.Failed(other)
+    }
+
+    /// The fail-closed classification of one native JEV answer. The provider echo
+    /// and the resolved snapshot must match the localization-observed identity
+    /// exactly; any other observation is Failed evidence, never a scored decision,
+    /// and is never silently accepted or re-requested until a desired answer.
+    pub def jevClassify(provider: String, resolved: String, answerKind: String, answer: String): JevDecision =
+        if (provider != jevProviderIdentity()) JevDecision.Failed("provider-mismatch:" + provider)
+        else if (resolved != jevResolvedSnapshot()) JevDecision.Failed("snapshot-mismatch:" + resolved)
+        else if (answerKind != jevAnswerKind()) JevDecision.Failed("answer-kind:" + answerKind)
+        else match answer {
+            case "Relevant"    => JevDecision.Relevant
+            case "NotRelevant" => JevDecision.NotRelevant
+            case "Unknown"     => JevDecision.Unknown
+            case other         => JevDecision.Failed("choice:" + other)
+        }
+
+    /// The exact JSON string literal of one declared text. The payload bytes are
+    /// the memo identity, so the escape vocabulary is fixed and never tuned.
+    pub def jsonQuote(text: String): String = "\"" + jsonEscape(String.toList(text), "") + "\""
+
+    def jsonEscape(chars: List[Char], acc: String): String = match chars {
+        case Nil => acc
+        case c :: rest =>
+            jsonEscape(rest, acc + jsonChar(c))
+    }
+
+    def jsonChar(c: Char): String =
+        if (c == '"') "\\\""
+        else if (c == '\\') "\\\\"
+        else if (c == '\n') "\\n"
+        else if (c == '\r') "\\r"
+        else if (c == '\t') "\\t"
+        else match List.find(entry -> match entry { case (ch, _) => ch == c }, controlEscapes()) {
+            case Some((_, escaped)) => escaped
+            case None               => "${c}"
+        }
+
+    /// The declared escape of every remaining control code point below 0x20 that
+    /// is not one of the five JSON shorthands: its canonical `\u00XX` form, so a
+    /// control character in a public issue can never produce invalid JSON or be
+    /// silently dropped.
+    def controlEscapes(): List[(Char, String)] =
+        ('\u0000', "\\u0000") :: ('\u0001', "\\u0001") :: ('\u0002', "\\u0002") :: ('\u0003', "\\u0003")
+            :: ('\u0004', "\\u0004") :: ('\u0005', "\\u0005") :: ('\u0006', "\\u0006") :: ('\u0007', "\\u0007")
+            :: ('\u0008', "\\u0008") :: ('\u000b', "\\u000b") :: ('\u000c', "\\u000c")
+            :: ('\u000e', "\\u000e") :: ('\u000f', "\\u000f") :: ('\u0010', "\\u0010") :: ('\u0011', "\\u0011")
+            :: ('\u0012', "\\u0012") :: ('\u0013', "\\u0013") :: ('\u0014', "\\u0014") :: ('\u0015', "\\u0015")
+            :: ('\u0016', "\\u0016") :: ('\u0017', "\\u0017") :: ('\u0018', "\\u0018") :: ('\u0019', "\\u0019")
+            :: ('\u001a', "\\u001a") :: ('\u001b', "\\u001b") :: ('\u001c', "\\u001c") :: ('\u001d', "\\u001d")
+            :: ('\u001e', "\\u001e") :: ('\u001f', "\\u001f") :: Nil
+
+    /// The declared criteria object of every choice question.
+    pub def jevCriteriaJson(): String =
+        "{" + List.join(",", List.map(entry -> match entry {
+            case (name, description) => jsonQuote(name) + ":" + jsonQuote(description)
+        }, jevCriteria())) + "}"
+
+    /// The declared state of one task's JEV context: the public task identity, the
+    /// deterministic public-issue prefix and the frozen rule.
+    pub def jevStateJson(task: String, issue: String, rule: String): String =
+        "{\"task\":" + jsonQuote(task) + ",\"bug_report\":" + jsonQuote(issue)
+            + ",\"rule\":" + jsonQuote(rule) + "}"
+
+    /// The declared question object of one candidate.
+    pub def jevQuestionJson(instruction: String): String =
+        "{\"type\":" + jsonQuote(jevAnswerKind()) + ",\"instructions\":" + jsonQuote(instruction)
+            + ",\"criteria\":" + jevCriteriaJson() + "}"
+
+    /// The exact Decisions payload of one task's assisted context: the requested
+    /// alias, the shared state and one choice question per candidate. The field
+    /// order is fixed because the payload bytes are the memo identity.
+    pub def jevPayloadJson(task: String, issue: String, rule: String, questions: List[(String, String)]): String =
+        "{\"model\":" + jsonQuote(jevRequestedModel()) + ",\"state\":" + jevStateJson(task, issue, rule)
+            + ",\"questions\":{" + List.join(",", List.map(entry -> match entry {
+                case (key, instruction) => jsonQuote(key) + ":" + jevQuestionJson(instruction)
+            }, questions)) + "}}"
+
+    /// The declared control instruction of one candidate: the candidate path and
+    /// its rank, score and bounded public anchor only.
+    pub def jevControlInstruction(path: String, rank: Int32, score: String, anchor: String): String =
+        "Candidate file path: " + path + " (rank " + Int32.toString(rank) + ", score " + score
+            + ", anchor " + anchor + ")"
+
+    /// The declared structure instruction: the exact control instruction plus the
+    /// already-materialized candidate Repository relations and Theory witnesses.
+    pub def jevStructureInstruction(path: String, rank: Int32, score: String, anchor: String, relations: String, witnesses: String): String =
+        jevControlInstruction(path, rank, score, anchor)
+            + "\nRepository relations: " + relations
+            + "\nTheory witnesses: " + witnesses
+
+    /// The declared bounded anchor of one candidate: its final path segment
+    /// without its extension. It is a public token derived from the candidate path
+    /// itself, never a new analysis.
+    pub def candidateAnchor(path: String): String = {
+        let segment = match List.reverse(String.split(regex = "/", path)) {
+            case last :: _ => last
+            case Nil       => path
+        };
+        match List.reverse(String.split(regex = "\\.", segment)) {
+            case _ :: rest if not List.isEmpty(rest) => List.join(".", List.reverse(rest))
+            case _                                   => segment
+        }
+    }
+
+    /// The declared bounded relation summary of one candidate: the atom names of
+    /// the world's facts whose source or target is the candidate path, each with
+    /// the number of facts that touch it, in atom-name order. It restates the
+    /// already-materialized facts and performs no new analysis.
+    pub def relationSummary(candidate: String, facts: List[(String, String, String)]): List[(String, Int32)] =
+        List.map(atom -> (atom, List.length(List.filter(row -> match row {
+            case (name, source, target) => name == atom and (source == candidate or target == candidate)
+        }, facts))), List.distinct(List.sort(List.map(row -> match row { case (name, _, _) => name }, facts))))
+
+    /// The declared relation text of one candidate: `atom=count` pairs, or `none`
+    /// when the candidate touches no materialized fact.
+    pub def relationText(candidate: String, facts: List[(String, String, String)]): String =
+        match List.filter(entry -> match entry { case (_, count) => count > 0 },
+            relationSummary(candidate, facts)) {
+            case Nil => "none"
+            case kept => List.join("; ", List.map(entry -> match entry {
+                case (atom, count) => atom + "=" + Int32.toString(count)
+            }, kept))
+        }
+
+    /// The declared bounded witness text of one task's materialized context: the
+    /// distinct Theory witness identifiers of the world, capped at the declared
+    /// bound, or `none`. A Theory witness names a structural projection row, not a
+    /// file's relevance, so it is presented as the bounded public identifier list
+    /// the localization structure condition carried — never as evidence that a
+    /// candidate file must be modified.
+    pub def witnessText(witnesses: List[(String, String, String)]): String =
+        match List.take(jevWitnessCap(),
+            List.sort(List.distinct(List.map(row -> match row { case (id, _, _) => id }, witnesses)))) {
+            case Nil  => "none"
+            case kept => List.join(", ", kept)
+        }
+
+    /// The declared question key of one candidate: its 1-based declared position in
+    /// the task's ranking. The key is the payload's question identity, so the
+    /// observed answer is joined back to the exact candidate it was asked about.
+    pub def jevQuestionKey(index: Int32): String = "c" + Int32.toString(index)
+
+    /// The declared cap on the witness pairs one JEV instruction names: a bounded
+    /// presentation of already-materialized witnesses, not a new analysis.
+    pub def jevWitnessCap(): Int32 = 8
+
+    /// The declared deterministic public-issue prefix of one task: the first
+    /// declared number of characters of the public issue text.
+    pub def issuePrefix(text: String): String = String.take(jevIssuePrefixChars(), text)
+
+    /// The declared public issue text of one task: its pinned title and body,
+    /// separated by one blank line. It carries no finding, no gold and no later
+    /// fix.
+    pub def publicIssue(title: String, body: String): String = (title + "\n\n" + body).trim()
+
+    /// The exact frozen prompt template bytes of the assisted condition. It is
+    /// fixed before any outcome and its SHA-256 is the prompt component of the
+    /// memo key, so a prompt edit regenerates only that prompt's JEV fixtures.
+    pub def jevPromptText(): String =
+        "FROZEN REVIEWBENCH JEV REQUEST — " + jevPromptIdentity() + "\n"
+            + "condition: " + jevAssistedCondition() + "\n"
+            + "requested model: " + jevRequestedModel() + "\n"
+            + "rule: " + jevStructureRule() + "\n"
+            + "issue prefix characters: " + Int32.toString(jevIssuePrefixChars()) + "\n"
+            + "outcomes: " + List.join(" | ",
+                List.map(entry -> match entry { case (name, _) => name }, jevCriteria())) + "\n"
+            + "criteria: " + jevCriteriaJson() + "\n"
+
+    /// The declared memo identity of one JEV context (the exact model, prompt
+    /// identity, condition, task, candidate and payload hash). Reuse happens only
+    /// on exact payload equality, so a changed payload is a different context and
+    /// a successful exact decision is never requested twice.
+    pub def jevDecisionMemoKey(prompt: String, task: String, candidate: String, payloadHash: String): String =
+        jevMemoKey(jevRequestedModel(), prompt, jevAssistedCondition(), task, candidate, payloadHash)
+
+    /// The declared frozen JEV public-context record as canonical rows: the native
+    /// route and endpoint, the requested and observed identity, the frozen prompt
+    /// and condition, the public field vocabulary, the exclusion vocabulary and the
+    /// exact memo shape. It is one statement; a receipt restates nothing.
+    pub def renderJevContext(): List[List[String]] =
+        List#{
+            List#{"jev", "route", jevRouteIdentity()},
+            List#{"jev", "endpoint", jevEndpoint()},
+            List#{"jev", "requested_model", jevRequestedModel()},
+            List#{"jev", "provider", jevProviderIdentity()},
+            List#{"jev", "resolved_snapshot", jevResolvedSnapshot()},
+            List#{"jev", "prompt", jevPromptIdentity()},
+            List#{"jev", "condition", jevAssistedCondition()},
+            List#{"jev", "control_fields", List.join(",", jevControlFields())},
+            List#{"jev", "structure_fields", List.join(",", jevStructureFields())},
+            List#{"jev", "excludes", List.join(",", jevContextExcludes())},
+            List#{"jev", "answer_kind", jevAnswerKind()},
+            List#{"jev", "outcomes", List.join(",",
+                List.map(entry -> match entry { case (name, _) => name }, jevCriteria()))},
+            List#{"jev", "issue_prefix_chars", Int32.toString(jevIssuePrefixChars())},
+            List#{"jev", "witness_cap", Int32.toString(jevWitnessCap())},
+            List#{"jev", "memo", "model,prompt,condition,task,candidate,payload_sha256"}
+        }
 }

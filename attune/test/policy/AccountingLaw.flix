@@ -180,7 +180,7 @@ def componentTablePartitionsTheRawCodeTotal(): Unit \ { Assert, IO } = {
             :: Nil;
     let mechanicalComponents =
         "ascii" :: "parquet" :: "boundary" :: "grit-binding" :: "build-rules" :: "embedding" :: "sol"
-            :: "reviewbench" :: Nil;
+            :: "reviewbench" :: "inference" :: Nil;
     Assert.assertEq(expected = cognitiveOf(a), sumComponents(cs, cognitiveComponents));
     Assert.assertEq(expected = mechanicalOf(a), sumComponents(cs, mechanicalComponents));
     Assert.assertEq(expected = fixturesOf(a), codeForComponent(cs, "tests"));

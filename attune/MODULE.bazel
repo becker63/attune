@@ -220,6 +220,44 @@ qwen_fixtures(
     token = "1",
 )
 
+# The ReviewBench paired study's hosted-Qwen (Q) assisted-context fixtures
+# (`VAL-REVIEW-002`, owner-authorized 2026-10-08). Same one route, same frozen
+# recipe and the same host-acquisition boundary as the localization Q branch: the
+# mission-local helper reads its one authorized credential entry internally and
+# materializes one immutable vector fixture file per declared group, and this
+# instance admits those files through the committed sanitized identity manifest
+# `//test/reviewbench_context:qwen-fixture-manifest.tsv` (identity only — group,
+# side, logical rows, unique inputs, truncated rows, unmeasured rows, frozen cap,
+# provider, resolved model, frozen recipe, digest) with a `file://` URL that must
+# match its declared SHA-256. A separate instance keeps the ReviewBench fixtures
+# distinct from the localization Q fixtures; a mutated or substituted fixture
+# fails the fetch instead of entering the study.
+reviewbench_qwen_fixtures = use_repo_rule("//platform/build:qwen_fixtures.bzl", "attune_qwen_fixtures")
+
+reviewbench_qwen_fixtures(
+    name = "reviewbench_qwen_fixtures",
+    manifest = "//test/reviewbench_context:qwen-fixture-manifest.tsv",
+    root = "/home/becker/.cache/attune-reviewbench-qwen",
+    token = "1",
+)
+
+# The ReviewBench JEV public-context observations (`VAL-REVIEW-002`, owner
+# decision 2026-10-08). The NATIVE Java OpenRouter Decisions boundary wrote its
+# sanitized observations beside its receipts OUTSIDE the mutable Bazel outputs;
+# this instance admits exactly that one sanitized file through the committed
+# identity record `//test/reviewbench_context:jev-observed-manifest.tsv` with a
+# `file://` URL that must match its declared SHA-256. No credential, no exact
+# payload and no raw provider body is admitted, and a mutated or substituted
+# manifest fails the fetch instead of entering the study.
+reviewbench_jev_observed = use_repo_rule("//platform/build:jev_observed.bzl", "attune_jev_observed")
+
+reviewbench_jev_observed(
+    name = "reviewbench_jev_observed",
+    manifest = "//test/reviewbench_context:jev-observed-manifest.tsv",
+    root = "/home/becker/.cache/attune-reviewbench-jev",
+    token = "1",
+)
+
 # The pinned Codex CLI of the standalone Sol scientific arm (owner-authorized
 # 2026-10-07, `library/sol-medium.md`). The arm's ChatGPT-plan SIWC route runs
 # the pinned Codex `0.160.1` app-server as a remote action, so its exact bytes

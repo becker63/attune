@@ -529,6 +529,12 @@ def _native_study_stage_impl(ctx):
     args.add("-Dattune.mode=stage")
     args.add("-Dattune.stage=" + ctx.attr.stage)
     args.add("-Dattune.label=" + ctx.label.name)
+    if ctx.attr.deadline_seconds > 0:
+        # A stage that declares a bounded wall-clock deadline hands it to the
+        # existing mechanical launcher, which kills the stage's child worker
+        # out-of-process when the declared bound is exceeded. No in-process
+        # cancellation is created or claimed; the world stays a partial UNKNOWN.
+        args.add("-Dattune.stage_deadline=" + str(ctx.attr.deadline_seconds))
     args.add("-Dattune.outputs=" + out.path)
     args.add("-Dattune.tests=" + ",".join(sources))
     if specs:
@@ -554,6 +560,7 @@ _native_study_stage = rule(
         "input_names": attr.string_list(),
         "stage": attr.string(mandatory = True),
         "receipt_plan": attr.label(allow_single_file = True),
+        "deadline_seconds": attr.int(default = 0),
         "java_deps": attr.label_list(providers = [JavaInfo]),
         "native_libs": attr.label_list(allow_files = True),
         "world_sources": attr.label_list(allow_files = True),
@@ -568,7 +575,7 @@ _native_study_stage = rule(
     toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
 )
 
-def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], native_libs = [], world_sources = [], host_isolation = False, **kwargs):
+def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], native_libs = [], world_sources = [], host_isolation = False, deadline_seconds = 0, **kwargs):
     """Materialize one declared study stage tree through the authentic native Tester.
 
     The action runs the pinned compiler's authentic native test engine over the
@@ -604,6 +611,9 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
       native_libs: the prepared shared libraries a native-engine stage law loads.
       world_sources: the declared whole-world source set a stage reads by path.
       host_isolation: pins the host `unshare` boundary instead of the portable route.
+      deadline_seconds: the declared out-of-process wall-clock bound, or 0 for the
+        ordinary unbounded wait; a stage that declares one is killed by the
+        launcher when it exceeds the bound and stays a partial UNKNOWN.
       **kwargs: forwarded to the underlying rule.
     """
     if len(inputs) != len(input_names):
@@ -632,6 +642,7 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
         inputs = inputs,
         input_names = input_names,
         receipt_plan = receipt_plan,
+        deadline_seconds = deadline_seconds,
         java_deps = java_deps,
         native_libs = native_libs,
         world_sources = world_sources,
@@ -746,7 +757,7 @@ def native_flix_shard_file(name, world, index, count):
     """
     attune_declared_record_file(name = name, kind = "shard", fields = [world, index, count])
 
-def native_flix_consumer_test(name, srcs, produced, declared_files = [], size = "small", tags = [], data = []):
+def native_flix_consumer_test(name, srcs, produced, java_deps = [], declared_files = [], native_libs = [], size = "small", tags = [], data = []):
     """Run native `@Test` laws over the declared trees a producer emitted.
 
     Each `produced` tree is a declared input, not an undeclared test output: the
@@ -755,17 +766,35 @@ def native_flix_consumer_test(name, srcs, produced, declared_files = [], size = 
     Tester's file list. The consumer therefore compiles the producer's exported
     source and asserts the tree's contract over the actual declared bytes.
 
+    When `java_deps` is given the consumer compiles through the same explicit
+    JVM class path route the producer did, so a consumer whose laws import a
+    source owner that reaches a prepared Java seam (the pinned Grit engine) still
+    resolves it; without `java_deps` the consumer stays on the pure native route.
+
     Args:
       name: the consumer test target name.
       srcs: the consumer's own explicit declared Flix law sources.
       produced: the producer targets whose declared trees this test consumes.
+      java_deps: the explicit dependency jars the consumer compiles against.
       declared_files: the declared sources the laws compare the trees against.
+      native_libs: the prepared shared libraries the consumer may load.
       size: the Bazel test size.
       tags: the Bazel test tags.
       data: additional declared test data.
     """
-    flags = ["-Dattune.mode=native", "-Dattune.produced=" + _rlocation(produced)]
+    flags = ["-Dattune.produced=" + _rlocation(produced)]
     extra_data = list(produced)
+    if java_deps:
+        manifest = name + "_jars"
+        java_jar_manifest(name = manifest, deps = java_deps)
+        flags.append("-Dattune.mode=java")
+        flags.append("-Dattune.jars=$(rlocationpath :%s)" % manifest)
+        extra_data.append(":" + manifest)
+    else:
+        flags.append("-Dattune.mode=native")
+    if native_libs:
+        flags.append("-Dattune.libs=" + _rlocation(native_libs))
+        extra_data.extend(native_libs)
     if declared_files:
         files_manifest = name + "_declared"
         declared_manifest(name = files_manifest, srcs = declared_files)

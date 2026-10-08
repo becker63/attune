@@ -38,6 +38,7 @@ REVIEWBENCH_SRCS = [
     "//src:Attune/Study/Metrics.flix",
     "//src:Attune/Study/Qwen.flix",
     "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Theory.flix",
 ]
 
 # The declared ReviewBench admission stage (`VAL-REVIEW-001`): it verifies the
@@ -116,6 +117,7 @@ native_flix_java_test(
         "//src:Attune/Study/Metrics.flix",
         "//src:Attune/Study/Qwen.flix",
         "//src:Attune/Study/ReviewBench.flix",
+        "//src:Attune/Theory.flix",
     ],
     java_deps = ["//platform/tools/grit:attune_grit"],
 )
