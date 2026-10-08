@@ -280,3 +280,23 @@ exports_files(["bwrap-aarch64-unknown-linux-musl"])
     sha256 = "5b2600ab05250bdf8b8b34f5dd8a8b543c941d2ad36a5213dfa93ad04d1a2bbd",
     urls = ["https://github.com/openai/codex/releases/download/rust-v0.160.1/bwrap-aarch64-unknown-linux-musl.tar.gz"],
 )
+
+# The one approved additional corpus (`VAL-REVIEW-001`): the pinned ReviewBench
+# `corpus/manifest.json` at the exact commit
+# 66df3f322d0d85ea133ea9fa777f5d1a8c933c4e. The URL carries the commit and the
+# path, and the provider's own SHA-256 pins the exact bytes; the admission stage
+# recomputes both the SHA-256 and the git blob SHA-1 of the materialized bytes, so
+# a mutated, substituted or different-revision manifest fails its declared origin
+# comparison instead of entering the study. `Attune.Study.ReviewBench` owns the
+# declared contract; this URL is only the acquisition. This is a public-input
+# acquisition, distinct from the credential-free scientific guests: the fetch
+# happens on the client, and no action that reduces the study reaches the network.
+# It is requested only by the explicitly selected `manual` `//test/reviewbench`
+# targets, so the ordinary `bazel test //...` gate never acquires the corpus.
+# Declared last for the same anonymous-repo renumbering reason as the catalog,
+# world archives, embedding runtime, Qwen fixtures and Codex assets above.
+http_file(
+    name = "reviewbench_manifest",
+    sha256 = "e74656b8c1c4bbab5ce85f1fcb742a7aaad550a4d7bd46e1f83a0746807bfa02",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/corpus/manifest.json"],
+)
