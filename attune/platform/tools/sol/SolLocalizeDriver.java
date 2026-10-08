@@ -8,11 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +37,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * {@code env-secrets} injection, and the one observable piece of it the driver
  * reports is the JWT expiry timestamp, which is metadata rather than a
  * credential.
+ *
+ * <p>The default {@code run} mode is the published original arm's mechanical
+ * path and is unchanged. The opt-in {@code --inspect true} path is a distinct,
+ * additive continuation for the enforced read-only inspection arm: it parses
+ * the app-server's own JSON item events and the completed-turn item view
+ * (de-duplicated by item id, so a tool action is never counted twice), records
+ * each observed discovery/search/read command with the bytes the tool actually
+ * returned, enforces the frozen client-mechanical budgets (wall clock, tool
+ * rounds, observed cumulative tokens) by sending {@code turn/interrupt}, and
+ * records the overshoot. It still owns no verdict: whether the observed reads
+ * satisfy the declared inspection floor is decided downstream in
+ * {@code Attune.Study.SolInspected}.
  */
 public final class SolLocalizeDriver {
 
@@ -61,6 +76,9 @@ public final class SolLocalizeDriver {
     private static final List<String> TOOL_ITEM_TYPES = List.of(
             "commandExecution", "fileChange", "mcpToolCall", "dynamicToolCall",
             "webSearch", "imageView", "collabAgentToolCall");
+
+    /** Command-action kinds that count as discovery rather than a file read. */
+    private static final List<String> DISCOVERY_ACTION_TYPES = List.of("search", "listFiles");
 
     private SolLocalizeDriver() {}
 
@@ -151,12 +169,23 @@ public final class SolLocalizeDriver {
         String effort = options.getOrDefault("effort", "medium");
         String backend = options.getOrDefault("backend", "codex-app-server");
         long timeoutSeconds = Long.parseLong(options.getOrDefault("timeout", "300"));
+        boolean inspect = Boolean.parseBoolean(options.getOrDefault("inspect", "false"));
+        int toolRoundBudget = Integer.parseInt(options.getOrDefault("max-tool-rounds", "32"));
+        long tokenBudget = Long.parseLong(options.getOrDefault("max-tokens", "256000"));
         Path codex = Paths.get(required(options, "codex"));
         Path repoManifest = Paths.get(required(options, "repo"));
+        Path reads = options.containsKey("reads") ? Paths.get(options.get("reads")) : null;
         String prompt = Files.readString(Paths.get(required(options, "prompt")), StandardCharsets.UTF_8);
-        String issue = issueForTask(Paths.get(required(options, "issue-tree")), task);
+        Path issueProjection = options.containsKey("issue-tsv")
+                ? Paths.get(required(options, "issue-tsv"))
+                : Paths.get(required(options, "issue-tree")).resolve("issues.tsv");
+        String issue = issueForTask(issueProjection, task);
 
         Receipt receipt = new Receipt(task, world, model, effort, backend);
+        receipt.arm = inspect ? "inspected" : "original";
+        receipt.inspectMode = inspect;
+        receipt.toolRoundBudget = toolRoundBudget;
+        receipt.tokenBudget = tokenBudget;
         receipt.timeoutCapSeconds = timeoutSeconds;
         receipt.promptIdentity = options.getOrDefault("prompt-identity", "Unavailable");
         receipt.startMillis = System.currentTimeMillis();
@@ -230,7 +259,9 @@ public final class SolLocalizeDriver {
                     + model + "\",\"effort\":\"" + effort + "\",\"outputSchema\":" + RESULT_SCHEMA
                     + ",\"input\":[{\"type\":\"text\",\"text\":"
                     + jsonString(prompt + "\n" + issue) + "}]}", 3);
-            String finalMessage = session.awaitTurnCompletion(receipt);
+            String finalMessage = inspect
+                    ? session.awaitInspectedTurn(receipt, threadId, toolRoundBudget, tokenBudget)
+                    : session.awaitTurnCompletion(receipt);
             receipt.turnCompleted = true;
             receipt.endMillis = System.currentTimeMillis();
             receipt.rawResult = finalMessage;
@@ -253,6 +284,9 @@ public final class SolLocalizeDriver {
             }
         } catch (TaskTimeoutException e) {
             receipt.endMillis = System.currentTimeMillis();
+            if ("Unavailable".equals(receipt.stopReason)) {
+                receipt.stopReason = "timeout";
+            }
             receipt.resultStatus = "timeout";
             receipt.failure = "task exceeded the declared " + timeoutSeconds + " s cap";
         } catch (Exception e) {
@@ -270,6 +304,9 @@ public final class SolLocalizeDriver {
         }
         Files.writeString(out, receipt.render(), StandardCharsets.UTF_8);
         writePredictions(predictions, task, receipt.paths);
+        if (reads != null) {
+            writeReads(reads, receipt);
+        }
     }
 
     /**
@@ -288,6 +325,52 @@ public final class SolLocalizeDriver {
                     .append(path).append('\n');
         }
         Files.writeString(out, tsv.toString(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Project the observed inspection activity into the one bounded mechanical
+     * surface the Flix owners consume: one `read` row per observed command
+     * action (its declared action kind, the path or query it names, the output
+     * byte count the tool actually returned, the digest of that output and the
+     * action's own tool status and elapsed offset) and one `tool` row per
+     * observed inspection item. This is projection, not a verdict: whether the
+     * floor is met is classified downstream.
+     */
+    private static void writeReads(Path out, Receipt receipt) throws IOException {
+        StringBuilder tsv = new StringBuilder();
+        for (ToolItem item : receipt.toolItems) {
+            tsv.append("tool\t").append(cell(item.type)).append('\t').append(cell(item.status))
+                    .append('\t').append(item.bytes).append('\t').append(item.atMillis).append('\n');
+        }
+        for (ReadAction action : receipt.reads) {
+            tsv.append("read\t").append(cell(action.actionType)).append('\t').append(cell(action.target))
+                    .append('\t').append(action.bytes).append('\t').append(cell(action.sha256))
+                    .append('\t').append(cell(action.exitCode)).append('\t').append(cell(action.status))
+                    .append('\t').append(action.atMillis).append('\n');
+        }
+        Files.writeString(out, tsv.toString(), StandardCharsets.UTF_8);
+    }
+
+    private static String cell(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ');
+    }
+
+    private static String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                hex.append(Character.forDigit((b >> 4) & 0xF, 16));
+                hex.append(Character.forDigit(b & 0xF, 16));
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            return "Unavailable";
+        }
     }
 
     private static List<String> launchCommand(Path codex) {
@@ -529,6 +612,266 @@ public final class SolLocalizeDriver {
                 }
             }
         }
+
+        // ------------------------------------------------- inspected path
+
+        /**
+         * The opt-in inspected pump. Unlike the original substring scan it
+         * routes every app-server message itself, parses the app-server's own
+         * JSON item events *and* the completed-turn item view with a real JSON
+         * reader, de-duplicates items by id (so a tool action is never counted
+         * twice), records every observed discovery/search/read command with the
+         * bytes the tool actually returned, and stops the turn with
+         * {@code turn/interrupt} at the first observable update past a frozen
+         * client-mechanical bound. Every bound is a client-side stop, never a
+         * claimed provider hard limit.
+         */
+        String awaitInspectedTurn(Receipt receipt, String threadId, int toolRoundBudget, long tokenBudget)
+                throws IOException, TaskTimeoutException {
+            long deadline = start + timeoutMillis;
+            List<String> texts = new ArrayList<>();
+            Set<String> seenItems = new LinkedHashSet<>();
+            boolean boundReached = false;
+            while (true) {
+                if (System.currentTimeMillis() > deadline) {
+                    if ("Unavailable".equals(receipt.stopReason)) {
+                        receipt.stopReason = "timeout";
+                    }
+                    throw new TaskTimeoutException();
+                }
+                String line;
+                try {
+                    line = messages.poll(500, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("interrupted while awaiting the app-server", e);
+                }
+                if (line == null) {
+                    if (!process.isAlive()) {
+                        throw new IOException("app-server exited before completing the turn");
+                    }
+                    continue;
+                }
+                lastActivity.set(System.currentTimeMillis());
+                if (line.isBlank()) {
+                    continue;
+                }
+                Object parsed = Json.parse(line);
+                if (!(parsed instanceof Map<?, ?> envelope)) {
+                    continue;
+                }
+                String method = Json.asText(envelope.get("method"));
+                if (method == null) {
+                    captureTurnStartResponse(envelope, receipt);
+                    continue;
+                }
+                Object params = envelope.get("params");
+                switch (method) {
+                    case "turn/started" -> {
+                        String id = Json.nestedText(params, "turn", "id");
+                        if (id != null) {
+                            receipt.turnId = id;
+                        }
+                    }
+                    case "thread/tokenUsage/updated" -> captureUsageEvent(params, receipt);
+                    case "item/completed" -> {
+                        if (params instanceof Map<?, ?> p) {
+                            captureItem(p.get("item"), receipt, seenItems, texts);
+                        }
+                    }
+                    case "turn/completed" -> {
+                        captureTurnCompleted(params, receipt, seenItems, texts);
+                        if ("Unavailable".equals(receipt.stopReason)) {
+                            receipt.stopReason = "natural";
+                        }
+                        receipt.toolRounds = receipt.toolItems.size();
+                        return texts.isEmpty() ? "" : texts.get(texts.size() - 1);
+                    }
+                    case "error" -> {
+                        Integer status = firstHttpStatus(line);
+                        if (status != null) {
+                            receipt.httpStatus = status.toString();
+                        }
+                    }
+                    default -> {
+                        // Every other declared notification is outside this arm's
+                        // observation surface.
+                    }
+                }
+                if (!boundReached) {
+                    if (receipt.toolItems.size() > toolRoundBudget) {
+                        receipt.stopReason = "tool-rounds";
+                        receipt.overshootToolRounds = receipt.toolItems.size() - toolRoundBudget;
+                        boundReached = true;
+                        if (!receipt.turnId.isEmpty()) {
+                            interruptTurn(threadId, receipt.turnId);
+                            receipt.interruptSent = true;
+                        }
+                    } else if (receipt.totalTokens != null && receipt.totalTokens > tokenBudget) {
+                        receipt.stopReason = "tokens";
+                        receipt.overshootTokens = receipt.totalTokens - tokenBudget;
+                        boundReached = true;
+                        if (!receipt.turnId.isEmpty()) {
+                            interruptTurn(threadId, receipt.turnId);
+                            receipt.interruptSent = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        /** Capture the turn identity from the `turn/start` response. */
+        private static void captureTurnStartResponse(Map<?, ?> envelope, Receipt receipt) {
+            Long id = Json.asNumber(envelope.get("id"));
+            if (id == null || id != 3L) {
+                return;
+            }
+            String turnId = Json.nestedText(envelope.get("result"), "turn", "id");
+            if (turnId != null) {
+                receipt.turnId = turnId;
+            }
+        }
+
+        /** The app-server's own `thread/tokenUsage/updated` breakdown. */
+        private static void captureUsageEvent(Object params, Receipt receipt) {
+            if (!(params instanceof Map<?, ?> p) || !(p.get("tokenUsage") instanceof Map<?, ?> usage)) {
+                return;
+            }
+            if (usage.get("total") instanceof Map<?, ?> total) {
+                applyBreakdown(total, receipt);
+            }
+            if (usage.get("modelContextWindow") instanceof Number window) {
+                receipt.modelContextWindow = window.longValue();
+            }
+        }
+
+        /**
+         * Apply one token breakdown. `totalTokens` is the provider's own
+         * input-plus-output total, in which cached input is already included and
+         * is therefore counted once; when it is absent the total is the observed
+         * input plus output.
+         */
+        private static void applyBreakdown(Map<?, ?> total, Receipt receipt) {
+            if (total.get("inputTokens") instanceof Number value) {
+                receipt.inputTokens = value.longValue();
+            }
+            if (total.get("cachedInputTokens") instanceof Number value) {
+                receipt.cachedInputTokens = value.longValue();
+            }
+            if (total.get("outputTokens") instanceof Number value) {
+                receipt.outputTokens = value.longValue();
+            }
+            if (total.get("reasoningOutputTokens") instanceof Number value) {
+                receipt.reasoningTokens = value.longValue();
+            }
+            if (total.get("cacheWriteInputTokens") instanceof Number value) {
+                receipt.cacheWriteInputTokens = value.longValue();
+            }
+            if (total.get("totalTokens") instanceof Number value) {
+                receipt.totalTokens = value.longValue();
+            } else if (receipt.inputTokens != null && receipt.outputTokens != null) {
+                receipt.totalTokens = receipt.inputTokens + receipt.outputTokens;
+            }
+        }
+
+        /**
+         * Record one observed thread item. The item id is the de-duplication
+         * key, so the same item seen through `item/completed` and through the
+         * completed turn's item view is counted exactly once.
+         */
+        private static void captureItem(Object item, Receipt receipt, Set<String> seenItems, List<String> texts) {
+            if (!(item instanceof Map<?, ?> map)) {
+                return;
+            }
+            String type = Json.asText(map.get("type"));
+            if (type == null) {
+                return;
+            }
+            long at = Math.max(0, System.currentTimeMillis() - receipt.startMillis);
+            if ("agentMessage".equals(type)) {
+                String text = Json.asText(map.get("text"));
+                if (text != null && !texts.contains(text)) {
+                    texts.add(text);
+                }
+                return;
+            }
+            if (!TOOL_ITEM_TYPES.contains(type)) {
+                return;
+            }
+            String id = Json.asText(map.get("id"));
+            String key = id == null ? type + "@" + receipt.toolItems.size() : id;
+            if (!seenItems.add(key)) {
+                return;
+            }
+            String status = Json.asText(map.get("status"));
+            String aggregated = Json.asText(map.get("aggregatedOutput"));
+            long bytes = aggregated == null ? 0 : aggregated.getBytes(StandardCharsets.UTF_8).length;
+            receipt.toolItems.add(new ToolItem(type, status, bytes, at));
+            if (!"commandExecution".equals(type)) {
+                return;
+            }
+            String exitCode = map.get("exitCode") == null
+                    ? "Unavailable"
+                    : String.valueOf(map.get("exitCode"));
+            Object actions = map.get("commandActions");
+            if (!(actions instanceof List<?> list)) {
+                return;
+            }
+            for (Object raw : list) {
+                if (!(raw instanceof Map<?, ?> action)) {
+                    continue;
+                }
+                String actionType = Json.asText(action.get("type"));
+                String target = Json.asText(action.get("path"));
+                if (target == null) {
+                    target = Json.asText(action.get("name"));
+                }
+                if (target == null) {
+                    target = Json.asText(action.get("query"));
+                }
+                receipt.reads.add(new ReadAction(
+                        actionType == null ? "unknown" : actionType,
+                        target == null ? "" : target,
+                        bytes,
+                        aggregated == null ? "" : sha256(aggregated),
+                        exitCode,
+                        status,
+                        at));
+            }
+        }
+
+        /** The completed turn: its status, item view and every item it carries. */
+        private static void captureTurnCompleted(
+                Object params, Receipt receipt, Set<String> seenItems, List<String> texts) {
+            if (!(params instanceof Map<?, ?> p) || !(p.get("turn") instanceof Map<?, ?> turn)) {
+                return;
+            }
+            String status = Json.asText(turn.get("status"));
+            receipt.turnStatus = status == null ? "Unavailable" : status;
+            String view = Json.asText(turn.get("itemsView"));
+            receipt.turnItemsView = view == null ? "Unavailable" : view;
+            if (turn.get("items") instanceof List<?> items) {
+                for (Object item : items) {
+                    captureItem(item, receipt, seenItems, texts);
+                }
+            }
+            if (turn.get("error") instanceof Map<?, ?> error) {
+                String message = Json.asText(error.get("message"));
+                if (message != null && !message.isEmpty()) {
+                    receipt.failure = message;
+                }
+            }
+            if (turn.get("durationMs") instanceof Number duration) {
+                receipt.turnDurationMs = duration.longValue();
+            }
+        }
+
+        /** The one hard stop the protocol supports: `turn/interrupt`. */
+        void interruptTurn(String threadId, String turnId) throws IOException {
+            send("turn/interrupt",
+                    "{\"threadId\":" + jsonString(threadId) + ",\"turnId\":" + jsonString(turnId) + "}",
+                    4);
+        }
     }
 
     private static void captureUsage(String line, Receipt receipt) {
@@ -575,6 +918,195 @@ public final class SolLocalizeDriver {
         }
         if (cacheWrite != null) {
             receipt.cacheWriteInputTokens = cacheWrite;
+        }
+    }
+
+    // ------------------------------------------------------- minimal JSON read
+
+    /**
+     * A minimal, bounded JSON reader for the app-server's own event stream.
+     *
+     * <p>The inspected path must report what the app-server actually said, so it
+     * parses the message rather than searching it for an exact serialization
+     * substring. The reader never resolves the message into a generic object
+     * graph beyond maps, lists and scalars, and it holds no policy.
+     */
+    private static final class Json {
+        private final String source;
+        private int index;
+
+        private Json(String source) {
+            this.source = source;
+        }
+
+        static Object parse(String text) {
+            try {
+                Json reader = new Json(text);
+                reader.skip();
+                return reader.value();
+            } catch (RuntimeException e) {
+                return null;
+            }
+        }
+
+        static String asText(Object value) {
+            return value instanceof String string ? string : null;
+        }
+
+        static Long asNumber(Object value) {
+            return value instanceof Number number ? number.longValue() : null;
+        }
+
+        static String nestedText(Object value, String... path) {
+            Object cursor = value;
+            for (String key : path) {
+                if (!(cursor instanceof Map<?, ?> map)) {
+                    return null;
+                }
+                cursor = map.get(key);
+            }
+            return asText(cursor);
+        }
+
+        private void skip() {
+            while (index < source.length() && Character.isWhitespace(source.charAt(index))) {
+                index++;
+            }
+        }
+
+        private Object value() {
+            skip();
+            if (index >= source.length()) {
+                throw new IllegalStateException("end of input");
+            }
+            char c = source.charAt(index);
+            return switch (c) {
+                case '{' -> object();
+                case '[' -> array();
+                case '"' -> string();
+                case 't' -> {
+                    literal("true");
+                    yield Boolean.TRUE;
+                }
+                case 'f' -> {
+                    literal("false");
+                    yield Boolean.FALSE;
+                }
+                case 'n' -> {
+                    literal("null");
+                    yield null;
+                }
+                default -> numberValue();
+            };
+        }
+
+        private void literal(String expected) {
+            if (!source.startsWith(expected, index)) {
+                throw new IllegalStateException("not a literal");
+            }
+            index += expected.length();
+        }
+
+        private Map<String, Object> object() {
+            Map<String, Object> map = new LinkedHashMap<>();
+            index++;
+            skip();
+            if (index < source.length() && source.charAt(index) == '}') {
+                index++;
+                return map;
+            }
+            while (true) {
+                skip();
+                String key = string();
+                skip();
+                if (source.charAt(index) != ':') {
+                    throw new IllegalStateException("expected a colon");
+                }
+                index++;
+                map.put(key, value());
+                skip();
+                char separator = source.charAt(index);
+                index++;
+                if (separator == '}') {
+                    return map;
+                }
+                if (separator != ',') {
+                    throw new IllegalStateException("expected an object separator");
+                }
+            }
+        }
+
+        private List<Object> array() {
+            List<Object> list = new ArrayList<>();
+            index++;
+            skip();
+            if (index < source.length() && source.charAt(index) == ']') {
+                index++;
+                return list;
+            }
+            while (true) {
+                list.add(value());
+                skip();
+                char separator = source.charAt(index);
+                index++;
+                if (separator == ']') {
+                    return list;
+                }
+                if (separator != ',') {
+                    throw new IllegalStateException("expected an array separator");
+                }
+            }
+        }
+
+        private String string() {
+            if (source.charAt(index) != '"') {
+                throw new IllegalStateException("expected a string");
+            }
+            index++;
+            StringBuilder builder = new StringBuilder();
+            while (index < source.length()) {
+                char c = source.charAt(index++);
+                if (c == '"') {
+                    return builder.toString();
+                }
+                if (c != '\\') {
+                    builder.append(c);
+                    continue;
+                }
+                char escape = source.charAt(index++);
+                switch (escape) {
+                    case 'n' -> builder.append('\n');
+                    case 't' -> builder.append('\t');
+                    case 'r' -> builder.append('\r');
+                    case 'b' -> builder.append('\b');
+                    case 'f' -> builder.append('\f');
+                    case 'u' -> {
+                        builder.append((char) Integer.parseInt(source.substring(index, index + 4), 16));
+                        index += 4;
+                    }
+                    default -> builder.append(escape);
+                }
+            }
+            throw new IllegalStateException("unterminated string");
+        }
+
+        private Object numberValue() {
+            int start = index;
+            while (index < source.length() && "+-.eE0123456789".indexOf(source.charAt(index)) >= 0) {
+                index++;
+            }
+            if (index == start) {
+                throw new IllegalStateException("expected a value");
+            }
+            String slice = source.substring(start, index);
+            if (slice.indexOf('.') < 0 && slice.indexOf('e') < 0 && slice.indexOf('E') < 0) {
+                try {
+                    return Long.parseLong(slice);
+                } catch (NumberFormatException e) {
+                    // Fall through to the floating-point form.
+                }
+            }
+            return Double.parseDouble(slice);
         }
     }
 
@@ -665,6 +1197,14 @@ public final class SolLocalizeDriver {
 
     // ----------------------------------------------------------------- receipt
 
+    /** One observed inspection item: its type, status, output bytes and offset. */
+    private record ToolItem(String type, String status, long bytes, long atMillis) {}
+
+    /** One observed command action, with the output bytes the tool returned. */
+    private record ReadAction(
+            String actionType, String target, long bytes, String sha256, String exitCode,
+            String status, long atMillis) {}
+
     private static final class Receipt {
         final String task;
         final String world;
@@ -688,6 +1228,25 @@ public final class SolLocalizeDriver {
         Long reasoningTokens;
         Long totalTokens;
         Long cacheWriteInputTokens;
+        // The opt-in inspected path's observation surface. In the original mode
+        // these stay at their declared defaults: the original receipt keeps its
+        // published shape and is never rewritten by the new path.
+        String arm = "original";
+        boolean inspectMode;
+        int toolRoundBudget = 32;
+        long tokenBudget = 256000;
+        long toolRounds;
+        int overshootToolRounds;
+        long overshootTokens;
+        String stopReason = "Unavailable";
+        String turnStatus = "Unavailable";
+        String turnItemsView = "Unavailable";
+        String turnId = "";
+        boolean interruptSent;
+        Long modelContextWindow;
+        long turnDurationMs;
+        final List<ToolItem> toolItems = new ArrayList<>();
+        final List<ReadAction> reads = new ArrayList<>();
 
         Receipt(String task, String world, String model, String effort, String backend) {
             this.task = task;
@@ -725,6 +1284,26 @@ public final class SolLocalizeDriver {
             field(json, "reasoning_tokens", orUnavailable(reasoningTokens));
             field(json, "total_tokens", orUnavailable(totalTokens));
             field(json, "cache_write_input_tokens", orUnavailable(cacheWriteInputTokens));
+            field(json, "arm", jsonString(arm));
+            field(json, "inspect_mode", Boolean.toString(inspectMode));
+            field(json, "tool_rounds", Long.toString(toolRounds));
+            field(json, "tool_round_budget", Integer.toString(toolRoundBudget));
+            field(json, "token_budget", Long.toString(tokenBudget));
+            field(json, "overshoot_tool_rounds", Integer.toString(overshootToolRounds));
+            field(json, "overshoot_tokens", Long.toString(overshootTokens));
+            field(json, "stop_reason", jsonString(stopReason));
+            field(json, "interrupt_sent", Boolean.toString(interruptSent));
+            field(json, "turn_status", jsonString(turnStatus));
+            field(json, "turn_items_view", jsonString(turnItemsView));
+            field(json, "turn_duration_ms",
+                    turnDurationMs == 0 ? jsonString("Unavailable") : Long.toString(turnDurationMs));
+            field(json, "model_context_window",
+                    modelContextWindow == null ? jsonString("Unavailable") : modelContextWindow.toString());
+            field(json, "tool_item_types", jsonString(toolItemTypes()));
+            field(json, "read_count", Integer.toString(reads.size()));
+            field(json, "read_bytes_total", Long.toString(readBytesTotal()));
+            field(json, "nonempty_read_count", Integer.toString(nonemptyReadCount()));
+            field(json, "first_nonempty_read_ms", firstNonemptyReadMillis());
             field(json, "usage", jsonString(usageSummary()));
             field(json, "path_count", Integer.toString(paths.size()));
             json.append("  \"paths\": [");
@@ -736,6 +1315,58 @@ public final class SolLocalizeDriver {
             json.append("  \"raw_result_present\": ").append(!rawResult.isEmpty()).append("\n");
             json.append("}\n");
             return json.toString();
+        }
+
+        /** Total output bytes the observed inspection commands returned. */
+        private long readBytesTotal() {
+            long total = 0;
+            for (ReadAction action : reads) {
+                total += action.bytes();
+            }
+            return total;
+        }
+
+        /** Observed actions that returned nonempty output, reads and discovery alike. */
+        private int nonemptyReadCount() {
+            int count = 0;
+            for (ReadAction action : reads) {
+                if (action.bytes() > 0) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /**
+         * The offset of the first observed inspection action that returned
+         * nonempty output, or `Unavailable`. This is a byte observation, not a
+         * relevance judgment: the first action that *returned bytes* is not
+         * claimed to be the first *relevant* read.
+         */
+        private String firstNonemptyReadMillis() {
+            long first = Long.MAX_VALUE;
+            for (ReadAction action : reads) {
+                if (action.bytes() > 0 && action.atMillis() < first) {
+                    first = action.atMillis();
+                }
+            }
+            return first == Long.MAX_VALUE ? jsonString("Unavailable") : Long.toString(first);
+        }
+
+        /** The observed item-type histogram, e.g. `commandExecution=3;reasoning=1`. */
+        private String toolItemTypes() {
+            Map<String, Integer> counts = new LinkedHashMap<>();
+            for (ToolItem item : toolItems) {
+                counts.merge(item.type(), 1, Integer::sum);
+            }
+            StringBuilder summary = new StringBuilder();
+            for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+                if (summary.length() > 0) {
+                    summary.append(';');
+                }
+                summary.append(entry.getKey()).append('=').append(entry.getValue());
+            }
+            return summary.toString();
         }
 
         private String usageSummary() {

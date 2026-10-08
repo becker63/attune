@@ -90,7 +90,8 @@ def attune_sol_cohort(
         prompt_identity,
         codex,
         issue_tree,
-        world_repo):
+        world_repo,
+        inspect = False):
     """Expand one declared task population into one Sol remote action per task.
 
     Args:
@@ -101,6 +102,8 @@ def attune_sol_cohort(
       codex: the pinned Codex CLI binary target.
       issue_tree: the declared public issue projection tree.
       world_repo: the declared acquisition repository of the clean world archives.
+      inspect: opt in to the distinct enforced read-only inspection arm for
+        every expanded task. Default `False` is the published original arm.
     """
     targets = []
     for task in tasks:
@@ -108,6 +111,7 @@ def attune_sol_cohort(
         attune_sol_task(
             name = target_name,
             codex = codex,
+            inspect = inspect,
             issue_tree = issue_tree,
             prompt = prompt,
             prompt_identity = prompt_identity,
@@ -129,6 +133,33 @@ def _sol_task_impl(ctx):
     projections = ctx.actions.declare_file(ctx.label.name + ".predictions.tsv")
     manifest = ctx.actions.declare_file(ctx.label.name + ".world.tsv")
     ctx.actions.write(manifest, _world_source_manifest(ctx, ctx.attr.world))
+    # Exactly one declared public-issue input: the arm's admitted public
+    # projection tree, or a frozen corpus-free fixture's own issue file.
+    if ctx.attr.issue_tsv:
+        issue_inputs = [ctx.file.issue_tsv]
+        issue_arguments = ["--issue-tsv", ctx.file.issue_tsv.path]
+    else:
+        issue_inputs = [ctx.file.issue_tree]
+        issue_arguments = ["--issue-tree", ctx.file.issue_tree.path + "/issues.tsv"]
+    outputs = [out, projections]
+    # The opt-in inspected path: the same driver and route, plus the declared
+    # observation surface (parsed item events, observed read bytes) and the
+    # frozen client-mechanical budgets. The original arm's targets declare none
+    # of this and keep their published argument list exactly.
+    inspect_arguments = []
+    if ctx.attr.inspect:
+        reads = ctx.actions.declare_file(ctx.label.name + ".reads.tsv")
+        outputs.append(reads)
+        inspect_arguments = [
+            "--inspect",
+            "true",
+            "--max-tool-rounds",
+            str(ctx.attr.max_tool_rounds),
+            "--max-tokens",
+            str(ctx.attr.max_tokens),
+            "--reads",
+            reads.path,
+        ]
     classpath, arguments = _driver_arguments(ctx.attr.deps, "run", [
         "--out", out.path,
         "--predictions", projections.path,
@@ -139,18 +170,17 @@ def _sol_task_impl(ctx):
         "--timeout", str(ctx.attr.timeout),
         "--prompt", ctx.file.prompt.path,
         "--prompt-identity", ctx.attr.prompt_identity,
-        "--issue-tree", ctx.file.issue_tree.path + "/issues.tsv",
         "--repo", manifest.path,
         "--codex", ctx.file.codex.path,
-    ])
+    ] + issue_arguments + inspect_arguments)
     ctx.actions.run(
         executable = runtime.java_executable_exec_path,
         arguments = arguments,
         inputs = depset(
-            [manifest, ctx.file.prompt, ctx.file.issue_tree, ctx.file.codex] + ctx.files.repo,
+            [manifest, ctx.file.prompt, ctx.file.codex] + issue_inputs + ctx.files.repo,
             transitive = [depset(classpath), ctx.attr.codex.files, runtime.files],
         ),
-        outputs = [out, projections],
+        outputs = outputs,
         env = _LOCALE_ENV,
         # `no-local` keeps the turn on the declared remote platform (never a host
         # fallback). Caching stays ON: a retained receipt is reused exactly, which
@@ -165,7 +195,7 @@ def _sol_task_impl(ctx):
         progress_message = "Sol localization %{label}",
         use_default_shell_env = False,
     )
-    return [DefaultInfo(files = depset([out, projections, manifest]))]
+    return [DefaultInfo(files = depset(outputs + [manifest]))]
 
 attune_sol_task = rule(
     implementation = _sol_task_impl,
@@ -176,18 +206,25 @@ attune_sol_task = rule(
     patch, interface oracle, catalog metadata, Attune E/Q ranks, JEV fixtures and
     report/metrics are physically absent from the closure. The rule emits one
     sanitized receipt plus the mechanical projection of that task's raw
-    structured result; it classifies nothing.
+    structured result; it classifies nothing. With `inspect = True` it is the
+    distinct enforced read-only inspection arm: it additionally emits the
+    mechanical projection of the observed inspection actions and enforces the
+    frozen client-mechanical budgets inside the driver.
     """,
     attrs = {
         "codex": attr.label(allow_single_file = True, mandatory = True),
         "prompt": attr.label(allow_single_file = True, mandatory = True),
-        "issue_tree": attr.label(allow_single_file = True, mandatory = True),
+        "issue_tree": attr.label(allow_single_file = True),
+        "issue_tsv": attr.label(allow_single_file = True),
         "repo": attr.label(mandatory = True),
         "task": attr.string(mandatory = True),
         "world": attr.string(mandatory = True),
         "model": attr.string(default = "gpt-6.1-sol"),
         "effort": attr.string(default = "medium"),
         "timeout": attr.int(default = 300),
+        "inspect": attr.bool(default = False),
+        "max_tool_rounds": attr.int(default = 32),
+        "max_tokens": attr.int(default = 256000),
         "prompt_identity": attr.string(mandatory = True),
         "deps": attr.label_list(
             default = ["//platform/tools/sol:sol_driver"],

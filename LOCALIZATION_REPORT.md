@@ -66,6 +66,20 @@ full split table, latency, token usage and the billing statement in the
 generation-16 section below. The arm is a separate measurement from the ten
 frozen ranking arms and is not blended with any of them.
 
+The owner-approved **distinct Sol inspected arm** (continuation #1,
+`library/sol-inspected.md`) is **PARTIAL**: its harness is implemented and
+validated (pre-edit gen16 snapshot outside mutable outputs, new byte-frozen
+inspect-to-localize prompt, opt-in inspected driver path with real item-event
+parsing, observed read bytes and enforced client-mechanical bounds, corpus-free
+authored bring-up fixture, corpus-free native laws in the ordinary gate), but the
+real bring-up trace is **blocked on a concrete auth blocker**: the BuildBuddy
+`ACCESS_TOKEN` secret holds an expired SIWC token, so no turn was dispatched.
+The owner-authorized host guarded refresh was run and produced a fresh 1-hour
+handoff; the owner must replace the BuildBuddy secret and re-run
+`sol_inspected_route_check` → `sol_inspected_fixture` → `sol_inspected_first_task`.
+No inspected-arm metric is claimed. Details in the new PARTIAL section at the end
+of this report.
+
 **Generated:** 2026-10-07T21:20:00Z (generation 14; supersedes generation 13 for
 current state; earlier generations retained below as history). Generation 14 is
 the owner-authorized **replicated five-observation acquisition** (Phase 2 of the
@@ -4438,3 +4452,165 @@ No upstream producer action re-executed in either.
   byte-identical outputs from the Bazel action and remote cache with 0 executed
   Sol actions, so no successful turn was rerun and no plan usage was lost or
   duplicated.
+
+---
+
+## Sol inspected arm — harness bring-up and blocked first trace (PARTIAL, 2026-10-08)
+
+This section records the first, **distinct** continuation of the standalone Sol
+arm (`library/sol-inspected.md`). It is deliberately separate from the published
+generation-16 result, which it does **not** rerun, rescore or rewrite.
+
+**State: PARTIAL.** The harness is implemented and locally validated; the real
+bring-up trace is blocked on a concrete auth blocker, so **no inspected-arm
+metric and no inspected-arm observation is claimed here**.
+
+### What the original zero-tool result is, on evidence
+
+The published gen16 arm recorded `tool_calls: 0` on all 88 receipts and an input
+floor near 31k tokens. Neither fact was accepted at face value; both were
+diagnosed from the actual driver, the generated protocol schemas and the
+preserved receipts:
+
+- **The zero-tool count is an incomplete counter, not an observation.** The
+  driver counted a tool call only when a line contained the exact substrings
+  `"item/completed"` and `"type":"<t>"` for a fixed type list. The generated
+  `TurnCompletedNotification` schema declares that `turn/completed` carries a
+  `Turn` with `items` and an `itemsView` (`full | summary | notLoaded`), which
+  the counter never reads; `item/started` was likewise ignored; and
+  non-inspection items (`fileChange`, `mcpToolCall`, `webSearch`, ...) were
+  counted as tool calls while no read or byte evidence was ever recorded. The
+  retained receipts contain no item stream, so what the model actually did
+  cannot be recovered from them: the honest statement is that the counter was
+  incomplete, not that the model refused to inspect. The published gen16
+  numbers stand as published and are only qualified here.
+- **The ~31k input floor is measured, and its composition is unknown.** Across
+  the 88 preserved receipts, `input_tokens` is min 30,859 / p50 31,457.5 /
+  mean 31,939.2 / max 45,151; `input_cached_tokens` min 10,240 / p50 20,928 /
+  max 32,768; `input − cached` min 2,354 / p50 10,873 / max 21,796;
+  `output_tokens` p50 214. The frozen prompt is 704 bytes and the complete
+  88-task public issue projection is 147,984 bytes, so the prompt and the issue
+  text can account for only a small part of the floor, and the world source is
+  never sent as input at all (it is materialized on disk for inspection). The
+  same static prefix is reported **cached across independent concurrent tasks**
+  (≥10,240, typically ~20,928 tokens), which is direct evidence that most of the
+  floor is a task-independent harness/protocol prefix (the app-server's own
+  system instructions plus the declared tool schemas). The exact composition
+  cannot be decomposed from the retained receipts — the provider exposes no
+  tokenizer and no request payload was retained — so it **remains unknown**, and
+  **no change was made on its account**. The new arm records
+  `model_context_window`, per-update token-usage totals and tool rounds so the
+  floor becomes observable per task; that limitation is disclosed rather than
+  papered over.
+- **cwd, mounts and tools, as configured.** The driver materializes the clean
+  world into a temp directory, sets `thread/start.cwd` to it and the builder
+  directory to the same path, with `sandbox: read-only`, `approvalPolicy: never`
+  and `env.clear()` leaving only `PATH`/`HOME`/`CODEX_HOME`/`LANG` plus the
+  injected SIWC token. The declared tool surface is the `ThreadItem` union
+  (`commandExecution` with parsed `commandActions`, `fileChange`, `mcpToolCall`,
+  `dynamicToolCall`, `webSearch`, `imageView`, `collabAgentToolCall`,
+  `subAgentActivity`, `sleep`) plus non-tool items. Nothing in the retained
+  evidence demonstrates a mount or tool-surface defect; the new arm's authored
+  fixture settles the question empirically instead of by assertion.
+
+### The one demonstrated defect that was fixed (opt-in only)
+
+`--inspect true` adds a distinct path to the same driver and the same pinned
+Codex `0.160.1` app-server on the same SIWC route. The default `run` path and
+its argument list are unchanged, so the original arm's behavior is untouched.
+
+- the app-server's own event stream is parsed as JSON with a bounded reader
+  rather than searched for a serialization substring;
+- every `item/completed` item **and** every `turn/completed.turn.items` entry is
+  captured into a set keyed by item id, so a tool action is counted exactly
+  once and cannot be double-counted;
+- every `commandExecution` item's `commandActions` is recorded as a real `read`
+  row: declared action kind (`read | search | listFiles | unknown`), the
+  path/query it names, the returned byte count, the SHA-256 of those bytes, the
+  exit code, the tool status and the offset in ms, with the full item-type
+  histogram as `tool_item_types`;
+- frozen **client-mechanical** bounds are enforced and disclosed: 300 s wall,
+  32 tool rounds, 256,000 observed cumulative tokens (input including cached,
+  plus output; the provider's `totalTokens` already includes cached input, which
+  is therefore counted once) and 8 concurrent tasks. The turn is interrupted
+  with `turn/interrupt` at the first observable update past a bound, the stop
+  reason is recorded, and the **overshoot is retained** rather than rounded
+  away. These are client stops and are never claimed as provider hard limits:
+  the protocol exposes no token or round cap;
+- new receipt fields keep provider-absent values explicitly `Unavailable`.
+
+The scientific classification lives in Flix
+(`src/Attune/Study/SolInspected.flix`): the declared test-path rule, the
+nonempty-implementation-read floor, `ProtocolFailed` on a zero-read result, the
+declared stop reasons and overshoot. It delegates the structured-result rules
+unchanged to `Attune.Study.Sol`, so the inspected arm cannot silently drift from
+the original arm's statement.
+
+### Frozen before any outcome
+
+- **New prompt**: `test/localization_sol_inspected/prompt.txt`, byte-frozen at
+  `sha256:4974812a1f476c3b36357ffdc64b5ca47dd831407aa9afbaf4e027a5cb5b3539`.
+  It localizes (never solves), requires searching the mounted repository and
+  reading the implementation before answering, allows following definitions,
+  callers, imports and tests, returns up to 10 ranked existing
+  repository-relative files (fewer when warranted, no padding) and permits
+  abstention **only after** inspection cannot establish relevance. No Attune,
+  rank, structure or gold assistance is present in its inputs.
+- **Corpus-free authored bring-up fixture**:
+  `test/localization_sol_inspected/worlds/fixture/`, a five-file repository whose
+  needed information is absent from the prompt and the issue. The defect is in
+  `src/format.js` (`sha256:40a378d6890753b8df049ada6e5a7cbaffd2a38236c872ea8420333c10f42a51`,
+  555 bytes); `src/counter.js` and `src/index.js` are deliberate correct
+  distractors. A conforming answer therefore requires a real search and a real
+  nonempty read of implementation source, and the reads projection records the
+  path and the returned bytes, so the read is verified rather than assumed.
+- **Pre-edit gen16 snapshot**: taken **before** any shared driver or rule edit
+  and held outside mutable Bazel outputs in
+  `library/sol-inspected/` — the complete 88-task receipt/prediction/source
+  record, the published metric artifacts, the original route check, the original
+  prompt bytes and the report, with a 271-file `SHA256SUMS` identity manifest.
+  After the snapshot, no original live producer is built or run again, and gen16
+  action keys are **not** asserted unchanged, because the shared jar changed.
+
+### Verification performed (offline, no provider)
+
+The new corpus-free laws are part of the ordinary offline gate: 7 `@Test` laws
+pin the declared action kinds, the declared test-path rule, the
+nonempty-implementation-read floor, the zero-read `ProtocolFailed`
+classification, the typed result-status failures, the declared bounds with
+retained overshoot, and the exact `read` row layout the driver writes, so the
+driver's projection and its Flix consumer are pinned together with no provider.
+The modified driver compiles, `buildifier` reports only pre-existing findings,
+and the full offline gate is 37 pass / 1 fail, the single failure being the
+documented pre-existing `//test/policy:workspace_audit_test` over the preserved
+untracked `notes/repository-through-time/` data, which is untouched.
+
+### The blocker: the injected SIWC token is expired
+
+The dedicated-platform pre-flight (`//test/localization_sol_inspected:route_check`,
+no provider call, fresh remote action) reports the secret exactly as injected:
+
+```json
+{ "token_present": true, "token_expiry_unix": 1791422914,
+  "now_unix": 1791425125, "token_expired": true }
+```
+
+Every dispatched turn would be rejected with HTTP 401, so **no turn was
+dispatched** and no failed or partial attempt was manufactured. The
+owner-authorized host guarded refresh was then run
+(`runtime/siwc-refresh.py`, host-side, no corpus, no provider, no token bytes
+printed): it PASSED with the required audience
+`https://api.openai.com/v1` and scopes, rotated the refresh token, and wrote a
+fresh 1-hour token to `/run/user/1000/attune-siwc-access-token`.
+
+**The remaining step is the owner's**: replace the BuildBuddy secret
+`ACCESS_TOKEN` with the contents of that handoff file. Then, back to back and in
+order: `sol_inspected_route_check` (must report `token_expired: false`),
+`sol_inspected_fixture` (the corpus-free authored fixture must show a real search
+and a nonempty implementation read, and a nonempty answer), and
+`sol_inspected_first_task` (exactly one real cohort task, alone, before any
+fan-out). The 88-task `sol_inspected_arm` fan-out must not run until that
+bring-up trace is retained and reviewed. None of these may use
+`--config=remote`: the dedicated platform is part of the action key, and an
+ordinary profile injects no secret, which would overwrite retained receipts with
+~250 ms failures.

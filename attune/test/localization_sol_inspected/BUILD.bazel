@@ -1,0 +1,135 @@
+load("//platform/build:native.bzl", "native_flix_test")
+load("//platform/build:sol.bzl", "attune_sol_cohort", "attune_sol_route_check", "attune_sol_task")
+load("//test/localization_runtime:localization_runtime.bzl", "RUNTIME_CAPPED_EXCLUSIONS")
+load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The distinct enforced read-only inspection arm's ONE frozen prompt
+# (`VAL-INSPECT-001`). The bytes are `prompt.txt`, frozen BEFORE any outcome;
+# the identity below is the SHA-256 of exactly those bytes. It is a NEW prompt,
+# not the original arm's: it requires inspection (search the mounted repository,
+# read the implementation before answering) and makes abstention a
+# post-inspection act, so a corpus-free fixture's answer can only be produced by
+# actually reading source.
+PROMPT_INSPECTED_IDENTITY = "sha256:4974812a1f476c3b36357ffdc64b5ca47dd831407aa9afbaf4e027a5cb5b3539"
+
+# The dedicated remote execution platform of the inspected arm. It is the same
+# declared platform as the original Sol arm — the ChatGPT-plan SIWC route must
+# reach the plan backend through BuildBuddy's declared external-network
+# contract, and the SIWC access token is injected *only* as the BuildBuddy
+# secret `ACCESS_TOKEN`. The arm is a distinct sibling, not a new route.
+platform(
+    name = "remote",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:arm64",
+    ],
+    exec_properties = {
+        "Arch": "arm64",
+        "OSFamily": "Linux",
+        "container-image": "docker://gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
+        "network": "external",
+        "env-secrets": "ACCESS_TOKEN",
+        "recycle-runner": "false",
+        "EstimatedCPU": "0.5",
+        "EstimatedMemory": "512MB",
+    },
+)
+
+# The declared pre-flight of the arm's secret boundary: it reports whether the
+# platform's injected `ACCESS_TOKEN` secret is present and, when it is a
+# well-formed JWT, its expiry instant. It makes NO provider call and touches no
+# corpus, so it runs before any scored task without consuming plan usage.
+attune_sol_route_check(
+    name = "route_check",
+    tags = ["manual"],
+)
+
+# The corpus-free authored bring-up fixture. It carries the information the
+# issue needs inside `src/format.js` and NOT in the prompt or the issue text, so
+# an answer that respects the frozen prompt can only come from actually
+# searching the mounted repository and reading nonempty implementation source.
+# The fixture is authored here, declares no corpus artifact and no evaluator
+# label, and exists to verify tool availability and the observed read bytes
+# before any cohort spend.
+filegroup(
+    name = "fixture_world",
+    srcs = glob(["worlds/fixture/**"]),
+)
+
+exports_files([
+    "fixture_issue.tsv",
+    "prompt.txt",
+])
+
+attune_sol_task(
+    name = "fixture_task",
+    codex = "@codex_cli//:codex-aarch64-unknown-linux-musl",
+    inspect = True,
+    issue_tsv = ":fixture_issue.tsv",
+    prompt = ":prompt.txt",
+    prompt_identity = PROMPT_INSPECTED_IDENTITY,
+    repo = ":fixture_world",
+    tags = ["manual"],
+    task = "fixture__total",
+    world = "fixture",
+)
+
+# The surviving tasks of the frozen runtime-capped cohort, derived from the same
+# admitted manifest the deterministic arms and the original Sol arm consume, so
+# the inspected population cannot drift from the cohort it is compared against:
+# 22 groups / 84 worlds / 88 tasks / 85 eligible.
+_EXCLUDED_GROUPS = [entry["group"] for entry in RUNTIME_CAPPED_EXCLUSIONS]
+
+_SURVIVING_TASKS = [
+    row
+    for row in LOCALIZATION_ANALYSIS
+    if len(row) > 3 and row[0] == "task" and row[2] not in _EXCLUDED_GROUPS
+]
+
+# One declared remote action per surviving task, exactly like the original arm's
+# cohort but with the opt-in inspected path: the same clean world
+# (`@attune_worlds//:<w>`) and public issue (`//test/localization:issue_text`)
+# inputs, the new frozen prompt, and no evaluator artifact of any kind in any
+# closure. The bring-up gate builds exactly ONE of these targets first.
+attune_sol_cohort(
+    name = "sol_inspected_tasks",
+    codex = "@codex_cli//:codex-aarch64-unknown-linux-musl",
+    inspect = True,
+    issue_tree = "//test/localization:issue_text",
+    prompt = ":prompt.txt",
+    prompt_identity = PROMPT_INSPECTED_IDENTITY,
+    tasks = _SURVIVING_TASKS,
+    world_repo = "@attune_worlds",
+)
+
+# The corpus-free laws of the inspected arm's inspection floor
+# (`VAL-INSPECT-001`): the declared action kinds, the declared test-path rule,
+# the nonempty-implementation-read floor, the zero-read `ProtocolFailed`
+# classification, the typed result-status failures and the retained overshoot.
+# Pure, so unlike the arm's remote tasks it is part of the ordinary offline gate.
+native_flix_test(
+    name = "sol_inspected_law",
+    srcs = [
+        "SolInspectedLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Metrics.flix",
+        "//src:Attune/Study/Sol.flix",
+        "//src:Attune/Study/SolInspected.flix",
+    ],
+)
+
+test_suite(
+    name = "all",
+    tags = ["manual"],
+    tests = [":sol_inspected_law"],
+)
