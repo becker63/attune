@@ -126,10 +126,12 @@ def attune_sol_cohort(
 def _sol_task_impl(ctx):
     runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
     out = ctx.actions.declare_file(ctx.label.name + ".receipt.json")
+    projections = ctx.actions.declare_file(ctx.label.name + ".predictions.tsv")
     manifest = ctx.actions.declare_file(ctx.label.name + ".world.tsv")
     ctx.actions.write(manifest, _world_source_manifest(ctx, ctx.attr.world))
     classpath, arguments = _driver_arguments(ctx.attr.deps, "run", [
         "--out", out.path,
+        "--predictions", projections.path,
         "--task", ctx.attr.task,
         "--world", ctx.attr.world,
         "--model", ctx.attr.model,
@@ -148,7 +150,7 @@ def _sol_task_impl(ctx):
             [manifest, ctx.file.prompt, ctx.file.issue_tree, ctx.file.codex] + ctx.files.repo,
             transitive = [depset(classpath), ctx.attr.codex.files, runtime.files],
         ),
-        outputs = [out],
+        outputs = [out, projections],
         env = _LOCALE_ENV,
         # `no-local` keeps the turn on the declared remote platform (never a host
         # fallback). Caching stays ON: a retained receipt is reused exactly, which
@@ -163,7 +165,7 @@ def _sol_task_impl(ctx):
         progress_message = "Sol localization %{label}",
         use_default_shell_env = False,
     )
-    return [DefaultInfo(files = depset([out]))]
+    return [DefaultInfo(files = depset([out, projections, manifest]))]
 
 attune_sol_task = rule(
     implementation = _sol_task_impl,
@@ -173,7 +175,8 @@ attune_sol_task = rule(
     issue projection are declared inputs; the reference patch, gold paths, test
     patch, interface oracle, catalog metadata, Attune E/Q ranks, JEV fixtures and
     report/metrics are physically absent from the closure. The rule emits one
-    sanitized receipt; it classifies nothing.
+    sanitized receipt plus the mechanical projection of that task's raw
+    structured result; it classifies nothing.
     """,
     attrs = {
         "codex": attr.label(allow_single_file = True, mandatory = True),

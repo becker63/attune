@@ -3204,7 +3204,7 @@ owner and no acquisition closure.
 
 | Component | Source | Language | Code | Class | Owner | One-sentence contract |
 | --- | --- | --- | --- | --- | --- | --- |
-| sol | `platform/tools/sol/SolLocalizeDriver.java` | Java | 740 | B | mechanical boundary | The standalone Sol arm's mechanical app-server driver: it materializes one clean world and its public issue from declared inputs, launches the pinned Codex 0.160.1 app-server as a fresh ephemeral child with `approvalPolicy never` and a read-only sandbox, speaks the documented JSON-RPC handshake for exactly one repository-inspection-only task, extracts the raw structured `{"paths":[...]}` result and writes one sanitized receipt; it holds no scientific policy, no label, no rank and no metric. |
+| sol | `platform/tools/sol/SolLocalizeDriver.java` | Java | 823 | B | mechanical boundary | The standalone Sol arm's mechanical app-server driver: it materializes one clean world and its public issue from declared inputs, launches the pinned Codex 0.160.1 app-server as a fresh ephemeral child with `approvalPolicy never` and a read-only sandbox, speaks the documented JSON-RPC handshake for exactly one repository-inspection-only task, constrains the final message with the declared `outputSchema`, extracts the raw structured `{"paths":[...]}` result, projects it mechanically and writes one sanitized receipt with the observable token usage; it holds no scientific policy, no label, no rank and no metric. |
 
 Every mechanical path must belong to a named mechanical component, or the
 component table would silently drop the measured lines;
@@ -3219,15 +3219,33 @@ in `//:policy_sources` so their source stays declared rather than silently
 unowned.
 
 Declared population at this leaf: `core` 204, `repository` 809, `theory` 629,
-`study` 2690, `policy` 566, `view` 522, `ascii` 87, `frontends` 372, `parquet`
-563, `boundary` 1040, `grit-binding` 185, `grit-rule` 684, `build-rules` 1451,
-`embedding` 246, `sol` 740, `inherited` 655, `inherited-locks` 21229, `tests`
-53899, `metadata` 591342. Class report: cognitive 6476, mechanical 4312,
-authored 10788, test 53899, support 21884; raw population 4249 readable files,
-code 677913, comment 4442, documentation 9937, blank 12321, derived physical
-704613 and nonblank 692292; `//test/policy:declared_source_policy_test` verdict
+`study` 2727, `policy` 566, `view` 522, `ascii` 87, `frontends` 372, `parquet`
+563, `boundary` 1040, `grit-binding` 185, `grit-rule` 684, `build-rules` 1454,
+`embedding` 246, `sol` 823, `inherited` 655, `inherited-locks` 21229, `tests`
+54258, `metadata` 591386. Class report: cognitive 6513, mechanical 4398,
+authored 10911, test 54258, support 21884; raw population 4252 readable files,
+code 678439, comment 4527, documentation 10086, blank 12412, derived physical
+705464 and nonblank 693052; `//test/policy:declared_source_policy_test` verdict
 `accept`. The live audit's pre-existing failure over the untracked
 `notes/repository-through-time/` data is unchanged and is not this leaf's work.
 Reconciling the canonical totals block and the README snapshot with the
 integrated source remains the `integrated-counts-external-ascii-and-handoff`
 feature's declared work, not this leaf's.
+
+### Executed, scored and published (2026-10-08)
+
+The arm ran to completion and its result is generation 16 of the root
+`LOCALIZATION_REPORT.md`; the execution record is
+`library/sol-arm-publication.md` and the sanitized evidence is
+`library/sol-arm-evidence/`. All 88 declared remote actions produced a retained
+receipt with `result_status: "ok"`, `timed_out: false` and the frozen prompt
+identity `sha256:e3180318…`; 30 tasks predicted, 57 abstained and 1 failed
+(`sveltejs__kit-3562`, a nonexistent-path result refused without evaluator
+repair), with 0 tool calls on every receipt. The arm's own result statement
+lives in `src/Attune/Study/Sol.flix` (the classification of one raw structured
+result into `Predicted`/`Abstained`/`Failed` and the rank projection), which is
+a semantic owner inside the existing `study` component rather than a second
+metric engine; the scoring stage `test/localization_sol/SolStages.flix` only
+binds, classifies and renders through the one canonical
+`Attune.Study.Metrics`. The eight corpus-free structured-result laws are
+`test/localization_sol/SolLaw.flix`.

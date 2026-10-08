@@ -54,6 +54,18 @@ reproduces all 224 published P / P+A baseline cells exactly (0 mismatches). The
 held-out final split is **15 eligible tasks in only 4 groups**, so its differences
 are reported and explicitly not read as a finding.
 
+The owner-authorized continuation also now publishes the **standalone Sol arm**
+(generation 16): 88 real `gpt-6.1-sol` medium repository-inspection turns through
+the pinned Codex `0.160.1` app-server on the ChatGPT-plan SIWC route, on the
+arm's own dedicated BuildBuddy platform, with the frozen prompt, the
+clean-world/public-issue-only firewall, 0 timeouts and 0 successful-task reruns.
+All 88 receipts read `result_status: "ok"`; 30 tasks predicted, 57 abstained and 1
+failed; all-eligible micro Hit@1 30.6% (26/85), Recall@1 22.8%, MRR@10 30.6%,
+FileAcc@1 17.6% and FileAcc@3 20.0% through the same canonical reducer, with the
+full split table, latency, token usage and the billing statement in the
+generation-16 section below. The arm is a separate measurement from the ten
+frozen ranking arms and is not blended with any of them.
+
 **Generated:** 2026-10-07T21:20:00Z (generation 14; supersedes generation 13 for
 current state; earlier generations retained below as history). Generation 14 is
 the owner-authorized **replicated five-observation acquisition** (Phase 2 of the
@@ -3061,6 +3073,238 @@ groups are held-out final; there is no significance test, no tuned threshold, no
 selected winner and no goalpost moved. The union, the ensembles and the votes are
 not blended with any other arm, and no cross-arm selection was performed.
 
+## Standalone Sol arm: `gpt-6.1-sol` medium on the dedicated ChatGPT-plan SIWC remote platform (generation 16)
+
+Owner-authorized continuation (2026-10-07/08), **stage 8 of the publish-first
+continuation** (binding contract `library/sol-medium.md`, assertions
+`VAL-SOL-001`–`VAL-SOL-004`). This is a **standalone scientific arm**: not a
+Factory worker route, not a variant of the ten frozen arms, and not a second
+reducer. It is one real repository-inspection turn per surviving task, executed
+by the pinned Codex `0.160.1` app-server against the ChatGPT-plan SIWC provider,
+then scored through the **same** canonical `Attune.Study.Metrics` path as every
+other arm. It is published immediately, before any final synthesis.
+
+**Route and identity.** Model `gpt-6.1-sol`, effort `medium`, backend
+`codex-app-server`, provider `openai_chatgpt_plan`, on the arm's own dedicated
+BuildBuddy platform `//test/localization_sol:remote` (`Arch=arm64`,
+`OSFamily=Linux`, the registry-digest-pinned RBE image, `network external`,
+`env-secrets ACCESS_TOKEN`, `recycle-runner false`, `remote_local_fallback
+false`, `no-local`). The SIWC access token reaches the child process only through
+that declared secret injection: it never appears in argv, a declared input, the
+CAS, a log, the BEP, a receipt, Git or Nix, and the driver's `route-check` mode
+reports only token presence and JWT expiry. `resolved_model` is `Unavailable` on
+every receipt — the app-server reported no resolved model — and no parity is
+claimed. Billing stays on the owner's **ChatGPT plan through the SIWC route**
+(never OpenRouter); no per-token price is observable from the receipts, so no USD
+amount and no API-equivalent counterfactual is claimed, and the SIWC cost is
+never reported as `$0`.
+
+**Frozen prompt and population.** The prompt bytes are
+`test/localization_sol/prompt.txt`, 704 bytes, sha256
+`e3180318bbe660aad182da50ca296616e976e1f669ec4397fe6597cf2cd66d5c` —
+byte-identical to the fenced prompt in the binding contract, frozen **before any
+outcome**, and carried as `prompt_identity` on all 88 receipts. The cohort is the
+same frozen runtime-capped population the deterministic, E, Q and JEV arms
+consume: **22 groups / 84 worlds / 88 tasks / 85 eligible** (50 development / 20
+calibration / 15 held-out final in 4 groups), 218 eligible gold files.
+
+**Prediction-input firewall.** 88 declared remote actions; each action's closure
+is exactly the pinned Codex binary, the frozen prompt bytes, the public issue
+projection and that task's own clean world source. A `bazel aquery` over
+`sol_tasks__pinojs__pino-121` shows 153 inputs = 34 world-source files + 114
+pinned-JDK files + exactly 5 declared inputs, with **0** hits for `label`,
+`gold`, `patch`, `FAIL_TO_PASS`, `PASS_TO_PASS`, `oracle`, `rank_`, `metrics`,
+`jev`, `report`, `LOCALIZATION`, `mapped`, `catalog` and `interface`. The
+reference patch, test metadata, Attune E/Q ranks, JEV fixtures, the report and
+every metric artifact are physically absent.
+
+**Execution.** All 88 tasks were dispatched and all 88 retained receipts read
+`result_status: "ok"` with `timed_out: false`, `turn_completed: true`, backend
+`codex-app-server`, effort `medium` and the frozen prompt identity. The declared
+300 s cap was never reached. The first pass ran at the declared `--jobs=50`;
+**37 tasks returned a real HTTP 429** and were re-executed at `--jobs=8` — the
+fan-out was reduced only on that observed evidence, and the 37 affected targets
+are frozen with the evidence. The single authorized transient-auth retry was
+spent on `pinojs__pino-121`, whose **first** receipt
+(`result_status: malformed`, `http_status: 401`, `turn_wall_ms: 7621`) is
+preserved verbatim as
+`library/sol-arm-evidence/first-scored-task-receipt.json` and is **not** rerun.
+No successful task was rerun.
+
+**Classification (the arm's own result statement, no evaluator repair).** 30
+tasks `predicted` (the structured `{"paths":[…]}` accepted as-is), 57
+`abstained` (the model returned an empty path list), 1 `failed`. The one failure
+is `sveltejs__kit-3562`: the raw result named 4 paths, one of which does not exist
+in the declared clean world, and the contract's rule makes a nonexistent-path
+result a **Failed** task with no repair and no re-prompt. Accepted predictions are
+short — 12 tasks with 1 path, 12 with 2, 6 with 3, none with 4 — and every
+retained prediction is a real repository-relative path of its own declared world.
+**Tool calls: 0 on all 88 receipts** (no `commandExecution`, `fileChange`,
+`mcpToolCall`, `dynamicToolCall`, `webSearch`, `imageView` or
+`collabAgentToolCall` item was observed). The model answered from the frozen
+prompt and public issue without inspecting the world; that is a measured property
+of this arm's behaviour, not a disabled capability, and it is the main reason the
+prediction sets are short.
+
+### Metrics through the one canonical reducer
+
+Every cell is `numerator/denominator` as the canonical exact rational, with the
+rendered percentage and the explicit `population`/`covered`/`undefined` counts.
+`micro` is the task mean; `macro` is the group-equal (task-within-group, then
+group mean) reduction.
+
+**All-eligible (85 tasks / 22 groups).**
+
+| Metric | micro | macro |
+| --- | --- | --- |
+| Hit@1 | 26/85 = 30.6% | 79/264 = 29.9% |
+| Hit@5 | 26/85 = 30.6% | 79/264 = 29.9% |
+| Hit@10 | 26/85 = 30.6% | 79/264 = 29.9% |
+| Recall@1 | 12787/56100 = 22.8% | 13007/58080 = 22.4% |
+| Recall@5 | 3403/14025 = 24.3% | 1729/7260 = 23.8% |
+| Recall@10 | 3403/14025 = 24.3% | 1729/7260 = 23.8% |
+| MRR@10 | 26/85 = 30.6% | 79/264 = 29.9% |
+| FileAcc@1 | 3/17 = 17.6% | 23/132 = 17.4% |
+| FileAcc@3 | 1/5 = 20.0% | 13/66 = 19.7% |
+| FileAcc@5 | 1/5 = 20.0% | 13/66 = 19.7% |
+| FileAcc@10 | 1/5 = 20.0% | 13/66 = 19.7% |
+| FileAcc@32 | 1/5 = 20.0% | 13/66 = 19.7% |
+
+`population = covered = 85`, `undefined = 0` for every micro cell;
+`population = covered = 22`, `undefined = 0` for every macro cell.
+
+**Declared splits (eligible tasks / groups).**
+
+| Split | Metric | micro | macro |
+| --- | --- | --- | --- |
+| development (50 / 13) | Hit@1 | 9/25 = 36.0% | 55/156 = 35.3% |
+| development | Recall@1 | 8827/33000 = 26.7% | 9047/34320 = 26.4% |
+| development | Recall@5 | 4661/16500 = 28.2% | 367/1320 = 27.8% |
+| development | MRR@10 | 9/25 = 36.0% | 55/156 = 35.3% |
+| development | FileAcc@1 | 11/50 = 22.0% | 17/78 = 21.8% |
+| development | FileAcc@3 | 6/25 = 24.0% | 37/156 = 23.7% |
+| calibration (20 / 5) | Hit@1 | 1/5 = 20.0% | 1/5 = 20.0% |
+| calibration | Recall@1 | 7/40 = 17.5% | 7/40 = 17.5% |
+| calibration | Recall@5 | 7/40 = 17.5% | 7/40 = 17.5% |
+| calibration | MRR@10 | 1/5 = 20.0% | 1/5 = 20.0% |
+| calibration | FileAcc@1 | 3/20 = 15.0% | 3/20 = 15.0% |
+| calibration | FileAcc@3 | 3/20 = 15.0% | 3/20 = 15.0% |
+| final (15 / 4) | Hit@1 | 4/15 = 26.7% | 1/4 = 25.0% |
+| final | Recall@1 | 1/6 = 16.7% | 5/32 = 15.6% |
+| final | Recall@5 | 1/5 = 20.0% | 3/16 = 18.8% |
+| final | MRR@10 | 4/15 = 26.7% | 1/4 = 25.0% |
+| final | FileAcc@1 | 1/15 = 6.7% | 1/16 = 6.3% |
+| final | FileAcc@3 | 2/15 = 13.3% | 1/8 = 12.5% |
+
+Every split cell carries `population = covered` and `undefined = 0`
+(development 50/13, calibration 20/5, final 15/4). The complete 96-row table,
+including `Recall@10`, `FileAcc@5/10/32` and the exact pairs for every scope, is
+frozen as `library/sol-arm-evidence/sol-metrics.tsv`.
+
+**Reading the k-flattening honestly.** This arm's rankings are at most 4 paths
+long, so `Hit@1 = Hit@5 = Hit@10` and `Recall@5 = Recall@10` by construction, and
+`MRR@10` coincides with `Hit@1` because every first hit here is at rank 1. That
+is a property of the arm's answer length, not evidence that deeper cutoffs add
+nothing; the file-accuracy family still separates (all-eligible FileAcc@1 17.6%
+→ FileAcc@3 20.0%), so some tasks do need more than one file and some are
+recovered only past rank 1 in file terms.
+
+**Failure and abstention denominators.** All 88 tasks stay in the record set and
+all 85 eligible tasks stay in every metric's denominator with
+`population = covered` and `undefined = 0`: an abstained or failed task is a
+measured miss, never a dropped row. The 3 tasks with no eligible gold are
+reported as `ineligible-no-gold` and are excluded from every metric denominator
+rather than scored as zeros. No provider field was fabricated to fill a gap.
+
+**Independent cross-check.** Recomputing the seven primary metrics directly from
+the frozen prediction projections and the admitted evaluator labels (a separate
+implementation from the stage's) reproduces every published all-eligible cell
+exactly: Hit@1/5/10 = 0.30588, Recall@1 = 0.22793, Recall@5/10 = 0.24264,
+MRR@10 = 0.30588, with 218 total eligible gold files — 0 mismatches.
+
+### Latency and usage
+
+Measured on the 88 retained receipts (per-turn values; percentiles are
+nearest-rank over the whole population).
+
+| Quantity | min | p25 | median | p75 | p90 | p95 | max | sum |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| turn wall (ms) | 9,356 | 11,871 | 12,822 | 14,831 | 18,328 | 18,726 | 30,254 | 1,221,235 |
+| input tokens | 30,859 | 31,089 | 31,455 | 32,062 | 33,065 | 34,415 | 45,151 | 2,810,646 |
+| cached input tokens | 10,240 | — | — | — | — | — | 32,768 | 2,024,832 |
+| output tokens | 155 | 191 | 213 | 262 | 340 | 414 | 545 | 20,944 |
+| reasoning tokens | 19 | 38 | 53 | 97 | 191 | 229 | 344 | 7,099 |
+| total tokens | 31,060 | 31,314 | 31,647 | 32,334 | 33,268 | 34,653 | 45,435 | 2,831,590 |
+| tool calls | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+`cache_write_input_tokens` is 0 on all 88 receipts. `remote_wall_ms` and
+`queue_wall_ms` are `Unavailable` inside the action — neither is observable from
+inside the action, and no value is estimated for them; the honest
+whole-invocation walls come from the Bazel BEP instead: **36.1 s** for the
+87-action `--jobs=50` first pass and **81.5 s** for the 37-action `--jobs=8` 429
+retry. The declared fan-out was 50; the observed concurrency is 50 in the first
+pass and 8 in the retry.
+
+**Billing.** All 88 turns were billed to the owner's ChatGPT plan through the
+SIWC route. The route is never OpenRouter. No USD figure is claimed, and no
+API-equivalent counterfactual is presented as actual spend.
+
+**Evidence frozen outside the output-base cache** (`library/sol-arm-evidence/`):
+the 88 sanitized receipts (`sol-receipts-88.json`), the mechanical prediction
+projection (`sol-predictions.tsv`, 31 tasks / 58 path rows), the three metric
+artifacts (`sol-metrics.tsv`, `sol-tasks.tsv`, `sol-statistics.tsv`), the 37 real
+429 retry targets, the valid route-check, the earlier expired route-check and the
+preserved first-task 401 receipt.
+
+### Replay is provider-free (`VAL-SOL-004`)
+
+The scoring stage `//test/localization_sol:sol_metrics` redeclares no producer.
+It binds the frozen per-task artifacts (one immutable declared tree carrying each
+task's sanitized receipt, the mechanical projection of its raw structured result
+and its declared clean-world source manifest) plus the admitted evaluator labels
+and the admitted mapped manifest, classifies through `Attune.Study.Sol`, and
+reduces through the one canonical reducer. A replay therefore executes **0** Codex
+turns, **0** JEV calls, **0** hosted-Qwen requests, **0** CodeRankEmbed
+inferences and **0** `Repository`/`Theory` actions, and issues **0** provider
+requests. The corpus-free structured-result laws
+(`//test/localization_sol:sol_law`, 8 cases) pin the accepted order and rank
+column, the nonexistent-path, duplicate-path and over-cap failures with no
+evaluator repair, the empty-result abstention, the non-`ok` receipt status as a
+typed failure, and the retention of failed and abstained tasks in the eligible
+denominator. The ordinary offline gate is **36 pass / 1 fail**, the one failure
+being the documented pre-existing `//test/policy:workspace_audit_test` over the
+preserved untracked `notes/repository-through-time/` data.
+
+### One operational incident, recorded
+
+After the successful cohort, a rebuild of the scoring target was issued with the
+*credential-free* `--config=remote` profile instead of the arm's documented
+dedicated-platform command. That is a different execution platform and therefore
+a different action key, so Bazel re-executed all 88 Sol actions on a platform
+with no `ACCESS_TOKEN` injection; every one failed in ~250 ms and overwrote the
+retained outputs with those failures. The arm was then re-materialized with the
+documented `sol_arm` command, which restored **all 88** outputs from the Bazel
+action and remote cache — 219 processes, **0** executed Sol actions — so no
+successful turn was rerun and no additional plan usage was incurred. Every number
+above is computed from those restored, byte-identical receipts. The consequence
+is recorded where it is actionable: the Sol targets must only ever be built
+through `sol_route_check`, `sol_first_task` and `sol_arm`.
+
+### Limits, stated plainly
+
+One measurement of one frozen cohort of 85 eligible tasks, of which only 15 tasks
+in 4 groups are held-out final. There is no significance test, no tuned
+threshold, no selected winner and no goalpost moved. The arm is not blended with
+any other arm and no cross-arm selection was performed. For orientation only, and
+with no selection implied: the frozen deterministic arms' all-eligible micro
+Hit@1 is 11.8% (`P`), 18.8% (`P+A`) and 18.8% (`E`), and the arm's 30.6% is a
+different measurement on the same tasks — an agent turn reading the public issue
+and the world, not a ranking over the frozen candidate universe — so the
+comparison is descriptive and not a like-for-like contrast. Because the model
+made no tool calls, its answers come from the prompt and the issue text alone;
+that is the arm's defining measured behaviour and the reason its coverage is
+bounded by answer length rather than by retrieval depth.
+
 ## Latency regimes
 
 | Regime | Covers | Measured |
@@ -4141,3 +4385,56 @@ No upstream producer action re-executed in either.
   0 JEV, 0 embedding, 0 hosted-Qwen, 0 `Repository`/`Theory` and 0 provider
   requests. The union publication is the hard gate before the Sol arm; no Sol
   dispatch was made here.
+- **2026-10-07T21:20:00Z — generation 16, FINAL for the standalone Sol arm.**
+  Owner-authorized stage 8 of the publish-first continuation (binding contract
+  `library/sol-medium.md`, `VAL-SOL-001`–`VAL-SOL-004`): the **standalone
+  `gpt-6.1-sol` medium arm** on the dedicated ChatGPT-plan SIWC remote platform.
+  88 declared remote actions over the frozen runtime-capped cohort (22 groups /
+  84 worlds / 88 tasks / 85 eligible; 50 development / 20 calibration / 15
+  held-out final in 4 groups; 218 eligible gold files), each action's closure
+  exactly the pinned Codex `0.160.1` binary, the frozen 704-byte prompt
+  (`sha256 e3180318…`, byte-identical to the contract and frozen before any
+  outcome), the public issue projection and that task's own clean world source —
+  `aquery` shows 0 hits for `label`, `gold`, `patch`, `FAIL_TO_PASS`,
+  `PASS_TO_PASS`, `oracle`, `rank_`, `metrics`, `jev`, `report`, `LOCALIZATION`,
+  `mapped`, `catalog` and `interface`. All 88 retained receipts read
+  `result_status: "ok"` with `timed_out: false` and `turn_completed: true`; the
+  declared 300 s cap was never reached (max turn wall 30,254 ms, sum 1,221,235
+  ms). The first pass ran at the declared `--jobs=50` and 37 tasks returned a
+  **real HTTP 429**, so only those 37 were re-executed at `--jobs=8`; the single
+  authorized transient-auth retry was spent on `pinojs__pino-121`, whose first
+  receipt (`result_status: malformed`, `http_status: 401`, `turn_wall_ms: 7621`)
+  is preserved verbatim and not rerun, and no successful task was rerun.
+  Classification: 30 predicted, 57 abstained, 1 failed (`sveltejs__kit-3562`, a
+  nonexistent-path result rejected without evaluator repair); 0 tool calls on all
+  88 receipts, so the arm answered from the prompt and issue alone. Through the
+  ONE canonical `Attune.Study.Metrics`: all-eligible micro Hit@1/5/10
+  26/85 = 30.6%, macro 79/264 = 29.9%; Recall@1 12787/56100 = 22.8% micro /
+  13007/58080 = 22.4% macro; Recall@5/10 24.3% micro / 23.8% macro; MRR@10
+  30.6% / 29.9%; FileAcc@1 3/17 = 17.6% / 23/132 = 17.4%; FileAcc@3/5/10/32
+  1/5 = 20.0% / 13/66 = 19.7%; development 50/13, calibration 20/5 and held-out
+  final 15/4 splits published in full, every cell with `population = covered` and
+  `undefined = 0`, abstentions and the one failure retained as measured misses.
+  Usage: 2,810,646 input tokens (2,024,832 cached), 20,944 output, 7,099
+  reasoning, 2,831,590 total, 0 `cache_write_input_tokens`. Billing is the owner's
+  ChatGPT plan through the SIWC route (never OpenRouter); no USD figure and no
+  API-equivalent counterfactual is claimed, and the SIWC cost is never `$0`.
+  Replay is provider-free: the scoring stage redeclares no producer and executes
+  0 Codex turns, 0 JEV, 0 hosted-Qwen, 0 CodeRankEmbed, 0 `Repository`/`Theory`.
+  Independent exact recomputation from the frozen projections and labels
+  reproduces every published all-eligible cell with 0 mismatches. Adds
+  `src/Attune/Study/Sol.flix`, `test/localization_sol/SolStages.flix`,
+  `test/localization_sol/SolLaw.flix` (8 corpus-free structured-result laws), the
+  `sol_records` immutable tree and the `sol_metrics` stage, and extends
+  `platform/build/sol.bzl` and the driver with the declared `outputSchema`
+  constraint, the mechanical prediction projection and the token-usage capture.
+  The ordinary offline gate is 36 pass / 1 fail (the documented pre-existing
+  `//test/policy:workspace_audit_test` over the preserved untracked
+  `notes/repository-through-time/` data). Sanitized evidence is frozen in
+  `library/sol-arm-evidence/`. One operational incident is recorded with the
+  result: a mis-keyed rebuild through the credential-free `--config=remote`
+  profile re-executed the 88 actions on a platform without the secret and
+  overwrote the outputs; the documented `sol_arm` command then restored all 88
+  byte-identical outputs from the Bazel action and remote cache with 0 executed
+  Sol actions, so no successful turn was rerun and no plan usage was lost or
+  duplicated.

@@ -40,6 +40,28 @@ public final class SolLocalizeDriver {
     private static final String CHATGPT_PLAN_PROVIDER = "openai_chatgpt_plan";
     private static final String APP_NAME = "Attune Localization Research";
 
+    /**
+     * The declared structured result of the frozen prompt, as a JSON Schema.
+     *
+     * <p>The binding contract fixes the required result as exactly
+     * {@code {"paths":["src/example.ts"]}}: one object with one {@code paths}
+     * array of strings. The app-server exposes
+     * {@code turn/start.params.outputSchema} ("Optional JSON Schema used to
+     * constrain the final assistant message for this turn"), and this is the
+     * mechanical realization of that declared contract. It constrains the JSON
+     * *shape* only: the count ceiling, ordering, uniqueness and existence rules
+     * stay where the contract puts them, in the downstream Flix classification.
+     */
+    private static final String RESULT_SCHEMA =
+            "{\"type\":\"object\",\"properties\":{\"paths\":{\"type\":\"array\","
+                    + "\"items\":{\"type\":\"string\"}}},\"required\":[\"paths\"],"
+                    + "\"additionalProperties\":false}";
+
+    /** Thread-item types that represent one repository-inspection action. */
+    private static final List<String> TOOL_ITEM_TYPES = List.of(
+            "commandExecution", "fileChange", "mcpToolCall", "dynamicToolCall",
+            "webSearch", "imageView", "collabAgentToolCall");
+
     private SolLocalizeDriver() {}
 
     public static void main(String[] args) throws Exception {
@@ -122,6 +144,7 @@ public final class SolLocalizeDriver {
 
     private static void run(Map<String, String> options) throws Exception {
         Path out = Paths.get(required(options, "out"));
+        Path predictions = Paths.get(required(options, "predictions"));
         String task = required(options, "task");
         String world = required(options, "world");
         String model = options.getOrDefault("model", "gpt-6.1-sol");
@@ -204,7 +227,8 @@ public final class SolLocalizeDriver {
                     + "\"config\":{\"model_reasoning_effort\":\"" + effort + "\"}}", 2);
             String threadId = session.awaitThreadId(2);
             session.send("turn/start", "{\"threadId\":\"" + jsonEscape(threadId) + "\",\"model\":\""
-                    + model + "\",\"effort\":\"" + effort + "\",\"input\":[{\"type\":\"text\",\"text\":"
+                    + model + "\",\"effort\":\"" + effort + "\",\"outputSchema\":" + RESULT_SCHEMA
+                    + ",\"input\":[{\"type\":\"text\",\"text\":"
                     + jsonString(prompt + "\n" + issue) + "}]}", 3);
             String finalMessage = session.awaitTurnCompletion(receipt);
             receipt.turnCompleted = true;
@@ -245,6 +269,25 @@ public final class SolLocalizeDriver {
             deleteRecursively(home.toFile());
         }
         Files.writeString(out, receipt.render(), StandardCharsets.UTF_8);
+        writePredictions(predictions, task, receipt.paths);
+    }
+
+    /**
+     * Project the raw structured paths into the one bounded declared ranking
+     * surface the Flix owners consume: `prediction <TAB> task <TAB> rank <TAB>
+     * path`, in the order the model returned. This is mechanical projection, not
+     * a verdict: existence, uniqueness, the count ceiling and the resulting rank
+     * tree are classified downstream. An absent or broken result writes no rows,
+     * which is exactly the FAIL the contract declares.
+     */
+    private static void writePredictions(Path out, String task, List<String> paths) throws IOException {
+        StringBuilder tsv = new StringBuilder();
+        for (int i = 0; i < paths.size(); i++) {
+            String path = paths.get(i).replace('\t', ' ').replace('\n', ' ').replace('\r', ' ');
+            tsv.append("prediction\t").append(task).append('\t').append(i + 1).append('\t')
+                    .append(path).append('\n');
+        }
+        Files.writeString(out, tsv.toString(), StandardCharsets.UTF_8);
     }
 
     private static List<String> launchCommand(Path codex) {
@@ -455,11 +498,18 @@ public final class SolLocalizeDriver {
                     continue;
                 }
                 lastActivity.set(System.currentTimeMillis());
+                if (line.contains("tokenUsage")) {
+                    captureThreadUsage(line, receipt);
+                }
                 if (line.contains("\"item/completed\"")) {
-                    receipt.toolCalls += countOccurrences(line, "\"toolCall\"")
-                            + countOccurrences(line, "\"commandExecution\"");
+                    for (String type : TOOL_ITEM_TYPES) {
+                        if (line.contains("\"type\":\"" + type + "\"")) {
+                            receipt.toolCalls++;
+                            break;
+                        }
+                    }
                     String text = jsonStringField(line, "text");
-                    if (line.contains("\"agentMessage\"") && text != null) {
+                    if (line.contains("\"agentMessage\"") && text != null && !texts.contains(text)) {
                         texts.add(text);
                     }
                 }
@@ -491,6 +541,41 @@ public final class SolLocalizeDriver {
         receipt.cachedInputTokens = jsonLongField(slice, "cached_input_tokens");
         receipt.outputTokens = jsonLongField(slice, "output_tokens");
         receipt.reasoningTokens = jsonLongField(slice, "reasoning_output_tokens");
+    }
+
+    /**
+     * The app-server reports token usage as its own `thread/tokenUsage/updated`
+     * notification carrying `tokenUsage.total` (camelCase breakdown). The
+     * receipt keeps only the numbers the provider actually returned; every
+     * absent one stays `Unavailable`.
+     */
+    private static void captureThreadUsage(String line, Receipt receipt) {
+        int at = line.indexOf("\"total\"");
+        String slice = at < 0 ? line : line.substring(at);
+        Long input = jsonLongField(slice, "inputTokens");
+        Long cached = jsonLongField(slice, "cachedInputTokens");
+        Long output = jsonLongField(slice, "outputTokens");
+        Long reasoning = jsonLongField(slice, "reasoningOutputTokens");
+        Long total = jsonLongField(slice, "totalTokens");
+        Long cacheWrite = jsonLongField(slice, "cacheWriteInputTokens");
+        if (input != null) {
+            receipt.inputTokens = input;
+        }
+        if (cached != null) {
+            receipt.cachedInputTokens = cached;
+        }
+        if (output != null) {
+            receipt.outputTokens = output;
+        }
+        if (reasoning != null) {
+            receipt.reasoningTokens = reasoning;
+        }
+        if (total != null) {
+            receipt.totalTokens = total;
+        }
+        if (cacheWrite != null) {
+            receipt.cacheWriteInputTokens = cacheWrite;
+        }
     }
 
     private static final class TaskTimeoutException extends Exception {
@@ -601,6 +686,8 @@ public final class SolLocalizeDriver {
         Long cachedInputTokens;
         Long outputTokens;
         Long reasoningTokens;
+        Long totalTokens;
+        Long cacheWriteInputTokens;
 
         Receipt(String task, String world, String model, String effort, String backend) {
             this.task = task;
@@ -636,6 +723,8 @@ public final class SolLocalizeDriver {
             field(json, "input_tokens", orUnavailable(inputTokens));
             field(json, "output_tokens", orUnavailable(outputTokens));
             field(json, "reasoning_tokens", orUnavailable(reasoningTokens));
+            field(json, "total_tokens", orUnavailable(totalTokens));
+            field(json, "cache_write_input_tokens", orUnavailable(cacheWriteInputTokens));
             field(json, "usage", jsonString(usageSummary()));
             field(json, "path_count", Integer.toString(paths.size()));
             json.append("  \"paths\": [");
@@ -654,7 +743,8 @@ public final class SolLocalizeDriver {
                 return "Unavailable";
             }
             return "input=" + orUnavailable(inputTokens) + " cached=" + orUnavailable(cachedInputTokens)
-                    + " output=" + orUnavailable(outputTokens) + " reasoning=" + orUnavailable(reasoningTokens);
+                    + " output=" + orUnavailable(outputTokens) + " reasoning=" + orUnavailable(reasoningTokens)
+                    + " total=" + orUnavailable(totalTokens);
         }
 
         private static String orUnavailable(Long value) {
