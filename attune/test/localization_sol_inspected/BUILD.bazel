@@ -46,9 +46,14 @@ platform(
 # The declared pre-flight of the arm's secret boundary: it reports whether the
 # platform's injected `ACCESS_TOKEN` secret is present and, when it is a
 # well-formed JWT, its expiry instant. It makes NO provider call and touches no
-# corpus, so it runs before any scored task without consuming plan usage.
+# corpus, so it runs before any scored task without consuming plan usage. It is
+# `fresh`, so its verdict is keyed on the declared measurement freshness token:
+# after the owner replaces the secret, a check with a NEW
+# `--define=attune_measurement_freshness=<token>` reports the newly injected
+# token rather than replaying the previous one's expiry.
 attune_sol_route_check(
     name = "route_check",
+    fresh = True,
     tags = ["manual"],
 )
 

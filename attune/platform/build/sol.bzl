@@ -35,12 +35,24 @@ def _sol_route_check_impl(ctx):
     runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
     out = ctx.actions.declare_file(ctx.label.name + ".json")
     classpath, arguments = _driver_arguments(ctx.attr.deps, "route-check", ["--out", out.path])
+    env = dict(_LOCALE_ENV)
+
+    # The injected `ACCESS_TOKEN` is a BuildBuddy execution secret, not a declared
+    # input, so its value is deliberately absent from this action's key. A cached
+    # verdict would therefore survive the owner's secret update and keep
+    # reporting the previous token's expiry, which defeats the pre-flight exactly
+    # when it is needed. When `fresh`, fold the repo's declared measurement
+    # freshness token into the action so a new token gives a new key and re-reads
+    # the secret actually injected, exactly like the other live measurement
+    # surfaces. It makes no provider call, so re-running is free.
+    if ctx.attr.fresh:
+        env["ATTUNE_MEASUREMENT_FRESHNESS"] = ctx.var.get("attune_measurement_freshness", "unset")
     ctx.actions.run(
         executable = runtime.java_executable_exec_path,
         arguments = arguments,
         inputs = depset(classpath, transitive = [runtime.files]),
         outputs = [out],
-        env = _LOCALE_ENV,
+        env = env,
         execution_requirements = {"no-local": "1"},
         mnemonic = "SolRouteCheck",
         progress_message = "Sol route check %{label}",
@@ -57,11 +69,23 @@ attune_sol_route_check = rule(
     well-formed JWT, its expiry instant. The token value itself is never written.
     `no-local` keeps the check on the declared remote platform, so the secret
     boundary it reports on is the one the arm actually uses.
+
+    `fresh` additionally keys the verdict on the declared measurement freshness
+    token (`--define=attune_measurement_freshness=...`), so a re-run after the
+    owner replaces the secret reports the newly injected token instead of
+    replaying the previous one's expiry; pass a new token for each check. It
+    stays off by default, so the published original arm's route check is
+    unchanged.
     """,
     attrs = {
         "deps": attr.label_list(
             default = ["//platform/tools/sol:sol_driver"],
             providers = [JavaInfo],
+        ),
+        "fresh": attr.bool(
+            default = False,
+            doc = "Key this diagnostic on the measurement freshness token so " +
+                  "each new token re-reads the currently injected secret.",
         ),
     },
     toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
@@ -133,6 +157,7 @@ def _sol_task_impl(ctx):
     projections = ctx.actions.declare_file(ctx.label.name + ".predictions.tsv")
     manifest = ctx.actions.declare_file(ctx.label.name + ".world.tsv")
     ctx.actions.write(manifest, _world_source_manifest(ctx, ctx.attr.world))
+
     # Exactly one declared public-issue input: the arm's admitted public
     # projection tree, or a frozen corpus-free fixture's own issue file.
     if ctx.attr.issue_tsv:
@@ -142,6 +167,7 @@ def _sol_task_impl(ctx):
         issue_inputs = [ctx.file.issue_tree]
         issue_arguments = ["--issue-tree", ctx.file.issue_tree.path + "/issues.tsv"]
     outputs = [out, projections]
+
     # The opt-in inspected path: the same driver and route, plus the declared
     # observation surface (parsed item events, observed read bytes) and the
     # frozen client-mechanical budgets. The original arm's targets declare none

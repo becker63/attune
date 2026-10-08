@@ -4588,29 +4588,44 @@ untracked `notes/repository-through-time/` data, which is untouched.
 ### The blocker: the injected SIWC token is expired
 
 The dedicated-platform pre-flight (`//test/localization_sol_inspected:route_check`,
-no provider call, fresh remote action) reports the secret exactly as injected:
+no provider call) reports the secret exactly as injected:
 
 ```json
 { "token_present": true, "token_expiry_unix": 1791422914,
-  "now_unix": 1791425125, "token_expired": true }
+  "now_unix": 1791425668, "token_expired": true }
 ```
 
-Every dispatched turn would be rejected with HTTP 401, so **no turn was
-dispatched** and no failed or partial attempt was manufactured. The
-owner-authorized host guarded refresh was then run
+The injected token expired at `2026-10-08T01:28:34Z` and the check ran at
+`2026-10-08T02:14:28Z`. Every dispatched turn would be rejected with HTTP 401,
+so **no turn was dispatched** and no failed or partial attempt was
+manufactured. The owner-authorized host guarded refresh was then run
 (`runtime/siwc-refresh.py`, host-side, no corpus, no provider, no token bytes
 printed): it PASSED with the required audience
 `https://api.openai.com/v1` and scopes, rotated the refresh token, and wrote a
 fresh 1-hour token to `/run/user/1000/attune-siwc-access-token`.
 
+That first pre-flight also exposed a real defect in the check itself, which was
+fixed: the injected `ACCESS_TOKEN` is a BuildBuddy execution secret and not a
+declared input, so it is absent from the action key, and a re-run (even with
+`--noremote_accept_cached`) returned the cached verdict. After the owner
+replaces the secret, the documented check would therefore have kept reporting
+the previous token's expiry and wrongly looked like the refresh failed.
+`attune_sol_route_check` now takes an opt-in `fresh` flag (default off, so the
+published original arm's route check is unchanged) that keys the verdict on the
+repo's existing `--define=attune_measurement_freshness=...` token. The inspected
+arm sets it; two runs with different tokens each re-executed and reported a
+`now_unix` equal to the wall clock instead of the stale value. Re-running the
+pre-flight makes no provider call, so it is free, but the owner must pass a NEW
+token value when re-checking after the secret update.
+
 **The remaining step is the owner's**: replace the BuildBuddy secret
 `ACCESS_TOKEN` with the contents of that handoff file. Then, back to back and in
-order: `sol_inspected_route_check` (must report `token_expired: false`),
-`sol_inspected_fixture` (the corpus-free authored fixture must show a real search
-and a nonempty implementation read, and a nonempty answer), and
-`sol_inspected_first_task` (exactly one real cohort task, alone, before any
-fan-out). The 88-task `sol_inspected_arm` fan-out must not run until that
-bring-up trace is retained and reviewed. None of these may use
+order: `sol_inspected_route_check` (must report `token_expired: false`, with a
+new freshness token), `sol_inspected_fixture` (the corpus-free authored fixture
+must show a real search and a nonempty implementation read, and a nonempty
+answer), and `sol_inspected_first_task` (exactly one real cohort task, alone,
+before any fan-out). The 88-task `sol_inspected_arm` fan-out must not run until
+that bring-up trace is retained and reviewed. None of these may use
 `--config=remote`: the dedicated platform is part of the action key, and an
 ordinary profile injects no secret, which would overwrite retained receipts with
 ~250 ms failures.
