@@ -72,6 +72,47 @@ public final class SolLocalizeDriver {
                     + "\"items\":{\"type\":\"string\"}}},\"required\":[\"paths\"],"
                     + "\"additionalProperties\":false}";
 
+    /**
+     * The declared structured result of the frozen ReviewBench review prompt, as
+     * a JSON Schema: one object with one {@code findings} array. Each finding
+     * names the repository-relative file it is about, the line span it concerns
+     * and a bounded message; the optional severity and category mirror the
+     * benchmark's own candidate vocabulary. This is a *minimal extension* of the
+     * localization schema: the same one-object/one-array shape, a different
+     * member name, and the same "shape only" rule — the count ceiling, the
+     * existence and uniqueness of paths and the classification stay in the
+     * downstream Flix owner.
+     *
+     * <p>The provider's structured-output contract requires EVERY declared
+     * property to appear in {@code required} (the same rule the localization
+     * schema already satisfies); the optional members are therefore expressed as
+     * nullable types rather than by omission, and the downstream extractor maps
+     * a null span or vocabulary member to its declared empty value.
+     */
+    private static final String FINDINGS_SCHEMA =
+            "{\"type\":\"object\",\"properties\":{\"findings\":{\"type\":\"array\",\"items\":"
+                    + "{\"type\":\"object\",\"properties\":{\"file\":{\"type\":\"string\"},"
+                    + "\"start_line\":{\"type\":[\"integer\",\"null\"]},"
+                    + "\"end_line\":{\"type\":[\"integer\",\"null\"]},"
+                    + "\"message\":{\"type\":\"string\"},"
+                    + "\"severity\":{\"type\":[\"string\",\"null\"]},"
+                    + "\"category\":{\"type\":[\"string\",\"null\"]}},"
+                    + "\"required\":[\"file\",\"start_line\",\"end_line\",\"message\","
+                    + "\"severity\",\"category\"],\"additionalProperties\":false}}},"
+                    + "\"required\":[\"findings\"],\"additionalProperties\":false}";
+
+    /** The declared ceiling on the changed-file records a review turn carries. */
+    private static final int REVIEW_CHANGED_FILE_LIMIT = 60;
+
+    /** The declared byte ceiling on the whole bounded base-to-head change block. */
+    private static final long REVIEW_CHANGE_BYTE_BUDGET = 400000L;
+
+    /** The declared byte ceiling on one changed file's rendered hunk. */
+    private static final long REVIEW_FILE_BYTE_BUDGET = 60000L;
+
+    /** The declared per-file line ceiling before a hunk degrades to a whole-file note. */
+    private static final int REVIEW_FILE_LINE_LIMIT = 3000;
+
     /** Thread-item types that represent one repository-inspection action. */
     private static final List<String> TOOL_ITEM_TYPES = List.of(
             "commandExecution", "fileChange", "mcpToolCall", "dynamicToolCall",
@@ -175,6 +216,18 @@ public final class SolLocalizeDriver {
         Path codex = Paths.get(required(options, "codex"));
         Path repoManifest = Paths.get(required(options, "repo"));
         Path reads = options.containsKey("reads") ? Paths.get(options.get("reads")) : null;
+        // The opt-in ReviewBench review path (owner-approved first paired
+        // economics, VAL-REVIEW-003). It is a minimal additive continuation of the
+        // verified inspected runner: a findings result schema, a bounded
+        // base-to-head change block and an optional assisted-context block. When
+        // every option is absent the original and inspected arms are byte-identical.
+        boolean review = Boolean.parseBoolean(options.getOrDefault("review", "false"));
+        String armName = options.getOrDefault("arm-name", "A");
+        Path baseManifest = options.containsKey("base-repo") ? Paths.get(options.get("base-repo")) : null;
+        Path changedRecords = options.containsKey("changed") ? Paths.get(options.get("changed")) : null;
+        Path contextFile = options.containsKey("context") ? Paths.get(options.get("context")) : null;
+        Path findings = options.containsKey("findings") ? Paths.get(options.get("findings")) : null;
+        Path diffOut = options.containsKey("diff") ? Paths.get(options.get("diff")) : null;
         String prompt = Files.readString(Paths.get(required(options, "prompt")), StandardCharsets.UTF_8);
         // The declared issue projection is handed over either as the frozen
         // fixture's own file (`--issue-tsv`) or as the arm's public projection
@@ -194,8 +247,9 @@ public final class SolLocalizeDriver {
         String issue = issueForTask(issueProjection, task);
 
         Receipt receipt = new Receipt(task, world, model, effort, backend);
-        receipt.arm = inspect ? "inspected" : "original";
-        receipt.inspectMode = inspect;
+        receipt.arm = review ? armName : (inspect ? "inspected" : "original");
+        receipt.inspectMode = inspect || review;
+        receipt.reviewMode = review;
         receipt.toolRoundBudget = toolRoundBudget;
         receipt.tokenBudget = tokenBudget;
         receipt.timeoutCapSeconds = timeoutSeconds;
@@ -211,6 +265,27 @@ public final class SolLocalizeDriver {
         Path workBase = out.toAbsolutePath().getParent();
         Path home = Files.createTempDirectory(workBase, "attune-sol-");
         Path repo = materializeRepo(repoManifest, home.resolve("repo"));
+        // The bounded base-to-head change block of the review path. The base
+        // revision is materialized beside the head only to render the change; it
+        // is never exposed to the sandbox, which sees the clean head checkout
+        // alone. When no base is declared the block is empty and the turn input
+        // is exactly the declared prompt plus issue.
+        String changeBlock = "";
+        if (review && baseManifest != null && changedRecords != null) {
+            Path base = materializeRepo(baseManifest, home.resolve("base"));
+            changeBlock = renderChangeBlock(changedRecords, base, repo);
+            if (diffOut != null) {
+                Files.writeString(diffOut, changeBlock, StandardCharsets.UTF_8);
+            }
+            receipt.changedFiles = countChanged(changedRecords);
+            receipt.changeBytes = changeBlock.getBytes(StandardCharsets.UTF_8).length;
+        }
+        String assistedContext = "";
+        if (review && contextFile != null) {
+            assistedContext = readBounded(contextFile, 60000L);
+            receipt.contextBytes = assistedContext.getBytes(StandardCharsets.UTF_8).length;
+            receipt.contextIdentity = sha256(assistedContext);
+        }
         Path codexExecutable = provisionCodex(
                 codex, options.get("code-mode-host"), options.get("bwrap"), home);
         Process process = null;
@@ -296,21 +371,32 @@ public final class SolLocalizeDriver {
                     .append("\",\"model\":\"").append(model)
                     .append("\",\"effort\":\"").append(effort).append("\"");
             if (emitResultSchema) {
-                turnParams.append(",\"outputSchema\":").append(RESULT_SCHEMA);
+                turnParams.append(",\"outputSchema\":").append(review ? FINDINGS_SCHEMA : RESULT_SCHEMA);
+            }
+            StringBuilder turnText = new StringBuilder();
+            turnText.append(prompt).append('\n').append(issue);
+            if (!changeBlock.isEmpty()) {
+                turnText.append("\n\n").append(changeBlock);
+            }
+            if (!assistedContext.isEmpty()) {
+                turnText.append("\n\n").append(assistedContext);
             }
             turnParams.append(",\"input\":[{\"type\":\"text\",\"text\":")
-                    .append(jsonString(prompt + "\n" + issue)).append("}]}");
+                    .append(jsonString(turnText.toString())).append("}]}");
             session.send("turn/start", turnParams.toString(), 3);
-            String finalMessage = inspect
+            String finalMessage = inspect || review
                     ? session.awaitInspectedTurn(receipt, threadId, toolRoundBudget, tokenBudget)
                     : session.awaitTurnCompletion(receipt);
             receipt.turnCompleted = true;
             receipt.endMillis = System.currentTimeMillis();
             receipt.rawResult = finalMessage;
-            Structured structured = extractStructuredPaths(finalMessage);
+            Structured structured = review
+                    ? extractStructuredFindings(finalMessage)
+                    : extractStructuredPaths(finalMessage);
             receipt.resultStatus = structured.status;
             receipt.paths = structured.paths;
-            if (receipt.resultStatus.equals("malformed")) {
+            receipt.findings = structured.findings;
+            if (receipt.resultStatus.equals("malformed") && receipt.failure.isEmpty()) {
                 receipt.failure = "structured result absent or unparseable";
             }
             String diagnostics = stderr.toString();
@@ -349,6 +435,31 @@ public final class SolLocalizeDriver {
         if (reads != null) {
             writeReads(reads, receipt);
         }
+        if (findings != null) {
+            writeFindings(findings, task, receipt.findings);
+        }
+    }
+
+    /**
+     * Project the raw structured findings into the one bounded mechanical surface
+     * the Flix owners consume: `finding <TAB> task <TAB> rank <TAB> file <TAB>
+     * start <TAB> end <TAB> severity <TAB> category <TAB> message`, in the order
+     * the model returned them. This is projection, not a verdict: existence,
+     * uniqueness, the count ceiling and the classification are decided downstream.
+     */
+    private static void writeFindings(Path out, String task, List<Finding> findings) throws IOException {
+        StringBuilder tsv = new StringBuilder();
+        for (int i = 0; i < findings.size(); i++) {
+            Finding finding = findings.get(i);
+            tsv.append("finding\t").append(task).append('\t').append(i + 1).append('\t')
+                    .append(cell(finding.file())).append('\t')
+                    .append(finding.startLine() < 0 ? "" : Integer.toString(finding.startLine())).append('\t')
+                    .append(finding.endLine() < 0 ? "" : Integer.toString(finding.endLine())).append('\t')
+                    .append(cell(finding.severity())).append('\t')
+                    .append(cell(finding.category())).append('\t')
+                    .append(cell(finding.message())).append('\n');
+        }
+        Files.writeString(out, tsv.toString(), StandardCharsets.UTF_8);
     }
 
     /**
@@ -796,6 +907,10 @@ public final class SolLocalizeDriver {
                         if (status != null) {
                             receipt.httpStatus = status.toString();
                         }
+                        // The app-server's own error text is the only place it
+                        // states why a turn failed. It carries no credential and
+                        // no request payload, and the retained copy is bounded.
+                        captureServerDiagnostic("error", params, receipt);
                     }
                     case "warning", "deprecationNotice", "configWarning" ->
                             captureServerDiagnostic(method, params, receipt);
@@ -899,6 +1014,9 @@ public final class SolLocalizeDriver {
             receipt.itemTypes.merge(type, 1, Integer::sum);
             long at = Math.max(0, System.currentTimeMillis() - receipt.startMillis);
             if ("agentMessage".equals(type)) {
+                if (receipt.firstAgentMessageMillis == null) {
+                    receipt.firstAgentMessageMillis = at;
+                }
                 String text = Json.asText(map.get("text"));
                 if (text != null && !texts.contains(text)) {
                     texts.add(text);
@@ -1270,12 +1388,22 @@ public final class SolLocalizeDriver {
     private static final class Structured {
         final String status;
         final List<String> paths;
+        final List<Finding> findings;
 
-        Structured(String status, List<String> paths) {
+        Structured(String status, List<String> paths, List<Finding> findings) {
             this.status = status;
             this.paths = paths;
+            this.findings = findings;
+        }
+
+        Structured(String status, List<String> paths) {
+            this(status, paths, List.of());
         }
     }
+
+    /** One observed review finding: the file it names, its line span and its text. */
+    private record Finding(
+            String file, int startLine, int endLine, String severity, String category, String message) {}
 
     /**
      * Extract the last {@code {"paths": [...]}} object from the agent's final
@@ -1346,6 +1474,210 @@ public final class SolLocalizeDriver {
         return values;
     }
 
+    /**
+     * Extract the last {@code {"findings": [...]}} object from the agent's final
+     * message. Like the path extractor this is mechanical JSON scanning, not a
+     * verdict: the count ceiling, path existence, uniqueness and the
+     * classification are checked downstream. A message that carries no parseable
+     * findings object is `malformed`, which the Flix owner keeps as a retained
+     * failure rather than a fabricated empty review.
+     */
+    private static Structured extractStructuredFindings(String message) {
+        if (message == null) {
+            return new Structured("malformed", List.of(), List.of());
+        }
+        int searchFrom = message.length();
+        while (true) {
+            int at = message.lastIndexOf("\"findings\"", searchFrom);
+            if (at < 0) {
+                return new Structured("malformed", List.of(), List.of());
+            }
+            int open = message.lastIndexOf('{', at);
+            if (open >= 0) {
+                List<Finding> findings = findingsOf(Json.parse(message.substring(open)));
+                if (findings != null) {
+                    return new Structured("ok", List.of(), findings);
+                }
+            }
+            searchFrom = at - 1;
+            if (searchFrom <= 0) {
+                return new Structured("malformed", List.of(), List.of());
+            }
+        }
+    }
+
+    private static List<Finding> findingsOf(Object parsed) {
+        if (!(parsed instanceof Map<?, ?> map) || !(map.get("findings") instanceof List<?> list)) {
+            return null;
+        }
+        List<Finding> findings = new ArrayList<>();
+        for (Object raw : list) {
+            if (!(raw instanceof Map<?, ?> entry)) {
+                return null;
+            }
+            String file = Json.asText(entry.get("file"));
+            if (file == null) {
+                return null;
+            }
+            Long start = Json.asNumber(entry.get("start_line"));
+            Long end = Json.asNumber(entry.get("end_line"));
+            String severity = Json.asText(entry.get("severity"));
+            String category = Json.asText(entry.get("category"));
+            String text = Json.asText(entry.get("message"));
+            findings.add(new Finding(file, start == null ? -1 : start.intValue(),
+                    end == null ? -1 : end.intValue(),
+                    severity == null ? "" : severity, category == null ? "" : category,
+                    text == null ? "" : text));
+        }
+        return findings;
+    }
+
+    // ------------------------------------------------- bounded change block
+
+    private static int countChanged(Path changed) throws IOException {
+        int count = 0;
+        for (String line : Files.readAllLines(changed, StandardCharsets.UTF_8)) {
+            if (line.startsWith("changed\t")) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static String readBounded(Path path, long budget) throws IOException {
+        if (!Files.isRegularFile(path)) {
+            return "";
+        }
+        String text = Files.readString(path, StandardCharsets.UTF_8);
+        if (text.getBytes(StandardCharsets.UTF_8).length <= budget) {
+            return text;
+        }
+        return text.substring(0, (int) Math.min((long) text.length(), budget));
+    }
+
+    /**
+     * Render the bounded base-to-head change block one review turn carries: the
+     * changed-file record (the measured PR change) followed by a unified diff of
+     * the changed files. The diff is the permitted PR metadata; the base revision
+     * itself is never exposed to the sandbox. Both the file count and the byte
+     * volume are bounded, and a bound that bites is stated rather than hidden.
+     */
+    private static String renderChangeBlock(Path changed, Path base, Path head) throws IOException {
+        StringBuilder out = new StringBuilder();
+        List<String[]> records = new ArrayList<>();
+        for (String line : Files.readAllLines(changed, StandardCharsets.UTF_8)) {
+            if (!line.startsWith("changed\t")) {
+                continue;
+            }
+            String[] fields = line.split("\t", -1);
+            if (fields.length >= 4) {
+                records.add(fields);
+            }
+        }
+        out.append("The pull request under review changes the following files "
+                + "(base revision -> head revision):\n\n");
+        for (String[] record : records) {
+            out.append("- ").append(record[1]).append(' ').append(record[2])
+                    .append(" (").append(record[3]).append(" bytes)\n");
+        }
+        out.append("\nBounded unified diff of the changed files:\n");
+        long budget = REVIEW_CHANGE_BYTE_BUDGET;
+        int files = 0;
+        boolean truncated = false;
+        for (String[] record : records) {
+            if (files >= REVIEW_CHANGED_FILE_LIMIT || budget <= 0) {
+                truncated = true;
+                break;
+            }
+            String hunk = fileHunk(record[2], base, head, Math.min(budget, REVIEW_FILE_BYTE_BUDGET));
+            if (hunk.isEmpty()) {
+                continue;
+            }
+            out.append(hunk);
+            budget -= hunk.getBytes(StandardCharsets.UTF_8).length;
+            files++;
+        }
+        if (truncated) {
+            out.append("\n[diff bounded: further changed files omitted by the declared cap]\n");
+        }
+        return out.toString();
+    }
+
+    private static String fileHunk(String path, Path base, Path head, long budget) throws IOException {
+        Path baseFile = base.resolve(path).normalize();
+        Path headFile = head.resolve(path).normalize();
+        if (!baseFile.startsWith(base) || !headFile.startsWith(head)) {
+            return "";
+        }
+        boolean hasBase = Files.isRegularFile(baseFile);
+        boolean hasHead = Files.isRegularFile(headFile);
+        if (!hasBase && !hasHead) {
+            return "";
+        }
+        if (hasBase && hasHead && sameBytes(baseFile, headFile)) {
+            return "";
+        }
+        if (hasBase && hasHead && Files.size(baseFile) > 262144L && Files.size(headFile) > 262144L) {
+            return "--- a/" + path + "\n+++ b/" + path + "\n[large file: " + Files.size(baseFile)
+                    + " -> " + Files.size(headFile) + " bytes; content not inlined]\n";
+        }
+        List<String> baseLines = hasBase ? boundedLines(baseFile) : List.of();
+        List<String> headLines = hasHead ? boundedLines(headFile) : List.of();
+        if (baseLines == null || headLines == null) {
+            return "--- a/" + path + "\n+++ b/" + path + "\n[binary or unreadable file; content not inlined]\n";
+        }
+        int prefix = 0;
+        int max = Math.min(baseLines.size(), headLines.size());
+        while (prefix < max && baseLines.get(prefix).equals(headLines.get(prefix))) {
+            prefix++;
+        }
+        int suffix = 0;
+        while (suffix < max - prefix && baseLines.get(baseLines.size() - 1 - suffix)
+                .equals(headLines.get(headLines.size() - 1 - suffix))) {
+            suffix++;
+        }
+        StringBuilder hunk = new StringBuilder();
+        hunk.append("--- ").append(hasBase ? "a/" + path : "/dev/null").append('\n');
+        hunk.append("+++ ").append(hasHead ? "b/" + path : "/dev/null").append('\n');
+        hunk.append("@@ -").append(prefix + 1).append(',')
+                .append(baseLines.size() - prefix - suffix).append(" +")
+                .append(prefix + 1).append(',').append(headLines.size() - prefix - suffix).append(" @@\n");
+        for (int i = prefix; i < baseLines.size() - suffix; i++) {
+            hunk.append('-').append(baseLines.get(i)).append('\n');
+        }
+        for (int i = prefix; i < headLines.size() - suffix; i++) {
+            hunk.append('+').append(headLines.get(i)).append('\n');
+        }
+        String rendered = hunk.toString();
+        if (rendered.getBytes(StandardCharsets.UTF_8).length > budget) {
+            return "--- a/" + path + "\n+++ b/" + path
+                    + "\n[changed file exceeds the declared per-file diff cap]\n";
+        }
+        return rendered;
+    }
+
+    private static boolean sameBytes(Path a, Path b) throws IOException {
+        return Files.size(a) == Files.size(b) && Files.mismatch(a, b) < 0;
+    }
+
+    /** Read a file as lines, or null when it is not decodable UTF-8 text. */
+    private static List<String> boundedLines(Path file) {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+                if (lines.size() >= REVIEW_FILE_LINE_LIMIT) {
+                    lines.add("[truncated at the declared per-file line cap]");
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+        return lines;
+    }
+
     // ----------------------------------------------------------------- receipt
 
     /** One observed inspection item: its type, status, output bytes and offset. */
@@ -1384,6 +1716,16 @@ public final class SolLocalizeDriver {
         // published shape and is never rewritten by the new path.
         String arm = "original";
         boolean inspectMode;
+        // The opt-in ReviewBench review path's observation surface. In every
+        // other mode these stay at their declared defaults, so the original and
+        // inspected receipts keep their published shape.
+        boolean reviewMode;
+        long changedFiles;
+        long changeBytes;
+        long contextBytes;
+        String contextIdentity = "Unavailable";
+        Long firstAgentMessageMillis;
+        List<Finding> findings = List.of();
         String resolvedModel = "Unavailable";
         boolean resultSchemaEmitted = true;
         long notificationsSeen;
@@ -1447,6 +1789,14 @@ public final class SolLocalizeDriver {
             field(json, "cache_write_input_tokens", orUnavailable(cacheWriteInputTokens));
             field(json, "arm", jsonString(arm));
             field(json, "inspect_mode", Boolean.toString(inspectMode));
+            field(json, "review_mode", Boolean.toString(reviewMode));
+            field(json, "changed_files", Long.toString(changedFiles));
+            field(json, "change_bytes", Long.toString(changeBytes));
+            field(json, "context_bytes", Long.toString(contextBytes));
+            field(json, "context_identity", jsonString(contextIdentity));
+            field(json, "finding_count", Integer.toString(findings.size()));
+            field(json, "first_finding_ms",
+                    firstAgentMessageMillis == null ? jsonString("Unavailable") : firstAgentMessageMillis.toString());
             field(json, "tool_rounds", Long.toString(toolRounds));
             field(json, "tool_round_budget", Integer.toString(toolRoundBudget));
             field(json, "token_budget", Long.toString(tokenBudget));

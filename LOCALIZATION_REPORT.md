@@ -5657,3 +5657,115 @@ provider. `reviewbench_context_law` is corpus-free and part of `//...`;
   context and the native-route JEV public context are actually materialized,
   preserved and provider-free on replay. No review and no judge session ran; the
   paired economic tables remain the later feature's result.
+
+## ReviewBench first paired review family (VAL-REVIEW-003, 2026-10-08)
+
+The first real paired review run on the pinned ReviewBench corpus, through the
+verified inspected Sol runner plus the minimal finding-schema extension. Every
+number is read from the persisted receipts, never asserted.
+
+### Planned versus actual denominators
+
+The planned cohort is **24 tasks x 2 arms = 48 planned arm reviews**, never
+grown to force a count. The ACTUAL reviewed set is the SAME structurally
+admitted paired subset in both arms: **10 tasks x 2 arms = 20 real reviews**.
+The **14 structural-attrition tasks** stay in the planned 24-task denominator
+with their measured `supported-permille-N-below-900` reasons, never replaced and
+never force-launched. There is **no 48-success requirement**.
+
+### Frozen per-review identity
+
+Both arms carry the requested model `gpt-6.1-sol` medium on the SIWC
+ChatGPT-plan route, the frozen prompt
+`sha256:0548d216c163f1719adb8d2b292b8038e006409d34a37865acd3984a96c6c08c`
+(byte-identical for every task and arm), the same head world and the same
+base->head change block, and the same preregistered budget **300 s / 32 tool
+rounds / 256,000 observed cumulative tokens**. The assisted context consumes the
+SAME token budget; its 60,000-byte cap was preregistered before acquisition and
+never tuned. Arm A = diff + public metadata + full read-only source exploration;
+Arm B = the same plus the combined Qwen/JEV structural context and witnesses. B
+differs in multiple inputs, so **no claim is made that B isolates structure**.
+
+### The first completed pair (streamed before the fan-out)
+
+`capawesome-team_cli-126` arm A and arm B completed first, run alone before any
+fan-out, and are preserved in
+`library/reviewbench-review/first-trace-2026-10-08/`:
+
+| Task | Arm | Status | Tool rounds | Read bytes | Findings | Context bytes | Turn wall |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| capawesome-team_cli-126 | A | ok | 5 | 130,527 | 2 | 0 | 46,359 ms |
+| capawesome-team_cli-126 | B | ok | 10 | 179,342 | 3 | 5,031 | 51,625 ms |
+
+The first pair is published even though it is a small positive; the report never
+waited for the whole cohort.
+
+### The cohort (20 real reviews)
+
+| Task | Arm | Status | Rounds | Findings | Change B | Context B | Tokens | Stop |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| EdV4H_usketch-534 | A | malformed | 5 | 0 | 93,449 | 0 | 265,727 | tokens |
+| EdV4H_usketch-534 | B | malformed | 5 | 0 | 93,449 | 5,937 | 277,125 | tokens |
+| agent-sh_agentsys-298 | A | ok | 4 | 2 | 11,096 | 0 | 117,521 | natural |
+| agent-sh_agentsys-298 | B | ok | 5 | 2 | 11,096 | 1,077 | 144,501 | natural |
+| brianc_node-postgres-3650 | A | ok | 6 | 3 | 83,121 | 0 | 211,800 | natural |
+| brianc_node-postgres-3650 | B | ok | 6 | 3 | 83,121 | 4,535 | 257,446 | tokens |
+| caasi_town-zero-6 | A | malformed | 5 | 0 | 141,691 | 0 | 275,930 | tokens |
+| caasi_town-zero-6 | B | malformed | 5 | 0 | 141,691 | 7,369 | 297,815 | tokens |
+| capawesome-team_cli-126 | A | ok | 5 | 2 | 70,436 | 0 | 242,377 | natural |
+| capawesome-team_cli-126 | B | ok | 10 | 3 | 70,436 | 5,031 | 223,492 | natural |
+| haoling_diary-notebook-blog-transformer-24 | A | ok | 6 | 2 | 17,486 | 0 | 113,442 | natural |
+| haoling_diary-notebook-blog-transformer-24 | B | ok | 4 | 2 | 17,486 | 3,525 | 79,308 | natural |
+| heyitsaamir_teamscli-31 | A | malformed | 4 | 0 | 226,065 | 0 | 307,426 | tokens |
+| heyitsaamir_teamscli-31 | B | malformed | 4 | 0 | 226,065 | 6,463 | 313,459 | tokens |
+| jenkinsci_gitea-plugin-141 | A | ok | 5 | 0 | 13,466 | 0 | 116,308 | natural |
+| jenkinsci_gitea-plugin-141 | B | ok | 6 | 1 | 13,466 | 5,300 | 133,329 | natural |
+| ls1intum_Artemis-12479 | A | malformed | 11 | 0 | 59,838 | 0 | 259,901 | tokens |
+| ls1intum_Artemis-12479 | B | malformed | 10 | 0 | 59,838 | 9,321 | 283,194 | tokens |
+| rulecom_rule-io-sdk-40 | A | ok | 6 | 1 | 17,813 | 0 | 116,013 | natural |
+| rulecom_rule-io-sdk-40 | B | ok | 5 | 1 | 17,813 | 3,629 | 151,420 | natural |
+
+**12 scored reviews** (`ok`) and **8 retained bounded failures** (`malformed`,
+`interrupted`, `stop_reason = tokens`). Every failure is the preregistered
+256,000-token cap: the driver interrupts at the bound before the model emits its
+final result. No failure was retried, resampled, replaced or re-elicited for
+quality, and no budget was tuned. The two arms failed the SAME four
+largest-change-block tasks. Every review opened the app-server's real internal
+tool loop (4–34 observed read rounds); none answered from the prompt alone.
+
+### Cost and timing
+
+All 20 reviews ran on the dedicated BuildBuddy platform with the SIWC
+`ACCESS_TOKEN` secret. Observed turn wall times are 27.8–70.99 s; the
+token-capped tasks stop at the budget, not the 300 s wall cap. **No dollar
+amount is reported**: the plan route returns no marginal API dollar figure and
+BuildBuddy durations are not dollars. The raw economic lines (acquisition
+network, Grit CPU work, RBE, Qwen, JEV, Sol, judge) and the cost/latency-vs-
+quality graphs are `VAL-REVIEW-005`'s later result.
+
+### Frozen before gold
+
+Every receipt, finding projection, bounded change block and read trace was
+persisted OUTSIDE mutable Bazel outputs before any gold or judge exposure
+(`library/reviewbench-review/`, `SHA256SUMS`-pinned). No `golden/` file entered
+any review input and no judge protocol was applied in this feature.
+
+### Commands (see `services.yaml`)
+
+`reviewbench_review_route_check` (no provider call), `reviewbench_review_first_pair`
+and `reviewbench_review_arm` are `manual` producer actions. They require
+`--modify_execution_info=AttuneStudyStage=+no-remote` (the provider-free study
+stages run host-local) and `--remote_timeout=600` (the 239 MiB Artemis world
+exceeds Bazel's 60 s default upload deadline); the review actions themselves run
+on the dedicated remote platform. `reviewbench_review_law` is corpus-free and
+part of `//...`.
+
+### Update history
+
+- ReviewBench first paired review family (this section): the 20 actual arm
+  reviews of the structurally admitted paired subset ran on the pinned corpus
+  through the verified inspected runner with the minimal finding-schema
+  extension; the first pair streamed before the fan-out; findings were frozen
+  before any gold/judge exposure. The judge protocol (`VAL-REVIEW-004`) and the
+  inline paired-economics tables and graphs (`VAL-REVIEW-005`) remain the later
+  features' results.
