@@ -101,6 +101,44 @@ public final class SolLocalizeDriver {
                     + "\"severity\",\"category\"],\"additionalProperties\":false}}},"
                     + "\"required\":[\"findings\"],\"additionalProperties\":false}";
 
+    /**
+     * The declared structured result of the frozen judge prompt (`VAL-REVIEW-004`),
+     * as a JSON Schema: one object with one {@code matches} array. Each entry names
+     * a blinded candidate id and the list of golden reference indices that
+     * candidate refers to — possibly empty, because a candidate that refers to no
+     * reference is an *unmatched* finding and is NEVER automatically a false
+     * positive. The reference indices are the `G`-prefixed positions of the
+     * golden-set order the mechanical boundary projected, and {@code reason} is the
+     * matcher's own short rationale kept for audit. Like the other schemas this
+     * constrains shape only: the claiming order, the classification and every
+     * metric stay in the Flix owner.
+     */
+    private static final String JUDGE_SCHEMA =
+            "{\"type\":\"object\",\"properties\":{\"matches\":{\"type\":\"array\",\"items\":"
+                    + "{\"type\":\"object\",\"properties\":{\"candidate\":{\"type\":\"string\"},"
+                    + "\"references\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},"
+                    + "\"reason\":{\"type\":\"string\"}},"
+                    + "\"required\":[\"candidate\",\"references\",\"reason\"],"
+                    + "\"additionalProperties\":false}}},"
+                    + "\"required\":[\"matches\"],\"additionalProperties\":false}";
+
+    /**
+     * The declared structured result of the frozen independent-adjudication prompt
+     * (`VAL-REVIEW-004`), as a JSON Schema: one object with one {@code judgments}
+     * array. Each entry names a blinded candidate id, the adjudicator's status
+     * ({@code valid}, {@code invalid} or {@code unresolved}) and the
+     * source-grounded evidence the adjudicator read. This is a SEPARATE,
+     * independent agent review — never a claim of human or manual review — and its
+     * status is kept apart from the automatic provisional reference-set match.
+     */
+    private static final String ADJUDICATE_SCHEMA =
+            "{\"type\":\"object\",\"properties\":{\"judgments\":{\"type\":\"array\",\"items\":"
+                    + "{\"type\":\"object\",\"properties\":{\"candidate\":{\"type\":\"string\"},"
+                    + "\"status\":{\"type\":\"string\"},\"evidence\":{\"type\":\"string\"}},"
+                    + "\"required\":[\"candidate\",\"status\",\"evidence\"],"
+                    + "\"additionalProperties\":false}}},"
+                    + "\"required\":[\"judgments\"],\"additionalProperties\":false}";
+
     /** The declared ceiling on the changed-file records a review turn carries. */
     private static final int REVIEW_CHANGED_FILE_LIMIT = 60;
 
@@ -228,6 +266,21 @@ public final class SolLocalizeDriver {
         Path contextFile = options.containsKey("context") ? Paths.get(options.get("context")) : null;
         Path findings = options.containsKey("findings") ? Paths.get(options.get("findings")) : null;
         Path diffOut = options.containsKey("diff") ? Paths.get(options.get("diff")) : null;
+        // The opt-in ReviewBench judge/adjudication path (`VAL-REVIEW-004`): the
+        // SAME verified inspected runner over the SAME dedicated SIWC route, with
+        // one fixed judge prompt and one fixed independent-adjudication prompt. The
+        // judge turn sees the task's golden reference set and the blinded candidate
+        // findings; the adjudication turn sees the blinded unmatched candidates and
+        // NO reference set at all. The mechanical boundary only projects: the
+        // matching, the dedup, the classification and every metric stay in Flix.
+        String judgeRole = options.getOrDefault("judge-role", "");
+        boolean judged = !judgeRole.isEmpty();
+        boolean judge = "judge".equals(judgeRole);
+        Path gold = options.containsKey("gold") ? Paths.get(options.get("gold")) : null;
+        Path candidates = options.containsKey("candidates") ? Paths.get(options.get("candidates")) : null;
+        Path judgments = options.containsKey("judgments") ? Paths.get(options.get("judgments")) : null;
+        Path referencesOut = options.containsKey("references") ? Paths.get(options.get("references")) : null;
+        Path unmatchedOut = options.containsKey("unmatched") ? Paths.get(options.get("unmatched")) : null;
         String prompt = Files.readString(Paths.get(required(options, "prompt")), StandardCharsets.UTF_8);
         // The declared issue projection is handed over either as the frozen
         // fixture's own file (`--issue-tsv`) or as the arm's public projection
@@ -247,9 +300,11 @@ public final class SolLocalizeDriver {
         String issue = issueForTask(issueProjection, task);
 
         Receipt receipt = new Receipt(task, world, model, effort, backend);
-        receipt.arm = review ? armName : (inspect ? "inspected" : "original");
-        receipt.inspectMode = inspect || review;
-        receipt.reviewMode = review;
+        receipt.arm = judged ? judgeRole : (review ? armName : (inspect ? "inspected" : "original"));
+        receipt.inspectMode = inspect || review || judged;
+        receipt.reviewMode = review && !judged;
+        receipt.judgeMode = judged;
+        receipt.judgeRole = judgeRole;
         receipt.toolRoundBudget = toolRoundBudget;
         receipt.tokenBudget = tokenBudget;
         receipt.timeoutCapSeconds = timeoutSeconds;
@@ -271,7 +326,7 @@ public final class SolLocalizeDriver {
         // alone. When no base is declared the block is empty and the turn input
         // is exactly the declared prompt plus issue.
         String changeBlock = "";
-        if (review && baseManifest != null && changedRecords != null) {
+        if ((review || judged) && baseManifest != null && changedRecords != null) {
             Path base = materializeRepo(baseManifest, home.resolve("base"));
             changeBlock = renderChangeBlock(changedRecords, base, repo);
             if (diffOut != null) {
@@ -285,6 +340,20 @@ public final class SolLocalizeDriver {
             assistedContext = readBounded(contextFile, 60000L);
             receipt.contextBytes = assistedContext.getBytes(StandardCharsets.UTF_8).length;
             receipt.contextIdentity = sha256(assistedContext);
+        }
+        // The judge turn's declared inputs: the task's golden reference set (mounted
+        // ONLY here, never in a review or prediction closure) and the blinded
+        // candidate findings. The adjudication turn declares the blinded unmatched
+        // candidates alone: no reference set is present at all.
+        List<Reference> goldReferences = judged && judge && gold != null
+                ? parseGold(gold)
+                : List.of();
+        String referenceBlock = renderReferences(goldReferences);
+        List<Candidate> candidateRows = candidates != null ? readCandidates(candidates) : List.of();
+        String candidateBlock = renderCandidates(candidateRows);
+        receipt.candidateCount = candidateRows.size();
+        if (judged && gold != null) {
+            receipt.goldIdentity = sha256(readBounded(gold, 4_000_000L));
         }
         Path codexExecutable = provisionCodex(
                 codex, options.get("code-mode-host"), options.get("bwrap"), home);
@@ -371,7 +440,9 @@ public final class SolLocalizeDriver {
                     .append("\",\"model\":\"").append(model)
                     .append("\",\"effort\":\"").append(effort).append("\"");
             if (emitResultSchema) {
-                turnParams.append(",\"outputSchema\":").append(review ? FINDINGS_SCHEMA : RESULT_SCHEMA);
+                turnParams.append(",\"outputSchema\":").append(
+                        judged ? (judge ? JUDGE_SCHEMA : ADJUDICATE_SCHEMA)
+                                : (review ? FINDINGS_SCHEMA : RESULT_SCHEMA));
             }
             StringBuilder turnText = new StringBuilder();
             turnText.append(prompt).append('\n').append(issue);
@@ -381,21 +452,31 @@ public final class SolLocalizeDriver {
             if (!assistedContext.isEmpty()) {
                 turnText.append("\n\n").append(assistedContext);
             }
+            if (!referenceBlock.isEmpty()) {
+                turnText.append("\n\n").append(referenceBlock);
+            }
+            if (!candidateBlock.isEmpty()) {
+                turnText.append("\n\n").append(candidateBlock);
+            }
             turnParams.append(",\"input\":[{\"type\":\"text\",\"text\":")
                     .append(jsonString(turnText.toString())).append("}]}");
             session.send("turn/start", turnParams.toString(), 3);
-            String finalMessage = inspect || review
+            String finalMessage = inspect || review || judged
                     ? session.awaitInspectedTurn(receipt, threadId, toolRoundBudget, tokenBudget)
                     : session.awaitTurnCompletion(receipt);
             receipt.turnCompleted = true;
             receipt.endMillis = System.currentTimeMillis();
             receipt.rawResult = finalMessage;
-            Structured structured = review
-                    ? extractStructuredFindings(finalMessage)
-                    : extractStructuredPaths(finalMessage);
+            Structured structured = judged
+                    ? (judge ? extractStructuredMatches(finalMessage)
+                             : extractStructuredJudgments(finalMessage))
+                    : (review ? extractStructuredFindings(finalMessage)
+                              : extractStructuredPaths(finalMessage));
             receipt.resultStatus = structured.status;
             receipt.paths = structured.paths;
             receipt.findings = structured.findings;
+            receipt.matches = structured.matches;
+            receipt.judgments = structured.judgments;
             if (receipt.resultStatus.equals("malformed") && receipt.failure.isEmpty()) {
                 receipt.failure = "structured result absent or unparseable";
             }
@@ -437,6 +518,15 @@ public final class SolLocalizeDriver {
         }
         if (findings != null) {
             writeFindings(findings, task, receipt.findings);
+        }
+        if (judgments != null) {
+            writeJudgments(judgments, task, judged && !judge, receipt.matches, receipt.judgments);
+        }
+        if (referencesOut != null && judged && judge) {
+            writeReferences(referencesOut, task, goldReferences);
+        }
+        if (unmatchedOut != null && judged && judge) {
+            writeUnmatched(unmatchedOut, task, candidateRows, receipt.matches);
         }
     }
 
@@ -1389,21 +1479,343 @@ public final class SolLocalizeDriver {
         final String status;
         final List<String> paths;
         final List<Finding> findings;
+        final List<Match> matches;
+        final List<Judgment> judgments;
 
-        Structured(String status, List<String> paths, List<Finding> findings) {
+        Structured(String status, List<String> paths, List<Finding> findings,
+                List<Match> matches, List<Judgment> judgments) {
             this.status = status;
             this.paths = paths;
             this.findings = findings;
+            this.matches = matches;
+            this.judgments = judgments;
+        }
+
+        Structured(String status, List<String> paths, List<Finding> findings) {
+            this(status, paths, findings, List.of(), List.of());
         }
 
         Structured(String status, List<String> paths) {
-            this(status, paths, List.of());
+            this(status, paths, List.of(), List.of(), List.of());
         }
     }
 
     /** One observed review finding: the file it names, its line span and its text. */
     private record Finding(
             String file, int startLine, int endLine, String severity, String category, String message) {}
+
+    /**
+     * One golden-set reference finding of one task, in the order the pinned
+     * golden JSON carries it. `index` is the 1-based position the judge prompt
+     * names (`G1`, `G2`, ...) and the label is the corpus's own human-reviewed
+     * `tp`/`fp` label. Gold is projected mechanically here and never enters a
+     * review, prediction or assisted-context closure.
+     */
+    private record Reference(
+            int index, String file, int startLine, int endLine, boolean truePositive,
+            String severity, String category, String message) {}
+
+    /** One blinded candidate finding of one task, as the judge prompt names it. */
+    private record Candidate(
+            String id, String file, int startLine, int endLine, String severity,
+            String category, String message) {}
+
+    /** One candidate's raw match correspondence to the golden set. */
+    private record Match(String candidate, List<String> references, String reason) {}
+
+    /** One unmatched candidate's independent source-grounded adjudication. */
+    private record Judgment(String candidate, String status, String evidence) {}
+
+    /** Parse the pinned golden JSON into its ordered reference findings. */
+    private static List<Reference> parseGold(Path gold) throws IOException {
+        List<Reference> references = new ArrayList<>();
+        Object parsed = Json.parse(Files.readString(gold, StandardCharsets.UTF_8));
+        if (!(parsed instanceof Map<?, ?> map) || !(map.get("findings") instanceof List<?> list)) {
+            return references;
+        }
+        int index = 0;
+        for (Object raw : list) {
+            if (!(raw instanceof Map<?, ?> entry)) {
+                continue;
+            }
+            String file = Json.asText(entry.get("file"));
+            if (file == null) {
+                continue;
+            }
+            Long start = Json.asNumber(entry.get("start_line"));
+            Long end = Json.asNumber(entry.get("end_line"));
+            String label = Json.asText(entry.get("tp_fp"));
+            String severity = Json.asText(entry.get("severity"));
+            String category = Json.asText(entry.get("category"));
+            String message = Json.asText(entry.get("message"));
+            index++;
+            references.add(new Reference(index, file, start == null ? -1 : start.intValue(),
+                    end == null ? -1 : end.intValue(), "tp".equalsIgnoreCase(label),
+                    severity == null ? "" : severity, category == null ? "" : category,
+                    message == null ? "" : message));
+        }
+        return references;
+    }
+
+    /** The bounded judge prompt's reference block, in golden-set order. */
+    private static String renderReferences(List<Reference> references) {
+        if (references.isEmpty()) {
+            return "";
+        }
+        StringBuilder out = new StringBuilder();
+        out.append("REFERENCE FINDINGS (the golden set for this PR; `tp` is a true positive and")
+                .append(" `fp` a false positive, both human-reviewed; a candidate that refers to")
+                .append(" none of these is an UNMATCHED finding, never automatically a false positive):");
+        for (Reference reference : references) {
+            out.append("\nG").append(reference.index()).append("  ").append(reference.file())
+                    .append(":").append(span(reference.startLine(), reference.endLine()))
+                    .append("  [").append(reference.truePositive() ? "tp" : "fp")
+                    .append(" ").append(reference.severity()).append(" ").append(reference.category())
+                    .append("] ").append(reference.message());
+        }
+        return out.toString();
+    }
+
+    /** The bounded candidate block, in the blinded order the input file carries. */
+    private static String renderCandidates(List<Candidate> candidates) {
+        if (candidates.isEmpty()) {
+            return "";
+        }
+        StringBuilder out = new StringBuilder();
+        out.append("CANDIDATE FINDINGS (blinded; the arm that produced each is not shown):");
+        for (Candidate candidate : candidates) {
+            out.append("\n").append(candidate.id()).append("  ").append(candidate.file())
+                    .append(":").append(span(candidate.startLine(), candidate.endLine()))
+                    .append("  [").append(candidate.severity()).append(" ").append(candidate.category())
+                    .append("] ").append(candidate.message());
+        }
+        return out.toString();
+    }
+
+    private static String span(int start, int end) {
+        if (start < 0) {
+            return "?";
+        }
+        if (end < 0 || end == start) {
+            return Integer.toString(start);
+        }
+        return start + "-" + end;
+    }
+
+    /** Read the blinded candidate projection the provider-free stage wrote. */
+    private static List<Candidate> readCandidates(Path path) throws IOException {
+        List<Candidate> candidates = new ArrayList<>();
+        if (!Files.isRegularFile(path)) {
+            return candidates;
+        }
+        for (String line : Files.readAllLines(path, StandardCharsets.UTF_8)) {
+            String[] cells = line.split("\t", -1);
+            if (cells.length < 8 || !cells[0].equals("candidate")) {
+                continue;
+            }
+            candidates.add(new Candidate(cells[1], cells[2], intOr(cells[3], -1), intOr(cells[4], -1),
+                    cells[5], cells[6], cells[7]));
+        }
+        return candidates;
+    }
+
+    private static int intOr(String text, int fallback) {
+        try {
+            return text.isEmpty() ? fallback : Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    /**
+     * Project the golden set into the one bounded mechanical surface the Flix
+     * owner consumes: `reference <TAB> task <TAB> index <TAB> file <TAB> start
+     * <TAB> end <TAB> tp <TAB> severity <TAB> category <TAB> message`. It is
+     * written by the JUDGE action alone, so the golden bytes are reachable only
+     * from the judge closure; the evaluator reads this projection. This is
+     * projection, not a verdict.
+     */
+    private static void writeReferences(Path out, String task, List<Reference> references) throws IOException {
+        StringBuilder tsv = new StringBuilder();
+        for (Reference reference : references) {
+            tsv.append("reference\t").append(cell(task)).append('\t').append(reference.index()).append('\t')
+                    .append(cell(reference.file())).append('\t')
+                    .append(reference.startLine() < 0 ? "" : Integer.toString(reference.startLine())).append('\t')
+                    .append(reference.endLine() < 0 ? "" : Integer.toString(reference.endLine())).append('\t')
+                    .append(reference.truePositive() ? "tp" : "fp").append('\t')
+                    .append(cell(reference.severity())).append('\t').append(cell(reference.category())).append('\t')
+                    .append(cell(reference.message())).append('\n');
+        }
+        Files.writeString(out, tsv.toString(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Project the blinded candidates the judge found no reference for, in the
+     * same bounded `candidate` row shape the candidate projection uses, so the
+     * separate independent-adjudication action reads exactly those candidates and
+     * never the golden set. "No reference" is the judge's own answer, so this is
+     * mechanical filtering, not a verdict: the adjudication status and the
+     * classification stay downstream.
+     */
+    private static void writeUnmatched(
+            Path out, String task, List<Candidate> candidates, List<Match> matches) throws IOException {
+        StringBuilder tsv = new StringBuilder();
+        for (Candidate candidate : candidates) {
+            boolean matched = false;
+            for (Match match : matches) {
+                if (match.candidate().equals(candidate.id()) && !match.references().isEmpty()) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (matched) {
+                continue;
+            }
+            tsv.append("candidate\t").append(cell(candidate.id())).append('\t').append(cell(candidate.file()))
+                    .append('\t').append(candidate.startLine() < 0 ? "" : Integer.toString(candidate.startLine()))
+                    .append('\t').append(candidate.endLine() < 0 ? "" : Integer.toString(candidate.endLine()))
+                    .append('\t').append(cell(candidate.severity())).append('\t')
+                    .append(cell(candidate.category())).append('\t').append(cell(candidate.message())).append('\n');
+        }
+        Files.writeString(out, tsv.toString(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Project the judge or adjudication result into the one bounded mechanical
+     * surface the Flix owner consumes. The judge writes `judged <TAB> task <TAB>
+     * candidate <TAB> references <TAB> reason` rows (references comma-joined, `-`
+     * when none). The adjudicator writes `adjudged <TAB> task <TAB> candidate
+     * <TAB> status <TAB> evidence` rows. This is projection, not a verdict: the
+     * claiming order, the dedup, the classification and every metric stay
+     * downstream.
+     */
+    private static void writeJudgments(
+            Path out, String task, boolean adjudication, List<Match> matches, List<Judgment> judgments)
+            throws IOException {
+        StringBuilder tsv = new StringBuilder();
+        if (adjudication) {
+            for (Judgment judgment : judgments) {
+                tsv.append("adjudged\t").append(cell(task)).append('\t').append(cell(judgment.candidate()))
+                        .append('\t').append(cell(judgment.status())).append('\t')
+                        .append(cell(judgment.evidence())).append('\n');
+            }
+        } else {
+            for (Match match : matches) {
+                String referencesOf = match.references().isEmpty() ? "-" : String.join(",", match.references());
+                tsv.append("judged\t").append(cell(task)).append('\t').append(cell(match.candidate()))
+                        .append('\t').append(cell(referencesOf)).append('\t')
+                        .append(cell(match.reason())).append('\n');
+            }
+        }
+        Files.writeString(out, tsv.toString(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Extract the last {@code {"matches": [...]}} object from the judge's final
+     * message. Mechanical JSON scanning, not a verdict: the claiming order, the
+     * dedup and the classification stay downstream.
+     */
+    private static Structured extractStructuredMatches(String message) {
+        if (message == null) {
+            return new Structured("malformed", List.of(), List.of());
+        }
+        int searchFrom = message.length();
+        while (true) {
+            int at = message.lastIndexOf("\"matches\"", searchFrom);
+            if (at < 0) {
+                return new Structured("malformed", List.of(), List.of());
+            }
+            int open = message.lastIndexOf('{', at);
+            if (open >= 0) {
+                List<Match> matches = matchesOf(Json.parse(message.substring(open)));
+                if (matches != null) {
+                    return new Structured("ok", List.of(), List.of(), matches, List.of());
+                }
+            }
+            searchFrom = at - 1;
+            if (searchFrom <= 0) {
+                return new Structured("malformed", List.of(), List.of());
+            }
+        }
+    }
+
+    private static List<Match> matchesOf(Object parsed) {
+        if (!(parsed instanceof Map<?, ?> map) || !(map.get("matches") instanceof List<?> list)) {
+            return null;
+        }
+        List<Match> matches = new ArrayList<>();
+        for (Object raw : list) {
+            if (!(raw instanceof Map<?, ?> entry)) {
+                return null;
+            }
+            String candidate = Json.asText(entry.get("candidate"));
+            if (candidate == null || !(entry.get("references") instanceof List<?> refs)) {
+                return null;
+            }
+            List<String> references = new ArrayList<>();
+            for (Object reference : refs) {
+                String value = Json.asText(reference);
+                if (value == null) {
+                    return null;
+                }
+                // The judge prompt names the references `G1`, `G2`, ...; the
+                // projection carries the declared 1-based index alone so the
+                // downstream owner parses one canonical integer vocabulary.
+                references.add(value.startsWith("G") || value.startsWith("g") ? value.substring(1) : value);
+            }
+            String reason = Json.asText(entry.get("reason"));
+            matches.add(new Match(candidate, references, reason == null ? "" : reason));
+        }
+        return matches;
+    }
+
+    /**
+     * Extract the last {@code {"judgments": [...]}} object from the adjudicator's
+     * final message. Mechanical JSON scanning, not a verdict.
+     */
+    private static Structured extractStructuredJudgments(String message) {
+        if (message == null) {
+            return new Structured("malformed", List.of(), List.of());
+        }
+        int searchFrom = message.length();
+        while (true) {
+            int at = message.lastIndexOf("\"judgments\"", searchFrom);
+            if (at < 0) {
+                return new Structured("malformed", List.of(), List.of());
+            }
+            int open = message.lastIndexOf('{', at);
+            if (open >= 0) {
+                List<Judgment> judgments = judgmentsOf(Json.parse(message.substring(open)));
+                if (judgments != null) {
+                    return new Structured("ok", List.of(), List.of(), List.of(), judgments);
+                }
+            }
+            searchFrom = at - 1;
+            if (searchFrom <= 0) {
+                return new Structured("malformed", List.of(), List.of());
+            }
+        }
+    }
+
+    private static List<Judgment> judgmentsOf(Object parsed) {
+        if (!(parsed instanceof Map<?, ?> map) || !(map.get("judgments") instanceof List<?> list)) {
+            return null;
+        }
+        List<Judgment> judgments = new ArrayList<>();
+        for (Object raw : list) {
+            if (!(raw instanceof Map<?, ?> entry)) {
+                return null;
+            }
+            String candidate = Json.asText(entry.get("candidate"));
+            String status = Json.asText(entry.get("status"));
+            if (candidate == null || status == null) {
+                return null;
+            }
+            String evidence = Json.asText(entry.get("evidence"));
+            judgments.add(new Judgment(candidate, status, evidence == null ? "" : evidence));
+        }
+        return judgments;
+    }
 
     /**
      * Extract the last {@code {"paths": [...]}} object from the agent's final
@@ -1720,6 +2132,15 @@ public final class SolLocalizeDriver {
         // other mode these stay at their declared defaults, so the original and
         // inspected receipts keep their published shape.
         boolean reviewMode;
+        // The opt-in ReviewBench judge/adjudication path's observation surface. In
+        // every other mode these stay at their declared defaults, so the original,
+        // inspected and review receipts keep their published shape.
+        boolean judgeMode;
+        String judgeRole = "";
+        long candidateCount;
+        String goldIdentity = "Unavailable";
+        List<Match> matches = List.of();
+        List<Judgment> judgments = List.of();
         long changedFiles;
         long changeBytes;
         long contextBytes;
@@ -1790,6 +2211,12 @@ public final class SolLocalizeDriver {
             field(json, "arm", jsonString(arm));
             field(json, "inspect_mode", Boolean.toString(inspectMode));
             field(json, "review_mode", Boolean.toString(reviewMode));
+            field(json, "judge_mode", Boolean.toString(judgeMode));
+            field(json, "judge_role", jsonString(judgeRole));
+            field(json, "gold_identity", jsonString(goldIdentity));
+            field(json, "candidate_count", Long.toString(candidateCount));
+            field(json, "match_count", Integer.toString(matches.size()));
+            field(json, "judgment_count", Integer.toString(judgments.size()));
             field(json, "changed_files", Long.toString(changedFiles));
             field(json, "change_bytes", Long.toString(changeBytes));
             field(json, "context_bytes", Long.toString(contextBytes));

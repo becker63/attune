@@ -5769,3 +5769,174 @@ part of `//...`.
   before any gold/judge exposure. The judge protocol (`VAL-REVIEW-004`) and the
   inline paired-economics tables and graphs (`VAL-REVIEW-005`) remain the later
   features' results.
+
+## ReviewBench owner judge protocol and independent adjudication (VAL-REVIEW-004, 2026-10-08)
+
+The owner's chosen judge protocol over the frozen findings of the first paired
+review family, through the SAME verified inspected runner on the SAME dedicated
+SIWC route. Every number below is read from the persisted judge/adjudication
+receipts and the provider-free reduction tree
+(`bazel-bin/test/reviewbench_judge/reviewbench_judge_report/`), never asserted.
+**Gold was mounted ONLY in the judge closure**: no review, prediction or
+assisted-context closure can reach a `golden/` file.
+
+### Blinded candidate construction
+
+`reviewbench_judge_candidates` is a provider-free stage: 0 model calls, 0 Sol
+turns, 0 Grit and 0 Theory work. It reads the 22 frozen findings of the 10
+admitted tasks (20 findings files plus the frozen paired summary) and writes one
+blinded candidate projection per task plus the separate candidate-to-arm
+blinding record. The candidates are re-identified positionally as `C1..Cn`,
+interleaved by rank across the two arms, and the candidate projection carries
+**no arm cell at all** (8 cells: candidate, file, start, end, severity, category,
+message); the arm map lives only in `blinding.tsv`, which the judge session never
+reads. All 22 frozen findings are blinded exactly once.
+
+### Frozen protocol identity
+
+The judge is a **separate pinned `gpt-6.1-sol` medium SIWC session via the Codex
+subscription**, on the same dedicated platform and `ACCESS_TOKEN` secret
+boundary as the Sol arms, with the same frozen budget 300 s / 32 tool rounds /
+256,000 observed tokens. One fixed judge prompt
+`sha256:3c4dbb6dc3457a97ca98fa985b7645b3a76cabf60d98cd7af6282cf0bbe5087d`,
+frozen AFTER the candidate findings existed and BEFORE any gold exposure, judges
+from the golden set and the source only. The independent-adjudication prompt
+`sha256:8168d1d97d2a19ad7ba05a7229ae8f1cae69c9571fb3f165cf6c2bf088bfaac3`
+sees the blinded unmatched candidates and **no golden set**, and states
+explicitly that it is an automated reviewer and never a human or manual review.
+
+### The judge sessions (6 tasks with candidates)
+
+| Task | Role | Status | Candidates | Matched | Adjudications | Tokens | Turn wall |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| agent-sh_agentsys-298 | judge | ok | 4 | 4 | 0 | 77,249 | 26,858 ms |
+| brianc_node-postgres-3650 | judge | ok | 6 | 6 | 0 | 112,345 | 17,512 ms |
+| capawesome-team_cli-126 | judge | ok | 5 | 5 | 0 | 98,463 | 27,266 ms |
+| haoling_diary-notebook-blog-transformer-24 | judge | ok | 4 | 4 | 0 | 40,869 | 16,278 ms |
+| jenkinsci_gitea-plugin-141 | judge | ok | 1 | 1 | 0 | 32,860 | 9,056 ms |
+| rulecom_rule-io-sdk-40 | judge | ok | 2 | 2 | 0 | 56,491 | 13,278 ms |
+
+All 22 blinded candidates received a judge correspondence. The four admitted
+tasks whose two review arms both ended at the token cap produced **no finding at
+all**; they stay in the metric denominator with zero candidates rather than being
+replaced or force-judged.
+
+### The independent adjudication sessions
+
+| Task | Role | Status | Candidates | Judgments | Tokens | Turn wall |
+| --- | --- | --- | --- | --- | --- | --- |
+| agent-sh_agentsys-298 | adjudicate | ok | 0 | 0 | 113,483 | 88,111 ms |
+| brianc_node-postgres-3650 | adjudicate | ok | 1 | 1 | 67,845 | 9,804 ms |
+| capawesome-team_cli-126 | adjudicate | ok | 0 | 0 | 28,213 | 5,952 ms |
+| haoling_diary-notebook-blog-transformer-24 | adjudicate | ok | 4 | 4 | 63,074 | 19,210 ms |
+| jenkinsci_gitea-plugin-141 | adjudicate | ok | 0 | 0 | 85,565 | 27,451 ms |
+| rulecom_rule-io-sdk-40 | adjudicate | ok | 0 | 0 | 15,643 | 4,655 ms |
+
+Five unmatched candidates received source-grounded independent adjudication,
+kept SEPARATE from the automatic provisional reference-set match:
+
+| Task | Candidate | Arm (from the blinding record) | Status | Grounding |
+| --- | --- | --- | --- | --- |
+| brianc_node-postgres-3650 | C5 | A | valid | `client.js` tracing forwards `origCb(err, res)`, losing the `Query` receiver that `handleReadyForQuery`/`handleError` gave callbacks |
+| haoling_diary-notebook-blog-transformer-24 | C1 | A | valid | `drive-client.ts` name search never tracks `nextPageToken`, so an empty first page is read as absence |
+| haoling_diary-notebook-blog-transformer-24 | C2 | B | invalid | duplicate of C1 (same method, condition, impact and fix) |
+| haoling_diary-notebook-blog-transformer-24 | C3 | A | valid | `drive-errors.ts` `parseDriveError` omits `dailyLimitExceeded`/`storageQuotaExceeded`, so quota 403s become permission errors |
+| haoling_diary-notebook-blog-transformer-24 | C4 | B | invalid | duplicate of C3 (same classification fix) |
+
+So the logical deduplication the protocol requires happened **at adjudication**:
+the two duplicated restatements were resolved `invalid` as duplicates of the
+valid finding in the paired arm. `haoling`'s paired disagreement is therefore
+adjudicated **A valid / B invalid** — exactly the paired disagreement the owner
+wanted an independent agent to settle. No adjudication is claimed as human or
+manual review, and **no reference-set miss was scored a false positive**: all 22
+candidates are classified matched / unmatched-valid / unmatched-invalid /
+unresolved, and an unmatched candidate stays unmatched until the independent
+adjudication says otherwise.
+
+### Quality (through the one canonical `Attune.Study.Metrics` reducers)
+
+All-findings view, task-micro over the 10-task denominator:
+
+| Arm | Known recall | Grounded precision | Valid precision | Resolved precision | Augmented recall |
+| --- | --- | --- | --- | --- | --- |
+| A | 1/9 = 11.1% | 6/7 = 85.7% | 9/10 = 90.0% | 9/10 = 90.0% | 11/75 = 14.7% |
+| B | 5/36 = 13.9% | 9/10 = 90.0% | 3/4 = 75.0% | 3/4 = 75.0% | 5/36 = 13.9% |
+
+(The same ratios over the summary's unreduced counts are A 8/72 and B 10/72
+known recall, A 9/10 and B 9/12 valid precision; the canonical reducer emits the
+reduced exact pair.) Medium/high-recall view (task-micro): A known recall
+2/9 = 22.2%, grounded precision 6/7 = 85.7%, valid precision 9/10 = 90.0%,
+resolved precision 9/10 = 90.0%, augmented recall 11/39 = 28.2%; B known recall
+1/4 = 25.0%, grounded precision 8/9 = 88.9%, valid precision 2/3 = 66.7%,
+resolved precision 8/11 = 72.7%, augmented recall 1/4 = 25.0%. High-severity
+view: both arms 1/1 = 100.0% on every metric.
+
+Repo-macro (mean of the defined per-task ratios, with the defined population
+beside it): A known recall 12.1% (865/7128 over 6 defined tasks), grounded
+precision 87.5% (7/8), valid precision 90.0%, resolved precision 90.0%, augmented
+recall 15.8% (667/4212); B known recall 16.4% (1171/7128), grounded precision
+93.3% (14/15), valid precision 77.8% (7/9), resolved precision 77.8%, augmented
+recall 16.4%. A task whose per-task ratio has an empty denominator is **excluded
+from the macro mean rather than counted as a zero**, and `macro-population.tsv`
+makes each exclusion visible (e.g. `grounded-precision` is defined for 4 of 10
+tasks for A and 5 of 10 for B).
+
+Supported locations (gold / newly discovered valid), all view: A covers 2/9,
+2/11, 2/27, 0/11, 0/6, 2/8 gold for agent-sh, brianc, capawesome, haoling,
+jenkinsci, rulecom with 0, 1, 0, 2, 0, 0 newly valid; B covers 2, 3, 2, 0, 1, 2
+with 0, 0, 0, 0, 0, 0 newly valid. Valid/paired disagreements (gold true,
+covered by A, covered by B, both, neither): agent-sh 9/2/2/2/7, brianc
+11/2/3/2/8, capawesome 27/2/2/2/25, haoling 11/0/0/0/11, jenkinsci 6/0/1/0/5,
+rulecom 8/2/2/2/6; the four zero-finding tasks are 0 throughout.
+
+**Failures/exclusions**: the four review arms with zero findings are retained in
+the denominator with zero candidates; `outcomes.tsv` restates the frozen review
+outcomes (12 `ok`, 8 retained token-cap failures); `failures.tsv` lists any
+non-`ok` judge/adjudication session and is **empty** — the one bounded failure
+observed (a provider `Selected model is at capacity` service error on the first
+`brianc` adjudication attempt) was retried exactly ONCE, the frozen contract's
+single authorized transient retry, and succeeded. No quality retry, resample,
+replacement or budget tuning was performed. No repo bootstrap resampling was
+used: the optional bootstrap is not applied and no extra assurance beyond the
+task-micro/repo-macro tables is claimed.
+
+### Cost and timing
+
+The judge and adjudication sessions are their own separate usage line: **418,277
+tokens** for the six judge sessions and **373,823 tokens** for the six
+adjudication sessions (792,100 total), observed turn walls 4.7–88.1 s. **No
+dollar amount is reported**: the SIWC plan route returns no marginal API dollar
+figure, BuildBuddy durations are not dollars, and the raw economic lines and
+cost/latency-vs-quality graphs are `VAL-REVIEW-005`'s later result.
+
+### Commands (see `services.yaml`)
+
+`reviewbench_judge_route_check` (no provider call), `reviewbench_judge_first_task`
+(one task, run alone before any fan-out) and `reviewbench_judge_cohort` (the six
+judge sessions plus the six independent-adjudication sessions) are `manual`
+producer actions. They require
+`--modify_execution_info=AttuneStudyStage=+no-remote` so the provider-free
+`reviewbench_judge_candidates` and `reviewbench_judge_report` stages run
+host-local, while the judge/adjudication actions run on the dedicated remote
+platform where the `ACCESS_TOKEN` secret is injected. **The report must be built
+with the SAME platform flags as the producers**: a report build under a
+different configuration re-executes the judge sessions host-locally, where the
+secret is absent (measured: `result_status: malformed`, `failure: Missing
+environment variable: ACCESS_TOKEN`); rebuilding the cohort with the platform
+flags restores the real remote results. `reviewbench_judge_law` is corpus-free
+and part of `//...`.
+
+### Update history
+
+- ReviewBench owner judge protocol and independent adjudication (this section):
+  22 blinded candidates from 22 frozen findings across the 10 admitted tasks were
+  judged by separate pinned `gpt-6.1-sol` medium SIWC sessions against the
+  gold-only judge closure (146 golden references over the 6 candidate-bearing
+  tasks); the 5 unmatched candidates — including the `haoling` paired
+  disagreement — received source-grounded independent agent adjudication (3
+  valid, 2 invalid as duplicates) kept separate from the automatic provisional
+  score, with no human/manual claim and no reference miss scored a false
+  positive; quality is reported at task-micro and repo-macro with the defined
+  macro population made explicit. The inline paired-economics tables and graphs
+  (`VAL-REVIEW-005`) remain the later feature's result.
+

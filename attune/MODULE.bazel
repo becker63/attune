@@ -356,3 +356,80 @@ world_sources(
     name = "reviewbench_worlds",
     manifest = "//test/reviewbench:archives.tsv",
 )
+
+# The pinned golden set of the admitted ReviewBench cohort's six candidate-bearing
+# tasks (`VAL-REVIEW-004`). Each file is the corpus's own per-task golden record
+# at the SAME commit the admission stage verified
+# (66df3f322d0d85ea133ea9fa777f5d1a8c933c4e); the URL carries the commit and the
+# path, and the provider's own SHA-256 pins the exact bytes, so a mutated or
+# substituted golden file fails the fetch instead of entering the judge.
+# `Attune.Study.ReviewBenchJudge` owns the declared judge protocol; these URLs are
+# only the acquisition. The golden set is requested ONLY by the explicitly
+# selected `manual` `//test/reviewbench_judge` judge targets, so the ordinary
+# `bazel test //...` gate never acquires it and no review, prediction or
+# assisted-context closure can reach it. Declared last for the same anonymous-repo
+# renumbering reason as the catalog, world archives, embedding runtime, Qwen
+# fixtures, Codex assets and manifest above.
+http_file(
+    name = "reviewbench_gold_agent_sh_agentsys_298",
+    sha256 = "1c5e5d68c26d5320dec8d21a152ff9d24cb8de6b05c12ac6bb69b31cc4ded54a",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/agent-sh_agentsys_298-a5224fae.json"],
+)
+
+http_file(
+    name = "reviewbench_gold_brianc_node_postgres_3650",
+    sha256 = "dd94751733c1779a6006ee1cabef100097b12d9d7725f04bc767684b15c09c16",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/brianc_node-postgres_3650-b922f0dd.json"],
+)
+
+http_file(
+    name = "reviewbench_gold_capawesome_team_cli_126",
+    sha256 = "73fcf6b6f506822db922c478d5972387c9be2c862c58cd3af9c60aff139fd19f",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/capawesome-team_cli_126-2d997db6.json"],
+)
+
+http_file(
+    name = "reviewbench_gold_haoling_diary_notebook_blog_transformer_24",
+    sha256 = "db031ddf4726239e7b9382e134fcaec18196f08a82712cbced585a89458a7f87",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/haoling_diary-notebook-blog-transformer_24-876934a6.json"],
+)
+
+http_file(
+    name = "reviewbench_gold_jenkinsci_gitea_plugin_141",
+    sha256 = "6fb59d7662665945f149b99a1c8db49af4a83dda3ebcf2bf4a5a597d0b6f7ca9",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/jenkinsci_gitea-plugin_141-2e021e56.json"],
+)
+
+http_file(
+    name = "reviewbench_gold_rulecom_rule_io_sdk_40",
+    sha256 = "032d2af9b4fa817e06eebaa6bdd7f9c045cc4faf223c4b227ef967565293ef94",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/rulecom_rule-io-sdk_40-550f7bc0.json"],
+)
+
+# The remaining admitted tasks' golden files are declared even though their two
+# frozen reviews produced no finding at all: the declared identity record stays
+# complete, so a future stage can verify that a task really carries no candidate
+# rather than merely failing to look. They are not requested by any target today.
+http_file(
+    name = "reviewbench_gold_heyitsaamir_teamscli_31",
+    sha256 = "a94ab357826a9009c7673b4b9ac614a7962f1b4a843cf2076a2c42ee96b9d67c",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/heyitsaamir_teamscli_31-ec0e9d9a.json"],
+)
+
+http_file(
+    name = "reviewbench_gold_caasi_town_zero_6",
+    sha256 = "bd3403887d13dde65c0701c4294fa5246777e4389fc35b2e38a0ca722b857885",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/caasi_town-zero_6-f6ef91ce.json"],
+)
+
+http_file(
+    name = "reviewbench_gold_EdV4H_usketch_534",
+    sha256 = "8815fb924d392e5d6813e8aa6da23254bf8a891dd9e385d5759e52c35785fed0",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/EdV4H_usketch_534-719aa834.json"],
+)
+
+http_file(
+    name = "reviewbench_gold_ls1intum_Artemis_12479",
+    sha256 = "902caadddebbea2d0f92e9ccbdf66dae50b2c8da37dbae5106f4761f5ef1d20f",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/ls1intum_Artemis_12479-237b3656.json"],
+)

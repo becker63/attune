@@ -489,6 +489,13 @@ public final class NativeLaunch {
         bindings.add("outputs=" + out.toAbsolutePath());
         bindings.add("stage=" + stage);
         bindings.add("label=" + System.getProperty("attune.label", ""));
+        // The launcher's own working directory is the action's execroot, and a
+        // declared `name<TAB>path` table can carry execroot-relative action paths
+        // (a path manifest of a whole declared population). Binding the exact
+        // directory here lets a stage law resolve such a declared relative path
+        // against the same root the launcher resolved its absolute bindings
+        // against. It is the launcher's own location, decided nowhere else.
+        bindings.add("execroot=" + Path.of("").toAbsolutePath());
         writeEncodings(work, bindings);
         for (String spec : inputs) {
             int separator = spec.indexOf('=');

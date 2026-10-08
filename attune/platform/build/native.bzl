@@ -481,6 +481,11 @@ def _native_study_stage_impl(ctx):
     declared_inputs = list(ctx.files.srcs) + list(inputs) + list(classpath) + jars
     declared_inputs.extend(ctx.files.world_sources)
     declared_inputs.extend(ctx.files.native_libs)
+    # A population a stage opens through a declared path manifest carries no
+    # binding name of its own, so its bytes are declared here: the manifest names
+    # the action paths, and these are the artifacts those paths name. Without
+    # this the action would name a path it never declared as an input.
+    declared_inputs.extend(ctx.files.extra_inputs)
     args = ctx.actions.args()
     if jars:
         args.add("-Dattune.jars=" + ",".join([jar.path for jar in jars]))
@@ -564,6 +569,7 @@ _native_study_stage = rule(
         "java_deps": attr.label_list(providers = [JavaInfo]),
         "native_libs": attr.label_list(allow_files = True),
         "world_sources": attr.label_list(allow_files = True),
+        "extra_inputs": attr.label_list(allow_files = True),
         "isolation": attr.string(values = ["unshare", "platform"], default = "unshare"),
         "unshare_binary": attr.label(allow_single_file = True),
         "unshare_closure": attr.label(allow_files = True),
@@ -575,7 +581,7 @@ _native_study_stage = rule(
     toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
 )
 
-def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], native_libs = [], world_sources = [], host_isolation = False, deadline_seconds = 0, **kwargs):
+def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt_plan = None, java_deps = [], native_libs = [], world_sources = [], extra_inputs = [], host_isolation = False, deadline_seconds = 0, **kwargs):
     """Materialize one declared study stage tree through the authentic native Tester.
 
     The action runs the pinned compiler's authentic native test engine over the
@@ -610,6 +616,9 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
       java_deps: the explicit dependency jars a Java-backed stage law consumes.
       native_libs: the prepared shared libraries a native-engine stage law loads.
       world_sources: the declared whole-world source set a stage reads by path.
+      extra_inputs: declared artifacts the stage opens through a declared path
+        manifest. They carry no binding name of their own, so a population a
+        stage names by manifest declares its own bytes here.
       host_isolation: pins the host `unshare` boundary instead of the portable route.
       deadline_seconds: the declared out-of-process wall-clock bound, or 0 for the
         ordinary unbounded wait; a stage that declares one is killed by the
@@ -646,6 +655,7 @@ def native_study_stage(name, stage, srcs, inputs = [], input_names = [], receipt
         java_deps = java_deps,
         native_libs = native_libs,
         world_sources = world_sources,
+        extra_inputs = extra_inputs,
         isolation = isolation,
         unshare_binary = unshare_binary,
         unshare_closure = unshare_closure,
