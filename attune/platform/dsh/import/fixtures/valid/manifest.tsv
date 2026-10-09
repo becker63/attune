@@ -1,0 +1,16 @@
+protocol	attune.native-session-bundle/1
+exporter	attune.dsh.export/1
+harness	dsh-0.2.0-rc.2
+provider	siwc-responses
+model	gpt-6.1-sol
+effort	medium
+world	world-evidence-1
+task	EdV4H_usketch-534
+arm	R1_PACKETS
+buildbuddy	invocation-004affce-34b8-4dfe-88b3-8dc30b665715
+sessionId	session-f4e81263-4772-4a82-bd20-4fd8a4b7115c
+createdAt	1791524750170
+exportedAt	1791524765000
+redactedFields	text,system,title,arguments
+file	session.jsonl	71fe9df3199b17592e9ca557528034ea38585866bdd7b921ab1ac111ebfb7e43	28023	sanitized
+file	events.jsonl	33622a918eaea4c1012d44a1f9dafd2b4650db0c8696f85c6b500f529df445ad	1288	sanitized

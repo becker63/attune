@@ -153,6 +153,14 @@ dsh_npm.npm_translate_lock(
     # copy and changes no other dependency's resolution.
     public_hoist_packages = {
         "@deepseek-ai/cordis@4.0.4": ["platform/dsh"],
+        # The supported durable session backends the local integration profile
+        # imports a native bundle through: the JSONL persistence backend is the
+        # one the pinned DSH itself writes, and the SQLite session-query backend
+        # is its supported derived index. Both are transitive members of the
+        # declared graph; the flat hoist is what the integration package's bare
+        # `import` needs, exactly as `dsh-tools` and `cordis` are hoisted above.
+        "@deepseek-ai/dsh-session-persistence-jsonl@0.2.0-rc.2": ["platform/dsh"],
+        "@deepseek-ai/dsh-session-query-sqlite@0.2.0-rc.2": ["platform/dsh"],
         "@deepseek-ai/dsh-tools@0.2.0-rc.2": ["platform/dsh"],
         "node-addon-require-builtin-linux-arm64-gnu@0.1.7": ["platform/dsh"],
         "node-addon-system-linux-arm64@0.1.2": ["platform/dsh"],

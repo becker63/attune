@@ -1,0 +1,70 @@
+"""The local supported session-persistence import path (VAL-SUB-014/015 core).
+
+This package holds the one importer that publishes a native session bundle into
+a dedicated local integration store through the pinned runtime's OWN durable
+session-persistence API (`create`/`open`/`read`/`append`/`flush`/`close`), the
+mechanical bundle-integrity model that refuses a corrupt/unsupported/traversing/
+out-of-order/incomplete bundle before any store write, and the laws that pin the
+whole path. It is provider-free and offline, so the ordinary `bazel test //...`
+gate runs it.
+
+The declared native bundle fixture is derived from an actual frozen DSH session
+(the provider-gate diagnostic): its structure and event vocabulary are the real
+native ones, and every model-text field is redacted. The manifest records the
+redaction, so the raw-versus-sanitized distinction is explicit and no field is
+fabricated.
+"""
+
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+filegroup(
+    name = "import_fixtures",
+    srcs = [
+        "fixtures/valid/events.jsonl",
+        "fixtures/valid/manifest.tsv",
+        "fixtures/valid/session.jsonl",
+    ],
+)
+
+js_library(
+    name = "import_library",
+    srcs = [
+        "bundle.mjs",
+        "importer.mjs",
+        "package.json",
+    ],
+)
+
+# The laws of the import path. They mount the REAL pinned JSONL persistence
+# backend through a real Cordis context and drive create/open/read/append/flush/
+# close over the declared native bundle fixture. Provider-free and offline.
+js_test(
+    name = "import_test",
+    data = [
+        ":import_fixtures",
+        ":import_library",
+        "//platform/dsh:node_modules",
+    ],
+    entry_point = "import_test.mjs",
+)
+
+# The declared local import action: it imports one bundle directory into a store
+# root and prints the identity/digest/event counts it observed. It is the actual
+# export/import run, kept `manual` so the ordinary gate never writes a store.
+js_binary(
+    name = "import_bundle",
+    data = [
+        ":import_library",
+        "//platform/dsh:node_modules",
+    ],
+    entry_point = "import_bundle.mjs",
+    tags = ["manual"],
+)
