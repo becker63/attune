@@ -19,7 +19,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { Context } from '@deepseek-ai/cordis'
+import SessionStore from '@deepseek-ai/dsh-session'
 import JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import SessionQuerySqlite from '@deepseek-ai/dsh-session-query-sqlite'
 
 import { BundleRefusal, importedHeader, stableImportedId, validateBundle } from './bundle.mjs'
 
@@ -157,6 +159,48 @@ export async function listStored(storeRoot) {
   try {
     const snapshots = await store.persistence.list()
     return snapshots.map((snapshot) => snapshot.header.id).sort()
+  } finally {
+    await store.dispose()
+  }
+}
+
+/// Open the store together with the supported SQLite session-query engine, so
+/// imported history is read through the SAME derived index the research UI
+/// uses rather than a second session IR. The query index is a dedicated file
+/// inside the integration store and is opened lazily at the first search.
+export async function openQueryStore(storeRoot) {
+  mkdirSync(storeRoot, { recursive: true })
+  const ctx = new Context()
+  await ctx.plugin(SessionStore)
+  await ctx.plugin(JsonlSessionPersistence, { root: join(storeRoot, 'sessions') })
+  await ctx.plugin(SessionQuerySqlite, { path: join(storeRoot, 'query.sqlite'), openAt: 'first-search' })
+  return {
+    ctx,
+    persistence: ctx.sessionPersistence,
+    query: ctx.sessionQuery,
+    async dispose() {
+      await ctx.fiber.dispose()
+    },
+  }
+}
+
+/// Read imported history through the supported SessionQuery engine: the
+/// complete logical corpus, one exact session log and a full-text search over
+/// the imported events. This is the data layer the research UI searches, so it
+/// is exercised directly rather than asserted from disk existence.
+export async function queryImported(storeRoot, { query, sessionId }) {
+  const store = await openQueryStore(storeRoot)
+  try {
+    const sessions = await store.query.listSessions()
+    const record = sessions.find((candidate) => candidate.header.id === sessionId)
+    const snapshot = sessionId === undefined ? undefined : await store.query.readSession(sessionId)
+    const hits = query === undefined ? undefined : await store.query.searchSessions({ query, limit: 20 })
+    return {
+      sessions: sessions.map((candidate) => ({ id: candidate.header.id, persisted: candidate.persisted })),
+      record: record === undefined ? undefined : { id: record.header.id, persisted: record.persisted },
+      events: snapshot === undefined ? undefined : snapshot.events.length,
+      hits: hits === undefined ? undefined : hits.items.map((hit) => ({ id: hit.header.id, bestMatch: hit.bestMatch.seq })),
+    }
   } finally {
     await store.dispose()
   }

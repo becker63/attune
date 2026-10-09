@@ -22,13 +22,14 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash as realCreateHash } from 'node:crypto'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 import { BUNDLE_PROTOCOL, BundleRefusal, parseManifest, validateBundle } from './bundle.mjs'
-import { importBundle, listStored, openStore, readImported, readLedger } from './importer.mjs'
+import { importBundle, listStored, openStore, queryImported, readImported, readLedger } from './importer.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const FIXTURE = join(HERE, 'fixtures', 'valid')
@@ -217,8 +218,24 @@ test('a same-id reimport with a different content digest is refused as a conflic
   )
 })
 
+// --------------------------------------------------- supported SessionQuery
+
+test('imported history reads through the supported SessionQuery engine', async () => {
+  const root = storeRoot('query')
+  const { manifestText, contents } = readFixture()
+  const imported = await importBundle({ manifestText, contents, storeRoot: root })
+
+  const result = await queryImported(root, { query: 'workspace-write', sessionId: imported.id })
+  assert.ok(
+    result.sessions.some((session) => session.id === imported.id),
+    'the imported session must appear in the logical corpus',
+  )
+  assert.equal(result.record.id, imported.id)
+  assert.equal(result.events, 24, 'the exact logical log must replay through SessionQuery')
+  assert.ok(Array.isArray(result.hits), 'a full-text search must return a page')
+})
+
 // A tiny synchronous sha256 for the cases that re-declare a mutated digest.
-import { createHash as realCreateHash } from 'node:crypto'
 function digestOf(text) {
   return realCreateHash('sha256').update(text).digest('hex')
 }
