@@ -13,7 +13,11 @@
 ///  - the `whole-file` escape reads any ONE declared file of the complete
 ///    authorized changed world whole, including a file the bounded region policy
 ///    marks `overflow`, so ordinary access beyond the initial neighborhood stays
-///    possible;
+///    possible; the complete world is declared by archive-relative reference and
+///    resolved against the declared `wholeFileRoot` (default: the region root);
+///  - the `region` acquisition serves exactly ONE declared region on its own,
+///    through the same boundary, so the offline preflight can compare individual
+///    acquisitions against the compiled packet over identical evidence;
 ///  - every served span is resolved against the declared packet world through
 ///    the runtime boundary and its sealed bytes are digest-verified, so a
 ///    packet can only disclose physical exact evidence;
@@ -104,11 +108,12 @@ export const PACKET_PARAMETERS = {
   disclosure: {
     type: 'string',
     required: true,
-    enum: ['progressive', 'full-source', 'whole-file'],
+    enum: ['progressive', 'full-source', 'whole-file', 'region'],
     description:
       'progressive discloses exactly the packet evidence; full-source discloses ' +
       'every declared region of the changed world; whole-file reads one exact ' +
-      'declared file of the complete changed world whole.',
+      'declared file of the complete changed world whole; region acquires ONE ' +
+      'exact declared region of the same world on its own.',
   },
   path: {
     type: 'string',
@@ -116,9 +121,10 @@ export const PACKET_PARAMETERS = {
     description:
       'The repository-relative path of one declared file of the complete changed ' +
       'world to read whole, or the declared absent value - when the disclosure is ' +
-      'not a whole-file read. A file the bounded REGION policy marks overflow is ' +
-      'still readable: the cap bounds the exact region tiling, it never removes ' +
-      'ordinary source access.',
+      'not a whole-file read. A region acquisition names the region as ' +
+      '`<repository-relative path>@<startLine>-<endLine>`. A file the bounded ' +
+      'REGION policy marks overflow is still readable: the cap bounds the exact ' +
+      'region tiling, it never removes ordinary source access.',
   },
   revision: {
     type: 'string',
@@ -276,17 +282,21 @@ function recordLedger(config, packetId, disclosure, delivered) {
 /// ACTUAL source text of the disclosure is delivered as a separate declared
 /// member in bounded, deterministic pages.
 export function executePacketOperation(args, config) {
-  const modes = ['progressive', 'full-source', 'whole-file']
+  const modes = ['progressive', 'full-source', 'whole-file', 'region']
   if (!modes.includes(args.disclosure)) {
     throw new PacketRefusal('the requested disclosure is not a declared disclosure mode')
   }
   const absent = (value) => value === undefined || value === ABSENT || value.length === 0
   const wholeFile = args.disclosure === 'whole-file'
+  const singleRegion = args.disclosure === 'region'
   if (wholeFile && (absent(args.path) || absent(args.revision))) {
     throw new PacketRefusal('a whole-file read needs both the declared path and its declared revision')
   }
-  if (!wholeFile && (!absent(args.path) || !absent(args.revision))) {
-    throw new PacketRefusal('only a whole-file disclosure names a declared file of the complete world')
+  if (singleRegion && (absent(args.path) || absent(args.revision))) {
+    throw new PacketRefusal('a region acquisition needs both the declared region and its declared revision')
+  }
+  if (!wholeFile && !singleRegion && (!absent(args.path) || !absent(args.revision))) {
+    throw new PacketRefusal('only a whole-file or region disclosure names a declared file of the complete world')
   }
   const compiled = loadCompiledPackets(config)
   const packet = compiled.packets.get(args.packet)
@@ -298,13 +308,26 @@ export function executePacketOperation(args, config) {
   if (wholeFile) {
     // The retained escape to the COMPLETE authorized changed world: one exact
     // declared file, resolved and digest-verified whole, with its bounded-policy
-    // status decided by the declared manifest rather than by this tool.
+    // status decided by the declared manifest rather than by this tool. The
+    // complete world is declared by archive-relative reference, so the read
+    // resolves against the declared whole-file root, which defaults to the region
+    // root for a world that seals its whole-file copies beside its regions.
+    const wholeFileRoot = declared(config, 'wholeFileRoot', 'ATTUNE_WHOLE_FILE_ROOT', sourceRoot)
     const row = findDeclaredWorldFile(declaredWorldFiles(config), {
       world: packet.worldScope,
       revision: args.revision,
       path: args.path,
     })
-    served = [readWholeFile(row, { sourceRoot })]
+    served = [readWholeFile(row, { wholeFileRoot })]
+  } else if (singleRegion) {
+    // The bounded INDIVIDUAL acquisition: exactly ONE declared region of the same
+    // world, resolved and digest-verified through the same boundary the compiled
+    // packet uses. It serves the region's ACTUAL source text on its own, so the
+    // offline preflight can compare individual acquisitions against the compiled
+    // packet over identical evidence.
+    const request = parseRegionRequest(packet.worldScope, args.path, args.revision)
+    const region = findDeclaredRegion(declaredRegions(config), request)
+    served = [readRegion(region, { sourceRoot })]
   } else {
     const regions = declaredRegions(config)
     const requested =
@@ -409,6 +432,24 @@ export function executePacketOperation(args, config) {
   }
 }
 
+/// Parse one declared region acquisition request: the repository-relative path and
+/// the exact inclusive line range, encoded as `<path>@<startLine>-<endLine>`. A
+/// request that is not in that declared form is refused rather than guessed.
+function parseRegionRequest(world, path, revision) {
+  const at = path.lastIndexOf('@')
+  const match = at > 0 ? /^([0-9]+)-([0-9]+)$/.exec(path.slice(at + 1)) : null
+  if (match === null) {
+    throw new PacketRefusal('a region acquisition names the region as <path>@<startLine>-<endLine>')
+  }
+  return {
+    world,
+    revision,
+    path: path.slice(0, at),
+    startLine: Number.parseInt(match[1], 10),
+    endLine: Number.parseInt(match[2], 10),
+  }
+}
+
 /// The declared page cursor: the declared absent value starts at the first byte,
 /// and otherwise the exact continuation offset a previous page returned. A
 /// cursor outside the delivered source is refused rather than silently clamped.
@@ -473,8 +514,9 @@ export function apply(ctx, config) {
         'every declared region of the changed world, so full source stays reachable; ' +
         'the whole-file disclosure reads one exact declared file of the complete ' +
         'changed world whole, so ordinary access beyond the initial neighborhood ' +
-        'stays possible. Every disclosed span is a declared identity whose sealed ' +
-        'bytes are digest-verified, and the exact source text is returned losslessly ' +
+        'stays possible; the region disclosure acquires ONE exact declared region of ' +
+        'the same world on its own. Every disclosed span is a declared identity whose ' +
+        'sealed bytes are digest-verified, and the exact source text is returned losslessly ' +
         'in bounded pages of at most ' + PACKET_PAGE_BYTES + ' bytes: a response that ' +
         'is not complete names its omitted bytes and the continuation byte offset to ' +
         'resume at, and is never truncated and never labelled complete. The declared ' +

@@ -8,6 +8,10 @@ import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -92,11 +96,36 @@ public final class AttuneReviewBench {
     }
 
     /**
-     * The identity of one declared file: {@code bytes}, {@code sha256} and the
-     * git blob SHA-1 ({@code gitblob}) of its exact bytes, one
-     * {@code key\\tvalue} line each. The git blob digest is the object name git
+     * Whether the exact bytes are a well-formed UTF-8 sequence, decided
+     * mechanically by a strict decode that reports malformed input instead of
+     * replacing it. It classifies no admission, size, digest or policy: it only
+     * reports whether the bytes can be delivered losslessly as text, so a caller
+     * that cannot deliver them can say so rather than silently substituting
+     * replacement characters.
+     */
+    private static boolean isWellFormedUtf8(byte[] content) {
+        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT);
+        try {
+            decoder.decode(ByteBuffer.wrap(content));
+            return true;
+        } catch (CharacterCodingException error) {
+            return false;
+        }
+    }
+
+    /**
+     * The identity of one declared file: {@code bytes}, {@code sha256}, the
+     * git blob SHA-1 ({@code gitblob}) of its exact bytes and the mechanical
+     * text-encoding classification ({@code utf8}), one {@code key\\tvalue} line
+     * each. The git blob digest is the object name git
      * would give the bytes, so a corpus pin declared as a git blob is verified
-     * against the real materialized bytes rather than a page fetch.
+     * against the real materialized bytes rather than a page fetch. The
+     * {@code utf8} field is {@code supported} exactly when the bytes are a
+     * well-formed UTF-8 sequence and {@code unsupported} otherwise, so a caller
+     * can classify a file it cannot deliver losslessly as text without
+     * re-encoding it.
      */
     public static String inspect(String name) {
         try {
@@ -109,6 +138,7 @@ public final class AttuneReviewBench {
             out.append("bytes\t").append(content.length).append("\n");
             out.append("sha256\t").append(hex(sha256.digest(content))).append("\n");
             out.append("gitblob\t").append(hex(sha1.digest())).append("\n");
+            out.append("utf8\t").append(isWellFormedUtf8(content) ? "supported" : "unsupported").append("\n");
             return out.toString();
         } catch (Exception error) {
             return "status\tfailed\terror\t" + escape(String.valueOf(error.getMessage())) + "\n";

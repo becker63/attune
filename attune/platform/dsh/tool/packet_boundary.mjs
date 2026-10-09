@@ -193,11 +193,18 @@ export function findDeclaredWorldFile(worldFiles, request) {
 }
 
 /// Read one declared whole file: resolve the sealed copy inside the declared
-/// root, verify its whole-file digest against the declared identity, and report
-/// the exact byte count, line range and bounded-policy status. No span of it is
-/// truncated.
-export function readWholeFile(row, { sourceRoot }) {
-  const target = resolveWithinRoot(sourceRoot, row.sealedFile)
+/// whole-file root, verify its whole-file digest against the declared identity,
+/// and report the exact byte count, line range and bounded-policy status. No span
+/// of it is truncated.
+///
+/// The whole-file root is SEPARATE from the region root because the complete
+/// authorized world is declared by archive-relative reference rather than copied:
+/// a changed region is sealed flat beside the compiled world, while an ordinary
+/// unchanged file of either revision is read from the declared archive tree. The
+/// default is the region root, so a world that seals its whole-file copies beside
+/// its regions (the retained `capawesome-team_cli_126` packet world) is unchanged.
+export function readWholeFile(row, { wholeFileRoot }) {
+  const target = resolveWithinRoot(wholeFileRoot, row.sealedFile)
   const bytes = readFileSync(target)
   const sha256 = createHash('sha256').update(bytes).digest('hex')
   if (sha256 !== row.sha256) {

@@ -390,22 +390,29 @@ native_study_stage(
 )
 
 # The declared ONE offline individual-acquisition-versus-compiled-packet preflight
-# (VAL-SUB-020). It reduces the SAME exact evidence the packet world materialized
-# (`evidence_reviewbench_packets`) into two arms — A = one individual source
-# acquisition per exact region, B = the compiled source-bearing packet over the
-# same regions — and reports identities, text bytes, actions, the agent-facing
-# operation count, completeness, output size, coverage escape, the four-quadrant
-# accounting and event fidelity over identical bytes. Every dimension is DERIVED
-# from the ACTUAL paging of the exact bytes under the boundary's own page budget: a
-# piece larger than one page needs MORE calls, so the operation count is measured
-# and the replacement is never inflated. It adds no compiler, planner, DAG,
-# scheduler or agent, and it is a mechanical test, never a token-saving claim.
-# Provider-free and offline.
+# (VAL-SUB-020). Its declared input is the RAW per-call record the
+# `//platform/dsh/tool:preflight_execution` action materialized by ACTUALLY driving
+# the registered packet tool in two bounded acquisition strategies over the SAME
+# exact evidence, beside the compiled packet world itself. The stage canonically
+# REDUCES those actual calls into the compared dimensions — identities, text bytes,
+# actions, the agent-facing operation count, completeness, output size, coverage
+# escape, the four-quadrant accounting and event fidelity — and it materializes the
+# pure paging MODEL separately as `preflight-model.tsv`, labelled as a model rather
+# than as executed proof. A piece larger than one page needs MORE calls, so the
+# operation count is measured and the replacement is never inflated. It adds no
+# compiler, planner, DAG, scheduler or agent, and it is a mechanical test, never a
+# token-saving claim. Provider-free and offline.
 native_study_stage(
     name = "evidence_reviewbench_preflight",
     srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = ["packets"],
-    inputs = [":evidence_reviewbench_packets"],
+    input_names = [
+        "execution",
+        "packets",
+    ],
+    inputs = [
+        "//platform/dsh/tool:preflight-execution.tsv",
+        ":evidence_reviewbench_packets",
+    ],
     java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
     stage = "evidence_reviewbench_preflight",
 )

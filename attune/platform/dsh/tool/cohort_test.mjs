@@ -4,13 +4,20 @@
 /// These laws run over the declared inputs of the tool that the
 /// `evidence_reviewbench_cohort` stage action materialized for EVERY one of the
 /// ten original frozen tasks: each task's changed world in the tool's own
-/// declared format (region manifest, whole-world file manifest, compiled packet
-/// projection) with its exact changed bytes sealed beside it. They register the
+/// declared format (region manifest, complete whole-world file manifest, compiled
+/// packet projection) with its exact changed bytes sealed beside it, plus the
+/// declared `@reviewbench_worlds` archives the whole-world manifest references.
+/// They register the
 /// plugin through a capturing registry and drive the REAL `defineTool` definition
 /// the DSH `@deepseek-ai/dsh-tools` surface produced, so the argument validation,
 /// the boundary, the served disclosure and the retained whole-world escape are
 /// the actual DSH ones rather than a re-implementation — the SAME tool the
 /// capawesome packet world is served through, now over all ten worlds.
+///
+/// The complete authorized world of both revisions is reachable through the
+/// retained whole-file escape: the manifest declares every admitted file by
+/// archive-relative reference, so an ordinary UNCHANGED file of either revision is
+/// read whole and digest-verified rather than only named.
 ///
 /// Nothing here contacts a provider, runs a model or fetches a package.
 ///
@@ -39,6 +46,29 @@ const TMP = process.env.TEST_TMPDIR ?? tmpdir()
 const COHORT = process.env.ATTUNE_COHORT_ROOT
   ?? fileURLToPath(new URL('../evidence_reviewbench_cohort/', import.meta.url))
 
+/// The declared WHOLE-FILE root of the complete authorized worlds: the directory
+/// the declared `@reviewbench_worlds` archive inputs materialize under. The
+/// per-task whole-world manifest declares every file by archive-relative
+/// reference, so the complete population stays reachable without copying its bytes
+/// into the stage output. The root is resolved through the runfiles tree's own
+/// declared repo mapping, never a host-global path lookup.
+export function declaredWholeFileRoot() {
+  const override = process.env.ATTUNE_WHOLE_FILE_ROOT
+  if (typeof override === 'string' && override.length > 0) return override
+  const runfiles = process.env.RUNFILES
+  assert.ok(runfiles, 'the runfiles root must be declared for the cohort tool law')
+  const mapping = readFileSync(join(runfiles, '_repo_mapping'), 'utf8').split('\n')
+  const row = mapping
+    .map((line) => line.split(','))
+    .find((fields) => fields.length >= 3
+      && (fields[0] === '' || fields[0] === '_main')
+      && fields[1] === 'reviewbench_worlds')
+  assert.ok(row, 'the declared reviewbench_worlds archive repo must be in the runfiles mapping')
+  return join(runfiles, row[2])
+}
+
+const WHOLE_FILE_ROOT = declaredWholeFileRoot()
+
 function lines(name) {
   return readFileSync(join(COHORT, name), 'utf8').split('\n').filter((line) => line.length > 0)
 }
@@ -61,6 +91,11 @@ const TASKS = rows('cohort-tool.tsv').map((row) => ({
     worldFiles: join(COHORT, `cohort-tool-${row[1]}-world-files.tsv`),
     projection: join(COHORT, `cohort-tool-${row[1]}-packet-records.tsv`),
     sourceRoot: COHORT,
+    // The complete authorized world is declared by archive-relative reference, so
+    // a whole-file read of an ordinary unchanged file resolves against the declared
+    // whole-file root while the changed-region reads stay under the sealed cohort
+    // root.
+    wholeFileRoot: WHOLE_FILE_ROOT,
   },
 }))
 
@@ -79,7 +114,9 @@ function regionsOf(task) {
   }))
 }
 
-/// The declared whole-world files of one task's changed world.
+/// The declared whole-world files of one task's changed world, both revisions and
+/// every admitted file, each carrying its explicit bounded-policy status and the
+/// changed/unchanged marker the complete population record appends.
 function worldFilesOf(task) {
   return rows(`cohort-tool-${task.task}-world-files.tsv`).map((row) => ({
     world: row[1],
@@ -89,6 +126,7 @@ function worldFilesOf(task) {
     sha256: row[5],
     status: row[6],
     sealedFile: row[7],
+    changed: row[8] === 'changed',
   }))
 }
 
@@ -183,7 +221,7 @@ test('every cohort packet discloses exactly the declared regions of its own worl
     }
     // No CLI prerequisite: every disclosed entrypoint is a changed file of the
     // task's own declared changed world, never a required CLI surface.
-    const changed = new Set(worldFilesOf(task).map((file) => file.path))
+    const changed = new Set(worldFilesOf(task).filter((file) => file.changed).map((file) => file.path))
     for (const entrypoint of value.entrypoints.split(',').filter((part) => part.length > 0)) {
       assert.ok(changed.has(entrypoint), `the entrypoint ${entrypoint} must be a changed file of ${task.task}`)
     }
@@ -239,8 +277,10 @@ test('the whole-file escape reads an ordinary file outside the initial neighborh
     const packet = await definition.execute(
       { packet: packetIdOf(task), disclosure: 'progressive', path: '-', revision: '-', cursor: '-' }, {})
     const inPacket = new Set(packet.spans.map((span) => span.path))
-    // A declared changed file the initial packet does NOT disclose: the ordinary
-    // source beyond the bounded neighborhood stays accessible.
+    // A declared file the initial packet does NOT disclose: the ordinary source
+    // beyond the bounded neighborhood stays accessible through the whole-file
+    // escape, resolved against the declared complete-world root rather than the
+    // sealed changed-region root.
     const outside = files.find((file) => file.status === 'admitted' && !inPacket.has(file.path))
     if (outside === undefined) continue
     const value = await definition.execute(
@@ -252,10 +292,38 @@ test('the whole-file escape reads an ordinary file outside the initial neighborh
     assert.equal(value.spans[0].bytes, outside.bytes)
     assert.equal(value.spans[0].status, 'admitted')
     assert.equal(value.uniqueBytes, value.totalBytes)
+    const collected = await collectPages(definition,
+      { packet: packetIdOf(task), disclosure: 'whole-file', path: outside.path, revision: outside.revision })
+    assert.equal(collected.text, readFileSync(join(WHOLE_FILE_ROOT, outside.sealedFile), 'utf8'))
   }
 })
 
-test('an overflow changed file stays readable whole with its explicit status', async () => {
+test('every cohort world reads an UNCHANGED file of BOTH revisions whole, digest-verified', async () => {
+  for (const task of TASKS) {
+    const definition = registeredDefinition(task.config)
+    const files = worldFilesOf(task)
+    // One ordinary UNCHANGED file of each revision: the complete authorized world
+    // is reachable through the SAME registered tool, not only the changed set the
+    // initial packet happens to disclose.
+    for (const revision of [...new Set(files.map((file) => file.revision))]) {
+      const row = files.find((file) => file.revision === revision
+        && !file.changed && file.status === 'admitted')
+      assert.ok(row, `the complete world of ${task.task} must carry an unchanged admitted file of ${revision}`)
+      const collected = await collectPages(definition,
+        { packet: packetIdOf(task), disclosure: 'whole-file', path: row.path, revision: row.revision })
+      // The delivered text is exactly the retained archive bytes of that unchanged
+      // file: the read resolved the archive-relative declared reference against the
+      // declared whole-file root and verified the whole-file digest.
+      const sealed = readFileSync(join(WHOLE_FILE_ROOT, row.sealedFile))
+      assert.equal(Buffer.from(collected.text, 'utf8').equals(sealed), true,
+        `the whole-file read of the unchanged ${row.path} of ${task.task} must be its exact retained bytes`)
+      assert.equal(collected.pages[0].spans[0].sha256, row.sha256)
+      assert.equal(collected.pages[0].spans[0].bytes, row.bytes)
+    }
+  }
+})
+
+test('an overflow file stays readable whole with its explicit status', async () => {
   let checked = 0
   for (const task of TASKS) {
     const overflow = worldFilesOf(task).filter((file) => file.status === 'overflow')
@@ -272,16 +340,24 @@ test('an overflow changed file stays readable whole with its explicit status', a
     assert.equal(first.spans[0].status, 'overflow')
     assert.equal(first.spans[0].sha256, row.sha256)
     assert.equal(first.spans[0].bytes, row.bytes)
-    assert.equal(first.deliveredBytes, PACKET_PAGE_BYTES)
+    // The page fills the declared byte budget except for the at most three bytes
+    // that could not carry a whole trailing UTF-8 code point.
+    assert.ok(first.deliveredBytes <= PACKET_PAGE_BYTES, 'a page must never exceed the declared byte budget')
+    assert.ok(first.deliveredBytes >= PACKET_PAGE_BYTES - 3, 'a page must fill the declared byte budget up to a code point')
     assert.notEqual(first.continuation, ABSENT)
     assert.equal(first.omittedBytes, first.totalBytes - first.deliveredBytes)
     const collected = await collectPages(definition,
       { packet: packetIdOf(task), disclosure: 'whole-file', path: row.path, revision: row.revision })
-    assert.equal(collected.pages.length, Math.ceil(row.bytes / PACKET_PAGE_BYTES))
-    assert.equal(collected.text, readFileSync(join(COHORT, row.sealedFile), 'utf8'))
+    // The oversized file needs more than one bounded page and is delivered whole:
+    // the concatenated text is exactly the retained archive bytes, with no silent
+    // truncation and no page labelled complete before the end.
+    assert.ok(collected.pages.length > 1, 'an overflow file must need more than one bounded page')
+    assert.equal(Buffer.from(collected.text, 'utf8').equals(readFileSync(join(WHOLE_FILE_ROOT, row.sealedFile))), true,
+      `the whole-file continuation of ${task.task} must deliver the exact retained bytes`)
+    assert.equal(collected.pages[collected.pages.length - 1].continuation, ABSENT)
     checked += 1
   }
-  assert.ok(checked > 0, 'the declared cohort must carry at least one explicit overflow changed file')
+  assert.ok(checked > 0, 'the declared cohort must carry at least one explicit overflow file')
 })
 
 test('a wrong revision, an undeclared path, an undeclared disclosure and an unknown packet are refused', async () => {
@@ -307,7 +383,7 @@ test('a wrong revision, an undeclared path, an undeclared disclosure and an unkn
   )
   await assert.rejects(
     definition.execute({ packet: packetIdOf(task), disclosure: 'progressive', path: file.path, revision: file.revision, cursor: '-' }, {}),
-    (error) => error.name === 'PacketRefusal' && /only a whole-file disclosure/.test(error.message),
+    (error) => error.name === 'PacketRefusal' && /only a whole-file or region disclosure/.test(error.message),
   )
 })
 

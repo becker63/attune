@@ -1161,6 +1161,17 @@ def relativeOfPath(path: String): String = match List.reverse(String.split(regex
     case Nil       => ""
 }
 
+/// The ARCHIVE-RELATIVE declared reference of one admitted world-source path: the
+/// part of the absolute path after the archive extraction root, i.e. the world id,
+/// the archive's own single leading directory and the repository-relative path,
+/// prefixed with the declared `worlds/` directory. The whole-file escape resolves
+/// it against the declared whole-file root, so the COMPLETE authorized world stays
+/// reachable without copying its bytes into the stage output.
+def archiveRelative(path: String): String = match List.reverse(String.split(regex = "/worlds/", path)) {
+    case tail :: _ => "worlds/" + tail
+    case Nil       => ""
+}
+
 def taskOfWorld(world: String): String =
     if (String.endsWith(suffix = "-base", world) or String.endsWith(suffix = "-head", world))
         String.dropRight(5, world) else world
@@ -1203,6 +1214,68 @@ def cohortExcluded(tasks: List[CohortTask]): List[String] \ IO = {
             case None        => false
         }, worldSourcePaths()))
 }
+
+/// The declared fields of the mechanical file-identity record
+/// `AttuneReviewBench.inspect` reports for one file (`bytes`, `sha256`, the git
+/// blob digest and the mechanical `utf8` text-encoding classification), keyed by
+/// field name. The stage reads the identity from that existing mechanical seam
+/// rather than recomputing it, so the whole-file manifest carries the SAME
+/// mechanical digest the rest of the pipeline uses and a file the seam reports as
+/// `unsupported` is classified honestly rather than delivered lossily.
+def inspectFields(path: String): Map[String, String] \ IO =
+    List.foldLeft((m, line) -> match fields(line) {
+        case key :: value :: _ => Map.insert(key, value, m)
+        case _                 => m
+    }, Map.empty(), records(AttuneReviewBench.inspect(path)))
+
+/// One declared file of the COMPLETE authorized world of one cohort task: the
+/// revision, the repository-relative path, the exact byte count and digest read
+/// mechanically from the retained archive bytes, the bounded-policy status and the
+/// archive-relative declared reference the whole-file escape resolves. A file
+/// whose exact bytes are not a supported lossless UTF-8 sequence is `unsupported`
+/// rather than silently read as empty text, and a credential file named `.env`
+/// never reaches this record because the admission excludes it before any read.
+type alias CohortWorldFile = {
+    task = String,
+    role = String,
+    revision = String,
+    path = String,
+    bytes = Int32,
+    sha256 = String,
+    status = String,
+    sealedFile = String,
+    changed = Bool
+}
+
+def cohortWorldFileOf(
+    task: String,
+    role: String,
+    revision: String,
+    rel: String,
+    abs: String,
+    changed: Bool
+): CohortWorldFile \ IO = {
+    let inspected = inspectFields(abs);
+    let bytes = intOf(Option.getWithDefault("0", Map.get("bytes", inspected)));
+    let sha256 = Option.getWithDefault("", Map.get("sha256", inspected));
+    // The mechanical text-encoding classification: a file whose exact bytes are
+    // not a well-formed UTF-8 sequence is `unsupported` rather than delivered
+    // lossily, so the record never presents a binary file as deliverable text.
+    let supported = Option.getWithDefault("unsupported", Map.get("utf8", inspected)) == "supported";
+    {task = task, role = role, revision = revision, path = rel, bytes = bytes, sha256 = sha256,
+     status = if (not supported) "unsupported"
+              else if (bytes <= 131072) "admitted" else "overflow",
+     sealedFile = archiveRelative(abs), changed = changed}
+}
+
+/// One declared row of the COMPLETE per-task world file manifest in the packet
+/// boundary's own declared format, with the changed/unchanged marker appended: the
+/// boundary's parser reads the declared prefix and the marker is what the offline
+/// tool law uses to select an ordinary UNCHANGED file of both revisions.
+def cohortWorldFileLine(worldId: String, file: CohortWorldFile): String =
+    String.intercalate("\t", List#{"file", worldId, file#revision, file#path,
+        Int32.toString(file#bytes), file#sha256, file#status, file#sealedFile,
+        if (file#changed) "changed" else "unchanged"})
 
 /// One changed-file record of one cohort task's mechanical base/head export diff,
 /// read from the declared output of the existing mechanical diff boundary. The
@@ -1481,6 +1554,32 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
     let absByRole = List.foldLeft((m, entry) -> match entry {
         case (task, role, _, abs, rel) => Map.insert(task + "|" + role + "|" + rel, abs, m)
     }, Map.empty(), entries);
+    // The COMPLETE authorized world of every task and BOTH revisions: one record
+    // per admitted file with its exact mechanical byte count and digest, its
+    // bounded-policy status and the archive-relative declared reference the
+    // whole-file escape resolves. It is derived from the real retained bytes, so an
+    // ordinary UNCHANGED file of either revision stays reachable through the SAME
+    // registered tool rather than only being named in a population manifest.
+    let changedKeys = List.map(c -> c#task + "|" + c#path, changed);
+    let completeFiles = List.map(entry -> match entry {
+        case (task, role, revision, abs, rel) =>
+            cohortWorldFileOf(task, role, revision, rel, abs,
+                List.memberOf(task + "|" + rel, changedKeys))
+    }, entries);
+    check(63, List.length(completeFiles) == List.length(entries));
+    check(64, List.forAll(file -> isHex64(file#sha256), completeFiles));
+    check(65, List.forAll(task -> List.exists(file -> file#task == task#task and file#role == "base", completeFiles)
+        and List.exists(file -> file#task == task#task and file#role == "head", completeFiles), tasks));
+    // Every task carries at least one ordinary UNCHANGED file in BOTH revisions, so
+    // the complete authorized population really is reachable and not only the
+    // changed set.
+    check(66, List.forAll(task -> List.exists(file -> file#task == task#task
+        and file#role == "base" and not file#changed, completeFiles)
+        and List.exists(file -> file#task == task#task
+            and file#role == "head" and not file#changed, completeFiles), tasks));
+    // The credential file named `.env` never reaches the complete record: the
+    // exclusion runs before any read, so no `.env` byte is inspected or digested.
+    check(67, List.forAll(file -> basename(file#path) != ".env", completeFiles));
     let toolRows = List.map(task -> {
         let own = List.filter(c -> c#task == task#task, changed);
         let revisionBase = Option.getWithDefault("", Map.get(task#baseWorld, revisions));
@@ -1489,10 +1588,11 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
         let files = cohortWorldFiles(task, revisionBase, revisionHead, own, absByRole);
         let regions = List.flatMap(cohortRegionsOf, files);
         let packet = cohortToolPacket(worldId, own, files, 4);
+        let complete = List.filter(file -> file#task == task#task, completeFiles);
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-region-manifest.tsv",
             renderLines(List.map(part -> regionLine(worldId, part), regions)));
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-world-files.tsv",
-            renderLines(List.map(file -> worldFileLine(worldId, file), files)));
+            renderLines(List.map(file -> cohortWorldFileLine(worldId, file), complete)));
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-packet-records.tsv",
             renderLines(List#{packetRecordLine("p1", packet)}
                 ::: List.map(ref -> spanLine(worldId, "p1", ref), packet#evidence)));
@@ -1501,13 +1601,28 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
             Int32.toString(List.length(files)), Int32.toString(List.length(regions)),
             Int32.toString(List.length(packet#evidence)), Int32.toString(List.length(packet#missing)),
             Int32.toString(List.length(List.filter(file -> file#status == "unsupported", files))),
-            Int32.toString(List.length(List.filter(file -> file#status == "overflow", files)))})
+            Int32.toString(List.length(List.filter(file -> file#status == "overflow", files))),
+            Int32.toString(List.length(complete)),
+            Int32.toString(List.length(List.filter(file -> not file#changed, complete)))})
     }, tasks);
     check(61, List.length(toolRows) == 10);
     // Every task's tool world resolves at least one declared region and at least
     // one initial packet span, so the tool has real changed source to deliver.
     check(62, List.forAll(row -> intOf(field(fields(row), 4)) > 0 and intOf(field(fields(row), 5)) > 0, toolRows));
-    writeText(outputsDir(), "cohort-tool.tsv", renderLines(toolRows))
+    writeText(outputsDir(), "cohort-tool.tsv", renderLines(toolRows));
+    // The per-task COMPLETE population record: the whole authorized file count of
+    // both revisions, the changed and unchanged split, and the explicit
+    // unsupported/overflow statuses, so a narrower world can never be presented as
+    // the full-world claim.
+    writeText(outputsDir(), "cohort-world-files.tsv", renderLines(List.map(task -> {
+        let complete = List.filter(file -> file#task == task#task, completeFiles);
+        String.intercalate("\t", List#{"worldfiles", task#task,
+            Int32.toString(List.length(complete)),
+            Int32.toString(List.length(List.filter(file -> file#changed, complete))),
+            Int32.toString(List.length(List.filter(file -> not file#changed, complete))),
+            Int32.toString(List.length(List.filter(file -> file#status == "unsupported", complete))),
+            Int32.toString(List.length(List.filter(file -> file#status == "overflow", complete)))})
+    }, tasks)))
 
 }
 
@@ -1539,6 +1654,14 @@ type alias PreflightRegion = {
 def preflightRegionKey(part: PreflightRegion): String =
     part#revision + "|" + part#path + ":" + Int32.toString(part#startLine)
         + "-" + Int32.toString(part#endLine) + "|" + part#sha256
+
+/// The exact identity key the SERVED pieces carry: revision, path and inclusive
+/// range. It is the key the registered tool's own `packetRegionKey` produces, so an
+/// identity the execution actually acquired can be compared with the declared
+/// world.
+def preflightRegionIdentity(part: PreflightRegion): String =
+    part#revision + "|" + part#path + "|" + Int32.toString(part#startLine)
+        + "|" + Int32.toString(part#endLine)
 
 def preflightRegions(dir: String): List[PreflightRegion] \ IO =
     List.filterMap(line -> match fields(line) {
@@ -1586,43 +1709,54 @@ def preflightPages(bytes: Int32): Int32 =
 
 def intMin(a: Int32, b: Int32): Int32 = if (a < b) a else b
 
-/// One ACTUAL agent-facing acquisition call of one strategy: the strategy, its
-/// ordinal, the exact piece identity, the bytes the page delivered, the omitted
-/// remainder of that piece and whether the call was accepted. A short page is
-/// accepted but NOT complete, so paging is visible rather than hidden.
+/// One ACTUAL agent-facing acquisition call the OFFLINE execution performed: the
+/// arm, its ordinal, whether the tool accepted the call, the number of source
+/// pieces the page touched and the bytes that page actually delivered. It is read
+/// from the execution's own raw record, so the operation count is MEASURED rather
+/// than modelled.
 type alias PreflightCall = {
-    arm = String, index = Int32, identity = String, delivered = Int32, omitted = Int32,
-    accepted = Bool, complete = Bool
+    arm = String, ordinal = Int32, accepted = Bool, pieces = Int32, delivered = Int32
 }
 
-/// The calls of one strategy over a list of exact pieces. Strategy A acquires one
-/// declared region per piece; strategy B serves the compiled packet as ONE piece.
-/// Both page any piece larger than the declared budget, so a page is never silently
-/// the whole oversized source.
-def preflightCalls(arm: String, pieces: List[(String, Int32)]): List[PreflightCall] =
-    List.flatMap(entry -> match entry {
-        case (identity, bytes) =>
-            List.map(index -> {
-                let start = index * preflightPageBytes();
-                let delivered = intMin(preflightPageBytes(), bytes - start);
-                { arm = arm, index = index, identity = identity, delivered = delivered,
-                  omitted = bytes - start - delivered, accepted = true,
-                  complete = start + delivered >= bytes }
-            }, List.range(0, preflightPages(bytes)))
-    }, pieces)
+/// The raw per-call/per-piece record rows the offline execution materialized.
+def preflightRaw(dir: String): List[List[String]] \ IO =
+    List.map(fields, records(readText(dir)))
+
+def preflightCallRows(raw: List[List[String]], arm: String): List[List[String]] =
+    List.filter(row -> field(row, 0) == "call" and field(row, 1) == arm, raw)
+
+def preflightPieceRows(raw: List[List[String]], arm: String): List[List[String]] =
+    List.filter(row -> field(row, 0) == "piece" and field(row, 1) == arm, raw)
+
+def preflightCallDelivered(raw: List[List[String]], arm: String, ordinal: String): Int32 =
+    List.foldLeft((sum, row) -> sum + intOf(field(row, 5)),
+        0, List.filter(row -> field(row, 2) == ordinal, preflightPieceRows(raw, arm)))
+
+def preflightCallPieces(raw: List[List[String]], arm: String, ordinal: String): Int32 =
+    List.length(List.filter(row -> field(row, 2) == ordinal, preflightPieceRows(raw, arm)))
+
+def preflightCallOf(raw: List[List[String]], arm: String, row: List[String]): PreflightCall =
+    { arm = arm, ordinal = intOf(field(row, 2)), accepted = field(row, 3) == "true",
+      pieces = preflightCallPieces(raw, arm, field(row, 2)),
+      delivered = preflightCallDelivered(raw, arm, field(row, 2)) }
+
+/// The ACTUAL calls of one arm in the order the execution performed them. The
+/// operation count is therefore the number of real tool calls, and a piece larger
+/// than one page really does consume more than one call.
+def preflightCalls(raw: List[List[String]], arm: String): List[PreflightCall] =
+    List.map(row -> preflightCallOf(raw, arm, row), preflightCallRows(raw, arm))
 
 def preflightCallLine(call: PreflightCall): String =
-    String.intercalate("\t", List#{call#arm, Int32.toString(call#index), call#identity,
-        Int32.toString(call#delivered), Int32.toString(call#omitted),
-        boolText(call#accepted), boolText(call#complete)})
+    String.intercalate("\t", List#{call#arm, Int32.toString(call#ordinal),
+        boolText(call#accepted), Int32.toString(call#pieces), Int32.toString(call#delivered)})
 
-def preflightCallDelivered(calls: List[PreflightCall]): Int32 =
+def preflightCallsDelivered(calls: List[PreflightCall]): Int32 =
     List.foldLeft((sum, call) -> sum + call#delivered, 0, calls)
 
-/// One exact piece's delivery summary, derived from its own page calls: the piece
-/// identity, its exact byte total, the bytes its pages actually delivered and
-/// whether those pages reached the piece end. Completeness is therefore DERIVED
-/// per piece rather than read off any single page.
+/// One exact piece's delivery summary, DERIVED from the actual calls that touched
+/// it: the piece identity, its exact byte total, the bytes its pages actually
+/// delivered and whether those pages reached the piece end. Completeness is
+/// therefore derived per piece rather than read off any single page.
 type alias PreflightPiece = {
     arm = String, identity = String, bytes = Int32, delivered = Int32, complete = Bool
 }
@@ -1631,18 +1765,30 @@ def preflightPieceLine(piece: PreflightPiece): String =
     String.intercalate("\t", List#{piece#arm, piece#identity, Int32.toString(piece#bytes),
         Int32.toString(piece#delivered), boolText(piece#complete)})
 
-/// The per-piece summaries of one strategy, derived from its own page calls: a
-/// piece is complete only when its pages delivered its whole exact byte total.
-def preflightPieces(arm: String, pieces: List[(String, Int32)]): List[PreflightPiece] = {
-    let calls = preflightCalls(arm, pieces);
-    List.map(entry -> match entry {
-        case (identity, bytes) =>
-            let delivered = List.foldLeft((sum, call) -> if (call#identity == identity)
-                sum + call#delivered else sum, 0, calls);
-            { arm = arm, identity = identity, bytes = bytes, delivered = delivered,
-              complete = delivered >= bytes }
-    }, pieces)
+/// The distinct exact piece identities one arm's actual calls touched.
+def preflightIdentities(raw: List[List[String]], arm: String): List[String] =
+    List.distinct(List.map(row -> field(row, 3), preflightPieceRows(raw, arm)))
+
+/// One piece's delivery summary, aggregated from every actual call that touched it:
+/// its exact byte total, the sum of the bytes those calls delivered and whether
+/// they reached its whole exact byte total.
+def preflightPieceOf(raw: List[List[String]], arm: String, identity: String): PreflightPiece = {
+    let rows = List.filter(row -> field(row, 3) == identity, preflightPieceRows(raw, arm));
+    let bytes = Option.getWithDefault(0, List.head(List.map(row -> intOf(field(row, 4)), rows)));
+    let delivered = List.foldLeft((sum, row) -> sum + intOf(field(row, 5)), 0, rows);
+    { arm = arm, identity = identity, bytes = bytes, delivered = delivered,
+      complete = bytes > 0 and delivered >= bytes }
 }
+
+/// The per-piece summaries of one arm, derived from its own actual calls.
+def preflightPieces(raw: List[List[String]], arm: String): List[PreflightPiece] =
+    List.map(identity -> preflightPieceOf(raw, arm, identity), preflightIdentities(raw, arm))
+
+def preflightPieceBytes(pieces: List[PreflightPiece]): Int32 =
+    List.foldLeft((sum, piece) -> sum + piece#bytes, 0, pieces)
+
+def preflightPieceDelivered(pieces: List[PreflightPiece]): Int32 =
+    List.foldLeft((sum, piece) -> sum + piece#delivered, 0, pieces)
 
 def preflightPiecesComplete(pieces: List[PreflightPiece]): Bool =
     not List.isEmpty(pieces) and List.forAll(piece -> piece#complete, pieces)
@@ -1658,95 +1804,165 @@ def preflightEscapeCoverage(dir: String): Int32 \ IO = {
         String.split(regex = ",", field(row, 5)))), 0, rows)
 }
 
-/// The declared ONE offline individual-acquisition-versus-compiled-packet
-/// preflight (VAL-SUB-020). It compares A = one individual source acquisition per
-/// exact region against B = the compiled source-bearing packet over the SAME exact
-/// evidence, holding the supplied bytes exactly equal, and DERIVES identities,
-/// text bytes, actions, the agent-facing operation count, completeness, output
-/// size, coverage escape, the four-quadrant accounting and event fidelity from the
-/// ACTUAL paging of the exact bytes under the boundary's own page budget. Paging
-/// is not free, so a strategy that needs more pages reports more operations and the
-/// operation replacement is never inflated. It adds no compiler, planner, DAG,
-/// scheduler or agent; it is a mechanical test and NEVER a token-saving claim.
-/// Where an agent-facing effect cannot be observed it is reported as `Unavailable`.
-def evidenceReviewbenchPreflight(): Unit \ {Assert, IO} = {
-    let dir = required("packets");
+/// One dimension row of a preflight table: the dimension name, the two arms'
+/// values, whether they agree and which table the row came from (`execution` for
+/// the canonically reduced ACTUAL calls, `model` for the pure paging model).
+def preflightRow(name: String, a: String, b: String, source: String): String =
+    String.intercalate("\t", List#{name, a, b, boolText(a == b), source})
+
+/// The declared header row of a preflight dimension table.
+def preflightHeader(): String =
+    String.intercalate("\t", List#{"dimension", "armA", "armB", "equal", "source"})
+
+/// The pure paging MODEL of one strategy: the same page arithmetic the boundary
+/// declares, applied to the declared exact byte totals. It is retained as a MODEL
+/// only — the executed preflight's own dimensions come from the ACTUAL calls.
+def preflightModelCalls(pieces: List[(String, Int32)]): List[PreflightCall] =
+    List.flatMap(entry -> match entry {
+        case (_, bytes) =>
+            List.map(index -> {
+                let start = index * preflightPageBytes();
+                let delivered = intMin(preflightPageBytes(), bytes - start);
+                { arm = "model", ordinal = index, accepted = true, pieces = 1, delivered = delivered }
+            }, List.range(0, preflightPages(bytes)))
+    }, pieces)
+
+/// The pure paging MODEL dimension table over the SAME declared evidence. It is
+/// written to `preflight-model.tsv` and is NEVER the executed proof.
+def preflightModelRows(dir: String): List[String] \ IO = {
     let regions = preflightRegions(dir);
     let declaredRegions = List.map(preflightRegionKey, regions);
     let regionBytes = List.foldLeft((m, part) -> Map.insert(preflightRegionKey(part), part#bytes, m),
         Map.empty(), regions);
     let spanRecords = preflightSpanRecords(dir);
-    let packets = preflightPackets(dir);
-    check(51, List.length(declaredRegions) > 0);
-    check(52, List.length(packets) > 0);
-    check(53, List.length(spanRecords) > 0);
-    // The evidence set: the distinct exact spans the compiled packets disclose and
-    // the exact byte count of each. Both arms acquire exactly this evidence.
-    let bKeys = List.sort(List.map(entry -> match entry { case (key, _, _) => key }, spanRecords));
-    let aKeys = List.sort(List.distinct(bKeys));
+    let keys = List.sort(List.distinct(List.map(entry -> match entry {
+        case (key, _, _) => key }, spanRecords)));
     let spanBytes = List.foldLeft((m, entry) -> match entry {
         case (key, bytes, _) => Map.insert(key, bytes, m) }, Map.empty(), spanRecords);
-    let aPieces = List.map(key -> (key, Option.getWithDefault(0, Map.get(key, regionBytes))), aKeys);
-    let bTotal = List.foldLeft((sum, key) -> sum + Option.getWithDefault(0, Map.get(key, spanBytes)), 0, aKeys);
-    // Strategy A: one individual acquisition per distinct exact region, paged.
-    let aCalls = preflightCalls("A", aPieces);
-    // Strategy B: the compiled source-bearing packet over the SAME exact spans,
-    // served as ONE compiled operation that pages its whole disclosed payload.
-    let bCalls = preflightCalls("B", List#{("packet", bTotal)});
-    let aBytes = preflightCallDelivered(aCalls);
-    let bBytes = preflightCallDelivered(bCalls);
-    // The two arms acquire the SAME exact evidence: identical span identities and
-    // identical exact text bytes, so a difference is the representation only. Every
-    // disclosed span is a DECLARED region, so no packet invents one.
-    check(54, aKeys == bKeys);
-    check(55, aBytes == bBytes);
-    check(56, aBytes == bTotal);
-    check(59, List.forAll(key -> List.memberOf(key, declaredRegions), bKeys));
-    // The retained full-source escape reaches every declared region.
+    let aPieces = List.map(key -> (key, Option.getWithDefault(0, Map.get(key, regionBytes))), keys);
+    let bTotal = List.foldLeft((sum, key) -> sum + Option.getWithDefault(0, Map.get(key, spanBytes)),
+        0, keys);
+    let aCalls = preflightModelCalls(aPieces);
+    let bCalls = preflightModelCalls(List#{("packet", bTotal)});
+    let aOps = List.length(aCalls);
+    let bOps = List.length(bCalls);
+    let aBytes = preflightCallsDelivered(aCalls);
+    let bBytes = preflightCallsDelivered(bCalls);
     let escapeCoverage = preflightEscapeCoverage(dir);
-    check(60, escapeCoverage >= List.length(declaredRegions));
-    // Completeness is DERIVED per piece from the delivered bytes, never authored:
-    // a piece is complete only when its pages reached its whole exact byte total.
-    let aPieceSummaries = preflightPieces("A", aPieces);
-    let bPieceSummaries = preflightPieces("B", List#{("packet", bTotal)});
-    let aComplete = if (preflightPiecesComplete(aPieceSummaries)) "complete" else "partial";
-    let bComplete = if (preflightPiecesComplete(bPieceSummaries)) "complete" else "partial";
+    List#{
+        preflightHeader(),
+        preflightRow("identities", Int32.toString(List.length(keys)), Int32.toString(List.length(keys)), "model"),
+        preflightRow("text-bytes", Int32.toString(aBytes), Int32.toString(bBytes), "model"),
+        preflightRow("actions", Int32.toString(aOps), Int32.toString(bOps), "model"),
+        preflightRow("operation-count", Int32.toString(aOps), Int32.toString(bOps), "model"),
+        preflightRow("completeness", "complete", "complete", "model"),
+        preflightRow("output-size", Int32.toString(aBytes), Int32.toString(bBytes), "model"),
+        preflightRow("coverage-escape", "full",
+            if (escapeCoverage >= List.length(declaredRegions)) "full" else "bounded", "model"),
+        preflightRow("accounting-physical", Int32.toString(aBytes), Int32.toString(bBytes), "model"),
+        preflightRow("accounting-model-visible", Int32.toString(aBytes), Int32.toString(bBytes), "model"),
+        preflightRow("accounting-observed-use", "Unavailable", "Unavailable", "model"),
+        preflightRow("event-fidelity", Int32.toString(aOps), Int32.toString(bOps), "model"),
+        preflightRow("token-saving-claim", "none", "none", "model")
+    }
+}
+
+/// The declared ONE offline individual-acquisition-versus-compiled-packet
+/// preflight (VAL-SUB-020).
+///
+/// Its declared input is the RAW per-call record the
+/// `//platform/dsh/tool:preflight_execution` action materialized by ACTUALLY
+/// driving the SAME registered packet tool in two bounded acquisition strategies
+/// over the SAME exact evidence: A = one individual `region` acquisition per
+/// distinct declared span identity, B = the compiled packets' own progressive
+/// disclosure. The stage canonically REDUCES those ACTUAL calls into identities,
+/// exact text bytes, actions, the agent-facing operation count, completeness,
+/// output size, coverage escape, the four-quadrant accounting and event fidelity,
+/// so a strategy that really needs more pages reports more calls and the operation
+/// replacement is never inflated. The pure paging arithmetic is retained ONLY as a
+/// MODEL (`preflight-model.tsv`), labelled as a model and never as executed proof.
+/// It adds no compiler, planner, DAG, scheduler or agent; it is a mechanical test
+/// and NEVER a token-saving claim. Where an agent-facing effect cannot be observed
+/// it is reported as `Unavailable`.
+def evidenceReviewbenchPreflight(): Unit \ {Assert, IO} = {
+    let dir = required("execution");
+    let world = required("packets");
+    let raw = preflightRaw(dir);
+    let regions = preflightRegions(world);
+    let declaredRegions = List.map(preflightRegionIdentity, regions);
+    let aCalls = preflightCalls(raw, "A");
+    let bCalls = preflightCalls(raw, "B");
+    let aPieces = preflightPieces(raw, "A");
+    let bPieces = preflightPieces(raw, "B");
+    let aIdentities = List.sort(List.map(piece -> piece#identity, aPieces));
+    let bIdentities = List.sort(List.map(piece -> piece#identity, bPieces));
+    let aTextBytes = preflightPieceBytes(aPieces);
+    let bTextBytes = preflightPieceBytes(bPieces);
+    let aDelivered = preflightCallsDelivered(aCalls);
+    let bDelivered = preflightCallsDelivered(bCalls);
+    let aComplete = preflightPiecesComplete(aPieces);
+    let bComplete = preflightPiecesComplete(bPieces);
     let aCallsCount = List.length(aCalls);
     let bCallsCount = List.length(bCalls);
     let aAccepted = List.length(List.filter(call -> call#accepted, aCalls));
     let bAccepted = List.length(List.filter(call -> call#accepted, bCalls));
-    let aEscape = if (aComplete == "complete") "full" else "bounded";
-    let bEscape = if (escapeCoverage >= List.length(declaredRegions)) "full" else "bounded";
+    // The offline execution really drove BOTH bounded strategies over declared
+    // evidence, and every declared region of the world is named by the manifest.
+    check(51, aCallsCount > 0 and bCallsCount > 0);
+    check(52, not List.isEmpty(aPieces) and not List.isEmpty(bPieces));
+    check(53, List.length(declaredRegions) > 0);
+    // Both arms acquire the SAME exact evidence: identical declared region
+    // identities and identical exact text bytes, so any measured difference is the
+    // representation only. Every acquired identity is a DECLARED region of the same
+    // world, so no packet invents one.
+    check(54, aIdentities == bIdentities);
+    check(55, aTextBytes == bTextBytes and aTextBytes > 0);
+    check(56, List.forAll(identity -> List.memberOf(identity, declaredRegions), aIdentities));
+    // Every ACTUAL page delivered exactly the bytes its own pieces report, both
+    // arms reached their whole exact byte totals (no silent truncation), and every
+    // call was accepted.
+    check(57, aDelivered == aTextBytes and bDelivered == bTextBytes);
+    check(58, aComplete and bComplete);
+    check(59, aAccepted == aCallsCount and bAccepted == bCallsCount);
+    // The retained full-source escape reaches every declared region of the world.
+    let escapeCoverage = preflightEscapeCoverage(world);
+    check(60, escapeCoverage >= List.length(declaredRegions));
+    // The compiled packet uses NO MORE agent-facing operations than the individual
+    // arm: the executed replacement is MEASURED, never inflated.
+    check(61, bCallsCount <= aCallsCount);
+    // The pure paging MODEL over the SAME declared evidence, retained as a model.
+    let modelRows = preflightModelRows(world);
+    check(62, List.length(modelRows) > 1);
+    let actualRows = List#{
+        preflightHeader(),
+        preflightRow("identities", Int32.toString(List.length(aIdentities)),
+            Int32.toString(List.length(bIdentities)), "execution"),
+        preflightRow("text-bytes", Int32.toString(aTextBytes), Int32.toString(bTextBytes), "execution"),
+        preflightRow("actions", Int32.toString(aCallsCount), Int32.toString(bCallsCount), "execution"),
+        preflightRow("operation-count", Int32.toString(aCallsCount), Int32.toString(bCallsCount), "execution"),
+        preflightRow("completeness", if (aComplete) "complete" else "partial",
+            if (bComplete) "complete" else "partial", "execution"),
+        preflightRow("output-size", Int32.toString(aDelivered), Int32.toString(bDelivered), "execution"),
+        preflightRow("coverage-escape", "full",
+            if (escapeCoverage >= List.length(declaredRegions)) "full" else "bounded", "execution"),
+        preflightRow("accounting-physical", Int32.toString(aTextBytes), Int32.toString(bTextBytes), "execution"),
+        preflightRow("accounting-model-visible", Int32.toString(aDelivered),
+            Int32.toString(bDelivered), "execution"),
+        preflightRow("accounting-observed-use", "Unavailable", "Unavailable", "execution"),
+        preflightRow("event-fidelity", Int32.toString(aAccepted), Int32.toString(bAccepted), "execution"),
+        preflightRow("token-saving-claim", "none", "none", "execution")};
+    writeText(outputsDir(), "preflight-execution.tsv", readText(dir));
     writeText(outputsDir(), "preflight-arm-a.tsv", renderLines(List.map(preflightCallLine, aCalls)));
     writeText(outputsDir(), "preflight-arm-b.tsv", renderLines(List.map(preflightCallLine, bCalls)));
-    writeText(outputsDir(), "preflight-piece-a.tsv", renderLines(List.map(preflightPieceLine, aPieceSummaries)));
-    writeText(outputsDir(), "preflight-piece-b.tsv", renderLines(List.map(preflightPieceLine, bPieceSummaries)));
-    writeText(outputsDir(), "preflight.tsv", renderLines(List#{
-        String.intercalate("\t", List#{"dimension", "armA", "armB", "equal"}),
-        String.intercalate("\t", List#{"identities", Int32.toString(List.length(aKeys)),
-            Int32.toString(List.length(bKeys)), boolText(aKeys == bKeys)}),
-        String.intercalate("\t", List#{"text-bytes", Int32.toString(aBytes),
-            Int32.toString(bBytes), boolText(aBytes == bBytes)}),
-        String.intercalate("\t", List#{"actions", Int32.toString(aCallsCount),
-            Int32.toString(bCallsCount), boolText(aCallsCount == bCallsCount)}),
-        String.intercalate("\t", List#{"operation-count", Int32.toString(aCallsCount),
-            Int32.toString(bCallsCount), boolText(aCallsCount == bCallsCount)}),
-        String.intercalate("\t", List#{"completeness", aComplete, bComplete,
-            boolText(aComplete == bComplete)}),
-        String.intercalate("\t", List#{"output-size", Int32.toString(aBytes),
-            Int32.toString(bBytes), boolText(aBytes == bBytes)}),
-        String.intercalate("\t", List#{"coverage-escape", aEscape, bEscape,
-            boolText(aEscape == bEscape)}),
-        String.intercalate("\t", List#{"accounting-physical", Int32.toString(aBytes),
-            Int32.toString(bBytes), boolText(aBytes == bBytes)}),
-        String.intercalate("\t", List#{"accounting-model-visible", Int32.toString(aBytes),
-            Int32.toString(bBytes), boolText(aBytes == bBytes)}),
-        String.intercalate("\t", List#{"accounting-observed-use", "Unavailable", "Unavailable", "true"}),
-        String.intercalate("\t", List#{"event-fidelity", Int32.toString(aAccepted),
-            Int32.toString(bAccepted), boolText(aAccepted == bAccepted)}),
-        String.intercalate("\t", List#{"token-saving-claim", "none", "none", "true"})}));
+    writeText(outputsDir(), "preflight-piece-a.tsv", renderLines(List.map(preflightPieceLine, aPieces)));
+    writeText(outputsDir(), "preflight-piece-b.tsv", renderLines(List.map(preflightPieceLine, bPieces)));
+    writeText(outputsDir(), "preflight.tsv", renderLines(actualRows));
+    writeText(outputsDir(), "preflight-model.tsv", renderLines(modelRows));
     writeText(outputsDir(), "preflight-note.txt",
-        "This preflight is a mechanical representation comparison over identical exact bytes; "
+        "The dimensions in preflight.tsv are the canonical reduction of the ACTUAL calls the "
+            + "offline //platform/dsh/tool:preflight_execution action made; preflight-model.tsv is "
+            + "the pure paging MODEL over the same declared evidence and is not executed proof. "
+            + "This preflight is a mechanical representation comparison over identical exact bytes; "
             + "it is NOT a token-saving claim and establishes no LLM saving.\n")
 }
 

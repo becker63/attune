@@ -243,9 +243,13 @@ native_flix_consumer_test(
 # `evidence_reviewbench_preflight` stage action materialized and recompute the
 # comparison from the SAME two arm records: A = one individual source acquisition
 # per exact region, B = the compiled source-bearing packet over the same exact
-# regions. The two arms must acquire identical exact evidence, the compiled packet
-# uses no more agent-facing operations, and the preflight never claims a token
-# saving. Provider-free and offline.
+# regions. The stage's dimensions are the canonical reduction of the RAW per-call
+# record the `//platform/dsh/tool:preflight_execution` action produced by actually
+# driving the registered tool, so the operation count is the number of REAL calls;
+# the pure paging model is retained only as a model. The two arms must acquire
+# identical exact evidence, the compiled packet uses no more agent-facing
+# operations, and the preflight never claims a token saving. Provider-free and
+# offline.
 native_flix_consumer_test(
     name = "evidence_reviewbench_preflight_law",
     srcs = [

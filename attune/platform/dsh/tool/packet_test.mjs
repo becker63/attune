@@ -74,6 +74,17 @@ const REGION_BYTES = REGION_ROWS.reduce((sum, row) => sum + Number.parseInt(row[
 const PROGRESSIVE = { packet: 'p1', disclosure: 'progressive', path: '-', revision: '-', cursor: '-' }
 const FULL_SOURCE = { packet: 'p1', disclosure: 'full-source', path: '-', revision: '-', cursor: '-' }
 const WHOLE_FILE = { packet: 'p1', disclosure: 'whole-file', path: 'src/index.ts', revision: HEAD, cursor: '-' }
+// The bounded INDIVIDUAL acquisition of exactly ONE declared region of the same
+// world: the offline preflight drives it through the same boundary the compiled
+// packet uses, so the two strategies read identical evidence.
+const FIRST_REGION = REGION_ROWS[0]
+const REGION_REQUEST = {
+  packet: 'p1',
+  disclosure: 'region',
+  path: `${FIRST_REGION[2]}@${FIRST_REGION[3]}-${FIRST_REGION[4]}`,
+  revision: FIRST_REGION[1],
+  cursor: '-',
+}
 
 // -------------------------------------------------------- schema projection
 
@@ -83,7 +94,7 @@ test('the packet tool declares the packet operation parameters', () => {
   assert.deepEqual(definition.parameters.required.sort(), ['cursor', 'disclosure', 'packet', 'path', 'revision'])
   assert.equal(definition.parameters.properties.packet.type, 'string')
   assert.deepEqual([...definition.parameters.properties.disclosure.enum].sort(),
-    ['full-source', 'progressive', 'whole-file'])
+    ['full-source', 'progressive', 'region', 'whole-file'])
   // The retained whole-world escape names one declared file of the changed world.
   assert.equal(definition.parameters.properties.path.type, 'string')
   assert.equal(definition.parameters.properties.revision.type, 'string')
@@ -106,7 +117,7 @@ test('every returned output property is declared in the output schema', async ()
   const declaredSource = new Set(Object.keys(schema.properties.source.items.properties))
   assert.equal(schema.properties.spans.items.additionalProperties, false)
   assert.equal(schema.properties.source.items.additionalProperties, false)
-  const requests = [PROGRESSIVE, FULL_SOURCE, WHOLE_FILE]
+  const requests = [PROGRESSIVE, FULL_SOURCE, WHOLE_FILE, REGION_REQUEST]
   for (const args of requests) {
     const value = await definition.execute(args, {})
     for (const key of Object.keys(value)) {
@@ -187,6 +198,29 @@ test('the retained escape reads one exact declared whole file of the complete wo
   assert.ok(value.uniqueBytes > 1000)
 })
 
+test('the complete world keeps an UNCHANGED file of BOTH revisions readable whole', async () => {
+  const definition = registeredDefinition({})
+  const files = readFileSync(DECLARED_WORLD_FILES, 'utf8').split('\n')
+    .filter((line) => line.length > 0).map((line) => line.split('\t'))
+  // The changed set is the world's own declared mechanical base/head diff: a file
+  // OUTSIDE it is an ordinary unchanged file the initial packet never discloses.
+  const changed = new Set(readFileSync(join(SEALED_ROOT, 'changed-files.tsv'), 'utf8').split('\n')
+    .filter((line) => line.length > 0).map((line) => line.split('\t')[2]))
+  const revisions = [...new Set(files.map((row) => row[2]))]
+  assert.equal(revisions.length, 2, 'the complete world must declare both revisions')
+  for (const revision of revisions) {
+    const row = files.find((candidate) => candidate[2] === revision
+      && !changed.has(candidate[3]) && candidate[6] === 'admitted')
+    assert.ok(row, `the complete world must carry an unchanged admitted file of ${revision}`)
+    const collected = await collectPages(definition,
+      { packet: 'p1', disclosure: 'whole-file', path: row[3], revision })
+    assert.equal(collected.pages[0].spans[0].sha256, row[5])
+    assert.equal(collected.pages[0].spans[0].bytes, Number.parseInt(row[4], 10))
+    assert.equal(Buffer.from(collected.text, 'utf8').equals(readFileSync(join(SEALED_ROOT, row[7]))), true,
+      `the whole-file read of the unchanged ${row[3]} of ${revision} must be its exact retained bytes`)
+  }
+})
+
 test('an undeclared file, an undeclared revision and a non-whole-file request are refused', async () => {
   const definition = registeredDefinition({})
   await assert.rejects(
@@ -199,7 +233,7 @@ test('an undeclared file, an undeclared revision and a non-whole-file request ar
   )
   await assert.rejects(
     definition.execute({ packet: 'p1', disclosure: 'progressive', path: 'src/index.ts', revision: HEAD, cursor: '-' }, {}),
-    (error) => error.name === 'PacketRefusal' && /only a whole-file disclosure/.test(error.message),
+    (error) => error.name === 'PacketRefusal' && /only a whole-file or region disclosure/.test(error.message),
   )
 })
 
