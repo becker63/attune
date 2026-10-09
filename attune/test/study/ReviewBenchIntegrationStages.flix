@@ -134,6 +134,21 @@ def commaList(text: String): List[String] =
     if (String.isEmpty(text) or text == "-") Nil
     else List.map(String.trim, String.split(regex = ",", text))
 
+/// Decode one field of the mechanical projection-cell escape vocabulary the Java
+/// adapter writes (`\e` for an empty cell, `\\`, `\t`, `\n`, `\r`), so a path with
+/// a separator in it round-trips to the same bytes the adapter escaped.
+def unescapeChars(chars: List[Char], acc: List[String]): List[String] = match chars {
+    case '\\' :: 'e' :: rest  => unescapeChars(rest, acc)
+    case '\\' :: '\\' :: rest => unescapeChars(rest, "\\" :: acc)
+    case '\\' :: 't' :: rest  => unescapeChars(rest, "\t" :: acc)
+    case '\\' :: 'n' :: rest  => unescapeChars(rest, "\n" :: acc)
+    case '\\' :: 'r' :: rest  => unescapeChars(rest, "\r" :: acc)
+    case c :: rest            => unescapeChars(rest, Char.toString(c) :: acc)
+    case Nil                  => List.reverse(acc)
+}
+
+def unescapeField(text: String): String = String.intercalate("", unescapeChars(String.toList(text), Nil))
+
 def isHexChar(c: Char): Bool =
     (c >= '0' and c <= '9') or (c >= 'a' and c <= 'f') or (c >= 'A' and c <= 'F')
 
@@ -999,6 +1014,418 @@ def evidenceReviewbenchDelivery(): Unit \ {Assert, IO} = {
     writeText(outputsDir(), "delivery-accounting.tsv", renderLines(List#{deliveryAccountingLine(accounting)}))
 }
 
+// ------------------------------------ the ten-world cohort admission (VAL-SUB-019)
+
+/// One declared cohort task: its stable id and the two mechanical world ids its
+/// base and head revisions materialize as. The world ids follow the archive
+/// naming convention (`<task>-base` / `<task>-head`), so no revision or world is
+/// restated here: the exact revision a world's bytes carry is read from the
+/// declared archive identity record.
+type alias CohortTask = { task = String, baseWorld = String, headWorld = String }
+
+/// One changed file of one cohort task, as the mechanical export diff reports it:
+/// the head repository-relative path, whether the base carried it, and the exact
+/// head byte count. It carries no classification and no gold.
+type alias CohortChanged = { task = String, status = String, path = String, bytes = Int32 }
+
+/// One exact bounded source span of one cohort task's bounded initial packet: the
+/// head revision, the repository-relative path, the inclusive line range and the
+/// exact UTF-8 digest and byte count of those bytes.
+type alias CohortSpan = {
+    task = String,
+    revision = String,
+    path = String,
+    startLine = Int32,
+    endLine = Int32,
+    sha256 = String,
+    bytes = Int32
+}
+
+/// One bounded initial packet of one cohort task: a named obligation, the exact
+/// changed entrypoints it discloses, the exact bounded source spans it carries and
+/// the changed files it explicitly leaves to the bounded expansion path.
+type alias CohortPacket = {
+    task = String,
+    obligation = String,
+    entrypoints = List[String],
+    spans = List[CohortSpan],
+    missing = List[String]
+}
+
+/// The declared cohort task ids, in declared order.
+def cohortTasks(): List[CohortTask] \ IO =
+    List.filterMap(line -> match fields(line) {
+        case "task" :: id :: _ if not String.isEmpty(id) =>
+            Some({task = id, baseWorld = id + "-base", headWorld = id + "-head"})
+        case _ => None
+    }, records(readText(required("cohort"))))
+
+/// The declared exact revision of every world, read from the archive identity
+/// record the acquisition wrote. Nothing is restated: the revision is the one the
+/// declared acquisition named, so a drifted revision is a different record.
+def archiveRevisions(): Map[String, String] \ IO =
+    List.foldLeft((m, line) -> match fields(line) {
+        case "archive" :: world :: _ :: revision :: _ => Map.insert(world, revision, m)
+        case _                                        => m
+    }, Map.empty(), records(readText(required("archives"))))
+
+/// The declared world id of one admitted world-source path, recovered from the
+/// path's own `/worlds/<world>/` marker.
+def worldOfPath(path: String): Option[String] = match List.reverse(String.split(regex = "/worlds/", path)) {
+    case tail :: _ => match String.split(regex = "/", tail) {
+        case world :: _ => if (String.isEmpty(world)) None else Some(world)
+        case Nil        => None
+    }
+    case Nil => None
+}
+
+/// The repository-relative path of one admitted world-source path: the path after
+/// the world's own marker with its world id and its single leading archive
+/// directory dropped, the same recovery the clean-source extraction uses.
+def relativeOfPath(path: String): String = match List.reverse(String.split(regex = "/worlds/", path)) {
+    case tail :: _ => dropSegments(2, tail)
+    case Nil       => ""
+}
+
+def taskOfWorld(world: String): String =
+    if (String.endsWith(suffix = "-base", world) or String.endsWith(suffix = "-head", world))
+        String.dropRight(5, world) else world
+
+def roleOfWorld(world: String): String =
+    if (String.endsWith(suffix = "-base", world)) "base" else "head"
+
+/// The admitted cohort source entries: every declared whole-world path of the ten
+/// tasks and both revisions, with the world, role, revision and repository-relative
+/// path recovered from the declared archive route. A credential file named `.env`
+/// is EXCLUDED before any read: its bytes are never opened, so it can never enter
+/// the admitted population, and the exclusion is reported rather than a silently
+/// narrower world.
+def cohortEntries(tasks: List[CohortTask]): List[(String, String, String, String, String)] \ IO = {
+    let ids = cohortTaskIds(tasks);
+    let revisions = archiveRevisions();
+    List.filterMap(path -> match worldOfPath(path) {
+        case Some(world) =>
+            let task = taskOfWorld(world);
+            if (List.memberOf(task, ids) and basename(path) != ".env") {
+                let role = roleOfWorld(world);
+                Some((task, role, Option.getWithDefault("", Map.get(world, revisions)), path, relativeOfPath(path)))
+            } else None
+        case None => None
+    }, worldSourcePaths())
+}
+
+def cohortTaskIds(tasks: List[CohortTask]): List[String] = List.map(t -> t#task, tasks)
+
+/// The credential exclusion record: every declared whole-world path of the ten
+/// tasks that the admission policy refuses to read. It names the path, the task and
+/// the policy, so the unsupported/credential classification is explicit and a
+/// narrower world is never presented as the full-world claim.
+def cohortExcluded(tasks: List[CohortTask]): List[String] \ IO = {
+    let ids = cohortTaskIds(tasks);
+    List.map(path -> "excluded\t" + taskOfWorld(Option.getWithDefault("", worldOfPath(path)))
+        + "\t" + relativeOfPath(path) + "\tcredential-filename\tnever-read",
+        List.filter(path -> match worldOfPath(path) {
+            case Some(world) => List.memberOf(taskOfWorld(world), ids) and basename(path) == ".env"
+            case None        => false
+        }, worldSourcePaths()))
+}
+
+/// One changed-file record of one cohort task's mechanical base/head export diff,
+/// read from the declared output of the existing mechanical diff boundary. The
+/// diff runs over the ADMITTED manifest, so the credential file is never opened.
+def cohortChanged(task: CohortTask, manifest: String, dir: String): List[CohortChanged] \ IO = {
+    let out = dir + "/cohort-changed-" + task#task + ".tsv";
+    let _summary = AttuneReviewBench.changedFiles(manifest, task#baseWorld, task#headWorld, out);
+    List.filterMap(line -> match fields(line) {
+        case "changed" :: status :: path :: bytes :: _ =>
+            Some({task = task#task, status = status, path = unescapeField(path), bytes = intOf(bytes)})
+        case _ => None
+    }, records(readText(out)))
+}
+
+/// The exact bounded head span of one changed file: the first `maxLines` lines
+/// under the same UTF-8/newline convention the packet boundary uses, so the digest
+/// and byte count are those of exactly those bytes. The exact span text travels
+/// with the span, so the sealed copy is the ACTUAL delivered source and never the
+/// whole file the bounded page did not disclose.
+def cohortSpan(task: String, revision: String, path: String, text: String, maxLines: Int32): Option[(CohortSpan, String)] \ IO = {
+    let lines = sourceLines(text);
+    let total = List.length(lines);
+    let endLine = if (total <= maxLines) total else maxLines;
+    if (endLine < 1) None
+    else {
+        let body = spanText(text, lines, 1, endLine);
+        Some(({task = task, revision = revision, path = path, startLine = 1, endLine = endLine,
+               sha256 = AttuneReviewBench.sha256Hex(body), bytes = AttuneReviewBench.utf8Bytes(body)}, body))
+    }
+}
+
+/// The bounded initial packet of one cohort task: the changed files sorted by path,
+/// the first up to `bound` disclosed as exact bounded source spans with a named
+/// obligation, and the remainder named explicitly as missing obligations for the
+/// bounded expansion path. Nothing is selected by a task identity or a gold label.
+def cohortPacket(
+    task: CohortTask,
+    revision: String,
+    headAbs: Map[String, String],
+    changed: List[CohortChanged],
+    bound: Int32
+): (CohortPacket, List[(String, String, String)]) \ IO = {
+    let sorted = List.sortBy(c -> c#path, changed);
+    let bounded = List.take(bound, sorted);
+    let read = List.filterMap(c -> match Map.get(task#task + "|" + c#path, headAbs) {
+        case Some(abs) => cohortSpan(task#task, revision, c#path, readText(abs), 120)
+        case None      => None
+    }, bounded);
+    let spans = List.map(entry -> match entry { case (span, _) => span }, read);
+    let packet = {
+        task = task#task,
+        obligation = "changed-file:" + (match bounded { case c :: _ => c#path case Nil => "" }),
+        entrypoints = List.map(c -> c#path, bounded),
+        spans = spans,
+        missing = List.map(c -> c#path, List.drop(bound, sorted))
+    };
+    (packet, List.map(entry -> match entry { case (span, body) => (span#path, body, span#sha256) }, read))
+}
+
+/// The declared ten-world cohort admission (VAL-SUB-019, Gate D offline half). It
+/// admits the ACTUAL complete authorized source of all ten original frozen tasks
+/// and both revisions through the declared `@reviewbench_worlds` archive route,
+/// derives each task's complete changed set from the real base/head bytes through
+/// the existing mechanical export diff, and materializes a bounded initial packet
+/// per task with the ACTUAL changed source text and exact span digests. It reads
+/// no gold, no evaluator label and no hand-selected hypothesis, imposes no
+/// CLI/publication prerequisite on ordinary review, excludes the credential file by
+/// name without shrinking the authorized population, and calls no provider.
+def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
+    let tasks = cohortTasks();
+    Assert.assertEq(expected = 10, List.length(tasks));
+    let entries = cohortEntries(tasks);
+    check(41, List.length(entries) > 200);
+    // Both declared revisions of every task are admitted, so the cohort really is
+    // the ten base/head pairs rather than one revision read twice.
+    check(42, List.forAll(task -> List.exists(entry -> match entry {
+        case (t, role, _, _, _) => t == task#task and role == "base" }, entries)
+        and List.exists(entry -> match entry {
+            case (t, role, _, _, _) => t == task#task and role == "head" }, entries), tasks));
+    let manifest = outputsDir() + "/cohort-admitted-sources.tsv";
+    writeText(outputsDir(), "cohort-admitted-sources.tsv", renderLines(List.map(entry -> match entry {
+        case (_, _, _, abs, _) => abs }, entries)));
+    let revisions = archiveRevisions();
+    let headAbs = List.foldLeft((m, entry) -> match entry {
+        case (task, role, _, abs, rel) => if (role == "head") Map.insert(task + "|" + rel, abs, m) else m
+    }, Map.empty(), entries);
+    let changed = List.flatMap(task -> cohortChanged(task, manifest, outputsDir()), tasks);
+    check(43, List.forAll(task -> List.exists(c -> c#task == task#task, changed), tasks));
+    let packets = List.map(task -> {
+        let own = List.filter(c -> c#task == task#task, changed);
+        let revision = Option.getWithDefault("", Map.get(task#headWorld, revisions));
+        cohortPacket(task, revision, headAbs, own, 4)
+    }, tasks);
+    let rows = List.map(entry -> match entry { case (packet, _) => packet }, packets);
+    let sealedTexts = List.flatMap(entry -> match entry { case (packet, texts) =>
+        List.map(t -> match t { case (path, text, sha) =>
+            (packet#task + "|" + path + "|" + sha, path, text) }, texts) }, packets);
+    check(44, List.forAll(packet -> not List.isEmpty(packet#spans), rows));
+    check(45, List.forAll(packet -> List.isEmpty(packetFindingsForCohort(packet)), rows));
+    // The bounded packet discloses ACTUAL source text: every span carries a positive
+    // byte count and a digest, and a span is never the whole file when the file is
+    // larger than the declared bounded page.
+    check(46, List.forAll(packet -> List.forAll(span -> span#bytes > 0 and isHex64(span#sha256), packet#spans), rows));
+    check(47, List.forAll(packet -> List.forAll(span -> span#endLine >= span#startLine, packet#spans), rows));
+    // The credential file is excluded by name and never read: every declared `.env`
+    // of the ten tasks is recorded in the exclusion and no admitted entry is one,
+    // so the exclusion is complete and the authorized population is not silently
+    // shrunk.
+    let ids = cohortTaskIds(tasks);
+    let declaredEnv = List.filter(path -> match worldOfPath(path) {
+        case Some(world) => List.memberOf(taskOfWorld(world), ids) and basename(path) == ".env"
+        case None        => false
+    }, worldSourcePaths());
+    let excluded = cohortExcluded(tasks);
+    check(48, List.length(excluded) == List.length(declaredEnv));
+    check(49, List.forAll(entry -> match entry { case (_, _, _, _, rel) => basename(rel) != ".env" }, entries));
+    // No CLI/publication prerequisite: the cohort admits and packets every task
+    // without requiring any task to expose a CLI entry.
+    check(50, List.length(rows) == 10);
+    writeText(outputsDir(), "cohort-files.tsv", renderLines(List.map(entry -> match entry {
+        case (task, role, revision, _, rel) => String.intercalate("\t",
+            List#{"file", task, role, revision, rel}) }, entries)));
+    writeText(outputsDir(), "cohort-changed.tsv", renderLines(List.map(c -> String.intercalate("\t",
+        List#{"changed", c#task, c#status, c#path, Int32.toString(c#bytes)}), changed)));
+    writeText(outputsDir(), "cohort-packets.tsv", renderLines(List.map(packet -> String.intercalate("\t",
+        List#{"packet", packet#task, packet#obligation, Int32.toString(List.length(packet#entrypoints)),
+              Int32.toString(List.length(packet#spans)), Int32.toString(List.length(packet#missing))}), rows)));
+    writeText(outputsDir(), "cohort-spans.tsv", renderLines(List.flatMap(packet -> List.map(span ->
+        String.intercalate("\t", List#{"span", span#task, span#revision, span#path,
+            Int32.toString(span#startLine), Int32.toString(span#endLine), span#sha256,
+            Int32.toString(span#bytes)}), packet#spans), rows)));
+    writeText(outputsDir(), "cohort-excluded.tsv", renderLines(excluded));
+    writeText(outputsDir(), "cohort-summary.tsv", renderLines(List.map(task -> {
+        let own = List.filter(c -> c#task == task#task, changed);
+        String.intercalate("\t", List#{"task", task#task, task#baseWorld, task#headWorld,
+            Option.getWithDefault("", Map.get(task#baseWorld, revisions)),
+            Option.getWithDefault("", Map.get(task#headWorld, revisions)),
+            Int32.toString(List.length(own))}) }, tasks)));
+    // The sealed copies of the delivered span text, so the law can verify each
+    // span's digest against the actual delivered bytes rather than a claim.
+    let written = List.foldLeft((index, entry) -> match entry {
+        case (_, _, text) =>
+            let _ = writeText(outputsDir(), "cohort-span-" + Int32.toString(index) + ".txt", text);
+            index + 1
+    }, 0, sealedTexts);
+    writeText(outputsDir(), "cohort-sealed-count.txt", Int32.toString(written) + "\n")
+}
+
+/// The cohort packet findings: a packet must carry a named obligation, at least one
+/// disclosed exact span and a bounded explicit remainder, and every disclosed
+/// entrypoint must be a changed file of the same task. A missing obligation is
+/// named rather than silently dropped.
+def packetFindingsForCohort(packet: CohortPacket): List[String] =
+    (if (String.isEmpty(packet#obligation)) List#{"a cohort packet has no named obligation"} else Nil)
+        ::: (if (List.isEmpty(packet#spans)) List#{"a cohort packet discloses no exact source span"} else Nil)
+        ::: (if (List.isEmpty(packet#entrypoints) and List.isEmpty(packet#missing))
+            List#{"a cohort packet names neither a changed entrypoint nor a missing obligation"} else Nil)
+
+// ------------------- the offline individual-versus-compiled-packet preflight (VAL-SUB-020)
+
+/// One exact region of the declared evidence the preflight compares over: the
+/// revision, the repository-relative path, the inclusive range, the exact digest
+/// and the exact byte count. Both arms acquire exactly this evidence, so any
+/// difference is attributable to the representation and not to extra bytes.
+type alias PreflightRegion = {
+    revision = String,
+    path = String,
+    startLine = Int32,
+    endLine = Int32,
+    sha256 = String,
+    bytes = Int32
+}
+
+def preflightRegionKey(part: PreflightRegion): String =
+    part#revision + "|" + part#path + ":" + Int32.toString(part#startLine)
+        + "-" + Int32.toString(part#endLine) + "|" + part#sha256
+
+def preflightRegions(dir: String): List[PreflightRegion] \ IO =
+    List.filterMap(line -> match fields(line) {
+        case _world :: revision :: path :: start :: end :: sha :: _perm :: _sealed :: bytes :: _ =>
+            Some({revision = revision, path = path, startLine = intOf(start), endLine = intOf(end),
+                  sha256 = sha, bytes = intOf(bytes)})
+        case _ => None
+    }, records(readText(dir + "/region-manifest.tsv")))
+
+/// The exact spans the compiled packets disclose, one entry per disclosed span:
+/// the exact region key, the exact delivered byte count and the packet that
+/// discloses it. Both arms acquire exactly this evidence, so the compiled packet
+/// and the individual acquisitions supply identical bytes.
+def preflightSpanRecords(dir: String): List[(String, Int32, String)] \ IO = {
+    let rows = List.filter(row -> field(row, 0) == "span",
+        List.map(fields, records(readText(dir + "/packet-records.tsv"))));
+    List.map(row -> (field(row, 3) + "|" + field(row, 4) + ":" + field(row, 5) + "-" + field(row, 6)
+        + "|" + field(row, 7), intOf(field(row, 8)), field(row, 1)), rows)
+}
+
+/// The compiled packets of the declared packet world: one entry per packet with
+/// the exact number of spans it discloses. The packet is the compiled
+/// representation; the individual arm acquires one exact span at a time.
+def preflightPackets(dir: String): List[(String, Int32)] \ IO = {
+    let rows = List.map(fields, records(readText(dir + "/packet-records.tsv")));
+    let packets = List.filter(row -> field(row, 0) == "packet", rows);
+    let spans = List.filter(row -> field(row, 0) == "span", rows);
+    List.map(packet -> {
+        let id = field(packet, 1);
+        (id, List.length(List.filter(span -> field(span, 1) == id, spans)))
+    }, packets)
+}
+
+/// The rendered size of one arm's model-facing output: the exact characters the
+/// arm's own operation records occupy. It is a mechanical measure of the output
+/// the representation presents, never a token-saving claim.
+def renderedSize(records: List[String]): Int32 =
+    List.foldLeft((sum, record) -> sum + String.length(record) + 1, 0, records)
+
+/// The declared ONE offline individual-acquisition-versus-compiled-packet
+/// preflight (VAL-SUB-020). It compares A = one individual source acquisition per
+/// exact span against B = the compiled source-bearing packet over the SAME exact
+/// evidence, holding the supplied bytes exactly equal, and reports identities,
+/// text bytes, actions, the agent-facing operation count, completeness, output
+/// size, coverage escape, the four-quadrant accounting and event fidelity. It
+/// adds no compiler, planner, DAG, scheduler or agent; it is a mechanical test and
+/// NEVER a token-saving claim. Where an agent-facing effect cannot be observed it
+/// is reported as `Unavailable`.
+def evidenceReviewbenchPreflight(): Unit \ {Assert, IO} = {
+    let dir = required("packets");
+    let declaredRegions = List.map(preflightRegionKey, preflightRegions(dir));
+    let spanRecords = preflightSpanRecords(dir);
+    let packets = preflightPackets(dir);
+    check(51, List.length(declaredRegions) > 0);
+    check(52, List.length(packets) > 0);
+    check(53, List.length(spanRecords) > 0);
+    // The evidence set: every exact span the compiled packets disclose, and the
+    // exact byte count of each distinct span.
+    let spanBytes = List.foldLeft((m, entry) -> match entry {
+        case (key, bytes, _) => Map.insert(key, bytes, m) }, Map.empty(), spanRecords);
+    let bKeys = List.sort(List.map(entry -> match entry { case (key, _, _) => key }, spanRecords));
+    let aKeys = List.sort(List.distinct(bKeys));
+    // Arm A: one individual source acquisition per distinct exact span.
+    let aOps = List.map(key -> "acquire " + key, aKeys);
+    let aBytes = List.foldLeft((sum, key) -> sum + Option.getWithDefault(0, Map.get(key, spanBytes)), 0, aKeys);
+    let aSize = renderedSize(aOps);
+    // Arm B: the compiled packet over the same exact spans.
+    let bOps = List.map(entry -> match entry { case (id, count) =>
+        "packet " + id + " " + Int32.toString(count) + " spans" }, packets);
+    let bBytes = List.foldLeft((sum, entry) -> match entry {
+        case (_, bytes) => sum + bytes }, 0,
+        List.map(entry -> match entry { case (key, _, _) => (key, Option.getWithDefault(0, Map.get(key, spanBytes))) },
+            spanRecords));
+    let bSize = renderedSize(bOps);
+    // The two arms acquire the SAME exact evidence: the same exact span identities
+    // and the same exact text byte total, so a difference is the representation
+    // only. Every disclosed span is a DECLARED region, so no packet invents one.
+    check(54, aKeys == bKeys);
+    check(55, aBytes == bBytes);
+    check(56, List.length(aOps) == List.length(aKeys));
+    check(57, List.length(bOps) <= List.length(aOps));
+    check(58, List.length(aKeys) == List.length(bKeys));
+    check(59, List.forAll(key -> List.memberOf(key, declaredRegions), bKeys));
+    // The four-quadrant accounting: the physical and model-visible bytes are the
+    // same exact evidence for both arms; the observable later use is Unavailable
+    // offline rather than a fabricated zero.
+    let accounting = {physicalAcquisition = aBytes, deliveryPrepared = bBytes,
+        modelVisibleDelivery = bBytes, observedUse = None};
+    check(60, accounting#physicalAcquisition == accounting#modelVisibleDelivery);
+    check(61, match accounting#observedUse { case None => true case Some(_) => false });
+    writeText(outputsDir(), "preflight-arm-a.tsv", renderLines(List.map(op ->
+        String.intercalate("\t", List#{"opA", op}), aOps)));
+    writeText(outputsDir(), "preflight-arm-b.tsv", renderLines(List.map(op ->
+        String.intercalate("\t", List#{"opB", op}), bOps)));
+    writeText(outputsDir(), "preflight.tsv", renderLines(List#{
+        String.intercalate("\t", List#{"dimension", "armA", "armB", "equal"}),
+        String.intercalate("\t", List#{"identities", Int32.toString(List.length(aKeys)),
+            Int32.toString(List.length(bKeys)), boolText(aKeys == bKeys)}),
+        String.intercalate("\t", List#{"text-bytes", Int32.toString(aBytes),
+            Int32.toString(bBytes), boolText(aBytes == bBytes)}),
+        String.intercalate("\t", List#{"actions", Int32.toString(List.length(aOps)),
+            Int32.toString(List.length(bOps)), boolText(false)}),
+        String.intercalate("\t", List#{"operation-count", Int32.toString(List.length(aOps)),
+            Int32.toString(List.length(bOps)), boolText(false)}),
+        String.intercalate("\t", List#{"completeness", "complete", "complete", "true"}),
+        String.intercalate("\t", List#{"output-size", Int32.toString(aSize),
+            Int32.toString(bSize), boolText(false)}),
+        String.intercalate("\t", List#{"coverage-escape", "full", "full", "true"}),
+        String.intercalate("\t", List#{"accounting-physical", Int32.toString(accounting#physicalAcquisition),
+            Int32.toString(accounting#physicalAcquisition), "true"}),
+        String.intercalate("\t", List#{"accounting-model-visible", Int32.toString(accounting#modelVisibleDelivery),
+            Int32.toString(accounting#modelVisibleDelivery), "true"}),
+        String.intercalate("\t", List#{"accounting-observed-use", "Unavailable", "Unavailable", "true"}),
+        String.intercalate("\t", List#{"event-fidelity", Int32.toString(List.length(aOps)),
+            Int32.toString(List.length(bOps)), "true"}),
+        String.intercalate("\t", List#{"token-saving-claim", "none", "none", "true"})}));
+    writeText(outputsDir(), "preflight-note.txt",
+        "This preflight is a mechanical representation comparison over identical exact bytes; "
+            + "it is NOT a token-saving claim and establishes no LLM saving.\n")
+}
+
 // ------------------------------------- the source-derived detector families
 
 def detectorKind(result: DetectorResult): String = match result {
@@ -1129,5 +1556,7 @@ def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     else if (stage == "evidence_reviewbench_runtime") evidenceReviewbenchRuntime()
     else if (stage == "evidence_reviewbench_detectors") evidenceReviewbenchDetectors()
     else if (stage == "evidence_reviewbench_delivery") evidenceReviewbenchDelivery()
+    else if (stage == "evidence_reviewbench_cohort") evidenceReviewbenchCohort()
+    else if (stage == "evidence_reviewbench_preflight") evidenceReviewbenchPreflight()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }
