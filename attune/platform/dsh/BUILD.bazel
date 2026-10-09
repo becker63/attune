@@ -16,6 +16,7 @@ the action.
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
 load("@dsh_npm//:defs.bzl", "npm_link_all_packages")
 load("//platform/dsh:dsh_agent.bzl", "dsh_agent_run")
+load("//platform/dsh:typert_package.bzl", "typert_package")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -144,4 +145,74 @@ js_test(
         ":typert_fixture",
     ],
     entry_point = "typert/typert_generation_test.mjs",
+)
+
+# --------------------------------------------------------------------------
+# The declared generation and installable package (VAL-SUB-008).
+#
+# `typert_package` is ONE declared `ctx.actions.run` of the real pinned Typert
+# generator: it generates the transport declaration from the declared fixture
+# and assembles the installable Cordis package (`dsh.bundle` patch, generated
+# contract identity, authored entry and manifest) into a declared output tree.
+# Two independent targets are built so the package law can prove the output is
+# byte-identical, and the package law loads the built package through the real
+# `@deepseek-ai/cordis` Context and typechecks it with the pinned TypeScript
+# compiler. Nothing here contacts a provider or fetches a package.
+# --------------------------------------------------------------------------
+
+# The declared contributor fixture the real generator analyzes. It is named one
+# file at a time so the live workspace audit sees the exact population.
+_TYPERT_PACKAGE_SRCS = [
+    "typert/packages/attune-evidence/package.json",
+    "typert/packages/attune-evidence/src/index.ts",
+    "typert/packages/attune-evidence/tsconfig.json",
+    "typert/tsconfig.host.json",
+]
+
+filegroup(
+    name = "typert_install",
+    srcs = [
+        "typert/install/cordis.patch.yml",
+        "typert/install/entry.d.ts",
+        "typert/install/entry.mjs",
+        "typert/install/manifest.json",
+    ],
+)
+
+js_binary(
+    name = "typert_build",
+    data = [
+        ":node_modules",
+        "typert/bridge.mjs",
+    ],
+    entry_point = "typert/package_build.mjs",
+    tags = ["manual"],
+)
+
+typert_package(
+    name = "typert_package_a",
+    install = [":typert_install"],
+    manifest = "typert/install/manifest.json",
+    srcs = _TYPERT_PACKAGE_SRCS,
+    tsconfig = "typert/tsconfig.host.json",
+)
+
+typert_package(
+    name = "typert_package_b",
+    install = [":typert_install"],
+    manifest = "typert/install/manifest.json",
+    srcs = _TYPERT_PACKAGE_SRCS,
+    tsconfig = "typert/tsconfig.host.json",
+)
+
+js_test(
+    name = "typert_package_test",
+    data = [
+        ":node_modules",
+        ":typert_fixture",
+        ":typert_install",
+        ":typert_package_a",
+        ":typert_package_b",
+    ],
+    entry_point = "typert/package_test.mjs",
 )

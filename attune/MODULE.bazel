@@ -144,9 +144,18 @@ dsh_npm.npm_translate_lock(
     # exactly those platform packages to `platform/dsh/node_modules` is what
     # Node's ordinary resolution needs; nothing else is hoisted, so no other
     # dependency resolution changes.
+    #
+    # `@deepseek-ai/cordis` is hoisted for the same ordinary-resolution reason:
+    # the narrow installable evidence-contract package is a Cordis plugin whose
+    # declared peer is `@deepseek-ai/cordis ~4.0.4`, so a consumer under
+    # `platform/dsh/` must resolve that exact pinned peer by its bare name. It is
+    # the peer the whole DSH graph already resolves to, so this adds no second
+    # copy and changes no other dependency's resolution.
     public_hoist_packages = {
+        "@deepseek-ai/cordis@4.0.4": ["platform/dsh"],
         "node-addon-require-builtin-linux-arm64-gnu@0.1.7": ["platform/dsh"],
         "node-addon-system-linux-arm64@0.1.2": ["platform/dsh"],
+        "typescript@6.0.3": ["platform/dsh"],
     },
     update_pnpm_lock = False,
 )

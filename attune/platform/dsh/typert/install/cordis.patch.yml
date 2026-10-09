@@ -1,0 +1,10 @@
+# The Cordis bundle patch of the narrow evidence contract package.
+#
+# It inserts the generated-contract plugin into a composed profile by its package
+# name, which is the ordinary supported loading route: the Cordis loader imports
+# the package's declared entry and applies it. The plugin registers no DSH tool,
+# so composing it changes no model-visible affordance; it only makes the
+# generated schema factories and the contract identity load.
+- insert:
+    - id: attune-evidence-contract
+      name: '@attune/evidence-contract/cordis'
