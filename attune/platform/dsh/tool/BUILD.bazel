@@ -38,6 +38,7 @@ js_library(
         "guard.mjs",
         "packet_boundary.mjs",
         "packet_tool.mjs",
+        "plain_tool.mjs",
         "package.json",
         "tool_schema.mjs",
     ],
@@ -62,6 +63,7 @@ exports_files([
     "attune-detector.plugin.yml",
     "attune-guard.plugin.yml",
     "attune-packet.plugin.yml",
+    "attune-plain.plugin.yml",
     "attune-tool.plugin.yml",
     "fixtures/boundary-world.tsv",
     "fixtures/expected-observation-projection.tsv",
@@ -94,6 +96,7 @@ js_library(
         "attune-detector.plugin.yml",
         "attune-guard.plugin.yml",
         "attune-packet.plugin.yml",
+        "attune-plain.plugin.yml",
         "attune-tool.plugin.yml",
         "fixtures/boundary-world.tsv",
         "fixtures/expected-observation-projection.tsv",
@@ -241,6 +244,31 @@ js_test(
     # repository, so they stay in their own runfiles location instead of being
     # copied into this package's output tree: the whole-file escape resolves them
     # by their declared archive-relative reference, and no corpus byte is copied.
+    no_copy_to_bin = [":cohort_worlds"],
+    tags = ["manual"],
+)
+
+# The laws of the SHARED bounded plain-read facade over the TEN cohort worlds
+# (the user-approved `## Pilot source-access binding`). They register the REAL
+# `defineTool` definition the pinned DSH surface produced and drive the bounded
+# `list` / `read` / `whole-file` operations over every task: the COMPLETE
+# authorized population through a bounded manifest, an ordinary UNCHANGED file of
+# BOTH revisions read whole against its retained archive bytes, an `overflow` file
+# served whole with its explicit status, an exact declared line range, and every
+# refusal path. The declared `@reviewbench_worlds` archives are carried as
+# runfiles, so the whole-file reads verify against the real retained bytes rather
+# than a copy. The corpus-bound cohort stage is `manual`, so this law is `manual`
+# too: the ordinary `bazel test //...` gate must never fetch the pinned corpus.
+js_test(
+    name = "plain_test",
+    data = [
+        ":cohort_worlds",
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_reviewbench_cohort",
+        "//platform/dsh:node_modules",
+        "attune-plain.plugin.yml",
+    ],
+    entry_point = "plain_test.mjs",
     no_copy_to_bin = [":cohort_worlds"],
     tags = ["manual"],
 )

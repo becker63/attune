@@ -33,6 +33,51 @@ PILOT_SRCS = [
     "//src:Attune/Theory.flix",
 ]
 
+# The explicit source closure of the appended source-binding declaration: the
+# binding stage plus the separately versioned binding owner
+# (`Attune.Study.ReviewPilotBinding`) and the canonical pilot owner it references.
+PILOT_BINDING_SRCS = [
+    "ReviewPilotBindingStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Study/ReviewPilotBinding.flix",
+    "//src:Attune/Theory.flix",
+]
+# The declared ReviewBench pilot SOURCE-BINDING stage (`VAL-STUDY-002`,
+# `VAL-STUDY-010`). It APPENDS the separately versioned source-access /
+# tool-mount / task-binding record alongside the immutable `1143bc2` freeze
+# outputs: the versioned binding identity rows, their frozen invariants and the
+# per-task / per-arm run configuration. It reduces the frozen freeze dispatch and
+# the already-admitted cohort tool index; it acquires nothing and calls no
+# provider. It consumes the pinned-corpus cohort index, so it is `manual`: the
+# ordinary gate never fetches the corpus.
+native_study_stage(
+    name = "reviewbench_pilot_binding",
+    srcs = PILOT_BINDING_SRCS,
+    input_names = [
+        "freeze",
+        "cohort",
+    ],
+    inputs = [
+        ":reviewbench_pilot_freeze",
+        "//platform/dsh:evidence_reviewbench_cohort",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_binding",
+    tags = ["manual"],
+)
+
 # The declared ReviewBench pilot freeze stage (`VAL-STUDY-001`, `VAL-STUDY-002`,
 # `VAL-STUDY-003`, `VAL-STUDY-010`). It reduces the already-materialized,
 # already-frozen admission projection and the frozen cohort fixture into the
@@ -68,6 +113,7 @@ native_study_stage(
 native_flix_java_test(
     name = "reviewbench_pilot_law",
     srcs = [
+        "ReviewPilotBindingLaw.flix",
         "ReviewPilotLaw.flix",
         "//src:Attune.flix",
         "//src:Attune/Coverage.flix",
@@ -79,6 +125,7 @@ native_flix_java_test(
         "//src:Attune/Study/Qwen.flix",
         "//src:Attune/Study/ReviewBench.flix",
         "//src:Attune/Study/ReviewPilot.flix",
+        "//src:Attune/Study/ReviewPilotBinding.flix",
         "//src:Attune/Theory.flix",
     ],
     java_deps = ["//platform/tools/grit:attune_grit"],

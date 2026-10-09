@@ -85,6 +85,14 @@ def _dsh_agent_run_impl(ctx):
         # native/PTC scoping rule).
         env["DSH_PERMISSION_MODE"] = ctx.attr.permission_mode
 
+        # The DECLARED per-task / per-arm run identity and world bindings of one
+        # pilot observation. They are ordinary declared environment values of THIS
+        # action, so one run has one identity and one per-task declared source
+        # root/CAS binding rather than a global host cache. The values are written
+        # by the declaring target (see the pilot runner), never read from the host.
+        for key, value in ctx.attr.agent_env.items():
+            env[key] = value
+
         args.add("--profile", ctx.attr.profile)
         for route in ctx.files.routes:
             args.add("--patch", route.path)
@@ -93,10 +101,11 @@ def _dsh_agent_run_impl(ctx):
         args.add("--json")
         args.add(ctx.attr.task)
 
+    inputs = ctx.files.routes + ctx.files.data
     ctx.actions.run(
         executable = ctx.executable.dsh,
         arguments = [args],
-        inputs = ctx.files.routes,
+        inputs = inputs,
         outputs = outputs,
         env = env,
         tools = [ctx.attr.dsh[DefaultInfo].files_to_run],
@@ -148,6 +157,17 @@ dsh_agent_run = rule(
             the overlay file and the overlays are declared data of the launcher.""",
         ),
         "task": attr.string(doc = "The one task string handed to the DSH app."),
+        "agent_env": attr.string_dict(
+            doc = """The declared per-task / per-arm run identity and world bindings
+            of one observation (e.g. `ATTUNE_RUN_TASK`, `ATTUNE_RUN_ARM`,
+            `ATTUNE_RUN_OBSERVATION`, `DSH_TOOLS_MODE` and the per-task declared
+            source roots). They are declared values of THIS action, so one run has
+            one identity and one per-task binding rather than a global host cache."""),
+        "data": attr.label_list(
+            allow_files = True,
+            doc = """Extra declared inputs of the run (the per-task declared world
+            files / archives the mounted tools read). They are ordinary declared
+            action inputs, never a host-global path lookup."""),
         "version_only": attr.bool(
             default = False,
             doc = "Probe mode: run the CLI's own `--version` and no session.",
