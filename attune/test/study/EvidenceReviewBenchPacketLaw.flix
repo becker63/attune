@@ -190,6 +190,23 @@ def everyPacketEntrypointIsDeclaredInTheManifest(): Unit \ {Assert, IO} = {
     }, packets))
 }
 
+/// The Flix-owned DELIVERED projection is the exact sealed span text: every
+/// delivered row's digest and byte count are those of the sealed admitted bytes
+/// of its declared span, so the source the packet tool hands the model is
+/// byte-identical to the Flix projection rather than a metadata-only record. A
+/// generated summary, a truncated prefix or a drifted sub-range would fail here.
+@Test
+def theDeliveredProjectionIsTheExactSealedSpanText(): Unit \ {Assert, IO} = {
+    let rows = producedRows("packet-delivered.tsv");
+    Assert.assertEq(expected = true, List.length(rows) > 0);
+    Assert.assertEq(expected = true, List.forAll(row -> {
+        let text = produced(field(row, 9));
+        AttuneReviewBench.sha256Hex(text) == field(row, 7)
+            and AttuneReviewBench.utf8Bytes(text) == intOf(field(row, 8))
+            and intOf(field(row, 8)) > 0
+    }, rows))
+}
+
 /// The retained full-source escape of every packet discloses EXACTLY every
 /// declared region of the changed world, so ordinary access to the complete
 /// authorized world stays possible beyond the initial progressive neighborhood.

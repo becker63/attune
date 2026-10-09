@@ -826,6 +826,103 @@ pub mod Attune.Study.EvidenceSubstrate {
             Int32.toString(accounting#uniqueBytes), Int32.toString(accounting#totalBytes),
             Int32.toString(accounting#repeatedBytes), Int32.toString(accounting#availableDiffBytes)})
 
+    // ---------------------------------------- four-quadrant delivery accounting
+
+    /// One ACTUAL per-operation delivery receipt, as the run itself recorded it.
+    /// The four quadrants are separated exactly as the mission requires and are
+    /// never conflated:
+    ///
+    ///  - `physicalBytes` is the bytes physically read and digest-verified;
+    ///  - `preparedBytes` is the bytes prepared into a model-facing payload;
+    ///  - `visibleBytes`  is the bytes of an ACCEPTED, postprocessing-completed
+    ///                     native tool result / model-facing message, and is `0`
+    ///                     when the schema or the renderer failed, the return was
+    ///                     interrupted or the output was truncated;
+    ///  - `used`          is a later demonstrable source request, action or
+    ///                     checkpoint reference, or `None` when unobservable.
+    ///
+    /// Nothing is inferred: understanding is never a use, and a prepared identity
+    /// is never a delivery.
+    pub type alias DeliveryReceipt = {
+        operation = String,
+        world = String,
+        revision = String,
+        identity = String,
+        physicalBytes = Int32,
+        preparedBytes = Int32,
+        accepted = Bool,
+        visibleBytes = Int32,
+        used = Option[Int32]
+    }
+
+    /// The four separate accountings of a set of actual receipts. They are kept
+    /// as four independent numbers (plus the honest `Option` use) so a prepared
+    /// payload, a physically verified read and an accepted model-visible
+    /// delivery can never be reported as one figure.
+    pub type alias DeliveryAccounting = {
+        physicalAcquisition = Int32,
+        deliveryPrepared = Int32,
+        modelVisibleDelivery = Int32,
+        observedUse = Option[Int32]
+    }
+
+    def visibleBytesOf(receipt: DeliveryReceipt): Int32 =
+        if (receipt#accepted) receipt#visibleBytes else 0
+
+    /// The observable later use of the whole receipt set: an aggregate only when
+    /// EVERY receipt's use is observable, otherwise the canonical `Unavailable`.
+    /// An unobservable use is never fabricated as a zero.
+    def observedUseOf(receipts: List[DeliveryReceipt]): Option[Int32] =
+        if (List.exists(receipt -> match receipt#used { case None => true case Some(_) => false }, receipts)) None
+        else Some(List.foldLeft((sum, receipt) -> sum + match receipt#used { case Some(n) => n case None => 0 },
+            0, receipts))
+
+    pub def deliveryAccounting(receipts: List[DeliveryReceipt]): DeliveryAccounting = {
+        physicalAcquisition = List.foldLeft((sum, receipt) -> sum + receipt#physicalBytes, 0, receipts),
+        deliveryPrepared = List.foldLeft((sum, receipt) -> sum + receipt#preparedBytes, 0, receipts),
+        modelVisibleDelivery = List.foldLeft((sum, receipt) -> sum + visibleBytesOf(receipt), 0, receipts),
+        observedUse = observedUseOf(receipts)
+    }
+
+    /// The accounting findings of a receipt set. A failed or unaccepted output
+    /// can never contribute model-visible bytes, prepared bytes can never exceed
+    /// the physically verified bytes, and model-visible bytes can never exceed
+    /// the prepared payload. A negative count is refused.
+    pub def deliveryAccountingFindings(receipts: List[DeliveryReceipt]): List[String] =
+        List.flatMap(receipt ->
+            (if (receipt#physicalBytes < 0 or receipt#preparedBytes < 0 or receipt#visibleBytes < 0)
+                List#{"a delivery receipt carries a negative byte count: " + receipt#identity} else Nil)
+                ::: (if (receipt#preparedBytes > receipt#physicalBytes)
+                    List#{"prepared bytes exceed the physically verified bytes of " + receipt#identity} else Nil)
+                ::: (if (receipt#visibleBytes > receipt#preparedBytes)
+                    List#{"model-visible bytes exceed the prepared payload of " + receipt#identity} else Nil)
+                ::: (if (not receipt#accepted and receipt#visibleBytes != 0)
+                    List#{"a receipt that was not accepted cannot count as a model-visible delivery: "
+                        + receipt#identity} else Nil),
+            receipts)
+
+    /// The canonical serialized record of the four quadrants, so a materialized
+    /// accounting and a Flix recomputation compare the same bytes. An
+    /// unobservable use serializes as the literal `Unavailable`.
+    pub def deliveryAccountingLine(accounting: DeliveryAccounting): String =
+        String.intercalate("\t", List#{
+            Int32.toString(accounting#physicalAcquisition),
+            Int32.toString(accounting#deliveryPrepared),
+            Int32.toString(accounting#modelVisibleDelivery),
+            Option.getWithDefault("Unavailable", Option.map(Int32.toString, accounting#observedUse))})
+
+    /// One serialized receipt row of the declared accounting input. The fields
+    /// are `operation <tab> world <tab> revision <tab> identity <tab> physical <tab>
+    /// prepared <tab> accepted <tab> visible <tab> used`, where `used` is either a
+    /// decimal count or the literal `Unavailable`.
+    pub def deliveryReceiptLine(receipt: DeliveryReceipt): String =
+        String.intercalate("\t", List#{
+            receipt#operation, receipt#world, receipt#revision, receipt#identity,
+            Int32.toString(receipt#physicalBytes), Int32.toString(receipt#preparedBytes),
+            if (receipt#accepted) "accepted" else "not-accepted",
+            Int32.toString(receipt#visibleBytes),
+            Option.getWithDefault("Unavailable", Option.map(Int32.toString, receipt#used))})
+
     /// The honest instrumentation of one packet review: how many physical
     /// acquisitions the run made, how many packets it used and how many distinct
     /// obligations those packets named. A value the offline substrate cannot
@@ -1117,11 +1214,12 @@ pub mod Attune.Study.EvidenceSubstrate {
     /// The literal import facts of one source text: a narrow literal static
     /// `import ... from '<spec>'` or a `await import('<spec>')` command entry. A
     /// dynamic `import(` whose argument is not a literal string is recorded as a
-    /// computed site. A relative, alias or builtin specifier and a bare package
-    /// the declared `dependencies` do not carry stay UNEXAMINED, because the
-    /// compiled publication target of a local import is a build mapping this
-    /// owner does not assert; only a bare dependency the declared contract
-    /// carries is a covered publication site.
+    /// computed site. A relative, alias or builtin specifier stays UNEXAMINED,
+    /// because the compiled publication target of a local import is a build
+    /// mapping this owner does not assert. A BARE package specifier is examined
+    /// against the declared dependency contract: the contract either carries the
+    /// target (covered) or it does not, and the second case is the source-backed
+    /// hypothesis the coupling previously made unreachable.
     pub def sourceImportFacts(
         revision: String,
         path: String,
@@ -1173,21 +1271,45 @@ pub mod Attune.Study.EvidenceSubstrate {
             and not String.startsWith(prefix = "@/", specifier)
             and not String.startsWith(prefix = "node:", specifier);
         let covered = bare and List.memberOf(packageNameOf(specifier), dependencies);
+        // The publication contract of a BARE package IS examined: the declared
+        // dependency metadata is the publication contract this bounded subset
+        // reads, so a bare target is `examined` whether or not it is covered. A
+        // relative, alias or builtin specifier's compiled publication target is a
+        // build mapping this owner does not assert, so it stays UNEXAMINED and is
+        // refused rather than guessed. `published` is the separate, independent
+        // fact of whether the declared contract carries the target, so the
+        // hypothesis branch (examined but not published) is reachable.
         { importer = path, target = specifier, sourceIdentity = identity, published = covered,
-          allowlisted = false, dynamic = false, generated = generated, examined = covered }
+          allowlisted = false, dynamic = false, generated = generated, examined = bare }
     }
+
+    /// Whether one identifier is bound LOCALLY by a literal assignment in the
+    /// same file. A guard over a locally bound identifier is a local/injected
+    /// variable rather than a missing declared CLI option, so the bounded subset
+    /// refuses it instead of fabricating a candidate. This is the source-backed
+    /// fact that decouples `injected` from option coverage.
+    def locallyAssigned(name: String, lines: List[String]): Bool =
+        List.exists(line -> {
+            let trimmed = String.trim(line);
+            (String.startsWith(prefix = "const " + name, trimmed)
+                or String.startsWith(prefix = "let " + name, trimmed)
+                or String.startsWith(prefix = "var " + name, trimmed))
+                and String.contains(substr = " = ", trimmed)
+        }, lines)
 
     /// The literal required-consumption facts of one source text: a narrow
     /// literal `if (!<name>)` precondition and the declared option names of the
     /// same file. A precondition whose bounded window carries `isInteractive()`
     /// is INTERACTIVE and a precondition with no literal `process.exit(` is
     /// UNSUPPORTED control flow, so both stay `Unknown`/refused rather than
-    /// becoming a candidate. A precondition whose guarded name the file does not
-    /// declare as an option is a LOCAL/injected variable rather than a CLI input,
-    /// so it is refused instead of fabricated. Only a supported NON-INTERACTIVE
-    /// precondition whose input the file declares as an option is reported, and a
-    /// declared option covers its own input, so an ordinary member read never
-    /// fabricates a required defect.
+    /// becoming a candidate. A precondition whose guarded name the file binds
+    /// LOCALLY is a local/injected variable rather than a CLI input, so it is
+    /// refused instead of fabricated. Only a supported NON-INTERACTIVE
+    /// precondition whose input the file does NOT declare as an option and does
+    /// NOT bind locally is reported: that is a required CLI input the program
+    /// never declares, the source-backed hypothesis the coupling previously made
+    /// unreachable. A declared option covers its own input, so an ordinary member
+    /// read never fabricates a required defect.
     pub def sourceCliFacts(revision: String, path: String, text: String): List[CliFact] = {
         let lines = sourceLinesOf(text);
         let declared = List.filterMap(entry -> match entry {
@@ -1201,10 +1323,11 @@ pub mod Attune.Study.EvidenceSubstrate {
                     let interactive = List.exists(l -> String.contains(substr = "isInteractive()", l), window);
                     let nonInteractive = List.exists(l -> String.contains(substr = "process.exit(", l), window);
                     let covered = List.memberOf(name, declared);
+                    let injected = locallyAssigned(name, lines);
                     Some({ program = revision + ":" + path + "#" + Int32.toString(index + 1),
                            requiredInput = "--" + name,
                            consumption = if (covered) "options." + name else "undeclared",
-                           computed = false, injected = not covered,
+                           computed = false, injected = injected,
                            defaulted = nonInteractive and not interactive and covered,
                            literal = nonInteractive and not interactive })
             }

@@ -516,6 +516,44 @@ def ledgerLine(packetId: String, disclosure: String, ref: EvidenceRef): String =
         Int32.toString(ref#startLine), Int32.toString(ref#endLine), ref#sha256,
         Int32.toString(ref#bytes)})
 
+/// The exact DELIVERED source text of one evidence reference: the very bytes of
+/// its declared span in the sealed admitted world, under the SAME UTF-8/newline
+/// convention the packet boundary uses. This is the ACTUAL source the packet
+/// tool hands the model — never a generated summary and never span metadata
+/// alone — and it is materialized so the cross-language delivered projection can
+/// be recomputed from the sealed bytes rather than trusted from the tool.
+def deliveredText(files: List[WorldFile], ref: EvidenceRef): String =
+    match List.findMap(file -> if (file#revision == ref#revision and file#path == ref#path) Some(file) else None,
+        files) {
+        case Some(file) => spanText(file#text, sourceLines(file#text), ref#startLine, ref#endLine)
+        case None       => ""
+    }
+
+/// One exact evidence reference with its stable position in its packet, so the
+/// delivered projection is indexed deterministically.
+def indexedSpans(refs: List[EvidenceRef], index: Int32, acc: List[(Int32, EvidenceRef)]): List[(Int32, EvidenceRef)] =
+    match refs {
+        case Nil         => List.reverse(acc)
+        case ref :: rest => indexedSpans(rest, index + 1, (index, ref) :: acc)
+    }
+
+/// One declared row of the delivered-source projection: the packet, the span
+/// position, the exact identity, the delivered byte count and digest, and the
+/// declared sealed file that holds the exact delivered text.
+def deliveredLine(id: String, index: Int32, ref: EvidenceRef, name: String): String =
+    String.intercalate("\t", List#{"delivered", id, Int32.toString(index), ref#revision, ref#path,
+        Int32.toString(ref#startLine), Int32.toString(ref#endLine), ref#sha256,
+        Int32.toString(ref#bytes), name})
+
+/// The delivered projection of every packet span: one record per span naming the
+/// packet, the span position, the exact reference and the sealed file that holds
+/// its exact delivered text.
+def deliveredProjection(ids: List[String], packets: List[EvidencePacket]): List[(String, String, Int32, EvidenceRef)] =
+    List.flatMap(entry -> match entry { case (id, packet) =>
+        List.map(part -> match part { case (index, ref) =>
+            ("delivered-" + id + "-" + Int32.toString(index) + ".txt", id, index, ref) },
+            indexedSpans(packet#evidence, 0, Nil)) }, zip(ids, packets))
+
 /// The declared offline REPLAY of the tool's own serving contract over the real
 /// region identities: every packet is served progressively, then the first packet
 /// is served through the retained full-source escape, then that first packet's
@@ -640,6 +678,16 @@ def evidenceReviewbenchPackets(): Unit \ {Assert, IO} = {
         List.flatMap(entry -> match entry { case (id, packet) =>
             List#{packetRecordLine(id, packet)} ::: List.map(ref -> spanLine(worldId, id, ref), packet#evidence) },
             zip(ids, packets))));
+    // The ACTUAL delivered source of every packet span, materialized as the
+    // Flix-owned delivered projection: one row per span plus the sealed file
+    // that holds its exact text. The packet tool delivers exactly these bytes,
+    // so a drifted or metadata-only delivery is a different record rather than a
+    // silently accepted one.
+    let delivered = deliveredProjection(ids, packets);
+    writeText(outputsDir(), "packet-delivered.tsv", renderLines(List.map(entry -> match entry {
+        case (name, id, index, ref) => deliveredLine(id, index, ref, name) }, delivered)));
+    List.foldLeft((_acc, entry) -> match entry {
+        case (name, _, _, ref) => writeText(outputsDir(), name, deliveredText(files, ref)) }, (), delivered);
     writeText(outputsDir(), "packet-expansion.tsv", renderLines(List.map(entry -> match entry {
         case (id, expansion) => expansionLine(id, expansion) }, zip(ids, expansions))));
     writeText(outputsDir(), "replay-ledger.tsv", renderLines(replayLedger(ids, packets, expansions)));

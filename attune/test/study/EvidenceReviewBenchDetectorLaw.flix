@@ -212,3 +212,45 @@ def refusalsAndUnknownsAreDistinctFromHypotheses(): Unit \ {Assert} = {
     Assert.assertEq(expected = "unresolved", detectorKind(unknown));
     Assert.assertEq(expected = "hypothesis", detectorKind(hypothesis))
 }
+
+def kindsOf(results: List[DetectorResult]): List[String] = List.map(detectorKind, results)
+
+def importKinds(text: String, dependencies: List[String]): List[String] =
+    kindsOf(List.map(detectImportPublication, sourceImportFacts("rev", "src/a.ts", text, dependencies)))
+
+def cliKinds(text: String): List[String] =
+    kindsOf(List.map(detectRequiredCliInput, sourceCliFacts("rev", "src/b.ts", text)))
+
+/// The generic extraction is INDEPENDENT of publication/option coverage, so the
+/// hypothesis branch is REACHABLE: a bare import the declared dependency contract
+/// does not carry, and a literal non-interactive required input the file declares
+/// as no option and binds nowhere locally, are both source-backed candidates.
+/// The clean (covered) case stays an honest Unresolved, the injected/computed/
+/// relative/dynamic cases stay refused, and nothing is fabricated. This proves
+/// the branch coupling the correction removes, at the REAL extraction, so a
+/// zero-hypothesis real world is a completed result rather than a negative
+/// behavioral finding.
+@Test
+def theExtractionCanHonestlyReachBothFamiliesHypothesisBranches(): Unit \ {Assert} = {
+    let manifest = "{\n  \"dependencies\": {\n    \"left-pad\": \"^1.0.0\"\n  }\n}\n";
+    let dependencies = declaredDependencies(manifest);
+    Assert.assertEq(expected = List#{"left-pad"}, dependencies);
+    // Family A: covered -> Unresolved; uncovered bare -> Hypothesis; relative and
+    // dynamic -> Refused. All three outcomes are the extraction's own facts.
+    Assert.assertEq(expected = List#{"unresolved"}, importKinds("import x from 'left-pad'\n", dependencies));
+    Assert.assertEq(expected = List#{"hypothesis"}, importKinds("import y from 'unpublished-pkg'\n", dependencies));
+    Assert.assertEq(expected = List#{"refused"}, importKinds("import z from './local'\n", dependencies));
+    Assert.assertEq(expected = List#{"refused"}, importKinds("const m = import(specifier)\n", dependencies));
+    // Family B: a declared option with a literal non-interactive exit is covered
+    // (Unresolved); an undeclared, unbound literal guard is a Hypothesis; a
+    // locally bound guard is an injected value (Refused); a guard with no literal
+    // exit is unsupported control flow (Refused).
+    let cleanCli = "const options = {\n  certPath: z.string()\n}\nif (!certPath) {\n  process.exit(1)\n}\n";
+    Assert.assertEq(expected = List#{"unresolved"}, cliKinds(cleanCli));
+    let missingCli = "if (!region) {\n  process.exit(1)\n}\n";
+    Assert.assertEq(expected = List#{"hypothesis"}, cliKinds(missingCli));
+    let injectedCli = "const region = resolveRegion()\nif (!region) {\n  process.exit(1)\n}\n";
+    Assert.assertEq(expected = List#{"refused"}, cliKinds(injectedCli));
+    let unsupportedCli = "if (!region) {\n  return\n}\n";
+    Assert.assertEq(expected = List#{"refused"}, cliKinds(unsupportedCli))
+}
