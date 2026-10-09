@@ -162,6 +162,47 @@ def qualityRows(fixtures: List[String]): List[QualityRow] \ IO =
         case None       => Nil
     }
 
+/// The declared directory of the immutable CORRECTED quality view. It is bound
+/// from the provider-free producer `//test/reviewbench_judge:reviewbench_corrected_metrics`,
+/// which re-reads the frozen judge/adjudication/corrective observations,
+/// substitutes ONLY the arm-isolated corrective `haoling` adjudications and
+/// reduces the full all/medium-high/high task-micro/repo-macro view through the
+/// SAME canonical `Attune.Study.ReviewBenchJudge` classification and
+/// `Attune.Study.Metrics` exact ratios as the original report. Reading the
+/// producer tree directly (rather than a hand-copied table) is what keeps the
+/// economics quality statement consistent with the approved correction.
+def correctedDir(): String \ IO =
+    resolveDeclared(Option.getWithDefault("", binding("corrected")))
+
+/// The corrected quality rows of the bound producer tree: the frozen reducer's
+/// own exact ratios, re-read rather than recomputed.
+def correctedQualityRows(dir: String): List[QualityRow] \ IO =
+    List.filterMap(qualityOf, records(readText(dir + "/corrected-metrics.tsv")))
+
+/// One labelled quality-contrast row: the ORIGINAL biased provisional value and
+/// the CORRECTED value of one scope/arm/view/metric, both re-read from the frozen
+/// reducer tables. Neither is overwritten and neither is recomputed here.
+def qualityContrastRow(scope: String, arm: String, view: String, metric: String,
+    provisional: List[QualityRow], corrected: List[QualityRow]): List[String] = {
+    let find = rows -> Option.map(row -> row#percent,
+        List.find(row -> row#scope == scope and row#arm == arm and row#view == view
+            and row#metric == metric, rows));
+    List#{"quality-contrast", scope, arm, view, metric,
+        Option.getWithDefault("Unavailable", find(provisional)),
+        Option.getWithDefault("Unavailable", find(corrected))}
+}
+
+/// The declared contrast rows of the one corrected task's two arms: the
+/// all-findings task-micro and repo-macro valid/resolved precision and augmented
+/// recall, each with the biased provisional value beside the corrected value.
+def qualityContrastRows(provisional: List[QualityRow], corrected: List[QualityRow]): List[List[String]] =
+    List.flatMap(scope -> List.flatMap(metric -> List.flatMap(arm ->
+        List.map(view -> qualityContrastRow(scope, arm, view, metric, provisional, corrected),
+            List#{"all"}),
+        List#{"A", "B"}),
+        List#{"valid-precision", "resolved-precision", "augmented-recall"}),
+        List#{"task-micro", "repo-macro"})
+
 /// One arm's declared valid-precision ratio, parsed from its frozen `90.0%`
 /// text (`90.0%` -> `900/1000`). It is a presentation value the frozen reducer
 /// already emitted, re-read for the graph rather than recomputed.
@@ -297,7 +338,11 @@ def reportStage(): Unit \ {Assert, IO} = {
     let fixtures = manifestPaths("fixtures");
     let observations = List.map(path -> observationOf(readText(path)), receiptPaths(fixtures));
     let summaries = ReviewBenchEconomics.armSummaries(observations);
-    let quality = qualityRows(fixtures);
+    // The PRIMARY quality statement is the bound canonical corrected view; the
+    // original owner-judge reduction tree is retained beside it as labelled
+    // provisional history, never overwritten.
+    let corrected = correctedQualityRows(correctedDir());
+    let provisional = qualityRows(fixtures);
     let tasks = List.distinct(List.map(observation -> observation#task, observations));
     writeText(dir, "economics-reviews.tsv", renderTsv(List.map(reviewRow, observations)));
     writeText(dir, "economics-arms.tsv", renderTsv(List.map(armRow, summaries)));
@@ -305,9 +350,12 @@ def reportStage(): Unit \ {Assert, IO} = {
     writeText(dir, "economics-costs.tsv", renderTsv(List.map(costRow, ReviewBenchEconomics.costRows())));
     writeText(dir, "economics-amortization.tsv",
         renderTsv(List.map(amortizationRow, ReviewBenchEconomics.amortizationRows(coldIndexMicros()))));
-    writeText(dir, "economics-quality.tsv", renderTsv(List.map(qualityRow, quality)));
+    writeText(dir, "economics-quality.tsv", renderTsv(List.map(qualityRow, corrected)));
+    writeText(dir, "economics-quality-provisional.tsv", renderTsv(List.map(qualityRow, provisional)));
+    writeText(dir, "economics-quality-contrast.tsv",
+        renderTsv(qualityContrastRows(provisional, corrected)));
     writeText(dir, "economics-provenance.tsv", renderTsv(List.map(provenanceRow, ReviewBenchEconomics.provenance())));
-    writeText(dir, "economics-graph.txt", graphText(summaries, quality));
+    writeText(dir, "economics-graph.txt", graphText(summaries, corrected));
     writeText(dir, "replay.tsv", renderTsv(List#{
         List#{"replay", "provider-calls", "0", "frozen receipts and frozen quality tables only"},
         List#{"replay", "review-actions", "0", "no review is re-run"},
@@ -343,10 +391,39 @@ def reportStage(): Unit \ {Assert, IO} = {
     // excluded undefined per-task ratios are retained in the scope split rather
     // than counted as zeros.
     Assert.assertEq(expected = 2,
-        List.length(List.filterMap(row -> validPrecisionRow(row#arm, quality), summaries)));
-    Assert.assertEq(expected = true, not List.isEmpty(List.filter(row -> row#scope == "repo-macro", quality)));
-    Assert.assertEq(expected = true, not List.isEmpty(List.filter(row -> row#scope == "task-micro", quality)))
+        List.length(List.filterMap(row -> validPrecisionRow(row#arm, corrected), summaries)));
+    Assert.assertEq(expected = true, not List.isEmpty(List.filter(row -> row#scope == "repo-macro", corrected)));
+    Assert.assertEq(expected = true, not List.isEmpty(List.filter(row -> row#scope == "task-micro", corrected)));
+    // The PRIMARY quality statement is the canonical CORRECTED view, not the
+    // biased original. The corrected `haoling` arm B candidates are restored per
+    // arm, so the all-findings B valid/resolved precision is 11/12 and the
+    // augmented recall is 6/37 at task-micro, and the repo-macro valid/resolved
+    // precision is 17/18. Arm A is unchanged by the arm-isolated correction.
+    Assert.assertEq(expected = Some((11, 12)), metricPair("task-micro", "B", "all", "valid-precision", corrected));
+    Assert.assertEq(expected = Some((11, 12)), metricPair("task-micro", "B", "all", "resolved-precision", corrected));
+    Assert.assertEq(expected = Some((6, 37)), metricPair("task-micro", "B", "all", "augmented-recall", corrected));
+    Assert.assertEq(expected = Some((17, 18)), metricPair("repo-macro", "B", "all", "valid-precision", corrected));
+    Assert.assertEq(expected = Some((17, 18)), metricPair("repo-macro", "B", "all", "resolved-precision", corrected));
+    Assert.assertEq(expected = Some((9, 10)), metricPair("task-micro", "A", "all", "valid-precision", corrected));
+    Assert.assertEq(expected = Some((9, 10)), metricPair("task-micro", "A", "all", "resolved-precision", corrected));
+    // The ORIGINAL biased table is retained as labelled provisional history: its
+    // B all-findings valid precision stays the frozen 75.0% (3/4) it always was,
+    // and it is never overwritten by the correction.
+    Assert.assertEq(expected = Some((3, 4)), metricPair("task-micro", "B", "all", "valid-precision", provisional));
+    Assert.assertEq(expected = Some((7, 9)), metricPair("repo-macro", "B", "all", "valid-precision", provisional));
+    Assert.assertEq(expected = Some((9, 10)), metricPair("task-micro", "A", "all", "valid-precision", provisional));
+    // Every corrected contrast row carries both the biased and the corrected
+    // value, so the old and the new are always reported side by side.
+    Assert.assertEq(expected = true,
+        List.forAll(row -> List.length(row) == 7, qualityContrastRows(provisional, corrected)))
 }
+
+/// One quality row's exact integer pair, or nothing when the row is absent.
+def metricPair(scope: String, arm: String, view: String, metric: String,
+    rows: List[QualityRow]): Option[(Int32, Int32)] =
+    Option.map(row -> (row#numerator, row#denominator),
+        List.find(row -> row#scope == scope and row#arm == arm and row#view == view
+            and row#metric == metric, rows))
 
 def qualityRow(row: QualityRow): List[String] =
     List#{"quality", row#scope, row#arm, row#view, row#metric, row#percent,

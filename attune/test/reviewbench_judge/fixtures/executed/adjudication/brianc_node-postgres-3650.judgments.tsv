@@ -1,0 +1,1 @@
+adjudged	brianc_node-postgres-3650	C5	valid	In packages/pg/lib/query.js, handleReadyForQuery and handleError invoke this.callback(...), giving ordinary callbacks the Query receiver. The new enrichedCb in packages/pg/lib/client.js forwards via origCb(err, res), losing that receiver when tracing is enabled and breaking callbacks that rely on this.text or other query state.

@@ -977,6 +977,235 @@ def sumNewCandidates(acc: Int32, pair: (String, List[ReviewBenchJudge.Classified
         case (_, _, counts) => acc + counts#candidates
     }
 
+// ------------------------------------------------------ corrected metric view
+
+///
+/// The declared corrected full-metric view (`VAL-REVIEW-005`).
+///
+/// The final economics first read the original owner-judge reduction tree, whose
+/// `haoling` arm B candidates were invalidated ONLY as cross-arm restatements of
+/// arm A's — the confirmed bias the arm-isolated correction removed. This stage
+/// folds the ACTUAL corrective observations back into the FULL metric view: it
+/// re-reads the frozen per-task judge/count/verdict data of the executed judge
+/// family and the frozen corrective observations, replaces ONLY the applicable
+/// `haoling` per-arm adjudication counts, and reduces the result through the SAME
+/// canonical `Attune.Study.ReviewBenchJudge` classification and
+/// `Attune.Study.Metrics` exact ratios as the original report. It is
+/// provider-free and fixture-only: it declares NO dependency on the original live
+/// judge or adjudication producers, so building or replaying it can never re-key
+/// or re-execute an original session.
+///
+/// The stage first proves it is the same reducer by reproducing the frozen
+/// original `metrics.tsv` byte-for-byte from the same frozen inputs; only then
+/// does it emit the corrected view. If the exact reducer ever contradicted the
+/// frozen original, the assertion fails rather than being forced.
+///
+
+def executedJudgePaths(fixtures: List[String]): List[String] =
+    List.filter(path -> String.contains(substr = "/executed/judge/", path), fixtures)
+
+def executedAdjudicationPaths(fixtures: List[String]): List[String] =
+    List.filter(path -> String.contains(substr = "/executed/adjudication/", path), fixtures)
+
+def executedCorrectivePaths(fixtures: List[String]): List[String] =
+    List.filter(path -> String.contains(substr = "/executed/corrective/", path), fixtures)
+
+def frozenReportMetricsPath(fixtures: List[String]): Option[String] =
+    List.find(path -> String.contains(substr = "/executed/report/metrics.tsv", path), fixtures)
+
+/// The frozen original blinding map of the executed joint judge family, read from
+/// the one preserved record (`haoling-original-blinding.tsv`).
+def originalBlinding(fixtures: List[String]): List[(String, String, String, Int32)] \ IO =
+    match List.find(path -> matchesSuffix("haoling-original-blinding.tsv", path), fixtures) {
+        case Some(path) => parseBlinding(readText(path))
+        case None       => Nil
+    }
+
+/// The frozen review outcome record of the paired family, read from
+/// `paired-summary.tsv`; its distinct tasks are the metric population.
+def pairedOutcomes(fixtures: List[String]): List[(String, String, String, String, Int32)] \ IO =
+    match List.find(path -> matchesSuffix("paired-summary.tsv", path), fixtures) {
+        case Some(path) => outcomeRows(readText(path))
+        case None       => Nil
+    }
+
+/// The blinded candidate population of the paired family, RECONSTRUCTED from the
+/// frozen findings bytes and the frozen review outcome record exactly as the
+/// provider-free candidates stage does: the fresh positional id interleaves the
+/// two arms by rank, and each candidate carries its arm for scoring only. No
+/// executed candidates-stage output is read, so this stage declares no dependency
+/// on any original producer.
+///
+/// The reconstructed `rank` is deliberately ZERO. The blinded candidate
+/// projection physically carries no rank (the rank lives only in the separate
+/// blinding record the judge never sees), and the executed report classified
+/// exactly that rank-less projection. The canonical `claim` reduction sorts an
+/// arm's candidates by `rank` before resolving the raw correspondences, so the
+/// input order of equal-rank candidates is part of the frozen observation: this
+/// reconstruction feeds the SAME all-zero-rank projection the executed report
+/// did, which is what makes the provisional view reproduce the frozen table
+/// byte-for-byte.
+def reconstructedCandidates(fixtures: List[String], tasks: List[String]): List[ReviewBenchJudge.Candidate] \ IO =
+    List.flatMap(task -> {
+        let entries = interleaved(findingsFor(fixtures, task, "A"), findingsFor(fixtures, task, "B"));
+        List.map(pair -> match pair {
+            case (index, (arm, candidate)) => {
+                id = candidateId(index), task = task, arm = arm, rank = blindedRank(),
+                file = candidate#file, start = candidate#start, end = candidate#end,
+                severity = candidate#severity, category = candidate#category, message = candidate#message
+            }
+        }, List.zip(List.range(1, List.length(entries) + 1), entries))
+    }, tasks)
+
+/// The declared rank of a blinded candidate: the candidate projection carries no
+/// rank, so every reconstructed candidate is rank-less exactly as the executed
+/// report read it.
+def blindedRank(): Int32 = 0
+
+/// The fresh per-arm positional index of a corrective candidate id (`X1` -> 1).
+def freshIndexOf(id: String): Int32 = Option.getWithDefault(0, Int32.fromString(String.drop(1, id)))
+
+/// The blinded original candidate id that the executed joint judge family gave
+/// one arm's frozen-rank candidate, from the preserved blinding record.
+def blindedIdOf(
+    blinding: List[(String, String, String, Int32)],
+    task: String,
+    arm: String,
+    rank: Int32): Option[String] =
+    match List.find(entry -> match entry {
+        case (_, owner, entryArm, entryRank) => owner == task and entryArm == arm and entryRank == rank
+    }, blinding) {
+        case Some((id, _, _, _)) => Some(id)
+        case None                => None
+    }
+
+/// The ACTUAL corrective observations of one task, mapped back onto the executed
+/// joint judge family's blinded candidate ids: each corrective session's fresh
+/// id `X<i>` is its arm's `i`-th selected frozen-rank candidate, and that
+/// candidate's original blinded id is the joint family's own id. This is the only
+/// place the correction enters; every other task and every matched/reference
+/// result is the frozen executed observation.
+def correctedTaskAdjudications(
+    fixtures: List[String],
+    correctivePaths: List[String],
+    blinding: List[(String, String, String, Int32)],
+    task: String): List[ReviewBenchJudge.Adjudication] \ IO = {
+    let selections = correctiveSelections(fixtures);
+    List.flatMap(arm -> {
+        let ranks = selectedRanks(selections, arm);
+        let suffix = "_" + armLower(arm) + ".judgments.tsv";
+        let adj = List.flatMap(path -> parseAdjudications(readText(path)),
+            List.filter(path -> String.endsWith(suffix = suffix, path), correctivePaths));
+        List.flatMap(entry -> {
+            let index = freshIndexOf(entry#candidate);
+            match List.head(List.drop(index - 1, ranks)) {
+                case Some(rank) => match blindedIdOf(blinding, task, arm, rank) {
+                    case Some(id) => List#{ { task = task, candidate = id, status = entry#status,
+                        evidence = entry#evidence } }
+                    case None     => Nil
+                }
+                case None => Nil
+            }
+        }, adj)
+    }, List#{"A", "B"})
+}
+
+/// The full adjudication population of the corrected view: the frozen executed
+/// adjudications with ONLY the corrective task's per-arm observations substituted.
+def correctedAdjudications(
+    fixtures: List[String],
+    correctivePaths: List[String],
+    blinding: List[(String, String, String, Int32)],
+    task: String,
+    executed: List[ReviewBenchJudge.Adjudication]): List[ReviewBenchJudge.Adjudication] \ IO =
+    List.filter(entry -> entry#task != task, executed) ::: correctedTaskAdjudications(fixtures, correctivePaths, blinding, task)
+
+/// The exact integer pair of one canonical metric over one counts record, or
+/// nothing when the population is empty.
+def pairOfMetric(
+    metric: ReviewBenchJudge.JudgeMetric,
+    counts: ReviewBenchJudge.Counts): Option[(Int32, Int32)] =
+    Option.map(ratio -> Metrics.ratioPair(ratio), ReviewBenchJudge.metricRatio(metric, counts))
+
+/// The exact integer pair of one canonical macro mean, or nothing when the
+/// population is empty.
+def pairOfMacro(
+    judged: List[(String, String, String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)],
+    metric: ReviewBenchJudge.JudgeMetric,
+    arm: String,
+    view: String): Option[(Int32, Int32)] =
+    Option.map(ratio -> Metrics.ratioPair(ratio), macroFor(judged, metric, arm, view))
+
+def correctedMetricsStage(): Unit \ {Assert, IO} = {
+    let dir = outputsDir();
+    let fixtures = manifestPaths("fixtures");
+    let executedJudge = executedJudgePaths(fixtures);
+    let executedAdjudication = executedAdjudicationPaths(fixtures);
+    let correctivePaths = executedCorrectivePaths(fixtures);
+    let references = List.flatMap(path -> parseReferences(readText(path)),
+        List.filter(path -> String.endsWith(suffix = ".references.tsv", path), executedJudge));
+    let matches = List.flatMap(path -> parseMatches(readText(path)),
+        List.filter(path -> String.endsWith(suffix = ".judgments.tsv", path), executedJudge));
+    let adjudications = List.flatMap(path -> parseAdjudications(readText(path)),
+        List.filter(path -> String.endsWith(suffix = ".judgments.tsv", path), executedAdjudication));
+    let blinding = originalBlinding(fixtures);
+    let outcomes = pairedOutcomes(fixtures);
+    let tasks = List.distinct(List.map(row -> match row { case (task, _, _, _, _) => task }, outcomes));
+    let candidates = reconstructedCandidates(fixtures, tasks);
+    let arms = List#{"A", "B"};
+    let views = ReviewBenchJudge.views();
+    let correctiveTaskName = ReviewBenchJudge.correctiveTask();
+    let correctedAdj = correctedAdjudications(fixtures, correctivePaths, blinding, correctiveTaskName, adjudications);
+    // The SAME canonical reduction, twice: the frozen executed adjudications
+    // (the original, provisional view) and the corrected per-arm observations.
+    let judgedProvisional = List.flatMap(task -> judgedForTask(task, arms, views, references, matches, adjudications, candidates), tasks);
+    let judged = List.flatMap(task -> judgedForTask(task, arms, views, references, matches, correctedAdj, candidates), tasks);
+    writeText(dir, "corrected-metrics.tsv", renderTsv(metricTable(judged, arms, views)));
+    writeText(dir, "corrected-summary.tsv", renderTsv(summaryTable(judged, arms, views)));
+    writeText(dir, "corrected-counts.tsv", renderTsv(List.filterMap(countRowIf, judged)));
+    writeText(dir, "corrected-macro-population.tsv",
+        renderTsv(macroPopulationTable(judged, arms, views, List.length(tasks))));
+    let provisionalText = renderTsv(metricTable(judgedProvisional, arms, views));
+    writeText(dir, "provisional-metrics.tsv", provisionalText);
+    writeText(dir, "corrected-provenance.tsv", renderTsv(List#{
+        List#{"population", "references", Int32.toString(List.length(references))},
+        List#{"population", "judge-matches", Int32.toString(List.length(matches))},
+        List#{"population", "executed-adjudications", Int32.toString(List.length(adjudications))},
+        List#{"population", "corrected-adjudications", Int32.toString(List.length(correctedAdj))},
+        List#{"population", "blinded-candidates", Int32.toString(List.length(candidates))},
+        List#{"population", "tasks", Int32.toString(List.length(tasks))},
+        List#{"population", "corrective-task", correctiveTaskName}
+    }));
+    // The reduction reproduces the FROZEN original metric table exactly, so the
+    // corrected view is the same reducer over the same frozen data with only the
+    // corrective observations substituted. A contradiction fails rather than
+    // being forced.
+    match frozenReportMetricsPath(fixtures) {
+        case Some(path) => Assert.assertEq(expected = readText(path), provisionalText)
+        case None       => Assert.assertEq(expected = "a frozen report metrics path", "missing")
+    };
+    // The corrected all-findings task-micro cells: the `haoling` arm B validity is
+    // restored per arm, so valid/resolved precision is 11/12 and the augmented
+    // recall is 6/37. Arm A is unchanged, and the high view (which holds none of
+    // the `haoling` candidates) is unchanged.
+    Assert.assertEq(expected = Some((11, 12)),
+        pairOfMetric(ReviewBenchJudge.JudgeMetric.ValidPrecision, countsFor(judged, "B", ReviewBenchJudge.allView())));
+    Assert.assertEq(expected = Some((11, 12)),
+        pairOfMetric(ReviewBenchJudge.JudgeMetric.ResolvedPrecision, countsFor(judged, "B", ReviewBenchJudge.allView())));
+    Assert.assertEq(expected = Some((6, 37)),
+        pairOfMetric(ReviewBenchJudge.JudgeMetric.AugmentedRecall, countsFor(judged, "B", ReviewBenchJudge.allView())));
+    Assert.assertEq(expected = Some((17, 18)),
+        pairOfMacro(judged, ReviewBenchJudge.JudgeMetric.ValidPrecision, "B", ReviewBenchJudge.allView()));
+    Assert.assertEq(expected = Some((17, 18)),
+        pairOfMacro(judged, ReviewBenchJudge.JudgeMetric.ResolvedPrecision, "B", ReviewBenchJudge.allView()));
+    Assert.assertEq(expected = Some((9, 10)),
+        pairOfMetric(ReviewBenchJudge.JudgeMetric.ValidPrecision, countsFor(judged, "A", ReviewBenchJudge.allView())));
+    Assert.assertEq(expected = metricTable(judgedProvisional, List#{"A"}, views),
+        metricTable(judged, List#{"A"}, views));
+    Assert.assertEq(expected = metricTableFor(judgedProvisional, "B", ReviewBenchJudge.highView()),
+        metricTableFor(judged, "B", ReviewBenchJudge.highView()))
+}
+
 // ---------------------------------------------------------------- dispatcher
 
 @Test
@@ -986,5 +1215,6 @@ def theDeclaredReviewBenchJudgeStageMaterializesItsArtifact(): Unit \ {Assert, I
     else if (stage == "reviewbench_judge_report") reportStage()
     else if (stage == "reviewbench_corrective_candidates") correctiveStage()
     else if (stage == "reviewbench_corrective_report") correctiveReportStage()
+    else if (stage == "reviewbench_corrected_metrics") correctedMetricsStage()
     else Assert.assertEq(expected = "a declared reviewbench judge stage name", stage)
 }

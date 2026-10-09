@@ -6067,11 +6067,18 @@ study, published INLINE in this one root report rather than in any timestamped
 copy. Every number below is reduced provider-free from the already-frozen
 admission records, the 20 review receipts and the owner-judge reduction tree of
 the sections above; nothing is re-run, no provider is called, and no finding,
-gold label or judge verdict is altered. The reduction is
+gold label or judge verdict is altered. The quality table and the graph use the
+**corrected** view — the owner-approved arm-isolated correction of the `haoling`
+cross-arm duplicate bias (the section above) folded back through the ONE
+canonical reducer — while the original biased table is retained beside it as
+labelled provisional history. The reduction is
 `//test/reviewbench_economics:reviewbench_economics_report` (a `manual` stage
-whose outputs sit under `bazel-bin/test/reviewbench_economics/`), the scientific
-statements live in the production owner `Attune.Study.ReviewBenchEconomics`, and
-the corpus-free laws are `//test/reviewbench_economics:reviewbench_economics_law`.
+whose outputs sit under `bazel-bin/test/reviewbench_economics/`), which binds the
+provider-free corrected view
+`//test/reviewbench_judge:reviewbench_corrected_metrics` as a declared input; the
+scientific statements live in the production owner
+`Attune.Study.ReviewBenchEconomics`, and the corpus-free laws are
+`//test/reviewbench_economics:reviewbench_economics_law`.
 **No positive result is required and none is claimed**: this is the honest paired
 measurement of a small exploratory cohort, with every bounded failure retained in
 the denominator.
@@ -6110,14 +6117,19 @@ unselected rows.
 ### Paired quality (the one canonical `Attune.Study.Metrics` reducer)
 
 All-findings, task-micro over the 10-task denominator. These are the frozen
-reducer's own exact ratios, re-read rather than recomputed:
+reducer's own exact ratios, re-read rather than recomputed. The **primary** table
+is the **corrected view**: the SAME canonical `Attune.Study.ReviewBenchJudge`
+classification and `Attune.Study.Metrics` exact ratios, re-run over the frozen
+per-task judge/adjudication observations with ONLY the owner-approved arm-isolated
+`haoling` per-arm adjudications substituted, and bound here as the declared
+immutable producer `//test/reviewbench_judge:reviewbench_corrected_metrics`:
 
 | View | Arm | Known recall | Grounded precision | Valid precision | Resolved precision | Augmented recall |
 | --- | --- | --- | --- | --- | --- | --- |
 | all | A | 11.1% (1/9) | 85.7% (6/7) | 90.0% (9/10) | 90.0% (9/10) | 14.7% (11/75) |
-| all | B | 13.9% (5/36) | 90.0% (9/10) | 75.0% (3/4) | 75.0% (3/4) | 13.9% (5/36) |
+| all | B | 13.9% (5/36) | 90.0% (9/10) | **91.7% (11/12)** | **91.7% (11/12)** | **16.2% (6/37)** |
 | medium-high | A | 22.2% (2/9) | 85.7% (6/7) | 90.0% (9/10) | 90.0% (9/10) | 28.2% (11/39) |
-| medium-high | B | 25.0% (1/4) | 88.9% (8/9) | 66.7% (2/3) | 72.7% (8/11) | 25.0% (1/4) |
+| medium-high | B | 25.0% (1/4) | 88.9% (8/9) | **83.3% (5/6)** | **90.9% (10/11)** | **28.9% (11/38)** |
 | high | A | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) |
 | high | B | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) |
 
@@ -6125,19 +6137,41 @@ Repo-macro (mean of the defined per-task ratios, all-findings view): A known
 recall 12.1% (865/7128), grounded precision 87.5% (7/8), valid precision 90.0%
 (9/10), resolved precision 90.0% (9/10), augmented recall 15.8% (667/4212); B
 known recall 16.4% (1171/7128), grounded precision 93.3% (14/15), valid precision
-77.8% (7/9), resolved precision 77.8% (7/9), augmented recall 16.4%
-(1171/7128). A per-task ratio with an empty denominator is **excluded from the
-macro mean rather than counted as a zero**, so the two scopes differ where a
-metric is undefined for some tasks; both scopes are emitted in
+**94.4% (17/18)**, resolved precision **94.4% (17/18)**, augmented recall
+**19.0% (17,599/92,664)**. A per-task ratio with an empty denominator is
+**excluded from the macro mean rather than counted as a zero**, so the two scopes
+differ where a metric is undefined for some tasks; both scopes are emitted in
 `economics-quality.tsv` (59 defined rows).
 
-The `valid precision` above is the **automatic provisional** score of the frozen
-owner-judge summary, kept SEPARATE from the independent-agent adjudication. The
-owner-approved arm-isolated correction (the previous section) moves the
-`haoling` **B** arm's valid precision from 0.0% to 100.0% over the corrected
-per-arm observations; that corrected value is reported in the correction
-section and is **not** folded back into the frozen provisional table here, so old
-and new stay separated.
+The corrected view restores the `haoling` **B** arm's two genuine findings, which
+the original joint adjudication had invalidated ONLY as cross-arm restatements of
+arm A's. It moves B's all-findings valid precision 75.0% → **91.7%** and
+repo-macro 77.8% → **94.4%**, and B's all-findings augmented recall
+13.9% → **16.2%**; arm A is unchanged (the correction is arm-isolated), and the
+high view (which holds none of the `haoling` candidates) is unchanged. Both
+severity views and both scopes move together, because the whole view is re-reduced
+through the one canonical path rather than patched.
+
+#### Original biased provisional table (retained history)
+
+The **first** economics published the ORIGINAL joint owner-judge reduction tree,
+whose `haoling` B candidates carried that same bias. That table is retained
+verbatim as labelled history in `economics-quality-provisional.tsv` and is **not**
+the reported result:
+
+| Scope | View | Arm | Valid precision | Resolved precision | Augmented recall |
+| --- | --- | --- | --- | --- | --- |
+| task-micro | all | A | 90.0% (9/10) | 90.0% (9/10) | 14.7% (11/75) |
+| task-micro | all | B | 75.0% (3/4) | 75.0% (3/4) | 13.9% (5/36) |
+| task-micro | medium-high | B | 66.7% (2/3) | 72.7% (8/11) | 25.0% (1/4) |
+| repo-macro | all | B | 77.8% (7/9) | 77.8% (7/9) | 16.4% (1171/7128) |
+
+Every biased and corrected value is reported side by side, unaltered, in
+`economics-quality-contrast.tsv` (12 rows); nothing is overwritten and no history
+is deleted. The corrected values are produced by the canonical reducer, not by a
+manual percentage patch, and the stage re-derives the frozen original
+`metrics.tsv` byte-for-byte from the same frozen inputs before emitting the
+corrected view.
 
 ### Elapsed and work (paired per-arm)
 
@@ -6227,9 +6261,9 @@ assumptions, not measurements.
 ### Cost-latency-quality graphs
 
 The inline graph is generated by the owner from the frozen values (a bounded,
-pure-ASCII scatter of each arm's all-findings valid precision against its median
-fresh turn wall, with the two-arm latency bars above it). Two points on the same
-cell share an `X` rather than overwriting:
+pure-ASCII scatter of each arm's **corrected** all-findings valid precision
+against its median fresh turn wall, with the two-arm latency bars above it). Two
+points on the same cell share an `X` rather than overwriting:
 
 ```text
 arm A median fresh turn wall 38466.5 ms |###########################|
@@ -6237,9 +6271,9 @@ arm B median fresh turn wall 42597.0 ms |##############################|
 
 valid precision (%) ^
 100% |                     
- 90% |                  O  
+ 90% |                  O O
  80% |                     
- 70% |                    O
+ 70% |                     
  60% |                     
  50% |                     
  40% |                     
@@ -6252,10 +6286,13 @@ valid precision (%) ^
 ```
 
 Read plainly: on this small cohort the two arms sit close together on latency
-(A median 38.5 s, B median 42.6 s) while arm A holds the higher provisional valid
-precision (90.0% vs 75.0%). The assisted-context arm B is not faster and is not
-more precise here; the cohort is far too small (10 tasks, 12 scored reviews) to
-claim any ranking-quality difference, and none is claimed.
+(A median 38.5 s, B median 42.6 s) and, on the **corrected** view, equally close
+on all-findings valid precision (A 90.0%, B 91.7%). The earlier graph, which used
+the biased original table, put arm B lower (75.0%) and was an artifact of the
+cross-arm duplicate bias now removed; the corrected graph is the honest one. No
+ranking-quality difference is claimed either way: the cohort is far too small
+(10 tasks, 12 scored reviews) to support one, and the flat latency and the
+near-identical precision do not establish that arm B is better or worse.
 
 ### Timing priors versus measured values
 
@@ -6287,24 +6324,54 @@ The reduction replays against the native public test interface only and executes
 
 ### The result, stated honestly
 
-This is a **valid negative-to-flat** first paired result: the assisted-context
-arm B is neither faster nor more precise than the plain arm A on this 10-task
-cohort, and four of the ten tasks exhausted the token budget in both arms. The
-planned 24-task × 2-arm = 48 denominator is retained, the 14-task attrition and
-the eight retained token-cap failures are named rather than dropped, and the
-all-219 population is carried beside the 24 selected and 10 admitted. No whole
-mission acceptance is claimed, and no pending assertion is manufactured.
+This is a **valid flat** first paired result on the **corrected** view: the
+assisted-context arm B is neither faster nor clearly more precise than the plain
+arm A on this 10-task cohort — the corrected all-findings valid precision is
+A 90.0% versus B 91.7% (one candidate apart, on 12 scored findings), the corrected
+repo-macro valid precision is A 90.0% versus B 94.4%, and the two arms are within
+a few seconds on median fresh turn wall — and four of the ten tasks exhausted the
+token budget in both arms. The corrected view is a **correction of a known
+scoring bias**, not evidence that arm B is better: the earlier 75.0% / 77.8% for
+arm B was an artifact of the original joint adjudication invalidating arm B's
+genuine findings purely as cross-arm duplicates of arm A's. No positive or
+ranking-quality conclusion is drawn, and none is required. The planned
+24-task × 2-arm = 48 denominator is retained, the 14-task attrition and the eight
+retained token-cap failures are named rather than dropped, and the all-219
+population is carried beside the 24 selected and 10 admitted. No whole-mission
+acceptance is claimed, and no pending assertion is manufactured.
 
 ### Commands (see `services.yaml`)
 
 `reviewbench_economics_report` (the provider-free reduction stage) and
 `reviewbench_economics_law` (the corpus-free laws) are the declared actions. The
 report stage is `manual` and runs host-local under
-`--modify_execution_info=AttuneStudyStage=+no-remote`; the law target is
-corpus-free and part of `//...`.
+`--modify_execution_info=AttuneStudyStage=+no-remote`; it binds the provider-free
+`//test/reviewbench_judge:reviewbench_corrected_metrics` corrected view as a
+declared input, so a replay executes **zero** fresh provider or live-producer
+actions. The law target is corpus-free and part of `//...`.
 
 ### Update history
 
+- Corrected-economics consistency repair (2026-10-08): the final economics
+  first re-read the ORIGINAL joint owner-judge `metrics.tsv`, whose `haoling`
+  arm B candidates carried the confirmed cross-arm duplicate bias, so its quality
+  table, graph and prose contradicted the approved arm-isolated correction. A new
+  provider-free stage
+  (`//test/reviewbench_judge:reviewbench_corrected_metrics`) re-reads the FROZEN
+  per-task judge/adjudication/corrective observations, substitutes ONLY the
+  corrective `haoling` per-arm adjudications and re-reduces the full
+  all/medium-high/high task-micro/repo-macro view through the SAME canonical
+  `Attune.Study.ReviewBenchJudge`/`Attune.Study.Metrics` path; it first reproduces
+  the frozen original `metrics.tsv` byte-for-byte from the same frozen inputs.
+  `//test/reviewbench_economics:reviewbench_economics_report` now binds that
+  corrected view as a declared input and reports the corrected B all-findings
+  valid precision 91.7% (11/12), repo-macro 94.4% (17/18) and augmented recall
+  16.2% (6/37) beside arm A's unchanged 90.0%. The original biased table is
+  retained as labelled provisional history (`economics-quality-provisional.tsv`)
+  with every old/new value in `economics-quality-contrast.tsv`. The incremental
+  correction usage (78,741 tokens / 32,145 ms / 2 sessions) is unchanged and
+  separate. No review, judge, adjudication, corrective session or corpus
+  acquisition was re-run: the repair is a provider-free replay of frozen fixtures.
 - ReviewBench paired-economics result (this section): the first exploratory paired
   result is published inline over the frozen admission/review/judge records. Typed
   admission/source/finding/judge provenance, the paired quality and elapsed

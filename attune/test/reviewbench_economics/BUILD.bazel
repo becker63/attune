@@ -49,12 +49,27 @@ attune_path_manifest(
 # Provider-free: 0 review actions, 0 judge actions, 0 Grit and 0 Theory work, so
 # a replay is fixture-only with ZERO provider calls. `manual`, so the ordinary
 # `bazel test //...` gate never runs it.
+#
+# The quality table and the graph's y axis are bound to the DECLARED immutable
+# corrected view `//test/reviewbench_judge:reviewbench_corrected_metrics` (the
+# canonical `Attune.Study.ReviewBenchJudge`/`Attune.Study.Metrics` reduction of
+# the frozen judge/adjudication/corrective observations). The stage reads that
+# provider-free producer tree directly rather than a hand-copied table, so the
+# economics quality statement can never drift from the correction, while the
+# ORIGINAL biased `fixtures/judge/metrics.tsv` is retained as labelled
+# provisional history.
 native_study_stage(
     name = "reviewbench_economics_report",
     srcs = STAGE_SRCS,
     extra_inputs = glob(["fixtures/**"]),
-    input_names = ["fixtures"],
-    inputs = [":economics_fixtures"],
+    input_names = [
+        "fixtures",
+        "corrected",
+    ],
+    inputs = [
+        ":economics_fixtures",
+        "//test/reviewbench_judge:reviewbench_corrected_metrics",
+    ],
     java_deps = [
         "//platform/tools/grit:attune_grit",
         "//platform/tools/reviewbench:attune_reviewbench",

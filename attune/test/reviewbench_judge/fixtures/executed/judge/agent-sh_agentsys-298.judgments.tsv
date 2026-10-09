@@ -1,0 +1,4 @@
+judged	agent-sh_agentsys-298	C1	15	The collector calls runAnalyzer without options, leaving execFileSync's default output buffer limit for the full git map.
+judged	agent-sh_agentsys-298	C2	15	The full map uses execFileSync's default buffer limit, and opts.top truncates hotspots only after the output is parsed.
+judged	agent-sh_agentsys-298	C3	4	adjustForAi is documented and accepted but never read, so the bus factor always uses unadjusted human commit counts.
+judged	agent-sh_agentsys-298	C4	4	The bus factor calculation never checks adjustForAi, producing the same result for true and false.

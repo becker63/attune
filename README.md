@@ -535,11 +535,18 @@ paired quality and elapsed tables, the separate cost lines with explicit
 `Unavailable` markers (only the hosted Qwen and JEV dollars were actually
 returned), the cold/warm-fresh/replay regimes, the 1/3/10 reviews-per-repository
 index amortization with its stated assumptions, and the inline
-cost-latency-quality graphs. It is reduced provider-free by
+cost-latency-quality graphs. The quality table and graph use the **corrected**
+view — the owner-approved arm-isolated correction of the `haoling` cross-arm
+duplicate bias, re-reduced through the one canonical
+`Attune.Study.ReviewBenchJudge`/`Attune.Study.Metrics` path by the provider-free
+`//test/reviewbench_judge:reviewbench_corrected_metrics` and bound as a declared
+input — with the original biased table retained as labelled provisional history.
+It is reduced provider-free by
 `//test/reviewbench_economics:reviewbench_economics_report` over the frozen
 receipts and the frozen owner-judge tree, with corpus-free laws in
-`//test/reviewbench_economics:reviewbench_economics_law`; the first exploratory
-result is flat on the 10-task cohort and no positive outcome is claimed.
+`//test/reviewbench_economics:reviewbench_economics_law`; the corrected first
+exploratory result is flat on the 10-task cohort and no positive outcome is
+claimed.
 
 ## Scoped SIWC renewal
 
