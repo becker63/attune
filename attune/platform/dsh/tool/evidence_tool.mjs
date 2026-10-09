@@ -9,13 +9,19 @@
 ///    constraint is refused rather than widened;
 ///  - its body enforces the runtime world/range/permission boundary
 ///    (`boundary.mjs`) BEFORE any sealed source byte is read;
-///  - it validates the acquired document against the generated contract
-///    factories when the declared package is present, and returns the canonical
-///    reference projection the Flix operation also produces.
+///  - the projection it returns is the COMPILED Flix operation's own
+///    materialized record, served from the declared `evidence_operation` stage
+///    tree (`reference-projections.tsv`), and validated against the generated
+///    contract factories.
 ///
-/// Typert does not register this tool and this plugin does not consume the
-/// Typert declaration as a tool schema; the two schema systems stay distinct and
-/// the bridge is the only lowering step between them. The tool acquires
+/// The tool therefore computes NO projection field and classifies no delivery:
+/// world, revision, path, digest, range, byte count and delivery all come from
+/// the canonical `Attune.Study.EvidenceOperation` meaning the pinned compiler
+/// actually ran, and this module only verifies that the served record is the
+/// requested region and that the sealed bytes match the declared identity
+/// digest. Typert does not register this tool and this plugin does not consume
+/// the Typert declaration as a tool schema; the two schema systems stay distinct
+/// and the bridge is the only lowering step between them. The tool acquires
 /// evidence; it decides no defect and no policy.
 ///
 /// @module attune.dsh.evidence-tool
@@ -46,6 +52,17 @@ export const DECLARED_CONTRACT_PACKAGE = fileURLToPath(
   new URL('../typert_package_a/package', import.meta.url),
 )
 
+/// The declared COMPILED evidence operation of the narrow evidence substrate:
+/// the tree the `//platform/dsh:evidence_operation_projection` stage action
+/// materialized from the canonical Flix operation. The tool serves these
+/// records, so the live tool path returns the compiled operation's output
+/// rather than a TypeScript re-derivation of it. A run may override the
+/// location through its declared config or the `ATTUNE_EVIDENCE_PROJECTION`
+/// environment variable.
+export const DECLARED_OPERATION_PROJECTION = fileURLToPath(
+  new URL('../evidence_operation_projection/reference-projections.tsv', import.meta.url),
+)
+
 /// The frozen versioned wire contract of the narrow evidence substrate. It is a
 /// declared input of every action that loads this plugin. The location is
 /// resolved at load time, never assumed: an explicit `contractWire` config value
@@ -72,8 +89,8 @@ export const PARAMETER_MEMBERS = [
 ]
 
 /// The eight canonical reference-projection fields, in the order the Flix
-/// operation emits them. The projection is derived from the acquired region,
-/// never authored separately.
+/// operation emits them. The projection is the compiled operation's record,
+/// never authored separately here.
 export const PROJECTION_FIELDS = [
   'world',
   'revision',
@@ -96,23 +113,88 @@ function requireDeclared(config, key, envName, fallback) {
   return value
 }
 
-/// Validate the acquired reference document against the generated contract
+/// The exact identity key of one acquired region, in the canonical
+/// `world|revision|path|sha256|startLine|endLine` form the Flix contract's
+/// `evidenceKey` emits. The tool looks a request up by this key; it never
+/// fabricates a key for a region the compiled operation did not materialize.
+export function regionKey(acquired) {
+  return [
+    acquired.world,
+    acquired.revision,
+    acquired.path,
+    acquired.sha256,
+    String(acquired.startLine),
+    String(acquired.endLine),
+  ].join('|')
+}
+
+/// Load the compiled Flix operation's materialized records: one canonical
+/// projection per declared region, keyed by the exact evidence identity. An
+/// absent or unreadable file fails closed rather than falling back to a
+/// TypeScript re-derivation of the projection.
+export function loadCompiledProjection(config) {
+  const path = requireDeclared(
+    config,
+    'projection',
+    'ATTUNE_EVIDENCE_PROJECTION',
+    DECLARED_OPERATION_PROJECTION,
+  )
+  let text
+  try {
+    text = readFileSync(path, 'utf8')
+  } catch (cause) {
+    throw new BoundaryRefusal(
+      `the compiled evidence operation is not present at ${path}: ${cause.code ?? cause.message}`,
+    )
+  }
+  const rows = new Map()
+  for (const line of text.split('\n')) {
+    if (line.trim().length === 0) continue
+    const separator = line.indexOf('\t')
+    if (separator < 0) {
+      throw new BoundaryRefusal('the compiled evidence operation carries a malformed record')
+    }
+    const key = line.slice(0, separator)
+    const fields = Object.fromEntries(
+      line
+        .slice(separator + 1)
+        .split('\t')
+        .map((entry) => {
+          const equals = entry.indexOf('=')
+          return [entry.slice(0, equals), entry.slice(equals + 1)]
+        }),
+    )
+    if (!sameFieldSet(Object.keys(fields), PROJECTION_FIELDS)) {
+      throw new BoundaryRefusal(
+        'the compiled evidence operation does not carry the declared projection field set',
+      )
+    }
+    rows.set(key, fields)
+  }
+  return { path, rows }
+}
+
+function sameFieldSet(candidate, declared) {
+  return candidate.length === declared.length && declared.every((field) => candidate.includes(field))
+}
+
+/// Validate the served reference document against the generated contract
 /// factories of the declared package, so the tool can never emit a document the
 /// generated contract would reject.
-async function validateAgainstGeneratedContract(acquired, packageRoot) {
+async function validateAgainstGeneratedContract(fields, packageRoot) {
   const module = await import(pathToFileURL(join(packageRoot, 'lib', 'typert.host.js')).href)
   if (typeof module.EvidenceRef !== 'function') {
     throw new BoundaryRefusal('the declared generated contract does not expose the EvidenceRef factory')
   }
   const document = {
-    world: acquired.world,
-    revision: acquired.revision,
-    path: acquired.path,
-    sha256: acquired.sha256,
-    startLine: acquired.startLine,
-    endLine: acquired.endLine,
-    bytes: acquired.bytes,
-    delivery: acquired.delivery,
+    world: fields.world,
+    revision: fields.revision,
+    path: fields.path,
+    sha256: fields.sha256,
+    startLine: Number.parseInt(fields.startLine, 10),
+    endLine: Number.parseInt(fields.endLine, 10),
+    bytes: Number.parseInt(fields.bytes, 10),
+    delivery: fields.delivery,
   }
   const result = module.EvidenceRef().safeParse(document)
   if (!result.success) {
@@ -120,7 +202,8 @@ async function validateAgainstGeneratedContract(acquired, packageRoot) {
   }
 }
 
-/// Acquire one exact declared region and return the canonical projection.
+/// Acquire one exact declared region and return the compiled operation's
+/// canonical projection of it.
 export async function executeEvidenceOperation(args, config) {
   const manifestPath = requireDeclared(
     config,
@@ -135,27 +218,32 @@ export async function executeEvidenceOperation(args, config) {
     DECLARED_SOURCE_ROOT,
   )
   const manifest = parseWorldManifest(readFileSync(manifestPath, 'utf8'))
+  // The mechanical boundary: scope, range, permission and traversal are all
+  // refused here, and the sealed bytes are read and digest-verified only after
+  // every refusal.
   const acquired = acquireRegion(args, { manifest, sourceRoot })
+  // The semantic half is the compiled Flix operation's own record. The tool
+  // serves it verbatim; it classifies no delivery and orders no field itself.
+  const compiled = loadCompiledProjection(config)
+  const fields = compiled.rows.get(regionKey(acquired))
+  if (fields === undefined) {
+    throw new BoundaryRefusal(
+      'the compiled evidence operation carries no projection for the requested region of that world',
+    )
+  }
+  if (fields.sha256 !== acquired.sha256) {
+    throw new BoundaryRefusal(
+      'the compiled evidence operation projection does not match the sealed source bytes',
+    )
+  }
   const packageRoot =
     config?.contractPackage ?? process.env.ATTUNE_EVIDENCE_CONTRACT ?? DECLARED_CONTRACT_PACKAGE
   if (typeof packageRoot === 'string' && packageRoot.length > 0) {
-    // The typed document (numeric range/byte counts) is what the generated
-    // contract validates; the model-facing projection is the string form below.
-    await validateAgainstGeneratedContract(acquired, packageRoot)
+    await validateAgainstGeneratedContract(fields, packageRoot)
   }
-  // The projection is the eight canonical reference fields as strings, exactly
-  // the shape the Flix `referenceProjection` emits and the declared output
-  // schema describes.
-  return {
-    world: acquired.world,
-    revision: acquired.revision,
-    path: acquired.path,
-    sha256: acquired.sha256,
-    startLine: String(acquired.startLine),
-    endLine: String(acquired.endLine),
-    bytes: String(acquired.bytes),
-    delivery: acquired.delivery,
-  }
+  // The returned record is the compiled operation's canonical projection, in
+  // the declared field order, as the strings the Flix projection emits.
+  return Object.fromEntries(PROJECTION_FIELDS.map((field) => [field, fields[field]]))
 }
 
 /// Register the tool on `ctx.tools`. The parameter spec is projected from the

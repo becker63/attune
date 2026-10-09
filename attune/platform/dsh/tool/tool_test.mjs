@@ -21,7 +21,15 @@ import { tmpdir } from 'node:os'
 
 import { BridgeRefusal } from '../typert/bridge.mjs'
 import { acquireRegion, parseWorldManifest } from './boundary.mjs'
-import { apply, loadWireContract, PARAMETER_MEMBERS, PROJECTION_FIELDS } from './evidence_tool.mjs'
+import {
+  apply,
+  DECLARED_OPERATION_PROJECTION,
+  loadCompiledProjection,
+  loadWireContract,
+  PARAMETER_MEMBERS,
+  PROJECTION_FIELDS,
+  regionKey,
+} from './evidence_tool.mjs'
 import { defineToolParametersFromWire } from './tool_schema.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -35,6 +43,14 @@ const CONTRACT_PACKAGE = resolve(HERE, '..', 'typert_package_a', 'package')
 function expectedReference() {
   const line = readFileSync(EXPECTED_REFERENCE, 'utf8').trim()
   return Object.fromEntries(line.split('\t').map((entry) => entry.split('=')))
+}
+
+/// The one canonical projection record the COMPILED Flix operation materialized
+/// into its declared tree, parsed into its declared fields.
+function compiledProjection() {
+  const { rows } = loadCompiledProjection({})
+  assert.equal(rows.size, 1, 'the compiled operation must materialize exactly one declared region')
+  return [...rows.values()][0]
 }
 
 /// Register the plugin into a capturing registry and return the definition the
@@ -85,9 +101,18 @@ test('the registered definition carries the compiled DSH parameter schema', () =
   assert.equal(definition.parameters.properties.world.type, 'string')
 })
 
+// -------------------------------------------------- the compiled operation
+
+test('the compiled Flix operation materializes the frozen parity projection', () => {
+  // The declared stage action ran the pinned compiler over the canonical
+  // `Attune.Study.EvidenceOperation` meaning; this reads what it actually wrote.
+  assert.equal(DECLARED_OPERATION_PROJECTION.endsWith('evidence_operation_projection/reference-projections.tsv'), true)
+  assert.deepEqual(compiledProjection(), expectedReference())
+})
+
 // --------------------------------------------------------------- the boundary
 
-test('an allowed region is acquired and projected to the frozen parity target', async () => {
+test('an allowed region is acquired and the compiled operation projection is served', async () => {
   const definition = registeredDefinition({
     worldManifest: MANIFEST,
     sourceRoot: SEALED_ROOT,
@@ -95,7 +120,49 @@ test('an allowed region is acquired and projected to the frozen parity target', 
   })
   const value = await definition.execute(ALLOWED, {})
   assert.deepEqual(Object.keys(value), PROJECTION_FIELDS)
+  // The served record is byte-for-byte the compiled Flix operation's own record
+  // and the frozen cross-language parity target: the tool authored neither.
+  assert.deepEqual(value, compiledProjection())
   assert.deepEqual(value, expectedReference())
+})
+
+test('the tool refuses a request the compiled operation did not materialize', async () => {
+  // A strict sub-range of the declared region is inside the world, but it is not
+  // a declared operation region, so no compiled projection backs it: the tool
+  // refuses rather than reclassifying a delivery of its own.
+  const definition = registeredDefinition({ worldManifest: MANIFEST, sourceRoot: SEALED_ROOT })
+  await assert.rejects(
+    definition.execute({ ...ALLOWED, endLine: 1 }, {}),
+    (error) => error.name === 'BoundaryRefusal' && /not the declared operation region/.test(error.message),
+  )
+})
+
+test('a missing compiled operation fails closed instead of re-deriving a projection', async () => {
+  const absent = join(TMP, 'attune-tool-absent-operation', 'reference-projections.tsv')
+  await assert.rejects(
+    registeredDefinition({ worldManifest: MANIFEST, sourceRoot: SEALED_ROOT, projection: absent }).execute(
+      ALLOWED,
+      {},
+    ),
+    (error) => error.name === 'BoundaryRefusal' && /compiled evidence operation is not present/.test(error.message),
+  )
+})
+
+test('a projection the sealed bytes do not match is refused', () => {
+  const rows = new Map([
+    [
+      [
+        'world-evidence-1',
+        'rev-1',
+        'source/shop.ts',
+        '0'.repeat(64),
+        '1',
+        '2',
+      ].join('|'),
+      Object.fromEntries(PROJECTION_FIELDS.map((field) => [field, field === 'sha256' ? '0'.repeat(64) : '1'])),
+    ],
+  ])
+  assert.notEqual(regionKey({ ...ALLOWED, sha256: '1'.repeat(64) }), [...rows.keys()][0])
 })
 
 test('an out-of-scope region is refused before any sealed source is read', async () => {

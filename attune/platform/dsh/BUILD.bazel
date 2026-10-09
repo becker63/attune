@@ -16,6 +16,7 @@ the action.
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_test")
 load("@aspect_rules_js//npm:defs.bzl", "npm_link_package")
 load("@dsh_npm//:defs.bzl", "npm_link_all_packages")
+load("//platform/build:native.bzl", "native_study_stage")
 load("//platform/dsh:dsh_agent.bzl", "dsh_agent_run")
 load("//platform/dsh:typert_package.bzl", "typert_package")
 
@@ -57,6 +58,42 @@ npm_link_package(
     version = "0.0.0",
 )
 
+# The ONE declared compiled evidence operation (the mechanical bridge from the
+# native DSH tool to canonical Flix meaning).
+#
+# `native_study_stage` is ONE declared `ctx.actions.run` of the mechanical
+# launcher driving the pinned compiler's authentic native Tester over the
+# declared `evidence_operation` stage law: it reads the declared world manifest,
+# the declared world identity record, the declared facts and the ACTUAL declared
+# sealed source bytes, applies the canonical `Attune.Study.EvidenceOperation`
+# meaning, and materializes the operation's own canonical records
+# (`reference-projections.tsv`, `observation-projections.tsv`) into a declared
+# output tree. The authored DSH tool SERVES those materialized records, so the
+# live tool path returns the compiled operation's output rather than a
+# TypeScript re-derivation of it; no guard or packet policy is restated in TS.
+#
+# The stage law lives in `//test/study` (it is a fixture-scoped `@Test`
+# dispatcher, exactly like every other declared stage) while the ACTION is
+# declared here, so the materialized tree sits beside the tool that consumes it
+# and the tool resolves it without reaching for a path of its own.
+native_study_stage(
+    name = "evidence_operation_projection",
+    srcs = ["//test/study:evidence_operation_stage_srcs"],
+    input_names = [
+        "facts",
+        "manifest",
+        "source",
+        "world",
+    ],
+    inputs = [
+        "//platform/dsh/tool:fixtures/facts.tsv",
+        "//platform/dsh/tool:fixtures/boundary-world.tsv",
+        "//platform/dsh/tool:fixtures/source/shop.ts",
+        "//platform/dsh/tool:fixtures/world.tsv",
+    ],
+    stage = "evidence_operation",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The
@@ -66,6 +103,7 @@ npm_link_package(
 js_binary(
     name = "dsh",
     data = [
+        ":evidence_operation_projection",
         ":node_modules",
         ":node_modules/@attune/dsh-evidence-tool",
         ":typert_bridge",

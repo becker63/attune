@@ -79,6 +79,7 @@ js_test(
     data = [
         ":evidence_tool_fixtures",
         ":evidence_tool_package",
+        "//platform/dsh:evidence_operation_projection",
         "//platform/dsh:node_modules",
         "//platform/dsh:typert_bridge",
         "//platform/dsh:typert_package_a",

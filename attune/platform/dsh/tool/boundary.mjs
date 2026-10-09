@@ -73,6 +73,15 @@ export function resolveWithinRoot(sourceRoot, path) {
 /// Acquire one exact region inside the declared world. Every check that can
 /// refuse the request runs before the sealed source is opened, so a denied read
 /// returns no source bytes.
+///
+/// The acquisition is deliberately MECHANICAL: it validates the declared world
+/// identity, the requested range and the declared permission, then reads the
+/// declared bytes and computes their digest. It classifies nothing: the
+/// delivery, the projection and the outcome are the canonical Flix operation's
+/// own records, which the compiled `evidence_operation` stage materializes and
+/// the tool serves. A request for a range that is not exactly one declared
+/// region of the world is refused here rather than reclassified into a partial
+/// delivery, because no compiled operation region backs it.
 export function acquireRegion(request, { manifest, sourceRoot }) {
   const startLine = integer(request.startLine, 'startLine')
   const endLine = integer(request.endLine, 'endLine')
@@ -91,6 +100,9 @@ export function acquireRegion(request, { manifest, sourceRoot }) {
   if (startLine < row.startLine || endLine > row.endLine) {
     throw new BoundaryRefusal('the requested range is outside the declared region of that world')
   }
+  if (startLine !== row.startLine || endLine !== row.endLine) {
+    throw new BoundaryRefusal('the requested range is not the declared operation region of that world')
+  }
   if (row.permission !== 'read-only') {
     throw new BoundaryRefusal('the declared permission for that region does not admit a read')
   }
@@ -101,20 +113,16 @@ export function acquireRegion(request, { manifest, sourceRoot }) {
   if (sha256 !== row.sha256) {
     throw new BoundaryRefusal('the source bytes do not match the declared world identity digest')
   }
-  const lineCount = bytes.length === 0 ? 0 : bytes.toString('utf8').split('\n').length - (bytes.toString('utf8').endsWith('\n') ? 1 : 0)
-  // A delivery is complete only when the requested range is exactly the whole
-  // declared region; a sub-range is honestly partial and can never be reported
-  // as complete coverage.
-  const delivery = startLine === row.startLine && endLine === row.endLine ? 'complete' : 'partial'
+  const text = bytes.toString('utf8')
+  const lineCount = bytes.length === 0 ? 0 : text.split('\n').length - (text.endsWith('\n') ? 1 : 0)
   return {
-    world: request.world,
-    revision: request.revision,
-    path: request.path,
+    world: row.world,
+    revision: row.revision,
+    path: row.path,
     sha256,
-    startLine,
-    endLine,
-    bytes: bytes.length,
-    delivery,
+    startLine: row.startLine,
+    endLine: row.endLine,
+    byteLength: bytes.length,
     lineCount,
   }
 }

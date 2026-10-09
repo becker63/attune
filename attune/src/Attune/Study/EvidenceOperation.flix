@@ -19,7 +19,8 @@ pub mod Attune.Study.EvidenceOperation {
     use Attune.Coverage
     use Attune.Coverage.Outcome
     use Attune.Study.EvidenceSubstrate.{
-        Delivery, EvidenceObservation, EvidenceRef, deliveryName, observationIsNegative, refFindings
+        Delivery, EvidenceObservation, EvidenceRef, deliveryName, evidenceKey, observationIsNegative,
+        refFindings
     }
 
     /// The one version of the bounded evidence operation. It is deliberately
@@ -100,4 +101,36 @@ pub mod Attune.Study.EvidenceOperation {
         List.map(match (key, _) -> key, referenceProjection(
             { world = "", revision = "", path = "", sha256 = "", startLine = 1, endLine = 1, bytes = 0,
               delivery = Delivery.Complete }))
+
+    /// One exact declared region of one world: the region a world manifest row
+    /// names. The row IS the whole region the world declares, so its delivery is
+    /// `Complete`; a strict sub-range of it would be `Partial`, and that case
+    /// belongs to a caller that actually delivers a sub-range rather than to this
+    /// declared-region constructor.
+    pub def declaredRegion(
+        world: String,
+        revision: String,
+        path: String,
+        sha256: String,
+        startLine: Int32,
+        endLine: Int32,
+        bytes: Int32
+    ): EvidenceRef =
+        { world = world, revision = revision, path = path, sha256 = sha256,
+          startLine = startLine, endLine = endLine, bytes = bytes, delivery = Delivery.Complete }
+
+    /// The canonical serialized record of one delivered reference: the exact
+    /// evidence identity key followed by the canonical projection line. A DSH
+    /// tool that serves the compiled operation's materialized records and a Flix
+    /// replay of the same operation therefore compare the same bytes, and a
+    /// drifted key or projection cannot pass unnoticed.
+    pub def referenceRecord(ref: EvidenceRef): String =
+        evidenceKey(ref) + "\t" + projectionLine(referenceProjection(ref))
+
+    /// The canonical serialized record of one observation: the same exact
+    /// evidence identity key followed by the canonical observation projection,
+    /// so the delivered bytes stay bound to the outcome that was observed over
+    /// exactly those bytes.
+    pub def observationRecord(observation: EvidenceObservation): String =
+        evidenceKey(observation#ref) + "\t" + projectionLine(observationProjection(observation))
 }

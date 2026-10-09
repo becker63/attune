@@ -365,7 +365,7 @@ pub mod Attune.Study.EvidenceSubstrate {
     /// The exact identity of one acquired piece of evidence. World, revision,
     /// path, source digest and line range all participate, so bytes from another
     /// world or revision can never satisfy a request.
-    def evidenceKey(ref: EvidenceRef): String =
+    pub def evidenceKey(ref: EvidenceRef): String =
         ref#world + "|" + ref#revision + "|" + ref#path + "|" + ref#sha256 + "|"
             + Int32.toString(ref#startLine) + "|" + Int32.toString(ref#endLine)
 
