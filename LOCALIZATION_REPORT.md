@@ -6618,9 +6618,14 @@ with no corpus and no provider:
 ```
 //test/reviewbench:reviewbench_law                              PASSED
 //test/reviewbench_review:reviewbench_review_law                PASSED
-//test/reviewbench_judge:reviewbench_judge_law                  PASSED (18 tests)
+//test/reviewbench_judge:reviewbench_judge_law                  PASSED (19 tests)
 //test/reviewbench_economics:reviewbench_economics_law          PASSED (25 tests)
 ```
+
+The measurement-boundary run of `//test/reviewbench_judge:reviewbench_judge_law`
+carried **19** `@Test` laws (an earlier transcription of this section said 18).
+The appended session-layout repair adds one more law, so the current total is
+**20** — the two counts are distinct and both are reported here.
 
 The **broad gate** was actually run
 (`bazel test //... --config=remote --jobs=8 --test_output=summary`): **42 tests
@@ -6695,4 +6700,22 @@ targets. Outputs are read under `bazel-bin/test/reviewbench_judge/<stage>/` and
   column-index bug is fixed so `corrective-failures.tsv` is correctly empty, and
   the correction's symmetry is now pinned. The raw failure is reported as it
   happened rather than repaired into a silent success.
+- Session-layout status repair (2026-10-09): the shared `sessionFailed` predicate
+  introduced by the measurement-boundary correction above read the **fifth** cell
+  of **both** session-row layouts, but only the arm-isolated corrective row
+  carries `result_status` there. The ordinary judge/adjudication row carries it in
+  the **fourth** cell, and its fifth cell is the failure text — empty on success —
+  so a successful ordinary session was misclassified as a failure. The predicate
+  is now layout-specific and lives in the canonical owner
+  (`Attune.Study.ReviewBenchJudge.sessionFailed`), selecting the ordinary status
+  index **3** or the corrective status index **4** from the row's leading tag; its
+  comment states the actual missing-status behaviour (an absent status cell reads
+  as `Unavailable`, which is not `ok` and is therefore listed rather than silently
+  accepted). A pure corpus-free regression law
+  (`theSessionFailureStatusColumnIsSpecificToEachSessionLayout`) pins both
+  layouts. The appended section's historical `//test/reviewbench_judge:reviewbench_judge_law`
+  count is corrected from `18` to **19**; the repair appends one law, so the
+  current total is **20**. No review, judge, adjudication, corrective session,
+  receipt, fixture, measurement or provider was touched; the fixed stages remain
+  `manual`, and the corpus-free laws still run in the ordinary offline gate.
 

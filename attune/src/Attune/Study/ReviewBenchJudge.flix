@@ -151,6 +151,45 @@ pub mod Attune.Study.ReviewBenchJudge {
     /// The declared judge outcome name of an `ok` mechanical result.
     pub def okStatus(): String = "ok"
 
+    /// The declared status-cell index of one ORDINARY judge or independent-
+    /// adjudication session row. The driver renders that row as
+    /// `session <TAB> judge_role <TAB> task <TAB> result_status <TAB> failure ...`,
+    /// so the status is the fourth cell (zero-based index 3).
+    pub def judgeSessionStatusIndex(): Int32 = 3
+
+    /// The declared status-cell index of one arm-isolated CORRECTIVE session row.
+    /// The driver renders that row as
+    /// `corrective-session <TAB> arm <TAB> judge_role <TAB> task <TAB>
+    /// result_status <TAB> failure ...`, so the status is the fifth cell
+    /// (zero-based index 4), one column further right than the ordinary row. The
+    /// two layouts are NOT interchangeable: an ordinary row's fifth cell is its
+    /// failure text, which is empty on success, so a shared index-4 read
+    /// misclassifies a successful ordinary session as a failure.
+    pub def correctiveSessionStatusIndex(): Int32 = 4
+
+    /// The declared status cell of one session receipt row. The row's leading tag
+    /// selects the layout — `corrective-session` for the arm-isolated corrective
+    /// row, the ordinary judge/adjudication layout otherwise — so the two layouts
+    /// are never confused through a shared column index.
+    pub def sessionStatus(row: List[String]): String =
+        match List.head(row) {
+            case Some("corrective-session") => statusCellAt(row, correctiveSessionStatusIndex())
+            case _                          => statusCellAt(row, judgeSessionStatusIndex())
+        }
+
+    /// Whether one session receipt row records a bounded failure: its status cell
+    /// is not the declared `ok` outcome. A row whose status cell is absent reads as
+    /// `Unavailable`, which is not `ok`, so an unrecorded status is listed as a
+    /// failure rather than silently accepted as a success.
+    pub def sessionFailed(row: List[String]): Bool =
+        sessionStatus(row) != okStatus()
+
+    def statusCellAt(row: List[String], index: Int32): String =
+        match List.head(List.drop(index, row)) {
+            case Some(value) => value
+            case None        => "Unavailable"
+        }
+
     // ------------------------------------------------------------- vocabulary
 
     /// One blinded candidate finding. The blinded `id` is what the judge sees;

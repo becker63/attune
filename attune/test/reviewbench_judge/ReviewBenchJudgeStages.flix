@@ -334,12 +334,11 @@ def sessionRow(text: String): List[String] =
           receiptScalar(text, "judgment_count"), receiptScalar(text, "total_tokens"),
           receiptScalar(text, "turn_wall_ms")}
 
-/// Whether one corrective session row records a bounded failure. The status cell
-/// is the FIFTH cell of the session row (`corrective-session <TAB> arm <TAB> role
-/// <TAB> task <TAB> result_status ...`), so a successful session is never listed
-/// as a failure and an absent status is neither an ok nor a failure.
-def sessionFailed(row: List[String]): Bool = cellOf(row, 4) != "ok"
-
+/// One cell of a driver-rendered row, or `Unavailable` when the row is shorter
+/// than the requested index. The session-failure predicate itself lives in the
+/// canonical owner (`Attune.Study.ReviewBenchJudge.sessionFailed`), because the
+/// ordinary and corrective session rows carry their `result_status` at DIFFERENT
+/// columns and a single shared index silently misclassifies a successful row.
 def cellOf(row: List[String], index: Int32): String =
     match List.head(List.drop(index, row)) {
         case Some(value) => value
@@ -670,7 +669,7 @@ def reportStage(): Unit \ {Assert, IO} = {
     let sessions = List.map(path -> sessionRow(readText(path)),
         List.filter(path -> matchesSuffix(".receipt.json", path), judgePaths ::: adjudicationPaths));
     writeText(dir, "sessions.tsv", renderTsv(sessions));
-    writeText(dir, "failures.tsv", renderTsv(List.filter(sessionFailed, sessions)));
+    writeText(dir, "failures.tsv", renderTsv(List.filter(ReviewBenchJudge.sessionFailed, sessions)));
     // The macro population beside the macro mean: how many per-task values were
     // actually defined. A task whose per-task ratio has an empty denominator is
     // excluded from the mean rather than counted as a zero, and this record makes
@@ -970,7 +969,7 @@ def correctiveReportStage(): Unit \ {Assert, IO} = {
     let sessions = List.map(path -> correctiveSessionRow(sessionArm(path), readText(path)),
         List.filter(path -> String.endsWith(suffix = ".receipt.json", path), correctivePaths));
     writeText(dir, "corrective-sessions.tsv", renderTsv(sessions));
-    writeText(dir, "corrective-failures.tsv", renderTsv(List.filter(sessionFailed, sessions)));
+    writeText(dir, "corrective-failures.tsv", renderTsv(List.filter(ReviewBenchJudge.sessionFailed, sessions)));
     writeText(dir, "corrective-provenance.tsv", renderTsv(List#{
         List#{"population", "task", task},
         List#{"population", "selections", Int32.toString(List.length(selections))},
@@ -985,7 +984,7 @@ def correctiveReportStage(): Unit \ {Assert, IO} = {
     // no arm's candidate silently leaves the classification.
     Assert.assertEq(expected = 2, List.length(sessions));
     Assert.assertEq(expected = true, List.forAll(row -> cellOf(row, 4) == "ok", sessions));
-    Assert.assertEq(expected = 0, List.length(List.filter(sessionFailed, sessions)));
+    Assert.assertEq(expected = 0, List.length(List.filter(ReviewBenchJudge.sessionFailed, sessions)));
     Assert.assertEq(expected = 2, List.length(newPerArm));
     Assert.assertEq(expected = true, List.forAll(pair -> match pair {
         case (_, _, counts) => counts#candidates == 2

@@ -448,3 +448,38 @@ def theMatchingOrderIsObservableInTheCountsButNeverChangesTheUnaffectedArm(): Un
     Assert.assertEq(expected = Some(4), ReviewBenchJudge.claimedIndexOf(backward, "C1"));
     Assert.assertEq(expected = Some(37), ReviewBenchJudge.claimedIndexOf(backward, "C2"))
 }
+
+// ---------------------------------------------------------------------------
+// Session-failure status column (`VAL-MEAS-002`, `VAL-MEAS-009`): the ordinary
+// judge/adjudication receipt row and the arm-isolated corrective receipt row
+// carry `result_status` at DIFFERENT columns, so one shared index silently
+// misclassifies a successful session. This is the regression law for both
+// layouts, and it is pure — no corpus and no provider.
+// ---------------------------------------------------------------------------
+
+@Test
+def theSessionFailureStatusColumnIsSpecificToEachSessionLayout(): Unit \ Assert = {
+    // The ordinary row is `session <TAB> judge_role <TAB> task <TAB>
+    // result_status <TAB> failure ...`: the status is the FOURTH cell (index 3).
+    // A successful session's failure text is EMPTY, so the FIFTH cell is exactly
+    // the column a shared index-4 read would mistake for a non-`ok` status.
+    let okOrdinary = List#{"session", "judge", "t", "ok", ""};
+    Assert.assertEq(expected = false, ReviewBenchJudge.sessionFailed(okOrdinary));
+    let failedOrdinary = List#{"session", "judge", "t", "malformed", "boom"};
+    Assert.assertEq(expected = true, ReviewBenchJudge.sessionFailed(failedOrdinary));
+    // The corrective row is `corrective-session <TAB> arm <TAB> judge_role <TAB>
+    // task <TAB> result_status <TAB> failure ...`: the status is the FIFTH cell
+    // (index 4), one column further right. A shared index-3 read would take the
+    // task cell, misclassifying a successful corrective session instead.
+    let okCorrective = List#{"corrective-session", "A", "corrective", "t", "ok", ""};
+    Assert.assertEq(expected = false, ReviewBenchJudge.sessionFailed(okCorrective));
+    let failedCorrective = List#{"corrective-session", "B", "corrective", "t", "malformed", "boom"};
+    Assert.assertEq(expected = true, ReviewBenchJudge.sessionFailed(failedCorrective));
+    // The two layouts' declared status indices are distinct, and an absent status
+    // cell reads as `Unavailable`, which is not `ok`, so the row is listed rather
+    // than silently accepted.
+    Assert.assertEq(expected = 3, ReviewBenchJudge.judgeSessionStatusIndex());
+    Assert.assertEq(expected = 4, ReviewBenchJudge.correctiveSessionStatusIndex());
+    Assert.assertEq(expected = true, ReviewBenchJudge.sessionFailed(List#{"session", "judge"}));
+    Assert.assertEq(expected = true, ReviewBenchJudge.sessionFailed(List#{"corrective-session", "A"}))
+}
