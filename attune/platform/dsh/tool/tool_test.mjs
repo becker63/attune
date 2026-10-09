@@ -21,7 +21,7 @@ import { tmpdir } from 'node:os'
 
 import { BridgeRefusal } from '../typert/bridge.mjs'
 import { acquireRegion, parseWorldManifest } from './boundary.mjs'
-import { apply, PARAMETER_MEMBERS, PROJECTION_FIELDS, WIRE } from './evidence_tool.mjs'
+import { apply, loadWireContract, PARAMETER_MEMBERS, PROJECTION_FIELDS } from './evidence_tool.mjs'
 import { defineToolParametersFromWire } from './tool_schema.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -52,7 +52,7 @@ const ALLOWED = { world: 'world-evidence-1', revision: 'rev-1', path: 'source/sh
 // -------------------------------------------------------- schema projection
 
 test('the tool parameters are projected from the frozen generated contract', () => {
-  const { contract, parameters } = defineToolParametersFromWire(WIRE, PARAMETER_MEMBERS)
+  const { contract, parameters } = defineToolParametersFromWire(loadWireContract({}), PARAMETER_MEMBERS)
   assert.equal(contract, 'attune.evidence-substrate/1')
   assert.deepEqual(Object.keys(parameters).sort(), ['endLine', 'path', 'revision', 'startLine', 'world'])
   assert.deepEqual(parameters.world, { type: 'string', required: true })
@@ -61,15 +61,15 @@ test('the tool parameters are projected from the frozen generated contract', () 
 
 test('the projection bridge refuses an unsupported construct instead of widening it', () => {
   assert.throws(
-    () => defineToolParametersFromWire(WIRE, ['FindingCheckpoint.delivered']),
+    () => defineToolParametersFromWire(loadWireContract({}), ['FindingCheckpoint.delivered']),
     (error) => error instanceof BridgeRefusal && /array/.test(error.message),
   )
   assert.throws(
-    () => defineToolParametersFromWire(WIRE, ['EvidenceRef.notAMember']),
+    () => defineToolParametersFromWire(loadWireContract({}), ['EvidenceRef.notAMember']),
     (error) => error instanceof BridgeRefusal && /not a declared contract member/.test(error.message),
   )
   // A union of string literals stays a union (a DSH enum), never a `oneOf`.
-  const { parameters } = defineToolParametersFromWire(WIRE, ['EvidenceRef.delivery'])
+  const { parameters } = defineToolParametersFromWire(loadWireContract({}), ['EvidenceRef.delivery'])
   assert.deepEqual(parameters.delivery, {
     type: 'string',
     required: true,

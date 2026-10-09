@@ -72,7 +72,7 @@ native_flix_java_test(
 # `platform/dsh/tool/fixtures/` through declared bindings, run the canonical
 # operation and assert its canonical projection against the same frozen parity
 # target the native DSH tool's acquisition projection is compared against by
-# `//platform/dsh:evidence_tool_test`. The fixture population is declared one
+# `//platform/dsh/tool:evidence_tool_test`. The fixture population is declared one
 # file at a time so the live workspace audit sees the exact declared inputs.
 native_flix_java_test(
     name = "evidence_operation_law",
@@ -85,11 +85,11 @@ native_flix_java_test(
         "//src:Attune/Study/EvidenceSubstrate.flix",
     ],
     declared_files = [
-        "//platform/dsh:tool/fixtures/expected-observation-projection.tsv",
-        "//platform/dsh:tool/fixtures/expected-reference-projection.tsv",
-        "//platform/dsh:tool/fixtures/facts.tsv",
-        "//platform/dsh:tool/fixtures/source/shop.ts",
-        "//platform/dsh:tool/fixtures/world.tsv",
+        "//platform/dsh/tool:fixtures/expected-observation-projection.tsv",
+        "//platform/dsh/tool:fixtures/expected-reference-projection.tsv",
+        "//platform/dsh/tool:fixtures/facts.tsv",
+        "//platform/dsh/tool:fixtures/source/shop.ts",
+        "//platform/dsh/tool:fixtures/world.tsv",
     ],
     java_deps = [],
 )

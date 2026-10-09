@@ -22,18 +22,43 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
 import { BoundaryRefusal, acquireRegion, parseWorldManifest } from './boundary.mjs'
 import { defineToolParametersFromWire } from './tool_schema.mjs'
 
-/// The frozen versioned wire contract of the narrow evidence substrate. It is a
-/// declared input of every action that loads this plugin.
-export const WIRE = JSON.parse(
-  readFileSync(new URL('../typert/contract.wire.v1.json', import.meta.url), 'utf8'),
+/// The declared fixture world of the tool, resolved beside the plugin module.
+/// A run may override the world manifest, the sealed source root and the wire
+/// contract through its declared config or environment; when it does not, the
+/// declared fixtures that ship with the plugin are the world it reads.
+export const DECLARED_WORLD_MANIFEST = fileURLToPath(
+  new URL('./fixtures/boundary-world.tsv', import.meta.url),
 )
+export const DECLARED_SOURCE_ROOT = fileURLToPath(new URL('./fixtures/', import.meta.url))
+
+/// The declared generated contract package of the narrow evidence substrate,
+/// resolved beside the plugin module. Every acquisition is validated against
+/// these generated factories, so the tool can never emit a reference document
+/// the generated contract would reject.
+export const DECLARED_CONTRACT_PACKAGE = fileURLToPath(
+  new URL('../typert_package_a/package', import.meta.url),
+)
+
+/// The frozen versioned wire contract of the narrow evidence substrate. It is a
+/// declared input of every action that loads this plugin. The location is
+/// resolved at load time, never assumed: an explicit `contractWire` config value
+/// or the `ATTUNE_EVIDENCE_WIRE` environment variable wins, and the plugin's own
+/// sibling `typert/` directory is the fallback the offline law uses.
+export function loadWireContract(config) {
+  const explicit = config?.contractWire ?? process.env.ATTUNE_EVIDENCE_WIRE
+  const source =
+    typeof explicit === 'string' && explicit.length > 0
+      ? explicit
+      : new URL('../typert/contract.wire.v1.json', import.meta.url)
+  return JSON.parse(readFileSync(source, 'utf8'))
+}
 
 /// The model-facing parameters are a NAMED SUBSET of the generated contract: the
 /// exact region identity a bounded acquisition reads. The tool computes the
@@ -63,8 +88,8 @@ export const PROJECTION_FIELDS = [
 export const name = 'attune-evidence-tool'
 export const inject = ['tools']
 
-function requireDeclared(config, key, envName) {
-  const value = config?.[key] ?? process.env[envName]
+function requireDeclared(config, key, envName, fallback) {
+  const value = config?.[key] ?? process.env[envName] ?? fallback
   if (typeof value !== 'string' || value.length === 0) {
     throw new BoundaryRefusal(`the ${key} is not declared for this run`)
   }
@@ -97,11 +122,22 @@ async function validateAgainstGeneratedContract(acquired, packageRoot) {
 
 /// Acquire one exact declared region and return the canonical projection.
 export async function executeEvidenceOperation(args, config) {
-  const manifestPath = requireDeclared(config, 'worldManifest', 'ATTUNE_EVIDENCE_WORLD')
-  const sourceRoot = requireDeclared(config, 'sourceRoot', 'ATTUNE_EVIDENCE_SOURCE_ROOT')
+  const manifestPath = requireDeclared(
+    config,
+    'worldManifest',
+    'ATTUNE_EVIDENCE_WORLD',
+    DECLARED_WORLD_MANIFEST,
+  )
+  const sourceRoot = requireDeclared(
+    config,
+    'sourceRoot',
+    'ATTUNE_EVIDENCE_SOURCE_ROOT',
+    DECLARED_SOURCE_ROOT,
+  )
   const manifest = parseWorldManifest(readFileSync(manifestPath, 'utf8'))
   const acquired = acquireRegion(args, { manifest, sourceRoot })
-  const packageRoot = config?.contractPackage ?? process.env.ATTUNE_EVIDENCE_CONTRACT
+  const packageRoot =
+    config?.contractPackage ?? process.env.ATTUNE_EVIDENCE_CONTRACT ?? DECLARED_CONTRACT_PACKAGE
   if (typeof packageRoot === 'string' && packageRoot.length > 0) {
     // The typed document (numeric range/byte counts) is what the generated
     // contract validates; the model-facing projection is the string form below.
@@ -126,7 +162,7 @@ export async function executeEvidenceOperation(args, config) {
 /// generated contract at apply time, so a drifted or unsupported contract fails
 /// the load instead of registering a widened tool.
 export function apply(ctx, config) {
-  const { contract, parameters } = defineToolParametersFromWire(WIRE, PARAMETER_MEMBERS)
+  const { contract, parameters } = defineToolParametersFromWire(loadWireContract(config), PARAMETER_MEMBERS)
   ctx.tools.register(
     defineTool({
       name: 'attune_evidence_operation',
@@ -149,7 +185,8 @@ export function apply(ctx, config) {
             type: 'text',
             text:
               `Acquired ${value.delivery} evidence ${value.path}@${value.revision} ` +
-              `lines ${value.startLine}-${value.endLine} (${value.bytes} bytes, ${value.sha256.slice(0, 12)}...).`,
+              `lines ${value.startLine}-${value.endLine} (${value.bytes} bytes).\n` +
+              `world: ${value.world}\nsha256: ${value.sha256}\ndelivery: ${value.delivery}`,
           },
         ],
       },

@@ -1,0 +1,87 @@
+"""The one native DSH tool of the narrow evidence substrate (owner-authorized 2026-10-09).
+
+This package holds the authored Cordis plugin that registers ONE `defineTool`
+tool through the real pinned `@deepseek-ai/dsh-tools` surface, the tiny
+supported-subset bridge that projects the generated evidence contract into the
+DSH parameter dialect, and the runtime world/range/permission boundary that
+refuses an out-of-scope or denied read before any sealed source byte is read.
+
+It is a separate Bazel package because the declared DSH loader resolves the
+plugin by its npm package name from the linked `node_modules` tree of
+`//platform/dsh`, and a first-party package link points at the Bazel package
+directory of the linked target. Nothing here is fetched, installed or resolved
+from a host `node_modules`.
+"""
+
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+# The linked first-party package the DSH loader imports by name.
+js_library(
+    name = "evidence_tool_package",
+    srcs = [
+        "boundary.mjs",
+        "evidence_tool.mjs",
+        "package.json",
+        "tool_schema.mjs",
+    ],
+)
+
+# The declared world manifest, sealed source and frozen cross-language parity
+# targets of the tool law.
+filegroup(
+    name = "evidence_tool_fixtures",
+    srcs = [
+        "fixtures/boundary-world.tsv",
+        "fixtures/expected-observation-projection.tsv",
+        "fixtures/expected-reference-projection.tsv",
+        "fixtures/facts.tsv",
+        "fixtures/source/shop.ts",
+        "fixtures/world.tsv",
+    ],
+)
+
+# The declared loader overlay that mounts the tool into a composed DSH profile.
+exports_files([
+    "attune-tool.plugin.yml",
+    "fixtures/boundary-world.tsv",
+    "fixtures/expected-observation-projection.tsv",
+    "fixtures/expected-reference-projection.tsv",
+    "fixtures/facts.tsv",
+    "fixtures/source/shop.ts",
+    "fixtures/world.tsv",
+])
+
+# The overlay and the declared fixture world as one linked library, so the DSH
+# adapter's `js_binary` can carry them in its runfiles as declared data.
+js_library(
+    name = "evidence_tool_runfiles",
+    srcs = [
+        "attune-tool.plugin.yml",
+        "fixtures/boundary-world.tsv",
+        "fixtures/expected-observation-projection.tsv",
+        "fixtures/expected-reference-projection.tsv",
+        "fixtures/facts.tsv",
+        "fixtures/source/shop.ts",
+        "fixtures/world.tsv",
+    ],
+)
+
+js_test(
+    name = "evidence_tool_test",
+    data = [
+        ":evidence_tool_fixtures",
+        ":evidence_tool_package",
+        "//platform/dsh:node_modules",
+        "//platform/dsh:typert_bridge",
+        "//platform/dsh:typert_package_a",
+    ],
+    entry_point = "tool_test.mjs",
+)

@@ -13,7 +13,8 @@ package can repair a missing dependency, because an undeclared dependency fails
 the action.
 """
 
-load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_test")
+load("@aspect_rules_js//npm:defs.bzl", "npm_link_package")
 load("@dsh_npm//:defs.bzl", "npm_link_all_packages")
 load("//platform/dsh:dsh_agent.bzl", "dsh_agent_run")
 load("//platform/dsh:typert_package.bzl", "typert_package")
@@ -42,12 +43,35 @@ exports_files([
 # linked under `platform/dsh/node_modules` from declared Bazel repositories.
 npm_link_all_packages(name = "node_modules")
 
+# The one authored Cordis plugin of the narrow evidence substrate, linked into
+# the same `node_modules` tree under its own package name so the DECLARED DSH
+# loader resolves it exactly like every other plugin. This is a first-party
+# package link, not an npm install: no lockfile entry, no fetch and no host
+# `node_modules` is involved, and the plugin's own relative imports and bare
+# `@deepseek-ai/dsh-tools` peer resolve through the same linked tree.
+npm_link_package(
+    name = "node_modules/@attune/dsh-evidence-tool",
+    src = "//platform/dsh/tool:evidence_tool_package",
+    package = "@attune/dsh-evidence-tool",
+    root_package = "platform/dsh",
+    version = "0.0.0",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
-# dependency closure, so Node's ordinary resolution finds every DSH plugin.
+# dependency closure, so Node's ordinary resolution finds every DSH plugin. The
+# linked evidence tool is the ONE authored plugin of this adapter, and the
+# contract bridge it reuses is declared beside it so the plugin's own relative
+# import resolves from the runfiles rather than from an accident of the build.
 js_binary(
     name = "dsh",
-    data = [":node_modules"],
+    data = [
+        ":node_modules",
+        ":node_modules/@attune/dsh-evidence-tool",
+        ":typert_bridge",
+        ":typert_package_a",
+        "//platform/dsh/tool:evidence_tool_runfiles",
+    ],
     entry_point = "entry.mjs",
     tags = ["manual"],
 )
@@ -114,6 +138,24 @@ dsh_agent_run(
     task = "Use the bash tool to run: printf 'GATE_OK'. Then reply with the exact command output.",
 )
 
+# The one native DSH run that exercises the AUTHORED evidence tool end to end
+# (VAL-SUB-002/003/007). It boots the SAME declared `siwc-responses` route as the
+# gate above and mounts the declared evidence-tool overlay, so one native
+# AgentLoop calls `attune_evidence_operation` twice: once for a region the
+# declared world names (whose canonical projection must equal the frozen
+# cross-language parity target the Flix operation law also asserts) and once for
+# a region it does not (which the runtime boundary refuses before any sealed
+# source byte is read). The native session tree and the event stream are declared
+# outputs. It is `manual`: the ordinary `bazel test //...` gate never runs a
+# provider.
+dsh_agent_run(
+    name = "evidence_tool_smoke",
+    plugin_patches = ["//platform/dsh/tool:attune-tool.plugin.yml"],
+    routes = ["route-siwc-responses.yml"],
+    tags = ["manual"],
+    task = "Do exactly two things. First call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/shop.ts', startLine 1, endLine 2, and report the full sha256 value it returns. Second call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/secret.ts', startLine 1, endLine 1, and report the exact error message it returns.",
+)
+
 # --------------------------------------------------------------------------
 # The narrow Typert boundary (VAL-SUB-004/005/006).
 #
@@ -135,6 +177,16 @@ filegroup(
         "typert/packages/attune-evidence/src/index.ts",
         "typert/packages/attune-evidence/tsconfig.json",
         "typert/tsconfig.host.json",
+    ],
+)
+
+# The supported-subset bridge and the frozen wire contract as a linked library,
+# so another package's rules_js target can consume them as declared deps.
+js_library(
+    name = "typert_bridge",
+    srcs = [
+        "typert/bridge.mjs",
+        "typert/contract.wire.v1.json",
     ],
 )
 
@@ -220,44 +272,13 @@ js_test(
 # --------------------------------------------------------------------------
 # The one native DSH tool of the narrow evidence substrate (VAL-SUB-002/003/007).
 #
-# `tool/` holds the authored Cordis plugin that registers ONE `defineTool` tool,
-# the tiny supported-subset bridge that projects the generated contract into the
-# DSH parameter dialect, and the runtime world/range/permission boundary. The law
-# runs the REAL `defineTool` definition the pinned `@deepseek-ai/dsh-tools`
-# surface produced over the declared world manifest, the declared sealed source
-# and the frozen cross-language parity target the Flix `evidence_operation_law`
-# also asserts. It is provider-free and offline, so the ordinary `bazel test //...`
-# gate runs it. The plugin reads the generated contract package through the
-# declared `typert_package_a` output; nothing is fetched or installed.
+# `tool/` is its own Bazel package (so the first-party npm link points at the
+# package directory) and holds the authored Cordis plugin that registers ONE
+# `defineTool` tool, the tiny supported-subset bridge that projects the
+# generated contract into the DSH parameter dialect, and the runtime
+# world/range/permission boundary. Its law runs the REAL `defineTool` definition
+# the pinned `@deepseek-ai/dsh-tools` surface produced over the declared world
+# manifest, the declared sealed source and the frozen cross-language parity
+# target the Flix `evidence_operation_law` also asserts. It is provider-free and
+# offline, so the ordinary `bazel test //...` gate runs it.
 # --------------------------------------------------------------------------
-
-filegroup(
-    name = "evidence_tool",
-    srcs = [
-        "tool/boundary.mjs",
-        "tool/evidence_tool.mjs",
-        "tool/tool_schema.mjs",
-    ],
-)
-
-filegroup(
-    name = "evidence_tool_fixtures",
-    srcs = [
-        "tool/fixtures/boundary-world.tsv",
-        "tool/fixtures/expected-reference-projection.tsv",
-        "tool/fixtures/source/shop.ts",
-    ],
-)
-
-js_test(
-    name = "evidence_tool_test",
-    data = [
-        ":evidence_tool",
-        ":evidence_tool_fixtures",
-        ":node_modules",
-        ":typert_package_a",
-        "typert/bridge.mjs",
-        "typert/contract.wire.v1.json",
-    ],
-    entry_point = "tool/tool_test.mjs",
-)

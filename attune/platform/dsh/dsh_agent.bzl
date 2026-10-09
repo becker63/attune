@@ -21,6 +21,14 @@ def _dsh_agent_run_impl(ctx):
     events = ctx.actions.declare_file(ctx.label.name + ".events.jsonl")
     outputs = [events]
 
+    # The declared DSH launcher materializes its own runfiles beside itself
+    # (`<executable>.runfiles`). The one authored plugin overlay of this adapter
+    # must be named by its RUNFILES path, because the declared DSH loader anchors
+    # an inserted relative plugin name beside the overlay file; the overlay and
+    # the plugin it names are declared data of the launcher, so both are present
+    # there without a host `node_modules` and without an extra action input.
+    runfiles_root = ctx.executable.dsh.path + ".runfiles"
+
     args = ctx.actions.args()
     env = {
         # The native stdout stream, teed by the declared entry point.
@@ -35,6 +43,16 @@ def _dsh_agent_run_impl(ctx):
         "LC_ALL": "C.UTF-8",
     }
 
+    plugin_patch_paths = []
+    for target in ctx.attr.plugin_patches:
+        for file in target[DefaultInfo].files.to_list():
+            plugin_patch_paths.append(
+                runfiles_root + "/" + ctx.expand_location(
+                    "$(rlocationpath %s)" % file.owner,
+                    targets = [target],
+                ),
+            )
+
     if ctx.attr.version_only:
         args.add("--version")
     elif ctx.attr.dump_config:
@@ -46,6 +64,8 @@ def _dsh_agent_run_impl(ctx):
         args.add("--profile", ctx.attr.profile)
         for route in ctx.files.routes:
             args.add("--patch", route.path)
+        for patch in plugin_patch_paths:
+            args.add("--patch", patch)
         args.add("--dump-config")
     else:
         # The native DSH home of this run. It is a declared output directory, so
@@ -68,6 +88,8 @@ def _dsh_agent_run_impl(ctx):
         args.add("--profile", ctx.attr.profile)
         for route in ctx.files.routes:
             args.add("--patch", route.path)
+        for patch in plugin_patch_paths:
+            args.add("--patch", patch)
         args.add("--json")
         args.add(ctx.attr.task)
 
@@ -117,6 +139,13 @@ dsh_agent_run = rule(
         "routes": attr.label_list(
             allow_files = True,
             doc = "The declared provider-route patches this run boots with.",
+        ),
+        "plugin_patches": attr.label_list(
+            allow_files = True,
+            doc = """The declared loader overlays that mount the authored plugins of
+            this adapter. They are passed by their RUNFILES path, because the
+            declared DSH loader anchors an inserted relative plugin name beside
+            the overlay file and the overlays are declared data of the launcher.""",
         ),
         "task": attr.string(doc = "The one task string handed to the DSH app."),
         "version_only": attr.bool(
