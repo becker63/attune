@@ -178,16 +178,25 @@ def exactlyTwoSourceDerivedFamiliesAreExercised(): Unit \ {Assert, IO} = {
         valueOf("required-cli-input", summary))
 }
 
-/// The source-derived sidecar is model-HIDDEN in BOTH prospective arms: the
-/// declared visibility of each family in each arm is false, so a detector output
-/// is never the definition of an arm (never R0 = family A / R1 = family B).
+/// The source-derived sidecar is model-HIDDEN in BOTH prospective arms AND in
+/// the DIAGNOSTIC arm the common prospective profile's detector overlay declares
+/// as its load default: the declared visibility of each family in each declared
+/// arm is false, so a detector output is never the definition of an arm (never
+/// R0 = family A / R1 = family B). The record names both families in all three
+/// declared arms, so the declared configuration loads; an arm the record does
+/// not name stays refused (fail-closed).
 @Test
 def bothSourceDerivedFamiliesAreHiddenInBothArms(): Unit \ {Assert, IO} = {
     let rows = visibilityRows();
-    Assert.assertEq(expected = 4, List.length(rows));
+    Assert.assertEq(expected = 6, List.length(rows));
     Assert.assertEq(expected = Nil, List.filter(row -> boolOf(field(row, 2)), rows));
     Assert.assertEq(expected = false, detectorVisibleToModel("R0_PLAIN"));
-    Assert.assertEq(expected = false, detectorVisibleToModel("R1_PACKETS"))
+    Assert.assertEq(expected = false, detectorVisibleToModel("R1_PACKETS"));
+    Assert.assertEq(expected = false, detectorVisibleToModel("DIAGNOSTIC"));
+    Assert.assertEq(expected = List#{"DIAGNOSTIC", "R0_PLAIN", "R1_PACKETS"},
+        List.sort(List.distinct(List.map(row -> field(row, 1), rows))));
+    Assert.assertEq(expected = List#{"import-publication", "required-cli-input"},
+        List.sort(List.distinct(List.map(row -> field(row, 0), rows))))
 }
 
 /// A refusal is an explicit unsupported case and an unresolved outcome is an

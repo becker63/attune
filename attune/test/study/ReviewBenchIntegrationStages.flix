@@ -945,9 +945,13 @@ def detectorSummaryLine(family: String, results: List[(String, DetectorResult)])
 /// decide rather than fabricating a candidate — and the declared clean/defect/
 /// dynamic fixtures remain the proof of the bounded capability.
 ///
-/// The sidecar is model-HIDDEN in BOTH prospective arms: it registers no
-/// model-facing tool and writes nothing to the session. It acquires no corpus,
-/// reads no gold and calls no provider.
+/// The sidecar is model-HIDDEN in BOTH prospective arms AND in the DIAGNOSTIC
+/// arm the common prospective profile's detector overlay declares as its load
+/// default: it registers no model-facing tool and writes nothing to the session.
+/// The declared visibility record names all three arms (all `false`) so the
+/// declared configuration loads, while an arm the record does not name is
+/// refused rather than guessed. It acquires no corpus, reads no gold and calls
+/// no provider.
 def evidenceReviewbenchDetectors(): Unit \ {Assert, IO} = {
     let rows = List.map(fields, records(readText(required("world"))));
     let world = firstRow(rows, "world");
@@ -997,10 +1001,16 @@ def evidenceReviewbenchDetectors(): Unit \ {Assert, IO} = {
         String.intercalate("\t", List#{"funnel", "verified", Int32.toString(funnel#verified)}),
         String.intercalate("\t", List#{"funnel", "committed", Int32.toString(funnel#committed)}),
         String.intercalate("\t", List#{"funnel", "reported", Int32.toString(funnel#reported)})}));
+    // The declared visibility record names both PROSPECTIVE arms AND the
+    // DIAGNOSTIC arm the common prospective profile's detector overlay declares
+    // as its load default. `detectorVisibleToModel` is false for EVERY arm, so
+    // the diagnostic arm is hidden exactly like R0 and R1: a detector output is
+    // never the definition of an arm. An arm the record does not name is refused
+    // rather than guessed, so an unknown arm stays fail-closed.
     writeText(outputsDir(), "reviewbench-detector-visibility.tsv", renderLines(
-        List.flatMap(family -> List#{
-            List.join("\t", List#{family, "R0_PLAIN", boolText(detectorVisibleToModel("R0_PLAIN"))}),
-            List.join("\t", List#{family, "R1_PACKETS", boolText(detectorVisibleToModel("R1_PACKETS"))})},
+        List.flatMap(family -> List.map(arm ->
+            List.join("\t", List#{family, arm, boolText(detectorVisibleToModel(arm))}),
+            List#{"R0_PLAIN", "R1_PACKETS", "DIAGNOSTIC"}),
             List#{"import-publication", "required-cli-input"})));
     writeText(outputsDir(), "reviewbench-detector-summary.tsv", renderLines(List#{
         detectorSummaryLine("import-publication", importResults),

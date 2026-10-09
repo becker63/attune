@@ -46,6 +46,23 @@ const SYNTHETIC_DETECTOR_VISIBILITY = new URL(
   import.meta.url,
 )
 
+/// The one declared loader overlay that mounts this sidecar into the common
+/// prospective profile. The regression laws below read its DECLARED config, so
+/// the arm the declaration supplies is checked against the declared visibility
+/// record rather than against a value the test invents.
+const DETECTOR_OVERLAY = new URL('./attune-detector.plugin.yml', import.meta.url)
+
+/// The declared `arm` of the overlay's single inserted row. It is a minimal read
+/// of the declared overlay's own bytes (the file carries exactly one `arm:` key);
+/// nothing about the arm's meaning is restated here.
+function declaredOverlayArm(text) {
+  for (const line of text.split('\n')) {
+    const match = /^\s+arm:\s*(\S+)\s*$/.exec(line)
+    if (match) return match[1]
+  }
+  return ''
+}
+
 function workdir(name) {
   const dir = join(TMP, name)
   rmSync(dir, { recursive: true, force: true })
@@ -78,13 +95,87 @@ test('the declared detector sidecar is the real ReviewBench tree with both famil
   assert.deepEqual([...families].sort(), ['import-publication', 'required-cli-input'])
 })
 
-test('the declared visibility of both families is false in both arms', () => {
+test('the declared visibility names both families in both prospective arms and the diagnostic arm, all hidden', () => {
   const rows = declaredSidecar(DECLARED_DETECTOR_VISIBILITY)
-  assert.equal(declaredVisibility(rows, 'import-publication', 'R0_PLAIN'), false)
-  assert.equal(declaredVisibility(rows, 'import-publication', 'R1_PACKETS'), false)
-  assert.equal(declaredVisibility(rows, 'required-cli-input', 'R0_PLAIN'), false)
-  assert.equal(declaredVisibility(rows, 'required-cli-input', 'R1_PACKETS'), false)
+  assert.equal(rows.length, 6)
+  for (const arm of ['R0_PLAIN', 'R1_PACKETS', 'DIAGNOSTIC']) {
+    assert.equal(declaredVisibility(rows, 'import-publication', arm), false)
+    assert.equal(declaredVisibility(rows, 'required-cli-input', arm), false)
+  }
+  // An arm the declared record does not name is refused, never guessed.
   assert.throws(() => declaredVisibility(rows, 'import-publication', 'R2_STOP'))
+})
+
+test('the declared detector overlay supplies an arm the visibility record names', () => {
+  const arm = declaredOverlayArm(readFileSync(DETECTOR_OVERLAY, 'utf8'))
+  // The mounted overlay must declare an arm: without one the sidecar refuses the
+  // whole load, so the declared smoke/profile configuration would fail to boot.
+  assert.notEqual(arm, '')
+  const rows = declaredSidecar(DECLARED_DETECTOR_VISIBILITY)
+  assert.equal(declaredVisibility(rows, 'import-publication', arm), false)
+  assert.equal(declaredVisibility(rows, 'required-cli-input', arm), false)
+})
+
+test('the exact declared configuration loads through the REAL pinned Cordis Context', async () => {
+  const arm = declaredOverlayArm(readFileSync(DETECTOR_OVERLAY, 'utf8'))
+  const dir = workdir('attune-detector-declared-load')
+  const sidecar = join(dir, 'sidecar.tsv')
+  const record = join(dir, 'visibility.tsv')
+  delete process.env.ATTUNE_RUN_ARM
+  delete process.env.ATTUNE_GUARD_ARM
+  process.env.ATTUNE_DETECTOR_SIDECAR = sidecar
+  process.env.ATTUNE_DETECTOR_VISIBILITY = record
+  try {
+    // The declared row's config is passed to the plugin exactly as the loader
+    // would, so this is a real Cordis load of the DECLARED configuration.
+    const ctx = new Context()
+    await ctx.plugin(sidecarModule, { arm })
+    assert.ok(ctx.fiber, 'the root fiber must exist after loading')
+    assert.equal(readFileSync(sidecar, 'utf8'), readFileSync(DECLARED_DETECTOR_SIDECAR, 'utf8'))
+    assert.deepEqual(readFileSync(record, 'utf8').trim().split('\n'), [
+      `import-publication\t${arm}\tfalse`,
+      `required-cli-input\t${arm}\tfalse`,
+    ])
+  } finally {
+    delete process.env.ATTUNE_DETECTOR_SIDECAR
+    delete process.env.ATTUNE_DETECTOR_VISIBILITY
+  }
+})
+
+test('an absent or unknown arm refuses rather than guessing one', () => {
+  const dir = workdir('attune-detector-unarmed')
+  process.env.ATTUNE_DETECTOR_SIDECAR = join(dir, 'sidecar.tsv')
+  process.env.ATTUNE_DETECTOR_VISIBILITY = join(dir, 'visibility.tsv')
+  delete process.env.ATTUNE_RUN_ARM
+  delete process.env.ATTUNE_GUARD_ARM
+  try {
+    // No arm anywhere: fail closed.
+    assert.throws(() => apply(fakeContext().ctx, {}))
+    // An arm the declared record does not name: fail closed.
+    assert.throws(() => apply(fakeContext().ctx, { arm: 'R2_STOP' }))
+  } finally {
+    delete process.env.ATTUNE_DETECTOR_SIDECAR
+    delete process.env.ATTUNE_DETECTOR_VISIBILITY
+  }
+})
+
+test('the arm the prospective runner supplies overrides the declared diagnostic default', () => {
+  const dir = workdir('attune-detector-runner-arm')
+  const record = join(dir, 'visibility.tsv')
+  process.env.ATTUNE_DETECTOR_SIDECAR = join(dir, 'sidecar.tsv')
+  process.env.ATTUNE_DETECTOR_VISIBILITY = record
+  process.env.ATTUNE_RUN_ARM = 'R1_PACKETS'
+  try {
+    apply(fakeContext().ctx, { arm: 'DIAGNOSTIC' })
+  } finally {
+    delete process.env.ATTUNE_DETECTOR_SIDECAR
+    delete process.env.ATTUNE_DETECTOR_VISIBILITY
+    delete process.env.ATTUNE_RUN_ARM
+  }
+  assert.deepEqual(readFileSync(record, 'utf8').trim().split('\n'), [
+    'import-publication\tR1_PACKETS\tfalse',
+    'required-cli-input\tR1_PACKETS\tfalse',
+  ])
 })
 
 test('the sidecar plugin materializes the real declared bytes and registers no tool', () => {

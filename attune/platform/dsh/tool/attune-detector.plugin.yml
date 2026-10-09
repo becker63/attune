@@ -13,6 +13,22 @@
 # profile) — and writes it to a declared sidecar path. It registers NO
 # model-facing tool and writes NOTHING to the session, so a detector output is
 # never part of the model-visible stream in either arm.
+#
+# The sidecar's `apply` requires an EXPLICIT arm: it refuses an arm the declared
+# visibility record does not name, so an unknown or absent arm fails closed
+# rather than silently guessing one. This row therefore declares an EXPLICIT
+# DIAGNOSTIC arm — the load default of the common prospective profile, which the
+# declared visibility record names and which is model-HIDDEN exactly like R0 and
+# R1. A prospective R0/R1 runner OVERRIDES it with the run's own identity through
+# either existing hook, so the declared configuration always loads while an arm
+# the record does not name stays refused:
+#
+#   - the environment (`ATTUNE_RUN_ARM`, or the guard's `ATTUNE_GUARD_ARM`), which
+#     takes precedence over this config; or
+#   - a later `--patch` overlay that targets this row's `id` and replaces its
+#     `config` wholesale with the run's arm.
 - insert:
     - id: attune-detector-sidecar
       name: ./detector_sidecar.mjs
+      config:
+        arm: DIAGNOSTIC

@@ -21,6 +21,14 @@
 /// `ATTUNE_DETECTOR_VISIBILITY_SOURCE` environment variables) still select the
 /// synthetic declared fixture tree when a law or a diagnostic needs it.
 ///
+/// The sidecar requires an EXPLICIT arm: an arm the declared visibility record
+/// does not name is refused rather than guessed, so an unknown (or absent) arm
+/// fails closed. The mounting overlay declares the DIAGNOSTIC arm as its load
+/// default (the record names it, and it is model-HIDDEN exactly like R0 and R1);
+/// a prospective R0/R1 runner OVERRIDES it with the run's own identity through
+/// the environment (`ATTUNE_RUN_ARM`/`ATTUNE_GUARD_ARM`) or a later patch that
+/// replaces this row's config.
+///
 /// The detectors are therefore sidecars of BOTH prospective arms, never the
 /// definition of one: R0 is never family A and R1 is never family B.
 ///
@@ -67,7 +75,10 @@ export function declaredVisibility(rows, family, arm) {
 
 /// Register the detector sidecar on the composed profile. It never registers a
 /// tool and never touches the session, so nothing it materializes is visible to
-/// the model.
+/// the model. The arm is resolved from the run's own identity (the environment,
+/// which the prospective runner supplies) first, then the declared config the
+/// mounting overlay carries; an absent arm is the empty string and is refused by
+/// `declaredVisibility` rather than guessed.
 export function apply(ctx, config) {
   const source = config?.source ?? process.env.ATTUNE_DETECTOR_SOURCE ?? DECLARED_DETECTOR_SIDECAR
   const visibilitySource =
