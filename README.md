@@ -528,6 +528,18 @@ working sets and economics, and the two standalone Sol arms (the original
 The report's generation-18 section is the final synthesis over all available
 arms and answers the owner's fifteen questions; every stage is `manual` and is
 selected only through the declared remote commands, never by `bazel test //...`.
+The root report also now carries the **ReviewBench first paired-economics result**
+(`VAL-REVIEW-005`): the typed admission/source/finding/judge provenance over the
+all-219 population with the 24 selected, 10 admitted and 14 attrition tasks, the
+paired quality and elapsed tables, the separate cost lines with explicit
+`Unavailable` markers (only the hosted Qwen and JEV dollars were actually
+returned), the cold/warm-fresh/replay regimes, the 1/3/10 reviews-per-repository
+index amortization with its stated assumptions, and the inline
+cost-latency-quality graphs. It is reduced provider-free by
+`//test/reviewbench_economics:reviewbench_economics_report` over the frozen
+receipts and the frozen owner-judge tree, with corpus-free laws in
+`//test/reviewbench_economics:reviewbench_economics_law`; the first exploratory
+result is flat on the 10-task cohort and no positive outcome is claimed.
 
 ## Scoped SIWC renewal
 
@@ -568,7 +580,9 @@ checked documentation correspondence. Deliberately not selected or run here:
   declared remote commands, never by `bazel test //...`; the post-hoc exploratory
   JEV, embedding and hosted-Qwen extensions, the replicated family, and the two
   Sol arms are published in the root report, and the owner-approved ReviewBench
-  paired study is the next authorized work);
+  first paired-economics result is published inline there as the terminal study
+  feature; coordination/repair, any new corpus beyond ReviewBench, new models,
+  effort sweeps, MCR and unrelated cleanup remain off-limits);
 - a general view catalog, large-graph layout, ASCII parser or architecture browser;
 - any model choice, live provider effect, ranking-quality claim or application
   policy selection beyond the recorded fixture decision contract.

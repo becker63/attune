@@ -1,0 +1,9 @@
+jev	tasks	10
+jev	candidates	129
+jev	logical_decisions	129
+jev	relevant	87
+jev	not_relevant	13
+jev	unknown	29
+jev	failed	0
+jev	provider_calls	10
+jev	context_provider_calls	0

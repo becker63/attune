@@ -6060,3 +6060,260 @@ under the **same platform flags** as the original producers.
   side by side, with the incremental 78,741-token / 32,145-ms cost reported
   separately. No review or unaffected judge was rerun and no budget was tuned.
 
+## ReviewBench paired-economics result (VAL-REVIEW-005, 2026-10-08)
+
+The first exploratory paired-economics result of the owner-approved ReviewBench
+study, published INLINE in this one root report rather than in any timestamped
+copy. Every number below is reduced provider-free from the already-frozen
+admission records, the 20 review receipts and the owner-judge reduction tree of
+the sections above; nothing is re-run, no provider is called, and no finding,
+gold label or judge verdict is altered. The reduction is
+`//test/reviewbench_economics:reviewbench_economics_report` (a `manual` stage
+whose outputs sit under `bazel-bin/test/reviewbench_economics/`), the scientific
+statements live in the production owner `Attune.Study.ReviewBenchEconomics`, and
+the corpus-free laws are `//test/reviewbench_economics:reviewbench_economics_law`.
+**No positive result is required and none is claimed**: this is the honest paired
+measurement of a small exploratory cohort, with every bounded failure retained in
+the denominator.
+
+### Typed provenance (admission, source, finding, judge)
+
+| Kind | Name | Value | Source / identity |
+| --- | --- | --- | --- |
+| admission | population-rows | 219 | `66df3f322d0d85ea133ea9fa777f5d1a8c933c4e` |
+| admission | primary-slice | 91 tasks / 72 repos | 68 TS / 15 JS / 7 Java / 1 Ruby = 41.6% of 219; not representative |
+| admission | fast-cohort | 83 tasks / 65 repos | 62 TS / 14 JS / 6 Java / 1 Ruby after exactly the eight named metadata outliers |
+| admission | selected-tasks | 24 | seed `attune-reviewbench-first-paired-2026-10-08` |
+| admission | admitted-tasks | 10 | structural admission ≥ 900 per-mille supported |
+| admission | attrition-tasks | 14 | named supported-per-mille-below-900 reasons, retained not replaced |
+| source | origin | `https://github.com/review-bench/ReviewBench` | canonical origin (MIT) |
+| source | manifest-blob | `c12d9f760bd4d79965e5870eb860cbcf78c07c9a` | `66df3f322d0d85ea133ea9fa777f5d1a8c933c4e` |
+| source | manifest-sha256 | `e74656b8c1c4bbab5ce85f1fcb742a7aaad550a4d7bd46e1f83a0746807bfa02` | 529,650 bytes |
+| source | exported-archives | 48 | digest-verified before extraction |
+| source | exported-compressed-bytes | 445,655,802 | public mirror archives |
+| source | exported-extracted-bytes | 926,941,184 | 884 MiB extracted |
+| finding | prompt-identity | `sha256:0548d216c163f1719adb8d2b292b8038e006409d34a37865acd3984a96c6c08c` | byte-identical for both arms |
+| finding | budget-identity | `reviewbench-paired-review-budget-v1` | 300 s / 32 rounds / 256,000 observed tokens |
+| finding | planned-arm-reviews | 48 | 24 planned tasks × 2 arms |
+| finding | admitted-arm-reviews | 20 | the SAME paired admitted subset in both arms |
+| judge | protocol-identity | `reviewbench-owner-judge-protocol-v1` | frozen before gold exposure |
+| judge | judge-prompt | `sha256:3c4dbb6dc3457a97ca98fa985b7645b3a76cabf60d98cd7af6282cf0bbe5087d` | frozen after findings, before gold |
+| judge | adjudication-prompt | `sha256:8168d1d97d2a19ad7ba05a7229ae8f1cae69c9571fb3f165cf6c2bf088bfaac3` | blinded unmatched candidates, no gold |
+| judge | corrective-prompt | `sha256:4c1bcf28526d2355aa365b066f7c87ed6df1cc94454b64f6e77aef928cf33136` | arm-isolated correction, preregistered |
+
+The **all-219 denominator** (`population-rows 219`), the metadata-only **fast
+cohort** (83 tasks / 65 repos) and the frozen **attrition** (14 tasks) are carried
+beside the actual admitted population (10 tasks) so the paired result can never
+be read as the full corpus. No scientific score is claimed for the 199
+unselected rows.
+
+### Paired quality (the one canonical `Attune.Study.Metrics` reducer)
+
+All-findings, task-micro over the 10-task denominator. These are the frozen
+reducer's own exact ratios, re-read rather than recomputed:
+
+| View | Arm | Known recall | Grounded precision | Valid precision | Resolved precision | Augmented recall |
+| --- | --- | --- | --- | --- | --- | --- |
+| all | A | 11.1% (1/9) | 85.7% (6/7) | 90.0% (9/10) | 90.0% (9/10) | 14.7% (11/75) |
+| all | B | 13.9% (5/36) | 90.0% (9/10) | 75.0% (3/4) | 75.0% (3/4) | 13.9% (5/36) |
+| medium-high | A | 22.2% (2/9) | 85.7% (6/7) | 90.0% (9/10) | 90.0% (9/10) | 28.2% (11/39) |
+| medium-high | B | 25.0% (1/4) | 88.9% (8/9) | 66.7% (2/3) | 72.7% (8/11) | 25.0% (1/4) |
+| high | A | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) |
+| high | B | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) | 100.0% (1/1) |
+
+Repo-macro (mean of the defined per-task ratios, all-findings view): A known
+recall 12.1% (865/7128), grounded precision 87.5% (7/8), valid precision 90.0%
+(9/10), resolved precision 90.0% (9/10), augmented recall 15.8% (667/4212); B
+known recall 16.4% (1171/7128), grounded precision 93.3% (14/15), valid precision
+77.8% (7/9), resolved precision 77.8% (7/9), augmented recall 16.4%
+(1171/7128). A per-task ratio with an empty denominator is **excluded from the
+macro mean rather than counted as a zero**, so the two scopes differ where a
+metric is undefined for some tasks; both scopes are emitted in
+`economics-quality.tsv` (59 defined rows).
+
+The `valid precision` above is the **automatic provisional** score of the frozen
+owner-judge summary, kept SEPARATE from the independent-agent adjudication. The
+owner-approved arm-isolated correction (the previous section) moves the
+`haoling` **B** arm's valid precision from 0.0% to 100.0% over the corrected
+per-arm observations; that corrected value is reported in the correction
+section and is **not** folded back into the frozen provisional table here, so old
+and new stay separated.
+
+### Elapsed and work (paired per-arm)
+
+Both arms ran the SAME 20 reviews (10 tasks × 2 arms) under the SAME frozen
+prompt and budget. Latencies are milliseconds; the first-useful-finding
+population is only the reviews that actually reported a finding (A 5, B 6):
+
+| Arm | Reviews | ok | failed | Median fresh turn wall | p95 fresh | Median first finding | p95 first finding | Finding reviews | Tool rounds | Reads | Read bytes | Cached tokens | Total tokens | Max turn wall | Max read bytes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A | 10 | 6 | 4 | 38,466.5 | 61,892.0 | 3,875.0 | 4,174.0 | 5 | 57 | 113 | 1,438,380 | 1,519,360 | 2,026,445 | 61,892 | 274,076 |
+| B | 10 | 6 | 4 | 42,597.0 | 70,994.0 | 3,829.5 | 4,415.0 | 6 | 60 | 129 | 1,829,251 | 1,628,288 | 2,161,089 | 70,994 | 391,661 |
+
+The 8 retained failures are the same four tasks in both arms (both review turns
+hit the 256,000-token cap and were classified `malformed` / `tokens`); they stay
+in the denominator with zero findings rather than being replaced. The per-review
+rows (rounds, reads, read bytes, cached tokens, total tokens, first-finding and
+turn wall, plus the change/context bytes) are in `economics-reviews.tsv`.
+
+### Regimes: cold total, warm fresh review and replay
+
+Each regime is its own measurement; an unmeasured wall is `Unavailable`, never a
+fabricated zero. The **cold** regime is the one-time shared-context acquisition
+(hosted Qwen + JEV provider work); the **warm fresh** regime is the paired review
+cohort on top of that materialized context; the **replay** regime is the
+provider-free fixture replay.
+
+| Regime | Wall (ms) | Meaning |
+| --- | --- | --- |
+| cold-hosted-provider | 35,795 | Qwen 32,513 ms + JEV 3,282 ms measured provider latency |
+| cold-acquisition-network | Unavailable | 48 public mirror archives; no wall measured separately |
+| cold-grit-extraction | Unavailable | host-local structural extraction over 20 worlds; no wall measured separately |
+| warm-fresh-review-cohort | 70,994 | max single-review turn wall over the 20 reviews |
+| warm-fresh-review-queue | Unavailable | `queue_wall_ms` not exposed by the driver |
+| warm-fresh-review-download | Unavailable | no download wall field exposed |
+| warm-fresh-review-execute | Unavailable | no execute wall field exposed |
+| warm-fresh-review-retry | 0 | no retry performed on any review |
+| warm-fresh-vs-replay | 70,994 | fresh cohort max turn wall versus a 0 ms / 0 provider-call replay |
+| fresh-model-cost | Measured | Qwen and JEV hosted-provider dollars actually returned |
+| fixture-memo-cost | 0 provider calls | fixture-memo replay incurs no provider dollar figure |
+| fixture-replay | 0 | provider-free replay: 0 provider calls |
+
+### Separate cost lines
+
+Every line is its own billing regime and is never folded into another. A dollar
+amount is reported **only** when a provider actually returned one; otherwise the
+line is explicitly `Unavailable` (never zero). BuildBuddy durations are not
+dollars, a SIWC plan quota is not a marginal API dollar, and no Cloudflare/CDN
+price is claimed:
+
+| Line | Value | Source |
+| --- | --- | --- |
+| acquisition-network | Unavailable (public mirror bytes; no dollar figure returned) | 48 archives / 445,655,802 compressed bytes |
+| grit-cpu-work | Unavailable (host-local structural extraction; no dollar figure returned) | 20 worlds, provider-free replay |
+| rbe | Unavailable (no billed remote action exposed) | review/context stages run host-local; review turns on the dedicated platform |
+| qwen-tokens-and-requests | **$0.00267825** | 5 requests / 176,754 tokens |
+| jev-tokens-and-requests | **$0.02527337** | 10 requests / 744,754 tokens |
+| sol-usage | Unavailable (SIWC plan route returns no marginal API dollar figure) | 20 reviews; measured tokens reported separately |
+| judge-usage | Unavailable (SIWC plan route returns no marginal API dollar figure) | 12 judge + adjudication sessions plus 2 corrective sessions |
+
+The two hosted provider lines are the ONLY amounts actually returned. The Sol and
+judge lines carry real token usage (2,026,445 / 2,161,089 review tokens above,
+792,100 judge tokens and 78,741 corrective tokens in the judge section) but no
+marginal API dollar figure, because the route is the ChatGPT-plan SIWC
+subscription rather than a metered API.
+
+### Cold-index amortization (1/3/10 reviews per repository)
+
+The cold index is the measured hosted-provider cold work actually returned
+(Qwen + JEV = 35,795 ms = 35,795,000 µs). It is amortized over 1, 3 and 10
+reviews per repository, with the exact remainder carried so the division never
+rounds silently:
+
+| Reviews per repository | Cold total (µs) | Per review (µs) | Remainder (µs) | Per review (ms) |
+| --- | --- | --- | --- | --- |
+| 1 | 35,795,000 | 35,795,000 | 0 | 35,795.0 |
+| 3 | 35,795,000 | 11,931,666 | 2 | 11,931.7 |
+| 10 | 35,795,000 | 3,579,500 | 0 | 3,579.5 |
+
+**Stated assumption.** The cold index is the measured hosted-provider cold work
+only (Qwen + JEV); the acquisition network wall and the host-local Grit
+extraction wall are not separately measured and are **not** included, and the
+prediction **assumes no SignatureReuse**. The actual measured denominator is one
+review per arm per repository (10 admitted tasks in 10 distinct repositories, so
+2 arm-reviews per repository); 3 and 10 are the requested amortization
+assumptions, not measurements.
+
+### Cost-latency-quality graphs
+
+The inline graph is generated by the owner from the frozen values (a bounded,
+pure-ASCII scatter of each arm's all-findings valid precision against its median
+fresh turn wall, with the two-arm latency bars above it). Two points on the same
+cell share an `X` rather than overwriting:
+
+```text
+arm A median fresh turn wall 38466.5 ms |###########################|
+arm B median fresh turn wall 42597.0 ms |##############################|
+
+valid precision (%) ^
+100% |                     
+ 90% |                  O  
+ 80% |                     
+ 70% |                    O
+ 60% |                     
+ 50% |                     
+ 40% |                     
+ 30% |                     
+ 20% |                     
+ 10% |                     
+  0% |                     
+     +---------------------> median fresh turn wall (ms)
+      0               42597
+```
+
+Read plainly: on this small cohort the two arms sit close together on latency
+(A median 38.5 s, B median 42.6 s) while arm A holds the higher provisional valid
+precision (90.0% vs 75.0%). The assisted-context arm B is not faster and is not
+more precise here; the cohort is far too small (10 tasks, 12 scored reviews) to
+claim any ranking-quality difference, and none is claimed.
+
+### Timing priors versus measured values
+
+The historical figures recorded earlier in this report remain **priors, never
+promises**, and are not comparable to the measured values below:
+
+| Quantity | Historical prior | Measured here |
+| --- | --- | --- |
+| First useful result | 15–30 min (prior) | median first finding 3.9 s (A) / 3.8 s (B) |
+| Implementation | 1–3 h (prior) | not measured (out of scope) |
+| Hosted-Qwen throughput | prior only | 32,513 ms for 5 requests / 176,754 tokens |
+| Cold shared context | prior only | 35,795 ms (Qwen + JEV) |
+
+No speed-up is claimed from programming time or from any prior: the measured
+values are read from the frozen receipts, and the priors are labelled as priors.
+
+### Replay and hermeticity
+
+The reduction replays against the native public test interface only and executes
+**zero** provider calls:
+
+| Replay | Count | Basis |
+| --- | --- | --- |
+| provider-calls | 0 | frozen receipts and frozen quality tables only |
+| review-actions | 0 | no review is re-run |
+| judge-actions | 0 | no judge or adjudication session is re-run |
+| grit-actions | 0 | no structural extraction |
+| theory-actions | 0 | no Theory lowering |
+
+### The result, stated honestly
+
+This is a **valid negative-to-flat** first paired result: the assisted-context
+arm B is neither faster nor more precise than the plain arm A on this 10-task
+cohort, and four of the ten tasks exhausted the token budget in both arms. The
+planned 24-task × 2-arm = 48 denominator is retained, the 14-task attrition and
+the eight retained token-cap failures are named rather than dropped, and the
+all-219 population is carried beside the 24 selected and 10 admitted. No whole
+mission acceptance is claimed, and no pending assertion is manufactured.
+
+### Commands (see `services.yaml`)
+
+`reviewbench_economics_report` (the provider-free reduction stage) and
+`reviewbench_economics_law` (the corpus-free laws) are the declared actions. The
+report stage is `manual` and runs host-local under
+`--modify_execution_info=AttuneStudyStage=+no-remote`; the law target is
+corpus-free and part of `//...`.
+
+### Update history
+
+- ReviewBench paired-economics result (this section): the first exploratory paired
+  result is published inline over the frozen admission/review/judge records. Typed
+  admission/source/finding/judge provenance, the paired quality and elapsed
+  tables, the separate cost lines with explicit `Unavailable` markers, the
+  cold/warm/replay regimes, the 1/3/10 index amortization with stated assumptions
+  and the cost-latency-quality graphs are reduced provider-free by
+  `//test/reviewbench_economics:reviewbench_economics_report`. The result is flat
+  on this small cohort and no positive outcome is claimed. This is the TERMINAL
+  ReviewBench feature: the continuation stops here, and coordination/repair, any
+  new corpus beyond ReviewBench, new models, effort sweeps, MCR and unrelated
+  cleanup remain OFF-LIMITS with the held coordination features preserved.
+
