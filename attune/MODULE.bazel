@@ -497,3 +497,22 @@ http_file(
     sha256 = "902caadddebbea2d0f92e9ccbdf66dae50b2c8da37dbae5106f4761f5ef1d20f",
     urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/ls1intum_Artemis_12479-237b3656.json"],
 )
+
+# The bounded development verification of the three exposed fixtures
+# (`VAL-SUB-018`). Their exact repository revisions are retained read-only in
+# the authorized `attune-reviewbench-worlds` cache; the committed identity record
+# `//test/study:fixtures/retained-worlds.tsv` names only the files a bounded
+# check actually reads, and each is admitted through a `file://` URL verified
+# against its declared SHA-256. Nothing is fetched from the network, no new
+# corpus is acquired, and a mutated or substituted retained file fails the
+# admission instead of entering the check. Declared last for the same
+# anonymous-repo renumbering reason as the acquisitions above.
+retained_worlds = use_repo_rule("//platform/build:retained_worlds.bzl", "attune_retained_worlds")
+
+retained_worlds(
+    name = "attune_retained_worlds",
+    manifest = "//test/study:fixtures/retained-worlds.tsv",
+    root = "/home/becker/.cache/attune-reviewbench-worlds",
+    token = "1",
+)
+

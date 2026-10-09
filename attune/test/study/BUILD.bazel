@@ -149,6 +149,28 @@ native_flix_java_test(
     java_deps = [],
 )
 
+# The bounded ACTUAL checks of the same three exposed fixtures (VAL-SUB-018):
+# the law reads the exact retained source bytes of the authorized
+# `attune-reviewbench-worlds` revisions (admitted and digest-verified by
+# `//platform/build:retained_worlds.bzl`) and performs each fixture's concrete
+# feasible check. The `usketch#534` precondition is corroborated from the actual
+# source (the editor pointer path calls the unwrapped `hitTest` while the shape
+# registers `withRotation(hitTest)`, and the declared deterministic case differs
+# between raw and rotated); `teamscli#31`'s supplied revision is not retained and
+# stays `Unavailable`; `Artemis#12479`'s precondition was not located in bounded
+# analysis and stays `Unknown`. No new corpus is acquired and no hypothesis is
+# injected as a prompt lead.
+native_flix_java_test(
+    name = "retained_world_verification_law",
+    srcs = ["RetainedWorldVerificationLaw.flix"],
+    declared_files = [
+        "@attune_retained_worlds//:usketch-rotation-util",
+        "@attune_retained_worlds//:usketch-sticky-plugin",
+        "fixtures/development-verification.tsv",
+    ],
+    java_deps = [],
+)
+
 # The one declared result reducer compiles the same dispatcher plus the Parquet
 # reducer law, which imports the typed Arrow seam. The seam jar is therefore a
 # declared dependency of the reducer stage alone, not of every study stage.

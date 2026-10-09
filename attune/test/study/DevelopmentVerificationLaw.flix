@@ -66,14 +66,14 @@ def theThreeExposedFixturesAreDeclaredWithExactHeadsAndChecks(): Unit \ {Assert,
     Assert.assertEq(expected = true, List.forAll(row -> field(row, 5) == "development", rows))
 }
 
-/// Each fixture records an honest `Unavailable`/`Unknown` result, never a
-/// validated true positive: the authorized source bytes are absent and no new
-/// corpus is acquired.
+/// Each fixture records an honest result from the declared vocabulary, never a
+/// validated true positive. The bounded actual checks and their retained-world
+/// identities are asserted by `//test/study:retained_world_verification_law`.
 @Test
 def everyFixtureRecordsAnHonestUnavailableOrUnknownResult(): Unit \ {Assert, IO} = {
     let rows = fixtureRows();
-    Assert.assertEq(expected = true,
-        List.forAll(row -> field(row, 4) == "Unavailable" or field(row, 4) == "Unknown", rows));
+    let honest = List#{"PreconditionConfirmed", "Unavailable", "Unknown"};
+    Assert.assertEq(expected = true, List.forAll(row -> List.memberOf(field(row, 4), honest), rows));
     Assert.assertEq(expected = false, List.exists(row -> field(row, 4) == "validated", rows))
 }
 
