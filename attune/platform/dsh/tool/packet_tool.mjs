@@ -10,6 +10,10 @@
 ///  - the `full-source` escape discloses every declared region of the changed
 ///    world, so full source stays reachable when the progressive view is not
 ///    enough;
+///  - the `whole-file` escape reads any ONE declared file of the complete
+///    authorized changed world whole, including a file the bounded region policy
+///    marks `overflow`, so ordinary access beyond the initial neighborhood stays
+///    possible;
 ///  - every served span is resolved against the declared packet world through
 ///    the runtime boundary and its sealed bytes are digest-verified, so a
 ///    packet can only disclose physical exact evidence;
@@ -17,9 +21,17 @@
 ///    total returned bytes, so a memoized repeat is visible and never reported
 ///    as newly acquired evidence.
 ///
+/// It delivers the ACTUAL source text, not span metadata: the exact sealed bytes
+/// of every named piece are losslessly decoded (or explicitly refused as an
+/// unsupported encoding) and returned in the separate declared `source` member,
+/// served in deterministic bounded pages with explicit omitted bytes and an
+/// explicit continuation. A page is never truncated and never labelled complete.
+/// The `spans` member remains the narrow identity/coverage record, so the
+/// `EvidenceRef` identity contract is unchanged and the text travels separately.
+///
 /// It decides no defect and no policy: the packet record it serves is the
 /// compiled `evidence_packets` stage's own materialized record, and this module
-/// only resolves and verifies it.
+/// only resolves, verifies and delivers it.
 ///
 /// @module attune.dsh.packet-tool
 
@@ -30,10 +42,12 @@ import { join } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
 import {
+  DEFAULT_PAGE_BYTES,
   PacketRefusal,
   findDeclaredRegion,
   findDeclaredWorldFile,
   packetRegionKey,
+  pageText,
   parsePacketWorld,
   parseWorldFiles,
   readRegion,
@@ -113,10 +127,25 @@ export const PACKET_PARAMETERS = {
       '- when the disclosure is not a whole-file read. An undeclared revision is ' +
       'refused and the declared revisions are named.',
   },
+  cursor: {
+    type: 'string',
+    required: true,
+    description:
+      'The byte offset into the ordered delivered source at which this page ' +
+      'begins: the declared absent value - starts at the first byte, and otherwise ' +
+      'the exact continuation value the previous response returned. The page is ' +
+      'bounded and never splits a UTF-8 code point; a response that is not complete ' +
+      'names the continuation offset of the next page.',
+  },
 }
 
 /// The declared absent value of the two file fields.
 export const ABSENT = '-'
+
+/// The deterministic bounded page budget of one delivered source response. The
+/// declaration lives here, beside the tool, so the served page is proved to stay
+/// under it and a page is never silently the whole (possibly oversized) source.
+export const PACKET_PAGE_BYTES = DEFAULT_PAGE_BYTES
 
 export const name = 'attune-packet-tool'
 export const inject = ['tools']
@@ -202,28 +231,36 @@ export function declaredWorldFiles(config) {
   return parseWorldFiles(readFileSync(path, 'utf8'))
 }
 
-/// Record one served span of this call in the run's own ledger. The ledger is
-/// what makes the run's acquisition accounting observable: the runtime reduction
-/// reads exactly these rows, so the memo, the byte counts and the packet use are
-/// derived from the deliveries that actually happened rather than declared. It
-/// defaults into the run's own declared DSH home, so an actual run persists its
-/// record as part of the session output rather than outside the action boundary.
-function recordLedger(config, packetId, disclosure, spans) {
+/// Record one DELIVERED source page of this call in the run's own ledger. The
+/// ledger is what makes the run's acquisition accounting observable: the runtime
+/// reduction reads exactly these rows, so the memo, the byte counts and the
+/// packet use are derived from the deliveries that actually happened rather than
+/// declared. It records the exact identity, the full piece byte count and the
+/// bytes actually delivered in this page, so a partial page is visible as
+/// `deliveredBytes < bytes`. The format keeps the frozen 8-column prefix of the
+/// immutable prepared ledger and appends the delivered byte count as a ninth
+/// column, so a reader that predates the correction still parses the prefix.
+/// It defaults into the run's own declared DSH home, so an actual run persists
+/// its record as part of the session output rather than outside the action
+/// boundary.
+function recordLedger(config, packetId, disclosure, delivered) {
   const path = config?.ledger ?? process.env.ATTUNE_PACKET_LEDGER
     ?? (process.env.DSH_HOME ? join(process.env.DSH_HOME, 'attune-packet-ledger.tsv') : '')
   if (typeof path !== 'string' || path.length === 0) return
-  const lines = spans.map((span) =>
+  const lines = delivered.map((piece) =>
     [
       packetId,
       disclosure,
-      span.revision,
-      span.path,
-      String(span.startLine),
-      String(span.endLine),
-      span.sha256,
-      String(span.bytes),
+      piece.revision,
+      piece.path,
+      String(piece.startLine),
+      String(piece.endLine),
+      piece.sha256,
+      String(piece.bytes),
+      String(piece.deliveredBytes),
     ].join('\t'),
   )
+  if (lines.length === 0) return
   appendFileSync(path, `${lines.join('\n')}\n`)
 }
 
@@ -231,7 +268,8 @@ function recordLedger(config, packetId, disclosure, spans) {
 /// packet's own compiled spans; the full-source escape is every declared region
 /// of the changed world, or one exact declared whole file of it when the model
 /// names that file. Every served span is resolved and digest-verified, and the
-/// returned accounting separates unique from total bytes.
+/// ACTUAL source text of the disclosure is delivered as a separate declared
+/// member in bounded, deterministic pages.
 export function executePacketOperation(args, config) {
   const modes = ['progressive', 'full-source', 'whole-file']
   if (!modes.includes(args.disclosure)) {
@@ -280,11 +318,51 @@ export function executePacketOperation(args, config) {
       return read
     })
   }
-  recordLedger(config, packet.id, args.disclosure, served)
+  const totalBytes = served.reduce((sum, ref) => sum + ref.bytes, 0)
+  const cursor = parseCursor(args.cursor, totalBytes)
+  // The deterministic bounded page: from `cursor` onward, deliver whole UTF-8
+  // code points up to the declared budget across the ordered pieces. The page
+  // never truncates silently: a partial page carries its exact delivered range,
+  // an explicit omitted byte count and the continuation offset of the next page.
+  const delivered = []
+  let position = 0
+  let remaining = PACKET_PAGE_BYTES
+  for (const ref of served) {
+    const end = position + ref.bytes
+    if (end <= cursor) {
+      position = end
+      continue
+    }
+    if (remaining <= 0) break
+    const localStart = Math.max(0, cursor - position)
+    const page = pageText(ref.text, localStart, remaining)
+    delivered.push({
+      world: ref.world,
+      revision: ref.revision,
+      path: ref.path,
+      startLine: ref.startLine,
+      endLine: ref.endLine,
+      sha256: ref.sha256,
+      bytes: ref.bytes,
+      status: ref.status,
+      text: page.text,
+      startByte: page.startByte,
+      endByte: page.endByte,
+      deliveredBytes: page.endByte - page.startByte,
+      omittedBytes: ref.bytes - (page.endByte - page.startByte),
+      complete: page.complete,
+    })
+    remaining -= page.endByte - page.startByte
+    position = end
+  }
+  recordLedger(config, packet.id, args.disclosure, delivered)
   const unique = []
   for (const ref of served) {
     if (!unique.some((other) => packetRegionKey(other) === packetRegionKey(ref))) unique.push(ref)
   }
+  const deliveredBytes = delivered.reduce((sum, piece) => sum + piece.deliveredBytes, 0)
+  const pageEnd = cursor + deliveredBytes
+  const hasMore = pageEnd < totalBytes
   return {
     packet: packet.id,
     disclosure: args.disclosure,
@@ -294,14 +372,54 @@ export function executePacketOperation(args, config) {
     contract: packet.contract,
     reachability: packet.reachability,
     missing: packet.missing.join(','),
-    spans: served,
+    // The identity/coverage record of the disclosure: pure declared span
+    // identity, with no source text. It is the narrow `EvidenceRef` projection.
+    spans: served.map((ref) => ({
+      world: ref.world,
+      revision: ref.revision,
+      path: ref.path,
+      startLine: ref.startLine,
+      endLine: ref.endLine,
+      sha256: ref.sha256,
+      bytes: ref.bytes,
+      status: ref.status,
+    })),
+    // The ACTUAL delivered source text of this page, as a separate declared
+    // member. It is exactly the sealed bytes of the named pieces, losslessly
+    // decoded, never a generated summary and never span metadata alone.
+    source: delivered,
     uniqueBytes: unique.reduce((sum, ref) => sum + ref.bytes, 0),
-    totalBytes: served.reduce((sum, ref) => sum + ref.bytes, 0),
+    totalBytes,
+    deliveredBytes,
+    omittedBytes: totalBytes - deliveredBytes,
+    continuation: hasMore ? String(pageEnd) : ABSENT,
   }
 }
 
-function renderSpans(spans) {
-  return spans.map((span) => `${span.path}@${span.revision}:${span.startLine}-${span.endLine} ${span.bytes} bytes sha256=${span.sha256}`).join('\n')
+/// The declared page cursor: the declared absent value starts at the first byte,
+/// and otherwise the exact continuation offset a previous page returned. A
+/// cursor outside the delivered source is refused rather than silently clamped.
+function parseCursor(value, totalBytes) {
+  if (value === undefined || value === ABSENT || value.length === 0) return 0
+  if (!/^[0-9]+$/.test(value)) {
+    throw new PacketRefusal('the cursor is not a declared byte offset or the declared absent value')
+  }
+  const cursor = Number.parseInt(value, 10)
+  if (cursor > totalBytes) {
+    throw new PacketRefusal('the cursor is past the end of the delivered source')
+  }
+  return cursor
+}
+
+function renderSource(source) {
+  return source
+    .map((piece) => {
+      const head = `${piece.path}@${piece.revision}:${piece.startLine}-${piece.endLine} `
+        + `${piece.deliveredBytes}/${piece.bytes} bytes sha256=${piece.sha256}`
+        + `${piece.complete ? '' : ` (omitted ${piece.omittedBytes} bytes)`}`
+      return `${head}\n${piece.text}`
+    })
+    .join('\n')
 }
 
 /// Register the packet tool on `ctx.tools`.
@@ -310,15 +428,19 @@ export function apply(ctx, config) {
     defineTool({
       name: PACKET_TOOL_NAME,
       description:
-        'Disclose one declared evidence packet of the changed world. The ' +
-        'progressive disclosure is exactly the packet evidence that answers its ' +
-        'named obligation; the full-source disclosure is every declared region of ' +
-        'the changed world, so full source stays reachable; the whole-file ' +
-        'disclosure reads one exact declared file of the complete changed world ' +
-        'whole, so ordinary access beyond the initial neighborhood stays possible. ' +
-        'Every disclosed span is a declared identity whose sealed bytes are ' +
-        'digest-verified. The declared absent value - marks the file fields of a ' +
-        'disclosure that reads no whole file.',
+        'Disclose one declared evidence packet of the changed world and deliver ' +
+        'its ACTUAL source text. The progressive disclosure is exactly the packet ' +
+        'evidence that answers its named obligation; the full-source disclosure is ' +
+        'every declared region of the changed world, so full source stays reachable; ' +
+        'the whole-file disclosure reads one exact declared file of the complete ' +
+        'changed world whole, so ordinary access beyond the initial neighborhood ' +
+        'stays possible. Every disclosed span is a declared identity whose sealed ' +
+        'bytes are digest-verified, and the exact source text is returned losslessly ' +
+        'in bounded pages of at most ' + PACKET_PAGE_BYTES + ' bytes: a response that ' +
+        'is not complete names its omitted bytes and the continuation byte offset to ' +
+        'resume at, and is never truncated and never labelled complete. The declared ' +
+        'absent value - marks the file fields of a disclosure that reads no whole ' +
+        'file and the cursor of a first page.',
       parameters: PACKET_PARAMETERS,
       output: {
         schema: {
@@ -335,6 +457,9 @@ export function apply(ctx, config) {
             missing: { type: 'string', required: true },
             uniqueBytes: { type: 'number', required: true },
             totalBytes: { type: 'number', required: true },
+            deliveredBytes: { type: 'number', required: true },
+            omittedBytes: { type: 'number', required: true },
+            continuation: { type: 'string', required: true },
             // The exact declared spans the disclosure served. Every property the
             // tool returns must be DECLARED here: the DSH output boundary
             // validates the returned object against this schema with
@@ -362,6 +487,34 @@ export function apply(ctx, config) {
                 },
               },
             },
+            // The separate declared source-text member: the ACTUAL delivered
+            // source of this page, one entry per piece the page touched, each
+            // carrying the exact lossless text together with its identity, its
+            // delivered and omitted byte counts and whether it is complete.
+            source: {
+              type: 'array',
+              required: true,
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  world: { type: 'string', required: true },
+                  revision: { type: 'string', required: true },
+                  path: { type: 'string', required: true },
+                  startLine: { type: 'number', required: true },
+                  endLine: { type: 'number', required: true },
+                  sha256: { type: 'string', required: true },
+                  bytes: { type: 'number', required: true },
+                  status: { type: 'string', required: true },
+                  text: { type: 'string', required: true },
+                  startByte: { type: 'number', required: true },
+                  endByte: { type: 'number', required: true },
+                  deliveredBytes: { type: 'number', required: true },
+                  omittedBytes: { type: 'number', required: true },
+                  complete: { type: 'boolean', required: true },
+                },
+              },
+            },
           },
         },
         render: (_args, value) => [
@@ -369,9 +522,12 @@ export function apply(ctx, config) {
             type: 'text',
             text:
               `Packet ${value.packet} (${value.disclosure}) for obligation ${value.operation}: ` +
-              `${value.spans.length} span(s), ${value.uniqueBytes} unique / ${value.totalBytes} returned bytes.\n` +
+              `${value.spans.length} span(s), ${value.uniqueBytes} unique / ${value.totalBytes} returned bytes, ` +
+              `${value.deliveredBytes} bytes delivered in this page` +
+              `${value.continuation === ABSENT ? '' : `, continuation ${value.continuation}`}` +
+              `${value.omittedBytes > 0 ? `, ${value.omittedBytes} bytes omitted` : ''}.\n` +
               `entrypoints: ${value.entrypoints}\nmissing obligations: ${value.missing || '(none)'}\n` +
-              renderSpans(value.spans),
+              renderSource(value.source),
           },
         ],
       },

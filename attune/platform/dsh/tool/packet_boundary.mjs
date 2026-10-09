@@ -25,6 +25,75 @@ export class PacketRefusal extends Error {
   }
 }
 
+/// The deterministic bounded page budget of one delivered source response. It is
+/// deliberately small: it keeps one tool result well under any output pruner or
+/// spill threshold, so the model actually receives the delivered bytes rather
+/// than a truncated prefix. A disclosure whose exact bytes exceed one page is
+/// served in deterministic pages with an explicit continuation, never truncated
+/// and never labelled complete.
+export const DEFAULT_PAGE_BYTES = 16384
+
+/// The strict UTF-8 decode of one sealed byte sequence. It is the ONLY decode
+/// the boundary performs: a byte sequence that is not well-formed UTF-8 is
+/// refused as an unsupported encoding rather than lossily re-encoded with the
+/// replacement character. The decoder keeps a leading BOM as a code point, so a
+/// decode/re-encode roundtrip is byte-exact for every supported sequence.
+export function decodeUtf8(bytes, label) {
+  let text
+  try {
+    text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes)
+  } catch {
+    throw new PacketRefusal(`the sealed source ${label} is not a supported lossless UTF-8 sequence`)
+  }
+  // The roundtrip proof: re-encoding the decoded text must reproduce the exact
+  // sealed bytes. A supported encoding therefore roundtrips; nothing lossy is
+  // ever delivered.
+  if (!Buffer.from(text, 'utf8').equals(bytes)) {
+    throw new PacketRefusal(`the sealed source ${label} does not roundtrip losslessly as UTF-8`)
+  }
+  return text
+}
+
+/// One deterministic bounded page of one decoded source text, addressed by a
+/// byte offset. The page never splits a UTF-8 code point: it starts exactly at
+/// `startByte` (which always lies on a code-point boundary because it is a value
+/// this function produced) and ends at the last whole code point that fits the
+/// budget. `nextByte` is the continuation offset, or `-1` when the piece is
+/// fully delivered. It truncates nothing silently: a partial page reports its
+/// exact delivered range and where to resume.
+export function pageText(text, startByte, budgetBytes) {
+  const points = Array.from(text)
+  let bytePos = 0
+  let startIndex = 0
+  while (startIndex < points.length && bytePos < startByte) {
+    bytePos += Buffer.byteLength(points[startIndex], 'utf8')
+    startIndex += 1
+  }
+  let endIndex = startIndex
+  let used = 0
+  while (endIndex < points.length) {
+    const size = Buffer.byteLength(points[endIndex], 'utf8')
+    if (endIndex > startIndex && used + size > budgetBytes) break
+    if (endIndex === startIndex && size > budgetBytes) {
+      // A single code point larger than the budget still advances, so the
+      // continuation can never stall on the same offset.
+      used += size
+      endIndex += 1
+      break
+    }
+    used += size
+    endIndex += 1
+  }
+  const complete = endIndex >= points.length
+  return {
+    text: points.slice(startIndex, endIndex).join(''),
+    startByte: bytePos,
+    endByte: bytePos + used,
+    complete,
+    nextByte: complete ? -1 : bytePos + used,
+  }
+}
+
 /// The declared packet world manifest: one row per exact declared region, keyed
 /// by the world/revision/path identity and carrying the allowed range, the
 /// declared span digest, the permission and the sealed file that holds it. A
@@ -118,7 +187,8 @@ export function readWholeFile(row, { sourceRoot }) {
   if (sha256 !== row.sha256) {
     throw new PacketRefusal('the sealed file bytes do not match the declared whole-world identity digest')
   }
-  const lines = bytes.toString('utf8').split('\n')
+  const text = decodeUtf8(bytes, row.path)
+  const lines = text.split('\n')
   const endLine = lines.length > 0 && lines[lines.length - 1] === '' ? lines.length - 1 : lines.length
   return {
     world: row.world,
@@ -129,6 +199,7 @@ export function readWholeFile(row, { sourceRoot }) {
     sha256,
     bytes: bytes.length,
     status: row.status,
+    text,
   }
 }
 
@@ -218,5 +289,6 @@ export function readRegion(region, { sourceRoot }) {
     sha256,
     bytes: span.length,
     status: 'admitted',
+    text: decodeUtf8(span, `${region.path}@${region.startLine}-${region.endLine}`),
   }
 }
