@@ -107,12 +107,20 @@ js_library(
     ],
 )
 
+# The laws of the one native packet tool over the REAL retained ReviewBench
+# world. They read the compiled `evidence_reviewbench_packets` tree the canonical
+# Flix stage materialized from the COMPLETE admitted base/head source trees, its
+# region manifest and its whole-world file manifest, register the REAL `defineTool`
+# definition the pinned DSH surface produced, and drive the progressive
+# disclosure, the retained full-source escape and the retained whole-file escape
+# of the complete changed world, plus every refusal path. Provider-free and
+# offline.
 js_test(
     name = "packet_test",
     data = [
         ":evidence_tool_package",
         ":packet_fixtures",
-        "//platform/dsh:evidence_packets",
+        "//platform/dsh:evidence_reviewbench_packets",
         "//platform/dsh:node_modules",
     ],
     entry_point = "packet_test.mjs",

@@ -199,44 +199,54 @@ native_study_stage(
 
 # The declared REAL-SOURCE packet world of the exact retained ReviewBench change
 # (VAL-SUB-010). It is the same `native_study_stage` shape over the integration
-# stage closure, and it reads the ACTUAL admitted bytes of the changed registry
-# (`src/index.ts` in both revisions) plus the changed command implementations and
-# the declared publication-contract metadata (`package.json`, `.npmignore`,
-# `tsconfig.json`), all admitted read-only and digest-verified by
-# `//platform/build:retained_worlds.bzl` (never fetched, never a new corpus). The
-# stage DERIVES the mandatory changed-entrypoint manifest, the exact regions with
-# their UTF-8/newline digests (through the existing mechanical
+# stage closure, and it reads the ACTUAL admitted bytes of the COMPLETE two
+# authorized `capawesome-team_cli-126` base/head source trees, admitted read-only
+# and digest-verified one file at a time by `//platform/build:retained_worlds.bzl`
+# (never fetched, never a new corpus). The stage DERIVES the complete changed-file
+# set, the mandatory changed-entrypoint manifest, the exact regions with their
+# UTF-8/newline digests (through the existing mechanical
 # `AttuneReviewBench.sha256Hex` seam), the progressive packet records, the
-# retained full-source escape, the memoized reacquisition decisions, the
-# unique-versus-total byte accounting and the sealed copies the packet boundary
-# verifies against. No gold, target label or task branching is read or written.
+# retained full-source escape, the whole-world file manifest with its explicit
+# bounded-policy status, the declared replay of the tool's serving contract and
+# the sealed copies the packet boundary verifies against. No gold, target label
+# or task branching is read or written.
 native_study_stage(
     name = "evidence_reviewbench_packets",
     srcs = ["//test/study:reviewbench_integration_stage_srcs"],
     input_names = [
-        "certificates_create",
-        "certificates_delete",
-        "certificates_list",
-        "index_base",
-        "index_head",
-        "npmignore",
-        "package_json",
-        "tsconfig",
+        "trees",
         "world",
     ],
     inputs = [
-        "@attune_retained_worlds//:capawesome-certificates-create-head",
-        "@attune_retained_worlds//:capawesome-certificates-delete-head",
-        "@attune_retained_worlds//:capawesome-certificates-list-head",
-        "@attune_retained_worlds//:capawesome-cli-index-base",
-        "@attune_retained_worlds//:capawesome-cli-index-head",
-        "@attune_retained_worlds//:capawesome-npmignore-head",
-        "@attune_retained_worlds//:capawesome-package-json-head",
-        "@attune_retained_worlds//:capawesome-tsconfig-head",
+        "//test/study:fixtures/retained-world-trees.tsv",
         "//test/study:fixtures/reviewbench-packets.tsv",
     ],
     java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
     stage = "evidence_reviewbench_packets",
+    world_sources = ["@attune_retained_world_trees//:all"],
+)
+
+# The declared runtime acquisition accounting of ONE run of the packet tool over
+# that same world (VAL-SUB-010 runtime half). It reduces the run's OWN ledger of
+# served exact spans against the declared region manifest, so the exact-identity
+# memo, the unique/total/repeated byte accounting and the observed acquisitions,
+# packet uses and obligations are derived from the delivery sequence rather than
+# declared. Without a bound session ledger it reduces the declared replay of the
+# tool's serving contract over the same real region identities, and the one value
+# no offline replay can observe stays the canonical `Unavailable`.
+native_study_stage(
+    name = "evidence_reviewbench_runtime",
+    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
+    input_names = [
+        "regions",
+        "world",
+    ],
+    inputs = [
+        ":evidence_reviewbench_packets",
+        "//test/study:fixtures/reviewbench-packets.tsv",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    stage = "evidence_reviewbench_runtime",
 )
 
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
@@ -365,9 +375,8 @@ dsh_agent_run(
     ],
     routes = ["route-siwc-responses.yml"],
     tags = ["manual"],
-    task = "Do exactly four things. First call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/shop.ts', startLine 1, endLine 2, and report the full sha256 value it returns. Second call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/secret.ts', startLine 1, endLine 1, and report the exact error message it returns. Third call attune_packet_operation with packet 'p1' and disclosure 'progressive', and report the returned uniqueBytes and totalBytes. Fourth call attune_packet_operation with packet 'p1' and disclosure 'full-source', and report the returned totalBytes.",
+    task = "Do exactly five things. First call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/shop.ts', startLine 1, endLine 2, and report the full sha256 value it returns. Second call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/secret.ts', startLine 1, endLine 1, and report the exact error message it returns. Third call attune_packet_operation with packet 'p1', disclosure 'progressive', path '-', revision '-', and report the returned uniqueBytes and totalBytes. Fourth call attune_packet_operation with packet 'p1', disclosure 'full-source', path '-', revision '-', and report the returned totalBytes. Fifth call attune_packet_operation with packet 'p1', disclosure 'whole-file', path 'src/index.ts', revision 'capawesome-team_cli-2d997db6e53c75213cbb13f2d3fdb636984eead4', and report the returned bytes and sha256.",
 )
-
 # --------------------------------------------------------------------------
 # The narrow Typert boundary (VAL-SUB-004/005/006).
 #

@@ -75,12 +75,13 @@ filegroup(
 
 # The laws of the ACTUAL retained-ReviewBench packet world (VAL-SUB-010). They
 # consume the tree the `evidence_reviewbench_packets` stage action materialized
-# and recompute the mandatory changed-entrypoint manifest, the exact regions and
-# the packet meaning over the SAME admitted bytes: the regions TILE each admitted
-# file, every packet's entrypoints come from the manifest, the retained
-# full-source escape discloses every declared head region, reacquisition reuses an
-# exact identity while still acquiring a distinct one, and the byte accounting
-# separates unique from total bytes. Provider-free and offline.
+# from the COMPLETE admitted base/head source trees and recompute the mandatory
+# changed-entrypoint manifest, the exact regions and the packet meaning over the
+# SAME admitted bytes: the regions TILE each admitted file, the sealed copy of
+# every admitted whole file carries its declared retained digest, every packet's
+# entrypoints come from the manifest, the retained full-source escape discloses
+# every declared head region, and the whole-world file manifest is complete with
+# an explicit bounded-policy status. Provider-free and offline.
 native_flix_consumer_test(
     name = "evidence_reviewbench_packet_law",
     srcs = [
@@ -91,18 +92,36 @@ native_flix_consumer_test(
         "//src:Attune/Study/EvidenceSubstrate.flix",
     ],
     declared_files = [
+        "fixtures/retained-world-trees.tsv",
         "fixtures/reviewbench-packets.tsv",
-        "@attune_retained_worlds//:capawesome-cli-index-base",
-        "@attune_retained_worlds//:capawesome-cli-index-head",
-        "@attune_retained_worlds//:capawesome-certificates-create-head",
-        "@attune_retained_worlds//:capawesome-certificates-list-head",
-        "@attune_retained_worlds//:capawesome-certificates-delete-head",
-        "@attune_retained_worlds//:capawesome-npmignore-head",
-        "@attune_retained_worlds//:capawesome-package-json-head",
-        "@attune_retained_worlds//:capawesome-tsconfig-head",
     ],
     java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
     produced = ["//platform/dsh:evidence_reviewbench_packets"],
+)
+
+# The laws of the ACTUAL runtime acquisition accounting (VAL-SUB-010 runtime
+# half). They consume the tree the `evidence_reviewbench_runtime` stage action
+# materialized and recompute the whole-run exact-identity memo, the
+# unique/total/repeated byte accounting and the observed instrumentation from the
+# SAME delivered exact spans the stage reduced, so the memo and the byte counts
+# are derived from a delivery sequence rather than declared as fixture numbers.
+# The one value an offline replay cannot observe stays the canonical
+# `Unavailable`. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_runtime_law",
+    srcs = [
+        "EvidenceReviewBenchRuntimeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "fixtures/retained-world-trees.tsv",
+        "fixtures/reviewbench-packets.tsv",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    produced = ["//platform/dsh:evidence_reviewbench_runtime"],
 )
 
 # The laws of the compiled operation: they consume the declared tree the

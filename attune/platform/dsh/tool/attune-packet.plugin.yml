@@ -7,9 +7,11 @@
 # profile's installed-package scope.
 #
 # The packet tool is the substitutive delivery operation of the shared evidence
-# interface: it serves the compiled `evidence_packets` stage tree progressively
-# and discloses the retained full-source escape on request. It is mounted by its
-# own overlay so a run composes exactly the operations it declares.
+# interface: it serves the compiled `evidence_reviewbench_packets` stage tree over
+# the COMPLETE admitted base/head source world progressively, discloses the
+# retained full-source escape and reads one exact declared file of the complete
+# changed world whole. It is mounted by its own overlay so a run composes exactly
+# the operations it declares.
 - insert:
     - id: attune-packet-tool
       name: ./packet_tool.mjs

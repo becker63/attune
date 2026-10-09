@@ -527,3 +527,21 @@ retained_worlds(
     token = "2",
 )
 
+# The COMPLETE authorized source trees of the same already-approved
+# `capawesome-team_cli_126` base/head world pair (VAL-SUB-010, full-source
+# escape). The committed identity record
+# `//test/study:fixtures/retained-world-trees.tsv` names every regular file of
+# the two retained trees one at a time, and each is admitted through a
+# `file://` URL verified against its declared SHA-256. Nothing is fetched from
+# the network, no new corpus and no new permission is acquired, and the whole
+# world is an ordinary declared input of the declared packet stage, so an
+# ordinary repository source beyond the changed neighborhood stays reachable.
+retained_world_trees = use_repo_rule("//platform/build:retained_worlds.bzl", "attune_retained_worlds")
+
+retained_world_trees(
+    name = "attune_retained_world_trees",
+    manifest = "//test/study:fixtures/retained-world-trees.tsv",
+    root = "/home/becker/.cache/attune-reviewbench-worlds",
+    token = "1",
+)
+

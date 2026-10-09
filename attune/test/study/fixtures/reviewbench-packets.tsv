@@ -1,43 +1,28 @@
 # The declared packet world of the ACTUAL retained ReviewBench change
 # (VAL-SUB-010).
 #
-# This names the IDENTITY of one real changed file of the already-authorized
-# `capawesome-team_cli-126` world plus the exact retained files whose bytes the
-# packets disclose, and the human cues (intent, contract, reachability, missing
-# obligations) of each declared packet. Nothing here is a gold label, a task
-# identity or a repository branch: the changed-entrypoint manifest, the exact
-# regions with their digests and byte counts, and every packet's evidence are
-# DERIVED from the actual admitted bytes by the stage and its consumer law.
+# This names the IDENTITY of the real `capawesome-team_cli-126` world pair and
+# the human cues of each declared packet. Nothing here is a gold label, a task
+# identity or a repository branch, and no changed file, changed entrypoint,
+# region, digest, byte count, memo decision or accounting number is declared:
+# the stage DERIVES all of them from the actual admitted base/head bytes of the
+# two complete retained worlds (`//test/study:fixtures/retained-world-trees.tsv`,
+# admitted read-only and digest-verified by `//platform/build:retained_worlds.bzl`).
 #
 # Row types (first field):
-#   world   <worldId> <baseRevision> <headRevision> <changedPath> <baseSha256> <headSha256>
-#   file    <fileId> <revision> <worldPath> <sealedName> <bindingName>
-#   packet  <packetId> <operation> <obligationKind> <worldScope> <contract> <disclosure> <intent> <reachability> <missing>
-#   packet-file <packetId> <fileId>
-#   request <packetId> <purpose> <fileId>
-#   verify  <hypothesis> <checkKind> <result> <inputs> <preconditions> <limits>
+#   world       <worldId> <baseRevision> <headRevision> <baseCacheWorld> <headCacheWorld>
+#   packet      <packetId> <operation> <obligationKind> <worldScope> <contract|-> <disclosure> <intent> <reachability|-> <missing>
+#   packet-path <packetId> <repositoryRelativePath>
+#   verify      <hypothesis> <checkKind> <result> <inputs> <preconditions> <limits>
 #
-# The publication contract, the path mapping and the dependency contract are NOT
-# declared here: the stage DERIVES them from the actual `package.json`,
-# `.npmignore` and `tsconfig.json` bytes. A cue the world does not support is `-`.
-world	capawesome-cli-126	capawesome-team_cli-a03825128b8380f86dcf85e8d3507b3a41d9f775	capawesome-team_cli-2d997db6e53c75213cbb13f2d3fdb636984eead4	src/index.ts	8f8f531028394771a7dbb8a69662ad1b70da94a9b07837cd1db8c9877790035b	93fa22303a38bfaf3fb3c17c532a4ba3d46c8ce8d436584e1460b439ea761f1e
-file	index-base	base	src/index.ts	index.base.ts	index_base
-file	index-head	head	src/index.ts	index.head.ts	index_head
-file	package-json	head	package.json	package.json	package_json
-file	npmignore	head	.npmignore	.npmignore	npmignore
-file	tsconfig	head	tsconfig.json	tsconfig.json	tsconfig
-file	certificates-create	head	src/commands/apps/certificates/create.ts	certificates-create.ts	certificates_create
-file	certificates-list	head	src/commands/apps/certificates/list.ts	certificates-list.ts	certificates_list
-file	certificates-delete	head	src/commands/apps/certificates/delete.ts	certificates-delete.ts	certificates_delete
+# The changed-file set, the mandatory changed-entrypoint manifest, the exact
+# region tiling and the whole-world file manifest are all derived from the real
+# bytes; the packets reference repository-relative paths, never line numbers.
+world	capawesome-cli-126	capawesome-team_cli-a03825128b8380f86dcf85e8d3507b3a41d9f775	capawesome-team_cli-2d997db6e53c75213cbb13f2d3fdb636984eead4	capawesome-team_cli-126-base	capawesome-team_cli-126-head
 packet	p1	publication/registry-entry	publication	capawesome-cli-126	package.json#bin	progressive	review whether the newly registered certificate and destination commands are published by the declared publication contract	the declared commands map is evaluated when the CLI entry module loads	read-publication-contract/compiled-artifact@head,read-caller/cli-consumer@head
 packet	p2	contract/certificates-create-options	contract	capawesome-cli-126	defineOptions#apps:certificates:create	progressive	review whether the newly added certificate creation command declares the inputs it requires in a non-interactive run	-	read-caller/certificates-registry@head
-packet-file	p1	index-head
-packet-file	p1	package-json
-packet-file	p1	npmignore
-packet-file	p2	certificates-create
-request	p1	context/ambiguity	index-head
-request	p1	obligation/publication	package-json
-request	p1	obligation/publication	npmignore
-request	p2	context/ambiguity	certificates-create
-request	p2	context/ambiguity	index-head
+packet-path	p1	src/index.ts
+packet-path	p1	package.json
+packet-path	p1	.npmignore
+packet-path	p2	src/commands/apps/certificates/create.ts
 verify	the newly registered commands are reachable from the declared published entry	base-head	Unknown	published-entry,commands-registry	the declared publication contract includes an artifact of the changed module	the published artifact is not built by this offline stage

@@ -58,6 +58,80 @@ export function packetRegionKey(region) {
   return [region.revision, region.path, String(region.startLine), String(region.endLine)].join('|')
 }
 
+/// The declared whole-world file manifest of the same world pair: one row per
+/// admitted repository file of each revision, carrying the exact byte count, the
+/// exact digest, the bounded-policy status (`admitted` or `overflow`) and the
+/// sealed file that holds the bytes. It is what keeps the COMPLETE authorized
+/// world reachable through the retained full-source escape.
+export function parseWorldFiles(text) {
+  const rows = []
+  for (const line of text.split('\n')) {
+    if (line.trim().length === 0) continue
+    const [kind, world, revision, path, bytes, sha256, status, sealedFile] = line.split('\t')
+    if (kind !== 'file') throw new PacketRefusal('the declared world file manifest has a malformed row')
+    rows.push({
+      world,
+      revision,
+      path,
+      bytes: Number.parseInt(bytes ?? '0', 10),
+      sha256: sha256 ?? '',
+      status: status ?? '',
+      sealedFile: sealedFile ?? '',
+    })
+  }
+  if (rows.length === 0) throw new PacketRefusal('the declared world file manifest is empty')
+  return rows
+}
+
+/// Resolve one requested WHOLE file of the complete authorized world. An
+/// identity the declared world does not name is refused, and a file the declared
+/// bounded policy does not admit is refused with its explicit `overflow` status
+/// rather than silently truncated or silently missing.
+export function findDeclaredWorldFile(worldFiles, request) {
+  const onPath = worldFiles.filter(
+    (candidate) =>
+      candidate.world === request.world &&
+      candidate.revision === request.revision &&
+      candidate.path === request.path,
+  )
+  if (onPath.length === 0) {
+    const revisions = [...new Set(worldFiles.filter((f) => f.path === request.path).map((f) => f.revision))]
+    throw new PacketRefusal(
+      revisions.length === 0
+        ? `the requested path ${request.path} is not a declared file of the requested world`
+        : `the requested revision is not a declared revision of ${request.path}; declared: ${revisions.join(', ')}`,
+    )
+  }
+  const row = onPath[0]
+  if (row.status !== 'admitted') {
+    throw new PacketRefusal(`the requested file is declared ${row.status} by the bounded world read policy`)
+  }
+  return row
+}
+
+/// Read one declared whole file: resolve the sealed copy inside the declared
+/// root, verify its whole-file digest against the declared identity, and report
+/// the exact byte count and line range. No span of it is truncated.
+export function readWholeFile(row, { sourceRoot }) {
+  const target = resolveWithinRoot(sourceRoot, row.sealedFile)
+  const bytes = readFileSync(target)
+  const sha256 = createHash('sha256').update(bytes).digest('hex')
+  if (sha256 !== row.sha256) {
+    throw new PacketRefusal('the sealed file bytes do not match the declared whole-world identity digest')
+  }
+  const lines = bytes.toString('utf8').split('\n')
+  const endLine = lines.length > 0 && lines[lines.length - 1] === '' ? lines.length - 1 : lines.length
+  return {
+    world: row.world,
+    revision: row.revision,
+    path: row.path,
+    startLine: 1,
+    endLine,
+    sha256,
+    bytes: bytes.length,
+  }
+}
+
 /// The exact bytes of one declared line span. The convention is fixed: the span
 /// of lines `a..b` is the contiguous bytes from the first byte of line `a`
 /// through the terminator of line `b`, so the whole-file span `1..N` of a file

@@ -23,41 +23,63 @@
 ///
 /// @module attune.dsh.packet-tool
 
-import { readFileSync } from 'node:fs'
+import { appendFileSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
 import {
   PacketRefusal,
   findDeclaredRegion,
+  findDeclaredWorldFile,
   packetRegionKey,
   parsePacketWorld,
+  parseWorldFiles,
   readRegion,
+  readWholeFile,
 } from './packet_boundary.mjs'
 
-/// The declared packet world of the tool, resolved beside the plugin module. A
-/// run may override the world manifest, the sealed root and the compiled
-/// projection through its declared config or environment; when it does not, the
-/// declared fixtures that ship with the plugin are the world it reads.
+/// The declared packet world of the tool: the real retained ReviewBench changed
+/// world that `//platform/dsh:evidence_reviewbench_packets` materialized from the
+/// complete admitted source trees. A run may override the world manifest, the
+/// whole-world manifest, the sealed root and the compiled projection through its
+/// declared config or environment; the defaults are the real compiled world, so
+/// the shipped tool never defaults to a synthetic packet set.
 export const DECLARED_PACKET_WORLD = fileURLToPath(
-  new URL('./fixtures/packet/packet-world.tsv', import.meta.url),
+  new URL('../evidence_reviewbench_packets/region-manifest.tsv', import.meta.url),
 )
-export const DECLARED_PACKET_ROOT = fileURLToPath(new URL('./fixtures/packet/', import.meta.url))
+export const DECLARED_PACKET_ROOT = fileURLToPath(
+  new URL('../evidence_reviewbench_packets/', import.meta.url),
+)
 
-/// The declared COMPILED packet world: the tree the `//platform/dsh:evidence_packets`
-/// stage action materialized from the canonical Flix packet meaning. The tool
-/// serves these records, so the live tool path returns the compiled stage's own
-/// output rather than a TypeScript re-derivation of it.
+/// The declared COMPILED packet world: the tree the
+/// `//platform/dsh:evidence_reviewbench_packets` stage action materialized from
+/// the canonical Flix packet meaning. The tool serves these records, so the live
+/// tool path returns the compiled stage's own output rather than a TypeScript
+/// re-derivation of it.
 export const DECLARED_PACKET_PROJECTION = fileURLToPath(
-  new URL('../evidence_packets/packet-records.tsv', import.meta.url),
+  new URL('../evidence_reviewbench_packets/packet-records.tsv', import.meta.url),
+)
+
+/// The declared whole-world file manifest of the same world pair: the complete
+/// authorized repository file set of both revisions, each with its exact digest,
+/// byte count and bounded-policy status. It is what keeps the complete world
+/// reachable through the retained full-source escape, beyond the packets' own
+/// initial neighborhood.
+export const DECLARED_WORLD_FILES = fileURLToPath(
+  new URL('../evidence_reviewbench_packets/world-files.tsv', import.meta.url),
 )
 
 export const PACKET_TOOL_NAME = 'attune_packet_operation'
 
-/// The model-facing parameters of the packet operation: the packet identity and
-/// the disclosure mode. The tool computes the spans, the digests and the byte
-/// accounting itself, so the model never supplies either.
+/// The model-facing parameters of the packet operation: the packet identity, the
+/// disclosure mode and the exact declared file identity the retained whole-world
+/// escape reads. The pinned DSH parameter dialect declares no optional parameter
+/// (a present property must be required), so the declared absent value `-` marks
+/// the two file fields as not used; a `whole-file` disclosure names both. The
+/// tool computes the spans, the digests and the byte accounting itself, so the
+/// model never supplies either.
 export const PACKET_PARAMETERS = {
   packet: {
     type: 'string',
@@ -67,12 +89,33 @@ export const PACKET_PARAMETERS = {
   disclosure: {
     type: 'string',
     required: true,
-    enum: ['progressive', 'full-source'],
+    enum: ['progressive', 'full-source', 'whole-file'],
     description:
       'progressive discloses exactly the packet evidence; full-source discloses ' +
-      'every declared region of the changed world.',
+      'every declared region of the changed world; whole-file reads one exact ' +
+      'declared file of the complete changed world whole.',
+  },
+  path: {
+    type: 'string',
+    required: true,
+    description:
+      'The repository-relative path of one declared file of the complete changed ' +
+      'world to read whole, or the declared absent value - when the disclosure is ' +
+      'not a whole-file read. A file the declared bounded read policy does not ' +
+      'admit is refused explicitly.',
+  },
+  revision: {
+    type: 'string',
+    required: true,
+    description:
+      'The declared revision identity of that file, or the declared absent value ' +
+      '- when the disclosure is not a whole-file read. An undeclared revision is ' +
+      'refused and the declared revisions are named.',
   },
 }
+
+/// The declared absent value of the two file fields.
+export const ABSENT = '-'
 
 export const name = 'attune-packet-tool'
 export const inject = ['tools']
@@ -152,36 +195,91 @@ export function declaredRegions(config) {
   return parsePacketWorld(readFileSync(path, 'utf8'))
 }
 
+/// The declared whole-world file manifest of the same world pair.
+export function declaredWorldFiles(config) {
+  const path = declared(config, 'worldFiles', 'ATTUNE_WORLD_FILES', DECLARED_WORLD_FILES)
+  return parseWorldFiles(readFileSync(path, 'utf8'))
+}
+
+/// Record one served span of this call in the run's own ledger. The ledger is
+/// what makes the run's acquisition accounting observable: the runtime reduction
+/// reads exactly these rows, so the memo, the byte counts and the packet use are
+/// derived from the deliveries that actually happened rather than declared. It
+/// defaults into the run's own declared DSH home, so an actual run persists its
+/// record as part of the session output rather than outside the action boundary.
+function recordLedger(config, packetId, disclosure, spans) {
+  const path = config?.ledger ?? process.env.ATTUNE_PACKET_LEDGER
+    ?? (process.env.DSH_HOME ? join(process.env.DSH_HOME, 'attune-packet-ledger.tsv') : '')
+  if (typeof path !== 'string' || path.length === 0) return
+  const lines = spans.map((span) =>
+    [
+      packetId,
+      disclosure,
+      span.revision,
+      span.path,
+      String(span.startLine),
+      String(span.endLine),
+      span.sha256,
+      String(span.bytes),
+    ].join('\t'),
+  )
+  appendFileSync(path, `${lines.join('\n')}\n`)
+}
+
 /// Serve one packet disclosure. The progressive disclosure is exactly the
 /// packet's own compiled spans; the full-source escape is every declared region
-/// of the changed world. Every served span is resolved and digest-verified, and
-/// the returned accounting separates unique from total bytes.
+/// of the changed world, or one exact declared whole file of it when the model
+/// names that file. Every served span is resolved and digest-verified, and the
+/// returned accounting separates unique from total bytes.
 export function executePacketOperation(args, config) {
-  if (args.disclosure !== 'progressive' && args.disclosure !== 'full-source') {
+  const modes = ['progressive', 'full-source', 'whole-file']
+  if (!modes.includes(args.disclosure)) {
     throw new PacketRefusal('the requested disclosure is not a declared disclosure mode')
+  }
+  const absent = (value) => value === undefined || value === ABSENT || value.length === 0
+  const wholeFile = args.disclosure === 'whole-file'
+  if (wholeFile && (absent(args.path) || absent(args.revision))) {
+    throw new PacketRefusal('a whole-file read needs both the declared path and its declared revision')
+  }
+  if (!wholeFile && (!absent(args.path) || !absent(args.revision))) {
+    throw new PacketRefusal('only a whole-file disclosure names a declared file of the complete world')
   }
   const compiled = loadCompiledPackets(config)
   const packet = compiled.packets.get(args.packet)
   if (packet === undefined) {
     throw new PacketRefusal(`the compiled packet world carries no packet ${args.packet}`)
   }
-  const regions = declaredRegions(config)
   const sourceRoot = declared(config, 'sourceRoot', 'ATTUNE_PACKET_SOURCE_ROOT', DECLARED_PACKET_ROOT)
-  const requested =
-    args.disclosure === 'progressive'
-      ? compiled.spans.get(args.packet) ?? []
-      : regions.map((region) => ({ ...region }))
-  if (requested.length === 0) {
-    throw new PacketRefusal(`the compiled packet ${args.packet} discloses no span`)
-  }
-  const served = requested.map((span) => {
-    const region = findDeclaredRegion(regions, span)
-    const read = readRegion(region, { sourceRoot })
-    if (span.bytes !== undefined && span.bytes !== read.bytes) {
-      throw new PacketRefusal('the compiled span byte count disagrees with the sealed span bytes')
+  let served
+  if (wholeFile) {
+    // The retained escape to the COMPLETE authorized changed world: one exact
+    // declared file, resolved and digest-verified whole, with its bounded-policy
+    // status decided by the declared manifest rather than by this tool.
+    const row = findDeclaredWorldFile(declaredWorldFiles(config), {
+      world: packet.worldScope,
+      revision: args.revision,
+      path: args.path,
+    })
+    served = [readWholeFile(row, { sourceRoot })]
+  } else {
+    const regions = declaredRegions(config)
+    const requested =
+      args.disclosure === 'progressive'
+        ? compiled.spans.get(args.packet) ?? []
+        : regions.map((region) => ({ ...region }))
+    if (requested.length === 0) {
+      throw new PacketRefusal(`the compiled packet ${args.packet} discloses no span`)
     }
-    return read
-  })
+    served = requested.map((span) => {
+      const region = findDeclaredRegion(regions, span)
+      const read = readRegion(region, { sourceRoot })
+      if (span.bytes !== undefined && span.bytes !== read.bytes) {
+        throw new PacketRefusal('the compiled span byte count disagrees with the sealed span bytes')
+      }
+      return read
+    })
+  }
+  recordLedger(config, packet.id, args.disclosure, served)
   const unique = []
   for (const ref of served) {
     if (!unique.some((other) => packetRegionKey(other) === packetRegionKey(ref))) unique.push(ref)
@@ -214,8 +312,12 @@ export function apply(ctx, config) {
         'Disclose one declared evidence packet of the changed world. The ' +
         'progressive disclosure is exactly the packet evidence that answers its ' +
         'named obligation; the full-source disclosure is every declared region of ' +
-        'the changed world, so full source stays reachable. Every disclosed span ' +
-        'is a declared region whose sealed bytes are digest-verified.',
+        'the changed world, so full source stays reachable; the whole-file ' +
+        'disclosure reads one exact declared file of the complete changed world ' +
+        'whole, so ordinary access beyond the initial neighborhood stays possible. ' +
+        'Every disclosed span is a declared identity whose sealed bytes are ' +
+        'digest-verified. The declared absent value - marks the file fields of a ' +
+        'disclosure that reads no whole file.',
       parameters: PACKET_PARAMETERS,
       output: {
         schema: {
