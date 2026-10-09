@@ -5,8 +5,8 @@ a dedicated local integration store through the pinned runtime's OWN durable
 session-persistence API (`create`/`open`/`read`/`append`/`flush`/`close`), the
 mechanical bundle-integrity model that refuses a corrupt/unsupported/traversing/
 out-of-order/incomplete bundle before any store write, and the laws that pin the
-whole path. It is provider-free and offline, so the ordinary `bazel test //...`
-gate runs it.
+whole path. It is provider-free and offline, so the ordinary offline gate runs
+it.
 
 The declared native bundle fixture is derived from an actual frozen DSH session
 (the provider-gate diagnostic): its structure and event vocabulary are the real
