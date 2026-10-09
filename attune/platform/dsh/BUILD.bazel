@@ -94,6 +94,21 @@ native_study_stage(
     stage = "evidence_operation",
 )
 
+# The ONE declared mechanical-guard declaration of the narrow evidence substrate.
+#
+# It is the same `native_study_stage` shape as the compiled operation above, over
+# the SAME declared stage sources, and it materializes what Flix owns about the
+# run limits: the frozen caps, the derived finalization reserve
+# (`guard-declaration.tsv`) and the canonical guard-decision boundary matrix
+# (`guard-decisions.tsv`). The DSH lifecycle guard plugin READS this tree, so the
+# caps, the reserve and every boundary decision come from the Flix owner and no
+# copy of them is restated in TypeScript or in an overlay.
+native_study_stage(
+    name = "evidence_guard_declaration",
+    srcs = ["//test/study:evidence_operation_stage_srcs"],
+    stage = "evidence_guard",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The
@@ -103,6 +118,7 @@ native_study_stage(
 js_binary(
     name = "dsh",
     data = [
+        ":evidence_guard_declaration",
         ":evidence_operation_projection",
         ":node_modules",
         ":node_modules/@attune/dsh-evidence-tool",

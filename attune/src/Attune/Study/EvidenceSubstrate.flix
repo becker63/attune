@@ -233,6 +233,136 @@ pub mod Attune.Study.EvidenceSubstrate {
     def overshootOf(limit: Int32, observed: Int32): Int32 =
         if (observed > limit) observed - limit else 0
 
+    /// The declared mechanical guard declaration: the frozen caps and the
+    /// derived finalization reserve, as the exact `key<TAB>value` records the
+    /// DSH lifecycle guard reads. The guard therefore enforces the values Flix
+    /// owns rather than a second copy restated in the integration layer, and a
+    /// change to a cap changes this declaration with it.
+    pub def guardDeclaration(): List[String] = {
+        let caps = frozenCaps();
+        let reserve = finalizationReserve(caps);
+        List#{
+            "contractVersion\t" + contractVersion(),
+            "wallMillis\t" + Int32.toString(caps#wallMillis),
+            "toolRounds\t" + Int32.toString(caps#toolRounds),
+            "cumulativeTokens\t" + Int32.toString(caps#cumulativeTokens),
+            "findings\t" + Int32.toString(caps#findings),
+            "reserveWallMillis\t" + Int32.toString(reserve#wallMillis),
+            "reserveToolRounds\t" + Int32.toString(reserve#toolRounds),
+            "reserveCumulativeTokens\t" + Int32.toString(reserve#cumulativeTokens),
+            "reserveCommittedFindings\t" + Int32.toString(reserve#committedFindings)
+        }
+    }
+
+    /// One declared DIAGNOSTIC guard declaration: the same shape as the frozen
+    /// declaration, with the tool-round cap reduced to a declared small bound so
+    /// one bounded local diagnostic can reach a cap inside a short run. The
+    /// prospective arms never use it, and its contract version names it as a
+    /// diagnostic, so a record it produced is visible as one rather than being
+    /// mistaken for a run under the frozen caps.
+    pub def diagnosticGuardDeclaration(toolRounds: Int32): List[String] = {
+        let caps = frozenCaps();
+        let reserve = finalizationReserve(caps);
+        List#{
+            "contractVersion\t" + contractVersion() + "+diagnostic",
+            "wallMillis\t" + Int32.toString(caps#wallMillis),
+            "toolRounds\t" + Int32.toString(toolRounds),
+            "cumulativeTokens\t" + Int32.toString(caps#cumulativeTokens),
+            "findings\t" + Int32.toString(caps#findings),
+            "reserveWallMillis\t" + Int32.toString(reserve#wallMillis),
+            "reserveToolRounds\t" + Int32.toString(reserve#toolRounds),
+            "reserveCumulativeTokens\t" + Int32.toString(reserve#cumulativeTokens),
+            "reserveCommittedFindings\t" + Int32.toString(reserve#committedFindings)
+        }
+    }
+
+    /// One declared guard-decision probe: a labelled observed consumption state
+    /// and whether the run suffered an infrastructure failure. The matrix below
+    /// covers each cap boundary (just inside, exactly at, and beyond it), the
+    /// reserve boundary and the empty/nonempty committed-finding distinction,
+    /// so a mechanical guard mirror is pinned to the canonical decision at every
+    /// boundary it can meet.
+    pub type alias GuardCase = {
+        label = String,
+        consumption = Consumption,
+        infrastructureFailed = Bool
+    }
+
+    /// The canonical serialization of one guard-decision row: the case inputs
+    /// followed by the canonical decision name. The DSH lifecycle guard reads
+    /// this row and must reproduce the decision, so a drift between the plugin
+    /// and the canonical meaning fails the parity law instead of silently
+    /// enforcing a different rule.
+    pub def guardDecisionRow(guardCase: GuardCase): String =
+        String.intercalate("\t", List#{guardCase#label,
+            Int32.toString(guardCase#consumption#wallMillis),
+            Int32.toString(guardCase#consumption#toolRounds),
+            Int32.toString(guardCase#consumption#cumulativeTokens),
+            Int32.toString(guardCase#consumption#committedFindings),
+            if (guardCase#infrastructureFailed) "true" else "false",
+            guardDecisionName(guardDecision(frozenCaps(), guardCase#consumption, guardCase#infrastructureFailed))})
+
+    /// The declared guard-decision boundary matrix. Each row names one observed
+    /// state a real run can reach; the canonical decision is derived from the
+    /// frozen caps, never authored beside them.
+    pub def guardCases(): List[GuardCase] = {
+        let caps = frozenCaps();
+        let reserve = finalizationReserve(caps);
+        let quiet = { wallMillis = 0, toolRounds = 0, cumulativeTokens = 0, committedFindings = 0 };
+        List#{
+            { label = "quiet", consumption = quiet, infrastructureFailed = false },
+            { label = "infrastructure-failure", consumption = quiet, infrastructureFailed = true },
+            { label = "wall-inside-reserve", consumption = { wallMillis = caps#wallMillis - reserve#wallMillis - 1, toolRounds = 0, cumulativeTokens = 0, committedFindings = 0 }, infrastructureFailed = false },
+            { label = "wall-at-reserve-boundary", consumption = { wallMillis = caps#wallMillis - reserve#wallMillis, toolRounds = 0, cumulativeTokens = 0, committedFindings = 0 }, infrastructureFailed = false },
+            { label = "rounds-at-reserve-boundary", consumption = { wallMillis = 0, toolRounds = caps#toolRounds - reserve#toolRounds, cumulativeTokens = 0, committedFindings = 0 }, infrastructureFailed = false },
+            { label = "tokens-at-reserve-boundary-empty", consumption = { wallMillis = 0, toolRounds = 0, cumulativeTokens = caps#cumulativeTokens - reserve#cumulativeTokens, committedFindings = 0 }, infrastructureFailed = false },
+            { label = "tokens-at-reserve-boundary-committed", consumption = { wallMillis = 0, toolRounds = 0, cumulativeTokens = caps#cumulativeTokens - reserve#cumulativeTokens, committedFindings = 3 }, infrastructureFailed = false },
+            { label = "findings-at-cap-committed", consumption = { wallMillis = 0, toolRounds = 0, cumulativeTokens = 0, committedFindings = caps#findings }, infrastructureFailed = false },
+            { label = "beyond-every-cap-committed", consumption = { wallMillis = caps#wallMillis + 1, toolRounds = caps#toolRounds + 1, cumulativeTokens = caps#cumulativeTokens + 1, committedFindings = 1 }, infrastructureFailed = false }
+        }
+    }
+
+    /// One budget-stop record: the honest mechanical record of a run the guard
+    /// stopped before it could finalize. It binds the identity, the observed
+    /// consumption, the canonical decision, the stop cause and the run's own
+    /// unresolved obligations. It is deliberately NOT a finding checkpoint and
+    /// articulates no claim, because a budget stop produces no committed
+    /// candidate that could be reported as one.
+    pub type alias BudgetStopRecord = {
+        task = String,
+        arm = String,
+        observation = Int32,
+        elapsedMillis = Int32,
+        toolRounds = Int32,
+        cumulativeTokens = Int32,
+        committedFindings = Int32,
+        decision = String,
+        stopCause = String,
+        unresolved = List[String]
+    }
+
+    /// The deterministic validator of one budget-stop record: identity,
+    /// non-negative consumption and a decision that is genuinely a stop. It
+    /// cannot and does not judge a defect.
+    pub def budgetStopFindings(record: BudgetStopRecord): List[String] =
+        (if (String.isEmpty(record#task) or String.isEmpty(record#arm)) List#{"budget stop has no task/arm identity"} else Nil)
+            ::: (if (record#observation < 1) List#{"budget stop has a non-positive observation"} else Nil)
+            ::: (if (record#elapsedMillis < 0 or record#toolRounds < 0 or record#cumulativeTokens < 0 or record#committedFindings < 0) List#{"budget stop carries negative consumption"} else Nil)
+            ::: (if (record#decision == guardDecisionName(GuardDecision.Continue)) List#{"a budget stop cannot carry the continue decision"} else Nil)
+
+    /// The canonical serialization of one budget-stop record, so the guard, an
+    /// interruption restore and a replay can compare it without re-running the
+    /// attempt.
+    pub def budgetStopLine(record: BudgetStopRecord): String =
+        String.intercalate("\t", List#{record#task, record#arm,
+            Int32.toString(record#observation),
+            Int32.toString(record#elapsedMillis),
+            Int32.toString(record#toolRounds),
+            Int32.toString(record#cumulativeTokens),
+            Int32.toString(record#committedFindings),
+            record#decision, record#stopCause,
+            String.intercalate(",", List.sort(record#unresolved))})
+
     // --------------------------------------------------- scoped negatives
 
     /// One scoped negative: the exact world, question, admitted relations,

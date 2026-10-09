@@ -23,12 +23,16 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-# The linked first-party package the DSH loader imports by name.
+# The linked first-party package the DSH loader imports by name. It carries the
+# one evidence tool and the one mechanical lifecycle guard: two authored Cordis
+# plugins of the same narrow integration package, each mounted by its own
+# declared overlay row.
 js_library(
     name = "evidence_tool_package",
     srcs = [
         "boundary.mjs",
         "evidence_tool.mjs",
+        "guard.mjs",
         "package.json",
         "tool_schema.mjs",
     ],
@@ -50,6 +54,7 @@ filegroup(
 
 # The declared loader overlay that mounts the tool into a composed DSH profile.
 exports_files([
+    "attune-guard.plugin.yml",
     "attune-tool.plugin.yml",
     "fixtures/boundary-world.tsv",
     "fixtures/expected-observation-projection.tsv",
@@ -59,11 +64,12 @@ exports_files([
     "fixtures/world.tsv",
 ])
 
-# The overlay and the declared fixture world as one linked library, so the DSH
+# The overlays and the declared fixture world as one linked library, so the DSH
 # adapter's `js_binary` can carry them in its runfiles as declared data.
 js_library(
     name = "evidence_tool_runfiles",
     srcs = [
+        "attune-guard.plugin.yml",
         "attune-tool.plugin.yml",
         "fixtures/boundary-world.tsv",
         "fixtures/expected-observation-projection.tsv",
@@ -85,4 +91,22 @@ js_test(
         "//platform/dsh:typert_package_a",
     ],
     entry_point = "tool_test.mjs",
+)
+
+# The laws of the one mechanical lifecycle guard. They read the REAL guard
+# declaration and canonical decision matrix the `evidence_guard_declaration`
+# stage action materialized from `Attune.Study.EvidenceSubstrate`, assert the
+# mechanical guard reproduces the canonical decision at every declared boundary,
+# and drive the plugin over a synthetic event stream to prove it accumulates the
+# normalized provider total with cached input counted once, never stops a run
+# inside its caps, stops the live loop at the cap and writes the canonical
+# budget-stop record. Provider-free and offline.
+js_test(
+    name = "guard_test",
+    data = [
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_guard_declaration",
+        "//platform/dsh:node_modules",
+    ],
+    entry_point = "guard_test.mjs",
 )

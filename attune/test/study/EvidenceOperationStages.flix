@@ -4,7 +4,9 @@ use Attune.Study.EvidenceOperation.{
     AcquisitionRequest, declaredRegion, observationRecord, observeEvidence, operationVersion,
     referenceRecord, requestFindings
 }
-use Attune.Study.EvidenceSubstrate.{EvidenceRef, refFindings}
+use Attune.Study.EvidenceSubstrate.{
+    EvidenceRef, diagnosticGuardDeclaration, guardCases, guardDecisionRow, guardDeclaration, refFindings
+}
 use Fs.FileRead
 use Fs.FileWrite
 
@@ -172,9 +174,36 @@ def evidenceOperation(): Unit \ {Assert, IO} = {
 
 // ---------------------------------------------------------------- dispatcher
 
+/// The one declared mechanical-guard stage: it materializes the caps and the
+/// derived finalization reserve Flix owns (`guard-declaration.tsv`) and the
+/// canonical guard-decision boundary matrix (`guard-decisions.tsv`) into the
+/// declared output tree. The DSH lifecycle guard READS both: it enforces the
+/// declared caps and must reproduce the canonical decision at every boundary,
+/// so no cap, reserve or decision rule is restated in the integration layer.
+/// It reads no source, no world and no corpus.
+///
+/// Beside the frozen declaration it writes the declared DIAGNOSTIC declaration
+/// (`guard-declaration-diagnostic.tsv`), whose only difference is the declared
+/// small tool-round bound: it exists so one bounded local diagnostic can reach a
+/// cap inside a short run and produce a real budget-stop record. It is never
+/// used by a prospective arm, and its contract version names it as a diagnostic.
+def evidenceGuard(): Unit \ {Assert, IO} = {
+    let declaration = guardDeclaration();
+    Assert.assertEq(expected = true, List.length(declaration) > 0);
+    let decisions = List.map(guardDecisionRow, guardCases());
+    Assert.assertEq(expected = true, List.length(decisions) > 0);
+    let diagnostic = diagnosticGuardDeclaration(3);
+    Assert.assertEq(expected = List.length(declaration), List.length(diagnostic));
+    Assert.assertEq(expected = true, List.length(diagnostic) > 0);
+    writeText(outputsDir(), "guard-declaration.tsv", renderLines(declaration));
+    writeText(outputsDir(), "guard-declaration-diagnostic.tsv", renderLines(diagnostic));
+    writeText(outputsDir(), "guard-decisions.tsv", renderLines(decisions))
+}
+
 @Test
 def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     let stage = stageName();
     if (stage == "evidence_operation") evidenceOperation()
+    else if (stage == "evidence_guard") evidenceGuard()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }

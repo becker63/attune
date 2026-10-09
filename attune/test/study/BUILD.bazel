@@ -76,6 +76,23 @@ native_flix_consumer_test(
     produced = ["//platform/dsh:evidence_operation_projection"],
 )
 
+# The laws of the declared mechanical-guard declaration: they consume the tree
+# the `evidence_guard` stage action materialized and assert it is the canonical
+# Flix caps and derived finalization reserve and the canonical guard decision at
+# every declared boundary. The DSH lifecycle guard plugin reads the same bytes.
+# Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_guard_declaration_law",
+    srcs = [
+        "EvidenceGuardDeclarationLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    produced = ["//platform/dsh:evidence_guard_declaration"],
+)
+
 # The narrow evidence substrate's provider-free laws. They compile the one new
 # owner module plus the canonical core vocabulary it reuses, and they read no
 # corpus, no provider and no build output: every case is a declared fact.
