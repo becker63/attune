@@ -30,6 +30,11 @@ EvidenceRef.world
 FindingCheckpoint
 FindingCheckpoint.arm
 FindingCheckpoint.claim
+FindingCheckpoint.commitId
+FindingCheckpoint.commitMillis
+FindingCheckpoint.consequence
+FindingCheckpoint.contract
+FindingCheckpoint.contradiction
 FindingCheckpoint.cumulativeTokens
 FindingCheckpoint.delivered
 FindingCheckpoint.elapsedMillis
@@ -39,6 +44,7 @@ FindingCheckpoint.sequence
 FindingCheckpoint.severityOrUnknown
 FindingCheckpoint.stopCause
 FindingCheckpoint.task
+FindingCheckpoint.uncertainty
 FindingCheckpoint.unresolved
 FindingCheckpoint.world
 Hypothesis

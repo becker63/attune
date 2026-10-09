@@ -1,11 +1,12 @@
 use Attune.Coverage.Outcome
 use Attune.Study.EvidenceSubstrate.{
-    AcquisitionObligation, Caps, CliFact, Consumption, Delivery, DetectorResult, EvidenceObservation,
-    EvidencePacket, EvidenceRef, FindingCheckpoint, FindingFunnel, ImportFact, PacketDisclosure,
-    PreflightArm, ScopedNegative, SemanticState, canonicalSurface, checkpointFindings, checkpointLine,
-    completeCoverage, contractDigest, deltaIsEmpty, detectImportPublication, detectRequiredCliInput,
-    detectorVisibleToModel, finalizationReserve, frozenCaps, fullSourceExpansion, funnelFindings,
-    guardDecision, GuardDecision, informationDelta, labelledIdentity, negativeFindings,
+    AcquisitionObligation, CandidateCommit, Caps, CliFact, Consumption, Delivery, DetectorResult,
+    EvidenceObservation, EvidencePacket, EvidenceRef, FindingCheckpoint, FindingFunnel, ImportFact,
+    PacketDisclosure, PreflightArm, ScopedNegative, SemanticState, candidateCommitFindings,
+    canonicalSurface, checkpointFindings, checkpointLine, commitCheckpoint, committedFindingsFindings,
+    completeCoverage, contractDigest, deliveredCommittedFindings, deltaIsEmpty, detectImportPublication,
+    detectRequiredCliInput, detectorVisibleToModel, finalizationReserve, frozenCaps, fullSourceExpansion,
+    funnelFindings, guardDecision, GuardDecision, informationDelta, labelledIdentity, negativeFindings,
     observationIsNegative, offlinePreflight, overshoot, packetFindings, reacquisitionPlan, refFindings,
     universalAbsence, unresolvedObligations
 }
@@ -110,9 +111,12 @@ def theCheckpointValidatorChecksIdentityAndNotTruth(): Unit \ Assert = {
 }
 
 def checkpoint(claim: String, delivered: List[EvidenceRef]): FindingCheckpoint = {
-    task = "t", arm = "R0", observation = 1, sequence = 1, elapsedMillis = 100,
-    cumulativeTokens = 1000, world = "w", claim = claim, severityOrUnknown = "medium",
-    delivered = delivered, explored = List#{"a"}, unresolved = Nil, stopCause = ""
+    task = "t", arm = "R0", observation = 1, sequence = 1,
+    commitId = "commit-1", commitMillis = 1700000000000i64, elapsedMillis = 100,
+    cumulativeTokens = 1000, world = "w", contract = "c", claim = claim,
+    severityOrUnknown = "medium", delivered = delivered, consequence = "caller returns null",
+    contradiction = "", uncertainty = "none observed", explored = List#{"a"},
+    unresolved = Nil, stopCause = ""
 }
 
 /// The canonical serialization is stable: the same identity always serializes to
@@ -123,6 +127,73 @@ def checkpointSerializationIsStable(): Unit \ Assert = {
     let a = checkpoint("claim", List#{ref(Delivery.Complete, 1, 9)});
     let b = checkpoint("claim", List#{ref(Delivery.Complete, 1, 9)});
     Assert.assertEq(expected = checkpointLine(a), checkpointLine(b))
+}
+
+/// A checkpoint binds the commit event, the world and the governing contract,
+/// and it refuses an absent commit event or contract rather than serializing a
+/// checkpoint that names neither.
+@Test
+def aCheckpointBindsItsCommitEventWorldAndContract(): Unit \ Assert = {
+    let good = checkpoint("claim", List#{ref(Delivery.Complete, 1, 9)});
+    let noCommit = { task = good#task, arm = good#arm, observation = good#observation,
+        sequence = good#sequence, commitId = "", commitMillis = good#commitMillis,
+        elapsedMillis = good#elapsedMillis, cumulativeTokens = good#cumulativeTokens,
+        world = good#world, contract = good#contract, claim = good#claim,
+        severityOrUnknown = good#severityOrUnknown, delivered = good#delivered,
+        consequence = good#consequence, contradiction = good#contradiction,
+        uncertainty = good#uncertainty, explored = good#explored, unresolved = good#unresolved,
+        stopCause = good#stopCause };
+    let noContract = { task = good#task, arm = good#arm, observation = good#observation,
+        sequence = good#sequence, commitId = good#commitId, commitMillis = good#commitMillis,
+        elapsedMillis = good#elapsedMillis, cumulativeTokens = good#cumulativeTokens,
+        world = good#world, contract = "", claim = good#claim,
+        severityOrUnknown = good#severityOrUnknown, delivered = good#delivered,
+        consequence = good#consequence, contradiction = good#contradiction,
+        uncertainty = good#uncertainty, explored = good#explored, unresolved = good#unresolved,
+        stopCause = good#stopCause };
+    Assert.assertEq(expected = 0, List.length(checkpointFindings(good)));
+    Assert.assertEq(expected = 1, List.length(checkpointFindings(noCommit)));
+    Assert.assertEq(expected = 1, List.length(checkpointFindings(noContract)))
+}
+
+/// The shared candidate-commit interface is one path in both arms: a candidate
+/// that names no world, contract or claim, or rests on no physically delivered
+/// evidence, is refused, and an accepted candidate binds its commit event and the
+/// observed consumption into the durable checkpoint.
+@Test
+def theCandidateCommitInterfaceBindsEvidenceAndTheCommitEvent(): Unit \ Assert = {
+    let good = candidate("candidate", List#{ref(Delivery.Complete, 1, 9)});
+    let noEvidence = candidate("candidate", Nil);
+    let noClaim = candidate("", List#{ref(Delivery.Complete, 1, 9)});
+    Assert.assertEq(expected = 0, List.length(candidateCommitFindings(good)));
+    Assert.assertEq(expected = 1, List.length(candidateCommitFindings(noEvidence)));
+    Assert.assertEq(expected = 1, List.length(candidateCommitFindings(noClaim)));
+    let checkpoint = commitCheckpoint(good, "commit-1", 1700000000000i64, 500, 12000,
+        List#{"a"}, "committed");
+    Assert.assertEq(expected = "commit-1", checkpoint#commitId);
+    Assert.assertEq(expected = 12000, checkpoint#cumulativeTokens);
+    Assert.assertEq(expected = 0, List.length(checkpointFindings(checkpoint)))
+}
+
+/// A stop delivers exactly the committed findings the run counted, and a
+/// mismatch between the observed committed count and the delivered lines is
+/// reported rather than accepted.
+@Test
+def aStopDeliversExactlyTheCommittedFindingsItCounted(): Unit \ Assert = {
+    let one = commitCheckpoint(candidate("candidate", List#{ref(Delivery.Complete, 1, 9)}),
+        "commit-1", 1700000000000i64, 500, 12000, List#{"a"}, "committed");
+    let lines = deliveredCommittedFindings(List#{one});
+    Assert.assertEq(expected = 1, List.length(lines));
+    Assert.assertEq(expected = 0, List.length(committedFindingsFindings(1, lines)));
+    Assert.assertEq(expected = 1, List.length(committedFindingsFindings(0, lines)));
+    Assert.assertEq(expected = 1, List.length(committedFindingsFindings(2, lines)))
+}
+
+def candidate(claim: String, delivered: List[EvidenceRef]): CandidateCommit = {
+    task = "t", arm = "R1", observation = 1, sequence = 1, world = "w", contract = "c",
+    claim = claim, severityOrUnknown = "medium", delivered = delivered,
+    consequence = "caller returns null", contradiction = "", uncertainty = "none observed",
+    unresolved = List#{"read-caller/consumer@head"}
 }
 
 /// The mechanical guard finalizes with the committed findings when the reserve

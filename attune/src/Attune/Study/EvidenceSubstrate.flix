@@ -107,20 +107,28 @@ pub mod Attune.Study.EvidenceSubstrate {
     // ------------------------------------------- checkpoints and the guard
 
     /// One committed finding checkpoint. It binds the task/arm/observation
-    /// identity, the observed mechanical consumption, the world, the articulated
-    /// claim, the evidence actually delivered, the explored/frontier state and
-    /// the unresolved obligations. It is a candidate, never a verdict.
+    /// identity, the commit event, the observed mechanical consumption, the
+    /// world, the governing contract, the articulated claim and its consequence,
+    /// the contradiction it rests on, its remaining uncertainty, the evidence
+    /// actually delivered, the explored/frontier state and the unresolved
+    /// obligations. It is a candidate, never a verdict.
     pub type alias FindingCheckpoint = {
         task = String,
         arm = String,
         observation = Int32,
         sequence = Int32,
+        commitId = String,
+        commitMillis = Int64,
         elapsedMillis = Int32,
         cumulativeTokens = Int32,
         world = String,
+        contract = String,
         claim = String,
         severityOrUnknown = String,
         delivered = List[EvidenceRef],
+        consequence = String,
+        contradiction = String,
+        uncertainty = String,
         explored = List[String],
         unresolved = List[String],
         stopCause = String
@@ -128,28 +136,124 @@ pub mod Attune.Study.EvidenceSubstrate {
 
     /// The deterministic validator of one checkpoint: identity, ranges,
     /// provenance and serialization only. It deliberately cannot and does not
-    /// judge defect truth.
+    /// judge defect truth. `consequence`, `contradiction` and `uncertainty` may
+    /// be empty, because an honest candidate can record that it found no
+    /// contradiction or has no consequence to state; an absent commit event, a
+    /// missing world or contract, or an empty claim may not.
     pub def checkpointFindings(checkpoint: FindingCheckpoint): List[String] =
         (if (String.isEmpty(checkpoint#task) or String.isEmpty(checkpoint#arm)) List#{"checkpoint has no task/arm identity"} else Nil)
             ::: (if (checkpoint#observation < 1 or checkpoint#sequence < 1) List#{"checkpoint has a non-positive observation/sequence"} else Nil)
+            ::: (if (String.isEmpty(checkpoint#commitId)) List#{"checkpoint has no commit event identity"} else Nil)
+            ::: (if (checkpoint#commitMillis < 0i64) List#{"checkpoint carries a negative commit timestamp"} else Nil)
             ::: (if (checkpoint#elapsedMillis < 0 or checkpoint#cumulativeTokens < 0) List#{"checkpoint carries negative consumption"} else Nil)
+            ::: (if (String.isEmpty(checkpoint#world)) List#{"checkpoint names no world"} else Nil)
+            ::: (if (String.isEmpty(checkpoint#contract)) List#{"checkpoint names no governing contract"} else Nil)
             ::: (if (String.isEmpty(checkpoint#claim)) List#{"checkpoint articulates no claim"} else Nil)
             ::: List.flatMap(refFindings, checkpoint#delivered)
 
     /// The canonical serialization of one checkpoint. Two checkpoints with the
     /// same identity serialize identically, so an interruption, an import and a
-    /// replay can compare them without re-running anything.
+    /// replay can compare them without re-running anything. The delivered
+    /// evidence is serialized by its exact identity key, so a range or a digest
+    /// change is a different checkpoint rather than a coincident one.
     pub def checkpointLine(checkpoint: FindingCheckpoint): String =
         String.intercalate("\t", List#{
             checkpoint#task, checkpoint#arm,
             Int32.toString(checkpoint#observation), Int32.toString(checkpoint#sequence),
+            checkpoint#commitId, Int64.toString(checkpoint#commitMillis),
             Int32.toString(checkpoint#elapsedMillis), Int32.toString(checkpoint#cumulativeTokens),
-            checkpoint#world, checkpoint#claim, checkpoint#severityOrUnknown,
-            String.intercalate(",", List.sort(List.map(ref -> ref#path, checkpoint#delivered))),
+            checkpoint#world, checkpoint#contract, checkpoint#claim, checkpoint#severityOrUnknown,
+            String.intercalate(",", List.sort(List.map(evidenceKey, checkpoint#delivered))),
+            checkpoint#consequence, checkpoint#contradiction, checkpoint#uncertainty,
             String.intercalate(",", List.sort(checkpoint#explored)),
             String.intercalate(",", List.sort(checkpoint#unresolved)),
             checkpoint#stopCause
         })
+
+    /// One articulated candidate: everything the reviewing model supplies to the
+    /// shared candidate-commit interface. It deliberately does NOT carry the
+    /// commit event or the observed mechanical consumption, because those are the
+    /// run recorder's own measurements rather than the model's articulation.
+    pub type alias CandidateCommit = {
+        task = String,
+        arm = String,
+        observation = Int32,
+        sequence = Int32,
+        world = String,
+        contract = String,
+        claim = String,
+        severityOrUnknown = String,
+        delivered = List[EvidenceRef],
+        consequence = String,
+        contradiction = String,
+        uncertainty = String,
+        unresolved = List[String]
+    }
+
+    /// The deterministic validator of one articulated candidate. A candidate
+    /// must name its identity, world and governing contract, articulate a claim
+    /// and rest on at least one physically delivered exact evidence reference: a
+    /// named obligation is satisfied only by physical exact evidence, never by
+    /// model understanding.
+    pub def candidateCommitFindings(commit: CandidateCommit): List[String] =
+        (if (String.isEmpty(commit#task) or String.isEmpty(commit#arm)) List#{"candidate has no task/arm identity"} else Nil)
+            ::: (if (commit#observation < 1 or commit#sequence < 1) List#{"candidate has a non-positive observation/sequence"} else Nil)
+            ::: (if (String.isEmpty(commit#world)) List#{"candidate names no world"} else Nil)
+            ::: (if (String.isEmpty(commit#contract)) List#{"candidate names no governing contract"} else Nil)
+            ::: (if (String.isEmpty(commit#claim)) List#{"candidate articulates no claim"} else Nil)
+            ::: (if (List.isEmpty(commit#delivered)) List#{"candidate rests on no physically delivered evidence"} else Nil)
+            ::: List.flatMap(refFindings, commit#delivered)
+
+    /// The shared candidate-commit interface every prospective arm uses: bind one
+    /// articulated candidate to its commit event and to the consumption the run
+    /// recorder actually observed, and the result is the durable checkpoint. Both
+    /// R0 and R1 call exactly this, so a committed candidate is one record shape
+    /// in both arms.
+    pub def commitCheckpoint(
+        commit: CandidateCommit,
+        commitId: String,
+        commitMillis: Int64,
+        elapsedMillis: Int32,
+        cumulativeTokens: Int32,
+        explored: List[String],
+        stopCause: String
+    ): FindingCheckpoint = {
+        task = commit#task,
+        arm = commit#arm,
+        observation = commit#observation,
+        sequence = commit#sequence,
+        commitId = commitId,
+        commitMillis = commitMillis,
+        elapsedMillis = elapsedMillis,
+        cumulativeTokens = cumulativeTokens,
+        world = commit#world,
+        contract = commit#contract,
+        claim = commit#claim,
+        severityOrUnknown = commit#severityOrUnknown,
+        delivered = commit#delivered,
+        consequence = commit#consequence,
+        contradiction = commit#contradiction,
+        uncertainty = commit#uncertainty,
+        explored = explored,
+        unresolved = commit#unresolved,
+        stopCause = stopCause
+    }
+
+    /// The delivered committed findings of one stop: the canonical serialization
+    /// of every genuinely committed checkpoint, in commit order. This is what an
+    /// interruption or a budget stop delivers, so a stopped run is reported with
+    /// the candidates it actually committed rather than as a review that found
+    /// nothing.
+    pub def deliveredCommittedFindings(checkpoints: List[FindingCheckpoint]): List[String] =
+        List.map(checkpointLine, checkpoints)
+
+    /// The findings of one delivered committed-finding set: the observed
+    /// committed count and the delivered lines must agree, so a run can never
+    /// report a committed finding it did not deliver or deliver one it did not
+    /// count.
+    pub def committedFindingsFindings(committedCount: Int32, delivered: List[String]): List[String] =
+        (if (committedCount < 0) List#{"committed-findings count is negative"} else Nil)
+            ::: (if (committedCount != List.length(delivered)) List#{"the delivered committed findings do not match the observed committed count"} else Nil)
 
     /// The frozen mechanical caps of every prospective arm.
     pub type alias Caps = {
@@ -341,14 +445,17 @@ pub mod Attune.Study.EvidenceSubstrate {
         unresolved = List[String]
     }
 
-    /// The deterministic validator of one budget-stop record: identity,
-    /// non-negative consumption and a decision that is genuinely a stop. It
-    /// cannot and does not judge a defect.
+    /// The deterministic validator of one run-stop record: identity,
+    /// non-negative consumption and a decision that is genuinely a stop. A
+    /// process interruption is the one stop that may occur while the canonical
+    /// decision is still `continue`, because the wall clock is not the guard's
+    /// decision; every other stop cause must carry a real finalization or
+    /// infrastructure decision. It cannot and does not judge a defect.
     pub def budgetStopFindings(record: BudgetStopRecord): List[String] =
         (if (String.isEmpty(record#task) or String.isEmpty(record#arm)) List#{"budget stop has no task/arm identity"} else Nil)
             ::: (if (record#observation < 1) List#{"budget stop has a non-positive observation"} else Nil)
             ::: (if (record#elapsedMillis < 0 or record#toolRounds < 0 or record#cumulativeTokens < 0 or record#committedFindings < 0) List#{"budget stop carries negative consumption"} else Nil)
-            ::: (if (record#decision == guardDecisionName(GuardDecision.Continue)) List#{"a budget stop cannot carry the continue decision"} else Nil)
+            ::: (if (record#decision == guardDecisionName(GuardDecision.Continue) and record#stopCause != "interrupted") List#{"a budget stop cannot carry the continue decision"} else Nil)
 
     /// The canonical serialization of one budget-stop record, so the guard, an
     /// interruption restore and a replay can compare it without re-running the
@@ -797,9 +904,12 @@ pub mod Attune.Study.EvidenceSubstrate {
         "FindingCheckpoint",
         "FindingCheckpoint.task", "FindingCheckpoint.arm",
         "FindingCheckpoint.observation", "FindingCheckpoint.sequence",
+        "FindingCheckpoint.commitId", "FindingCheckpoint.commitMillis",
         "FindingCheckpoint.elapsedMillis", "FindingCheckpoint.cumulativeTokens",
-        "FindingCheckpoint.world", "FindingCheckpoint.claim",
-        "FindingCheckpoint.severityOrUnknown", "FindingCheckpoint.delivered",
+        "FindingCheckpoint.world", "FindingCheckpoint.contract",
+        "FindingCheckpoint.claim", "FindingCheckpoint.severityOrUnknown",
+        "FindingCheckpoint.delivered", "FindingCheckpoint.consequence",
+        "FindingCheckpoint.contradiction", "FindingCheckpoint.uncertainty",
         "FindingCheckpoint.explored", "FindingCheckpoint.unresolved",
         "FindingCheckpoint.stopCause",
         "Hypothesis",

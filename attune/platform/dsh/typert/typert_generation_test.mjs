@@ -198,9 +198,16 @@ test('the generated schemas accept the canonical contract documents and preserve
     status: 'Candidate',
   }).success, false)
   assert.equal(generated.FindingCheckpoint().safeParse({
-    task: 't', arm: 'R0_PLAIN', observation: 1, sequence: 1, elapsedMillis: 10, cumulativeTokens: 20,
-    world: 'world-1', claim: 'c', severityOrUnknown: 'unknown', delivered: [reference], explored: [], unresolved: [], stopCause: 'continue',
+    task: 't', arm: 'R0_PLAIN', observation: 1, sequence: 1, commitId: 'commit-1', commitMillis: 1700000000000,
+    elapsedMillis: 10, cumulativeTokens: 20, world: 'world-1', contract: 'contract/1', claim: 'c',
+    severityOrUnknown: 'unknown', delivered: [reference], consequence: 'caller returns null',
+    contradiction: '', uncertainty: 'none observed', explored: [], unresolved: [], stopCause: 'committed',
   }).success, true)
+  assert.equal(generated.FindingCheckpoint().safeParse({
+    task: 't', arm: 'R0_PLAIN', observation: 1, sequence: 1, commitId: 'commit-1', commitMillis: 1700000000000,
+    elapsedMillis: 10, cumulativeTokens: 20, world: 'world-1', claim: 'c',
+    severityOrUnknown: 'unknown', delivered: [reference], explored: [], unresolved: [], stopCause: 'committed',
+  }).success, false, 'a checkpoint that names no governing contract is not the contract')
 
   const js = readArtifact(root)
   assert.match(js, /z\.union\(\[z\.literal\('WITNESS'\), z\.literal\('NO-MATCH'\), z\.literal\('UNKNOWN'\), z\.literal\('FAILED'\)\]\)/)

@@ -31,6 +31,8 @@ js_library(
     name = "evidence_tool_package",
     srcs = [
         "boundary.mjs",
+        "commit_record.mjs",
+        "commit_tool.mjs",
         "evidence_tool.mjs",
         "guard.mjs",
         "package.json",
@@ -107,6 +109,29 @@ js_test(
         ":evidence_tool_package",
         "//platform/dsh:evidence_guard_declaration",
         "//platform/dsh:node_modules",
+        "//platform/dsh:typert_bridge",
     ],
     entry_point = "guard_test.mjs",
+)
+
+# The laws of the shared candidate-commit interface and its durable recording.
+# They register the REAL commit tool definition, resolve its delivered evidence
+# against the declared world, and drive the REAL lifecycle guard over a synthetic
+# native event stream: a commit is recorded durably and the review continues, a
+# stop delivers exactly the committed findings the run counted, an interruption
+# keeps them, a resume restores them and a fresh session invents none. They also
+# assert the TypeScript serialization is byte-identical to the canonical Flix
+# `checkpointLine` the pinned compiler materialized. Provider-free and offline.
+js_test(
+    name = "commit_test",
+    data = [
+        ":evidence_tool_fixtures",
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_guard_declaration",
+        "//platform/dsh:evidence_operation_projection",
+        "//platform/dsh:node_modules",
+        "//platform/dsh:typert_bridge",
+        "//platform/dsh:typert_package_a",
+    ],
+    entry_point = "commit_test.mjs",
 )

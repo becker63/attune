@@ -11,6 +11,12 @@
 # The tool reads the declared fixture world that ships beside it (the manifest,
 # the sealed source root and the generated contract package). A run may override
 # any of them through the tool's declared config or environment.
+#
+# The same overlay also mounts the shared candidate-commit tool, so the acquire
+# and commit operations are the two model-facing operations of one authored
+# package and both arms present exactly them.
 - insert:
     - id: attune-evidence-tool
       name: ./evidence_tool.mjs
+    - id: attune-commit-tool
+      name: ./commit_tool.mjs

@@ -63,9 +63,11 @@ export interface EvidenceObservation {
 
 /**
  * One committed finding checkpoint: the task/arm/observation identity, the
- * observed mechanical consumption, the world, the articulated claim, the
- * evidence actually delivered, the explored/frontier state and the unresolved
- * obligations. It is a candidate, never a verdict.
+ * commit event, the observed mechanical consumption, the world, the governing
+ * contract, the articulated claim and its consequence, the contradiction it
+ * rests on, its remaining uncertainty, the evidence actually delivered, the
+ * explored/frontier state and the unresolved obligations. It is a candidate,
+ * never a verdict.
  *
  * @typert schema
  */
@@ -74,12 +76,18 @@ export interface FindingCheckpoint {
   readonly arm: string
   readonly observation: number
   readonly sequence: number
+  readonly commitId: string
+  readonly commitMillis: number
   readonly elapsedMillis: number
   readonly cumulativeTokens: number
   readonly world: string
+  readonly contract: string
   readonly claim: string
   readonly severityOrUnknown: string
   readonly delivered: EvidenceRef[]
+  readonly consequence: string
+  readonly contradiction: string
+  readonly uncertainty: string
   readonly explored: string[]
   readonly unresolved: string[]
   readonly stopCause: string

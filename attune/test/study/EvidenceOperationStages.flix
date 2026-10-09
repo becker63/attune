@@ -5,7 +5,9 @@ use Attune.Study.EvidenceOperation.{
     referenceRecord, requestFindings
 }
 use Attune.Study.EvidenceSubstrate.{
-    EvidenceRef, diagnosticGuardDeclaration, guardCases, guardDecisionRow, guardDeclaration, refFindings
+    CandidateCommit, Delivery, EvidenceRef, FindingCheckpoint, commitCheckpoint,
+    deliveredCommittedFindings, diagnosticGuardDeclaration, guardCases, guardDecisionRow,
+    guardDeclaration, refFindings
 }
 use Fs.FileRead
 use Fs.FileWrite
@@ -195,9 +197,56 @@ def evidenceGuard(): Unit \ {Assert, IO} = {
     let diagnostic = diagnosticGuardDeclaration(3);
     Assert.assertEq(expected = List.length(declaration), List.length(diagnostic));
     Assert.assertEq(expected = true, List.length(diagnostic) > 0);
+    // A second diagnostic declaration with a slightly larger declared tool-round
+    // bound, so one bounded live diagnostic can commit a candidate, CONTINUE past
+    // it, and only then reach the cap. It is the same declared diagnostic shape
+    // and is never used by a prospective arm.
+    let diagnostic5 = diagnosticGuardDeclaration(5);
+    Assert.assertEq(expected = List.length(declaration), List.length(diagnostic5));
     writeText(outputsDir(), "guard-declaration.tsv", renderLines(declaration));
     writeText(outputsDir(), "guard-declaration-diagnostic.tsv", renderLines(diagnostic));
-    writeText(outputsDir(), "guard-decisions.tsv", renderLines(decisions))
+    writeText(outputsDir(), "guard-declaration-diagnostic5.tsv", renderLines(diagnostic5));
+    writeText(outputsDir(), "guard-decisions.tsv", renderLines(decisions));
+    // The canonical serialization of ONE fixed committed checkpoint. The
+    // mechanical lifecycle guard mirrors this serialization in TypeScript, so
+    // this fixture is the cross-language parity target: the plugin law reads
+    // these exact bytes and asserts its own line for the same fixture matches.
+    writeText(outputsDir(), "checkpoint-canonical.tsv",
+        renderLines(deliveredCommittedFindings(List#{canonicalCheckpointFixture()})))
+}
+
+/// The fixed committed checkpoint of the cross-language serialization parity
+/// target. Every field is declared, so the TypeScript mirror reproduces exactly
+/// these bytes from the same values.
+def canonicalCheckpointFixture(): FindingCheckpoint =
+    commitCheckpoint(canonicalCandidateFixture(), "commit-0001", 1700000000000i64, 4200, 18000,
+        List#{"source/shop.ts"}, "committed")
+
+def canonicalCandidateFixture(): CandidateCommit = {
+    task = "task-evidence-1",
+    arm = "R1_PACKETS",
+    observation = 1,
+    sequence = 1,
+    world = "world-evidence-1",
+    contract = "contract/shop/1",
+    claim = "the changed import is not published",
+    severityOrUnknown = "medium",
+    delivered = List#{canonicalEvidenceRef()},
+    consequence = "runtime import resolution fails for consumers",
+    contradiction = "",
+    uncertainty = "callers not yet inspected",
+    unresolved = List#{"read-caller/consumer@head"}
+}
+
+def canonicalEvidenceRef(): EvidenceRef = {
+    world = "world-evidence-1",
+    revision = "rev-1",
+    path = "source/shop.ts",
+    sha256 = "c9185df0d7d1108bbf45e5e44c70a59f3f338b893f3f0765a64cc2fc075bccfe",
+    startLine = 1,
+    endLine = 2,
+    bytes = 61,
+    delivery = Delivery.Complete
 }
 
 @Test

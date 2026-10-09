@@ -1,8 +1,9 @@
 /// The one mechanical lifecycle guard of the narrow evidence substrate.
 ///
 /// This is an ordinary Cordis plugin that enforces the run limits Flix owns at
-/// the ACTUAL DSH lifecycle. It is the smallest genuine path between the
-/// canonical guard meaning and a live run:
+/// the ACTUAL DSH lifecycle and durably records the run's committed candidates.
+/// It is the smallest genuine path between the canonical guard meaning and a
+/// live run:
 ///
 ///  - it READS the declared `guard-declaration.tsv` the pinned compiler's
 ///    native Tester materialized from `Attune.Study.EvidenceSubstrate`, so the
@@ -11,11 +12,20 @@
 ///  - it accumulates the run's OWN event stream: the normalized provider-total
 ///    usage of every assistant message (cached input counted exactly once, see
 ///    `normalizedProviderTotal`) and the number of model-issued tool calls;
+///  - it converts each native `attune_commit_candidate` tool call into the
+///    canonical durable checkpoint (`commit_record.mjs` mirrors the Flix
+///    `checkpointLine`), attaching the consumption it actually observed, and it
+///    CONTINUES after a commit rather than stopping on a first finding;
 ///  - it reproduces the canonical guard decision at every boundary, pinned to
 ///    the canonical `guard-decisions.tsv` matrix by the plugin law;
 ///  - when the canonical decision is no longer `continue` it stops the live
 ///    AgentLoop through the supported `agent.cancel(cause)` surface and writes
-///    the run's durable budget-stop record as a declared output.
+///    the run's durable stop record as a declared output, delivering the
+///    committed findings it counted;
+///  - on SIGINT it writes the same durable stop record before the process exits,
+///    so an interrupted attempt keeps its committed candidates, and on a resumed
+///    session it restores the accumulation it already spent and re-emits the
+///    restored record as a declared output.
 ///
 /// It decides no defect, no packet and no policy: a `finalize-empty` or
 /// `finalize-with-committed-findings` stop is an incomplete run with unresolved
@@ -24,8 +34,17 @@
 ///
 /// @module attune.dsh.lifecycle-guard
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+
+import {
+  COMMIT_TOOL_NAME,
+  articulate,
+  articulationFindings,
+  checkpointLine,
+  checkpointOf,
+  commitIdOf,
+} from './commit_record.mjs'
 
 /// The declared guard declaration of the narrow evidence substrate: the tree
 /// the `//platform/dsh:evidence_guard_declaration` stage action materialized
@@ -42,6 +61,13 @@ export const DECLARED_GUARD_DECISIONS = fileURLToPath(
   new URL('../evidence_guard_declaration/guard-decisions.tsv', import.meta.url),
 )
 
+/// The canonical serialization of one fixed committed checkpoint, materialized
+/// by the same stage action from the canonical Flix `checkpointLine`. The plugin
+/// law asserts the mirror in `commit_record.mjs` reproduces these exact bytes.
+export const DECLARED_CANONICAL_CHECKPOINT = fileURLToPath(
+  new URL('../evidence_guard_declaration/checkpoint-canonical.tsv', import.meta.url),
+)
+
 /// The canonical decision names of the Flix guard. They are the names
 /// `Attune.Study.EvidenceSubstrate.guardDecisionName` emits, so a serialized
 /// record is readable by the same vocabulary as the canonical meaning.
@@ -49,6 +75,12 @@ export const CONTINUE = 'continue'
 export const FINALIZE_WITH_COMMITTED_FINDINGS = 'finalize-with-committed-findings'
 export const FINALIZE_EMPTY = 'finalize-empty'
 export const STOP_INFRASTRUCTURE_FAILURE = 'stop-infrastructure-failure'
+
+/// The one declared stop cause of a process interruption. It is distinct from a
+/// budget stop: an interruption can occur while the canonical decision is still
+/// `continue`, so the stop record keeps the decision that was actually reached
+/// and names the interruption as the cause.
+export const INTERRUPTED = 'interrupted'
 
 export const name = 'attune-lifecycle-guard'
 export const inject = ['agents']
@@ -147,7 +179,7 @@ export function parseDecisionMatrix(text) {
   return rows
 }
 
-/// The canonical budget-stop line of one observed stop: the same tab-separated
+/// The canonical stop-record line of one observed stop: the same tab-separated
 /// record `Attune.Study.EvidenceSubstrate.budgetStopLine` emits, so a stop the
 /// guard wrote and a stop the Flix meaning serializes are comparable without
 /// re-running the attempt.
@@ -208,11 +240,27 @@ export function observe(state, event) {
 /// of resetting it: a capped session cannot be escaped by resuming. Only the
 /// consumption is restored; a prior attempt's infrastructure failure is not
 /// carried into the resumed attempt, and the wall clock starts at the resume
-/// because the wall cap bounds one attempt.
+/// because the wall cap bounds one attempt. The committed-finding count is
+/// restored from the durable checkpoint log, not from re-counting events, so a
+/// committed candidate is never double-counted across a restart.
 export function restoreState(declaration, events, now) {
   const state = initialState(declaration, now)
   for (const event of events) observeConsumption(state, event)
   return state
+}
+
+/// The committed checkpoint lines already durably written for this run, in
+/// commit order. An absent log is an empty run, never a fabricated commit.
+export function committedCheckpointLines(path) {
+  if (typeof path !== 'string' || path.length === 0) return []
+  let text
+  try {
+    text = readFileSync(path, 'utf8')
+  } catch (cause) {
+    if (cause.code === 'ENOENT') return []
+    throw cause
+  }
+  return text.split('\n').filter((line) => line.trim().length > 0)
 }
 
 /// The observed consumption of one accumulation state at `now`.
@@ -225,11 +273,12 @@ export function consumptionOf(state, now) {
   }
 }
 
-/// The durable enforcement record of one stopped run: the declared caps, the
-/// observed consumption and the canonical decision, plus the canonical
-/// budget-stop line. It carries the run's own unresolved obligations, which is
-/// what makes a budget stop an incomplete run rather than a negative result.
-export function enforcementRecord(state, now, stopCause, unresolved, task, arm, observation) {
+/// The durable stop record of one stopped run: the declared caps, the observed
+/// consumption and the canonical decision, plus the canonical stop line and the
+/// committed findings the run actually delivered. It carries the run's own
+/// unresolved obligations, which is what makes a stop an incomplete run rather
+/// than a negative result.
+export function enforcementRecord(state, now, stopCause, unresolved, task, arm, observation, committed) {
   const consumption = consumptionOf(state, now)
   const decision = guardDecisionOf(state.declaration, consumption, state.infrastructureFailed)
   const budgetStop = {
@@ -244,11 +293,12 @@ export function enforcementRecord(state, now, stopCause, unresolved, task, arm, 
     stopCause,
     unresolved,
   }
-  return { consumption, decision, budgetStop }
+  return { consumption, decision, budgetStop, committed: committed ?? [] }
 }
 
-/// Render one enforcement record as the declared `key<TAB>value` lines, with the
-/// canonical budget-stop line as its own `budgetStop` entry.
+/// Render one stop record as the declared `key<TAB>value` lines, with the
+/// canonical stop line as its own `budgetStop` entry and one `committedCheckpoint`
+/// entry per genuinely committed candidate.
 export function renderEnforcement(state, record) {
   const lines = [
     `contractVersion\t${state.declaration.contractVersion}`,
@@ -264,6 +314,38 @@ export function renderEnforcement(state, record) {
     `stopCause\t${record.budgetStop.stopCause}`,
     `budgetStop\t${budgetStopLine(record.budgetStop)}`,
   ]
+  for (const line of record.committed) lines.push(`committedCheckpoint\t${line}`)
+  return lines.join('\n') + '\n'
+}
+
+/// The restored record of a resumed attempt: the consumption it already spent,
+/// the committed findings it durably kept and the canonical decision those
+/// restore to. It is written BEFORE the resumed loop does any work, so the
+/// restore is a declared output rather than a claim about one.
+export function renderRestored(state, now, task, arm, observation, committed) {
+  const consumption = consumptionOf(state, now)
+  const decision = guardDecisionOf(state.declaration, consumption, false)
+  const lines = [
+    `contractVersion\t${state.declaration.contractVersion}`,
+    `restoredWallMillis\t${consumption.wallMillis}`,
+    `restoredToolRounds\t${consumption.toolRounds}`,
+    `restoredCumulativeTokens\t${consumption.cumulativeTokens}`,
+    `restoredCommittedFindings\t${consumption.committedFindings}`,
+    `restoredDecision\t${decision}`,
+    `restoredStopLine\t${budgetStopLine({
+      task,
+      arm,
+      observation,
+      elapsedMillis: consumption.wallMillis,
+      toolRounds: consumption.toolRounds,
+      cumulativeTokens: consumption.cumulativeTokens,
+      committedFindings: consumption.committedFindings,
+      decision,
+      stopCause: 'restored',
+      unresolved: [],
+    })}`,
+  ]
+  for (const line of committed) lines.push(`restoredCheckpoint\t${line}`)
   return lines.join('\n') + '\n'
 }
 
@@ -283,16 +365,23 @@ export function apply(ctx, config) {
     requireDeclared(config, 'declaration', 'ATTUNE_GUARD_DECLARATION', DECLARED_GUARD_DECLARATION),
   )
   const recordPath = process.env.ATTUNE_GUARD_RECORD ?? config?.record
-  const task = process.env.ATTUNE_GUARD_TASK ?? config?.task ?? ''
-  const arm = process.env.ATTUNE_GUARD_ARM ?? config?.arm ?? ''
-  const observation = Number.parseInt(process.env.ATTUNE_GUARD_OBSERVATION ?? config?.observation ?? '1', 10)
+  const checkpointPath = process.env.ATTUNE_GUARD_CHECKPOINTS ?? config?.checkpoints
+  const restoredPath = process.env.ATTUNE_GUARD_RESTORED ?? config?.restored
+  const task = process.env.ATTUNE_RUN_TASK ?? process.env.ATTUNE_GUARD_TASK ?? config?.task ?? ''
+  const arm = process.env.ATTUNE_RUN_ARM ?? process.env.ATTUNE_GUARD_ARM ?? config?.arm ?? ''
+  const observation = Number.parseInt(
+    process.env.ATTUNE_RUN_OBSERVATION ?? process.env.ATTUNE_GUARD_OBSERVATION ?? config?.observation ?? '1',
+    10,
+  )
   const unresolved = (process.env.ATTUNE_GUARD_UNRESOLVED ?? '').split(',').filter((entry) => entry.length > 0)
   const states = new WeakMap()
+  const liveStates = new Set()
 
   /// The accumulation state of one session: restored once from its own persisted
   /// event log when it is first seen (a resumed session therefore continues from
   /// the consumption it already spent), then followed by the authoritative live
-  /// events. A stop already recorded for the session is never re-derived.
+  /// events. The committed-finding count comes from the durable checkpoint log,
+  /// so it is not double-counted by the restore fold.
   function stateFor(session, event) {
     let state = states.get(session)
     if (state !== undefined) return state
@@ -302,13 +391,65 @@ export function apply(ctx, config) {
     // observed exactly once, by the caller below.
     const prior = persisted.filter((entry) => entry !== event)
     state = restoreState(declaration, prior, Date.now())
+    const committed = committedCheckpointLines(checkpointPath)
+    state.committedFindings = committed.length
+    state.committed = committed
     states.set(session, state)
+    liveStates.add(state)
+    // A genuine resume (the session already carried events) re-emits the
+    // restored record as a declared output. A fresh session writes nothing.
+    if (restoredPath !== undefined && restoredPath.length > 0 && prior.length > 0) {
+      writeFileSync(restoredPath, renderRestored(state, Date.now(), task, arm, observation, committed))
+    }
     return state
+  }
+
+  /// Convert one native commit tool call into the canonical durable checkpoint.
+  /// It parses the model's own articulation, resolves its delivered evidence
+  /// against the declared world and attaches the consumption actually observed.
+  /// A malformed articulation is not counted and never fabricated into a commit.
+  function recordCommit(state, event, now) {
+    let articulation
+    try {
+      const args = JSON.parse(event.data?.arguments ?? '{}')
+      articulation = articulate(args, { task, arm, observation, config })
+      const findings = articulationFindings(articulation)
+      if (findings.length > 0) throw new Error(findings.join('; '))
+    } catch (error) {
+      ctx.logger?.warn?.(`attune lifecycle guard did not record a candidate commit: ${String(error)}`)
+      return false
+    }
+    const commitId = commitIdOf(articulation)
+    const sequence = state.committedFindings + 1
+    const consumption = consumptionOf(state, now)
+    const checkpoint = checkpointOf(articulation, {
+      sequence,
+      commitId,
+      commitMillis: now,
+      elapsedMillis: consumption.wallMillis,
+      cumulativeTokens: consumption.cumulativeTokens,
+      explored: [],
+      stopCause: 'committed',
+    })
+    const line = checkpointLine(checkpoint)
+    if (checkpointPath !== undefined && checkpointPath.length > 0) {
+      appendFileSync(checkpointPath, line + '\n')
+    }
+    state.committedFindings = sequence
+    state.committed = [...(state.committed ?? []), line]
+    return true
+  }
+
+  function stopCauseOf(state) {
+    return state.infrastructureFailed ? 'infrastructure-failure' : 'budget-stop'
   }
 
   function writeStop(state, now, stopCause) {
     if (recordPath === undefined || recordPath.length === 0) return undefined
-    const record = enforcementRecord(state, now, stopCause, unresolved, task, arm, observation)
+    const committed = committedCheckpointLines(checkpointPath)
+    state.committed = committed
+    state.committedFindings = committed.length
+    const record = enforcementRecord(state, now, stopCause, unresolved, task, arm, observation, committed)
     writeFileSync(recordPath, renderEnforcement(state, record))
     return record
   }
@@ -317,11 +458,17 @@ export function apply(ctx, config) {
     const state = stateFor(session, event)
     if (state.stopped) return
     observe(state, event)
-    const consumption = consumptionOf(state, Date.now())
+    if (event.type === 'tool/call' && event.data?.name === COMMIT_TOOL_NAME) {
+      // A commit is recorded durably and the review CONTINUES: there is no
+      // first-finding stop and no silent suppression of a committed candidate.
+      recordCommit(state, event, Date.now())
+    }
+    const now = Date.now()
+    const consumption = consumptionOf(state, now)
     const decision = guardDecisionOf(declaration, consumption, state.infrastructureFailed)
     if (decision === CONTINUE) return
     state.stopped = true
-    const record = writeStop(state, Date.now(), state.infrastructureFailed ? 'infrastructure-failure' : 'budget-stop')
+    const record = writeStop(state, now, stopCauseOf(state))
     try {
       ctx.agents.get(session.id)?.cancel({
         kind: 'attune-lifecycle-guard',
@@ -332,4 +479,27 @@ export function apply(ctx, config) {
       ctx.logger?.warn?.(`attune lifecycle guard could not stop the agent: ${String(error)}`)
     }
   })
+
+  // The process-interruption path: a SIGINT writes the same durable stop record
+  // (with the committed findings it counted) for every live session before the
+  // process exits, so an interrupted attempt keeps its committed candidates and
+  // a resume can restore them.
+  function writeInterruptionRecords() {
+    const now = Date.now()
+    for (const state of liveStates) {
+      if (state.stopped) continue
+      state.stopped = true
+      try {
+        writeStop(state, now, INTERRUPTED)
+      } catch (error) {
+        ctx.logger?.warn?.(`attune lifecycle guard could not write the interruption record: ${String(error)}`)
+      }
+    }
+  }
+
+  process.on('SIGINT', writeInterruptionRecords)
+
+  // Exposed so the plugin law can exercise the interruption path without
+  // emitting a real signal; the loader ignores a plugin's apply return value.
+  return { interrupt: writeInterruptionRecords }
 }
