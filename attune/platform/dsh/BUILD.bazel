@@ -109,6 +109,25 @@ native_study_stage(
     stage = "evidence_guard",
 )
 
+# The ONE declared detector sidecar of the narrow evidence substrate.
+#
+# It is the same `native_study_stage` shape over the SAME declared stage sources
+# and it materializes the two detector families' outcomes over the declared
+# detector fixture sites (`detector-sidecar.tsv`), the honest
+# generated -> inspected -> articulated -> verified -> committed -> delivered ->
+# adjudicated funnel (`detector-funnel.tsv`) and the declared model visibility of
+# each family in each prospective arm (`detector-visibility.tsv`). The sidecar is
+# a model-HIDDEN declared artifact of the run: it is never a model-facing tool
+# and never part of a session event stream, so a detector output is never the
+# definition of an arm.
+native_study_stage(
+    name = "evidence_detector_sidecar",
+    srcs = ["//test/study:evidence_operation_stage_srcs"],
+    input_names = ["detectors"],
+    inputs = ["//test/study:fixtures/detectors.tsv"],
+    stage = "evidence_detectors",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The
@@ -118,6 +137,7 @@ native_study_stage(
 js_binary(
     name = "dsh",
     data = [
+        ":evidence_detector_sidecar",
         ":evidence_guard_declaration",
         ":evidence_operation_projection",
         ":node_modules",

@@ -5,9 +5,11 @@ use Attune.Study.EvidenceOperation.{
     referenceRecord, requestFindings
 }
 use Attune.Study.EvidenceSubstrate.{
-    CandidateCommit, Delivery, EvidenceRef, FindingCheckpoint, commitCheckpoint,
-    deliveredCommittedFindings, diagnosticGuardDeclaration, guardCases, guardDecisionRow,
-    guardDeclaration, refFindings
+    CandidateCommit, CliFact, Delivery, DetectorResult, EvidenceRef, FindingCheckpoint,
+    FindingFunnel, ImportFact, commitCheckpoint,
+    deliveredCommittedFindings, detectImportPublication, detectRequiredCliInput,
+    detectorResultLine, detectorVisibleToModel, diagnosticGuardDeclaration, funnelFindings,
+    guardCases, guardDecisionRow, guardDeclaration, refFindings
 }
 use Fs.FileRead
 use Fs.FileWrite
@@ -249,10 +251,114 @@ def canonicalEvidenceRef(): EvidenceRef = {
     delivery = Delivery.Complete
 }
 
+// -------------------------------------------------- the two detector sidecars
+
+/// One declared detector fixture outcome: its family, its fixture identity, its
+/// classification (a local, cross-file or exposed-development site) and the
+/// result the ONE canonical detector produced for it. Nothing here judges a
+/// defect: a hypothesis is a candidate, a refusal is an explicit unsupported
+/// case and an unresolved outcome is an honest Unknown.
+def detectorOutcome(row: List[String]): (String, String, String, DetectorResult) = {
+    let family = field(row, 0);
+    if (family == "import-publication")
+        (family, field(row, 1), field(row, 2), detectImportPublication({
+            importer = field(row, 3), target = field(row, 5), sourceIdentity = field(row, 8),
+            published = boolOf(field(row, 9)), allowlisted = boolOf(field(row, 10)),
+            dynamic = boolOf(field(row, 11)), generated = boolOf(field(row, 12)),
+            examined = boolOf(field(row, 13))}))
+    else
+        (family, field(row, 1), field(row, 2), detectRequiredCliInput({
+            program = field(row, 4), requiredInput = field(row, 6), consumption = field(row, 7),
+            computed = boolOf(field(row, 14)), injected = boolOf(field(row, 15)),
+            defaulted = boolOf(field(row, 16)), literal = boolOf(field(row, 17))}))
+}
+
+def boolOf(text: String): Bool = text == "true"
+
+/// Whether a declared row names one of the two detector families. The fixture
+/// header and any unrelated row are not a detector site, so they are skipped
+/// rather than guessed into a family.
+def isDetectorFamily(name: String): Bool =
+    name == "import-publication" or name == "required-cli-input"
+
+def detectorKind(result: DetectorResult): String = match result {
+    case DetectorResult.Hypothesis(_) => "hypothesis"
+    case DetectorResult.Refused(_)    => "refused"
+    case DetectorResult.Unresolved(_) => "unresolved"
+}
+
+def countDetectorKind(rows: List[(String, String, String, DetectorResult)], kind: String): Int32 =
+    List.length(List.filter(row -> match row {
+        case (_, _, _, result) => detectorKind(result) == kind
+    }, rows))
+
+/// The declared detector sidecar stage (VAL-SUB-013). It runs the ONE canonical
+/// detector of each family over the declared fixture sites and materializes:
+///
+///  - `detector-sidecar.tsv`: every outcome, with its family, fixture identity,
+///    classification and the canonical result line. This is the model-HIDDEN
+///    sidecar: it is a declared artifact of the run, never a model-facing tool
+///    and never part of the session event stream;
+///  - `detector-funnel.tsv`: the generated -> inspected -> articulated ->
+///    verified -> committed -> delivered -> adjudicated funnel. Every hypothesis
+///    is retained as a candidate (`packetBacked`), and the refusals and
+///    unresolved outcomes are exactly the detection losses. Nothing downstream
+///    is claimed, so those stages are an honest zero;
+///  - `detector-visibility.tsv`: the declared model visibility of each family in
+///    each prospective arm, which is `false` in BOTH arms, so a detector output
+///    is never the definition of an arm.
+///
+/// It reads only the declared fixture; it acquires no corpus and calls no
+/// provider.
+def evidenceDetectors(): Unit \ {Assert, IO} = {
+    let path = required("detectors");
+    let rows = List.map(detectorOutcome,
+        List.filter(row -> isDetectorFamily(field(row, 0)), List.map(fields, records(readText(path)))));
+    Assert.assertEq(expected = true, List.length(rows) > 0);
+    Assert.assertEq(expected = true,
+        countDetectorKind(rows, "hypothesis") > 0 and countDetectorKind(rows, "refused") > 0
+            and countDetectorKind(rows, "unresolved") > 0);
+    let hypotheses = countDetectorKind(rows, "hypothesis");
+    let refused = countDetectorKind(rows, "refused");
+    let unresolved = countDetectorKind(rows, "unresolved");
+    // `detected` is every output the detectors generated: a hypothesis, an
+    // explicit refusal or an honest unresolved outcome. The refusals and
+    // unresolved outcomes are exactly the detection losses, and every hypothesis
+    // is retained as a candidate.
+    let detected = hypotheses + refused + unresolved;
+    let funnel: FindingFunnel = {
+        detected = detected, refused = refused, unresolved = unresolved,
+        packetBacked = hypotheses, verified = 0, committed = 0, reported = 0
+    };
+    Assert.assertEq(expected = true, List.isEmpty(funnelFindings(funnel)));
+    writeText(outputsDir(), "detector-sidecar.tsv",
+        renderLines(List.map(row -> match row {
+            case (family, fixture, classification, result) =>
+                List.join("\t", List#{family, fixture, classification,
+                    detectorKind(result), detectorResultLine(result)})
+        }, rows)));
+    writeText(outputsDir(), "detector-funnel.tsv", renderLines(List#{
+        List.join("\t", List#{"funnel", "detected", Int32.toString(funnel#detected)}),
+        List.join("\t", List#{"funnel", "refused", Int32.toString(funnel#refused)}),
+        List.join("\t", List#{"funnel", "unresolved", Int32.toString(funnel#unresolved)}),
+        List.join("\t", List#{"funnel", "packetBacked", Int32.toString(funnel#packetBacked)}),
+        List.join("\t", List#{"funnel", "verified", Int32.toString(funnel#verified)}),
+        List.join("\t", List#{"funnel", "committed", Int32.toString(funnel#committed)}),
+        List.join("\t", List#{"funnel", "reported", Int32.toString(funnel#reported)})}));
+    writeText(outputsDir(), "detector-visibility.tsv",
+        renderLines(List.flatMap(family -> List#{
+            List.join("\t", List#{family, "R0_PLAIN", boolText(detectorVisibleToModel("R0_PLAIN"))}),
+            List.join("\t", List#{family, "R1_PACKETS", boolText(detectorVisibleToModel("R1_PACKETS"))})},
+            List#{"import-publication", "required-cli-input"})))
+}
+
+def boolText(value: Bool): String = if (value) "true" else "false"
+
 @Test
 def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     let stage = stageName();
     if (stage == "evidence_operation") evidenceOperation()
     else if (stage == "evidence_guard") evidenceGuard()
+    else if (stage == "evidence_detectors") evidenceDetectors()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }

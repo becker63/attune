@@ -1,0 +1,17 @@
+# The one declared DSH overlay that mounts the model-hidden detector sidecar.
+#
+# It is a loader patch list (`--patch`) whose single patch INSERTS the sidecar as
+# a new profile row, exactly like the evidence-tool and guard overlays beside it.
+# The row's `name` is a RELATIVE module specifier, which the declared DSH loader
+# anchors beside this file, so the sidecar resolves from this package's own
+# directory.
+#
+# The sidecar reads the declared `evidence_detector_sidecar` tree that ships
+# beside the profile (the two detector families' outcomes, the honest funnel and
+# the declared visibility the Flix owner materialized) and writes it to a
+# declared sidecar path. It registers NO model-facing tool and writes NOTHING to
+# the session, so a detector output is never part of the model-visible stream in
+# either arm.
+- insert:
+    - id: attune-detector-sidecar
+      name: ./detector_sidecar.mjs
