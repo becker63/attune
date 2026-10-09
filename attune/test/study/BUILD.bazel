@@ -194,6 +194,25 @@ native_flix_consumer_test(
     ],
 )
 
+# The laws of the four-quadrant delivery accounting (VAL-SUB-010, Gate C offline
+# half). They consume the tree the `evidence_reviewbench_delivery` stage action
+# materialized and recompute the four separated accountings from the SAME
+# per-operation receipts, so a prepared payload, a physically verified read and
+# an accepted model-visible delivery can never be reported as one figure. A
+# failed or unaccepted operation contributes zero visible bytes, and an
+# unobservable later use stays `Unavailable`. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_delivery_law",
+    srcs = [
+        "EvidenceReviewBenchDeliveryLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    produced = ["//platform/dsh:evidence_reviewbench_delivery"],
+)
+
 # The laws of the compiled operation: they consume the declared tree the
 # `evidence_operation` stage action materialized and assert it is the canonical
 # Flix reference record of the declared region and the frozen cross-language

@@ -43,6 +43,7 @@ import { defineTool } from '@deepseek-ai/dsh-tools'
 
 import {
   DEFAULT_PAGE_BYTES,
+  DEFAULT_PAGE_PIECES,
   PacketRefusal,
   findDeclaredRegion,
   findDeclaredWorldFile,
@@ -146,6 +147,10 @@ export const ABSENT = '-'
 /// declaration lives here, beside the tool, so the served page is proved to stay
 /// under it and a page is never silently the whole (possibly oversized) source.
 export const PACKET_PAGE_BYTES = DEFAULT_PAGE_BYTES
+
+/// The maximum number of distinct source pieces one page carries, so the rendered
+/// page can never emit an unbounded list of per-piece identity markers.
+export const PACKET_MAX_PIECES = DEFAULT_PAGE_PIECES
 
 export const name = 'attune-packet-tool'
 export const inject = ['tools']
@@ -327,13 +332,14 @@ export function executePacketOperation(args, config) {
   const delivered = []
   let position = 0
   let remaining = PACKET_PAGE_BYTES
+  let pieceCount = 0
   for (const ref of served) {
     const end = position + ref.bytes
     if (end <= cursor) {
       position = end
       continue
     }
-    if (remaining <= 0) break
+    if (remaining <= 0 || pieceCount >= PACKET_MAX_PIECES) break
     const localStart = Math.max(0, cursor - position)
     const page = pageText(ref.text, localStart, remaining)
     delivered.push({
@@ -353,6 +359,7 @@ export function executePacketOperation(args, config) {
       complete: page.complete,
     })
     remaining -= page.endByte - page.startByte
+    pieceCount += 1
     position = end
   }
   recordLedger(config, packet.id, args.disclosure, delivered)
@@ -411,6 +418,15 @@ function parseCursor(value, totalBytes) {
   return cursor
 }
 
+/// The bounded character preview of one declared cue list. The exact list stays
+/// in the structured member; the model-facing preview names the total and the
+/// number not shown, so a bounded cue view is explicit rather than a silent
+/// truncation that could blow the rendered output budget.
+function previewList(joined, maxChars) {
+  if (joined.length <= maxChars) return joined
+  return `${joined.slice(0, maxChars)} … (${joined.length} chars total)`
+}
+
 function renderSource(source) {
   return source
     .map((piece) => {
@@ -420,6 +436,23 @@ function renderSource(source) {
       return `${head}\n${piece.text}`
     })
     .join('\n')
+}
+
+/// The model-facing render of one page. Its total length is bounded by
+/// construction: a compact fixed header (the cue lists are previewed with an
+/// explicit total), at most `PACKET_MAX_PIECES` per-piece identity markers and at
+/// most `PACKET_PAGE_BYTES` of delivered source, so the whole rendered tool
+/// result stays under the declared DSH tool-result prune threshold and is never
+/// silently pruned.
+function renderPage(value) {
+  return `Packet ${value.packet} (${value.disclosure}) obligation ${value.operation}: `
+    + `${value.spans.length} span(s), ${value.uniqueBytes} unique / ${value.totalBytes} total bytes, `
+    + `${value.deliveredBytes} delivered`
+    + `${value.continuation === ABSENT ? '' : `, continuation ${value.continuation}`}`
+    + `${value.omittedBytes > 0 ? `, ${value.omittedBytes} omitted` : ''}.\n`
+    + `entrypoints: ${previewList(value.entrypoints, 600)}\n`
+    + `missing obligations: ${previewList(value.missing, 300) || '(none)'}\n`
+    + renderSource(value.source)
 }
 
 /// Register the packet tool on `ctx.tools`.
@@ -520,14 +553,7 @@ export function apply(ctx, config) {
         render: (_args, value) => [
           {
             type: 'text',
-            text:
-              `Packet ${value.packet} (${value.disclosure}) for obligation ${value.operation}: ` +
-              `${value.spans.length} span(s), ${value.uniqueBytes} unique / ${value.totalBytes} returned bytes, ` +
-              `${value.deliveredBytes} bytes delivered in this page` +
-              `${value.continuation === ABSENT ? '' : `, continuation ${value.continuation}`}` +
-              `${value.omittedBytes > 0 ? `, ${value.omittedBytes} bytes omitted` : ''}.\n` +
-              `entrypoints: ${value.entrypoints}\nmissing obligations: ${value.missing || '(none)'}\n` +
-              renderSource(value.source),
+            text: renderPage(value),
           },
         ],
       },

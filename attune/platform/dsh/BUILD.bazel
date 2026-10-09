@@ -304,6 +304,24 @@ native_study_stage(
     world_sources = ["@attune_retained_world_trees//:all"],
 )
 
+# The declared four-quadrant delivery accounting of the corrected source-bearing
+# protocol (VAL-SUB-010, Gate C offline half). It is the same
+# `native_study_stage` shape over the integration stage closure, but it reads the
+# corrected protocol's own per-operation delivery receipts and materializes the
+# four separated accountings (physical acquisition, prepared payload,
+# model-visible delivery, observable use) plus the receipt rows themselves. A
+# failed or unaccepted operation contributes zero visible bytes, so a schema/
+# render failure or an interrupted return is never counted as delivery. It calls
+# no provider and acquires no corpus.
+native_study_stage(
+    name = "evidence_reviewbench_delivery",
+    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
+    input_names = ["receipts"],
+    inputs = ["//test/study:fixtures/reviewbench-delivery.tsv"],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    stage = "evidence_reviewbench_delivery",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The

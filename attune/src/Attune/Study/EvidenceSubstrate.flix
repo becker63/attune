@@ -885,15 +885,17 @@ pub mod Attune.Study.EvidenceSubstrate {
     }
 
     /// The accounting findings of a receipt set. A failed or unaccepted output
-    /// can never contribute model-visible bytes, prepared bytes can never exceed
-    /// the physically verified bytes, and model-visible bytes can never exceed
-    /// the prepared payload. A negative count is refused.
+    /// can never contribute model-visible bytes, and model-visible bytes can
+    /// never exceed the prepared payload. A negative count is refused. The
+    /// quadrants are SEPARATE measurements, not a strict ordering: a memoized
+    /// exact-identity reuse prepares and delivers bytes that a previous operation
+    /// physically read, so a single operation's prepared bytes may legitimately
+    /// exceed its own physical bytes, and only the prepared/visible relation is
+    /// required to hold.
     pub def deliveryAccountingFindings(receipts: List[DeliveryReceipt]): List[String] =
         List.flatMap(receipt ->
             (if (receipt#physicalBytes < 0 or receipt#preparedBytes < 0 or receipt#visibleBytes < 0)
                 List#{"a delivery receipt carries a negative byte count: " + receipt#identity} else Nil)
-                ::: (if (receipt#preparedBytes > receipt#physicalBytes)
-                    List#{"prepared bytes exceed the physically verified bytes of " + receipt#identity} else Nil)
                 ::: (if (receipt#visibleBytes > receipt#preparedBytes)
                     List#{"model-visible bytes exceed the prepared payload of " + receipt#identity} else Nil)
                 ::: (if (not receipt#accepted and receipt#visibleBytes != 0)

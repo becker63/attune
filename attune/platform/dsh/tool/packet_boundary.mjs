@@ -26,12 +26,28 @@ export class PacketRefusal extends Error {
 }
 
 /// The deterministic bounded page budget of one delivered source response. It is
-/// deliberately small: it keeps one tool result well under any output pruner or
-/// spill threshold, so the model actually receives the delivered bytes rather
-/// than a truncated prefix. A disclosure whose exact bytes exceed one page is
-/// served in deterministic pages with an explicit continuation, never truncated
-/// and never labelled complete.
-export const DEFAULT_PAGE_BYTES = 16384
+/// deliberately small: it keeps one tool result well under the real DSH output
+/// bound, so the model actually receives the delivered bytes rather than a
+/// pruned prefix. The declared `dsh-base` bundle mounts
+/// `@deepseek-ai/dsh-compaction-tool-result-pruner` at `thresholdChars: 8192`,
+/// which replaces the MIDDLE of any tool-result text over 8192 code points with
+/// a `[... tool result middle pruned ...]` marker — a silent truncation. A page
+/// is measured in UTF-8 bytes and a code point is never shorter than one byte, so
+/// a 4096-byte page (plus its short header) can never reach that threshold. A
+/// disclosure whose exact bytes exceed one page is served in deterministic pages
+/// with an explicit continuation, never truncated and never labelled complete.
+export const DEFAULT_PAGE_BYTES = 3072
+
+/// The maximum number of distinct source pieces one page carries. Together with
+/// the byte budget it bounds the rendered page: a page never emits an unbounded
+/// list of per-piece identity markers, so the whole rendered tool result stays
+/// under the declared prune threshold.
+export const DEFAULT_PAGE_PIECES = 8
+
+/// The real DSH tool-result prune threshold in code points, read from the
+/// declared `dsh-base` bundle's `tool-result-pruner` configuration. A served page
+/// must render within this bound so no page is silently pruned.
+export const DSH_TOOL_RESULT_PRUNE_THRESHOLD_CHARS = 8192
 
 /// The strict UTF-8 decode of one sealed byte sequence. It is the ONLY decode
 /// the boundary performs: a byte sequence that is not well-formed UTF-8 is

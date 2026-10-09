@@ -21,7 +21,13 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 
-import { PacketRefusal, packetRegionKey, parsePacketWorld, spanBytes } from './packet_boundary.mjs'
+import {
+  DSH_TOOL_RESULT_PRUNE_THRESHOLD_CHARS,
+  PacketRefusal,
+  packetRegionKey,
+  parsePacketWorld,
+  spanBytes,
+} from './packet_boundary.mjs'
 import {
   ABSENT,
   apply,
@@ -343,6 +349,30 @@ function spanByteOffset(bytes, startLine) {
   return offset
 }
 
+test('the delivered source is byte-identical to the Flix-owned delivered projection', async () => {
+  const definition = registeredDefinition({})
+  // The Flix packet stage materializes the exact delivered text of every packet
+  // span as a declared projection. The tool's own delivery must agree with it
+  // byte-for-byte, so the cross-language delivered projection is one contract
+  // rather than two independently drifting records.
+  const rows = readFileSync(join(SEALED_ROOT, 'packet-delivered.tsv'), 'utf8')
+    .split('\n').filter((line) => line.length > 0).map((line) => line.split('\t'))
+  const byIdentity = new Map()
+  for (const row of rows) {
+    assert.equal(row[0], 'delivered')
+    byIdentity.set([row[3], row[4], row[5], row[6]].join('|'), row)
+  }
+  const collected = await collectPages(definition, PROGRESSIVE)
+  for (const identity of collected.order) {
+    const row = byIdentity.get(identity)
+    assert.ok(row, `the Flix delivered projection must declare the span ${identity}`)
+    const projected = readFileSync(join(SEALED_ROOT, row[9]), 'utf8')
+    const delivered = collected.chunks.get(identity).pieces.map((piece) => piece.text).join('')
+    assert.equal(delivered, projected, `the delivered text of ${identity} must equal the Flix projection`)
+    assert.equal(createHash('sha256').update(Buffer.from(delivered, 'utf8')).digest('hex'), row[7])
+  }
+})
+
 test('a cursor past the delivered source is refused rather than clamped', async () => {
   const definition = registeredDefinition({})
   await assert.rejects(
@@ -353,6 +383,36 @@ test('a cursor past the delivered source is refused rather than clamped', async 
     definition.execute({ ...PROGRESSIVE, cursor: 'not-a-number' }, {}),
     (error) => error.name === 'PacketRefusal' && /not a declared byte offset/.test(error.message),
   )
+})
+
+test('every rendered page stays under the real DSH tool-result prune threshold', async () => {
+  const definition = registeredDefinition({})
+  // The declared `dsh-base` bundle mounts the tool-result pruner at
+  // `thresholdChars: 8192`, which replaces the MIDDLE of any tool-result text
+  // over that many code points with a marker — a silent truncation. Every served
+  // page must render strictly within that bound, so the model receives the whole
+  // delivered page and no delivered source is ever pruned. This is the real
+  // output bound the amendment requires, not a nominal schema/render success.
+  const overflow = readFileSync(DECLARED_WORLD_FILES, 'utf8').split('\n')
+    .find((line) => line.split('\t')[6] === 'overflow').split('\t')
+  const requests = [PROGRESSIVE, FULL_SOURCE,
+    { packet: 'p1', disclosure: 'whole-file', path: overflow[3], revision: overflow[2] }]
+  for (const args of requests) {
+    let cursor = ABSENT
+    let pages = 0
+    while (true) {
+      const value = await definition.execute({ ...args, cursor }, {})
+      const blocks = definition.output.render({ ...args, cursor }, value)
+      const chars = blocks.reduce(
+        (sum, block) => sum + (block.type === 'text' ? Array.from(block.text).length : 0), 0)
+      assert.ok(chars <= DSH_TOOL_RESULT_PRUNE_THRESHOLD_CHARS,
+        `a rendered ${args.disclosure} page must stay under ${DSH_TOOL_RESULT_PRUNE_THRESHOLD_CHARS} code points, got ${chars}`)
+      if (value.continuation === ABSENT) break
+      cursor = value.continuation
+      pages += 1
+      assert.ok(pages < 4000, 'the continuation must reach completion')
+    }
+  }
 })
 
 // -------------------------------------------------------------- the boundary

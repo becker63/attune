@@ -1,14 +1,15 @@
 import attune.reviewbench.AttuneReviewBench
 
 use Attune.Study.EvidenceSubstrate.{
-    ChangedEntrypoint, CliFact, Delivery, DetectorResult, EvidencePacket, EvidenceRef, FindingFunnel,
-    ImportFact, InformationDelta, PacketDisclosure, RunObservation, ScopedNegative, SemanticState,
-    VerificationRecord, byteAccounting, byteAccountingLine, declaredDependencies, deliveryName,
-    detectImportPublication, detectRequiredCliInput, detectorResultLine, detectorVisibleToModel,
-    entrypointFindings, entrypointKey, entrypointLine, evidenceKey, fullSourceExpansion, funnelFindings,
-    informationDelta, instrumentationLine, packetFindings, packetInstrumentation, packetManifestFindings,
-    reacquisitionLine, runObservationFindings, runObservationLines, sourceCliFacts, sourceImportFacts,
-    verificationFindings, verificationLine
+    ChangedEntrypoint, CliFact, Delivery, DeliveryReceipt, DetectorResult, EvidencePacket, EvidenceRef,
+    FindingFunnel, ImportFact, InformationDelta, PacketDisclosure, RunObservation, ScopedNegative,
+    SemanticState, VerificationRecord, byteAccounting, byteAccountingLine, declaredDependencies,
+    deliveryAccounting, deliveryAccountingFindings, deliveryAccountingLine, deliveryName,
+    deliveryReceiptLine, detectImportPublication, detectRequiredCliInput, detectorResultLine,
+    detectorVisibleToModel, entrypointFindings, entrypointKey, entrypointLine, evidenceKey,
+    fullSourceExpansion, funnelFindings, informationDelta, instrumentationLine, packetFindings,
+    packetInstrumentation, packetManifestFindings, reacquisitionLine, runObservationFindings,
+    runObservationLines, sourceCliFacts, sourceImportFacts, verificationFindings, verificationLine
 }
 use Fs.FileRead
 use Fs.FileWrite
@@ -946,6 +947,58 @@ def evidenceReviewbenchRuntime(): Unit \ {Assert, IO} = {
     writeText(outputsDir(), "runtime-observations.tsv", renderLines(runObservationLines(observation)))
 }
 
+// ---------------------------------------- the four-quadrant delivery accounting
+
+/// One declared delivery receipt row of the corrected source-bearing protocol:
+/// the operation, the exact world/revision identity, the physically verified
+/// bytes, the prepared payload bytes, whether the native result was ACCEPTED, the
+/// bytes the accepted result actually delivered and the observable later use (or
+/// the literal `Unavailable`). A failed or unaccepted row declares its visible
+/// bytes as zero, so a schema/render failure or an interrupted return can never
+/// count as delivery.
+def receiptOf(row: List[String]): Option[DeliveryReceipt] =
+    if (field(row, 0) != "receipt") None
+    else Some({
+        operation = field(row, 1),
+        world = field(row, 2),
+        revision = field(row, 3),
+        identity = field(row, 4),
+        physicalBytes = intOf(field(row, 5)),
+        preparedBytes = intOf(field(row, 6)),
+        accepted = field(row, 7) == "accepted",
+        visibleBytes = intOf(field(row, 8)),
+        used = if (field(row, 9) == "Unavailable") None else Int32.fromString(field(row, 9))
+    })
+
+/// The declared four-quadrant delivery accounting of the corrected protocol
+/// (VAL-SUB-010, Gate C offline half). It reduces the run's OWN per-operation
+/// receipts and separates the four quadrants that must never be conflated:
+/// `PhysicalAcquisition`, `DeliveryPrepared`, `ModelVisibleDelivery` (only an
+/// accepted, postprocessing-completed native result) and `ObservedUse` (only a
+/// later demonstrable reference, else `Unavailable`). A failed or unaccepted row
+/// contributes zero visible bytes, so a schema/render failure or an interrupted
+/// return is not delivery. It calls no provider and acquires no corpus.
+def evidenceReviewbenchDelivery(): Unit \ {Assert, IO} = {
+    let rows = List.map(fields, records(readText(required("receipts"))));
+    let receipts = List.filterMap(receiptOf, rows);
+    check(31, not List.isEmpty(receipts));
+    // A prepared identity is never a delivery: the accounting is only valid when
+    // no unaccepted row carries visible bytes and no quadrant exceeds its source.
+    Assert.assertEq(expected = Nil, deliveryAccountingFindings(receipts));
+    let accounting = deliveryAccounting(receipts);
+    check(32, accounting#modelVisibleDelivery <= accounting#deliveryPrepared);
+    // The record exercises a FAILED operation, so the model-visible total is
+    // strictly below the prepared total and the honest negative is materialized.
+    check(34, List.exists(receipt -> not receipt#accepted, receipts));
+    check(35, accounting#modelVisibleDelivery < accounting#deliveryPrepared);
+    // An exact repeat of an already-delivered identity is a reuse, not new
+    // evidence, so it is a distinct receipt with the same identity.
+    check(36, List.length(List.distinct(List.map(receipt -> receipt#identity, receipts)))
+        < List.length(receipts));
+    writeText(outputsDir(), "delivery-receipts.tsv", renderLines(List.map(deliveryReceiptLine, receipts)));
+    writeText(outputsDir(), "delivery-accounting.tsv", renderLines(List#{deliveryAccountingLine(accounting)}))
+}
+
 // ------------------------------------- the source-derived detector families
 
 def detectorKind(result: DetectorResult): String = match result {
@@ -1075,5 +1128,6 @@ def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     if (stage == "evidence_reviewbench_packets") evidenceReviewbenchPackets()
     else if (stage == "evidence_reviewbench_runtime") evidenceReviewbenchRuntime()
     else if (stage == "evidence_reviewbench_detectors") evidenceReviewbenchDetectors()
+    else if (stage == "evidence_reviewbench_delivery") evidenceReviewbenchDelivery()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }
