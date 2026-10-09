@@ -128,6 +128,22 @@ native_study_stage(
     stage = "evidence_detectors",
 )
 
+# The ONE declared offline equal-exact-bytes preflight of the narrow evidence
+# substrate.
+#
+# It is the same `native_study_stage` shape over the SAME declared stage sources
+# and it materializes the per-arm packet/obligation records
+# (`preflight-arms.tsv`) and the provider-free preflight output
+# (`preflight-result.tsv`) from the declared equal-byte fixture arms. It calls no
+# model and no provider: a fixture result is never an LLM saving.
+native_study_stage(
+    name = "evidence_preflight",
+    srcs = ["//test/study:evidence_operation_stage_srcs"],
+    input_names = ["preflight"],
+    inputs = ["//test/study:fixtures/preflight.tsv"],
+    stage = "evidence_preflight",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The

@@ -127,6 +127,26 @@ native_flix_consumer_test(
     produced = ["//platform/dsh:evidence_detector_sidecar"],
 )
 
+# The laws of the declared offline equal-exact-bytes preflight (VAL-SUB-017):
+# they consume the tree the `evidence_preflight` stage action materialized and
+# assert the two arms supply identical exact bytes, the named obligation is
+# answered only by PHYSICAL exact evidence, and the unobservable observed use and
+# displacement stay `Unavailable`. The declared fixture population is named one
+# file at a time so the live workspace audit sees the exact declared input.
+# Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_preflight_law",
+    srcs = [
+        "EvidencePreflightLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = ["fixtures/preflight.tsv"],
+    produced = ["//platform/dsh:evidence_preflight"],
+)
+
 # The wire-parity laws of the same contract. They read the frozen versioned wire
 # fixtures under `platform/dsh/typert/` through declared bindings, so the
 # canonical Flix meaning and the frozen fixture are compared over the real

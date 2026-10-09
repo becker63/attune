@@ -5,11 +5,12 @@ use Attune.Study.EvidenceOperation.{
     referenceRecord, requestFindings
 }
 use Attune.Study.EvidenceSubstrate.{
-    CandidateCommit, CliFact, Delivery, DetectorResult, EvidenceRef, FindingCheckpoint,
-    FindingFunnel, ImportFact, commitCheckpoint,
+    AcquisitionObligation, CandidateCommit, CliFact, Delivery, DetectorResult, EvidenceRef,
+    FindingCheckpoint, FindingFunnel, ImportFact, PreflightArm, commitCheckpoint,
     deliveredCommittedFindings, detectImportPublication, detectRequiredCliInput,
-    detectorResultLine, detectorVisibleToModel, diagnosticGuardDeclaration, funnelFindings,
-    guardCases, guardDecisionRow, guardDeclaration, refFindings
+    detectorResultLine, detectorVisibleToModel, diagnosticGuardDeclaration, deliveryName,
+    evidenceKey, funnelFindings, guardCases, guardDecisionRow, guardDeclaration, offlinePreflight,
+    refFindings
 }
 use Fs.FileRead
 use Fs.FileWrite
@@ -354,11 +355,93 @@ def evidenceDetectors(): Unit \ {Assert, IO} = {
 
 def boolText(value: Bool): String = if (value) "true" else "false"
 
+// ------------------------------------------- the offline equal-byte preflight
+
+/// The declared delivery name of one evidence row, mapped onto the canonical
+/// delivery vocabulary. Only a declared `complete` is complete coverage; every
+/// other declared name is a partial delivery and is never read as complete.
+def deliveryOf(name: String): Delivery = if (name == "complete") Delivery.Complete else Delivery.Partial
+
+def isPreflightArm(name: String): Bool = name == "passive" or name == "substitutive"
+
+/// The exact evidence reference of one declared preflight row: the world,
+/// revision, path, digest, range, byte count and delivery the fixture declares.
+def preflightEvidence(row: List[String]): EvidenceRef = {
+    world = field(row, 7), revision = field(row, 8), path = field(row, 9), sha256 = field(row, 10),
+    startLine = intOf(field(row, 11)), endLine = intOf(field(row, 12)),
+    bytes = intOf(field(row, 13)), delivery = deliveryOf(field(row, 14))
+}
+
+/// The acquisition obligation one declared arm names, or nothing when the arm
+/// is the passive additional-context representation (which names no obligation).
+def preflightObligation(row: List[String]): Option[AcquisitionObligation] =
+    if (field(row, 2) == "-") None
+    else Some({ operation = field(row, 2), entrypoint = field(row, 3), kind = field(row, 4),
+                worldScope = field(row, 5), satisfied = boolOf(field(row, 6)) })
+
+def preflightArmOf(rows: List[List[String]], armName: String): Option[PreflightArm] = {
+    let arm = List.filter(row -> field(row, 0) == armName, rows);
+    match arm {
+        case row :: _ => Some({ label = field(row, 1), evidence = List.map(preflightEvidence, arm),
+                                obligation = preflightObligation(row) })
+        case Nil      => None
+    }
+}
+
+def preflightEmptyArm(): PreflightArm = { label = "", evidence = Nil, obligation = None }
+
+def armSuppliedBytes(arm: PreflightArm): Int32 =
+    List.foldLeft((total, ref) -> total + ref#bytes, 0, arm#evidence)
+
+/// The declared offline equal-exact-bytes preflight stage (VAL-SUB-017). It
+/// reads the declared fixture arms, runs the canonical `offlinePreflight` and
+/// materializes:
+///
+///  - `preflight-arms.tsv`: the per-arm packet/obligation record (its label, the
+///    obligation it names, its supplied byte total and its exact evidence rows
+///    with their identity keys, ranges and delivery);
+///  - `preflight-result.tsv`: the provider-free preflight output, which reports
+///    the supplied bytes and the exact-byte equality and leaves the observed use
+///    and the measured displacement `Unavailable`, because a fixture result is
+///    never an LLM saving.
+///
+/// The stage asserts the fixture really is an equal-exact-byte fixture and that
+/// the substitutive obligation is satisfied by PHYSICAL exact evidence. It calls
+/// no model and no provider.
+def evidencePreflight(): Unit \ {Assert, IO} = {
+    let path = required("preflight");
+    let rows = List.filter(row -> isPreflightArm(field(row, 0)), List.map(fields, records(readText(path))));
+    let passive = Option.getWithDefault(preflightEmptyArm(), preflightArmOf(rows, "passive"));
+    let substitutive = Option.getWithDefault(preflightEmptyArm(), preflightArmOf(rows, "substitutive"));
+    Assert.assertEq(expected = true, List.length(passive#evidence) > 0);
+    Assert.assertEq(expected = true, List.length(substitutive#evidence) > 0);
+    let result = offlinePreflight(passive, substitutive);
+    Assert.assertEq(expected = true, result#sameExactBytes);
+    Assert.assertEq(expected = true, result#satisfiedByPhysicalEvidence);
+    writeText(outputsDir(), "preflight-arms.tsv", renderLines(
+        List.flatMap(arm -> List#{
+            List.join("\t", List#{"arm", arm#label,
+                Option.getWithDefault("-", Option.map(o -> o#operation, arm#obligation)),
+                Int32.toString(armSuppliedBytes(arm)), Int32.toString(List.length(arm#evidence))})}
+            ::: List.map(ref -> List.join("\t", List#{"evidence", arm#label, evidenceKey(ref),
+                Int32.toString(ref#bytes), deliveryName(ref#delivery)}), arm#evidence),
+            List#{passive, substitutive})));
+    writeText(outputsDir(), "preflight-result.tsv", renderLines(List#{
+        List.join("\t", List#{"suppliedBytes", Int32.toString(result#suppliedBytes)}),
+        List.join("\t", List#{"sameExactBytes", boolText(result#sameExactBytes)}),
+        List.join("\t", List#{"passiveObligations", Int32.toString(result#passiveObligations)}),
+        List.join("\t", List#{"substitutiveObligations", Int32.toString(result#substitutiveObligations)}),
+        List.join("\t", List#{"satisfiedByPhysicalEvidence", boolText(result#satisfiedByPhysicalEvidence)}),
+        List.join("\t", List#{"observedUse", result#observedUse}),
+        List.join("\t", List#{"displacement", result#displacement})}))
+}
+
 @Test
 def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     let stage = stageName();
     if (stage == "evidence_operation") evidenceOperation()
     else if (stage == "evidence_guard") evidenceGuard()
     else if (stage == "evidence_detectors") evidenceDetectors()
+    else if (stage == "evidence_preflight") evidencePreflight()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }
