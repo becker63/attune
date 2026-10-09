@@ -84,7 +84,8 @@ def canonicalOutcome(row: List[String]): Option[DetectorResult] = {
             importer = field(row, 3), target = field(row, 5), sourceIdentity = field(row, 8),
             published = boolOf(field(row, 9)), allowlisted = boolOf(field(row, 10)),
             dynamic = boolOf(field(row, 11)), generated = boolOf(field(row, 12)),
-            examined = boolOf(field(row, 13))}))
+            examined = boolOf(field(row, 13)), builtin = boolOf(field(row, 18)),
+            proved = boolOf(field(row, 19))}))
     else if (family == "required-cli-input")
         Some(detectRequiredCliInput({
             program = field(row, 4), requiredInput = field(row, 6), consumption = field(row, 7),

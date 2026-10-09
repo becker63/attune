@@ -334,13 +334,14 @@ export function executePacketOperation(args, config) {
   let remaining = PACKET_PAGE_BYTES
   let pieceCount = 0
   for (const ref of served) {
-    const end = position + ref.bytes
-    if (end <= cursor) {
-      position = end
-      continue
-    }
     if (remaining <= 0 || pieceCount >= PACKET_MAX_PIECES) break
-    const localStart = Math.max(0, cursor - position)
+    const start = position
+    const end = start + ref.bytes
+    position = end
+    // A piece that ends at or before the page cursor is already fully delivered:
+    // it contributes no bytes to this page and consumes no budget.
+    if (end <= cursor) continue
+    const localStart = Math.max(0, cursor - start)
     const page = pageText(ref.text, localStart, remaining)
     delivered.push({
       world: ref.world,
@@ -360,7 +361,12 @@ export function executePacketOperation(args, config) {
     })
     remaining -= page.endByte - page.startByte
     pieceCount += 1
-    position = end
+    // The page ended INSIDE this piece: the next page resumes exactly at the
+    // contiguous global offset this page reached. Advancing to the next piece
+    // here would deliver a later offset out of order and silently drop the
+    // piece's own omitted bytes, so the page stops at the piece boundary it
+    // reached and names the continuation.
+    if (!page.complete) break
   }
   recordLedger(config, packet.id, args.disclosure, delivered)
   const unique = []

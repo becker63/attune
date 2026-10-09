@@ -210,6 +210,10 @@ native_flix_consumer_test(
         "//src:Attune/Study.flix",
         "//src:Attune/Study/EvidenceSubstrate.flix",
     ],
+    declared_files = [
+        "fixtures/reviewbench-delivery-events.jsonl",
+        "fixtures/reviewbench-delivery-ledger.tsv",
+    ],
     produced = ["//platform/dsh:evidence_reviewbench_delivery"],
 )
 

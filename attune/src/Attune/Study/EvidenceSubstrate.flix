@@ -925,6 +925,154 @@ pub mod Attune.Study.EvidenceSubstrate {
             Int32.toString(receipt#visibleBytes),
             Option.getWithDefault("Unavailable", Option.map(Int32.toString, receipt#used))})
 
+    // ------------------------------- the ACTUAL native delivered-receipt reducer
+
+    /// The delivered-receipt join of one retained native event stream. It is read
+    /// from the ACTUAL `tool_call` and `tool_result` events rather than from an
+    /// authored acceptance flag, so a preparation-only ledger row can never be
+    /// read as delivery: the join exists only when a native result carried the
+    /// exact sealed span identity and its delivered/omitted byte counts.
+    pub type alias DeliveryEventJoin = {
+        packet = String,
+        disclosure = String,
+        callId = String,
+        status = String,
+        world = String,
+        revision = String,
+        identity = String,
+        spanSha256 = String,
+        spanBytes = Int32,
+        preparedBytes = Int32,
+        deliveredBytes = Int32,
+        omittedBytes = Int32,
+        spanOmittedBytes = Int32,
+        observedEcho = Option[String]
+    }
+
+    def eventIndexOfFrom(text: String, marker: String, index: Int32): Int32 =
+        if (index + String.length(marker) > String.length(text)) -1
+        else if (String.startsWith(prefix = marker, String.drop(index, text))) index
+        else eventIndexOfFrom(text, marker, index + 1)
+
+    def eventIndexOf(text: String, marker: String): Int32 = eventIndexOfFrom(text, marker, 0)
+
+    def eventAfter(text: String, marker: String): Option[String] =
+        let at = eventIndexOf(text, marker);
+        if (at < 0) None else Some(String.drop(at + String.length(marker), text))
+
+    def eventBefore(text: String, marker: String): Option[String] =
+        let at = eventIndexOf(text, marker);
+        if (at < 0) None else Some(String.take(at, text))
+
+    /// One literal JSON string field of a declared native event line. The retained
+    /// smoke's own values carry no escaped double quote, so the value is the text
+    /// between the key and the next quote.
+    def eventStringField(line: String, key: String): Option[String] =
+        match eventAfter(line, "\"" + key + "\":\"") {
+            case Some(rest) => eventBefore(rest, "\"")
+            case None       => None
+        }
+
+    def eventDigitGroups(text: String): List[String] =
+        List.filter(group -> not String.isEmpty(group), String.split(regex = "\\D+", text))
+
+    def eventLastInt(text: String): Option[Int32] =
+        List.findMap(group -> Int32.fromString(group), List.reverse(eventDigitGroups(text)))
+
+    def eventFirstInt(text: String): Option[Int32] =
+        List.findMap(group -> Int32.fromString(group), eventDigitGroups(text))
+
+    def eventLine(text: String, kind: String): Option[String] =
+        List.find(line -> String.contains(substr = "\"type\":\"" + kind + "\"", line), String.lines(text))
+
+    /// The literal two-character JSON newline escape (`\` then `n`) that separates
+    /// the rendered lines inside one retained `result` string value. The raw event
+    /// file carries a real newline only between events; the rendered tool result
+    /// is a single JSON string with escaped newlines, so its own lines are split on
+    /// this literal sequence rather than on a real newline.
+    def jsonNewline(): String = "\\n"
+
+    def eventResultLines(text: String): List[String] = String.split(regex = "\\\\n", text)
+
+    def eventIntOrZero(value: Option[Int32]): Int32 = Option.getWithDefault(0, value)
+
+    /// The delivered-receipt join of one retained native event stream. It reads
+    /// the ACTUAL completion status, the exact declared sealed span identity and
+    /// digest, and the delivered/omitted byte counts the accepted result carried.
+    /// An event that carries no signal yields no join, so the honest outcome is
+    /// `Unavailable` rather than a fabricated receipt.
+    pub def deliveryEventJoin(events: String): Option[DeliveryEventJoin] =
+        match eventLine(events, "tool_result") {
+            case None => None
+            case Some(resultLine) => match eventStringField(resultLine, "result") {
+                case None => None
+                case Some(text) =>
+                    let call = Option.getWithDefault("", eventLine(events, "tool_call"));
+                    let spanLine = Option.getWithDefault("",
+                        List.find(line -> String.contains(substr = " bytes sha256=", line), eventResultLines(text)));
+                    let identityToken = Option.getWithDefault("", eventBefore(spanLine, " "));
+                    let path = Option.getWithDefault("", eventBefore(identityToken, "@"));
+                    let revision = Option.getWithDefault("",
+                        match eventAfter(identityToken, "@") {
+                            case Some(rest) => eventBefore(rest, ":")
+                            case None       => None
+                        });
+                    let range = Option.getWithDefault("", eventAfter(identityToken, ":"));
+                    let world = Option.getWithDefault("", match eventAfter(text, "entrypoints: ") {
+                        case Some(rest) => match eventBefore(rest, jsonNewline()) {
+                            case Some(line) => match String.split(regex = "\\|", line) {
+                                case token :: _ => Some(token)
+                                case Nil        => None
+                            }
+                            case None       => None
+                        }
+                        case None       => None
+                    });
+                    let echo = match eventLine(events, "text") {
+                        case Some(line) => match eventStringField(line, "text") {
+                            case Some(value) => eventAfter(value, "FIRST:")
+                            case None        => None
+                        }
+                        case None => None
+                    };
+                    Some({
+                        packet = Option.getWithDefault("", eventStringField(call, "packet")),
+                        disclosure = Option.getWithDefault("", eventStringField(call, "disclosure")),
+                        callId = Option.getWithDefault("", eventStringField(call, "callId")),
+                        status = Option.getWithDefault("", eventStringField(resultLine, "status")),
+                        world = world,
+                        revision = revision,
+                        identity = path + ":" + range,
+                        spanSha256 = String.take(64, Option.getWithDefault("", eventAfter(spanLine, "sha256="))),
+                        spanBytes = eventIntOrZero(eventLastInt(Option.getWithDefault("", eventBefore(text, " bytes sha256=")))),
+                        preparedBytes = eventIntOrZero(eventLastInt(Option.getWithDefault("", eventBefore(text, " unique")))),
+                        deliveredBytes = eventIntOrZero(eventLastInt(Option.getWithDefault("", eventBefore(text, " delivered, continuation")))),
+                        omittedBytes = eventIntOrZero(eventLastInt(Option.getWithDefault("", eventBefore(text, " omitted.")))),
+                        spanOmittedBytes = eventIntOrZero(eventFirstInt(Option.getWithDefault("", eventAfter(text, "(omitted ")))),
+                        observedEcho = echo
+                    })
+            }
+        }
+
+    /// The canonical four-quadrant receipt of one ACTUAL native delivered-receipt
+    /// join. Only a `status=completed` result is accepted, and only an accepted
+    /// result carries model-visible bytes; a schema/render failure or an
+    /// interrupted return contributes zero. The observable later use is `None`
+    /// (the canonical `Unavailable`): the run carries no demonstrable later source
+    /// request, action or checkpoint reference, and understanding is never
+    /// inferred from the model's own echoed text.
+    pub def deliveryReceiptOfJoin(join: DeliveryEventJoin): DeliveryReceipt = {
+        operation = "packet " + join#packet + " (" + join#disclosure + ")",
+        world = join#world,
+        revision = join#revision,
+        identity = join#identity,
+        physicalBytes = join#spanBytes,
+        preparedBytes = join#preparedBytes,
+        accepted = join#status == "completed",
+        visibleBytes = if (join#status == "completed") join#deliveredBytes else 0,
+        used = None
+    }
+
     /// The honest instrumentation of one packet review: how many physical
     /// acquisitions the run made, how many packets it used and how many distinct
     /// obligations those packets named. A value the offline substrate cannot
@@ -1059,18 +1207,48 @@ pub mod Attune.Study.EvidenceSubstrate {
         allowlisted = Bool,
         dynamic = Bool,
         generated = Bool,
-        examined = Bool
+        examined = Bool,
+        builtin = Bool,
+        proved = Bool
     }
 
     /// Family A: a new/changed resolved local runtime import whose target is not
     /// published, not allowlisted and not a default inclusion. A dynamic,
-    /// generated or unexamined site is refused rather than guessed.
+    /// generated or unexamined site is refused rather than guessed. A Node core
+    /// module is refused: it is not a package publication target and has no
+    /// publication contract to violate. A site whose non-publication is NOT
+    /// PROVED is refused too — a bare specifier that merely does not appear in the
+    /// declared `dependencies` block is not proof that the target is unpublished,
+    /// because a workspace, peer, optional, dev or environment-provided resolution
+    /// could satisfy it; that determination needs a package/workspace resolver
+    /// this bounded subset does not build, so it stays an honest limitation rather
+    /// than a fabricated candidate. Only a fact whose non-publication the bounded
+    /// subset actually proves reaches a hypothesis.
     pub def detectImportPublication(fact: ImportFact): DetectorResult =
         if (fact#dynamic) DetectorResult.Refused("dynamic import resolution is not a supported static subset")
         else if (fact#generated) DetectorResult.Refused("generated or bundled import is not a supported static subset")
+        else if (fact#builtin) DetectorResult.Refused("a Node core module is not a published package target")
         else if (not fact#examined) DetectorResult.Refused("the publication contract of the target was not examined")
         else if (fact#published or fact#allowlisted) DetectorResult.Unresolved("the import is covered by the declared publication contract")
+        else if (not fact#proved) DetectorResult.Refused("absence from the declared dependency contract is not proof that the target is unpublished; a full package/workspace resolver is outside this bounded subset")
         else DetectorResult.Hypothesis(fact#importer + " -> " + fact#target + " is not in the published allowlist")
+
+    /// Whether a bare import specifier names a Node core module. A core module is
+    /// not a published package: it resolves from the runtime, so a bare `fs`,
+    /// `path` or `module` import is never a publication-contract violation. The
+    /// bounded set follows the runtime's own core-module names (the `node:`
+    /// scheme is already handled as an explicit builtin prefix).
+    pub def isNodeBuiltin(specifier: String): Bool = {
+        let name = packageNameOf(specifier);
+        List.memberOf(name, List#{
+            "assert", "async_hooks", "buffer", "child_process", "cluster", "console",
+            "constants", "crypto", "dgram", "diagnostics_channel", "dns", "domain",
+            "events", "fs", "http", "http2", "https", "inspector", "module", "net",
+            "os", "path", "perf_hooks", "process", "punycode", "querystring",
+            "readline", "repl", "stream", "string_decoder", "sys", "timers", "tls",
+            "trace_events", "tty", "url", "util", "v8", "vm", "wasi",
+            "worker_threads", "zlib"})
+    }
 
     /// Family B's declared static fact about one required CLI input site. Only
     /// literal, explainable syntax is in the supported subset; computed options,
@@ -1255,7 +1433,7 @@ pub mod Attune.Study.EvidenceSubstrate {
                 if (String.isEmpty(specifier))
                     List#{ { importer = path, target = "(computed)", sourceIdentity = identity,
                              published = false, allowlisted = false, dynamic = true, generated = false,
-                             examined = false } }
+                             examined = false, builtin = false, proved = false } }
                 else List#{ importFactOf(identity, path, specifier, dependencies) }
         }
     }
@@ -1269,7 +1447,9 @@ pub mod Attune.Study.EvidenceSubstrate {
         let generated = String.contains(substr = "/generated/", specifier)
             or String.contains(substr = "/dist/", specifier)
             or String.contains(substr = "/bundled/", specifier);
-        let bare = not String.startsWith(prefix = ".", specifier)
+        let builtin = isNodeBuiltin(specifier);
+        let bare = not builtin
+            and not String.startsWith(prefix = ".", specifier)
             and not String.startsWith(prefix = "@/", specifier)
             and not String.startsWith(prefix = "node:", specifier);
         let covered = bare and List.memberOf(packageNameOf(specifier), dependencies);
@@ -1279,25 +1459,47 @@ pub mod Attune.Study.EvidenceSubstrate {
         // relative, alias or builtin specifier's compiled publication target is a
         // build mapping this owner does not assert, so it stays UNEXAMINED and is
         // refused rather than guessed. `published` is the separate, independent
-        // fact of whether the declared contract carries the target, so the
-        // hypothesis branch (examined but not published) is reachable.
+        // fact of whether the declared contract carries the target. `proved` is
+        // whether this bounded subset PROVES the target is unpublished: absent from
+        // the declared `dependencies` block is NOT proof (a workspace, peer,
+        // optional, dev or environment resolution could satisfy it), so the
+        // extraction leaves `proved` false and the detector refuses it rather than
+        // fabricating a candidate. A Node core module is refused as a builtin.
         { importer = path, target = specifier, sourceIdentity = identity, published = covered,
-          allowlisted = false, dynamic = false, generated = generated, examined = bare }
+          allowlisted = false, dynamic = false, generated = generated, examined = bare,
+          builtin = builtin, proved = false }
     }
 
-    /// Whether one identifier is bound LOCALLY by a literal assignment in the
-    /// same file. A guard over a locally bound identifier is a local/injected
-    /// variable rather than a missing declared CLI option, so the bounded subset
-    /// refuses it instead of fabricating a candidate. This is the source-backed
-    /// fact that decouples `injected` from option coverage.
+    /// Whether one identifier is bound LOCALLY by a declaration in the same file.
+    /// A guard over a locally declared identifier is a local/injected variable
+    /// rather than a missing declared CLI option, so the bounded subset refuses it
+    /// instead of fabricating a candidate. A TYPED, uninitialized declaration
+    /// (`let authMethod: string;`) is just as local as an initialized one: the
+    /// value is filled elsewhere in the same file (often by a prompt), so the
+    /// declaration itself is the source-backed fact, not a `= ` initializer. This
+    /// is the correction that stops a same-file typed local from being read as an
+    /// undeclared required CLI input.
     def locallyAssigned(name: String, lines: List[String]): Bool =
         List.exists(line -> {
             let trimmed = String.trim(line);
-            (String.startsWith(prefix = "const " + name, trimmed)
-                or String.startsWith(prefix = "let " + name, trimmed)
-                or String.startsWith(prefix = "var " + name, trimmed))
-                and String.contains(substr = " = ", trimmed)
+            declaresName("const", name, trimmed)
+                or declaresName("let", name, trimmed)
+                or declaresName("var", name, trimmed)
         }, lines)
+
+    /// Whether one source line declares exactly `keyword name` (and not a longer
+    /// identifier that merely starts with `name`). The character after the name
+    /// must be a declaration delimiter or the end of the line, so `let xtra` never
+    /// counts as a declaration of `x`.
+    def declaresName(keyword: String, name: String, line: String): Bool = {
+        let prefix = keyword + " " + name;
+        if (not String.startsWith(prefix = prefix, line)) false
+        else {
+            let rest = String.trim(String.drop(String.length(prefix), line));
+            if (String.isEmpty(rest)) true
+            else List.memberOf(String.charAt(0, rest), List#{':', '=', ';', ','})
+        }
+    }
 
     /// The literal required-consumption facts of one source text: a narrow
     /// literal `if (!<name>)` precondition and the declared option names of the

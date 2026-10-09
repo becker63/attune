@@ -80,6 +80,24 @@ def produced(name: String): String \ IO = readText(required("produced0") + "/" +
 def producedRows(name: String): List[List[String]] \ IO =
     List.map(fields, records(produced(name)))
 
+/// The declared source lines of one text, without a trailing empty segment, so a
+/// file that ends with a newline has exactly its own line count.
+def sourceLinesOf(text: String): List[String] = {
+    let raw = String.lines(text);
+    match List.reverse(raw) {
+        case "" :: rest => List.reverse(rest)
+        case _          => raw
+    }
+}
+
+/// The exact span text of lines `a..b` under the fixed convention the packet
+/// boundary uses: the contiguous bytes from the first byte of line `a` through
+/// the terminator of line `b`.
+def spanOf(text: String, lines: List[String], startLine: Int32, endLine: Int32): String = {
+    let body = String.intercalate("\n", List.take(endLine - startLine + 1, List.drop(startLine - 1, lines)));
+    if (endLine == List.length(lines) and not String.endsWith(suffix = "\n", text)) body else body + "\n"
+}
+
 // --------------------------------------------------------------------- laws
 
 /// The cohort admits all ten frozen tasks and both revisions, and each task has a
@@ -121,4 +139,42 @@ def theTenWorldCohortAdmitsBoundedPacketsWithExactText(): Unit \ {Assert, IO} = 
     // No CLI/publication prerequisite: every bounded packet names a changed file,
     // never a required CLI entry, so ordinary review is not gated on a CLI surface.
     Assert.assertEq(expected = true, List.forAll(row -> String.startsWith(prefix = "changed-file:", field(row, 2)), packets))
+}
+
+/// The cohort stage ALSO materializes, for EVERY one of the ten tasks, the changed
+/// world in the packet boundary's own declared format, so the SAME registered
+/// native tool resolves and delivers that task's real source through the SAME
+/// boundary the offline tool law drives. This law recomputes the declared
+/// consistency from the materialized records: every task's progressive span is a
+/// declared region of the SAME task world, and every declared region's digest and
+/// byte count are those of the exact sealed span bytes. An unsupported or
+/// overflow changed file carries an explicit status and is never a silent drop.
+@Test
+def theCohortMaterializesTheSameBoundaryWorldForEveryTask(): Unit \ {Assert, IO} = {
+    let tool = producedRows("cohort-tool.tsv");
+    Assert.assertEq(expected = 10, List.length(tool));
+    Assert.assertEq(expected = true, List.forAll(row -> field(row, 0) == "tool", tool));
+    Assert.assertEq(expected = true, List.forAll(index -> match rowAt(tool, index) {
+        case Some(row) =>
+            let task = field(row, 1);
+            let regions = producedRows("cohort-tool-" + task + "-region-manifest.tsv");
+            let packet = producedRows("cohort-tool-" + task + "-packet-records.tsv");
+            let spans = List.filter(entry -> field(entry, 0) == "span", packet);
+            let keys = List.map(entry -> field(entry, 1) + "|" + field(entry, 2) + "|"
+                + field(entry, 3) + "|" + field(entry, 4), regions);
+            not List.isEmpty(spans)
+                and List.forAll(entry -> List.memberOf(field(entry, 3) + "|" + field(entry, 4) + "|"
+                    + field(entry, 5) + "|" + field(entry, 6), keys), spans)
+                and List.forAll(entry -> {
+                    let sealedText = readText(required("produced0") + "/" + field(entry, 7));
+                    let sourceText = sourceLinesOf(sealedText);
+                    let start = intOf(field(entry, 3));
+                    let end = intOf(field(entry, 4));
+                    let body = spanOf(sealedText, sourceText, start, end);
+                    start >= 1 and end >= start and end <= List.length(sourceText)
+                        and AttuneReviewBench.sha256Hex(body) == field(entry, 5)
+                        and AttuneReviewBench.utf8Bytes(body) == intOf(field(entry, 8))
+                }, regions)
+        case None => false
+    }, List.range(0, List.length(tool))))
 }

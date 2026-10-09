@@ -306,18 +306,30 @@ native_study_stage(
 
 # The declared four-quadrant delivery accounting of the corrected source-bearing
 # protocol (VAL-SUB-010, Gate C offline half). It is the same
-# `native_study_stage` shape over the integration stage closure, but it reads the
-# corrected protocol's own per-operation delivery receipts and materializes the
-# four separated accountings (physical acquisition, prepared payload,
-# model-visible delivery, observable use) plus the receipt rows themselves. A
-# failed or unaccepted operation contributes zero visible bytes, so a schema/
-# render failure or an interrupted return is never counted as delivery. It calls
-# no provider and acquires no corpus.
+# `native_study_stage` shape over the integration stage closure. It DERIVES the
+# ACCEPTED receipt from the retained native smoke's own `events.jsonl` (an
+# accepted, postprocessing-completed `status=completed` tool result carrying the
+# exact declared sealed span identity, its digest and its delivered/omitted byte
+# counts) joined with the run's own prepared ledger row, and reduces the declared
+# deterministic FAULT fixtures (an unaccepted schema/render-failed operation and an
+# interrupted return) as the operations that contribute zero model-visible bytes.
+# It materializes the four separated accountings (physical acquisition, prepared
+# payload, model-visible delivery, observable use) plus the receipt rows
+# themselves, so a schema rejection, a render failure or an interrupted return is
+# never counted as delivery. It calls no provider and acquires no corpus.
 native_study_stage(
     name = "evidence_reviewbench_delivery",
     srcs = ["//test/study:reviewbench_integration_stage_srcs"],
-    input_names = ["receipts"],
-    inputs = ["//test/study:fixtures/reviewbench-delivery.tsv"],
+    input_names = [
+        "receipts",
+        "events",
+        "ledger",
+    ],
+    inputs = [
+        "//test/study:fixtures/reviewbench-delivery.tsv",
+        "//test/study:fixtures/reviewbench-delivery-events.jsonl",
+        "//test/study:fixtures/reviewbench-delivery-ledger.tsv",
+    ],
     java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
     stage = "evidence_reviewbench_delivery",
 )
@@ -328,6 +340,13 @@ native_study_stage(
 # route, derives each task's complete changed set from the real base/head bytes
 # through the existing mechanical export diff, and materializes a bounded initial
 # packet per task carrying the ACTUAL changed source text with exact span digests.
+# It ALSO materializes, for EVERY task, that task's changed world in the packet
+# boundary's own declared format — the region manifest, the whole-world file
+# manifest, the compiled packet projection and the sealed changed bytes — so the
+# SAME registered native tool (`//platform/dsh/tool:packet_tool`) can be exercised
+# over each of the ten worlds by `//platform/dsh/tool:cohort_test`, not just
+# declared in a Flix-only shape. An unsupported or overflow changed file carries an
+# explicit status and no region, so it is named rather than silently dropped.
 # It reads no gold and no evaluator label, imposes no CLI/publication prerequisite,
 # and excludes the credential file named `.env` before any read. The target is
 # `manual` on purpose: the ordinary `bazel test //...` gate must never fetch or
@@ -376,9 +395,12 @@ native_study_stage(
 # acquisition per exact region, B = the compiled source-bearing packet over the
 # same regions — and reports identities, text bytes, actions, the agent-facing
 # operation count, completeness, output size, coverage escape, the four-quadrant
-# accounting and event fidelity over identical bytes. It adds no compiler,
-# planner, DAG, scheduler or agent, and it is a mechanical test, never a
-# token-saving claim. Provider-free and offline.
+# accounting and event fidelity over identical bytes. Every dimension is DERIVED
+# from the ACTUAL paging of the exact bytes under the boundary's own page budget: a
+# piece larger than one page needs MORE calls, so the operation count is measured
+# and the replacement is never inflated. It adds no compiler, planner, DAG,
+# scheduler or agent, and it is a mechanical test, never a token-saving claim.
+# Provider-free and offline.
 native_study_stage(
     name = "evidence_reviewbench_preflight",
     srcs = ["//test/study:reviewbench_integration_stage_srcs"],

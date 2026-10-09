@@ -557,7 +557,37 @@ def theImportDetectorRefusesUnsupportedSites(): Unit \ Assert = {
 def importFact(published: Bool, allowlisted: Bool, dynamic: Bool, generated: Bool, examined: Bool): ImportFact = {
     importer = "src/a.ts", target = "some-package", sourceIdentity = "digest",
     published = published, allowlisted = allowlisted, dynamic = dynamic, generated = generated,
-    examined = examined
+    examined = examined, builtin = false, proved = true
+}
+
+/// Family A refuses a Node core module (`fs`, `path`, `module`) — it is not a
+/// published package target — and it refuses a fact whose non-publication the
+/// bounded subset has NOT proved, so a bare specifier that merely does not appear
+/// in the declared `dependencies` block is never read as a violation. Only a fact
+/// the bounded subset actually proves reaches a hypothesis. These are the narrow
+/// law fixtures the source-delivery correction adds.
+@Test
+def theImportDetectorRefusesBuiltinsAndUnprovedFacts(): Unit \ Assert = {
+    let builtin = importFactFull(false, false, false, false, false, true, false);
+    let unproved = importFactFull(false, false, false, false, true, false, false);
+    let proved = importFactFull(false, false, false, false, true, false, true);
+    Assert.assertEq(expected = true, isRefused(detectImportPublication(builtin)));
+    Assert.assertEq(expected = true, isRefused(detectImportPublication(unproved)));
+    Assert.assertEq(expected = true, isHypothesis(detectImportPublication(proved)))
+}
+
+def importFactFull(
+    published: Bool,
+    allowlisted: Bool,
+    dynamic: Bool,
+    generated: Bool,
+    examined: Bool,
+    builtin: Bool,
+    proved: Bool
+): ImportFact = {
+    importer = "src/a.ts", target = "some-package", sourceIdentity = "digest",
+    published = published, allowlisted = allowlisted, dynamic = dynamic, generated = generated,
+    examined = examined, builtin = builtin, proved = proved
 }
 
 /// Family B accepts only literal consumption and refuses computed options,

@@ -88,16 +88,27 @@ test('the declared detector sidecar is the real ReviewBench tree with both famil
   const rows = lines.map((line) => line.split('\t'))
   const kinds = rows.map((cells) => cells[2])
   // The supported literal subset refuses what it cannot decide, so the real
-  // world carries explicit refusals and honest Unknown outcomes alongside the
-  // source-backed hypotheses the coupling correction makes reachable.
+  // world carries explicit refusals and honest Unknown outcomes.
   assert.ok(kinds.includes('refused'))
   assert.ok(kinds.includes('unresolved'))
   const families = new Set(rows.map((cells) => cells[0]))
   assert.deepEqual([...families].sort(), ['import-publication', 'required-cli-input'])
-  // Every hypothesis is SOURCE-CLEAN: its identity is the exact declared
-  // `world:relative/path#line` source identity of an admitted file and its
-  // detail names that same repository-relative path. Nothing branches on a
-  // fixture label, a gold line or a repository identity.
+  // The correction makes the extraction CONSERVATIVE: a Node core module is not a
+  // publication target, and a binding that is not a proven publication target (a
+  // local/injected/uninitialized typed binding, or a bare absence from the declared
+  // dependencies) is refused rather than hypothesized. The former seven
+  // false-positive hypotheses are therefore excluded, and the honest real-world
+  // result is a ZERO-hypothesis one — which is NOT a source-clean result and NOT a
+  // negative behavioral finding, only the completed output of a bounded subset.
+  // Every hypothesis the corrected tree DOES carry must still be source-clean:
+  // its identity is the exact declared `world:relative/path#line` source identity
+  // of an admitted file and its detail names that same repository-relative path,
+  // with nothing branching on a fixture label, a gold line or a repository
+  // identity.
+  assert.ok(
+    rows.some((cells) => cells[2] === 'refused' && /core module/.test(cells[4])),
+    'the corrected extraction must refuse a Node core module as a publication target',
+  )
   const hypotheses = rows.filter((cells) => cells[2] === 'hypothesis')
   for (const cells of hypotheses) {
     const identity = /^([^:]+):([^#]+)#(\d+)$/.exec(cells[1])

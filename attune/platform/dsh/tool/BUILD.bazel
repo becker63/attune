@@ -139,6 +139,27 @@ js_test(
     entry_point = "tool_test.mjs",
 )
 
+# The laws of the SAME registered packet tool over the TEN materialized cohort
+# worlds (VAL-SUB-019, Gate D offline half). They read the
+# `evidence_reviewbench_cohort` tree the canonical Flix stage materialized for
+# EVERY one of the ten original frozen tasks — each task's changed world in the
+# tool's own declared format with its exact changed bytes sealed beside it — and
+# drive the REAL `defineTool` definition the pinned DSH surface produced over the
+# progressive disclosure, the full-source escape and the retained whole-file
+# escape of each task, plus the refusal and unsupported-encoding paths. The
+# corpus-bound cohort stage is `manual`, so this law is `manual` too: the
+# ordinary `bazel test //...` gate must never fetch or scan the pinned corpus.
+js_test(
+    name = "cohort_test",
+    data = [
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_reviewbench_cohort",
+        "//platform/dsh:node_modules",
+    ],
+    entry_point = "cohort_test.mjs",
+    tags = ["manual"],
+)
+
 # The laws of the one mechanical lifecycle guard. They read the REAL guard
 # declaration and canonical decision matrix the `evidence_guard_declaration`
 # stage action materialized from `Attune.Study.EvidenceSubstrate`, assert the
