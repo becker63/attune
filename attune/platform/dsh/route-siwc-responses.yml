@@ -1,0 +1,47 @@
+# The user-authorized declared reviewer provider route (owner decision 2026-10-09).
+#
+# This is a DECLARED `llm-pi-ai` provider route, not the pinned `openai-codex`
+# route. Its explicit name `siwc-responses` is truthful and distinct from
+# `openai-codex`: it speaks the OpenAI Responses API at the exact endpoint the
+# scoped SIWC resource token is issued for, and it never masquerades as the
+# Codex route.
+#
+# Why the declared route and not `openai-codex`: pi-ai's `openai-codex-responses`
+# path calls `extractAccountId` before `fetch` (reading the
+# `https://api.openai.com/auth` claim `chatgpt_account_id`) and `dsh-codex`'s
+# credential store additionally requires a codex OAuth document with a refresh
+# token and account id. The scoped SIWC handoff is a bare access token with
+# audience `https://api.openai.com/v1` and no account claim, so the Codex route
+# fails closed as a real error negative. That refusal is preserved as history,
+# never as a passed gate.
+#
+# The credential is read from the environment variable named here, which is the
+# SAME existing BuildBuddy `ACCESS_TOKEN` secret exchange the historical Sol and
+# ReviewBench arms already use. The token is never a declared input, never in
+# argv, and never written to a log, receipt or the CAS.
+#
+# The model declaration is explicit and truthful: `gpt-6.1-sol` at medium effort
+# with a declared context/output capacity. The installed pi-ai 0.87.1 catalog
+# does not carry `gpt-6.1-sol`, so the explicit declaration is what makes the
+# request, and the reasoning-effort map is what makes medium effort real. No
+# silent model, account or billing substitution happens anywhere on this route.
+- id: llm-pi-ai
+  config:
+    providers:
+      siwc-responses:
+        api: openai-responses
+        baseURL: https://api.openai.com/v1
+        apiKeyEnv: ACCESS_TOKEN
+        displayName: SIWC Responses (declared reviewer route)
+        models:
+          - id: gpt-6.1-sol
+            contextWindow: 400000
+            maxTokens: 128000
+            reasoningEfforts:
+              low: low
+              medium: medium
+              high: high
+- id: agent-default-model
+  config:
+    provider: siwc-responses
+    model: gpt-6.1-sol

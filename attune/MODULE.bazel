@@ -98,6 +98,60 @@ maven.install(
 )
 use_repo(maven, "attune_maven")
 
+# The narrow Node/TypeScript adapter closure (owner-authorized 2026-10-09). The
+# mission's implementation-language restriction is lifted ONLY for the bounded
+# DSH/Typert evidence substrate: compatible pinned Aspect rules_js/rules_ts and
+# rules_nodejs, the pinned Node 24.18.1 runtime the installed DSH 0.2.0-rc.2
+# package itself runs on, the pinned pnpm used to translate the DSH npm lock, and
+# the real Typert 0.2.0-rc.2 generator. None of this Bazelizes the upstream DSH
+# monorepo; it packages one narrow declared adapter. The whole workspace is never
+# `--config=remote`d wholesale for this closure: only the explicitly selected
+# adapter and smoke targets declare the Node toolchain and the npm packages.
+bazel_dep(name = "rules_nodejs", version = "6.7.6")
+bazel_dep(name = "aspect_rules_js", version = "2.9.3")
+bazel_dep(name = "aspect_rules_ts", version = "3.5.1")
+
+# The one pinned Node runtime of the adapter closure. It is the SAME Node minor
+# the installed pinned DSH package is launched with
+# (`/nix/store/...-nodejs-24.18.1`), so the hermetic Bazel Node and the observed
+# local DSH Node cannot drift onto two runtimes. `nodejs_toolchains` is the
+# rules_nodejs toolchain repo; the runtime toolchain must register before the
+# non-runtime one (rules_nodejs's own bzlmod ordering requirement).
+nodejs = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+nodejs.toolchain(node_version = "24.18.1")
+use_repo(nodejs, "nodejs_toolchains")
+
+register_toolchains("@nodejs_toolchains//:linux_amd64_runtime_toolchain")
+register_toolchains("@nodejs_toolchains//:linux_amd64_toolchain")
+register_toolchains("@nodejs_toolchains//:linux_arm64_runtime_toolchain")
+register_toolchains("@nodejs_toolchains//:linux_arm64_toolchain")
+
+# The single authoritative npm translation of the DSH 0.2.0-rc.2 dependency
+# graph. The committed `platform/dsh/package-lock.json` is the unchanged user
+# Nix package lock; `platform/dsh/pnpm-lock.yaml` is its ordinary `pnpm import`
+# translation (no hand edit), and this extension fetches exactly the packages
+# that lock names. No host `npm install` and no global package ever repairs a
+# missing dependency: an undeclared dependency fails the action.
+dsh_npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+dsh_npm.npm_translate_lock(
+    name = "dsh_npm",
+    data = ["//platform/dsh:package.json"],
+    pnpm_lock = "//platform/dsh:pnpm-lock.yaml",
+    # The two native-addon families in the DSH graph resolve their platform
+    # package by a bare `require` of the family name suffixed with the platform
+    # triple, from a loader that lives under `.aspect_rules_js/`, i.e. outside
+    # the package whose `optionalDependencies` declare it. A flat hoist of
+    # exactly those platform packages to `platform/dsh/node_modules` is what
+    # Node's ordinary resolution needs; nothing else is hoisted, so no other
+    # dependency resolution changes.
+    public_hoist_packages = {
+        "node-addon-require-builtin-linux-arm64-gnu@0.1.7": ["platform/dsh"],
+        "node-addon-system-linux-arm64@0.1.2": ["platform/dsh"],
+    },
+    update_pnpm_lock = False,
+)
+use_repo(dsh_npm, "dsh_npm")
+
 # The declared isolation tool: pinned util-linux `unshare` and its runtime
 # closure, resolved from the Nix developer shell PATH (never a hardcoded
 # readiness cache path).

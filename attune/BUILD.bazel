@@ -38,6 +38,7 @@ filegroup(
         ":policy_files",
         "//notes:policy_files",
         "//platform/build:policy_files",
+        "//platform/dsh:policy_files",
         "//platform/embedding:policy_files",
         "//platform/support/grit:policy_files",
         "//platform/tools:policy_files",

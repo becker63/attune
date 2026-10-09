@@ -157,10 +157,18 @@ pub mod Attune.Policy {
     /// and the Nix packaging expression both read, plus the Nix expression that
     /// only unpacks those declared wheels. It runs no inference and changes no
     /// host closure.
+    ///
+    /// `platform/dsh/` carries the owner-approved narrow DSH/Typert adapter: the
+    /// hermetic packaging of the pinned DSH 0.2.0-rc.2 agent runtime and its
+    /// declared npm closure, the one declared provider-route patch, and the one
+    /// Starlark producer action that runs it. It is not a general Node/TypeScript
+    /// admission and not a second agent runtime: it declares one executable and
+    /// one adapter contract, and every other JavaScript/TypeScript path stays
+    /// outside the approved roots.
     pub def isApprovedRoot(path: String): Bool =
         hasPrefix("src/", path) or hasPrefix("test/", path)
             or hasPrefix("platform/tools/", path) or hasPrefix("platform/build/", path)
-            or hasPrefix("platform/embedding/", path)
+            or hasPrefix("platform/embedding/", path) or hasPrefix("platform/dsh/", path)
             or hasPrefix("notes/", path)
 
     /// The exact root metadata the policy requires and admits in this workspace.
@@ -694,6 +702,7 @@ pub mod Attune.Policy {
     def isMechanicalPath(path: String): Bool =
         hasPrefix("platform/tools/", path)
             or hasPrefix("platform/embedding/", path)
+            or hasPrefix("platform/dsh/", path)
             or (hasPrefix("platform/build/", path) and not isGritClosureRule(path))
 
     pub def ownershipOf(path: String): Ownership =
@@ -718,6 +727,7 @@ pub mod Attune.Policy {
         "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "ascii"
             :: "frontends" :: "parquet" :: "boundary" :: "grit-binding" :: "grit-rule"
             :: "build-rules" :: "embedding" :: "sol" :: "reviewbench" :: "inference"
+            :: "dsh-adapter"
             :: "inherited" :: "inherited-locks" :: "tests" :: "metadata" :: Nil
 
     pub def componentOf(path: String): String =
@@ -756,6 +766,12 @@ pub mod Attune.Policy {
         // mechanical component, or the component table would silently drop the
         // measured lines.
         else if (hasPrefix("platform/tools/inference/", path)) "inference"
+        // The owner-approved narrow DSH/Typert adapter is its own mechanical
+        // packaging family, exactly as the Arrow seam, the Sol driver and the
+        // ReviewBench boundaries are: every mechanical path must belong to a
+        // named mechanical component, or the component table would silently drop
+        // the measured lines.
+        else if (hasPrefix("platform/dsh/", path)) "dsh-adapter"
         else if (hasPrefix("platform/build/", path)) "build-rules"
         else if (path == "platform/support/grit/cargo-bazel-lock.json" or path == "platform/support/grit/Cargo.lock") "inherited-locks"
         else if (hasPrefix("platform/support/", path) or hasPrefix("platform/zed/", path)) "inherited"

@@ -1,0 +1,99 @@
+"""The narrow hermetic DSH adapter closure (owner-authorized 2026-10-09).
+
+This package packages ONE thing: the pinned DSH 0.2.0-rc.2 agent runtime and its
+declared npm dependency graph, so the mission's native AgentLoop can run as a
+declared Bazel action locally and on the pinned arm64 RBE platform. It does not
+Bazelize the upstream DSH monorepo, does not register a second agent runtime, and
+adds no provider, transport or credential path of its own.
+
+The npm graph is translated from the committed `pnpm-lock.yaml` (itself the
+ordinary `pnpm import` of the unchanged user `package-lock.json`) by the
+`dsh_npm` extension in `MODULE.bazel`; no host `npm install` and no global
+package can repair a missing dependency, because an undeclared dependency fails
+the action.
+"""
+
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
+load("@dsh_npm//:defs.bzl", "npm_link_all_packages")
+load("//platform/dsh:dsh_agent.bzl", "dsh_agent_run")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "package-lock.json",
+            "pnpm-lock.yaml",
+        ],
+    ),
+)
+
+exports_files([
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+])
+
+# The one npm link tree of this package: every package the DSH lock names is
+# linked under `platform/dsh/node_modules` from declared Bazel repositories.
+npm_link_all_packages(name = "node_modules")
+
+# The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
+# unchanged, and the linked node_modules tree is the whole declared runtime
+# dependency closure, so Node's ordinary resolution finds every DSH plugin.
+js_binary(
+    name = "dsh",
+    data = [":node_modules"],
+    entry_point = "entry.mjs",
+    tags = ["manual"],
+)
+
+# The dedicated remote platform of the DSH provider gate. It is the SAME pinned
+# arm64 container image and the SAME declared external-network contract the
+# inherited Sol and ReviewBench review arms already use, and it injects the SAME
+# existing BuildBuddy `ACCESS_TOKEN` org secret. Nothing about the platform,
+# pool, image or credential exchange is new; only the declared action on it is.
+platform(
+    name = "remote",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:arm64",
+    ],
+    exec_properties = {
+        "Arch": "arm64",
+        "OSFamily": "Linux",
+        "container-image": "docker://gcr.io/flame-public/rbe-ubuntu22-04@sha256:0d84a80bb0fc36ba5381942adcf6493249594dcc9044845c617b78c9b621cae3",
+        "network": "external",
+        "env-secrets": "ACCESS_TOKEN",
+        "recycle-runner": "false",
+        "EstimatedCPU": "1",
+        "EstimatedMemory": "2GB",
+    },
+)
+
+# The container/platform probe of the DSH adapter. It makes NO provider call and
+# reads NO secret: it runs the hermetic DSH CLI's own `--version` on the declared
+# remote platform, so the launcher, the hermetic Node runtime and the npm closure
+# are proven to load in the pinned arm64 RBE container before any credentialed
+# run. `no-local` keeps it honest: it can only be remote evidence.
+dsh_agent_run(
+    name = "remote_probe",
+    tags = ["manual"],
+    version_only = True,
+)
+
+# The mandatory direct-provider gate (VAL-SUB-001). One native DSH AgentLoop
+# through the user-authorized declared `siwc-responses` route with an explicit
+# `gpt-6.1-sol`/medium declaration, the existing scoped SIWC `ACCESS_TOKEN`
+# injected by the existing BuildBuddy secret exchange, one model-issued tool call
+# with its result and the native session persisted as a declared output. It is
+# `manual`: the ordinary `bazel test //...` gate never runs a provider.
+dsh_agent_run(
+    name = "provider_gate_smoke",
+    routes = ["route-siwc-responses.yml"],
+    tags = ["manual"],
+    task = "Use the bash tool to run: printf 'GATE_OK'. Then reply with the exact command output.",
+)
