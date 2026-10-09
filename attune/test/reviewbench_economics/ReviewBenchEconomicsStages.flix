@@ -117,12 +117,21 @@ def observationOf(text: String): ReviewBenchEconomics.Observation =
         toolRounds = intOf(receiptScalar(text, "tool_rounds")),
         readCount = intOf(receiptScalar(text, "read_count")),
         readBytes = int64Of(receiptScalar(text, "read_bytes_total")),
+        // The driver exposes only the TOTAL returned bytes; it records no exact
+        // distinct evidence-byte count, so the unique value is Unavailable rather
+        // than the total counted once per projected action.
+        uniqueEvidenceBytes = None,
         inputCachedTokens = int64Of(receiptScalar(text, "input_cached_tokens")),
         inputTokens = int64Of(receiptScalar(text, "input_tokens")),
         outputTokens = int64Of(receiptScalar(text, "output_tokens")),
         totalTokens = int64Of(receiptScalar(text, "total_tokens")),
-        firstFindingMs = intOf(receiptScalar(text, "first_finding_ms")),
+        // The historical `first_finding_ms` is the first AGENT MESSAGE; it is kept
+        // under its honest label and never published as a finding latency.
+        firstAgentMessageMs = intOf(receiptScalar(text, "first_finding_ms")),
+        firstNonemptyReadMs = intOf(receiptScalar(text, "first_nonempty_read_ms")),
         turnWallMs = intOf(receiptScalar(text, "turn_wall_ms")),
+        startUnixMs = int64Of(receiptScalar(text, "start_unix_ms")),
+        endUnixMs = int64Of(receiptScalar(text, "end_unix_ms")),
         changeBytes = int64Of(receiptScalar(text, "change_bytes")),
         contextBytes = int64Of(receiptScalar(text, "context_bytes"))
     }
@@ -244,12 +253,21 @@ def medianTurnWallMsOf(summary: ReviewBenchEconomics.ArmSummary): Option[Int32] 
 
 // ------------------------------------------------------------------- tables
 
-def reviewRow(observation: ReviewBenchEconomics.Observation): List[String] =
+/// One review row. The historical `first_finding_ms` is carried under its honest
+/// label (first agent message); the genuine first-finding latency is the explicit
+/// `Unavailable` sentinel, and the first-evidence latency is the first non-empty
+/// read. `unique_evidence_bytes` is `Unavailable` because the driver records only
+/// the total returned bytes, so the total is never re-counted as if unique.
+def reviewRow(gap: Int64, observation: ReviewBenchEconomics.Observation): List[String] =
     List#{"review", observation#task, observation#arm, observation#status, observation#stop,
         Int32.toString(observation#findingCount), Int32.toString(observation#toolRounds),
         Int32.toString(observation#readCount), Int64.toString(observation#readBytes),
+        optionBytes(observation#uniqueEvidenceBytes),
         Int64.toString(observation#inputCachedTokens), Int64.toString(observation#totalTokens),
-        Int32.toString(observation#firstFindingMs), Int32.toString(observation#turnWallMs),
+        Int32.toString(observation#firstAgentMessageMs), "Unavailable",
+        Int32.toString(observation#firstNonemptyReadMs), Int32.toString(observation#turnWallMs),
+        Int64.toString(observation#startUnixMs), Int64.toString(observation#endUnixMs),
+        Int64.toString(gap),
         Int64.toString(observation#changeBytes), Int64.toString(observation#contextBytes)}
 
 def armRow(summary: ReviewBenchEconomics.ArmSummary): List[String] =
@@ -257,12 +275,49 @@ def armRow(summary: ReviewBenchEconomics.ArmSummary): List[String] =
         Int32.toString(summary#failed),
         ReviewBenchEconomics.latencyText(summary#medianTurnWallMs),
         ReviewBenchEconomics.latencyText(summary#p95TurnWallMs),
-        ReviewBenchEconomics.latencyText(summary#medianFirstFindingMs),
-        ReviewBenchEconomics.latencyText(summary#p95FirstFindingMs),
+        ReviewBenchEconomics.latencyText(summary#medianFirstAgentMessageMs),
+        ReviewBenchEconomics.latencyText(summary#p95FirstAgentMessageMs),
+        ReviewBenchEconomics.latencyText(summary#firstFindingMs),
+        Int32.toString(summary#firstFindingPopulation),
+        ReviewBenchEconomics.latencyText(summary#medianFirstEvidenceMs),
         Int32.toString(summary#findingReviews), Int64.toString(summary#toolRounds),
         Int64.toString(summary#readCount), Int64.toString(summary#readBytes),
+        optionBytes(summary#uniqueEvidenceBytes),
         Int64.toString(summary#inputCachedTokens), Int64.toString(summary#totalTokens),
         Int32.toString(summary#maxTurnWallMs), Int64.toString(summary#maxReadBytes)}
+
+def optionBytes(value: Option[Int64]): String = match value {
+    case Some(bytes) => Int64.toString(bytes)
+    case None        => "Unavailable"
+}
+
+/// The per-review dispatch gap of a cohort: each review's start instant minus the
+/// previous review's start instant in ascending start order, zero for the first.
+def dispatchGapRows(observations: List[ReviewBenchEconomics.Observation]): List[(String, String, Int64)] =
+    gapRows(List.sortBy(observation -> observation#startUnixMs, observations), -1i64, Nil)
+
+def gapRows(
+    observations: List[ReviewBenchEconomics.Observation],
+    previous: Int64,
+    acc: List[(String, String, Int64)]): List[(String, String, Int64)] = match observations {
+    case observation :: rest =>
+        let gap = if (previous < 0i64) 0i64 else observation#startUnixMs - previous;
+        gapRows(rest, observation#startUnixMs, (observation#task, observation#arm, gap) :: acc)
+    case Nil => List.reverse(acc)
+}
+
+/// One measured dispatch-gap row of the cohort.
+def gapRow(gap: (String, String, Int64)): List[String] = match gap {
+    case (task, arm, value) => List#{"dispatch-gap", task, arm, Int64.toString(value)}
+}
+
+def dispatchGapOf(gaps: List[(String, String, Int64)], task: String, arm: String): Int64 =
+    match List.find(gap -> match gap {
+        case (gapTask, gapArm, _) => gapTask == task and gapArm == arm
+    }, gaps) {
+        case Some((_, _, value)) => value
+        case None                => 0i64
+    }
 
 def costRow(row: ReviewBenchEconomics.CostRow): List[String] =
     List#{"cost", ReviewBenchEconomics.costLineName(row#line),
@@ -278,25 +333,52 @@ def provenanceRow(row: ReviewBenchEconomics.ProvenanceRow): List[String] =
 /// The declared regimes of the paired economics: the measured cold provider work,
 /// the warm fresh review cohort and the provider-free fixture replay. Each is its
 /// own regime; an unmeasured wall is `Unavailable`, never zero.
+def optionInt64(value: Option[Int64]): String = match value {
+    case Some(number) => Int64.toString(number)
+    case None         => "Unavailable"
+}
+
+def optionInt32(value: Option[Int32]): String = match value {
+    case Some(number) => Int32.toString(number)
+    case None         => "Unavailable"
+}
+
 def regimeRows(observations: List[ReviewBenchEconomics.Observation]): List[List[String]] = {
-    let cohortWall = ReviewBenchEconomics.cohortWallMs(observations);
-    let warm = match cohortWall {
-        case Some(value) => Int32.toString(value)
-        case None        => "Unavailable"
-    };
+    // The honest cohort wall is the ACTUAL first-start-to-last-end interval, and
+    // the dispatch gaps are measured from the real start instants. The maximum
+    // single-review turn wall is reported separately as a per-turn bound, never
+    // presented as the cohort wall.
+    let interval = ReviewBenchEconomics.cohortIntervalMs(observations);
+    let gaps = ReviewBenchEconomics.dispatchGapsMs(observations);
+    let maxTurnWall = ReviewBenchEconomics.maxTurnWallMs(observations);
+    let replay = ReviewBenchEconomics.replayWallMs();
     List#{
         List#{"regime", "cold-hosted-provider", "35795", "Qwen 32513 ms + JEV 3282 ms measured provider latency"},
         List#{"regime", "cold-acquisition-network", "Unavailable", "48 public mirror archives; no wall measured separately"},
         List#{"regime", "cold-grit-extraction", "Unavailable", "host-local structural extraction over 20 worlds; no wall measured separately"},
-        List#{"regime", "warm-fresh-review-cohort", warm, "max single-review turn wall over " + Int32.toString(List.length(observations)) + " reviews"},
+        List#{"regime", "warm-fresh-review-cohort-interval", optionInt64(interval),
+            "actual first-start-to-last-end interval over " + Int32.toString(List.length(observations)) + " reviews; NOT the max single-review turn wall"},
+        List#{"regime", "warm-fresh-review-max-turn-wall", optionInt32(maxTurnWall),
+            "largest single-review turn wall; a bound on one turn, not the cohort interval"},
+        List#{"regime", "warm-fresh-review-dispatch-gap-count", Int32.toString(List.length(gaps)),
+            "consecutive review start-instant gaps"},
+        List#{"regime", "warm-fresh-review-dispatch-gap-sum", Int64.toString(ReviewBenchEconomics.sumInt64(gaps)),
+            "sum of the measured dispatch gaps"},
+        List#{"regime", "warm-fresh-review-dispatch-gap-min", Int64.toString(ReviewBenchEconomics.minInt64(gaps)),
+            "smallest measured dispatch gap"},
+        List#{"regime", "warm-fresh-review-dispatch-gap-max", Int64.toString(ReviewBenchEconomics.maxInt64(gaps)),
+            "largest measured dispatch gap"},
         List#{"regime", "warm-fresh-review-queue", "Unavailable", "queue_wall_ms not exposed by the driver"},
         List#{"regime", "warm-fresh-review-download", "Unavailable", "no download wall field exposed"},
         List#{"regime", "warm-fresh-review-execute", "Unavailable", "no execute wall field exposed"},
         List#{"regime", "warm-fresh-review-retry", "0", "no retry performed on any review"},
-        List#{"regime", "warm-fresh-vs-replay", warm, "fresh cohort max turn wall versus a 0 ms / 0 provider-call fixture replay"},
+        List#{"regime", "fixture-replay-wall", optionInt64(replay),
+            "provider-free replay wall not instrumented by the stage; Unavailable, never a fabricated 0"},
+        List#{"regime", "fixture-replay-actions", "0 provider calls", "provider-free replay: 0 provider, 0 review, 0 judge actions"},
         List#{"regime", "fresh-model-cost", "Measured", "Qwen and JEV hosted-provider dollars actually returned"},
         List#{"regime", "fixture-memo-cost", "0 provider calls", "fixture-memo replay incurs no provider dollar figure"},
-        List#{"regime", "fixture-replay", "0", "provider-free replay: 0 provider calls"}
+        List#{"regime", "hosted-attribution-denominator", ReviewBenchEconomics.hostedAttributionDenominator(),
+            "cohort hosted usage is attributed to this denominator, never divided per repository without one"}
     }
 }
 
@@ -344,7 +426,13 @@ def reportStage(): Unit \ {Assert, IO} = {
     let corrected = correctedQualityRows(correctedDir());
     let provisional = qualityRows(fixtures);
     let tasks = List.distinct(List.map(observation -> observation#task, observations));
-    writeText(dir, "economics-reviews.tsv", renderTsv(List.map(reviewRow, observations)));
+    // The measured dispatch gaps of the cohort: each review's start instant minus
+    // the previous review's start instant in ascending start order. They are
+    // measured from the real start instants, never inferred from turn walls.
+    let gaps = dispatchGapRows(observations);
+    writeText(dir, "economics-reviews.tsv", renderTsv(List.map(observation ->
+        reviewRow(dispatchGapOf(gaps, observation#task, observation#arm), observation), observations)));
+    writeText(dir, "economics-dispatch-gaps.tsv", renderTsv(List.map(gapRow, gaps)));
     writeText(dir, "economics-arms.tsv", renderTsv(List.map(armRow, summaries)));
     writeText(dir, "economics-regimes.tsv", renderTsv(regimeRows(observations)));
     writeText(dir, "economics-costs.tsv", renderTsv(List.map(costRow, ReviewBenchEconomics.costRows())));

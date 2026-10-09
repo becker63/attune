@@ -133,6 +133,26 @@ GOLD = {
     "rulecom_rule-io-sdk-40": "@reviewbench_gold_rulecom_rule_io_sdk_40//file",
 }
 
+# The ten admitted tasks whose pinned golden sets the reference-population stage
+# reads, in the declared binding order. Each name is the task key the stage law
+# looks up, and each corresponding input is the pinned golden file of that task,
+# so the population is projected from the corpus's own bytes rather than from any
+# candidate or judge output.
+REFERENCE_GOLD_TASKS = [
+    "agent-sh_agentsys-298",
+    "brianc_node-postgres-3650",
+    "capawesome-team_cli-126",
+    "haoling_diary-notebook-blog-transformer-24",
+    "jenkinsci_gitea-plugin-141",
+    "rulecom_rule-io-sdk-40",
+    "heyitsaamir_teamscli-31",
+    "caasi_town-zero-6",
+    "EdV4H_usketch-534",
+    "ls1intum_Artemis-12479",
+]
+
+REFERENCE_GOLD_INPUTS = [GOLD[task] for task in REFERENCE_GOLD_TASKS]
+
 # The shared owners the materialized artifacts already reference. The parent
 # module chain (`Attune` -> `Attune.Study` -> `Attune.Study.ReviewBenchJudge`)
 # must be declared, so the judge owner's own file is listed here and reused by
@@ -267,29 +287,40 @@ attune_reviewbench_corrective_cohort(
     world_repo = "@reviewbench_worlds",
 )
 
-# The declared action paths of the corrective session receipts. The report stage
-# binds exactly one declared input per name, so the two corrective outputs arrive
-# as a manifest of action paths and the report opens exactly those it names.
+# The declared action paths of the corrective session receipts. It records the
+# two live corrective session outputs as a manifest of action paths, and it is the
+# acquisition record of the two sessions: `:reviewbench_corrective_report` does
+# NOT consume it, because the two receipts are frozen as declared fixtures under
+# `fixtures/executed/corrective/`, so no report replay can ever re-execute a live
+# corrective session.
 attune_path_manifest(
     name = "corrective_outputs",
     srcs = [":reviewbench_corrective"],
 )
 
-# The declared corrective report stage: it reduces the two corrective session
+# The declared corrective report stage: it reduces the FROZEN corrective session
 # receipts and the frozen old-joint adjudication through the ONE canonical
 # `Attune.Study.Metrics` path PER ARM, and reports the old (joint, provisional)
 # and new (per-arm corrected) numbers SEPARATELY. Provider-free: 0 corrective
 # sessions, 0 judge sessions, 0 adjudication sessions, 0 Sol turns, 0 Grit and
 # 0 Theory work, so a replay is fixture-only with ZERO provider calls.
+#
+# It deliberately declares NO dependency on the live corrective cohort
+# (`:reviewbench_corrective`): the two corrective session receipts and their
+# `adjudged` projections are committed as immutable declared fixtures under
+# `fixtures/executed/corrective/` (byte-identical to the session outputs,
+# SHA-256 pinned here), so a stage-source change can never invalidate and
+# re-execute a live SIWC producer, and a replay of this stage is always
+# provider-free. The receipts were frozen after the two sessions completed and
+# were never re-derived.
 native_study_stage(
     name = "reviewbench_corrective_report",
     srcs = STAGE_SRCS,
-    extra_inputs = glob(["fixtures/**"]) + [":reviewbench_corrective"],
-    input_names = ["fixtures", "candidates", "corrective"],
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures", "candidates"],
     inputs = [
         ":judge_fixtures",
         ":reviewbench_corrective_candidates",
-        ":corrective_outputs",
     ],
     java_deps = [
         "//platform/tools/grit:attune_grit",
@@ -319,6 +350,51 @@ native_study_stage(
 native_study_stage(
     name = "reviewbench_corrected_metrics",
     srcs = STAGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]) + [":reviewbench_reference_population"],
+    input_names = ["fixtures", "referencepopulation"],
+    inputs = [":judge_fixtures", ":reviewbench_reference_population"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_corrected_metrics",
+    tags = ["manual"],
+)
+
+# The declared provider-free reference-population stage (`VAL-MEAS-004`,
+# `VAL-MEAS-005`). It projects the pinned golden sets of ALL TEN admitted tasks
+# through the mechanical boundary, independent of any reviewer or judge candidate
+# output, and writes one driver-format reference projection per task plus the
+# per-task and total population records. It asserts the declared 130 positives /
+# 62 medium-or-high / 58 on the four candidate-less tasks; a discrepancy fails
+# rather than adjusting the value. The golden sets are declared ONLY here and in
+# the judge cohort: no review, prediction or assisted-context closure reaches
+# them. Provider-free: 0 model, 0 judge, 0 Grit and 0 Theory work. `manual`, so
+# the ordinary `bazel test //...` gate never acquires the golden set.
+native_study_stage(
+    name = "reviewbench_reference_population",
+    srcs = STAGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"] + REFERENCE_GOLD_TASKS,
+    inputs = [":judge_fixtures"] + REFERENCE_GOLD_INPUTS,
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_reference_population",
+    tags = ["manual"],
+)
+
+# The declared provider-free order-sensitivity stage (`VAL-MEAS-003`). It pins the
+# frozen effective order of the `capawesome-team_cli-126` equal-rank blinded
+# candidates, shows that reversing the same equal-rank candidates changes the
+# effective match (C4 G4 -> G37, C5 none -> G4) while the canonical rank-sorted
+# matching still reproduces the frozen observation, and shows that the unaffected
+# arm is invariant under the reorder. Provider-free: it reads only frozen
+# fixtures and calls no provider. `manual`.
+native_study_stage(
+    name = "reviewbench_order_sensitivity",
+    srcs = STAGE_SRCS,
     extra_inputs = glob(["fixtures/**"]),
     input_names = ["fixtures"],
     inputs = [":judge_fixtures"],
@@ -326,7 +402,7 @@ native_study_stage(
         "//platform/tools/grit:attune_grit",
         "//platform/tools/reviewbench:attune_reviewbench",
     ],
-    stage = "reviewbench_corrected_metrics",
+    stage = "reviewbench_order_sensitivity",
     tags = ["manual"],
 )
 

@@ -1,3 +1,5 @@
+import attune.reviewbench.AttuneReviewBench
+
 use Attune.Study.Metrics
 use Attune.Study.ReviewBenchJudge
 use Fs.FileRead
@@ -262,6 +264,11 @@ def candidatesStage(): Unit \ {Assert, IO} = {
 
 // -------------------------------------------------------------- report stage
 
+/// One projected reference record as the canonical `Reference`. Only the declared
+/// `tp` label is a positive; the reference-population stage separately counts and
+/// ASSERTS that no record carries a label outside the declared `tp`/`fp`
+/// vocabulary, so an unknown label fails the population rather than being
+/// silently reduced to a negative here.
 def referenceOf(line: String): Option[ReviewBenchJudge.Reference] = match fields(line) {
     case "reference" :: task :: index :: file :: start :: end :: label :: severity :: category :: message :: _ =>
         Some({ index = intOf(index), task = task, file = file, start = start, end = end,
@@ -327,7 +334,11 @@ def sessionRow(text: String): List[String] =
           receiptScalar(text, "judgment_count"), receiptScalar(text, "total_tokens"),
           receiptScalar(text, "turn_wall_ms")}
 
-def sessionFailed(row: List[String]): Bool = cellOf(row, 3) != "ok"
+/// Whether one corrective session row records a bounded failure. The status cell
+/// is the FIFTH cell of the session row (`corrective-session <TAB> arm <TAB> role
+/// <TAB> task <TAB> result_status ...`), so a successful session is never listed
+/// as a failure and an absent status is neither an ok nor a failure.
+def sessionFailed(row: List[String]): Bool = cellOf(row, 4) != "ok"
 
 def cellOf(row: List[String], index: Int32): String =
     match List.head(List.drop(index, row)) {
@@ -453,6 +464,18 @@ def countsFor(
     arm: String,
     view: String): ReviewBenchJudge.Counts =
     ReviewBenchJudge.sumCounts(List.filterMap(entry -> countsIf(arm, view, entry), judged))
+
+/// The exact counts of ONE task's one arm under one view, or the zero counts when
+/// that task/arm/view is not in the judged population.
+def countsForTask(
+    judged: List[(String, String, String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)],
+    task: String,
+    arm: String,
+    view: String): ReviewBenchJudge.Counts =
+    ReviewBenchJudge.sumCounts(List.filterMap(entry -> match entry {
+        case (entryTask, entryArm, entryView, _, counts) =>
+            if (entryTask == task and entryArm == arm and entryView == view) Some(counts) else None
+    }, judged))
 
 def ratioIf(
     metric: ReviewBenchJudge.JudgeMetric,
@@ -876,7 +899,13 @@ def correctiveReportStage(): Unit \ {Assert, IO} = {
     let dir = outputsDir();
     let fixtures = manifestPaths("fixtures");
     let candidatesDir = Option.getWithDefault("", binding("candidates"));
-    let correctivePaths = manifestPaths("corrective");
+    // The FROZEN corrective observations: the two arm-isolated corrective session
+    // receipts and their `adjudged` projections, committed as immutable declared
+    // fixtures under `fixtures/executed/corrective/`. The stage declares NO
+    // dependency on the live corrective cohort, so a replay can never re-key or
+    // re-execute a corrective session and a stage-source change can never
+    // invalidate a live producer.
+    let correctivePaths = executedCorrectivePaths(fixtures);
     let selections = correctiveSelections(fixtures);
     let tasks = List.distinct(List.map(row -> match row { case (task, _, _) => task }, selections));
     let task = Option.getWithDefault("", List.head(tasks));
@@ -956,14 +985,37 @@ def correctiveReportStage(): Unit \ {Assert, IO} = {
     // no arm's candidate silently leaves the classification.
     Assert.assertEq(expected = 2, List.length(sessions));
     Assert.assertEq(expected = true, List.forAll(row -> cellOf(row, 4) == "ok", sessions));
+    Assert.assertEq(expected = 0, List.length(List.filter(sessionFailed, sessions)));
     Assert.assertEq(expected = 2, List.length(newPerArm));
     Assert.assertEq(expected = true, List.forAll(pair -> match pair {
         case (_, _, counts) => counts#candidates == 2
     }, newPerArm));
     Assert.assertEq(expected = true, List.forAll(pair -> match pair {
         case (_, _, counts) => counts#candidates == 2
-    }, oldPerArm))
+    }, oldPerArm));
+    // The arm-isolated correction is SYMMETRIC: the old joint adjudication left arm
+    // B's two candidates invalid while arm A's two were valid; the corrected
+    // per-arm classification makes both arms' two candidates valid, and it does
+    // not move arm A (the arm the correction did not re-adjudicate).
+    Assert.assertEq(expected = 2, (countsOfPair(oldPerArm, "A"))#unmatchedValid);
+    Assert.assertEq(expected = 0, (countsOfPair(oldPerArm, "A"))#unmatchedInvalid);
+    Assert.assertEq(expected = 0, (countsOfPair(oldPerArm, "B"))#unmatchedValid);
+    Assert.assertEq(expected = 2, (countsOfPair(oldPerArm, "B"))#unmatchedInvalid);
+    Assert.assertEq(expected = 2, (countsOfPair(newPerArm, "A"))#unmatchedValid);
+    Assert.assertEq(expected = 0, (countsOfPair(newPerArm, "A"))#unmatchedInvalid);
+    Assert.assertEq(expected = 2, (countsOfPair(newPerArm, "B"))#unmatchedValid);
+    Assert.assertEq(expected = 0, (countsOfPair(newPerArm, "B"))#unmatchedInvalid)
 }
+
+/// The counts of one arm in a labelled per-arm population, or the zero counts when
+/// the arm is absent.
+def countsOfPair(
+    perArm: List[(String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)],
+    arm: String): ReviewBenchJudge.Counts =
+    match List.find(pair -> match pair { case (entryArm, _, _) => entryArm == arm }, perArm) {
+        case Some((_, _, counts)) => counts
+        case None                 => ReviewBenchJudge.zeroCounts()
+    }
 
 def sessionArm(path: String): String = if (String.endsWith(suffix = "_a.receipt.json", path)) "A" else "B"
 
@@ -1136,6 +1188,22 @@ def pairOfMacro(
     view: String): Option[(Int32, Int32)] =
     Option.map(ratio -> Metrics.ratioPair(ratio), macroFor(judged, metric, arm, view))
 
+/// One full-population counts row: the reference denominator and the arm's exact
+/// matched/unmatched population over ALL TEN admitted tasks, materialized
+/// independently of candidate output.
+def fullPopulationCountRow(arm: String, view: String, counts: ReviewBenchJudge.Counts): List[String] =
+    List#{"full-population", arm, view, Int32.toString(counts#candidates),
+          Int32.toString(counts#matchedTrue), Int32.toString(counts#unmatchedValid),
+          Int32.toString(counts#goldTrue), Int32.toString(counts#goldCovered)}
+
+/// One denominator-only sensitivity row: the arm's known recall over the full
+/// admitted positive population, unreduced, labelled as a denominator-only value
+/// rather than published as the final score.
+def sensitivityRow(arm: String, view: String, counts: ReviewBenchJudge.Counts): List[String] =
+    List#{"sensitivity", arm, view, "known-recall",
+          Int32.toString(counts#goldCovered) + "/" + Int32.toString(counts#goldTrue),
+          "denominator-only", ReviewBenchJudge.fullPopulationViewVersion()}
+
 def correctedMetricsStage(): Unit \ {Assert, IO} = {
     let dir = outputsDir();
     let fixtures = manifestPaths("fixtures");
@@ -1156,38 +1224,67 @@ def correctedMetricsStage(): Unit \ {Assert, IO} = {
     let views = ReviewBenchJudge.views();
     let correctiveTaskName = ReviewBenchJudge.correctiveTask();
     let correctedAdj = correctedAdjudications(fixtures, correctivePaths, blinding, correctiveTaskName, adjudications);
-    // The SAME canonical reduction, twice: the frozen executed adjudications
-    // (the original, provisional view) and the corrected per-arm observations.
+    // The full-population reference set: EVERY admitted task's pinned golden
+    // references, materialized independently of candidate output by the
+    // provider-free reference-population producer. The four candidate-less tasks
+    // contribute their 58 positives to the denominator and nothing to the
+    // numerator.
+    let referenceDir = Option.getWithDefault("", binding("referencepopulation"));
+    let fullReferences = List.flatMap(task -> parseReferences(readText(referenceDir + "/reference-" + task + ".tsv")), tasks);
+    // The SAME canonical reduction, three times: the frozen executed
+    // adjudications (the original, provisional view), the corrected per-arm
+    // observations over the matched population, and the corrected per-arm
+    // observations over the full admitted population.
     let judgedProvisional = List.flatMap(task -> judgedForTask(task, arms, views, references, matches, adjudications, candidates), tasks);
     let judged = List.flatMap(task -> judgedForTask(task, arms, views, references, matches, correctedAdj, candidates), tasks);
+    let judgedFull = List.flatMap(task -> judgedForTask(task, arms, views, fullReferences, matches, correctedAdj, candidates), tasks);
     writeText(dir, "corrected-metrics.tsv", renderTsv(metricTable(judged, arms, views)));
     writeText(dir, "corrected-summary.tsv", renderTsv(summaryTable(judged, arms, views)));
     writeText(dir, "corrected-counts.tsv", renderTsv(List.filterMap(countRowIf, judged)));
     writeText(dir, "corrected-macro-population.tsv",
         renderTsv(macroPopulationTable(judged, arms, views, List.length(tasks))));
+    writeText(dir, "corrected-full-population.tsv", renderTsv(
+        List.flatMap(arm -> List.map(view -> fullPopulationCountRow(arm, view, countsFor(judgedFull, arm, view)), views), arms)));
+    writeText(dir, "full-population-sensitivity.tsv", renderTsv(
+        List.flatMap(arm -> List.map(view -> sensitivityRow(arm, view, countsFor(judgedFull, arm, view)), views), arms)));
     let provisionalText = renderTsv(metricTable(judgedProvisional, arms, views));
     writeText(dir, "provisional-metrics.tsv", provisionalText);
     writeText(dir, "corrected-provenance.tsv", renderTsv(List#{
         List#{"population", "references", Int32.toString(List.length(references))},
+        List#{"population", "full-references", Int32.toString(List.length(fullReferences))},
+        List#{"population", "full-positives", Int32.toString(List.length(List.filter(reference -> reference#truePositive, fullReferences)))},
         List#{"population", "judge-matches", Int32.toString(List.length(matches))},
         List#{"population", "executed-adjudications", Int32.toString(List.length(adjudications))},
         List#{"population", "corrected-adjudications", Int32.toString(List.length(correctedAdj))},
         List#{"population", "blinded-candidates", Int32.toString(List.length(candidates))},
         List#{"population", "tasks", Int32.toString(List.length(tasks))},
-        List#{"population", "corrective-task", correctiveTaskName}
+        List#{"population", "corrective-task", correctiveTaskName},
+        List#{"version", "matching", ReviewBenchJudge.correctedMatchingVersion()},
+        List#{"version", "full-population", ReviewBenchJudge.fullPopulationViewVersion()}
     }));
-    // The reduction reproduces the FROZEN original metric table exactly, so the
-    // corrected view is the same reducer over the same frozen data with only the
-    // corrective observations substituted. A contradiction fails rather than
-    // being forced.
+    assertFrozenReproduction(fixtures, provisionalText);
+    assertCorrectedCells(judged, judgedProvisional, views);
+    assertFullPopulation(judged, judgedFull, judgedProvisional, fullReferences)
+}
+
+/// The reduction reproduces the FROZEN original metric table exactly, so the
+/// corrected view is the same reducer over the same frozen data with only the
+/// corrective observations substituted. A contradiction fails rather than being
+/// forced.
+def assertFrozenReproduction(fixtures: List[String], provisionalText: String): Unit \ {Assert, IO} =
     match frozenReportMetricsPath(fixtures) {
         case Some(path) => Assert.assertEq(expected = readText(path), provisionalText)
         case None       => Assert.assertEq(expected = "a frozen report metrics path", "missing")
-    };
-    // The corrected all-findings task-micro cells: the `haoling` arm B validity is
-    // restored per arm, so valid/resolved precision is 11/12 and the augmented
-    // recall is 6/37. Arm A is unchanged, and the high view (which holds none of
-    // the `haoling` candidates) is unchanged.
+    }
+
+/// The corrected all-findings task-micro cells: the `haoling` arm B validity is
+/// restored per arm, so valid/resolved precision is 11/12 and the augmented recall
+/// is 6/37. Arm A is unchanged, and the high view (which holds none of the
+/// `haoling` candidates) is unchanged.
+def assertCorrectedCells(
+    judged: List[(String, String, String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)],
+    judgedProvisional: List[(String, String, String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)],
+    views: List[String]): Unit \ Assert = {
     Assert.assertEq(expected = Some((11, 12)),
         pairOfMetric(ReviewBenchJudge.JudgeMetric.ValidPrecision, countsFor(judged, "B", ReviewBenchJudge.allView())));
     Assert.assertEq(expected = Some((11, 12)),
@@ -1206,6 +1303,392 @@ def correctedMetricsStage(): Unit \ {Assert, IO} = {
         metricTableFor(judged, "B", ReviewBenchJudge.highView()))
 }
 
+/// The full-population view (`VAL-MEAS-004`, `VAL-MEAS-005`): all TEN admitted
+/// tasks contribute their pinned golden references independently of candidate
+/// output, so the all-findings positive denominator is 130 and the medium-or-high
+/// denominator is 62. The matched-population view keeps its own 72-positive
+/// denominator, so the two are reported side by side and never silently merged.
+/// The four candidate-less tasks appear with ZERO candidates and their gold in the
+/// denominator, so a token-cap failure is a miss in the denominator rather than a
+/// dropped, undefined or negative row.
+def assertFullPopulation(
+    judged: List[(String, String, String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)],
+    judgedFull: List[(String, String, String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)],
+    judgedProvisional: List[(String, String, String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)],
+    fullReferences: List[ReviewBenchJudge.Reference]): Unit \ Assert = {
+    Assert.assertEq(expected = 130, List.length(List.filter(reference -> reference#truePositive, fullReferences)));
+    Assert.assertEq(expected = 130, (countsFor(judgedFull, "A", ReviewBenchJudge.allView()))#goldTrue);
+    Assert.assertEq(expected = 130, (countsFor(judgedFull, "B", ReviewBenchJudge.allView()))#goldTrue);
+    Assert.assertEq(expected = 62, (countsFor(judgedFull, "A", ReviewBenchJudge.mediumHighView()))#goldTrue);
+    Assert.assertEq(expected = 62, (countsFor(judgedFull, "B", ReviewBenchJudge.mediumHighView()))#goldTrue);
+    // The arm's covered positives are unchanged: the extra four tasks contribute no
+    // candidate, so the known-recall numerator stays 8 (A) / 10 (B) while the
+    // denominator grows to 130. The denominator-only sensitivity is exactly that.
+    Assert.assertEq(expected = 8, (countsFor(judgedFull, "A", ReviewBenchJudge.allView()))#goldCovered);
+    Assert.assertEq(expected = 10, (countsFor(judgedFull, "B", ReviewBenchJudge.allView()))#goldCovered);
+    Assert.assertEq(expected = "8/130", Int32.toString((countsFor(judgedFull, "A", ReviewBenchJudge.allView()))#goldCovered)
+        + "/" + Int32.toString((countsFor(judgedFull, "A", ReviewBenchJudge.allView()))#goldTrue));
+    Assert.assertEq(expected = "10/130", Int32.toString((countsFor(judgedFull, "B", ReviewBenchJudge.allView()))#goldCovered)
+        + "/" + Int32.toString((countsFor(judgedFull, "B", ReviewBenchJudge.allView()))#goldTrue));
+    // The matched-population view is unchanged: its own denominator is 72, and the
+    // precision cells are identical in both views because precision does not depend
+    // on the reference denominator.
+    Assert.assertEq(expected = 72, (countsFor(judged, "B", ReviewBenchJudge.allView()))#goldTrue);
+    Assert.assertEq(expected = 11, (countsFor(judgedFull, "B", ReviewBenchJudge.allView()))#matchedTrue
+        + (countsFor(judgedFull, "B", ReviewBenchJudge.allView()))#unmatchedValid);
+    Assert.assertEq(expected = 12, (countsFor(judgedFull, "B", ReviewBenchJudge.allView()))#candidates);
+    // The frozen PROVISIONAL all-findings valid precision is unchanged by the
+    // versioned matching: arm B stays the frozen 3/4 and arm A 9/10, which is what
+    // the `capawesome-team_cli_126` equal-rank overlap reduces to under the pinned
+    // effective order (`VAL-MEAS-003`).
+    Assert.assertEq(expected = Some((3, 4)),
+        pairOfMetric(ReviewBenchJudge.JudgeMetric.ValidPrecision,
+            countsFor(judgedProvisional, "B", ReviewBenchJudge.allView())));
+    Assert.assertEq(expected = Some((9, 10)),
+        pairOfMetric(ReviewBenchJudge.JudgeMetric.ValidPrecision,
+            countsFor(judgedProvisional, "A", ReviewBenchJudge.allView())));
+    let candidateLess = List#{"EdV4H_usketch-534", "caasi_town-zero-6",
+        "heyitsaamir_teamscli-31", "ls1intum_Artemis-12479"};
+    Assert.assertEq(expected = true, List.forAll(task -> {
+        let counts = countsForTask(judgedFull, task, "A", ReviewBenchJudge.allView());
+        counts#candidates == 0 and counts#goldTrue > 0
+    }, candidateLess));
+    Assert.assertEq(expected = 58, List.foldLeft((acc, task) ->
+        acc + (countsForTask(judgedFull, task, "A", ReviewBenchJudge.allView()))#goldTrue, 0, candidateLess))
+}
+
+// ------------------------------------------------- reference population stage
+
+///
+/// The independently materialized reference population (`VAL-MEAS-004`,
+/// `VAL-MEAS-005`).
+///
+/// The population of every admitted task's golden references is projected
+/// directly from the pinned golden digests of ALL TEN admitted tasks through the
+/// mechanical boundary, independent of any reviewer or judge candidate output. It
+/// writes one driver-format reference projection per task plus the per-task and
+/// total population records, and asserts the declared 130 positives / 62
+/// medium-or-high / 58 on the four candidate-less tasks. A discrepancy fails
+/// rather than adjusting the assertion value. Provider-free: no model, no judge,
+/// no Grit and no Theory work.
+///
+
+def referenceFileName(task: String): String = "reference-" + task + ".tsv"
+
+def severityMediumHigh(severity: String): Bool = severity == "medium" or severity == "high"
+
+def bothArmsFailed(outcomes: List[(String, String, String, String, Int32)], task: String): Bool = {
+    let rows = List.filter(row -> match row { case (owner, _, _, _, _) => owner == task }, outcomes);
+    not List.isEmpty(rows) and List.forAll(row -> match row { case (_, _, status, _, _) => status != "ok" }, rows)
+}
+
+/// One task's reference-population row. The source eligibility and the review
+/// status are SEPARATE fields: a task admitted by the declared structural
+/// supported-source rule is `supported-source` whatever its reviews did, and a
+/// failed review is never a negative label on its gold.
+def referencePopulationRow(entry: (String, Int32, Int32, Int32, Bool)): List[String] = match entry {
+    case (task, findings, positives, mediumHigh, failed) =>
+        List#{"population", task, Int32.toString(findings), Int32.toString(positives),
+              Int32.toString(mediumHigh), "supported-source",
+              if (failed) "failed" else "candidate-bearing"}
+}
+
+/// The declared golden-label vocabulary of one projected reference record.
+def referenceLabelOf(line: String): String = match fields(line) {
+    case "reference" :: _ :: _ :: _ :: _ :: _ :: label :: _ => label
+    case _                                                  => "unknown"
+}
+
+/// The declared severity cell of one projected reference record.
+def referenceSeverityOf(line: String): String = match fields(line) {
+    case "reference" :: _ :: _ :: _ :: _ :: _ :: _ :: severity :: _ => severity
+    case _                                                         => "unknown"
+}
+
+def declaredLabel(label: String): Bool = label == "tp" or label == "fp"
+
+def declaredSeverity(severity: String): Bool =
+    severity == "low" or severity == "medium" or severity == "high"
+
+/// One task's eligibility rows: the supported-source eligibility, the declared
+/// label population and the two UNKNOWN populations that are reported separately
+/// and never folded into a negative or into a severity view.
+def eligibilityRows(task: String, lines: List[String]): List[List[String]] = {
+    let labels = List.map(referenceLabelOf, lines);
+    let severities = List.map(referenceSeverityOf, lines);
+    List#{
+        List#{"eligibility", task, "supported-source", Int32.toString(List.length(lines)),
+              "structural admission >= 900 per-mille supported source"},
+        List#{"eligibility", task, "declared-label", Int32.toString(List.length(List.filter(declaredLabel, labels))),
+              "labels inside the declared tp/fp vocabulary"},
+        List#{"eligibility", task, "unknown-label",
+              Int32.toString(List.length(List.filter(label -> not declaredLabel(label), labels))),
+              "labels outside tp/fp, reported separately and never folded into a negative"},
+        List#{"eligibility", task, "unknown-severity",
+              Int32.toString(List.length(List.filter(severity -> not declaredSeverity(severity), severities))),
+              "severities outside low/medium/high, reported separately and never folded into a view"}
+    }
+}
+
+def severityRows(task: String, references: List[ReviewBenchJudge.Reference]): List[List[String]] = {
+    let positives = List.filter(reference -> reference#truePositive, references);
+    let severities = List.distinct(List.map(reference -> reference#severity, positives));
+    List.map(severity -> List#{"severity", task, severity,
+        Int32.toString(List.length(List.filter(reference -> reference#severity == severity, positives)))},
+        severities)
+}
+
+def goldSummaryOf(entry: (String, String, String)): String = match entry {
+    case (_, _, summary) => summary
+}
+
+def referenceTaskOf(entry: (String, String, String)): String = match entry {
+    case (task, _, _) => task
+}
+
+def referencePathOf(entry: (String, String, String)): String = match entry {
+    case (_, name, _) => name
+}
+
+def positiveCount(entry: (String, Int32, Int32, Int32, Bool)): Int32 = match entry {
+    case (_, _, positives, _, _) => positives
+}
+
+def mediumHighCount(entry: (String, Int32, Int32, Int32, Bool)): Int32 = match entry {
+    case (_, _, _, mediumHigh, _) => mediumHigh
+}
+
+def failedFlag(entry: (String, Int32, Int32, Int32, Bool)): Bool = match entry {
+    case (_, _, _, _, failed) => failed
+}
+
+def referenceCount(entry: (String, Int32, Int32, Int32, Bool)): Int32 = match entry {
+    case (_, references, _, _, _) => references
+}
+
+/// The projected reference records of one task, read back from the mechanical
+/// boundary's own output file.
+def projectedReferenceLines(dir: String, task: String): List[String] \ IO =
+    List.filter(line -> String.startsWith(prefix = "reference\t", line),
+        records(readText(dir + "/" + referenceFileName(task))))
+
+/// The total of one eligibility kind over a task's eligibility rows.
+def eligibilityTotal(rows: List[List[String]], kind: String): Int32 =
+    List.foldLeft((acc, row) -> if (cellOf(row, 2) == kind) acc + intOf(cellOf(row, 3)) else acc, 0, rows)
+
+def referencePopulationStage(): Unit \ {Assert, IO} = {
+    let dir = outputsDir();
+    let fixtures = manifestPaths("fixtures");
+    let outcomes = pairedOutcomes(fixtures);
+    let tasks = List.distinct(List.map(row -> match row { case (task, _, _, _, _) => task }, outcomes));
+    // Project each task's pinned golden set through the mechanical boundary into
+    // the declared reference vocabulary, exactly as the judge action did.
+    let projected = List.map(task -> {
+        let name = referenceFileName(task);
+        let summary = match binding(task) {
+            case Some(gold) => AttuneReviewBench.goldReferences(task, gold, dir + "/" + name)
+            case None       => "status\tfailed\terror\tno declared golden input for " + task
+        };
+        (task, name, summary)
+    }, tasks);
+    let populations = List.map(task -> {
+        let references = List.filterMap(referenceOf, records(readText(dir + "/" + referenceFileName(task))));
+        let positives = List.filter(reference -> reference#truePositive, references);
+        let mediumHigh = List.filter(reference -> severityMediumHigh(reference#severity), positives);
+        (task, List.length(references), List.length(positives), List.length(mediumHigh),
+         bothArmsFailed(outcomes, task))
+    }, tasks);
+    let totalPositive = List.foldLeft((acc, entry) -> acc + positiveCount(entry), 0, populations);
+    let totalMediumHigh = List.foldLeft((acc, entry) -> acc + mediumHighCount(entry), 0, populations);
+    let failedPositive = List.foldLeft((acc, entry) -> if (failedFlag(entry)) acc + positiveCount(entry) else acc,
+        0, populations);
+    writeText(dir, "reference-population.tsv", renderTsv(List.map(referencePopulationRow, populations)));
+    writeText(dir, "reference-severity.tsv", renderTsv(List.flatMap(entry ->
+        severityRows(referenceTaskOf(entry),
+            List.filterMap(referenceOf, records(readText(dir + "/" + referencePathOf(entry))))),
+        projected)));
+    let eligibility = List.flatMap(task -> eligibilityRows(task, projectedReferenceLines(dir, task)), tasks);
+    writeText(dir, "reference-eligibility.tsv", renderTsv(eligibility));
+    writeText(dir, "reference-summary.tsv", renderTsv(List#{
+        List#{"summary", "tasks", Int32.toString(List.length(tasks))},
+        List#{"summary", "positive", Int32.toString(totalPositive)},
+        List#{"summary", "medium-high", Int32.toString(totalMediumHigh)},
+        List#{"summary", "failed-positive", Int32.toString(failedPositive)}
+    }));
+    // The supported-source eligibility and the review status stay separate
+    // fields, and no reference leaves the declared label/severity vocabulary: an
+    // UNKNOWN label or severity is reported separately rather than folded into a
+    // negative or into a severity view.
+    Assert.assertEq(expected = List.length(tasks) * 4, List.length(eligibility));
+    Assert.assertEq(expected = true, List.forAll(row -> cellOf(row, 2) == "supported-source",
+        List.filter(row -> cellOf(row, 2) == "supported-source", eligibility)));
+    let totalReferences = List.foldLeft((acc, entry) -> acc + referenceCount(entry), 0, populations);
+    Assert.assertEq(expected = totalReferences, eligibilityTotal(eligibility, "declared-label"));
+    Assert.assertEq(expected = 0, eligibilityTotal(eligibility, "unknown-label"));
+    Assert.assertEq(expected = 0, eligibilityTotal(eligibility, "unknown-severity"));
+    // Every declared golden input was projected, and the pinned digests yield the
+    // declared population exactly. A discrepancy fails; the value is not adjusted.
+    Assert.assertEq(expected = true,
+        List.forAll(entry -> String.contains(substr = "status\tok", goldSummaryOf(entry)), projected));
+    Assert.assertEq(expected = 10, List.length(tasks));
+    Assert.assertEq(expected = 130, totalPositive);
+    Assert.assertEq(expected = 62, totalMediumHigh);
+    Assert.assertEq(expected = 58, failedPositive);
+    Assert.assertEq(expected = 4, List.length(List.filter(failedFlag, populations)));
+    Assert.assertEq(expected = 6, List.length(List.filter(entry -> not failedFlag(entry), populations)));
+    // Every candidate-less task contributes its gold even though it produced no
+    // candidate: its positive population is non-empty and named.
+    Assert.assertEq(expected = true, List.forAll(entry ->
+        not failedFlag(entry) or positiveCount(entry) > 0, populations));
+    // The mechanical boundary is the SAME one the judge action used: for every
+    // candidate-bearing task the projection is byte-identical to the frozen
+    // reference record the judge wrote, so the new population is the pinned
+    // golden bytes and not a re-encoding.
+    let frozen = List.filter(path -> String.contains(substr = "/executed/judge/", path) and String.endsWith(suffix = ".references.tsv", path), fixtures);
+    Assert.assertEq(expected = 6, List.length(frozen));
+    let frozenMatches = List.map(path -> {
+        let task = taskOfReferencePath(path);
+        readText(path) == readText(dir + "/" + referenceFileName(task))
+    }, frozen);
+    Assert.assertEq(expected = true, List.forAll(identity, frozenMatches))
+}
+
+/// The task key of one frozen reference record path
+/// (`.../<task>.references.tsv` -> `<task>`).
+def taskOfReferencePath(path: String): String = {
+    let name = Option.getWithDefault("", List.last(String.split(regex = "/", path)));
+    if (String.endsWith(suffix = ".references.tsv", name))
+        String.take(String.length(name) - String.length(".references.tsv"), name)
+    else name
+}
+
+// -------------------------------------------------- order sensitivity stage
+
+///
+/// The versioned order-sensitivity counterexample (`VAL-MEAS-003`).
+///
+/// The canonical matching resolves an arm's equal-rank blinded candidates in the
+/// reducer's own rank-sorted effective order, and `capawesome-team_cli-126` is
+/// the counterexample where several candidates claim the same references. This
+/// provider-free stage states the frozen effective order explicitly, shows that a
+/// DIFFERENT order of the same equal-rank candidates (their natural input order)
+/// changes both the per-candidate match and the arm's frozen counts, and shows
+/// that the canonical matching still reproduces the frozen observation (the
+/// arm-local greedy claim the provisional table was reduced under) and that the
+/// unaffected arm is invariant under the reorder. It reads only frozen fixtures:
+/// no model, no judge and no provider call.
+///
+
+def claimedText(value: Option[Int32]): String = match value {
+    case Some(index) => "G" + Int32.toString(index)
+    case None        => "none"
+}
+
+def orderRow(
+    task: String,
+    arm: String,
+    candidate: String,
+    canonical: List[(String, Option[Int32])],
+    reordered: List[(String, Option[Int32])]): List[String] = {
+    let before = ReviewBenchJudge.claimedIndexOf(canonical, candidate);
+    let after = ReviewBenchJudge.claimedIndexOf(reordered, candidate);
+    List#{"order-sensitivity", task, arm, candidate, claimedText(before), claimedText(after),
+          if (before == after) "unchanged" else "changed"}
+}
+
+def candidateIds(assignments: List[(String, Option[Int32])]): List[String] =
+    List.map(entry -> match entry { case (id, _) => id }, assignments)
+
+def claimsText(assignments: List[(String, Option[Int32])]): String =
+    List.join(",", List.map(entry -> match entry { case (id, index) => id + "->" + claimedText(index) }, assignments))
+
+def orderSensitivityStage(): Unit \ {Assert, IO} = {
+    let dir = outputsDir();
+    let fixtures = manifestPaths("fixtures");
+    let task = "capawesome-team_cli-126";
+    let judgePaths = executedJudgePaths(fixtures);
+    let references = List.flatMap(path -> parseReferences(readText(path)),
+        List.filter(path -> String.endsWith(suffix = task + ".references.tsv", path), judgePaths));
+    let matches = List.flatMap(path -> parseMatches(readText(path)),
+        List.filter(path -> String.endsWith(suffix = task + ".judgments.tsv", path), judgePaths));
+    let candidates = reconstructedCandidates(fixtures, List#{task});
+    let armA = List.filter(candidate -> candidate#arm == "A", candidates);
+    let armB = List.filter(candidate -> candidate#arm == "B", candidates);
+    // The FROZEN canonical effective order: the reducer's own rank sort, which
+    // every blinded candidate enters at rank zero, so the effective order is the
+    // reducer's observed equal-rank order and is NOT the candidates' input order.
+    // It is recorded explicitly below rather than left implicit.
+    let frozenB = ReviewBenchJudge.claimedReferences(ReviewBenchJudge.effectiveOrder(armB), references, matches);
+    let frozenA = ReviewBenchJudge.claimedReferences(ReviewBenchJudge.effectiveOrder(armA), references, matches);
+    // A DIFFERENT ordering of the SAME equal-rank candidates: their natural input
+    // order. It resolves the overlapping candidates differently while leaving the
+    // non-overlapping arm unchanged.
+    let inputB = ReviewBenchJudge.claimedReferences(armB, references, matches);
+    let inputA = ReviewBenchJudge.claimedReferences(armA, references, matches);
+    // The frozen reduction's own counts, under the canonical matching (which
+    // sorts by rank) and under the alternative input order.
+    let frozenCounts = ReviewBenchJudge.countsOf(
+        ReviewBenchJudge.classifyArm(armB, references, matches, Nil), references, matches);
+    let inputCounts = ReviewBenchJudge.countsOf(
+        ReviewBenchJudge.classifyArmInOrder(armB, references, matches, Nil), references, matches);
+    let rows = List.flatMap(candidate -> List#{
+        orderRow(task, "B", candidate, frozenB, inputB)
+    }, candidateIds(frozenB)) ::: List.flatMap(candidate -> List#{
+        orderRow(task, "A", candidate, frozenA, inputA)
+    }, candidateIds(frozenA));
+    writeText(dir, "order-sensitivity.tsv", renderTsv(rows));
+    writeText(dir, "order-sensitivity-summary.tsv", renderTsv(List#{
+        List#{"order-version", ReviewBenchJudge.correctedMatchingVersion(), task},
+        List#{"frozen-effective-order", claimsText(frozenB),
+              "the canonical rank-sorted effective order the frozen provisional table reduces under"},
+        List#{"alternative-order", claimsText(inputB),
+              "the same equal-rank candidates in their natural input order"},
+        List#{"changed-candidates", Int32.toString(List.length(List.filter(row -> cellOf(row, 6) == "changed", rows))),
+              "candidates whose effective match changes under the alternative equal-rank order"},
+        List#{"frozen-arm-B-matched", Int32.toString(frozenCounts#matched),
+              "arm B candidates matched under the frozen effective order"},
+        List#{"frozen-arm-B-matched-true", Int32.toString(frozenCounts#matchedTrue),
+              "arm B candidates matched to a true positive under the frozen effective order"},
+        List#{"alternative-arm-B-matched", Int32.toString(inputCounts#matched),
+              "arm B candidates matched under the alternative equal-rank order"},
+        List#{"alternative-arm-B-matched-true", Int32.toString(inputCounts#matchedTrue),
+              "arm B candidates matched to a true positive under the alternative equal-rank order"},
+        List#{"unaffected-arm-invariant",
+              if (List.forAll(candidate -> ReviewBenchJudge.claimedIndexOf(frozenA, candidate) == ReviewBenchJudge.claimedIndexOf(inputA, candidate), candidateIds(frozenA))) "true" else "false",
+              "the non-overlapping arm is unchanged by the reorder"}
+    }));
+    // The frozen effective assignment, pinned explicitly: arm B resolves C2 -> G1
+    // (true positive), C4 -> G37 (true positive) and C5 -> G4 (the false positive).
+    Assert.assertEq(expected = Some(1), ReviewBenchJudge.claimedIndexOf(frozenB, "C2"));
+    Assert.assertEq(expected = Some(37), ReviewBenchJudge.claimedIndexOf(frozenB, "C4"));
+    Assert.assertEq(expected = Some(4), ReviewBenchJudge.claimedIndexOf(frozenB, "C5"));
+    // The SAME candidates in their input order resolve differently: C4 -> G4 (the
+    // false positive) and C5 -> no unclaimed reference. The effective match
+    // changes without any candidate, reference or label changing.
+    Assert.assertEq(expected = Some(1), ReviewBenchJudge.claimedIndexOf(inputB, "C2"));
+    Assert.assertEq(expected = Some(4), ReviewBenchJudge.claimedIndexOf(inputB, "C4"));
+    Assert.assertEq(expected = None, ReviewBenchJudge.claimedIndexOf(inputB, "C5"));
+    Assert.assertEq(expected = true, frozenB != inputB);
+    Assert.assertEq(expected = 2, List.length(List.filter(row -> cellOf(row, 6) == "changed", rows)));
+    // The canonical versioned matching IS the reducer that reproduces the frozen
+    // observation: over the frozen effective order it gives exactly the frozen
+    // arm-B counts (3 candidates, 3 matched, 2 matched to a true positive). A
+    // different order of the SAME equal-rank candidates gives 2 matched and 1
+    // matched-to-true, so the ordering sensitivity is visible in the reduction
+    // itself and not only in the per-candidate assignment.
+    Assert.assertEq(expected = 3, frozenCounts#candidates);
+    Assert.assertEq(expected = 3, frozenCounts#matched);
+    Assert.assertEq(expected = 2, frozenCounts#matchedTrue);
+    Assert.assertEq(expected = 2, inputCounts#matched);
+    Assert.assertEq(expected = 1, inputCounts#matchedTrue);
+    // The non-overlapping arm is invariant under the reorder, so the new
+    // definition never silently changes an unaffected observation. The arm is
+    // compared per candidate, since reordering legitimately changes list order.
+    Assert.assertEq(expected = true, List.forAll(candidate ->
+        ReviewBenchJudge.claimedIndexOf(frozenA, candidate) == ReviewBenchJudge.claimedIndexOf(inputA, candidate),
+        candidateIds(frozenA)))
+}
+
 // ---------------------------------------------------------------- dispatcher
 
 @Test
@@ -1216,5 +1699,7 @@ def theDeclaredReviewBenchJudgeStageMaterializesItsArtifact(): Unit \ {Assert, I
     else if (stage == "reviewbench_corrective_candidates") correctiveStage()
     else if (stage == "reviewbench_corrective_report") correctiveReportStage()
     else if (stage == "reviewbench_corrected_metrics") correctedMetricsStage()
+    else if (stage == "reviewbench_reference_population") referencePopulationStage()
+    else if (stage == "reviewbench_order_sensitivity") orderSensitivityStage()
     else Assert.assertEq(expected = "a declared reviewbench judge stage name", stage)
 }

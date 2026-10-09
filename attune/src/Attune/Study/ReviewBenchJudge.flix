@@ -88,6 +88,53 @@ pub mod Attune.Study.ReviewBenchJudge {
     /// duplicate bias.
     pub def correctiveTask(): String = "haoling_diary-notebook-blog-transformer-24"
 
+    /// The declared VERSION identity of the canonical matching semantics
+    /// (`VAL-MEAS-003`). The canonical matching is the arm-local greedy claim in
+    /// the arm's effective order: the blinded projection carries no rank, every
+    /// candidate shares rank zero, and the reducer's canonical rank sort fixes
+    /// the effective order in which equal-rank candidates resolve a shared golden
+    /// reference. That order is pinned explicitly rather than left implicit,
+    /// because the `capawesome-team_cli-126` counterexample shows that a
+    /// DIFFERENT order of the SAME equal-rank candidates changes the effective
+    /// match: under the frozen effective order arm B resolves C5 -> G4 (a false
+    /// positive), C2 -> G1 and C4 -> G37; in the candidates' natural input order
+    /// the same arm resolves C2 -> G1, C4 -> G4 (the false positive) and C5 -> no
+    /// unclaimed reference. The version never silently changes an unaffected
+    /// observation: every arm/task/view whose candidates do not share an
+    /// overlapping reference is invariant under the order, and the frozen
+    /// provisional table is reproduced byte-for-byte under this declared order.
+    pub def correctedMatchingVersion(): String = "reviewbench-corrected-matching-v2"
+
+    /// The declared version identity of the separately versioned FULL-POPULATION
+    /// quality view (`VAL-MEAS-004`, `VAL-MEAS-005`). The matched-population view
+    /// is the frozen six candidate-bearing tasks' own reference set; the
+    /// full-population view is the reference population of ALL TEN admitted
+    /// tasks, materialized independently of candidate output. Its recall
+    /// denominators are the full admitted positive population, and its
+    /// known-recall cells are DENOMINATOR-ONLY sensitivities until the matching
+    /// semantics of the four candidate-less tasks are resolved, so they are
+    /// reported beside — never instead of — the matched-population ratios.
+    pub def fullPopulationViewVersion(): String = "reviewbench-full-population-view-v1"
+
+    /// The explicit definition of the full-population view's recall cells. A
+    /// task whose reviews produced no candidate at all contributes its golden
+    /// true positives to the denominator and structurally zero to the numerator;
+    /// the resulting ratio is a denominator-only sensitivity, not a matched
+    /// observation, and is never published as the final score.
+    pub def fullPopulationDefinition(): String =
+        "recall denominator = every positive reference of all ten admitted tasks " +
+        "(130 positives / 62 medium-or-high / 58 on the four candidate-less tasks); " +
+        "numerator = the matched true positives the arm's candidates actually cover; " +
+        "the four candidate-less tasks contribute zero numerator by construction, " +
+        "so the known-recall cell is a denominator-only sensitivity"
+
+    /// The declared honest reason the genuine first-finding timing is not
+    /// available from the frozen review receipts: the driver's `first_finding_ms`
+    /// field is rendered from the first AGENT MESSAGE, and no separate
+    /// first-committed-finding timestamp was recorded.
+    pub def firstFindingUnavailableReason(): String =
+        "driver field first_finding_ms is the first agent message; no separate first-committed-finding timestamp was recorded"
+
     /// The declared identity of the frozen judge budget record.
     pub def budgetIdentity(): String = "reviewbench-judge-budget-v1"
 
@@ -255,6 +302,79 @@ pub mod Attune.Study.ReviewBenchJudge {
         matches: List[Match],
         adjudications: List[Adjudication]): List[Classified] =
         claim(List.sortBy(candidate -> candidate#rank, candidates), references, matches, adjudications, Nil, Nil)
+
+    /// Classify one arm's candidates under an EXPLICIT effective order, without
+    /// re-sorting by rank. The canonical `classifyArm` sorts an arm's candidates
+    /// by `rank`, so when the blinded projection carries no rank every candidate
+    /// shares rank zero and the reducer's rank sort fixes ONE specific permutation
+    /// of the equal-rank input: that permutation is the frozen EFFECTIVE order.
+    /// The order is load-bearing: the first candidate in order claims the first
+    /// still-unclaimed reference, so two equal-rank candidates that claim
+    /// overlapping references resolve differently under a different order. This
+    /// entry point states an order explicitly, so an order-sensitivity
+    /// counterexample can be reduced without rewriting the canonical matching or
+    /// the frozen bytes.
+    pub def classifyArmInOrder(
+        candidates: List[Candidate],
+        references: List[Reference],
+        matches: List[Match],
+        adjudications: List[Adjudication]): List[Classified] =
+        claim(candidates, references, matches, adjudications, Nil, Nil)
+
+    /// The declared effective order of a blinded candidate population: the
+    /// reducer's canonical sort by rank. The blinded projection carries no rank,
+    /// so every candidate enters at rank zero and the sort fixes one specific
+    /// permutation of the equal-rank input; that permutation is the frozen
+    /// EFFECTIVE order, and the canonical matching reproduces the frozen
+    /// provisional bytes exactly under it. It is deliberately NOT documented as
+    /// preserving the input order, because it does not, and the
+    /// `capawesome-team_cli-126` counterexample shows that the difference is
+    /// observable: the same equal-rank candidates in their natural input order
+    /// resolve a shared golden reference differently.
+    pub def effectiveOrder(candidates: List[Candidate]): List[Candidate] =
+        List.sortBy(candidate -> candidate#rank, candidates)
+
+    /// The declared effective MATCH of one arm's candidates under an explicit
+    /// order: each candidate's claimed golden reference index, or none. It is the
+    /// same arm-local greedy claim the canonical classification uses, exposed as
+    /// data so an order-sensitivity counterexample can name exactly which
+    /// candidate claimed which reference before and after a reorder. The two
+    /// reductions are pinned to agree by the law
+    /// `theDataViewAndTheClassificationAgreeOnTheSameClaim` and, over the frozen
+    /// population, by the byte-for-byte provisional reproduction itself.
+    pub def claimedReferences(
+        candidates: List[Candidate],
+        references: List[Reference],
+        matches: List[Match]): List[(String, Option[Int32])] =
+        claims(candidates, references, matches, Nil, Nil)
+
+    def claims(
+        candidates: List[Candidate],
+        references: List[Reference],
+        matches: List[Match],
+        claimed: List[Int32],
+        acc: List[(String, Option[Int32])]): List[(String, Option[Int32])] = match candidates {
+        case Nil => List.reverse(acc)
+        case candidate :: rest =>
+            let available = List.filter(index -> not List.memberOf(index, claimed),
+                referencesOf(candidate#task, candidate#id, matches));
+            match List.head(List.sort(available)) {
+                case Some(index) => claims(rest, references, matches, index :: claimed,
+                    (candidate#id, Some(index)) :: acc)
+                case None        => claims(rest, references, matches, claimed,
+                    (candidate#id, None) :: acc)
+            }
+    }
+
+    /// The declared claimed reference index of one candidate in one assignment,
+    /// or none.
+    pub def claimedIndexOf(
+        assignments: List[(String, Option[Int32])],
+        candidate: String): Option[Int32] =
+        match List.find(entry -> match entry { case (id, _) => id == candidate }, assignments) {
+            case Some((_, index)) => index
+            case None             => None
+        }
 
     def claim(
         candidates: List[Candidate],

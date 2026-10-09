@@ -160,23 +160,40 @@ pub mod Attune.Study.ReviewBenchEconomics {
     /// observe is carried as the sentinel the reader supplies rather than as a
     /// fabricated zero. The latency fields are milliseconds and fit the 32-bit
     /// range; the byte and token fields are 64-bit sums.
+    ///
+    /// `firstAgentMessageMs` is the driver's historical `first_finding_ms`, which
+    /// is the first AGENT MESSAGE, not the first finding. It is kept under its
+    /// honest label. `firstNonemptyReadMs` is the first non-empty read. A genuine
+    /// first-committed-finding timestamp was not recorded, so it is carried as
+    /// nothing (`Unavailable`) rather than silently relabelled.
+    ///
+    /// `startUnixMs`/`endUnixMs` are the real wall-clock bounds of the turn, so
+    /// the cohort interval and the dispatch gaps are the actual first-start-to-
+    /// last-end interval and the real inter-review gaps, never the maximum single
+    /// turn wall. `uniqueEvidenceBytes` is the exact distinct evidence bytes; the
+    /// driver exposes only the total returned bytes, so it is `None`
+    /// (`Unavailable`) rather than the total duplicated per projected action.
     pub type alias Observation = {
-        task              = String,
-        arm               = String,
-        status            = String,
-        stop              = String,
-        findingCount      = Int32,
-        toolRounds        = Int32,
-        readCount         = Int32,
-        readBytes         = Int64,
-        inputCachedTokens = Int64,
-        inputTokens       = Int64,
-        outputTokens      = Int64,
-        totalTokens       = Int64,
-        firstFindingMs    = Int32,
-        turnWallMs        = Int32,
-        changeBytes       = Int64,
-        contextBytes      = Int64
+        task                = String,
+        arm                 = String,
+        status              = String,
+        stop                = String,
+        findingCount        = Int32,
+        toolRounds          = Int32,
+        readCount           = Int32,
+        readBytes           = Int64,
+        uniqueEvidenceBytes = Option[Int64],
+        inputCachedTokens   = Int64,
+        inputTokens         = Int64,
+        outputTokens        = Int64,
+        totalTokens         = Int64,
+        firstAgentMessageMs = Int32,
+        firstNonemptyReadMs = Int32,
+        turnWallMs          = Int32,
+        startUnixMs         = Int64,
+        endUnixMs           = Int64,
+        changeBytes         = Int64,
+        contextBytes        = Int64
     }
 
     /// Whether one observation is a scored review.
@@ -260,32 +277,44 @@ pub mod Attune.Study.ReviewBenchEconomics {
     /// explicit denominator, and a failed review is retained in the population
     /// rather than dropped.
     pub type alias ArmSummary = {
-        arm               = String,
-        reviews           = Int32,
-        ok                = Int32,
-        failed            = Int32,
-        medianTurnWallMs  = Option[Metrics.Ratio],
-        p95TurnWallMs     = Option[Metrics.Ratio],
-        medianFirstFindingMs = Option[Metrics.Ratio],
-        p95FirstFindingMs = Option[Metrics.Ratio],
-        findingReviews    = Int32,
-        toolRounds        = Int64,
-        readCount         = Int64,
-        readBytes         = Int64,
-        inputCachedTokens = Int64,
-        totalTokens       = Int64,
-        maxTurnWallMs     = Int32,
-        maxReadBytes      = Int64
+        arm                       = String,
+        reviews                   = Int32,
+        ok                        = Int32,
+        failed                    = Int32,
+        medianTurnWallMs          = Option[Metrics.Ratio],
+        p95TurnWallMs             = Option[Metrics.Ratio],
+        medianFirstAgentMessageMs = Option[Metrics.Ratio],
+        p95FirstAgentMessageMs    = Option[Metrics.Ratio],
+        firstFindingMs            = Option[Metrics.Ratio],
+        firstFindingPopulation    = Int32,
+        medianFirstEvidenceMs     = Option[Metrics.Ratio],
+        findingReviews            = Int32,
+        toolRounds                = Int64,
+        readCount                 = Int64,
+        readBytes                 = Int64,
+        uniqueEvidenceBytes       = Option[Int64],
+        inputCachedTokens         = Int64,
+        totalTokens               = Int64,
+        maxTurnWallMs             = Int32,
+        maxReadBytes              = Int64
     }
 
-    /// The pooled summary of one arm's observations. The first-useful-finding
-    /// latency is reduced over the reviews that actually reported at least one
-    /// finding; the population is carried beside it.
+    /// The pooled summary of one arm's observations.
+    ///
+    /// The retained historical `first_finding_ms` is reduced over the reviews that
+    /// actually reported at least one finding, under its honest label
+    /// (first-agent-message); the population is carried beside it. The genuine
+    /// first-finding latency is `None` (`Unavailable`) because no such timestamp
+    /// was recorded, and the finding-review population is still reported beside
+    /// it. The first-evidence latency is reduced over the reviews that performed
+    /// at least one non-empty read.
     pub def armSummary(arm: String, observations: List[Observation]): ArmSummary = {
         let armObs = armObservations(arm, observations);
         let walls = List.map(observation -> observation#turnWallMs, armObs);
         let findingObs = List.filter(observation -> observation#findingCount > 0, armObs);
-        let firsts = List.map(observation -> observation#firstFindingMs, findingObs);
+        let agentMessages = List.map(observation -> observation#firstAgentMessageMs, findingObs);
+        let readObs = List.filter(observation -> observation#readCount > 0, armObs);
+        let evidences = List.map(observation -> observation#firstNonemptyReadMs, readObs);
         {
             arm = arm,
             reviews = List.length(armObs),
@@ -293,12 +322,16 @@ pub mod Attune.Study.ReviewBenchEconomics {
             failed = List.length(List.filter(observation -> not isOk(observation), armObs)),
             medianTurnWallMs = medianRatio(walls),
             p95TurnWallMs = percentileRatio(walls, 95),
-            medianFirstFindingMs = medianRatio(firsts),
-            p95FirstFindingMs = percentileRatio(firsts, 95),
+            medianFirstAgentMessageMs = medianRatio(agentMessages),
+            p95FirstAgentMessageMs = percentileRatio(agentMessages, 95),
+            firstFindingMs = None,
+            firstFindingPopulation = List.length(findingObs),
+            medianFirstEvidenceMs = medianRatio(evidences),
             findingReviews = List.length(findingObs),
             toolRounds = sumInt64(List.map(observation -> Int32.toInt64(observation#toolRounds), armObs)),
             readCount = sumInt64(List.map(observation -> Int32.toInt64(observation#readCount), armObs)),
             readBytes = sumInt64(List.map(observation -> observation#readBytes, armObs)),
+            uniqueEvidenceBytes = sumUniqueBytes(armObs),
             inputCachedTokens = sumInt64(List.map(observation -> observation#inputCachedTokens, armObs)),
             totalTokens = sumInt64(List.map(observation -> observation#totalTokens, armObs)),
             maxTurnWallMs = maxInt32(walls),
@@ -306,16 +339,81 @@ pub mod Attune.Study.ReviewBenchEconomics {
         }
     }
 
+    /// The exact sum of a population of optional byte counts: the total when every
+    /// member measured one, and `None` (`Unavailable`) as soon as any member did
+    /// not, so an unmeasured member is never silently counted as zero.
+    pub def sumUniqueBytes(observations: List[Observation]): Option[Int64] =
+        List.foldLeft(stepUnique, Some(0i64), observations)
+
+    def stepUnique(acc: Option[Int64], observation: Observation): Option[Int64] =
+        match (acc, observation#uniqueEvidenceBytes) {
+            case (Some(total), Some(bytes)) => Some(total + bytes)
+            case _                          => None
+        }
+
     /// Both arms' pooled summaries, in report order.
     pub def armSummaries(observations: List[Observation]): List[ArmSummary] =
         List.map(arm -> armSummary(arm, observations), List#{"A", "B"})
 
-    /// The cohort wall of a population of observations: the maximum turn wall of
-    /// any single review, which bounds the wall of the concurrent cohort. It is
-    /// `Unavailable` when the population is empty.
-    pub def cohortWallMs(observations: List[Observation]): Option[Int32] =
+    /// The maximum single-review turn wall of a population of observations. It
+    /// is the bound on one review's own turn, NOT the cohort wall: the honest
+    /// cohort wall is `cohortIntervalMs`, the actual first-start-to-last-end
+    /// interval. It is `Unavailable` when the population is empty.
+    pub def maxTurnWallMs(observations: List[Observation]): Option[Int32] =
         if (List.isEmpty(observations)) None
         else Some(maxInt32(List.map(observation -> observation#turnWallMs, observations)))
+
+    /// The CORRECTED cohort wall: the actual elapsed wall of the whole cohort.
+    ///
+    /// The historical `cohortWallMs` was the maximum single-review turn wall, which
+    /// bounds one turn and NOT the cohort; that value is now reported under its own
+    /// honest name `maxTurnWallMs`, and this name carries the corrected definition
+    /// (the actual first-start-to-last-end interval) so the published cohort wall
+    /// and the per-turn bound can never be conflated again.
+    pub def cohortWallMs(observations: List[Observation]): Option[Int64] =
+        cohortIntervalMs(observations)
+
+    /// The ACTUAL cohort interval of a population of observations: the last end
+    /// instant minus the first start instant, in milliseconds. It is the real
+    /// elapsed interval of the cohort, and it is deliberately NOT the maximum
+    /// single-review turn wall. `Unavailable` when the population is empty.
+    pub def cohortIntervalMs(observations: List[Observation]): Option[Int64] =
+        if (List.isEmpty(observations)) None
+        else {
+            let starts = List.map(observation -> observation#startUnixMs, observations);
+            let ends = List.map(observation -> observation#endUnixMs, observations);
+            Some(maxInt64(ends) - minInt64(starts))
+        }
+
+    /// The exact dispatch gaps of a cohort: the differences between consecutive
+    /// review start instants, in ascending start order. A cohort of one review has
+    /// no gap and returns the empty list.
+    pub def dispatchGapsMs(observations: List[Observation]): List[Int64] = {
+        let starts = List.sort(List.map(observation -> observation#startUnixMs, observations));
+        gapsOf(starts)
+    }
+
+    def gapsOf(starts: List[Int64]): List[Int64] = match starts {
+        case first :: second :: rest => (second - first) :: gapsOf(second :: rest)
+        case _                       => Nil
+    }
+
+    /// The smallest value of a 64-bit population, or zero when it is empty.
+    pub def minInt64(values: List[Int64]): Int64 =
+        List.foldLeft((acc, value) -> if (value < acc) value else acc, maxInt64(values), values)
+
+    /// The declared provider-free replay wall, in milliseconds. The replay stage
+    /// does not instrument its own wall, so the wall is `Unavailable` rather than
+    /// a fabricated zero; the provider/review/judge action COUNTS beside it are
+    /// exactly zero and are reported separately.
+    pub def replayWallMs(): Option[Int64] = None
+
+    /// The declared denominator of the hosted-provider cohort attribution. A
+    /// cohort hosted dollar figure is attributed to the whole cohort, never
+    /// divided into a per-repository or per-review cost without an explicit
+    /// denominator; this names the denominator the report uses.
+    pub def hostedAttributionDenominator(): String =
+        "cohort of 10 admitted tasks x 2 arms = 20 reviews in 10 distinct repositories"
 
     // ------------------------------------------------------------- cost lines
 

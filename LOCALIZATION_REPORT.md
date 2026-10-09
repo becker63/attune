@@ -6384,3 +6384,315 @@ actions. The law target is corpus-free and part of `//...`.
   new corpus beyond ReviewBench, new models, effort sweeps, MCR and unrelated
   cleanup remain OFF-LIMITS with the held coordination features preserved.
 
+## ReviewBench measurement-boundary correction (VAL-MEAS-001..009, 2026-10-09)
+
+This section is **appended**. Every section above is preserved verbatim, no frozen
+fixture was rewritten, and no earlier number was edited in place. The correction
+is a **provider-free replay** of the SAME frozen review receipts, judge judgments,
+adjudications, arm-isolated corrective observations and pinned golden digests: no
+review, judge, adjudication or corrective session was re-run, and no gold was
+re-acquired beyond the pinned `@reviewbench_gold_*` digests. Two identities are
+published here and nowhere else: the matching semantics
+`reviewbench-corrected-matching-v2` and the full-population view
+`reviewbench-full-population-view-v1`. Where this section **refines a definition**
+(the cohort wall, the first-finding latency, the unique byte count, the replay
+wall and the hosted attribution), the refined value is stated here and the older
+presentation is retained above as labelled history rather than overwritten.
+
+### Frozen provisional bytes are reproduced before any corrected value (VAL-MEAS-001)
+
+`//test/reviewbench_judge:reviewbench_corrected_metrics` re-reads the frozen
+per-task judge references/judgments, the executed joint adjudications and the two
+arm-isolated corrective judgments, reconstructs the ORIGINAL (pre-correction)
+metric table through the one canonical `Attune.Study.ReviewBenchJudge` /
+`Attune.Study.Metrics` path, and asserts it **byte-for-byte** equal to the
+checked-in provisional table **before** it emits any corrected value:
+
+| Artifact | Value |
+| --- | --- |
+| Stage output `provisional-metrics.tsv` | byte-identical to `test/reviewbench_judge/fixtures/executed/report/metrics.tsv` |
+| Assertion | `Assert.assertEq(expected = readText(frozenReportMetricsPath(fixtures)), provisionalText)` |
+| Retention | the provisional table stays labelled history and is never overwritten |
+
+A byte that differs fails the stage rather than being forced. The population
+records of the same run: 146 matched-population references, 241 full-population
+references, 22 blinded candidates over 10 admitted tasks, 5 executed and 5
+corrected adjudications, corrective task
+`haoling_diary-notebook-blog-transformer-24`.
+
+### The effective ordering is pinned and a versioned sensitivity is emitted (VAL-MEAS-003)
+
+The canonical matching resolves an arm's blinded candidates in the reducer's own
+**rank-sorted effective order**. The blinded projection carries no rank, so every
+candidate enters at rank zero and that order is one specific permutation of the
+input — **not** the input order — and it is load-bearing: the first candidate in
+order claims the first still-unclaimed golden reference, so two equal-rank
+candidates that claim overlapping references resolve differently under a different
+order. `capawesome-team_cli_126` is the counterexample, and the pinned assignment
+is published by `//test/reviewbench_judge:reviewbench_order_sensitivity`:
+
+| Order | C2 | C4 | C5 | matched | matched-to-true |
+| --- | --- | --- | --- | --- | --- |
+| frozen effective order (C5, C2, C4) | G1 (tp) | G37 (tp) | G4 (fp) | 3 | 2 |
+| natural input order (C2, C4, C5) | G1 (tp) | G4 (fp) | none | 2 | 1 |
+
+Both rows are the SAME candidates, references and labels; only the effective order
+differs, and the arm's frozen counts move with it. The frozen all-findings
+task-micro valid precision is therefore unchanged by the new version: arm B stays
+the frozen `3/4` (75.0%) and arm A `9/10` (90.0%). The non-overlapping arm A is
+**invariant** under the reorder (C1 → G1 tp, C3 → G4 fp in both orders), so the
+new definition never silently changes an unaffected observation. The stage emits
+`order-sensitivity.tsv` (per candidate, before/after/changed) and
+`order-sensitivity-summary.tsv` (both orderings, the two changed candidates, the
+frozen and alternative arm-B counts, and the invariant flag).
+
+### The arm-isolated `haoling` correction is retained and symmetric (VAL-MEAS-002)
+
+The frozen judge judgments, reference sets, executed joint adjudication and the two
+arm-isolated corrective judgments are read verbatim; the correction substitutes
+ONLY the corrective task's per-arm observations and leaves every other task, arm A
+and the high view unchanged. The corrected matched-population cells are unchanged
+from the section above: arm B all-findings task-micro valid/resolved precision
+`11/12`, repo-macro `17/18`, augmented recall `6/37`; arm A all-findings valid
+precision `9/10`; the high view (which holds none of the `haoling` candidates) is
+byte-identical between the provisional and corrected tables. The `6/37` figure is
+the **matched-population** historical expectation only and is explicitly NOT
+required to reproduce in the full-130 view below.
+
+### The full reference population is materialized independently of candidates (VAL-MEAS-004)
+
+`//test/reviewbench_judge:reviewbench_reference_population` projects each of the
+TEN admitted tasks' pinned golden digests through the same mechanical projection
+the judge action used, independent of any reviewer or judge candidate output, and
+asserts the declared population. All ten tasks contribute, including the four
+whose reviews produced **zero** candidates:
+
+| Task | References | Positives | Medium-or-high | Source eligibility | Review status |
+| --- | --- | --- | --- | --- | --- |
+| EdV4H_usketch-534 | 17 | 13 | 8 | supported-source | failed |
+| caasi_town-zero-6 | 39 | 25 | 13 | supported-source | failed |
+| heyitsaamir_teamscli-31 | 19 | 12 | 2 | supported-source | failed |
+| ls1intum_Artemis-12479 | 20 | 8 | 3 | supported-source | failed |
+| agent-sh_agentsys-298 | 16 | 9 | 3 | supported-source | candidate-bearing |
+| brianc_node-postgres-3650 | 26 | 11 | 5 | supported-source | candidate-bearing |
+| capawesome-team_cli-126 | 43 | 27 | 19 | supported-source | candidate-bearing |
+| haoling_diary-notebook-blog-transformer-24 | 24 | 11 | 4 | supported-source | candidate-bearing |
+| jenkinsci_gitea-plugin-141 | 12 | 6 | 1 | supported-source | candidate-bearing |
+| rulecom_rule-io-sdk-40 | 25 | 8 | 4 | supported-source | candidate-bearing |
+| **total** | **241** | **130** | **62** | | 58 positives on the four failed tasks |
+
+The six candidate-bearing tasks' projections are additionally asserted
+**byte-identical** to the frozen reference records the judge wrote, so the new
+population is the pinned golden bytes rather than a re-encoding.
+
+### Empty-candidate-with-gold, denominator-only sensitivities and eligibility (VAL-MEAS-005)
+
+A task with golden references and zero candidates is a **miss in the denominator**,
+not an undefined or dropped row; an undefined ratio is omitted or `Unavailable`,
+never rendered `0.0%`; and the full-population recall cells are published as
+**denominator-only sensitivities**, kept separate from the matched-population
+ratios and never presented as the final score:
+
+| Arm | View | Known recall (denominator-only) | Version |
+| --- | --- | --- | --- |
+| A | all | 8/130 | reviewbench-full-population-view-v1 |
+| B | all | 10/130 | reviewbench-full-population-view-v1 |
+| A | medium-high | 8/62 | reviewbench-full-population-view-v1 |
+| B | medium-high | 9/62 | reviewbench-full-population-view-v1 |
+| A | high | 2/4 | reviewbench-full-population-view-v1 |
+| B | high | 2/4 | reviewbench-full-population-view-v1 |
+
+The matched-population denominators (72 positives on the six candidate-bearing
+tasks) and the full-population denominator (130) are reported side by side and
+never silently merged. The four failed tasks each carry `0` candidates and their
+gold in the denominator (58 positives), asserted per task. Supported-source
+eligibility and the review status are **separate fields**, and the label/severity
+vocabulary is reported separately: `reference-eligibility.tsv` records
+`supported-source`, `declared-label`, `unknown-label` and `unknown-severity` per
+task, with the unknown populations asserted to be exactly `0` across all ten
+tasks. A golden label outside the declared `tp`/`fp` vocabulary is projected as
+`unknown` rather than folded into `fp`, and the population assertion fails the
+stage rather than letting an unlabelled finding be scored as a negative.
+
+### First-agent-message and first-finding timing are distinguished (VAL-MEAS-006)
+
+The historical driver field `first_finding_ms` is the first **agent message**, not
+the first finding. It is kept under its own honest label (for example capawesome
+arm A `4174 ms`, the frozen value) and the genuine first-committed-finding latency
+is carried as an explicit **`Unavailable`** with its reason
+(`driver field first_finding_ms is the first agent message; no separate
+first-committed-finding timestamp was recorded`), never silently relabelled as a
+finding latency. The median/p95 first-agent-message population is only the reviews
+that actually reported a finding, and that population is carried beside the value
+(A 5 reviews, B 6). The first-evidence latency is the first non-empty read
+(`first_nonempty_read_ms`), a distinct third value.
+
+### Cohort interval, dispatch gaps, bytes, replay wall and attribution (VAL-MEAS-007)
+
+The cohort wall is now the **actual first-start-to-last-end interval** measured
+from the real per-review `start_unix_ms`/`end_unix_ms`, and the per-review
+dispatch gaps are measured from those same real instants — neither is the maximum
+single-review turn wall, which is reported separately as a per-turn bound:
+
+| Regime | Wall (ms) | Meaning |
+| --- | --- | --- |
+| cold-hosted-provider | 35,795 | Qwen 32,513 ms + JEV 3,282 ms measured provider latency |
+| warm-fresh-review-cohort-interval | 4,739,612 | actual first-start-to-last-end interval over 20 reviews; NOT the max single-review turn wall |
+| warm-fresh-review-max-turn-wall | 70,994 | largest single-review turn wall; a bound on one turn, not the cohort interval |
+| warm-fresh-review-dispatch-gap-count | 19 | consecutive review start-instant gaps |
+| warm-fresh-review-dispatch-gap-sum | 4,673,817 | sum of the measured dispatch gaps |
+| warm-fresh-review-dispatch-gap-min / -max | 52 / 1,827,874 | smallest / largest measured dispatch gap |
+| warm-fresh-review-queue / -download / -execute | Unavailable | the driver exposes no such wall field |
+| warm-fresh-review-retry | 0 | no retry performed on any review |
+| fixture-replay-wall | Unavailable | the replay stage does not instrument its own wall; never a fabricated `0` |
+| fixture-replay-actions | 0 provider calls | 0 provider, 0 review, 0 judge, 0 Grit, 0 Theory actions |
+| hosted-attribution-denominator | cohort of 10 admitted tasks × 2 arms = 20 reviews in 10 distinct repositories | the denominator the cohort hosted usage is attributed to |
+
+The previous section's `warm-fresh-review-cohort 70,994` line was the **maximum
+single-review turn wall** presented under a cohort label; it is retained above as
+history and superseded here. The per-review table (`economics-reviews.tsv`) now
+carries start/end/dispatch per review, the retained first-agent-message value, a
+separately labelled `Unavailable` first-finding cell, the first-non-empty-read
+latency and the change/context bytes. `unique_evidence_bytes` is **`Unavailable`**:
+the driver records only the total returned bytes, so the total is never re-counted
+as if unique, and `sumUniqueBytes` returns `Unavailable` as soon as any member is
+unmeasured. Hosted provider usage is attributed to the whole cohort and is never
+divided into a per-repository cost without an explicit denominator.
+
+### Quality and economics propagate from the canonical Flix reducer (VAL-MEAS-008)
+
+Every published table and graph is derived in Flix from the frozen fixtures through
+the one canonical `Attune.Study.ReviewBenchJudge` / `Attune.Study.Metrics` /
+`Attune.Study.ReviewBenchEconomics` path, and the corrected view is a **declared
+input** of the economics stage. `economics-quality.tsv` is the corrected reducer's
+own rows (arm B task-micro `11/12`, repo-macro `17/18` valid and resolved
+precision), `economics-quality-provisional.tsv` retains the biased table,
+`economics-quality-contrast.tsv` puts each old/new value side by side (12 rows),
+`economics-graph.txt` is the reducer's own ASCII output, `economics-regimes.tsv`
+carries the corrected regimes above, and `replay.tsv` reports `0`
+provider/review/judge/grit/theory actions. No report number is authored by hand in
+a stage literal, and the biased provisional table is never the primary view.
+
+### The corrective report is provider-free and its sessions are frozen fixtures
+
+Repairing the measurement boundary exposed one more boundary defect and it is
+fixed here: `//test/reviewbench_judge:reviewbench_corrective_report` declared the
+LIVE corrective cohort (`:reviewbench_corrective`) as a build input, and that
+cohort is downstream of the shared stage sources. Any edit to the stage sources
+therefore invalidated the two live SIWC corrective sessions and re-executed them.
+An explicit build of the stage after such an edit did re-execute them, and both
+turned out **failed closed** in this environment — `result_status malformed`,
+`failure "Missing environment variable: ACCESS_TOKEN."`, `total_tokens
+Unavailable`, `turn_wall_ms` 412 / 271 ms, `judgment_count 0`. **No model call,
+no provider request and no provider response occurred**: the launcher aborted
+before reaching the provider (0 tokens, no model output), so the frozen review,
+judge and adjudication observations and the published correction are untouched.
+
+The stage now declares **no dependency on the live cohort**. The two original
+corrective session receipts and their `adjudged` projections are committed as
+immutable declared fixtures under
+`test/reviewbench_judge/fixtures/executed/corrective/` (the receipts are
+byte-identical to the preserved session outputs, SHA-256
+`860b3817dc430a99103e01132f45e28cd9bf03bcdbceea4383bc788d6a16c60a` (A) and
+`913ef05d26a675acaeb0263c55b13ae3c64c2dc8595afb755825a99f5d6c672d` (B), and were
+never re-derived), and the frozen `adjudged` projections are already byte-identical
+to the committed ones. A replay is therefore always fixture-only, and a
+stage-source change can never invalidate a live producer. The rebuilt outputs are
+**byte-identical** to the published ones for
+`corrective-sessions.tsv` (A `ok` 2/2 41,644 tokens 13,401 ms; B `ok` 2/2 37,097
+tokens 18,744 ms), `corrective-provenance.tsv` (selections 4, old-candidates 4,
+new-candidates 4, corrective-sessions 2, corrective-receipt-paths 2),
+`corrective-counts.tsv`, `corrective-verdicts.tsv` and
+`corrective-old-vs-new.tsv` (old joint A 100.0% → new 100.0%; old joint B 0.0% →
+new **100.0%**, the arm-isolated correction, unchanged). One column-index bug is
+also fixed: `sessionFailed` read the task cell instead of the status cell, so both
+SUCCESSFUL sessions were listed in `corrective-failures.tsv`; that file is now
+correctly empty. The stage additionally pins the correction's symmetry (old A
+2 valid / old B 2 invalid → new A 2 valid / new B 2 valid).
+
+### Focused laws run offline and the raw workspace-audit failure is reported (VAL-MEAS-009)
+
+The corpus-free measurement laws are part of the ordinary offline gate and pass
+with no corpus and no provider:
+
+```
+//test/reviewbench:reviewbench_law                              PASSED
+//test/reviewbench_review:reviewbench_review_law                PASSED
+//test/reviewbench_judge:reviewbench_judge_law                  PASSED (18 tests)
+//test/reviewbench_economics:reviewbench_economics_law          PASSED (25 tests)
+```
+
+The **broad gate** was actually run
+(`bazel test //... --config=remote --jobs=8 --test_output=summary`): **42 tests
+pass and 1 fails**, in 57.1 s, invocation
+`https://app.buildbuddy.io/invocation/e71a91ac-2b1d-42eb-b028-75c3ebd47586`:
+
+```
+Executed 6 out of 43 tests: 42 tests pass and 1 fails locally.
+//test/policy:workspace_audit_test                                       FAILED in 12.2s
+```
+
+The one failure is the **pre-existing, unrelated** raw workspace audit:
+
+```
+//test/policy:workspace_audit_test                              FAILED in 11.9s
+  Assertion failed: expected `accept`, but got `reject`
+  liveWorkspaceIsAccepted (test/policy/AuditLaw.flix:12)
+```
+
+Its cause is reported verbatim: 87 `attune-policy-finding rule=ignored-forbidden`
+findings, **all** under the preserved untracked user notes — 79 under
+`attune/notes/repository-through-time/checkpoints-v2/`, 6 under
+`attune/notes/repository-through-time/inputs/` and 2 under
+`attune/notes/repository-through-time/source-grit-acquisition.diff.txt` (a
+forbidden file is present in the live workspace but no build admits it). Those
+paths are user work and were **not** cleaned, weakened, relabelled or claimed
+green; the audit was not edited to pass. No original producer produced any
+observation: no review, judge, adjudication, acquisition, Grit or Theory run
+occurred, and the only producer re-execution at all was the bounded corrective
+re-execution reported above, which failed closed before reaching the provider
+(0 tokens, no model call) and left every frozen observation unchanged.
+
+### Commands (see `services.yaml`)
+
+`historical_replay` runs the five provider-free stages
+(`reviewbench_reference_population`, `reviewbench_order_sensitivity`,
+`reviewbench_corrected_metrics`, `reviewbench_corrective_report`,
+`reviewbench_economics_report`); `historical_laws` runs the five corpus-free law
+targets. Outputs are read under `bazel-bin/test/reviewbench_judge/<stage>/` and
+`bazel-bin/test/reviewbench_economics/reviewbench_economics_report/`.
+
+### Update history
+
+- Measurement-boundary correction (2026-10-09): the historical scoring/economics
+  boundary was repaired without re-acquiring reviews or judges. The provisional
+  table is now reproduced byte-for-byte before any corrected value; the matching
+  semantics are published as `reviewbench-corrected-matching-v2` with the
+  capawesome equal-rank effective ordering pinned and an order-sensitivity
+  counterexample proving that a different order of the same equal-rank candidates
+  changes the effective match while the unaffected arm stays invariant; the
+  arm-isolated `haoling` correction is retained unchanged and symmetric; all ten
+  admitted tasks' gold populations are materialized independently of candidates
+  (130 positive / 62 medium-or-high / 58 on the four failed tasks); the full-130
+  view is published as the separately versioned
+  `reviewbench-full-population-view-v1` with `A 8/130` and `B 10/130` labelled
+  denominator-only; first-agent-message and first-finding timing, the cohort
+  interval and dispatch gaps, unique versus total bytes, the replay wall and the
+  hosted attribution denominator are now defined honestly, with `Unavailable`
+  where the driver exposes no field; and every table and graph propagates from the
+  canonical Flix reducer. No review, judge, adjudication, corrective session or
+  corpus acquisition was re-run.
+- Corrective-report boundary and one bounded incident (2026-10-09): the declared
+  corrective report stage was found to depend on the LIVE corrective cohort, so a
+  stage-source edit re-executed the two corrective sessions. They failed closed on
+  `Missing environment variable: ACCESS_TOKEN` (0 tokens, no model call, no
+  provider request), leaving the frozen review/judge/adjudication observations and
+  the published correction untouched. The stage now reads the two original
+  corrective session receipts as immutable declared fixtures (SHA-256 pinned,
+  byte-identical to the preserved session outputs, never re-derived) and declares
+  no dependency on the live cohort, so a replay is always provider-free; the
+  rebuilt outputs are byte-identical to the published ones, `sessionFailed`'s
+  column-index bug is fixed so `corrective-failures.tsv` is correctly empty, and
+  the correction's symmetry is now pinned. The raw failure is reported as it
+  happened rather than repaired into a silent success.
+

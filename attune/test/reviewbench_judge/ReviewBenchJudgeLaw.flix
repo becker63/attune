@@ -328,3 +328,123 @@ def aCorrectiveUnresolvedValidityIsRetainedInTheDenominator(): Unit \ Assert = {
     Assert.assertEq(expected = Some((1, 1)),
         ratioOf(ReviewBenchJudge.JudgeMetric.ResolvedPrecision, c))
 }
+
+// ---------------------------------------------------------------------------
+// Measurement-boundary semantics: the versioned matching, the pinned effective
+// order and the separately versioned full-population view (`VAL-MEAS-003`,
+// `VAL-MEAS-004`, `VAL-MEAS-005`).
+// ---------------------------------------------------------------------------
+
+/// A reference set with one false positive (`4`) and one true positive (`37`),
+/// matching the shape of the `capawesome-team_cli-126` overlap.
+def overlapReferences(): List[ReviewBenchJudge.Reference] =
+    reference(4, false, "medium") :: reference(37, true, "medium") :: Nil
+
+@Test
+def theCorrectedMatchingAndFullPopulationViewsAreSeparatelyVersioned(): Unit \ Assert = {
+    Assert.assertEq(expected = "reviewbench-corrected-matching-v2",
+        ReviewBenchJudge.correctedMatchingVersion());
+    Assert.assertEq(expected = "reviewbench-full-population-view-v1",
+        ReviewBenchJudge.fullPopulationViewVersion());
+    // The two version identities are distinct, so a change to the matching never
+    // silently re-labels the population view and vice versa.
+    Assert.assertEq(expected = true,
+        ReviewBenchJudge.correctedMatchingVersion() != ReviewBenchJudge.fullPopulationViewVersion());
+    // The declared full-population definition names its three honest denominators.
+    let definition = ReviewBenchJudge.fullPopulationDefinition();
+    Assert.assertEq(expected = true, String.contains(substr = "130 positives", definition));
+    Assert.assertEq(expected = true, String.contains(substr = "62 medium-or-high", definition));
+    Assert.assertEq(expected = true, String.contains(substr = "58 on the four candidate-less tasks", definition));
+    Assert.assertEq(expected = true, String.contains(substr = "denominator-only sensitivity", definition))
+}
+
+@Test
+def theGenuineFirstFindingLatencyIsDeclaredUnavailable(): Unit \ Assert = {
+    // The driver's `first_finding_ms` is the first AGENT MESSAGE; no separate
+    // first-committed-finding timestamp was recorded, and the reason is declared.
+    let reason = ReviewBenchJudge.firstFindingUnavailableReason();
+    Assert.assertEq(expected = true, String.contains(substr = "first agent message", reason));
+    Assert.assertEq(expected = true, String.contains(substr = "no separate first-committed-finding timestamp", reason))
+}
+
+@Test
+def theEffectiveOrderIsTheDeclaredRankOrder(): Unit \ Assert = {
+    let references = overlapReferences();
+    // C4 matches the overlapping set {4, 37}; C5 matches only {4}.
+    let matches = judged("C4", List#{4, 37}) :: judged("C5", List#{4}) :: Nil;
+    // With distinct ranks the effective order is the ascending rank order, and the
+    // explicit-order entry point agrees with the canonical classification.
+    let c5First = candidate("B", "C5", 1, "medium", "m5");
+    let c4Second = candidate("B", "C4", 2, "medium", "m4");
+    let canonical = ReviewBenchJudge.classifyArm(List#{c4Second, c5First}, references, matches, Nil);
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.MatchedFalse), verdictOf(canonical, "C5"));
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.MatchedTrue), verdictOf(canonical, "C4"));
+    let explicit = ReviewBenchJudge.classifyArmInOrder(List#{c5First, c4Second}, references, matches, Nil);
+    Assert.assertEq(expected = verdictOf(canonical, "C4"), verdictOf(explicit, "C4"));
+    Assert.assertEq(expected = verdictOf(canonical, "C5"), verdictOf(explicit, "C5"));
+    // The reverse rank assignment resolves the SAME equal candidates differently:
+    // C4 takes the false positive and C5 is left with no unclaimed reference.
+    let c4First = candidate("B", "C4", 1, "medium", "m4");
+    let c5Second = candidate("B", "C5", 2, "medium", "m5");
+    let reversed = ReviewBenchJudge.classifyArm(List#{c5Second, c4First}, references, matches, Nil);
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.MatchedFalse), verdictOf(reversed, "C4"));
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.UnmatchedUnresolved), verdictOf(reversed, "C5"));
+    // The same effective match is readable as data, and the two orders differ.
+    let claimed = ReviewBenchJudge.claimedReferences(List#{c4First, c5Second}, references, matches);
+    Assert.assertEq(expected = Some(4), ReviewBenchJudge.claimedIndexOf(claimed, "C4"));
+    Assert.assertEq(expected = None, ReviewBenchJudge.claimedIndexOf(claimed, "C5"));
+    Assert.assertEq(expected = None, ReviewBenchJudge.claimedIndexOf(claimed, "C9"))
+}
+
+@Test
+def theDataViewAndTheClassificationAgreeOnTheSameClaim(): Unit \ Assert = {
+    // `claimedReferences` exposes the same arm-local greedy claim as data; the
+    // canonical classification over the SAME order must agree with it.
+    let references = overlapReferences();
+    let matches = judged("C4", List#{4, 37}) :: judged("C5", List#{4}) :: Nil;
+    let c4 = candidate("B", "C4", 0, "medium", "m4");
+    let c5 = candidate("B", "C5", 0, "medium", "m5");
+    let order = List#{c5, c4};
+    let claimed = ReviewBenchJudge.claimedReferences(order, references, matches);
+    let classified = ReviewBenchJudge.classifyArmInOrder(order, references, matches, Nil);
+    Assert.assertEq(expected = Some(4), ReviewBenchJudge.claimedIndexOf(claimed, "C5"));
+    Assert.assertEq(expected = Some(37), ReviewBenchJudge.claimedIndexOf(claimed, "C4"));
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.MatchedFalse), verdictOf(classified, "C5"));
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.MatchedTrue), verdictOf(classified, "C4"));
+    // The reverse order claims the other way round, in both reductions.
+    let reversed = ReviewBenchJudge.claimedReferences(List#{c4, c5}, references, matches);
+    Assert.assertEq(expected = Some(4), ReviewBenchJudge.claimedIndexOf(reversed, "C4"));
+    Assert.assertEq(expected = None, ReviewBenchJudge.claimedIndexOf(reversed, "C5"));
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.MatchedFalse),
+        verdictOf(ReviewBenchJudge.classifyArmInOrder(List#{c4, c5}, references, matches, Nil), "C4"));
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.UnmatchedUnresolved),
+        verdictOf(ReviewBenchJudge.classifyArmInOrder(List#{c4, c5}, references, matches, Nil), "C5"))
+}
+
+@Test
+def theMatchingOrderIsObservableInTheCountsButNeverChangesTheUnaffectedArm(): Unit \ Assert = {
+    let references = overlapReferences();
+    let matches = judged("C4", List#{4, 37}) :: judged("C5", List#{4}) :: Nil;
+    let c4 = candidate("B", "C4", 0, "medium", "m4");
+    let c5 = candidate("B", "C5", 0, "medium", "m5");
+    let one = ReviewBenchJudge.countsOf(
+        ReviewBenchJudge.classifyArmInOrder(List#{c4, c5}, references, matches, Nil), references, matches);
+    let other = ReviewBenchJudge.countsOf(
+        ReviewBenchJudge.classifyArmInOrder(List#{c5, c4}, references, matches, Nil), references, matches);
+    // The same candidates, references and labels; only the effective order differs.
+    Assert.assertEq(expected = 1, one#matched);
+    Assert.assertEq(expected = 0, one#matchedTrue);
+    Assert.assertEq(expected = 2, other#matched);
+    Assert.assertEq(expected = 1, other#matchedTrue);
+    // An arm whose candidates share no overlapping reference is invariant: its
+    // per-candidate match does not move under any reorder, so the version never
+    // silently changes an unaffected observation.
+    let disjoint = candidate("A", "C1", 0, "medium", "m1") :: candidate("A", "C2", 0, "medium", "m2") :: Nil;
+    let disjointMatches = judged("C1", List#{4}) :: judged("C2", List#{37}) :: Nil;
+    let forward = ReviewBenchJudge.claimedReferences(disjoint, references, disjointMatches);
+    let backward = ReviewBenchJudge.claimedReferences(List.reverse(disjoint), references, disjointMatches);
+    Assert.assertEq(expected = Some(4), ReviewBenchJudge.claimedIndexOf(forward, "C1"));
+    Assert.assertEq(expected = Some(37), ReviewBenchJudge.claimedIndexOf(forward, "C2"));
+    Assert.assertEq(expected = Some(4), ReviewBenchJudge.claimedIndexOf(backward, "C1"));
+    Assert.assertEq(expected = Some(37), ReviewBenchJudge.claimedIndexOf(backward, "C2"))
+}

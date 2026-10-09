@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -230,6 +231,127 @@ public final class AttuneReviewBench {
         summary.append("cells\t").append(cells).append("\n");
         summary.append("status\tok\n");
         return summary.toString();
+    }
+
+    /**
+     * The declared cell vocabulary of the golden-reference projection. It is the
+     * SAME bounded vocabulary the judge driver's own reference projection uses
+     * (a tab, newline or carriage return becomes a space; an absent value is the
+     * empty cell), so a reference population materialized here is byte-identical
+     * to the one the judge action wrote and can be compared against it directly.
+     */
+    private static String cell(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ');
+    }
+
+    private static String scalarText(JsonToken token, JsonParser parser) throws IOException {
+        if (token == null) {
+            return null;
+        }
+        switch (token) {
+            case VALUE_STRING:
+            case VALUE_NUMBER_INT:
+            case VALUE_NUMBER_FLOAT:
+            case VALUE_TRUE:
+            case VALUE_FALSE:
+                return parser.getText();
+            default:
+                return null;
+        }
+    }
+
+    private static Long numberText(JsonToken token, JsonParser parser) throws IOException {
+        String text = scalarText(token, parser);
+        if (text == null) {
+            return null;
+        }
+        try {
+            return Long.valueOf(text.trim());
+        } catch (NumberFormatException error) {
+            return null;
+        }
+    }
+
+    /**
+     * Project one pinned golden JSON file's {@code findings} array into the
+     * declared reference vocabulary and write it to {@code output}: one
+     * {@code reference <TAB> task <TAB> index <TAB> file <TAB> start <TAB> end
+     * <TAB> tp|fp|unknown <TAB> severity <TAB> category <TAB> message} row per
+     * golden finding, in the golden file's own order, exactly as the judge
+     * driver's own reference projection writes it.
+     *
+     * <p>It decides nothing: it selects no task, labels no candidate and judges
+     * nothing. The golden file is read once, the declared scalar columns are
+     * projected in order and every count, severity classification, denominator
+     * and eligibility statement stays in {@code Attune.Study}. A golden label
+     * outside the declared {@code tp}/{@code fp} vocabulary is projected as
+     * {@code unknown} rather than folded into {@code fp}, so an unlabelled
+     * finding can never be scored as a negative; the owner reports the unknown
+     * population separately. The golden file is a declared input of the caller;
+     * this method reads exactly the path it is given and never searches for one.
+     */
+    public static String goldReferences(String task, String goldPath, String output) {
+        List<String> rows = new ArrayList<>();
+        int index = 0;
+        try (InputStream stream = new FileInputStream(goldPath);
+             JsonParser parser = FACTORY.createParser(stream)) {
+            if (parser.nextToken() != JsonToken.START_OBJECT) {
+                return "status\tfailed\terror\tnot a json object";
+            }
+            while (parser.nextToken() != JsonToken.END_OBJECT) {
+                String field = parser.currentName();
+                JsonToken value = parser.nextToken();
+                if ("findings".equals(field) && value == JsonToken.START_ARRAY) {
+                    while (parser.nextToken() == JsonToken.START_OBJECT) {
+                        String file = null;
+                        String label = null;
+                        String severity = null;
+                        String category = null;
+                        String message = null;
+                        Long start = null;
+                        Long end = null;
+                        while (parser.nextToken() != JsonToken.END_OBJECT) {
+                            String name = parser.currentName();
+                            JsonToken token = parser.nextToken();
+                            switch (name) {
+                                case "file": file = scalarText(token, parser); break;
+                                case "start_line": start = numberText(token, parser); break;
+                                case "end_line": end = numberText(token, parser); break;
+                                case "tp_fp": label = scalarText(token, parser); break;
+                                case "severity": severity = scalarText(token, parser); break;
+                                case "category": category = scalarText(token, parser); break;
+                                case "message": message = scalarText(token, parser); break;
+                                default:
+                                    if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
+                                        parser.skipChildren();
+                                    }
+                                    break;
+                            }
+                        }
+                        if (file == null) {
+                            continue;
+                        }
+                        index++;
+                        rows.add("reference\t" + cell(task) + "\t" + index + "\t" + cell(file) + "\t"
+                                + (start == null ? "" : start.toString()) + "\t"
+                                + (end == null ? "" : end.toString()) + "\t"
+                                + ("tp".equalsIgnoreCase(label) ? "tp"
+                                        : ("fp".equalsIgnoreCase(label) ? "fp" : "unknown")) + "\t"
+                                + cell(severity) + "\t" + cell(category) + "\t" + cell(message));
+                    }
+                } else if (value == JsonToken.START_OBJECT || value == JsonToken.START_ARRAY) {
+                    parser.skipChildren();
+                }
+            }
+            Files.writeString(Paths.get(output),
+                    rows.isEmpty() ? "" : String.join("\n", rows) + "\n", StandardCharsets.UTF_8);
+        } catch (Exception error) {
+            return "status\tfailed\terror\t" + escape(String.valueOf(error.getMessage()));
+        }
+        return "references\t" + index + "\nstatus\tok\n";
     }
 
     /** The streaming SHA-256 of one declared file's exact bytes, as lowercase hex. */

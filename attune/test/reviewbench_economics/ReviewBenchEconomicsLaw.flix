@@ -161,25 +161,133 @@ def thePinnedCorpusIdentityIsDeclared(): Unit \ Assert = {
     Assert.assertEq(expected = 83, ReviewBenchEconomics.fastCohortTasks())
 }
 
+/// One synthetic observation with the declared honest labels: `firstAgentMessageMs`
+/// is the driver's historical `first_finding_ms` and `uniqueEvidenceBytes` is
+/// `None` (the driver records only the total returned bytes).
+def observation(
+    task: String,
+    arm: String,
+    status: String,
+    stop: String,
+    findingCount: Int32,
+    startUnixMs: Int64,
+    endUnixMs: Int64,
+    turnWallMs: Int32): ReviewBenchEconomics.Observation =
+    { task = task, arm = arm, status = status, stop = stop, findingCount = findingCount,
+      toolRounds = 3, readCount = 2, readBytes = 100i64, uniqueEvidenceBytes = None,
+      inputCachedTokens = 10i64, inputTokens = 20i64, outputTokens = 5i64, totalTokens = 25i64,
+      firstAgentMessageMs = 100, firstNonemptyReadMs = 120, turnWallMs = turnWallMs,
+      startUnixMs = startUnixMs, endUnixMs = endUnixMs, changeBytes = 10i64, contextBytes = 0i64 }
+
 @Test
 def theArmSummaryRetainsFailuresInThePopulation(): Unit \ Assert = {
     let observations = List#{
-        { task = "t1", arm = "A", status = "ok", stop = "natural", findingCount = 1, toolRounds = 3,
-          readCount = 2, readBytes = 100i64, inputCachedTokens = 10i64, inputTokens = 20i64,
-          outputTokens = 5i64, totalTokens = 25i64, firstFindingMs = 100, turnWallMs = 1000,
-          changeBytes = 10i64, contextBytes = 0i64 },
-        { task = "t2", arm = "A", status = "malformed", stop = "tokens", findingCount = 0, toolRounds = 4,
-          readCount = 1, readBytes = 50i64, inputCachedTokens = 5i64, inputTokens = 10i64,
-          outputTokens = 2i64, totalTokens = 12i64, firstFindingMs = 200, turnWallMs = 2000,
-          changeBytes = 20i64, contextBytes = 0i64 }
+        observation("t1", "A", "ok", "natural", 1, 1000i64, 2000i64, 1000),
+        observation("t2", "A", "malformed", "tokens", 0, 3000i64, 5000i64, 2000)
     };
     let summary = ReviewBenchEconomics.armSummary("A", observations);
     Assert.assertEq(expected = 2, summary#reviews);
     Assert.assertEq(expected = 1, summary#ok);
     Assert.assertEq(expected = 1, summary#failed);
-    // The first-useful-finding population is only the reviews that reported a
-    // finding, carried explicitly beside the value.
+    // The retained historical `first_finding_ms` is reduced over the reviews that
+    // actually reported a finding, under its honest label (first agent message),
+    // and the population is carried explicitly beside it.
     Assert.assertEq(expected = 1, summary#findingReviews);
-    Assert.assertEq(expected = "100/1", ratioText(summary#medianFirstFindingMs));
+    Assert.assertEq(expected = 1, summary#firstFindingPopulation);
+    Assert.assertEq(expected = "100/1", ratioText(summary#medianFirstAgentMessageMs));
     Assert.assertEq(expected = "1500/1", ratioText(summary#medianTurnWallMs))
+}
+
+@Test
+def theGenuineFirstFindingLatencyIsUnavailableRatherThanTheAgentMessage(): Unit \ Assert = {
+    // No separate first-committed-finding timestamp was recorded, so the genuine
+    // first-finding latency is `Unavailable`, never the first agent message.
+    let summary = ReviewBenchEconomics.armSummary("A",
+        List#{observation("t1", "A", "ok", "natural", 1, 1000i64, 2000i64, 1000)});
+    Assert.assertEq(expected = "undefined", ratioText(summary#firstFindingMs));
+    // The honest label of the retained value is the first agent message, and the
+    // population it was reduced over is carried beside it.
+    Assert.assertEq(expected = "100/1", ratioText(summary#medianFirstAgentMessageMs));
+    Assert.assertEq(expected = 1, summary#firstFindingPopulation)
+}
+
+@Test
+def theCohortIntervalIsNotTheMaximumSingleTurnWall(): Unit \ Assert = {
+    // Two reviews that ran back to back: the cohort interval is the real
+    // first-start-to-last-end elapsed time (9000 ms), which is strictly larger
+    // than the largest single-review turn wall (2000 ms).
+    let observations = List#{
+        observation("t1", "A", "ok", "natural", 1, 1000i64, 3000i64, 2000),
+        observation("t2", "A", "ok", "natural", 1, 8000i64, 10000i64, 1500)
+    };
+    Assert.assertEq(expected = Some(9000i64), ReviewBenchEconomics.cohortIntervalMs(observations));
+    // The corrected cohort wall IS the interval, never the max single turn wall.
+    Assert.assertEq(expected = ReviewBenchEconomics.cohortIntervalMs(observations),
+        ReviewBenchEconomics.cohortWallMs(observations));
+    Assert.assertEq(expected = Some(2000), ReviewBenchEconomics.maxTurnWallMs(observations));
+    Assert.assertEq(expected = true,
+        Option.getWithDefault(0i64, ReviewBenchEconomics.cohortIntervalMs(observations))
+            > Int32.toInt64(Option.getWithDefault(0, ReviewBenchEconomics.maxTurnWallMs(observations))))
+}
+
+@Test
+def anEmptyCohortHasNoIntervalAndNoTurnWall(): Unit \ Assert = {
+    Assert.assertEq(expected = None, ReviewBenchEconomics.cohortIntervalMs(Nil));
+    Assert.assertEq(expected = None, ReviewBenchEconomics.maxTurnWallMs(Nil))
+}
+
+@Test
+def theDispatchGapsAreConsecutiveStartInstantsNotTurnWalls(): Unit \ Assert = {
+    // Starts at 1000, 4000, 9000: the measured gaps are 3000 and 5000. They are
+    // differences of real start instants, never the turn walls (2000, 1500).
+    let observations = List#{
+        observation("t1", "A", "ok", "natural", 1, 1000i64, 3000i64, 2000),
+        observation("t2", "A", "ok", "natural", 1, 4000i64, 5500i64, 1500),
+        observation("t3", "A", "ok", "natural", 1, 9000i64, 9500i64, 500)
+    };
+    Assert.assertEq(expected = List#{3000i64, 5000i64}, ReviewBenchEconomics.dispatchGapsMs(observations));
+    Assert.assertEq(expected = 8000i64, ReviewBenchEconomics.sumInt64(ReviewBenchEconomics.dispatchGapsMs(observations)));
+    Assert.assertEq(expected = 3000i64, ReviewBenchEconomics.minInt64(ReviewBenchEconomics.dispatchGapsMs(observations)));
+    Assert.assertEq(expected = 5000i64, ReviewBenchEconomics.maxInt64(ReviewBenchEconomics.dispatchGapsMs(observations)));
+    Assert.assertEq(expected = Nil, ReviewBenchEconomics.dispatchGapsMs(List#{
+        observation("t1", "A", "ok", "natural", 1, 1000i64, 3000i64, 2000)}))
+}
+
+/// The same observation with an explicit distinct-evidence-byte count, so a law
+/// can state the measured and unmeasured cases without record-update syntax.
+def withUniqueBytes(value: Option[Int64], entry: ReviewBenchEconomics.Observation): ReviewBenchEconomics.Observation =
+    { task = entry#task, arm = entry#arm, status = entry#status, stop = entry#stop,
+      findingCount = entry#findingCount, toolRounds = entry#toolRounds, readCount = entry#readCount,
+      readBytes = entry#readBytes, uniqueEvidenceBytes = value,
+      inputCachedTokens = entry#inputCachedTokens, inputTokens = entry#inputTokens,
+      outputTokens = entry#outputTokens, totalTokens = entry#totalTokens,
+      firstAgentMessageMs = entry#firstAgentMessageMs, firstNonemptyReadMs = entry#firstNonemptyReadMs,
+      turnWallMs = entry#turnWallMs, startUnixMs = entry#startUnixMs, endUnixMs = entry#endUnixMs,
+      changeBytes = entry#changeBytes, contextBytes = entry#contextBytes }
+
+@Test
+def anUnmeasuredUniqueEvidenceByteCountIsUnavailableRatherThanTheTotal(): Unit \ Assert = {
+    // The driver records only the total returned bytes, so the unique byte count
+    // is `Unavailable` and is never the total counted once per projected action.
+    let unmeasured = List#{observation("t1", "A", "ok", "natural", 1, 1000i64, 2000i64, 1000)};
+    Assert.assertEq(expected = None, ReviewBenchEconomics.sumUniqueBytes(unmeasured));
+    let measured = List.map(entry -> withUniqueBytes(Some(7i64), entry), unmeasured);
+    Assert.assertEq(expected = Some(7i64), ReviewBenchEconomics.sumUniqueBytes(measured));
+    // One unmeasured member makes the whole total Unavailable rather than zero.
+    let mixed = measured ::: unmeasured;
+    Assert.assertEq(expected = None, ReviewBenchEconomics.sumUniqueBytes(mixed))
+}
+
+@Test
+def theReplayWallIsUnavailableWhileItsActionCountsAreZero(): Unit \ Assert =
+    // The provider-free replay stage does not instrument its own wall, so the wall
+    // is `Unavailable` rather than a fabricated zero; the action counts are zero.
+    Assert.assertEq(expected = None, ReviewBenchEconomics.replayWallMs())
+
+@Test
+def theHostedAttributionDenominatorNamesTheCohort(): Unit \ Assert = {
+    let denominator = ReviewBenchEconomics.hostedAttributionDenominator();
+    Assert.assertEq(expected = true, String.contains(substr = "cohort", denominator));
+    Assert.assertEq(expected = true, String.contains(substr = "20 reviews", denominator));
+    Assert.assertEq(expected = true, String.contains(substr = "10 distinct repositories", denominator))
 }

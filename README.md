@@ -546,7 +546,21 @@ It is reduced provider-free by
 receipts and the frozen owner-judge tree, with corpus-free laws in
 `//test/reviewbench_economics:reviewbench_economics_law`; the corrected first
 exploratory result is flat on the 10-task cohort and no positive outcome is
-claimed.
+claimed. The root report also carries the appended **ReviewBench
+measurement-boundary correction** (`VAL-MEAS-001..009`): the frozen provisional
+table is reproduced byte-for-byte before any corrected value, the matching
+semantics are published as `reviewbench-corrected-matching-v2` with the
+`capawesome-team_cli_126` equal-rank effective ordering pinned and a versioned
+order-sensitivity counterexample, all ten admitted tasks' gold populations are
+materialized independently of candidates through
+`//test/reviewbench_judge:reviewbench_reference_population` (130 positive / 62
+medium-or-high / 58 on the four failed tasks), and the full-130 view is published
+as the separately versioned `reviewbench-full-population-view-v1` with `A 8/130`
+and `B 10/130` labelled denominator-only. First-agent-message versus
+first-finding timing, the cohort interval and dispatch gaps, unique versus total
+bytes, the replay wall and the hosted attribution denominator are now defined
+honestly, with `Unavailable` wherever the frozen receipts expose no field; the
+previous sections and fixtures are preserved and the correction is appended.
 
 ## Scoped SIWC renewal
 
