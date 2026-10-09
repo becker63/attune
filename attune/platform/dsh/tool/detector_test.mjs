@@ -85,14 +85,29 @@ test('the declared detector sidecar is the real ReviewBench tree with both famil
   const lines = declaredSidecar(DECLARED_DETECTOR_SIDECAR)
   assert.ok(lines.length > 0)
   // The real tree's column layout is family, identity, kind, resultKind, detail.
-  const kinds = lines.map((line) => line.split('\t')[2])
+  const rows = lines.map((line) => line.split('\t'))
+  const kinds = rows.map((cells) => cells[2])
   // The supported literal subset refuses what it cannot decide, so the real
-  // world carries refusals and unresolved outcomes and no fabricated hypothesis.
+  // world carries explicit refusals and honest Unknown outcomes alongside the
+  // source-backed hypotheses the coupling correction makes reachable.
   assert.ok(kinds.includes('refused'))
   assert.ok(kinds.includes('unresolved'))
-  assert.ok(!kinds.includes('hypothesis'))
-  const families = new Set(lines.map((line) => line.split('\t')[0]))
+  const families = new Set(rows.map((cells) => cells[0]))
   assert.deepEqual([...families].sort(), ['import-publication', 'required-cli-input'])
+  // Every hypothesis is SOURCE-CLEAN: its identity is the exact declared
+  // `world:relative/path#line` source identity of an admitted file and its
+  // detail names that same repository-relative path. Nothing branches on a
+  // fixture label, a gold line or a repository identity.
+  const hypotheses = rows.filter((cells) => cells[2] === 'hypothesis')
+  for (const cells of hypotheses) {
+    const identity = /^([^:]+):([^#]+)#(\d+)$/.exec(cells[1])
+    assert.ok(identity, `a hypothesis carries no exact source identity: ${cells[1]}`)
+    assert.ok(!/gold|fixture/i.test(cells[1]), `a hypothesis identity is not source-clean: ${cells[1]}`)
+    assert.ok(
+      cells[4].includes(identity[2]),
+      `a hypothesis detail names no source path: ${cells[4]}`,
+    )
+  }
 })
 
 test('the declared visibility names both families in both prospective arms and the diagnostic arm, all hidden', () => {
