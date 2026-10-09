@@ -519,4 +519,39 @@ pub mod Attune.Study.EvidenceSubstrate {
     pub def labelledIdentity(label: String, members: List[String]): Option[String] =
         let canonical = canonicalSurface(members);
         if (List.isEmpty(canonical)) None else Some(label + ":" + String.intercalate("\n", canonical))
+
+    /// The declared exported surface of the contract: one line per exported
+    /// declaration of the narrow contract, followed by one `Name.member` line
+    /// per exported member. It is the Flix declaration of exactly the surface
+    /// the generated TypeScript declaration and the frozen parity fixture
+    /// (`platform/dsh/typert/contract-surface.v1.txt`) must agree on, and its
+    /// canonical form is the contract digest's surface. A member added here
+    /// without regenerating the fixture is a contract change, not a silent
+    /// extension.
+    pub def declaredContractSurface(): List[String] = List#{
+        "EvidenceRef",
+        "EvidenceRef.world", "EvidenceRef.revision", "EvidenceRef.path",
+        "EvidenceRef.sha256", "EvidenceRef.startLine", "EvidenceRef.endLine",
+        "EvidenceRef.bytes", "EvidenceRef.delivery",
+        "AcquisitionObligation",
+        "AcquisitionObligation.operation", "AcquisitionObligation.entrypoint",
+        "AcquisitionObligation.kind", "AcquisitionObligation.worldScope",
+        "AcquisitionObligation.satisfied",
+        "EvidenceObservation",
+        "EvidenceObservation.outcome", "EvidenceObservation.ref",
+        "EvidenceObservation.provenance",
+        "FindingCheckpoint",
+        "FindingCheckpoint.task", "FindingCheckpoint.arm",
+        "FindingCheckpoint.observation", "FindingCheckpoint.sequence",
+        "FindingCheckpoint.elapsedMillis", "FindingCheckpoint.cumulativeTokens",
+        "FindingCheckpoint.world", "FindingCheckpoint.claim",
+        "FindingCheckpoint.severityOrUnknown", "FindingCheckpoint.delivered",
+        "FindingCheckpoint.explored", "FindingCheckpoint.unresolved",
+        "FindingCheckpoint.stopCause",
+        "Hypothesis",
+        "Hypothesis.family", "Hypothesis.identity", "Hypothesis.operation",
+        "Hypothesis.world", "Hypothesis.violation", "Hypothesis.supporting",
+        "Hypothesis.contradicting", "Hypothesis.missingObligations",
+        "Hypothesis.status"
+    }
 }

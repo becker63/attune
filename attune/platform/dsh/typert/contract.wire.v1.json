@@ -1,0 +1,79 @@
+{
+  "contract": "attune.evidence-substrate/1",
+  "dialect": "attune.wire/1",
+  "$defs": {
+    "EvidenceRef": {
+      "type": "object",
+      "properties": {
+        "world": { "type": "string" },
+        "revision": { "type": "string" },
+        "path": { "type": "string" },
+        "sha256": { "type": "string" },
+        "startLine": { "type": "number" },
+        "endLine": { "type": "number" },
+        "bytes": { "type": "number" },
+        "delivery": { "enum": ["complete", "partial", "overflow", "unsupported"] }
+      },
+      "required": ["world", "revision", "path", "sha256", "startLine", "endLine", "bytes", "delivery"],
+      "additionalProperties": false
+    },
+    "AcquisitionObligation": {
+      "type": "object",
+      "properties": {
+        "operation": { "type": "string" },
+        "entrypoint": { "type": "string" },
+        "kind": { "type": "string" },
+        "worldScope": { "type": "string" },
+        "satisfied": { "type": "boolean" }
+      },
+      "required": ["operation", "entrypoint", "kind", "worldScope", "satisfied"],
+      "additionalProperties": false
+    },
+    "EvidenceObservation": {
+      "type": "object",
+      "properties": {
+        "outcome": { "enum": ["WITNESS", "NO-MATCH", "UNKNOWN", "FAILED"] },
+        "ref": { "$ref": "#/$defs/EvidenceRef" },
+        "provenance": { "type": "string" }
+      },
+      "required": ["outcome", "ref", "provenance"],
+      "additionalProperties": false
+    },
+    "FindingCheckpoint": {
+      "type": "object",
+      "properties": {
+        "task": { "type": "string" },
+        "arm": { "type": "string" },
+        "observation": { "type": "number" },
+        "sequence": { "type": "number" },
+        "elapsedMillis": { "type": "number" },
+        "cumulativeTokens": { "type": "number" },
+        "world": { "type": "string" },
+        "claim": { "type": "string" },
+        "severityOrUnknown": { "type": "string" },
+        "delivered": { "type": "array", "items": { "$ref": "#/$defs/EvidenceRef" } },
+        "explored": { "type": "array", "items": { "type": "string" } },
+        "unresolved": { "type": "array", "items": { "type": "string" } },
+        "stopCause": { "type": "string" }
+      },
+      "required": ["task", "arm", "observation", "sequence", "elapsedMillis", "cumulativeTokens", "world", "claim", "severityOrUnknown", "delivered", "explored", "unresolved", "stopCause"],
+      "additionalProperties": false
+    },
+    "Hypothesis": {
+      "type": "object",
+      "properties": {
+        "family": { "enum": ["import-publication", "required-cli-input"] },
+        "identity": { "type": "string" },
+        "operation": { "type": "string" },
+        "world": { "type": "string" },
+        "violation": { "type": "string" },
+        "supporting": { "type": "array", "items": { "$ref": "#/$defs/EvidenceRef" } },
+        "contradicting": { "type": "array", "items": { "$ref": "#/$defs/EvidenceRef" } },
+        "missingObligations": { "type": "array", "items": { "type": "string" } },
+        "status": { "enum": ["Candidate", "NeedsEvidence", "Disproved", "SourceBacked", "Unknown", "Failed"] }
+      },
+      "required": ["family", "identity", "operation", "world", "violation", "supporting", "contradicting", "missingObligations", "status"],
+      "additionalProperties": false
+    }
+  }
+}

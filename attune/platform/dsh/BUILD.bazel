@@ -13,7 +13,7 @@ package can repair a missing dependency, because an undeclared dependency fails
 the action.
 """
 
-load("@aspect_rules_js//js:defs.bzl", "js_binary")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
 load("@dsh_npm//:defs.bzl", "npm_link_all_packages")
 load("//platform/dsh:dsh_agent.bzl", "dsh_agent_run")
 
@@ -111,4 +111,37 @@ dsh_agent_run(
     routes = ["route-siwc-responses.yml"],
     tags = ["manual"],
     task = "Use the bash tool to run: printf 'GATE_OK'. Then reply with the exact command output.",
+)
+
+# --------------------------------------------------------------------------
+# The narrow Typert boundary (VAL-SUB-004/005/006).
+#
+# `typert/` holds the versioned wire contract of the narrow evidence contract,
+# its one authoritative TypeScript public declaration and the tiny
+# supported-subset bridge. The laws below run the REAL pinned
+# `@deepseek-ai/dsh-typert-generator` analyzer/emitter over that fixture and
+# assert parity, determinism, drift detection and fail-closed refusal. They are
+# provider-free and offline, so the ordinary `bazel test //...` gate runs them.
+# --------------------------------------------------------------------------
+
+filegroup(
+    name = "typert_fixture",
+    srcs = [
+        "typert/bridge.mjs",
+        "typert/contract-surface.v1.txt",
+        "typert/contract.wire.v1.json",
+        "typert/packages/attune-evidence/package.json",
+        "typert/packages/attune-evidence/src/index.ts",
+        "typert/packages/attune-evidence/tsconfig.json",
+        "typert/tsconfig.host.json",
+    ],
+)
+
+js_test(
+    name = "typert_generation_test",
+    data = [
+        ":node_modules",
+        ":typert_fixture",
+    ],
+    entry_point = "typert/typert_generation_test.mjs",
 )

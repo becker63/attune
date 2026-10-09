@@ -1,0 +1,53 @@
+# attune.evidence-substrate/1 — the selected canonical exported surface.
+#
+# One line per exported identity: the declaration name, then one `Name.member`
+# line per exported member. This is the frozen parity fixture of the contract:
+# the canonical Flix meaning, the versioned wire fixture and the generated
+# TypeScript declaration must all agree on exactly this surface, and the
+# contract digest is this surface (canonicalized) prefixed by the version.
+#
+# The order is irrelevant (the surface is canonicalized: trimmed, deduplicated
+# and sorted), so the lines are grouped by declaration for readability.
+AcquisitionObligation
+AcquisitionObligation.entrypoint
+AcquisitionObligation.kind
+AcquisitionObligation.operation
+AcquisitionObligation.satisfied
+AcquisitionObligation.worldScope
+EvidenceObservation
+EvidenceObservation.outcome
+EvidenceObservation.provenance
+EvidenceObservation.ref
+EvidenceRef
+EvidenceRef.bytes
+EvidenceRef.delivery
+EvidenceRef.endLine
+EvidenceRef.path
+EvidenceRef.revision
+EvidenceRef.sha256
+EvidenceRef.startLine
+EvidenceRef.world
+FindingCheckpoint
+FindingCheckpoint.arm
+FindingCheckpoint.claim
+FindingCheckpoint.cumulativeTokens
+FindingCheckpoint.delivered
+FindingCheckpoint.elapsedMillis
+FindingCheckpoint.explored
+FindingCheckpoint.observation
+FindingCheckpoint.sequence
+FindingCheckpoint.severityOrUnknown
+FindingCheckpoint.stopCause
+FindingCheckpoint.task
+FindingCheckpoint.unresolved
+FindingCheckpoint.world
+Hypothesis
+Hypothesis.contradicting
+Hypothesis.family
+Hypothesis.identity
+Hypothesis.missingObligations
+Hypothesis.operation
+Hypothesis.status
+Hypothesis.supporting
+Hypothesis.violation
+Hypothesis.world
