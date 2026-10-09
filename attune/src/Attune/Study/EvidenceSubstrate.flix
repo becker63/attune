@@ -322,13 +322,14 @@ pub mod Attune.Study.EvidenceSubstrate {
         case FullSource
     }
 
-    /// One source-backed evidence packet: the obligation it answers, the review
-    /// intent, the supported contract and reachability cues (each `None` when the
-    /// world does not support that cue, never a fabricated placeholder), the exact
-    /// implementation evidence it discloses and the obligations it does not yet
-    /// answer.
+    /// One source-backed evidence packet: the obligation it answers, the exact
+    /// changed entrypoints it is about, the review intent, the supported contract
+    /// and reachability cues (each `None` when the world does not support that
+    /// cue, never a fabricated placeholder), the exact implementation evidence it
+    /// discloses and the obligations it does not yet answer.
     pub type alias EvidencePacket = {
         obligation = AcquisitionObligation,
+        entrypoints = List[String],
         intent = String,
         contract = Option[String],
         reachability = Option[String],
@@ -337,11 +338,14 @@ pub mod Attune.Study.EvidenceSubstrate {
         missing = List[String]
     }
 
-    /// The findings of one packet: it must answer a named obligation, disclose
-    /// evidence, and never claim `FullSource` over evidence that is not complete.
-    /// A cue is either supported or absent; a present cue must not be blank.
+    /// The findings of one packet: it must answer a named obligation, name at
+    /// least one exact changed entrypoint (the mandatory changed-entrypoint
+    /// manifest), disclose evidence, and never claim `FullSource` over evidence
+    /// that is not complete. A cue is either supported or absent; a present cue
+    /// must not be blank.
     pub def packetFindings(packet: EvidencePacket): List[String] =
         (if (String.isEmpty(packet#obligation#operation) or String.isEmpty(packet#intent)) List#{"packet answers no named obligation/intent"} else Nil)
+            ::: (if (List.isEmpty(packet#entrypoints) or List.exists(String.isEmpty, packet#entrypoints)) List#{"packet names no exact changed entrypoint"} else Nil)
             ::: (if (List.isEmpty(packet#evidence)) List#{"packet discloses no evidence"} else Nil)
             ::: (if (packet#disclosure == PacketDisclosure.FullSource and List.exists(ref -> not completeCoverage(ref), packet#evidence)) List#{"packet claims full-source disclosure over incomplete evidence"} else Nil)
             ::: (if (blankCue(packet#contract)) List#{"packet carries a blank contract cue"} else Nil)
@@ -354,12 +358,13 @@ pub mod Attune.Study.EvidenceSubstrate {
         case Some(value) => String.isEmpty(String.trim(value))
     }
 
-    /// The full-source expansion of one packet: the same obligation, intent and
-    /// supported cues, disclosing the complete source of the named region instead
-    /// of the progressive excerpt. It is the honest escape, not a second packet.
+    /// The full-source expansion of one packet: the same obligation, the same
+    /// changed entrypoints, intent and supported cues, disclosing the complete
+    /// source of the named region instead of the progressive excerpt. It is the
+    /// honest escape, not a second packet.
     pub def fullSourceExpansion(packet: EvidencePacket, complete: List[EvidenceRef]): EvidencePacket =
-        { obligation = packet#obligation, intent = packet#intent, contract = packet#contract,
-          reachability = packet#reachability, evidence = complete,
+        { obligation = packet#obligation, entrypoints = packet#entrypoints, intent = packet#intent,
+          contract = packet#contract, reachability = packet#reachability, evidence = complete,
           disclosure = PacketDisclosure.FullSource, missing = packet#missing }
 
     /// The exact identity of one acquired piece of evidence. World, revision,
@@ -552,6 +557,66 @@ pub mod Attune.Study.EvidenceSubstrate {
     /// is: both families are hidden sidecars in BOTH prospective arms, so a
     /// detector output is never the definition of an arm.
     pub def detectorVisibleToModel(_arm: String): Bool = false
+
+    // ------------------------------------------- native and PTC common mode
+
+    /// The two tool-presentation scopes. They are compared on identical fixed
+    /// offline fixtures; neither is a security boundary and no second PTC
+    /// runtime is built.
+    pub enum ToolScope with Eq, ToString {
+        case Native
+        case Ptc
+    }
+
+    pub def toolScopeName(scope: ToolScope): String = match scope {
+        case ToolScope.Native => "native"
+        case ToolScope.Ptc    => "ptc"
+    }
+
+    /// The ONE frozen common tool-presentation mode every prospective arm uses.
+    /// It is frozen before any outcome; the comparison below is what justifies
+    /// choosing it, and a fixture result never establishes an LLM saving.
+    pub def commonToolPresentationMode(): String = "native"
+
+    /// One bounded action executed under one scope: its kind and name, the exact
+    /// input and result digests, the honest status, the provenance the scope
+    /// retained and the deadline and permission the scope ran under.
+    pub type alias ScopeAction = {
+        scope = String,
+        kind = String,
+        name = String,
+        inputDigest = String,
+        resultDigest = String,
+        status = String,
+        provenance = String,
+        deadlineMillis = Int32,
+        permissions = String
+    }
+
+    /// The canonical line of one scope action with the scope label itself
+    /// removed, so two scopes' corresponding actions compare on everything the
+    /// comparison is about: the action, its exact inputs and results, its honest
+    /// status, its retained provenance and the deadline and permission it ran
+    /// under.
+    pub def scopeActionLine(action: ScopeAction): String =
+        String.intercalate("\t", List#{action#kind, action#name, action#inputDigest,
+            action#resultDigest, action#status, action#provenance,
+            Int32.toString(action#deadlineMillis), action#permissions})
+
+    /// The offline native/PTC comparison over identical fixed fixtures: the two
+    /// scopes agree exactly when every corresponding action is identical in kind,
+    /// name, exact input and result digests, status, retained provenance,
+    /// deadline and permissions. A scope that ran under a different deadline or
+    /// permission, or that lost its sub-action provenance, does not agree.
+    pub def scopesAgree(native: List[ScopeAction], ptc: List[ScopeAction]): Bool =
+        List.map(scopeActionLine, native) == List.map(scopeActionLine, ptc)
+
+    /// The findings of one native/PTC comparison: the two scopes must execute the
+    /// same number of actions, and each action must carry a non-empty retained
+    /// provenance (a scope that drops sub-action provenance is not comparable).
+    pub def scopeComparisonFindings(native: List[ScopeAction], ptc: List[ScopeAction]): List[String] =
+        (if (List.length(native) != List.length(ptc)) List#{"the native and PTC scopes executed a different number of actions"} else Nil)
+            ::: (if (List.exists(action -> String.isEmpty(action#provenance), native ::: ptc)) List#{"a scope action retained no provenance"} else Nil)
 
     // ------------------------------------------------------- contract identity
 

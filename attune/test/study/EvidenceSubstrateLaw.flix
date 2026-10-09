@@ -217,22 +217,30 @@ def state(
 
 // ------------------------------------------- packets and reacquisition
 
-/// A packet must answer a named obligation, disclose evidence, and never claim
-/// full-source disclosure over evidence that is not complete.
+/// A packet must answer a named obligation, name at least one exact changed
+/// entrypoint, disclose evidence, and never claim full-source disclosure over
+/// evidence that is not complete.
 @Test
 def aPacketIsSourceBackedAndCannotOverclaim(): Unit \ Assert = {
     let good = packet(Delivery.Complete, PacketDisclosure.Progressive, "review the boundary");
     let empty = packet(Delivery.Complete, PacketDisclosure.Progressive, "");
     let overclaim = packet(Delivery.Partial, PacketDisclosure.FullSource, "review the boundary");
+    let noEntry = { obligation = good#obligation, entrypoints = Nil, intent = good#intent,
+        contract = good#contract, reachability = good#reachability, evidence = good#evidence,
+        disclosure = good#disclosure, missing = good#missing };
     Assert.assertEq(expected = 0, List.length(packetFindings(good)));
     Assert.assertEq(expected = 1, List.length(packetFindings(empty)));
-    Assert.assertEq(expected = 1, List.length(packetFindings(overclaim)))
+    Assert.assertEq(expected = 1, List.length(packetFindings(overclaim)));
+    // The changed-entrypoint manifest is mandatory: a packet that names no exact
+    // changed entrypoint is refused.
+    Assert.assertEq(expected = 1, List.length(packetFindings(noEntry)))
 }
 
 def packet(delivery: Delivery, disclosure: PacketDisclosure, intent: String): EvidencePacket = {
-    obligation = obligation("read-consumer", false), intent = intent, contract = None,
-    reachability = Some("direct caller"), evidence = List#{ref(delivery, 1, 9)},
-    disclosure = disclosure, missing = List#{"read-caller/consumer@head"}
+    obligation = obligation("read-consumer", false), entrypoints = List#{"source/shop.ts"},
+    intent = intent, contract = None, reachability = Some("direct caller"),
+    evidence = List#{ref(delivery, 1, 9)}, disclosure = disclosure,
+    missing = List#{"read-caller/consumer@head"}
 }
 
 /// The full-source escape discloses the complete region without inventing a
