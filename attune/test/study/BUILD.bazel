@@ -124,6 +124,53 @@ native_flix_consumer_test(
     produced = ["//platform/dsh:evidence_reviewbench_runtime"],
 )
 
+# The laws of the ONE ACTUAL native run's own 72-row acquisition ledger
+# (VAL-SUB-010 runtime half, VAL-SUB-012 join). They consume the tree the
+# `evidence_reviewbench_actual_runtime` stage action materialized from the FROZEN
+# immutable record of the authorized remote ReviewBench source smoke, and
+# recompute the whole-run exact-identity memo, the unique/total/repeated byte
+# accounting, the observed instrumentation and the compact
+# scoped-negative/InformationDelta/observational-summary join from the SAME
+# delivery sequence the stage reduced. Every number is derived from the run's own
+# served spans rather than declared as a fixture count, so a repeated delivery is
+# never confused with a physical memo reuse or with independent defect discovery.
+# Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_actual_runtime_law",
+    srcs = [
+        "EvidenceReviewBenchActualRuntimeLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    produced = ["//platform/dsh:evidence_reviewbench_actual_runtime"],
+)
+
+# The laws of the SOURCE-DERIVED detector families (VAL-SUB-013, real-source
+# half). They consume the tree the `evidence_reviewbench_detectors` stage action
+# materialized plus the packet world it extracted from, and re-derive the two
+# families' contract facts from the SAME admitted head bytes with the SAME
+# canonical extraction and run the SAME canonical detectors, so the materialized
+# sidecar is the canonical result of the REAL world rather than a declared
+# fixture. Exactly two families exist, every fact carries a changed-head source
+# identity, the funnel is monotone, and both families are model-hidden in BOTH
+# prospective arms. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_detector_law",
+    srcs = [
+        "EvidenceReviewBenchDetectorLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    produced = [
+        "//platform/dsh:evidence_reviewbench_packets",
+        "//platform/dsh:evidence_reviewbench_detectors",
+    ],
+)
+
 # The laws of the compiled operation: they consume the declared tree the
 # `evidence_operation` stage action materialized and assert it is the canonical
 # Flix reference record of the declared region and the frozen cross-language

@@ -1,11 +1,14 @@
 import attune.reviewbench.AttuneReviewBench
 
 use Attune.Study.EvidenceSubstrate.{
-    ChangedEntrypoint, Delivery, EvidencePacket, EvidenceRef, PacketDisclosure, VerificationRecord,
-    byteAccounting, byteAccountingLine, deliveryName, entrypointFindings, entrypointKey,
-    entrypointLine, evidenceKey, fullSourceExpansion, instrumentationLine, packetFindings,
-    packetInstrumentation, packetManifestFindings, reacquisitionLine, verificationFindings,
-    verificationLine
+    ChangedEntrypoint, CliFact, Delivery, DetectorResult, EvidencePacket, EvidenceRef, FindingFunnel,
+    ImportFact, InformationDelta, PacketDisclosure, RunObservation, ScopedNegative, SemanticState,
+    VerificationRecord, byteAccounting, byteAccountingLine, declaredDependencies, deliveryName,
+    detectImportPublication, detectRequiredCliInput, detectorResultLine, detectorVisibleToModel,
+    entrypointFindings, entrypointKey, entrypointLine, evidenceKey, fullSourceExpansion, funnelFindings,
+    informationDelta, instrumentationLine, packetFindings, packetInstrumentation, packetManifestFindings,
+    reacquisitionLine, runObservationFindings, runObservationLines, sourceCliFacts, sourceImportFacts,
+    verificationFindings, verificationLine
 }
 use Fs.FileRead
 use Fs.FileWrite
@@ -650,8 +653,11 @@ def evidenceReviewbenchPackets(): Unit \ {Assert, IO} = {
         String.intercalate("\t", List#{"changed-unsealed", String.intercalate(",", changedUnsealed)}),
         String.intercalate("\t", List#{"regions", Int32.toString(List.length(regions))}),
         String.intercalate("\t", List#{"worldfiles", Int32.toString(List.length(files))})}));
-    List.foldLeft((_acc, file) -> writeText(outputsDir(), file#id, file#text), (),
-        List.filter(file -> file#status == "admitted", files))
+    // EVERY admitted world file is sealed, including a file the bounded REGION
+    // read policy marks `overflow`: the cap bounds the exact region tiling, it
+    // does not remove source access, so the oversized file stays reachable
+    // through ordinary whole-file exploration.
+    List.foldLeft((_acc, file) -> writeText(outputsDir(), file#id, file#text), (), files)
 }
 
 // ------------------------------------- the runtime acquisition accounting
@@ -704,9 +710,13 @@ def ledgerDecisions(rows: List[LedgerRow], worldId: String, seen: List[String]):
 def countDecision(records: List[String], decision: String): Int32 =
     List.length(List.filter(line -> String.contains(substr = "\t" + decision + "\t", line), records))
 
+/// The obligation identity one packet names, in the SAME canonical
+/// `operation/kind@worldScope` form the substrate's `unresolvedObligations` uses,
+/// read from the `packet-record` layout the packets tree carries (operation at
+/// column 2, kind at column 4, world scope at column 5).
 def obligationOf(rows: List[List[String]], id: String): String = {
     let row = rowById(rows, "packet", id);
-    if (List.isEmpty(row)) "" else field(row, 2) + "\t" + field(row, 4)
+    if (List.isEmpty(row)) "" else field(row, 2) + "/" + field(row, 4) + "@" + field(row, 5)
 }
 
 /// The exact spans the run reached OUTSIDE the initial progressive packet
@@ -719,6 +729,83 @@ def outsideDiscoveries(rows: List[LedgerRow], seen: List[String], count: Int32):
         if (List.memberOf(ledgerKey(row), seen)) outsideDiscoveries(rest, seen, count)
         else outsideDiscoveries(rest, ledgerKey(row) :: seen,
             if (row#disclosure == "progressive") count else count + 1)
+}
+
+def boolText(value: Bool): String = if (value) "true" else "false"
+
+/// The obligation keys one packet names as its own satisfied obligation.
+def obligationKeys(packets: List[List[String]], used: List[String]): List[String] =
+    List.distinct(List.filterMap(id -> {
+        let row = rowById(packets, "packet", id);
+        if (List.isEmpty(row)) None else Some(field(row, 2) + "/" + field(row, 4) + "@" + field(row, 5))
+    }, used))
+
+/// The obligations the used packets still leave unresolved: the `missing` column
+/// of each used packet record (column 11 of the packet-record layout).
+def missingKeys(packets: List[List[String]], used: List[String]): List[String] =
+    List.distinct(List.flatMap(id -> commaList(field(rowById(packets, "packet", id), 11)), used))
+
+/// The scoped negative the run's OWN ledger established: over the declared
+/// region and whole-file population of the world pair, every delivered span is a
+/// declared identity. It names its world, question, admitted relations, searched
+/// population and the run's own bounds, and it never claims universal absence.
+def runtimeNegative(
+    worldId: String,
+    regionRows: List[List[String]],
+    fileRows: List[List[String]],
+    ledger: List[LedgerRow]
+): ScopedNegative = {
+    world = worldId,
+    question = "did the run deliver a span outside the declared region and whole-file population?",
+    relations = List#{"declared-region", "declared-whole-file"},
+    population = Int32.toString(List.length(regionRows)) + " declared regions and "
+        + Int32.toString(List.length(fileRows)) + " declared whole files",
+    bounds = Int32.toString(List.length(ledger)) + " served spans of the run's own ledger",
+    invalidated = false
+}
+
+/// The pure InformationDelta of the run's own delivery: the exact identities
+/// first delivered OUTSIDE the packet's initial progressive evidence are the new
+/// witnesses, the obligation the delivered evidence discharged and the
+/// obligations that stay unresolved come from the SAME compiled packet records.
+/// New bytes and new tool calls are deliberately not inputs.
+def runtimeDelta(
+    ledger: List[LedgerRow],
+    packets: List[List[String]],
+    used: List[String]
+): InformationDelta = {
+    let progressive = List.distinct(List.filterMap(row ->
+        if (row#disclosure == "progressive") Some(ledgerKey(row)) else None, ledger));
+    let all = List.distinct(List.map(ledgerKey, ledger));
+    let satisfied = obligationKeys(packets, used);
+    let unresolved = missingKeys(packets, used);
+    let before: SemanticState = { witnesses = progressive, negatives = Nil, contradictions = Nil,
+        committed = Nil, obligations = satisfied ::: unresolved };
+    let after: SemanticState = { witnesses = all, negatives = Nil, contradictions = Nil,
+        committed = Nil, obligations = unresolved };
+    informationDelta(before, after)
+}
+
+/// The compact observation JOINED from the run's own delivered evidence: the
+/// scoped negative the delivery established, the pure InformationDelta of the
+/// same delivery and the observed mechanical summary. The observed budget is
+/// `Unavailable` because the ledger is a delivery record and carries no usage,
+/// and the committed-findings count is the honest zero of a run that committed
+/// no candidate. It is an OBSERVER: no semantic stopping and no adaptive
+/// planning effect.
+def runtimeObservation(
+    worldId: String,
+    regionRows: List[List[String]],
+    fileRows: List[List[String]],
+    ledger: List[LedgerRow],
+    packets: List[List[String]],
+    used: List[String]
+): RunObservation = {
+    negative = runtimeNegative(worldId, regionRows, fileRows, ledger),
+    delta = runtimeDelta(ledger, packets, used),
+    observedBudget = "Unavailable",
+    committedFindings = 0,
+    unresolved = missingKeys(packets, used)
 }
 
 /// The declared runtime acquisition accounting of ONE native run (VAL-SUB-010
@@ -748,10 +835,13 @@ def evidenceReviewbenchRuntime(): Unit \ {Assert, IO} = {
         + field(row, 4) + "|" + field(row, 5), regionRows);
     // A whole-file disclosure of the complete changed world is a declared
     // identity too: the exact declared file at its declared revision, read whole.
+    // EVERY declared file is a readable identity, including one the bounded REGION
+    // policy marks `overflow`: the cap bounds the region tiling, it does not remove
+    // ordinary source access.
+    let worldFileRows = List.filter(row -> field(row, 0) == "file",
+        List.map(fields, records(readText(required("regions") + "/world-files.tsv"))));
     let fileKeys = List.map(row -> field(row, 2) + "|" + field(row, 3) + "|1|"
-        + field(row, 8) + "|" + field(row, 5), List.filter(row -> field(row, 0) == "file"
-            and field(row, 6) == "admitted", List.map(fields, records(
-                readText(required("regions") + "/world-files.tsv")))));
+        + field(row, 8) + "|" + field(row, 5), worldFileRows);
     let packets = List.map(fields, records(readText(required("regions") + "/packet-records.tsv")));
     let declaredLedger = Option.getWithDefault("", binding("ledger"));
     // A BOUND ledger is the record of an actual native session, so the spans the
@@ -782,6 +872,13 @@ def evidenceReviewbenchRuntime(): Unit \ {Assert, IO} = {
     let observed = {acquisitions = acquisitions, packetUses = List.length(used),
         distinctObligations = List.length(List.distinct(List.map(id -> obligationOf(packets, id), used))),
         outsideNeighborhood = outside};
+    // The compact observation JOINED from the same delivered evidence: the scoped
+    // negative over the declared population, the pure InformationDelta of the
+    // delivery and the observed mechanical summary. It is an observer with no
+    // semantic stopping and no adaptive planning effect, so it never changes a
+    // guard decision and never suppresses a candidate.
+    let observation = runtimeObservation(worldId, regionRows, worldFileRows, ledger, packets, used);
+    Assert.assertEq(expected = Nil, runObservationFindings(observation));
     writeText(outputsDir(), "reacquisition.tsv", renderLines(decisions));
     // The reduced record carries the exact manifest and delivery sequence it was
     // reduced from, so the accounting can be recomputed from this tree alone.
@@ -797,7 +894,119 @@ def evidenceReviewbenchRuntime(): Unit \ {Assert, IO} = {
         String.intercalate("\t", List#{"ledger", Int32.toString(List.length(ledger))}),
         String.intercalate("\t", List#{"acquire", Int32.toString(acquisitions)}),
         String.intercalate("\t", List#{"reuse", Int32.toString(reuses)}),
-        String.intercalate("\t", List#{"outside", outside})}))
+        String.intercalate("\t", List#{"outside", outside})}));
+    writeText(outputsDir(), "runtime-observations.tsv", renderLines(runObservationLines(observation)))
+}
+
+// ------------------------------------- the source-derived detector families
+
+def detectorKind(result: DetectorResult): String = match result {
+    case DetectorResult.Hypothesis(_) => "hypothesis"
+    case DetectorResult.Refused(_)    => "refused"
+    case DetectorResult.Unresolved(_) => "unresolved"
+}
+
+def countDetectorKind(rows: List[(String, DetectorResult)], kind: String): Int32 =
+    List.length(List.filter(row -> match row {
+        case (_, result) => detectorKind(result) == kind
+    }, rows))
+
+def importFactLine(fact: ImportFact, result: DetectorResult): String =
+    String.intercalate("\t", List#{"import-publication", fact#sourceIdentity, fact#importer, fact#target,
+        boolText(fact#published), boolText(fact#allowlisted), boolText(fact#dynamic),
+        boolText(fact#generated), boolText(fact#examined), detectorKind(result),
+        detectorResultLine(result)})
+
+def cliFactLine(fact: CliFact, result: DetectorResult): String =
+    String.intercalate("\t", List#{"required-cli-input", fact#program, fact#requiredInput,
+        fact#consumption, boolText(fact#computed), boolText(fact#injected), boolText(fact#defaulted),
+        boolText(fact#literal), detectorKind(result), detectorResultLine(result)})
+
+/// One declared detector family summary row of the real-source extraction: the
+/// family, the number of source-derived facts and the honest outcome counts.
+def detectorSummaryLine(family: String, results: List[(String, DetectorResult)]): String =
+    String.intercalate("\t", List#{family, Int32.toString(List.length(results)),
+        Int32.toString(countDetectorKind(results, "hypothesis")),
+        Int32.toString(countDetectorKind(results, "refused")),
+        Int32.toString(countDetectorKind(results, "unresolved"))})
+
+/// The declared SOURCE-DERIVED detector stage (VAL-SUB-013, real-source half).
+///
+/// It runs the SAME two canonical detectors over the facts the generic lexical
+/// extraction derives from the ACTUAL admitted bytes of the complete
+/// `capawesome-team_cli_126` head revision: Family A over the literal import
+/// sites of every changed head file resolved against the declared
+/// `package.json` dependency contract, and Family B over the literal
+/// required-consumption preconditions of the same files. Every extracted fact
+/// carries the exact source identity of a changed head file; the extraction
+/// branches only on the syntax of the real bytes and the declared metadata, never
+/// on a repository, task, gold or known-line identity. The real world may
+/// honestly yield zero hypotheses — the supported subset refuses what it cannot
+/// decide rather than fabricating a candidate — and the declared clean/defect/
+/// dynamic fixtures remain the proof of the bounded capability.
+///
+/// The sidecar is model-HIDDEN in BOTH prospective arms: it registers no
+/// model-facing tool and writes nothing to the session. It acquires no corpus,
+/// reads no gold and calls no provider.
+def evidenceReviewbenchDetectors(): Unit \ {Assert, IO} = {
+    let rows = List.map(fields, records(readText(required("world"))));
+    let world = firstRow(rows, "world");
+    Assert.assertEq(expected = false, List.isEmpty(world));
+    let worldId = field(world, 1);
+    let tree = treeRows();
+    let files = sortFiles(loadFiles(world, tree, worldSourcePaths()));
+    let changed = changedPaths(files);
+    let headChanged = List.filter(file -> file#role == "head" and List.memberOf(file#path, changed), files);
+    check(21, not List.isEmpty(headChanged));
+    let dependencies = declaredDependencies(fileText(files, "head", "package.json"));
+    check(22, List.length(dependencies) > 0);
+    let importFacts = List.flatMap(file -> sourceImportFacts(file#revision, file#path, file#text, dependencies), headChanged);
+    let cliFacts = List.flatMap(file -> sourceCliFacts(file#revision, file#path, file#text), headChanged);
+    // Every extracted fact carries the exact source identity of a CHANGED head
+    // file: the identity is `<headRevision>:<path>#<line>`.
+    let headRevision = field(world, 3);
+    let identities = List.map(fact -> fact#sourceIdentity, importFacts) ::: List.map(fact -> fact#program, cliFacts);
+    check(23, List.forAll(identity -> List.exists(path ->
+        String.contains(substr = headRevision + ":" + path + "#", identity), changed), identities));
+    let importResults = List.map(fact -> (fact#sourceIdentity, detectImportPublication(fact)), importFacts);
+    let cliResults = List.map(fact -> (fact#program, detectRequiredCliInput(fact)), cliFacts);
+    let results = importResults ::: cliResults;
+    let hypotheses = countDetectorKind(results, "hypothesis");
+    let refused = countDetectorKind(results, "refused");
+    let unresolved = countDetectorKind(results, "unresolved");
+    let funnel: FindingFunnel = { detected = hypotheses + refused + unresolved, refused = refused,
+        unresolved = unresolved, packetBacked = hypotheses, verified = 0, committed = 0, reported = 0 };
+    Assert.assertEq(expected = Nil, funnelFindings(funnel));
+    writeText(outputsDir(), "reviewbench-detector-facts.tsv", renderLines(
+        List.map(fact -> importFactLine(fact, detectImportPublication(fact)), importFacts)
+            ::: List.map(fact -> cliFactLine(fact, detectRequiredCliInput(fact)), cliFacts)));
+    writeText(outputsDir(), "reviewbench-detector-sidecar.tsv", renderLines(
+        List.map(entry -> match entry {
+            case (identity, result) => List.join("\t", List#{"import-publication", identity,
+                detectorKind(result), detectorResultLine(result)})
+        }, importResults)
+            ::: List.map(entry -> match entry {
+                case (identity, result) => List.join("\t", List#{"required-cli-input", identity,
+                    detectorKind(result), detectorResultLine(result)})
+            }, cliResults)));
+    writeText(outputsDir(), "reviewbench-detector-funnel.tsv", renderLines(List#{
+        String.intercalate("\t", List#{"funnel", "detected", Int32.toString(funnel#detected)}),
+        String.intercalate("\t", List#{"funnel", "refused", Int32.toString(funnel#refused)}),
+        String.intercalate("\t", List#{"funnel", "unresolved", Int32.toString(funnel#unresolved)}),
+        String.intercalate("\t", List#{"funnel", "packetBacked", Int32.toString(funnel#packetBacked)}),
+        String.intercalate("\t", List#{"funnel", "verified", Int32.toString(funnel#verified)}),
+        String.intercalate("\t", List#{"funnel", "committed", Int32.toString(funnel#committed)}),
+        String.intercalate("\t", List#{"funnel", "reported", Int32.toString(funnel#reported)})}));
+    writeText(outputsDir(), "reviewbench-detector-visibility.tsv", renderLines(
+        List.flatMap(family -> List#{
+            List.join("\t", List#{family, "R0_PLAIN", boolText(detectorVisibleToModel("R0_PLAIN"))}),
+            List.join("\t", List#{family, "R1_PACKETS", boolText(detectorVisibleToModel("R1_PACKETS"))})},
+            List#{"import-publication", "required-cli-input"})));
+    writeText(outputsDir(), "reviewbench-detector-summary.tsv", renderLines(List#{
+        detectorSummaryLine("import-publication", importResults),
+        detectorSummaryLine("required-cli-input", cliResults),
+        String.intercalate("\t", List#{"world", worldId, "changed", Int32.toString(List.length(changed)),
+            "dependencies", Int32.toString(List.length(dependencies))})}))
 }
 
 // ---------------------------------------------------------------- dispatcher
@@ -807,5 +1016,6 @@ def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     let stage = stageName();
     if (stage == "evidence_reviewbench_packets") evidenceReviewbenchPackets()
     else if (stage == "evidence_reviewbench_runtime") evidenceReviewbenchRuntime()
+    else if (stage == "evidence_reviewbench_detectors") evidenceReviewbenchDetectors()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }

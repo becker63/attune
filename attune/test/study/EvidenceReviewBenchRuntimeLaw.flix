@@ -144,7 +144,7 @@ def theInstrumentationIsObservedFromTheDeliveredSequence(): Unit \ {Assert, IO} 
     Assert.assertEq(expected = acquires, intOf(field(instrumentation, 0)));
     Assert.assertEq(expected = List.length(used), intOf(field(instrumentation, 1)));
     let packets = List.filter(row -> field(row, 0) == "packet", producedRows("packet-records.tsv"));
-    let obligations = List.distinct(List.map(row -> field(row, 2) + "\t" + field(row, 4),
+    let obligations = List.distinct(List.map(row -> field(row, 2) + "/" + field(row, 4) + "@" + field(row, 5),
         List.filter(row -> List.memberOf(field(row, 1), used), packets)));
     Assert.assertEq(expected = List.length(obligations), intOf(field(instrumentation, 2)));
     Assert.assertEq(expected = "Unavailable", field(instrumentation, 3));

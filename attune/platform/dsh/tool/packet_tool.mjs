@@ -101,8 +101,9 @@ export const PACKET_PARAMETERS = {
     description:
       'The repository-relative path of one declared file of the complete changed ' +
       'world to read whole, or the declared absent value - when the disclosure is ' +
-      'not a whole-file read. A file the declared bounded read policy does not ' +
-      'admit is refused explicitly.',
+      'not a whole-file read. A file the bounded REGION policy marks overflow is ' +
+      'still readable: the cap bounds the exact region tiling, it never removes ' +
+      'ordinary source access.',
   },
   revision: {
     type: 'string',
@@ -353,6 +354,11 @@ export function apply(ctx, config) {
                   endLine: { type: 'number', required: true },
                   sha256: { type: 'string', required: true },
                   bytes: { type: 'number', required: true },
+                  // The bounded-policy status of the served identity: `admitted`
+                  // for a tiled region or an admitted whole file, `overflow` for a
+                  // whole file the region cap does not tile but that stays
+                  // readable through ordinary exploration.
+                  status: { type: 'string', required: true },
                 },
               },
             },

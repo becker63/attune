@@ -249,6 +249,61 @@ native_study_stage(
     stage = "evidence_reviewbench_runtime",
 )
 
+# The declared canonical reduction of the ONE ACTUAL native run's OWN 72-row
+# acquisition ledger (VAL-SUB-010 runtime half). It is the SAME
+# `evidence_reviewbench_runtime` stage action, but its ledger binding is the
+# frozen immutable record of the authorized remote ReviewBench source smoke
+# (`library/dsh-gate-evidence/remote-reviewbench-source-smoke/dsh-home/
+# attune-packet-ledger.tsv`, 72 rows), admitted as a normal declared input rather
+# than a synthetic declared count. The stage therefore reduces the run's ACTUAL
+# delivery sequence: the exact-identity memo, the unique/total/repeated byte
+# accounting, the acquisitions/reuses and the spans reached outside the initial
+# progressive evidence are all derived from real native events, and the compact
+# scoped-negative/InformationDelta/observational-summary join is materialized
+# beside them. It calls no provider and acquires no corpus.
+native_study_stage(
+    name = "evidence_reviewbench_actual_runtime",
+    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
+    input_names = [
+        "ledger",
+        "regions",
+        "world",
+    ],
+    inputs = [
+        "//test/study:fixtures/reviewbench-runtime-ledger.tsv",
+        ":evidence_reviewbench_packets",
+        "//test/study:fixtures/reviewbench-packets.tsv",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    stage = "evidence_reviewbench_runtime",
+)
+
+# The declared SOURCE-DERIVED detector families of the narrow evidence substrate
+# (VAL-SUB-013, real-source half). It is the same `native_study_stage` shape over
+# the integration stage closure and it reads the ACTUAL admitted bytes of the
+# COMPLETE `capawesome-team_cli_126` base/head trees (the same declared
+# `world_sources` the packet world uses). The stage derives the two families'
+# contract facts from the real changed head source with the generic lexical
+# extraction and the declared `package.json` dependency contract, runs the SAME
+# two canonical detectors over them, and materializes the model-HIDDEN sidecar,
+# the honest funnel and the both-arm invisibility record. It acquires no corpus,
+# reads no gold and calls no provider.
+native_study_stage(
+    name = "evidence_reviewbench_detectors",
+    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
+    input_names = [
+        "trees",
+        "world",
+    ],
+    inputs = [
+        "//test/study:fixtures/retained-world-trees.tsv",
+        "//test/study:fixtures/reviewbench-packets.tsv",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    stage = "evidence_reviewbench_detectors",
+    world_sources = ["@attune_retained_world_trees//:all"],
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The

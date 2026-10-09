@@ -84,9 +84,11 @@ export function parseWorldFiles(text) {
 }
 
 /// Resolve one requested WHOLE file of the complete authorized world. An
-/// identity the declared world does not name is refused, and a file the declared
-/// bounded policy does not admit is refused with its explicit `overflow` status
-/// rather than silently truncated or silently missing.
+/// identity the declared world does not name is refused. A file the declared
+/// bounded REGION policy marks `overflow` is still READABLE: the cap bounds the
+/// exact region tiling, it never removes ordinary source access, so the whole
+/// file is served and its bounded-policy status is reported rather than silently
+/// truncating it or silently denying it.
 export function findDeclaredWorldFile(worldFiles, request) {
   const onPath = worldFiles.filter(
     (candidate) =>
@@ -102,16 +104,13 @@ export function findDeclaredWorldFile(worldFiles, request) {
         : `the requested revision is not a declared revision of ${request.path}; declared: ${revisions.join(', ')}`,
     )
   }
-  const row = onPath[0]
-  if (row.status !== 'admitted') {
-    throw new PacketRefusal(`the requested file is declared ${row.status} by the bounded world read policy`)
-  }
-  return row
+  return onPath[0]
 }
 
 /// Read one declared whole file: resolve the sealed copy inside the declared
 /// root, verify its whole-file digest against the declared identity, and report
-/// the exact byte count and line range. No span of it is truncated.
+/// the exact byte count, line range and bounded-policy status. No span of it is
+/// truncated.
 export function readWholeFile(row, { sourceRoot }) {
   const target = resolveWithinRoot(sourceRoot, row.sealedFile)
   const bytes = readFileSync(target)
@@ -129,6 +128,7 @@ export function readWholeFile(row, { sourceRoot }) {
     endLine,
     sha256,
     bytes: bytes.length,
+    status: row.status,
   }
 }
 
@@ -217,5 +217,6 @@ export function readRegion(region, { sourceRoot }) {
     endLine: region.endLine,
     sha256,
     bytes: span.length,
+    status: 'admitted',
   }
 }

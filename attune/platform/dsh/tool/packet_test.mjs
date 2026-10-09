@@ -168,7 +168,7 @@ test('the retained escape reads one exact declared whole file of the complete wo
   assert.ok(value.uniqueBytes > 1000)
 })
 
-test('an undeclared file, an undeclared revision and an overflowed file are refused', async () => {
+test('an undeclared file, an undeclared revision and a non-whole-file request are refused', async () => {
   const definition = registeredDefinition({})
   await assert.rejects(
     definition.execute({ packet: 'p1', disclosure: 'whole-file', path: 'src/absent.ts', revision: HEAD }, {}),
@@ -178,18 +178,29 @@ test('an undeclared file, an undeclared revision and an overflowed file are refu
     definition.execute({ packet: 'p1', disclosure: 'whole-file', path: 'src/index.ts', revision: 'rev-x' }, {}),
     (error) => error.name === 'PacketRefusal' && /not a declared revision/.test(error.message),
   )
-  const overflow = readFileSync(DECLARED_WORLD_FILES, 'utf8').split('\n')
-    .find((line) => line.split('\t')[6] === 'overflow')
-  assert.ok(overflow, 'the declared bounded policy must report an explicit overflow file')
-  const row = overflow.split('\t')
-  await assert.rejects(
-    definition.execute({ packet: 'p1', disclosure: 'whole-file', path: row[3], revision: row[2] }, {}),
-    (error) => error.name === 'PacketRefusal' && /declared overflow/.test(error.message),
-  )
   await assert.rejects(
     definition.execute({ packet: 'p1', disclosure: 'progressive', path: 'src/index.ts', revision: HEAD }, {}),
     (error) => error.name === 'PacketRefusal' && /only a whole-file disclosure/.test(error.message),
   )
+})
+
+test('an overflowed file stays readable whole with its bounded-policy status', async () => {
+  const definition = registeredDefinition({})
+  const overflow = readFileSync(DECLARED_WORLD_FILES, 'utf8').split('\n')
+    .find((line) => line.split('\t')[6] === 'overflow')
+  assert.ok(overflow, 'the declared bounded policy must report an explicit overflow file')
+  const row = overflow.split('\t')
+  // The 131072-byte REGION cap does NOT remove source access: the oversized file
+  // is served whole, digest-verified, with its explicit `overflow` status.
+  const value = await definition.execute(
+    { packet: 'p1', disclosure: 'whole-file', path: row[3], revision: row[2] },
+    {},
+  )
+  assert.equal(value.spans.length, 1)
+  assert.equal(value.spans[0].status, 'overflow')
+  assert.equal(value.spans[0].sha256, row[5])
+  assert.equal(value.spans[0].bytes, Number.parseInt(row[4], 10))
+  assert.equal(value.uniqueBytes, value.totalBytes)
 })
 
 // -------------------------------------------------------------- the boundary

@@ -547,6 +547,50 @@ pub mod Attune.Study.EvidenceSubstrate {
             and List.isEmpty(delta#contradictions) and List.isEmpty(delta#committed)
             and List.isEmpty(delta#discharged)
 
+    // ------------------------------------- the observational summary join
+
+    /// One compact observation JOINED from a run's own delivered evidence: the
+    /// scoped negative that delivery established, the pure InformationDelta of
+    /// the same delivery and the observed mechanical summary (an observed budget
+    /// that is `Unavailable` when the record carries no usage, the committed
+    /// findings and the obligations that stay unresolved). It is an OBSERVER: it
+    /// has no semantic stopping and no adaptive planning effect, so it never
+    /// changes a guard decision or suppresses a candidate.
+    pub type alias RunObservation = {
+        negative = ScopedNegative,
+        delta = InformationDelta,
+        observedBudget = String,
+        committedFindings = Int32,
+        unresolved = List[String]
+    }
+
+    /// The findings of one observation: its scoped negative must be bounded, an
+    /// observation must never claim universal absence, and it must never invent a
+    /// budget the record did not observe.
+    pub def runObservationFindings(observation: RunObservation): List[String] =
+        negativeFindings(observation#negative)
+            ::: (if (universalAbsence(observation#negative)) List#{"the observation claims universal absence"} else Nil)
+            ::: (if (String.isEmpty(observation#observedBudget)) List#{"the observation records no observed budget"} else Nil)
+
+    /// The canonical serialized rows of one observation join: the bounded scoped
+    /// negative, the pure delta members and the observed summary. A materialized
+    /// join and a Flix recomputation compare these exact bytes.
+    pub def runObservationLines(observation: RunObservation): List[String] =
+        let negative = observation#negative;
+        List#{
+            String.intercalate("\t", List#{"negative", negative#world, negative#question,
+                String.intercalate(",", negative#relations), negative#population, negative#bounds,
+                if (negative#invalidated) "true" else "false"}),
+            String.intercalate("\t", List#{"delta", "witnesses", String.intercalate(",", observation#delta#witnesses)}),
+            String.intercalate("\t", List#{"delta", "negatives", String.intercalate(",", observation#delta#negatives)}),
+            String.intercalate("\t", List#{"delta", "contradictions", String.intercalate(",", observation#delta#contradictions)}),
+            String.intercalate("\t", List#{"delta", "committed", String.intercalate(",", observation#delta#committed)}),
+            String.intercalate("\t", List#{"delta", "discharged", String.intercalate(",", observation#delta#discharged)}),
+            String.intercalate("\t", List#{"delta", "unresolved", String.intercalate(",", observation#delta#unresolved)}),
+            String.intercalate("\t", List#{"summary", "observedBudget", observation#observedBudget}),
+            String.intercalate("\t", List#{"summary", "committedFindings", Int32.toString(observation#committedFindings)}),
+            String.intercalate("\t", List#{"summary", "unresolvedObligations", Int32.toString(List.length(observation#unresolved))})}
+
     // ------------------------------------------- packets and reacquisition
 
     /// How much of the source one evidence packet discloses. A packet starts at
@@ -957,6 +1001,215 @@ pub mod Attune.Study.EvidenceSubstrate {
     /// is: both families are hidden sidecars in BOTH prospective arms, so a
     /// detector output is never the definition of an arm.
     pub def detectorVisibleToModel(_arm: String): Bool = false
+
+    // ------------------------------- the generic source-derived detector facts
+
+    /// The two families are SOURCE-DERIVED: this narrow lexical extraction reads
+    /// only the declared source bytes and the declared package metadata and
+    /// produces the contract facts the canonical detectors above consume. Every
+    /// extracted fact carries the exact source identity (revision, path and the
+    /// inclusive head line) of the site it came from, never a fixture label, a
+    /// gold line or a repository identity. A site the supported literal subset
+    /// cannot decide is refused or left `Unknown`; nothing is fabricated to force
+    /// a hypothesis, so an honest zero-fire is a completed result.
+
+    /// The literal quoted value at index `k` of one source line. It is the same
+    /// narrow lexical primitive the changed-entrypoint extractor reuses.
+    def sourceQuotedAt(line: String, k: Int32): Option[String] =
+        match atIndex(String.split(regex = "'", line), 2 * k + 1) {
+            case Some(value) => if (String.isEmpty(value)) None else Some(value)
+            case None        => None
+        }
+
+    def atIndex(xs: List[String], index: Int32): Option[String] = match xs {
+        case value :: rest => if (index == 0) Some(value) else atIndex(rest, index - 1)
+        case Nil           => None
+    }
+
+    /// The declared source lines of one text, without a trailing empty segment.
+    def sourceLinesOf(text: String): List[String] = {
+        let raw = String.lines(text);
+        match List.reverse(raw) {
+            case "" :: rest => List.reverse(rest)
+            case _          => raw
+        }
+    }
+
+    def indexedLinesOf(lines: List[String], index: Int32, acc: List[(Int32, String)]): List[(Int32, String)] =
+        match lines {
+            case Nil          => List.reverse(acc)
+            case line :: rest => indexedLinesOf(rest, index + 1, (index, line) :: acc)
+        }
+
+    /// The maximal identifier prefix of a text (letters, digits, `_` and `$`).
+    def identifierPrefix(text: String): String = identifierPrefixAt(text, 0)
+
+    def identifierPrefixAt(text: String, index: Int32): String =
+        if (index >= String.length(text)) text
+        else {
+            let character = String.charAt(index, text);
+            if (Char.isLetterOrDigit(character) or character == '_' or character == '$')
+                identifierPrefixAt(text, index + 1)
+            else String.take(index, text)
+        }
+
+    /// The name of one literal `if (!<name>)` guard, or nothing. A guard whose
+    /// negation is a call (`if (!isInteractive())`) is not a required-input guard.
+    def guardName(line: String): Option[String] = {
+        let trimmed = String.trim(line);
+        if (not String.startsWith(prefix = "if (!", trimmed)) None
+        else {
+            let rest = String.drop(5, trimmed);
+            let name = identifierPrefix(rest);
+            let after = String.drop(String.length(name), rest);
+            if (String.isEmpty(name) or not String.startsWith(prefix = ")", after)) None else Some(name)
+        }
+    }
+
+    /// The name of one literal option declaration (`<name>: z.<type>()`, or the
+    /// head of a multiline `<name>: z` whose builder continues on the next line),
+    /// or nothing. Only the declared option shape is recognized.
+    def optionName(line: String): Option[String] = {
+        let trimmed = String.trim(line);
+        let name = identifierPrefix(trimmed);
+        if (String.isEmpty(name)) None
+        else {
+            let after = String.drop(String.length(name), trimmed);
+            if (String.startsWith(prefix = ": z.", after) or after == ": z") Some(name) else None
+        }
+    }
+
+    /// The bare package name of a specifier, keeping a scope (`@scope/name`).
+    pub def packageNameOf(specifier: String): String =
+        if (String.startsWith(prefix = "@", specifier))
+            match String.split(regex = "/", specifier) {
+                case scope :: name :: _ => scope + "/" + name
+                case _                  => specifier
+            }
+        else match String.split(regex = "/", specifier) {
+            case first :: _ => first
+            case Nil        => ""
+        }
+
+    /// The declared dependency names of a `package.json` text: the quoted keys of
+    /// its `dependencies` object, read literally between the block's braces. It
+    /// is a bounded literal read of the declared publication metadata, not a JSON
+    /// engine.
+    pub def declaredDependencies(text: String): List[String] =
+        dependencyKeys(sourceLinesOf(text), false, Nil)
+
+    def dependencyKeys(lines: List[String], inBlock: Bool, acc: List[String]): List[String] = match lines {
+        case Nil => List.reverse(acc)
+        case line :: rest =>
+            let trimmed = String.trim(line);
+            if (not inBlock) {
+                if (String.contains(substr = "\"dependencies\"", line) and String.contains(substr = "{", line))
+                    dependencyKeys(rest, true, acc)
+                else dependencyKeys(rest, false, acc)
+            } else if (String.startsWith(prefix = "}", trimmed)) List.reverse(acc)
+            else match String.split(regex = "\"", trimmed) {
+                case _ :: name :: _ => if (String.isEmpty(name))
+                    dependencyKeys(rest, true, acc) else dependencyKeys(rest, true, name :: acc)
+                case _ => dependencyKeys(rest, true, acc)
+            }
+    }
+
+    /// The literal import facts of one source text: a narrow literal static
+    /// `import ... from '<spec>'` or a `await import('<spec>')` command entry. A
+    /// dynamic `import(` whose argument is not a literal string is recorded as a
+    /// computed site. A relative, alias or builtin specifier and a bare package
+    /// the declared `dependencies` do not carry stay UNEXAMINED, because the
+    /// compiled publication target of a local import is a build mapping this
+    /// owner does not assert; only a bare dependency the declared contract
+    /// carries is a covered publication site.
+    pub def sourceImportFacts(
+        revision: String,
+        path: String,
+        text: String,
+        dependencies: List[String]
+    ): List[ImportFact] =
+        List.flatMap(entry -> match entry {
+            case (index, line) => importFactsOfLine(revision, path, index + 1, line, dependencies)
+        }, indexedLinesOf(sourceLinesOf(text), 0, Nil))
+
+    def importFactsOfLine(
+        revision: String,
+        path: String,
+        line: Int32,
+        text: String,
+        dependencies: List[String]
+    ): List[ImportFact] = {
+        let trimmed = String.trim(text);
+        let site =
+            if (String.startsWith(prefix = "import ", trimmed) and String.contains(substr = " from ", trimmed))
+                sourceQuotedAt(text, 0)
+            else if (String.startsWith(prefix = "'", trimmed) and String.contains(substr = "await import(", text))
+                sourceQuotedAt(text, 1)
+            else if (String.contains(substr = "import(", text) and not String.contains(substr = "import('", text))
+                Some("")
+            else None;
+        let identity = revision + ":" + path + "#" + Int32.toString(line);
+        match site {
+            case None => Nil
+            case Some(specifier) =>
+                if (String.isEmpty(specifier))
+                    List#{ { importer = path, target = "(computed)", sourceIdentity = identity,
+                             published = false, allowlisted = false, dynamic = true, generated = false,
+                             examined = false } }
+                else List#{ importFactOf(identity, path, specifier, dependencies) }
+        }
+    }
+
+    def importFactOf(
+        identity: String,
+        path: String,
+        specifier: String,
+        dependencies: List[String]
+    ): ImportFact = {
+        let generated = String.contains(substr = "/generated/", specifier)
+            or String.contains(substr = "/dist/", specifier)
+            or String.contains(substr = "/bundled/", specifier);
+        let bare = not String.startsWith(prefix = ".", specifier)
+            and not String.startsWith(prefix = "@/", specifier)
+            and not String.startsWith(prefix = "node:", specifier);
+        let covered = bare and List.memberOf(packageNameOf(specifier), dependencies);
+        { importer = path, target = specifier, sourceIdentity = identity, published = covered,
+          allowlisted = false, dynamic = false, generated = generated, examined = covered }
+    }
+
+    /// The literal required-consumption facts of one source text: a narrow
+    /// literal `if (!<name>)` precondition and the declared option names of the
+    /// same file. A precondition whose bounded window carries `isInteractive()`
+    /// is INTERACTIVE and a precondition with no literal `process.exit(` is
+    /// UNSUPPORTED control flow, so both stay `Unknown`/refused rather than
+    /// becoming a candidate. A precondition whose guarded name the file does not
+    /// declare as an option is a LOCAL/injected variable rather than a CLI input,
+    /// so it is refused instead of fabricated. Only a supported NON-INTERACTIVE
+    /// precondition whose input the file declares as an option is reported, and a
+    /// declared option covers its own input, so an ordinary member read never
+    /// fabricates a required defect.
+    pub def sourceCliFacts(revision: String, path: String, text: String): List[CliFact] = {
+        let lines = sourceLinesOf(text);
+        let declared = List.filterMap(entry -> match entry {
+            case (_, line) => optionName(line)
+        }, indexedLinesOf(lines, 0, Nil));
+        List.filterMap(entry -> match entry {
+            case (index, line) => match guardName(line) {
+                case None => None
+                case Some(name) =>
+                    let window = List.take(6, List.drop(index + 1, lines));
+                    let interactive = List.exists(l -> String.contains(substr = "isInteractive()", l), window);
+                    let nonInteractive = List.exists(l -> String.contains(substr = "process.exit(", l), window);
+                    let covered = List.memberOf(name, declared);
+                    Some({ program = revision + ":" + path + "#" + Int32.toString(index + 1),
+                           requiredInput = "--" + name,
+                           consumption = if (covered) "options." + name else "undeclared",
+                           computed = false, injected = not covered,
+                           defaulted = nonInteractive and not interactive and covered,
+                           literal = nonInteractive and not interactive })
+            }
+        }, indexedLinesOf(lines, 0, Nil))
+    }
 
     // ------------------------------------------- native and PTC common mode
 
