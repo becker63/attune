@@ -317,6 +317,7 @@ js_binary(
         ":evidence_guard_declaration",
         ":evidence_operation_projection",
         ":evidence_packets",
+        ":evidence_reviewbench_detectors",
         ":evidence_reviewbench_packets",
         ":node_modules",
         ":node_modules/@attune/dsh-evidence-tool",
@@ -425,6 +426,7 @@ dsh_agent_run(
 dsh_agent_run(
     name = "reviewbench_integration_smoke",
     plugin_patches = [
+        "//platform/dsh/tool:attune-detector.plugin.yml",
         "//platform/dsh/tool:attune-packet.plugin.yml",
         "//platform/dsh/tool:attune-tool.plugin.yml",
     ],

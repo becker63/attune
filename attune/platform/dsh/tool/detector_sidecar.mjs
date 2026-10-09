@@ -4,14 +4,22 @@
 /// families' declared outputs as a MODEL-HIDDEN sidecar of one run. It exists so
 /// an actual DSH run carries the detector sidecar without ever presenting it:
 ///
-///  - it READS the declared `detector-sidecar.tsv` tree the pinned compiler's
-///    native Tester materialized from `Attune.Study.EvidenceSubstrate` (the
-///    declared `evidence_detectors` stage action). It computes no detector result
-///    here and restates no rule;
+///  - it READS the declared `reviewbench-detector-sidecar.tsv` tree the pinned
+///    compiler's native Tester materialized from `Attune.Study.EvidenceSubstrate`
+///    over the ACTUAL admitted ReviewBench source (the declared
+///    `evidence_reviewbench_detectors` stage action). It computes no detector
+///    result here and restates no rule;
 ///  - it writes that sidecar to the declared sidecar path and records the
 ///    declared model visibility of each family in this run's arm;
 ///  - it registers NO model-facing tool and writes NOTHING to the session, so a
 ///    detector output is never part of the model-visible stream in either arm.
+///
+/// The declared defaults are the REAL ReviewBench configuration the common
+/// prospective profile uses (the prefixed `reviewbench-detector-*` filenames),
+/// not the earlier synthetic fixture defaults; the existing override hooks
+/// (declared config or the `ATTUNE_DETECTOR_SOURCE`/
+/// `ATTUNE_DETECTOR_VISIBILITY_SOURCE` environment variables) still select the
+/// synthetic declared fixture tree when a law or a diagnostic needs it.
 ///
 /// The detectors are therefore sidecars of BOTH prospective arms, never the
 /// definition of one: R0 is never family A and R1 is never family B.
@@ -21,18 +29,19 @@
 import { copyFileSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-/// The declared detector sidecar tree of the narrow evidence substrate: the
-/// `//platform/dsh:evidence_detector_sidecar` stage action materialized it from
-/// the canonical Flix detector meaning. A run may override the location through
-/// its declared config or the `ATTUNE_DETECTOR_SOURCE` environment variable.
+/// The declared detector sidecar tree of the common prospective profile: the
+/// `//platform/dsh:evidence_reviewbench_detectors` stage action materialized it
+/// from the canonical Flix detector meaning over the ACTUAL admitted ReviewBench
+/// base/head source. A run may override the location through its declared config
+/// or the `ATTUNE_DETECTOR_SOURCE` environment variable.
 export const DECLARED_DETECTOR_SIDECAR = fileURLToPath(
-  new URL('../evidence_detector_sidecar/detector-sidecar.tsv', import.meta.url),
+  new URL('../evidence_reviewbench_detectors/reviewbench-detector-sidecar.tsv', import.meta.url),
 )
 
 /// The declared model-visibility record of the same stage action: the canonical
 /// visibility of each family in each prospective arm, which is false in both.
 export const DECLARED_DETECTOR_VISIBILITY = fileURLToPath(
-  new URL('../evidence_detector_sidecar/detector-visibility.tsv', import.meta.url),
+  new URL('../evidence_reviewbench_detectors/reviewbench-detector-visibility.tsv', import.meta.url),
 )
 
 export const name = 'attune-detector-sidecar'

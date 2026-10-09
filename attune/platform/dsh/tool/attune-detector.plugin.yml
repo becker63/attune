@@ -6,12 +6,13 @@
 # anchors beside this file, so the sidecar resolves from this package's own
 # directory.
 #
-# The sidecar reads the declared `evidence_detector_sidecar` tree that ships
-# beside the profile (the two detector families' outcomes, the honest funnel and
-# the declared visibility the Flix owner materialized) and writes it to a
-# declared sidecar path. It registers NO model-facing tool and writes NOTHING to
-# the session, so a detector output is never part of the model-visible stream in
-# either arm.
+# The sidecar reads the declared `evidence_reviewbench_detectors` tree that ships
+# beside the profile — the two detector families' outcomes, the honest funnel and
+# the declared visibility the Flix owner materialized from the ACTUAL admitted
+# ReviewBench base/head source (the declared DEFAULT of the common prospective
+# profile) — and writes it to a declared sidecar path. It registers NO
+# model-facing tool and writes NOTHING to the session, so a detector output is
+# never part of the model-visible stream in either arm.
 - insert:
     - id: attune-detector-sidecar
       name: ./detector_sidecar.mjs

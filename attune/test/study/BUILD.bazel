@@ -1,5 +1,6 @@
 load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_java_test", "native_flix_test", "native_study_stage")
 load("//platform/build:study.bzl", "attune_admission_probe", "attune_study")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("//test/study:manifest/localization/mapped.bzl", "LOCALIZATION_ANALYSIS")
 load("//test/study:manifest/manifest.bzl", "ANALYSIS")
 
@@ -52,6 +53,28 @@ EVIDENCE_STAGE_SRCS = [
 filegroup(
     name = "evidence_operation_stage_srcs",
     srcs = EVIDENCE_STAGE_SRCS,
+)
+
+# The declared partial import record of the preserved historical Codex trace
+# (VAL-SUB-016). It is consumed by the native law and by the local supported
+# import action of `//platform/dsh/import`.
+filegroup(
+    name = "historical_trace_fixture",
+    srcs = [
+        "fixtures/historical-codex-prompt.txt",
+        "fixtures/historical-codex-trace.tsv",
+    ],
+)
+
+# The same fixture as a rules_js library, so `//platform/dsh/import` can carry it
+# into its runfiles as a declared data dependency.
+js_library(
+    name = "historical-codex-trace_tsv",
+    srcs = [
+        "fixtures/historical-codex-prompt.txt",
+        "fixtures/historical-codex-trace.tsv",
+    ],
+    visibility = ["//platform/dsh/import:__pkg__"],
 )
 
 # The explicit source closure of the ACTUAL retained-ReviewBench stages: the
@@ -414,6 +437,23 @@ native_flix_java_test(
         "@attune_retained_worlds//:usketch-sticky-plugin",
         "fixtures/development-verification.tsv",
     ],
+    java_deps = [],
+)
+
+# The laws of the partial historical Codex trace import (VAL-SUB-016). They read
+# the declared partial import record derived from the preserved historical
+# `codex-app-server` trace (an aggregate receipt, not a raw native session) and
+# assert that only the fields the trace actually recorded carry a value, that
+# every other field is the literal `Unavailable` and never fabricated, that no
+# checkpoint or commit event is invented before an actual claim, that the two
+# recorded findings resolve against the exact HEAD revision while a base-revision
+# path stays unavailable, that the import is marked read-only/imported and not
+# resumable, and that the finite approved population is enumerated against the
+# forty assertions. Provider-free and offline.
+native_flix_java_test(
+    name = "evidence_historical_trace_law",
+    srcs = ["HistoricalCodexTraceLaw.flix"],
+    declared_files = ["fixtures/historical-codex-trace.tsv"],
     java_deps = [],
 )
 

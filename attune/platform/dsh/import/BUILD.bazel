@@ -46,9 +46,29 @@ js_library(
     srcs = [
         "bundle.mjs",
         "exporter.mjs",
+        "historical_trace.mjs",
         "importer.mjs",
         "package.json",
     ],
+)
+
+# The laws of the partial historical Codex trace import (VAL-SUB-016). They build
+# the ONE bounded partial historical bundle from the declared record derived from
+# the preserved historical `codex-app-server` trace, import it through the REAL
+# pinned persistence backend, and assert the manifest states the real harness,
+# keeps every unrecorded identity `Unavailable`, the partial session log carries
+# only recorded content and invents no checkpoint, the import is durable and
+# read-only (no model resume) and an identical reimport is a no-op, and the source
+# path outside the exact world/revision artifacts stays unavailable. Provider-free
+# and offline.
+js_test(
+    name = "historical_import_test",
+    data = [
+        ":import_library",
+        "//platform/dsh:node_modules",
+        "//test/study:historical-codex-trace_tsv",
+    ],
+    entry_point = "historical_import_test.mjs",
 )
 
 # The laws of the import path. They mount the REAL pinned JSONL persistence
@@ -107,5 +127,21 @@ js_binary(
         "//platform/dsh:node_modules",
     ],
     entry_point = "export_bundle.mjs",
+    tags = ["manual"],
+)
+
+# The declared local IMPORT action of the partial historical Codex trace
+# (VAL-SUB-016): it builds the partial historical bundle from a declared record
+# and imports it into a store root through the supported persistence API, then
+# prints the identity/digest it observed. It is `manual` so the ordinary gate
+# never writes a store.
+js_binary(
+    name = "historical_import",
+    data = [
+        ":import_library",
+        "//platform/dsh:node_modules",
+        "//test/study:historical-codex-trace_tsv",
+    ],
+    entry_point = "historical_import.mjs",
     tags = ["manual"],
 )

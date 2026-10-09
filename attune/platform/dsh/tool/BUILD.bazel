@@ -181,16 +181,20 @@ js_test(
 )
 
 # The laws of the model-hidden detector sidecar. They read the REAL
-# `evidence_detector_sidecar` tree the `evidence_detectors` stage action
-# materialized from `Attune.Study.EvidenceSubstrate`, assert the plugin
-# materializes exactly those declared bytes, registers NO model-facing tool and
-# declares both families invisible in BOTH prospective arms. Provider-free and
-# offline.
+# `evidence_reviewbench_detectors` tree the `evidence_reviewbench_detectors`
+# stage action materialized from `Attune.Study.EvidenceSubstrate` over the ACTUAL
+# admitted ReviewBench source (the declared default of the common prospective
+# profile), assert the plugin materializes exactly those declared bytes,
+# registers NO model-facing tool and declares both families invisible in BOTH
+# prospective arms, and assert the existing override hook still selects the
+# synthetic declared fixture tree when a diagnostic asks for it. Provider-free
+# and offline.
 js_test(
     name = "detector_test",
     data = [
         ":evidence_tool_package",
         "//platform/dsh:evidence_detector_sidecar",
+        "//platform/dsh:evidence_reviewbench_detectors",
         "//platform/dsh:node_modules",
     ],
     entry_point = "detector_test.mjs",
