@@ -1,0 +1,4 @@
+fixture	head	supplied	check	result	classification	promptLead
+usketch#534	719aa8340584e714552d132a9ec6971582673a8b	-	sticky-hitTest-vs-withRotation-rotated-pointer	Unavailable	development	false
+teamscli#31	d82facdeb7c7148ef8938d724774fc2465d35a66	ec0e9d9a60bff66e8b28af4656803836c22001dd	wrapAction-exit0-vs-menu-return	Unavailable	development	false
+Artemis#12479	237b36560d91b57ec1b8948b4425cdba7ff25bb3	-	timestamp-subquery-exercise-user-vs-outer	Unknown	development	false

@@ -1,0 +1,162 @@
+/// The one native DSH tool of the narrow evidence substrate.
+///
+/// This is an ordinary Cordis plugin registering ONE model-facing tool through
+/// the real DSH `defineTool`/tool-registry surface. It is the smallest genuine
+/// path between the generated evidence contract and a DSH execution:
+///
+///  - its parameter spec is projected from the generated wire contract by the
+///    tiny supported-subset bridge (`tool_schema.mjs`), so an unsupported
+///    constraint is refused rather than widened;
+///  - its body enforces the runtime world/range/permission boundary
+///    (`boundary.mjs`) BEFORE any sealed source byte is read;
+///  - it validates the acquired document against the generated contract
+///    factories when the declared package is present, and returns the canonical
+///    reference projection the Flix operation also produces.
+///
+/// Typert does not register this tool and this plugin does not consume the
+/// Typert declaration as a tool schema; the two schema systems stay distinct and
+/// the bridge is the only lowering step between them. The tool acquires
+/// evidence; it decides no defect and no policy.
+///
+/// @module attune.dsh.evidence-tool
+
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+
+import { defineTool } from '@deepseek-ai/dsh-tools'
+
+import { BoundaryRefusal, acquireRegion, parseWorldManifest } from './boundary.mjs'
+import { defineToolParametersFromWire } from './tool_schema.mjs'
+
+/// The frozen versioned wire contract of the narrow evidence substrate. It is a
+/// declared input of every action that loads this plugin.
+export const WIRE = JSON.parse(
+  readFileSync(new URL('../typert/contract.wire.v1.json', import.meta.url), 'utf8'),
+)
+
+/// The model-facing parameters are a NAMED SUBSET of the generated contract: the
+/// exact region identity a bounded acquisition reads. The tool computes the
+/// digest and the completeness itself, so the model never supplies either.
+export const PARAMETER_MEMBERS = [
+  'EvidenceRef.world',
+  'EvidenceRef.revision',
+  'EvidenceRef.path',
+  'EvidenceRef.startLine',
+  'EvidenceRef.endLine',
+]
+
+/// The eight canonical reference-projection fields, in the order the Flix
+/// operation emits them. The projection is derived from the acquired region,
+/// never authored separately.
+export const PROJECTION_FIELDS = [
+  'world',
+  'revision',
+  'path',
+  'sha256',
+  'startLine',
+  'endLine',
+  'bytes',
+  'delivery',
+]
+
+export const name = 'attune-evidence-tool'
+export const inject = ['tools']
+
+function requireDeclared(config, key, envName) {
+  const value = config?.[key] ?? process.env[envName]
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new BoundaryRefusal(`the ${key} is not declared for this run`)
+  }
+  return value
+}
+
+/// Validate the acquired reference document against the generated contract
+/// factories of the declared package, so the tool can never emit a document the
+/// generated contract would reject.
+async function validateAgainstGeneratedContract(acquired, packageRoot) {
+  const module = await import(pathToFileURL(join(packageRoot, 'lib', 'typert.host.js')).href)
+  if (typeof module.EvidenceRef !== 'function') {
+    throw new BoundaryRefusal('the declared generated contract does not expose the EvidenceRef factory')
+  }
+  const document = {
+    world: acquired.world,
+    revision: acquired.revision,
+    path: acquired.path,
+    sha256: acquired.sha256,
+    startLine: acquired.startLine,
+    endLine: acquired.endLine,
+    bytes: acquired.bytes,
+    delivery: acquired.delivery,
+  }
+  const result = module.EvidenceRef().safeParse(document)
+  if (!result.success) {
+    throw new BoundaryRefusal('the acquired reference is not a valid generated-contract document')
+  }
+}
+
+/// Acquire one exact declared region and return the canonical projection.
+export async function executeEvidenceOperation(args, config) {
+  const manifestPath = requireDeclared(config, 'worldManifest', 'ATTUNE_EVIDENCE_WORLD')
+  const sourceRoot = requireDeclared(config, 'sourceRoot', 'ATTUNE_EVIDENCE_SOURCE_ROOT')
+  const manifest = parseWorldManifest(readFileSync(manifestPath, 'utf8'))
+  const acquired = acquireRegion(args, { manifest, sourceRoot })
+  const packageRoot = config?.contractPackage ?? process.env.ATTUNE_EVIDENCE_CONTRACT
+  if (typeof packageRoot === 'string' && packageRoot.length > 0) {
+    // The typed document (numeric range/byte counts) is what the generated
+    // contract validates; the model-facing projection is the string form below.
+    await validateAgainstGeneratedContract(acquired, packageRoot)
+  }
+  // The projection is the eight canonical reference fields as strings, exactly
+  // the shape the Flix `referenceProjection` emits and the declared output
+  // schema describes.
+  return {
+    world: acquired.world,
+    revision: acquired.revision,
+    path: acquired.path,
+    sha256: acquired.sha256,
+    startLine: String(acquired.startLine),
+    endLine: String(acquired.endLine),
+    bytes: String(acquired.bytes),
+    delivery: acquired.delivery,
+  }
+}
+
+/// Register the tool on `ctx.tools`. The parameter spec is projected from the
+/// generated contract at apply time, so a drifted or unsupported contract fails
+/// the load instead of registering a widened tool.
+export function apply(ctx, config) {
+  const { contract, parameters } = defineToolParametersFromWire(WIRE, PARAMETER_MEMBERS)
+  ctx.tools.register(
+    defineTool({
+      name: 'attune_evidence_operation',
+      description:
+        'Acquire the exact declared source region of one evidence world. ' +
+        'Returns the canonical evidence reference (world, revision, path, digest, ' +
+        'range, byte count and delivery). It reads only a region the declared world ' +
+        'names, and refuses an out-of-scope or denied request before reading source.',
+      parameters,
+      output: {
+        schema: {
+          type: 'object',
+          additionalProperties: false,
+          properties: Object.fromEntries(
+            PROJECTION_FIELDS.map((field) => [field, { type: 'string', required: true }]),
+          ),
+        },
+        render: (_args, value) => [
+          {
+            type: 'text',
+            text:
+              `Acquired ${value.delivery} evidence ${value.path}@${value.revision} ` +
+              `lines ${value.startLine}-${value.endLine} (${value.bytes} bytes, ${value.sha256.slice(0, 12)}...).`,
+          },
+        ],
+      },
+      execute(args) {
+        return executeEvidenceOperation(args, config)
+      },
+    }),
+  )
+  return contract
+}

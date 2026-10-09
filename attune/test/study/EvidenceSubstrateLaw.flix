@@ -2,11 +2,11 @@ use Attune.Coverage.Outcome
 use Attune.Study.EvidenceSubstrate.{
     AcquisitionObligation, Caps, CliFact, Consumption, Delivery, DetectorResult, EvidenceObservation,
     EvidencePacket, EvidenceRef, FindingCheckpoint, FindingFunnel, ImportFact, PacketDisclosure,
-    ScopedNegative, SemanticState, canonicalSurface, checkpointFindings, checkpointLine,
+    PreflightArm, ScopedNegative, SemanticState, canonicalSurface, checkpointFindings, checkpointLine,
     completeCoverage, contractDigest, deltaIsEmpty, detectImportPublication, detectRequiredCliInput,
     detectorVisibleToModel, finalizationReserve, frozenCaps, fullSourceExpansion, funnelFindings,
     guardDecision, GuardDecision, informationDelta, labelledIdentity, negativeFindings,
-    observationIsNegative, overshoot, packetFindings, reacquisitionPlan, refFindings,
+    observationIsNegative, offlinePreflight, overshoot, packetFindings, reacquisitionPlan, refFindings,
     universalAbsence, unresolvedObligations
 }
 
@@ -245,6 +245,56 @@ def theFullSourceEscapeKeepsTheObligationAndIntent(): Unit \ Assert = {
     Assert.assertEq(expected = progressive#intent, full#intent);
     Assert.assertEq(expected = PacketDisclosure.FullSource, full#disclosure);
     Assert.assertEq(expected = 0, List.length(packetFindings(full)))
+}
+
+// --------------------------------------- offline equal-byte preflight
+
+/// The offline preflight compares two representations over the SAME exact bytes:
+/// a passive additional-context arm and a substitutive arm that names the
+/// acquisition obligation its evidence answers. It reports the supplied byte
+/// total and the exact-byte equality, and it never fabricates an observed use or
+/// a measured displacement from a fixture.
+@Test
+def theOfflinePreflightComparesEqualExactBytes(): Unit \ Assert = {
+    let evidence = List#{ref(Delivery.Complete, 1, 9), ref(Delivery.Complete, 20, 30)};
+    let passive: PreflightArm = { label = "passive", evidence = evidence, obligation = None };
+    let substitutive: PreflightArm = {
+        label = "substitutive",
+        evidence = evidence,
+        obligation = Some(obligation("read-consumer", false))
+    };
+    let result = offlinePreflight(passive, substitutive);
+    Assert.assertEq(expected = true, result#sameExactBytes);
+    Assert.assertEq(expected = 20, result#suppliedBytes);
+    Assert.assertEq(expected = 0, result#passiveObligations);
+    Assert.assertEq(expected = 1, result#substitutiveObligations);
+    Assert.assertEq(expected = true, result#satisfiedByPhysicalEvidence);
+    Assert.assertEq(expected = "Unavailable", result#observedUse);
+    Assert.assertEq(expected = "Unavailable", result#displacement)
+}
+
+/// The preflight fails its equality when the arms supply different bytes, and an
+/// obligation is never satisfied by model understanding or by incomplete
+/// evidence: a substitutive arm whose evidence is partial is not satisfied.
+@Test
+def theOfflinePreflightRefusesUnequalBytesAndUnprovenObligations(): Unit \ Assert = {
+    let passive: PreflightArm = {
+        label = "passive", evidence = List#{ref(Delivery.Complete, 1, 9)}, obligation = None
+    };
+    let unequal: PreflightArm = {
+        label = "substitutive", evidence = List#{ref(Delivery.Complete, 1, 40)},
+        obligation = Some(obligation("read-consumer", false))
+    };
+    Assert.assertEq(expected = false, offlinePreflight(passive, unequal)#sameExactBytes);
+    // Same exact bytes, but the evidence is only partial: the obligation is not
+    // satisfied by physical exact evidence.
+    let partial: PreflightArm = {
+        label = "substitutive", evidence = List#{ref(Delivery.Partial, 1, 9)},
+        obligation = Some(obligation("read-consumer", false))
+    };
+    let result = offlinePreflight(passive, partial);
+    Assert.assertEq(expected = true, result#sameExactBytes);
+    Assert.assertEq(expected = false, result#satisfiedByPhysicalEvidence)
 }
 
 /// Exact physical reacquisition is reused by exact identity, and a request that

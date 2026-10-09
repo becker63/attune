@@ -380,6 +380,65 @@ pub mod Attune.Study.EvidenceSubstrate {
          List.filter(ref -> not List.memberOf(evidenceKey(ref), have), requested))
     }
 
+    // --------------------------------------- offline equal-byte preflight
+
+    /// One arm of the offline preflight: a representation over one exact set of
+    /// delivered evidence. A passive additional-context arm names no acquisition
+    /// obligation; a substitutive arm names the obligation its evidence answers.
+    pub type alias PreflightArm = {
+        label = String,
+        evidence = List[EvidenceRef],
+        obligation = Option[AcquisitionObligation]
+    }
+
+    /// The offline equal-exact-byte preflight of passive additional context
+    /// versus a named obligation-satisfaction representation. It reports only
+    /// what is observable offline: the supplied byte total, whether the two arms
+    /// supply the SAME exact bytes, how many obligations each names and whether
+    /// the substitutive obligation is satisfied by PHYSICAL exact evidence. The
+    /// observed evidence use and the measured displacement stay `Unavailable`
+    /// offline, because a fixture result is not an LLM saving and must never be
+    /// fabricated into one.
+    pub type alias PreflightResult = {
+        suppliedBytes = Int32,
+        sameExactBytes = Bool,
+        passiveObligations = Int32,
+        substitutiveObligations = Int32,
+        satisfiedByPhysicalEvidence = Bool,
+        observedUse = String,
+        displacement = String
+    }
+
+    def armKeys(arm: PreflightArm): List[String] = List.sort(List.map(evidenceKey, arm#evidence))
+
+    def armBytes(arm: PreflightArm): Int32 = List.foldLeft((total, ref) -> total + ref#bytes, 0, arm#evidence)
+
+    def namesObligation(arm: PreflightArm): Bool = match arm#obligation {
+        case None    => false
+        case Some(_) => true
+    }
+
+    /// Whether the substitutive arm's named obligation is satisfied by physical
+    /// exact evidence: it names an obligation, discloses evidence, and every
+    /// piece of that evidence is complete coverage. Model understanding never
+    /// satisfies it.
+    def physicallySatisfied(arm: PreflightArm): Bool =
+        namesObligation(arm) and not List.isEmpty(arm#evidence)
+            and List.isEmpty(List.filter(ref -> not completeCoverage(ref), arm#evidence))
+
+    /// The offline preflight of two representations over the SAME exact bytes.
+    /// The two arms must supply byte-equal evidence, so any later measured
+    /// difference is attributable to the representation and not to extra bytes.
+    pub def offlinePreflight(passive: PreflightArm, substitutive: PreflightArm): PreflightResult = {
+        suppliedBytes = armBytes(passive),
+        sameExactBytes = armKeys(passive) == armKeys(substitutive),
+        passiveObligations = if (namesObligation(passive)) 1 else 0,
+        substitutiveObligations = if (namesObligation(substitutive)) 1 else 0,
+        satisfiedByPhysicalEvidence = physicallySatisfied(substitutive),
+        observedUse = "Unavailable",
+        displacement = "Unavailable"
+    }
+
     // ------------------------------------------------------- the finding funnel
 
     /// The observable finding funnel of one arm: how many candidate hypotheses

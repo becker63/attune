@@ -1,0 +1,2 @@
+defines	source/shop.ts	Shop
+calls	source/shop.ts	cart

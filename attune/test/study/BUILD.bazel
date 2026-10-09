@@ -67,6 +67,46 @@ native_flix_java_test(
     java_deps = [],
 )
 
+# The laws of the one bounded Flix evidence operation. They read the ACTUAL
+# declared source bytes and the declared world/facts fixtures under
+# `platform/dsh/tool/fixtures/` through declared bindings, run the canonical
+# operation and assert its canonical projection against the same frozen parity
+# target the native DSH tool's acquisition projection is compared against by
+# `//platform/dsh:evidence_tool_test`. The fixture population is declared one
+# file at a time so the live workspace audit sees the exact declared inputs.
+native_flix_java_test(
+    name = "evidence_operation_law",
+    srcs = [
+        "EvidenceOperationLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceOperation.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "//platform/dsh:tool/fixtures/expected-observation-projection.tsv",
+        "//platform/dsh:tool/fixtures/expected-reference-projection.tsv",
+        "//platform/dsh:tool/fixtures/facts.tsv",
+        "//platform/dsh:tool/fixtures/source/shop.ts",
+        "//platform/dsh:tool/fixtures/world.tsv",
+    ],
+    java_deps = [],
+)
+
+# The laws of the three exposed development verification fixtures (VAL-SUB-018).
+# They assert over the declared fixture record that each fixture names an exact
+# head and a concrete feasible check, records an honest `Unavailable`/`Unknown`
+# result rather than a validated true positive, keeps the immutable historical
+# `teamscli` pin beside the separate supplied exposed revision, and injects no
+# hypothesis as a retrospective prompt lead. Provider-free and offline.
+native_flix_java_test(
+    name = "development_verification_law",
+    srcs = ["DevelopmentVerificationLaw.flix"],
+    declared_files = ["fixtures/development-verification.tsv"],
+    java_deps = [],
+)
+
 # The one declared result reducer compiles the same dispatcher plus the Parquet
 # reducer law, which imports the typed Arrow seam. The seam jar is therefore a
 # declared dependency of the reducer stage alone, not of every study stage.

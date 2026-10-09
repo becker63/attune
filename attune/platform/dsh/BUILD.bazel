@@ -216,3 +216,48 @@ js_test(
     ],
     entry_point = "typert/package_test.mjs",
 )
+
+# --------------------------------------------------------------------------
+# The one native DSH tool of the narrow evidence substrate (VAL-SUB-002/003/007).
+#
+# `tool/` holds the authored Cordis plugin that registers ONE `defineTool` tool,
+# the tiny supported-subset bridge that projects the generated contract into the
+# DSH parameter dialect, and the runtime world/range/permission boundary. The law
+# runs the REAL `defineTool` definition the pinned `@deepseek-ai/dsh-tools`
+# surface produced over the declared world manifest, the declared sealed source
+# and the frozen cross-language parity target the Flix `evidence_operation_law`
+# also asserts. It is provider-free and offline, so the ordinary `bazel test //...`
+# gate runs it. The plugin reads the generated contract package through the
+# declared `typert_package_a` output; nothing is fetched or installed.
+# --------------------------------------------------------------------------
+
+filegroup(
+    name = "evidence_tool",
+    srcs = [
+        "tool/boundary.mjs",
+        "tool/evidence_tool.mjs",
+        "tool/tool_schema.mjs",
+    ],
+)
+
+filegroup(
+    name = "evidence_tool_fixtures",
+    srcs = [
+        "tool/fixtures/boundary-world.tsv",
+        "tool/fixtures/expected-reference-projection.tsv",
+        "tool/fixtures/source/shop.ts",
+    ],
+)
+
+js_test(
+    name = "evidence_tool_test",
+    data = [
+        ":evidence_tool",
+        ":evidence_tool_fixtures",
+        ":node_modules",
+        ":typert_package_a",
+        "typert/bridge.mjs",
+        "typert/contract.wire.v1.json",
+    ],
+    entry_point = "tool/tool_test.mjs",
+)

@@ -153,6 +153,7 @@ dsh_npm.npm_translate_lock(
     # copy and changes no other dependency's resolution.
     public_hoist_packages = {
         "@deepseek-ai/cordis@4.0.4": ["platform/dsh"],
+        "@deepseek-ai/dsh-tools@0.2.0-rc.2": ["platform/dsh"],
         "node-addon-require-builtin-linux-arm64-gnu@0.1.7": ["platform/dsh"],
         "node-addon-system-linux-arm64@0.1.2": ["platform/dsh"],
         "typescript@6.0.3": ["platform/dsh"],
