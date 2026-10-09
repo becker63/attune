@@ -34,6 +34,7 @@ import {
   normalizedProviderTotal,
   observe,
   parseDecisionMatrix,
+  restoreState,
 } from './guard.mjs'
 
 const TMP = process.env.TEST_TMPDIR ?? tmpdir()
@@ -230,8 +231,74 @@ test('the guard stops the live loop and writes the canonical budget-stop record 
   delete process.env.ATTUNE_GUARD_UNRESOLVED
 })
 
-test('an infrastructure failure stops the loop with the honest cause', () => {
-  const dir = join(TMP, 'attune-guard-infra')
+test('a resumed session restores the consumption it already spent', () => {
+  const declaration = loadGuardDeclaration(DECLARED_GUARD_DECLARATION)
+  // The session's OWN persisted event log: two model rounds and their usage.
+  const persisted = [
+    { type: 'user/message', data: {} },
+    { type: 'assistant/message', data: { usage: { inputTokens: 100, outputTokens: 20 } } },
+    { type: 'tool/call', data: {} },
+    { type: 'assistant/message', data: { usage: { inputTokens: 50, cacheReadTokens: 10, outputTokens: 5 } } },
+    { type: 'tool/call', data: {} },
+    { type: 'turn/end', data: { reason: { kind: 'error' } } },
+  ]
+  const restored = restoreState(declaration, persisted, 5000)
+  assert.equal(restored.toolRounds, 2)
+  assert.equal(restored.cumulativeTokens, 185)
+  // A prior attempt's infrastructure failure is not carried into the resumed
+  // attempt, and the wall clock starts at the resume.
+  assert.equal(restored.infrastructureFailed, false)
+  assert.equal(consumptionOf(restored, 5000).wallMillis, 0)
+})
+
+test('a capped session cannot be escaped by resuming it', () => {
+  const dir = join(TMP, 'attune-guard-resume')
+  const recordPath = join(dir, 'record.tsv')
+  const declarationPath = join(dir, 'guard-declaration.tsv')
+  mkdirSync(dir, { recursive: true })
+  rmSync(recordPath, { force: true })
+  writeFileSync(
+    declarationPath,
+    [
+      'contractVersion\ttest/1',
+      'wallMillis\t60000',
+      'toolRounds\t3',
+      'cumulativeTokens\t100',
+      'findings\t32',
+      'reserveWallMillis\t15000',
+      'reserveToolRounds\t1',
+      'reserveCumulativeTokens\t1',
+      'reserveCommittedFindings\t0',
+      '',
+    ].join('\n'),
+  )
+  const harness = fakeContext()
+  process.env.ATTUNE_GUARD_RECORD = recordPath
+  process.env.ATTUNE_GUARD_TASK = 'task-1'
+  process.env.ATTUNE_GUARD_ARM = 'R1'
+  apply(harness.ctx, { declaration: declarationPath })
+  // The resumed session already spent one model round, so the NEXT round reaches
+  // the cap: resuming does not reset the round budget.
+  const session = {
+    id: 'session-resume',
+    snapshotEvents: () => [
+      { type: 'assistant/message', data: { usage: { inputTokens: 40, outputTokens: 10 } } },
+      { type: 'tool/call', data: {} },
+    ],
+  }
+  harness.emit(session, { type: 'turn/start', data: {} })
+  assert.equal(harness.cancelCause, undefined, 'the restored round plus the reserve is still inside the cap')
+  harness.emit(session, { type: 'tool/call', data: {} })
+  assert.equal(harness.cancelCause?.decision, FINALIZE_EMPTY)
+  const record = readFileSync(recordPath, 'utf8')
+  assert.match(record, /\nobservedToolRounds\t2\n/)
+  assert.match(record, /\nobservedCumulativeTokens\t50\n/)
+  delete process.env.ATTUNE_GUARD_RECORD
+  delete process.env.ATTUNE_GUARD_TASK
+  delete process.env.ATTUNE_GUARD_ARM
+})
+
+test('an infrastructure failure stops the loop with the honest cause', () => {  const dir = join(TMP, 'attune-guard-infra')
   const recordPath = join(dir, 'record.tsv')
   mkdirSync(dir, { recursive: true })
   rmSync(recordPath, { force: true })

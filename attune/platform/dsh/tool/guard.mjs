@@ -181,17 +181,37 @@ export function initialState(declaration, now) {
 }
 
 /// Fold one observed session event into the accumulation state. Only the two
-/// model-issued event kinds move it: an assistant message carries the step's
-/// provider usage, and a tool call is one model-issued round. Nothing else is
-/// interpreted as consumption.
-export function observe(state, event) {
+/// model-issued event kinds move the consumption: an assistant message carries
+/// the step's provider usage, and a tool call is one model-issued round. Nothing
+/// else is interpreted as consumption.
+export function observeConsumption(state, event) {
   if (event.type === 'assistant/message') {
     state.cumulativeTokens += normalizedProviderTotal(event.data?.usage)
   } else if (event.type === 'tool/call') {
     state.toolRounds += 1
-  } else if (event.type === 'turn/end' && event.data?.reason?.kind === 'error') {
+  }
+  return state
+}
+
+/// Fold one LIVE session event into the accumulation state: the consumption
+/// above plus the honest infrastructure-failure mark a live failed turn carries.
+export function observe(state, event) {
+  observeConsumption(state, event)
+  if (event.type === 'turn/end' && event.data?.reason?.kind === 'error') {
     state.infrastructureFailed = true
   }
+  return state
+}
+
+/// Restore the accumulation state of a session from its OWN persisted event log,
+/// so a resumed session continues from the consumption it already spent instead
+/// of resetting it: a capped session cannot be escaped by resuming. Only the
+/// consumption is restored; a prior attempt's infrastructure failure is not
+/// carried into the resumed attempt, and the wall clock starts at the resume
+/// because the wall cap bounds one attempt.
+export function restoreState(declaration, events, now) {
+  const state = initialState(declaration, now)
+  for (const event of events) observeConsumption(state, event)
   return state
 }
 
@@ -269,6 +289,23 @@ export function apply(ctx, config) {
   const unresolved = (process.env.ATTUNE_GUARD_UNRESOLVED ?? '').split(',').filter((entry) => entry.length > 0)
   const states = new WeakMap()
 
+  /// The accumulation state of one session: restored once from its own persisted
+  /// event log when it is first seen (a resumed session therefore continues from
+  /// the consumption it already spent), then followed by the authoritative live
+  /// events. A stop already recorded for the session is never re-derived.
+  function stateFor(session, event) {
+    let state = states.get(session)
+    if (state !== undefined) return state
+    const persisted = typeof session?.snapshotEvents === 'function' ? session.snapshotEvents() : []
+    // The session appends an event before notifying its observers, so the log
+    // already carries the event being delivered: it is excluded by identity and
+    // observed exactly once, by the caller below.
+    const prior = persisted.filter((entry) => entry !== event)
+    state = restoreState(declaration, prior, Date.now())
+    states.set(session, state)
+    return state
+  }
+
   function writeStop(state, now, stopCause) {
     if (recordPath === undefined || recordPath.length === 0) return undefined
     const record = enforcementRecord(state, now, stopCause, unresolved, task, arm, observation)
@@ -277,11 +314,7 @@ export function apply(ctx, config) {
   }
 
   ctx.on('session/event', (session, event) => {
-    let state = states.get(session)
-    if (state === undefined) {
-      state = initialState(declaration, Date.now())
-      states.set(session, state)
-    }
+    const state = stateFor(session, event)
     if (state.stopped) return
     observe(state, event)
     const consumption = consumptionOf(state, Date.now())
