@@ -85,6 +85,21 @@ dsh_agent_run(
     version_only = True,
 )
 
+# The local Cordis load proof of the same artifact is run from the built binary
+# directly (see library/dsh-substrate.md): composing the declared profile loads
+# every declared DSH plugin from the linked npm closure, proving the produced
+# package loads locally with no host `node_modules`. It is not a Bazel action
+# because the rules_js launcher needs `uname`/`dirname` on `PATH`, which the
+# hermetic action environment deliberately does not carry.
+
+# The same load proof on the pinned arm64 RBE platform, so the produced package
+# is shown to load through Cordis on both platforms.
+dsh_agent_run(
+    name = "remote_load",
+    dump_config = True,
+    tags = ["manual"],
+)
+
 # The mandatory direct-provider gate (VAL-SUB-001). One native DSH AgentLoop
 # through the user-authorized declared `siwc-responses` route with an explicit
 # `gpt-6.1-sol`/medium declaration, the existing scoped SIWC `ACCESS_TOKEN`

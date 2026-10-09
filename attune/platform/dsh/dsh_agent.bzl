@@ -37,6 +37,16 @@ def _dsh_agent_run_impl(ctx):
 
     if ctx.attr.version_only:
         args.add("--version")
+    elif ctx.attr.dump_config:
+        # The Cordis load probe: composing the profile requires every declared
+        # plugin to load from the linked npm closure, so the dumped tree is
+        # evidence that the produced artifact really loads and does not silently
+        # fall back to host node_modules. It makes no provider call and reads no
+        # secret.
+        args.add("--profile", ctx.attr.profile)
+        for route in ctx.files.routes:
+            args.add("--patch", route.path)
+        args.add("--dump-config")
     else:
         # The native DSH home of this run. It is a declared output directory, so
         # the persisted session tree is a real action output rather than a side
@@ -68,7 +78,7 @@ def _dsh_agent_run_impl(ctx):
         outputs = outputs,
         env = env,
         tools = [ctx.attr.dsh[DefaultInfo].files_to_run],
-        execution_requirements = {"no-local": "1"},
+        execution_requirements = {"no-local": "1"} if ctx.attr.remote_only else {},
         mnemonic = "DshAgentRun",
         progress_message = "Native DSH agent run %{label}",
         use_default_shell_env = False,
@@ -92,6 +102,14 @@ dsh_agent_run = rule(
             cfg = "exec",
         ),
         "profile": attr.string(default = "headless"),
+        "dump_config": attr.bool(
+            default = False,
+            doc = "Probe mode: compose the declared profile and dump the resolved Cordis plugin tree.",
+        ),
+        "remote_only": attr.bool(
+            default = True,
+            doc = "Declare `no-local` so the action can only be remote evidence.",
+        ),
         "permission_mode": attr.string(
             default = "danger-full-access",
             doc = "The declared DSH permission mode of the run.",
