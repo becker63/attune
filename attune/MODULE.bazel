@@ -522,6 +522,8 @@ retained_worlds(
     name = "attune_retained_worlds",
     manifest = "//test/study:fixtures/retained-worlds.tsv",
     root = "/home/becker/.cache/attune-reviewbench-worlds",
-    token = "1",
+    # Token 2 admits the publication-contract and changed-command bytes of the
+    # same already-authorized `capawesome-team_cli-126` world (no new corpus).
+    token = "2",
 )
 

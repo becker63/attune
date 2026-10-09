@@ -61,7 +61,9 @@ export function packetRegionKey(region) {
 /// The exact bytes of one declared line span. The convention is fixed: the span
 /// of lines `a..b` is the contiguous bytes from the first byte of line `a`
 /// through the terminator of line `b`, so the whole-file span `1..N` of a file
-/// that ends with a newline is exactly the whole file.
+/// that ends with a newline is exactly the whole file. The unterminated final
+/// line of a file that does NOT end with a newline has no terminator, so a span
+/// that ends there stops at the last byte of the file rather than inventing one.
 export function spanBytes(bytes, startLine, endLine) {
   const lines = bytes.toString('utf8').split('\n')
   if (startLine < 1 || endLine < startLine || endLine > lines.length) {
@@ -75,7 +77,9 @@ export function spanBytes(bytes, startLine, endLine) {
   for (let index = startLine - 1; index < endLine; index += 1) {
     end += Buffer.byteLength(lines[index], 'utf8') + 1
   }
-  if (end > bytes.length) {
+  // The final line of a file without a trailing newline carries no terminator.
+  if (end > bytes.length) end = bytes.length
+  if (start > bytes.length) {
     throw new PacketRefusal('the requested line span runs past the sealed file bytes')
   }
   return bytes.subarray(start, end)

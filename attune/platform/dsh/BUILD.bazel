@@ -197,6 +197,48 @@ native_study_stage(
     stage = "evidence_reviewbench_world",
 )
 
+# The declared REAL-SOURCE packet world of the exact retained ReviewBench change
+# (VAL-SUB-010). It is the same `native_study_stage` shape over the integration
+# stage closure, and it reads the ACTUAL admitted bytes of the changed registry
+# (`src/index.ts` in both revisions) plus the changed command implementations and
+# the declared publication-contract metadata (`package.json`, `.npmignore`,
+# `tsconfig.json`), all admitted read-only and digest-verified by
+# `//platform/build:retained_worlds.bzl` (never fetched, never a new corpus). The
+# stage DERIVES the mandatory changed-entrypoint manifest, the exact regions with
+# their UTF-8/newline digests (through the existing mechanical
+# `AttuneReviewBench.sha256Hex` seam), the progressive packet records, the
+# retained full-source escape, the memoized reacquisition decisions, the
+# unique-versus-total byte accounting and the sealed copies the packet boundary
+# verifies against. No gold, target label or task branching is read or written.
+native_study_stage(
+    name = "evidence_reviewbench_packets",
+    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
+    input_names = [
+        "certificates_create",
+        "certificates_delete",
+        "certificates_list",
+        "index_base",
+        "index_head",
+        "npmignore",
+        "package_json",
+        "tsconfig",
+        "world",
+    ],
+    inputs = [
+        "@attune_retained_worlds//:capawesome-certificates-create-head",
+        "@attune_retained_worlds//:capawesome-certificates-delete-head",
+        "@attune_retained_worlds//:capawesome-certificates-list-head",
+        "@attune_retained_worlds//:capawesome-cli-index-base",
+        "@attune_retained_worlds//:capawesome-cli-index-head",
+        "@attune_retained_worlds//:capawesome-npmignore-head",
+        "@attune_retained_worlds//:capawesome-package-json-head",
+        "@attune_retained_worlds//:capawesome-tsconfig-head",
+        "//test/study:fixtures/reviewbench-packets.tsv",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    stage = "evidence_reviewbench_packets",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The
@@ -210,6 +252,7 @@ js_binary(
         ":evidence_guard_declaration",
         ":evidence_operation_projection",
         ":evidence_packets",
+        ":evidence_reviewbench_packets",
         ":node_modules",
         ":node_modules/@attune/dsh-evidence-tool",
         ":typert_bridge",

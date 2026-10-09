@@ -72,6 +72,15 @@ public final class AttuneReviewBench {
         return out.toString();
     }
 
+    /**
+     * The exact UTF-8 byte length of one declared text. It is the same encoding
+     * {@link #sha256Hex(String)} hashes, so a stage can report the exact byte
+     * count of a derived span with the same convention as its digest.
+     */
+    public static int utf8Bytes(String text) {
+        return text.getBytes(StandardCharsets.UTF_8).length;
+    }
+
     /** The declared SHA-256 digest of one declared text, as lowercase hex. */
     public static String sha256Hex(String text) {
         try {
