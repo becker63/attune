@@ -1,0 +1,90 @@
+load("//platform/build:native.bzl", "native_flix_java_test", "native_study_stage")
+
+package(default_visibility = ["//visibility:public"])
+
+# This package's contribution to the declared authored-source population.
+filegroup(
+    name = "policy_files",
+    srcs = glob(["**"]),
+)
+
+exports_files(["prompt.txt"])
+
+# The explicit source closure of the pilot freeze stage: the freeze dispatcher
+# plus the canonical owner it reduces and the shared owners both consume. The
+# holdout selection, the arm/protocol identities, the activation rule and the
+# Pareto rule all live in `Attune.Study.ReviewPilot`; the metadata-only cohort,
+# the fast cohort, the distinct-repository preference and the split mechanism
+# live in the existing `Attune.Study.ReviewBench` and `Attune.Study`; the
+# frontend language table lives in `Attune.Repository.Grit`. The mechanical
+# digest seam (`AttuneReviewBench.sha256Hex`) is the only Java dependency.
+PILOT_SRCS = [
+    "ReviewPilotStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The declared ReviewBench pilot freeze stage (`VAL-STUDY-001`, `VAL-STUDY-002`,
+# `VAL-STUDY-003`, `VAL-STUDY-010`). It reduces the already-materialized,
+# already-frozen admission projection and the frozen cohort fixture into the
+# metadata-only 24-task holdout, the frozen protocol record, the balanced
+# deterministic dispatch record and the frozen activation and Pareto rules. It
+# acquires nothing and calls no provider, but it consumes the pinned-corpus
+# admission tree, so it is `manual`: the ordinary gate never fetches the corpus.
+native_study_stage(
+    name = "reviewbench_pilot_freeze",
+    srcs = PILOT_SRCS,
+    input_names = [
+        "admission",
+        "cohort",
+        "prompt",
+    ],
+    inputs = [
+        "//test/reviewbench:reviewbench_admission",
+        "//test/study:fixtures/reviewbench-cohort.tsv",
+        "prompt.txt",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_freeze",
+    tags = ["manual"],
+)
+
+# The corpus-free laws of the pilot owner: they drive the exact production arm,
+# protocol, observation, holdout, activation and Pareto rules over declared
+# fixtures. No corpus, no network, no golden finding and no provider is touched,
+# so the ordinary gate runs them.
+native_flix_java_test(
+    name = "reviewbench_pilot_law",
+    srcs = [
+        "ReviewPilotLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+        "//src:Attune/Study/Qwen.flix",
+        "//src:Attune/Study/ReviewBench.flix",
+        "//src:Attune/Study/ReviewPilot.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    java_deps = ["//platform/tools/grit:attune_grit"],
+)
+
+test_suite(
+    name = "all",
+    tests = [":reviewbench_pilot_law"],
+)

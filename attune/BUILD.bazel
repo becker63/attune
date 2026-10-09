@@ -77,6 +77,7 @@ filegroup(
         "//test/reviewbench_context:policy_files",
         "//test/reviewbench_economics:policy_files",
         "//test/reviewbench_judge:policy_files",
+        "//test/reviewbench_pilot:policy_files",
         "//test/reviewbench_review:policy_files",
         "//test/seam:policy_files",
         "//test/spine:policy_files",
