@@ -147,6 +147,33 @@ native_flix_consumer_test(
     produced = ["//platform/dsh:evidence_preflight"],
 )
 
+# The laws of the declared packet world (VAL-SUB-010): they consume the tree the
+# `evidence_packets` stage action materialized and assert it is the canonical
+# Flix packet meaning recomputed over the SAME declared fixture and the SAME
+# sealed base/head source bytes: the mandatory changed-entrypoint manifest covers
+# every packet, the disclosed spans carry their exact digests/ranges, the
+# retained full-source escape discloses the whole changed head file,
+# reacquisition reuses an exact identity while still acquiring a distinct one,
+# and the byte accounting separates unique from total bytes. The declared
+# fixture population is named one file at a time so the live workspace audit sees
+# the exact declared inputs. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_packet_law",
+    srcs = [
+        "EvidencePacketLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "fixtures/packets.tsv",
+        "//platform/dsh/tool:fixtures/packet/cart.base.ts",
+        "//platform/dsh/tool:fixtures/packet/cart.head.ts",
+    ],
+    produced = ["//platform/dsh:evidence_packets"],
+)
+
 # The wire-parity laws of the same contract. They read the frozen versioned wire
 # fixtures under `platform/dsh/typert/` through declared bindings, so the
 # canonical Flix meaning and the frozen fixture are compared over the real

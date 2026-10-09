@@ -5,12 +5,15 @@ use Attune.Study.EvidenceOperation.{
     referenceRecord, requestFindings
 }
 use Attune.Study.EvidenceSubstrate.{
-    AcquisitionObligation, CandidateCommit, CliFact, Delivery, DetectorResult, EvidenceRef,
-    FindingCheckpoint, FindingFunnel, ImportFact, PreflightArm, commitCheckpoint,
-    deliveredCommittedFindings, detectImportPublication, detectRequiredCliInput,
+    AcquisitionObligation, ByteAccounting, CandidateCommit, ChangedEntrypoint, CliFact, Delivery,
+    DetectorResult, EvidencePacket, EvidenceRef, FindingCheckpoint, FindingFunnel, ImportFact,
+    PacketDisclosure, PacketInstrumentation, PreflightArm, VerificationRecord, byteAccounting,
+    byteAccountingLine, commitCheckpoint, deliveredCommittedFindings, detectImportPublication, detectRequiredCliInput,
     detectorResultLine, detectorVisibleToModel, diagnosticGuardDeclaration, deliveryName,
-    evidenceKey, funnelFindings, guardCases, guardDecisionRow, guardDeclaration, offlinePreflight,
-    refFindings
+    entrypointFindings, entrypointKey, entrypointLine, evidenceKey, fullSourceExpansion, funnelFindings,
+    guardCases, guardDecisionRow, guardDeclaration, instrumentationLine, offlinePreflight,
+    packetInstrumentation, packetManifestFindings, reacquisitionLine, refFindings,
+    verificationFindings, verificationLine
 }
 use Fs.FileRead
 use Fs.FileWrite
@@ -436,6 +439,261 @@ def evidencePreflight(): Unit \ {Assert, IO} = {
         List.join("\t", List#{"displacement", result#displacement})}))
 }
 
+// ------------------------------------------------- the declared packet world
+
+/// The declared rows of one row kind, in declaration order.
+def rowsOf(rows: List[List[String]], kind: String): List[List[String]] =
+    List.filter(row -> field(row, 0) == kind, rows)
+
+/// The first declared row of one kind, or an empty row when the fixture declares
+/// none. The stage asserts the rows it needs, so an absent row fails loudly
+/// rather than publishing an empty packet world.
+def firstRow(rows: List[List[String]], kind: String): List[String] = match rowsOf(rows, kind) {
+    case row :: _ => row
+    case Nil      => Nil
+}
+
+/// The one declared row of one kind and identity, or an empty row.
+def rowById(rows: List[List[String]], kind: String, id: String): List[String] =
+    match List.filter(row -> field(row, 0) == kind and field(row, 1) == id, rows) {
+        case row :: _ => row
+        case Nil      => Nil
+}
+
+/// The exact region key of one declared region row: its revision, path and
+/// inclusive range. A packet references its evidence regions by this key, so a
+/// region the world does not declare can never be resolved into evidence.
+def regionRowKey(row: List[String]): String =
+    field(row, 1) + "|" + field(row, 2) + "|" + field(row, 3) + "|" + field(row, 4)
+
+/// The exact evidence reference of one declared region row of one world.
+def regionRowRef(row: List[String], worldId: String): EvidenceRef = {
+    world = worldId, revision = field(row, 1), path = field(row, 2), sha256 = field(row, 5),
+    startLine = intOf(field(row, 3)), endLine = intOf(field(row, 4)), bytes = intOf(field(row, 6)),
+    delivery = Delivery.Complete
+}
+
+/// The (region key, reference) index of the declared regions of one revision.
+def regionIndex(rows: List[List[String]], worldId: String, revision: String): List[(String, EvidenceRef)] =
+    List.map(row -> (regionRowKey(row), regionRowRef(row, worldId)),
+        List.filter(row -> field(row, 1) == revision, rowsOf(rows, "region")))
+
+def refsOf(index: List[(String, EvidenceRef)]): List[EvidenceRef] =
+    List.map(entry -> match entry { case (_, ref) => ref }, index)
+
+/// Resolve one packet's referenced region by its exact declared key. A key the
+/// world does not declare resolves to nothing rather than to a guessed region.
+def resolveRegion(index: List[(String, EvidenceRef)], key: String): Option[EvidenceRef] =
+    List.findMap(entry -> match entry {
+        case (candidate, ref) => if (candidate == key) Some(ref) else None
+    }, index)
+
+/// The declared changed-entrypoint manifest of one fixture.
+def packetEntrypoints(rows: List[List[String]]): List[ChangedEntrypoint] =
+    List.map(row -> { world = field(row, 1), baseRevision = field(row, 2), headRevision = field(row, 3),
+        path = field(row, 4), startLine = intOf(field(row, 5)), endLine = intOf(field(row, 6)),
+        kind = field(row, 7), symbol = field(row, 8) }, rowsOf(rows, "entrypoint"))
+
+/// The declared packet ids, in declaration order.
+def packetIds(rows: List[List[String]]): List[String] =
+    List.distinct(List.map(row -> field(row, 1), rowsOf(rows, "packet")))
+
+/// The linked keys of one row kind for one packet, in declaration order.
+def linkedKeys(rows: List[List[String]], kind: String, packetId: String): List[String] =
+    List.map(row -> field(row, 2),
+        List.filter(row -> field(row, 1) == packetId, rowsOf(rows, kind)))
+
+/// The one declared packet of one id, resolved against the declared regions. A
+/// cue the fixture declares as `-` is absent, never a blank placeholder, and an
+/// evidence key the world does not declare resolves to nothing.
+def declaredPacket(
+    rows: List[List[String]],
+    packetId: String,
+    index: List[(String, EvidenceRef)]
+): Option[EvidencePacket] = {
+    let row = rowById(rows, "packet", packetId);
+    if (List.isEmpty(row)) None
+    else Some({
+        obligation = { operation = field(row, 2), entrypoint = field(row, 3), kind = field(row, 4),
+                       worldScope = field(row, 5), satisfied = false },
+        entrypoints = linkedKeys(rows, "packet-entrypoint", packetId),
+        intent = field(row, 8),
+        contract = if (field(row, 6) == "-") None else Some(field(row, 6)),
+        reachability = if (field(row, 9) == "-") None else Some(field(row, 9)),
+        evidence = List.filterMap(key -> resolveRegion(index, key),
+            linkedKeys(rows, "packet-evidence", packetId)),
+        disclosure = if (field(row, 7) == "full-source")
+            PacketDisclosure.FullSource else PacketDisclosure.Progressive,
+        missing = linkedKeys(rows, "packet-missing", packetId)
+    })
+}
+
+/// The declared reacquisition requests of one packet, in declaration order.
+def requestPairs(
+    rows: List[List[String]],
+    packetId: String,
+    index: List[(String, EvidenceRef)]
+): List[(String, EvidenceRef)] =
+    List.filterMap(row -> Option.map(ref -> (field(row, 2), ref), resolveRegion(index, field(row, 3))),
+        List.filter(row -> field(row, 1) == packetId, rowsOf(rows, "request")))
+
+/// Every declared reacquisition request, in packet and declaration order.
+def allRequests(rows: List[List[String]], index: List[(String, EvidenceRef)]): List[(String, EvidenceRef)] =
+    List.flatMap(packetId -> requestPairs(rows, packetId, index), packetIds(rows))
+
+/// The ordered physical acquisition decisions of the declared requests: an exact
+/// identity already acquired is reused, and a distinct identity is still
+/// acquired. Reuse never suppresses a distinct necessary piece.
+def reacquisitionRecords(requests: List[(String, EvidenceRef)], seen: List[String]): List[String] =
+    match requests {
+        case Nil => Nil
+        case (purpose, ref) :: rest =>
+            let reused = List.memberOf(evidenceKey(ref), seen);
+            reacquisitionLine(ref, reused, purpose) :: reacquisitionRecords(rest,
+                if (reused) seen else evidenceKey(ref) :: seen)
+    }
+
+def countDecisions(records: List[String], decision: String): Int32 =
+    List.length(List.filter(line -> String.contains(substr = "\t" + decision + "\t", line), records))
+
+def disclosureName(disclosure: PacketDisclosure): String = match disclosure {
+    case PacketDisclosure.Progressive => "progressive"
+    case PacketDisclosure.FullSource  => "full-source"
+}
+
+def packetRecordLine(packetId: String, packet: EvidencePacket): String =
+    String.intercalate("\t", List#{"packet", packetId, packet#obligation#operation,
+        packet#obligation#entrypoint, packet#obligation#kind, packet#obligation#worldScope,
+        Option.getWithDefault("-", packet#contract), disclosureName(packet#disclosure),
+        packet#intent, Option.getWithDefault("-", packet#reachability),
+        String.intercalate(",", packet#entrypoints), String.intercalate(",", packet#missing),
+        String.intercalate(",", List.map(evidenceKey, packet#evidence))})
+
+def spanLine(packetId: String, ref: EvidenceRef): String =
+    String.intercalate("\t", List#{"span", packetId, ref#world, ref#revision, ref#path,
+        Int32.toString(ref#startLine), Int32.toString(ref#endLine), ref#sha256,
+        Int32.toString(ref#bytes), deliveryName(ref#delivery)})
+
+def expansionLine(packetId: String, expansion: EvidencePacket): String =
+    String.intercalate("\t", List#{"expansion", packetId, expansion#obligation#operation,
+        disclosureName(expansion#disclosure), String.intercalate(",", expansion#entrypoints),
+        String.intercalate(",", List.map(evidenceKey, expansion#evidence))})
+
+/// The comma-separated list of one verification field. An absent (`-`) or empty
+/// field is the empty list rather than a blank element.
+def commaList(text: String): List[String] =
+    if (String.isEmpty(text) or text == "-") Nil
+    else List.map(String.trim, String.split(regex = ",", text))
+
+/// One declared verification row: its hypothesis, check kind, observed result,
+/// exact inputs, the preconditions that had to hold and the honest limits.
+def declaredVerification(row: List[String]): VerificationRecord = {
+    hypothesis = field(row, 1), checkKind = field(row, 2), result = field(row, 3),
+    inputs = commaList(field(row, 4)), preconditions = commaList(field(row, 5)),
+    limits = commaList(field(row, 6))
+}
+
+/// The declared packet world stage (VAL-SUB-010). It reads the declared diff
+/// fixture and the ACTUAL sealed base/head source bytes, applies the canonical
+/// packet meaning, and materializes:
+///
+///  - `changed-entrypoints.tsv`: the MANDATORY changed-entrypoint manifest, so
+///    no changed entrypoint a packet references is silently dropped;
+///  - `packet-records.tsv`: each packet's obligation, intent, supported cues,
+///    its exact disclosed spans with their digests/ranges and its missing
+///    obligations;
+///  - `packet-expansion.tsv`: the retained FULL-SOURCE escape of each packet,
+///    which keeps the obligation, entrypoints and cues and discloses the whole
+///    changed head file;
+///  - `reacquisition.tsv`: the ordered physical acquisition decisions, which
+///    reuse an already-acquired exact identity and still acquire a distinct one;
+///  - `byte-accounting.tsv`: the unique evidence bytes separately from the total
+///    returned bytes, so a memoized repeat is visible and never reported as new;
+///  - `packet-instrumentation.tsv`: the observed acquisitions and packet uses,
+///    with the unobservable outside-neighborhood value `Unavailable`;
+///  - `verification.tsv`: the bounded verification records with their exact
+///    inputs, preconditions, result and limits.
+///
+/// It acquires no corpus and calls no provider.
+def evidencePackets(): Unit \ {Assert, IO} = {
+    let rows = List.map(fields, records(readText(required("packets"))));
+    let world = firstRow(rows, "world");
+    Assert.assertEq(expected = false, List.isEmpty(world));
+    let worldId = field(world, 1);
+    let baseRevision = field(world, 2);
+    let headRevision = field(world, 3);
+    let changedPath = field(world, 4);
+    let baseBytes = intOf(field(world, 7));
+    let headBytes = intOf(field(world, 8));
+    // The declared byte counts are DERIVED from the real sealed source bytes, so
+    // a world record that drifted from the sealed source fails the stage loudly.
+    Assert.assertEq(expected = baseBytes, String.length(readText(required("baseSource"))));
+    Assert.assertEq(expected = headBytes, String.length(readText(required("headSource"))));
+    let manifest = packetEntrypoints(rows);
+    Assert.assertEq(expected = true, List.length(manifest) > 1);
+    Assert.assertEq(expected = true, List.isEmpty(List.flatMap(entrypointFindings, manifest)));
+    Assert.assertEq(expected = true,
+        List.forAll(entrypoint -> entrypoint#world == worldId and entrypoint#path == changedPath, manifest));
+    let headIndex = regionIndex(rows, worldId, headRevision);
+    let baseIndex = regionIndex(rows, worldId, baseRevision);
+    let index = headIndex ::: baseIndex;
+    let headRegions = refsOf(headIndex);
+    // The changed head file is declared as more than one exact region and the
+    // declared regions TILE it, so the packet spans are real sub-regions of one
+    // changed file rather than a single whole-file region.
+    Assert.assertEq(expected = true, List.length(headRegions) > 1);
+    Assert.assertEq(expected = headBytes, List.foldLeft((sum, ref) -> sum + ref#bytes, 0, headRegions));
+    Assert.assertEq(expected = baseBytes, List.foldLeft((sum, ref) -> sum + ref#bytes, 0, refsOf(baseIndex)));
+    let packetIdList = packetIds(rows);
+    let packetPairs = List.filterMap(packetId ->
+        Option.map(packet -> (packetId, packet), declaredPacket(rows, packetId, index)), packetIdList);
+    Assert.assertEq(expected = List.length(packetIdList), List.length(packetPairs));
+    // The mandatory changed-entrypoint manifest covers every packet: a packet
+    // that references an undeclared entrypoint fails the stage.
+    Assert.assertEq(expected = true, List.forAll(entry -> match entry {
+        case (_, packet) => List.isEmpty(packetManifestFindings(packet, manifest))
+    }, packetPairs));
+    let expansionPairs = List.map(entry -> match entry {
+        case (packetId, packet) => (packetId, fullSourceExpansion(packet, headRegions))
+    }, packetPairs);
+    Assert.assertEq(expected = true, List.forAll(entry -> match entry {
+        case (_, expansion) => expansion#disclosure == PacketDisclosure.FullSource
+            and List.isEmpty(packetManifestFindings(expansion, manifest))
+    }, expansionPairs));
+    Assert.assertEq(expected = true, List.exists(entry -> match entry {
+        case (_, packet) => not List.isEmpty(packet#missing)
+    }, packetPairs));
+    let delivered = List.flatMap(entry -> match entry { case (_, packet) => packet#evidence }, packetPairs);
+    let requests = allRequests(rows, index);
+    let requestEvidence = List.map(entry -> match entry { case (_, ref) => ref }, requests);
+    let accounting = byteAccounting(delivered ::: requestEvidence, baseBytes + headBytes);
+    Assert.assertEq(expected = true, accounting#totalBytes >= accounting#uniqueBytes);
+    Assert.assertEq(expected = true, accounting#repeatedBytes > 0);
+    Assert.assertEq(expected = true, accounting#uniqueBytes <= accounting#availableDiffBytes);
+    let reacquisitions = reacquisitionRecords(requests, Nil);
+    Assert.assertEq(expected = true, countDecisions(reacquisitions, "reuse") > 0);
+    Assert.assertEq(expected = true, countDecisions(reacquisitions, "acquire") > 0);
+    let instrumentation = packetInstrumentation(List.map(entry -> match entry { case (_, packet) => packet }, packetPairs),
+        countDecisions(reacquisitions, "acquire"));
+    Assert.assertEq(expected = "Unavailable", instrumentation#outsideNeighborhood);
+    let verifications = List.map(declaredVerification, rowsOf(rows, "verify"));
+    Assert.assertEq(expected = true, List.length(verifications) > 0);
+    Assert.assertEq(expected = true, List.isEmpty(List.flatMap(verificationFindings, verifications)));
+    writeText(outputsDir(), "changed-entrypoints.tsv", renderLines(List.map(entrypointLine, manifest)));
+    writeText(outputsDir(), "packet-records.tsv", renderLines(
+        List.flatMap(entry -> match entry {
+            case (packetId, packet) => List#{packetRecordLine(packetId, packet)}
+                ::: List.map(ref -> spanLine(packetId, ref), packet#evidence)
+        }, packetPairs)));
+    writeText(outputsDir(), "packet-expansion.tsv", renderLines(
+        List.map(entry -> match entry { case (packetId, expansion) => expansionLine(packetId, expansion) },
+            expansionPairs)));
+    writeText(outputsDir(), "reacquisition.tsv", renderLines(reacquisitions));
+    writeText(outputsDir(), "byte-accounting.tsv", renderLines(List#{byteAccountingLine(accounting)}));
+    writeText(outputsDir(), "packet-instrumentation.tsv", renderLines(List#{instrumentationLine(instrumentation)}));
+    writeText(outputsDir(), "verification.tsv", renderLines(List.map(verificationLine, verifications)))
+}
+
 @Test
 def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     let stage = stageName();
@@ -443,5 +701,6 @@ def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     else if (stage == "evidence_guard") evidenceGuard()
     else if (stage == "evidence_detectors") evidenceDetectors()
     else if (stage == "evidence_preflight") evidencePreflight()
+    else if (stage == "evidence_packets") evidencePackets()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }

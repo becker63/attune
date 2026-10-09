@@ -144,6 +144,34 @@ native_study_stage(
     stage = "evidence_preflight",
 )
 
+# The ONE declared packet world of the narrow evidence substrate (VAL-SUB-010).
+#
+# It is the same `native_study_stage` shape over the SAME declared stage sources.
+# It reads a BOUNDED declared diff fixture (one changed file in two revisions,
+# two exact declared regions of its head revision, the mandatory
+# changed-entrypoint manifest and the declared packets that reference them) plus
+# the ACTUAL sealed base/head source bytes, applies the canonical packet meaning
+# and materializes the changed-entrypoint manifest, the progressive packet
+# records with their exact spans/digests/ranges, the retained full-source escape,
+# the ordered memoized reacquisition decisions, the unique-vs-total byte
+# accounting, the honest packet instrumentation and the bounded verification
+# records. It acquires no corpus and calls no provider.
+native_study_stage(
+    name = "evidence_packets",
+    srcs = ["//test/study:evidence_operation_stage_srcs"],
+    input_names = [
+        "baseSource",
+        "headSource",
+        "packets",
+    ],
+    inputs = [
+        "//platform/dsh/tool:fixtures/packet/cart.base.ts",
+        "//platform/dsh/tool:fixtures/packet/cart.head.ts",
+        "//test/study:fixtures/packets.tsv",
+    ],
+    stage = "evidence_packets",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The
@@ -156,6 +184,7 @@ js_binary(
         ":evidence_detector_sidecar",
         ":evidence_guard_declaration",
         ":evidence_operation_projection",
+        ":evidence_packets",
         ":node_modules",
         ":node_modules/@attune/dsh-evidence-tool",
         ":typert_bridge",

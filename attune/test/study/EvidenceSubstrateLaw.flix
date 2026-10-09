@@ -1,14 +1,18 @@
 use Attune.Coverage.Outcome
 use Attune.Study.EvidenceSubstrate.{
-    AcquisitionObligation, CandidateCommit, Caps, CliFact, Consumption, Delivery, DetectorResult,
-    EvidenceObservation, EvidencePacket, EvidenceRef, FindingCheckpoint, FindingFunnel, ImportFact,
-    PacketDisclosure, PreflightArm, ScopedNegative, SemanticState, candidateCommitFindings,
-    canonicalSurface, checkpointFindings, checkpointLine, commitCheckpoint, committedFindingsFindings,
-    completeCoverage, contractDigest, deliveredCommittedFindings, deltaIsEmpty, detectImportPublication,
-    detectRequiredCliInput, detectorVisibleToModel, finalizationReserve, frozenCaps, fullSourceExpansion,
-    funnelFindings, guardDecision, GuardDecision, informationDelta, labelledIdentity, negativeFindings,
-    observationIsNegative, offlinePreflight, overshoot, packetFindings, reacquisitionPlan, refFindings,
-    universalAbsence, unresolvedObligations
+    AcquisitionObligation, ByteAccounting, CandidateCommit, Caps, ChangedEntrypoint, CliFact,
+    Consumption, Delivery, DetectorResult, EvidenceObservation, EvidencePacket, EvidenceRef,
+    FindingCheckpoint, FindingFunnel, ImportFact, PacketDisclosure, PacketInstrumentation,
+    PreflightArm, ScopedNegative, SemanticState, VerificationRecord, byteAccounting,
+    candidateCommitFindings, canonicalSurface, checkpointFindings, checkpointLine, commitCheckpoint,
+    committedFindingsFindings, completeCoverage, contractDigest, deliveredCommittedFindings, deltaIsEmpty,
+    detectImportPublication, detectRequiredCliInput, detectorVisibleToModel, entrypointFindings,
+    entrypointKey, entrypointKinds, evidenceKey, finalizationReserve, frozenCaps, fullSourceExpansion,
+    funnelFindings, guardDecision, GuardDecision, informationDelta, instrumentationLine, labelledIdentity,
+    negativeFindings, observationIsNegative, offlinePreflight, overshoot, packetFindings,
+    packetInstrumentation, packetManifestFindings, reacquisitionLine, reacquisitionPlan, refFindings,
+    uniqueEvidence, universalAbsence, unresolvedObligations, verificationFindings, verificationKinds,
+    verificationLine
 }
 
 /// The narrow evidence substrate's laws. Everything here is provider-free and
@@ -387,6 +391,120 @@ def reacquisitionReusesExactIdentityOnly(): Unit \ Assert = {
     let (reused, toAcquire) = reacquisitionPlan(acquired, List#{same, widerRange});
     Assert.assertEq(expected = 1, List.length(reused));
     Assert.assertEq(expected = List#{40}, List.map(r -> r#endLine, toAcquire))
+}
+
+// ---------------------- the changed-entrypoint manifest and byte accounting
+
+/// One declared changed entrypoint of the packet diff fixture.
+def entrypoint(path: String, start: Int32, end: Int32, kind: String, symbol: String): ChangedEntrypoint = {
+    world = "world-packet-1", baseRevision = "rev-1", headRevision = "rev-2", path = path,
+    startLine = start, endLine = end, kind = kind, symbol = symbol
+}
+
+/// One declared packet over the packet diff fixture: its obligation, the exact
+/// changed entrypoints it references, its cues and its disclosed evidence.
+def manifestPacket(
+    operation: String,
+    entrypoints: List[String],
+    evidence: List[EvidenceRef],
+    reachability: Option[String]
+): EvidencePacket = {
+    obligation = obligation(operation, false), entrypoints = entrypoints,
+    intent = "review the changed " + operation, contract = Some("contract/cart/1"),
+    reachability = reachability, evidence = evidence, disclosure = PacketDisclosure.Progressive,
+    missing = List#{"read-caller/consumer@head"}
+}
+
+/// The mandatory changed-entrypoint manifest is not decoration: a packet that
+/// references a changed entrypoint the manifest does not declare is refused,
+/// whether the manifest is empty or simply lacks that entrypoint, while the same
+/// packet passes once the manifest declares it. The manifest row itself must
+/// carry a world/revision identity, a path/symbol and a declared kind.
+@Test
+def theChangedEntrypointManifestIsMandatory(): Unit \ Assert = {
+    let declared = entrypoint("source/cart.ts", 2, 2, "exported-symbol", "cartTotal");
+    Assert.assertEq(expected = 0, List.length(entrypointFindings(declared)));
+    let packet = manifestPacket("read-export", List#{entrypointKey(declared)},
+        List#{ref(Delivery.Complete, 1, 2)}, Some("consumer.ts calls cartTotal"));
+    Assert.assertEq(expected = 0, List.length(packetManifestFindings(packet, List#{declared})));
+    Assert.assertEq(expected = 1, List.length(packetManifestFindings(packet, Nil)));
+    let unknown = entrypoint("source/cart.ts", 2, 2, "voting-ensemble", "cartTotal");
+    Assert.assertEq(expected = 1, List.length(entrypointFindings(unknown)));
+    let undeclared = manifestPacket("read-caller", List#{"source/cart.ts|rev-2"},
+        packet#evidence, None);
+    Assert.assertEq(expected = 1, List.length(packetManifestFindings(undeclared, List#{declared})))
+}
+
+/// Byte accounting separates the unique evidence bytes from the total returned
+/// bytes, so a reacquisition of the SAME exact identity is visible as a repeat
+/// and is never reported as newly acquired evidence.
+@Test
+def byteAccountingSeparatesUniqueFromTotalBytes(): Unit \ Assert = {
+    let first = ref(Delivery.Complete, 1, 2);
+    let again = ref(Delivery.Complete, 1, 2);
+    let other = ref(Delivery.Complete, 3, 3);
+    let accounting = byteAccounting(List#{first, again, other}, 61);
+    Assert.assertEq(expected = 2 * first#bytes, accounting#uniqueBytes);
+    Assert.assertEq(expected = 3 * first#bytes, accounting#totalBytes);
+    Assert.assertEq(expected = first#bytes, accounting#repeatedBytes);
+    Assert.assertEq(expected = 61, accounting#availableDiffBytes);
+    Assert.assertEq(expected = 2, List.length(uniqueEvidence(List#{first, again, other})))
+}
+
+/// Reacquisition is by EXACT identity and never by pathname: the same path and
+/// range in another revision is a distinct, still-acquired piece, and the
+/// canonical record names the reuse or the acquisition rather than denying a
+/// request because its pathname appeared before.
+@Test
+def reacquisitionIsByExactIdentityAndNeverByPathname(): Unit \ Assert = {
+    let head = ref(Delivery.Complete, 1, 2);
+    let base = { world = head#world, revision = "rev-1", path = head#path, sha256 = head#sha256,
+          startLine = head#startLine, endLine = head#endLine, bytes = head#bytes, delivery = head#delivery };
+    let (reused, toAcquire) = reacquisitionPlan(List#{head}, List#{head, base});
+    Assert.assertEq(expected = 1, List.length(reused));
+    Assert.assertEq(expected = List#{"rev-1"}, List.map(r -> r#revision, toAcquire));
+    Assert.assertEq(expected = evidenceKey(head) + "\treuse\tcontext/ambiguity",
+        reacquisitionLine(head, true, "context/ambiguity"));
+    Assert.assertEq(expected = evidenceKey(base) + "\tacquire\tdistinct-obligation",
+        reacquisitionLine(base, false, "distinct-obligation"))
+}
+
+/// A verification record carries its exact inputs, the preconditions that had to
+/// hold, the observed result and the honest limits of the check. An inconclusive
+/// check records `Unknown`; it is evidence, never an automatic verdict, and an
+/// undeclared check kind or a missing input is refused.
+@Test
+def theVerificationRecordCarriesItsInputsPreconditionsResultAndLimits(): Unit \ Assert = {
+    let record = { hypothesis = "h1", checkKind = "base-head",
+        inputs = List#{"base-revision", "head-revision"},
+        preconditions = List#{"head-region-declared"}, result = "Unknown",
+        limits = List#{"the changed branch is not shown to be reached by any inspected caller"} };
+    Assert.assertEq(expected = 0, List.length(verificationFindings(record)));
+    Assert.assertEq(expected = true, List.memberOf("base-head", verificationKinds()));
+    Assert.assertEq(expected = "Unknown", record#result);
+    let unsupported = { hypothesis = "h1", checkKind = "voting-ensemble", inputs = record#inputs,
+        preconditions = record#preconditions, result = record#result, limits = record#limits };
+    Assert.assertEq(expected = 1, List.length(verificationFindings(unsupported)));
+    let noInput = { hypothesis = "h1", checkKind = "base-head", inputs = Nil,
+        preconditions = Nil, result = "NoMatch", limits = Nil };
+    Assert.assertEq(expected = 1, List.length(verificationFindings(noInput)))
+}
+
+/// The packet instrumentation is honest: it counts the physical acquisitions it
+/// was given and the packets it used, and a value the offline substrate cannot
+/// observe (a discovery outside the initial source neighborhood) stays
+/// `Unavailable` rather than a fabricated zero.
+@Test
+def thePacketInstrumentationIsHonestAndUnavailableStaysUnavailable(): Unit \ Assert = {
+    let one = manifestPacket("read-export", List#{"e"}, List#{ref(Delivery.Complete, 1, 2)}, None);
+    let two = manifestPacket("read-caller", List#{"e"}, List#{ref(Delivery.Complete, 3, 3)}, None);
+    let instrumentation = packetInstrumentation(List#{one, two}, 3);
+    Assert.assertEq(expected = 3, instrumentation#acquisitions);
+    Assert.assertEq(expected = 2, instrumentation#packetUses);
+    Assert.assertEq(expected = 2, instrumentation#distinctObligations);
+    Assert.assertEq(expected = "Unavailable", instrumentation#outsideNeighborhood);
+    Assert.assertEq(expected = "0\t0\t0\tUnavailable",
+        instrumentationLine(packetInstrumentation(Nil, 0)))
 }
 
 /// The finding funnel is monotone: a later stage never invents a finding, and

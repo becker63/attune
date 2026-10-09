@@ -681,6 +681,169 @@ pub mod Attune.Study.EvidenceSubstrate {
         displacement = "Unavailable"
     }
 
+    // --------------------- the changed-entrypoint manifest and byte accounting
+
+    /// One exact changed entrypoint of the materialized base/head diff: the world
+    /// and the base/head revisions it belongs to, its exact span in the changed
+    /// file, and the kind of entrypoint it is. The manifest of them is mandatory:
+    /// no changed entrypoint a packet references may be silently dropped.
+    pub type alias ChangedEntrypoint = {
+        world = String,
+        baseRevision = String,
+        headRevision = String,
+        path = String,
+        startLine = Int32,
+        endLine = Int32,
+        kind = String,
+        symbol = String
+    }
+
+    /// The declared kinds a changed entrypoint may be: a changed operation, an
+    /// exported symbol, a CLI entry, or an import/publication site.
+    pub def entrypointKinds(): List[String] =
+        List#{"operation", "exported-symbol", "cli-entry", "import-site"}
+
+    /// The exact identity of one changed entrypoint. World, both revisions, the
+    /// path, the exact span and the symbol all participate, so an entrypoint of
+    /// another revision can never stand in for it.
+    pub def entrypointKey(entrypoint: ChangedEntrypoint): String =
+        entrypoint#world + "|" + entrypoint#baseRevision + "|" + entrypoint#headRevision + "|"
+            + entrypoint#path + "|" + Int32.toString(entrypoint#startLine) + "|"
+            + Int32.toString(entrypoint#endLine) + "|" + entrypoint#kind + "|" + entrypoint#symbol
+
+    /// The canonical serialized record of one changed entrypoint, so a
+    /// materialized manifest and a Flix recomputation compare the same bytes.
+    pub def entrypointLine(entrypoint: ChangedEntrypoint): String =
+        String.intercalate("\t", List#{
+            entrypoint#world, entrypoint#baseRevision, entrypoint#headRevision, entrypoint#path,
+            Int32.toString(entrypoint#startLine), Int32.toString(entrypoint#endLine),
+            entrypoint#kind, entrypoint#symbol, entrypointKey(entrypoint)})
+
+    /// The identity findings of one changed entrypoint. It never judges a defect.
+    pub def entrypointFindings(entrypoint: ChangedEntrypoint): List[String] =
+        (if (String.isEmpty(entrypoint#world) or String.isEmpty(entrypoint#baseRevision)
+             or String.isEmpty(entrypoint#headRevision))
+            List#{"changed entrypoint has no world or revision identity"} else Nil)
+            ::: (if (String.isEmpty(entrypoint#path) or String.isEmpty(entrypoint#symbol))
+                List#{"changed entrypoint names no path or symbol"} else Nil)
+            ::: (if (List.memberOf(entrypoint#kind, entrypointKinds())) Nil
+                else List#{"changed entrypoint names no declared kind"})
+            ::: (if (entrypoint#startLine < 1 or entrypoint#endLine < entrypoint#startLine)
+                List#{"changed entrypoint carries an impossible line range"} else Nil)
+
+    /// The mandatory changed-entrypoint manifest findings of one packet: the
+    /// packet's own findings, plus one finding for every changed entrypoint the
+    /// packet references that the manifest does not declare. An undeclared
+    /// entrypoint is refused rather than silently accepted, and an empty manifest
+    /// refuses every packet that references one.
+    pub def packetManifestFindings(packet: EvidencePacket, manifest: List[ChangedEntrypoint]): List[String] =
+        let declared = List.map(entrypointKey, manifest);
+        packetFindings(packet) :::
+            List.map(key -> "packet references an undeclared changed entrypoint: " + key,
+                List.filter(key -> not List.memberOf(key, declared), packet#entrypoints))
+
+    /// The distinct pieces of one evidence set, first occurrence winning. Two
+    /// references with the same exact identity are one physical acquisition.
+    def distinctEvidence(seen: List[String], evidence: List[EvidenceRef]): List[EvidenceRef] = match evidence {
+        case Nil         => Nil
+        case ref :: rest =>
+            if (List.memberOf(evidenceKey(ref), seen)) distinctEvidence(seen, rest)
+            else ref :: distinctEvidence(evidenceKey(ref) :: seen, rest)
+    }
+
+    /// The unique evidence of one set, in the order it was first delivered.
+    pub def uniqueEvidence(evidence: List[EvidenceRef]): List[EvidenceRef] =
+        List.reverse(distinctEvidence(Nil, evidence))
+
+    /// The honest byte accounting of one evidence set: the unique evidence bytes
+    /// (each exact identity counted once), the total returned bytes (every
+    /// delivery counted, so a repeated reacquisition is visible instead of
+    /// hidden), the repeat bytes, and the whole available diff byte total. Unique
+    /// and total stay separate numbers, so reused evidence is never reported as
+    /// newly acquired bytes.
+    pub type alias ByteAccounting = {
+        uniqueBytes = Int32,
+        totalBytes = Int32,
+        repeatedBytes = Int32,
+        availableDiffBytes = Int32
+    }
+
+    pub def byteAccounting(evidence: List[EvidenceRef], availableDiffBytes: Int32): ByteAccounting =
+        let unique = uniqueEvidence(evidence);
+        let total = List.foldLeft((sum, ref) -> sum + ref#bytes, 0, evidence);
+        let distinct = List.foldLeft((sum, ref) -> sum + ref#bytes, 0, unique);
+        { uniqueBytes = distinct, totalBytes = total, repeatedBytes = total - distinct,
+          availableDiffBytes = availableDiffBytes }
+
+    /// The canonical serialized record of one byte accounting, so a materialized
+    /// accounting and a Flix recomputation compare the same bytes.
+    pub def byteAccountingLine(accounting: ByteAccounting): String =
+        String.intercalate("\t", List#{
+            Int32.toString(accounting#uniqueBytes), Int32.toString(accounting#totalBytes),
+            Int32.toString(accounting#repeatedBytes), Int32.toString(accounting#availableDiffBytes)})
+
+    /// The honest instrumentation of one packet review: how many physical
+    /// acquisitions the run made, how many packets it used and how many distinct
+    /// obligations those packets named. A value the offline substrate cannot
+    /// observe is `Unavailable` rather than a fabricated zero.
+    pub type alias PacketInstrumentation = {
+        acquisitions = Int32,
+        packetUses = Int32,
+        distinctObligations = Int32,
+        outsideNeighborhood = String
+    }
+
+    pub def packetInstrumentation(packets: List[EvidencePacket], acquisitions: Int32): PacketInstrumentation =
+        { acquisitions = acquisitions, packetUses = List.length(packets),
+          distinctObligations = List.length(List.distinct(List.map(
+              packet -> packet#obligation#operation + "\t" + packet#obligation#kind, packets))),
+          outsideNeighborhood = "Unavailable" }
+
+    pub def instrumentationLine(instrumentation: PacketInstrumentation): String =
+        String.intercalate("\t", List#{
+            Int32.toString(instrumentation#acquisitions), Int32.toString(instrumentation#packetUses),
+            Int32.toString(instrumentation#distinctObligations), instrumentation#outsideNeighborhood})
+
+    /// The canonical record of one reacquisition decision: the exact requested
+    /// identity, whether it was reused from an already-acquired exact identity,
+    /// and the purpose it was requested for. Reuse is by exact identity only, so
+    /// a request whose pathname appeared before but whose world, revision, range
+    /// or digest differs is still acquired rather than denied.
+    pub def reacquisitionLine(requested: EvidenceRef, reused: Bool, purpose: String): String =
+        evidenceKey(requested) + "\t" + (if (reused) "reuse" else "acquire") + "\t" + purpose
+
+    /// One bounded verification of a credible hypothesis: the cheapest existing
+    /// scoped check that can settle it. It records the exact inputs, the
+    /// preconditions that had to hold, the observed result and the honest limits
+    /// of the check. A check produces evidence, never an automatic verdict, and
+    /// an inconclusive or failed check is not a negative.
+    pub type alias VerificationRecord = {
+        hypothesis = String,
+        checkKind = String,
+        inputs = List[String],
+        preconditions = List[String],
+        result = String,
+        limits = List[String]
+    }
+
+    /// The declared check kinds: an exact source read, an existing assertion, a
+    /// bounded reproduction, or a base/head comparison.
+    pub def verificationKinds(): List[String] =
+        List#{"source-read", "existing-assertion", "reproduction", "base-head"}
+
+    pub def verificationFindings(record: VerificationRecord): List[String] =
+        (if (String.isEmpty(record#hypothesis)) List#{"verification names no hypothesis"} else Nil)
+            ::: (if (List.memberOf(record#checkKind, verificationKinds())) Nil
+                else List#{"verification names no declared check kind"})
+            ::: (if (List.isEmpty(record#inputs)) List#{"verification names no input"} else Nil)
+            ::: (if (String.isEmpty(record#result)) List#{"verification records no result"} else Nil)
+
+    pub def verificationLine(record: VerificationRecord): String =
+        String.intercalate("\t", List#{
+            record#hypothesis, record#checkKind, String.intercalate(",", record#inputs),
+            String.intercalate(",", record#preconditions), record#result,
+            String.intercalate(",", record#limits)})
+
     // ------------------------------------------------------- the finding funnel
 
     /// The observable finding funnel of one arm: how many candidate hypotheses

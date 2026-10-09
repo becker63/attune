@@ -36,6 +36,8 @@ js_library(
         "detector_sidecar.mjs",
         "evidence_tool.mjs",
         "guard.mjs",
+        "packet_boundary.mjs",
+        "packet_tool.mjs",
         "package.json",
         "tool_schema.mjs",
     ],
@@ -59,14 +61,30 @@ filegroup(
 exports_files([
     "attune-detector.plugin.yml",
     "attune-guard.plugin.yml",
+    "attune-packet.plugin.yml",
     "attune-tool.plugin.yml",
     "fixtures/boundary-world.tsv",
     "fixtures/expected-observation-projection.tsv",
     "fixtures/expected-reference-projection.tsv",
     "fixtures/facts.tsv",
+    "fixtures/packet/cart.base.ts",
+    "fixtures/packet/cart.head.ts",
+    "fixtures/packet/packet-world.tsv",
     "fixtures/source/shop.ts",
     "fixtures/world.tsv",
 ])
+
+# The declared sealed base/head source bytes of the packet world (VAL-SUB-010)
+# and the world manifest the packet tool reads. They are declared inputs of the
+# packet stage action and of the packet tool law; nothing here is fetched.
+filegroup(
+    name = "packet_fixtures",
+    srcs = [
+        "fixtures/packet/cart.base.ts",
+        "fixtures/packet/cart.head.ts",
+        "fixtures/packet/packet-world.tsv",
+    ],
+)
 
 # The overlays and the declared fixture world as one linked library, so the DSH
 # adapter's `js_binary` can carry them in its runfiles as declared data.
@@ -75,14 +93,29 @@ js_library(
     srcs = [
         "attune-detector.plugin.yml",
         "attune-guard.plugin.yml",
+        "attune-packet.plugin.yml",
         "attune-tool.plugin.yml",
         "fixtures/boundary-world.tsv",
         "fixtures/expected-observation-projection.tsv",
         "fixtures/expected-reference-projection.tsv",
         "fixtures/facts.tsv",
+        "fixtures/packet/cart.base.ts",
+        "fixtures/packet/cart.head.ts",
+        "fixtures/packet/packet-world.tsv",
         "fixtures/source/shop.ts",
         "fixtures/world.tsv",
     ],
+)
+
+js_test(
+    name = "packet_test",
+    data = [
+        ":evidence_tool_package",
+        ":packet_fixtures",
+        "//platform/dsh:evidence_packets",
+        "//platform/dsh:node_modules",
+    ],
+    entry_point = "packet_test.mjs",
 )
 
 js_test(
