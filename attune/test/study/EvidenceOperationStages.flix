@@ -694,6 +694,156 @@ def evidencePackets(): Unit \ {Assert, IO} = {
     writeText(outputsDir(), "verification.tsv", renderLines(List.map(verificationLine, verifications)))
 }
 
+// ------------------------------- the exact ReviewBench changed-entrypoint world
+
+/// The `k`-th single-quoted literal of one ACTUAL source line, or nothing when
+/// the line carries fewer literals or the literal is empty. It is a bounded
+/// lexical read of the real source text, never a semantic claim about the module
+/// the literal names.
+def quotedAt(line: String, k: Int32): Option[String] =
+    match atIndex(String.split(regex = "'", line), 2 * k + 1) {
+        case Some(value) => if (String.isEmpty(value)) None else Some(value)
+        case None        => None
+    }
+
+/// The leading identifier of one declaration line: the declared name of the
+/// `export`/`function`/`const` form the line carries, with the declaration
+/// keyword and any `async` modifier skipped. It reads only the actual text.
+def declaredName(line: String): String = {
+    let rest = String.trim(line);
+    let afterExport = if (String.startsWith(prefix = "export ", rest))
+        String.trim(String.drop(7, rest)) else rest;
+    let afterAsync = if (String.startsWith(prefix = "async ", afterExport))
+        String.trim(String.drop(6, afterExport)) else afterExport;
+    let afterKind = if (String.startsWith(prefix = "function ", afterAsync)) String.trim(String.drop(9, afterAsync))
+        else if (String.startsWith(prefix = "const ", afterAsync)) String.trim(String.drop(6, afterAsync))
+        else if (String.startsWith(prefix = "let ", afterAsync)) String.trim(String.drop(4, afterAsync))
+        else if (String.startsWith(prefix = "var ", afterAsync)) String.trim(String.drop(4, afterAsync))
+        else if (String.startsWith(prefix = "class ", afterAsync)) String.trim(String.drop(6, afterAsync))
+        else afterAsync;
+    match String.split(regex = "[^A-Za-z0-9_$]", afterKind) {
+        case name :: _ => name
+        case Nil       => ""
+    }
+}
+
+/// One declared site as a single-element list, or nothing when the symbol is
+/// empty. A site with no exact symbol is never published.
+def siteOf(kind: String, symbol: Option[String]): List[(String, String)] = match symbol {
+    case Some(value) => if (String.isEmpty(value)) Nil else List#{(kind, value)}
+    case None        => Nil
+}
+
+/// The declared entrypoint sites of one ACTUAL source line: a narrow literal
+/// static import, a CLI command registration (which names both the command and
+/// the literal module it resolves), an exported symbol, or a module operation.
+/// The extraction is generic and lexical: it branches on the syntax of the real
+/// bytes, never on a repository, task, gold or known-line identity.
+def lineSites(line: String): List[(String, String)] = {
+    let trimmed = String.trim(line);
+    if (String.startsWith(prefix = "import ", trimmed) and String.contains(substr = " from ", trimmed))
+        siteOf("import-site", quotedAt(line, 0))
+    else if (String.startsWith(prefix = "'", trimmed) and String.contains(substr = "await import(", line))
+        siteOf("cli-entry", quotedAt(line, 0)) ::: siteOf("import-site", quotedAt(line, 1))
+    else if (String.startsWith(prefix = "export ", trimmed))
+        siteOf("exported-symbol", Some(declaredName(trimmed)))
+    else if (String.startsWith(prefix = "function ", trimmed) or String.startsWith(prefix = "async function ", trimmed))
+        siteOf("operation", Some(declaredName(trimmed)))
+    else if (String.startsWith(prefix = "const ", trimmed) and String.contains(substr = " = ", trimmed))
+        siteOf("operation", Some(declaredName(trimmed)))
+    else Nil
+}
+
+/// One source text with its 1-based line numbers, in order.
+def indexedLines(lines: List[String], index: Int32, acc: List[(Int32, String)]): List[(Int32, String)] =
+    match lines {
+        case Nil          => List.reverse(acc)
+        case line :: rest => indexedLines(rest, index + 1, (index, line) :: acc)
+    }
+
+/// Every declared entrypoint site of one source text, as (1-based line, kind,
+/// symbol, exact line text). The line text travels with the site so a changed
+/// site is decided by exact byte identity, never by position.
+def textSites(text: String): List[(Int32, String, String, String)] =
+    List.flatMap(entry -> match entry {
+        case (index, line) => List.map(site -> match site {
+            case (kind, symbol) => (index + 1, kind, symbol, line)
+        }, lineSites(line))
+    }, indexedLines(String.lines(text), 0, Nil))
+
+/// The changed entrypoints of one base/head pair: a site of the head revision
+/// whose exact line text does not occur anywhere in the base revision. A site
+/// whose bytes are unchanged (even when it moved) is not a content change, and a
+/// site the base never carried is an addition. Nothing is decided by position.
+def changedSites(base: String, head: String): List[(Int32, String, String)] = {
+    let baseLines = String.lines(base);
+    List.map(entry -> match entry { case (line, kind, symbol, _) => (line, kind, symbol) },
+        List.filter(entry -> match entry {
+            case (_, _, _, text) => not List.memberOf(text, baseLines)
+        }, textSites(head)))
+}
+
+/// One changed site as the canonical changed entrypoint of one world.
+def reviewbenchEntrypoint(
+    worldId: String,
+    baseRevision: String,
+    headRevision: String,
+    path: String,
+    site: (Int32, String, String)
+): ChangedEntrypoint = match site {
+    case (line, kind, symbol) => { world = worldId, baseRevision = baseRevision,
+        headRevision = headRevision, path = path, startLine = line, endLine = line,
+        kind = kind, symbol = symbol }
+}
+
+/// The declared changed-entrypoint world of the exact retained ReviewBench source
+/// (VAL-SUB-010). It reads ONE real changed file's actual base/head bytes from
+/// the already-admitted `attune-reviewbench-worlds` corpus and materializes:
+///
+///  - `reviewbench-world.tsv`: the materialized diff identity (the world, both
+///    revisions, the path, the exact declared digests and the DERIVED byte
+///    counts) plus the manifest size and kinds, so the diff is materialized once
+///    with exact identity;
+///  - `changed-entrypoints.tsv`: the MANDATORY changed-entrypoint manifest,
+///    DERIVED from the actual bytes (a narrow literal import site, a CLI entry,
+///    an exported symbol or an operation), so no changed entrypoint the packets
+///    and obligations reference is silently dropped.
+///
+/// The declared byte counts are DERIVED from the real admitted source, so a world
+/// record that drifted from the source fails the stage loudly. No gold, target
+/// label or task identity is read or written; the stage acquires no corpus and
+/// calls no provider.
+def evidenceReviewbenchWorld(): Unit \ {Assert, IO} = {
+    let rows = List.map(fields, records(readText(required("world"))));
+    let world = firstRow(rows, "world");
+    Assert.assertEq(expected = false, List.isEmpty(world));
+    let worldId = field(world, 1);
+    let baseRevision = field(world, 2);
+    let headRevision = field(world, 3);
+    let path = field(world, 4);
+    let base = readText(required("baseSource"));
+    let head = readText(required("headSource"));
+    Assert.assertEq(expected = intOf(field(world, 7)), String.length(base));
+    Assert.assertEq(expected = intOf(field(world, 8)), String.length(head));
+    let manifest = List.map(site -> reviewbenchEntrypoint(worldId, baseRevision, headRevision, path, site),
+        changedSites(base, head));
+    Assert.assertEq(expected = true, List.length(manifest) > 1);
+    Assert.assertEq(expected = true, List.isEmpty(List.flatMap(entrypointFindings, manifest)));
+    Assert.assertEq(expected = true,
+        List.forAll(entrypoint -> entrypoint#world == worldId and entrypoint#path == path, manifest));
+    Assert.assertEq(expected = true, List.exists(entrypoint -> entrypoint#kind == "cli-entry", manifest));
+    Assert.assertEq(expected = true, List.exists(entrypoint -> entrypoint#kind == "import-site", manifest));
+    writeText(outputsDir(), "changed-entrypoints.tsv", renderLines(List.map(entrypointLine, manifest)));
+    writeText(outputsDir(), "reviewbench-world.tsv", renderLines(List#{
+        String.intercalate("\t", List#{"world", worldId, baseRevision, headRevision, path,
+            field(world, 5), field(world, 6), Int32.toString(String.length(base)),
+            Int32.toString(String.length(head))}),
+        String.intercalate("\t", List#{"manifest", Int32.toString(List.length(manifest))}),
+        String.intercalate("\t", List#{"kinds", String.intercalate(",",
+            List.distinct(List.map(entrypoint -> entrypoint#kind, manifest)))})
+    }))
+}
+
 @Test
 def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     let stage = stageName();
@@ -702,5 +852,6 @@ def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     else if (stage == "evidence_detectors") evidenceDetectors()
     else if (stage == "evidence_preflight") evidencePreflight()
     else if (stage == "evidence_packets") evidencePackets()
+    else if (stage == "evidence_reviewbench_world") evidenceReviewbenchWorld()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }

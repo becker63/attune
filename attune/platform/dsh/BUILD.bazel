@@ -172,6 +172,31 @@ native_study_stage(
     stage = "evidence_packets",
 )
 
+# The MANDATORY changed-entrypoint world of ONE real changed file of the exact
+# retained ReviewBench corpus (VAL-SUB-010). It is the same `native_study_stage`
+# shape over the same declared stage sources, but its base/head bytes are the
+# ALREADY-AUTHORIZED `attune-reviewbench-worlds` source of
+# `capawesome-team_cli-126/src/index.ts`, admitted read-only and digest-verified
+# by `//platform/build:retained_worlds.bzl` (never fetched, never a new corpus).
+# The stage DERIVES the changed-entrypoint manifest from the actual bytes; the
+# declared world record only names the identity. No gold, target label or task
+# branching is read or written.
+native_study_stage(
+    name = "evidence_reviewbench_world",
+    srcs = ["//test/study:evidence_operation_stage_srcs"],
+    input_names = [
+        "baseSource",
+        "headSource",
+        "world",
+    ],
+    inputs = [
+        "@attune_retained_worlds//:capawesome-cli-index-base",
+        "@attune_retained_worlds//:capawesome-cli-index-head",
+        "//test/study:fixtures/reviewbench-world.tsv",
+    ],
+    stage = "evidence_reviewbench_world",
+)
+
 # The declared DSH CLI binary. `entry.mjs` imports the package's own `bin.js`
 # unchanged, and the linked node_modules tree is the whole declared runtime
 # dependency closure, so Node's ordinary resolution finds every DSH plugin. The

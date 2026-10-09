@@ -174,6 +174,34 @@ native_flix_consumer_test(
     produced = ["//platform/dsh:evidence_packets"],
 )
 
+# The laws of the MANDATORY changed-entrypoint world over the exact retained
+# ReviewBench source (VAL-SUB-010). They consume the tree the
+# `evidence_reviewbench_world` stage action materialized and recompute the
+# changed-entrypoint manifest over the SAME real admitted base/head bytes of
+# `capawesome-team_cli-126/src/index.ts`: every named symbol must literally occur
+# in the actual head revision, the manifest must name both a CLI entry and a
+# narrow literal import site with exact world/revision/path identity, and the
+# materialized diff identity must report the real digests and the DERIVED byte
+# counts. The retained source is admitted read-only and digest-verified by
+# `//platform/build:retained_worlds.bzl`; no new corpus is acquired and no gold or
+# task identity is read. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_world_law",
+    srcs = [
+        "ReviewBenchWorldLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    declared_files = [
+        "fixtures/reviewbench-world.tsv",
+        "@attune_retained_worlds//:capawesome-cli-index-base",
+        "@attune_retained_worlds//:capawesome-cli-index-head",
+    ],
+    produced = ["//platform/dsh:evidence_reviewbench_world"],
+)
+
 # The wire-parity laws of the same contract. They read the frozen versioned wire
 # fixtures under `platform/dsh/typert/` through declared bindings, so the
 # canonical Flix meaning and the frozen fixture are compared over the real

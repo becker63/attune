@@ -1,3 +1,5 @@
 name	world	path	sha256
 usketch-sticky-plugin	EdV4H_usketch-534-head	EdV4H_usketch-534-head/EdV4H_usketch-719aa8340584e714552d132a9ec6971582673a8b/plugins/usketch-plugin-shape-sticky/src/plugin.tsx	e3a1adf789155254d634ef56c6477c5d2e704d825103c716d14065e9b20162a3
 usketch-rotation-util	EdV4H_usketch-534-head	EdV4H_usketch-534-head/EdV4H_usketch-719aa8340584e714552d132a9ec6971582673a8b/packages/shared/src/utils/rotation.ts	dc8d0c5ba3bb8743d6c4a0ad8cf190e64b67cf92fd29320d96a7e00570354197
+capawesome-cli-index-base	capawesome-team_cli-126-base	capawesome-team_cli-126-base/capawesome-team_cli-a03825128b8380f86dcf85e8d3507b3a41d9f775/src/index.ts	8f8f531028394771a7dbb8a69662ad1b70da94a9b07837cd1db8c9877790035b
+capawesome-cli-index-head	capawesome-team_cli-126-head	capawesome-team_cli-126-head/capawesome-team_cli-2d997db6e53c75213cbb13f2d3fdb636984eead4/src/index.ts	93fa22303a38bfaf3fb3c17c532a4ba3d46c8ce8d436584e1460b439ea761f1e
