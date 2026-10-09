@@ -55,6 +55,31 @@ test('the packet tool declares the packet operation parameters', () => {
   assert.deepEqual([...definition.parameters.properties.disclosure.enum].sort(), ['full-source', 'progressive'])
 })
 
+// The DSH output boundary validates the returned object against the declared
+// output schema with `additionalProperties: false`, so an undeclared returned
+// property is a runtime refusal of the whole tool result (an actual remote run
+// caught exactly that for `spans`). This law pins the declared schema to the
+// object the tool actually returns for every disclosure mode.
+test('every returned output property is declared in the output schema', async () => {
+  const definition = registeredDefinition({})
+  const schema = definition.output.schema
+  assert.equal(schema.additionalProperties, false)
+  const declared = new Set(Object.keys(schema.properties))
+  const declaredSpan = new Set(Object.keys(schema.properties.spans.items.properties))
+  assert.equal(schema.properties.spans.items.additionalProperties, false)
+  for (const args of [PROGRESSIVE, FULL_SOURCE]) {
+    const value = await definition.execute(args, {})
+    for (const key of Object.keys(value)) {
+      assert.ok(declared.has(key), `the returned property "${key}" must be declared in the output schema`)
+    }
+    for (const span of value.spans) {
+      for (const key of Object.keys(span)) {
+        assert.ok(declaredSpan.has(key), `the returned span property "${key}" must be declared in the output schema`)
+      }
+    }
+  }
+})
+
 // ------------------------------------------------------- the compiled world
 
 test('the compiled packet world materializes the declared packets and spans', () => {

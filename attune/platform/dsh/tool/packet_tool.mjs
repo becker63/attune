@@ -232,6 +232,28 @@ export function apply(ctx, config) {
             missing: { type: 'string', required: true },
             uniqueBytes: { type: 'number', required: true },
             totalBytes: { type: 'number', required: true },
+            // The exact declared spans the disclosure served. Every property the
+            // tool returns must be DECLARED here: the DSH output boundary
+            // validates the returned object against this schema with
+            // `additionalProperties: false`, so an undeclared property is a
+            // runtime refusal (an actual remote run caught exactly that).
+            spans: {
+              type: 'array',
+              required: true,
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  world: { type: 'string', required: true },
+                  revision: { type: 'string', required: true },
+                  path: { type: 'string', required: true },
+                  startLine: { type: 'number', required: true },
+                  endLine: { type: 'number', required: true },
+                  sha256: { type: 'string', required: true },
+                  bytes: { type: 'number', required: true },
+                },
+              },
+            },
           },
         },
         render: (_args, value) => [

@@ -300,6 +300,31 @@ dsh_agent_run(
     task = "Do exactly two things. First call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/shop.ts', startLine 1, endLine 2, and report the full sha256 value it returns. Second call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/secret.ts', startLine 1, endLine 1, and report the exact error message it returns.",
 )
 
+# The ONE final authorized gold-blind remote integration smoke that folds in the
+# COMPILED-operation AND the COMPILED-packet path (VAL-SUB-002/003/007 remote,
+# VAL-SUB-010 runtime half). It boots the SAME declared `siwc-responses` route as
+# the gate above and mounts BOTH authored tool overlays, so one native AgentLoop
+# on the pinned arm64 RBE calls `attune_evidence_operation` (the compiled Flix
+# operation's own materialized record for a declared region, plus the runtime
+# boundary refusal for an undeclared one) AND `attune_packet_operation` (the
+# compiled packet world, progressive and then the retained full-source escape).
+# No gold, no target label and no task identity is handed to the model: it names
+# only the declared world, revisions, ranges and packet ids. The native session
+# tree and the `--json` event stream are declared outputs, so the run is
+# materialized into the CAS and can be imported locally through the supported
+# persistence API. It is `manual`: the ordinary `bazel test //...` gate never
+# runs a provider.
+dsh_agent_run(
+    name = "reviewbench_integration_smoke",
+    plugin_patches = [
+        "//platform/dsh/tool:attune-packet.plugin.yml",
+        "//platform/dsh/tool:attune-tool.plugin.yml",
+    ],
+    routes = ["route-siwc-responses.yml"],
+    tags = ["manual"],
+    task = "Do exactly four things. First call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/shop.ts', startLine 1, endLine 2, and report the full sha256 value it returns. Second call attune_evidence_operation with world 'world-evidence-1', revision 'rev-1', path 'source/secret.ts', startLine 1, endLine 1, and report the exact error message it returns. Third call attune_packet_operation with packet 'p1' and disclosure 'progressive', and report the returned uniqueBytes and totalBytes. Fourth call attune_packet_operation with packet 'p1' and disclosure 'full-source', and report the returned totalBytes.",
+)
+
 # --------------------------------------------------------------------------
 # The narrow Typert boundary (VAL-SUB-004/005/006).
 #
