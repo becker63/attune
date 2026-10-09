@@ -1,5 +1,5 @@
 load("//platform/build:native.bzl", "native_flix_java_test", "native_study_stage")
-load("//platform/build:sol.bzl", "attune_path_manifest", "attune_reviewbench_judge_cohort", "attune_sol_route_check")
+load("//platform/build:sol.bzl", "attune_path_manifest", "attune_reviewbench_corrective_cohort", "attune_reviewbench_judge_cohort", "attune_sol_route_check")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -45,7 +45,7 @@ attune_sol_route_check(
     tags = ["manual"],
 )
 
-exports_files(["prompt-judge.txt", "prompt-adjudicate.txt"])
+exports_files(["prompt-judge.txt", "prompt-adjudicate.txt", "prompt-corrective.txt"])
 
 # The frozen judge prompt's exact identity: the SHA-256 of `prompt-judge.txt`,
 # frozen AFTER the candidate findings exist and BEFORE any gold exposure. It is
@@ -57,6 +57,15 @@ JUDGE_PROMPT_IDENTITY = "sha256:3c4dbb6dc3457a97ca98fa985b7645b3a76cabf60d98cd7a
 # `prompt-adjudicate.txt`. The adjudicator sees the blinded candidates the judge
 # found no reference for and NO golden set at all.
 ADJUDICATION_PROMPT_IDENTITY = "sha256:8168d1d97d2a19ad7ba05a7229ae8f1cae69c9571fb3f165cf6c2bf088bfaac3"
+
+# The frozen arm-isolated CORRECTIVE prompt's exact identity: the SHA-256 of
+# `prompt-corrective.txt`, PREREGISTERED before any corrective output and never
+# tuned (`library/reviewbench-adjudication-correction.md`). It is a SEPARATE
+# prompt from the joint adjudication prompt: each corrective session sees exactly
+# its own arm's TWO unmatched candidates, no other arm, no reference set and no
+# prior verdict. It is the SAME value
+# `Attune.Study.ReviewBenchJudge.correctivePromptIdentity()` declares.
+CORRECTIVE_PROMPT_IDENTITY = "sha256:4c1bcf28526d2355aa365b066f7c87ed6df1cc94454b64f6e77aef928cf33136"
 
 # The pinned companion `codex-code-mode-host` binary and the pinned bundled
 # sandbox helper of the same Codex release, exactly as the verified inspected and
@@ -203,6 +212,91 @@ attune_reviewbench_judge_cohort(
     role = "adjudicate",
     tasks = JUDGE_TASKS,
     world_repo = "@reviewbench_worlds",
+)
+
+# The ONE corrective task of the arm-isolated re-adjudication
+# (`library/reviewbench-adjudication-correction.md`): the task whose executed
+# joint adjudication carried the confirmed cross-arm duplicate bias.
+CORRECTIVE_TASK = [
+    "task",
+    "haoling_diary-notebook-blog-transformer-24",
+    "haoling/diary-notebook-blog-transformer",
+    "haoling_diary-notebook-blog-transformer-24-head",
+]
+
+# The declared provider-free corrective candidate stage: it reads ONLY the frozen
+# findings fixtures and the frozen unmatched-selection record and writes one
+# per-arm candidate file (fresh per-arm positional ids, no arm cell), the
+# evaluator-only blinding record and the corrective index. It declares no
+# dependency on the original live judge/adjudication producers, so building it
+# can never re-key or re-execute an original session. No model, no Grit, no
+# Theory and no world download happens here.
+native_study_stage(
+    name = "reviewbench_corrective_candidates",
+    srcs = STAGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"],
+    inputs = [":judge_fixtures"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_corrective_candidates",
+    tags = ["manual"],
+)
+
+# The declared arm-isolated corrective cohort (`VAL-REVIEW-004`): EXACTLY TWO
+# fresh SIWC `gpt-6.1-sol` medium sessions, one per arm, on the SAME dedicated
+# BuildBuddy platform, the SAME frozen client-mechanical limits (300 s / 32
+# rounds / 256k) and the SAME route as the executed adjudication. Each session
+# sees only its own arm's two unmatched candidates under fresh ids, with no
+# condition label, no other-arm candidate, no prior judge or adjudication verdict
+# and NO golden set. Every target is `manual`, so the ordinary `bazel test //...`
+# gate never runs a corrective session and never spends plan usage.
+attune_reviewbench_corrective_cohort(
+    name = "reviewbench_corrective",
+    bwrap = CODE_BWRAP,
+    candidates = ":reviewbench_corrective_candidates",
+    code_mode_host = CODE_MODE_HOST,
+    codex = "@codex_cli//:codex-aarch64-unknown-linux-musl",
+    issues = "//test/reviewbench_review:reviewbench_review_issues",
+    measure = "//test/reviewbench:reviewbench_measure",
+    prompt = ":prompt-corrective.txt",
+    prompt_identity = CORRECTIVE_PROMPT_IDENTITY,
+    task = CORRECTIVE_TASK,
+    world_repo = "@reviewbench_worlds",
+)
+
+# The declared action paths of the corrective session receipts. The report stage
+# binds exactly one declared input per name, so the two corrective outputs arrive
+# as a manifest of action paths and the report opens exactly those it names.
+attune_path_manifest(
+    name = "corrective_outputs",
+    srcs = [":reviewbench_corrective"],
+)
+
+# The declared corrective report stage: it reduces the two corrective session
+# receipts and the frozen old-joint adjudication through the ONE canonical
+# `Attune.Study.Metrics` path PER ARM, and reports the old (joint, provisional)
+# and new (per-arm corrected) numbers SEPARATELY. Provider-free: 0 corrective
+# sessions, 0 judge sessions, 0 adjudication sessions, 0 Sol turns, 0 Grit and
+# 0 Theory work, so a replay is fixture-only with ZERO provider calls.
+native_study_stage(
+    name = "reviewbench_corrective_report",
+    srcs = STAGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]) + [":reviewbench_corrective"],
+    input_names = ["fixtures", "candidates", "corrective"],
+    inputs = [
+        ":judge_fixtures",
+        ":reviewbench_corrective_candidates",
+        ":corrective_outputs",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_corrective_report",
+    tags = ["manual"],
 )
 
 # The declared action paths of the judge and adjudication receipts. A stage binds

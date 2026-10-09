@@ -337,6 +337,86 @@ def attune_reviewbench_judge_cohort(
     )
     return targets
 
+def attune_reviewbench_corrective_cohort(
+        name,
+        task,
+        prompt,
+        prompt_identity,
+        codex,
+        code_mode_host,
+        bwrap,
+        world_repo,
+        measure,
+        issues,
+        candidates):
+    """Expand the ONE corrective task into TWO arm-isolated corrective sessions.
+
+    `VAL-REVIEW-004` correction (`library/reviewbench-adjudication-correction.md`):
+    the executed joint adjudication carried a confirmed CROSS-ARM duplicate bias on
+    this one task, so it is re-adjudicated by EXACTLY TWO fresh sessions, one per
+    arm. Each session reads ONLY its own arm's two unmatched candidates under
+    fresh per-arm positional ids (a candidate projection with no arm cell), the
+    SAME frozen change block, public issue and corrective prompt, and NO golden
+    set at all. The SAME mechanical inspected runner, the SAME dedicated SIWC
+    route and the SAME frozen client-mechanical budgets as the executed
+    adjudication are reused: the corrective role is the adjudication path with a
+    distinct declared role name, so nothing about the route or the budget changes.
+    The arm is carried only by the target name (an evaluator-side label), never by
+    the session input or its receipt.
+
+    Args:
+      name: the aggregating filegroup name; each target is `<name>__<task>_<arm>`.
+      task: the single admitted cohort row `[kind, task, group, head_world, ...]`.
+      prompt: the frozen corrective prompt, byte-identical for both arms.
+      prompt_identity: the declared identity of the frozen corrective prompt bytes.
+      codex: the pinned Codex CLI binary target.
+      code_mode_host: the pinned companion `codex-code-mode-host` binary.
+      bwrap: the pinned bundled sandbox helper.
+      world_repo: the declared acquisition repository of the base/head archives.
+      measure: the admitted measurement tree holding each task's changed record.
+      issues: the declared metadata tree holding `issues.tsv`.
+      candidates: the declared provider-free per-arm corrective candidate tree.
+
+    Returns:
+      The list of the two expanded per-arm target labels.
+    """
+    targets = []
+    key = task[1]
+    head_world = task[3]
+    base_world = head_world[:-len("-head")] + "-base"
+    pr = int(key.rsplit("-", 1)[1])
+    for arm in ("A", "B"):
+        target_name = "%s__%s_%s" % (name, key, arm.lower())
+        attune_sol_task(
+            name = target_name,
+            arm_name = "corrective",
+            base_repo = "%s//:%s" % (world_repo, base_world),
+            base_world = base_world,
+            bwrap = bwrap,
+            candidates = candidates,
+            candidates_name = "corrective-%s.tsv" % arm.lower(),
+            changed = measure,
+            code_mode_host = code_mode_host,
+            codex = codex,
+            inspect = True,
+            judge_role = "corrective",
+            pr = pr,
+            prompt = prompt,
+            prompt_identity = prompt_identity,
+            repo = "%s//:%s" % (world_repo, head_world),
+            review_issues = issues,
+            tags = ["manual"],
+            task = key,
+            world = head_world,
+        )
+        targets.append(":" + target_name)
+    native.filegroup(
+        name = name,
+        srcs = targets,
+        tags = ["manual"],
+    )
+    return targets
+
 def _path_manifest_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + ".txt")
     ctx.actions.write(out, "\n".join(sorted([file.path for file in ctx.files.srcs])) + "\n")

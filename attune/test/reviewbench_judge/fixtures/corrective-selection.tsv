@@ -1,0 +1,10 @@
+# Frozen per-arm unmatched-candidate selection for the arm-isolated corrective
+# adjudication (library/reviewbench-adjudication-correction.md). Every haoling
+# candidate was UNMATCHED by the executed blinded judge (judge unmatched.tsv,
+# preserved in library/reviewbench-correction-snapshots/judge-outputs/), so each
+# arm's TWO unmatched candidates are its two frozen findings. Columns:
+# corrective-selection <task> <arm> <frozen-rank>.
+corrective-selection	haoling_diary-notebook-blog-transformer-24	A	1
+corrective-selection	haoling_diary-notebook-blog-transformer-24	A	2
+corrective-selection	haoling_diary-notebook-blog-transformer-24	B	1
+corrective-selection	haoling_diary-notebook-blog-transformer-24	B	2

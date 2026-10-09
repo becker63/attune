@@ -674,6 +674,309 @@ def reportStage(): Unit \ {Assert, IO} = {
         List.foldLeft(allViewClassified, 0, judged))
 }
 
+// -------------------------------------------------- corrective candidate stage
+
+///
+/// The arm-isolated corrective adjudication
+/// (`library/reviewbench-adjudication-correction.md`, `VAL-REVIEW-004`).
+///
+/// The confirmed cross-arm duplicate bias is corrected by EXACTLY TWO fresh,
+/// arm-isolated sessions over the ONE task whose joint adjudication carried it.
+/// Each session sees only its OWN arm's TWO unmatched candidates under fresh
+/// per-arm positional ids, with no condition/arm label, no other-arm candidate,
+/// no prior judge or adjudication verdict, no reference set and no gold. The
+/// corrective candidate projection is built from the FROZEN findings and the
+/// frozen unmatched-selection record alone: it declares no dependency on the
+/// original live judge or adjudication producers, so building or running it can
+/// never re-key or re-execute an original session. Everything here is
+/// provider-free.
+///
+
+def correctiveSelectionOf(line: String): Option[(String, String, Int32)] = match fields(line) {
+    case "corrective-selection" :: task :: arm :: rank :: _ => Some((task, arm, intOf(rank)))
+    case _                                                   => None
+}
+
+def correctiveSelections(fixtures: List[String]): List[(String, String, Int32)] \ IO =
+    match List.find(path -> matchesSuffix("corrective-selection.tsv", path), fixtures) {
+        case Some(path) => List.filterMap(correctiveSelectionOf, records(readText(path)))
+        case None       => Nil
+    }
+
+def selectedRanks(selections: List[(String, String, Int32)], arm: String): List[Int32] =
+    List.map(row -> match row { case (_, _, rank) => rank },
+        List.filter(row -> match row { case (_, entryArm, _) => entryArm == arm }, selections))
+
+/// The arm's frozen unmatched candidates named by the selection record, in the
+/// record's own order, each read from the frozen findings bytes.
+def selectedFindings(
+    fixtures: List[String],
+    task: String,
+    arm: String,
+    selections: List[(String, String, Int32)]): List[ReviewBenchJudge.Candidate] \ IO = {
+    let findings = findingsFor(fixtures, task, arm);
+    List.filterMap(rank -> findByRank(rank, findings), selectedRanks(selections, arm))
+}
+
+/// The fresh per-arm positional id. It names neither the arm nor the frozen rank
+/// of the review family, so the session cannot recover the cross-arm pairing.
+def freshId(index: Int32): String = "X" + Int32.toString(index)
+
+def correctiveCandidateRow(pair: (Int32, ReviewBenchJudge.Candidate)): List[String] = match pair {
+    case (index, candidate) =>
+        List#{"candidate", freshId(index), candidate#file, candidate#start, candidate#end,
+              candidate#severity, candidate#category, candidate#message}
+}
+
+def correctiveRows(candidates: List[ReviewBenchJudge.Candidate]): List[List[String]] =
+    List.map(correctiveCandidateRow, List.zip(List.range(1, List.length(candidates) + 1), candidates))
+
+def armLower(arm: String): String = if (arm == "A") "a" else "b"
+
+def correctiveArmFile(arm: String): String = "corrective-" + armLower(arm) + ".tsv"
+
+def correctiveBlindingRow(task: String, arm: String, pair: (Int32, ReviewBenchJudge.Candidate)): List[String] =
+    match pair {
+        case (index, candidate) =>
+            List#{"corrective-blinding", freshId(index), task, arm, Int32.toString(candidate#rank)}
+    }
+
+def correctiveBlindingRows(task: String, arm: String, candidates: List[ReviewBenchJudge.Candidate]): List[List[String]] =
+    List.map(pair -> correctiveBlindingRow(task, arm, pair),
+        List.zip(List.range(1, List.length(candidates) + 1), candidates))
+
+def correctiveFileRow(arm: String, candidates: List[ReviewBenchJudge.Candidate]): List[String] =
+    List#{"corrective-file", arm, correctiveArmFile(arm), Int32.toString(List.length(candidates))}
+
+/// One corrective-blinding row is well formed when it carries the declared shape
+/// and its arm cell is one of the two declared arms.
+def correctiveBlindingRowDeclared(row: List[String]): Bool =
+    List.length(row) == 5 and cellOf(row, 0) == "corrective-blinding"
+        and (cellOf(row, 3) == "A" or cellOf(row, 3) == "B")
+
+def correctiveStage(): Unit \ {Assert, IO} = {
+    let dir = outputsDir();
+    let fixtures = manifestPaths("fixtures");
+    let selections = correctiveSelections(fixtures);
+    let tasks = List.distinct(List.map(row -> match row { case (task, _, _) => task }, selections));
+    let task = Option.getWithDefault("", List.head(tasks));
+    let arms = List#{"A", "B"};
+    let perArm = List.map(arm -> (arm, selectedFindings(fixtures, task, arm, selections)), arms);
+    let _ = List.map(pair -> match pair {
+        case (arm, candidates) => writeText(dir, correctiveArmFile(arm), renderTsv(correctiveRows(candidates)))
+    }, perArm);
+    let blinding = List.flatMap(pair -> match pair {
+        case (arm, candidates) => correctiveBlindingRows(task, arm, candidates)
+    }, perArm);
+    writeText(dir, "corrective-blinding.tsv", renderTsv(blinding));
+    writeText(dir, "corrective-index.tsv", renderTsv(List.map(pair -> match pair {
+        case (arm, candidates) => correctiveFileRow(arm, candidates)
+    }, perArm)));
+    writeText(dir, "corrective-task.tsv", renderTsv(List#{
+        List#{"corrective-task", task, Int32.toString(List.length(selections))}
+    }));
+    // Exactly ONE corrective task, TWO arms, and exactly TWO unmatched candidates
+    // per arm; every candidate row carries the 8-cell blinded shape with NO arm
+    // cell, and the separate blinding record names every arm.
+    Assert.assertEq(expected = 1, List.length(tasks));
+    Assert.assertEq(expected = true, not String.isEmpty(task));
+    Assert.assertEq(expected = 2, List.length(perArm));
+    Assert.assertEq(expected = true, List.forAll(pair -> match pair {
+        case (_, candidates) => List.length(candidates) == 2
+    }, perArm));
+    Assert.assertEq(expected = true, List.forAll(pair -> match pair {
+        case (_, candidates) => List.forAll(eightCells, correctiveRows(candidates))
+    }, perArm));
+    Assert.assertEq(expected = 4, List.length(blinding));
+    Assert.assertEq(expected = true, List.forAll(correctiveBlindingRowDeclared, blinding))
+}
+
+// ------------------------------------------------------ corrective report stage
+
+def correctiveIndexOf(line: String): Option[(String, String)] = match fields(line) {
+    case "corrective-file" :: arm :: name :: _ => Some((arm, name))
+    case _                                      => None
+}
+
+def correctiveIndex(dir: String): List[(String, String)] \ IO =
+    List.filterMap(correctiveIndexOf, records(readText(dir + "/corrective-index.tsv")))
+
+def correctiveFileFor(index: List[(String, String)], arm: String): String =
+    match List.find(entry -> match entry { case (entryArm, _) => entryArm == arm }, index) {
+        case Some((_, name)) => name
+        case None            => correctiveArmFile(arm)
+    }
+
+/// The arm's corrective session adjudications, read from the receipts' own
+/// `adjudged` projection. The arm is inferred from the target filename alone; the
+/// session receipt itself carries no arm label.
+def correctiveAdjudications(paths: List[String], suffix: String): List[ReviewBenchJudge.Adjudication] \ IO =
+    List.flatMap(path -> parseAdjudications(readText(path)),
+        List.filter(path -> String.endsWith(suffix = suffix, path), paths))
+
+/// One frozen original-blinding entry rendered into the old (joint) candidate of
+/// its arm, using the frozen findings bytes. This reconstructs the OLD
+/// provisional observation set from frozen evidence alone.
+def oldCandidateOf(
+    entry: (String, String, String, Int32),
+    findings: List[ReviewBenchJudge.Candidate]): Option[ReviewBenchJudge.Candidate] =
+    match entry {
+        case (id, task, arm, rank) => Option.map(candidate -> {
+            id = id, task = task, arm = arm, rank = rank, file = candidate#file,
+            start = candidate#start, end = candidate#end, severity = candidate#severity,
+            category = candidate#category, message = candidate#message
+        }, findByRank(rank, findings))
+    }
+
+def labelledCountsRow(label: String, arm: String, counts: ReviewBenchJudge.Counts): List[String] =
+    List#{"corrective-counts", label, arm,
+        Int32.toString(counts#candidates), Int32.toString(counts#matched),
+        Int32.toString(counts#matchedTrue), Int32.toString(counts#unmatched),
+        Int32.toString(counts#unmatchedValid), Int32.toString(counts#unmatchedInvalid),
+        Int32.toString(counts#unmatchedUnresolved), Int32.toString(counts#goldTrue),
+        Int32.toString(counts#goldCovered)}
+
+/// One labelled exact metric through the ONE canonical `Attune.Study.Metrics`
+/// path. An undefined ratio is omitted rather than reported as a zero.
+def labelledMetricRows(label: String, arm: String, counts: ReviewBenchJudge.Counts): List[List[String]] =
+    List.filterMap(metric -> Option.map(ratio -> List#{
+        "corrective-metric", label, arm, ReviewBenchJudge.judgeMetricName(metric),
+        Metrics.ratioPercentage(ratio), Int32.toString(ratio#numerator),
+        Int32.toString(ratio#denominator)
+    }, ReviewBenchJudge.metricRatio(metric, counts)), ReviewBenchJudge.judgeMetrics())
+
+def labelledVerdictRow(label: String, arm: String, entry: ReviewBenchJudge.Classified): List[String] =
+    List#{"corrective-verdict", label, arm, (entry#candidate)#id,
+        ReviewBenchJudge.verdictName(entry#verdict)}
+
+def metricPercent(metric: ReviewBenchJudge.JudgeMetric, counts: ReviewBenchJudge.Counts): String =
+    match ReviewBenchJudge.metricRatio(metric, counts) {
+        case Some(ratio) => Metrics.ratioPercentage(ratio)
+        case None        => "Unavailable"
+    }
+
+/// One old-versus-new contrast row for one arm and one metric: the provisional
+/// joint value beside the corrected per-arm value, both labelled by the table's
+/// own label column so neither is silently overwritten.
+def contrastRow(
+    arm: String,
+    metric: ReviewBenchJudge.JudgeMetric,
+    old: ReviewBenchJudge.Counts,
+    corrected: ReviewBenchJudge.Counts): List[String] =
+    List#{"corrective-contrast", arm, ReviewBenchJudge.judgeMetricName(metric),
+        metricPercent(metric, old), metricPercent(metric, corrected)}
+
+def correctiveSessionRow(arm: String, text: String): List[String] =
+    List#{"corrective-session", arm, receiptScalar(text, "judge_role"), receiptScalar(text, "task"),
+          receiptScalar(text, "result_status"), receiptScalar(text, "failure"),
+          receiptScalar(text, "candidate_count"), receiptScalar(text, "judgment_count"),
+          receiptScalar(text, "total_tokens"), receiptScalar(text, "turn_wall_ms")}
+
+def correctiveReportStage(): Unit \ {Assert, IO} = {
+    let dir = outputsDir();
+    let fixtures = manifestPaths("fixtures");
+    let candidatesDir = Option.getWithDefault("", binding("candidates"));
+    let correctivePaths = manifestPaths("corrective");
+    let selections = correctiveSelections(fixtures);
+    let tasks = List.distinct(List.map(row -> match row { case (task, _, _) => task }, selections));
+    let task = Option.getWithDefault("", List.head(tasks));
+    let arms = List#{"A", "B"};
+    let index = correctiveIndex(candidatesDir);
+    let originalBlinding = match List.find(path -> matchesSuffix("haoling-original-blinding.tsv", path), fixtures) {
+        case Some(path) => parseBlinding(readText(path))
+        case None       => Nil
+    };
+    let oldAdjudications = match List.find(path -> matchesSuffix("haoling-old-joint-adjudication.tsv", path), fixtures) {
+        case Some(path) => parseAdjudications(readText(path))
+        case None       => Nil
+    };
+    // NEW (corrected, per arm): the arm's two fresh-id candidates classified from
+    // its own corrective observations alone.
+    let newPerArm = List.map(arm -> {
+        let candidates = List.map(candidate -> withArm(candidate, arm),
+            parseCandidates(task, readText(candidatesDir + "/" + correctiveFileFor(index, arm))));
+        let adjudications = correctiveAdjudications(correctivePaths, "_" + armLower(arm) + ".judgments.tsv");
+        let classified = ReviewBenchJudge.correctiveClassify(candidates, adjudications);
+        (arm, classified, ReviewBenchJudge.countsOf(classified, Nil, Nil))
+    }, arms);
+    // OLD (joint, provisional): the arm's frozen C-id candidates classified from
+    // the preserved joint adjudication statuses, per arm. Reported SEPARATELY,
+    // never as the corrected result and never rewritten.
+    let oldPerArm = List.map(arm -> {
+        let findings = findingsFor(fixtures, task, arm);
+        let entries = List.filter(entry -> match entry {
+            case (_, owner, entryArm, _) => owner == task and entryArm == arm
+        }, originalBlinding);
+        let candidates = List.filterMap(entry -> oldCandidateOf(entry, findings), entries);
+        let classified = ReviewBenchJudge.correctiveClassify(candidates, oldAdjudications);
+        (arm, classified, ReviewBenchJudge.countsOf(classified, Nil, Nil))
+    }, arms);
+    writeText(dir, "corrective-counts.tsv", renderTsv(
+        List.flatMap(pair -> match pair { case (arm, _, counts) => List#{
+            labelledCountsRow("old", arm, counts)
+        }}, oldPerArm) ::: List.flatMap(pair -> match pair { case (arm, _, counts) => List#{
+            labelledCountsRow("new", arm, counts)
+        }}, newPerArm)));
+    writeText(dir, "corrective-metrics.tsv", renderTsv(
+        List.flatMap(pair -> match pair { case (arm, _, counts) => labelledMetricRows("old", arm, counts) }, oldPerArm)
+            ::: List.flatMap(pair -> match pair { case (arm, _, counts) => labelledMetricRows("new", arm, counts) }, newPerArm)));
+    writeText(dir, "corrective-verdicts.tsv", renderTsv(
+        List.flatMap(pair -> match pair { case (arm, classified, _) =>
+            List.map(entry -> labelledVerdictRow("old", arm, entry), classified) }, oldPerArm)
+            ::: List.flatMap(pair -> match pair { case (arm, classified, _) =>
+            List.map(entry -> labelledVerdictRow("new", arm, entry), classified) }, newPerArm)));
+    writeText(dir, "corrective-old-vs-new.tsv", renderTsv(
+        List.flatMap(arm -> {
+            let oldCounts = match List.find(pair -> match pair { case (entryArm, _, _) => entryArm == arm }, oldPerArm) {
+                case Some((_, _, counts)) => counts
+                case None                 => ReviewBenchJudge.zeroCounts()
+            };
+            let newCounts = match List.find(pair -> match pair { case (entryArm, _, _) => entryArm == arm }, newPerArm) {
+                case Some((_, _, counts)) => counts
+                case None                 => ReviewBenchJudge.zeroCounts()
+            };
+            List.map(metric -> contrastRow(arm, metric, oldCounts, newCounts),
+                ReviewBenchJudge.judgeMetrics())
+        }, arms)));
+    let sessions = List.map(path -> correctiveSessionRow(sessionArm(path), readText(path)),
+        List.filter(path -> String.endsWith(suffix = ".receipt.json", path), correctivePaths));
+    writeText(dir, "corrective-sessions.tsv", renderTsv(sessions));
+    writeText(dir, "corrective-failures.tsv", renderTsv(List.filter(sessionFailed, sessions)));
+    writeText(dir, "corrective-provenance.tsv", renderTsv(List#{
+        List#{"population", "task", task},
+        List#{"population", "selections", Int32.toString(List.length(selections))},
+        List#{"population", "old-candidates", Int32.toString(List.foldLeft(sumOldCandidates, 0, oldPerArm))},
+        List#{"population", "new-candidates", Int32.toString(List.foldLeft(sumNewCandidates, 0, newPerArm))},
+        List#{"population", "corrective-sessions", Int32.toString(List.length(sessions))},
+        List#{"population", "corrective-receipt-paths", Int32.toString(List.length(List.filter(
+            path -> String.endsWith(suffix = ".receipt.json", path), correctivePaths)))}
+    }));
+    // EXACTLY TWO corrective sessions, one per arm, each over TWO candidates; the
+    // corrected per-arm population is exactly the two unmatched candidates, and
+    // no arm's candidate silently leaves the classification.
+    Assert.assertEq(expected = 2, List.length(sessions));
+    Assert.assertEq(expected = true, List.forAll(row -> cellOf(row, 4) == "ok", sessions));
+    Assert.assertEq(expected = 2, List.length(newPerArm));
+    Assert.assertEq(expected = true, List.forAll(pair -> match pair {
+        case (_, _, counts) => counts#candidates == 2
+    }, newPerArm));
+    Assert.assertEq(expected = true, List.forAll(pair -> match pair {
+        case (_, _, counts) => counts#candidates == 2
+    }, oldPerArm))
+}
+
+def sessionArm(path: String): String = if (String.endsWith(suffix = "_a.receipt.json", path)) "A" else "B"
+
+def sumOldCandidates(acc: Int32, pair: (String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)): Int32 =
+    match pair {
+        case (_, _, counts) => acc + counts#candidates
+    }
+
+def sumNewCandidates(acc: Int32, pair: (String, List[ReviewBenchJudge.Classified], ReviewBenchJudge.Counts)): Int32 =
+    match pair {
+        case (_, _, counts) => acc + counts#candidates
+    }
+
 // ---------------------------------------------------------------- dispatcher
 
 @Test
@@ -681,5 +984,7 @@ def theDeclaredReviewBenchJudgeStageMaterializesItsArtifact(): Unit \ {Assert, I
     let stage = stageName();
     if (stage == "reviewbench_judge_candidates") candidatesStage()
     else if (stage == "reviewbench_judge_report") reportStage()
+    else if (stage == "reviewbench_corrective_candidates") correctiveStage()
+    else if (stage == "reviewbench_corrective_report") correctiveReportStage()
     else Assert.assertEq(expected = "a declared reviewbench judge stage name", stage)
 }

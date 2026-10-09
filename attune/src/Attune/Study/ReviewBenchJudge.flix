@@ -70,6 +70,24 @@ pub mod Attune.Study.ReviewBenchJudge {
     pub def adjudicationPromptIdentity(): String =
         "sha256:8168d1d97d2a19ad7ba05a7229ae8f1cae69c9571fb3f165cf6c2bf088bfaac3"
 
+    /// The declared corrective role name of the arm-isolated re-adjudication
+    /// (`library/reviewbench-adjudication-correction.md`). It is the SAME
+    /// mechanical inspected runner over the SAME dedicated SIWC route, but each
+    /// session sees ONLY its own arm's two unmatched candidates.
+    pub def correctiveRole(): String = "corrective"
+
+    /// The declared identity of the frozen corrective prompt. It is a SEPARATE
+    /// prompt PREREGISTERED to exact bytes BEFORE any corrective output and
+    /// never tuned afterwards; the joint judge and adjudication prompt
+    /// identities stay historical. It is distinct from both.
+    pub def correctivePromptIdentity(): String =
+        "sha256:4c1bcf28526d2355aa365b066f7c87ed6df1cc94454b64f6e77aef928cf33136"
+
+    /// The declared single task of the arm-isolated corrective adjudication: the
+    /// one task whose executed joint adjudication carried the confirmed cross-arm
+    /// duplicate bias.
+    pub def correctiveTask(): String = "haoling_diary-notebook-blog-transformer-24"
+
     /// The declared identity of the frozen judge budget record.
     pub def budgetIdentity(): String = "reviewbench-judge-budget-v1"
 
@@ -260,6 +278,22 @@ pub mod Attune.Study.ReviewBenchJudge {
                         { candidate = candidate, verdict = verdict } :: acc)
             }
     }
+
+    /// Classify ONE arm's candidates independently from its own corrective
+    /// observations ALONE (`library/reviewbench-adjudication-correction.md`).
+    ///
+    /// The corrective session is physically given no reference set, no other
+    /// arm's candidates and no prior verdict, so every candidate is UNMATCHED and
+    /// its validity is exactly its corrective status: valid, invalid or
+    /// explicitly unresolved. Calling this once per arm is the whole point: a
+    /// candidate is NEVER invalid or deduplicated merely because the OTHER arm
+    /// reported the same issue. Within an arm the ordinary claim-based
+    /// classification (and therefore the ordinary logical-dedup law) is
+    /// unchanged.
+    pub def correctiveClassify(
+        candidates: List[Candidate],
+        adjudications: List[Adjudication]): List[Classified] =
+        classifyArm(candidates, Nil, Nil, adjudications)
 
     /// Whether one golden reference is covered for recall by any of the arm's
     /// candidates: the raw correspondence counts regardless of which candidate

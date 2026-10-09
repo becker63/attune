@@ -255,3 +255,76 @@ def macroReportingExcludesAnUndefinedPerTaskValueAndReportsItsPopulation(): Unit
     Assert.assertEq(expected = 3, ReviewBenchJudge.sumCounts(defined :: defined :: defined :: Nil)#goldTrue);
     Assert.assertEq(expected = 3, ReviewBenchJudge.sumCounts(defined :: defined :: defined :: Nil)#goldCovered)
 }
+
+// ---------------------------------------------------------------------------
+// Arm-isolated corrective adjudication (`library/reviewbench-adjudication-correction.md`)
+// ---------------------------------------------------------------------------
+
+@Test
+def theCorrectiveProtocolIsFrozenAndDistinct(): Unit \ Assert = {
+    // The corrective role and prompt are declared, and the corrective prompt is a
+    // SEPARATE identity from both the judge and the joint adjudication prompts.
+    Assert.assertEq(expected = "corrective", ReviewBenchJudge.correctiveRole());
+    Assert.assertEq(expected = "haoling_diary-notebook-blog-transformer-24",
+        ReviewBenchJudge.correctiveTask());
+    Assert.assertEq(expected = true,
+        String.startsWith(prefix = "sha256:", ReviewBenchJudge.correctivePromptIdentity()));
+    Assert.assertEq(expected = true,
+        ReviewBenchJudge.correctivePromptIdentity() != ReviewBenchJudge.adjudicationPromptIdentity());
+    Assert.assertEq(expected = true,
+        ReviewBenchJudge.correctivePromptIdentity() != ReviewBenchJudge.judgePromptIdentity())
+}
+
+@Test
+def aCandidateSharingAnIssueWithTheOtherArmIsNeverDeduplicatedAgainstIt(): Unit \ Assert = {
+    // The SAME logical issue, once per arm. Each arm is classified from its OWN
+    // corrective observation alone, so neither arm's candidate can invalidate the
+    // other's — the confirmed cross-arm bias.
+    let armA = candidate("A", "C1", 1, "medium", "missing nextPageToken pagination") :: Nil;
+    let armB = candidate("B", "C2", 1, "medium", "missing nextPageToken pagination") :: Nil;
+    let classifiedA = ReviewBenchJudge.correctiveClassify(armA, adjudication("C1", "valid") :: Nil);
+    let classifiedB = ReviewBenchJudge.correctiveClassify(armB, adjudication("C2", "valid") :: Nil);
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.UnmatchedValid), verdictOf(classifiedA, "C1"));
+    Assert.assertEq(expected = Some(ReviewBenchJudge.Verdict.UnmatchedValid), verdictOf(classifiedB, "C2"));
+    let countsA = ReviewBenchJudge.countsOf(classifiedA, Nil, Nil);
+    let countsB = ReviewBenchJudge.countsOf(classifiedB, Nil, Nil);
+    Assert.assertEq(expected = 1, countsA#unmatchedValid);
+    Assert.assertEq(expected = 0, countsA#unmatchedInvalid);
+    Assert.assertEq(expected = 1, countsB#unmatchedValid);
+    Assert.assertEq(expected = 0, countsB#unmatchedInvalid);
+    // Both candidates carry exactly the same logical key; the corrective path
+    // still keeps BOTH valid because it never compares across arms.
+    Assert.assertEq(expected = ReviewBenchJudge.findingKey("a.ts", "missing nextPageToken pagination"),
+        ReviewBenchJudge.findingKey("a.ts", "missing nextPageToken pagination"))
+}
+
+@Test
+def withinArmLogicalDedupIsUnchangedAndNeverCrossesArms(): Unit \ Assert = {
+    // Within one arm the existing claim-based logical dedup is unchanged.
+    let armA = candidate("A", "C1", 1, "medium", "same bug")
+        :: candidate("A", "C2", 2, "medium", "same bug") :: Nil;
+    Assert.assertEq(expected = 1, List.length(ReviewBenchJudge.logicalFindings(armA)));
+    let armB = candidate("B", "C3", 1, "medium", "same bug") :: Nil;
+    Assert.assertEq(expected = 1, List.length(ReviewBenchJudge.logicalFindings(armB)));
+    // Concatenating the two arms WOULD dedup the cross-arm duplicate — which is
+    // exactly what the corrective path never does: it classifies each arm alone.
+    Assert.assertEq(expected = 1,
+        List.length(ReviewBenchJudge.logicalFindings(armA ::: armB)))
+}
+
+@Test
+def aCorrectiveUnresolvedValidityIsRetainedInTheDenominator(): Unit \ Assert = {
+    let armA = candidate("A", "C1", 1, "medium", "x") :: candidate("A", "C2", 2, "medium", "y") :: Nil;
+    let classified = ReviewBenchJudge.correctiveClassify(armA,
+        adjudication("C1", "valid") :: adjudication("C2", "unresolved") :: Nil);
+    let c = ReviewBenchJudge.countsOf(classified, Nil, Nil);
+    Assert.assertEq(expected = 1, c#unmatchedValid);
+    Assert.assertEq(expected = 1, c#unmatchedUnresolved);
+    Assert.assertEq(expected = 0, c#unmatchedInvalid);
+    // The unresolved candidate stays in the valid-precision denominator (1/2),
+    // and the companion resolved precision reports the resolved population (1/1).
+    Assert.assertEq(expected = Some((1, 2)),
+        ratioOf(ReviewBenchJudge.JudgeMetric.ValidPrecision, c));
+    Assert.assertEq(expected = Some((1, 1)),
+        ratioOf(ReviewBenchJudge.JudgeMetric.ResolvedPrecision, c))
+}

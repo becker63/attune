@@ -5940,3 +5940,123 @@ and part of `//...`.
   macro population made explicit. The inline paired-economics tables and graphs
   (`VAL-REVIEW-005`) remain the later feature's result.
 
+## Arm-isolated adjudication correction (VAL-REVIEW-004, 2026-10-08)
+
+### The defect this corrects
+
+The owner reviewed the frozen judge/adjudication result above and identified one
+bounded correctness defect. The `haoling_diary-notebook-blog-transformer-24`
+adjudication was run as a **single joint session** that saw all four of that
+task's unmatched candidates (C1 and C3 from arm A, C2 and C4 from arm B) at once.
+That joint session resolved C2 and C4 **`invalid` purely as restatements of the
+arm-A findings C1 and C3** — a cross-arm duplicate judgement. The independent
+adjudicator was supposed to settle *within-arm* duplication only; letting one
+arm's finding invalidate the other arm's finding is a bias against arm B, whose
+two genuine findings were scored `invalid` for being about the same source issue
+that arm A happened to report first. On the all-findings view this made the
+`haoling` B arm read **valid precision 0.0% (0/1)** and suppressed its
+augmented recall, while the A arm read 100.0%.
+
+### What was corrected (exactly two sessions, one per arm)
+
+The owner approved exactly **two** arm-isolated corrective adjudication sessions
+and nothing else. Each corrective session consumes only the **frozen** source and
+frozen findings of the one task — never a live original review or judge producer
+— and sees **only its own arm's two unmatched candidates** under **fresh blind
+ids** (`X1`, `X2`), with no condition labels, no other-arm candidates, no prior
+verdicts, no gold and no other evidence. A separate corrective prompt was frozen
+**before** any result was observed (`test/reviewbench_judge/prompt-corrective.txt`,
+identity `sha256:4c1bcf28526d2355aa365b066f7c87ed6df1cc94454b64f6e77aef928cf33136`),
+and both sessions ran the **same** `gpt-6.1-sol` medium SIWC route on the
+dedicated remote platform under the **same 300 s / 32 rounds / 256 k** budget.
+Within-arm dedup is unchanged: a restatement of another finding *in the same
+arm* still resolves `invalid`. What changed is only that a finding reported by
+the **other** arm can no longer, by itself, invalidate this arm's finding.
+
+Original reviews, judges, raw verdicts and scores were **not** touched: the
+frozen judge/adjudication/report outputs and the frozen findings were copied
+outside the mutable outputs first
+(`library/reviewbench-correction-snapshots/`, source identity `38acb83`) and the
+corrective targets read only those frozen bytes. **No review was rerun, no
+unaffected judge session was rerun, and no model or budget was tuned.** No
+desired-outcome retry was performed; both corrective sessions returned `ok` on
+their first attempt.
+
+### Original (joint, biased) result versus corrected (arm-isolated) result
+
+| View | Arm | Candidates | Valid | Invalid | Unresolved | Valid precision | Resolved precision | Augmented recall |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| old (joint) | A | 2 | 2 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| old (joint) | B | 2 | 0 | 2 | 0 | 0.0% | 0.0% | Unavailable |
+| new (arm-isolated) | A | 2 | 2 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| new (arm-isolated) | B | 2 | 2 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+
+The corrected `haoling` B arm moves from **valid precision 0.0% → 100.0%**; the
+A arm is unchanged at 100.0% (the correction is arm-isolated, so it cannot move
+the arm it did not re-adjudicate). The old and new views are reported **side by
+side** in `corrective-old-vs-new.tsv`; nothing is overwritten and no history is
+deleted. `corrective-verdicts.tsv` keeps the old joint verdicts (`old A C1/C3
+unmatched-valid`, `old B C2/C4 unmatched-invalid`) beside the corrected per-arm
+verdicts (`new A X1/X2 unmatched-valid`, `new B X1/X2 unmatched-valid`), and
+`corrective-provenance.tsv` records the single task, `selections 4`,
+`old-candidates 4`, `new-candidates 4`, `corrective-sessions 2` and
+`corrective-receipt-paths 2`.
+
+### Incremental economics (separate from the main line)
+
+The two corrective sessions are their own usage line, disjoint from the earlier
+judge/adjudication totals:
+
+| Task | Arm | Session | Result | Candidates | Unmatched | Tokens | Latency | Attempts |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| haoling_diary-notebook-blog-transformer-24 | A | corrective | ok | 2 | 2 | 41,644 | 13,401 ms | 1 |
+| haoling_diary-notebook-blog-transformer-24 | B | corrective | ok | 2 | 2 | 37,097 | 18,744 ms | 1 |
+
+Incremental corrective cost: **78,741 tokens** and **32,145 ms** over **2
+sessions / 2 attempts**, on the dedicated SIWC route. As in the main section,
+**no dollar amount is reported** (the route returns no marginal API dollar
+figure) and these receipts/usage/latency/attempts are frozen outside the
+mutable outputs.
+
+### Reduction, laws and replay
+
+There is **one canonical reducer per arm**: the corrective observations are fed
+through the existing `Attune.Study.Metrics` reduction path with the **unaffected
+frozen evidence** (gold, matches, paired summary), exactly as the main section,
+and no new scoring engine, no fabricated fix and no free-text heuristic
+reclassification was introduced — the corrected verdicts come from the
+corrective sessions' own `adjudged` statuses. Corpus-free native laws pin the
+properties: the corrective protocol is frozen and distinct from the original
+prompt, a cross-arm restatement is never deduplicated, within-arm dedup is
+unchanged, and unresolved candidates are retained
+(`//test/reviewbench_judge:reviewbench_judge_law`). The corrective candidate and
+report stages are provider-free; a fixture-only replay of
+`//test/reviewbench_judge:reviewbench_corrective_report` and
+`//test/reviewbench_judge:reviewbench_corrective` executes **zero** fresh
+actions (all cache hits) and makes **zero** provider calls.
+
+### Commands (see `services.yaml`)
+
+`reviewbench_corrective_route_check` (no provider call),
+`reviewbench_corrective_candidates` (provider-free), `reviewbench_corrective_first_arm`
+(one arm, run alone before the second), `reviewbench_corrective_cohort` (the two
+arm sessions), `reviewbench_corrective_report` (provider-free) and
+`reviewbench_corrective_law` are the declared actions. The report and candidate
+stages run host-local under
+`--modify_execution_info=AttuneStudyStage=+no-remote`, while the two corrective
+sessions run on the dedicated remote platform where `ACCESS_TOKEN` is injected,
+under the **same platform flags** as the original producers.
+
+### Update history
+
+- Arm-isolated adjudication correction (this section): the owner identified that
+  the single joint `haoling` adjudication had invalidated arm B's two genuine
+  findings purely as cross-arm restatements of arm A's findings. Exactly two
+  arm-isolated corrective adjudication sessions (one per arm) were run on the
+  frozen source and findings under fresh blind ids and a separately frozen
+  prompt, with within-arm dedup unchanged and the other arm unable to invalidate
+  a finding. The `haoling` B arm's valid precision moves 0.0% → 100.0%; the old
+  joint result and the corrected per-arm result are both preserved and reported
+  side by side, with the incremental 78,741-token / 32,145-ms cost reported
+  separately. No review or unaffected judge was rerun and no budget was tuned.
+

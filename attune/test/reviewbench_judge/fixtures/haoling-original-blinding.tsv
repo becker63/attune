@@ -1,0 +1,9 @@
+# Frozen original blinding map of the executed joint judge family for the one
+# corrective task (library/reviewbench-correction-snapshots/.../blinding.tsv).
+# Preserved historical/provisional evidence: the original positional ids encode
+# the cross-arm pairing, so the corrective sessions use fresh per-arm ids and
+# never these. Columns: blinding <candidate> <task> <arm> <frozen-rank>.
+blinding	C1	haoling_diary-notebook-blog-transformer-24	A	1
+blinding	C2	haoling_diary-notebook-blog-transformer-24	B	1
+blinding	C3	haoling_diary-notebook-blog-transformer-24	A	2
+blinding	C4	haoling_diary-notebook-blog-transformer-24	B	2
