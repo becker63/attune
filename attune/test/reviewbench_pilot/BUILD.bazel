@@ -1,7 +1,7 @@
 load("//platform/build:native.bzl", "native_flix_java_test", "native_study_stage")
 load("//platform/build:sol.bzl", "attune_path_manifest")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
-load("//platform/dsh:pilot_runner.bzl", "attune_pilot_runners")
+load("//platform/dsh:pilot_runner.bzl", "attune_holdout_runners", "attune_pilot_runners")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -18,7 +18,7 @@ filegroup(
     srcs = glob(["**"]),
 )
 
-exports_files(["prompt.txt"])
+exports_files(["prompt.txt", "holdout-archives.tsv"])
 
 # The explicit source closure of the pilot freeze stage: the freeze dispatcher
 # plus the canonical owner it reduces and the shared owners both consume. The
@@ -298,4 +298,35 @@ attune_pilot_runners(
     prompt = "prompt.txt",
     routes = ["//platform/dsh:route-siwc-responses.yml"],
     world_repo = "@reviewbench_worlds",
+)
+
+# The forty-eight once-only observations of the heldout confirmation
+# (`VAL-STUDY-004`, the RUN half). ONE declared DSH action per (task, arm) of the
+# frozen balanced deterministic holdout dispatch: the metadata-only 24-task
+# holdout x the fresh plain arm `R0_PLAIN` and the freshly selected policy's arm
+# `R1_PACKETS` (the predeclared Pareto selection froze `R1_PACKETS` before any
+# heldout outcome). It reuses the SAME `dsh_agent_run` rule, the SAME shared
+# plain-read facade / candidate-commit operation / hidden detector families /
+# mechanical lifecycle guard, the SAME declared provider route and the SAME
+# frozen prompt bytes as the pilot, so the confirmation uses the identical shared
+# DSH subscription substrate, exact source worlds and judging policy. The
+# per-task holdout world is the holdout task's OWN declared head world, never a
+# pilot world and never a neighbour's. They are `manual`: the ordinary
+# `bazel test //...` gate never runs a provider, and each one is a once-only
+# scientific observation (no heldout tuning, no replacement, no quality retry).
+attune_holdout_runners(
+    name = "reviewbench_holdout_runners",
+    cohort = "//platform/dsh:evidence_reviewbench_holdout_cohort",
+    common_overlays = [
+        "//platform/dsh/tool:attune-guard.plugin.yml",
+        "//platform/dsh/tool:attune-commit.plugin.yml",
+        "//platform/dsh/tool:attune-detector.plugin.yml",
+        "//platform/dsh/tool:attune-plain.plugin.yml",
+        "//platform/dsh/tool:attune-reviewer.plugin.yml",
+    ],
+    issues = "//test/reviewbench_review:reviewbench_holdout_issues",
+    packet_overlay = "//platform/dsh/tool:attune-packet.plugin.yml",
+    prompt = "prompt.txt",
+    routes = ["//platform/dsh:route-siwc-responses.yml"],
+    world_repo = "@reviewbench_holdout_worlds",
 )

@@ -111,6 +111,31 @@ native_study_stage(
     tags = ["manual"],
 )
 
+# The declared public metadata record of the metadata-only 24-task HOLDOUT
+# (`VAL-STUDY-004`): one `issue` row per frozen holdout task, projected from the
+# SAME pinned-corpus admission projection the original cohort uses and filtered
+# to the immutable holdout freeze record. It reads no finding and no gold and
+# calls no provider. The target is `manual` because it consumes the pinned-corpus
+# admission tree and the holdout freeze tree, not the ordinary gate.
+native_study_stage(
+    name = "reviewbench_holdout_issues",
+    srcs = STAGE_SRCS,
+    input_names = [
+        "admission",
+        "holdout",
+    ],
+    inputs = [
+        "//test/reviewbench:reviewbench_admission",
+        "//test/reviewbench_pilot:reviewbench_pilot_freeze",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_holdout_issues",
+    tags = ["manual"],
+)
+
 # The declared assisted arm's bounded structural context, once per admitted task,
 # from the already-materialized Qwen ranking, JEV public-context decisions and
 # task relations/witnesses. Provider-free: no model, no Grit, no Theory lowering

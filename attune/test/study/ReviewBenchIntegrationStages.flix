@@ -1465,13 +1465,27 @@ def cohortToolPacket(
 /// no gold, no evaluator label and no hand-selected hypothesis, imposes no
 /// CLI/publication prerequisite on ordinary review, excludes the credential file by
 /// name without shrinking the authorized population, and calls no provider.
-def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
+def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = reviewbenchCohort(10)
+
+/// The declared metadata-only 24-task HOLDOUT cohort admission (`VAL-STUDY-004`).
+/// It is the SAME declared cohort admission over the frozen holdout tasklist and
+/// the declared holdout world archives: 24 tasks, both frozen revisions, the same
+/// bounded initial packet, the same complete whole-world manifest and the same
+/// per-task registered-tool world. Nothing is re-selected and no pilot task is
+/// admitted, so the confirmation reads exactly the frozen holdout population.
+def evidenceReviewbenchHoldoutCohort(): Unit \ {Assert, IO} = reviewbenchCohort(24)
+
+/// The shared declared cohort admission over the declared cohort fixture and the
+/// declared world archives. `expected` is the declared task count of that cohort
+/// (10 for the original pilot cohort, 24 for the metadata-only holdout), so the
+/// two stages share ONE implementation and can never drift apart.
+def reviewbenchCohort(declaredTasks: Int32): Unit \ {Assert, IO} = {
     let tasks = cohortTasks();
-    Assert.assertEq(expected = 10, List.length(tasks));
+    Assert.assertEq(expected = declaredTasks, List.length(tasks));
     let entries = cohortEntries(tasks);
     check(41, List.length(entries) > 200);
     // Both declared revisions of every task are admitted, so the cohort really is
-    // the ten base/head pairs rather than one revision read twice.
+    // the declared base/head pairs rather than one revision read twice.
     check(42, List.forAll(task -> List.exists(entry -> match entry {
         case (t, role, _, _, _) => t == task#task and role == "base" }, entries)
         and List.exists(entry -> match entry {
@@ -1502,7 +1516,7 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
     check(46, List.forAll(packet -> List.forAll(span -> span#bytes > 0 and isHex64(span#sha256), packet#spans), rows));
     check(47, List.forAll(packet -> List.forAll(span -> span#endLine >= span#startLine, packet#spans), rows));
     // The credential file is excluded by name and never read: every declared `.env`
-    // of the ten tasks is recorded in the exclusion and no admitted entry is one,
+    // of the declared tasks is recorded in the exclusion and no admitted entry is one,
     // so the exclusion is complete and the authorized population is not silently
     // shrunk.
     let ids = cohortTaskIds(tasks);
@@ -1515,7 +1529,7 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
     check(49, List.forAll(entry -> match entry { case (_, _, _, _, rel) => basename(rel) != ".env" }, entries));
     // No CLI/publication prerequisite: the cohort admits and packets every task
     // without requiring any task to expose a CLI entry.
-    check(50, List.length(rows) == 10);
+    check(50, List.length(rows) == declaredTasks);
     writeText(outputsDir(), "cohort-files.tsv", renderLines(List.map(entry -> match entry {
         case (task, role, revision, _, rel) => String.intercalate("\t",
             List#{"file", task, role, revision, rel}) }, entries)));
@@ -1545,7 +1559,7 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
     writeText(outputsDir(), "cohort-sealed-count.txt", Int32.toString(written) + "\n");
 
     // ------- the SAME registered packet tool / source boundary, offline-exercised
-    // over EVERY one of the ten materialized worlds. Each task's changed world is
+    // over EVERY one of the declared materialized worlds. Each task's changed world is
     // materialized in the tool's own declared format (region manifest, whole-world
     // file manifest, compiled packet projection) with its exact changed bytes
     // sealed beside it, so the ONE native tool resolves and delivers the real
@@ -1663,7 +1677,7 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
             Int32.toString(List.length(complete)),
             Int32.toString(List.length(List.filter(file -> not file#changed, complete)))})
     }, tasks);
-    check(61, List.length(toolRows) == 10);
+    check(61, List.length(toolRows) == declaredTasks);
     // Every task's tool world resolves at least one declared region and at least
     // one initial packet span, so the tool has real changed source to deliver.
     check(62, List.forAll(row -> intOf(field(fields(row), 4)) > 0 and intOf(field(fields(row), 5)) > 0, toolRows));
@@ -2155,6 +2169,7 @@ def theDeclaredStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     else if (stage == "evidence_reviewbench_detectors") evidenceReviewbenchDetectors()
     else if (stage == "evidence_reviewbench_delivery") evidenceReviewbenchDelivery()
     else if (stage == "evidence_reviewbench_cohort") evidenceReviewbenchCohort()
+    else if (stage == "evidence_reviewbench_holdout_cohort") evidenceReviewbenchHoldoutCohort()
     else if (stage == "evidence_reviewbench_preflight") evidenceReviewbenchPreflight()
     else Assert.assertEq(expected = "a declared stage name", stage)
 }

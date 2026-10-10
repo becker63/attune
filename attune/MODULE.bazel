@@ -545,3 +545,25 @@ retained_world_trees(
     token = "1",
 )
 
+# The approved clean-source acquisition of the frozen metadata-only 24-task
+# HOLDOUT's exact base and head worlds (`VAL-STUDY-004`). The declared archive
+# identity record `//test/reviewbench_pilot:holdout-archives.tsv` names each
+# holdout world's mirror repository, exact revision and exact archive digest; it
+# is emitted by the real acquisition and owned by `Attune.Study.ReviewPilot`, so
+# no repository, revision or digest is restated here as truth. The holdout tasks
+# are drawn from the remaining fast cohort and EXCLUDE every original24 task, so
+# no heldout world is a pilot world and the pilot's own ten tasks can never be
+# substituted. Each archive is fetched on the client and verified against its
+# declared SHA-256 before extraction, exactly like the pilot worlds above, so a
+# mutated or substituted archive fails the fetch instead of entering the study,
+# and both holdout arms read identical bytes. The ordinary `bazel test //...`
+# gate never fetches it: only the explicitly selected `manual`
+# `//platform/dsh:evidence_reviewbench_holdout_cohort` target declares it.
+# Declared last for the same anonymous-repo renumbering reason as the catalog,
+# world archives, embedding runtime, Qwen fixtures, Codex assets, manifest and
+# retained worlds above.
+world_sources(
+    name = "reviewbench_holdout_worlds",
+    manifest = "//test/reviewbench_pilot:holdout-archives.tsv",
+)
+

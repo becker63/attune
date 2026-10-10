@@ -19,6 +19,7 @@ load("@dsh_npm//:defs.bzl", "npm_link_all_packages")
 load("//platform/build:native.bzl", "native_study_stage")
 load("//platform/dsh:dsh_agent.bzl", "dsh_agent_run")
 load("//platform/dsh:typert_package.bzl", "typert_package")
+load("//test/reviewbench_pilot:holdout_worlds.bzl", "REVIEWBENCH_HOLDOUT_WORLDS")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -398,6 +399,33 @@ native_study_stage(
         "@reviewbench_worlds//:rulecom_rule-io-sdk-40-base",
         "@reviewbench_worlds//:rulecom_rule-io-sdk-40-head",
     ],
+)
+# The declared metadata-only 24-task HOLDOUT cohort admission (VAL-STUDY-004). It
+# is the SAME declared cohort admission over the frozen holdout tasklist and the
+# declared digest-verified `@reviewbench_holdout_worlds` archive route: 24 tasks,
+# both frozen revisions, the same bounded initial packet, the same complete
+# whole-world manifest and the same per-task registered-tool world, materialized
+# with the SAME shared `reviewbenchCohort` implementation the ten-task cohort uses
+# so the two stages can never drift apart. The holdout tasks are drawn from the
+# remaining fast cohort and EXCLUDE every original24 task, so no pilot task and no
+# pilot world is admitted here. It reads no gold and no evaluator label, and it
+# calls no provider. The target is `manual` on purpose: the ordinary
+# `bazel test //...` gate must never fetch or scan the pinned corpus.
+native_study_stage(
+    name = "evidence_reviewbench_holdout_cohort",
+    srcs = ["//test/study:reviewbench_integration_stage_srcs"],
+    input_names = [
+        "cohort",
+        "archives",
+    ],
+    inputs = [
+        "//test/study:fixtures/reviewbench-holdout-cohort.tsv",
+        "//test/reviewbench_pilot:holdout-archives.tsv",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    stage = "evidence_reviewbench_holdout_cohort",
+    tags = ["manual"],
+    world_sources = REVIEWBENCH_HOLDOUT_WORLDS,
 )
 
 # The declared ONE offline individual-acquisition-versus-compiled-packet preflight

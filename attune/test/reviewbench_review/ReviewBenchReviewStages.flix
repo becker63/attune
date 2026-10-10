@@ -136,13 +136,35 @@ def selectionPairs(admissionDir: String): List[(String, String)] \ IO =
 def issueText(title: String, body: String): String =
     title + "\n\n" + body
 
+/// The declared `(nwo, pr)` pairs of the metadata-only 24-task HOLDOUT, read from
+/// the immutable holdout freeze record (`holdout.tsv`). The freeze record is the
+/// frozen selection, so no heldout task is re-derived, added or replaced, and no
+/// task outside the holdout is projected. The holdout EXCLUDES every original24
+/// task, so the two metadata records are disjoint.
+def holdoutPairs(holdoutDir: String): List[(String, String)] \ IO =
+    List.filterMap(line -> match fields(line) {
+        case "holdout" :: _ :: _ :: nwo :: pr :: _ => Some((nwo, pr))
+        case _                                     => None
+    }, records(readText(holdoutDir + "/holdout.tsv")))
+
 /// The declared metadata record both arms read: one `issue` row per task of the
 /// frozen 24-task metadata selection, in the projection's declared row order.
-def issuesStage(): Unit \ {Assert, IO} = {
+def issuesStage(): Unit \ {Assert, IO} =
+    issuesStageFor(selectionPairs(Option.getWithDefault("", binding("admission"))))
+
+/// The declared metadata record of the metadata-only 24-task HOLDOUT
+/// (`VAL-STUDY-004`): one `issue` row per frozen holdout task, read from the SAME
+/// pinned-corpus admission projection the original cohort uses. It projects no
+/// task outside the holdout and reads no finding, no gold and no later fix.
+def holdoutIssuesStage(): Unit \ {Assert, IO} =
+    issuesStageFor(holdoutPairs(Option.getWithDefault("", binding("holdout"))))
+
+/// The shared declared metadata projection over one declared `(nwo, pr)` task
+/// selection, so the original cohort and the holdout can never drift apart.
+def issuesStageFor(selected: List[(String, String)]): Unit \ {Assert, IO} = {
     let dir = outputsDir();
     let admission = Option.getWithDefault("", binding("admission"));
     let cells = projectionCells(admission);
-    let selected = selectionPairs(admission);
     let rows = List.filterMap(row -> {
         let nwo = cellValue(cells, row, "nwo");
         let pr = cellValue(cells, row, "pr_number");
@@ -154,7 +176,7 @@ def issuesStage(): Unit \ {Assert, IO} = {
     writeText(dir, "issues.tsv", renderTsv(rows));
     Assert.assertEq(expected = true, not List.isEmpty(rows));
     Assert.assertEq(expected = true, List.forAll(row -> not String.isEmpty(field(row, 1)), rows));
-    // Every frozen metadata task is projected, and nothing else.
+    // Every declared task is projected, and nothing else.
     Assert.assertEq(expected = List.length(selected), List.length(rows))
 }
 
@@ -297,6 +319,7 @@ def contextsStage(): Unit \ {Assert, IO} = {
 def theDeclaredReviewBenchReviewStageMaterializesItsArtifact(): Unit \ {Assert, IO} = {
     let stage = stageName();
     if (stage == "reviewbench_review_issues") issuesStage()
+    else if (stage == "reviewbench_holdout_issues") holdoutIssuesStage()
     else if (stage == "reviewbench_review_contexts") contextsStage()
     else Assert.assertEq(expected = "a declared reviewbench review stage name", stage)
 }

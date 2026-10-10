@@ -238,6 +238,24 @@ native_flix_consumer_test(
     java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
     produced = ["//platform/dsh:evidence_reviewbench_cohort"],
 )
+# The laws of the metadata-only 24-task HOLDOUT cohort admission (VAL-STUDY-004).
+# They consume the tree the `evidence_reviewbench_holdout_cohort` stage action
+# materialized over the ACTUAL complete authorized source of the frozen holdout 24
+# tasks and both revisions and recompute the SAME cohort invariants the ten-task
+# cohort law recomputes, plus the disjointness of the holdout from the ten pilot
+# tasks. Provider-free and offline.
+native_flix_consumer_test(
+    name = "evidence_reviewbench_holdout_cohort_law",
+    srcs = [
+        "EvidenceReviewBenchHoldoutCohortLaw.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/EvidenceSubstrate.flix",
+    ],
+    java_deps = ["//platform/tools/reviewbench:attune_reviewbench"],
+    produced = ["//platform/dsh:evidence_reviewbench_holdout_cohort"],
+)
 
 # The laws of the ONE offline individual-acquisition-versus-compiled-packet
 # preflight (VAL-SUB-020). They consume the tree the
