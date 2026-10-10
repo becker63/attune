@@ -16,12 +16,20 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 
-import { CommitRefusal, COMMIT_TOOL_NAME, checkpointLine } from './commit_record.mjs'
+import {
+  CommitRefusal,
+  COMMIT_TOOL_NAME,
+  checkpointLine,
+  parseDeliveredSpec,
+  resolveDeliveredRegions,
+} from './commit_record.mjs'
+import { BoundaryRefusal } from './boundary.mjs'
 import { apply as applyCommit } from './commit_tool.mjs'
 import {
   DECLARED_CANONICAL_CHECKPOINT,
@@ -398,4 +406,118 @@ test('a fresh session invents no restored checkpoint', (t) => {
   })
   harness.emit({ id: 'session-fresh' }, { type: 'turn/start', data: {} })
   assert.throws(() => readFileSync(restoredPath, 'utf8'), /ENOENT/, 'a fresh session restores nothing')
+})
+
+// ---------------------------------------------------------------------------
+// The declared revision identity of a delivered region.
+//
+// These laws drive the REAL `resolveDeliveredRegions` against a synthetic world
+// that declares BOTH a BASE and a HEAD row for the same path, exactly as every
+// real task world does. They assert that a pathname alone can never silently
+// resolve against the HEAD row, that the explicit revision identifies the exact
+// bytes, that a SUPPORTED-UTF8 `overflow` file of the declared world is a real
+// candidate witness, and that a file whose exact bytes are not a supported
+// lossless UTF-8 sequence stays unreachable rather than becoming a lossy read.
+// ---------------------------------------------------------------------------
+
+const BASE_REVISION = '1b8e4f7a29d3c65084be17fa2c9d0e53617bfa48'
+const HEAD_REVISION = '7f3a9c0d51b2e84619cf2a7d3e05b8f4c6a1d902'
+
+/// Materialize a synthetic two-revision world with one ordinary changed file, one
+/// supported-UTF8 overflow file, and one file that is NOT a supported UTF-8
+/// sequence (and therefore carries no row at all, like the real cohort).
+function revisionWorld(name) {
+  const dir = workDir(name)
+  const sourceRoot = join(dir, 'source')
+  const write = (rel, text) => {
+    const path = join(sourceRoot, rel)
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, text)
+    return path
+  }
+  const headPath = write('worlds/head/src/dup.ts', 'export const head = 1\n')
+  const basePath = write('worlds/base/src/dup.ts', 'export const base = 1\n')
+  const lockPath = write('worlds/head/pnpm-lock.yaml', 'lockfileVersion: 9.0\n')
+  const binPath = write('worlds/head/assets/blob.bin', Buffer.from([0xff, 0xfe, 0x00, 0x01]))
+  const digest = (text) => createHash('sha256').update(text).digest('hex')
+  const row = (revision, path, sealed, file) =>
+    [
+      'world-revision-1', revision, path, '1', '0', digest(readFileSync(file)), 'read-only',
+      sealed, String(readFileSync(file).length),
+    ].join('\t')
+  const manifestPath = join(dir, 'world.tsv')
+  writeFileSync(
+    manifestPath,
+    [
+      row(HEAD_REVISION, 'src/dup.ts', 'worlds/head/src/dup.ts', headPath),
+      row(BASE_REVISION, 'src/dup.ts', 'worlds/base/src/dup.ts', basePath),
+      row(HEAD_REVISION, 'pnpm-lock.yaml', 'worlds/head/pnpm-lock.yaml', lockPath),
+    ].join('\n') + '\n',
+  )
+  const projection = join(dir, 'projections.tsv')
+  writeFileSync(projection, '')
+  return {
+    config: { worldManifest: manifestPath, sourceRoot, projection },
+    digest,
+    basePath,
+  }
+}
+
+test('a base citation resolves to the exact base bytes, never the head row', (t) => {
+  const world = revisionWorld('revision-base')
+  const references = resolveDeliveredRegions(
+    `src/dup.ts@${BASE_REVISION}@1-1`, world.config, 'world-revision-1')
+  assert.equal(references.length, 1)
+  assert.equal(references[0].revision, BASE_REVISION)
+  assert.equal(references[0].path, 'src/dup.ts')
+  assert.equal(references[0].sha256, world.digest('export const base = 1\n'))
+  assert.notEqual(references[0].sha256, world.digest('export const head = 1\n'))
+  assert.equal(references[0].delivery, 'complete')
+})
+
+test('a pathname alone never resolves silently against the head row', (t) => {
+  const world = revisionWorld('revision-ambiguous')
+  assert.throws(
+    () => resolveDeliveredRegions('src/dup.ts@1-1', world.config, 'world-revision-1'),
+    (error) => error instanceof CommitRefusal &&
+      /names no revision/.test(error.message) &&
+      error.message.includes(HEAD_REVISION) && error.message.includes(BASE_REVISION),
+    'an ambiguous pathname citation is refused and names the declared revisions',
+  )
+})
+
+test('an undeclared revision is refused rather than assumed', (t) => {
+  const world = revisionWorld('revision-undeclared')
+  assert.throws(
+    () => resolveDeliveredRegions(
+      'src/dup.ts@0123456789abcdef0123456789abcdef01234567@1-1',
+      world.config, 'world-revision-1'),
+    (error) => error instanceof BoundaryRefusal && /does not declare/.test(error.message),
+  )
+})
+
+test('a supported-utf8 overflow file of the declared world is a candidate witness', (t) => {
+  const world = revisionWorld('revision-overflow')
+  const references = resolveDeliveredRegions(
+    `pnpm-lock.yaml@${HEAD_REVISION}@1-1`, world.config, 'world-revision-1')
+  assert.equal(references.length, 1)
+  assert.equal(references[0].path, 'pnpm-lock.yaml')
+  assert.equal(references[0].sha256, world.digest('lockfileVersion: 9.0\n'))
+})
+
+test('an unsupported-encoding file stays unreachable rather than read lossily', (t) => {
+  const world = revisionWorld('revision-unsupported')
+  assert.throws(
+    () => resolveDeliveredRegions(
+      `assets/blob.bin@${HEAD_REVISION}@1-1`, world.config, 'world-revision-1'),
+    (error) => error instanceof BoundaryRefusal && /not a declared region/.test(error.message),
+    'a file the world does not declare is refused, so no lossy witness is produced',
+  )
+})
+
+test('a malformed delivered entry is refused rather than guessed', (t) => {
+  assert.throws(
+    () => parseDeliveredSpec('src/dup.ts'),
+    (error) => error instanceof CommitRefusal && /path@revision@start-end/.test(error.message),
+  )
 })

@@ -235,11 +235,14 @@ export function composePilotTask({ prompt, issue, changed, task, arm, base, head
   lines.push('')
   lines.push(
     'Record each candidate with `attune_commit_candidate`, naming the exact ' +
-    '`path@start-end` evidence you actually received. Any bounded line span of an ' +
-    'ordinary authorized file of this world is deliverable evidence, whether or ' +
-    'not it lies in the initially disclosed neighborhood. Committing does not end ' +
-    'the review: keep investigating and commit every candidate you can ground in ' +
-    'exact source.',
+    '`path@revision@startLine-endLine` evidence you actually received, with the ' +
+    'explicit BASE-or-HEAD revision of the world: each world declares both a BASE ' +
+    'and a HEAD row for the same path, so a pathname without its revision cannot ' +
+    'identify the bytes. Any bounded line span of an ordinary authorized file of ' +
+    'this world is deliverable evidence, whether or not it lies in the initially ' +
+    'disclosed neighborhood, and a file the bounded region policy marks `overflow` ' +
+    'is still readable this way. Committing does not end the review: keep ' +
+    'investigating and commit every candidate you can ground in exact source.',
   )
   return lines.join('\n') + '\n'
 }

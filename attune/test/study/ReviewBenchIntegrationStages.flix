@@ -1621,16 +1621,34 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
         // against the real sealed bytes rather than against the bounded initial
         // packet neighborhood; the exact whole-file digest is the declared
         // identity and the sealed location is the archive-relative path the
-        // ordinary whole-file escape already resolves. An unsupported-encoding or
-        // overflow file contributes no row, so a lossy read is never offered as
-        // evidence, and no `.env` or excluded path is present.
-        let evidenceWorld = List.filterMap(file -> if (file#status == "admitted")
+        // ordinary whole-file escape already resolves. A file the bounded read
+        // policy marks `overflow` is a SUPPORTED-UTF8 file whose whole-file
+        // identity and sealed bytes are declared, so it stays in the candidate
+        // world: the cap bounds the exact region tiling, it never removes an
+        // ordinary authorized file from a candidate proof, and a bounded span of
+        // it is a real delivery. A file whose exact bytes are NOT a supported
+        // lossless UTF-8 sequence (`unsupported`) contributes no row, so a lossy
+        // read is never offered as evidence, and no `.env` or excluded path is
+        // present.
+        let evidenceWorld = List.filterMap(file -> if (file#status == "admitted" or file#status == "overflow")
             Some(String.intercalate("\t", List#{worldId, file#revision, file#path, "1", "0",
                 file#sha256, "read-only", file#sealedFile, Int32.toString(file#bytes)}))
             else None, List.sortBy(file -> if (file#role == "head") 0 else 1, complete));
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-evidence-world.tsv",
             renderLines(evidenceWorld));
         check(69, List.length(evidenceWorld) > 0);
+        // The SUPPORTED-UTF8 `overflow` files of the task are IN the candidate
+        // world (the cap bounds the region tiling, it never excludes an ordinary
+        // authorized file from a candidate proof), and the `unsupported` files
+        // are NOT: a lossy read can never become a candidate witness.
+        check(102, List.length(evidenceWorld) == List.length(complete) -
+            List.length(List.filter(file -> file#status == "unsupported", complete)));
+        // The SUPPORTED-UTF8 `overflow` files of the task are IN the candidate
+        // world: each one's declared sealed location is really present in the
+        // rendered world, so a candidate can cite a bounded span of it.
+        let evidenceWorldText = renderLines(evidenceWorld);
+        check(103, List.forAll(file -> if (file#status == "overflow")
+            String.contains(substr = file#sealedFile, evidenceWorldText) else true, complete));
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-world-files.tsv",
             renderLines(List.map(file -> cohortWorldFileLine(worldId, file), complete)));
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-packet-records.tsv",

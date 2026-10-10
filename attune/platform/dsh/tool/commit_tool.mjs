@@ -57,11 +57,12 @@ export function apply(ctx, config) {
       name: COMMIT_TOOL_NAME,
       description:
         'Commit one articulated candidate finding to the durable review checkpoint. ' +
-        'Supply the exact delivered evidence as path@start-end entries (semicolon ' +
-        'separated); each must be a declared region of the named world, so the ' +
-        'candidate rests on physical exact evidence. The run recorder adds the ' +
-        'identity, the commit event and the observed usage. Committing does NOT end ' +
-        'the review: continue investigating.',
+        'Supply the exact delivered evidence as `path@revision@start-end` entries ' +
+        '(semicolon separated): each must name the exact BASE-or-HEAD revision and a ' +
+        'bounded line span of a declared file of the named world, so the candidate ' +
+        'rests on physical exact evidence rather than on a pathname alone. The run ' +
+        'recorder adds the identity, the commit event and the observed usage. ' +
+        'Committing does NOT end the review: continue investigating.',
       parameters: COMMIT_PARAMETERS,
       output: {
         schema: {

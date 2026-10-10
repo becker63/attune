@@ -1,0 +1,19 @@
+# The one declared provider-free catalog proof of the gated ReviewBench pilot.
+#
+# It is a `--patch` list of the SAME declared loader patches the pilot composes,
+# used only by the offline catalog proof (never by a live observation):
+#
+#  - it DISABLES the headless app runner, so the composed profile mounts every
+#    declared plugin but dispatches no task and therefore makes NO provider call;
+#  - it INSERTS the declared catalog probe as one further profile row.
+#
+# The probe waits until the composed catalog is stable and then writes the ACTUAL
+# registered model-facing tool names to `ATTUNE_CATALOG_OUT`. Nothing here
+# changes the catalog the probe measures, and nothing here is part of a live
+# pilot run.
+- id: headless-runner
+  disabled: true
+
+- insert:
+    - id: attune-catalog-probe
+      name: ./catalog_probe.mjs

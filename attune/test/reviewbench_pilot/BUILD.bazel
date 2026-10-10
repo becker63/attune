@@ -163,9 +163,10 @@ attune_pilot_runners(
     cohort = "//platform/dsh:evidence_reviewbench_cohort",
     common_overlays = [
         "//platform/dsh/tool:attune-guard.plugin.yml",
-        "//platform/dsh/tool:attune-tool.plugin.yml",
+        "//platform/dsh/tool:attune-commit.plugin.yml",
         "//platform/dsh/tool:attune-detector.plugin.yml",
         "//platform/dsh/tool:attune-plain.plugin.yml",
+        "//platform/dsh/tool:attune-reviewer.plugin.yml",
     ],
     issues = "//test/reviewbench_review:reviewbench_review_issues",
     packet_overlay = "//platform/dsh/tool:attune-packet.plugin.yml",

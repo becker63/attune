@@ -31,6 +31,7 @@ js_library(
     name = "evidence_tool_package",
     srcs = [
         "boundary.mjs",
+        "catalog_probe.mjs",
         "commit_record.mjs",
         "commit_tool.mjs",
         "detector_sidecar.mjs",
@@ -60,11 +61,14 @@ filegroup(
 
 # The declared loader overlay that mounts the tool into a composed DSH profile.
 exports_files([
+    "attune-commit.plugin.yml",
     "attune-detector.plugin.yml",
     "attune-guard.plugin.yml",
     "attune-packet.plugin.yml",
     "attune-plain.plugin.yml",
+    "attune-reviewer.plugin.yml",
     "attune-tool.plugin.yml",
+    "catalog_probe.plugin.yml",
     "fixtures/boundary-world.tsv",
     "fixtures/expected-observation-projection.tsv",
     "fixtures/expected-reference-projection.tsv",
@@ -93,11 +97,14 @@ filegroup(
 js_library(
     name = "evidence_tool_runfiles",
     srcs = [
+        "attune-commit.plugin.yml",
         "attune-detector.plugin.yml",
         "attune-guard.plugin.yml",
         "attune-packet.plugin.yml",
         "attune-plain.plugin.yml",
+        "attune-reviewer.plugin.yml",
         "attune-tool.plugin.yml",
+        "catalog_probe.plugin.yml",
         "fixtures/boundary-world.tsv",
         "fixtures/expected-observation-projection.tsv",
         "fixtures/expected-reference-projection.tsv",
@@ -337,6 +344,21 @@ js_test(
         "//platform/dsh:typert_package_a",
     ],
     entry_point = "commit_test.mjs",
+)
+
+# The laws of the declared REVIEWER-profile binding of the gated pilot. They pin
+# the declared overlay bytes the pilot composes, so a later edit that re-enables a
+# broad native surface fails offline. The runtime half of the same fix is the
+# provider-free catalog proof that composes the real profile and reads the ACTUAL
+# registered tool names. Provider-free and offline.
+js_test(
+    name = "binding_test",
+    data = [
+        "attune-reviewer.plugin.yml",
+        "attune-commit.plugin.yml",
+        "attune-tool.plugin.yml",
+    ],
+    entry_point = "binding_test.mjs",
 )
 
 # The laws of the model-hidden detector sidecar. They read the REAL

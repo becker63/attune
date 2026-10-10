@@ -44,7 +44,15 @@ export const COMMIT_PARAMETERS = {
   contract: { type: 'string', required: true },
   claim: { type: 'string', required: true },
   severityOrUnknown: { type: 'string', required: true },
-  delivered: { type: 'string', required: true },
+  delivered: {
+    type: 'string',
+    required: true,
+    description:
+      'The exact delivered evidence as `path@revision@start-end` entries, semicolon ' +
+      'separated. The revision is REQUIRED because each world declares both a BASE ' +
+      'and a HEAD row for the same path, so a pathname alone cannot identify the ' +
+      'bytes the candidate rests on.',
+  },
   consequence: { type: 'string', required: true },
   contradiction: { type: 'string', required: true },
   uncertainty: { type: 'string', required: true },
@@ -62,20 +70,47 @@ export class CommitRefusal extends Error {
   }
 }
 
-const DELIVERED_ENTRY = /^([^@]+)@(\d+)-(\d+)$/
+const DELIVERED_ENTRY = /^(.+)@(\d+)-(\d+)$/
 
-/// Parse the literal `path@start-end;path2@start2-end2` delivered spec. An empty
-/// spec is an empty list; a malformed entry is refused rather than guessed.
+/// The declared EXPLICIT-REVISION delivered form `path@revision@start-end`, in
+/// which the entry names the exact BASE-or-HEAD revision of the world it cites.
+/// A world that admits two revisions of one path (every real task world does)
+/// cannot be resolved from a pathname alone, so the explicit form is the form
+/// the review is asked to use and the only one that is unambiguous there.
+const DELIVERED_ENTRY_REVISION = /^(.+)@([0-9a-fA-F]{4,64})@(\d+)-(\d+)$/
+
+/// Parse the literal `path[@revision]@start-end;...` delivered spec. An empty
+/// spec is an empty list; a malformed entry is refused rather than guessed. The
+/// revision is explicit when the entry names one; a bare `path@start-end` entry
+/// is resolved only against a world that declares exactly ONE revision of that
+/// path, so a BASE path can never be silently resolved against the HEAD row.
 export function parseDeliveredSpec(spec) {
   const entries = []
   for (const piece of String(spec ?? '').split(';')) {
     const trimmed = piece.trim()
     if (trimmed.length === 0) continue
-    const match = DELIVERED_ENTRY.exec(trimmed)
-    if (match === null) {
-      throw new CommitRefusal(`the delivered entry ${trimmed} is not a path@start-end region`)
+    const explicit = DELIVERED_ENTRY_REVISION.exec(trimmed)
+    if (explicit !== null) {
+      entries.push({
+        path: explicit[1],
+        revision: explicit[2],
+        startLine: Number.parseInt(explicit[3], 10),
+        endLine: Number.parseInt(explicit[4], 10),
+      })
+      continue
     }
-    entries.push({ path: match[1], startLine: Number.parseInt(match[2], 10), endLine: Number.parseInt(match[3], 10) })
+    const bare = DELIVERED_ENTRY.exec(trimmed)
+    if (bare === null) {
+      throw new CommitRefusal(
+        `the delivered entry ${trimmed} is not a path@revision@start-end or path@start-end region`,
+      )
+    }
+    entries.push({
+      path: bare[1],
+      revision: '',
+      startLine: Number.parseInt(bare[2], 10),
+      endLine: Number.parseInt(bare[3], 10),
+    })
   }
   return entries
 }
@@ -108,10 +143,13 @@ export function declaredWorld(config) {
 }
 
 /// Resolve one delivered spec into the exact evidence references the declared
-/// world names. Each entry is refused unless it is exactly one declared region
-/// of the world the candidate names and the sealed bytes match the declared
-/// identity digest, and the reference carries the COMPILED Flix operation's own
-/// delivery and byte count rather than a value invented here.
+/// world names. Each entry is refused unless it names exactly one declared
+/// region of the world the candidate names — INCLUDING the exact BASE-or-HEAD
+/// revision when the world declares more than one revision of that path, so a
+/// pathname alone can never silently resolve against the HEAD row — and the
+/// sealed bytes match the declared identity digest. The reference carries the
+/// COMPILED Flix operation's own delivery and byte count rather than a value
+/// invented here.
 export function resolveDeliveredRegions(spec, config, world) {
   const entries = parseDeliveredSpec(spec)
   if (entries.length === 0) return []
@@ -119,9 +157,33 @@ export function resolveDeliveredRegions(spec, config, world) {
   const manifest = parseWorldManifest(readFileSync(declared.manifestPath, 'utf8'))
   const compiled = loadCompiledProjection(config)
   return entries.map((entry) => {
-    const row = manifest.find((candidate) => candidate.path === entry.path)
-    if (row === undefined) {
+    const rows = manifest.filter((candidate) => candidate.path === entry.path)
+    if (rows.length === 0) {
       throw new BoundaryRefusal('the requested region is not a declared region of the requested world')
+    }
+    let row
+    if (entry.revision.length > 0) {
+      row = rows.find((candidate) => candidate.revision === entry.revision)
+      if (row === undefined) {
+        const declaredRevisions = [...new Set(rows.map((candidate) => candidate.revision))].join(', ')
+        throw new BoundaryRefusal(
+          `the delivered region names revision ${entry.revision} of ${entry.path}, which the declared ` +
+          `world does not declare (declared revisions: ${declaredRevisions})`,
+        )
+      }
+    } else {
+      const declaredRevisions = [...new Set(rows.map((candidate) => candidate.revision))]
+      if (declaredRevisions.length > 1) {
+        // The world declares this path at more than one revision, so a pathname
+        // alone is ambiguous: resolving it "first" would silently answer a BASE
+        // citation with the HEAD bytes. Refuse and name the declared revisions.
+        throw new CommitRefusal(
+          `the delivered region ${entry.path}@${entry.startLine}-${entry.endLine} names no revision and the ` +
+          `declared world declares ${declaredRevisions.length} revisions of that path ` +
+          `(${declaredRevisions.join(', ')}): name the exact BASE-or-HEAD revision as path@revision@start-end`,
+        )
+      }
+      row = rows[0]
     }
     if (row.world !== world) {
       throw new BoundaryRefusal('the delivered region belongs to a different world than the candidate names')
