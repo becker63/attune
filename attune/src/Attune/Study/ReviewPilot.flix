@@ -499,4 +499,79 @@ pub mod Attune.Study.ReviewPilot {
 
     def findPointByKey(points: List[ParetoPoint], key: String): Option[ParetoPoint] =
         List.find(point -> rankKey(point) == key, points)
+
+    // -------------------------------------------------- heldout confirmation
+
+    /// The declared identity of the holdout confirmation record: the
+    /// predeclared Pareto selection and its justification, frozen BEFORE any
+    /// heldout observation exists.
+    pub def holdoutConfirmationIdentity(): String = "reviewbench-heldout-confirmation-v1"
+
+    /// The declared identity of the frozen holdout policy-selection record.
+    pub def holdoutSelectionIdentity(): String = "reviewbench-heldout-policy-selection-v1"
+
+    /// The declared identity of the holdout confirmation dispatch: one fresh
+    /// plain observation and one fresh selected-policy observation per
+    /// structurally admitted holdout task.
+    pub def holdoutDispatchIdentity(): String = "reviewbench-heldout-balanced-dispatch-v1"
+
+    /// The selection justification stated once, so the frozen record and the
+    /// executable rule can never disagree about what "the Pareto selection" means.
+    pub def holdoutJustification(): String =
+        "max-validRecovery-then-min-work-then-min-time-then-max-completion-on-frontier"
+
+    /// The arm a frozen observed policy name carries. The holdout selects only
+    /// among the OBSERVED pilot policies: an optional arm that was declined and
+    /// never run has no outcome and can never be named here.
+    pub def armOfPolicy(name: String): Option[Arm] =
+        if (name == armName(Arm.R0Plain)) Some(Arm.R0Plain)
+        else if (name == armName(Arm.R1Packets)) Some(Arm.R1Packets)
+        else None
+
+    /// The four predeclared quantities one observed policy contributes to the
+    /// selection: all-admitted valid recovery, cumulative provider work, fresh
+    /// elapsed time and completion/salvage. Higher is better for recovery and
+    /// completion; lower is better for work and elapsed time.
+    pub type alias PolicyOutcome = {
+        policy              = String,
+        validRecovery       = Int32,
+        cumulativeWork      = Int64,
+        freshElapsedMillis  = Int64,
+        completedOrSalvaged = Int32
+    }
+
+    /// One observed policy as its declared Pareto point.
+    pub def paretoPointOf(outcome: PolicyOutcome): ParetoPoint = {
+        policy = outcome#policy,
+        validRecovery = outcome#validRecovery,
+        cumulativeWork = outcome#cumulativeWork,
+        freshElapsedMillis = outcome#freshElapsedMillis,
+        completedOrSalvaged = outcome#completedOrSalvaged
+    }
+
+    /// The frozen holdout selection: the SAME predeclared Pareto rule applied to
+    /// the observed policy outcomes. It selects exactly one policy, or nothing
+    /// when no candidate exists, and it never consults a heldout outcome.
+    pub def selectHeldoutPolicy(outcomes: List[PolicyOutcome]): Option[ParetoPoint] =
+        selectPolicy(List.map(paretoPointOf, outcomes))
+
+    /// The two arms of the holdout confirmation, in balanced dispatch order: the
+    /// plain R0 arm first, then the freshly selected policy's arm. The plain arm
+    /// is always observed, so the two arms are distinct whenever the selected
+    /// policy names a packet/optional arm; a degenerate selection of the plain
+    /// arm itself yields one arm and one observation per task.
+    pub def holdoutArms(selected: ParetoPoint): List[Arm] =
+        match armOfPolicy(selected#policy) {
+            case Some(arm) => List.distinct(Arm.R0Plain :: arm :: Nil)
+            case None      => List#{Arm.R0Plain}
+        }
+
+    /// Whether the holdout confirmation runs two arms per admitted task.
+    pub def holdoutHasTwoArms(selected: ParetoPoint): Bool =
+        List.length(holdoutArms(selected)) == 2
+
+    /// The declared per-task holdout observation count of one selected policy:
+    /// two for a two-arm confirmation, one for a degenerate plain self-selection.
+    pub def holdoutObservationsPerTask(selected: ParetoPoint): Int32 =
+        List.length(holdoutArms(selected))
 }

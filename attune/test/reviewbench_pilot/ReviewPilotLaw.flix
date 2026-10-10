@@ -202,3 +202,54 @@ def theParetoRuleSelectsOneReproduciblePoint(): Unit \ Assert = {
     // An empty candidate set selects nothing.
     Assert.assertEq(expected = true, Option.isEmpty(ReviewPilot.selectPolicy(Nil)))
 }
+
+// --------------------------------------------------- heldout confirmation
+
+def outcome(policy: String, recovery: Int32, work: Int64, elapsed: Int64, completed: Int32): ReviewPilot.PolicyOutcome =
+    { policy = policy, validRecovery = recovery, cumulativeWork = work,
+      freshElapsedMillis = elapsed, completedOrSalvaged = completed }
+
+def armNameOf(name: String): String =
+    Option.getWithDefault("none", Option.map(arm -> ReviewPilot.armName(arm), ReviewPilot.armOfPolicy(name)))
+
+@Test
+def theHeldoutSelectionPicksTheGreatestRecoveryOnTheFrontier(): Unit \ Assert = {
+    // The ACTUAL judged pilot outcomes: R1 delivers more recovered findings but
+    // costs more work and more elapsed time, so neither point dominates the other
+    // and both stay on the frontier.
+    let outcomes = List#{
+        outcome("R0_PLAIN", 4, 2089624i64, 766000i64, 5),
+        outcome("R1_PACKETS", 7, 2742605i64, 849000i64, 6)
+    };
+    Assert.assertEq(expected = 2, List.length(ReviewPilot.frontier(List.map(ReviewPilot.paretoPointOf, outcomes))));
+    let selected = ReviewPilot.selectHeldoutPolicy(outcomes);
+    Assert.assertEq(expected = "R1_PACKETS",
+        Option.getWithDefault("", Option.map(point -> point#policy, selected)));
+    // The confirmation runs one fresh plain arm and one fresh selected arm.
+    let point = ReviewPilot.paretoPointOf(outcome("R1_PACKETS", 7, 2742605i64, 849000i64, 6));
+    Assert.assertEq(expected = true, ReviewPilot.holdoutHasTwoArms(point));
+    Assert.assertEq(expected = 2, ReviewPilot.holdoutObservationsPerTask(point));
+    Assert.assertEq(expected = ReviewPilot.Arm.R0Plain :: ReviewPilot.Arm.R1Packets :: Nil,
+        ReviewPilot.holdoutArms(point));
+    // An empty candidate set selects nothing, so no confirmation can be fabricated.
+    Assert.assertEq(expected = true, Option.isEmpty(ReviewPilot.selectHeldoutPolicy(Nil)))
+}
+
+@Test
+def onlyObservedPoliciesCanBeSelectedForTheHoldout(): Unit \ Assert = {
+    Assert.assertEq(expected = "R0_PLAIN", armNameOf("R0_PLAIN"));
+    Assert.assertEq(expected = "R1_PACKETS", armNameOf("R1_PACKETS"));
+    // A declined optional arm was never run, so it carries no outcome and is not
+    // even nameable as a holdout policy.
+    Assert.assertEq(expected = "none", armNameOf("R2_STOP"));
+    Assert.assertEq(expected = "none", armNameOf("R3_RANKED"));
+    Assert.assertEq(expected = "none", armNameOf("R4_PLANNED"));
+    // R3-R2 is never a policy name either.
+    Assert.assertEq(expected = "none", armNameOf("R3-R2"));
+    // Every declared holdout confirmation identity is named and distinct.
+    let identities = List#{ReviewPilot.holdoutConfirmationIdentity(), ReviewPilot.holdoutSelectionIdentity(),
+        ReviewPilot.holdoutDispatchIdentity()};
+    Assert.assertEq(expected = true, List.forAll(name -> not String.isEmpty(name), identities));
+    Assert.assertEq(expected = true, List.length(List.distinct(identities)) == 3);
+    Assert.assertEq(expected = true, ReviewPilot.holdoutConfirmationIdentity() != ReviewPilot.protocolIdentity())
+}

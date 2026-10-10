@@ -91,8 +91,26 @@ native_study_stage(
 # The explicit source closure of the pilot RUN-half stages: the blinding and
 # reduction dispatcher plus the canonical owner it reduces and the shared owners
 # both consume.
-PILOT_RUN_SRCS = [
-    "ReviewPilotRunStages.flix",
+PILOT_RUN_SRCS = [    "ReviewPilotRunStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The explicit source closure of the holdout-confirmation stage: the selection
+# dispatcher plus the canonical pilot owner whose frozen Pareto rule it applies
+# and the shared owners both consume. It is a separate target from the run-half
+# stages because each stage file owns its own parsing helpers.
+PILOT_HOLDOUT_SRCS = [
+    "ReviewPilotHoldoutStages.flix",
     "//src:Attune.flix",
     "//src:Attune/Coverage.flix",
     "//src:Attune/Repository.flix",
@@ -161,6 +179,35 @@ native_study_stage(
         "//platform/tools/reviewbench:attune_reviewbench",
     ],
     stage = "reviewbench_pilot_run",
+    tags = ["manual"],
+)
+
+# The declared ReviewBench holdout confirmation FREEZE stage (`VAL-STUDY-004`).
+# It reduces the ACTUAL judged pilot outcomes and the immutable metadata-only
+# 24-task holdout into the predeclared Pareto selection and freezes it BEFORE any
+# heldout observation exists, plus the balanced deterministic holdout dispatch of
+# one plain and one selected-policy observation per holdout task. No heldout
+# outcome is an input, because none exists yet; the target is `manual` because it
+# consumes the run-half reduction tree, not the ordinary gate.
+native_study_stage(
+    name = "reviewbench_pilot_holdout_freeze",
+    srcs = PILOT_HOLDOUT_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = [
+        "holdout",
+        "pilot_run",
+        "fixtures",
+    ],
+    inputs = [
+        ":reviewbench_pilot_freeze",
+        ":reviewbench_pilot_run",
+        ":pilot_run_fixtures",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_holdout_freeze",
     tags = ["manual"],
 )
 
