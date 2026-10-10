@@ -43,6 +43,38 @@ pub mod Attune.Study.ReviewPilotBinding {
     /// requirement: it names which binding declaration this is.
     pub def bindingVersion(): String = "2026-10-09"
 
+    // ------------------------------------------- corrected remaining binding
+
+    /// The declared identity of the CORRECTED reviewer binding (pilot integrity
+    /// recovery, approved 2026-10-10). It is a NEW, separately named version
+    /// alongside `reviewbench-pilot-source-binding-v1`; the original record is
+    /// never retro-defined, and the six attempted slots `obs-2..obs-7` keep the
+    /// binding they actually ran under. The untouched `obs-8..obs-21` are the ONLY
+    /// observations that use this version, so the twenty-slot cohort is honestly
+    /// MIXED-VERSION rather than a clean contemporaneous pair.
+    pub def correctedBindingIdentity(): String = "reviewbench-pilot-source-binding-v2"
+
+    /// The implementation commit of the corrected binding. It is frozen BEFORE any
+    /// of `obs-8..obs-21` produced an outcome, so the version a reader sees is the
+    /// code that really ran the remaining observations.
+    pub def correctedBindingCommit(): String = "d0b3094"
+
+    /// The declared model-facing tool catalog of the corrected binding, measured
+    /// provider-free on the REAL registered registry: the shared bounded plain-read
+    /// facade and the shared candidate-commit operation in BOTH arms.
+    pub def correctedSharedToolNames(): List[String] =
+        "attune_source_read" :: "attune_commit_candidate" :: Nil
+
+    /// The ONE tool the corrected binding adds on top of the shared pair, in the
+    /// packet arm only.
+    pub def correctedPacketToolNames(): List[String] = "attune_packet_operation" :: Nil
+
+    /// The declared slots of each version: the six attempted slots ran the v1
+    /// binding and are never re-dispatched; the fourteen untouched slots are the
+    /// only dispatchable observations.
+    pub def correctedBindingSlots(): List[String] = "obs-8..obs-21" :: Nil
+    pub def originalBindingSlots(): List[String] = "obs-2..obs-7" :: Nil
+
     // ------------------------------------------------ shared plain-read facade
 
     /// The declared identity of the ONE shared bounded plain-read facade. It is
@@ -245,6 +277,17 @@ pub mod Attune.Study.ReviewPilotBinding {
         ("commit", "commits-then-continues", "true"),
         ("commit", "outside-region-rejected", "false"),
         ("binding", "appended-before", "any-review-outcome"),
-        ("binding", "previous-version", "reviewbench-pilot-protocol-v1@1143bc2")
+        ("binding", "previous-version", "reviewbench-pilot-protocol-v1@1143bc2"),
+        ("corrected-binding", "identity", correctedBindingIdentity()),
+        ("corrected-binding", "implementation-commit", correctedBindingCommit()),
+        ("corrected-binding", "frozen-before", "obs-8..obs-21-outcome"),
+        ("corrected-binding", "slots", List.join(",", correctedBindingSlots())),
+        ("corrected-binding", "shared-tools", List.join(",", correctedSharedToolNames())),
+        ("corrected-binding", "packet-tools", List.join(",", correctedPacketToolNames())),
+        ("original-binding", "identity", bindingIdentity()),
+        ("original-binding", "slots", List.join(",", originalBindingSlots())),
+        ("original-binding", "slot-state", "attempted-never-redispatched"),
+        ("cohort", "version-mix", "mixed-version-6-original-14-corrected"),
+        ("cohort", "paired-causal-estimate", "false")
     }
 }
