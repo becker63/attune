@@ -142,8 +142,11 @@ def attune_holdout_runners(
                 tags = ["manual"],
                 # The launcher REPLACES this one positional argument with the
                 # composed review task of the observation (see
-                # `platform/dsh/pilot_task.mjs`); it is never sent verbatim.
-                task = "HOLDOUT-TASK-COMPOSED-AT-RUN-TIME",
+                # `platform/dsh/pilot_task.mjs`); it is never sent verbatim. The
+                # declared placeholder is the SAME literal the launcher's
+                # fail-closed binding check requires, so a holdout observation
+                # cannot be dispatched with an uncomposed task.
+                task = "PILOT-TASK-COMPOSED-AT-RUN-TIME",
                 world_archives = [
                     "%s//:%s-base" % (world_repo, task),
                     "%s//:%s-head" % (world_repo, task),
