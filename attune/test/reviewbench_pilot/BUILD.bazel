@@ -124,6 +124,25 @@ PILOT_HOLDOUT_SRCS = [
     "//src:Attune/Theory.flix",
 ]
 
+# The explicit source closure of the holdout-confirmation RUN-half reduction: the
+# heldout reduction dispatcher plus the canonical pilot owner whose frozen
+# identities it reads. It is a separate target from the pilot run-half stages
+# because each stage file owns its own parsing helpers.
+PILOT_HOLDOUT_RUN_SRCS = [
+    "ReviewHoldoutRunStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
 # The frozen run-half receipts the reduction stages declare: the ACTUAL delivered
 # finals, the durable committed checkpoints, the normalized candidate findings,
 # the frozen predictions/diagnostics/usage ledger and the ten-task reference
@@ -211,6 +230,30 @@ native_study_stage(
     tags = ["manual"],
 )
 
+# The declared ReviewBench heldout-confirmation RUN-half reduction
+# (`VAL-STUDY-004`). It reduces the FORTY-EIGHT frozen once-only heldout
+# observations — one fresh plain and one fresh selected-policy observation per
+# task of the frozen metadata-only 24-task holdout — into the canonical heldout
+# record: the per-observation table (every budget-stopped and every empty
+# delivery stays a miss), the per-arm usage with the guard-prefix and measured
+# overshoots SEPARATE, the explicit planned/original24/remaining denominator, the
+# per-task RAW paired difference, the honest limited-support statement and the
+# blinded candidate projection. Provider-free and corpus-free: it reads only the
+# frozen receipts and calls no provider.
+native_study_stage(
+    name = "reviewbench_holdout_run",
+    srcs = PILOT_HOLDOUT_RUN_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"],
+    inputs = [":pilot_run_fixtures"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_holdout_run",
+    tags = ["manual"],
+)
+
 # The declared ReviewBench pilot freeze stage (`VAL-STUDY-001`, `VAL-STUDY-002`,
 # `VAL-STUDY-003`, `VAL-STUDY-010`). It reduces the already-materialized,
 # already-frozen admission projection and the frozen cohort fixture into the
@@ -267,7 +310,36 @@ native_flix_java_test(
 
 test_suite(
     name = "all",
-    tests = [":reviewbench_pilot_law"],
+    tests = [
+        ":reviewbench_holdout_law",
+        ":reviewbench_pilot_law",
+    ],
+)
+
+# The corpus-free laws of the heldout-confirmation reduction (`VAL-STUDY-004`):
+# the production completion/salvage rule, the DISTINCT guard-prefix and measured
+# overshoots, the exactly-one-observation-per-arm pairing rule and the frozen
+# heldout selection rule, all over declared in-memory records. No corpus, no
+# network, no golden finding, no provider and no fixture file is touched, so the
+# ordinary gate runs them. It is a SEPARATE target from the pilot law because the
+# heldout reduction owns its own parsing helpers.
+native_flix_java_test(
+    name = "reviewbench_holdout_law",
+    srcs = [
+        "ReviewHoldoutRunStages.flix",
+        "//src:Attune.flix",
+        "//src:Attune/Coverage.flix",
+        "//src:Attune/Repository.flix",
+        "//src:Attune/Repository/Grit.flix",
+        "//src:Attune/Study.flix",
+        "//src:Attune/Study/Embedding.flix",
+        "//src:Attune/Study/Metrics.flix",
+        "//src:Attune/Study/Qwen.flix",
+        "//src:Attune/Study/ReviewBench.flix",
+        "//src:Attune/Study/ReviewPilot.flix",
+        "//src:Attune/Theory.flix",
+    ],
+    java_deps = ["//platform/tools/grit:attune_grit"],
 )
 
 # The twenty once-only observations of the gated pilot (`VAL-STUDY-002`,
