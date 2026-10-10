@@ -662,6 +662,12 @@ def qualityCorrectionStage(): Unit \ {Assert, IO} = {
     let adjudications = parseAdjudications(readFixture("holdout-adjudications.tsv"));
     let corrected = correctedAdjudications(blinding, adjudications);
     let taskList = candidateTasks();
+    // The ADMITTED 24-task gold population of the frozen holdout, read from the
+    // immutable freeze record rather than from the candidate index: the quality
+    // and severity metric populations iterate these tasks, so a task with golden
+    // references but no candidate contributes a DEFINED zero recall instead of
+    // being dropped from the denominator.
+    let admittedTasks = List.map(taskId, tasks());
     let perArm = List.flatMap(task -> {
         let candidates = candidatesFor(task, blinding);
         List.map(arm -> {
@@ -718,7 +724,7 @@ def qualityCorrectionStage(): Unit \ {Assert, IO} = {
                 viewCountsOf(view, task, arm, references, matches, adjudications, candidates, blinding, corrected)),
                 qualityViewNames())
         }, arms())
-    }, taskList);
+    }, admittedTasks);
     let viewCountsFor = (arm, view) -> List.filterMap(entry -> match entry {
         case (_, a, v, c) if a == arm and v == view => Some(c)
         case _                                       => None
@@ -738,7 +744,7 @@ def qualityCorrectionStage(): Unit \ {Assert, IO} = {
                 severityCountsOf(view, task, arm, references, matches, adjudications, candidates, corrected)),
                 severityViewNames())
         }, arms())
-    }, taskList);
+    }, admittedTasks);
     let severityCountsFor = (arm, view) -> List.filterMap(entry -> match entry {
         case (_, a, v, c) if a == arm and v == view => Some(c)
         case _                                       => None
@@ -789,7 +795,34 @@ def qualityCorrectionStage(): Unit \ {Assert, IO} = {
     // total equals the canonical corrected counts tree, so the micro/macro views
     // are a faithful re-projection and never a second metric engine.
     Assert.assertEq(expected = List.length(blinding), inclusiveCandidates);
-    Assert.assertEq(expected = publishedValid, inclusiveValid)
+    Assert.assertEq(expected = publishedValid, inclusiveValid);
+    // Bounded denominator regression (`VAL-STUDY-005`): the quality and severity
+    // metric populations are the ADMITTED 24-task gold, not only the 13
+    // candidate-bearing tasks. Every admitted task contributes one counts record
+    // per (arm, view), each arm's known-recall denominator is the full admitted
+    // positive gold, and a task with golden references and no candidate
+    // contributes a DEFINED zero recall rather than being silently dropped.
+    let admittedGold = List.foldLeft((acc, task) -> {
+        let references = parseReferences(readText(treeDir("references") + "/" + referenceFileName(task)));
+        acc + List.length(List.filter(reference -> reference#truePositive, references))
+    }, 0, admittedTasks);
+    let countsPopulation = (arm, view) -> List.length(viewCountsFor(arm, view));
+    let qualityGoldOf = (arm, view) -> match List.find(row ->
+        field(row, 1) == arm and field(row, 2) == view, qualityCounts) {
+        case Some(row) => intOf(field(row, 9))
+        case None      => -1
+    };
+    let zeroCandidateWithGold = List.length(List.filter(entry -> match entry {
+        case (_, _, view, c) => view == "inclusive" and c#candidates == 0 and c#goldTrue > 0
+    }, viewRows));
+    Assert.assertEq(expected = ReviewPilot.holdoutSize(), List.length(admittedTasks));
+    Assert.assertEq(expected = true, admittedGold > 0);
+    Assert.assertEq(expected = true, List.forAll(arm -> List.forAll(view ->
+        countsPopulation(arm, view) == ReviewPilot.holdoutSize(), qualityViewNames()), arms()));
+    Assert.assertEq(expected = true, List.forAll(arm ->
+        qualityGoldOf(arm, "inclusive") == admittedGold
+            and qualityGoldOf(arm, "final-only") == admittedGold, arms()));
+    Assert.assertEq(expected = true, zeroCandidateWithGold > 0)
 }
 
 // ---------------------------------------------------------------- dispatcher

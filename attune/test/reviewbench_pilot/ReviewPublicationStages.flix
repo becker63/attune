@@ -339,6 +339,15 @@ def publicationStage(): Unit \ {Assert, IO} = {
     // each of the two arms and the two views (final-only / inclusive).
     Assert.assertEq(expected = 44, List.length(qualityMetrics));
     Assert.assertEq(expected = 4, List.length(List.filter(row -> field(row, 1) == "quality-counts", qualityMetrics)));
+    // The recall/severity metric population is the ADMITTED 24-task gold
+    // population (`VAL-STUDY-005`), not only the candidate-bearing tasks: every
+    // micro row reports 24 contributing tasks and every per-arm/view
+    // `quality-counts` row carries the full 224-positive admitted gold, so a
+    // zero-candidate task with gold stays in the denominator.
+    Assert.assertEq(expected = true, List.forAll(row ->
+        field(row, 2) != "micro" or field(row, 7) == "24", qualityMetrics));
+    Assert.assertEq(expected = true, List.forAll(row ->
+        field(row, 1) != "quality-counts" or field(row, 10) == "224", qualityMetrics));
     // Two arms x two severity views x five metrics x (micro + macro).
     Assert.assertEq(expected = 40, List.length(severityMetrics));
     Assert.assertEq(expected = true, List.forAll(row -> List.length(row) == 15, taskTable))

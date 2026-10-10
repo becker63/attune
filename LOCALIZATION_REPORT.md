@@ -6781,9 +6781,11 @@ by an invented positive:
   first-source checkpoint is an early-recovery diagnostic that changed neither
   the cap nor the primary numerator.
 - **RQ2 — bounded evidence.** Answered negatively at the packet. The R1
-  progressive packet was mounted in every R1 slot but its only observed call
-  (`obs-32`, rulecom R1) was **refused**: `packetAccepted = 0` in every pilot and
-  holdout slot. No packet-uptake or token-saving effect is claimed.
+  progressive packet was mounted in every R1 slot and was invoked in exactly
+  **three** slots across the whole study (pilot `obs-5` and `obs-19`, holdout
+  `obs-32`); every one of those calls was **refused** (`packetRefused = 1`) and
+  `packetAccepted = 0` in every pilot and holdout slot. No packet-uptake,
+  understanding or token-saving effect is claimed.
 - **RQ3 — existing context ordering.** The shared plain-read facade delivered the
   actual source text in both arms (accepted source bytes: pilot R0 528751 / R1
   525210; holdout R0 1226163 / R1 1232642), and the R1-only packet added no
@@ -6860,17 +6862,26 @@ empty ones.
 The canonical Flix quality is reported at **task-micro** (pooled) and
 **repository-equal macro** (every holdout task is its own repository), for the
 primary **final-only** view and the **checkpoint-inclusive** view, over all
-admitted tasks including the failed and empty ones. An undefined per-task value
-(an empty denominator, never a zero) is excluded from the macro mean and the
-defined population is reported beside it
+admitted tasks including the failed and empty ones. The recall and severity
+denominators are the full **admitted 24-task gold population** (224 positive / 88
+medium-or-high), not only the 13 candidate-bearing tasks: a task with golden
+references and no candidate contributes a **defined zero recall** rather than
+being dropped, so every per-arm/view `quality-counts` row carries
+`goldTrue = 224` and every micro row reports 24 contributing tasks. The
+candidate-specific verdict/counts tree (`holdout-judged-counts-corrected.tsv`)
+remains the **13 candidate-bearing tasks / 26 rows** — a candidate-scoped output
+clearly separate from these all-admitted metric views; precision and
+valid-behavior counts are unchanged. An undefined
+per-task value (an empty denominator, never a zero) is excluded from the macro
+mean and the defined population is reported beside it
 (`bazel-bin/test/reviewbench_pilot/reviewbench_publication/publication-quality-metrics.tsv`):
 
-| View | Arm | Candidates | Valid | Micro valid precision | Macro valid precision (defined) | Micro known recall | Macro known recall |
+| View | Arm | Candidates | Valid | Micro valid precision | Macro valid precision (defined) | Micro known recall | Macro known recall (defined) |
 |---|---|---|---|---|---|---|---|
-| final-only | R0_PLAIN | 9 | 5 | 55.6% | 64.3% (7) | 16.1% | 24.3% |
-| final-only | R1_PACKETS | 6 | 4 | 66.7% | 80.0% (5) | 11.2% | 19.4% |
-| inclusive | R0_PLAIN | 32 | 18 | 56.3% | 53.2% (13) | 56.6% | 66.1% |
-| inclusive | R1_PACKETS | 27 | 17 | 63.0% | 57.6% (12) | 43.4% | 50.6% |
+| final-only | R0_PLAIN | 9 | 5 | 55.6% | 64.3% (7) | 10.3% | 13.3% (22) |
+| final-only | R1_PACKETS | 6 | 4 | 66.7% | 80.0% (5) | 7.1% | 10.6% (22) |
+| inclusive | R0_PLAIN | 32 | 18 | 56.3% | 53.2% (13) | 36.2% | 36.0% (22) |
+| inclusive | R1_PACKETS | 27 | 17 | 63.0% | 57.6% (12) | 27.7% | 27.6% (22) |
 
 The inclusive view carries every blinded candidate (32 + 27 = 59) and its valid
 total equals the canonical corrected counts (35), so the micro/macro views are a
@@ -6886,10 +6897,10 @@ known/medium/high recall over all admitted gold
 
 | Severity | Arm | Micro known recall | Macro known recall (defined) | Micro augmented recall |
 |---|---|---|---|---|
-| medium-high | R0_PLAIN | 60.3% | 69.5% (11) | 62.9% |
-| medium-high | R1_PACKETS | 48.3% | 51.8% (11) | 52.4% |
-| high | R0_PLAIN | 62.5% | 71.4% (7) | 66.7% |
-| high | R1_PACKETS | 50.0% | 57.1% (7) | 55.6% |
+| medium-high | R0_PLAIN | 39.8% | 36.4% (21) | 42.4% |
+| medium-high | R1_PACKETS | 31.8% | 27.1% (21) | 35.5% |
+| high | R0_PLAIN | 45.5% | 55.6% (9) | 50.0% |
+| high | R1_PACKETS | 36.4% | 44.4% (9) | 41.7% |
 
 ### Compact per-task table (frozen holdout, corrected view)
 
@@ -6911,7 +6922,10 @@ the frozen 24-task / 48-observation denominator. Representative rows:
 | `swarmbase_swarmbase-161` | R0_PLAIN | budget-stop | 223803 | 82647 | 0 | 0 | 0 | 0 |
 | `swarmbase_swarmbase-161` | R1_PACKETS | budget-stop | 265299 | 81916 | 0 | 0 | 0 | 0 |
 
-The packet refusal is visible as `packetRefused = 1` on the `rulecom` R1 row and
+The packet refusal is visible as `packetRefused = 1` on the `rulecom` R1 row
+(holdout `obs-32`); the two pilot packet refusals are pilot `obs-5`
+(`agent-sh_agentsys-298` R1) and `obs-19` (`ls1intum_Artemis-12479` R1), so the
+study carries **three refused packet calls and zero accepted**.
 `packetAccepted = 0` everywhere. Every row is `observedUse-Unknown`: internal use
 is never inferred.
 
@@ -7055,31 +7069,34 @@ responsibility, not by language. The recorded measured totals are A cognitive
 5,484, B mechanical 2,769, A+B authored 8,253, C test 10,288 and C support 21,884
 (the current gate re-derives these as size-review notes; a soft threshold
 crossing is a note, never a rejection). The historical 250-line glue aspiration
-is **not** a gate and is not claimed. The ReviewBench study itself (from the
-corpus admission `fe4a8f2` to the terminal head) changed 313 files with 63,384
-insertions and 27 deletions, distributed as `platform/` 32,737, `test/` 23,091,
-`src/` 5,527, `MODULE.bazel` 445 and the root report 1,299 — reported as authored,
-inherited and generated exactly as the design note classifies them. Cold/warm
-build and cache behaviour: the broad gate runs the declared remote profile and
-its own invocation measured **97.0 s elapsed / 38.6 s critical path over 4,415
-actions** with 8,686 action-cache and 1,637 remote-cache hits and 9 remote
-executions; no advance time saving is claimed. The mission ran from 2026-10-03 to
-the terminal head on 2026-10-10; the measured study half ran from the corpus
-admission on 2026-10-08. The audit24/44/75h forecast is **not** asserted as
-achieved.
+is **not** a gate and is not claimed. The ReviewBench study footprint is measured
+over the explicit fixed git range `fe4a8f2..3926028` (corpus admission `fe4a8f2`
+→ the pre-repair publication commit `3926028`): 313 files with 63,394 insertions
+and 45 deletions, distributed as `attune/platform/` 32,484, `attune/test/` 23,450,
+`attune/src/` 5,017, `attune/MODULE.bazel` 567, the root report 1,706 and other
+170 — reported as authored, inherited and generated exactly as the design note
+classifies them. (This denominator-repair commit is a later, separately named
+follow-on; the range above is fixed and reproducible, not a self-referential
+`HEAD`.) Cold/warm build and cache behaviour is **`Unavailable`**: no retained
+receipt preserves a cold/warm/cache measurement for this study, so no
+elapsed/critical-path/action-cache/remote-cache figure is claimed and none is
+re-benchmarked. The mission ran from 2026-10-03 to the terminal head on
+2026-10-10; the measured study half ran from the corpus admission on 2026-10-08.
+The audit24/44/75h forecast is **not** asserted as achieved.
 
 ### Tests passed and failed
 
 The broad gate is maintained honestly and is **not** all green. The current broad
 gate is `bazel test //... --config=remote --jobs=8 --host_jvm_args=-Xmx3g`:
 **78 of 79 tests pass, 1 fails — true exit 3** (latest invocation
-`e7c5c25c-5e91-4b64-83da-3688beccd10c`). The single failure is the known
+`35e8c701-7bbd-42b3-bfab-c18f4b4aaa9a`). The single failure is the known
 `//test/policy:workspace_audit_test` over the preserved user directory
-`notes/repository-through-time/` (`ignored-forbidden` findings). The failure is
-reported raw and is **never** cleaned, suppressed or relabelled; the `-Xmx3g`
-host-heap flag is a required startup option (without it the Bazel server dies with
-`OutOfMemoryError` while downloading remote outputs). Every owned check passes,
-including the corpus-free laws and the provider-free publication replay.
+`notes/repository-through-time/` (exactly 87 `ignored-forbidden` findings). The
+failure is reported raw and is **never** cleaned, suppressed or relabelled; the
+`-Xmx3g` host-heap flag is a required startup option (without it the Bazel server
+dies with `OutOfMemoryError` while downloading remote outputs). Every owned check
+passes, including the corpus-free laws (with the new bounded all-admitted-task
+recall-denominator regression) and the provider-free publication replay.
 
 ### Negative and modest outcome (a completed scientific result)
 
