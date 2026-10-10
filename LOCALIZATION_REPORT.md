@@ -6719,3 +6719,410 @@ targets. Outputs are read under `bazel-bin/test/reviewbench_judge/<stage>/` and
   receipt, fixture, measurement or provider was touched; the fixed stages remain
   `manual`, and the corpus-free laws still run in the ordinary offline gate.
 
+
+## ReviewBench measured study: gated pilot, heldout confirmation, corrected quality and provider-free publication (generation 19, 2026-10-10)
+
+**Status:** FINAL. This is the terminal publication of the measured ReviewBench
+study. It appends ONE named section; every earlier generation above is retained
+unchanged. It adds **no** new measurement, model call, judge, adjudication or
+corpus: it reduces the already-frozen receipts through the canonical Flix
+reducers and reports the actual outcomes, including the honest negative/modest
+result. It is the terminal stop of the mission.
+
+### Identity chain and provenance
+
+Every stage from freeze to publication joins the same frozen objects. The
+declared identities are:
+
+| Identity | Value |
+|---|---|
+| Pilot protocol | `reviewbench-pilot-protocol-v1` |
+| Corrected source-bearing packet | `reviewbench-source-bearing-packet-v2` |
+| Common substrate | `reviewbench-common-substrate-v1` |
+| Scoring | `reviewbench-pilot-scoring-v1` |
+| Dispatch | `reviewbench-balanced-deterministic-dispatch-v1` |
+| Reserve | `reviewbench-finalization-reserve-v1` |
+| Holdout | `reviewbench-holdout24-v1` |
+| Activation rule | `reviewbench-one-optional-contrast-rule-v1` |
+| Pareto rule | `reviewbench-pareto-selection-v1` |
+| Holdout confirmation | `reviewbench-heldout-confirmation-v1` |
+| Holdout selection | `reviewbench-heldout-policy-selection-v1` |
+| Holdout dispatch | `reviewbench-heldout-balanced-dispatch-v1` |
+| Judge protocol | `reviewbench-pilot-judge-protocol-v1` |
+| Frozen prompt (declared = observed) | `sha256:c77d29975a48bdf37ba880e2c0afd0bfdc737d159cef1dd6739cf45215424313` |
+| Route / model / effort / tool mode | `siwc-responses` / `gpt-6.1-sol` / `medium` / `native` |
+| Caps | 300 s · 32 tool rounds · 256000 observed provider-total tokens (cached inside) · 32 findings |
+| Reserve | 15000 ms · 1 round · 2560 tokens |
+| Early-recovery diagnostic | 30000–60000 tokens (not a stop, not a cap) |
+
+Provider, credential and process identity: the declared DSH route `llm-pi-ai`
+(`api: openai-responses`, `baseURL https://api.openai.com/v1`, `apiKeyEnv
+ACCESS_TOKEN`) using the existing scoped SIWC `ACCESS_TOKEN` through the existing
+BuildBuddy secret exchange, requesting `gpt-6.1-sol` at medium effort. The
+route's explicit name never masquerades as `openai-codex`, and no billing
+fallback, custom transport, nested agent or model substitution is used. The
+pinned process is Flix 0.76.1, JDK 25/aarch64, Bazel 8.6.0 and Nix 2.34.8. The
+served-model echo and the judge pre-call freeze time are **unverified** and are
+not claimed. Credentials are never printed, hashed, passed in argv or admitted as
+inputs.
+
+### The five original questions, retained with honest outcomes
+
+The five original scientific questions (RQ1–RQ5) are kept and answered by what
+actually happened — a declined treatment, a negative or a modest result — never
+by an invented positive:
+
+- **RQ1 — stopping and checkpoint recovery.** The mechanical budget guard
+  stopped 7 of 10 pilot slots per arm and 23 of 48 heldout observations.
+  Checkpoint recovery is reported separately from primary final delivery: pilot
+  corrected R0 4 final / 5 checkpoint-recovered / 9 inclusive and R1 7 / 4 / 11;
+  heldout corrected R0 18 and R1 17 valid delivered. A durable checkpoint is
+  never promoted to a final delivery by hindsight, and the early 30k–60k
+  first-source checkpoint is an early-recovery diagnostic that changed neither
+  the cap nor the primary numerator.
+- **RQ2 — bounded evidence.** Answered negatively at the packet. The R1
+  progressive packet was mounted in every R1 slot but its only observed call
+  (`obs-32`, rulecom R1) was **refused**: `packetAccepted = 0` in every pilot and
+  holdout slot. No packet-uptake or token-saving effect is claimed.
+- **RQ3 — existing context ordering.** The shared plain-read facade delivered the
+  actual source text in both arms (accepted source bytes: pilot R0 528751 / R1
+  525210; holdout R0 1226163 / R1 1232642), and the R1-only packet added no
+  observed benefit, so the ordering hypothesis is **not supported** by the frozen
+  observations.
+- **RQ4 — actual mediated substitution.** Declined and untested as a redesign.
+  The ONE optional contrast of the pilot was **declined**
+  (`decline:r1-not-worse-than-r0`) and no optional arm ran; the mechanism stays
+  explicitly untested rather than answered by invention.
+- **RQ5 — quality/resource composition frontier.** Reported as the actual
+  corrected per-arm quality and economics with raw denominators; the non-gate 5x
+  target is a hypothesis, not a pass.
+
+No RQ is upgraded, and each declined or superseded mechanism is recorded as an
+actual outcome.
+
+### Frozen cohort and denominators
+
+- **Pilot.** 10 admitted tasks × 2 arms = 20 once-only slots; 28 blinded
+  candidates; 130 positive references (62 medium-or-high) including the four
+  failed tasks. The cohort is an honest **mixed-version** record: 14 corrected
+  (`v2`) streams and 6 preserved pre-fix (`v1`) attempts that are never re-run
+  (recorded `protocol-violations 6`,
+  `v1-prefix-binding-defect-never-rerun`). The freeze half is committed at
+  `1143bc2` and the corrected remaining binding at `5ad167f`.
+- **Holdout.** The metadata-only 24-task holdout was selected before any heldout
+  outcome from the 59 remaining cohort (219 planned → 83 fast cohort → 24
+  original excluded → 59 remaining → 24 selected). 24 tasks × 2 arms = 48
+  once-only observations; 59 blinded candidates (15 final + 44 checkpoint);
+  references 459 / 224 positive / 88 medium-or-high. No task replacement and no
+  heldout tuning (`no-heldout-tuning true`, `no-task-replacement true`); the
+  prediction freeze preceded gold acquisition.
+
+### Canonical quality and the terminal cross-arm reconciliation
+
+Raw receipts are preserved byte-exact. The canonical judge reduction publishes an
+**as-acquired** classification and, as a SEPARATE versioned output, a
+**within-arm-policy-faithful** corrected projection
+(`//test/reviewbench_pilot:reviewbench_holdout_quality`). That stage independently
+re-derives the raw per-arm classification from the frozen judge/adjudication
+fixtures and asserts byte parity before it publishes the correction: 59 of 59
+verdicts recomputed, **0 parity mismatches**, 0 provider calls.
+
+The raw blind adjudicator invalidated a candidate against an equivalent candidate
+of the **other** arm in four cases. The frozen rule makes a cross-arm equivalent
+**symmetrically valid**, so the terminal reconciliation repairs exactly those and
+leaves a within-arm restatement a duplicate:
+
+| Heldout candidate | Arm | Anchor | Raw | Corrected | Source-grounded reason |
+|---|---|---|---|---|---|
+| `scorbo2_ext-sn-statistics-19` C2 | R1 | C1 (R0) | invalid | valid | cross-arm equivalent of the valid R0 C1 |
+| `scorbo2_ext-sn-statistics-19` C4 | R1 | C1 (R0) | invalid | valid | cross-arm equivalent of the valid R0 C1 |
+| `Asjas_course-platform-946` C2 | R1 | C1 (R0) | invalid | valid | cross-arm equivalent of the valid R0 C1 |
+| `Asjas_course-platform-946` C6 | R1 | C5 (R0) | invalid | valid | cross-arm equivalent of the valid R0 C5 |
+
+Within-arm restatements stay duplicates and deduplicate once: `scorbo2` C3 and
+`PierreJanineh` C8 are `invalid-within-arm-duplicate`, and a checkpoint/final pair
+is attributed to the behaviour once, preferring the actual **final** delivery
+where one exists. A shared reference alone is never an equivalence. Corrected
+holdout totals: unmatched-valid 5 → **9**, unmatched-invalid 6 → **2**,
+unmatched-unresolved **10** (unchanged), cross-arm reinstated 4, within-arm
+duplicate 2. Corrected per-arm valid delivered: R0 **18**, R1 **17** (raw R1 was
+13). The pilot is corrected by the same within-arm rule (published separately at
+`7200674` and `17b8aa9`): final 4/7, checkpoint-recovered 5/4, inclusive 9/11.
+No verdict-shopping occurred: every candidate was judged once, blinded, and the
+correction is a mechanical policy projection over the frozen verdicts, not a
+re-judgment. The claim reduction is order-sensitive by construction (the
+canonical in-order claim), and the versioned order-sensitivity counterexample
+retained above (`reviewbench-corrected-matching-v2`, the pinned capawesome
+equal-rank effective ordering) applies to that same claim reduction; the
+independent judgment here covers every admitted task, including the failed and
+empty ones.
+
+The canonical Flix quality is reported at **task-micro** (pooled) and
+**repository-equal macro** (every holdout task is its own repository), for the
+primary **final-only** view and the **checkpoint-inclusive** view, over all
+admitted tasks including the failed and empty ones. An undefined per-task value
+(an empty denominator, never a zero) is excluded from the macro mean and the
+defined population is reported beside it
+(`bazel-bin/test/reviewbench_pilot/reviewbench_publication/publication-quality-metrics.tsv`):
+
+| View | Arm | Candidates | Valid | Micro valid precision | Macro valid precision (defined) | Micro known recall | Macro known recall |
+|---|---|---|---|---|---|---|---|
+| final-only | R0_PLAIN | 9 | 5 | 55.6% | 64.3% (7) | 16.1% | 24.3% |
+| final-only | R1_PACKETS | 6 | 4 | 66.7% | 80.0% (5) | 11.2% | 19.4% |
+| inclusive | R0_PLAIN | 32 | 18 | 56.3% | 53.2% (13) | 56.6% | 66.1% |
+| inclusive | R1_PACKETS | 27 | 17 | 63.0% | 57.6% (12) | 43.4% | 50.6% |
+
+The inclusive view carries every blinded candidate (32 + 27 = 59) and its valid
+total equals the canonical corrected counts (35), so the micro/macro views are a
+faithful re-projection of the ONE `ReviewBenchJudge` metric path and never a
+second metric engine. Grounded, resolved and augmented-recall micro/macro values
+are in the same file. Supported-source and `Unknown` eligibility is explicit in
+`holdout-reference-eligibility.tsv` (0 unknown-label / 0 unknown-severity).
+
+The medium-or-higher and high severity stratifications (gold set, candidates and
+correspondences all restricted to the same severity subset) report the
+known/medium/high recall over all admitted gold
+(`publication-severity-metrics.tsv`):
+
+| Severity | Arm | Micro known recall | Macro known recall (defined) | Micro augmented recall |
+|---|---|---|---|---|
+| medium-high | R0_PLAIN | 60.3% | 69.5% (11) | 62.9% |
+| medium-high | R1_PACKETS | 48.3% | 51.8% (11) | 52.4% |
+| high | R0_PLAIN | 62.5% | 71.4% (7) | 66.7% |
+| high | R1_PACKETS | 50.0% | 57.1% (7) | 55.6% |
+
+### Compact per-task table (frozen holdout, corrected view)
+
+`bazel-bin/test/reviewbench_pilot/reviewbench_publication/publication-task-table.tsv`
+carries one row per (task, arm) over all 24 tasks and 48 observations: the
+budget/stop cause, the all-inclusive session-token work, the accepted source-text
+bytes, the separately reported manifest-metadata (`list`) count, the packet
+uptake, the arm's own candidate population, the corrected valid-delivered count
+and the interruption. Every empty or budget-stopped observation stays a miss in
+the frozen 24-task / 48-observation denominator. Representative rows:
+
+| Task | Arm | Interruption | Session tokens | Accepted source bytes | Candidates | Valid delivered | Invalid | Unresolved |
+|---|---|---|---|---|---|---|---|---|
+| `Asjas_course-platform-946` | R0_PLAIN | budget-stop | 221045 | 71446 | 3 | 3 | 0 | 0 |
+| `Asjas_course-platform-946` | R1_PACKETS | budget-stop | 167052 | 69230 | 3 | 3 | 0 | 0 |
+| `scorbo2_ext-sn-statistics-19` | R0_PLAIN | Unavailable | 167609 | 57192 | 4 | 2 | 1 | 1 |
+| `scorbo2_ext-sn-statistics-19` | R1_PACKETS | Unavailable | 211504 | 68967 | 2 | 2 | 0 | 0 |
+| `rulecom_rule-io-sdk-36` | R1_PACKETS | Unavailable | 163141 | 50567 | 4 | 1 | 0 | 1 |
+| `swarmbase_swarmbase-161` | R0_PLAIN | budget-stop | 223803 | 82647 | 0 | 0 | 0 | 0 |
+| `swarmbase_swarmbase-161` | R1_PACKETS | budget-stop | 265299 | 81916 | 0 | 0 | 0 | 0 |
+
+The packet refusal is visible as `packetRefused = 1` on the `rulecom` R1 row and
+`packetAccepted = 0` everywhere. Every row is `observedUse-Unknown`: internal use
+is never inferred.
+
+### Evidence displacement
+
+The prepared ledger is **prepared evidence, never delivered source text**. The
+historical 72-row prepared ledger (`100041` unique / `120317` total / `20276`
+repeated bytes) is classified as prepared identities and is never counted as
+model-delivered evidence. Actual displacement is reported separately:
+
+| Displacement stage | Value | Classification |
+|---|---|---|
+| Physical acquisition | prepared identities only | prepared, not delivered |
+| Delivery prepared | `120317` total / `20276` repeated bytes | prepared, not delivered |
+| Model-visible delivery | accepted native `read`/`whole-file` result body, lossless UTF-8 | delivered |
+| Observed use | `Unknown` | never inferred |
+
+Pilot accepted delivered source text is 528751 bytes (R0) and 525210 bytes (R1);
+holdout accepted delivered source text is 1226163 bytes (R0) and 1232642 bytes
+(R1). The `list` results (pilot 16 R0 / 20 R1; holdout 26 R0 / 28 R1 accepted, 0
+refused) are population MANIFEST metadata and contribute ZERO delivered source
+bytes. A refusal, a truncation or an altered body is never delivery, and a
+deterministic physical re-read is memoization, never a token saving.
+
+### Finding funnel and detectors
+
+Exactly two detector families are kept, both model-hidden in BOTH arms
+(import/publication and required-CLI-input). On the real capawesome world the
+funnel is monotone but terminates at zero hypotheses: `detected 218`,
+`refused 156`, `unresolved 62`, `0 hypotheses` (Family A 152 = 0/112/40; Family B
+66 = 0/44/22). The real Family A hypothesis branch is unreachable through the
+current bounded front-end — an honest limitation, **not** a source-clean result
+and **not** a per-task negative. No third detector family, catalog or per-task
+negative is added, and no test is required to fire.
+
+### Budget trajectories and economics
+
+- Pilot provider-total tokens: R0 2089624, R1 2742605, **4832229** combined
+  (already child-inclusive; `542447` of the total is child tokens). Both judge
+  passes are disclosed separately and are **not** part of the review total:
+  `431002` tokens / 30 steps (first defective source-root pass) and `433468`
+  tokens / 30 steps (operational retry); there is no third pass.
+- Holdout provider-total tokens: R0 3153355, R1 3414592, **6567947** combined.
+  The 16 independent evaluator sessions (13 judge + 3 adjudication) cost
+  **276637** provider-total tokens with zero failures.
+- Guard-prefix versus measured overshoots are kept SEPARATE; the observed
+  cumulative total includes cached input inside the 256000 cap and records any
+  overshoot beyond it as actual, never inside the cap claim.
+- **`obs-3` usage discrepancy (reported, not resolved):** the guard record reports
+  `observedCumulativeTokens = 286694` (29 rounds) while the retained event
+  stream's 31 `step_end` provider totals sum to `951018` (last step 51119,
+  all-session total 1084402). The observed lead (`286694` ≈ the prefix sum of the
+  first 16 of the 31 step totals) is a lead to confirm, not a resolution. No
+  usage is invented; the discrepancy is reported as observed/`Unavailable`.
+- Raw efficiency ratios are reported with their floor-quantization limitation and
+  are not multiplied into any forecast: pilot exact valid-per-million R0 1.914
+  (floor 1) / R1 2.552 (floor 2).
+
+### The non-gate 5x target, with raw denominators
+
+The primary **5x** objective — independently valid DELIVERED defects per
+cumulative provider-total token versus a comparable `R0_PLAIN` baseline — and the
+**10x upside** are **hypotheses, never mandatory positive gates**. A supported
+negative or modest outcome is a completed scientific result. The historical
+comparison is arithmetic only, never a contemporaneous control:
+
+| Illustration | Value | Classification |
+|---|---|---|
+| Historical plain | 9 valid / 2026445 tokens | arithmetic only |
+| Historical packet | 11 valid / 2161089 tokens | arithmetic only |
+| Historical efficiency | +14.6% efficiency with +6.64% tokens | arithmetic, matching-sensitivity caveat |
+| Tokens per valid | 225161 | illustration |
+| 9-valid ceiling | 405289 | illustration |
+| 11-valid ceiling | 495353 | illustration |
+| 14-valid ceiling | 630450 | planning scenario |
+| 18-valid ceiling | 810578 | illustration |
+
+The historical comparison is never used as a matched control (the fresh
+`R0_PLAIN` arm is the matched baseline) and its ratio is never multiplied into a
+forecast. No cost is guessed and no 5x or efficiency inference is drawn from the
+excluded, failed or mixed-version attempts.
+
+### Five populations and six result categories
+
+The result separates five named populations, and every `all`/`every` claim names
+its population:
+
+| Population | Content | Status |
+|---|---|---|
+| Demonstrated | the pilot and holdout independent-judged outcomes | separate |
+| Development-fixture | `usketch#534`, `teamscli#31`, `Artemis#12479` exposed development runs | separate, not true positives, not unseen |
+| Oracle-upper-bound | the oracle ceilings (A32/E32/Q32, strict FileAcc) | separate |
+| Uncertain | unresolved verdicts, the `obs-3` discrepancy, unreconciled/`Unavailable` values | separate |
+| Needed-unseen | a real unseen 5x confirmation requires an unseen study | not yet available |
+
+The final result is classified in six categories, preserving the prior
+development/oracle/uncertain distinctions:
+
+| Category | Content | Status |
+|---|---|---|
+| Implemented | native Flix/DSH/Typert substrate | preserved |
+| Physically verified | tool import/export, Nix package/profile, checkpoint mechanisms | preserved |
+| Model delivered | actual lossless source text through accepted native results | measured |
+| Behaviorally observed | detector funnel and acquisition events | measured |
+| Independently judged | blinded judge and adjudication | measured |
+| Generalized | holdout confirmation | limited support only |
+
+### Provider-free replay
+
+The single provider-free publication reduction
+(`//test/reviewbench_pilot:reviewbench_publication`) re-derives every published
+figure from immutable frozen receipts and reduced trees, with **zero** model, JEV,
+Qwen, original-review or judge producer calls:
+
+```
+replay  source                 immutable-frozen-receipts-and-reduced-trees
+replay  provider-calls         0
+replay  model-calls            0
+replay  wall-time              Unavailable
+replay  holdout-tasks          24
+replay  holdout-observations   48
+replay  holdout-matched-true   26
+replay  holdout-unmatched-valid 9
+replay  holdout-unmatched-invalid 2
+replay  holdout-unmatched-unresolved 10
+replay  holdout-valid-delivered 35
+```
+
+The reconstruction covers the preserved mixed-version pilot cohort (six preserved
+attempted failures plus the fourteen remaining slots) and leaves the `obs-3`
+usage discrepancy as observed/`Unavailable`, never silently filled. Wall time is
+`Unavailable` because a provider-free native Flix stage does not measure its own
+wall clock. The corpus-free laws (`reviewbench_publication_law`,
+`reviewbench_holdout_judge_law`, `reviewbench_holdout_law`,
+`reviewbench_pilot_law`) run in the ordinary offline gate.
+
+### Engineering footprint, build behaviour and revised forecast
+
+The authored cognitive-ownership accounting classifies implementation by
+responsibility, not by language. The recorded measured totals are A cognitive
+5,484, B mechanical 2,769, A+B authored 8,253, C test 10,288 and C support 21,884
+(the current gate re-derives these as size-review notes; a soft threshold
+crossing is a note, never a rejection). The historical 250-line glue aspiration
+is **not** a gate and is not claimed. The ReviewBench study itself (from the
+corpus admission `fe4a8f2` to the terminal head) changed 313 files with 63,384
+insertions and 27 deletions, distributed as `platform/` 32,737, `test/` 23,091,
+`src/` 5,527, `MODULE.bazel` 445 and the root report 1,299 — reported as authored,
+inherited and generated exactly as the design note classifies them. Cold/warm
+build and cache behaviour: the broad gate runs the declared remote profile and
+its own invocation measured **97.0 s elapsed / 38.6 s critical path over 4,415
+actions** with 8,686 action-cache and 1,637 remote-cache hits and 9 remote
+executions; no advance time saving is claimed. The mission ran from 2026-10-03 to
+the terminal head on 2026-10-10; the measured study half ran from the corpus
+admission on 2026-10-08. The audit24/44/75h forecast is **not** asserted as
+achieved.
+
+### Tests passed and failed
+
+The broad gate is maintained honestly and is **not** all green. The current broad
+gate is `bazel test //... --config=remote --jobs=8 --host_jvm_args=-Xmx3g`:
+**78 of 79 tests pass, 1 fails — true exit 3** (latest invocation
+`e7c5c25c-5e91-4b64-83da-3688beccd10c`). The single failure is the known
+`//test/policy:workspace_audit_test` over the preserved user directory
+`notes/repository-through-time/` (`ignored-forbidden` findings). The failure is
+reported raw and is **never** cleaned, suppressed or relabelled; the `-Xmx3g`
+host-heap flag is a required startup option (without it the Bazel server dies with
+`OutOfMemoryError` while downloading remote outputs). Every owned check passes,
+including the corpus-free laws and the provider-free publication replay.
+
+### Negative and modest outcome (a completed scientific result)
+
+The honest outcome is **negative/modest, and it is a completed scientific
+result**, not a failure to publish:
+
+- The packet treatment (RQ2/RQ3) showed **no** observed uptake: the only packet
+  call was refused, so no token saving, understanding or delivered event is
+  claimed.
+- The pilot activation rule **DECLINED** the one optional contrast
+  (`r1-not-worse-than-r0`); the decline is robust under the floor quantization
+  (R1 2.552 ≥ R0 1.914 per million).
+- The corrected holdout is essentially flat (R0 18 vs R1 17 valid delivered), so
+  the packet policy is **not** shown to be better on the frozen confirmation.
+- The 5x/10x target remains an **untested hypothesis**; a real unseen study is
+  required before any efficiency claim.
+
+No follow-up optimization or repair campaign is started, and no additional
+assurance subsystem is added.
+
+### Subjective-prior update (gated on the real independently judged pilot)
+
+The subjective prior is updated to **40–45% development / 20–30% unseen** only
+after the REAL independently judged pilot above, and it is published as a
+**prior**, not a fitted posterior. The six preserved attempted slots and the
+smoke, build and packet results contribute **no** efficiency evidence; the
+capawesome hidden detector fixture stays classified
+"not evaluated for other world" with no per-task negative and no new catalog.
+
+### Owned commits and terminal stop
+
+The owned changes are committed in both repositories, preserving all user work
+and the user index:
+
+- `/home/becker/projects/attune`: the `attune/` nested workspace and the root
+  `LOCALIZATION_REPORT.md`/`README.md` are committed with this section (parent
+  `c0334bc`, so the report names its base rather than a self-referential hash).
+- `/home/becker/nixos-from-scratch` at `b591f92` (the owned
+  `packages/attune-dsh-integration/` package/profile; this terminal owner changed
+  no Nix file).
+
+The preserved user work (`.gitignore`, `.repomixignore`,
+`attune/notes/repository-through-time/`, `x` and the staged Nix changes) is never
+committed, moved or destroyed. This section is the terminal publication: after it
+and its validation the mission **stops normally**. No future optimization,
+repair, new arm, model, corpus or provider route is authorized by this result.

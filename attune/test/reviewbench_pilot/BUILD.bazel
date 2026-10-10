@@ -314,6 +314,7 @@ test_suite(
         ":reviewbench_holdout_judge_law",
         ":reviewbench_holdout_law",
         ":reviewbench_pilot_law",
+        ":reviewbench_publication_law",
     ],
 )
 
@@ -540,6 +541,91 @@ native_study_stage(
     ],
     stage = "reviewbench_holdout_judged",
     tags = ["manual"],
+)
+
+# The declared provider-free policy-faithful holdout QUALITY projection
+# (`VAL-STUDY-005`, `VAL-STUDY-007`, `VAL-CROSS-002`). It INDEPENDENTLY
+# re-derives the as-acquired per-arm classification from the raw frozen judge /
+# adjudication fixtures, asserts byte parity with the frozen judged tree, then
+# publishes the within-arm-policy-faithful corrected projection as a SEPARATE
+# output — the raw receipts stay byte-exact. The correction reinstates a
+# candidate invalidated only against a candidate of the OTHER arm (a cross-arm
+# equivalent is symmetrically valid) and keeps a within-arm restatement a
+# duplicate. Provider-free and corpus-free. `manual`.
+native_study_stage(
+    name = "reviewbench_holdout_quality",
+    srcs = PILOT_HOLDOUT_JUDGE_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = [
+        "fixtures",
+        "candidates",
+        "references",
+        "judged",
+    ],
+    inputs = [
+        ":pilot_run_fixtures",
+        ":reviewbench_holdout_run",
+        ":reviewbench_holdout_references",
+        ":reviewbench_holdout_judged",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_holdout_quality",
+    tags = ["manual"],
+)
+
+# The declared provider-free PUBLICATION reduction of the measured study
+# (`VAL-STUDY-005..009`, `VAL-STUDY-011`, `VAL-CROSS-001..002`). It reduces the
+# ALREADY-REDUCED canonical receipts of the pilot run half, the heldout run half
+# and the policy-faithful holdout quality projection into the compact study
+# record the root report cites: the headline quality of both arms, the compact
+# per-task table (budget, acquisition, source candidates, valid delivered,
+# interruption), the evidence-displacement classification and the non-gate 5x
+# diagnostic. It calls no model/JEV/Qwen/original producer and reads only the
+# immutable frozen receipts and reduced trees. `manual`.
+PUBLICATION_SRCS = ["ReviewPublicationStages.flix"] + [
+    src
+    for src in PILOT_HOLDOUT_JUDGE_SRCS
+    if src != "ReviewHoldoutJudgeStages.flix"
+]
+
+native_study_stage(
+    name = "reviewbench_publication",
+    srcs = PUBLICATION_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = [
+        "fixtures",
+        "pilot_run",
+        "holdout_run",
+        "holdout_quality",
+    ],
+    inputs = [
+        ":pilot_run_fixtures",
+        ":reviewbench_pilot_run",
+        ":reviewbench_holdout_run",
+        ":reviewbench_holdout_quality",
+    ],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_publication",
+    tags = ["manual"],
+)
+
+# The corpus-free law of the publication reduction (`VAL-STUDY-011`,
+# `VAL-CROSS-002`): one per-(task, arm) compact row is derived only from that
+# arm's own frozen records, never borrowing the other arm's candidate population
+# and never promoting an invalid or unresolved candidate to a valid delivery. No
+# corpus, no network, no golden finding, no provider and no fixture file is
+# touched, so the ordinary gate runs it. It is a SEPARATE target from the other
+# laws because the publication reduction owns its own parsing helpers.
+native_flix_java_test(
+    name = "reviewbench_publication_law",
+    srcs = PUBLICATION_SRCS,
+    java_deps = ["//platform/tools/grit:attune_grit"],
 )
 
 # The corpus-free laws of the holdout judging (`VAL-STUDY-004`): an unmatched

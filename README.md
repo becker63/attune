@@ -562,6 +562,35 @@ bytes, the replay wall and the hosted attribution denominator are now defined
 honestly, with `Unavailable` wherever the frozen receipts expose no field; the
 previous sections and fixtures are preserved and the correction is appended.
 
+## The ReviewBench measured study (operator workflow)
+
+The measured ReviewBench study is complete and published in the root
+`LOCALIZATION_REPORT.md` (generation 19). Its stages are selected only through
+`services.yaml`, never by the ordinary gate: `bazel test //...` runs the
+corpus-free laws and never a provider. The reductions are provider-free over the
+immutable frozen receipts, and the acquisition runners are once-only and not
+re-run.
+
+- Corpus-free laws (ordinary offline gate): `services.yaml pilot_freeze_law`,
+  `pilot_task_law`, `holdout_run_law`, `holdout_judge_law` and
+  `publication_law`.
+- Provider-free reduction stages: `pilot_freeze_stage`, `pilot_binding_stage`,
+  `pilot_run_stage`, `holdout_run_stage`, `holdout_references_stage`,
+  `holdout_judged_stage`, `holdout_quality_stage` and `publication_stage`. They
+  rebuild the frozen reduction trees and call no model, JEV, Qwen, review or
+  judge producer.
+- Once-only acquisition (not re-run): `pilot_dispatch` and `holdout_dispatch`,
+  with the mission-local runner in `library/dsh-gate-evidence/`.
+- The terminal cross-arm quality reconciliation is published by
+  `holdout_quality_stage` as a SEPARATE versioned output beside the preserved
+  as-acquired receipts: a cross-arm equivalent is symmetrically valid and a
+  within-arm restatement deduplicates once.
+- The provider-free publication record is written to
+  `bazel-bin/test/reviewbench_pilot/reviewbench_publication/publication-*.tsv`.
+- The broad gate is `services.yaml test`; the single known
+  `//test/policy:workspace_audit_test` failure over the preserved user directory
+  `notes/repository-through-time/` is reported raw and is not all green.
+
 ## Scoped SIWC renewal
 
 The ChatGPT-plan SIWC access token that the Sol arms and the downstream
