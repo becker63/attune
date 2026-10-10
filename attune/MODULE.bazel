@@ -567,3 +567,161 @@ world_sources(
     manifest = "//test/reviewbench_pilot:holdout-archives.tsv",
 )
 
+
+# The pinned golden sets of the frozen metadata-only 24-task HOLDOUT's
+# structurally admitted tasks (`VAL-STUDY-004`). Each file is the corpus's own
+# per-task golden record at the SAME commit the holdout cohort admission
+# verified (66df3f322d0d85ea133ea9fa777f5d1a8c933c4e); the URL carries the commit
+# and the path, and the provider's own SHA-256 pins the exact bytes, so a
+# mutated or substituted golden file fails the fetch instead of entering the
+# heldout judge. The heldout prediction freeze (`holdout-predictions.tsv`) was
+# committed BEFORE any golden byte was acquired, so the scientific freeze order
+# (pair predictions before evaluator labels) holds. The golden set is requested
+# ONLY by the explicitly selected `manual` holdout reference/judge targets, so
+# the ordinary `bazel test //...` gate never acquires it and no review,
+# prediction or assisted-context closure can reach it. Declared last for the
+# same anonymous-repo renumbering reason as the acquisitions above.
+
+http_file(
+    name = "reviewbench_holdout_gold_swarmbase_swarmbase_161",
+    sha256 = "d196b81eeba2837fb76a540f412ba97af7b9ddc94bfe8cef3483a738244b37a7",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/swarmbase_swarmbase_161-46963834.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_capawesome_team_cli_127",
+    sha256 = "24ff83bc1b8d6d49bed22d8ed98dad7a8287611065131020ccf84d1ab6a31490",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/capawesome-team_cli_127-5c1cc1c9.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_konturio_disaster_ninja_fe_1082",
+    sha256 = "4bb8b575d04522069ce714d157b5da196323d09a8725a32c342f168b7d6d3fad",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/konturio_disaster-ninja-fe_1082-a54020e9.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_hughdidit_DAISy_Agency_309",
+    sha256 = "6bb8fafe53cbc78bee8b1ce55559785985caab7655f0cad12ce86adc3dd46e82",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/hughdidit_DAISy-Agency_309-ac6e2196.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_confluentinc_mcp_confluent_143",
+    sha256 = "f1438575db767191ef356f94fa4baec52a9da9e41602bc47c346d4a6c9bfb875",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/confluentinc_mcp-confluent_143-abcb5d9f.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_PierreJanineh_TechDebtMCP_135",
+    sha256 = "75c71c49222d6bb597701dcd0bceb5df734be1918769f792dcf694f18556d438",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/PierreJanineh_TechDebtMCP_135-16a54f0f.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_motif_ui_motifreact_34",
+    sha256 = "a014568d016ea692b310a63a1b81e41f4ddda66279b0e39ba8024aedcbe16eea",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/motif-ui_motifreact_34-cb636a17.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_Asjas_course_platform_946",
+    sha256 = "416c09c50c94a8cd220528ed7c5b13f391f4fae2edf7ad8eea3696e9dcad503d",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/Asjas_course-platform_946-ef3adc91.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_wiyco_review_insights_31",
+    sha256 = "4d622b622869e21c74182ab110ddb1954da183bf22b3fd06c897fee9a603d684",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/wiyco_review-insights_31-e9c5280f.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_pnp_cli_microsoft365_7191",
+    sha256 = "f76f48389c0051819bf6736a24c4d1b4c9a3cdae2828847f4bc3eae2a40f9412",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/pnp_cli-microsoft365_7191-a44ec571.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_taskless_skills_16",
+    sha256 = "3f69aaa62443bf5eec4b0e45c6975a2a5a30073ab45c8dd4df689c2900d3cc1b",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/taskless_skills_16-d7b6f3f5.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_supa_magic_spm_19",
+    sha256 = "7177f3798568ca717d8c1ddbf70ad30af13d8ca345068b35a56e2016bad0233a",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/supa-magic_spm_19-c60d2e03.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_NestDevLab_nestjs_yalc_123",
+    sha256 = "65a6652e5617778dbc03cbd4d80dab64ea11c18fa2ab8ef19566336a7b1a97eb",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/NestDevLab_nestjs-yalc_123-3ce6ba57.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_ComposioHQ_agent_orchestrator_1277",
+    sha256 = "323375fca0727ca581fc661079f5a924d9a1d45cfb1c76880001981f6ff86d8f",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/ComposioHQ_agent-orchestrator_1277-76652c7c.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_rcrsr_rill_53",
+    sha256 = "078d0dd38d01e6124479995513ef2d484065f8903aeb2ec1e3e70b46d0a28dc7",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/rcrsr_rill_53-2ed44caf.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_rulecom_rule_io_sdk_36",
+    sha256 = "5d09221fe95ba9578815627aa01ff989bb8909b3e12fea8309bc8051802771df",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/rulecom_rule-io-sdk_36-778a137b.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_iTwin_presentation_1288",
+    sha256 = "11f08ca9ddf89b07f36839a7de5ef5a756336d351c33ecb2a4b0ddb4bfa06545",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/iTwin_presentation_1288-31c0f13a.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_RobertAgterhuis_myAgentic_IT_Project_team_V2_331",
+    sha256 = "f6296862ae58147b3212e9cffcc429dd2c5abeb559b961c9065ab02ad6061fb0",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/RobertAgterhuis_myAgentic-IT-Project-team-V2_331-980b84fa.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_SolidOS_solid_panes_598",
+    sha256 = "d1beaa68139c12e55cc3c0f7cbce40c18ae2913eaaf1504e08e17d20c5c69045",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/SolidOS_solid-panes_598-38141b1f.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_fernando_msa_bacula_log_archiver_1",
+    sha256 = "5c102a7e2de4763b46eeafe3c180ca4a93666cd6bdd9040edf6268c3bb25f54b",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/fernando-msa_bacula-log-archiver_1-bc9e7308.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_axios_axios_10836",
+    sha256 = "69c00f55d58ff7cc444ea456e9144514ec20d3f04be275f0b56aba29a1d4c5b6",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/axios_axios_10836-9cd706cc.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_blamechris_chroxy_2266",
+    sha256 = "7e571205d15743c5ef333ff1d103eb1b6eff750fb123d4a948086b1f5069eb8b",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/blamechris_chroxy_2266-7febfc48.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_AY2526S2_CS2103T_W14_3_tp_152",
+    sha256 = "f8c1fcc76bc318b8f110cc46fd3869a2f201d2b6faf91e27f6429b5f540f70ef",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/AY2526S2-CS2103T-W14-3_tp_152-e0a9ce03.json"],
+)
+
+http_file(
+    name = "reviewbench_holdout_gold_scorbo2_ext_sn_statistics_19",
+    sha256 = "095d93ced1ef6f8dfc6cee699dbf57c624b2a89dcccd31bb37c39fa4d5005bd6",
+    urls = ["https://raw.githubusercontent.com/review-bench/ReviewBench/66df3f322d0d85ea133ea9fa777f5d1a8c933c4e/golden/scorbo2_ext-sn-statistics_19-8ef352bd.json"],
+)
