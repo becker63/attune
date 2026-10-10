@@ -566,13 +566,24 @@ def isCorrectedSupported(status: String): Bool =
 
 /// One candidate of the corrected evaluator view: its arm/source/slot, whether
 /// the policy-faithful rule finds it supported, and the behavior anchor it
-/// belongs to. A reference-matched candidate is its own behavior (the raw judge
-/// already matched it to a reference); an unmatched candidate shares the anchor
-/// its adjudication named.
+/// belongs to. A reference-MATCHED candidate is anchored to the reference set
+/// the judge itself named (`ref:...`), so a checkpoint and a final of the SAME
+/// arm that the judge matched to the SAME reference set are ONE behavior — the
+/// frozen within-arm final/checkpoint collapse, applied from the judge's own
+/// verdict rather than from a mere shared single reference. An UNMATCHED
+/// candidate shares the anchor its adjudication named.
 type alias CorrectedView = {
     task = String, id = String, arm = String, source = String, slot = String, index = String,
     supported = Bool, anchor = String
 }
+
+/// The behavior anchor of a reference-MATCHED candidate: the exact set of
+/// reference indices the judge's own verdict matched, order-normalized. Two
+/// candidates collapse only when the judge matched the IDENTICAL set, so a
+/// shared single reference between two different verdicts (e.g. caasi's
+/// `23,29` versus `23,27`) is never by itself an equivalence.
+def referenceSetAnchor(refs: List[String]): String =
+    "ref:" + List.join(",", List.sort(List.distinct(refs)))
 
 def unmatchedView(candidate: BlindedCandidate, corrected: List[CorrectedAdjudication]): CorrectedView =
     match List.find(entry -> entry#task == candidate#task and entry#id == candidate#id, corrected) {
@@ -598,25 +609,30 @@ def correctedView(references: List[Reference], verdicts: List[Judgment], resolve
                         and entry#candidate == candidate#id, resolved);
                     { task = candidate#task, id = candidate#id, arm = candidate#arm, source = candidate#source,
                       slot = candidate#slot, index = candidate#index,
-                      supported = isSupported(classOf(refsOfTask, judgment, adjudication)), anchor = candidate#id }
+                      supported = isSupported(classOf(refsOfTask, judgment, adjudication)),
+                      anchor = referenceSetAnchor(verdict#refs) }
                 }
             case None => unmatchedView(candidate, corrected)
         }
     }, blinded)
 }
 
-/// The behaviors of one arm: one per distinct (task, anchor) with at least one
-/// supported candidate in that arm. A behavior is attributed to the FINAL
-/// delivery when the arm actually delivered it as a final finding (the primary
-/// `FindingDelivered` artifact); otherwise to its checkpoint candidate. This is
-/// the frozen within-arm final/checkpoint collapse, applied ONCE per behavior and
-/// NEVER across arms.
+/// The behaviors of one arm: one per distinct (task, anchor) that has at least
+/// one supported candidate in that arm. A behavior is attributed to the FINAL
+/// delivery when the arm actually DELIVERED it as a final finding — even when the
+/// final candidate itself was adjudicated an equivalence duplicate of a valid
+/// checkpoint, because that duplicate status invalidates the redundant CANDIDATE,
+/// never the behavior's actual delivered final text (the primary
+/// `FindingDelivered` artifact). Otherwise it is attributed to its checkpoint
+/// candidate. This is the frozen within-arm final/checkpoint collapse, applied
+/// ONCE per behavior and NEVER across arms.
 def behaviorRepresentatives(arm: String, view: List[CorrectedView]): List[(String, Bool)] = {
-    let mine = List.filter(candidate -> candidate#arm == arm and candidate#supported, view);
+    let mine = List.filter(candidate -> candidate#arm == arm, view);
     let keys = List.distinct(List.map(candidate -> candidate#task + ":" + candidate#anchor, mine));
-    List.map(key -> {
+    List.filterMap(key -> {
         let group = List.filter(candidate -> candidate#task + ":" + candidate#anchor == key, mine);
-        (key, List.exists(candidate -> candidate#source == "final", group))
+        if (not List.exists(candidate -> candidate#supported, group)) None
+        else Some((key, List.exists(candidate -> candidate#source == "final", group)))
     }, keys)
 }
 
@@ -655,6 +671,22 @@ def correctedArm(arm: String, view: List[CorrectedView], slots: List[SlotRecord]
     { arm = arm, finalValid = List.length(finals), checkpointValid = List.length(checkpoints),
       checkpointAcknowledged = acknowledged,
       checkpointUnacknowledged = List.length(checkpoints) - acknowledged }
+}
+
+/// The published corrected BEHAVIOR population of one arm: every supported
+/// behavior exactly once, with its attribution (`final-delivery` when the arm
+/// actually delivered it as a final, else `checkpoint-recovery`) and, for a
+/// checkpoint behavior, whether an ACKNOWLEDGED native commit result covered it
+/// (`-` for a final-delivery behavior, whose delivery is its final text and not a
+/// commit acknowledgement). This is the auditable derivation of `finalValid` and
+/// `checkpointValid`; no target count is forced.
+def behaviorRows(arm: String, view: List[CorrectedView], slots: List[SlotRecord]): List[List[String]] = {
+    let reps = behaviorRepresentatives(arm, view);
+    List.map(pair -> match pair {
+        case (key, isFinal) => List#{"behavior-corrected", arm, key,
+            if (isFinal) "final-delivery" else "checkpoint-recovery",
+            if (isFinal) "-" else boolText(representsAcknowledged(key, arm, view, slots))}
+    }, List.sortBy(pair -> match pair { case (key, _) => key }, reps))
 }
 
 def asAcquiredRow(row: Adjudication, blinded: List[BlindedCandidate]): List[String] =
@@ -721,21 +753,27 @@ def correctedMetricsRow(arm: String, metrics: CorrectedArm, slots: List[SlotReco
 
 // ---------------------------------------------- F6: actual accepted delivery
 
-/// One slot's ACTUAL accepted-delivery measurement: accepted/refused source and
-/// packet calls and the rendered source-text bytes of the ACCEPTED results only.
+/// One slot's ACTUAL accepted-delivery measurement: accepted/refused
+/// `read`/`whole-file` source calls, the separately reported accepted/refused
+/// `list` MANIFEST-metadata calls, accepted/refused packet calls, and the
+/// lossless UTF-8 source-text bytes of the ACCEPTED text results only.
 /// `refusedPreparedDeliveredBytes` is always 0 by construction (a refusal is not
 /// delivery), and `observedUse` is the literal `Unknown` (internal use is never
-/// inferred).
+/// inferred). A `list` result is population metadata, never source text, so its
+/// bytes are excluded from `acceptedDeliveredBytes`.
 type alias DeliveryRow = {
     slot = String, arm = String, sourceAccepted = Int32, sourceRefused = Int32,
+    listAccepted = Int32, listRefused = Int32,
     packetAccepted = Int32, packetRefused = Int32, acceptedDeliveredBytes = Int64,
     acceptedPresentations = Int32, otherToolAccepted = Int32, otherToolRefused = Int32
 }
 
 def parseDelivery(line: String): Option[DeliveryRow] = match fields(line) {
     case "slot" :: _ => None
-    case slot :: _ :: arm :: sa :: sr :: pa :: pr :: bytes :: pres :: _ :: ota :: otr :: _ :: _ =>
+    case slot :: _ :: arm :: sa :: sr :: la :: lr :: pa :: pr :: bytes :: pres :: _
+        :: ota :: otr :: _ :: _ =>
         Some({ slot = slot, arm = arm, sourceAccepted = intOf(sa), sourceRefused = intOf(sr),
+               listAccepted = intOf(la), listRefused = intOf(lr),
                packetAccepted = intOf(pa), packetRefused = intOf(pr), acceptedDeliveredBytes = int64Of(bytes),
                acceptedPresentations = intOf(pres), otherToolAccepted = intOf(ota), otherToolRefused = intOf(otr) })
     case _ => None
@@ -746,16 +784,20 @@ def deliveries(): List[DeliveryRow] \ IO =
 
 def deliverySlotRow(row: DeliveryRow): List[String] =
     List#{"delivery-slot", row#slot, row#arm, Int32.toString(row#sourceAccepted),
-        Int32.toString(row#sourceRefused), Int32.toString(row#packetAccepted),
+        Int32.toString(row#sourceRefused), Int32.toString(row#listAccepted),
+        Int32.toString(row#listRefused), Int32.toString(row#packetAccepted),
         Int32.toString(row#packetRefused), Int64.toString(row#acceptedDeliveredBytes),
         Int32.toString(row#acceptedPresentations), "0",
-        Int32.toString(row#otherToolAccepted), Int32.toString(row#otherToolRefused), "Unknown"}
+        Int32.toString(row#otherToolAccepted), Int32.toString(row#otherToolRefused), "Unknown",
+        "source-text-only-list-is-metadata"}
 
 def deliveryArmRow(arm: String, rows: List[DeliveryRow]): List[String] = {
     let mine = List.filter(row -> row#arm == arm, rows);
     List#{"delivery-arm", arm,
         Int32.toString(List.foldLeft((sum, row) -> sum + row#sourceAccepted, 0, mine)),
         Int32.toString(List.foldLeft((sum, row) -> sum + row#sourceRefused, 0, mine)),
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#listAccepted, 0, mine)),
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#listRefused, 0, mine)),
         Int32.toString(List.foldLeft((sum, row) -> sum + row#packetAccepted, 0, mine)),
         Int32.toString(List.foldLeft((sum, row) -> sum + row#packetRefused, 0, mine)),
         Int64.toString(List.foldLeft((sum, row) -> sum + row#acceptedDeliveredBytes, 0i64, mine)),
@@ -765,6 +807,8 @@ def deliveryArmRow(arm: String, rows: List[DeliveryRow]): List[String] = {
         Int32.toString(List.foldLeft((sum, row) -> sum + row#otherToolRefused, 0, mine)),
         "observedUse-Unknown",
         "refusals-omit-prepared-never-delivered",
+        "list-accepted-is-manifest-metadata-not-source",
+        "utf8-bytes-verified-against-declared-delivered-count",
         "packet-uptake-behavioral-negative"}
 }
 
@@ -951,12 +995,14 @@ def integrityRows(slots: List[SlotRecord], rows: List[ToolRow],
 }
 
 /// Write every run-half receipt: the as-acquired reduction plus the SEPARATE
-/// corrected projections (adjudication, metrics, decision, delivery). No raw
-/// record is rewritten here; the corrected files are new, versioned outputs.
+/// corrected projections (behavior population, adjudication, metrics, decision,
+/// delivery). No raw record is rewritten here; the corrected files are new,
+/// versioned outputs.
 def writeRunHalfReceipts(dir: String, slots: List[SlotRecord], rows: List[ToolRow],
                          candidates: List[PilotCandidate], judged: List[JudgedCandidate],
                          r0: ArmMetrics, r1: ArmMetrics, resolved: List[Adjudication],
                          blinded: List[BlindedCandidate], correctedAdjs: List[CorrectedAdjudication],
+                         view: List[CorrectedView],
                          correctedR0: CorrectedArm, correctedR1: CorrectedArm,
                          deliveryRows: List[DeliveryRow]): Unit \ IO = {
     writeText(dir, "run-half-slots.tsv", renderTsv(List.map(slot -> slotRow(slot, rows), slots)));
@@ -971,6 +1017,8 @@ def writeRunHalfReceipts(dir: String, slots: List[SlotRecord], rows: List[ToolRo
     writeText(dir, "run-half-adjudication-asacquired.tsv",
         renderTsv(List.map(row -> asAcquiredRow(row, blinded), resolved)));
     writeText(dir, "run-half-adjudication-corrected.tsv", renderTsv(List.map(correctedRow, correctedAdjs)));
+    writeText(dir, "run-half-behaviors.tsv", renderTsv(
+        behaviorRows("R0_PLAIN", view, slots) ::: behaviorRows("R1_PACKETS", view, slots)));
     writeText(dir, "run-half-metrics-corrected.tsv", renderTsv(List#{
         correctedMetricsRow("R0_PLAIN", correctedR0, slots),
         correctedMetricsRow("R1_PACKETS", correctedR1, slots) }));
@@ -1016,7 +1064,7 @@ def theDeclaredReviewBenchPilotRunHalfReducesTheFrozenObservationsAndDecides(): 
             Option.map(measuredOvershootOf, List.find(slot -> slot#slot == "obs-3", slots)));
         let correctedDecisionName = correctedDecisionNameOf(correctedR0, correctedR1, slots);
         writeRunHalfReceipts(dir, slots, rows, candidates, judged, r0, r1, resolved, blinded,
-            correctedAdjs, correctedR0, correctedR1, deliveryRows);
+            correctedAdjs, view, correctedR0, correctedR1, deliveryRows);
 
         // The reduction preserves every frozen distinction: twenty once-only
         // slots, seven non-empty finals, seventeen durable checkpoint rows with
@@ -1055,23 +1103,48 @@ def theDeclaredReviewBenchPilotRunHalfReducesTheFrozenObservationsAndDecides(): 
         Assert.assertEq(expected = "invalid-within-arm-duplicate", correctedStatusOf("C7"));
         Assert.assertEq(expected = "valid-cross-arm-equivalent", correctedStatusOf("C8"));
 
-        // The corrected primary `FindingDelivered` population is 2 vs 7 (the two
-        // R1 haoling behaviors are delivered finals); the acknowledged-only
-        // checkpoint recovery is 8 R0 / 5 R1, its unacknowledged subset 1 each.
-        Assert.assertEq(expected = 2, correctedR0#finalValid);
+        // The corrected primary `FindingDelivered` population is 4 vs 7. The four
+        // R0 finals are the two behaviors R0 actually delivered as finals — the
+        // two haoling behaviors anchored by C1/C5, whose redundant final
+        // candidates C3/C7 the adjudicator called duplicates of the valid
+        // checkpoints C1/C5 (a duplicate status invalidates the redundant
+        // CANDIDATE, never the behavior's delivered final) — plus jenkins
+        // `ref:7` (the obs-16 checkpoint collapses into its own delivered final)
+        // and rulecom `ref:20,21` (the obs-20 checkpoint collapses into its
+        // delivered final). The seven R1 finals are the three usketch finals, the
+        // two haoling behaviors R1 delivered as finals, jenkins `ref:7` and
+        // rulecom `ref:20,21`.
+        Assert.assertEq(expected = 4, correctedR0#finalValid);
         Assert.assertEq(expected = 7, correctedR1#finalValid);
-        // The checkpoint-inclusive view is NOT the acknowledged-only recovery:
-        // checkpointValid is 9 R0 / 6 R1, of which 8 R0 / 5 R1 are acknowledged.
-        Assert.assertEq(expected = 9, correctedR0#checkpointValid);
-        Assert.assertEq(expected = 6, correctedR1#checkpointValid);
-        Assert.assertEq(expected = 8, correctedR0#checkpointAcknowledged);
-        Assert.assertEq(expected = 5, correctedR1#checkpointAcknowledged);
+        // The checkpoint-inclusive view is NOT the acknowledged-only recovery, and
+        // it no longer double counts a behavior: checkpointValid is 5 R0 / 4 R1
+        // (four caasi + one capawesome per arm), of which 4 R0 / 3 R1 are
+        // acknowledged by a successful native commit result and 1 each are the
+        // stored-but-unacknowledged rows (obs-8 seq 4, obs-9 seq 3).
+        Assert.assertEq(expected = 5, correctedR0#checkpointValid);
+        Assert.assertEq(expected = 4, correctedR1#checkpointValid);
+        Assert.assertEq(expected = 9, correctedR0#finalValid + correctedR0#checkpointValid);
+        Assert.assertEq(expected = 11, correctedR1#finalValid + correctedR1#checkpointValid);
+        Assert.assertEq(expected = 4, correctedR0#checkpointAcknowledged);
+        Assert.assertEq(expected = 3, correctedR1#checkpointAcknowledged);
         Assert.assertEq(expected = 1, correctedR0#checkpointUnacknowledged);
         Assert.assertEq(expected = 1, correctedR1#checkpointUnacknowledged);
+        // The published behavior projection carries exactly the corrected
+        // populations, once per supported behavior.
+        Assert.assertEq(expected = 9, List.length(behaviorRows("R0_PLAIN", view, slots)));
+        Assert.assertEq(expected = 11, List.length(behaviorRows("R1_PACKETS", view, slots)));
 
         // F6: no R1 packet call was ever ACCEPTED, so the lack of packet uptake is
         // a behavioral negative, never a substituted token saving.
         Assert.assertEq(expected = 0, List.foldLeft((sum, row) -> sum + row#packetAccepted, 0, deliveryRows));
+        // F6: `list` results are MANIFEST METADATA, reported separately and never
+        // counted as delivered source text; every accepted text result's body
+        // bytes were verified against its own declared delivered count, so the
+        // accepted delivered source bytes are the lossless UTF-8 payload only.
+        Assert.assertEq(expected = 36, List.foldLeft((sum, row) -> sum + row#listAccepted, 0, deliveryRows));
+        Assert.assertEq(expected = 0, List.foldLeft((sum, row) -> sum + row#listRefused, 0, deliveryRows));
+        Assert.assertEq(expected = 1053961i64,
+            List.foldLeft((sum, row) -> sum + row#acceptedDeliveredBytes, 0i64, deliveryRows));
         // F6: the guard-prefix overshoot and the actual measured session-total
         // overshoot are DISTINCT; obs-3 is far over the cap when the whole
         // measured session (child included) is counted.
