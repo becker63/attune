@@ -53,6 +53,45 @@ def _dsh_agent_run_impl(ctx):
                 ),
             )
 
+    # The DECLARED per-task composition inputs of ONE pilot observation. They are
+    # ordinary declared action inputs, so the composed review task of an
+    # observation is built from the frozen prompt, the task's own public issue and
+    # the task's own declared cohort records rather than from a build-time literal
+    # or a host-global lookup. `ATTUNE_DSH_PILOT=1` (a declared `agent_env` value
+    # of the pilot targets) makes the launcher consume them and fails closed
+    # before any provider call when a binding is missing or names another world.
+    pilot_inputs = []
+    if ctx.attr.pilot_prompt:
+        prompt_files = ctx.files.pilot_prompt
+        if len(prompt_files) != 1:
+            fail("the declared pilot prompt must be exactly ONE file")
+        env["ATTUNE_DSH_PROMPT_FILE"] = prompt_files[0].path
+        pilot_inputs.append(prompt_files[0])
+    if ctx.attr.pilot_issues:
+        issue_trees = ctx.files.pilot_issues
+        if len(issue_trees) != 1:
+            fail("the declared pilot issue record must be exactly ONE declared tree")
+        env["ATTUNE_DSH_ISSUES_FILE"] = issue_trees[0].path + "/issues.tsv"
+        pilot_inputs.append(issue_trees[0])
+    if ctx.attr.pilot_cohort:
+        cohort = ctx.files.pilot_cohort
+        if len(cohort) != 1:
+            fail("the declared pilot cohort must be exactly ONE declared tree")
+        pilot_inputs.append(cohort[0])
+
+    # The declared whole-file root of the complete authorized world of this
+    # observation. The task's whole-world manifest names every file by
+    # archive-relative reference, so the root is the declared `worlds/` parent of
+    # the archive inputs this action declares — never a host-global path.
+    if ctx.attr.world_archives:
+        archives = ctx.files.world_archives
+        if not archives:
+            fail("the declared world archives of a pilot observation are empty")
+        anchor = archives[0].path
+        if "/worlds/" not in anchor:
+            fail("the declared world archive input %s is not under a declared `worlds/` root" % anchor)
+        env["ATTUNE_WHOLE_FILE_ROOT"] = anchor.rsplit("/worlds/", 1)[0]
+
     if ctx.attr.version_only:
         args.add("--version")
     elif ctx.attr.dump_config:
@@ -74,6 +113,58 @@ def _dsh_agent_run_impl(ctx):
         home = ctx.actions.declare_directory(ctx.label.name + ".dsh-home")
         outputs.append(home)
         env["DSH_HOME"] = home.path
+
+        # The declared per-task / per-arm binding of ONE pilot observation. Every
+        # value is the REAL name the mounted tool reads, and every path is the
+        # declared per-task path under this action's own declared cohort tree, so
+        # one observation binds one task world rather than a host cache. The
+        # launcher consumes exactly these names and fails closed before any
+        # provider call when one is missing or names another world.
+        if ctx.attr.pilot:
+            if not ctx.attr.pilot_cohort:
+                fail("a pilot observation requires the declared cohort tree of its task")
+            task = ctx.attr.agent_env.get("ATTUNE_RUN_TASK")
+            arm = ctx.attr.agent_env.get("ATTUNE_RUN_ARM")
+            if not task or not arm:
+                fail("a pilot observation requires its declared run identity")
+            root = ctx.files.pilot_cohort[0].path
+            prefix = root + "/cohort-tool-" + task + "-"
+            env["ATTUNE_DSH_PILOT"] = "1"
+            env["ATTUNE_DSH_COHORT_ROOT"] = root
+            env["ATTUNE_WORLD_FILES"] = prefix + "world-files.tsv"
+            # The evidence world of the candidate-commit operation: one row per
+            # ADMITTED whole file of BOTH declared revisions of THIS task, with its
+            # declared whole-file identity digest, its sealed archive-relative
+            # location and its declared permission. A candidate is therefore backed
+            # by real authorized source of its own task — inside or outside the
+            # initial bounded neighborhood — and never by the fixture world or by
+            # another task's packet default.
+            env["ATTUNE_EVIDENCE_WORLD"] = prefix + "evidence-world.tsv"
+            # The COMPILED operation's own reference projections of the declared
+            # regions, materialized by the same Flix stage law. The evidence tool
+            # SERVES these records where they exist and the acquisition's own
+            # measured reference elsewhere, so a candidate is never rejected
+            # merely because no initial compiled projection exists.
+            env["ATTUNE_EVIDENCE_PROJECTION"] = prefix + "reference-projections.tsv"
+            env["ATTUNE_EVIDENCE_SOURCE_ROOT"] = env["ATTUNE_WHOLE_FILE_ROOT"]
+            if not env.get("ATTUNE_EVIDENCE_SOURCE_ROOT"):
+                fail("a pilot observation requires the declared whole-file root of its world")
+            if arm == "R1_PACKETS":
+                env["ATTUNE_PACKET_WORLD"] = prefix + "region-manifest.tsv"
+                env["ATTUNE_PACKET_PROJECTION"] = prefix + "packet-records.tsv"
+                env["ATTUNE_PACKET_SOURCE_ROOT"] = root
+            # The declared durable paths of the common substrate, all inside this
+            # run's own declared DSH home (a declared action output).
+            for name, suffix in [
+                ("ATTUNE_GUARD_RECORD", "guard-record.tsv"),
+                ("ATTUNE_GUARD_CHECKPOINTS", "checkpoints.tsv"),
+                ("ATTUNE_GUARD_RESTORED", "restored.tsv"),
+                ("ATTUNE_PLAIN_LEDGER", "attune-plain-ledger.tsv"),
+                ("ATTUNE_PACKET_LEDGER", "attune-packet-ledger.tsv"),
+                ("ATTUNE_DETECTOR_SIDECAR", "detector-sidecar.tsv"),
+                ("ATTUNE_DETECTOR_VISIBILITY", "detector-visibility.tsv"),
+            ]:
+                env[name] = home.path + "/" + suffix
 
         # The pinned RBE container has no usable sandbox backend (no bubblewrap
         # and no Landlock-enforcing kernel), so DSH's own bash sandbox refuses to
@@ -101,7 +192,7 @@ def _dsh_agent_run_impl(ctx):
         args.add("--json")
         args.add(ctx.attr.task)
 
-    inputs = ctx.files.routes + ctx.files.data
+    inputs = ctx.files.routes + ctx.files.data + pilot_inputs + ctx.files.world_archives
     ctx.actions.run(
         executable = ctx.executable.dsh,
         arguments = [args],
@@ -168,9 +259,40 @@ dsh_agent_run = rule(
             doc = """Extra declared inputs of the run (the per-task declared world
             files / archives the mounted tools read). They are ordinary declared
             action inputs, never a host-global path lookup."""),
+        "pilot_prompt": attr.label(
+            allow_single_file = True,
+            doc = """The FROZEN review prompt of the pilot, declared as an input of ONE
+            observation. It is composed as the byte-exact prefix of the observation's
+            review task."""),
+        "pilot_issues": attr.label(
+            allow_single_file = True,
+            doc = """The admitted public issue record of the pilot (`issues.tsv`), declared
+            as an input of ONE observation. Only this task's own public row is read."""),
+        "pilot_cohort": attr.label(
+            allow_single_file = True,
+            doc = """The declared admitted cohort tree that carries this task's changed-file
+            manifest, sealed region manifest and revision record. It is ONE declared
+            tree, so one observation binds one per-task world rather than a host cache."""),
+        "world_archives": attr.label_list(
+            allow_files = True,
+            doc = """The declared digest-verified source archives of THIS observation's
+            world (both revisions). Their declared `worlds/` parent is the whole-file
+            root the plain facade and the packet escape resolve unchanged files
+            against, so the complete authorized population is reachable without
+            copying a corpus byte into the action output."""),
         "version_only": attr.bool(
             default = False,
             doc = "Probe mode: run the CLI's own `--version` and no session.",
         ),
+        "pilot": attr.bool(
+            default = False,
+            doc = """Declare ONE observation of the gated ReviewBench pilot. The action
+            then exports the real per-task / per-arm binding the mounted tools read
+            (the cohort root, the whole-world manifest, the evidence world/source
+            root/projection, the R1-only packet world, and the durable guard,
+            checkpoint, restore, ledger and detector-sidecar paths inside this run's
+            own declared DSH home), and the launcher composes the review task from
+            the declared prompt/issue/cohort inputs and fails closed before any
+            provider call when a binding is missing or names another world."""),
     },
 )

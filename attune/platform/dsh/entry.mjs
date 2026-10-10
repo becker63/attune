@@ -15,6 +15,7 @@
 // restates nothing.
 import { openSync, writeSync } from "node:fs";
 import { runCli } from "@deepseek-ai/dsh/lib/bin.js";
+import { applyPilotTask } from "./pilot_task.mjs";
 
 const eventsOut = process.env.ATTUNE_DSH_EVENTS_OUT;
 if (eventsOut) {
@@ -32,5 +33,14 @@ if (eventsOut) {
     return write(chunk, encoding, callback);
   };
 }
+
+// The declared per-task / per-arm observation binding of the gated pilot. When
+// `ATTUNE_DSH_PILOT=1` is declared, the ONE positional task argument is replaced
+// by the composed review task of this observation, read from the declared input
+// files of the runner. The binding is validated FIRST and fails closed before any
+// provider call, so a missing or wrong per-task world can never silently serve a
+// compiled default. When the marker is absent nothing about the invocation
+// changes, so every other declared run of this adapter is byte-for-byte as before.
+process.argv = [process.argv[0], process.argv[1], ...applyPilotTask(process.env, process.argv.slice(2))];
 
 await runCli();

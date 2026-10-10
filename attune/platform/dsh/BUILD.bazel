@@ -35,10 +35,21 @@ filegroup(
 )
 
 exports_files([
+    "dsh_agent.bzl",
+    "pilot_runner.bzl",
+    "pilot_task.mjs",
     "package.json",
     "package-lock.json",
     "pnpm-lock.yaml",
 ])
+
+# The declared per-task / per-arm pilot composition module of the launcher, as a
+# linked library so both the launcher itself and the pilot composition law can
+# consume the SAME declared source rather than a copy.
+js_library(
+    name = "pilot_task_module",
+    srcs = ["pilot_task.mjs"],
+)
 
 # The one npm link tree of this package: every package the DSH lock names is
 # linked under `platform/dsh/node_modules` from declared Bazel repositories.
@@ -437,6 +448,12 @@ js_binary(
         ":typert_bridge",
         ":typert_package_a",
         "//platform/dsh/tool:evidence_tool_runfiles",
+        # The declared per-task / per-arm pilot composition module of the
+        # launcher. It is an ordinary declared input of the same package as
+        # `entry.mjs`, so the launcher's own relative import resolves from the
+        # runfiles rather than from a host path. When `ATTUNE_DSH_PILOT` is
+        # absent it changes nothing about a run.
+        ":pilot_task_module",
     ],
     entry_point = "entry.mjs",
     tags = ["manual"],

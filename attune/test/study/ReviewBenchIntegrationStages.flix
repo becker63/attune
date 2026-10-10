@@ -1,5 +1,6 @@
 import attune.reviewbench.AttuneReviewBench
 
+use Attune.Study.EvidenceOperation.{declaredRegion, referenceRecord}
 use Attune.Study.EvidenceSubstrate.{
     ChangedEntrypoint, CliFact, Delivery, DeliveryEventJoin, DeliveryReceipt, DetectorResult,
     EvidencePacket, EvidenceRef,
@@ -1591,6 +1592,45 @@ def evidenceReviewbenchCohort(): Unit \ {Assert, IO} = {
         let complete = List.filter(file -> file#task == task#task, completeFiles);
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-region-manifest.tsv",
             renderLines(List.map(part -> regionLine(worldId, part), regions)));
+        // The canonical reference projections of the SAME declared regions,
+        // rendered by the canonical `Attune.Study.EvidenceOperation` owner:
+        // the native evidence tool SERVES these records verbatim, so a candidate
+        // commit resolves a delivered region against the compiled operation's own
+        // projection rather than a re-derivation of it. Every declared region is
+        // a whole admitted region of the sealed world (`cohortRegionsOf` admits
+        // only `admitted` files), so its delivery is the complete coverage the
+        // declared region really is.
+        let projections = List.map(part -> referenceRecord({
+            world = worldId,
+            revision = part#revision,
+            path = part#path,
+            sha256 = part#sha256,
+            startLine = part#startLine,
+            endLine = part#endLine,
+            bytes = part#bytes,
+            delivery = Delivery.Complete
+        }), regions);
+        let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-reference-projections.tsv",
+            renderLines(projections));
+        check(68, List.length(projections) == List.length(regions) and not List.isEmpty(projections));
+        // The declared EVIDENCE world of the candidate-commit operation: one row
+        // per ADMITTED whole file of BOTH declared revisions, in the canonical
+        // `world, revision, path, startLine, endLine, sha256, permission,
+        // sealedFile, bytes` layout. `endLine = 0` declares the whole file, so a
+        // delivered span anywhere inside an ordinary authorized file is validated
+        // against the real sealed bytes rather than against the bounded initial
+        // packet neighborhood; the exact whole-file digest is the declared
+        // identity and the sealed location is the archive-relative path the
+        // ordinary whole-file escape already resolves. An unsupported-encoding or
+        // overflow file contributes no row, so a lossy read is never offered as
+        // evidence, and no `.env` or excluded path is present.
+        let evidenceWorld = List.filterMap(file -> if (file#status == "admitted")
+            Some(String.intercalate("\t", List#{worldId, file#revision, file#path, "1", "0",
+                file#sha256, "read-only", file#sealedFile, Int32.toString(file#bytes)}))
+            else None, List.sortBy(file -> if (file#role == "head") 0 else 1, complete));
+        let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-evidence-world.tsv",
+            renderLines(evidenceWorld));
+        check(69, List.length(evidenceWorld) > 0);
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-world-files.tsv",
             renderLines(List.map(file -> cohortWorldFileLine(worldId, file), complete)));
         let _ = writeText(outputsDir(), "cohort-tool-" + task#task + "-packet-records.tsv",

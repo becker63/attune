@@ -88,6 +88,7 @@ REVIEWBENCH_INTEGRATION_SRCS = [
     "//src:Attune.flix",
     "//src:Attune/Coverage.flix",
     "//src:Attune/Study.flix",
+    "//src:Attune/Study/EvidenceOperation.flix",
     "//src:Attune/Study/EvidenceSubstrate.flix",
 ]
 

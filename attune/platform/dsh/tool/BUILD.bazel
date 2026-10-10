@@ -273,6 +273,31 @@ js_test(
     tags = ["manual"],
 )
 
+# The provider-free laws of the per-task / per-arm pilot review-task composition
+# and of the fail-closed pilot binding check (`VAL-STUDY-002`, `VAL-STUDY-010`).
+# They read ONLY declared inputs: the frozen prompt, the admitted public issue
+# record, the declared cohort root with each task's own changed-file manifest,
+# sealed region manifest and revision record, and the complete whole-world file
+# manifest. They compose the twenty once-only tasks exactly as the pilot runner
+# does, assert that every composed line comes from a declared input, and refuse a
+# missing or wrong per-task world provider-free. No provider, no model, no golden
+# finding and no review label is touched. `manual`, because it reads the pinned
+# corpus the cohort stage admitted.
+js_test(
+    name = "pilot_task_test",
+    data = [
+        ":evidence_tool_package",
+        "//platform/dsh:evidence_reviewbench_cohort",
+        "//platform/dsh:node_modules",
+        "//platform/dsh:pilot_task_module",
+        "//test/reviewbench_pilot:prompt_module",
+        "//test/reviewbench_review:reviewbench_review_issues",
+    ],
+    entry_point = "pilot_task_test.mjs",
+    no_copy_to_bin = ["//platform/dsh:evidence_reviewbench_cohort"],
+    tags = ["manual"],
+)
+
 # The laws of the one mechanical lifecycle guard. They read the REAL guard
 # declaration and canonical decision matrix the `evidence_guard_declaration`
 # stage action materialized from `Attune.Study.EvidenceSubstrate`, assert the

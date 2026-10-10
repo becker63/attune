@@ -1,6 +1,15 @@
 load("//platform/build:native.bzl", "native_flix_java_test", "native_study_stage")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("//platform/dsh:pilot_runner.bzl", "attune_pilot_runners")
 
 package(default_visibility = ["//visibility:public"])
+
+# The frozen review prompt as a linked library, so the pilot composition law can
+# consume the SAME declared bytes the runner composes from.
+js_library(
+    name = "prompt_module",
+    srcs = ["prompt.txt"],
+)
 
 # This package's contribution to the declared authored-source population.
 filegroup(
@@ -134,4 +143,33 @@ native_flix_java_test(
 test_suite(
     name = "all",
     tests = [":reviewbench_pilot_law"],
+)
+
+# The twenty once-only observations of the gated pilot (`VAL-STUDY-002`,
+# `VAL-STUDY-010`, the RUN half). ONE declared DSH action per (task, arm) of the
+# frozen balanced deterministic dispatch: the ten original admitted tasks x
+# `R0_PLAIN`/`R1_PACKETS`. Every target declares its own run identity, its own
+# per-task world binding and its own overlay set; BOTH arms mount the shared
+# bounded plain-read facade, the shared candidate-commit operation and the two
+# model-hidden detector families plus the mechanical lifecycle guard, and ONLY the
+# packet arm additionally mounts the R1-only progressive packet operation. The
+# composed review task of each observation is built at run time from the declared
+# frozen prompt, the task's own public issue and its own changed-file manifest,
+# base/head identities and declared source operations. They are `manual`: the
+# ordinary `bazel test //...` gate never runs a provider, and each one is a
+# once-only scientific observation (no rerun, no replacement, no quality retry).
+attune_pilot_runners(
+    name = "reviewbench_pilot_runners",
+    cohort = "//platform/dsh:evidence_reviewbench_cohort",
+    common_overlays = [
+        "//platform/dsh/tool:attune-guard.plugin.yml",
+        "//platform/dsh/tool:attune-tool.plugin.yml",
+        "//platform/dsh/tool:attune-detector.plugin.yml",
+        "//platform/dsh/tool:attune-plain.plugin.yml",
+    ],
+    issues = "//test/reviewbench_review:reviewbench_review_issues",
+    packet_overlay = "//platform/dsh/tool:attune-packet.plugin.yml",
+    prompt = "prompt.txt",
+    routes = ["//platform/dsh:route-siwc-responses.yml"],
+    world_repo = "@reviewbench_worlds",
 )

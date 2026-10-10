@@ -132,9 +132,29 @@ export function resolveDeliveredRegions(spec, config, world) {
     )
     const fields = compiled.rows.get(regionKey(acquired))
     if (fields === undefined) {
-      throw new BoundaryRefusal(
-        'the compiled evidence operation carries no projection for the delivered region of that world',
-      )
+      // The compiled operation need not carry a projection for every ordinary
+      // authorized region: its materialized records cover the bounded initial
+      // regions of the declared world. A region of the declared complete
+      // population is still exact source — the sealed bytes were read and the
+      // declared whole-file identity digest verified above — so the candidate is
+      // backed by the acquisition's own measured reference instead of being
+      // rejected for lying outside an initial bounded neighborhood. A region the
+      // world does not declare at all was already refused before any byte was read.
+      if (typeof acquired.delivery !== 'string' || acquired.delivery.length === 0) {
+        throw new BoundaryRefusal(
+          'the compiled evidence operation carries no projection for the delivered region of that world',
+        )
+      }
+      return {
+        world: acquired.world,
+        revision: acquired.revision,
+        path: acquired.path,
+        sha256: acquired.sha256,
+        startLine: acquired.startLine,
+        endLine: acquired.endLine,
+        bytes: acquired.byteLength,
+        delivery: acquired.delivery,
+      }
     }
     if (fields.sha256 !== acquired.sha256) {
       throw new BoundaryRefusal(

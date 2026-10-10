@@ -227,9 +227,27 @@ export async function executeEvidenceOperation(args, config) {
   const compiled = loadCompiledProjection(config)
   const fields = compiled.rows.get(regionKey(acquired))
   if (fields === undefined) {
-    throw new BoundaryRefusal(
-      'the compiled evidence operation carries no projection for the requested region of that world',
-    )
+    // A declared region of the complete authorized population that the compiled
+    // operation's bounded materialization does not cover is still exact source:
+    // the sealed bytes were read and the declared whole-file identity digest
+    // verified before this point, so the acquisition's own measured reference is
+    // served rather than refused. A region the world does not declare was already
+    // refused before any byte was read.
+    if (typeof acquired.delivery !== 'string' || acquired.delivery.length === 0) {
+      throw new BoundaryRefusal(
+        'the compiled evidence operation carries no projection for the requested region of that world',
+      )
+    }
+    return {
+      world: acquired.world,
+      revision: acquired.revision,
+      path: acquired.path,
+      sha256: acquired.sha256,
+      startLine: String(acquired.startLine),
+      endLine: String(acquired.endLine),
+      bytes: String(acquired.byteLength),
+      delivery: acquired.delivery,
+    }
   }
   if (fields.sha256 !== acquired.sha256) {
     throw new BoundaryRefusal(
