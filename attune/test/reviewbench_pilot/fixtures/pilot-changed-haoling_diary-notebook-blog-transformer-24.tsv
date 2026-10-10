@@ -1,0 +1,3 @@
+changed	added	src/lib/drive-client.ts	13837	import { parseDriveError, DriveNotFoundError } from "./drive-errors";
+changed	added	src/lib/drive-errors.ts	2790	/** Google Drive API エラーのベースクラス。 */
+summary	25	27	2	16627

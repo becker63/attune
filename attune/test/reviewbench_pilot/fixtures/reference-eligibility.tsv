@@ -1,0 +1,40 @@
+eligibility	EdV4H_usketch-534	supported-source	17	structural admission >= 900 per-mille supported source
+eligibility	EdV4H_usketch-534	declared-label	17	labels inside the declared tp/fp vocabulary
+eligibility	EdV4H_usketch-534	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	EdV4H_usketch-534	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	agent-sh_agentsys-298	supported-source	16	structural admission >= 900 per-mille supported source
+eligibility	agent-sh_agentsys-298	declared-label	16	labels inside the declared tp/fp vocabulary
+eligibility	agent-sh_agentsys-298	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	agent-sh_agentsys-298	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	brianc_node-postgres-3650	supported-source	26	structural admission >= 900 per-mille supported source
+eligibility	brianc_node-postgres-3650	declared-label	26	labels inside the declared tp/fp vocabulary
+eligibility	brianc_node-postgres-3650	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	brianc_node-postgres-3650	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	caasi_town-zero-6	supported-source	39	structural admission >= 900 per-mille supported source
+eligibility	caasi_town-zero-6	declared-label	39	labels inside the declared tp/fp vocabulary
+eligibility	caasi_town-zero-6	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	caasi_town-zero-6	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	capawesome-team_cli-126	supported-source	43	structural admission >= 900 per-mille supported source
+eligibility	capawesome-team_cli-126	declared-label	43	labels inside the declared tp/fp vocabulary
+eligibility	capawesome-team_cli-126	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	capawesome-team_cli-126	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	haoling_diary-notebook-blog-transformer-24	supported-source	24	structural admission >= 900 per-mille supported source
+eligibility	haoling_diary-notebook-blog-transformer-24	declared-label	24	labels inside the declared tp/fp vocabulary
+eligibility	haoling_diary-notebook-blog-transformer-24	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	haoling_diary-notebook-blog-transformer-24	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	heyitsaamir_teamscli-31	supported-source	19	structural admission >= 900 per-mille supported source
+eligibility	heyitsaamir_teamscli-31	declared-label	19	labels inside the declared tp/fp vocabulary
+eligibility	heyitsaamir_teamscli-31	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	heyitsaamir_teamscli-31	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	jenkinsci_gitea-plugin-141	supported-source	12	structural admission >= 900 per-mille supported source
+eligibility	jenkinsci_gitea-plugin-141	declared-label	12	labels inside the declared tp/fp vocabulary
+eligibility	jenkinsci_gitea-plugin-141	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	jenkinsci_gitea-plugin-141	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	ls1intum_Artemis-12479	supported-source	20	structural admission >= 900 per-mille supported source
+eligibility	ls1intum_Artemis-12479	declared-label	20	labels inside the declared tp/fp vocabulary
+eligibility	ls1intum_Artemis-12479	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	ls1intum_Artemis-12479	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view
+eligibility	rulecom_rule-io-sdk-40	supported-source	25	structural admission >= 900 per-mille supported source
+eligibility	rulecom_rule-io-sdk-40	declared-label	25	labels inside the declared tp/fp vocabulary
+eligibility	rulecom_rule-io-sdk-40	unknown-label	0	labels outside tp/fp, reported separately and never folded into a negative
+eligibility	rulecom_rule-io-sdk-40	unknown-severity	0	severities outside low/medium/high, reported separately and never folded into a view

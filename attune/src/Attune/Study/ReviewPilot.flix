@@ -384,6 +384,65 @@ pub mod Attune.Study.ReviewPilot {
         else
             PilotDecision.Activate(OptionalContrast.R2MinusR1)
 
+    // ------------------------------------------------- independent judge policy
+
+    /// The declared identity of the frozen pilot judge policy record. It is
+    /// frozen BEFORE any judge acquisition and reuses the SAME approved
+    /// independent-judging policy the historical paired study used: the blinded
+    /// candidate ids, the frozen judge and independent-adjudication prompts, the
+    /// same route/model/effort and the same client-mechanical budgets.
+    pub def judgeProtocolIdentity(): String = "reviewbench-pilot-judge-protocol-v1"
+
+    /// The declared identity of the blinded candidate vocabulary. The producing
+    /// arm, the observation slot and the checkpoint identity are carried ONLY by
+    /// the separate evaluator-side blinding record and never by a judge input.
+    pub def judgeBlindingIdentity(): String = "reviewbench-blinded-candidate-ids-v1"
+
+    /// The frozen judge prompt identity: the SHA-256 of the frozen judge prompt
+    /// bytes, reused unchanged from the approved independent-judging policy.
+    pub def judgePromptIdentity(): String =
+        "sha256:3c4dbb6dc3457a97ca98fa985b7645b3a76cabf60d98cd7af6282cf0bbe5087d"
+
+    /// The frozen independent-adjudication prompt identity, reused unchanged.
+    pub def adjudicationPromptIdentity(): String =
+        "sha256:8168d1d97d2a19ad7ba05a7229ae8f1cae69c9571fb3f165cf6c2bf088bfaac3"
+
+    /// The declared judge roles.
+    pub def judgeRole(): String = "judge"
+    pub def adjudicationRole(): String = "adjudicate"
+
+    /// The declared judge route/model/effort: the SAME approved independent route
+    /// and requested model as the review arms, with no substitution.
+    pub def judgeRouteIdentity(): String = routeIdentity()
+    pub def judgeModel(): String = requestedModel()
+    pub def judgeEffort(): String = requestedEffort()
+
+    /// The frozen judge client-mechanical budgets: the same caps the review arms
+    /// run under.
+    pub def judgeWallSeconds(): Int32 = wallSeconds()
+    pub def judgeToolRounds(): Int32 = toolRounds()
+    pub def judgeObservedTokenBudget(): Int64 = observedTokenBudget()
+
+    /// The corrected matching version the pilot reduction reuses canonically.
+    pub def correctedMatchingVersion(): String = "reviewbench-corrected-matching-v2"
+
+    /// The declared identity of the reference population the pilot judges against:
+    /// the full all-ten-task population including every failed task, never a
+    /// candidate-restricted subset.
+    pub def referencePopulationIdentity(): String = "reviewbench-reference-population-130-v1"
+    pub def referencePositives(): Int32 = 130
+    pub def referenceMediumHigh(): Int32 = 62
+
+    /// The declared identity of the run-half reduction record.
+    pub def runHalfIdentity(): String = "reviewbench-pilot-run-half-v1"
+
+    /// The declared no-leak invariants of the judge policy: a judge input never
+    /// carries the producing arm, a detector hypothesis or a golden label, and a
+    /// reference miss is never automatically a false positive.
+    pub def judgeNoArmDisclosure(): Bool = true
+    pub def judgeNoLabelLeak(): Bool = true
+    pub def judgeDenominatorIncludesFailures(): Bool = true
+
     // ------------------------------------------------------------- Pareto rule
 
     /// One declared candidate's Pareto point: the four predeclared quantities the

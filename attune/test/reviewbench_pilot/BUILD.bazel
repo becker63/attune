@@ -1,4 +1,5 @@
 load("//platform/build:native.bzl", "native_flix_java_test", "native_study_stage")
+load("//platform/build:sol.bzl", "attune_path_manifest")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("//platform/dsh:pilot_runner.bzl", "attune_pilot_runners")
 
@@ -87,6 +88,82 @@ native_study_stage(
     tags = ["manual"],
 )
 
+# The explicit source closure of the pilot RUN-half stages: the blinding and
+# reduction dispatcher plus the canonical owner it reduces and the shared owners
+# both consume.
+PILOT_RUN_SRCS = [
+    "ReviewPilotRunStages.flix",
+    "//src:Attune.flix",
+    "//src:Attune/Coverage.flix",
+    "//src:Attune/Repository.flix",
+    "//src:Attune/Repository/Grit.flix",
+    "//src:Attune/Study.flix",
+    "//src:Attune/Study/Embedding.flix",
+    "//src:Attune/Study/Metrics.flix",
+    "//src:Attune/Study/Qwen.flix",
+    "//src:Attune/Study/ReviewBench.flix",
+    "//src:Attune/Study/ReviewPilot.flix",
+    "//src:Attune/Theory.flix",
+]
+
+# The frozen run-half receipts the reduction stages declare: the ACTUAL delivered
+# finals, the durable committed checkpoints, the normalized candidate findings,
+# the frozen predictions/diagnostics/usage ledger and the ten-task reference
+# population. They are ordinary repo fixtures, so the stages read them without
+# fetching the corpus.
+filegroup(
+    name = "pilot_run_fixture_files",
+    srcs = glob(["fixtures/**"]),
+)
+
+attune_path_manifest(
+    name = "pilot_run_fixtures",
+    srcs = glob(["fixtures/**"]),
+)
+
+# The declared ReviewBench pilot candidate-blinding stage (`VAL-STUDY-002`,
+# `VAL-STUDY-005`). It blinds the ACTUAL delivered findings of the twenty
+# once-only observations — the non-empty FINAL deliveries plus the durable
+# committed CHECKPOINT candidates — into one per-task blinded projection with
+# fresh positional ids and NO producing-arm cell, plus a SEPARATE evaluator-side
+# blinding record. Provider-free and corpus-free: it reads only the frozen
+# receipts and calls no provider.
+native_study_stage(
+    name = "reviewbench_pilot_candidates",
+    srcs = PILOT_RUN_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"],
+    inputs = [":pilot_run_fixtures"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_candidates",
+    tags = ["manual"],
+)
+
+# The declared ReviewBench pilot RUN-HALF REDUCTION stage (`VAL-STUDY-002`,
+# `VAL-STUDY-005`, `VAL-STUDY-010`, `VAL-STUDY-011`). It reduces the frozen
+# twenty-slot records together with the independently judged receipts into the
+# canonical run-half record: the per-slot budget/acquisition/delivery table, the
+# separately versioned commit/source/packet refusal projection, the per-arm
+# judged evidence, the all-task reference denominator and the ONE activation
+# decision applied by the unchanged frozen `Attune.Study.ReviewPilot` rule.
+# Provider-free and corpus-free: it reads only the frozen receipts.
+native_study_stage(
+    name = "reviewbench_pilot_run",
+    srcs = PILOT_RUN_SRCS,
+    extra_inputs = glob(["fixtures/**"]),
+    input_names = ["fixtures"],
+    inputs = [":pilot_run_fixtures"],
+    java_deps = [
+        "//platform/tools/grit:attune_grit",
+        "//platform/tools/reviewbench:attune_reviewbench",
+    ],
+    stage = "reviewbench_pilot_run",
+    tags = ["manual"],
+)
+
 # The declared ReviewBench pilot freeze stage (`VAL-STUDY-001`, `VAL-STUDY-002`,
 # `VAL-STUDY-003`, `VAL-STUDY-010`). It reduces the already-materialized,
 # already-frozen admission projection and the frozen cohort fixture into the
@@ -124,6 +201,7 @@ native_flix_java_test(
     srcs = [
         "ReviewPilotBindingLaw.flix",
         "ReviewPilotLaw.flix",
+        "ReviewPilotRunStages.flix",
         "//src:Attune.flix",
         "//src:Attune/Coverage.flix",
         "//src:Attune/Repository.flix",

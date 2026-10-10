@@ -1,0 +1,28 @@
+judged	EdV4H_usketch-534	C1	12,15	The rotation transform is confined to ShapeLayer, while the candidate identifies both the active DOM renderer’s missing rotation and GPU shapes drawing unrotated despite rotation-aware hit tests.
+judged	EdV4H_usketch-534	C2	1	The text editing listener calls raw hitTest(shape, event.worldPoint), while shape registration uses withRotation(hitTest), causing rotated text editing hit tests to disagree with selection.
+judged	EdV4H_usketch-534	C3	2	The sticky editing listener calls raw hitTest and sends POINTER_DOWN only on a hit, bypassing the withRotation wrapper used in shape registration.
+judged	caasi_town-zero-6	C1	23,29	Phase 8 writes trigger-produced beliefs without recording changed keys and then clears changedFacts, preventing dependent triggers from firing next tick.
+judged	caasi_town-zero-6	C2	23,29	Trigger effect writes omit recordChangedFact before the batch is cleared, so their new facts cannot activate chained rules in subsequent ticks.
+judged	caasi_town-zero-6	C3	23,27	loadScenario inserts initial beliefs without marking their keys changed, so evaluateBatch skips rules depending on those facts.
+judged	caasi_town-zero-6	C4	4	Phase 8 executes only set_fact effects and warns instead of executing every other effect type.
+judged	caasi_town-zero-6	C5	4	The trigger execution loop discards give_item, take_item, damage, and register_trigger effects despite their support in the general executor.
+judged	caasi_town-zero-6	C6	30	Phase 8 applies each set_fact to the agent resolved from rule.targets without consulting effect.target.
+judged	caasi_town-zero-6	C7	30	Unlike the general executor, which forwards effect.target, Phase 8 writes facts to each rule target regardless of the effect's specified recipient.
+judged	capawesome-team_cli-126	C1	1	appleApiKeyId is an unset local rather than a CLI option, so non-interactive API-key creation exits at the required-ID check after uploading the key.
+judged	capawesome-team_cli-126	C2	1	appleApiKeyId is never populated from options, making the mandatory key-ID check always exit in non-interactive API-key creation.
+judged	haoling_diary-notebook-blog-transformer-24	C1	-	The searches omit nextPageToken, but no reference identifies missing pagination rather than ordering, scope, parent constraints, or concurrency.
+judged	haoling_diary-notebook-blog-transformer-24	C2	-	Both searches treat an empty first page as absence, a pagination issue distinct from the references concerning folder visibility and duplicate-creation races.
+judged	haoling_diary-notebook-blog-transformer-24	C3	-	Missing continuation-token handling in both name searches is not the nondeterministic selection or concurrent find-or-create issue described by the references.
+judged	haoling_diary-notebook-blog-transformer-24	C4	-	The source requests only files and never follows nextPageToken, but none of the references describes this pagination defect.
+judged	haoling_diary-notebook-blog-transformer-24	C5	-	parseDriveError omits dailyLimitExceeded, whereas G19 concerns combining 429 and 403 in the quota-error class rather than missing quota reasons.
+judged	haoling_diary-notebook-blog-transformer-24	C6	-	The quota allowlist excludes dailyLimitExceeded and storageQuotaExceeded, a classification omission distinct from G19's concern about combining HTTP statuses.
+judged	haoling_diary-notebook-blog-transformer-24	C7	-	The missing dailyLimitExceeded reason causes fallback to DrivePermissionError, which no reference identifies as the underlying issue.
+judged	haoling_diary-notebook-blog-transformer-24	C8	-	Both named quota reasons are absent from the allowlist, while G19 addresses the quota-error class's treatment of 429 and 403 rather than these omissions.
+judged	jenkinsci_gitea-plugin-141	C1	7	The NOT_BUILT branch fetches the version without a fallback, so lookup failures prevent publishing WARNING or SKIPPED.
+judged	jenkinsci_gitea-plugin-141	C2	7	An IOException from the required version fetch escapes before createCommitStatus rather than falling back to WARNING.
+judged	jenkinsci_gitea-plugin-141	C3	7	The finding concerns version-discovery failures aborting NOT_BUILT notifications without a WARNING fallback, with 502/503 given as examples.
+judged	jenkinsci_gitea-plugin-141	C4	7	The unhandled version lookup can fail before createCommitStatus is reached, dropping the terminal notification instead of publishing WARNING.
+judged	rulecom_rule-io-sdk-40	C1	20,21	Both listApiKeys and createApiKey use requestV3, which logs their full secret-bearing responses when debug is enabled.
+judged	rulecom_rule-io-sdk-40	C2	20,21	Both API-key methods route responses through requestV3's unredacted debug logging, exposing listed and newly generated keys.
+judged	rulecom_rule-io-sdk-40	C3	20,21	The reported leakage is requestV3's debug logging of generated keys from createApiKey and returned keys from listApiKeys.
+judged	rulecom_rule-io-sdk-40	C4	20,21	Both endpoints pass secret-bearing responses to requestV3, whose debug logger prints the entire parsed response without redaction.
