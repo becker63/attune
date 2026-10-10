@@ -7073,8 +7073,10 @@ is **not** a gate and is not claimed. The ReviewBench study footprint is measure
 over the explicit fixed git range `fe4a8f2..3926028` (corpus admission `fe4a8f2`
 → the pre-repair publication commit `3926028`): 313 files with 63,394 insertions
 and 45 deletions, distributed as `attune/platform/` 32,484, `attune/test/` 23,450,
-`attune/src/` 5,017, `attune/MODULE.bazel` 567, the root report 1,706 and other
-170 — reported as authored, inherited and generated exactly as the design note
+`attune/src/` 5,017, `attune/MODULE.bazel` 425 plus `attune/MODULE.bazel.lock` 142
+(567 together), the root report 1,706 and 170 other grouped root files
+(`README.md`, `attune/AGENTS.md`, `attune/BUILD.bazel` and `attune/notes/`) —
+reported as authored, inherited and generated exactly as the design note
 classifies them. (This denominator-repair commit is a later, separately named
 follow-on; the range above is fixed and reproducible, not a self-referential
 `HEAD`.) Cold/warm build and cache behaviour is **`Unavailable`**: no retained
@@ -7095,8 +7097,13 @@ gate is `bazel test //... --config=remote --jobs=8 --host_jvm_args=-Xmx3g`:
 failure is reported raw and is **never** cleaned, suppressed or relabelled; the
 `-Xmx3g` host-heap flag is a required startup option (without it the Bazel server
 dies with `OutOfMemoryError` while downloading remote outputs). Every owned check
-passes, including the corpus-free laws (with the new bounded all-admitted-task
-recall-denominator regression) and the provider-free publication replay.
+passes, including the corpus-free laws and the provider-free publication replay.
+The bounded all-admitted-task recall-denominator regression is a **materialized**
+assertion: it executes in the `manual` holdout-quality and publication
+materialization stages (`holdout_quality_stage`, `publication_stage`), not in the
+ordinary corpus-free law targets, because the 24-task population and the
+`goldTrue = 224` counts are asserted against the frozen fixtures those stages
+materialize.
 
 ### Negative and modest outcome (a completed scientific result)
 

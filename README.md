@@ -589,8 +589,13 @@ re-run.
   population** (224 positive / 88 medium-or-high), not only the candidate-bearing
   tasks: a task with golden references and no candidate contributes a **defined
   zero recall**, and every per-arm/view `quality-counts` row carries
-  `goldTrue = 224`. `reviewbench_holdout_judge_law` and
-  `reviewbench_publication_law` pin this population offline.
+  `goldTrue = 224`. These denominator assertions are materialized in the
+  `manual` holdout-quality and publication stages (`holdout_quality_stage` ->
+  `reviewbench_holdout_quality`, `publication_stage` -> `reviewbench_publication`),
+  which pin the counts against the frozen fixtures; they are not assertions of the
+  ordinary corpus-free law targets (`reviewbench_holdout_judge_law`,
+  `reviewbench_publication_law`), which run in the offline gate but do not carry
+  the materialized denominator population.
 - The provider-free publication record is written to
   `bazel-bin/test/reviewbench_pilot/reviewbench_publication/publication-*.tsv`.
 - The broad gate is `services.yaml test`; the single known
