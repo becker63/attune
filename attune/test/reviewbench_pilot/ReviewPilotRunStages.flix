@@ -327,11 +327,15 @@ def parseJudgment(line: String): Option[Judgment] = match fields(line) {
 def judgments(): List[Judgment] \ IO =
     List.filterMap(parseJudgment, records(readFixture("pilot-judgments.tsv")))
 
-type alias Adjudication = { task = String, candidate = String, status = String }
+/// One raw blind adjudication verdict over one unmatched candidate. The frozen
+/// `reason` is retained verbatim: the corrected projection reads the adjudicator's
+/// OWN source-backed reason to recover the equivalence it named, and never invents
+/// a verdict.
+type alias Adjudication = { task = String, candidate = String, status = String, reason = String }
 
 def parseAdjudication(line: String): Option[Adjudication] = match fields(line) {
-    case "adjudged" :: task :: candidate :: status :: _ =>
-        Some({ task = task, candidate = candidate, status = status })
+    case "adjudged" :: task :: candidate :: status :: rest =>
+        Some({ task = task, candidate = candidate, status = status, reason = List.join("\t", rest) })
     case _ => None
 }
 
@@ -491,6 +495,279 @@ def metricsOf(arm: String, judged: List[JudgedCandidate], references: List[Refer
     }
 }
 
+// ================================= F1: policy-faithful corrected adjudication
+
+/// The evaluator-side blinded view of one candidate: its fresh positional id and
+/// the producing arm/slot/source restored ONLY for the evaluator (never a judge
+/// input). Recomputed from the SAME frozen candidate fixtures, so no separate
+/// blinding file is authored.
+type alias BlindedCandidate = { task = String, id = String, arm = String, source = String, slot = String, index = String }
+
+def blindedCandidates(candidates: List[PilotCandidate]): List[BlindedCandidate] =
+    List.flatMap(task -> {
+        let ordered = orderedFor(task, candidates);
+        List.filterMap(index -> Option.map(candidate -> { task = task, id = candidateId(index + 1),
+            arm = candidate#arm, source = candidate#source, slot = candidate#slot, index = candidate#index },
+            List.head(List.drop(index, ordered))), List.range(0, List.length(ordered)))
+    }, tasksOf(candidates))
+
+def blindingArm(blinded: List[BlindedCandidate], task: String, id: String): String =
+    Option.getWithDefault("Unavailable",
+        Option.map(candidate -> candidate#arm,
+            List.find(candidate -> candidate#task == task and candidate#id == id, blinded)))
+
+/// The anchor id the adjudicator's OWN frozen reason names (`duplicates C<k>`),
+/// validated against that task's blinded ids so a malformed reason can never
+/// manufacture an equivalence. This is a bounded literal extraction of the
+/// frozen reason text; it invents no verdict.
+def anchorFor(task: String, reason: String, blinded: List[BlindedCandidate]): Option[String] =
+    match List.drop(2, String.split(regex = "\\s+", reason)) {
+        case token :: _ =>
+            let id = match String.split(regex = "[^A-Za-z0-9]", token) {
+                case first :: _ => first
+                case Nil        => token
+            };
+            if (List.exists(candidate -> candidate#task == task and candidate#id == id, blinded)) Some(id) else None
+        case Nil => None
+    }
+
+/// One raw blind adjudication verdict over an unmatched candidate, joined with
+/// its evaluator-side arm and the policy-faithful corrected status. The RAW
+/// status is carried UNCHANGED; the corrected status is a separate field that
+/// the frozen within-arm rule implies. A candidate invalidated against a
+/// candidate in the OTHER arm is reinstated: within-arm dedup never crosses arms.
+type alias CorrectedAdjudication = {
+    task = String, id = String, arm = String, source = String, slot = String,
+    rawStatus = String, anchor = String, anchorArm = String, crossArm = Bool,
+    correctedStatus = String, reason = String
+}
+
+def correctedAdjudications(blinded: List[BlindedCandidate], resolved: List[Adjudication]): List[CorrectedAdjudication] =
+    List.filterMap(verdict -> match List.find(candidate -> candidate#task == verdict#task
+        and candidate#id == verdict#candidate, blinded) {
+        case None => None
+        case Some(candidate) =>
+            let invalid = verdict#status == "invalid";
+            let anchor = if (invalid)
+                Option.getWithDefault(verdict#candidate, anchorFor(verdict#task, verdict#reason, blinded))
+                else verdict#candidate;
+            let anchorArm = blindingArm(blinded, verdict#task, anchor);
+            let crossArm = invalid and anchorArm != candidate#arm;
+            let corrected = if (not invalid) "valid-as-acquired"
+                else if (crossArm) "valid-cross-arm-equivalent"
+                else "invalid-within-arm-duplicate";
+            Some({ task = verdict#task, id = verdict#candidate, arm = candidate#arm, source = candidate#source,
+                   slot = candidate#slot, rawStatus = verdict#status, anchor = anchor, anchorArm = anchorArm,
+                   crossArm = crossArm, correctedStatus = corrected, reason = verdict#reason })
+    }, resolved)
+
+def isCorrectedSupported(status: String): Bool =
+    status == "valid-as-acquired" or status == "valid-cross-arm-equivalent"
+
+/// One candidate of the corrected evaluator view: its arm/source/slot, whether
+/// the policy-faithful rule finds it supported, and the behavior anchor it
+/// belongs to. A reference-matched candidate is its own behavior (the raw judge
+/// already matched it to a reference); an unmatched candidate shares the anchor
+/// its adjudication named.
+type alias CorrectedView = {
+    task = String, id = String, arm = String, source = String, slot = String, index = String,
+    supported = Bool, anchor = String
+}
+
+def unmatchedView(candidate: BlindedCandidate, corrected: List[CorrectedAdjudication]): CorrectedView =
+    match List.find(entry -> entry#task == candidate#task and entry#id == candidate#id, corrected) {
+        case Some(entry) => { task = candidate#task, id = candidate#id, arm = candidate#arm,
+            source = candidate#source, slot = candidate#slot, index = candidate#index,
+            supported = isCorrectedSupported(entry#correctedStatus), anchor = entry#anchor }
+        case None => { task = candidate#task, id = candidate#id, arm = candidate#arm,
+            source = candidate#source, slot = candidate#slot, index = candidate#index,
+            supported = false, anchor = candidate#id }
+    }
+
+def correctedView(references: List[Reference], verdicts: List[Judgment], resolved: List[Adjudication],
+                  blinded: List[BlindedCandidate]): List[CorrectedView] = {
+    let corrected = correctedAdjudications(blinded, resolved);
+    List.map(candidate -> {
+        let judgment = List.find(verdict -> verdict#task == candidate#task and verdict#candidate == candidate#id, verdicts);
+        match judgment {
+            case Some(verdict) =>
+                if (List.isEmpty(verdict#refs)) unmatchedView(candidate, corrected)
+                else {
+                    let refsOfTask = List.filter(reference -> reference#task == candidate#task, references);
+                    let adjudication = List.find(entry -> entry#task == candidate#task
+                        and entry#candidate == candidate#id, resolved);
+                    { task = candidate#task, id = candidate#id, arm = candidate#arm, source = candidate#source,
+                      slot = candidate#slot, index = candidate#index,
+                      supported = isSupported(classOf(refsOfTask, judgment, adjudication)), anchor = candidate#id }
+                }
+            case None => unmatchedView(candidate, corrected)
+        }
+    }, blinded)
+}
+
+/// The behaviors of one arm: one per distinct (task, anchor) with at least one
+/// supported candidate in that arm. A behavior is attributed to the FINAL
+/// delivery when the arm actually delivered it as a final finding (the primary
+/// `FindingDelivered` artifact); otherwise to its checkpoint candidate. This is
+/// the frozen within-arm final/checkpoint collapse, applied ONCE per behavior and
+/// NEVER across arms.
+def behaviorRepresentatives(arm: String, view: List[CorrectedView]): List[(String, Bool)] = {
+    let mine = List.filter(candidate -> candidate#arm == arm and candidate#supported, view);
+    let keys = List.distinct(List.map(candidate -> candidate#task + ":" + candidate#anchor, mine));
+    List.map(key -> {
+        let group = List.filter(candidate -> candidate#task + ":" + candidate#anchor == key, mine);
+        (key, List.exists(candidate -> candidate#source == "final", group))
+    }, keys)
+}
+
+def acknowledgedCountOf(slot: String, slots: List[SlotRecord]): Int32 =
+    match List.find(record -> record#slot == slot, slots) {
+        case Some(record) => if (record#checkpoints <= record#commitSuccess) record#checkpoints else record#commitSuccess
+        case None         => 0
+    }
+
+/// Whether one checkpoint behavior's representative checkpoint candidate carried
+/// an ACKNOWLEDGED native commit result (its own slot's acknowledged count covers
+/// its own checkpoint ordinal). The two unacknowledged rows are kept in their own
+/// subset and never silently promoted.
+def representsAcknowledged(key: String, arm: String, view: List[CorrectedView], slots: List[SlotRecord]): Bool =
+    List.exists(candidate -> candidate#arm == arm and candidate#task + ":" + candidate#anchor == key
+        and candidate#source == "checkpoint"
+        and intOf(candidate#index) <= acknowledgedCountOf(candidate#slot, slots), view)
+
+/// The corrected per-arm population. `finalValid` is the semantic primary
+/// `FindingDelivered` count: distinct supported behaviors delivered as finals.
+/// `checkpointValid` is the separately reported checkpoint-inclusive recovery;
+/// `checkpointAcknowledged` is its acknowledged-only subset and
+/// `checkpointUnacknowledged` the stored-but-unacknowledged remainder.
+type alias CorrectedArm = {
+    arm = String, finalValid = Int32, checkpointValid = Int32,
+    checkpointAcknowledged = Int32, checkpointUnacknowledged = Int32
+}
+
+def correctedArm(arm: String, view: List[CorrectedView], slots: List[SlotRecord]): CorrectedArm = {
+    let reps = behaviorRepresentatives(arm, view);
+    let finals = List.filter(pair -> match pair { case (_, isFinal) => isFinal }, reps);
+    let checkpoints = List.filter(pair -> match pair { case (_, isFinal) => not isFinal }, reps);
+    let acknowledged = List.length(List.filter(pair -> match pair {
+        case (key, _) => representsAcknowledged(key, arm, view, slots)
+    }, checkpoints));
+    { arm = arm, finalValid = List.length(finals), checkpointValid = List.length(checkpoints),
+      checkpointAcknowledged = acknowledged,
+      checkpointUnacknowledged = List.length(checkpoints) - acknowledged }
+}
+
+def asAcquiredRow(row: Adjudication, blinded: List[BlindedCandidate]): List[String] =
+    List#{"adjudication-as-acquired", row#task, row#candidate,
+        blindingArm(blinded, row#task, row#candidate), row#status, escapeField(row#reason)}
+
+def correctedRow(row: CorrectedAdjudication): List[String] =
+    List#{"adjudication-corrected", row#task, row#id, row#arm, row#source, row#slot,
+        row#rawStatus, row#anchor, row#anchorArm, boolText(row#crossArm),
+        row#correctedStatus, escapeField(row#reason)}
+
+/// The activation view of one arm: the UNCHANGED frozen optional rule reads
+/// only the primary delivered count, the all-inclusive provider usage and the
+/// budget-stop count, so the corrected projection feeds it exactly those.
+def activationArmOf(arm: String, validDelivered: Int32, slots: List[SlotRecord]): ArmMetrics = {
+    let armSlots = List.filter(slot -> slot#arm == arm, slots);
+    { arm = arm, finalValid = validDelivered, checkpointValid = 0, validDelivered = validDelivered,
+      checkpointInclusive = 0, falsePositives = 0, unmatchedValid = 0, unmatchedInvalid = 0,
+      unresolved = 0, matchedTp = 0, matchedMediumHigh = 0,
+      providerTotal = List.foldLeft((sum, slot) -> sum + slot#sessionTotal, 0i64, armSlots),
+      budgetStopped = List.length(List.filter(slot -> slot#stopCause == "budget-stop", armSlots)),
+      unresolvedObligations = 0 }
+}
+
+def correctedDecisionNameOf(correctedR0: CorrectedArm, correctedR1: CorrectedArm,
+                            slots: List[SlotRecord]): String =
+    ReviewPilot.decisionName(ReviewPilot.decidePilot(
+        judgedArmOf(activationArmOf(correctedR0#arm, correctedR0#finalValid, slots)),
+        judgedArmOf(activationArmOf(correctedR1#arm, correctedR1#finalValid, slots))))
+
+/// The UNCHANGED frozen activation rule applied to the CORRECTED primary
+/// `FindingDelivered` metrics, over the same all-inclusive attempt usage. It
+/// reaffirms the as-acquired decision (`r1-not-worse-than-r0`): the correction
+/// only raises R1's numerator, so the rule can only remain a decline.
+def correctedDecisionRows(correctedR0: CorrectedArm, correctedR1: CorrectedArm,
+                          slots: List[SlotRecord]): List[List[String]] = {
+    let r0 = activationArmOf(correctedR0#arm, correctedR0#finalValid, slots);
+    let r1 = activationArmOf(correctedR1#arm, correctedR1#finalValid, slots);
+    let name = correctedDecisionNameOf(correctedR0, correctedR1, slots);
+    List#{
+        List#{"decision-corrected", ReviewPilot.runHalfIdentity(), ReviewPilot.activationIdentity(), name,
+            "frozen-rule-unchanged-floor-quantization-noted"},
+        List#{"decision-corrected-input", "R0_PLAIN", Int32.toString(r0#validDelivered),
+            Int64.toString(r0#providerTotal), Int64.toString(ReviewPilot.validPerMillion(judgedArmOf(r0))),
+            Int32.toString(r0#budgetStopped)},
+        List#{"decision-corrected-input", "R1_PACKETS", Int32.toString(r1#validDelivered),
+            Int64.toString(r1#providerTotal), Int64.toString(ReviewPilot.validPerMillion(judgedArmOf(r1))),
+            Int32.toString(r1#budgetStopped)}
+    }
+}
+
+def correctedMetricsRow(arm: String, metrics: CorrectedArm, slots: List[SlotRecord]): List[String] = {
+    let armSlots = List.filter(slot -> slot#arm == arm, slots);
+    let providerTotal = List.foldLeft((sum, slot) -> sum + slot#sessionTotal, 0i64, armSlots);
+    let exact = Int32.toInt64(metrics#finalValid) * 1000000i64;
+    List#{"arm-metrics-corrected", arm,
+        Int32.toString(metrics#finalValid), Int32.toString(metrics#checkpointValid),
+        Int32.toString(metrics#finalValid + metrics#checkpointValid),
+        Int32.toString(metrics#checkpointAcknowledged), Int32.toString(metrics#checkpointUnacknowledged),
+        Int64.toString(providerTotal), Int64.toString(exact),
+        Int64.toString(if (providerTotal <= 0i64) 0i64 else exact / providerTotal),
+        Int64.toString(if (providerTotal <= 0i64) 0i64 else Int64.remainder(exact, providerTotal))}
+}
+
+// ---------------------------------------------- F6: actual accepted delivery
+
+/// One slot's ACTUAL accepted-delivery measurement: accepted/refused source and
+/// packet calls and the rendered source-text bytes of the ACCEPTED results only.
+/// `refusedPreparedDeliveredBytes` is always 0 by construction (a refusal is not
+/// delivery), and `observedUse` is the literal `Unknown` (internal use is never
+/// inferred).
+type alias DeliveryRow = {
+    slot = String, arm = String, sourceAccepted = Int32, sourceRefused = Int32,
+    packetAccepted = Int32, packetRefused = Int32, acceptedDeliveredBytes = Int64,
+    acceptedPresentations = Int32, otherToolAccepted = Int32, otherToolRefused = Int32
+}
+
+def parseDelivery(line: String): Option[DeliveryRow] = match fields(line) {
+    case "slot" :: _ => None
+    case slot :: _ :: arm :: sa :: sr :: pa :: pr :: bytes :: pres :: _ :: ota :: otr :: _ :: _ =>
+        Some({ slot = slot, arm = arm, sourceAccepted = intOf(sa), sourceRefused = intOf(sr),
+               packetAccepted = intOf(pa), packetRefused = intOf(pr), acceptedDeliveredBytes = int64Of(bytes),
+               acceptedPresentations = intOf(pres), otherToolAccepted = intOf(ota), otherToolRefused = intOf(otr) })
+    case _ => None
+}
+
+def deliveries(): List[DeliveryRow] \ IO =
+    List.filterMap(parseDelivery, records(readFixture("pilot-delivery-metrics.tsv")))
+
+def deliverySlotRow(row: DeliveryRow): List[String] =
+    List#{"delivery-slot", row#slot, row#arm, Int32.toString(row#sourceAccepted),
+        Int32.toString(row#sourceRefused), Int32.toString(row#packetAccepted),
+        Int32.toString(row#packetRefused), Int64.toString(row#acceptedDeliveredBytes),
+        Int32.toString(row#acceptedPresentations), "0",
+        Int32.toString(row#otherToolAccepted), Int32.toString(row#otherToolRefused), "Unknown"}
+
+def deliveryArmRow(arm: String, rows: List[DeliveryRow]): List[String] = {
+    let mine = List.filter(row -> row#arm == arm, rows);
+    List#{"delivery-arm", arm,
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#sourceAccepted, 0, mine)),
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#sourceRefused, 0, mine)),
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#packetAccepted, 0, mine)),
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#packetRefused, 0, mine)),
+        Int64.toString(List.foldLeft((sum, row) -> sum + row#acceptedDeliveredBytes, 0i64, mine)),
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#acceptedPresentations, 0, mine)),
+        "0",
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#otherToolAccepted, 0, mine)),
+        Int32.toString(List.foldLeft((sum, row) -> sum + row#otherToolRefused, 0, mine)),
+        "observedUse-Unknown",
+        "refusals-omit-prepared-never-delivered",
+        "packet-uptake-behavioral-negative"}
+}
+
 // ------------------------------------------------------------------- the stage
 
 def referencePopulationPositives(): Int32 = ReviewPilot.referencePositives()
@@ -509,15 +786,26 @@ def slotRow(slot: SlotRecord, rows: List[ToolRow]): List[String] =
         boolText(slot#finalNonEmpty),
         Int32.toString(slot#commitSuccess) }
 
-/// The declared observed-token cap overshoot of one slot: the guard's own
-/// sampled cumulative value beyond the frozen budget, or 0 when the guard never
-/// stopped the loop (its value is `Unavailable`, which is not an overshoot).
+/// The GUARD-PREFIX overshoot of one slot: the mechanical guard's own sampled
+/// cumulative value beyond the frozen budget, or 0 when the guard never stopped
+/// the loop (its value is `Unavailable`, which is not an overshoot). This is a
+/// PREFIX sample, NOT the run's whole measured usage.
 def overshootOf(slot: SlotRecord): Int64 =
     match Int64.fromString(slot#guardTokens) {
         case Some(value) => let excess = value - ReviewPilot.observedTokenBudget();
             if (excess > 0i64) excess else 0i64
         case None => 0i64
     }
+
+/// The ACTUAL measured session-total overshoot of one slot: the run's own
+/// measured provider-total usage (parent continuation INCLUDING any child
+/// session) beyond the frozen budget. It is reported SEPARATELY from the
+/// guard-prefix overshoot: on `obs-3` the guard sampled `286694` (a prefix of the
+/// parent's 31 steps) while the measured session total is `1084402`.
+def measuredOvershootOf(slot: SlotRecord): Int64 = {
+    let excess = slot#sessionTotal - ReviewPilot.observedTokenBudget();
+    if (excess > 0i64) excess else 0i64
+}
 
 def usageRow(arm: String, slots: List[SlotRecord]): List[String] = {
     let armSlots = List.filter(slot -> slot#arm == arm, slots);
@@ -529,7 +817,8 @@ def usageRow(arm: String, slots: List[SlotRecord]): List[String] = {
         Int32.toString(List.foldLeft((sum, slot) -> sum + slot#sessions, 0, armSlots)),
         Int32.toString(List.length(List.filter(slot -> slot#guardTokens != "Unavailable", armSlots))),
         Int32.toString(List.length(List.filter(slot -> slot#stopCause == "budget-stop", armSlots))),
-        Int64.toString(List.foldLeft((sum, slot) -> sum + overshootOf(slot), 0i64, armSlots)) }
+        Int64.toString(List.foldLeft((sum, slot) -> sum + overshootOf(slot), 0i64, armSlots)),
+        Int64.toString(List.foldLeft((sum, slot) -> sum + measuredOvershootOf(slot), 0i64, armSlots)) }
 }
 
 def candidateRowOf(candidate: JudgedCandidate): List[String] =
@@ -661,6 +950,37 @@ def integrityRows(slots: List[SlotRecord], rows: List[ToolRow],
     }
 }
 
+/// Write every run-half receipt: the as-acquired reduction plus the SEPARATE
+/// corrected projections (adjudication, metrics, decision, delivery). No raw
+/// record is rewritten here; the corrected files are new, versioned outputs.
+def writeRunHalfReceipts(dir: String, slots: List[SlotRecord], rows: List[ToolRow],
+                         candidates: List[PilotCandidate], judged: List[JudgedCandidate],
+                         r0: ArmMetrics, r1: ArmMetrics, resolved: List[Adjudication],
+                         blinded: List[BlindedCandidate], correctedAdjs: List[CorrectedAdjudication],
+                         correctedR0: CorrectedArm, correctedR1: CorrectedArm,
+                         deliveryRows: List[DeliveryRow]): Unit \ IO = {
+    writeText(dir, "run-half-slots.tsv", renderTsv(List.map(slot -> slotRow(slot, rows), slots)));
+    writeText(dir, "run-half-usage.tsv", renderTsv(List#{
+        usageRow("R0_PLAIN", slots), usageRow("R1_PACKETS", slots) }));
+    writeText(dir, "run-half-candidates.tsv", renderTsv(List.map(candidateRowOf, judged)));
+    writeText(dir, "run-half-metrics.tsv", renderTsv(List#{
+        metricsRow("R0_PLAIN", r0), metricsRow("R1_PACKETS", r1) }));
+    writeText(dir, "run-half-decision.tsv", renderTsv(decisionRows(r0, r1)));
+    writeText(dir, "run-half-integrity.tsv", renderTsv(integrityRows(slots, rows, candidates)));
+    writeText(dir, "run-half-acquisition.tsv", renderTsv(List.map(acquisitionRow, diagnostics())));
+    writeText(dir, "run-half-adjudication-asacquired.tsv",
+        renderTsv(List.map(row -> asAcquiredRow(row, blinded), resolved)));
+    writeText(dir, "run-half-adjudication-corrected.tsv", renderTsv(List.map(correctedRow, correctedAdjs)));
+    writeText(dir, "run-half-metrics-corrected.tsv", renderTsv(List#{
+        correctedMetricsRow("R0_PLAIN", correctedR0, slots),
+        correctedMetricsRow("R1_PACKETS", correctedR1, slots) }));
+    writeText(dir, "run-half-decision-corrected.tsv",
+        renderTsv(correctedDecisionRows(correctedR0, correctedR1, slots)));
+    writeText(dir, "run-half-delivery.tsv", renderTsv(
+        List.map(deliverySlotRow, deliveryRows) ::: List#{
+            deliveryArmRow("R0_PLAIN", deliveryRows), deliveryArmRow("R1_PACKETS", deliveryRows) }))
+}
+
 @Test
 def theDeclaredReviewBenchPilotRunHalfReducesTheFrozenObservationsAndDecides(): Unit \ {Assert, IO} = {
     let stage = stageName();
@@ -677,15 +997,26 @@ def theDeclaredReviewBenchPilotRunHalfReducesTheFrozenObservationsAndDecides(): 
         let r0 = metricsOf("R0_PLAIN", judged, references, slots, verdicts);
         let r1 = metricsOf("R1_PACKETS", judged, references, slots, verdicts);
 
-        writeText(dir, "run-half-slots.tsv", renderTsv(List.map(slot -> slotRow(slot, rows), slots)));
-        writeText(dir, "run-half-usage.tsv", renderTsv(List#{
-            usageRow("R0_PLAIN", slots), usageRow("R1_PACKETS", slots) }));
-        writeText(dir, "run-half-candidates.tsv", renderTsv(List.map(candidateRowOf, judged)));
-        writeText(dir, "run-half-metrics.tsv", renderTsv(List#{
-            metricsRow("R0_PLAIN", r0), metricsRow("R1_PACKETS", r1) }));
-        writeText(dir, "run-half-decision.tsv", renderTsv(decisionRows(r0, r1)));
-        writeText(dir, "run-half-integrity.tsv", renderTsv(integrityRows(slots, rows, candidates)));
-        writeText(dir, "run-half-acquisition.tsv", renderTsv(List.map(acquisitionRow, diagnostics())));
+        // F1/F2: the evaluator-side policy-faithful projection. Raw verdicts are
+        // UNCHANGED; the corrected status is a separate field, and the corrected
+        // population separates the primary `FindingDelivered` count from the
+        // acknowledged-only checkpoint recovery and its unacknowledged subset.
+        let blinded = blindedCandidates(candidates);
+        let correctedAdjs = correctedAdjudications(blinded, resolved);
+        let view = correctedView(references, verdicts, resolved, blinded);
+        let correctedR0 = correctedArm("R0_PLAIN", view, slots);
+        let correctedR1 = correctedArm("R1_PACKETS", view, slots);
+        let deliveryRows = deliveries();
+        let correctedStatusOf = id -> Option.getWithDefault("Unavailable",
+            Option.map(row -> row#correctedStatus,
+                List.find(row -> row#task == "haoling_diary-notebook-blog-transformer-24" and row#id == id, correctedAdjs)));
+        let obs3GuardOvershoot = Option.getWithDefault(0i64,
+            Option.map(overshootOf, List.find(slot -> slot#slot == "obs-3", slots)));
+        let obs3MeasuredOvershoot = Option.getWithDefault(0i64,
+            Option.map(measuredOvershootOf, List.find(slot -> slot#slot == "obs-3", slots)));
+        let correctedDecisionName = correctedDecisionNameOf(correctedR0, correctedR1, slots);
+        writeRunHalfReceipts(dir, slots, rows, candidates, judged, r0, r1, resolved, blinded,
+            correctedAdjs, correctedR0, correctedR1, deliveryRows);
 
         // The reduction preserves every frozen distinction: twenty once-only
         // slots, seven non-empty finals, seventeen durable checkpoint rows with
@@ -701,7 +1032,56 @@ def theDeclaredReviewBenchPilotRunHalfReducesTheFrozenObservationsAndDecides(): 
         Assert.assertEq(expected = true, List.forAll(candidate ->
             candidate#arm == "R0_PLAIN" or candidate#arm == "R1_PACKETS", judged));
         Assert.assertEq(expected = 130, referencePopulationPositives());
-        Assert.assertEq(expected = true, not List.isEmpty(judged))
+        // Every actual finding is judged: 28 candidates = the 11 non-empty FINAL
+        // findings (including obs-3's committed-0 final) plus the 17 durable
+        // checkpoint rows; nothing is excluded from the 130-reference denominator.
+        Assert.assertEq(expected = 28, List.length(judged));
+        Assert.assertEq(expected = 11, List.length(List.filter(candidate -> candidate#source == "final", judged)));
+        Assert.assertEq(expected = 17, List.length(List.filter(candidate -> candidate#source == "checkpoint", judged)));
+        // F6: the accepted-delivery measurement covers all twenty slots, old
+        // pre-fix and corrected alike, including obs-19.
+        Assert.assertEq(expected = 20, List.length(deliveryRows));
+
+        // F1: the raw adjudicator invalidated C2/C4/C6/C8 against C1/C5 in the
+        // OTHER arm, which the frozen within-arm dedup forbids. The corrected
+        // projection reinstates exactly those four; the R0 within-arm duplicates
+        // C3/C7 stay invalid-within-arm-duplicate and no raw verdict is rewritten.
+        Assert.assertEq(expected = "valid-as-acquired", correctedStatusOf("C1"));
+        Assert.assertEq(expected = "valid-cross-arm-equivalent", correctedStatusOf("C2"));
+        Assert.assertEq(expected = "invalid-within-arm-duplicate", correctedStatusOf("C3"));
+        Assert.assertEq(expected = "valid-cross-arm-equivalent", correctedStatusOf("C4"));
+        Assert.assertEq(expected = "valid-as-acquired", correctedStatusOf("C5"));
+        Assert.assertEq(expected = "valid-cross-arm-equivalent", correctedStatusOf("C6"));
+        Assert.assertEq(expected = "invalid-within-arm-duplicate", correctedStatusOf("C7"));
+        Assert.assertEq(expected = "valid-cross-arm-equivalent", correctedStatusOf("C8"));
+
+        // The corrected primary `FindingDelivered` population is 2 vs 7 (the two
+        // R1 haoling behaviors are delivered finals); the acknowledged-only
+        // checkpoint recovery is 8 R0 / 5 R1, its unacknowledged subset 1 each.
+        Assert.assertEq(expected = 2, correctedR0#finalValid);
+        Assert.assertEq(expected = 7, correctedR1#finalValid);
+        // The checkpoint-inclusive view is NOT the acknowledged-only recovery:
+        // checkpointValid is 9 R0 / 6 R1, of which 8 R0 / 5 R1 are acknowledged.
+        Assert.assertEq(expected = 9, correctedR0#checkpointValid);
+        Assert.assertEq(expected = 6, correctedR1#checkpointValid);
+        Assert.assertEq(expected = 8, correctedR0#checkpointAcknowledged);
+        Assert.assertEq(expected = 5, correctedR1#checkpointAcknowledged);
+        Assert.assertEq(expected = 1, correctedR0#checkpointUnacknowledged);
+        Assert.assertEq(expected = 1, correctedR1#checkpointUnacknowledged);
+
+        // F6: no R1 packet call was ever ACCEPTED, so the lack of packet uptake is
+        // a behavioral negative, never a substituted token saving.
+        Assert.assertEq(expected = 0, List.foldLeft((sum, row) -> sum + row#packetAccepted, 0, deliveryRows));
+        // F6: the guard-prefix overshoot and the actual measured session-total
+        // overshoot are DISTINCT; obs-3 is far over the cap when the whole
+        // measured session (child included) is counted.
+        Assert.assertEq(expected = 30694i64, obs3GuardOvershoot);
+        Assert.assertEq(expected = 828402i64, obs3MeasuredOvershoot);
+
+        // The UNCHANGED frozen activation rule, applied to the corrected primary
+        // metrics, still DECLINES: the correction only raises R1's numerator, so
+        // the decision is robust and no optional contrast is activated.
+        Assert.assertEq(expected = "decline:r1-not-worse-than-r0", correctedDecisionName)
     }
 }
 
