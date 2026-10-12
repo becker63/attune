@@ -13,6 +13,10 @@ experiments, provisional figures, and their later corrections. Its development
 paths and revision IDs describe retained external archives. **Use the corrected
 summary and committed tables for current ReviewBench claims.**
 
+[Waits & reuse](#1-five-kinds-of-wait) · [Localization](#2-localization-finding-the-files-a-fix-touches) ·
+[ReviewBench](#3-reviewbench-testing-the-economic-implication) · [Coordination](#4-coordination-a-parallelism-experiment) ·
+[Reproduce](#5-reproducibility-and-availability)
+
 ## What the work asked
 
 | Question | Finding | Scope |
@@ -25,7 +29,7 @@ summary and committed tables for current ReviewBench claims.**
 
 ## 1. Five kinds of wait
 
-[View the interactive five-wait distributions](https://atlas-live-five.vercel.app/#runtime)
+[View the interactive five-wait distributions](https://atlas-live-five.vercel.app/#overview)
 · [Native README figure](README.md#five-kinds-of-wait)
 
 | Timer | n | Median | Boundary |
@@ -152,7 +156,14 @@ Do not sum overlapping lines as a total study cost. Different prompt identities
 do not share their provider answers. Plan-billed agent dollar cost is unknown;
 API-equivalent figures in historical graphics are estimates, not actual fees.
 
-## 3. ReviewBench: shared structural context for review
+## 3. ReviewBench: testing the economic implication
+
+Localization raised an economic hypothesis: reusable repository analysis might
+reduce agents' context-gathering work. ReviewBench tested a review workflow to
+make that implication observable. The problem changed: reviewers start from a
+diff and must identify and support valid defects, rather than simply find a fix's
+files. Raw localization was a smaller part of the job. This is the workflow
+interpretation; the study did not isolate its causal contribution.
 
 **Comparison:** plain source access (R0) versus source access with an optional
 structural packet (R1). Both arms had the same plain-read facade. The planned
@@ -203,12 +214,22 @@ discrepancy: guard 286,694 tokens versus event-step total 951,018 and all-sessio
 1,084,402. Provider-free replay wall time and cold/warm BuildBuddy timings are
 unavailable. None is filled in with an estimate.
 
-## 4. Coordination and reproducibility
+## 4. Coordination: a parallelism experiment
 
-Witness-bearing coordination policies, independent/joint plans, and ASCII views
-are implemented and fixture-tested. The original 32-pair panel did not produce a
-completed full-panel result. Current fixtures, historical corrected-v2 replay,
-and external execution remain explicitly separate.
+Can repository architecture let multiple agents work in the same worktree?
+Coordination reuses localization's extraction, anchors, and structural questions
+to slice change requests into proposed independent work. It examines shared
+boundaries and connections, producing a witness for parallel work, coordination,
+or an unknown result.
+
+The aim is to schedule agents over those slices rather than serialize every
+change. Structural independence is evidence for a plan, not a guarantee against
+editing conflicts or shared build/test effects. Witness-bearing policies,
+independent/joint plans, and ASCII views are implemented and fixture-tested.
+The original 32-pair panel did not produce a completed full-panel result. Current
+fixtures, historical corrected-v2 replay, and external execution remain separate.
+
+## 5. Reproducibility and availability
 
 **No new model calls are needed to inspect these results.** The committed tables and archive are directly readable; the canonical timing
 observations remain on the website. The ordinary

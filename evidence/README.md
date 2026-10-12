@@ -7,6 +7,9 @@ or measurements.
 [Unchanged chronological archive](../reports/localization-history.md) ·
 [Interactive figures](https://atlas-live-five.vercel.app/#overview)
 
+[Results](#start-with-the-measurements) · [Localization tables](#localization-files-and-metrics) ·
+[ReviewBench tables](#reviewbench-files-and-corrections) · [Replay](#inspect-and-reproduce-without-paid-inference)
+
 ## Start with the measurements
 
 | Study | Question and comparison | Population | Result |
@@ -24,7 +27,7 @@ cold remote wall 51.70 s, unchanged warm graph 0.153 s. Its
 remains the source, not these current-release tables.
 
 The five-wait distributions and their 707 observations remain on the
-[website](https://atlas-live-five.vercel.app/#runtime), with a native ASCII figure
+[website](https://atlas-live-five.vercel.app/#overview), with a native ASCII figure
 in the [README](../README.md#five-kinds-of-wait). They are not copied here.
 
 ## Localization files and metrics
@@ -55,6 +58,13 @@ Macro rows average repository groups. Failures remain misses; ineligible tasks
 are excluded. Equal aggregates can conceal different gains and losses.
 
 ## ReviewBench files and corrections
+
+ReviewBench tested the economic implication of localization: could saved
+structural context reduce review work? Reviewers already have a diff, so the
+problem shifts from locating files to supporting valid defects. The paired
+plain/packet comparison did not demonstrate an efficiency gain; the treatment's
+three calls were all refused. These tables explain the actual quality and cost,
+not a localization-to-review speedup.
 
 | File family | Read it for |
 | --- | --- |

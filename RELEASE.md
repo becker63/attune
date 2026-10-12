@@ -154,7 +154,7 @@ are retained in `evidence/`. This introduces no measurement.
 
 The former 470,155-byte report is archived unchanged (SHA256
 `f4523df64cdfff11e1f6c90771c6ce211e9ca6b0dad7bd4d0c9453068840130c`).
-The primary report is approximately 1,950 words; the expanded evidence guide
+The primary report is approximately 2,100 words; the expanded evidence guide
 explains questions, populations, results, formats, and reproduction limits.
 
 Focused public-workspace verification passed:

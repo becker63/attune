@@ -14,7 +14,15 @@ work. Typed queries and tests make those boundaries checkable.
 [Read the measured results](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) ·
 [About the author](https://becker63.digital/)
 
-## Five kinds of wait
+[Effects & waits](#effects-waits-and-reused-work) ·
+[Experiments](#evaluating-software-workflows) ·
+[Small programs](#small-programs-over-repository-structure) ·
+[Implementation](#implementation) ·
+[Reproduce](#reproduce-and-inspect)
+
+## Effects, waits, and reused work
+
+### Five kinds of wait
 
 A provider request, a source-reading process, and a prepared judgment are different
 jobs. Their timing boundaries tell us where reuse and scheduling might help.
@@ -44,7 +52,7 @@ The interactive plot shows every observation and the mean. Extraction's mean was
 
 These are separate retained measurements, not a concurrent schedule or a
 controlled Jev-versus-Sol speedup. The model-turn populations include three issues
-outside the 85-task accuracy cohort. [Explore the interactive plot and timer boundaries](https://atlas-live-five.vercel.app/#runtime)
+outside the 85-task accuracy cohort. [Explore the interactive plot and timer boundaries](https://atlas-live-five.vercel.app/#overview)
 or inspect [all observations and source hashes](https://atlas-live-five.vercel.app/wait-classes.json).
 
 ### Make expensive work explicit
@@ -79,7 +87,9 @@ made no new provider calls. This is an offline evaluation result, not a live
 coding-agent speedup or a timing of the current Flix implementation.
 [Sealed report and usage](https://github.com/becker63/attuneflix/tree/main/experiments/swe-explore-js-ts-scale).
 
-## Finding the files: the localization study
+## Evaluating software workflows
+
+### Localization: finding the files
 
 Given an issue, can retrieval plus structural post-processing find the existing
 files its reference fix changes? The retained SWE-rebench-V2 JS/TS comparison
@@ -115,7 +125,60 @@ cost and local wall time unavailable.
 [Read the concise study report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) ·
 [Inspect the frozen tables](https://github.com/becker63/attune/tree/main/evidence)
 
-## Start with three files
+### Coordination: dividing work between agents
+
+Can we structure a repository so several agents can work independently in the
+same worktree? Coordination applies the same source extraction, anchors, and
+typed structural questions used in localization to **slice proposed work**.
+
+Instead of ranking files, it asks whether two changes touch the same boundary:
+
+```text
+change A + change B + repository facts
+                 |
+                 v
+     structural witness -> parallel / coordinate / unknown
+```
+
+This is a parallelism experiment: make independent work explicit, then decide
+which work needs coordination. A witness explains the policy's proposed split;
+it does not guarantee that arbitrary edits cannot conflict. The policies and
+independent/joint plans are implemented and fixture-tested. The original 32-pair
+real panel has no completed full-panel result, so no measured multi-agent speedup
+is claimed.
+
+### ReviewBench: from localization to economics
+
+Localization suggested an economic question: could reusable repository analysis
+reduce the work an agent spends gathering context? ReviewBench tried to make that
+question concrete in code review, comparing plain source access with optional
+structural packets.
+
+The task changed substantially. A reviewer already starts from a diff; finding
+files is only part of identifying, grounding, and delivering a valid defect.
+Raw localization mattered less in that workflow. That is a lesson about the task,
+not a measured causal estimate of localization's contribution.
+
+| Corrected 24-task holdout | Plain source access | Packet-assisted condition |
+| --- | ---: | ---: |
+| Valid findings, final + checkpoint | 18 | 17 |
+| Known recall, 224 positive references | 36.2% | 27.7% |
+
+A ten-task paired pilot preceded the holdout. All three packet calls across both
+populations were refused; zero were accepted. The proposed efficiency improvement
+was not demonstrated. Final delivery, checkpoint recovery, unresolved judgments,
+and mixed-version pilot attempts remain separately reported.
+
+Holdout review used 6,567,947 provider-total tokens; evaluation used another
+276,637. Actual dollar cost is unknown for plan-billed work.
+
+[Study report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) ·
+[Evidence guide](https://github.com/becker63/attune/tree/main/evidence) ·
+[Full historical archive](https://github.com/becker63/attune/blob/main/reports/localization-history.md)
+
+## Small programs over repository structure
+
+### Start with three files
 
 Navigating unfamiliar code means repeatedly reconstructing its connections.
 Text search finds a name; understanding a change also requires knowing where
@@ -147,7 +210,7 @@ A symbol is a named function or other admitted definition. Here, an import is a
 uniquely resolved literal `require_relative`. Dynamic Ruby behavior is outside
 this fixture's claim; ambiguous evidence does not become a guessed edge.
 
-## Turn a question into a program
+### Routes: ordinary operations over typed sets
 
 A **frontier** is a set of files or symbols from one repository world. A
 **route** applies relations to that set, one ordinary operation at a time:
@@ -211,7 +274,7 @@ A logical transition request can reuse an answer without executing the operation
 
 </details>
 
-## Why bounded programs might help
+### Bounded programs and Theory
 
 Prior research motivates the idea. *On the Naturalness of Software* describes
 repetition and predictability in code. *On the Localness of Software* shows the
@@ -224,7 +287,7 @@ easier to execute, inspect, and reuse. Bounded queries make the work enumerable.
 Repeated states are opportunities to avoid computation; how often that saves
 useful work remains a workload-specific measurement.
 
-### Relationships that hold together
+#### Relationships that hold together
 
 Routes follow a sequence. **Theory** asks whether several relationships hold at
 once: for example, whether two distinct files import the same file. It admits
@@ -233,7 +296,7 @@ four typed roles, two outputs, and one inequality. Renaming roles or reordering
 conjuncts preserves candidate identity; reversing an edge does not. Candidate
 reuse follows that canonical identity, rather than arbitrary logical equivalence.
 
-### Repetition is a hypothesis to measure
+#### Repetition is a hypothesis to measure
 
 Native Flix Datalog evaluates the admitted descriptors over shared repository
 facts. This is the current mechanism. The older
@@ -301,61 +364,6 @@ separate. Partial extraction cannot establish that no relationship exists.
 
 </details>
 
-## How it computes
-
-```text
-source -> Grit observations -> admitted repository facts
-                                      |
-                        typed routes + bounded Datalog
-                                      |
-                           studies -> ASCII evidence
-```
-
-**Grit** extracts definitions, imports, and calls. **Repository** conservatively
-admits resolvable evidence and records coverage. A **repository world** identifies
-its source origin, exact content, and extraction/resolution/admission semantics;
-a changed source or semantic recipe cannot borrow another world's answers.
-
-**Flix** owns identity, relation application, Theory, study policies, and metrics.
-Narrow Java/native interfaces handle process launch, filesystem access, Grit, and
-columnar data. **Bazel** declares the computation graph: source facts and Theory
-shards can be shared across tasks, while prediction inputs remain separate from
-evaluator labels. **Nix** pins the developer environment. **BuildBuddy** supplies
-optional remote caching and execution.
-
-File reads, provider requests, and subprocesses are effectful work: they cost
-time or resources. Flix makes effects explicit; narrow interfaces perform them.
-In localization, Atlas-style structural analysis is a deterministic
-post-processing stage over retrieved candidates, supplying inspectable evidence
-for reranking. The build graph separates acquisition from this processing, so
-changed questions need not repeat unchanged source analysis or file embeddings.
-
-These are three separate forms of reuse: Attune memoizes exact semantic work;
-Bazel reuses unchanged action outputs; BuildBuddy can cache or execute those
-actions remotely. Faster offline replay is not evidence of an equivalent speedup
-for a live coding agent.
-
-## Other experiments: useful limits
-
-| Study | What was tested | What the retained evidence supports |
-| --- | --- | --- |
-| Coordination | Witness-bearing policies; independent and joint execution | Implemented and fixture-tested. No completed result for the original 32-pair real panel. |
-| ReviewBench | Plain source access versus packet-assisted review; 10-task pilot, 24-task holdout | Corrected inclusive valid findings: 18 versus 17. Known recall: 36.2% versus 27.7%, over 224 positive references. No demonstrated efficiency improvement. |
-
-All three ReviewBench packet calls across pilot and holdout were refused; zero
-were accepted. Final findings, checkpoint recovery, unresolved judgments, and
-mixed-version pilot attempts remain separate. Holdout review used 6,567,947
-provider-total tokens; evaluation used another 276,637. Dollar cost is unknown
-for plan-billed work.
-
-The [short report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md)
-explains populations, costs, and corrections. The
-[unchanged chronological archive](https://github.com/becker63/attune/blob/main/reports/localization-history.md)
-retains the longer research sequence, including superseded provisional figures.
-The [evidence guide](https://github.com/becker63/attune/tree/main/evidence)
-explains the committed tables and provider-free replay. Larger retained source
-archives and some embedding inputs remain external.
-
 <details>
 <summary>Checked application fixtures and their provenance</summary>
 
@@ -405,6 +413,33 @@ None can silently stand in for the others.
 
 </details>
 
+## Implementation
+
+```text
+source -> Grit observations -> admitted repository facts
+                                      |
+                        typed routes + bounded Datalog
+                                      |
+                           studies -> ASCII evidence
+```
+
+**Grit** extracts definitions, imports, and calls. **Repository** conservatively
+admits resolvable evidence and records coverage. A **repository world** identifies
+its source origin, exact content, and extraction/resolution/admission semantics;
+a changed source or semantic recipe cannot borrow another world's answers.
+
+**Flix** owns identity, relation application, Theory, study policies, and metrics.
+Narrow Java/native interfaces handle process launch, filesystem access, Grit, and
+columnar data. **Bazel** declares the computation graph: source facts and Theory
+shards can be shared across tasks, while prediction inputs remain separate from
+evaluator labels. **Nix** pins the developer environment. **BuildBuddy** supplies
+optional remote caching and execution.
+
+These are three separate forms of reuse: Attune memoizes exact semantic work;
+Bazel reuses unchanged action outputs; BuildBuddy can cache or execute those
+actions remotely. Faster offline replay is not evidence of an equivalent speedup
+for a live coding agent.
+
 ## Reproduce and inspect
 
 The active workspace remains under `attune/` so the declared source and isolation
@@ -433,6 +468,15 @@ The independent semantic tests, renderer goldens, and
 separate. Correspondence runs actual extraction, admission, and rendering,
 then compares all six marked examples byte for byte; it also checks local links.
 
+## Documentation and source
+
+| Read this | For |
+| --- | --- |
+| [Study report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) | Questions, populations, corrected results, costs, and limits. |
+| [Evidence guide](https://github.com/becker63/attune/tree/main/evidence) | Frozen table formats, exact hashes, and replay availability. |
+| [Historical archive](https://github.com/becker63/attune/blob/main/reports/localization-history.md) | The full, unchanged research chronology and provisional generations. |
+| [Release verification](https://github.com/becker63/attune/blob/main/RELEASE.md) | Exact passing targets and the original-checkout audit failure. |
+
 ```text
 README.md                 explanation and checked examples
 LOCALIZATION_REPORT.md    concise results, corrections, and limitations
@@ -449,11 +493,6 @@ Start with [core identity and relations](attune/src/Attune.flix),
 [design note](attune/notes/design.md). The design note distinguishes cognitive
 implementation, mechanical support, and tests/inherited artifacts; its soft
 budgets require review rather than hiding complexity in glue or fixtures.
-
-The existing local user directory `notes/repository-through-time/` is excluded
-from publication and preserved locally. It is known to fail the live workspace
-audit in that original checkout; the publication verification records both
-results rather than treating that failure as a passing gate.
 
 Licensed under [Apache 2.0](LICENSE). The previous Effect/Joern implementation
 remains on `archive/effect-joern-2026-10-12` in this repository.
