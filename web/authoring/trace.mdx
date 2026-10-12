@@ -1,0 +1,59 @@
+# BM25 beside Attune
+
+One issue. The same 393 files. Two ways to find an implementation.
+
+This is a **saved comparison on a known historical case**, separate from the frozen benchmark. When recorded, BM25 searched locally and Qwen obtained fresh embeddings; Flix ranked them. Atlas reused the pinned version’s facts and structural answers. No fixing paths entered those steps, and no model is running now.
+
+<TraceIdentity />
+
+## Begin with the words in the issue
+
+<TraceIssue />
+
+BM25 searches file paths and full source text. It rewards matching terms that are rarer across the candidate files, with a length adjustment. Qwen embeds the issue and raw file contents, then compares their vectors. The two methods use the same candidate files but deliberately different representations.
+
+<TraceRanks />
+
+## What each answer can explain
+
+On the left are actual word contributions to BM25's first result. On the right is a verified call path from Qwen's first result. These are different forms of evidence: one explains a lexical score, the other explains a program connection. Neither proves that a file requires a fix.
+
+<TraceMechanics />
+
+Atlas's expression is small enough to read as a sentence: **from this file, find a function it defines, a function that calls, and the file defining that called function**. The shared symbols make the three steps one connected path. It can name an implementation without requiring that implementation to repeat the issue's words.
+
+<CodeWalk name="calls" />
+
+<FlixBlock name="domains" />
+
+This actual Flix check gathers the input and output kinds used at each shared position and rejects a position assigned both kinds. `Defines` ends at a symbol; `Calls` begins at a symbol. They fit. `Imports` ends at a file, so it cannot be followed directly by `Calls`. This checks the question's construction, not its relevance to the bug.
+
+## What Jev actually receives
+
+The recorded request takes that run’s Qwen top 32 and attaches the saved relation summaries and structural-answer IDs. Below is the exact prepared question for the first candidate. The complete public request is in the downloadable trace.
+
+<TraceQuestion />
+
+<TraceJudgment />
+
+The graph above explains a source relationship for the reader. It is not a transcript of Jev traversing that graph. The structural condition supplies metadata, and stable promotion moves files judged Relevant ahead of the others while preserving each group's original order.
+
+<FlixBlock name="promotion" />
+
+<CodeWalk name="promote" />
+
+## Time is part of the mechanism
+
+<TraceTiming />
+
+The Qwen acquisition process includes request waiting and fixture materialization. The Flix rank stage includes compiler/launcher startup as well as ranking; its own test output separately reports the body duration. Atlas metadata assembly reads retained facts and witnesses—it does not measure source extraction or Theory matching from scratch. The recording includes manual setup gaps, so stage durations are not an uninterrupted end-to-end benchmark.
+
+BM25 is much cheaper to start here. Qwen's opportunity is to reuse file vectors for later issues. This recording does not measure a warm online query, and it does not establish that extra latency pays off across repositories.
+
+## Check the historical fix afterward
+
+<TraceReveal />
+
+This recording uses an explicit BM25 baseline: lowercase ASCII alphanumeric tokens over path plus source, unique query terms, no stemming or stop-word filter, `k1 = 1.2`, `b = 0.75`, score descending with path ascending for ties. It is not the census's path-token P arm. Qwen retains its original prefix, truncation and 4,096-dimensional recipe. This familiar example is explanatory, not held-out evidence.
+
+[Read how effects and artifact identity allow reuse →](#runtime)

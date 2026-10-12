@@ -1,0 +1,70 @@
+<Step>
+
+### Start with a file we already found.
+
+In Greenwood #1100, Qwen put **bundle.js first**. That gives us a useful starting point, but it is only one part of the fix.
+
+The question is simple: **what helper does this file use, and who else uses that helper?**
+
+<Story />
+
+</Step>
+
+<Step>
+
+### Read the arrows as sentences.
+
+**bundle.js imports resource-utils.js.** That is the first recorded fact.
+
+**graph.js also imports resource-utils.js.** That is the second. To find graph.js from the helper, read this import backward: “this helper is imported by graph.js.”
+
+Together, those facts tell us that two build stages use the same helper. They do **not** tell us that both stages have a bug.
+
+```text
+bundle.js ------> resource-utils.js <------ graph.js
+           uses                    used by
+
+Atlas calls these steps: Imports ; ImportedBy
+```
+
+</Step>
+
+<Step>
+
+### What Theory.flix contributes
+
+Theory checks that both arrows really exist **in the same source snapshot** and meet at **the same helper**. It will not fill a missing arrow with a guess.
+
+Think of its work as a sentence with blanks:
+
+> Start at this file. Find a file it imports. Return another file that imports that same file.
+
+This is an English explanation of a relation composition, not executable Flix. The browser displays the census’s saved match; it does not run Theory again.
+
+</Step>
+
+<Step>
+
+### Finding a connection is not the same as finding the fix.
+
+The shared helper was only **28th** in Qwen’s list. It stayed **28th** with Jev alone. With graph information supplied to Jev, it moved to **10th**.
+
+That change matters: Greenwood went from an incomplete result to **all eight fixing files in the top ten**.
+
+The recorded connection makes the helper’s role understandable. The study does not establish that this particular pair of arrows caused Jev’s decision.
+
+</Step>
+
+<Step>
+
+### One small piece of the actual Flix
+
+This rule keeps a matched pair only when its first member is the chosen starting point. Read `:-` as **“when”** and the comma as **“and.”**
+
+<Rule />
+
+In English: **keep this result when the connection matched, and it starts where we asked.** `w` is the source snapshot, `x` the starting point, and `y` the result. `c` identifies the connection description.
+
+The larger implementation also checks file and symbol types and gives equivalent descriptions a consistent identity. Those checks protect the match; they do not read an issue or assign a relevance score.
+
+</Step>

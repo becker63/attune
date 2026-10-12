@@ -1,0 +1,233 @@
+<Page id="benchmark">
+
+# Find the files. Check the historical fix.
+
+Give a method an issue and the repository **before the fix**. It proposes files to open. Then compare them with the files that actually changed. We did this for **85 issues across 22 repositories**.
+
+<p className="benchmark-jumps"><a href="#benchmark/dataset">Dataset</a> / <a href="#benchmark/cost">Time &amp; money</a> / <a href="#benchmark/jev">Jev alone</a> / <a href="#benchmark/structure">Without models</a> / <a href="#benchmark/metrics">Metrics</a> / <a href="#benchmark/results">Results</a> / <a href="#benchmark/bm25">BM25</a> / <a href="#benchmark/sol">Sol comparison</a></p>
+
+
+
+<h2 id="benchmark-results">The frozen results</h2>
+
+One right file can look like success while the other seven are missing. Here, the open circle counts issues with **any** required file in the first ten; the filled circle counts **every** required file. The gap is partial recovery.
+
+<Figure name="benchmark-recovery" />
+
+QJ adds Jev judgment to Qwen. QS instead gives that judgment Atlas clues. P counts matching words in file paths. Sol searches and reads the repository itself. **Sol’s scored misses include 19 tasks that fail a recorded implementation-read requirement**, not 19 demonstrated reasoning failures. [Its procedure and raw answers are shown below](#benchmark/sol).
+
+<h2 id="benchmark-cost">Qwen retrieval before the small judgment</h2>
+
+Qwen's cold embedding acquisition cost **$0.141**: **33× below** the **$4.65 estimated API bill** for 88 inspected Sol turns. On 85 eligible issues, Qwen found a required file within ten in 73 cases, versus 65 for Sol. Complete recovery was weaker: 38 versus 41.
+
+<Figure name="cost-money" />
+
+Adding structural context and Jev judgment brings known model spend to **$0.165—28× below the Sol estimate**. Cold acquisition made 351 embedding requests; unchanged warm replay made none. Warm wall time was not measured. All comparisons exclude source-analysis and computer costs. Sol's actual subscription bill is unknown.
+
+### Then judge the retrieved shortlist
+
+Jev judges at most 32 prepared files. Sol searches and reads a repository in a whole agent turn. Their timers cover different work.
+
+<Figure name="cost-latency" />
+
+The medians are 0.37 seconds for Jev and 28.94 seconds for Sol. Their 78× ratio excludes Jev's preparation; it does not measure a whole-workflow speedup. [Five kinds of wait](#overview) · [Preparation and replay](#runtime).
+
+<details className="technical-reading">
+<summary>Check the estimated Sol bill</summary>
+
+The estimate prices recorded new input, cached input and generated output separately at the published rates. Cached input is text the provider reports reusing internally. The retained plan bill is unavailable.
+
+<Figure name="cost-pricing" />
+
+</details>
+
+The estimate gives Sol its recorded provider cache discount. That is different from Attune keeping saved vectors: these are two separate kinds of reuse.
+
+<h2 id="benchmark-jev">What if Jev sees every file?</h2>
+
+We tried it in a new run of the current Jev model. **No embeddings, no Atlas, no shortlist.** Jev received the issue text and each eligible file path: 28,370 judgments across the same 85 issues. It never saw the implementation or the historical fix. Files marked Relevant come first; alphabetical path order breaks ties.
+
+<Figure name="benchmark-independent" />
+
+Jev alone finds something in **71/85 issues**, and everything in **46/85**. Qwen’s frozen results are **73/85** and **38/85**. Similar totals hide different discoveries: Jev finds **29 required paths** outside Qwen’s first ten, while Qwen finds **27** outside Jev’s. Even path-word matching finds ten required paths that Jev misses. Neither result contains the other.
+
+This tests whether judgment can operate without the other stages—it can. It does **not** prove that their errors are statistically independent, or that combining the answers would improve a future run. We have not evaluated that combination.
+
+<details className="technical-reading">
+<summary>How this new run differs from the frozen experiment</summary>
+
+Run date: 2026-10-11. All 28,370 choices succeeded, in 928 requests of at most 32 paths. The native model reports `jev-1.13.0`; the frozen judgment study reports `typesafe/jev-1.13-20260917`. The old dated route was unavailable. Both input scope and recorded model identity differ, so this is an exploratory comparison, not a controlled ablation of the frozen pipeline.
+
+The issue is the same retained prefix of at most 2,000 characters. No earlier rank or similarity score is supplied. Relevant files are stably promoted over an alphabetical starting order; NotRelevant and Unknown remain distinct and receive no promotion. There were 649 Relevant, 27,219 NotRelevant and 502 Unknown choices. A score is checked against the same 218 eligible historical fixing paths, after acquisition. We fixed the request and tie rule before collecting choices.
+
+Of Jev’s 111 recovered fixing-path occurrences, **107 were marked Relevant**, three Unknown and one NotRelevant. A file can still enter the first ten through the alphabetical fallback. As a separate sanity check, alphabetical order alone hits 15/85 issues and completely recovers seven. “In the list” and “the model said yes” are different observations.
+
+The connector returned token usage and request latencies, but no dollar charges. Cost is **unavailable**, not zero. The benchmark’s earlier 78× and 28× comparisons refer to the frozen prepared-shortlist condition, not this all-file run. [Requests, ordering and limits](jev-path-only-protocol.json) · [Every decision and its probabilities](sources/jev-path-only-decisions.tsv).
+
+</details>
+
+<h2 id="benchmark-dataset">85 issues, 22 repositories, 81 source snapshots</h2>
+
+We call eligible historical fixing paths **gold**. They stay out of the prediction input. Other files may explain the issue, but do not earn credit for a missing fixing path.
+
+<pre className="pattern-diagram">{`issue + pinned source ----> predicted file paths
+                                      |
+historical fixing paths --------------+----> score
+                         evaluation only`}</pre>
+
+We started with 96 tasks, four from each of 24 repository groups. Unfinished extraction removed Prettier and Lighthouse’s eight tasks. Three of the remaining 88 have no eligible fixing paths: Greenwood #1085, community-server #1040 and Spectral #1059. **85 tasks are scored; timing and acquisition can still cover 88.**
+
+A **world** is one exact repository version; several tasks can share it. The 85 tasks span **81 worlds**, with **41 single-file and 44 multi-file fixes** containing 218 eligible path occurrences. Several issues in one repository are repeated observations, not independent architectural examples.
+
+<Figure name="benchmark-cohort" />
+
+The admitted candidate files are JavaScript/TypeScript-family source, including tests. Eligible gold includes supported existing source paths changed, deleted or renamed by the fix; it excludes new files and tests. All 218 eligible gold occurrences are present in their task’s candidate list. This measures finding eligible modified files, not every file a developer might need to understand the issue.
+
+Each task has its own candidate set. Across the 85 eligible lists there are 28,370 file occurrences. The often-quoted 29,493 counts all 88 surviving task lists, including duplicated files when tasks share a world. It is not one giant search space or a count of unique files.
+
+The frozen eligible splits contain 50 development tasks from 13 groups, 20 calibration tasks from five groups, and 15 final tasks from four groups. The all-task view is descriptive; the final split is small. The panel concentrates on web frameworks, Node tooling, linting and developer utilities. It does not establish coverage of arbitrary languages or repository families.
+
+<h2 id="benchmark-metrics">What does a success mean?</h2>
+
+Slide the cutoff below. You are reading farther down the **same saved ranking**, not asking for a better prediction. Each `#` is a file in Greenwood’s historical fix.
+
+<Figure name="benchmark-metrics" />
+
+The `@k` means “look only at the first k returned paths.” A required file at rank 11 is missed at ten, even if the full ranking contains it. These measurements answer different questions:
+
+- **Hit@k — did we find anything?** One if at least one eligible required file appears; zero otherwise.
+- **Complete@k — did we find everything?** One only if every eligible required file appears. The canonical Flix name is `FileAcc@k`.
+- **Recall@k — how much of the fix did we find?** Recovered required files divided by that task’s required-file count.
+- **MRR@k — how early was the first hit?** The reciprocal of its rank: rank one gives 1, rank two gives 1/2. No hit inside k gives zero. The table’s MRR averages this over tasks.
+
+At ten, Greenwood’s Qwen ranking contains five of eight eligible required files. That is a Hit of 1, Complete of 0, Recall of 5/8, and reciprocal rank of 1 because the first file is relevant. Expanding the window to 28 finally includes all eight. No prediction changed; only the cutoff changed.
+
+<details className="technical-reading">
+<summary>Read the exact Flix scoring rule</summary>
+
+The evaluator first takes the prediction prefix. Then it keeps the gold paths found in that prefix. `List.memberOf` is an exact path-membership check: a plausible filename or a neighboring file does not earn partial credit for that path.
+
+<FlixBlock name="metricGold" />
+
+Hit asks whether that recovered list is nonempty. Complete recovery compares its length with the gold list’s length. Here is the actual complete-recovery rule; `not List.isEmpty(gold)` prevents an empty label from becoming a vacuous success.
+
+<FlixBlock name="metricComplete" />
+
+Ineligible tasks are excluded before aggregation. An eligible task with an abstention or a failed prediction stays in the denominator and receives zero. Also, a ten-path answer cannot completely recover a task with more than ten required files; two tasks in this cohort cross that bound.
+
+</details>
+
+## Read a little farther
+
+One guess, five guesses, ten guesses. Replay reveals the actual scores at those three cutoffs. The vertical scale is the same in each panel: how many of the 85 issues were recovered?
+
+<Figure name="benchmark-cutoffs" />
+
+Qwen’s any-file recovery rises from 35 issues at rank one to 73 at ten. Jev with structural context raises those counts to 52 and 78. Complete recovery at ten is lower: 38 for Qwen, 47 for the structural condition. The extra search depth and the judgment step answer different parts of the problem.
+
+## The same issues, side by side
+
+An aggregate gain does not mean every issue improves. Each thin column below follows one historical issue through all six procedures. Green means every required file was found; amber means only part of the fix; muted pink means none. The marks retain the repository grouping so repeated issues from one codebase remain visible.
+
+<Figure name="benchmark-outcomes" />
+
+## The exact scores
+
+The default table gives every eligible task equal weight. “Repositories equally” first averages within each repository, then averages the 22 repository means. The plots above use the 85-task view; changing the table’s scope does not change their denominator.
+
+<Figure name="benchmark-results" />
+
+The table includes three extra structural procedures. The main plots compare six procedures; archived CodeRankEmbed and replicated results remain in the downloadable source tables. There is no 85-task BM25 result to publish.
+
+On all 85 tasks, QS reaches **78 any-file hits and 47 complete recoveries**. Inspected Sol reaches **65 and 41**. On the final slice of 15 tasks, QS has 14 any-file hits and inspected Sol has 13; both completely recover ten. Four repository groups are too few for a broad generalization.
+
+A difference in these totals does not, by itself, isolate the value of model size, Atlas, or any particular relationship. The procedures have different inputs and output behavior.
+
+<h2 id="benchmark-structure">What does Atlas do without embeddings?</h2>
+
+Start with words in the issue, and use **no model calls**. P matches those words against paths. P+A also recognizes named files or functions—starting clues called **anchors**. P+A+F adds direct connections. P+A+D also uses Theory’s saved relationship answers.
+
+<Figure name="benchmark-structure" />
+
+At ten files, the path-only method finds something in **30/85** issues. Named starting points raise that to **35/85**, a net gain of five issues. The full structural method also finds **35/85**, and recovers every required file in **18/85**, compared with **14/85** for paths alone. At rank one, anchors raise hits from 10 to 16; adding the later structural scores reduces that count. Structure is useful here, but more structural scoring is not automatically better.
+
+This is structure **without models**, not without a starting clue. Preparing the source facts still costs time.
+
+The [architecture census](#patterns) helps explain why a repository can have rich, recognizable structure without an equally strong localization signal. Common utilities serve many behaviors, public entry points hide implementation files, and dynamic dependencies can escape the recorded relationships. These are source-grounded explanations to investigate, not a causal test proving why the aggregate gain is small.
+
+## Path-word matching: the baseline you can calculate yourself
+
+Could we do this with word matching alone? **P** compares the issue with each file’s **path**—its filename and folders. It never reads the implementation. Try this small example:
+
+<Figure name="reading-path-words" />
+
+Lowercase, split into word-like pieces, discard pieces shorter than three characters, and remove repeats. Count the whole words shared with the issue. Put larger counts first; break ties by the original path. These pieces are called **tokens**, but they are not model billing tokens.
+
+The small trap: `receipt_total` stays one word, and `receiptTotal` becomes `receipttotal`. Neither splits into `receipt` and `total`. A separator is anything except a letter, digit or underscore.
+
+<FlixBlock name="pathScore" />
+
+`pathTokens` is the path’s word list. `foldLeft` starts at zero and visits the issue words: add one if the word is present, otherwise keep the count. The score is a count, not a probability. There is no stemming, semantic similarity, learned weight or hidden inference call.
+
+<details className="technical-reading">
+<summary>Read the exact tokenizer</summary>
+
+<FlixBlock name="pathTokens" />
+
+The code uses `Char.isLetterOrDigit`, including Unicode letters; the old ASCII-only comment is narrower than the implementation. `c :: rest` separates the next character from the rest of the list; `Nil` ends it. Accepted characters extend `current`. A separator finishes that piece and starts another. The final filter keeps pieces of length at least three, and `distinct` removes repeats. [The ordering key](sources/path-order.flix) reverses score order and then uses the path to break ties.
+
+</details>
+
+P misses behavior whose name is absent from the path. Qwen also sees source text. **P and Q are alternative starting rankings**, not two steps in sequence. Beating P means beating this simple rule, not every possible word-search method.
+
+<h2 id="benchmark-bm25">BM25: a measured comparison on one issue</h2>
+
+BM25 searches for the issue’s words in file paths and source text. Matching a term that appears in few files contributes more; term frequency and document length also affect the score. The retained Greenwood recording compares BM25 and Qwen on exactly the same 393 candidate paths. This is an existing recording, not a new model run.
+
+<Figure name="benchmark-bm25" />
+
+Qwen puts five of the eight fixing files in the first ten; BM25 puts three there. But BM25 ranks the shared `resource-utils.js` helper at 11, ahead of Qwen’s 24. That counterexample is useful: the embedding improves several ranks without improving every rank. Neither method recovers the whole fix at ten in this recording.
+
+BM25’s one-issue result is not P’s **30/85** cohort score. Different method, different evidence.
+
+<h2 id="benchmark-sol">What did Sol actually do?</h2>
+
+The frontier comparison uses `gpt-6.1-sol` at medium effort. The original and inspected runs are distinct frozen arms. The original run observed no tool calls and often abstained; treating it as a strong repository-reading baseline would be misleading. The inspected run explicitly required searching and reading implementation files before returning up to ten existing paths.
+
+<BenchmarkProtocols />
+
+Both Sol procedures were one bounded turn per task. They saw the public issue and clean repository, with the historical labels withheld. The inspected run returned a mean of 3.23 paths across 88 turns, rather than a complete candidate ranking. Its prompt asked it to avoid padding an answer. A ten-position scoring window is therefore not the same thing as ten returned predictions.
+
+## Each finds things the other misses
+
+Inspected Sol finds a required file in **all seven tasks that QS misses**. QS has 20 hits that inspected Sol is scored as missing; 19 of those Sol results fail the recorded implementation-read requirement described below. Both hit 58 tasks. Switch to complete recovery and the overlap changes again. This is a comparison of existing answers, not a proposed ensemble or a newly evaluated combined system.
+
+<Figure name="benchmark-pairs" />
+
+The Sol scores have an important qualification. The inspected procedure required a recorded nonempty implementation read. **20 of 88 turns fail that requirement; 19 are in the 85-task scoring cohort.** Their receipts contain inspection commands, but the frozen projection could not name an implementation read. The original scoring keeps those tasks as misses. They are not 19 demonstrated failures to reason about the code.
+
+The following Flix function shows exactly where that requirement enters. An otherwise successful turn with no qualifying read becomes a protocol failure before its paths reach the metric reducer. The website preserves that rule; it does not silently rescore the raw answer.
+
+<FlixBlock name="solFloor" />
+
+## Open the actual answers
+
+FxTS illustrates a real Sol success where QS misses the only eligible required file. Greenwood illustrates why a scored Sol miss can be an instrumentation issue: the raw answer names relevant files, but its inspection record fails the declared requirement. Carbon shows complete recovery by Sol where QS finds only part of the fix.
+
+<Figure name="benchmark-answers" />
+
+## The preparation bill is not just inference
+
+The source reader recognizes definitions, imports and calls; Flix checks their targets. In the recorded build, the longest extraction process took **42.5 minutes**. A fast judgment on prepared data does not erase that cost. [Replay all 92 extraction actions and inspect their timing distribution](#extraction).
+
+## What we learned—and what we did not
+
+Learned retrieval is strong in this panel. Narrow judgment improves its ordering, and structural context adds a smaller aggregate improvement with individual regressions. Sol’s different procedure recovers issues that the ranked pipeline misses. None of these observations establishes general model superiority, causal credit for a particular Atlas operator, or performance on an unseen architectural population.
+
+The benchmark labels are change-path labels, not a manually verified minimum explanation. New files, unsupported source and tests can matter to a real fix while being ineligible here. Source names and code snippets in an issue can make retrieval easier. These limits are part of the problem being measured, not footnotes to remove from the denominator.
+
+[Inspect all 85 issues](#field) · [Return to the Qwen → Atlas → Jev walkthrough](#retrieval)
+
+<p className="source-link">Evidence: <a href="benchmark.json" download="">presentation data with source hashes</a> · <a href="sources/strict_metrics.tsv" download="">canonical ranking metrics</a> · <a href="sources/sol_inspected_metrics.tsv" download="">canonical Sol metrics</a>. The original manifests, labels, predictions and Flix engine remain unchanged.</p>
+
+</Page>

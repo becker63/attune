@@ -1,0 +1,848 @@
+{
+  "rows": [
+    {
+      "world": "w69",
+      "repository": "sindresorhus/got",
+      "revision": "f9f2807e63635432ab175824859caa70e3c583aa",
+      "seconds": 17.248000000000047,
+      "start": 3281.750699,
+      "end": 3298.998699,
+      "outlier": false
+    },
+    {
+      "world": "w71",
+      "repository": "sindresorhus/got",
+      "revision": "cecea2d1081c2dc255995229cbcf4eff92a7efb1",
+      "seconds": 17.478999999999928,
+      "start": 580.54655,
+      "end": 598.02555,
+      "outlier": false
+    },
+    {
+      "world": "w70",
+      "repository": "sindresorhus/got",
+      "revision": "f9078b6440eefd3a8ebf15ff07b61d2bc1b27b8b",
+      "seconds": 17.55499999999938,
+      "start": 4646.684992,
+      "end": 4664.239992,
+      "outlier": false
+    },
+    {
+      "world": "w24",
+      "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+      "revision": "df0faf840109374be3f74778e4302820de5df497",
+      "seconds": 19.98600000000033,
+      "start": 3508.300899,
+      "end": 3528.286899,
+      "outlier": false
+    },
+    {
+      "world": "w26",
+      "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+      "revision": "54590cf89a1d6dcac5352a908ee16f75adb087fd",
+      "seconds": 21.28800000000001,
+      "start": 3588.142699,
+      "end": 3609.430699,
+      "outlier": false
+    },
+    {
+      "world": "w92",
+      "repository": "pinojs/pino",
+      "revision": "5e5e543033f5a0596142e0c8af6693a393c28013",
+      "seconds": 22.01800000000003,
+      "start": 659.823329,
+      "end": 681.841329,
+      "outlier": false
+    },
+    {
+      "world": "w25",
+      "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+      "revision": "1f8f414a487a0f8d67c37b7de13fda7848f5ac67",
+      "seconds": 22.403000000000247,
+      "start": 3507.963214,
+      "end": 3530.366214,
+      "outlier": false
+    },
+    {
+      "world": "w63",
+      "repository": "ember-cli/eslint-plugin-ember",
+      "revision": "9cde36a38d1e57cd64812a7a44ac0f42df16905c",
+      "seconds": 23.088999999999942,
+      "start": 4960.45412,
+      "end": 4983.54312,
+      "outlier": false
+    },
+    {
+      "world": "w23",
+      "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+      "revision": "0c95c3f83e9ab70e77d552210f94928fce6808b3",
+      "seconds": 28.846000000000004,
+      "start": 3406.701893,
+      "end": 3435.547893,
+      "outlier": false
+    },
+    {
+      "world": "w17",
+      "repository": "JoshuaKGoldberg/create-typescript-app",
+      "revision": "a64a9c7f55de23c8f80633dd0e6d4353fcd1f220",
+      "seconds": 33.289999999999964,
+      "start": 3154.161221,
+      "end": 3187.451221,
+      "outlier": false
+    },
+    {
+      "world": "w19",
+      "repository": "JoshuaKGoldberg/create-typescript-app",
+      "revision": "be806ca42a57a0e97108d3a736288d225967616a",
+      "seconds": 33.848999999999705,
+      "start": 3272.698279,
+      "end": 3306.547279,
+      "outlier": false
+    },
+    {
+      "world": "w18",
+      "repository": "JoshuaKGoldberg/create-typescript-app",
+      "revision": "834a44de5b4a7f3e4be4925a68911e192cbba2de",
+      "seconds": 35.228999999999814,
+      "start": 3158.714303,
+      "end": 3193.943303,
+      "outlier": false
+    },
+    {
+      "world": "w16",
+      "repository": "JoshuaKGoldberg/create-typescript-app",
+      "revision": "6f260c8df819bd796252ae3797809bf40d915520",
+      "seconds": 36.91600000000017,
+      "start": 3267.064082,
+      "end": 3303.980082,
+      "outlier": false
+    },
+    {
+      "world": "w52",
+      "repository": "solid/community-server",
+      "revision": "b1991cb08ae722aae497104067a7a455456952c7",
+      "seconds": 43.833,
+      "start": 70.22581,
+      "end": 114.05881,
+      "outlier": false
+    },
+    {
+      "world": "w36",
+      "repository": "obsidian-tasks-group/obsidian-tasks",
+      "revision": "7716c2894fd721e6de5691066647822b3c7a1bad",
+      "seconds": 47.13599999999997,
+      "start": 3955.780317,
+      "end": 4002.916317,
+      "outlier": false
+    },
+    {
+      "world": "w37",
+      "repository": "obsidian-tasks-group/obsidian-tasks",
+      "revision": "04c621db3117b8ccaaa57c10ea212c682e27e716",
+      "seconds": 49.64300000000003,
+      "start": 3843.807672,
+      "end": 3893.450672,
+      "outlier": false
+    },
+    {
+      "world": "w58",
+      "repository": "marpple/FxTS",
+      "revision": "54cf5d26171a9c7632d459c97b5c2853b4190ac9",
+      "seconds": 50.577999999999975,
+      "start": 3899.798088,
+      "end": 3950.376088,
+      "outlier": false
+    },
+    {
+      "world": "w53",
+      "repository": "solid/community-server",
+      "revision": "f6f45c0ece35ed72c14224925e4711ae4d756520",
+      "seconds": 51.29600000000001,
+      "start": 19.072616,
+      "end": 70.368616,
+      "outlier": false
+    },
+    {
+      "world": "w60",
+      "repository": "marpple/FxTS",
+      "revision": "2738b9ae070b173d0bd78036168f09426581401c",
+      "seconds": 53.16300000000001,
+      "start": 365.822929,
+      "end": 418.985929,
+      "outlier": false
+    },
+    {
+      "world": "w59",
+      "repository": "marpple/FxTS",
+      "revision": "7b099745fd3038f9155d74b8b76c3a7561073a9e",
+      "seconds": 56.678,
+      "start": 9.70215,
+      "end": 66.38015,
+      "outlier": false
+    },
+    {
+      "world": "w33",
+      "repository": "vuejs/eslint-plugin-vue",
+      "revision": "ee4143b08d57a279dc17fb5ebccd212dfc122d86",
+      "seconds": 60.451999999999316,
+      "start": 4498.957846,
+      "end": 4559.409846,
+      "outlier": false
+    },
+    {
+      "world": "w12",
+      "repository": "platers/obsidian-linter",
+      "revision": "d3515fe32804f4ec495d993f10eabbf4b9fa6161",
+      "seconds": 62.228999999999814,
+      "start": 1066.057461,
+      "end": 1128.286461,
+      "outlier": false
+    },
+    {
+      "world": "w13",
+      "repository": "platers/obsidian-linter",
+      "revision": "5ed573398e717b06f2afa65818224cf0abc1ab2a",
+      "seconds": 62.53099999999995,
+      "start": 2861.844055,
+      "end": 2924.375055,
+      "outlier": false
+    },
+    {
+      "world": "w32",
+      "repository": "vuejs/eslint-plugin-vue",
+      "revision": "99fe70dd45097ed4a7c8bdc60cf98e30ee57afac",
+      "seconds": 62.67700000000059,
+      "start": 4584.683467,
+      "end": 4647.360467,
+      "outlier": false
+    },
+    {
+      "world": "w15",
+      "repository": "platers/obsidian-linter",
+      "revision": "4a0724ab6a3f8340ea3a48f491f6f08bdaa86e57",
+      "seconds": 63.41000000000031,
+      "start": 3045.89785,
+      "end": 3109.30785,
+      "outlier": false
+    },
+    {
+      "world": "w14",
+      "repository": "platers/obsidian-linter",
+      "revision": "4cd434c20a3e1384911680c7eaf1414a59ee0205",
+      "seconds": 63.983000000000175,
+      "start": 3014.394233,
+      "end": 3078.377233,
+      "outlier": false
+    },
+    {
+      "world": "w90",
+      "repository": "pinojs/pino",
+      "revision": "21ee5e2a03835dca7652f7b66905ae436c92e7d1",
+      "seconds": 64.60500000000047,
+      "start": 4838.097409,
+      "end": 4902.702409,
+      "outlier": false
+    },
+    {
+      "world": "w89",
+      "repository": "pinojs/pino",
+      "revision": "c57c25855d89a2c481914672bbdeebe7ec3087c7",
+      "seconds": 66.40200000000004,
+      "start": 2706.431008,
+      "end": 2772.833008,
+      "outlier": false
+    },
+    {
+      "world": "w91",
+      "repository": "pinojs/pino",
+      "revision": "1726618447f01ed90276d92d2ae196c252770e01",
+      "seconds": 66.8690000000006,
+      "start": 4919.325357,
+      "end": 4986.194357,
+      "outlier": false
+    },
+    {
+      "world": "w73",
+      "repository": "stoplightio/spectral",
+      "revision": "20774dca6b244aa11dfea9ee76de2a76c5f9d98a",
+      "seconds": 66.9380000000001,
+      "start": 5214.590735,
+      "end": 5281.528735,
+      "outlier": false
+    },
+    {
+      "world": "w74",
+      "repository": "stoplightio/spectral",
+      "revision": "d2803e9f9a7c6e185cb7ecc6f492cc81f312889f",
+      "seconds": 68.86899999999969,
+      "start": 5101.705474,
+      "end": 5170.574474,
+      "outlier": false
+    },
+    {
+      "world": "w75",
+      "repository": "stoplightio/spectral",
+      "revision": "ec6b829a8bfa047882b9939738c6f95eb180c5aa",
+      "seconds": 69.202,
+      "start": 10.080365,
+      "end": 79.282365,
+      "outlier": false
+    },
+    {
+      "world": "w64",
+      "repository": "ember-cli/eslint-plugin-ember",
+      "revision": "c879157460fad4353f826c924f2e41761427337e",
+      "seconds": 75.918,
+      "start": 9.098475,
+      "end": 85.016475,
+      "outlier": false
+    },
+    {
+      "world": "w61",
+      "repository": "ember-cli/eslint-plugin-ember",
+      "revision": "fcdb389919d704177bdf78bbf6ca2f21b30e516b",
+      "seconds": 77.0659999999998,
+      "start": 4271.016374,
+      "end": 4348.082374,
+      "outlier": false
+    },
+    {
+      "world": "w62",
+      "repository": "ember-cli/eslint-plugin-ember",
+      "revision": "88c231a3cb54248ed0f60f05b9733834bc75e83e",
+      "seconds": 77.0949999999998,
+      "start": 4069.907694,
+      "end": 4147.002694,
+      "outlier": false
+    },
+    {
+      "world": "w66",
+      "repository": "singapore/renovate",
+      "revision": "af8f11dbbfb03982ead3cb627a2a2b49eaa1abd1",
+      "seconds": 81.42700000000002,
+      "start": 172.989208,
+      "end": 254.416208,
+      "outlier": false
+    },
+    {
+      "world": "w67",
+      "repository": "singapore/renovate",
+      "revision": "50295417d4ff68571bd90e9e75cdd1daf5a08ed2",
+      "seconds": 85.6869999999999,
+      "start": 5197.897442,
+      "end": 5283.584442,
+      "outlier": false
+    },
+    {
+      "world": "w76",
+      "repository": "stoplightio/spectral",
+      "revision": "40a39628cd2cb9e907d5e052d9d186838c70659e",
+      "seconds": 85.70699999999988,
+      "start": 3139.555534,
+      "end": 3225.262534,
+      "outlier": false
+    },
+    {
+      "world": "w65",
+      "repository": "singapore/renovate",
+      "revision": "8d91a85fb72490c996fd953925a9e3a856c35b5f",
+      "seconds": 85.80699999999979,
+      "start": 4986.756816,
+      "end": 5072.563816,
+      "outlier": false
+    },
+    {
+      "world": "w72",
+      "repository": "sindresorhus/got",
+      "revision": "c25af092bf792c2c7e29db848a569f2eb3e527f8",
+      "seconds": 86.02400000000034,
+      "start": 4898.504201,
+      "end": 4984.528201,
+      "outlier": false
+    },
+    {
+      "world": "w68",
+      "repository": "singapore/renovate",
+      "revision": "0427604de61a6a1783f208d9858320c29950b794",
+      "seconds": 86.03099999999995,
+      "start": 4650.1674,
+      "end": 4736.1984,
+      "outlier": false
+    },
+    {
+      "world": "w40",
+      "repository": null,
+      "revision": null,
+      "seconds": 90.13999999999987,
+      "start": 3189.668346,
+      "end": 3279.808346,
+      "outlier": false
+    },
+    {
+      "world": "w38",
+      "repository": null,
+      "revision": null,
+      "seconds": 93.0,
+      "start": 3698.629913,
+      "end": 3791.629913,
+      "outlier": false
+    },
+    {
+      "world": "w46",
+      "repository": "ProjectEvergreen/greenwood",
+      "revision": "76f943ef09dedce2c3ee9deecb562c298d00f271",
+      "seconds": 93.09899999999993,
+      "start": 464.987834,
+      "end": 558.086834,
+      "outlier": false
+    },
+    {
+      "world": "w47",
+      "repository": "ProjectEvergreen/greenwood",
+      "revision": "e7a08b6fcf7aa60f69491ec6aff591823991b7f6",
+      "seconds": 93.427,
+      "start": 46.453998,
+      "end": 139.880998,
+      "outlier": false
+    },
+    {
+      "world": "w39",
+      "repository": null,
+      "revision": null,
+      "seconds": 94.12199999999984,
+      "start": 3505.070412,
+      "end": 3599.192412,
+      "outlier": false
+    },
+    {
+      "world": "w54",
+      "repository": "FormidableLabs/urql",
+      "revision": "8e7fc5ce1451b24f569343011da717362c1ba3f0",
+      "seconds": 98.40099999999984,
+      "start": 3354.163406,
+      "end": 3452.564406,
+      "outlier": false
+    },
+    {
+      "world": "w48",
+      "repository": "ProjectEvergreen/greenwood",
+      "revision": "7ff06de494ddebd1e97e6ba65401d5c931b0eaf6",
+      "seconds": 98.87600000000003,
+      "start": 280.203852,
+      "end": 379.079852,
+      "outlier": false
+    },
+    {
+      "world": "w56",
+      "repository": "FormidableLabs/urql",
+      "revision": "935db592cf3365e29d351d654d6bdd7d3bc1e9d1",
+      "seconds": 100.04600000000028,
+      "start": 4738.079312,
+      "end": 4838.125312,
+      "outlier": false
+    },
+    {
+      "world": "w55",
+      "repository": "FormidableLabs/urql",
+      "revision": "2527996491103e5ce17328071e67583f5b498c70",
+      "seconds": 100.119,
+      "start": 11.040211,
+      "end": 111.159211,
+      "outlier": false
+    },
+    {
+      "world": "w57",
+      "repository": "FormidableLabs/urql",
+      "revision": "da5a2eba69afdc5c176066c1ea1e2311d4c1435d",
+      "seconds": 101.21799999999985,
+      "start": 4722.408285,
+      "end": 4823.626285,
+      "outlier": false
+    },
+    {
+      "world": "w49",
+      "repository": "ProjectEvergreen/greenwood",
+      "revision": "3003f49d1f0415e6ca2786f49a7747ea3817a774",
+      "seconds": 101.23700000000002,
+      "start": 158.476135,
+      "end": 259.713135,
+      "outlier": false
+    },
+    {
+      "world": "w43",
+      "repository": "jsx-eslint/eslint-plugin-react",
+      "revision": "ef733fd420c821f7159b28f4a36ce5e09375f9b8",
+      "seconds": 105.57099999999991,
+      "start": 828.495706,
+      "end": 934.066706,
+      "outlier": false
+    },
+    {
+      "world": "w44",
+      "repository": "jsx-eslint/eslint-plugin-react",
+      "revision": "aac7fb9bc48427539839280ea522ccbe50458ac1",
+      "seconds": 106.50100000000009,
+      "start": 746.424464,
+      "end": 852.925464,
+      "outlier": false
+    },
+    {
+      "world": "w45",
+      "repository": "jsx-eslint/eslint-plugin-react",
+      "revision": "87fb344c9509f8c31e9bd4a49d31576397a89ebc",
+      "seconds": 106.65600000000006,
+      "start": 638.209797,
+      "end": 744.865797,
+      "outlier": false
+    },
+    {
+      "world": "w42",
+      "repository": "jsx-eslint/eslint-plugin-react",
+      "revision": "2575bba0ae30b1b0b4013539be3b0dc4eb8114eb",
+      "seconds": 110.31600000000003,
+      "start": 951.16119,
+      "end": 1061.47719,
+      "outlier": false
+    },
+    {
+      "world": "w31",
+      "repository": "vuejs/eslint-plugin-vue",
+      "revision": "47e3f89a554ada9f32acd48088abbb7d40d51b5e",
+      "seconds": 110.31800000000021,
+      "start": 4404.853634,
+      "end": 4515.171634,
+      "outlier": false
+    },
+    {
+      "world": "w20",
+      "repository": "sveltejs/kit",
+      "revision": "842337b35a7c5fb49917c409e773ac5d9c61049d",
+      "seconds": 117.46299999999974,
+      "start": 3342.515386,
+      "end": 3459.978386,
+      "outlier": false
+    },
+    {
+      "world": "w21",
+      "repository": "sveltejs/kit",
+      "revision": "80233c279f94e6aa86888b24147d46141c3ea688",
+      "seconds": 131.49000000000024,
+      "start": 3357.527067,
+      "end": 3489.017067,
+      "outlier": false
+    },
+    {
+      "world": "w22",
+      "repository": "sveltejs/kit",
+      "revision": "b7ebff7ecdac6b7e6901553ada453743b18d78e4",
+      "seconds": 150.91400000000021,
+      "start": 3586.246866,
+      "end": 3737.160866,
+      "outlier": false
+    },
+    {
+      "world": "w79",
+      "repository": "firebase/firebase-tools",
+      "revision": "63ed7b1d005c9d65956910fa8d523571da271bc1",
+      "seconds": 156.02499999999998,
+      "start": 749.252836,
+      "end": 905.277836,
+      "outlier": false
+    },
+    {
+      "world": "w78",
+      "repository": "firebase/firebase-tools",
+      "revision": "e04591d4965746af1b7e36873265dcf4cbd5cb6c",
+      "seconds": 156.42100000000028,
+      "start": 4726.938926,
+      "end": 4883.359926,
+      "outlier": false
+    },
+    {
+      "world": "w77",
+      "repository": "firebase/firebase-tools",
+      "revision": "ba06f6dc34e64ef53a9cf002bacd6cdd0675749f",
+      "seconds": 157.10699999999997,
+      "start": 2886.54787,
+      "end": 3043.65487,
+      "outlier": false
+    },
+    {
+      "world": "w50",
+      "repository": "solid/community-server",
+      "revision": "b0208bf4699ce96c4e30ab6603089c1d8b5f2aef",
+      "seconds": 161.833,
+      "start": 143.484209,
+      "end": 305.317209,
+      "outlier": false
+    },
+    {
+      "world": "w80",
+      "repository": "firebase/firebase-tools",
+      "revision": "c8de003b82acd00dc244a30c6b5c21c615c57b09",
+      "seconds": 162.10600000000068,
+      "start": 4589.684122,
+      "end": 4751.790122,
+      "outlier": false
+    },
+    {
+      "world": "w51",
+      "repository": "solid/community-server",
+      "revision": "e604c0c2e427f7cf426cda6e3a52c2d72b997057",
+      "seconds": 177.25,
+      "start": 121.379721,
+      "end": 298.629721,
+      "outlier": false
+    },
+    {
+      "world": "w81",
+      "repository": null,
+      "revision": null,
+      "seconds": 277.0140000000001,
+      "start": 4840.139536,
+      "end": 5117.153536,
+      "outlier": false
+    },
+    {
+      "world": "w82",
+      "repository": null,
+      "revision": null,
+      "seconds": 280.692,
+      "start": 3515.091876,
+      "end": 3795.783876,
+      "outlier": false
+    },
+    {
+      "world": "w87",
+      "repository": "elastic/synthetics",
+      "revision": "7c3bd6475040967ffae003e0509df502ced35f64",
+      "seconds": 342.5649999999996,
+      "start": 5019.988368,
+      "end": 5362.553368,
+      "outlier": false
+    },
+    {
+      "world": "w85",
+      "repository": "elastic/synthetics",
+      "revision": "01c81e9607da4c0f57f83c775f810bc22861c5db",
+      "seconds": 342.77400000000034,
+      "start": 5028.488324,
+      "end": 5371.262324,
+      "outlier": false
+    },
+    {
+      "world": "w88",
+      "repository": "elastic/synthetics",
+      "revision": "7384dc9588c3773f4f639387047faf3393e621f0",
+      "seconds": 343.70500000000084,
+      "start": 4448.572842,
+      "end": 4792.277842,
+      "outlier": false
+    },
+    {
+      "world": "w86",
+      "repository": "elastic/synthetics",
+      "revision": "769e2e8b36229b1f48be3349d5c1f679ed210ffe",
+      "seconds": 350.24299999999994,
+      "start": 1105.920893,
+      "end": 1456.163893,
+      "outlier": false
+    },
+    {
+      "world": "w83",
+      "repository": null,
+      "revision": null,
+      "seconds": 474.1180000000004,
+      "start": 5286.431673,
+      "end": 5760.549673,
+      "outlier": false
+    },
+    {
+      "world": "w1",
+      "repository": "serverless/serverless",
+      "revision": "2ac55b01bee405c5ca719f4b52166399b9d6f48a",
+      "seconds": 499.005,
+      "start": 132.683858,
+      "end": 631.688858,
+      "outlier": false
+    },
+    {
+      "world": "w4",
+      "repository": "serverless/serverless",
+      "revision": "17d64e6c94b88a5daf36f28a4fa192c231052cfb",
+      "seconds": 502.05899999999997,
+      "start": 323.297109,
+      "end": 825.356109,
+      "outlier": false
+    },
+    {
+      "world": "w2",
+      "repository": "serverless/serverless",
+      "revision": "4d64730130c44cdfbb872f8a16111df409135dc8",
+      "seconds": 502.45799999999997,
+      "start": 18.928501,
+      "end": 521.386501,
+      "outlier": false
+    },
+    {
+      "world": "w3",
+      "repository": "serverless/serverless",
+      "revision": "83e194cb17b5b932bcc866f2543351b64fde329a",
+      "seconds": 515.317,
+      "start": 140.026063,
+      "end": 655.343063,
+      "outlier": false
+    },
+    {
+      "world": "w28",
+      "repository": "Sage/carbon",
+      "revision": "5be5f330c7dc88fc30f5362c7d4f9c9d0ada74bf",
+      "seconds": 580.846,
+      "start": 3707.703889,
+      "end": 4288.549889,
+      "outlier": false
+    },
+    {
+      "world": "w30",
+      "repository": "Sage/carbon",
+      "revision": "18bca960fd0fbd8893c18415eb9a79eed23fdc0a",
+      "seconds": 598.3510000000001,
+      "start": 3898.084402,
+      "end": 4496.435402,
+      "outlier": false
+    },
+    {
+      "world": "w29",
+      "repository": "Sage/carbon",
+      "revision": "bde9df23ae9b494ebb6a63dc20355337cda5e062",
+      "seconds": 606.6239999999998,
+      "start": 3976.434521,
+      "end": 4583.058521,
+      "outlier": true
+    },
+    {
+      "world": "w27",
+      "repository": "Sage/carbon",
+      "revision": "f303f8d3d3204b1c947ae749bd6f1bf96233b888",
+      "seconds": 658.3279999999995,
+      "start": 3770.509191,
+      "end": 4428.837191,
+      "outlier": true
+    },
+    {
+      "world": "w8",
+      "repository": "FHIR/sushi",
+      "revision": "2f6adfd82de60ef6d810a3345dc953c7387da732",
+      "seconds": 1873.6700000000003,
+      "start": 1192.120577,
+      "end": 3065.790577,
+      "outlier": true
+    },
+    {
+      "world": "w11",
+      "repository": "FHIR/sushi",
+      "revision": "d8f56185677f9748d7a759c624bdf3d2192dd3c9",
+      "seconds": 1916.991,
+      "start": 967.407033,
+      "end": 2884.398033,
+      "outlier": true
+    },
+    {
+      "world": "w10",
+      "repository": "FHIR/sushi",
+      "revision": "663286ef961c7546f71ba9e86e1e6862e4ff7046",
+      "seconds": 1920.6739999999998,
+      "start": 1483.570132,
+      "end": 3404.244132,
+      "outlier": true
+    },
+    {
+      "world": "w9",
+      "repository": "FHIR/sushi",
+      "revision": "301e66940a2265a467debff69c5c3bfaeb06931a",
+      "seconds": 1989.6629999999998,
+      "start": 1873.840551,
+      "end": 3863.503551,
+      "outlier": true
+    },
+    {
+      "world": "w5",
+      "repository": "eslint/eslint",
+      "revision": "22ff6f3ab122f61c10fa51f9b1082f2e6f302938",
+      "seconds": 2044.737,
+      "start": 2223.365664,
+      "end": 4268.102664,
+      "outlier": true
+    },
+    {
+      "world": "w7",
+      "repository": "eslint/eslint",
+      "revision": "abc765c1bc6b546db82cb5cd038b66a3aa68b315",
+      "seconds": 2065.07,
+      "start": 637.916651,
+      "end": 2702.986651,
+      "outlier": true
+    },
+    {
+      "world": "w6",
+      "repository": "eslint/eslint",
+      "revision": "4f595e8a7cc1fefae866d2cf0e758515d6098e3c",
+      "seconds": 2083.522,
+      "start": 2102.071008,
+      "end": 4185.593008,
+      "outlier": true
+    },
+    {
+      "world": "w35",
+      "repository": "obsidian-tasks-group/obsidian-tasks",
+      "revision": "1164899d6b4b251db81dff1edcc836d4192d833a",
+      "seconds": 2520.687000000001,
+      "start": 6878.172414,
+      "end": 9398.859414,
+      "outlier": true
+    },
+    {
+      "world": "w34",
+      "repository": "obsidian-tasks-group/obsidian-tasks",
+      "revision": "d48284e82386548e13c1471fc9dc1771d3d736be",
+      "seconds": 2548.7440000000006,
+      "start": 8109.987062,
+      "end": 10658.731062,
+      "outlier": true
+    }
+  ],
+  "missing": [
+    {
+      "world": "w84",
+      "repository": null,
+      "revision": null
+    },
+    {
+      "world": "w41",
+      "repository": null,
+      "revision": null
+    }
+  ],
+  "stats": {
+    "n": 90,
+    "min": 17.248000000000047,
+    "q1": 62.56750000000011,
+    "median": 93.77449999999993,
+    "q3": 279.77250000000004,
+    "mean": 344.57738888888895,
+    "max": 2548.7440000000006,
+    "p95": 2019.9536999999998,
+    "lower_whisker": 17.248000000000047,
+    "upper_whisker": 598.3510000000001,
+    "lower_fence": -263.2399999999998,
+    "upper_fence": 605.5799999999999,
+    "outliers": 11
+  },
+  "measurement": "Remote execution process wall time inside world_extract actions; Grit + Java + Flix, not isolated parsing.",
+  "population": "92 actions in an interrupted, partly cached build; 90 process intervals observed, 2 missing.",
+  "quantiles": "Linear interpolation at (n-1)*p, also called R type 7. Whiskers end at observed values within Q1/Q3 +/- 1.5 IQR.",
+  "provenance": {
+    "/home/becker/experiments/attune-localization-ascii-20261010/dist/evidence.json": "59b933a96356ed57c838bb7379aee2e61a43c8e31c3ef19521c44ecb35433c3d",
+    "/home/becker/experiments/attune-localization-pattern-census-20261010/world-inventory.tsv": "72106fc51ed0bbbf95fb3304143ef7cb6d8b07a1869ece38bdf3608c23c778c3"
+  }
+}

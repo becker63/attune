@@ -1,0 +1,40 @@
+<Page id="history">
+
+# Attune over time
+
+Three files change. Fifteen recorded calls disappear. Yet two of our headline measurements do not budge.
+
+That happened during a cleanup of Attune. We asked the same connection-following questions before and after the edit. Some individual answers changed, but the proportion of empty answers and the total reach stayed the same. **A summary can hold still while its details move.**
+
+<Figure name="signature-history-changes" />
+
+The selected cleanup changes **860 of 26,232** answer sizes from the same eight starting files. The two lines summarize all 24 saved versions: how often a sequence of lookups ends empty, and how much of the repository the lookups reach. We call this repeatable summary a **structural signature**. It describes connections, not what the program does.
+
+Now choose **Workspace move**. The overall reach falls from **61.99% to 50.33%**. But the chosen starting files changed too. Keep the five starting files present on both sides, and their empty-answer rate is identical. We cannot make the same claim for their reach: that matched-start measurement is not supplied here.
+
+**Add Theory** shows the same trap for functions: the overall line shifts, while the two continuing function starts keep their empty-answer rate. A changing sample can move a headline without demonstrating a changed architecture.
+
+## Same shape does not mean same code
+
+<pre className="pattern-diagram">{"Similar summary     != identical answers\nSame answer size    != same answer members\nSimilar connections != unchanged behavior\nSimilar signature   != permission to reuse a cache"}</pre>
+
+A small edit to a central connection can affect many answers. A large rewrite can preserve the connections we measure. These checkpoints show both persistence and change; they do not establish a universal rule relating edit size to structure.
+
+Exact reuse asks a stricter question: are the repository world, input set and next operation identical? [That is what Atlas checks before taking a saved answer](#patterns).
+
+<details className="technical-reading">
+<summary>Read the measures and comparison populations</summary>
+
+A **route** starts at a file or named code item and follows a sequence of relationships. **Empty routes** counts file-start questions ending empty. **Cumulative reach** combines every file reached within seven steps, removes duplicates, divides by the admitted file population, then averages over starting points. It is not just the final answer’s size.
+
+The source bars compare consecutive checkpoints: added paths, removed paths, and same-path files with changed byte hashes. A move can count as both removal and addition. These are not edited lines. The first checkpoint has no change count.
+
+The archive contains **30 checkpoints: 24 Attune and six older AttuneFlix versions**, using a common Flix, Java and Starlark source slice. This is separate from the 78-version, eleven-repository study. The chart uses the 24 newer versions with fixed scales.
+
+The examples compare `d901935b` → `b28fc778` (cleanup), `dd2c93de` → `7a32afb5` (move), and `b21b97bf` → `83764734` (Theory). Source coverage and resolution can also alter the answers—for example, removing a duplicate definition can make a previously ambiguous call resolvable. Inspect a point for exact values and provenance.
+
+</details>
+
+[Compare different repositories →](#patterns)
+
+</Page>

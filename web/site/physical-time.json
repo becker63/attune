@@ -1,0 +1,6356 @@
+{
+  "profile": {
+    "bazel_version": "release 8.6.0",
+    "build_id": "1606f3a4-3382-4e96-8b09-a1cc039babde",
+    "output_base": "/home/becker/.cache/attune-v2-bootstrap-bazel",
+    "date": "2026-10-06T18:23:15.435947261Z",
+    "profile_start_ts": 1791310995435
+  },
+  "actions": [
+    {
+      "stage": "world_extract",
+      "world": "w59",
+      "start": 5.828253,
+      "end": 67.452741,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5.984287,
+          "end": 7.823307
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 8.13815,
+          "end": 9.70215
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 9.70215,
+          "end": 66.38015
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 66.38015,
+          "end": 67.07715
+        },
+        {
+          "kind": "remote output download",
+          "start": 67.137378,
+          "end": 67.448522
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w53",
+      "start": 15.124256,
+      "end": 70.928545,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 15.272786,
+          "end": 16.393793
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 17.471616,
+          "end": 19.072616
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 19.072616,
+          "end": 70.368616
+        },
+        {
+          "kind": "remote output download",
+          "start": 70.484698,
+          "end": 70.926147
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w75",
+      "start": 5.776125,
+      "end": 79.986442,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 6.080709,
+          "end": 8.270086
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 8.449365,
+          "end": 10.080365
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 10.080365,
+          "end": 79.282365
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 79.282365,
+          "end": 79.388365
+        },
+        {
+          "kind": "remote output download",
+          "start": 79.515433,
+          "end": 79.980978
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w64",
+      "start": 5.931335,
+      "end": 85.511727,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 6.045686,
+          "end": 7.489431
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 7.860475,
+          "end": 9.098475
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 9.098475,
+          "end": 85.016475
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 85.016475,
+          "end": 85.135475
+        },
+        {
+          "kind": "remote output download",
+          "start": 85.29956,
+          "end": 85.509779
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w59",
+      "start": 70.930471,
+      "end": 91.962564,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 71.03909,
+          "end": 71.604268
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 71.686191,
+          "end": 72.540191
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 72.540191,
+          "end": 91.272191
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 91.272191,
+          "end": 91.566191
+        },
+        {
+          "kind": "remote output download",
+          "start": 91.628312,
+          "end": 91.95946
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w53",
+      "start": 80.002675,
+      "end": 101.034004,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 80.112561,
+          "end": 80.695692
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 80.997931,
+          "end": 82.225931
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 82.225931,
+          "end": 100.611931
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 100.611931,
+          "end": 100.722931
+        },
+        {
+          "kind": "remote output download",
+          "start": 100.848068,
+          "end": 101.03032
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w75",
+      "start": 85.513936,
+      "end": 109.062101,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 85.635133,
+          "end": 87.24271
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 87.396031,
+          "end": 89.464031
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 89.464031,
+          "end": 106.836031
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 106.836031,
+          "end": 108.604031
+        },
+        {
+          "kind": "remote output download",
+          "start": 108.733194,
+          "end": 109.058736
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w55",
+      "start": 5.752854,
+      "end": 112.149922,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 6.006666,
+          "end": 9.061007
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 9.199211,
+          "end": 11.040211
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 11.040211,
+          "end": 111.159211
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 111.159211,
+          "end": 111.381211
+        },
+        {
+          "kind": "remote output download",
+          "start": 111.877266,
+          "end": 112.147292
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w52",
+      "start": 67.458735,
+      "end": 114.811601,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 67.600871,
+          "end": 68.352193
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 68.49781,
+          "end": 70.22581
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 70.22581,
+          "end": 114.05881
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 114.05881,
+          "end": 114.52381
+        },
+        {
+          "kind": "remote output download",
+          "start": 114.58999,
+          "end": 114.808118
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w64",
+      "start": 91.971756,
+      "end": 116.119381,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 92.102772,
+          "end": 92.634405
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 92.933901,
+          "end": 94.200901
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 94.200901,
+          "end": 115.624901
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 115.624901,
+          "end": 115.812901
+        },
+        {
+          "kind": "remote output download",
+          "start": 115.929961,
+          "end": 116.117086
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w52",
+      "start": 115.543438,
+      "end": 134.051024,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 115.654755,
+          "end": 116.136508
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 116.359684,
+          "end": 117.880684
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 117.880684,
+          "end": 133.656684
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 133.656684,
+          "end": 133.795684
+        },
+        {
+          "kind": "remote output download",
+          "start": 133.864756,
+          "end": 134.048065
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w55",
+      "start": 114.813916,
+      "end": 137.979966,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 114.932594,
+          "end": 115.591588
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 116.001326,
+          "end": 117.242326
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 117.242326,
+          "end": 137.285326
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 137.285326,
+          "end": 137.569326
+        },
+        {
+          "kind": "remote output download",
+          "start": 137.65737,
+          "end": 137.977142
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w47",
+      "start": 39.974307,
+      "end": 140.541649,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 40.219326,
+          "end": 41.961357
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 43.139998,
+          "end": 46.453998
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 46.453998,
+          "end": 139.880998
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 139.880998,
+          "end": 140.199998
+        },
+        {
+          "kind": "remote output download",
+          "start": 140.301139,
+          "end": 140.540395
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w47",
+      "start": 153.288598,
+      "end": 171.306551,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 153.44891,
+          "end": 153.784814
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 153.932016,
+          "end": 154.388016
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 154.388016,
+          "end": 171.002016
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 171.002016,
+          "end": 171.076016
+        },
+        {
+          "kind": "remote output download",
+          "start": 171.135116,
+          "end": 171.303862
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w66",
+      "start": 171.316553,
+      "end": 255.126306,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 171.434492,
+          "end": 171.946972
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 172.040208,
+          "end": 172.989208
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 172.989208,
+          "end": 254.416208
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 254.416208,
+          "end": 254.606208
+        },
+        {
+          "kind": "remote output download",
+          "start": 254.835413,
+          "end": 255.123992
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w49",
+      "start": 155.804486,
+      "end": 260.218739,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 155.936088,
+          "end": 156.90243
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 157.061135,
+          "end": 158.476135
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 158.476135,
+          "end": 259.713135
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 259.713135,
+          "end": 259.873135
+        },
+        {
+          "kind": "remote output download",
+          "start": 259.981191,
+          "end": 260.217183
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w66",
+      "start": 260.225582,
+      "end": 277.760063,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 260.346607,
+          "end": 260.670557
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 260.837104,
+          "end": 261.331104
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 261.331104,
+          "end": 277.147104
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 277.147104,
+          "end": 277.508104
+        },
+        {
+          "kind": "remote output download",
+          "start": 277.587151,
+          "end": 277.758428
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w49",
+      "start": 269.855579,
+      "end": 291.666013,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 270.024967,
+          "end": 270.687354
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 270.971057,
+          "end": 271.586057
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 271.586057,
+          "end": 291.196057
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 291.196057,
+          "end": 291.459057
+        },
+        {
+          "kind": "remote output download",
+          "start": 291.515111,
+          "end": 291.664161
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w51",
+      "start": 116.126498,
+      "end": 299.264323,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 116.252748,
+          "end": 117.828935
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 118.262721,
+          "end": 121.379721
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 121.379721,
+          "end": 298.629721
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 298.629721,
+          "end": 298.845721
+        },
+        {
+          "kind": "remote output download",
+          "start": 298.90178,
+          "end": 299.262807
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w50",
+      "start": 140.547319,
+      "end": 305.782634,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 140.667356,
+          "end": 141.310923
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 141.442209,
+          "end": 143.484209
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 143.484209,
+          "end": 305.317209
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 305.317209,
+          "end": 305.494209
+        },
+        {
+          "kind": "remote output download",
+          "start": 305.566267,
+          "end": 305.780099
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w51",
+      "start": 305.226855,
+      "end": 362.388973,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 305.334525,
+          "end": 306.137055
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 306.260719,
+          "end": 307.295719
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 307.295719,
+          "end": 361.847719
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 361.847719,
+          "end": 362.021719
+        },
+        {
+          "kind": "remote output download",
+          "start": 362.173773,
+          "end": 362.378543
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w50",
+      "start": 314.495519,
+      "end": 370.319469,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 314.821543,
+          "end": 315.203304
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 315.279098,
+          "end": 316.406098
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 316.406098,
+          "end": 369.546098
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 369.546098,
+          "end": 369.758098
+        },
+        {
+          "kind": "remote output download",
+          "start": 370.001153,
+          "end": 370.305987
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w48",
+      "start": 277.767435,
+      "end": 380.256202,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 277.8851,
+          "end": 278.743141
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 279.008852,
+          "end": 280.203852
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 280.203852,
+          "end": 379.079852
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 379.079852,
+          "end": 379.820852
+        },
+        {
+          "kind": "remote output download",
+          "start": 379.994886,
+          "end": 380.24899
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w48",
+      "start": 386.082803,
+      "end": 407.137085,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 386.267069,
+          "end": 387.092484
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 387.345446,
+          "end": 388.394446
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 388.394446,
+          "end": 406.442446
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 406.442446,
+          "end": 406.854446
+        },
+        {
+          "kind": "remote output download",
+          "start": 406.917486,
+          "end": 407.134935
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w60",
+      "start": 362.390854,
+      "end": 419.925858,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 362.551113,
+          "end": 363.505752
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 364.365929,
+          "end": 365.822929
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 365.822929,
+          "end": 418.985929
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 418.985929,
+          "end": 419.435929
+        },
+        {
+          "kind": "remote output download",
+          "start": 419.583965,
+          "end": 419.924705
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w60",
+      "start": 434.314975,
+      "end": 459.132003,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 434.708619,
+          "end": 435.159444
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 435.876134,
+          "end": 437.045134
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 437.045134,
+          "end": 457.974134
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 457.974134,
+          "end": 458.561134
+        },
+        {
+          "kind": "remote output download",
+          "start": 458.798188,
+          "end": 459.130516
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w2",
+      "start": 14.424521,
+      "end": 522.411832,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 14.835428,
+          "end": 16.000326
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 16.120501,
+          "end": 18.928501
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 18.928501,
+          "end": 521.386501
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 521.386501,
+          "end": 521.931501
+        },
+        {
+          "kind": "remote output download",
+          "start": 521.999548,
+          "end": 522.408978
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w46",
+      "start": 459.139971,
+      "end": 558.925164,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 459.349918,
+          "end": 460.417776
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 461.002834,
+          "end": 464.987834
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 464.987834,
+          "end": 558.086834
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 558.086834,
+          "end": 558.329834
+        },
+        {
+          "kind": "remote output download",
+          "start": 558.702029,
+          "end": 558.920784
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w46",
+      "start": 558.933769,
+      "end": 578.627888,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 559.347435,
+          "end": 560.050902
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 560.149309,
+          "end": 560.696309
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 560.696309,
+          "end": 578.181309
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 578.181309,
+          "end": 578.333309
+        },
+        {
+          "kind": "remote output download",
+          "start": 578.466423,
+          "end": 578.625484
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w71",
+      "start": 578.631433,
+      "end": 598.75523,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 578.7421,
+          "end": 579.297821
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 579.48555,
+          "end": 580.54655
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 580.54655,
+          "end": 598.02555
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 598.02555,
+          "end": 598.22055
+        },
+        {
+          "kind": "remote output download",
+          "start": 598.39666,
+          "end": 598.754402
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w2",
+      "start": 540.82092,
+      "end": 601.05871,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 541.570108,
+          "end": 542.192922
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 542.836941,
+          "end": 544.782941
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 544.782941,
+          "end": 600.405941
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 600.405941,
+          "end": 600.539941
+        },
+        {
+          "kind": "remote output download",
+          "start": 600.786988,
+          "end": 601.052661
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w71",
+      "start": 598.757392,
+      "end": 615.822717,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 598.904281,
+          "end": 600.147147
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 600.58106,
+          "end": 601.84706
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 601.84706,
+          "end": 614.74406
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 614.74406,
+          "end": 615.27406
+        },
+        {
+          "kind": "remote output download",
+          "start": 615.686154,
+          "end": 615.821359
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w1",
+      "start": 128.753282,
+      "end": 632.803695,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 128.876585,
+          "end": 130.30695
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 130.415858,
+          "end": 132.683858
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 132.683858,
+          "end": 631.688858
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 631.688858,
+          "end": 632.154858
+        },
+        {
+          "kind": "remote output download",
+          "start": 632.232904,
+          "end": 632.801207
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w3",
+      "start": 134.065843,
+      "end": 656.65141,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 134.258354,
+          "end": 134.855855
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 135.044063,
+          "end": 140.026063
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 140.026063,
+          "end": 655.343063
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 655.343063,
+          "end": 655.904063
+        },
+        {
+          "kind": "remote output download",
+          "start": 656.426098,
+          "end": 656.647901
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w92",
+      "start": 656.654765,
+      "end": 683.136938,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 656.763505,
+          "end": 658.161644
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 658.546329,
+          "end": 659.823329
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 659.823329,
+          "end": 681.841329
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 681.841329,
+          "end": 682.549329
+        },
+        {
+          "kind": "remote output download",
+          "start": 682.636351,
+          "end": 683.136078
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w1",
+      "start": 632.847499,
+      "end": 693.134471,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 632.97438,
+          "end": 633.821651
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 634.08963,
+          "end": 635.31063
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 635.31063,
+          "end": 692.71063
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 692.71063,
+          "end": 692.84363
+        },
+        {
+          "kind": "remote output download",
+          "start": 692.915662,
+          "end": 693.129878
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w92",
+      "start": 693.135047,
+      "end": 710.701868,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 693.425961,
+          "end": 694.267023
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 694.43684,
+          "end": 695.82684
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 695.82684,
+          "end": 709.55784
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 709.55784,
+          "end": 709.97484
+        },
+        {
+          "kind": "remote output download",
+          "start": 710.034875,
+          "end": 710.700632
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w45",
+      "start": 633.619008,
+      "end": 745.767878,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 633.73543,
+          "end": 634.907906
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 635.116797,
+          "end": 638.209797
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 638.209797,
+          "end": 744.865797
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 744.865797,
+          "end": 745.231797
+        },
+        {
+          "kind": "remote output download",
+          "start": 745.408837,
+          "end": 745.766242
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w3",
+      "start": 683.146742,
+      "end": 747.876357,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 683.329551,
+          "end": 684.084289
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 685.245262,
+          "end": 687.143262
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 687.143262,
+          "end": 746.942262
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 746.942262,
+          "end": 747.226262
+        },
+        {
+          "kind": "remote output download",
+          "start": 747.31731,
+          "end": 747.870826
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w45",
+      "start": 747.881484,
+      "end": 776.54044,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 748.845553,
+          "end": 749.433499
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 749.539853,
+          "end": 750.169853
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 750.169853,
+          "end": 776.092853
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 776.092853,
+          "end": 776.187853
+        },
+        {
+          "kind": "remote output download",
+          "start": 776.388893,
+          "end": 776.538144
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w4",
+      "start": 320.529497,
+      "end": 826.120664,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 320.650641,
+          "end": 321.597819
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 321.669109,
+          "end": 323.297109
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 323.297109,
+          "end": 825.356109
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 825.356109,
+          "end": 825.517109
+        },
+        {
+          "kind": "remote output download",
+          "start": 825.662152,
+          "end": 826.118587
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w44",
+      "start": 742.623555,
+      "end": 854.22467,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 742.76346,
+          "end": 743.9014
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 744.139464,
+          "end": 746.424464
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 746.424464,
+          "end": 852.925464
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 852.925464,
+          "end": 853.556464
+        },
+        {
+          "kind": "remote output download",
+          "start": 853.681586,
+          "end": 854.218421
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w79",
+      "start": 745.777307,
+      "end": 906.704141,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 746.174577,
+          "end": 747.477515
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 747.754836,
+          "end": 749.252836
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 749.252836,
+          "end": 905.277836
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 905.277836,
+          "end": 905.975836
+        },
+        {
+          "kind": "remote output download",
+          "start": 906.127894,
+          "end": 906.700692
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w4",
+      "start": 854.235842,
+      "end": 916.418875,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 854.387493,
+          "end": 854.847385
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 855.183191,
+          "end": 856.037191
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 856.037191,
+          "end": 915.322191
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 915.322191,
+          "end": 915.380191
+        },
+        {
+          "kind": "remote output download",
+          "start": 916.201252,
+          "end": 916.411955
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w43",
+      "start": 826.131274,
+      "end": 934.454445,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 826.40028,
+          "end": 827.147561
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 827.317706,
+          "end": 828.495706
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 828.495706,
+          "end": 934.066706
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 934.066706,
+          "end": 934.122706
+        },
+        {
+          "kind": "remote output download",
+          "start": 934.246761,
+          "end": 934.453151
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w44",
+      "start": 916.42482,
+      "end": 948.156138,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 916.612175,
+          "end": 916.934722
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 917.052087,
+          "end": 917.893087
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 917.893087,
+          "end": 947.860087
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 947.860087,
+          "end": 947.917087
+        },
+        {
+          "kind": "remote output download",
+          "start": 947.97214,
+          "end": 948.152936
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w79",
+      "start": 906.707822,
+      "end": 951.708558,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 906.905839,
+          "end": 907.830797
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 908.208546,
+          "end": 908.439546
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 908.439546,
+          "end": 950.688546
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 950.688546,
+          "end": 951.379546
+        },
+        {
+          "kind": "remote output download",
+          "start": 951.436575,
+          "end": 951.705726
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w43",
+      "start": 948.159896,
+      "end": 978.300601,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 948.272214,
+          "end": 949.31183
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 949.879944,
+          "end": 950.358944
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 950.358944,
+          "end": 977.915944
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 977.915944,
+          "end": 977.993944
+        },
+        {
+          "kind": "remote output download",
+          "start": 978.074997,
+          "end": 978.298145
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w42",
+      "start": 949.547314,
+      "end": 1062.425955,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 949.655426,
+          "end": 950.145123
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 950.21919,
+          "end": 951.16119
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 951.16119,
+          "end": 1061.47719
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 1061.47719,
+          "end": 1061.56919
+        },
+        {
+          "kind": "remote output download",
+          "start": 1062.028246,
+          "end": 1062.423359
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w12",
+      "start": 1062.428242,
+      "end": 1129.174071,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 1062.807354,
+          "end": 1064.293794
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 1064.413461,
+          "end": 1066.057461
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 1066.057461,
+          "end": 1128.286461
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 1128.286461,
+          "end": 1128.445461
+        },
+        {
+          "kind": "remote output download",
+          "start": 1128.547499,
+          "end": 1129.155586
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w42",
+      "start": 1129.191402,
+      "end": 1162.999714,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 1129.387739,
+          "end": 1129.926411
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 1130.096133,
+          "end": 1131.195133
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 1131.195133,
+          "end": 1162.302133
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 1162.302133,
+          "end": 1162.709133
+        },
+        {
+          "kind": "remote output download",
+          "start": 1162.769191,
+          "end": 1162.99659
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w12",
+      "start": 1163.000362,
+      "end": 1187.617198,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 1163.148455,
+          "end": 1163.903383
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 1164.086177,
+          "end": 1165.258177
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 1165.258177,
+          "end": 1186.987177
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 1186.987177,
+          "end": 1187.259177
+        },
+        {
+          "kind": "remote output download",
+          "start": 1187.353235,
+          "end": 1187.615363
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w86",
+      "start": 1009.790813,
+      "end": 1456.95949,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 1009.925644,
+          "end": 1011.454998
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 1104.535893,
+          "end": 1105.920893
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 1105.920893,
+          "end": 1456.163893
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 1456.163893,
+          "end": 1456.541893
+        },
+        {
+          "kind": "remote output download",
+          "start": 1456.627952,
+          "end": 1456.934059
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w86",
+      "start": 1474.127038,
+      "end": 1496.483989,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 1474.291217,
+          "end": 1475.286418
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 1475.455976,
+          "end": 1477.308976
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 1477.308976,
+          "end": 1495.008976
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 1495.008976,
+          "end": 1495.751976
+        },
+        {
+          "kind": "remote output download",
+          "start": 1495.842997,
+          "end": 1496.48307
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w7",
+      "start": 632.813068,
+      "end": 2704.09427,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 633.228633,
+          "end": 634.523352
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 635.003651,
+          "end": 637.916651
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 637.916651,
+          "end": 2702.986651
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 2702.986651,
+          "end": 2703.474651
+        },
+        {
+          "kind": "remote output download",
+          "start": 2703.619771,
+          "end": 2704.091738
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w89",
+      "start": 2704.099801,
+      "end": 2773.51482,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 2704.488505,
+          "end": 2705.078465
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2705.598008,
+          "end": 2706.431008
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2706.431008,
+          "end": 2772.833008
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 2772.833008,
+          "end": 2773.140008
+        },
+        {
+          "kind": "remote output download",
+          "start": 2773.211129,
+          "end": 2773.508646
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w7",
+      "start": 2773.515749,
+      "end": 2815.989038,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 2773.621118,
+          "end": 2774.057262
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2774.188857,
+          "end": 2774.917857
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2774.917857,
+          "end": 2815.165857
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 2815.165857,
+          "end": 2815.381857
+        },
+        {
+          "kind": "remote output download",
+          "start": 2815.442917,
+          "end": 2815.981561
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w89",
+      "start": 2815.992217,
+      "end": 2831.371084,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 2816.100374,
+          "end": 2816.612518
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2816.735524,
+          "end": 2817.337524
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2817.337524,
+          "end": 2830.935524
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 2830.935524,
+          "end": 2831.080524
+        },
+        {
+          "kind": "remote output download",
+          "start": 2831.19855,
+          "end": 2831.369892
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w11",
+      "start": 964.982075,
+      "end": 2884.878946,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 965.101307,
+          "end": 966.106142
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 966.312033,
+          "end": 967.407033
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 967.407033,
+          "end": 2884.398033
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 2884.398033,
+          "end": 2884.538033
+        },
+        {
+          "kind": "remote output download",
+          "start": 2884.635089,
+          "end": 2884.877739
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w13",
+      "start": 2860.20532,
+      "end": 2924.861322,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 2860.316421,
+          "end": 2860.84438
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2860.977055,
+          "end": 2861.844055
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2861.844055,
+          "end": 2924.375055
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 2924.375055,
+          "end": 2924.481055
+        },
+        {
+          "kind": "remote output download",
+          "start": 2924.551072,
+          "end": 2924.860065
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w11",
+      "start": 2924.862262,
+      "end": 2957.489946,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 2925.040232,
+          "end": 2925.363115
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2925.617101,
+          "end": 2926.123101
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2926.123101,
+          "end": 2956.911101
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 2956.911101,
+          "end": 2957.031101
+        },
+        {
+          "kind": "remote output download",
+          "start": 2957.08512,
+          "end": 2957.486928
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w13",
+      "start": 2957.490611,
+      "end": 2983.054243,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 2957.59826,
+          "end": 2958.054368
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2958.661352,
+          "end": 2958.982352
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2958.982352,
+          "end": 2982.478352
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 2982.478352,
+          "end": 2982.585352
+        },
+        {
+          "kind": "remote output download",
+          "start": 2982.653375,
+          "end": 2983.053271
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w77",
+      "start": 2884.884613,
+      "end": 3044.008273,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 2884.994631,
+          "end": 2885.562671
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2885.69287,
+          "end": 2886.54787
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2886.54787,
+          "end": 3043.65487
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3043.65487,
+          "end": 3043.73987
+        },
+        {
+          "kind": "remote output download",
+          "start": 3043.795894,
+          "end": 3044.006983
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w8",
+      "start": 807.298475,
+      "end": 3066.310477,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 807.464271,
+          "end": 808.613848
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 1190.036577,
+          "end": 1192.120577
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 1192.120577,
+          "end": 3065.790577
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3065.790577,
+          "end": 3065.884577
+        },
+        {
+          "kind": "remote output download",
+          "start": 3065.974621,
+          "end": 3066.309589
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w14",
+      "start": 3012.51792,
+      "end": 3078.980061,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3012.636772,
+          "end": 3013.198993
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3013.305233,
+          "end": 3014.394233
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3014.394233,
+          "end": 3078.377233
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3078.377233,
+          "end": 3078.595233
+        },
+        {
+          "kind": "remote output download",
+          "start": 3078.659259,
+          "end": 3078.979279
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w15",
+      "start": 3044.012227,
+      "end": 3110.131928,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3044.120072,
+          "end": 3044.70241
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3044.82485,
+          "end": 3045.89785
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3045.89785,
+          "end": 3109.30785
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3109.30785,
+          "end": 3109.79385
+        },
+        {
+          "kind": "remote output download",
+          "start": 3109.912908,
+          "end": 3110.130854
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w77",
+      "start": 3066.315506,
+      "end": 3110.636821,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3066.464371,
+          "end": 3067.361382
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3068.040869,
+          "end": 3069.062869
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3069.062869,
+          "end": 3109.797869
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3109.797869,
+          "end": 3110.328869
+        },
+        {
+          "kind": "remote output download",
+          "start": 3110.413888,
+          "end": 3110.635584
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w8",
+      "start": 3078.981482,
+      "end": 3111.74162,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3079.111294,
+          "end": 3079.914366
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3080.222522,
+          "end": 3081.053522
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3081.053522,
+          "end": 3110.842522
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3110.842522,
+          "end": 3111.391522
+        },
+        {
+          "kind": "remote output download",
+          "start": 3111.453579,
+          "end": 3111.740059
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w15",
+      "start": 3110.640085,
+      "end": 3137.253565,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3110.760929,
+          "end": 3111.518604
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3111.698684,
+          "end": 3112.576684
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3112.576684,
+          "end": 3136.931684
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3136.931684,
+          "end": 3136.990684
+        },
+        {
+          "kind": "remote output download",
+          "start": 3137.045742,
+          "end": 3137.249532
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w14",
+      "start": 3110.13392,
+      "end": 3137.397022,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3110.288778,
+          "end": 3110.938476
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3111.017774,
+          "end": 3112.011774
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3112.011774,
+          "end": 3136.862774
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3136.862774,
+          "end": 3137.013774
+        },
+        {
+          "kind": "remote output download",
+          "start": 3137.067818,
+          "end": 3137.395637
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w17",
+      "start": 3152.224142,
+      "end": 3187.88696,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3152.378245,
+          "end": 3152.973261
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3153.109221,
+          "end": 3154.161221
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3154.161221,
+          "end": 3187.451221
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3187.451221,
+          "end": 3187.563221
+        },
+        {
+          "kind": "remote output download",
+          "start": 3187.621317,
+          "end": 3187.885425
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w18",
+      "start": 3156.552153,
+      "end": 3194.386303,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3156.742218,
+          "end": 3157.440509
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3157.671303,
+          "end": 3158.714303
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3158.714303,
+          "end": 3193.943303
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3193.943303,
+          "end": 3194.110303
+        },
+        {
+          "kind": "remote output download",
+          "start": 3194.173358,
+          "end": 3194.385224
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w17",
+      "start": 3194.39079,
+      "end": 3210.685017,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3194.499381,
+          "end": 3194.747223
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3194.827562,
+          "end": 3195.087562
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3195.087562,
+          "end": 3210.317562
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3210.317562,
+          "end": 3210.367562
+        },
+        {
+          "kind": "remote output download",
+          "start": 3210.441688,
+          "end": 3210.684012
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w76",
+      "start": 3137.25694,
+      "end": 3225.604241,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3137.364754,
+          "end": 3138.068729
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3138.256534,
+          "end": 3139.555534
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3139.555534,
+          "end": 3225.262534
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3225.262534,
+          "end": 3225.313534
+        },
+        {
+          "kind": "remote output download",
+          "start": 3225.386589,
+          "end": 3225.603107
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w18",
+      "start": 3210.685855,
+      "end": 3225.84154,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3210.793684,
+          "end": 3211.474401
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3211.57485,
+          "end": 3212.00085
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3212.00085,
+          "end": 3225.15785
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3225.15785,
+          "end": 3225.38685
+        },
+        {
+          "kind": "remote output download",
+          "start": 3225.456905,
+          "end": 3225.84025
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w76",
+      "start": 3225.847201,
+      "end": 3248.710898,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3225.977144,
+          "end": 3226.618642
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3226.79875,
+          "end": 3227.34075
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3227.34075,
+          "end": 3248.26675
+        },
+        {
+          "kind": "remote output download",
+          "start": 3248.493808,
+          "end": 3248.708652
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w40",
+      "start": 3187.898633,
+      "end": 3280.226461,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3188.068529,
+          "end": 3188.480224
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3188.592346,
+          "end": 3189.668346
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3189.668346,
+          "end": 3279.808346
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3279.808346,
+          "end": 3279.886346
+        },
+        {
+          "kind": "remote output download",
+          "start": 3279.98339,
+          "end": 3280.22556
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w69",
+      "start": 3280.230587,
+      "end": 3300.061557,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3280.338156,
+          "end": 3280.660028
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3281.113699,
+          "end": 3281.750699
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3281.750699,
+          "end": 3298.998699
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3298.998699,
+          "end": 3299.507699
+        },
+        {
+          "kind": "remote output download",
+          "start": 3299.781762,
+          "end": 3300.060583
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w16",
+      "start": 3265.587671,
+      "end": 3304.413533,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3265.697132,
+          "end": 3266.153249
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3266.254082,
+          "end": 3267.064082
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3267.064082,
+          "end": 3303.980082
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3303.980082,
+          "end": 3304.098082
+        },
+        {
+          "kind": "remote output download",
+          "start": 3304.151132,
+          "end": 3304.41232
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w19",
+      "start": 3248.713196,
+      "end": 3306.951876,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3249.107774,
+          "end": 3249.398868
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3272.210279,
+          "end": 3272.698279
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3272.698279,
+          "end": 3306.547279
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3306.547279,
+          "end": 3306.617279
+        },
+        {
+          "kind": "remote output download",
+          "start": 3306.715344,
+          "end": 3306.950879
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w69",
+      "start": 3304.416321,
+      "end": 3320.17952,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3304.950876,
+          "end": 3305.506352
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3305.642271,
+          "end": 3306.988271
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3306.988271,
+          "end": 3319.857271
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3319.857271,
+          "end": 3319.951271
+        },
+        {
+          "kind": "remote output download",
+          "start": 3320.010327,
+          "end": 3320.178688
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w16",
+      "start": 3306.955001,
+      "end": 3324.503246,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3307.282394,
+          "end": 3307.682112
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3307.887558,
+          "end": 3308.798558
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3308.798558,
+          "end": 3324.077558
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3324.077558,
+          "end": 3324.128558
+        },
+        {
+          "kind": "remote output download",
+          "start": 3324.321614,
+          "end": 3324.501107
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w40",
+      "start": 3300.065898,
+      "end": 3325.923684,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3300.210171,
+          "end": 3300.550427
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3300.825438,
+          "end": 3301.329438
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3301.329438,
+          "end": 3325.333438
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3325.333438,
+          "end": 3325.697438
+        },
+        {
+          "kind": "remote output download",
+          "start": 3325.757473,
+          "end": 3325.919848
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w19",
+      "start": 3320.182339,
+      "end": 3336.443826,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3320.307542,
+          "end": 3320.629331
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3320.843712,
+          "end": 3321.905712
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3321.905712,
+          "end": 3336.032712
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3336.032712,
+          "end": 3336.094712
+        },
+        {
+          "kind": "remote output download",
+          "start": 3336.271733,
+          "end": 3336.442623
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w10",
+      "start": 13.082497,
+      "end": 3404.732334,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 13.212847,
+          "end": 15.053038
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 1481.502132,
+          "end": 1483.570132
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 1483.570132,
+          "end": 3404.244132
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3404.244132,
+          "end": 3404.390132
+        },
+        {
+          "kind": "remote output download",
+          "start": 3404.445189,
+          "end": 3404.731029
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w23",
+      "start": 3404.738524,
+      "end": 3435.933705,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3404.844029,
+          "end": 3405.321882
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3405.429893,
+          "end": 3406.701893
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3406.701893,
+          "end": 3435.547893
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3435.547893,
+          "end": 3435.650893
+        },
+        {
+          "kind": "remote output download",
+          "start": 3435.716947,
+          "end": 3435.932443
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w54",
+      "start": 3352.25618,
+      "end": 3453.296163,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3352.3608,
+          "end": 3352.93879
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3353.031406,
+          "end": 3354.163406
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3354.163406,
+          "end": 3452.564406
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3452.564406,
+          "end": 3452.860406
+        },
+        {
+          "kind": "remote output download",
+          "start": 3453.060459,
+          "end": 3453.294992
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w20",
+      "start": 3339.829762,
+      "end": 3460.564906,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3339.950717,
+          "end": 3341.193341
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3341.262386,
+          "end": 3342.515386
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3342.515386,
+          "end": 3459.978386
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3459.978386,
+          "end": 3460.241386
+        },
+        {
+          "kind": "remote output download",
+          "start": 3460.343444,
+          "end": 3460.563504
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w10",
+      "start": 3435.93591,
+      "end": 3469.71003,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3436.12337,
+          "end": 3436.892398
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3437.036734,
+          "end": 3437.641734
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3437.641734,
+          "end": 3469.121734
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3469.121734,
+          "end": 3469.212734
+        },
+        {
+          "kind": "remote output download",
+          "start": 3469.286787,
+          "end": 3469.706609
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w23",
+      "start": 3453.302142,
+      "end": 3475.673672,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3453.419703,
+          "end": 3453.773383
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3453.908125,
+          "end": 3454.033125
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3454.033125,
+          "end": 3475.100125
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3475.100125,
+          "end": 3475.325125
+        },
+        {
+          "kind": "remote output download",
+          "start": 3475.499193,
+          "end": 3475.672044
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w54",
+      "start": 3460.569773,
+      "end": 3485.47809,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3460.678974,
+          "end": 3461.422512
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3461.586584,
+          "end": 3462.433584
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3462.433584,
+          "end": 3485.059584
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3485.059584,
+          "end": 3485.132584
+        },
+        {
+          "kind": "remote output download",
+          "start": 3485.198637,
+          "end": 3485.476812
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w20",
+      "start": 3469.710719,
+      "end": 3488.573361,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3469.83429,
+          "end": 3470.316473
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3470.4068,
+          "end": 3471.0958
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3471.0958,
+          "end": 3488.0518
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3488.0518,
+          "end": 3488.2468
+        },
+        {
+          "kind": "remote output download",
+          "start": 3488.305827,
+          "end": 3488.570655
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w21",
+      "start": 3354.740588,
+      "end": 3489.452029,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3354.864219,
+          "end": 3355.890781
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3356.063067,
+          "end": 3357.527067
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3357.527067,
+          "end": 3489.017067
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3489.017067,
+          "end": 3489.139067
+        },
+        {
+          "kind": "remote output download",
+          "start": 3489.21112,
+          "end": 3489.45122
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w21",
+      "start": 3491.126365,
+      "end": 3511.953814,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3491.244158,
+          "end": 3491.595681
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3491.752281,
+          "end": 3492.539281
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3492.539281,
+          "end": 3510.950281
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3510.950281,
+          "end": 3511.604281
+        },
+        {
+          "kind": "remote output download",
+          "start": 3511.690337,
+          "end": 3511.951083
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w24",
+      "start": 3505.861929,
+      "end": 3528.717567,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3505.984997,
+          "end": 3506.592885
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3506.835899,
+          "end": 3508.300899
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3508.300899,
+          "end": 3528.286899
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3528.286899,
+          "end": 3528.349899
+        },
+        {
+          "kind": "remote output download",
+          "start": 3528.479917,
+          "end": 3528.716964
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w25",
+      "start": 3506.234473,
+      "end": 3531.361212,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3506.345844,
+          "end": 3506.937477
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3507.112214,
+          "end": 3507.963214
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3507.963214,
+          "end": 3530.366214
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3530.366214,
+          "end": 3530.855214
+        },
+        {
+          "kind": "remote output download",
+          "start": 3531.071234,
+          "end": 3531.36057
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w24",
+      "start": 3531.365193,
+      "end": 3553.127927,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3531.471823,
+          "end": 3532.406995
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3532.669151,
+          "end": 3533.173151
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3533.173151,
+          "end": 3552.065151
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3552.065151,
+          "end": 3552.523151
+        },
+        {
+          "kind": "remote output download",
+          "start": 3552.920217,
+          "end": 3553.126693
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w25",
+      "start": 3544.489432,
+      "end": 3566.910446,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3544.609322,
+          "end": 3545.427274
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3545.527128,
+          "end": 3546.720128
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3546.720128,
+          "end": 3565.905128
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3565.905128,
+          "end": 3566.474128
+        },
+        {
+          "kind": "remote output download",
+          "start": 3566.596242,
+          "end": 3566.906754
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w39",
+      "start": 3501.319918,
+      "end": 3599.634716,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3501.521772,
+          "end": 3502.389717
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3502.484412,
+          "end": 3505.070412
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3505.070412,
+          "end": 3599.192412
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3599.192412,
+          "end": 3599.303412
+        },
+        {
+          "kind": "remote output download",
+          "start": 3599.378434,
+          "end": 3599.633885
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w26",
+      "start": 3585.693089,
+      "end": 3610.153432,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3585.811367,
+          "end": 3586.547496
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3586.617699,
+          "end": 3588.142699
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3588.142699,
+          "end": 3609.430699
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3609.430699,
+          "end": 3609.755699
+        },
+        {
+          "kind": "remote output download",
+          "start": 3609.87072,
+          "end": 3610.152415
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w39",
+      "start": 3610.159267,
+      "end": 3637.047257,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3610.344325,
+          "end": 3611.582604
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3611.811699,
+          "end": 3613.160699
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3613.160699,
+          "end": 3636.700699
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3636.700699,
+          "end": 3636.781699
+        },
+        {
+          "kind": "remote output download",
+          "start": 3636.839755,
+          "end": 3637.04359
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w26",
+      "start": 3637.0503,
+      "end": 3660.602878,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3637.409009,
+          "end": 3638.264851
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3638.495857,
+          "end": 3639.630857
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3639.630857,
+          "end": 3659.864857
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3659.864857,
+          "end": 3660.179857
+        },
+        {
+          "kind": "remote output download",
+          "start": 3660.433875,
+          "end": 3660.600337
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w22",
+      "start": 3584.326886,
+      "end": 3738.459887,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3584.487667,
+          "end": 3585.080027
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3585.398866,
+          "end": 3586.246866
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3586.246866,
+          "end": 3737.160866
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3737.160866,
+          "end": 3738.103866
+        },
+        {
+          "kind": "remote output download",
+          "start": 3738.176914,
+          "end": 3738.458445
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w22",
+      "start": 3738.465245,
+      "end": 3764.592178,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3738.653176,
+          "end": 3739.829516
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3741.212796,
+          "end": 3742.974796
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3742.974796,
+          "end": 3763.324796
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3763.324796,
+          "end": 3764.188796
+        },
+        {
+          "kind": "remote output download",
+          "start": 3764.274841,
+          "end": 3764.588278
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w38",
+      "start": 3695.162605,
+      "end": 3793.175881,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3695.290874,
+          "end": 3696.349441
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3696.575913,
+          "end": 3698.629913
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3698.629913,
+          "end": 3791.629913
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3791.629913,
+          "end": 3792.120913
+        },
+        {
+          "kind": "remote output download",
+          "start": 3792.944996,
+          "end": 3793.174347
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w82",
+      "start": 3511.9638,
+      "end": 3796.367307,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3512.08448,
+          "end": 3513.387068
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3513.502876,
+          "end": 3515.091876
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3515.091876,
+          "end": 3795.783876
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3795.783876,
+          "end": 3795.958876
+        },
+        {
+          "kind": "remote output download",
+          "start": 3796.140898,
+          "end": 3796.361959
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w38",
+      "start": 3812.651377,
+      "end": 3839.926166,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3812.902474,
+          "end": 3813.864284
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3814.823964,
+          "end": 3816.788964
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3816.788964,
+          "end": 3839.282964
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3839.282964,
+          "end": 3839.611964
+        },
+        {
+          "kind": "remote output download",
+          "start": 3839.692015,
+          "end": 3839.922273
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w9",
+      "start": 1203.63874,
+      "end": 3864.170878,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 1203.754485,
+          "end": 1205.364493
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 1872.515551,
+          "end": 1873.840551
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 1873.840551,
+          "end": 3863.503551
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3863.503551,
+          "end": 3863.607551
+        },
+        {
+          "kind": "remote output download",
+          "start": 3863.812571,
+          "end": 3864.169796
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w82",
+      "start": 3796.399268,
+      "end": 3866.476126,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3796.582067,
+          "end": 3797.212998
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3797.476806,
+          "end": 3798.127806
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3798.127806,
+          "end": 3865.851806
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3865.851806,
+          "end": 3865.944806
+        },
+        {
+          "kind": "remote output download",
+          "start": 3866.197857,
+          "end": 3866.4735
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w37",
+      "start": 3839.931961,
+      "end": 3893.874328,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3840.12222,
+          "end": 3841.183501
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3841.278672,
+          "end": 3843.807672
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3843.807672,
+          "end": 3893.450672
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3893.450672,
+          "end": 3893.582672
+        },
+        {
+          "kind": "remote output download",
+          "start": 3893.659691,
+          "end": 3893.873585
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w9",
+      "start": 3864.17447,
+      "end": 3897.785268,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3864.310134,
+          "end": 3864.934428
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3865.605717,
+          "end": 3866.864717
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3866.864717,
+          "end": 3897.066717
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3897.066717,
+          "end": 3897.354717
+        },
+        {
+          "kind": "remote output download",
+          "start": 3897.479775,
+          "end": 3897.779818
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w37",
+      "start": 3897.265258,
+      "end": 3918.369081,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3897.648795,
+          "end": 3898.215474
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3898.307545,
+          "end": 3898.833545
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3898.833545,
+          "end": 3917.906545
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3917.906545,
+          "end": 3918.017545
+        },
+        {
+          "kind": "remote output download",
+          "start": 3918.127614,
+          "end": 3918.367162
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w58",
+      "start": 3897.790702,
+      "end": 3951.857387,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3898.04657,
+          "end": 3898.752813
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3899.041088,
+          "end": 3899.798088
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3899.798088,
+          "end": 3950.376088
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3950.376088,
+          "end": 3951.405088
+        },
+        {
+          "kind": "remote output download",
+          "start": 3951.483142,
+          "end": 3951.856736
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w58",
+      "start": 3952.308653,
+      "end": 3973.507066,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3952.413053,
+          "end": 3953.178229
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3953.92249,
+          "end": 3955.70149
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3955.70149,
+          "end": 3972.39149
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 3972.39149,
+          "end": 3973.28349
+        },
+        {
+          "kind": "remote output download",
+          "start": 3973.36751,
+          "end": 3973.505091
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w36",
+      "start": 3951.860442,
+      "end": 4003.392475,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3952.333328,
+          "end": 3953.240304
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3953.660317,
+          "end": 3955.780317
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3955.780317,
+          "end": 4002.916317
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4002.916317,
+          "end": 4003.060317
+        },
+        {
+          "kind": "remote output download",
+          "start": 4003.13135,
+          "end": 4003.39081
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w36",
+      "start": 4017.31695,
+      "end": 4036.6132,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4017.771455,
+          "end": 4018.59016
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4018.804588,
+          "end": 4019.898588
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4019.898588,
+          "end": 4036.247588
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4036.247588,
+          "end": 4036.325588
+        },
+        {
+          "kind": "remote output download",
+          "start": 4036.432623,
+          "end": 4036.610252
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w62",
+      "start": 4066.554943,
+      "end": 4147.886288,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4066.946289,
+          "end": 4068.078832
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4068.626694,
+          "end": 4069.907694
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4069.907694,
+          "end": 4147.002694
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4147.002694,
+          "end": 4147.415694
+        },
+        {
+          "kind": "remote output download",
+          "start": 4147.540757,
+          "end": 4147.884449
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w6",
+      "start": 407.139532,
+      "end": 4186.038328,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 407.287291,
+          "end": 408.726794
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2100.171008,
+          "end": 2102.071008
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2102.071008,
+          "end": 4185.593008
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4185.593008,
+          "end": 4185.698008
+        },
+        {
+          "kind": "remote output download",
+          "start": 4185.803062,
+          "end": 4186.036458
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w62",
+      "start": 4186.044809,
+      "end": 4208.921798,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4186.263158,
+          "end": 4186.767198
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4186.83848,
+          "end": 4187.30748
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4187.30748,
+          "end": 4208.18048
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4208.18048,
+          "end": 4208.33848
+        },
+        {
+          "kind": "remote output download",
+          "start": 4208.523535,
+          "end": 4208.919834
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w6",
+      "start": 4208.92292,
+      "end": 4249.802977,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4209.067467,
+          "end": 4209.421798
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4209.520124,
+          "end": 4210.284124
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4210.284124,
+          "end": 4248.886124
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4248.886124,
+          "end": 4249.508124
+        },
+        {
+          "kind": "remote output download",
+          "start": 4249.560171,
+          "end": 4249.795999
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w5",
+      "start": 395.366274,
+      "end": 4269.032237,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 395.480249,
+          "end": 397.964408
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 2220.797664,
+          "end": 2223.365664
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 2223.365664,
+          "end": 4268.102664
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4268.102664,
+          "end": 4268.670664
+        },
+        {
+          "kind": "remote output download",
+          "start": 4268.726705,
+          "end": 4269.030778
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w28",
+      "start": 3599.63634,
+      "end": 4289.323658,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3599.783584,
+          "end": 3601.808035
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3706.393889,
+          "end": 3707.703889
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3707.703889,
+          "end": 4288.549889
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4288.549889,
+          "end": 4288.823889
+        },
+        {
+          "kind": "remote output download",
+          "start": 4288.908941,
+          "end": 4289.320174
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w5",
+      "start": 4280.716085,
+      "end": 4325.328793,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4280.835362,
+          "end": 4281.999645
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4282.326067,
+          "end": 4282.877067
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4282.877067,
+          "end": 4324.232067
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4324.232067,
+          "end": 4324.551067
+        },
+        {
+          "kind": "remote output download",
+          "start": 4324.772089,
+          "end": 4325.325238
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w61",
+      "start": 4269.033643,
+      "end": 4348.755042,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4269.174848,
+          "end": 4270.084042
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4270.155374,
+          "end": 4271.016374
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4271.016374,
+          "end": 4348.082374
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4348.082374,
+          "end": 4348.325374
+        },
+        {
+          "kind": "remote output download",
+          "start": 4348.435435,
+          "end": 4348.751404
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w61",
+      "start": 4378.615772,
+      "end": 4402.285916,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4378.722673,
+          "end": 4379.135503
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4379.443384,
+          "end": 4379.665384
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4379.665384,
+          "end": 4401.154384
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4401.154384,
+          "end": 4401.937384
+        },
+        {
+          "kind": "remote output download",
+          "start": 4402.002446,
+          "end": 4402.282213
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w28",
+      "start": 4325.329352,
+      "end": 4418.624157,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4325.499149,
+          "end": 4326.15556
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4326.227421,
+          "end": 4326.596421
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4326.596421,
+          "end": 4417.011421
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4417.011421,
+          "end": 4418.043421
+        },
+        {
+          "kind": "remote output download",
+          "start": 4418.123443,
+          "end": 4418.621404
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w27",
+      "start": 3764.593588,
+      "end": 4430.049381,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3765.184049,
+          "end": 3768.409363
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3768.543191,
+          "end": 3770.509191
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3770.509191,
+          "end": 4428.837191
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4428.837191,
+          "end": 4429.535191
+        },
+        {
+          "kind": "remote output download",
+          "start": 4429.646229,
+          "end": 4430.047716
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w30",
+      "start": 3893.875234,
+      "end": 4496.958386,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3893.98546,
+          "end": 3895.093001
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3895.305402,
+          "end": 3898.084402
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3898.084402,
+          "end": 4496.435402
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4496.435402,
+          "end": 4496.549402
+        },
+        {
+          "kind": "remote output download",
+          "start": 4496.603454,
+          "end": 4496.956564
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w31",
+      "start": 4402.292138,
+      "end": 4515.811631,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4402.445226,
+          "end": 4403.392884
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4403.859634,
+          "end": 4404.853634
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4404.853634,
+          "end": 4515.171634
+        },
+        {
+          "kind": "remote output download",
+          "start": 4515.312686,
+          "end": 4515.810096
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w27",
+      "start": 4434.103243,
+      "end": 4547.221279,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4434.213915,
+          "end": 4434.989005
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4435.398249,
+          "end": 4436.193249
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4436.193249,
+          "end": 4546.597249
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4546.597249,
+          "end": 4546.790249
+        },
+        {
+          "kind": "remote output download",
+          "start": 4546.860304,
+          "end": 4547.213891
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w33",
+      "start": 4496.969122,
+      "end": 4560.318581,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4497.080763,
+          "end": 4497.770926
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4497.886846,
+          "end": 4498.957846
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4498.957846,
+          "end": 4559.409846
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4559.409846,
+          "end": 4559.593846
+        },
+        {
+          "kind": "remote output download",
+          "start": 4560.043899,
+          "end": 4560.317342
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w31",
+      "start": 4547.227418,
+      "end": 4570.106335,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4547.335847,
+          "end": 4547.776653
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4548.085052,
+          "end": 4548.550052
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4548.550052,
+          "end": 4569.769052
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4569.769052,
+          "end": 4569.842052
+        },
+        {
+          "kind": "remote output download",
+          "start": 4569.928073,
+          "end": 4570.10503
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w29",
+      "start": 3973.519163,
+      "end": 4583.487975,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 3973.803339,
+          "end": 3974.608303
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 3974.723521,
+          "end": 3976.434521
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 3976.434521,
+          "end": 4583.058521
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4583.058521,
+          "end": 4583.123521
+        },
+        {
+          "kind": "remote output download",
+          "start": 4583.193576,
+          "end": 4583.483902
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w33",
+      "start": 4570.110655,
+      "end": 4588.215753,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4570.325225,
+          "end": 4570.663832
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4570.745185,
+          "end": 4571.237185
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4571.237185,
+          "end": 4587.906185
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4587.906185,
+          "end": 4587.983185
+        },
+        {
+          "kind": "remote output download",
+          "start": 4588.040207,
+          "end": 4588.213228
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w30",
+      "start": 4515.81576,
+      "end": 4615.889159,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4515.965913,
+          "end": 4516.66811
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4516.81599,
+          "end": 4517.73499
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4517.73499,
+          "end": 4614.79099
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4614.79099,
+          "end": 4615.33999
+        },
+        {
+          "kind": "remote output download",
+          "start": 4615.422011,
+          "end": 4615.875599
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w32",
+      "start": 4583.499914,
+      "end": 4647.958746,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4583.6153,
+          "end": 4583.935934
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4584.059467,
+          "end": 4584.683467
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4584.683467,
+          "end": 4647.360467
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4647.360467,
+          "end": 4647.553467
+        },
+        {
+          "kind": "remote output download",
+          "start": 4647.700524,
+          "end": 4647.9575
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w70",
+      "start": 4644.614342,
+      "end": 4664.947322,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4644.799819,
+          "end": 4645.584424
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4645.692992,
+          "end": 4646.684992
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4646.684992,
+          "end": 4664.239992
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4664.239992,
+          "end": 4664.643992
+        },
+        {
+          "kind": "remote output download",
+          "start": 4664.72801,
+          "end": 4664.946747
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w32",
+      "start": 4664.95228,
+      "end": 4682.61647,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4665.06876,
+          "end": 4665.322712
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4665.409091,
+          "end": 4665.897091
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4665.897091,
+          "end": 4682.149091
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4682.149091,
+          "end": 4682.218091
+        },
+        {
+          "kind": "remote output download",
+          "start": 4682.460145,
+          "end": 4682.613478
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w29",
+      "start": 4587.665547,
+      "end": 4692.953775,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4587.804155,
+          "end": 4588.160264
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4588.253693,
+          "end": 4588.352693
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4588.352693,
+          "end": 4692.194693
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4692.194693,
+          "end": 4692.391693
+        },
+        {
+          "kind": "remote output download",
+          "start": 4692.738749,
+          "end": 4692.9468
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w70",
+      "start": 4682.617253,
+      "end": 4697.070808,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4682.721791,
+          "end": 4683.059603
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4683.290687,
+          "end": 4683.865687
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4683.865687,
+          "end": 4696.651687
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4696.651687,
+          "end": 4696.796687
+        },
+        {
+          "kind": "remote output download",
+          "start": 4696.862707,
+          "end": 4697.070215
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w68",
+      "start": 4647.963278,
+      "end": 4736.752887,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4648.16551,
+          "end": 4648.650407
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4648.7314,
+          "end": 4650.1674
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4650.1674,
+          "end": 4736.1984
+        },
+        {
+          "kind": "remote output download",
+          "start": 4736.502437,
+          "end": 4736.751892
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w80",
+      "start": 4588.216172,
+      "end": 4752.475063,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4588.323349,
+          "end": 4588.907702
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4589.000122,
+          "end": 4589.684122
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4589.684122,
+          "end": 4751.790122
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4751.790122,
+          "end": 4751.968122
+        },
+        {
+          "kind": "remote output download",
+          "start": 4752.219166,
+          "end": 4752.472089
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w68",
+      "start": 4752.480782,
+      "end": 4771.268748,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4752.612814,
+          "end": 4752.949009
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4753.024708,
+          "end": 4753.863708
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4753.863708,
+          "end": 4770.847708
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4770.847708,
+          "end": 4771.001708
+        },
+        {
+          "kind": "remote output download",
+          "start": 4771.056759,
+          "end": 4771.266177
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w88",
+      "start": 4445.726982,
+      "end": 4792.67953,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4445.935233,
+          "end": 4446.684164
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4447.460842,
+          "end": 4448.572842
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4448.572842,
+          "end": 4792.277842
+        },
+        {
+          "kind": "remote output download",
+          "start": 4792.386895,
+          "end": 4792.67761
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w88",
+      "start": 4792.680402,
+      "end": 4813.163607,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4792.801803,
+          "end": 4793.061626
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4793.18993,
+          "end": 4793.64793
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4793.64793,
+          "end": 4812.77693
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4812.77693,
+          "end": 4812.85093
+        },
+        {
+          "kind": "remote output download",
+          "start": 4812.924115,
+          "end": 4813.160727
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w80",
+      "start": 4771.269648,
+      "end": 4818.475337,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4771.416649,
+          "end": 4771.958544
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4772.080668,
+          "end": 4772.625668
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4772.625668,
+          "end": 4817.886668
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4817.886668,
+          "end": 4818.000668
+        },
+        {
+          "kind": "remote output download",
+          "start": 4818.068725,
+          "end": 4818.470656
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w57",
+      "start": 4719.968656,
+      "end": 4824.010213,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4720.109283,
+          "end": 4721.527975
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4721.625285,
+          "end": 4722.408285
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4722.408285,
+          "end": 4823.626285
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4823.626285,
+          "end": 4823.695285
+        },
+        {
+          "kind": "remote output download",
+          "start": 4823.762336,
+          "end": 4824.008186
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w56",
+      "start": 4736.754125,
+      "end": 4838.609453,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4736.880247,
+          "end": 4737.388215
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4737.487312,
+          "end": 4738.079312
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4738.079312,
+          "end": 4838.125312
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4838.125312,
+          "end": 4838.314312
+        },
+        {
+          "kind": "remote output download",
+          "start": 4838.367473,
+          "end": 4838.607874
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w57",
+      "start": 4832.599536,
+      "end": 4853.069715,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4832.731479,
+          "end": 4833.223382
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4833.368632,
+          "end": 4833.514632
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4833.514632,
+          "end": 4852.626632
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4852.626632,
+          "end": 4852.688632
+        },
+        {
+          "kind": "remote output download",
+          "start": 4852.743662,
+          "end": 4853.064866
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w56",
+      "start": 4853.070847,
+      "end": 4873.590961,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4853.254478,
+          "end": 4853.543101
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4853.643449,
+          "end": 4854.054449
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4854.054449,
+          "end": 4873.181449
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4873.181449,
+          "end": 4873.272449
+        },
+        {
+          "kind": "remote output download",
+          "start": 4873.327605,
+          "end": 4873.586438
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w78",
+      "start": 4724.821069,
+      "end": 4883.670682,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4724.957072,
+          "end": 4725.476231
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4725.744926,
+          "end": 4726.938926
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4726.938926,
+          "end": 4883.359926
+        },
+        {
+          "kind": "remote output download",
+          "start": 4883.444978,
+          "end": 4883.668149
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w90",
+      "start": 4836.836679,
+      "end": 4903.002438,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4836.955521,
+          "end": 4837.458119
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4837.559409,
+          "end": 4838.097409
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4838.097409,
+          "end": 4902.702409
+        },
+        {
+          "kind": "remote output download",
+          "start": 4902.791468,
+          "end": 4903.000642
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w90",
+      "start": 4903.008413,
+      "end": 4917.5652,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4903.114836,
+          "end": 4903.382583
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4903.765224,
+          "end": 4904.255224
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4904.255224,
+          "end": 4917.153224
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4917.153224,
+          "end": 4917.247224
+        },
+        {
+          "kind": "remote output download",
+          "start": 4917.322455,
+          "end": 4917.563242
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w78",
+      "start": 4887.235702,
+      "end": 4928.281537,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4887.344588,
+          "end": 4887.748419
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4887.837963,
+          "end": 4887.974963
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4887.974963,
+          "end": 4927.330963
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4927.330963,
+          "end": 4927.860963
+        },
+        {
+          "kind": "remote output download",
+          "start": 4928.083019,
+          "end": 4928.274707
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w63",
+      "start": 4958.423209,
+      "end": 4984.254371,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4958.537184,
+          "end": 4959.901328
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4959.99612,
+          "end": 4960.45412
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4960.45412,
+          "end": 4983.54312
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4983.54312,
+          "end": 4983.89712
+        },
+        {
+          "kind": "remote output download",
+          "start": 4983.974168,
+          "end": 4984.252497
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w72",
+      "start": 4897.005946,
+      "end": 4984.982798,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4897.114927,
+          "end": 4897.815557
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4897.928201,
+          "end": 4898.504201
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4898.504201,
+          "end": 4984.528201
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4984.528201,
+          "end": 4984.649201
+        },
+        {
+          "kind": "remote output download",
+          "start": 4984.719255,
+          "end": 4984.981238
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w91",
+      "start": 4917.566656,
+      "end": 4986.711329,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4917.686939,
+          "end": 4918.572919
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4918.678357,
+          "end": 4919.325357
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4919.325357,
+          "end": 4986.194357
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4986.194357,
+          "end": 4986.407357
+        },
+        {
+          "kind": "remote output download",
+          "start": 4986.463399,
+          "end": 4986.709525
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w63",
+      "start": 4984.984284,
+      "end": 4999.223061,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4985.115348,
+          "end": 4985.649311
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4985.760332,
+          "end": 4986.314332
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4986.314332,
+          "end": 4998.850332
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 4998.850332,
+          "end": 4998.921332
+        },
+        {
+          "kind": "remote output download",
+          "start": 4998.974393,
+          "end": 4999.220817
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w91",
+      "start": 4986.713953,
+      "end": 5002.833371,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4986.826586,
+          "end": 4987.964177
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4988.0663,
+          "end": 4988.8023
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4988.8023,
+          "end": 5002.3883
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 5002.3883,
+          "end": 5002.5013
+        },
+        {
+          "kind": "remote output download",
+          "start": 5002.561354,
+          "end": 5002.830788
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w72",
+      "start": 5002.833824,
+      "end": 5018.721737,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5003.000857,
+          "end": 5003.29441
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5003.441451,
+          "end": 5003.936451
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5003.936451,
+          "end": 5018.201451
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 5018.201451,
+          "end": 5018.388451
+        },
+        {
+          "kind": "remote output download",
+          "start": 5018.449503,
+          "end": 5018.719591
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w65",
+      "start": 4984.259245,
+      "end": 5072.906074,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4984.591382,
+          "end": 4985.609363
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4985.760816,
+          "end": 4986.756816
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4986.756816,
+          "end": 5072.563816
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w65",
+      "start": 5085.00126,
+      "end": 5100.562712,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5085.124691,
+          "end": 5085.716919
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5085.915167,
+          "end": 5100.276167
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w81",
+      "start": 4838.617614,
+      "end": 5117.532199,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4838.728089,
+          "end": 4839.30274
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 4839.382536,
+          "end": 4840.139536
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 4840.139536,
+          "end": 5117.153536
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w74",
+      "start": 5100.568741,
+      "end": 5170.906328,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5100.679237,
+          "end": 5101.00694
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5101.104474,
+          "end": 5101.705474
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5101.705474,
+          "end": 5170.574474
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w81",
+      "start": 5117.55286,
+      "end": 5182.199862,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5117.666518,
+          "end": 5117.999355
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5118.104253,
+          "end": 5181.919253
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w74",
+      "start": 5182.210953,
+      "end": 5199.37368,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5182.330938,
+          "end": 5182.601359
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5182.705553,
+          "end": 5199.136553
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w73",
+      "start": 5213.194649,
+      "end": 5281.930748,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5213.304052,
+          "end": 5213.822994
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5213.916735,
+          "end": 5214.590735
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5214.590735,
+          "end": 5281.528735
+        },
+        {
+          "kind": "remote output download",
+          "start": 5281.644788,
+          "end": 5281.928916
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w67",
+      "start": 5196.756325,
+      "end": 5284.382915,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5196.873879,
+          "end": 5197.259637
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5197.344442,
+          "end": 5197.897442
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5197.897442,
+          "end": 5283.584442
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 5283.584442,
+          "end": 5284.067442
+        },
+        {
+          "kind": "remote output download",
+          "start": 5284.127492,
+          "end": 5284.38166
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w73",
+      "start": 5281.935378,
+      "end": 5303.150732,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5282.085439,
+          "end": 5282.482059
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5282.679111,
+          "end": 5283.609111
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5283.609111,
+          "end": 5302.139111
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 5302.139111,
+          "end": 5302.696111
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w67",
+      "start": 5303.151859,
+      "end": 5322.074838,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5303.263541,
+          "end": 5303.735357
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5303.969871,
+          "end": 5304.711871
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5304.711871,
+          "end": 5321.071871
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 5321.071871,
+          "end": 5321.765871
+        },
+        {
+          "kind": "remote output download",
+          "start": 5321.822926,
+          "end": 5322.073484
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w87",
+      "start": 5018.723759,
+      "end": 5363.345792,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5018.836927,
+          "end": 5019.366873
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5019.489368,
+          "end": 5019.988368
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5019.988368,
+          "end": 5362.553368
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 5362.553368,
+          "end": 5362.863368
+        },
+        {
+          "kind": "remote output download",
+          "start": 5363.039421,
+          "end": 5363.342612
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w85",
+      "start": 5026.552906,
+      "end": 5371.796918,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5026.662822,
+          "end": 5027.179704
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5027.278324,
+          "end": 5028.488324
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5028.488324,
+          "end": 5371.262324
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 5371.262324,
+          "end": 5371.514324
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w87",
+      "start": 5363.346528,
+      "end": 5382.227716,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5363.490486,
+          "end": 5363.999129
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5364.096514,
+          "end": 5364.786514
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5364.786514,
+          "end": 5381.853514
+        },
+        {
+          "kind": "remote output download",
+          "start": 5381.974581,
+          "end": 5382.226151
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w85",
+      "start": 5371.799837,
+      "end": 5390.193972,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5371.909126,
+          "end": 5372.355315
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5372.442635,
+          "end": 5372.857635
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5372.857635,
+          "end": 5389.849635
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w83",
+      "start": 5284.390957,
+      "end": 5761.292138,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5284.509086,
+          "end": 5285.03693
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5285.183673,
+          "end": 5286.431673
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5286.431673,
+          "end": 5760.549673
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 5760.549673,
+          "end": 5760.744673
+        },
+        {
+          "kind": "remote output download",
+          "start": 5760.868738,
+          "end": 5761.288633
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w83",
+      "start": 5761.300191,
+      "end": 5846.7994,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 5761.762223,
+          "end": 5762.360116
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 5762.636486,
+          "end": 5763.238486
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 5763.238486,
+          "end": 5846.103486
+        },
+        {
+          "kind": "remote output download",
+          "start": 5846.257521,
+          "end": 5846.794965
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w35",
+      "start": 4147.888129,
+      "end": 9399.837857,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4148.073968,
+          "end": 4148.886614
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 6877.775414,
+          "end": 6878.172414
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 6878.172414,
+          "end": 9398.859414
+        },
+        {
+          "kind": "remote output download",
+          "start": 9399.045476,
+          "end": 9399.834748
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w35",
+      "start": 9399.839267,
+      "end": 9432.397117,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 9399.950356,
+          "end": 9400.751394
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 9401.055585,
+          "end": 9402.529585
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 9402.529585,
+          "end": 9431.712585
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 9431.712585,
+          "end": 9431.964585
+        },
+        {
+          "kind": "remote output download",
+          "start": 9432.03762,
+          "end": 9432.394585
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w34",
+      "start": 4289.330926,
+      "end": 10659.207813,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4289.449581,
+          "end": 4289.943412
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 8108.646062,
+          "end": 8109.987062
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 8109.987062,
+          "end": 10658.731062
+        },
+        {
+          "kind": "remote output download",
+          "start": 10658.871125,
+          "end": 10659.206419
+        }
+      ]
+    },
+    {
+      "stage": "theory_world",
+      "world": "w34",
+      "start": 10659.208951,
+      "end": 10687.528155,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 10659.368133,
+          "end": 10659.837793
+        },
+        {
+          "kind": "Remote execution file fetching",
+          "start": 10659.942229,
+          "end": 10660.501229
+        },
+        {
+          "kind": "Remote execution process wall time",
+          "start": 10660.501229,
+          "end": 10686.855229
+        },
+        {
+          "kind": "Remote execution upload time",
+          "start": 10686.855229,
+          "end": 10686.912229
+        },
+        {
+          "kind": "remote output download",
+          "start": 10687.165275,
+          "end": 10687.526491
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w84",
+      "start": 4825.062832,
+      "end": 17114.429074,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 4825.186093,
+          "end": 4826.060019
+        }
+      ]
+    },
+    {
+      "stage": "world_extract",
+      "world": "w41",
+      "start": 1511.440916,
+      "end": 18118.152818,
+      "parts": [
+        {
+          "kind": "Remote execution upload time",
+          "start": 1511.715266,
+          "end": 1513.812549
+        }
+      ]
+    }
+  ],
+  "seconds": 18118.152818,
+  "processes": 180,
+  "summed_process_seconds": 33628.758,
+  "union_process_seconds": 9641.228846000004,
+  "max_recorded_overlap": 7,
+  "unknown_process_worlds": [
+    "w41",
+    "w84"
+  ],
+  "detail": {
+    "stage": "world_extract",
+    "world": "w59",
+    "start": 5.828253,
+    "end": 67.452741,
+    "parts": [
+      {
+        "kind": "Remote execution upload time",
+        "start": 5.984287,
+        "end": 7.823307
+      },
+      {
+        "kind": "Remote execution file fetching",
+        "start": 8.13815,
+        "end": 9.70215
+      },
+      {
+        "kind": "Remote execution process wall time",
+        "start": 9.70215,
+        "end": 66.38015
+      },
+      {
+        "kind": "Remote execution upload time",
+        "start": 66.38015,
+        "end": 67.07715
+      },
+      {
+        "kind": "remote output download",
+        "start": 67.137378,
+        "end": 67.448522
+      }
+    ]
+  },
+  "worlds": [
+    {
+      "world": "w8",
+      "repository": "FHIR/sushi",
+      "revision": "2f6adfd82de60ef6d810a3345dc953c7387da732",
+      "files": "276"
+    },
+    {
+      "world": "w9",
+      "repository": "FHIR/sushi",
+      "revision": "301e66940a2265a467debff69c5c3bfaeb06931a",
+      "files": "276"
+    },
+    {
+      "world": "w10",
+      "repository": "FHIR/sushi",
+      "revision": "663286ef961c7546f71ba9e86e1e6862e4ff7046",
+      "files": "276"
+    },
+    {
+      "world": "w11",
+      "repository": "FHIR/sushi",
+      "revision": "d8f56185677f9748d7a759c624bdf3d2192dd3c9",
+      "files": "276"
+    },
+    {
+      "world": "w54",
+      "repository": "FormidableLabs/urql",
+      "revision": "8e7fc5ce1451b24f569343011da717362c1ba3f0",
+      "files": "320"
+    },
+    {
+      "world": "w55",
+      "repository": "FormidableLabs/urql",
+      "revision": "2527996491103e5ce17328071e67583f5b498c70",
+      "files": "320"
+    },
+    {
+      "world": "w56",
+      "repository": "FormidableLabs/urql",
+      "revision": "935db592cf3365e29d351d654d6bdd7d3bc1e9d1",
+      "files": "320"
+    },
+    {
+      "world": "w57",
+      "repository": "FormidableLabs/urql",
+      "revision": "da5a2eba69afdc5c176066c1ea1e2311d4c1435d",
+      "files": "323"
+    },
+    {
+      "world": "w16",
+      "repository": "JoshuaKGoldberg/create-typescript-app",
+      "revision": "6f260c8df819bd796252ae3797809bf40d915520",
+      "files": "185"
+    },
+    {
+      "world": "w17",
+      "repository": "JoshuaKGoldberg/create-typescript-app",
+      "revision": "a64a9c7f55de23c8f80633dd0e6d4353fcd1f220",
+      "files": "176"
+    },
+    {
+      "world": "w18",
+      "repository": "JoshuaKGoldberg/create-typescript-app",
+      "revision": "834a44de5b4a7f3e4be4925a68911e192cbba2de",
+      "files": "176"
+    },
+    {
+      "world": "w19",
+      "repository": "JoshuaKGoldberg/create-typescript-app",
+      "revision": "be806ca42a57a0e97108d3a736288d225967616a",
+      "files": "176"
+    },
+    {
+      "world": "w23",
+      "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+      "revision": "0c95c3f83e9ab70e77d552210f94928fce6808b3",
+      "files": "281"
+    },
+    {
+      "world": "w24",
+      "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+      "revision": "df0faf840109374be3f74778e4302820de5df497",
+      "files": "232"
+    },
+    {
+      "world": "w25",
+      "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+      "revision": "1f8f414a487a0f8d67c37b7de13fda7848f5ac67",
+      "files": "233"
+    },
+    {
+      "world": "w26",
+      "repository": "JoshuaKGoldberg/tslint-to-eslint-config",
+      "revision": "54590cf89a1d6dcac5352a908ee16f75adb087fd",
+      "files": "233"
+    },
+    {
+      "world": "w46",
+      "repository": "ProjectEvergreen/greenwood",
+      "revision": "76f943ef09dedce2c3ee9deecb562c298d00f271",
+      "files": "360"
+    },
+    {
+      "world": "w47",
+      "repository": "ProjectEvergreen/greenwood",
+      "revision": "e7a08b6fcf7aa60f69491ec6aff591823991b7f6",
+      "files": "362"
+    },
+    {
+      "world": "w49",
+      "repository": "ProjectEvergreen/greenwood",
+      "revision": "3003f49d1f0415e6ca2786f49a7747ea3817a774",
+      "files": "393"
+    },
+    {
+      "world": "w27",
+      "repository": "Sage/carbon",
+      "revision": "f303f8d3d3204b1c947ae749bd6f1bf96233b888",
+      "files": "1347"
+    },
+    {
+      "world": "w28",
+      "repository": "Sage/carbon",
+      "revision": "5be5f330c7dc88fc30f5362c7d4f9c9d0ada74bf",
+      "files": "1335"
+    },
+    {
+      "world": "w29",
+      "repository": "Sage/carbon",
+      "revision": "bde9df23ae9b494ebb6a63dc20355337cda5e062",
+      "files": "1335"
+    },
+    {
+      "world": "w30",
+      "repository": "Sage/carbon",
+      "revision": "18bca960fd0fbd8893c18415eb9a79eed23fdc0a",
+      "files": "1340"
+    },
+    {
+      "world": "w85",
+      "repository": "elastic/synthetics",
+      "revision": "01c81e9607da4c0f57f83c775f810bc22861c5db",
+      "files": "58"
+    },
+    {
+      "world": "w86",
+      "repository": "elastic/synthetics",
+      "revision": "769e2e8b36229b1f48be3349d5c1f679ed210ffe",
+      "files": "60"
+    },
+    {
+      "world": "w87",
+      "repository": "elastic/synthetics",
+      "revision": "7c3bd6475040967ffae003e0509df502ced35f64",
+      "files": "60"
+    },
+    {
+      "world": "w88",
+      "repository": "elastic/synthetics",
+      "revision": "7384dc9588c3773f4f639387047faf3393e621f0",
+      "files": "60"
+    },
+    {
+      "world": "w61",
+      "repository": "ember-cli/eslint-plugin-ember",
+      "revision": "fcdb389919d704177bdf78bbf6ca2f21b30e516b",
+      "files": "208"
+    },
+    {
+      "world": "w62",
+      "repository": "ember-cli/eslint-plugin-ember",
+      "revision": "88c231a3cb54248ed0f60f05b9733834bc75e83e",
+      "files": "206"
+    },
+    {
+      "world": "w63",
+      "repository": "ember-cli/eslint-plugin-ember",
+      "revision": "9cde36a38d1e57cd64812a7a44ac0f42df16905c",
+      "files": "60"
+    },
+    {
+      "world": "w64",
+      "repository": "ember-cli/eslint-plugin-ember",
+      "revision": "c879157460fad4353f826c924f2e41761427337e",
+      "files": "213"
+    },
+    {
+      "world": "w5",
+      "repository": "eslint/eslint",
+      "revision": "22ff6f3ab122f61c10fa51f9b1082f2e6f302938",
+      "files": "1007"
+    },
+    {
+      "world": "w6",
+      "repository": "eslint/eslint",
+      "revision": "4f595e8a7cc1fefae866d2cf0e758515d6098e3c",
+      "files": "1007"
+    },
+    {
+      "world": "w7",
+      "repository": "eslint/eslint",
+      "revision": "abc765c1bc6b546db82cb5cd038b66a3aa68b315",
+      "files": "1007"
+    },
+    {
+      "world": "w77",
+      "repository": "firebase/firebase-tools",
+      "revision": "ba06f6dc34e64ef53a9cf002bacd6cdd0675749f",
+      "files": "363"
+    },
+    {
+      "world": "w78",
+      "repository": "firebase/firebase-tools",
+      "revision": "e04591d4965746af1b7e36873265dcf4cbd5cb6c",
+      "files": "359"
+    },
+    {
+      "world": "w79",
+      "repository": "firebase/firebase-tools",
+      "revision": "63ed7b1d005c9d65956910fa8d523571da271bc1",
+      "files": "359"
+    },
+    {
+      "world": "w80",
+      "repository": "firebase/firebase-tools",
+      "revision": "c8de003b82acd00dc244a30c6b5c21c615c57b09",
+      "files": "361"
+    },
+    {
+      "world": "w42",
+      "repository": "jsx-eslint/eslint-plugin-react",
+      "revision": "2575bba0ae30b1b0b4013539be3b0dc4eb8114eb",
+      "files": "245"
+    },
+    {
+      "world": "w43",
+      "repository": "jsx-eslint/eslint-plugin-react",
+      "revision": "ef733fd420c821f7159b28f4a36ce5e09375f9b8",
+      "files": "245"
+    },
+    {
+      "world": "w44",
+      "repository": "jsx-eslint/eslint-plugin-react",
+      "revision": "aac7fb9bc48427539839280ea522ccbe50458ac1",
+      "files": "245"
+    },
+    {
+      "world": "w45",
+      "repository": "jsx-eslint/eslint-plugin-react",
+      "revision": "87fb344c9509f8c31e9bd4a49d31576397a89ebc",
+      "files": "245"
+    },
+    {
+      "world": "w58",
+      "repository": "marpple/FxTS",
+      "revision": "54cf5d26171a9c7632d459c97b5c2853b4190ac9",
+      "files": "263"
+    },
+    {
+      "world": "w59",
+      "repository": "marpple/FxTS",
+      "revision": "7b099745fd3038f9155d74b8b76c3a7561073a9e",
+      "files": "297"
+    },
+    {
+      "world": "w60",
+      "repository": "marpple/FxTS",
+      "revision": "2738b9ae070b173d0bd78036168f09426581401c",
+      "files": "272"
+    },
+    {
+      "world": "w34",
+      "repository": "obsidian-tasks-group/obsidian-tasks",
+      "revision": "d48284e82386548e13c1471fc9dc1771d3d736be",
+      "files": "87"
+    },
+    {
+      "world": "w35",
+      "repository": "obsidian-tasks-group/obsidian-tasks",
+      "revision": "1164899d6b4b251db81dff1edcc836d4192d833a",
+      "files": "95"
+    },
+    {
+      "world": "w36",
+      "repository": "obsidian-tasks-group/obsidian-tasks",
+      "revision": "7716c2894fd721e6de5691066647822b3c7a1bad",
+      "files": "102"
+    },
+    {
+      "world": "w37",
+      "repository": "obsidian-tasks-group/obsidian-tasks",
+      "revision": "04c621db3117b8ccaaa57c10ea212c682e27e716",
+      "files": "106"
+    },
+    {
+      "world": "w89",
+      "repository": "pinojs/pino",
+      "revision": "c57c25855d89a2c481914672bbdeebe7ec3087c7",
+      "files": "110"
+    },
+    {
+      "world": "w90",
+      "repository": "pinojs/pino",
+      "revision": "21ee5e2a03835dca7652f7b66905ae436c92e7d1",
+      "files": "110"
+    },
+    {
+      "world": "w91",
+      "repository": "pinojs/pino",
+      "revision": "1726618447f01ed90276d92d2ae196c252770e01",
+      "files": "122"
+    },
+    {
+      "world": "w92",
+      "repository": "pinojs/pino",
+      "revision": "5e5e543033f5a0596142e0c8af6693a393c28013",
+      "files": "24"
+    },
+    {
+      "world": "w12",
+      "repository": "platers/obsidian-linter",
+      "revision": "d3515fe32804f4ec495d993f10eabbf4b9fa6161",
+      "files": "197"
+    },
+    {
+      "world": "w13",
+      "repository": "platers/obsidian-linter",
+      "revision": "5ed573398e717b06f2afa65818224cf0abc1ab2a",
+      "files": "197"
+    },
+    {
+      "world": "w14",
+      "repository": "platers/obsidian-linter",
+      "revision": "4cd434c20a3e1384911680c7eaf1414a59ee0205",
+      "files": "197"
+    },
+    {
+      "world": "w15",
+      "repository": "platers/obsidian-linter",
+      "revision": "4a0724ab6a3f8340ea3a48f491f6f08bdaa86e57",
+      "files": "197"
+    },
+    {
+      "world": "w1",
+      "repository": "serverless/serverless",
+      "revision": "2ac55b01bee405c5ca719f4b52166399b9d6f48a",
+      "files": "750"
+    },
+    {
+      "world": "w2",
+      "repository": "serverless/serverless",
+      "revision": "4d64730130c44cdfbb872f8a16111df409135dc8",
+      "files": "754"
+    },
+    {
+      "world": "w3",
+      "repository": "serverless/serverless",
+      "revision": "83e194cb17b5b932bcc866f2543351b64fde329a",
+      "files": "755"
+    },
+    {
+      "world": "w4",
+      "repository": "serverless/serverless",
+      "revision": "17d64e6c94b88a5daf36f28a4fa192c231052cfb",
+      "files": "755"
+    },
+    {
+      "world": "w69",
+      "repository": "sindresorhus/got",
+      "revision": "f9f2807e63635432ab175824859caa70e3c583aa",
+      "files": "14"
+    },
+    {
+      "world": "w70",
+      "repository": "sindresorhus/got",
+      "revision": "f9078b6440eefd3a8ebf15ff07b61d2bc1b27b8b",
+      "files": "15"
+    },
+    {
+      "world": "w71",
+      "repository": "sindresorhus/got",
+      "revision": "cecea2d1081c2dc255995229cbcf4eff92a7efb1",
+      "files": "15"
+    },
+    {
+      "world": "w72",
+      "repository": "sindresorhus/got",
+      "revision": "c25af092bf792c2c7e29db848a569f2eb3e527f8",
+      "files": "66"
+    },
+    {
+      "world": "w65",
+      "repository": "singapore/renovate",
+      "revision": "8d91a85fb72490c996fd953925a9e3a856c35b5f",
+      "files": "109"
+    },
+    {
+      "world": "w66",
+      "repository": "singapore/renovate",
+      "revision": "af8f11dbbfb03982ead3cb627a2a2b49eaa1abd1",
+      "files": "113"
+    },
+    {
+      "world": "w67",
+      "repository": "singapore/renovate",
+      "revision": "50295417d4ff68571bd90e9e75cdd1daf5a08ed2",
+      "files": "109"
+    },
+    {
+      "world": "w68",
+      "repository": "singapore/renovate",
+      "revision": "0427604de61a6a1783f208d9858320c29950b794",
+      "files": "115"
+    },
+    {
+      "world": "w51",
+      "repository": "solid/community-server",
+      "revision": "e604c0c2e427f7cf426cda6e3a52c2d72b997057",
+      "files": "577"
+    },
+    {
+      "world": "w52",
+      "repository": "solid/community-server",
+      "revision": "b1991cb08ae722aae497104067a7a455456952c7",
+      "files": "153"
+    },
+    {
+      "world": "w53",
+      "repository": "solid/community-server",
+      "revision": "f6f45c0ece35ed72c14224925e4711ae4d756520",
+      "files": "170"
+    },
+    {
+      "world": "w73",
+      "repository": "stoplightio/spectral",
+      "revision": "20774dca6b244aa11dfea9ee76de2a76c5f9d98a",
+      "files": "247"
+    },
+    {
+      "world": "w75",
+      "repository": "stoplightio/spectral",
+      "revision": "ec6b829a8bfa047882b9939738c6f95eb180c5aa",
+      "files": "248"
+    },
+    {
+      "world": "w76",
+      "repository": "stoplightio/spectral",
+      "revision": "40a39628cd2cb9e907d5e052d9d186838c70659e",
+      "files": "296"
+    },
+    {
+      "world": "w20",
+      "repository": "sveltejs/kit",
+      "revision": "842337b35a7c5fb49917c409e773ac5d9c61049d",
+      "files": "341"
+    },
+    {
+      "world": "w21",
+      "repository": "sveltejs/kit",
+      "revision": "80233c279f94e6aa86888b24147d46141c3ea688",
+      "files": "343"
+    },
+    {
+      "world": "w22",
+      "repository": "sveltejs/kit",
+      "revision": "b7ebff7ecdac6b7e6901553ada453743b18d78e4",
+      "files": "384"
+    },
+    {
+      "world": "w31",
+      "repository": "vuejs/eslint-plugin-vue",
+      "revision": "47e3f89a554ada9f32acd48088abbb7d40d51b5e",
+      "files": "428"
+    },
+    {
+      "world": "w32",
+      "repository": "vuejs/eslint-plugin-vue",
+      "revision": "99fe70dd45097ed4a7c8bdc60cf98e30ee57afac",
+      "files": "235"
+    },
+    {
+      "world": "w33",
+      "repository": "vuejs/eslint-plugin-vue",
+      "revision": "ee4143b08d57a279dc17fb5ebccd212dfc122d86",
+      "files": "235"
+    }
+  ],
+  "limits": "Partly cached, interrupted build. Action end is not a success receipt. Unassigned envelope time is not an isolated queue measurement. Hosted inference is a separate recording.",
+  "provenance": {
+    "/home/becker/experiments/attune-localization-ascii-20261010/dist/evidence.json": "59b933a96356ed57c838bb7379aee2e61a43c8e31c3ef19521c44ecb35433c3d"
+  }
+}

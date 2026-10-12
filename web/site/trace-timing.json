@@ -1,0 +1,118 @@
+{
+  "task": "projectevergreen__greenwood-1100",
+  "revision": "3003f49d1f0415e6ca2786f49a7747ea3817a774",
+  "timing": {
+    "started": "2026-10-11T00:37:54.263439+00:00",
+    "events": [
+      {
+        "name": "BM25 index",
+        "start_ms": 96.63080499740317,
+        "end_ms": 119.17797196656466
+      },
+      {
+        "name": "BM25 search",
+        "start_ms": 119.22930495347828,
+        "end_ms": 134.6555839991197
+      },
+      {
+        "name": "compile helpers",
+        "start_ms": 137.48271396616474,
+        "end_ms": 782.1077489643358,
+        "exit_code": 0
+      },
+      {
+        "name": "Qwen acquisition",
+        "start_ms": 782.3890830040909,
+        "end_ms": 93005.77783200424,
+        "exit_code": 0
+      },
+      {
+        "name": "Flix Qwen ranking",
+        "start_ms": 95702.72099999999,
+        "end_ms": 101021.95099501693,
+        "exit_code": 0
+      },
+      {
+        "name": "Atlas metadata assembly",
+        "start_ms": 101022.68100000001,
+        "end_ms": 101047.76708897916,
+        "exit_code": 1
+      },
+      {
+        "name": "Atlas metadata assembly",
+        "start_ms": 121450.725,
+        "end_ms": 121510.99015399572,
+        "exit_code": 1
+      },
+      {
+        "name": "Atlas metadata assembly",
+        "start_ms": 153716.683,
+        "end_ms": 153843.505611026,
+        "exit_code": 1
+      },
+      {
+        "name": "Atlas metadata assembly",
+        "start_ms": 177990.799,
+        "end_ms": 178074.48186397308,
+        "exit_code": 0
+      }
+    ]
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "inputs": 32,
+      "latency_ms": 14578
+    },
+    {
+      "attempt": 2,
+      "inputs": 32,
+      "latency_ms": 7275
+    },
+    {
+      "attempt": 3,
+      "inputs": 32,
+      "latency_ms": 19557
+    },
+    {
+      "attempt": 4,
+      "inputs": 32,
+      "latency_ms": 5924
+    },
+    {
+      "attempt": 5,
+      "inputs": 32,
+      "latency_ms": 6694
+    },
+    {
+      "attempt": 6,
+      "inputs": 32,
+      "latency_ms": 7312
+    },
+    {
+      "attempt": 7,
+      "inputs": 32,
+      "latency_ms": 5765
+    },
+    {
+      "attempt": 8,
+      "inputs": 32,
+      "latency_ms": 5114
+    },
+    {
+      "attempt": 9,
+      "inputs": 32,
+      "latency_ms": 7523
+    },
+    {
+      "attempt": 10,
+      "inputs": 32,
+      "latency_ms": 5509
+    },
+    {
+      "attempt": 11,
+      "inputs": 32,
+      "latency_ms": 5486
+    }
+  ]
+}

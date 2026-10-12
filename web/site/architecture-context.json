@@ -1,0 +1,49 @@
+{
+  "repository": "ProjectEvergreen/greenwood",
+  "world": "w49",
+  "revision": "3003f49d1f0415e6ca2786f49a7747ea3817a774",
+  "start": [
+    "packages/cli/src/lib/resource-utils.js"
+  ],
+  "imports": [
+    "packages/cli/src/lib/hashing-utils.js"
+  ],
+  "imports_imports": [],
+  "imports_imported_by": [
+    "packages/cli/src/lib/resource-utils.js",
+    "packages/cli/src/lifecycles/bundle.js",
+    "packages/cli/src/lifecycles/serve.js"
+  ],
+  "path_prefix": "packages/cli/src/",
+  "self_study": {
+    "repository": "attuneflix",
+    "baseline": "bcfc126db7b7c7f535353ccc8afca44465903571",
+    "cleaned": "ae2f5e68711121f8ecbf9ce94a7926ca7c7833d1",
+    "admitted_files": [
+      72,
+      75
+    ],
+    "regions": 10,
+    "metrics": {
+      "cross_region_edge_ratio (M4)": [
+        0.867,
+        0.888
+      ],
+      "median_file_blast (M5)": [
+        18.0,
+        28.0
+      ],
+      "high_overlap_pairs (M7, of 45)": [
+        45.0,
+        45.0
+      ]
+    },
+    "source_span": "experiments/atlas-parallelism/REPORT.md:87-103; authoritative v2 columns"
+  },
+  "provenance": {
+    "/home/becker/.cache/attune-v2-bootstrap-bazel/execroot/_main/bazel-out/aarch64-fastbuild/bin/test/localization/world_extract_w49/facts.tsv": "4c5f71ab9e8c33047736e1f84dc4cc6f415543bdbee54d6fa4c5a6cb5d166f17",
+    "/home/becker/experiments/attune-localization-pattern-census-20261010/world-inventory.tsv": "72106fc51ed0bbbf95fb3304143ef7cb6d8b07a1869ece38bdf3608c23c778c3",
+    "/home/becker/projects/attuneflix/experiments/atlas-parallelism/REPORT.md": "acf5026efc29ce785a99a02a72cb03c9a8402a24ad0ac95798d1c3486ea887ce",
+    "/home/becker/projects/attuneflix/README.md": "dc221a541971bb28cf0481d4e2a2f5b7b7cda1d487c2c16c2c1304ad5b14feb4"
+  }
+}

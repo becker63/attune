@@ -427,11 +427,16 @@ local links resolve. The former renderer and its six output examples remain in
 README.md                 explanation and checked examples
 LOCALIZATION_REPORT.md    concise results, corrections, and limitations
 evidence/                 frozen tables and their reading guide
+web/                      website, graphics, and independent deployment
 attune/src/               identity, effects, Repository, Theory, Study
 attune/test/              laws and small authored fixtures
 attune/platform/          pinned build rules and mechanical interfaces
 attune/notes/design.md    ownership, provenance, and source accounting
 ```
+
+The website lives in `web/`, outside the Flix workspace. Run `nix run ./web`
+to preview it; its [guide](https://github.com/becker63/attune/tree/main/web)
+explains checks and deployment.
 
 Start with [core identity and relations](attune/src/Attune.flix),
 [Repository](attune/src/Attune/Repository.flix), or the

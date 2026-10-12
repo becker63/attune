@@ -1,0 +1,192 @@
+<Page id="relationships">
+
+<Sequence current="2" />
+
+# Who uses this file?
+
+A bug report says Greenwood’s styles and scripts go missing. A model puts `resource-utils.js` in **28th place** on its reading list. We show only ten. Is this an unimportant file—or a useful one too far down the list?
+
+The code gives us another clue: the build command, server and bundler all use it. Here is what happened when we passed that clue to the model judging the list.
+
+<Figure name="reading-atlas-handoff" />
+
+**Atlas keeps source connections so we can ask questions about them.** Here it supplies the note; Jev makes the judgment; Flix reorders the list. All eight files in Greenwood’s historical fix now appear in the first ten. The note contains several clues, so this result does not tell us which clue changed the model’s mind.
+
+Both judgments started with the **same first 32 files**. The note did not fetch more files or let the model explore the graph. It also did not always help: in Obsidian Tasks, two required files moved out of the first ten. [Compare both outcomes](#localization).
+
+## “Who imports this?” is a table lookup
+
+An import says that one file uses another. Grit recognizes that line of code. Flix finds the target and keeps a row:
+
+<pre className="pattern-diagram">{"bundle.js\n  import ... from '../lib/resource-utils.js'\n       |\n       v\nsource       relationship    target\nbundle.js    Imports         resource-utils.js"}</pre>
+
+To find the helper’s users, keep Imports rows ending at `resource-utils.js`. Return the files at the other end. Watch the unrelated connections disappear:
+
+<Figure name="atlas-filter" />
+
+**22 files remain.** To keep the note short, Jev receives that count and the first six names. Nothing here guesses what an import means; it follows the recorded pairs.
+
+These rows belong to Greenwood’s frozen version, called **world w49**. Short paths above omit `packages/cli/src/`. Each language needs its own reader, but the later table lookup is the same. A name the reader cannot resolve gives us no connection. [Grit shows that boundary—and a real missing edge](#extraction).
+
+## Can we find two files using the same helper?
+
+Receipt and checkout both import pricing in a small, checked Ruby shop example. Look for the repeated name:
+
+<Figure name="datalog-join" />
+
+We keep two known imports as **facts**. Then write a **rule** saying that two different files form a pair when they import the same target. That is **Datalog**: rules that combine known facts to answer questions.
+
+Here is the rule from the original shop example. Its [source and tests are preserved here](https://github.com/becker63/attune/blob/70ba0dc5601f72ea48cc01d90f4b9ad17fa4818c/attune/test/docs/ReadmeCorrespondence.flix); the [current README](https://github.com/becker63/attune#readme) shows a shorter version of the same question:
+
+<DatalogCode name="pair" />
+
+Read `:-` as **“if.”** A `Pair` exists if both Imports lines match. The repeated `center` makes the target identical in both; `a != b` keeps a file from pairing with itself. Repeating `s` keeps the observations in the same repository world.
+
+`a`, `b` and `center` are blanks filled from the rows—**variables**. Connecting rows through the same blank is a **join**. No filename is hardcoded in the rule.
+
+This query asks for the two consumers:
+
+<DatalogCode name="query" />
+
+Out come `(checkout, receipt)` and `(receipt, checkout)`, with their full paths. Same two files, two orders. With only one consumer, there is no pair. An empty answer is still an answer.
+
+The first `#{ ... }` declares the columns and their types; `String` means text. The second block contains the rule. For the language details, see [Flix’s Datalog guide](https://doc.flix.dev/fixpoints.html) and [Madsen, Starup and Lhoták’s 2022 paper](https://ceur-ws.org/Vol-3203/short8.pdf).
+
+## One answer. Then a repository full of them.
+
+The shop rule found a real matching pair. We call such a match a **witness**: actual files that make the rule true. It is evidence for that relationship, not evidence of a bug.
+
+A question can also ask for less. Instead of returning two consumers, ask **“which files are imported?”** Build and serve both name the same helper. Two supporting facts, one returned filename:
+
+<Figure name="datalog-witness" />
+
+That small question returned **56 distinct files** in Greenwood and found something in **76 of 81 saved repository versions**. Now keep the procedure fixed and vary the question. Attune’s **Theory** module constructs small questions from the same relationships. The matrix runs 72 of them against each of those 81 versions, from 22 repository groups.
+
+**One square = one question asked of one version.** A filled square means at least one saved answer; an open dot means the question ran and found none. Point to a square for the exact question and count.
+
+<Figure name="incidence" />
+
+**42 questions matched every world. All 72 matched at least 72 worlds.** These connections are common! That also limits their usefulness: an ordinary shared dependency is not a smoking gun for a bug. These answers are not the twelve human-identified design-pattern categories in the [architecture census](#patterns).
+
+Adding the structural note to Jev produces **one extra any-file success and two extra complete fixes across 85 issues**. Some individual file ranks get worse. [See the actual notes, judgments and results](#localization).
+
+## We already read this repository
+
+A new issue does not change the imports. Keep those facts. If we ask what the *same exact files* import again, keep that answer too.
+
+<pre className="pattern-diagram">{"same repository world + same memo namespace\n\n(Files{receipt.rb}, Imports) -> Files{pricing.rb}\n             |\n             `-- same question again -> saved answer"}</pre>
+
+That last diagram is a teaching example. Exact membership matters: two sets of ten files need not contain the same files. [Watch two different routes reuse one answer](#patterns). A similar-looking repository version is not interchangeable with this one.
+
+<details className="technical-reading">
+<summary>Inspect the machine: six relationships, real Theory code and saved rows</summary>
+
+## The common vocabulary
+
+A **file** is a source path. A **symbol** is a named definition, such as a function. Grit extracts definitions, imports and calls. Flix admits justified targets, then reverses those same pairs to provide three backward directions. They are not six independent measurements.
+
+<Figure name="datalog-relations" />
+
+<Figure name="datalog-pipeline" />
+
+Starting from a symbol, `DefinedIn` finds its file; `ImportedBy` finds that file’s users. A sequence of such lookups is a route. Each operation accepts files or symbols and returns a new set of the declared type.
+
+<Figure name="datalog-route" />
+
+### Theory: write a small question as data
+
+Once “who shares a dependency?” works, we can ask nearby questions: who calls a name defined here? Which file contains the thing that this function calls? Each question rearranges a few of the same relationship lookups.
+
+`Attune.Theory` writes these little questions down as data. A **descriptor** is a recipe with three fields. `atoms` lists the required relationships. `denied` lists pairs of positions that must hold different values. `outputs` lists which positions to return. The evaluator can read many such recipes without generating a new source file for each one.
+
+The supported grammar permits one to three positive two-ended relationships, up to four typed positions, one or two output positions, and an optional inequality. “Positive” means requiring a fact to exist. The relationships must connect, and every returned position must occur in a relationship. These limits make a finite, inspectable family; they do not amount to unrestricted rule generation.
+
+The following descriptors were checked and executed through the current Theory implementation on tiny authored facts. A numbered **position** is just a blank to fill, like `a`, `b` or `center` in the shop rule. Position 0 does not mean “the first file in the repository.” It means “the first named place in this question.”
+
+The braces hold a **record**: named fields grouped into one value. `outputs = 0 :: 1 :: Nil` says “return position 0, followed by position 1, then end the list.” `::` builds a list and `Nil` is the empty list at its end. `denied = Nil` says there are no pairs required to differ. For comparison, `denied = (0, 2) :: Nil` would require the values at positions 0 and 2 to differ. That is the descriptor’s counterpart of `a != b`.
+
+Read the diagrams first, then the comments. They describe the same small operation.
+
+<pre className="pattern-diagram">{"one relationship\n[0: File] --Imports--> [1: File]\nreturn 0, 1"}</pre>
+
+<DatalogCode name="one" />
+
+<pre className="pattern-diagram">{"two relationships\n[0: File] --Imports--> [1: File]\n[2: File] --Imports--> [1: File]\nreturn 0, 2; they may be the same file"}</pre>
+
+<DatalogCode name="two" />
+
+<pre className="pattern-diagram">{"three relationships\n[0: File] --Defines--> [1: Symbol]\n[1: Symbol] --Calls--> [2: Symbol]\n[2: Symbol] --DefinedIn--> [3: File]\nreturn 0, 3"}</pre>
+
+<DatalogCode name="three" />
+
+That third question asks which file defines a caller, and which file contains the thing it calls. It is legal and passes the small executable example. **It was not part of the frozen 72-candidate study below.** The retained template family uses only one or two relationships and no inequality.
+
+### Match the recipe against the facts
+
+There are two tables to read. The **recipe table**, called `Desc`, says which relationships the question requires. The **fact table**, called `Edge`, says which relationships actually exist in the world. The engine must find facts that satisfy the recipe.
+
+Take the two-import question. The recipe says: find an Imports row from position 0 to position 1, then another Imports row from position 2 to that **same position 1**. The actual file names fill those positions. A successful filling is called a **binding**—nothing more mysterious than names assigned to the blanks.
+
+The code below is the real shared-target rule, with explanatory comments added. Instead of hardcoding Imports, it reads `r0` and `r1`, the two relationship names, from the recipe. That lets the same checked rule handle other compatible pairs of relationships.
+
+<DatalogCode name="bindingNotes" />
+
+`Binding(...)` is the row we want to produce. `Desc(...)` reads the recipe. The two `Edge(...)` lines find its supporting facts. Because both repeat `w` and `e1`, they must agree on the world and shared target. The `shape` string chooses this arrangement of arrows: 0 → 1 and 2 → 1.
+
+The final three lines implement the optional “these positions must be different” conditions. Each line allows a match if that pair was not constrained, or if its two values really differ. In the frozen 72-question family no inequality was requested, so these checks do not remove self-pairs.
+
+There is one bookkeeping detail: the stored binding reserves four positions for all supported question shapes. This shape needs only three, so its last `e0` is filler. It is not an additional source relationship. The underscores `_` mean “this rule does not need this column.”
+
+Once a binding exists, we still have to decide what to return. In the shared-dependency example, we might want both consumers, or only the shared target. The input facts can be identical while the requested answer differs.
+
+The second rule reads the output positions from the recipe and selects those values:
+
+<DatalogCode name="output" />
+
+`role(out0, ...)` selects one position from the match; `role(out1, ...)` selects the other. This is **projection**: returning only selected columns. Several different matches can produce the same output row, so the saved answer can be much smaller than the internal work.
+
+The earlier “which files are imported?” example has two importing files but returns only the shared target. They produce **one saved answer**, not two. For a one-column question, Theory’s fixed output format repeats that value in its two output slots. The stored row still counts once. The small rule shown in the graphic is an executed, specialized reading of the descriptor; production uses the general rule family above.
+
+
+<Figure name="frequency" />
+
+The retained matrix has 5,832 evaluated question/world pairs and 186 observed empty results. Its 1,406,061 saved output rows are distinct within each question/world pair. They are not the full number of internal matches, unique files or independent architectural examples. The frozen questions have no inequality: repeated positions can refer to the same item, so some two-connection questions detect very ordinary single-edge properties.
+
+## Reuse the expensive answer; ask a new small question
+
+The source world and structural question determine the matched rows. The wording of a new issue does not change those rows. We can therefore keep the world’s prepared answers and select the ones useful for a new candidate, instead of repeating the full structural calculation for every issue.
+
+Theory makes this split explicit. `Output` is the prepared answer table. `Anchor` names an item we want to focus on. This actual rule selects prepared rows whose first output matches that item:
+
+<FlixBlock name="anchorOnly" />
+
+Read it as “return this task-specific row if it is already an Output row, and its first item is an Anchor in the same world.” `c` keeps the question’s identity; `w` keeps the world’s identity. This is a lookup into answers already computed. It does not rerun the source reader or reconstruct the relationships.
+
+The frozen Jev prompt writer performs its own bounded lookup against retained answers, using the candidate’s defined symbols. The rule above shows Theory’s explicit reuse boundary; it is not a claim that the Java writer invokes that exact Flix rule for each note.
+
+There is also reuse *inside* a route. Two different sequences of lookups can reach the same exact set. If they ask the same next question in the same world and scope, that calculation can be shared. [The architecture page compares this with prefix caching and shows the actual key](#patterns).
+
+These properties have three different payoffs. **For localization**, source connections add evidence about a candidate’s role. **For wall time**, retained facts and answers avoid repeating preparation, while unchanged file acquisitions can survive a source edit. **For architecture**, the same fixed questions produce different patterns of empty answers and repeated calculations across repositories. None of these observations alone establishes the other two. A cheaply reused empty answer can describe the graph accurately while providing no clue to a fix.
+
+## What about rules that keep going?
+
+So far, our rules make a bounded number of lookups. **Recursion** means a rule can use results produced by that same relationship. Imagine a screen importing a formatter, which imports a units helper:
+
+<pre className="pattern-diagram">{"[screen] --Imports--> [format] --Imports--> [units]\n    |                                        ^\n    `--------------- Reaches ----------------'"}</pre>
+
+<DatalogCode name="recursion" />
+
+The first rule turns direct imports into reachability. The second extends a known path by one import. Evaluation repeats until no new rows appear—a **fixpoint**. This separate, executed teaching example returns the two direct connections and `screen → units`. It is not a claim that the frozen Theory study generated recursive queries.
+
+Datalog has costs: finding matches, storing intermediate values and updating results after changes all take work. Zhao and colleagues’ [*FlowLog: Efficient and Extensible Datalog via Incrementality* (2025 preprint; VLDB 2026)](https://arxiv.org/abs/2511.00865) studies another engine that reuses relational work as inputs change. It is relevant research, not Attune’s implementation or a measured Attune speedup.
+
+
+</details>
+
+## Read once. Ask again.
+
+Reading files and asking a model for numbers need the outside world. **Effects** make those requests visible in Flix. Once we have the facts, **Datalog** asks questions about them. Neither automatically provides caching or scheduling; the saved identities and runtime must do that work.
+
+[How effects hand work over →](#effects) · [What the waits cost →](#runtime)
+
+</Page>

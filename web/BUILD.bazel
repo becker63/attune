@@ -1,0 +1,55 @@
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_test")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//:vercel/package_json.bzl", vercel_bin = "bin")
+
+npm_link_all_packages(name = "node_modules")
+
+# Package the checked-in site without rerunning any research or model calls.
+copy_to_directory(
+    name = "static",
+    srcs = glob(["site/**"]),
+    root_paths = ["site"],
+)
+
+copy_to_directory(
+    name = "vercel_output",
+    srcs = [
+        "config.json",
+        ":static",
+    ],
+    root_paths = ["."],
+)
+
+js_test(
+    name = "layout_test",
+    size = "small",
+    data = [
+        "release.json",
+        ":vercel_output",
+    ],
+    entry_point = "layout_check.mjs",
+    env = {"PATH": "/usr/local/bin:/usr/bin:/bin:/run/current-system/sw/bin"},
+)
+
+js_binary(
+    name = "preview",
+    data = [":static"],
+    entry_point = "serve.mjs",
+)
+
+vercel_bin.vercel_binary(
+    name = "vercel_cli",
+    tags = ["manual"],
+)
+
+js_binary(
+    name = "deploy",
+    data = glob(["deploy/*.mjs"]) + [
+        "release.json",
+        ":vercel_cli",
+        ":vercel_output",
+    ],
+    entry_point = "deploy.mjs",
+    tags = ["manual"],
+)

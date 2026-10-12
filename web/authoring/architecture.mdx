@@ -1,0 +1,168 @@
+<Page id="architecture">
+
+# Follow a connection. What happens next?
+
+Start at Greenwood’s `resource-utils.js`. It imports `hashing-utils.js`. Now ask who imports *that* file. Three files answer, including the one we started from.
+
+<Figure name="signature-route" />
+
+Each step takes the files we have, follows one relationship, and replaces the current set with the answer. That sequence is a **route**. `Imports; ImportedBy` reads “find imports; then find their importers.”
+
+`Files{...}` lists exact files; `Symbols{...}` lists named pieces of code, such as functions. `[OK]` means the set has members. `[EMPTY]` means none. This current set is the **frontier**—where the next step starts, not everywhere we have been.
+
+**Eight of these nine questions return something.** One returned item and 58 returned items each count as one answered question. “8/9 still find something” does not mean eight files found, or eight bugs solved.
+
+The steps must fit together. Imports takes files; Calls takes named code items. `Defines; Calls` fits because Defines finds the names inside a file. `Imports; Calls` does not. This check is what **typed** means here.
+
+## Nothing in, nothing out
+
+Ask what `hashing-utils.js` imports and the recorded answer is empty. There is no file left for the next step to start from.
+
+<Figure name="reading-extinction" />
+
+That is **extinction**: once this route empties out, continuing it cannot bring anything back. Asking a different question *before* the empty step can still find three consumers. Dead route, useful file.
+
+Empty answers tell us where these particular connections run out. A short chain could explain one; a dynamic call the reader cannot resolve could explain another. They describe the **accepted facts**, not everything the program does.
+
+## What if we ask the same question twice?
+
+“What does receipt.rb import?” The first lookup follows the imports and saves the answer. Ask again, with exactly the same file and saved repository, and we can use that answer.
+
+<Figure name="reading-memo" />
+
+Try changing B to `checkout.rb`. It imports the same pricing file, but the saved question starts at `receipt.rb`. The new question needs its own calculation. Same destination, different work.
+
+The saved answer belongs to the question **“what does this exact file set import?”** We do not need to follow those connections twice. Saving a calculation’s answer for the same request is called **memoization**.
+
+<pre className="pattern-diagram">{"(typed input state, next operation)\n    -> typed output state"}</pre>
+
+Here “state” just means the files or named code items currently in hand. `[OK; REUSE t4]` tells two things: the answer has members, and computation `t4` supplied it. An empty answer can be saved too. A failed calculation is different.
+
+Different routes can reach this same question too. One starts at a function; another starts at its file:
+
+<pre className="pattern-diagram">{"A: Symbols{Shop.Receipt.render}\n   `-- defined_in -> Files{shop/receipt.rb}\n       `-- imports -> Files{shop/pricing.rb} [COMPUTED t4]\n\nB: Files{shop/receipt.rb}\n   `-- imports -> Files{shop/pricing.rb} [REUSE t4]"}</pre>
+
+The repeated part is **receipt.rb + imports**. The earlier steps do not have to match. This diagram is the checked shop fixture, in the same world and memo namespace.
+
+**Prefix caching** shares the beginning of two routes. Atlas can also share work after *different* beginnings, if they arrive at the same exact question. Matching output counts alone is not enough; two sets of ten files might have no members in common.
+
+<details className="technical-reading">
+<summary>What must match? The actual key and lookup</summary>
+
+<pre className="pattern-diagram">{"(world, memo namespace, exact typed input, next atom)\n    -> exact typed output"}</pre>
+
+The **world** identifies the repository version and its interpretation rules. A **memo namespace** separates calculations that must not share answers. An **atom** is one relationship operation. All four parts must match:
+
+<FlixBlock name="transitionKey" />
+
+<FlixBlock name="memoLookup" />
+
+`Some((ordinal, output))` means a saved set was found; `Hit(ordinal)` points to the original computation. `None` means we must do the work. After successful `apply`, `:: memo` saves the new entry. Empty results count as successful answers; errors do not.
+
+Two different questions can independently produce the same output. That does not retroactively share their work. Only if they then ask the same *next* question can that later computation be shared.
+
+There are several different kinds of saved work. The [Grit process memo](sources/grit-memo.rs) keeps compiled patterns and file-extraction results under matching language, program, path and source; a process restart loses it. Atlas keeps exact relationship answers in a world-scoped memo. Bazel keeps declared action outputs. Inference fixtures keep vectors or decisions with their input/model/recipe identity. A retained fixture is not a provider-side cache hit.
+
+Unchanged file extraction can survive a source edit, but repository resolution may still change elsewhere: a new definition can make a formerly unique name ambiguous. The transition memo cannot silently cross into the new world. [Wall Time shows the measured reuse boundaries](#runtime).
+
+</details>
+
+## Does every repository answer the same way?
+
+We tried the same family of questions on **78 saved versions of 11 repositories**. Eight files and eight named code items start each version’s questions. Some paths run out quickly. Others keep returning answers.
+
+<Figure name="signature-middle" />
+
+Read rightward for more steps; upward for more questions still returning something. The shaded band holds the middle half of eleven repository profiles. Each repository counts once, even when we have many versions of it. This is an ordinary range *in this sample*, not a model of all repositories.
+
+That profile is a **structural signature**: how the same questions answer in different codebases. Across all route lengths, the middle repository has **63.18% empty file-start answers**. The middle half lies between **52.44% and 75.25%**.
+
+<details className="technical-reading">
+<summary>Which questions, and what is the denominator?</summary>
+
+Every starting point receives all type-correct routes of lengths one through seven: **3,279 routes**, or **52,464 answers per version** across sixteen starts. No issue or fix chooses them. Each next step has three legal options. Thus eight file starts produce **72 two-step answers** and **17,496 seven-step answers**.
+
+For example, NodeBB `c5ae8a70` has **23/72 = 31.94%** nonempty two-step file answers. That percentage counts questions, not files reached or issues solved. The band first takes each repository’s median across versions, then the middle half of those eleven profiles. There are 22 NodeBB versions but only one Babel version. [Individual curves and source identities](signatures.json).
+
+</details>
+
+## Empty, broad, repeated
+
+Three repositories can answer the same question very differently: nothing, a huge set, or something we already calculated. Those differences matter for both usefulness and work.
+
+<Figure name="signature-properties" />
+
+**Empty** counts questions returning nothing. **Broad** measures the returned set as a share of its type’s population: 20 of 100 functions is 20%; 20 of 1,000 files is 2%. The graph uses the 90th percentile—nine tenths of answer sizes fall at or below it. **Repeated work** compares route counts with actual relationship evaluations. That multiplier counts avoided calculations, not seconds saved.
+
+### Immutable keeps answering
+
+Immutable’s symbol-start questions stay nonempty more often than any other repository here: **57.47%** across all lengths, and **57.30%** at seven steps. Plenty still end empty.
+
+<Figure name="signature-case-immutable" />
+
+One starting path is `src/predicates/isList.js`. A predicate is a function asking a yes/no question, but that filename does not explain this curve by itself. We would need to inspect the connections. Immutable is in this signature study, not the 85-issue localization cohort.
+
+### Babel runs out—and remembers that
+
+**99.48%** of Babel’s file-start routes finish empty: only **137 of 26,232** return something. Here is the catch: all eight starting files are test fixtures, little programs used to test the compiler. They are not a tour of Babel’s implementation.
+
+<Figure name="signature-case-babel" />
+
+Once many routes reach an empty set, they keep asking the same few questions of it. Those saved empty answers are reusable.
+
+<Figure name="signature-babel-work" />
+
+For one numeric-separator fixture, **3,279 routes need only nine relationship evaluations**. Their 21,324 step requests contain nine calculations and 21,315 reuses, producing two distinct output states. Very efficient. Mostly empty.
+
+Babel’s function starts tell a different story, also shown above. At the other end, Element’s file routes stay nonempty **72.86%** of the time; its 90th-percentile answer covers **70.62%** of the relevant population. Lots of neighbors can mean useful shared code—or far too much context for one bug.
+
+## How much work was shared?
+
+<Figure name="signature-reuse" />
+
+Each point is one of **1,248 recorded starting-point executions**. They show measured work counts in the historical route study, not measured speedups. The shop example earlier demonstrates the current exact-key rule; these older recordings supply the larger comparison.
+
+## What are these connections for?
+
+A curve cannot tell us whether a file is a plugin, a helper or a public entry point. For that, open the code. In the separate localization census, **28 deeply inspected issues yielded forty confirmed examples in twelve categories**.
+
+Choose a row to see the participating files and what they do. The small strips keep the same 22 repository positions, so repeated patterns line up.
+
+<Figure name="pattern-catalog" />
+
+A blank means **not established by this inspection**, not “absent from the repository.” Naming a folder `plugins` was not enough to confirm a plugin architecture.
+
+For a shared helper, we can first ask which two different files import the same target:
+
+<DatalogCode name="sharedRule" />
+
+Both Imports lines share `center`; `a != b` excludes self-pairs. That establishes a shared dependency. Reading its implementation tells us what role it plays. Theory’s frozen 72-question family has no inequality and permits self-pairs; those questions are not the twelve human-confirmed design patterns. [Atlas connects rules to actual saved rows](#relationships).
+
+## Repetition has a local accent
+
+People repeat coding choices. **Naturalness** research measures how predictable that makes source text. **Localness** asks where those repetitions occur: a project may repeat its own names and phrases more strongly than a general model expects. See Hindle and colleagues’ [*On the Naturalness of Software* (2012)](https://web.cs.ucdavis.edu/~su/publications/natural.pdf) and Tu, Su and Devanbu’s [*On the Localness of Software* (2014)](https://doi.org/10.1145/2635868.2635875).
+
+Here we ask a different question: does code repeat the same relationship answers? If so, we may reuse a calculation. These plots do not reproduce those papers’ text-prediction results or show that a signature predicts a fix.
+
+<details className="technical-reading">
+<summary>Sharing more code can also connect more parts</summary>
+
+“Local” can also mean dependencies staying within a group of files. An earlier AttuneFlix study compared two revisions with the same ten groups. Files increased from 72 to 75; imports crossing groups rose from **86.7% to 88.8%**. For **all 45 pairs of groups**, at least half of their combined two-step neighborhoods were shared, before and after cleanup.
+
+Removing duplicate implementation can increase shared dependencies. That is not automatically a design defect, but it can make a two-step neighborhood a blunt clue to a bug. These are the v2 Grit-based measurements for `bcfc126d` → `ae2f5e68`, not the earlier path-word proxy. [Retained research notes](sources/local-grammar-evidence.txt) · [identities and hashes](architecture-context.json).
+
+</details>
+
+A repository can also keep a similar profile through many edits. [Attune over time](#history) puts those edits beside the answers, including changes hidden by a steady headline.
+
+## Useful structure is not automatically a useful clue
+
+A shared helper may serve many unrelated features. A public entry point may point toward the right area while hiding the file that needs changing. This census gives concrete reasons to investigate Atlas’s modest aggregate gain; it does not prove their causes.
+
+In the localization experiment, Atlas supplies candidate notes to Jev—not this whole-repository signature, or new files beyond Qwen’s first 32. That adds **one any-file success and two complete fixes** over basic Jev. The resulting totals are **78/85** and **47/85**. Without either model, the path-and-structure procedure scores **35/85** and **18/85**, still starting from the issue’s words.
+
+Different shapes, less repeated work, better file recovery: three separate questions. A useful result in one does not settle the others.
+
+[Read the notes, judgments and rank changes →](#localization)
+
+</Page>

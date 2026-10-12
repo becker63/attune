@@ -1,0 +1,61 @@
+<h1>Scheduling and replay</h1>
+<p>The <a href="#overview">opening chapter compares five kinds of wait</a>. Here we follow the dependencies: which jobs can overlap, which saved answers remain valid, and what must run again after an input changes.</p>
+<p><strong>Wall time</strong> is what you wait from start to finish. Adding operation durations gives a different number when work overlaps. In one retained build, <strong>180 preparation processes sum to 9.34 hours inside a roughly 5.03-hour span</strong>, with up to seven running together. That build was partly cached and interrupted—not a successful cold run of the full corpus. <a href="#extraction">Explore the recorded timeline</a> · <a href="physical-time.json">Exact intervals</a>.</p>
+<h2>The timer starts in different places</h2>
+<p>These three Greenwood measurements were recorded separately. The cold embedding run prepares inputs; Jev’s timer starts after its context is ready. A warm replay made no provider requests, but nobody timed its local work.</p>
+<div class="table-scroll"><table class="timing-boundaries"><thead><tr><th>Measured operation</th><th>Elapsed</th><th>What the timer includes</th></tr></thead><tbody><tr><td>Cold Qwen acquisition</td><td>92.223 s</td><td>Eleven hosted requests and local acquisition work for this issue’s embedding inputs.</td></tr><tr><td>Sol inspection</td><td>40.111 s</td><td>The complete retained inspection turn for this issue.</td></tr><tr><td>Jev with prepared Qwen + Atlas context</td><td>0.582 s</td><td>The judgment request only. Repository preparation is already available.</td></tr><tr><td>Warm embedding replay</td><td>Unmeasured</td><td>Zero provider requests were observed; loading and local computation still take time.</td></tr></tbody></table></div>
+<p>They are examples, not averages. <a href="#benchmark/cost">The benchmark distributions</a> include all 88 measured requests or turns per condition. <a href="time-scale.json">Receipts and identities</a> keep those boundaries checkable.</p>
+<h2>Watch the requests we did not have to repeat</h2>
+<p>The retained embedding acquisition asked for 27,733 rows, but only 10,555 inputs were distinct. Repeated input bytes could share an answer. One empty input was left unmeasured; the rest went out in 351 batches of at most 32.</p>
+<div id="runtime-charts"></div>
+<p>Each cold dot is a timed SDK request. Together they add to <strong>26.4 minutes</strong>; gaps, preparation and writing are outside that sum. Without start timestamps, it is not an end-to-end wall-clock series. The warm replay made <strong>zero provider requests</strong>. Not one. Loading and ranking still took unmeasured time.</p>
+<p>The cold receipt reports <strong>$0.1409903</strong>. The warm receipt marks cost <code>Unavailable</code>; zero requests is not a recorded zero-dollar receipt. Exact bytes, model and embedding recipe decide which answers can be kept.</p>
+<h2>Change the issue. Keep the file vectors.</h2>
+<p><strong>Cold:</strong> the required repository data is not prepared. <strong>Warm:</strong> those exact answers are available. A new issue can reuse the file vectors while still needing its own vector and judgment. <strong>Incremental:</strong> source changed, so keep unaffected pieces and redo affected work.</p>
+<section class="experiment"><header><h3>Change one input. Keep the unaffected work.</h3><p>Component boundaries · dependency explanation, not a new execution</p></header><figure class="evidence-figure" data-work="boundaries"></figure></section>
+<p>These boundaries let us work on the parts separately. Improve the embedding recipe without rewriting the source reader. Replace the judge without extracting the whole repository again. The changed part’s inputs and outputs must stay explicit; a language feature alone does not arrange this reuse.</p>
+<h2>Five new reads. Not 163.</h2>
+<p>At Attune revision <code>140d1b2d</code>, acquisition reused <strong>158 of 163 files</strong> and read only five afresh. The saved files matched by normalized path, source hash and language under the same pinned Grit queries. A hash is a compact fingerprint used here to check source identity.</p>
+<section class="experiment"><header><h3>158 files kept. Only five acquired.</h3><p>One real Attune checkpoint · each square is one counted source file</p></header><figure class="evidence-figure" data-work="files"></figure></section>
+<p>This saves <strong>file extraction</strong>, not every later calculation. The changed repository still needs its references resolved and structural questions evaluated. Adding a definition can change how a name resolves somewhere else. Incremental reuse is smaller than “the whole repository is cached.”</p>
+<p>Inside one calculation, two routes can also reach the same set and ask the same next question. The second can use the first answer. <a href="#patterns">Watch that exact-question reuse</a>. A similar-looking answer is not enough.</p>
+<h2>Different jobs need different machinery</h2>
+<p>A <strong>GPU</strong> is good at many similar numerical operations together, as in model inference. A <strong>CPU</strong> runs general-purpose work: reading files, executing tools and matching table rows. Moving data and waiting for services take time too. The model is one part of the job.</p>
+<p>That is what we admire in <strong><a href="https://docs.modular.com/mojo/manual/">Modular and Mojo</a></strong>: making CPU and GPU work parts of one program, so each can run where it fits. Attune uses Flix and Bazel, not Mojo’s runtime. The inspiration is to make the parts visible enough to improve separately. Our hosted-model receipts do not identify the provider’s actual hardware.</p>
+<p>Flix helps distinguish a calculation on supplied numbers from a request for outside work. <a href="#effects">The effects example shows that handoff</a>. Bazel handles a larger boundary: which whole steps can run, and which outputs are already valid?</p>
+<h2>What Bazel needs to know</h2>
+<p><strong>Bazel is a build system.</strong> Tell it which files a step reads and writes; it can track what depends on what. Independent steps can run together. A completed step can be reused when its inputs and execution identity still match.</p>
+<p>This actual ranking rule declares the issue vector, the repository’s vector batches and the candidate-list check:</p>
+<figure class="source-window"><figcaption>localization_qwen.bzl:74–82 · actual source</figcaption><pre><code>        native_study_stage(
+            name = &quot;rank_q_%s&quot; % task[1],
+            stage = &quot;rank_q&quot;,
+            srcs = stage_srcs,
+            inputs = [rank_template % task[1]],
+            input_names = [&quot;deterministic&quot;],
+            world_sources = [query_fixture] + shards,
+            tags = [&quot;manual&quot;],
+        )</code></pre></figure>
+<pre><code class="language-text">saved file vectors ----+----&gt; rank issue A
+                       |       ^
+                       |    new issue A vector
+                       |
+                       +----&gt; rank issue B
+                               ^
+                            new issue B vector
+</code></pre>
+<p>A batch, or <strong>shard</strong>, is one separately stored piece of the vectors. Both ranking steps can read it. Flix effects do not create these Bazel dependencies automatically; the rule has to declare them.</p>
+<p>Mokhov, Mitchell and Peyton Jones’s <a href="https://www.microsoft.com/en-us/research/publication/build-systems-la-carte/"><em>Build Systems à la Carte</em> (2018)</a> separates deciding what needs rebuilding from deciding when it can run. That distinction matters here: being reusable and being ready are different questions.</p>
+<h2>The last required answer still matters</h2>
+<pre class="pattern-diagram">source A  -------- done -------+
+source B  ------------ done ---+--&gt; next step
+source C  --------------------+
+                            ^
+                     still waiting here
+
+These run together.
+All three answers are required.</pre>
+<p>Even instant inference leaves the other required work. That is the intuition behind <strong>Amdahl’s law</strong>: speeding up one part cannot remove the time spent elsewhere. <a href="https://www.cs.cmu.edu/~18742/papers/Amdahl1967.pdf">Gene Amdahl’s original paper (1967)</a>.</p>
+<p>When many pieces must finish, an unusually slow one can hold up the answer. That long end of the distribution is the <strong>tail</strong>. Dean and Barroso’s <a href="https://research.google/pubs/the-tail-at-scale/"><em>The Tail at Scale</em> (2013)</a> explains the systems problem. Our 42.5-minute extraction process is a concrete reminder: overlap does not make the last required result disappear.</p>
+<p>Chang and colleagues’ <a href="https://arxiv.org/abs/2608.15127"><em>From LLM Inference to Agentic Workloads</em> (2026)</a> found non-model components dominating latency in five of ten studied agent applications. Raj and colleagues’ <a href="https://arxiv.org/abs/2511.00739"><em>A CPU-Centric Perspective</em> (2025; revised 2026)</a> studies CPU/GPU scheduling in agent workloads. Those are external studies, not explanations of this particular Sol run. They motivate timing the whole job.</p>
+<p>Save exact repeated work. Overlap independent work. Leave the model a smaller question. The <a href="#benchmark/cost">78× judgment-wait and 28× model-spend comparisons</a> make that worth exploring, without isolating what each engineering choice contributed. And a cheaper answer can still be wrong.</p>
+<p><a href="#extraction">Watch the extraction build unfold →</a> · <a href="#relationships">Ask questions of the saved facts →</a></p>
