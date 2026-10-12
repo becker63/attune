@@ -1,5 +1,5 @@
 {
-  description = "Attune v2 bootstrap developer shell; Bazel owns project derivation";
+  description = "Attune developer shell; Bazel owns project derivation";
 
   # Developer bootstrap only. Every pinned input is a non-secret, git-aware
   # remote (github:). This flake lives in the nested `attune/` workspace, so Nix
