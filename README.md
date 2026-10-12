@@ -48,27 +48,35 @@ controlled Jev-versus-Sol speedup. The model-turn populations include three issu
 outside the 85-task accuracy cohort. [Explore the interactive plot and timer boundaries](https://atlas-live-five.vercel.app/#overview)
 or inspect [all observations and source hashes](https://atlas-live-five.vercel.app/wait-classes.json).
 
-### Small judgments, large differences
+### Qwen retrieval: a smaller bill, reusable work
 
-In localization, Jev judged a prepared list of files. GPT-6.1-Sol, medium,
-inspected the repository. Across **88 recorded tasks**, the difference was large:
+Qwen ranks files using embeddings: numeric descriptions of their contents.
+Across the retained acquisition for **88 tasks**, its reported provider charge
+was **$0.141**, compared with **~$4.65 estimated** for GPT-6.1-Sol, medium,
+inspecting repositories.
 
-| What we compared | Prepared Jev judgment | Sol repository inspection | Difference |
-| --- | ---: | ---: | ---: |
-| Median wait | 0.37 s | 28.94 s | **78×** |
-| Judgment spend | $0.024 reported | ~$4.65 estimated API bill | **195×** |
-| Including first-time embeddings | $0.165 reported | Same ~$4.65 estimate | **28×** |
+| Workflow | Known model spend | Compared with the Sol estimate |
+| --- | ---: | ---: |
+| Qwen retrieval | $0.141 | **33× lower** |
+| Qwen + structural context + Jev judgment | $0.165 | **28× lower** |
+| Sol repository inspection | ~$4.65 API-equivalent estimate | Reference |
 
-Jev's timer starts after its file list is ready; Sol's includes reading and tool
-use. Preparing that list still takes work. This is **not a 78× speedup for the
-whole job**. Sol ran on a ChatGPT subscription; its dollar figure estimates an
-API bill from recorded usage. The last row adds embedding requests, but excludes
-source analysis, local work, and computer costs.
+On the **85 accuracy-eligible tasks**, Qwen found at least one required file
+within ten in **85.9%** of cases, versus **76.5%** for Sol. Adding structural
+context and Jev raised that to **91.8%**. Sol put a required file first more
+often; Qwen alone recovered every required file less often. These are different
+answering procedures, not a quality-matched contest.
 
-Quality also differed: Sol put the right file first more often; the prepared
-workflow found a required file within ten more often. The table below shows both.
-[Receipts, exact ratios, and price assumptions](https://atlas-live-five.vercel.app/costs.json) ·
-[Explore the comparisons](https://atlas-live-five.vercel.app/#benchmark).
+The reusable part matters: cold acquisition made **351 embedding requests**;
+an unchanged warm replay made **zero**. No warm wall time was recorded.
+Sol ran on a ChatGPT subscription; its dollar figure estimates an API bill from
+recorded usage. These comparisons exclude source analysis, local work, and
+computer costs. They measure model spend, not whole-job latency.
+
+Jev adds a small judgment after retrieval. Its median request took 0.37 seconds,
+versus 28.94 seconds for Sol's whole inspection turn; preparation lies outside
+that Jev timer. [Receipts and price assumptions](https://atlas-live-five.vercel.app/costs.json) ·
+[Explore retrieval, costs, and reuse](https://atlas-live-five.vercel.app/#benchmark).
 
 ### Make expensive work explicit
 
