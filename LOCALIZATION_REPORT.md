@@ -30,7 +30,7 @@ summary and committed tables for current ReviewBench claims.**
 ## 1. Five kinds of wait
 
 [View the interactive five-wait distributions](https://atlas-live-five.vercel.app/#overview)
-· [Native README figure](README.md#five-kinds-of-wait)
+· [README figure](README.md#five-kinds-of-wait)
 
 | Timer | n | Median | Boundary |
 | --- | ---: | ---: | --- |

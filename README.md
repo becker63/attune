@@ -27,14 +27,7 @@ work. Typed queries and tests make those boundaries checkable.
 A provider request, a source-reading process, and a prepared judgment are different
 jobs. Their timing boundaries tell us where reuse and scheduling might help.
 
-```text
-              0.1 s          1 s             10 s        1 min          10 min    1 h
-Embeddings                  |----[=|===]---|......... .  ..
-Extraction                                      |--------[==|======]----|.      . .
-Theory                                        |-[=|=]--|.. ...
-Jev request          |[|]|.   .   .
-Sol turn                                        |-[=|]-|.
-```
+![Five box-and-whisker distributions from 707 retained operations on a logarithmic time scale](https://atlas-live-five.vercel.app/five-waits.svg)
 
 | Measured job | Observations | Median | What the timer includes |
 | --- | ---: | ---: | --- |
@@ -44,10 +37,9 @@ Sol turn                                        |-[=|]-|.
 | Jev judgment | 88 | 0.37 s | Request over an already prepared shortlist |
 | Sol inspection | 88 | 28.94 s | Whole repository-inspection turn |
 
-**Read the plot:** `[===]` contains the middle half; its `|` marks the median.
-Outside bars mark whisker ends; dots mark outlier positions (nearby observations
-share a character). The scale is logarithmic and rounded to character cells.
-The interactive plot shows every observation and the mean. Extraction's mean was
+**Read the plot:** boxes contain the middle half; the line is the median;
+the diamond is the mean. Each dot is a recorded operation. The horizontal scale
+is logarithmic: the same distance means ten times longer. Extraction's mean was
 344.58 seconds, and its longest process took 42.5 minutes.
 
 These are separate retained measurements, not a concurrent schedule or a
@@ -434,6 +426,21 @@ columnar data. **Bazel** declares the computation graph: source facts and Theory
 shards can be shared across tasks, while prediction inputs remain separate from
 evaluator labels. **Nix** pins the developer environment. **BuildBuddy** supplies
 optional remote caching and execution.
+
+### Typed agent interfaces
+
+Agent tools need contracts too. A bounded bridge lowers supported wire contracts
+to TypeScript for the real **Typert** generator. A separate projection creates
+**DeepSeek Harness (DSH)** model-facing tool schemas; transport declarations and
+tool schemas remain distinct. Unsupported constructs are refused rather than
+silently weakened.
+
+Bazel builds an installable **Cordis** package from those declared inputs. Tests
+check generation, installation, and tool boundaries. See the
+[contract bridge](https://github.com/becker63/attune/blob/main/attune/platform/dsh/typert/bridge.mjs)
+and [tool projection](https://github.com/becker63/attune/blob/main/attune/platform/dsh/tool/tool_schema.mjs).
+
+### Three kinds of reuse
 
 These are three separate forms of reuse: Attune memoizes exact semantic work;
 Bazel reuses unchanged action outputs; BuildBuddy can cache or execute those
