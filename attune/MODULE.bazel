@@ -86,47 +86,6 @@ maven.install(
 )
 use_repo(maven, "attune_maven")
 
-# One DSH evidence tool, an installable Cordis package, and real Typert generation.
-bazel_dep(name = "rules_nodejs", version = "6.7.6")
-bazel_dep(name = "aspect_rules_js", version = "2.9.3")
-bazel_dep(name = "aspect_rules_ts", version = "3.5.1")
-
-# Register runtime toolchains before the Node execution toolchains.
-nodejs = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
-nodejs.toolchain(node_version = "24.18.1")
-use_repo(nodejs, "nodejs_toolchains")
-
-register_toolchains("@nodejs_toolchains//:linux_amd64_runtime_toolchain")
-
-register_toolchains("@nodejs_toolchains//:linux_amd64_toolchain")
-
-register_toolchains("@nodejs_toolchains//:linux_arm64_runtime_toolchain")
-
-register_toolchains("@nodejs_toolchains//:linux_arm64_toolchain")
-
-# The npm lock records the pinned DSH dependency graph. Its pnpm import is
-# Bazel's input; neither lock is hand-edited. Missing dependencies fail the action.
-dsh_npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
-dsh_npm.npm_translate_lock(
-    name = "dsh_npm",
-    data = ["//platform/dsh:package.json"],
-    pnpm_lock = "//platform/dsh:pnpm-lock.yaml",
-    # Bare imports need these pinned peers and platform addons at the package root.
-    public_hoist_packages = {
-        "@deepseek-ai/cordis@4.0.4": ["platform/dsh"],
-        # Retain the upstream runtime's session peers without adding another copy.
-        "@deepseek-ai/dsh-session-persistence-jsonl@0.2.0-rc.2": ["platform/dsh"],
-        "@deepseek-ai/dsh-session-query-sqlite@0.2.0-rc.2": ["platform/dsh"],
-        "@deepseek-ai/dsh-session@0.2.0-rc.2": ["platform/dsh"],
-        "@deepseek-ai/dsh-tools@0.2.0-rc.2": ["platform/dsh"],
-        "node-addon-require-builtin-linux-arm64-gnu@0.1.7": ["platform/dsh"],
-        "node-addon-system-linux-arm64@0.1.2": ["platform/dsh"],
-        "typescript@6.0.3": ["platform/dsh"],
-    },
-    update_pnpm_lock = False,
-)
-use_repo(dsh_npm, "dsh_npm")
-
 # Resolve pinned user/network isolation tools from Nix.
 local_unshare = use_repo_rule("//platform/build:unshare_repository.bzl", "local_unshare")
 

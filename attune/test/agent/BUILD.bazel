@@ -1,0 +1,14 @@
+load("//platform/build:native.bzl", "native_flix_test")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(name = "policy_files", srcs = glob(["**"]))
+
+native_flix_test(
+    name = "agent_test",
+    srcs = ["AgentTest.flix", "//src:Attune.flix", "//src:Attune/Agent.flix"],
+    java_deps = [
+        "@attune_maven//:dev_langchain4j_langchain4j_core",
+        "@attune_maven//:org_slf4j_slf4j_nop",
+    ],
+)

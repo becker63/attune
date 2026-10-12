@@ -363,17 +363,16 @@ optional remote execution and caching. **Nix** pins the tools.
 A repository world includes source origin, content, and the analysis recipe.
 Changing any of them changes which saved structural answers remain valid.
 
-### Agent tools that keep their contracts
+### A small agent loop
 
-Agent tools need clear rules for their inputs. Attune turns a supported contract
-into TypeScript for the **Typert** generator, then separately builds the input
-schema used by **DeepSeek Harness (DSH)** tools. The two formats stay distinct.
-An unsupported rule is rejected, rather than silently dropped.
+A model can ask to read a source region. Flix checks the world, content digest,
+permission, and exact range before returning any source. Each reply and tool
+call spends a finite budget. Missing saved evidence stays an error.
 
-Bazel builds an installable **Cordis** package from those declared inputs. Tests
-check generation, installation, and tool boundaries. See the
-[contract bridge](https://github.com/becker63/attune/blob/main/attune/platform/dsh/typert/bridge.mjs)
-and [tool projection](https://github.com/becker63/attune/blob/main/attune/platform/dsh/tool/tool_schema.mjs).
+[Agent.flix](attune/src/Attune/Agent.flix) owns this loop. LangChain4j supplies JVM
+messages and model transport. Tests exercise a complete tool call with a fake
+model; they make no provider calls. This replaces the DSH, Cordis, and generated
+TypeScript integration preserved in Git history.
 
 ### Three kinds of reuse
 

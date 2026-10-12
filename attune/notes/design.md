@@ -23,7 +23,7 @@ Nix pins the tools. BuildBuddy can run Bazel actions remotely.
 - `src/Attune/Study.flix`: shared artifacts, execution receipts, and coordination.
 - `src/Attune/Study/{Embedding,Qwen,Jev,Metrics}.flix`: retrieval, optional judgment,
   and precise scoring. Evaluation labels remain separate from prediction inputs.
-- `platform/dsh/`: one typed source-evidence tool and its Typert generation.
+- `src/Attune/Agent.flix`: a bounded Flix conversation using LangChain4j messages.
 - `platform/tools/`, `platform/build/`: native calls, file formats, compiler launch,
   process receipts, and declared Bazel actions.
 
@@ -124,10 +124,11 @@ ReviewBench orchestration, and chronological design notes are preserved at the
 The evidence guide links replay instructions and input availability. Frozen
 results, corrected denominators, and negative findings remain public.
 
-The evidence wire contract is now version 2: only `EvidenceRef` and
-`EvidenceObservation` remain. Flix, the versioned wire file, TypeScript declarations,
-and real Typert output are checked together. Runtime checks still verify world,
-revision, digest, permission, and exact region; types cannot prove those bytes.
+The DSH/Cordis runtime and Typert bridge are retired. A Flix-owned loop uses
+LangChain4j messages directly. It grants read-only access to exact source ranges;
+world identity, digests, permissions, strict JSON inputs, and a finite call
+budget are checked before delivery. Saved replies match provider identity and
+the complete SDK request. The deterministic fake is a test, not a model result.
 
 ## Provenance and licenses
 
@@ -166,7 +167,7 @@ licenses. Locks remain the authoritative dependency identities.
 | Zed Flix extension assets (`platform/zed/extension.toml`, `platform/zed/languages/flix/*`) | Flix grammar revision above | reference checkout `platform/zed/` | Apache-2.0 |
 
 
-The Node/DSH/Typert dependencies are pinned by `platform/dsh/pnpm-lock.yaml` and
-`MODULE.bazel`; Node 24.18.1 and DSH/Typert 0.2.0-rc.2 remain unchanged.
+The core no longer depends on Node, DSH, Cordis, or Typert. The independent
+`web/` workspace retains its own website dependencies.
 The inherited Grit integration and grammar pins are preserved. No scientific
 corpus or machine-specific retained-input repository is declared by current main.
