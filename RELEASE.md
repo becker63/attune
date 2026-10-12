@@ -148,12 +148,13 @@ micro row keeps 24 contributing tasks.
 
 The README now leads with the five measured wait distributions, effects, exact
 reuse/scheduling, and localization results. The six checked snippet families
-remain unchanged. `evidence/timing/` exports the existing 707-observation figure
-and copies its exact frozen JSON; it introduces no measurement.
+remain unchanged. The README renders a native ASCII box-and-whisker summary of the existing
+707 observations and links to their canonical website data; no timing copies
+are retained in `evidence/`. This introduces no measurement.
 
 The former 470,155-byte report is archived unchanged (SHA256
 `f4523df64cdfff11e1f6c90771c6ce211e9ca6b0dad7bd4d0c9453068840130c`).
-The primary report is approximately 1,950 words; the expanded evidence guide
+The primary report is approximately 2,100 words; the expanded evidence guide
 explains questions, populations, results, formats, and reproduction limits.
 
 Focused public-workspace verification passed:
