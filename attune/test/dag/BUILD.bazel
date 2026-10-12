@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_producer")
+load("//platform/build:native.bzl", "native_flix_producer", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -40,7 +40,7 @@ native_flix_producer(
 # walks it, records the measured listing and the declared bindings, and appends
 # the tree's own Flix sources to the pinned Tester, so the consumer compiles the
 # producer's exported source and asserts the tree's contract over its real bytes.
-native_flix_consumer_test(
+native_flix_test(
     name = "declared_artifact_consumer_test",
     srcs = ["ArtifactLaw.flix"],
     declared_files = ["fixtures/world/Shop.flix"],

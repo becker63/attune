@@ -1,14 +1,7 @@
 use Fs.FileRead
 
-/// The declared result-reducer laws (VAL-CROSS-003).
-///
-/// The one Flix reducer consumed every frozen per-task reduction and every
-/// measured branch tree, wrote the actual Parquet artifact through the typed
-/// Arrow seam, and rendered the bounded ASCII application report. These laws
-/// classify the materialized declared tree: the reducer records the separate
-/// reference label and an honest observation, the report keeps a frozen
-/// reduction and a measured branch apart, and the parquet artifact is really
-/// materialized beside them. Every row is a labelled fixture.
+/// Check the materialized Parquet file and its readable TSV rows.
+/// Reference labels and measured observations keep their separate provenance.
 
 def records(text: String): List[String] =
     List.filter(line -> not String.isEmpty(String.trim(line)), String.lines(text))
@@ -80,18 +73,3 @@ def dropIndex(row: List[String], index: Int32): List[String] =
         case _ :: rest => dropIndex(rest, index - 1)
         case Nil       => Nil
     }
-
-/// The bounded ASCII report is truthful: it names the application, scope and
-/// fixture provenance, keeps a frozen reduction and a measured branch distinct,
-/// and preserves the honest `unmeasured` reduction observation.
-@Test
-def theBoundedAsciiReportIsTruthful(): Unit \ {Assert, IO} = {
-    let produced = listing();
-    let report = readText(treePath("results", "results.txt", produced));
-    Assert.assertEq(expected = true,
-        String.startsWith(prefix = "graph=application name=study scope=fixture work=fixture", report));
-    Assert.assertEq(expected = true, String.contains(substr = "reduce t5 = prediction_rows=2 reference_rows=0 = unmeasured", report));
-    Assert.assertEq(expected = true, String.contains(substr = "joint p1/ownA = joint = ObservedFalse", report));
-    Assert.assertEq(expected = true, String.contains(substr = "observation check p1/baseline = own = ObservedFalse", report));
-    Assert.assertEq(expected = true, List.forAll(line -> not String.contains(substr = "[", line), records(report)))
-}

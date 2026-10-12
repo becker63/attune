@@ -51,7 +51,7 @@ means unavailable, not permission to reacquire them.
 
 `src/Attune/Policy.flix` is the executable source policy. Keep identity/relations
 in Attune, admission/resolution in Repository, bounded descriptors and Datalog
-in Theory, evaluation policy in Study, and presentation in View/ASCII. Java and
+in Theory, and evaluation policy in Study. Java and
 build rules handle mechanics; do not move policy or metrics into glue.
 
 - Authored sources belong under `src/`, `test/`, `platform/tools/`,
@@ -69,13 +69,11 @@ build rules handle mechanics; do not move policy or metrics into glue.
 
 ## Checked documentation
 
-The root README has six marker families: `routes`, `view`, `proof`,
-`counterexample`, `localization`, and `coordination`. The selected View source
-comment has its own checked grammar. `//test/docs:readme_correspondence_test`
-regenerates the payloads through real Ruby extraction, admission, and rendering,
-then checks byte equality and declared local links. Never hand-edit payloads,
-widen the vocabulary, or let tests bless/rewrite documents. Keep independent
-semantic assertions, renderer goldens, and correspondence tests separate.
+The README's `shared-imports` block is the actual Flix function compiled in
+`//test/docs:readme_correspondence_test`. Tests run it on real Ruby extraction,
+assert its answers independently, compare source and README bytes, and check
+local links. Never let a test bless or rewrite a document. The removed renderer,
+its goldens, and the former six output blocks are preserved in Git history.
 
 ## Cognitive budget
 

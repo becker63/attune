@@ -1,5 +1,5 @@
 load("@rules_java//java:defs.bzl", "java_library")
-load("//platform/build:native.bzl", "native_flix_java_test")
+load("//platform/build:native.bzl", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -32,7 +32,7 @@ java_library(
 # The native Flix fixtures drive the typed seam through the pinned compiler's
 # authentic test engine, with the SDK jars passed explicitly as prepared
 # dependencies. No `flix.toml` project and no dependency resolver are used.
-native_flix_java_test(
+native_flix_test(
     name = "inference_seam_test",
     srcs = [
         "InferenceSeamTest.flix",
@@ -41,7 +41,7 @@ native_flix_java_test(
     java_deps = [":attune_inference"],
 )
 
-native_flix_java_test(
+native_flix_test(
     name = "parquet_seam_test",
     srcs = [
         "ParquetSeamTest.flix",
@@ -56,7 +56,7 @@ native_flix_java_test(
 # vocabulary. It drives the approved SDK decision API over a deterministic
 # recorded exchange and asserts the finite-budget, declared-fallback and
 # classified-failure laws. No provider is contacted. Executed fixture.
-native_flix_java_test(
+native_flix_test(
     name = "decision_seam_test",
     srcs = [
         "DecisionSeamLaw.flix",
@@ -71,7 +71,7 @@ native_flix_java_test(
 # Manual negative fixture: a deliberately false assertion over the Java-backed
 # route. It is excluded from `bazel test //...` by the `manual` tag; running it
 # directly must fail, proving the route reports real assertion failures.
-native_flix_java_test(
+native_flix_test(
     name = "false_assertion_java_test",
     srcs = ["FalseAssertionJava.flix"],
     java_deps = [":attune_inference"],

@@ -9,7 +9,7 @@
 /// The ownership direction is deliberate and acyclic. `Attune.Repository` earns
 /// acquisition completeness and supplies one nominal world-bearing facts /
 /// earned scoped coverage bridge. `Attune.Theory` consumes core values and a
-/// world's facts and never imports Study or View. `Attune.Study` consumes the
+/// world's facts and never imports Study. `Attune.Study` consumes the
 /// structural artifacts. Nothing here reads a document, contacts a provider or
 /// decides a corpus verdict, and no arbitrary passed-in coverage state can
 /// substitute for acquisition evidence: a complete no-match needs `Complete`

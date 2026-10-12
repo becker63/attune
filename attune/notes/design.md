@@ -23,7 +23,6 @@ Nix pins the tools. BuildBuddy can run Bazel actions remotely.
 - `src/Attune/Study.flix`: shared artifacts, execution receipts, and coordination.
 - `src/Attune/Study/{Embedding,Qwen,Jev,Metrics}.flix`: retrieval, optional judgment,
   and precise scoring. Evaluation labels remain separate from prediction inputs.
-- `src/Attune/{View,AsciiTree}.flix`: answers and witnesses rendered as text.
 - `platform/dsh/`: one typed source-evidence tool and its Typert generation.
 - `platform/tools/`, `platform/build/`: native calls, file formats, compiler launch,
   process receipts, and declared Bazel actions.
@@ -55,8 +54,8 @@ also covers language additions beyond our pin.
 
 ## Checks and source accounting
 
-`nix run .#test` checks the retained implementation. Semantic laws, renderer
-outputs, and six README examples stay independent. The live workspace audit
+`nix run .#test` checks the retained implementation. Semantic assertions and the
+README source-copy check stay independent. The live workspace audit
 reports undeclared files; it never deletes preserved user work.
 
 The source policy counts cognitive implementation, mechanical support, and tests
@@ -71,17 +70,51 @@ The retained study stage adapters serialize fixture data for the Bazel graph.
 Their mechanical code is counted with build/runtime support. Semantic selection,
 ranking, coverage, and coordination remain in the Flix owners above.
 
-The retained source audit reports **4,884 cognitive + 5,533 mechanical = 10,417
+The retained source audit reports **4,394 cognitive + 4,910 mechanical = 9,304
 code lines**, excluding comments and tests. That is down from 9,742 + 16,641
 (26,383) in the complete study snapshot. These counts still exceed the soft
 budgets; the cleanup does not declare those budgets met.
 
 The remaining cost buys conservative multi-language admission, bounded Datalog,
-exact metrics, checked rendering, and isolated native/tool integration. Each has
+exact metrics, and isolated native/tool integration. Each has
 a named owner and independent laws. The new walkthrough adds one request and one
-handler; it adds no scheduler or framework. Reducing substantially further would
-mean narrowing these supported behaviors, not just removing campaign machinery.
+handler; it adds no scheduler or framework. Further reductions should first remove unused interfaces and duplicated mechanics;
+parser admission, query safety, and source isolation need their existing laws.
 The three retained stage adapters are included in the mechanical count above.
+Physical source lines (including comments and blanks) are 5,511 Flix and 1,960
+Starlark, down from 6,379 and 2,303 before removing the renderer. Test reductions
+are reported separately; deleting formatting goldens is not a core-code saving.
+
+## Readable Flix and a smaller build boundary
+
+Prefer a few named values and direct pattern matches. Destructure `(source,
+target)` where it is used; do not send the reader through tuple-accessor helpers.
+Use `forM` for dependent steps that can fail and `Result.traverse` for a list of
+such steps. Both stop at the first error. Keep recursion for an actual recursive
+problem, such as exploring connected roles or resolving path segments.
+
+Effects describe requests at the boundary. Ordinary errors remain `Result`
+values. Datalog expresses relations that must hold together; the README shows a
+complete tested question. These are three different jobs, with no Flix scheduler.
+The pinned compiler checks every example. See Flix's
+[pattern matching](https://doc.flix.dev/pattern-matching.html) and
+[forM](https://doc.flix.dev/monadic-for-yield.html) explanations.
+
+The custom View/ASCII renderer and its formatting tests now live in
+[the previous source revision](https://github.com/becker63/attune/tree/70ba0dc5601f72ea48cc01d90f4b9ad17fa4818c).
+Results remain available as TSV and Parquet. The README tests a short executable
+question instead of six generated reports. Core query, reuse, coverage, and
+coordination assertions remain active.
+
+`native_flix_test` is the single test declaration, with optional declared jars
+and files. Five tree-producing rules share JVM launch setup. The unused study
+admission probe and redundant record-writing wrappers are gone. Bounds checks
+still run before a study graph is expanded. The Grit rule remains because it
+patches pinned language registries and builds the parser closure, not just Flix.
+
+An unreferenced ReviewBench acquisition runner and its private transport are
+also in history. The recorded SDK seam still runs offline in `test/seam/`.
+No current command dispatches new model work.
 
 ## What moved into history
 

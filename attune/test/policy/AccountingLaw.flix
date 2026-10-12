@@ -4,8 +4,7 @@ use Attune.Policy.{
     cognitiveOf, cognitivePreferredHigh, cognitivePreferredLow,
     cognitiveStopAndJustify, commentOf, componentLines, componentNames,
     componentOf, docOf, entryPath, evaluate, fixturesOf, mechanicalOf,
-    mechanicalPrefer, nonblankOf, ownershipOf, physicalOf, presentationCognitiveOf,
-    presentationMechanicalOf, renderReport, reviewNotes, ruleOf, supportOf, totalsOf, verdictName
+    mechanicalPrefer, nonblankOf, ownershipOf, physicalOf, renderReport, reviewNotes, ruleOf, supportOf, totalsOf, verdictName
 }
 
 /// The owner-approved cognitive-ownership accounting laws.
@@ -43,8 +42,7 @@ def hasBudgetFinding(found: List[Finding]): Bool =
     List.exists(f -> ruleOf(f) == "budget-exceeded", found)
 
 /// Classification is by component responsibility, not by language or location:
-/// a Flix source in the cognitive core is cognitive while the one generic ASCII
-/// writer beside it is mechanical; a maintained Grit frontend is cognitive
+/// a Flix source in the cognitive core is cognitive; a maintained Grit frontend is cognitive
 /// under any path; a mechanical adapter is mechanical even though it is
 /// first-party authored.
 @Test
@@ -53,8 +51,7 @@ def ownershipSplitsByComponentNotLanguage(): Unit \ Assert = {
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Repository.flix"));
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/grit/defines/java.grit"));
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("platform/build/grit_repository.bzl"));
-    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/View.flix"));
-    Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("src/Attune/AsciiTree.flix"));
+    Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Docs.flix"));
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("platform/tools/parquet/AttuneParquet.java"));
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("platform/tools/boundary/NativeLaunch.java"));
     Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("platform/build/native.bzl"));
@@ -66,13 +63,13 @@ def ownershipSplitsByComponentNotLanguage(): Unit \ Assert = {
 /// Moving or placing authored code never makes it inherited or exempt: a
 /// genuine fixture stays a fixture, a meaning-changing Grit frontend stays
 /// cognitive under any path, inherited support stays support, and the authored
-/// mechanical writer stays authored.
+/// mechanical launcher stays authored.
 @Test
 def relocationDoesNotMakeAuthoredCodeInherited(): Unit \ Assert = {
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/policy/AccountingLaw.flix"));
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("test/queries/attune.grit"));
     Assert.assertEq(expected = Ownership.Support, ownershipOf("platform/support/grit/lib.rs"));
-    Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("src/Attune/AsciiTree.flix"))
+    Assert.assertEq(expected = Ownership.Mechanical, ownershipOf("platform/tools/boundary/NativeLaunch.java"))
 }
 
 /// Algorithms stay in their semantic owners. Ordinary laws are fixtures;
@@ -82,7 +79,7 @@ def migratedSemanticsLeaveNoHiddenTestAlgorithm(): Unit \ Assert = {
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Theory.flix"));
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune/Study.flix"));
     Assert.assertEq(expected = Ownership.Cognitive, ownershipOf("src/Attune.flix"));
-    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/view/SemanticViewLaw.flix"));
+    Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/theory/TheoryLaw.flix"));
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/spine/CoreApplyLaw.flix"));
     Assert.assertEq(expected = Ownership.Fixture, ownershipOf("test/seam/DecisionSeamLaw.flix"));
     Assert.assertEq(expected = "tests", componentOf("test/policy/AccountingLaw.flix"))
@@ -147,21 +144,6 @@ def mechanicalExcessIsReviewedNotRejected(): Unit \ Assert = {
     Assert.assertEq(expected = true, List.exists(n -> String.contains(substr = "mechanical substrate", n), notes))
 }
 
-/// The two presentation categories are reported as labelled subsets of the A/B
-/// classes, never added a second time.
-@Test
-def presentationIsASubsetNotASecondAddition(): Unit \ Assert = {
-    let loaded =
-        entry("src/Attune/AsciiTree.flix", String.repeat(10, "x = 1;\n"))
-            :: entry("src/Attune/View.flix", String.repeat(10, "x = 1;\n"))
-            :: green();
-    let (_, cs) = evaluate("declared", "", loaded);
-    let a = accountingOf(cs);
-    Assert.assertEq(expected = 10, presentationMechanicalOf(a));
-    Assert.assertEq(expected = 10, presentationCognitiveOf(a));
-    Assert.assertEq(expected = authoredOf(a), cognitiveOf(a) + mechanicalOf(a))
-}
-
 /// The published component table partitions the raw measured code total: the
 /// named cognitive and mechanical components sum to the A/B classes, and every
 /// component together sums to the raw code total, so no measured line is
@@ -173,11 +155,11 @@ def componentTablePartitionsTheRawCodeTotal(): Unit \ { Assert, IO } = {
     println(componentLines(cs));
     let a = accountingOf(cs);
     let cognitiveComponents =
-        "workflow" :: "core" :: "repository" :: "theory" :: "study" :: "policy" :: "view" :: "frontends" :: "grit-rule"
+        "workflow" :: "core" :: "repository" :: "theory" :: "study" :: "policy" :: "docs" :: "frontends" :: "grit-rule"
             :: Nil;
     let mechanicalComponents =
-        "ascii" :: "parquet" :: "boundary" :: "grit-binding" :: "build-rules"
-            :: "inference" :: "dsh-adapter" :: Nil;
+        "parquet" :: "boundary" :: "grit-binding" :: "build-rules"
+            :: "dsh-adapter" :: Nil;
     Assert.assertEq(expected = cognitiveOf(a), sumComponents(cs, cognitiveComponents));
     Assert.assertEq(expected = mechanicalOf(a), sumComponents(cs, mechanicalComponents));
     Assert.assertEq(expected = fixturesOf(a), codeForComponent(cs, "tests"));

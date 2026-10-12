@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_drain_probe", "native_flix_consumer_test", "native_process_receipt")
+load("//platform/build:native.bzl", "native_drain_probe", "native_flix_test", "native_process_receipt")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -36,7 +36,7 @@ native_drain_probe(
 # and bounded logs, and the declared plan is bound so the laws can assert its
 # finiteness and admissibility. The drain fault fixture is a second declared
 # input for the post-start drain-failure laws.
-native_flix_consumer_test(
+native_flix_test(
     name = "process_receipt_test",
     srcs = [
         "ReceiptLaw.flix",

@@ -116,7 +116,7 @@ pub mod Attune.Repository {
 
     /// One `from -> to` line per edge, for evidence and assertions.
     pub def edgeTexts(edges: List[(String, String)]): List[String] =
-        List.map(pair -> firstOf(pair) + " -> " + secondOf(pair), edges)
+        List.map(match (source, target) -> source + " -> " + target, edges)
 
     pub def declarationTexts(repository: Repository): List[String] =
         List.map(declarationText, repository#declarations)
@@ -126,30 +126,15 @@ pub mod Attune.Repository {
 
     // ------------------------------------------------------------------ lists
 
-    def isEmpty(l: List[a]): Bool = match l {
-        case Nil => true
-        case _   => false
-    }
-
-    def firstOf(pair: (String, String)): String = match pair {
-        case (first, _) => first
-    }
-
-    def secondOf(pair: (String, String)): String = match pair {
-        case (_, second) => second
-    }
-
     /// Sort and deduplicate a relation, so one admitted edge is recorded once.
     /// The ordered pair key is unique per edge, so the standard distinct after
     /// the sort is exactly the adjacent dedup, without a second hand-rolled walk.
     def dedupSorted(edges: List[(String, String)]): List[(String, String)] =
-        List.distinct(List.sortBy(pair -> firstOf(pair) + "\t" + secondOf(pair), edges))
+        List.distinct(List.sortBy(match (source, target) -> source + "\t" + target, edges))
 
     /// The inverse of a relation is derived from that relation, once.
     def invert(edges: List[(String, String)]): List[(String, String)] =
-        dedupSorted(List.map(pair -> (secondOf(pair), firstOf(pair)), edges))
-
-    def memberOf(value: String, values: List[String]): Bool = List.memberOf(value, values)
+        dedupSorted(List.map(match (source, target) -> (target, source), edges))
 
     def countOfSymbol(declarations: List[Declaration], symbol: String): Int32 =
         List.foldLeft((count, declaration) -> if (declaration#symbol == symbol) count + 1 else count, 0, declarations)
@@ -171,21 +156,17 @@ pub mod Attune.Repository {
         Grit.facts(id, source, AttuneGrit.evaluate(languageName, programText, id, source))
     }
 
-    /// The definitions, imports and calls of one file, in that order.
-    def fileFacts(id: String, source: String): Result[Grit.Error, (List[Grit.Fact], List[Grit.Fact], List[Grit.Fact])] \ IO =
-        match Grit.language(id) {
-            case None => Err(Grit.Error.UnsupportedFile(id))
-            case Some(language) => match factsOf(id, source, language, Grit.Program.Defines) {
-                case Err(error) => Err(error)
-                case Ok(definitions) => match factsOf(id, source, language, Grit.Program.Imports) {
-                    case Err(error) => Err(error)
-                    case Ok(imports) => match factsOf(id, source, language, Grit.Program.Calls) {
-                        case Err(error) => Err(error)
-                        case Ok(calls) => Ok((definitions, imports, calls))
-                    }
-                }
-            }
-        }
+    /// Extract definitions, then imports, then calls. `forM` stops at the first
+    /// error; each successful answer gives the next line its value.
+    def fileFacts(file: (String, String)): Result[Grit.Error, Entry] \ IO = {
+        let (id, source) = file;
+        forM (
+            language <- Option.toOk(Grit.Error.UnsupportedFile(id), Grit.language(id));
+            definitions <- factsOf(id, source, language, Grit.Program.Defines);
+            imports <- factsOf(id, source, language, Grit.Program.Imports);
+            calls <- factsOf(id, source, language, Grit.Program.Calls)
+        ) yield { id = id, source = source, definitions = definitions, imports = imports, calls = calls }
+    }
 
     // ---------------------------------------------------------------- identity
 
@@ -361,7 +342,7 @@ pub mod Attune.Repository {
             case None => Err(Refusal.ComputedRequire(file, logged))
             case Some(literal) => {
                 let target = targetPath(file, literal);
-                if (memberOf(target, world)) Ok(target) else Err(Refusal.MissingFile(file, literal))
+                if (List.memberOf(target, world)) Ok(target) else Err(Refusal.MissingFile(file, literal))
             }
         }
     }
@@ -420,7 +401,7 @@ pub mod Attune.Repository {
         else {
             let candidates = List.map(scope -> candidate(scope, normalizeConstant(receiver), callee),
                 scopesOf(declarations, file, fact#startByte, fact#endByte));
-            let matching = List.filter(symbol -> not isEmpty(callableSites(declarations, symbol)), candidates);
+            let matching = List.filter(symbol -> not List.isEmpty(callableSites(declarations, symbol)), candidates);
             match matching {
                 case Nil => Err(Refusal.UnknownSymbol(file, callee))
                 case symbol :: Nil =>
@@ -629,7 +610,7 @@ pub mod Attune.Repository {
     def uniqueSuffix(world: List[String], candidate: String): Option[String] = {
         let matches = List.filter(path -> path == candidate or String.endsWith(suffix = "/" + candidate, path), world);
         match matches {
-            case file :: rest => if (isEmpty(rest)) Some(file) else None
+            case file :: rest => if (List.isEmpty(rest)) Some(file) else None
             case Nil          => None
         }
     }
@@ -693,10 +674,8 @@ pub mod Attune.Repository {
     /// Analyze one authored world. The world is the exact set of
     /// `(world-relative file id, exact source)` pairs the caller declares.
     pub def analyze(world: List[(String, String)]): Result[Grit.Error, Repository] \ IO =
-        match fileFactsAll(world, Nil) {
-            case Err(error)  => Err(error)
-            case Ok(perFile) => Ok(assemble(world, perFile))
-        }
+        // Visit files in order. A failed extraction stops the whole admission.
+        Result.traverse(fileFacts, world) |> Result.map(assemble(world))
 
     /// One analyzed file: its id and exact source plus the three fact sets.
     ///
@@ -711,27 +690,12 @@ pub mod Attune.Repository {
         calls       = List[Grit.Fact]
     }
 
-    def fileFactsAll(world: List[(String, String)], acc: List[Entry]): Result[Grit.Error, List[Entry]] \ IO =
-        match world {
-            case Nil => Ok(List.reverse(acc))
-            case (id, source) :: rest => match fileFacts(id, source) {
-                case Err(error) => Err(error)
-                case Ok((definitions, imports, calls)) => fileFactsAll(rest, {
-                    id = id,
-                    source = source,
-                    definitions = definitions,
-                    imports = imports,
-                    calls = calls
-                } :: acc)
-            }
-        }
-
     type alias Relation = { edges = List[(String, String)], refusals = List[Refusal] }
 
     def emptyRelation(): Relation = { edges = Nil, refusals = Nil }
 
     def assemble(world: List[(String, String)], perFile: List[Entry]): Repository = {
-        let ids = List.map(pair -> firstOf(pair), world);
+        let ids = List.map(match (id, _) -> id, world);
         let declarations = List.flatMap(entry -> declarations(entry), perFile);
         let imports = List.map(entry -> importsOf(ids, entry), perFile);
         let calls = List.map(entry -> callsOf(declarations, entry), perFile);
@@ -786,7 +750,8 @@ pub mod Attune.Repository {
             ::: List.map(pair -> worldEdge(world, Atom.Callers, pair), repository#callers)
 
     def worldEdge(world: World, atom: Atom, pair: (String, String)): Fact =
-        { world = world, source = firstOf(pair), atom = atom, target = secondOf(pair) }
+        let (source, target) = pair;
+        { world = world, source = source, atom = atom, target = target }
 
     /// The acquisition completeness this repository actually earned for its own
     /// scope. `Complete` is claimed only when the whole declared world was

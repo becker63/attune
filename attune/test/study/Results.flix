@@ -1,24 +1,12 @@
 import attune.parquet.AttuneParquet
 
-use Attune.AsciiTree
 use Attune.Study
-use Attune.View
 use Fs.FileRead
 use Fs.FileWrite
 
-/// The one declared result reducer (VAL-CROSS-003).
-///
-/// It consumes every frozen per-task reduction tree and every measured branch
-/// tree, re-states their already-materialized rows through the typed Arrow
-/// Parquet seam, and renders one bounded ASCII application report through the
-/// shared `Attune.View` projection. It creates no truth: the prediction, the
-/// separate reference label, the honest observation state and the measured
-/// branch outcomes all arrived as declared inputs, and this law only admits,
-/// serializes and presents them. Every record is a labelled fixture.
-///
-/// The reducer is the only stage that compiles the Arrow seam, so the mechanical
-/// Parquet adapter is a declared dependency of this one action rather than of
-/// every study stage.
+/// Collect declared fixture results as Parquet and TSV.
+/// Prediction, reference labels, and observations remain separate input rows.
+/// Only this stage needs Arrow; upstream stages do not load it.
 
 // ------------------------------------------------------- adapter-local parsing
 
@@ -120,7 +108,7 @@ def resultRowList(): List[(String, String, String, String, String)] \ IO = {
 // ------------------------------------------------------------------- the law
 
 @Test
-def theReducerMaterializesParquetAndBoundedReport(): Unit \ {Assert, IO} = {
+def theReducerMaterializesParquetAndTsv(): Unit \ {Assert, IO} = {
     let rows = resultRowList();
     Assert.assertEq(expected = true, not List.isEmpty(rows));
     let target = Option.getWithDefault(".", binding("outputs")) + "/results.parquet";
@@ -131,24 +119,5 @@ def theReducerMaterializesParquetAndBoundedReport(): Unit \ {Assert, IO} = {
     Assert.assertEq(expected = true, String.contains(substr = "\"provenance\":\"reference\"", read));
     Assert.assertEq(expected = true, String.contains(substr = "\"provenance\":\"observation\"", read));
     resultWrite("summary.tsv", List.join("\n", List.map(match (kind, subject, detail, answer, provenance) ->
-        List.join("\t", List#{kind, subject, detail, answer, provenance}), rows)) + "\n");
-
-    // The bounded ASCII report: the same rows as a typed application report, so
-    // a frozen reduction, a declared label and a measured branch stay distinct
-    // provenances. Every entry is labelled fixture work.
-    let limits = AsciiTree.limits(6, 128, 200, 160, 40000);
-    let entries = List.map(match (kind, subject, detail, answer, provenance) -> {
-        provenance = if (provenance == "observation") View.Provenance.Observation else View.Provenance.Fixture,
-        subject = kind + " " + subject,
-        answer = detail + " = " + answer,
-        assumptions = List#{"fixture"}
-    }, rows);
-    let report = { application = "study", scope = "fixture", work = View.Provenance.Fixture, entries = entries };
-    match View.renderApplication(limits, report) {
-        case Ok(text) => {
-            resultWrite("results.txt", text);
-            Assert.assertEq(expected = true, String.startsWith(prefix = "graph=application name=study", text))
-        }
-        case Err(error) => Assert.assertEq(expected = "a renderable fixture report", error)
-    }
+        List.join("\t", List#{kind, subject, detail, answer, provenance}), rows)) + "\n")
 }

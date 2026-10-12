@@ -1,4 +1,4 @@
-load("//platform/build:native.bzl", "native_flix_consumer_test", "native_flix_java_test", "native_study_stage")
+load("//platform/build:native.bzl", "native_flix_test", "native_study_stage")
 load("//platform/build:study.bzl", "attune_study")
 load("//test/study:manifest/manifest.bzl", "ANALYSIS")
 
@@ -31,7 +31,7 @@ filegroup(
     srcs = EVIDENCE_STAGE_SRCS,
 )
 
-native_flix_consumer_test(
+native_flix_test(
     name = "evidence_operation_projection_law",
     srcs = [
         "EvidenceOperationProjectionLaw.flix",
@@ -49,7 +49,7 @@ native_flix_consumer_test(
     produced = ["//platform/dsh:evidence_operation_projection"],
 )
 
-native_flix_java_test(
+native_flix_test(
     name = "evidence_contract_parity_law",
     srcs = [
         "EvidenceContractParityLaw.flix",
@@ -62,7 +62,7 @@ native_flix_java_test(
     java_deps = [],
 )
 
-native_flix_java_test(
+native_flix_test(
     name = "evidence_operation_law",
     srcs = [
         "EvidenceOperationLaw.flix",
@@ -84,8 +84,6 @@ native_flix_java_test(
 
 RESULT_SRCS = STAGE_SRCS + [
     "Results.flix",
-    "//src:Attune/AsciiTree.flix",
-    "//src:Attune/View.flix",
 ]
 
 native_study_stage(

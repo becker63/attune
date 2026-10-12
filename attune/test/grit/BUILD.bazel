@@ -1,5 +1,5 @@
 load("@rules_java//java:defs.bzl", "java_library")
-load("//platform/build:native.bzl", "native_flix_java_test")
+load("//platform/build:native.bzl", "native_flix_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -56,7 +56,7 @@ java_library(
 # with the packaged query inventory, the declared Ruby world and the prepared
 # shared library. The approved Ruby arm is exercised through the same entry
 # point as the seven retained languages.
-native_flix_java_test(
+native_flix_test(
     name = "grit_ruby_test",
     srcs = [
         "GritSeamTest.flix",

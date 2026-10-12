@@ -254,50 +254,10 @@ Two paths can reach the same set. When the next operation has the same world,
 exact input set, relation, and memo scope, Attune can reuse its earlier result.
 Equal-looking output alone does not establish a cache hit.
 
-<details>
-<summary>Checked route example: computed, empty, and reused</summary>
+A logical transition request can therefore reuse an answer without executing the
+operation again. The [memo tests](attune/test/spine/CoreMemoLaw.flix) check both
+hits and misses, including empty answers and changes of repository world.
 
-<!-- attune:snippet=routes -->
-```text
-graph=route snapshot=shop-v1 memo=demo schedule=recorded-serial
-
-route=R status=OK
-
-Files -> imports -> Files
-
-R: Files{shop/receipt.rb}
-   `-- imports -> Files{shop/pricing.rb}  [OK; COMPUTED t1]
-
-route=E status=EMPTY
-
-Files -> imports -> Files
-
-E: Files{shop/pricing.rb}
-   `-- imports -> Files{}  [EMPTY]
-
-route=A status=OK
-
-Symbols -> defined_in -> Files -> imports -> Files
-
-A: Symbols{Shop.Receipt.render}
-   `-- defined_in -> Files{shop/receipt.rb}  [OK; COMPUTED t3]
-       `-- imports -> Files{shop/pricing.rb}  [OK; COMPUTED t4]
-
-route=B status=OK
-
-Files -> imports -> Files -> imported_by -> Files
-
-B: Files{shop/receipt.rb}
-   `-- imports -> Files{shop/pricing.rb}  [OK; REUSE t4]
-       `-- imported_by -> Files{shop/checkout.rb, shop/receipt.rb}  [OK; COMPUTED t6]
-```
-<!-- attune:end=routes -->
-
-These events are an authored serial fixture, not a live performance measurement.
-`OK` / `EMPTY` describe answers; `COMPUTED` / `REUSE` describe recorded work.
-A logical transition request can reuse an answer without executing the operation.
-
-</details>
 
 ### Bounded programs and Theory
 
@@ -340,109 +300,40 @@ Original papers:
 [Localness](https://doi.org/10.1145/2635868.2635875),
 [Plastic Surgery](https://earlbarr.com/publications/psh.pdf).
 
-<details>
-<summary>Checked shared-dependency view, witness, and counterexample</summary>
+### A question you can read and run
 
-<!-- attune:snippet=view -->
-```text
-graph=view name=imports scope=shop-v1 mode=adjacency
+Which two files import the same dependency? This is the complete Flix question:
 
-nodes
-+-- Files{shop/checkout.rb}
-+-- Files{shop/pricing.rb}
-`-- Files{shop/receipt.rb}
-
-edges
-+-- Files{shop/checkout.rb} --imports--> Files{shop/pricing.rb}
-`-- Files{shop/receipt.rb} --imports--> Files{shop/pricing.rb}
+<!-- attune:snippet=shared-imports -->
+```flix
+def sharedImports(imports: List[(String, String)]): List[(String, String, String)] = {
+    let facts = inject imports into Imports/2;
+    let rules = #{
+        Shared(first, second, dependency) :-
+            Imports(first, dependency),
+            Imports(second, dependency),
+            if (first != second).
+    };
+    query facts, rules select (first, second, dependency)
+        from Shared(first, second, dependency)
+        |> Vector.toList |> List.sort
+}
 ```
-<!-- attune:end=view -->
+<!-- attune:end=shared-imports -->
 
-The query keeps both directed edges. Its rule is:
+Read `:-` as **“if”**: a pair shares a dependency if both files import it and
+are different files. `inject` supplies the observed imports; `query` asks for
+answers. On the Ruby shop above, it finds `checkout.rb` and `receipt.rb` sharing
+`pricing.rb`. One importer alone produces no pair.
 
-```text
-Pair(s, a, b, center) :- Imports(s, a, center), Imports(s, b, center), if (a != b).
-```
+The [test](attune/test/docs/ReadmeCorrespondence.flix) runs this exact function
+after extracting the shop's source. It checks the answers separately from the
+README copy. [Theory](attune/src/Attune/Theory.flix) applies the same idea to a
+bounded collection of questions.
 
-<!-- attune:snippet=proof -->
-```text
-graph=proof goal=Pair scope=shop-v1
-outcome=WITNESS
-
-Pair(s, a, b, center) :-
-+-- left Imports(s, a, center)  [s=shop-v1, a=shop/checkout.rb, center=shop/pricing.rb]
-+-- right Imports(s, b, center)  [s=shop-v1, b=shop/receipt.rb, center=shop/pricing.rb]
-`-- a != b  [true]
-```
-<!-- attune:end=proof -->
-
-One importer cannot fill two distinct roles:
-
-<!-- attune:snippet=counterexample -->
-```text
-graph=proof goal=Pair scope=one
-outcome=NO-MATCH
-
-Pair(s, a, b, center) :-
-+-- left Imports(s, a, center)  [s=one, a=receipt.rb, center=pricing.rb]
-+-- right Imports(s, b, center)  [s=one, b=receipt.rb, center=pricing.rb]
-`-- a != b  [false]
-```
-<!-- attune:end=counterexample -->
-
-A complete `NO-MATCH`, an `UNKNOWN` result, and a classified failure remain
-separate. Partial extraction cannot establish that no relationship exists.
-
-</details>
-
-<details>
-<summary>Checked application fixtures and their provenance</summary>
-
-<!-- attune:snippet=localization -->
-```text
-graph=application name=localization scope=shop-v1 work=fixture
-
-prediction task=receipt = shop/pricing.rb assuming(structural-imports-only)
-
-prediction task=pricing = EMPTY assuming(legal-empty-continuation)
-
-observation task=receipt = Unmeasured assuming(no-external-execution)
-
-observation task=pricing = UNKNOWN assuming(coverage-partial)
-
-history task=receipt = none assuming(no-retained-localization-evidence)
-
-fixture task=receipt = gold=shop/pricing.rb hit=true assuming(labelled-fixture-gold)
-```
-<!-- attune:end=localization -->
-
-<!-- attune:snippet=coordination -->
-```text
-graph=application name=coordination scope=shop-v1 work=fixture
-
-prediction pair=receipt/checkout = CoordinatesBecause(E1:SameDeclaredBoundary(Shop::Pricing)) assuming(single-declared-boundary)
-
-prediction pair=receipt/checkout-both-extend = ParallelBecause(E1:DistinctAnchorsAndNoDirectCallOn(Shop::Pricing)) assuming(distinct-anchors-no-direct-call)
-
-prediction pair=receipt/absent = UnknownBecause(E1:UnknownIntent) assuming(unknown-intent-stays-unknown)
-
-observation pair=receipt/checkout = Unmeasured assuming(no-external-execution)
-
-observation query=Shop.Nothing.render = UNKNOWN assuming(coverage-partial)
-
-observation coverage=failure = FAILED assuming(classified-failure-not-unmeasured-success)
-
-history retained-corrected-v2 = NotEarned assuming(historical-replay-is-not-external-execution)
-
-fixture acquired-shop = Partial assuming(three-authored-files)
-```
-<!-- attune:end=coordination -->
-
-A prediction is a proposed answer; an observation records what was measured;
-a historical replay reuses retained evidence; a fixture tests an authored case.
-None can silently stand in for the others.
-
-</details>
+A complete no-match, an unknown result, and a failure remain different outcomes.
+A prediction, an observation, a historical replay, and an authored fixture also
+remain separate: proposed work is not evidence that it ran.
 
 ## Implementation
 
@@ -518,10 +409,11 @@ The complete campaign implementation is preserved at
 [archive/complete-studies-2026-10-12](https://github.com/becker63/attune/tree/archive/complete-studies-2026-10-12).
 See the evidence guide for its frozen-input replay requirements.
 
-The independent semantic tests, renderer goldens, and
-[README correspondence test](attune/test/docs/ReadmeCorrespondence.flix) remain
-separate. Correspondence runs actual extraction, admission, and rendering,
-then compares all six marked examples byte for byte; it also checks local links.
+Semantic laws check extraction, query answers, reuse, and failure handling.
+The [README correspondence test](attune/test/docs/ReadmeCorrespondence.flix)
+checks that the displayed program is the function those tests run, and that
+local links resolve. The former renderer and its six output examples remain in
+[Git history](https://github.com/becker63/attune/tree/70ba0dc5601f72ea48cc01d90f4b9ad17fa4818c).
 
 ## Documentation and source
 
@@ -535,7 +427,7 @@ then compares all six marked examples byte for byte; it also checks local links.
 README.md                 explanation and checked examples
 LOCALIZATION_REPORT.md    concise results, corrections, and limitations
 evidence/                 frozen tables and their reading guide
-attune/src/               identity, Repository, Theory, Study, View/ASCII
+attune/src/               identity, effects, Repository, Theory, Study
 attune/test/              laws and small authored fixtures
 attune/platform/          pinned build rules and mechanical interfaces
 attune/notes/design.md    ownership, provenance, and source accounting

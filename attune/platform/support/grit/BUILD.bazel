@@ -26,8 +26,8 @@ exports_files([
 # declared C++ dependency; no host libgcc or /nix/store path enters the action.
 cc_import(
     name = "unwind",
-    alwayslink = True,
     static_library = "@llvm-project//libunwind:libunwind.static",
+    alwayslink = True,
 )
 
 # The frozen Grit ABI shared library. `lib.rs` is the retained native host plus

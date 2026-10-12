@@ -45,15 +45,14 @@ Dependency directions the wiring makes explicit:
   joint dispatch, and it runs under each original environment.
 - `results` is the one Flix reducer: it consumes every frozen reduction and every
   measured branch tree, materializes the declared Parquet artifact through the
-  typed Arrow seam and renders the bounded ASCII report.
+  typed Arrow seam and renders the readable TSV summary.
 """
 
 load(
     "//platform/build:native.bzl",
+    "attune_declared_record_file",
     "attune_source_tree",
-    "native_flix_anchor_file",
-    "native_flix_consumer_test",
-    "native_flix_shard_file",
+    "native_flix_test",
     "native_study_stage",
 )
 
@@ -198,38 +197,6 @@ def _enforce_bounds(name, analysis, bounds):
             "\n  ".join(violations),
         ))
 
-_ADMISSION_STRICT = "attune_admission_strict"
-
-def _admission_probe_impl(ctx):
-    analysis = [row.split("\t") for row in ctx.attr.rows]
-    bounds = _bounds(analysis)
-    violations = _bound_violations(ctx.label.name, analysis, bounds)
-    out = ctx.actions.declare_file(ctx.label.name + ".txt")
-    ctx.actions.write(out, "".join([violation + "\n" for violation in violations]))
-    if violations and ctx.var.get(_ADMISSION_STRICT, "") == "1":
-        fail("%s: admitted manifest violates its declared bounds:\n  %s" % (
-            ctx.label.name,
-            "\n  ".join(violations),
-        ))
-    return [DefaultInfo(files = depset([out]))]
-
-attune_admission_probe = rule(
-    implementation = _admission_probe_impl,
-    doc = """Exercise the production admission predicate over a declared record set.
-
-    This is the one bounded macro-admission regression, not a validation
-    framework. It runs the exact `_bound_violations` contract the study macro
-    enforces, over the declared `rows`, and writes the violations it found. Under
-    `--define=attune_admission_strict=1` it also fails, so a controlled fixture
-    invocation can prove that a truncated row and each over-bound declaration are
-    refused in analysis. Without the define it only records, so the target can
-    never break the ordinary offline gate.
-    """,
-    attrs = {
-        "rows": attr.string_list(mandatory = True),
-    },
-)
-
 def attune_study(
         name,
         analysis,
@@ -249,7 +216,7 @@ def attune_study(
       name: the graph name; it also names the two declared study suites.
       analysis: the admitted manifest records, loaded from `manifest.bzl`.
       stage_srcs: the explicit Flix sources every declared stage compiles.
-      result_srcs: the explicit Flix sources of the Parquet/ASCII result reducer.
+      result_srcs: the explicit Flix sources of the Parquet/TSV result reducer.
       law_srcs: the explicit Flix law source for each declared consumer test.
       variant_files: the package-relative baseline/A/B/AB variant source files.
       branch_plans: the package-relative bounded argv receipt plan for each
@@ -295,11 +262,10 @@ def attune_study(
             # this node's index: the record is generated here rather than parsed
             # out of the target name, so the node lowers exactly its own bounded
             # slice and the declaration can never drift from the manifest.
-            native_flix_shard_file(
+            attune_declared_record_file(
                 name = "shard_%s_%s" % (world_id, shard[2]),
-                world = world_id,
-                index = shard[2],
-                count = shard[3],
+                kind = "shard",
+                fields = [world_id, shard[2], shard[3]],
             )
             native_study_stage(
                 name = "theory_shard_%s_%s" % (world_id, shard[2]),
@@ -321,9 +287,10 @@ def attune_study(
         # The admitted manifest is the one declared authority for this task's
         # anchor token; its anchor record is generated here rather than
         # hand-authored a second time, so the two can never drift.
-        native_flix_anchor_file(
+        attune_declared_record_file(
             name = "anchor_%s" % task_id,
-            token = task[5],
+            kind = "anchor",
+            fields = [task[5]],
         )
         witness_labels = [
             ":theory_shard_%s_%s" % (world_id, shard[2])
@@ -412,8 +379,8 @@ def attune_study(
 
     # The one Flix reducer: it consumes every frozen per-task reduction and every
     # measured branch tree and materializes the declared Parquet artifact and the
-    # bounded ASCII report. It creates no truth; it re-states the already
-    # materialized fixture rows through the Arrow seam and the one writer.
+    # readable TSV summary. It creates no truth; it re-states the already
+    # materialized fixture rows through the Arrow seam and as TSV.
     result_inputs = reduced + branches
     result_names = [label.split(":")[1] for label in result_inputs]
     native_study_stage(
@@ -426,14 +393,13 @@ def attune_study(
     )
     produced.append(":results")
 
-    native_flix_consumer_test(
+    native_flix_test(
         name = "manifest_test",
         srcs = [law_srcs["manifest_test"]],
         produced = [":analysis_prepare"],
         declared_files = ["manifest/analysis.tsv"],
-        tags = [],
     )
-    native_flix_consumer_test(
+    native_flix_test(
         name = "bounds_test",
         srcs = [law_srcs["bounds_test"]],
         produced = [
@@ -446,15 +412,13 @@ def attune_study(
             "manifest/panel_late.tsv",
             "manifest/panel_overflow.tsv",
         ],
-        tags = [],
     )
-    native_flix_consumer_test(
+    native_flix_test(
         name = "dag_test",
         srcs = [law_srcs["dag_test"]],
         produced = produced,
-        tags = [],
     )
-    native_flix_consumer_test(
+    native_flix_test(
         name = "firewall_test",
         srcs = [law_srcs["firewall_test"]],
         produced = produced,
@@ -462,13 +426,11 @@ def attune_study(
         # firewall law reads the same declared bytes the prediction stage does
         # and checks the prediction carries exactly that identity.
         declared_files = [_label(package, policy)],
-        tags = [],
     )
-    native_flix_consumer_test(
+    native_flix_test(
         name = "results_test",
         srcs = [law_srcs["results_test"]],
         produced = [":results"],
-        tags = [],
     )
 
     native.test_suite(
@@ -479,7 +441,6 @@ def attune_study(
             ":firewall_test",
             ":results_test",
         ],
-        tags = [],
     )
     native.test_suite(
         name = "all",
@@ -490,5 +451,4 @@ def attune_study(
             ":manifest_test",
             ":results_test",
         ],
-        tags = [],
     )

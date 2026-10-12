@@ -463,6 +463,24 @@ def unsupportedFileIsRefusedNotGuessed(): Unit \ {Assert, IO} =
             case Err(other) => "other ${other}"
         })
 
+/// Traversing a repository keeps the first error and never returns partial success.
+@Test
+def aFailedFileStopsRepositoryAdmission(): Unit \ {Assert, IO} = {
+    let world = List#{
+        ("first.md", "# unsupported"),
+        ("second.txt", "also unsupported")
+    };
+    Assert.assertEq(expected = "unsupported-file first.md", match Repository.analyze(world) {
+        case Err(error) => errorName(error)
+        case Ok(_) => "partial success"
+    });
+    Assert.assertEq(expected = "unsupported-file first.md",
+        match Repository.analyze(("valid.rb", "module Shop; end") :: world) {
+            case Err(error) => errorName(error)
+            case Ok(_) => "partial success"
+        })
+}
+
 /// The JavaScript and TypeScript frontends report exact facts through the real
 /// engine on sources whose whole spans are stated independently: the matched
 /// construct, the syntax before the logged name, that name and both byte ranges.
