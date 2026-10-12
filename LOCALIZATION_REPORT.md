@@ -6,9 +6,9 @@ ReviewBench uses generation 19 **plus the committed recall-denominator repair**.
 
 [Interactive measurements](https://atlas-live-five.vercel.app/#overview) ·
 [Frozen tables and reading guide](evidence/README.md) ·
-[Full chronological archive](reports/localization-history.md)
+[Full chronological archive](https://github.com/becker63/attune/blob/e9731b823ff2ea706b1330ea48dc70f2befef311/LOCALIZATION_REPORT.md)
 
-The archive preserves the previous report byte for byte, including unsuccessful
+The previous report remains unchanged in Git history, including unsuccessful
 experiments, provisional figures, and their later corrections. Its development
 paths and revision IDs describe retained external archives. **Use the corrected
 summary and committed tables for current ReviewBench claims.**
@@ -156,6 +156,27 @@ Do not sum overlapping lines as a total study cost. Different prompt identities
 do not share their provider answers. Plan-billed agent dollar cost is unknown;
 API-equivalent figures in historical graphics are estimates, not actual fees.
 
+### Large component-level deltas versus the frontier inspection arm
+
+The retained 88-task cost presentation compares QS's prepared Jev judgment with
+`gpt-6.1-sol`, medium, inspected:
+
+| Comparison | QS | Inspected Sol | Sol / QS |
+| --- | ---: | ---: | ---: |
+| Median measured request/turn | 0.370 s | 28.942 s | 78.2× |
+| Judgment spend | $0.023915388 reported | $4.6544292 API-equivalent estimate | 194.6× |
+| Model spend including cold embeddings | $0.164905688 reported | Same estimate | 28.2× |
+
+Sol's dollar line applies the presentation's frozen October 10 pricing assumptions
+to its recorded token categories; actual plan billing is unknown. The last QS
+line adds cold Qwen acquisition and judgment, excluding source-analysis and
+compute costs. Jev's timer excludes preparation; Sol's includes inspection.
+The comparison is descriptive, not quality-matched: QS/inspected Sol had top-one
+hits 52/60, any-required-file recovery within ten 78/65, and complete recovery
+within ten 47/41, all over the 85 eligible tasks under their different answer
+protocols. No equivalent live-agent speedup is inferred.
+[Receipts, assumptions, and exact ratios](https://atlas-live-five.vercel.app/costs.json).
+
 ## 3. ReviewBench: testing the economic implication
 
 Localization raised an economic hypothesis: reusable repository analysis might
@@ -241,5 +262,5 @@ and external embedding fixtures are not bundled in this release.
 
 The original developer checkout retains an unrelated user directory that fails
 `//test/policy:workspace_audit_test` (87 ignored-forbidden findings). It was not
-deleted or admitted to publication. The curated release passed all 79 targets;
-[RELEASE.md](RELEASE.md) records exact validation and boundaries.
+deleted or admitted to publication. The curated release passed all 79 targets. The original user directory remains
+preserved; its audit failure is not counted as a pass.

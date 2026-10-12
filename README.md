@@ -15,7 +15,7 @@ work. Typed queries and tests make those boundaries checkable.
 [About the author](https://becker63.digital/)
 
 [Effects & waits](#effects-waits-and-reused-work) ·
-[Experiments](#evaluating-software-workflows) ·
+[Experiments](#what-the-experiments-found) ·
 [Small programs](#small-programs-over-repository-structure) ·
 [Implementation](#implementation) ·
 [Reproduce](#reproduce-and-inspect)
@@ -24,8 +24,9 @@ work. Typed queries and tests make those boundaries checkable.
 
 ### Five kinds of wait
 
-A provider request, a source-reading process, and a prepared judgment are different
-jobs. Their timing boundaries tell us where reuse and scheduling might help.
+Reading source, asking a model, and judging a prepared file list take different
+amounts of time. Measuring them separately shows where scheduling and reuse
+might help. Embeddings turn file text into numbers for retrieval.
 
 ![Five box-and-whisker distributions from 707 retained operations on a logarithmic time scale](https://atlas-live-five.vercel.app/five-waits.svg)
 
@@ -38,7 +39,7 @@ jobs. Their timing boundaries tell us where reuse and scheduling might help.
 | Sol inspection | 88 | 28.94 s | Whole repository-inspection turn |
 
 **Read the plot:** boxes contain the middle half; the line is the median;
-the diamond is the mean. Each dot is a recorded operation. The horizontal scale
+the diamond is the mean (average). Each dot is a recorded operation. The horizontal scale
 is logarithmic: the same distance means ten times longer. Extraction's mean was
 344.58 seconds, and its longest process took 42.5 minutes.
 
@@ -46,6 +47,28 @@ These are separate retained measurements, not a concurrent schedule or a
 controlled Jev-versus-Sol speedup. The model-turn populations include three issues
 outside the 85-task accuracy cohort. [Explore the interactive plot and timer boundaries](https://atlas-live-five.vercel.app/#overview)
 or inspect [all observations and source hashes](https://atlas-live-five.vercel.app/wait-classes.json).
+
+### Small judgments, large differences
+
+In localization, Jev judged a prepared list of files. GPT-6.1-Sol, medium,
+inspected the repository. Across **88 recorded tasks**, the difference was large:
+
+| What we compared | Prepared Jev judgment | Sol repository inspection | Difference |
+| --- | ---: | ---: | ---: |
+| Median wait | 0.37 s | 28.94 s | **78×** |
+| Judgment spend | $0.024 reported | ~$4.65 estimated API bill | **195×** |
+| Including first-time embeddings | $0.165 reported | Same ~$4.65 estimate | **28×** |
+
+Jev's timer starts after its file list is ready; Sol's includes reading and tool
+use. Preparing that list still takes work. This is **not a 78× speedup for the
+whole job**. Sol ran on a ChatGPT subscription; its dollar figure estimates an
+API bill from recorded usage. The last row adds embedding requests, but excludes
+source analysis, local work, and computer costs.
+
+Quality also differed: Sol put the right file first more often; the prepared
+workflow found a required file within ten more often. The table below shows both.
+[Receipts, exact ratios, and price assumptions](https://atlas-live-five.vercel.app/costs.json) ·
+[Explore the comparisons](https://atlas-live-five.vercel.app/#benchmark).
 
 ### Make expensive work explicit
 
@@ -79,7 +102,7 @@ made no new provider calls. This is an offline evaluation result, not a live
 coding-agent speedup or a timing of the current Flix implementation.
 [Sealed report and usage](https://github.com/becker63/attuneflix/tree/main/experiments/swe-explore-js-ts-scale).
 
-## Evaluating software workflows
+## What the experiments found
 
 ### Localization: finding the files
 
@@ -95,6 +118,7 @@ scored **85 eligible tasks in 22 repository groups**:
 | Hosted Qwen retrieval | 41.2% | 85.9% |
 | Qwen + Jev reranking | 57.6% | 90.6% |
 | Qwen + structural context + Jev | 61.2% | 91.8% |
+| Inspected GPT-6.1-Sol (different answer protocol) | 70.6% | 76.5% |
 
 Atlas supplies structural context **after retrieval**; it does not replace the
 retriever. The results are mixed: richer deterministic scoring hurt top-one
@@ -105,7 +129,8 @@ the last condition recovered **all required files in the top 10 on 55.3% of task
 This was exploratory. Eight of the original 96 tasks were excluded because two
 groups did not finish within the runtime cap; three of the remaining 88 had no
 eligible gold. The final split has only 15 eligible tasks in four groups.
-The inspected Sol arm reached 60/85 top-one hits under a different answer protocol,
+The inspected Sol arm reached 60/85 top-one hits under a different answer protocol
+over its own returned files, rather than the ranking arms’ common candidate universe,
 with 20/88 read-floor failures retained as misses.
 
 Historical Qwen acquisition reported $0.1409903; the two Qwen/Jev conditions
@@ -119,9 +144,9 @@ cost and local wall time unavailable.
 
 ### Coordination: dividing work between agents
 
-Can we structure a repository so several agents can work independently in the
-same worktree? Coordination applies the same source extraction, anchors, and
-typed structural questions used in localization to **slice proposed work**.
+Can we organize a repository so several agents can change it independently in
+one checkout? Coordination uses the same code connections as localization to
+**divide work between agents**.
 
 Instead of ranking files, it asks whether two changes touch the same boundary:
 
@@ -132,41 +157,39 @@ change A + change B + repository facts
      structural witness -> parallel / coordinate / unknown
 ```
 
-This is a parallelism experiment: make independent work explicit, then decide
-which work needs coordination. A witness explains the policy's proposed split;
-it does not guarantee that arbitrary edits cannot conflict. The policies and
-independent/joint plans are implemented and fixture-tested. The original 32-pair
-real panel has no completed full-panel result, so no measured multi-agent speedup
-is claimed.
+The goal is parallel work: give agents separate pieces when the evidence supports
+it, and coordinate them when changes overlap. The explanation for a split is not
+a guarantee against conflicting edits. The rules and execution plans pass tests
+on authored examples. The original 32-pair study is unfinished; it has no measured
+multi-agent speedup to report.
 
-### ReviewBench: from localization to economics
+### ReviewBench: could this make review cheaper?
 
-Localization suggested an economic question: could reusable repository analysis
-reduce the work an agent spends gathering context? ReviewBench tried to make that
-question concrete in code review, comparing plain source access with optional
-structural packets.
+Localization raised a practical question: could saved knowledge of a repository
+reduce an agent's work—and its cost? ReviewBench tested that idea in code review,
+comparing ordinary source access with access to an optional packet of code
+connections.
 
-The task changed substantially. A reviewer already starts from a diff; finding
-files is only part of identifying, grounding, and delivering a valid defect.
-Raw localization mattered less in that workflow. That is a lesson about the task,
-not a measured causal estimate of localization's contribution.
+Review was a different problem. The agent already starts with a code change;
+it must find real defects and explain them. Finding files was a smaller part of
+that job. The study did not separately measure how much localization contributed.
 
-| Corrected 24-task holdout | Plain source access | Packet-assisted condition |
+| Corrected results: 24 reserved tasks | Plain source access | Packet-assisted condition |
 | --- | ---: | ---: |
-| Valid findings, final + checkpoint | 18 | 17 |
+| Valid findings, final + saved checkpoint | 18 | 17 |
 | Known recall, 224 positive references | 36.2% | 27.7% |
 
-A ten-task paired pilot preceded the holdout. All three packet calls across both
-populations were refused; zero were accepted. The proposed efficiency improvement
-was not demonstrated. Final delivery, checkpoint recovery, unresolved judgments,
-and mixed-version pilot attempts remain separately reported.
+A ten-task pilot came first. Across the pilot and later check, the packet tool
+was called three times and refused all three. The setup did not show a cost-saving
+benefit. Final reviews, saved checkpoints, and unresolved judgments are counted
+separately in the report.
 
-Holdout review used 6,567,947 provider-total tokens; evaluation used another
-276,637. Actual dollar cost is unknown for plan-billed work.
+The later reviews used 6,567,947 tokens; judging their findings used another
+276,637. The actual subscription cost is unknown.
 
 [Study report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) ·
 [Evidence guide](https://github.com/becker63/attune/tree/main/evidence) ·
-[Full historical archive](https://github.com/becker63/attune/blob/main/reports/localization-history.md)
+[Full historical archive](https://github.com/becker63/attune/blob/e9731b823ff2ea706b1330ea48dc70f2befef311/LOCALIZATION_REPORT.md)
 
 ## Small programs over repository structure
 
@@ -282,16 +305,22 @@ useful work remains a workload-specific measurement.
 #### Relationships that hold together
 
 Routes follow a sequence. **Theory** asks whether several relationships hold at
-once: for example, whether two distinct files import the same file. It admits
-canonical conjunctive descriptors with one to three positive relations, at most
-four typed roles, two outputs, and one inequality. Renaming roles or reordering
-conjuncts preserves candidate identity; reversing an edge does not. Candidate
-reuse follows that canonical identity, rather than arbitrary logical equivalence.
+once: for example, whether two distinct files import the same file. The questions have fixed limits, so Attune can enumerate and check them.
+
+<details>
+<summary>The exact bounds and reuse rule</summary>
+
+Theory admits one to three positive relations, at most four typed roles, two
+outputs, and one inequality. It gives equivalent spellings one candidate identity:
+renaming roles or reordering conjuncts preserves it; reversing an edge does not.
+This is bounded canonicalization, not a test of arbitrary logical equivalence.
+
+</details>
 
 #### Repetition is a hypothesis to measure
 
-Native Flix Datalog evaluates the admitted descriptors over shared repository
-facts. This is the current mechanism. The older
+Flix Datalog runs those questions over the same repository facts. This is the
+current implementation. The older
 [AttuneFlix Atlas experiments](https://github.com/becker63/attuneflix) explored a
 different bounded route family; their census and replay timings are historical
 evidence, not measurements of this implementation.
@@ -427,13 +456,12 @@ shards can be shared across tasks, while prediction inputs remain separate from
 evaluator labels. **Nix** pins the developer environment. **BuildBuddy** supplies
 optional remote caching and execution.
 
-### Typed agent interfaces
+### Agent tools that keep their contracts
 
-Agent tools need contracts too. A bounded bridge lowers supported wire contracts
-to TypeScript for the real **Typert** generator. A separate projection creates
-**DeepSeek Harness (DSH)** model-facing tool schemas; transport declarations and
-tool schemas remain distinct. Unsupported constructs are refused rather than
-silently weakened.
+Agent tools need clear rules for their inputs. Attune turns a supported contract
+into TypeScript for the **Typert** generator, then separately builds the input
+schema used by **DeepSeek Harness (DSH)** tools. The two formats stay distinct.
+An unsupported rule is rejected, rather than silently dropped.
 
 Bazel builds an installable **Cordis** package from those declared inputs. Tests
 check generation, installation, and tool boundaries. See the
@@ -461,6 +489,8 @@ nix develop --command bazel --output_base="$HOME/.cache/attune-v2-bootstrap-baze
 This is the provider-free test gate. Initial setup downloads pinned toolchains
 and dependencies; tests run without model credentials or corpus acquisition.
 Manual acquisition and live dispatch targets are excluded from `//...`.
+The public snapshot passed all 79 targets. The original developer checkout
+still fails `workspace_audit_test` on 87 findings in a preserved user directory.
 Use one Bazel owner at a time; never clear shared caches.
 
 Opt-in BuildBuddy check, with `BUILDBUDDY_API_KEY` supplied privately:
@@ -481,13 +511,11 @@ then compares all six marked examples byte for byte; it also checks local links.
 | --- | --- |
 | [Study report](https://github.com/becker63/attune/blob/main/LOCALIZATION_REPORT.md) | Questions, populations, corrected results, costs, and limits. |
 | [Evidence guide](https://github.com/becker63/attune/tree/main/evidence) | Frozen table formats, exact hashes, and replay availability. |
-| [Historical archive](https://github.com/becker63/attune/blob/main/reports/localization-history.md) | The full, unchanged research chronology and provisional generations. |
-| [Release verification](https://github.com/becker63/attune/blob/main/RELEASE.md) | Exact passing targets and the original-checkout audit failure. |
+| [Historical archive](https://github.com/becker63/attune/blob/e9731b823ff2ea706b1330ea48dc70f2befef311/LOCALIZATION_REPORT.md) | The full, unchanged research chronology and provisional generations. |
 
 ```text
 README.md                 explanation and checked examples
 LOCALIZATION_REPORT.md    concise results, corrections, and limitations
-reports/                  unchanged chronological research archive
 evidence/                 frozen tables, timing distributions, reading guide
 attune/src/               identity, Repository, Theory, Study, View/ASCII
 attune/test/              laws, fixtures, frozen receipts, replay stages
