@@ -156,26 +156,29 @@ Do not sum overlapping lines as a total study cost. Different prompt identities
 do not share their provider answers. Plan-billed agent dollar cost is unknown;
 API-equivalent figures in historical graphics are estimates, not actual fees.
 
-### Large component-level deltas versus the frontier inspection arm
+### Qwen first: provider spend and reusable acquisition
 
-The retained 88-task cost presentation compares QS's prepared Jev judgment with
-`gpt-6.1-sol`, medium, inspected:
+Qwen's cold embedding acquisition reported $0.1409903. Pricing the retained
+88 inspected `gpt-6.1-sol`, medium, turns gives a $4.6544292 API-equivalent
+estimate: **33.0×** the Qwen charge. Adding QS's Jev judgments brings known
+model spend to $0.164905688, or **28.2× below** the same estimate.
 
-| Comparison | QS | Inspected Sol | Sol / QS |
-| --- | ---: | ---: | ---: |
-| Median measured request/turn | 0.370 s | 28.942 s | 78.2× |
-| Judgment spend | $0.023915388 reported | $4.6544292 API-equivalent estimate | 194.6× |
-| Model spend including cold embeddings | $0.164905688 reported | Same estimate | 28.2× |
+Qwen / QS / inspected Sol recovered at least one required file within ten in
+73 / 78 / 65 of the **85 eligible tasks**. Complete recovery was 38 / 47 / 41;
+top-one hits were 35 / 52 / 60. Qwen alone therefore had better partial
+recovery, but weaker top-one and complete recovery than inspected Sol.
+Different answer protocols prevent a quality-matched interpretation.
 
-Sol's dollar line applies the presentation's frozen October 10 pricing assumptions
-to its recorded token categories; actual plan billing is unknown. The last QS
-line adds cold Qwen acquisition and judgment, excluding source-analysis and
-compute costs. Jev's timer excludes preparation; Sol's includes inspection.
-The comparison is descriptive, not quality-matched: QS/inspected Sol had top-one
-hits 52/60, any-required-file recovery within ten 78/65, and complete recovery
-within ten 47/41, all over the 85 eligible tasks under their different answer
-protocols. No equivalent live-agent speedup is inferred.
-[Receipts, assumptions, and exact ratios](https://atlas-live-five.vercel.app/costs.json).
+Cold acquisition made 351 embedding requests; unchanged warm replay made none.
+Warm local wall time was not measured. Source-analysis, build, and local compute
+costs are excluded. Sol ran on a subscription: actual plan billing is unknown.
+The estimate applies frozen October 10 API prices to recorded token categories.
+
+Jev's prepared judgment is a separate stage: $0.023915388 reported, median
+0.370 seconds. Sol's median inspection turn was 28.942 seconds. Those timers
+exclude and include preparation respectively; their 78.2× ratio does not measure
+a whole-workflow speedup. The Jev-only charge ratio is 194.6×, but omits Qwen
+acquisition. [Receipts and assumptions](https://atlas-live-five.vercel.app/costs.json).
 
 ## 3. ReviewBench: testing the economic implication
 

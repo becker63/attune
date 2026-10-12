@@ -31,10 +31,12 @@ The five-wait distributions and their 707 observations remain on the
 in the [README](../README.md#five-kinds-of-wait). They are not copied here.
 
 The retained [cost comparison](https://atlas-live-five.vercel.app/costs.json)
-shows 78.2× between the prepared Jev-request and inspected-Sol-turn medians;
-The estimated API-price comparison is about 195× for judgment, or 28× after
-first-time embedding requests. The jobs include different work; Sol's actual
-subscription cost is unknown. The report shows the quality tradeoff and assumptions.
+puts Qwen first: $0.141 in cold embedding charges, about **33× below** the
+$4.65 API-equivalent estimate for frontier-model repository inspection. Adding
+structural context and Jev judgment totals $0.165, about **28× below**.
+These are model charges, excluding computer costs; Sol's actual subscription
+bill is unknown. The report shows quality tradeoffs. Unchanged warm replay
+made no new embedding requests; its wall time was not measured.
 
 ## Localization files and metrics
 
