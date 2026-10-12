@@ -25,7 +25,8 @@ summary and committed tables for current ReviewBench claims.**
 
 ## 1. Five kinds of wait
 
-![707 measured operations in five wait distributions](evidence/timing/five-waits.svg)
+[View the interactive five-wait distributions](https://atlas-live-five.vercel.app/#runtime)
+· [Native README figure](README.md#five-kinds-of-wait)
 
 | Timer | n | Median | Boundary |
 | --- | ---: | ---: | --- |
@@ -45,7 +46,7 @@ These are separate retained runs, not a simultaneous timeline. Jev and Sol have
 different timer boundaries, so dividing their medians does not measure an
 end-to-end agent speedup. Their 88-task timing populations include three issues
 outside the accuracy cohort. Two extraction envelopes lacked process intervals.
-[Exact observations, boundaries, and provenance hashes](evidence/timing/wait-classes.json).
+[Exact observations, boundaries, and provenance hashes](https://atlas-live-five.vercel.app/wait-classes.json).
 
 A separate recorded build contains 180 preparation processes whose intervals sum
 to 9.34 hours within a roughly 5.03-hour build span, with up to seven overlapping.
@@ -209,8 +210,8 @@ are implemented and fixture-tested. The original 32-pair panel did not produce a
 completed full-panel result. Current fixtures, historical corrected-v2 replay,
 and external execution remain explicitly separate.
 
-**No new model calls are needed to inspect these results.** The committed tables,
-707 timing observations, and archive are directly readable. The ordinary
+**No new model calls are needed to inspect these results.** The committed tables and archive are directly readable; the canonical timing
+observations remain on the website. The ordinary
 [README test command](README.md#reproduce-and-inspect) exercises provider-free
 laws, rendering, and correspondence. ReviewBench publication can be regenerated
 from pinned cached inputs without fetching; the [evidence guide](evidence/README.md)

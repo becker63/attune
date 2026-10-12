@@ -19,7 +19,14 @@ work. Typed queries and tests make those boundaries checkable.
 A provider request, a source-reading process, and a prepared judgment are different
 jobs. Their timing boundaries tell us where reuse and scheduling might help.
 
-![Five measured wait distributions: 707 retained operations on a logarithmic time scale](https://raw.githubusercontent.com/becker63/attune/main/evidence/timing/five-waits.svg)
+```text
+              0.1 s          1 s             10 s        1 min          10 min    1 h
+Embeddings                  |----[=|===]---|......... .  ..
+Extraction                                      |--------[==|======]----|.      . .
+Theory                                        |-[=|=]--|.. ...
+Jev request          |[|]|.   .   .
+Sol turn                                        |-[=|]-|.
+```
 
 | Measured job | Observations | Median | What the timer includes |
 | --- | ---: | ---: | --- |
@@ -29,15 +36,16 @@ jobs. Their timing boundaries tell us where reuse and scheduling might help.
 | Jev judgment | 88 | 0.37 s | Request over an already prepared shortlist |
 | Sol inspection | 88 | 28.94 s | Whole repository-inspection turn |
 
-**Read the plot:** boxes contain the middle half; the line is the median;
-the diamond is the mean. Each dot is an observation. The horizontal scale is
-logarithmic: the same distance means ten times longer. Extraction's mean was
+**Read the plot:** `[===]` contains the middle half; its `|` marks the median.
+Outside bars mark whisker ends; dots mark outlier positions (nearby observations
+share a character). The scale is logarithmic and rounded to character cells.
+The interactive plot shows every observation and the mean. Extraction's mean was
 344.58 seconds, and its longest process took 42.5 minutes.
 
 These are separate retained measurements, not a concurrent schedule or a
 controlled Jev-versus-Sol speedup. The model-turn populations include three issues
 outside the 85-task accuracy cohort. [Explore the interactive plot and timer boundaries](https://atlas-live-five.vercel.app/#runtime)
-or inspect [all observations and source hashes](https://github.com/becker63/attune/blob/main/evidence/timing/wait-classes.json).
+or inspect [all observations and source hashes](https://atlas-live-five.vercel.app/wait-classes.json).
 
 ### Make expensive work explicit
 
